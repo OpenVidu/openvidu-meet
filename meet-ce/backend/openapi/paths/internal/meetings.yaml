@@ -51,7 +51,8 @@
         operationId: updateParticipantRole
         summary: Update participant role in a meeting
         description: >
-            Updates the role of a participant in the current meeting in an OpenVidu Meet room.
+            Applies a moderation action to a participant in the current meeting in an OpenVidu Meet room.
+            Supported actions are `upgrade` (promote to moderator) and `downgrade` (restore original permissions).
         tags:
             - Internal API - Meetings
         security:
@@ -69,6 +70,8 @@
                 $ref: '../../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../../components/responses/internal/error-room-participant-not-found.yaml'
+            '409':
+                $ref: '../../components/responses/internal/error-participant-role-conflict.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':

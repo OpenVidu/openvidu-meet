@@ -43,7 +43,7 @@ export const updateParticipantRole = async (req: Request, res: Response) => {
 		);
 		await roomMemberService.updateParticipantRole(roomId, participantIdentity, action);
 		res.status(200).json({
-			message: `Moderation action '${action}' applied to participant '${participantIdentity}'`
+			message: `Moderation action '${action}' applied to participant '${participantIdentity}' in room '${roomId}'`
 		});
 	} catch (error) {
 		handleError(

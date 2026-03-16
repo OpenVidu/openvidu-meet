@@ -6,4 +6,4 @@ content:
             properties:
                 message:
                     type: string
-                    example: 'Participant "Alice" role updated to "moderator"'
+                    example: 'Moderation action "upgrade" applied to participant "alice_smith" in room "room_123"'

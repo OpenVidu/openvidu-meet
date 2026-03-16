@@ -1,6 +1,4 @@
 type: object
-required:
-    - secret
 properties:
     secret:
         type: string
@@ -14,13 +12,13 @@ properties:
         example: 'abc123456'
     joinMeeting:
         type: boolean
-        description: Whether the token is intended for joining a meeting. If true, participantName must be provided.
+        description: >
+            Whether the token is intended for joining a meeting.
+            When true, participantName may be required for anonymous users and can be inferred for identified users.
         example: true
     participantName:
         type: string
-        description: The name of the participant when joining the meeting. Required if `joinMeeting` is true.
-        example: 'Alice'
-    participantIdentity:
-        type: string
-        description: The identity of the participant in the meeting. Required when refreshing an existing token used for joining a meeting.
+        description: >
+            The participant display name to use when joining the meeting.
+            Required for anonymous users when `joinMeeting` is true.
         example: 'Alice'

@@ -40,6 +40,8 @@ paths:
         $ref: './paths/internal/meet-global-config.yaml#/~1config~1captions'
     /rooms/{roomId}/members/token:
         $ref: './paths/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
+    /rooms/{roomId}/members/token/refresh:
+        $ref: './paths/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token~1refresh'
     /meetings/{roomId}:
         $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}'
     /meetings/{roomId}/participants/{participantIdentity}:

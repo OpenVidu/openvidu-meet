@@ -5,10 +5,13 @@
         description: >
             Generates a token for a user to access an OpenVidu Meet room and its resources.
             When using the anonymous recording secret, generated tokens only allow retrieval of room recordings.
+            When a previous room member token is provided via `X-Room-Member-Token`, the endpoint can regenerate
+            a join token while preserving participant identity.
         tags:
             - Internal API - Room Members
         security:
             - accessTokenHeader: []
+            - roomMemberTokenHeader: []
         parameters:
             - $ref: '../../components/parameters/room-id-path.yaml'
         requestBody:
@@ -17,7 +20,7 @@
             '200':
                 $ref: '../../components/responses/internal/success-generate-room-member-token.yaml'
             '400':
-                $ref: '../../components/responses/internal/error-invalid-room-secret.yaml'
+                $ref: '../../components/responses/internal/error-invalid-room-member-token-request.yaml'
             '401':
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
@@ -28,5 +31,30 @@
                 $ref: '../../components/responses/internal/error-room-closed.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../../components/responses/internal-server-error.yaml'
+
+/rooms/{roomId}/members/token/refresh:
+    post:
+        operationId: refreshRoomMemberToken
+        summary: Refresh room member token
+        description: >
+            Refreshes a room member token for a participant already connected to a meeting.
+            Requires a valid room member token in `X-Room-Member-Token`.
+        tags:
+            - Internal API - Room Members
+        security:
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../../components/parameters/room-id-path.yaml'
+        responses:
+            '200':
+                $ref: '../../components/responses/internal/success-generate-room-member-token.yaml'
+            '401':
+                $ref: '../../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../../components/responses/internal/error-room-participant-not-found.yaml'
             '500':
                 $ref: '../../components/responses/internal-server-error.yaml'
