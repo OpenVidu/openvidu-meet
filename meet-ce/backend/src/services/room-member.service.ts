@@ -435,7 +435,7 @@ export class RoomMemberService {
 
 		if (joinMeeting) {
 			tokenMetadata.livekitUrl = MEET_ENV.LIVEKIT_URL;
-			const resolvedParticipantName = participantName || secretSource?.name || authenticatedSource?.name;
+			let resolvedParticipantName = participantName || secretSource?.name || authenticatedSource?.name;
 			let participantIdentity: string | undefined;
 
 			// If regenerating an existing token for joining a meeting, use the participant identity from the previous token's context
@@ -443,8 +443,9 @@ export class RoomMemberService {
 			if (previousToken) {
 				const tokenContext = await this.getValidatedRoomMemberTokenContext(roomId, previousToken);
 
-				if (tokenContext.participantIdentity) {
+				if (tokenContext.participantIdentity && tokenContext.participantName) {
 					participantIdentity = tokenContext.participantIdentity;
+					resolvedParticipantName = tokenContext.participantName;
 				}
 			}
 
@@ -535,7 +536,7 @@ export class RoomMemberService {
 			);
 
 			const participant = await this.getParticipantFromMeeting(roomId, participantIdentity!);
-			participantName = participant.name;
+			participantName = participant.name || participantName;
 
 			const participantMetadata = this.parseParticipantMeetingMetadata(participant.metadata);
 			const isCurrentlyPromotedModerator = participantMetadata.isPromotedModerator === true;

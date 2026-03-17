@@ -2,6 +2,7 @@ import { expect } from '@jest/globals';
 import {
 	MeetAppearanceConfig,
 	MeetAssistantCapabilityName,
+	MeetParticipantModerationAction,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
@@ -14,7 +15,6 @@ import {
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomMemberOptions,
-	MeetRoomMemberRole,
 	MeetRoomMemberTokenOptions,
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
@@ -751,7 +751,8 @@ export const bulkDeleteRoomMembers = async (roomId: string, memberIds: string[])
 export const generateRoomMemberTokenRequest = async (
 	roomId: string,
 	tokenOptions: MeetRoomMemberTokenOptions,
-	accessToken?: string
+	accessToken?: string,
+	previousToken?: string
 ) => {
 	checkAppIsRunning();
 
@@ -763,6 +764,10 @@ export const generateRoomMemberTokenRequest = async (
 		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
 	}
 
+	if (previousToken) {
+		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, previousToken);
+	}
+
 	return await req;
 };
 
@@ -772,13 +777,23 @@ export const generateRoomMemberTokenRequest = async (
 export const generateRoomMemberToken = async (
 	roomId: string,
 	tokenOptions: MeetRoomMemberTokenOptions,
-	accessToken?: string
+	accessToken?: string,
+	previousToken?: string
 ): Promise<string> => {
-	const response = await generateRoomMemberTokenRequest(roomId, tokenOptions, accessToken);
+	const response = await generateRoomMemberTokenRequest(roomId, tokenOptions, accessToken, previousToken);
 	expect(response.status).toBe(200);
 
 	expect(response.body).toHaveProperty('token');
 	return `Bearer ${response.body.token}`;
+};
+
+export const refreshRoomMemberTokenRequest = async (roomId: string, previousToken: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/members/token/refresh`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, previousToken)
+		.send({});
 };
 
 // MEETING HELPERS
@@ -801,8 +816,8 @@ export const cancelAssistant = (assistantId: string, token: string): Promise<Res
 export const updateParticipant = async (
 	roomId: string,
 	participantIdentity: string,
-	newRole: MeetRoomMemberRole,
-	moderatorToken: string
+	action: MeetParticipantModerationAction,
+	roomMemberToken: string
 ) => {
 	checkAppIsRunning();
 
@@ -812,12 +827,12 @@ export const updateParticipant = async (
 				`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`
 			)
 		)
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
-		.send({ role: newRole });
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		.send({ action });
 	return response;
 };
 
-export const kickParticipant = async (roomId: string, participantIdentity: string, moderatorToken: string) => {
+export const kickParticipant = async (roomId: string, participantIdentity: string, roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
@@ -826,17 +841,17 @@ export const kickParticipant = async (roomId: string, participantIdentity: strin
 				`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`
 			)
 		)
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send();
 	return response;
 };
 
-export const endMeeting = async (roomId: string, moderatorToken: string) => {
+export const endMeeting = async (roomId: string, roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
 		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`))
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send();
 
 	await waitForMeetingToEnd(roomId);

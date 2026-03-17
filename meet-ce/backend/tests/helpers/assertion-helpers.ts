@@ -11,7 +11,7 @@ import {
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomConfig,
 	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
 	TrackSource
 } from '@openvidu-meet/typings';
@@ -625,9 +625,10 @@ export const expectValidRoomMemberTokenResponse = (
 	validations: {
 		roomId: string;
 		memberId?: string;
-		baseRole: MeetRoomMemberRole;
-		customPermissions?: Partial<MeetRoomMemberPermissions>;
-		effectivePermissions: MeetRoomMemberPermissions;
+		userId?: string;
+		permissions: MeetRoomMemberPermissions;
+		badge?: MeetRoomMemberUIBadge;
+		isPromotedModerator?: boolean;
 		joinMeeting?: boolean;
 		participantName?: string;
 		participantIdentityPrefix?: string;
@@ -636,13 +637,15 @@ export const expectValidRoomMemberTokenResponse = (
 	const {
 		roomId,
 		memberId,
-		baseRole,
-		effectivePermissions,
-		customPermissions,
+		userId,
+		permissions,
+		badge,
+		isPromotedModerator,
 		joinMeeting = false,
 		participantName,
 		participantIdentityPrefix
 	} = validations;
+
 	expect(response.status).toBe(200);
 	expect(response.body).toHaveProperty('token');
 
@@ -654,13 +657,13 @@ export const expectValidRoomMemberTokenResponse = (
 		expect(decodedToken).toHaveProperty('name', participantName);
 		expect(decodedToken).toHaveProperty('sub');
 
-		if (memberId) {
-			expect(decodedToken.sub).toBe(memberId);
+		if (memberId || userId) {
+			expect(decodedToken.sub).toBe(memberId || userId);
 		} else if (participantIdentityPrefix) {
 			expect(decodedToken.sub?.startsWith(participantIdentityPrefix)).toBe(true);
 		}
 
-		const livekitPermissions = getLiveKitPermissions(roomId, effectivePermissions);
+		const livekitPermissions = getLiveKitPermissions(roomId, permissions!);
 		expect(decodedToken).toHaveProperty('video', livekitPermissions);
 	} else {
 		expect(decodedToken).not.toHaveProperty('name');
@@ -671,9 +674,9 @@ export const expectValidRoomMemberTokenResponse = (
 	expect(decodedToken).toHaveProperty('metadata');
 	const metadata = JSON.parse(decodedToken.metadata || '{}');
 	expect(metadata).toHaveProperty('iat');
-	expect(metadata).toHaveProperty('livekitUrl');
 	expect(metadata).toHaveProperty('roomId', roomId);
-	expect(metadata).toHaveProperty('baseRole', baseRole);
+	expect(metadata).toHaveProperty('permissions', permissions);
+	expect(metadata).toHaveProperty('badge', badge);
 
 	if (memberId) {
 		expect(metadata).toHaveProperty('memberId', memberId);
@@ -681,13 +684,23 @@ export const expectValidRoomMemberTokenResponse = (
 		expect(metadata).not.toHaveProperty('memberId');
 	}
 
-	if (customPermissions) {
-		expect(metadata).toHaveProperty('customPermissions', customPermissions);
+	if (userId) {
+		expect(metadata).toHaveProperty('userId', userId);
 	} else {
-		expect(metadata).not.toHaveProperty('customPermissions');
+		expect(metadata).not.toHaveProperty('userId');
 	}
 
-	expect(metadata).toHaveProperty('effectivePermissions', effectivePermissions);
+	if (isPromotedModerator !== undefined) {
+		expect(metadata).toHaveProperty('isPromotedModerator', isPromotedModerator);
+	} else {
+		expect(metadata).not.toHaveProperty('isPromotedModerator');
+	}
+
+	if (joinMeeting) {
+		expect(metadata).toHaveProperty('livekitUrl');
+	} else {
+		expect(metadata).not.toHaveProperty('livekitUrl');
+	}
 };
 
 /** Assert a well-formed 200 response from createAssistant */

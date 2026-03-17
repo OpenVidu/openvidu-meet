@@ -1,7 +1,14 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMember, MeetRoomMemberRole, MeetRoomRoles, MeetUserRole } from '@openvidu-meet/typings';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import {
+	MeetRoomMember,
+	MeetRoomMemberRole,
+	MeetRoomRoles,
+	MeetSignalType,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
+import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
@@ -11,7 +18,6 @@ import {
 	createUser,
 	deleteAllRooms,
 	deleteAllUsers,
-
 	getRoomMember,
 	sleep,
 	startTestServer,
@@ -276,6 +282,45 @@ describe('Room Members API Tests', () => {
 
 			// Check if the participant has been removed from LiveKit
 			await expect(livekitService.getParticipant(roomId, participantIdentity)).rejects.toThrow(OpenViduMeetError);
+		});
+
+		it('should send permissions-updated signal when member permissions change and participant is in meeting', async () => {
+			// Create a member
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Test Member',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			const member = createResponse.body as MeetRoomMember;
+			const memberId = member.memberId;
+
+			// Join fake participant to the room to simulate real join
+			const participantIdentity = memberId; // Participant identity is the same as memberId for members
+			await joinFakeParticipant(roomId, memberId);
+
+			const frontendEventService = container.get(FrontendEventService);
+			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
+
+			// Update room member permissions
+			const response = await updateRoomMember(roomId, memberId, {
+				customPermissions: {
+					canRecord: true
+				}
+			});
+			expect(response.status).toBe(200);
+
+			expect(sendSignalSpy).toHaveBeenCalledTimes(1);
+			expect(sendSignalSpy).toHaveBeenCalledWith(
+				roomId,
+				{
+					roomId,
+					participantIdentity: memberId,
+					timestamp: expect.any(Number)
+				},
+				{
+					topic: MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
+					destinationIdentities: [participantIdentity]
+				}
+			);
 		});
 	});
 

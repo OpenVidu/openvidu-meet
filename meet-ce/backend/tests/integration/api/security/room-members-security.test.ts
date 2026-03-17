@@ -1,13 +1,22 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { TokenService } from '../../../../src/services/token.service.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoomMember,
 	deleteAllRooms,
 	deleteAllUsers,
+	endMeeting,
+	generateRoomMemberToken,
 	getFullPath,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
@@ -646,6 +655,73 @@ describe('Room Members API Security Tests', () => {
 			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token`).send({
 				joinMeeting: false
 			});
+			expect(response.status).toBe(401);
+		});
+	});
+
+	describe('Refresh Room Member Token Tests', () => {
+		it('should succeed when using valid room member token for joining meeting', async () => {
+			// Generate a room member token for joining the meeting
+			const previousToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.moderatorSecret,
+				joinMeeting: true,
+				participantName: 'Test Participant'
+			});
+
+			// Extract participant identity and metadata from the token
+			const tokenService = container.get(TokenService);
+			const claims = tokenService.getClaimsIgnoringExpiration(previousToken);
+			const participantIdentity = claims.sub;
+			expect(participantIdentity).toBeDefined();
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// Simulate participant joining the meeting
+			await joinFakeParticipant(roomId, participantIdentity!);
+			await updateParticipantMetadata(roomId, participantIdentity!, metadata);
+
+			// Attempt to refresh the token using the valid previous room member token
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token/refresh`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, previousToken);
+			expect(response.status).toBe(200);
+
+			// Clean up by disconnecting the fake participant and ending the meeting
+			await disconnectFakeParticipants();
+			await endMeeting(roomId, previousToken);
+		});
+
+		it('should fail when using valid room member token not for joining meeting', async () => {
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token/refresh`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomUsers.roomMemberDetails.memberToken);
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when using valid room member token for a different room', async () => {
+			// Generate a room member token for a different room
+			const differentRoom = await setupSingleRoom();
+			const previousToken = await generateRoomMemberToken(differentRoom.room.roomId, {
+				secret: differentRoom.moderatorSecret,
+				joinMeeting: true,
+				participantName: 'Test Participant'
+			});
+
+			// Attempt to refresh the token using the valid room member token for a different room
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token/refresh`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, previousToken);
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when using invalid room member token', async () => {
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token/refresh`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, 'invalid_token');
+			expect(response.status).toBe(401);
+		});
+
+		it('should fail when user is not authenticated with room member token', async () => {
+			const response = await request(app).post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token/refresh`);
 			expect(response.status).toBe(401);
 		});
 	});

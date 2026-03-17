@@ -1,5 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetAssistantCapabilityName, MeetRoomMemberRole, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
+import {
+	MeetAssistantCapabilityName,
+	MeetParticipantModerationAction,
+	MeetRoomMemberRole,
+	MeetRoomMemberTokenMetadata,
+	MeetRoomMemberUIBadge
+} from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
@@ -103,15 +109,15 @@ describe('Meeting API Security Tests', () => {
 	});
 
 	describe('Update Participant in Meeting Tests', () => {
-		const role = MeetRoomMemberRole.MODERATOR;
+		const action = MeetParticipantModerationAction.UPGRADE;
 
 		const setParticipantMetadata = async () => {
 			const metadata: MeetRoomMemberTokenMetadata = {
 				iat: Date.now(),
-				livekitUrl: MEET_ENV.LIVEKIT_URL,
 				roomId,
-				baseRole: MeetRoomMemberRole.SPEAKER,
-				effectivePermissions: roomData.room.roles.speaker.permissions
+				permissions: roomData.room.roles.speaker.permissions,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				livekitUrl: MEET_ENV.LIVEKIT_URL
 			};
 			await updateParticipantMetadata(roomId, participantIdentity, metadata);
 		};
@@ -125,7 +131,7 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-				.send({ role });
+				.send({ action });
 			expect(response.status).toBe(401);
 		});
 
@@ -133,7 +139,7 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken)
-				.send({ role });
+				.send({ action });
 			expect(response.status).toBe(401);
 		});
 
@@ -146,7 +152,7 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken)
-				.send({ role });
+				.send({ action });
 			expect(response.status).toBe(200);
 
 			// Re-join participant for further tests
@@ -163,7 +169,7 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken)
-				.send({ role });
+				.send({ action });
 			expect(response.status).toBe(403);
 		});
 
@@ -173,7 +179,7 @@ describe('Meeting API Security Tests', () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken)
-				.send({ role });
+				.send({ action });
 			expect(response.status).toBe(403);
 		});
 	});

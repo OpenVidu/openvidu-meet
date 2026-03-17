@@ -1,14 +1,24 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
+	MeetParticipantModerationAction,
 	MeetRoomMember,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
+	MeetRoomMemberTokenMetadata,
+	MeetRoomMemberUIBadge,
 	MeetRoomRoles,
 	MeetRoomStatus,
 	MeetUserRole
 } from '@openvidu-meet/typings';
+import { container } from '../../../../src/config/dependency-injector.config.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { TokenService } from '../../../../src/services/token.service.js';
 import { expectValidationError, expectValidRoomMemberTokenResponse } from '../../../helpers/assertion-helpers.js';
-import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	createRoomMember,
@@ -18,12 +28,14 @@ import {
 	generateRoomMemberToken,
 	generateRoomMemberTokenRequest,
 	startTestServer,
+	updateParticipant,
 	updateRoomAccessConfig,
 	updateRoomRoles,
-	updateRoomStatus
+	updateRoomStatus,
+	updateUserRole
 } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom, setupUser } from '../../../helpers/test-scenarios.js';
-import { RoomData } from '../../../interfaces/scenarios.js';
+import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom, setupUser } from '../../../helpers/test-scenarios.js';
+import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
 const allPermissions: MeetRoomMemberPermissions = {
 	canRecord: true,
@@ -59,16 +71,71 @@ const recordingReadOnlyPermissions: MeetRoomMemberPermissions = {
 	canChangeVirtualBackground: false
 };
 
+const noPermissions: MeetRoomMemberPermissions = {
+	canRecord: false,
+	canRetrieveRecordings: false,
+	canDeleteRecordings: false,
+	canJoinMeeting: false,
+	canShareAccessLinks: false,
+	canMakeModerator: false,
+	canKickParticipants: false,
+	canEndMeeting: false,
+	canPublishVideo: false,
+	canPublishAudio: false,
+	canShareScreen: false,
+	canReadChat: false,
+	canWriteChat: false,
+	canChangeVirtualBackground: false
+};
+
+const mergePermissions = (
+	first: MeetRoomMemberPermissions,
+	second: MeetRoomMemberPermissions
+): MeetRoomMemberPermissions => {
+	const merged = { ...noPermissions };
+
+	for (const key of Object.keys(merged) as Array<keyof MeetRoomMemberPermissions>) {
+		merged[key] = first[key] || second[key];
+	}
+
+	return merged;
+};
+
 describe('Room Members API Tests', () => {
 	let roomData: RoomData;
 	let roomId: string;
 	let roomRoles: MeetRoomRoles;
 
+	let roomUsers: RoomTestUsers;
+	let testUsers: TestUsers;
+
+	let tokenService: TokenService;
+	let livekitService: LiveKitService;
+
+	const getRawToken = (token: string) => token.replace(/^Bearer\s+/i, '');
+
 	beforeAll(async () => {
 		await startTestServer();
+		tokenService = container.get(TokenService);
+		livekitService = container.get(LiveKitService);
+
 		roomData = await setupSingleRoom();
 		roomId = roomData.room.roomId;
 		roomRoles = roomData.room.roles;
+
+		roomData = await setupTestUsersForRoom(roomData);
+		roomUsers = roomData.users!;
+		testUsers = await setupTestUsers();
+	});
+
+	afterEach(async () => {
+		// End the meeting for further tests
+		// Note: We need to generate a new moderator token since some tests modify the room roles or anonymous config,
+		// which invalidate the previous moderator token.
+		roomData.moderatorToken = await generateRoomMemberToken(roomId, {
+			secret: roomData.moderatorSecret
+		});
+		await endMeeting(roomId, roomData.moderatorToken);
 	});
 
 	afterAll(async () => {
@@ -89,8 +156,8 @@ describe('Room Members API Tests', () => {
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.moderatorSecret });
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomRoles.moderator.permissions
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions
 			});
 		});
 
@@ -124,8 +191,8 @@ describe('Room Members API Tests', () => {
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: roomData.speakerSecret });
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.SPEAKER,
-				effectivePermissions: roomRoles.speaker.permissions
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions: roomRoles.speaker.permissions
 			});
 		});
 
@@ -161,8 +228,8 @@ describe('Room Members API Tests', () => {
 			const response = await generateRoomMemberTokenRequest(roomId, { secret: recordingSecret });
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.SPEAKER,
-				effectivePermissions: recordingReadOnlyPermissions
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions: recordingReadOnlyPermissions
 			});
 		});
 
@@ -207,66 +274,39 @@ describe('Room Members API Tests', () => {
 		});
 
 		it('should generate token for registered ADMIN user', async () => {
-			// Create a registered ADMIN user
-			const adminData = await setupUser({
-				userId: `admin_${Date.now()}`,
-				name: 'Admin User',
-				password: 'adminpassword',
-				role: MeetUserRole.ADMIN
-			});
-
 			// Generate token without specifying secret (should use ADMIN privileges)
-			const response = await generateRoomMemberTokenRequest(roomId, {}, adminData.accessToken);
+			const response = await generateRoomMemberTokenRequest(roomId, {}, testUsers.admin.accessToken);
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR, // ADMIN users should get MODERATOR role in the room
-				effectivePermissions: allPermissions // ADMIN users should have all permissions
+				userId: testUsers.admin.user.userId,
+				badge: MeetRoomMemberUIBadge.ADMIN,
+				permissions: allPermissions // ADMIN users should have all permissions
 			});
 		});
 
 		it('should generate token for room owner', async () => {
-			// Create a registered user to be the room owner
-			const ownerData = await setupUser({
-				userId: `owner_${Date.now()}`,
-				name: 'Room Owner',
-				password: 'ownerpassword',
-				role: MeetUserRole.USER
-			});
-
 			// Create room with the user as owner
-			const roomWithOwner = await createRoom({}, ownerData.accessToken);
+			const roomWithOwner = await createRoom({}, testUsers.user.accessToken);
 
 			// Generate token for the room owner
-			const response = await generateRoomMemberTokenRequest(roomWithOwner.roomId, {}, ownerData.accessToken);
+			const response = await generateRoomMemberTokenRequest(roomWithOwner.roomId, {}, testUsers.user.accessToken);
 			expectValidRoomMemberTokenResponse(response, {
 				roomId: roomWithOwner.roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR, // Room owner should get MODERATOR role
-				effectivePermissions: allPermissions // Room owner should have all permissions
+				userId: testUsers.user.user.userId,
+				badge: MeetRoomMemberUIBadge.OWNER,
+				permissions: allPermissions // Room owner should have all permissions
 			});
 		});
 
 		it('should generate token for registered user room member', async () => {
-			// Create a registered user
-			const userData = await setupUser({
-				userId: `user_${Date.now()}`,
-				name: 'Registered Member',
-				password: 'password123',
-				role: MeetUserRole.USER
-			});
-
-			// Add as room member
-			await createRoomMember(roomId, {
-				userId: userData.user.userId,
-				baseRole: MeetRoomMemberRole.MODERATOR
-			});
-
 			// Generate token without specifying secret
-			const response = await generateRoomMemberTokenRequest(roomId, {}, userData.accessToken);
+			const response = await generateRoomMemberTokenRequest(roomId, {}, roomUsers.userMember.accessToken);
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				memberId: userData.user.userId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomRoles.moderator.permissions
+				userId: roomUsers.userMember.user.userId,
+				memberId: roomUsers.userMember.user.userId,
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions
 			});
 		});
 
@@ -285,15 +325,15 @@ describe('Room Members API Tests', () => {
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
 				memberId,
-				baseRole: MeetRoomMemberRole.SPEAKER,
-				effectivePermissions: roomRoles.speaker.permissions
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions: roomRoles.speaker.permissions
 			});
 		});
 
 		it('should generate token with custom permissions for room member', async () => {
 			// Create room member with custom permissions
 			const createResponse = await createRoomMember(roomId, {
-				name: 'Custom Permissions Member',
+				name: 'Custom Member',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
 					canRecord: true,
@@ -302,7 +342,7 @@ describe('Room Members API Tests', () => {
 				}
 			});
 			const memberId = createResponse.body.memberId;
-			const effectivePermissions = createResponse.body.effectivePermissions;
+			const permissions = createResponse.body.effectivePermissions;
 
 			const response = await generateRoomMemberTokenRequest(roomId, {
 				secret: memberId
@@ -310,13 +350,8 @@ describe('Room Members API Tests', () => {
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
 				memberId,
-				baseRole: MeetRoomMemberRole.SPEAKER,
-				customPermissions: {
-					canRecord: true,
-					canDeleteRecordings: true,
-					canKickParticipants: true
-				},
-				effectivePermissions
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions
 			});
 		});
 
@@ -327,14 +362,146 @@ describe('Room Members API Tests', () => {
 			expect(response.status).toBe(404);
 		});
 
+		it('should combine permissions when using ADMIN access token and recording secret', async () => {
+			expect(roomData.recordingSecret).toBeDefined();
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: roomData.recordingSecret! },
+				testUsers.admin.accessToken
+			);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				userId: testUsers.admin.user.userId,
+				badge: MeetRoomMemberUIBadge.ADMIN,
+				permissions: allPermissions
+			});
+		});
+
+		it('should combine permissions when using ADMIN access token and external member secret', async () => {
+			const createResponse = await createRoomMember(roomId, {
+				name: 'External Member',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: {
+					canKickParticipants: true,
+					canDeleteRecordings: true
+				}
+			});
+			const externalMemberId = createResponse.body.memberId as string;
+
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: externalMemberId },
+				testUsers.admin.accessToken
+			);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				memberId: externalMemberId,
+				userId: testUsers.admin.user.userId,
+				badge: MeetRoomMemberUIBadge.ADMIN,
+				permissions: allPermissions
+			});
+		});
+
+		it('should combine permissions when using room member access token and recording secret', async () => {
+			const userData = await setupUser({
+				userId: `usr_${Date.now()}`,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+
+			const createResponse = await createRoomMember(roomId, {
+				userId: userData.user.userId,
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: {
+					canRetrieveRecordings: false,
+					canDeleteRecordings: true,
+					canJoinMeeting: false,
+					canPublishVideo: false,
+					canPublishAudio: false,
+					canShareScreen: false,
+					canReadChat: false,
+					canWriteChat: false,
+					canChangeVirtualBackground: false
+				}
+			});
+			const memberPermissions = createResponse.body.effectivePermissions as MeetRoomMemberPermissions;
+			const expectedPermissions = mergePermissions(memberPermissions, recordingReadOnlyPermissions);
+
+			expect(roomData.recordingSecret).toBeDefined();
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: roomData.recordingSecret! },
+				userData.accessToken
+			);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				userId: userData.user.userId,
+				memberId: userData.user.userId,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions: expectedPermissions
+			});
+		});
+
+		it('should combine permissions when using room member access token and external member secret', async () => {
+			const userData = await setupUser({
+				userId: `usr_${Date.now()}`,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+
+			const createUserMemberResponse = await createRoomMember(roomId, {
+				userId: userData.user.userId,
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: {
+					canRecord: true,
+					canDeleteRecordings: true,
+					canShareAccessLinks: true,
+					canMakeModerator: true,
+					canKickParticipants: true,
+					canEndMeeting: true
+				}
+			});
+			const userMemberPermissions = createUserMemberResponse.body
+				.effectivePermissions as MeetRoomMemberPermissions;
+
+			const createExternalResponse = await createRoomMember(roomId, {
+				name: 'External Merge Source',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: {
+					canRecord: true,
+					canPublishAudio: false
+				}
+			});
+			const externalMemberId = createExternalResponse.body.memberId as string;
+			const externalPermissions = createExternalResponse.body.effectivePermissions as MeetRoomMemberPermissions;
+			const expectedPermissions = mergePermissions(userMemberPermissions, externalPermissions);
+
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: externalMemberId },
+				userData.accessToken
+			);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				memberId: externalMemberId,
+				userId: userData.user.userId,
+				// Should get moderator badge because they will have all permissions of a moderator
+				// due to the custom permissions set when creating the user member
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: expectedPermissions
+			});
+		});
+
 		it('should generate normal token when not specifying joinMeeting', async () => {
 			const response = await generateRoomMemberTokenRequest(roomId, {
 				secret: roomData.moderatorSecret
 			});
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomRoles.moderator.permissions,
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions,
 				joinMeeting: false
 			});
 		});
@@ -348,24 +515,16 @@ describe('Room Members API Tests', () => {
 			});
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomRoles.moderator.permissions,
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName,
 				participantIdentityPrefix: 'alice_smith'
 			});
-
-			// End the meeting for further tests
-			// Note: We need to generate a new moderator token since some tests modify the room roles or anonymous config,
-			// which invalidate the previous moderator token.
-			const moderatorToken = await generateRoomMemberToken(roomId, {
-				secret: roomData.moderatorSecret
-			});
-			await endMeeting(roomId, moderatorToken);
 		});
 
 		it('should generate token when specifying joinMeeting true and participant already exists in the room', async () => {
-			const participantName = 'Alice Smith';
+			const participantName = `Alice Smith`;
 
 			// Create token for the first participant
 			let response = await generateRoomMemberTokenRequest(roomId, {
@@ -375,8 +534,8 @@ describe('Room Members API Tests', () => {
 			});
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomRoles.moderator.permissions,
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName,
 				participantIdentityPrefix: 'alice_smith'
@@ -390,20 +549,12 @@ describe('Room Members API Tests', () => {
 			});
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomRoles.moderator.permissions,
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName: participantName + '_1', // Suffix is added to avoid conflict with the first participant
 				participantIdentityPrefix: 'alice_smith_1'
 			});
-
-			// End the meeting for further tests
-			// Note: We need to generate a new moderator token since some tests modify the room roles or anonymous config,
-			// which invalidate the previous moderator token.
-			const moderatorToken = await generateRoomMemberToken(roomId, {
-				secret: roomData.moderatorSecret
-			});
-			await endMeeting(roomId, moderatorToken);
 		});
 
 		it('should fail to generate token when anonymous user tries to join meeting without canJoinMeeting permission', async () => {
@@ -468,40 +619,6 @@ describe('Room Members API Tests', () => {
 			await updateRoomStatus(roomId, MeetRoomStatus.OPEN);
 		});
 
-		it('should refresh token to join meeting for an existing participant', async () => {
-			const participantName = 'TEST_PARTICIPANT';
-
-			// Create room with initial participant
-			const roomWithParticipant = await setupSingleRoom(true);
-
-			// Refresh token for the participant by specifying participantIdentity
-			const response = await generateRoomMemberTokenRequest(roomWithParticipant.room.roomId, {
-				secret: roomWithParticipant.moderatorSecret,
-				joinMeeting: true,
-				participantName,
-				participantIdentity: participantName
-			});
-			expectValidRoomMemberTokenResponse(response, {
-				roomId: roomWithParticipant.room.roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomWithParticipant.room.roles.moderator.permissions,
-				joinMeeting: true,
-				participantName,
-				participantIdentityPrefix: participantName
-			});
-		});
-
-		it('should fail to refresh token when participant does not exist in the meeting', async () => {
-			const participantName = 'Inexistent Participant';
-			const response = await generateRoomMemberTokenRequest(roomId, {
-				secret: roomData.moderatorSecret,
-				joinMeeting: true,
-				participantName,
-				participantIdentity: participantName
-			});
-			expect(response.status).toBe(404);
-		});
-
 		it('should handle special characters in participant name', async () => {
 			const participantName = "José María O'Brien-García";
 			const response = await generateRoomMemberTokenRequest(roomId, {
@@ -511,20 +628,12 @@ describe('Room Members API Tests', () => {
 			});
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomRoles.moderator.permissions,
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName,
 				participantIdentityPrefix: 'jose_maria_obrien_garcia'
 			});
-
-			// End the meeting for further tests
-			// Note: We need to generate a new moderator token since some tests modify the room roles or anonymous config,
-			// which invalidate the previous moderator token.
-			const moderatorToken = await generateRoomMemberToken(roomId, {
-				secret: roomData.moderatorSecret
-			});
-			await endMeeting(roomId, moderatorToken);
 		});
 
 		it('should use default participant identity prefix when participant name has no valid characters', async () => {
@@ -536,20 +645,203 @@ describe('Room Members API Tests', () => {
 			});
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				baseRole: MeetRoomMemberRole.MODERATOR,
-				effectivePermissions: roomRoles.moderator.permissions,
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName,
 				participantIdentityPrefix: 'participant'
 			});
+		});
+	});
 
-			// End the meeting for further tests
-			// Note: We need to generate a new moderator token since some tests modify the room roles or anonymous config,
-			// which invalidate the previous moderator token.
-			const moderatorToken = await generateRoomMemberToken(roomId, {
-				secret: roomData.moderatorSecret
+	describe('Regenerate Room Member Token Tests', () => {
+		it('should regenerate token to join meeting for an existing participant', async () => {
+			// Generate initial token for a speaker to join the meeting
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: `Test Participant`
 			});
-			await endMeeting(roomId, moderatorToken);
+
+			// Extract participant identity and metadata from the initial token
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = claims.sub;
+			expect(participantIdentity).toBeDefined();
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// Simulate participant joining the meeting
+			await joinFakeParticipant(roomId, participantIdentity!);
+			await updateParticipantMetadata(roomId, participantIdentity!, metadata);
+
+			// Regenerate token for the same participant
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{
+					secret: roomData.speakerSecret,
+					joinMeeting: true
+				},
+				undefined,
+				initialToken
+			);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions: roomRoles.speaker.permissions,
+				joinMeeting: true,
+				participantName: 'Test Participant'
+			});
+		});
+
+		it('should fail to regenerate token when participant does not exist in the meeting', async () => {
+			// Generate initial token for a user to join the meeting
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.moderatorSecret,
+				joinMeeting: true,
+				participantName: 'Non-Existent Participant'
+			});
+
+			// Attempt to regenerate token before the participant has joined the meeting
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{
+					secret: roomData.moderatorSecret,
+					joinMeeting: true
+				},
+				undefined,
+				initialToken
+			);
+			expect(response.status).toBe(404);
+		});
+
+		it('should regenerate token with moderator permissions after promotion although source remains speaker', async () => {
+			// Generate initial token for a speaker to join the meeting
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Promoted Participant'
+			});
+
+			// Extract participant identity and metadata from the initial token
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = claims.sub;
+			expect(participantIdentity).toBeDefined();
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// Simulate participant joining the meeting
+			await joinFakeParticipant(roomId, participantIdentity!);
+			await updateParticipantMetadata(roomId, participantIdentity!, metadata);
+
+			// Promote participant to moderator
+			await updateParticipant(
+				roomId,
+				participantIdentity!,
+				MeetParticipantModerationAction.UPGRADE,
+				roomData.moderatorToken
+			);
+
+			// Regenerate token for the same participant
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{
+					secret: roomData.speakerSecret,
+					joinMeeting: true
+				},
+				undefined,
+				initialToken
+			);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				badge: MeetRoomMemberUIBadge.MODERATOR,
+				permissions: roomRoles.moderator.permissions,
+				isPromotedModerator: true,
+				joinMeeting: true,
+				participantName: 'Promoted Participant'
+			});
+
+			// Verify participant's metadata info still reflects the promotion to moderator
+			const participant = await livekitService.getParticipant(roomData.room.roomId, participantIdentity!);
+			expect(participant).toBeDefined();
+			expect(participant).toHaveProperty('metadata');
+
+			const participantMetadata = JSON.parse(participant.metadata || '{}');
+			expect(participantMetadata).toHaveProperty('roomId', roomId);
+			expect(participantMetadata).toHaveProperty('badge', MeetRoomMemberUIBadge.MODERATOR);
+			expect(participantMetadata).toHaveProperty('permissions', roomRoles.moderator.permissions);
+			expect(participantMetadata).toHaveProperty('isPromotedModerator', true);
+			expect(participantMetadata).toHaveProperty('originalPermissions', roomRoles.speaker.permissions);
+		});
+
+		it('should regenerate token with admin permissions ignoring moderator promotion', async () => {
+			// Create a new user and make them a speaker member of the room
+			const userData = await setupUser({
+				userId: `usr_${Date.now()}`,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+			await createRoomMember(roomId, {
+				userId: userData.user.userId,
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+
+			const initialToken = await generateRoomMemberToken(
+				roomId,
+				{
+					joinMeeting: true
+				},
+				userData.accessToken
+			);
+
+			const initialClaims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = initialClaims.sub;
+			expect(participantIdentity).toBeDefined();
+			const initialMetadata = JSON.parse(initialClaims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// Simulate participant joining the meeting
+			await joinFakeParticipant(roomId, participantIdentity!);
+			await updateParticipantMetadata(roomId, participantIdentity!, initialMetadata);
+
+			// Promote participant to moderator
+			await updateParticipant(
+				roomId,
+				participantIdentity!,
+				MeetParticipantModerationAction.UPGRADE,
+				roomData.moderatorToken
+			);
+
+			// Update user role to ADMIN
+			await updateUserRole(userData.user.userId, MeetUserRole.ADMIN);
+
+			// Regenerate token for the same participant
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{
+					secret: roomData.moderatorSecret,
+					joinMeeting: true
+				},
+				userData.accessToken,
+				initialToken
+			);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				userId: userData.user.userId,
+				badge: MeetRoomMemberUIBadge.ADMIN,
+				permissions: allPermissions,
+				joinMeeting: true,
+				participantName: 'Test User'
+			});
+
+			// Verify participant's metadata info reflects the admin role with all permissions, ignoring the previous promotion to moderator
+			const participant = await livekitService.getParticipant(roomData.room.roomId, participantIdentity!);
+			expect(participant).toBeDefined();
+			expect(participant).toHaveProperty('metadata');
+
+			const participantMetadata = JSON.parse(participant.metadata || '{}');
+			expect(participantMetadata).toHaveProperty('roomId', roomId);
+			expect(participantMetadata).toHaveProperty('badge', MeetRoomMemberUIBadge.ADMIN);
+			expect(participantMetadata).toHaveProperty('permissions', allPermissions);
+			expect(participantMetadata).not.toHaveProperty('isPromotedModerator');
+			expect(participantMetadata).not.toHaveProperty('originalPermissions');
 		});
 	});
 
@@ -561,11 +853,15 @@ describe('Room Members API Tests', () => {
 			expectValidationError(response, 'joinMeeting', 'Expected boolean');
 		});
 
-		it('should fail when joinMeeting is true but participantName is not provided', async () => {
+		it('should fail when participantName is not provided when joinMeeting is true and user is anonymous', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
 				joinMeeting: true
 			});
-			expectValidationError(response, 'participantName', 'participantName is required when joinMeeting is true');
+			expect(response.status).toBe(400);
+			expect(response.body.message).toContain(
+				'participantName is required when joining a meeting and it cannot be inferred from member/user context'
+			);
 		});
 	});
 });
