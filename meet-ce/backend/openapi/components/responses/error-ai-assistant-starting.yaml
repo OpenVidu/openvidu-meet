@@ -1,0 +1,11 @@
+description: Conflict — The AI assistant cannot be started because it is already being started
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/error.yaml'
+        examples:
+            already_starting:
+                summary: AI assistant is already starting
+                value:
+                    error: 'AI Assistant Error'
+                    message: 'AI assistant for room "room_123" is already starting'

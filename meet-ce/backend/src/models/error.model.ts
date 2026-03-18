@@ -358,6 +358,12 @@ export const errorParticipantCannotBeDemotedFromModerator = (
 	);
 };
 
+// AI Assistant errors
+
+export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('AI Assistant Error', `AI assistant  for room '${roomId}' is already starting`, 409);
+};
+
 // Webhook errors
 
 export const errorInvalidWebhookUrl = (url: string, reason: string): OpenViduMeetError => {

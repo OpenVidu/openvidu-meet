@@ -223,8 +223,8 @@ describe('AI Assistant API Tests', () => {
 					createAssistant(roomData.moderatorToken)
 				]);
 
-				expect(res1.status).toBe(200);
-				expect(res2.status).toBe(200);
+				expect([200, 409]).toContain(res1.status);
+				expect([200, 409]).toContain(res2.status);
 				// The distributed lock guarantees at most one dispatch is created
 				expect(livekitService.createAgent).toHaveBeenCalledTimes(1);
 			});

@@ -4,7 +4,7 @@ import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { errorConfigurationError } from '../models/error.model.js';
+import { errorAiAssistantAlreadyStarting, errorConfigurationError } from '../models/error.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -62,8 +62,8 @@ export class AiAssistantService {
 			});
 
 			if (executionResult === null) {
-				this.logger.error(`Could not acquire lock '${lockKey}' for creating assistant in room '${roomId}'`);
-				throw new Error('Could not acquire lock for creating assistant. Please try again.');
+				this.logger.warn(`Could not acquire lock '${lockKey}' for creating assistant in room '${roomId}'. Another assistant may have been created concurrently.`);
+				throw errorAiAssistantAlreadyStarting(roomId);
 			}
 
 			return executionResult;
