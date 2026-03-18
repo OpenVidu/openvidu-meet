@@ -27,6 +27,7 @@ export class RoomMemberContextService {
 	 * Individual signals for room member context
 	 */
 	private readonly _roomMemberToken = signal<string | undefined>(undefined);
+	private readonly _roomId = signal<string | undefined>(undefined);
 	private readonly _participantName = signal<string | undefined>(undefined);
 	private readonly _isParticipantNameFromUrl = signal<boolean>(false);
 	private readonly _memberBadge = signal<MeetRoomMemberUIBadge>(MeetRoomMemberUIBadge.OTHER);
@@ -35,6 +36,8 @@ export class RoomMemberContextService {
 
 	/** Readonly signal for the room member token */
 	readonly roomMemberToken = this._roomMemberToken.asReadonly();
+	/** Readonly signal for the room identifier embedded in the token */
+	readonly roomId = this._roomId.asReadonly();
 	/** Readonly signal for the participant name */
 	readonly participantName = this._participantName.asReadonly();
 	/** Readonly signal for whether the participant name came from a URL parameter */
@@ -171,6 +174,7 @@ export class RoomMemberContextService {
 				this.scheduleTokenRefresh(tokenMetadata.roomId, expirationMs);
 			}
 
+			this._roomId.set(tokenMetadata.roomId);
 			this._permissions.set(tokenMetadata.permissions);
 			this._memberBadge.set(tokenMetadata.badge);
 
@@ -231,6 +235,7 @@ export class RoomMemberContextService {
 	clearContext(): void {
 		this.clearTokenRefreshTimeout();
 		this._roomMemberToken.set(undefined);
+		this._roomId.set(undefined);
 		this._participantName.set(undefined);
 		this._isParticipantNameFromUrl.set(false);
 		this._permissions.set(undefined);

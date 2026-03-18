@@ -13,7 +13,7 @@
 							[subtitle]="linkOverlayConfig.subtitle"
 							[titleSize]="linkOverlayConfig.titleSize"
 							[titleWeight]="linkOverlayConfig.titleWeight"
-							[meetingUrl]="meetingUrl()"
+							[meetingUrl]="meetingUrl() ?? ''"
 							(copyClicked)="onCopyMeetingLinkClicked()"
 						></ov-share-meeting-link>
 					</div>

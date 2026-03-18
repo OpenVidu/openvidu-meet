@@ -1,9 +1,7 @@
-import { Clipboard } from '@angular/cdk/clipboard';
 import { inject, Injectable } from '@angular/core';
-import { MeetParticipantModerationAction, MeetRoom } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
-import { NotificationService } from '../../../shared/services/notification.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -12,19 +10,8 @@ export class MeetingService {
 	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
 
 	protected httpService = inject(HttpService);
-	protected notificationService = inject(NotificationService);
-	protected clipboard = inject(Clipboard);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingService');
-
-	/**
-	 * Copies the meeting speaker link to the clipboard.
-	 */
-	copyMeetingSpeakerLink(room: MeetRoom): void {
-		const speakerLink = room.access.anonymous.speaker.url;
-		this.clipboard.copy(speakerLink);
-		this.notificationService.showSnackbar('Speaker link copied to clipboard');
-	}
 
 	/**
 	 * Ends a meeting by its room ID.

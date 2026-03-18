@@ -1,19 +1,13 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import {
-	LoggerService,
-	OpenViduComponentsUiModule,
-	PanelService,
-	PanelType,
-	ParticipantModel
-} from 'openvidu-components-angular';
+import { OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from 'openvidu-components-angular';
 import { HiddenParticipantsIndicatorComponent } from '../../components/hidden-participants-indicator/hidden-participants-indicator.component';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { CustomParticipantModel } from '../../models/custom-participant.model';
+import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingLayoutService } from '../../services/meeting-layout.service';
-import { MeetingService } from '../../services/meeting.service';
 import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.component';
 
 @Component({
@@ -30,18 +24,18 @@ import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.c
 })
 export class MeetingCustomLayoutComponent {
 	protected meetingContextService = inject(MeetingContextService);
-	protected meetingService = inject(MeetingService);
+	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
 	protected layoutService = inject(MeetingLayoutService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected panelService = inject(PanelService);
-	protected logger = inject(LoggerService).get('MeetingCustomLayoutComponent');
 
 	lkRoom = this.meetingContextService.lkRoom;
 
-	meetingUrl = this.meetingContextService.meetingUrl;
+	meetingUrl = this.meetingAccessLinkService.speakerPublicLink;
 	shouldShowLinkOverlay = computed(() => {
 		const hasNoRemotes = this.remoteParticipants().length === 0;
-		return this.meetingContextService.meetingUI().showShareAccessLinks && hasNoRemotes;
+		const hasPublicSpeakerLink = !!this.meetingUrl();
+		return this.meetingContextService.meetingUI().showShareAccessLinks && hasNoRemotes && hasPublicSpeakerLink;
 	});
 	linkOverlayConfig = {
 		title: 'Start collaborating',
@@ -97,12 +91,7 @@ export class MeetingCustomLayoutComponent {
 	}
 
 	protected onCopyMeetingLinkClicked(): void {
-		const room = this.meetingContextService.meetRoom();
-		if (!room) {
-			this.logger.e('Cannot copy link: meeting room is undefined');
-			return;
-		}
-		this.meetingService.copyMeetingSpeakerLink(room);
+		this.meetingAccessLinkService.copyMeetingSpeakerLink();
 	}
 
 	protected toggleParticipantsPanel(): void {

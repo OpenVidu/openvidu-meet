@@ -1,10 +1,10 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { MeetRoom } from '@openvidu-meet/typings';
 import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { CustomParticipantModel } from '../models';
+import { MeetingAccessLinkService } from './meeting-access-link.service';
 
 /**
  * Central service for managing meeting context and state during the MEETING PHASE.
@@ -20,10 +20,9 @@ export class MeetingContextService {
 	private readonly globalConfigService = inject(GlobalConfigService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
+	private readonly meetingAccessLinkService = inject(MeetingAccessLinkService);
 
 	private readonly _roomId = signal<string | undefined>(undefined);
-	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
-	private readonly _meetingUrl = signal<string>('');
 	private readonly _roomSecret = signal<string | undefined>(undefined);
 	private readonly _e2eeKey = signal<string>('');
 	private readonly _isE2eeKeyFromUrl = signal<boolean>(false);
@@ -36,11 +35,7 @@ export class MeetingContextService {
 
 	/** Readonly signal for the current room ID */
 	readonly roomId = this._roomId.asReadonly();
-	/** Readonly signal for the current room */
-	readonly meetRoom = this._meetRoom.asReadonly();
 
-	/** Readonly signal for the current meeting URL */
-	readonly meetingUrl = this._meetingUrl.asReadonly();
 	/** Readonly signal for the room secret (if any) */
 	readonly roomSecret = this._roomSecret.asReadonly();
 	/** Readonly signal for the stored E2EE key (if any) */
@@ -87,30 +82,6 @@ export class MeetingContextService {
 	 */
 	setRoomId(roomId: string): void {
 		this._roomId.set(roomId);
-	}
-
-	/**
-	 * Sets the meeting context with meet room information
-	 * @param room The room object
-	 */
-	setMeetRoom(room: MeetRoom): void {
-		this._meetRoom.set(room);
-		this.setRoomId(room.roomId);
-
-		if (room.access?.registered?.url) {
-			this.setMeetingUrl(room.access.registered.url);
-		}
-	}
-
-	/**
-	 * Updates the meeting URL based on room access URL
-	 * @param accessUrl The room access URL
-	 */
-	private setMeetingUrl(accessUrl: string): void {
-		// Construct the meeting URL using the access URL without the protocol
-		const url = new URL(accessUrl);
-		const meetingUrl = `${url.host}${url.pathname}`;
-		this._meetingUrl.set(meetingUrl);
 	}
 
 	/**
@@ -203,8 +174,7 @@ export class MeetingContextService {
 	 */
 	clearContext(): void {
 		this._roomId.set(undefined);
-		this._meetRoom.set(undefined);
-		this._meetingUrl.set('');
+		this.meetingAccessLinkService.clear();
 		this._roomSecret.set(undefined);
 		this._e2eeKey.set('');
 		this._isE2eeKeyFromUrl.set(false);

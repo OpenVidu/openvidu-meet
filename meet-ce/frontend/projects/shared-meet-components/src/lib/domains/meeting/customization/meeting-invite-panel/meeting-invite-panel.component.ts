@@ -1,9 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
-import { LoggerService } from 'openvidu-components-angular';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
+import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
-import { MeetingService } from '../../services/meeting.service';
 
 /**
  * Reusable component for displaying the share meeting link panel
@@ -17,20 +16,12 @@ import { MeetingService } from '../../services/meeting.service';
 })
 export class MeetingInvitePanelComponent {
 	protected meetingContextService = inject(MeetingContextService);
-	protected meetingService = inject(MeetingService);
-	protected loggerService = inject(LoggerService);
-	protected log = this.loggerService.get('OpenVidu Meet - MeetingInvitePanel');
+	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
 
 	showShareLink = computed(() => this.meetingContextService.meetingUI().showShareAccessLinks);
-	meetingUrl = this.meetingContextService.meetingUrl;
+	meetingUrl = this.meetingAccessLinkService.speakerPublicLink;
 
 	onCopyClicked(): void {
-		const room = this.meetingContextService.meetRoom();
-		if (!room) {
-			this.log.e('Cannot copy link: meeting room is undefined');
-			return;
-		}
-
-		this.meetingService.copyMeetingSpeakerLink(room);
+		this.meetingAccessLinkService.copyMeetingSpeakerLink();
 	}
 }

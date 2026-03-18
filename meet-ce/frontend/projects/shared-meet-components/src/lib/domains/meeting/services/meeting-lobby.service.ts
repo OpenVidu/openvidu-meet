@@ -10,9 +10,9 @@ import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
+import { MeetingAccessLinkService } from './meeting-access-link.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
-import { MeetingService } from './meeting.service';
 
 /**
  * Service that manages the meeting lobby phase state and operations.
@@ -21,8 +21,8 @@ import { MeetingService } from './meeting.service';
 @Injectable()
 export class MeetingLobbyService {
 	protected roomService = inject(RoomService);
+	protected accessLinkService = inject(MeetingAccessLinkService);
 	protected meetingContextService = inject(MeetingContextService);
-	protected meetingService = inject(MeetingService);
 	protected recordingService = inject(RecordingService);
 	protected authService = inject(AuthService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
@@ -50,13 +50,8 @@ export class MeetingLobbyService {
 		})
 	);
 
-	/** Readonly signal for the room */
-	readonly room = this._room.asReadonly();
-	/** Readonly signal for the room ID */
-	readonly roomId = this._roomId.asReadonly();
 	/** Readonly signal for room name */
 	readonly roomName = computed(() => this._room()?.roomName);
-
 	/** Readonly signal for whether the room is closed */
 	readonly roomClosed = computed(() => this._room()?.status === MeetRoomStatus.CLOSED);
 	/** Readonly signal for whether E2EE is enabled in the room */
@@ -83,10 +78,14 @@ export class MeetingLobbyService {
 	 * The share link is shown only if the room is not closed and the user has permissions to moderate the room
 	 */
 	readonly showShareLink = computed(() => {
-		return !this.roomClosed() && this.meetingContextService.meetingUI().showShareAccessLinks;
+		return (
+			!this.roomClosed() &&
+			!!this.accessLinkService.speakerPublicLink() &&
+			this.meetingContextService.meetingUI().showShareAccessLinks
+		);
 	});
 	/** Computed signal for meeting URL derived from MeetingContextService */
-	readonly meetingUrl = computed(() => this.meetingContextService.meetingUrl());
+	readonly meetingUrl = computed(() => this.accessLinkService.speakerPublicLink() ?? '');
 
 	/** Readonly signal for the room member token */
 	readonly roomMemberToken = this._roomMemberToken.asReadonly();
@@ -156,7 +155,7 @@ export class MeetingLobbyService {
 
 			const [room] = await Promise.all([
 				this.roomService.getRoom(roomId, {
-					fields: ['roomId', 'roomName', 'status', 'config', 'access'],
+					fields: ['roomId', 'roomName', 'status', 'config'],
 					extraFields: ['config']
 				}),
 				this.setBackButtonText(),
@@ -164,7 +163,6 @@ export class MeetingLobbyService {
 				this.initializeParticipantName()
 			]);
 			this._room.set(room);
-			this.meetingContextService.setMeetRoom(room);
 
 			if (this.hasRoomE2EEEnabled()) {
 				// If E2EE is enabled, make the e2eeKey form control required
@@ -190,10 +188,7 @@ export class MeetingLobbyService {
 	 * Copies the meeting speaker link to clipboard
 	 */
 	copyMeetingSpeakerLink() {
-		const room = this._room();
-		if (room) {
-			this.meetingService.copyMeetingSpeakerLink(room);
-		}
+		this.accessLinkService.copyMeetingSpeakerLink();
 	}
 
 	/**
@@ -229,7 +224,7 @@ export class MeetingLobbyService {
 	 */
 	async goToRecordings(): Promise<void> {
 		try {
-			const roomId = this.roomId();
+			const roomId = this._roomId();
 			await this.navigationService.navigateTo(`/room/${roomId}/recordings`);
 		} catch (error) {
 			this.log.e('Error navigating to recordings:', error);

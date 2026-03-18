@@ -5,9 +5,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { LoggerService } from 'openvidu-components-angular';
+import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
-import { MeetingService } from '../../services/meeting.service';
 
 /**
  * Component for extra toolbar buttons (like copy meeting link).
@@ -21,7 +21,7 @@ import { MeetingService } from '../../services/meeting.service';
 })
 export class MeetingToolbarExtraButtonsComponent {
 	protected meetingContextService = inject(MeetingContextService);
-	protected meetingService = inject(MeetingService);
+	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
 	protected captionService = inject(MeetingCaptionsService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
@@ -47,13 +47,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	isMobile = this.meetingContextService.isMobile;
 
 	onCopyLinkClick(): void {
-		const room = this.meetingContextService.meetRoom();
-		if (!room) {
-			this.log.e('Cannot copy link: meeting room is undefined');
-			return;
-		}
-
-		this.meetingService.copyMeetingSpeakerLink(room);
+		this.meetingAccessLinkService.copyMeetingSpeakerLink();
 	}
 
 	async onCaptionsClick(): Promise<void> {
