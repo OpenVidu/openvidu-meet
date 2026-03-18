@@ -55,10 +55,16 @@ export const getRooms = async (req: Request, res: Response) => {
 		const optimizedQueryParams = { ...queryParams, fields: fieldsForQuery };
 
 		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(optimizedQueryParams);
+		const filteredRooms = await Promise.all(
+			rooms.map(async (room) => {
+				const permissions = await roomService.getAuthenticatedRoomMemberPermissions(room.roomId);
+				return MeetRoomHelper.applyPermissionFiltering(room, permissions);
+			})
+		);
 		const maxItems = Number(queryParams.maxItems);
 
 		// Add metadata at response root level (multiple rooms strategy)
-		let response = { rooms, pagination: { isTruncated, nextPageToken, maxItems } };
+		let response = { rooms: filteredRooms, pagination: { isTruncated, nextPageToken, maxItems } };
 		response = MeetRoomHelper.addResponseMetadata(response);
 		return res.status(200).json(response);
 	} catch (error) {
@@ -89,7 +95,6 @@ export const getRoom = async (req: Request, res: Response) => {
 		room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
 
 		room = MeetRoomHelper.addResponseMetadata(room);
-
 		return res.status(200).json(room);
 	} catch (error) {
 		handleError(res, error, `getting room '${roomId}'`);

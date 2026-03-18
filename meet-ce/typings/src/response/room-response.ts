@@ -55,12 +55,16 @@ export type MeetRoomSortField = (typeof MEET_ROOM_SORT_FIELDS)[number];
 /**
  * Sensitive fields of a MeetRoom that require specific permissions to be viewed.
  */
-export const SENSITIVE_ROOM_FIELDS_BY_PERMISSION: Partial<Record<keyof MeetRoomMemberPermissions, MeetRoomField[]>> = {
-	canShareAccessLinks: ['access']
+export type MeetRoomSensitiveFieldPath = MeetRoomField | 'access.anonymous';
+
+const SENSITIVE_ROOM_FIELDS_BY_PERMISSION: Partial<
+	Record<keyof MeetRoomMemberPermissions, MeetRoomSensitiveFieldPath[]>
+> = {
+	canShareAccessLinks: ['access.anonymous']
 };
 
 export const SENSITIVE_ROOM_FIELDS_ENTRIES = Object.entries(SENSITIVE_ROOM_FIELDS_BY_PERMISSION) as ReadonlyArray<
-	[keyof MeetRoomMemberPermissions, MeetRoomField[]]
+	[keyof MeetRoomMemberPermissions, MeetRoomSensitiveFieldPath[]]
 >;
 
 /**

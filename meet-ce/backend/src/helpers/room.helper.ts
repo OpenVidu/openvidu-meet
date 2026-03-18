@@ -192,37 +192,56 @@ export class MeetRoomHelper {
 	}
 
 	/**
-	 *  Applies permission filtering to a MeetRoom object by removing sensitive fields based on the provided permissions.
-	 * @param room
-	 * @param permissions
-	 * @returns
+	 * Applies permission filtering to a MeetRoom object by removing sensitive fields based on the provided permissions.
+	 * 
+	 * @param room - The MeetRoom object to filter
+	 * @param permissions - The permissions of the room member, used to determine which sensitive fields to exclude
+	 * @returns A MeetRoom object with sensitive fields removed according to the member's permissions
 	 */
 	static applyPermissionFiltering(room: MeetRoom, permissions: MeetRoomMemberPermissions): MeetRoom {
 		if (!room || !permissions || SENSITIVE_ROOM_FIELDS_ENTRIES.length === 0) {
 			return room;
 		}
 
-		let filteredRoom: MeetRoom | undefined;
+		const filteredRoom: MeetRoom = { ...room };
 
-		for (const [permissionKey, fields] of SENSITIVE_ROOM_FIELDS_ENTRIES as [
-			keyof MeetRoomMemberPermissions,
-			(keyof MeetRoom)[]
-		][]) {
-			if (!fields?.length) {
+		for (const [permissionKey, fieldPaths] of SENSITIVE_ROOM_FIELDS_ENTRIES) {
+			if (fieldPaths.length === 0 || permissions[permissionKey]) {
 				continue;
 			}
 
-			if (permissions[permissionKey]) {
-				continue;
-			}
-
-			filteredRoom ??= { ...room };
-			fields.forEach((field) => {
-				delete (filteredRoom as Partial<MeetRoom>)[field];
+			fieldPaths.forEach((fieldPath) => {
+				this.deleteFieldByPath(filteredRoom as unknown as Record<string, unknown>, fieldPath);
 			});
 		}
 
-		return filteredRoom ?? room;
+		return filteredRoom;
+	}
+
+	/**
+	 * Deletes a property from an object by path (supports top-level and nested fields).
+	 */
+	private static deleteFieldByPath(entity: Record<string, unknown>, path: string): void {
+		if (!path.includes('.')) {
+			delete entity[path];
+			return;
+		}
+
+		const segments = path.split('.');
+		const lastSegment = segments.pop();
+		let current: Record<string, unknown> = entity;
+
+		for (const segment of segments) {
+			const nextNode = current[segment];
+
+			if (!nextNode || typeof nextNode !== 'object' || Array.isArray(nextNode)) {
+				return;
+			}
+
+			current = nextNode as Record<string, unknown>;
+		}
+
+		delete current[lastSegment!];
 	}
 
 	/**
