@@ -51,12 +51,13 @@ export const MEET_ENV = {
 	MONGO_REPLICA_SET_NAME: process.env.MEET_MONGO_REPLICA_SET_NAME ?? 'rs0',
 	MONGO_DB_NAME: process.env.MEET_MONGO_DB_NAME ?? 'openvidu-meet',
 	// pool configuration
-	MONGO_MAX_POOL_SIZE: parseInt(process.env.MEET_MONGO_MAX_POOL_SIZE ?? '30', 10),
-	MONGO_MIN_POOL_SIZE: parseInt(process.env.MEET_MONGO_MIN_POOL_SIZE ?? '10', 10),
+	MONGO_MAX_POOL_SIZE: parseInt(process.env.MEET_MONGO_MAX_POOL_SIZE ?? '100', 10),
+	MONGO_MIN_POOL_SIZE: parseInt(process.env.MEET_MONGO_MIN_POOL_SIZE ?? '0', 10),
 	// connection timeouts
-	MONGO_SERVER_SELECTION_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SERVER_SELECTION_TIMEOUT_MS ?? '5000', 10),
-	MONGO_CONNECT_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_CONNECT_TIMEOUT_MS ?? '10000', 10),
-	MONGO_SOCKET_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SOCKET_TIMEOUT_MS ?? '45000', 10),
+	MONGO_SERVER_SELECTION_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SERVER_SELECTION_TIMEOUT_MS ?? '30000', 10),
+	MONGO_CONNECT_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_CONNECT_TIMEOUT_MS ?? '30000', 10),
+	MONGO_SOCKET_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SOCKET_TIMEOUT_MS ?? '0', 10),
+	MONGO_MAX_IDLE_TIME_MS: parseInt(process.env.MEET_MONGO_MAX_IDLE_TIME_MS ?? '0', 10),
 
 	BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE || 's3', // Options: 's3', 'abs', 'gcs'
 
@@ -93,8 +94,7 @@ export const MEET_ENV = {
 	// Deployment configuration
 	MODULES_FILE: process.env.MODULES_FILE || undefined,
 	MODULE_NAME: process.env.MODULE_NAME || 'openviduMeet',
-	ENABLED_MODULES: process.env.ENABLED_MODULES ?? '',
-
+	ENABLED_MODULES: process.env.ENABLED_MODULES ?? ''
 };
 
 export function checkModuleEnabled() {
