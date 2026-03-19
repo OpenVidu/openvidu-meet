@@ -1,6 +1,5 @@
 import {
 	MeetRecordingField,
-	MeetRecordingFilters,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	SortOrder
@@ -16,6 +15,13 @@ import {
 	MeetRecordingModel
 } from '../models/mongoose-schemas/recording.schema.js';
 import { LoggerService } from '../services/logger.service.js';
+import type {
+	MeetRecordingPage,
+	MeetRecordingRepositoryQuery,
+	MeetRecordingRepositoryQueryWithFields,
+	MeetRecordingRepositoryQueryWithProjection,
+	ProjectedRecording
+} from '../types/recording-projection.types.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
@@ -92,8 +98,25 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param fields - Array of field names to include in the result
 	 * @returns The recording (without access secrets), or null if not found
 	 */
-	async findByRecordingId(recordingId: string, fields?: MeetRecordingField[]): Promise<MeetRecordingInfo | null> {
-		return this.findOne({ recordingId }, fields);
+	async findByRecordingId(recordingId: string): Promise<MeetRecordingInfo | null>;
+
+	async findByRecordingId<const TFields extends readonly MeetRecordingField[]>(
+		recordingId: string,
+		fields: TFields
+	): Promise<ProjectedRecording<TFields> | null>;
+
+	async findByRecordingId(
+		recordingId: string,
+		fields?: readonly MeetRecordingField[]
+	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo> | null>;
+
+	async findByRecordingId(
+		recordingId: string,
+		fields?: readonly MeetRecordingField[]
+	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo> | null> {
+		return this.findOne({ recordingId }, fields as string[]) as Promise<
+			MeetRecordingInfo | Partial<MeetRecordingInfo> | null
+		>;
 	}
 
 	/**
@@ -115,11 +138,19 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing recordings array, pagination info, and optional next page token
 	 */
-	async find(options: MeetRecordingFilters & { roomIds?: string[] } = {}): Promise<{
-		recordings: MeetRecordingInfo[];
-		isTruncated: boolean;
-		nextPageToken?: string;
-	}> {
+	async find(options?: MeetRecordingRepositoryQuery): Promise<MeetRecordingPage<MeetRecordingInfo>>;
+
+	async find<const TFields extends readonly MeetRecordingField[]>(
+		options: MeetRecordingRepositoryQueryWithProjection<TFields>
+	): Promise<MeetRecordingPage<ProjectedRecording<TFields>>>;
+
+	async find(
+		options: MeetRecordingRepositoryQueryWithFields
+	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>>;
+
+	async find(
+		options: MeetRecordingRepositoryQueryWithFields = {}
+	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>> {
 		const {
 			roomIds,
 			roomId,
@@ -164,7 +195,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 				sortField,
 				sortOrder
 			},
-			fields
+			fields as string[]
 		);
 
 		return {

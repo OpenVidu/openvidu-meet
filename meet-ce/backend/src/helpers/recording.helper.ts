@@ -76,8 +76,7 @@ export class RecordingHelper {
 		return fileResults.length > 0 && streamResults.length === 0;
 	}
 
-	static canBeDeleted(recordingInfo: MeetRecordingInfo): boolean {
-		const { status } = recordingInfo;
+	static canBeDeleted(status: MeetRecordingStatus): boolean {
 		const isFinished = [
 			MeetRecordingStatus.COMPLETE,
 			MeetRecordingStatus.FAILED,

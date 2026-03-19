@@ -1,7 +1,11 @@
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
 import { MeetRoom, MeetRoomStatus } from '../database/room.entity.js';
 import { ExtraFieldKey } from './extra-field.js';
+import { ProjectedEntityByFields } from './field-projection.js';
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
+
+/** Room entity projected to the requested fields tuple. */
+export type ProjectedMeetRoom<TFields extends readonly MeetRoomField[]> = ProjectedEntityByFields<MeetRoom, TFields>;
 
 /**
  * List of all valid fields that can be selected from a MeetRoom.

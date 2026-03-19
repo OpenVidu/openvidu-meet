@@ -11,7 +11,7 @@ import { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { handleError } from '../models/error.model.js';
+import { handleError, internalError } from '../models/error.model.js';
 import { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
@@ -57,6 +57,10 @@ export const getRooms = async (req: Request, res: Response) => {
 		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(optimizedQueryParams);
 		const filteredRooms = await Promise.all(
 			rooms.map(async (room) => {
+				if (!room.roomId) {
+					throw internalError('applying permission filtering to rooms without roomId');
+				}
+
 				const permissions = await roomService.getAuthenticatedRoomMemberPermissions(room.roomId);
 				return MeetRoomHelper.applyPermissionFiltering(room, permissions);
 			})

@@ -9,14 +9,14 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomField,
-	MeetRoomFilters,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
 	MeetRoomRoles,
 	MeetRoomRolesConfig,
 	MeetRoomStatus,
 	MeetUser,
-	MeetUserRole
+	MeetUserRole,
+	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { CreateOptions, Room } from 'livekit-server-sdk';
@@ -40,6 +40,13 @@ import {
 import { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
+import type {
+	MeetRoomPage,
+	MeetRoomRepositoryQueryWithFields,
+	MeetRoomServiceQuery,
+	MeetRoomServiceQueryWithFields,
+	MeetRoomServiceQueryWithProjection,
+} from '../types/room-projection.types.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -338,12 +345,18 @@ export class RoomService {
 	 * @returns A Promise that resolves to paginated room list (with DB-optimized fields, but no HTTP filtering)
 	 * @throws If there was an error retrieving the rooms
 	 */
-	async getAllMeetRooms(filters: MeetRoomFilters): Promise<{
-		rooms: MeetRoom[];
-		isTruncated: boolean;
-		nextPageToken?: string;
-	}> {
-		const queryOptions: MeetRoomFilters & { roomIds?: string[]; owner?: string } = { ...filters };
+	async getAllMeetRooms(filters?: MeetRoomServiceQuery): Promise<MeetRoomPage<MeetRoom>>;
+
+	async getAllMeetRooms<const TFields extends readonly MeetRoomField[]>(
+		filters: MeetRoomServiceQueryWithProjection<TFields>
+	): Promise<MeetRoomPage<ProjectedMeetRoom<TFields>>>;
+
+	async getAllMeetRooms(filters: MeetRoomServiceQueryWithFields): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>>;
+
+	async getAllMeetRooms(
+		filters: MeetRoomServiceQueryWithFields = {}
+	): Promise<MeetRoomPage<MeetRoom | ProjectedMeetRoom<readonly MeetRoomField[]>>> {
+		const queryOptions: MeetRoomRepositoryQueryWithFields = { ...filters };
 		const user = this.requestSessionService.getAuthenticatedUser();
 
 		// TODO: This logic may move to a controller  because it is related to access control for HTTP requests,
@@ -423,7 +436,16 @@ export class RoomService {
 	 * @param fields - Array of fields to retrieve from database (for query optimization)
 	 * @returns A promise that resolves to an {@link MeetRoom} object if found, or rejects with an error if not found.
 	 */
-	async getMeetRoom(roomId: string, fields?: MeetRoomField[]): Promise<MeetRoom> {
+	async getMeetRoom(roomId: string): Promise<MeetRoom>;
+
+	async getMeetRoom<const TFields extends readonly MeetRoomField[]>(
+		roomId: string,
+		fields: TFields
+	): Promise<ProjectedMeetRoom<TFields>>;
+
+	async getMeetRoom(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom>>;
+
+	async getMeetRoom(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom>> {
 		const room = await this.roomRepository.findByRoomId(roomId, fields);
 
 		if (!room) {
@@ -431,7 +453,7 @@ export class RoomService {
 			throw errorRoomNotFound(roomId);
 		}
 
-		return room;
+		return room as MeetRoom | Partial<MeetRoom>;
 	}
 
 	/**

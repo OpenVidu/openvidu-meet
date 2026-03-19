@@ -1,7 +1,6 @@
 import {
 	MeetRoomMember,
 	MeetRoomMemberField,
-	MeetRoomMemberFilters,
 	MeetRoomMemberPermissions,
 	SortOrder
 } from '@openvidu-meet/typings';
@@ -15,6 +14,13 @@ import {
 	MeetRoomMemberModel
 } from '../models/mongoose-schemas/room-member.schema.js';
 import { LoggerService } from '../services/logger.service.js';
+import type {
+	MeetRoomMemberPage,
+	MeetRoomMemberQueryWithFields,
+	ProjectedMeetRoomMember,
+	RoomMemberQuery,
+	RoomMemberQueryWithProjection,
+} from '../types/room-member-projection.types.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
@@ -87,12 +93,28 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param fields - Array of field names to include in the result
 	 * @returns The room member or null if not found
 	 */
+	async findByRoomAndMemberId(roomId: string, memberId: string): Promise<MeetRoomMember | null>;
+
+	async findByRoomAndMemberId<const TFields extends readonly MeetRoomMemberField[]>(
+		roomId: string,
+		memberId: string,
+		fields: TFields
+	): Promise<ProjectedMeetRoomMember<TFields> | null>;
+
 	async findByRoomAndMemberId(
 		roomId: string,
 		memberId: string,
-		fields?: MeetRoomMemberField[]
-	): Promise<MeetRoomMember | null> {
-		return this.findOne({ roomId, memberId }, fields);
+		fields?: readonly MeetRoomMemberField[]
+	): Promise<MeetRoomMember | Partial<MeetRoomMember> | null>;
+
+	async findByRoomAndMemberId(
+		roomId: string,
+		memberId: string,
+		fields?: readonly MeetRoomMemberField[]
+	): Promise<MeetRoomMember | Partial<MeetRoomMember> | null> {
+		return this.findOne({ roomId, memberId }, fields as string[]) as Promise<
+			MeetRoomMember | Partial<MeetRoomMember> | null
+		>;
 	}
 
 	/**
@@ -103,12 +125,22 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param fields - Array of field names to include in the result
 	 * @returns Array of found room members
 	 */
+	async findByRoomAndMemberIds(roomId: string, memberIds: string[]): Promise<MeetRoomMember[]>;
+
+	async findByRoomAndMemberIds<const TFields extends readonly MeetRoomMemberField[]>(
+		roomId: string,
+		memberIds: string[],
+		fields: TFields
+	): Promise<ProjectedMeetRoomMember<TFields>[]>;
+
 	async findByRoomAndMemberIds(
 		roomId: string,
 		memberIds: string[],
-		fields?: MeetRoomMemberField[]
-	): Promise<MeetRoomMember[]> {
-		return this.findAll({ roomId, memberId: { $in: memberIds } }, fields);
+		fields?: readonly MeetRoomMemberField[]
+	): Promise<MeetRoomMember[] | Partial<MeetRoomMember>[]> {
+		return this.findAll({ roomId, memberId: { $in: memberIds } }, fields as string[]) as Promise<
+			MeetRoomMember[] | Partial<MeetRoomMember>[]
+		>;
 	}
 
 	/**
@@ -158,12 +190,23 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 */
 	async findByRoomId(
 		roomId: string,
-		options: MeetRoomMemberFilters = {}
-	): Promise<{
-		members: MeetRoomMember[];
-		isTruncated: boolean;
-		nextPageToken?: string;
-	}> {
+		options?: RoomMemberQuery
+	): Promise<MeetRoomMemberPage<MeetRoomMember>>;
+
+	async findByRoomId<const TFields extends readonly MeetRoomMemberField[]>(
+		roomId: string,
+		options: RoomMemberQueryWithProjection<TFields>
+	): Promise<MeetRoomMemberPage<ProjectedMeetRoomMember<TFields>>>;
+
+	async findByRoomId(
+		roomId: string,
+		options: MeetRoomMemberQueryWithFields
+	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>>;
+
+	async findByRoomId(
+		roomId: string,
+		options: MeetRoomMemberQueryWithFields = {}
+	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>> {
 		const {
 			name,
 			fields,
@@ -189,7 +232,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 				sortField,
 				sortOrder
 			},
-			fields
+			fields as string[]
 		);
 
 		return {

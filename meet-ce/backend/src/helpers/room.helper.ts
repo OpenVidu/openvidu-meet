@@ -193,17 +193,20 @@ export class MeetRoomHelper {
 
 	/**
 	 * Applies permission filtering to a MeetRoom object by removing sensitive fields based on the provided permissions.
-	 * 
+	 *
 	 * @param room - The MeetRoom object to filter
 	 * @param permissions - The permissions of the room member, used to determine which sensitive fields to exclude
 	 * @returns A MeetRoom object with sensitive fields removed according to the member's permissions
 	 */
-	static applyPermissionFiltering(room: MeetRoom, permissions: MeetRoomMemberPermissions): MeetRoom {
+	static applyPermissionFiltering<TRoom extends Partial<MeetRoom>>(
+		room: TRoom,
+		permissions: MeetRoomMemberPermissions
+	): TRoom {
 		if (!room || !permissions || SENSITIVE_ROOM_FIELDS_ENTRIES.length === 0) {
 			return room;
 		}
 
-		const filteredRoom: MeetRoom = { ...room };
+		const filteredRoom = { ...room } as TRoom;
 
 		for (const [permissionKey, fieldPaths] of SENSITIVE_ROOM_FIELDS_ENTRIES) {
 			if (fieldPaths.length === 0 || permissions[permissionKey]) {

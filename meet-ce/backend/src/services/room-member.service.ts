@@ -3,7 +3,6 @@ import {
 	MeetParticipantModerationAction,
 	MeetRoomMember,
 	MeetRoomMemberField,
-	MeetRoomMemberFilters,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
@@ -40,6 +39,13 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
+import type {
+	MeetRoomMemberPage,
+	MeetRoomMemberQueryWithFields,
+	ProjectedMeetRoomMember,
+	RoomMemberQuery,
+	RoomMemberQueryWithProjection,
+} from '../types/room-member-projection.types.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -186,11 +192,19 @@ export class RoomMemberService {
 	 * @param fields - Array of field names to include in the result
 	 * @returns A promise that resolves to the MeetRoomMember object or null if not found
 	 */
+	async getRoomMember(roomId: string, memberId: string): Promise<MeetRoomMember | null>;
+
+	async getRoomMember<const TFields extends readonly MeetRoomMemberField[]>(
+		roomId: string,
+		memberId: string,
+		fields: TFields
+	): Promise<ProjectedMeetRoomMember<TFields> | null>;
+
 	async getRoomMember(
 		roomId: string,
 		memberId: string,
-		fields?: MeetRoomMemberField[]
-	): Promise<MeetRoomMember | null> {
+		fields?: readonly MeetRoomMemberField[]
+	): Promise<MeetRoomMember | Partial<MeetRoomMember> | null> {
 		return this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId, fields);
 	}
 
@@ -203,12 +217,23 @@ export class RoomMemberService {
 	 */
 	async getAllRoomMembers(
 		roomId: string,
-		filters: MeetRoomMemberFilters
-	): Promise<{
-		members: MeetRoomMember[];
-		isTruncated: boolean;
-		nextPageToken?: string;
-	}> {
+		filters?: RoomMemberQuery
+	): Promise<MeetRoomMemberPage<MeetRoomMember>>;
+
+	async getAllRoomMembers<const TFields extends readonly MeetRoomMemberField[]>(
+		roomId: string,
+		filters: RoomMemberQueryWithProjection<TFields>
+	): Promise<MeetRoomMemberPage<ProjectedMeetRoomMember<TFields>>>;
+
+	async getAllRoomMembers(
+		roomId: string,
+		filters: MeetRoomMemberQueryWithFields
+	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>>;
+
+	async getAllRoomMembers(
+		roomId: string,
+		filters: MeetRoomMemberQueryWithFields = {}
+	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>> {
 		const response = await this.roomMemberRepository.findByRoomId(roomId, filters);
 		return response;
 	}
