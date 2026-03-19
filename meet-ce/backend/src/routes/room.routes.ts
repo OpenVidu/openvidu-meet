@@ -33,7 +33,11 @@ import {
 	authorizeRoomMemberTokenGeneration,
 	setupRoomMemberTokenAuthentication
 } from '../middlewares/room-member.middleware.js';
-import { authorizeRoomAccess, authorizeRoomManagement } from '../middlewares/room.middleware.js';
+import {
+	applyRoomListAccessFilters,
+	authorizeRoomAccess,
+	authorizeRoomManagement
+} from '../middlewares/room.middleware.js';
 
 export const roomRouter: Router = Router();
 roomRouter.use(bodyParser.urlencoded({ extended: true }));
@@ -50,6 +54,7 @@ roomRouter.get(
 	'/',
 	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)),
 	validateGetRoomsReq,
+	applyRoomListAccessFilters,
 	roomCtrl.getRooms
 );
 roomRouter.delete(

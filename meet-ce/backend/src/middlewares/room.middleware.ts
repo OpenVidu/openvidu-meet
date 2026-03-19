@@ -7,8 +7,48 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
+
+type RoomListValidatedQuery = {
+	owner?: string;
+	roomIds?: string[];
+};
+
+/**
+ * Middleware to apply room list access filters to validated query options.
+ *
+ * - ADMIN or API key: can list all rooms (no extra filters)
+ * - USER: can list rooms they own or where they are members
+ * - ROOM_MEMBER: can list only rooms where they are members
+ */
+export const applyRoomListAccessFilters = async (_req: Request, res: Response, next: NextFunction) => {
+	const requestSessionService = container.get(RequestSessionService);
+	const user = requestSessionService.getAuthenticatedUser();
+
+	// API key requests and ADMIN users can list all rooms.
+	if (!user || user.role === MeetUserRole.ADMIN) {
+		return next();
+	}
+
+	try {
+		const roomMemberRepository = container.get(RoomMemberRepository);
+		const queryOptions = res.locals.validatedQuery as RoomListValidatedQuery;
+
+		const memberRoomIds = await roomMemberRepository.getRoomIdsByMemberId(user.userId);
+		queryOptions.roomIds = memberRoomIds;
+
+		if (user.role === MeetUserRole.USER) {
+			queryOptions.owner = user.userId;
+		}
+
+		res.locals.validatedQuery = queryOptions;
+		return next();
+	} catch (error) {
+		return handleError(res, error, 'applying room list access filters');
+	}
+};
 
 /**
  * Middleware to authorize access to a room.

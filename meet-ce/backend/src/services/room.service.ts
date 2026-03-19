@@ -42,10 +42,9 @@ import { RoomMemberRepository } from '../repositories/room-member.repository.js'
 import { RoomRepository } from '../repositories/room.repository.js';
 import type {
 	MeetRoomPage,
+	MeetRoomRepositoryQuery,
 	MeetRoomRepositoryQueryWithFields,
-	MeetRoomServiceQuery,
-	MeetRoomServiceQueryWithFields,
-	MeetRoomServiceQueryWithProjection,
+	MeetRoomRepositoryQueryWithProjection,
 } from '../types/room-projection.types.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
@@ -336,44 +335,24 @@ export class RoomService {
 	/**
 	 * Retrieves a list of rooms based on the provided filtering, pagination, and sorting options.
 	 *
-	 * If the request is made by an authenticated user, access is determined by the user's role:
-	 * - ADMIN: Can see all rooms
-	 * - USER: Can see rooms they own or are members of
-	 * - ROOM_MEMBER: Can see rooms they are members of
-	 *
-	 * @param filters - Filtering, pagination and sorting options (fields used for DB query optimization)
+	 * @param filters - Filtering, pagination and sorting options, including optional internal access-scope filters
 	 * @returns A Promise that resolves to paginated room list (with DB-optimized fields, but no HTTP filtering)
 	 * @throws If there was an error retrieving the rooms
 	 */
-	async getAllMeetRooms(filters?: MeetRoomServiceQuery): Promise<MeetRoomPage<MeetRoom>>;
+	async getAllMeetRooms(filters?: MeetRoomRepositoryQuery): Promise<MeetRoomPage<MeetRoom>>;
 
 	async getAllMeetRooms<const TFields extends readonly MeetRoomField[]>(
-		filters: MeetRoomServiceQueryWithProjection<TFields>
+		_filters: MeetRoomRepositoryQueryWithProjection<TFields>
 	): Promise<MeetRoomPage<ProjectedMeetRoom<TFields>>>;
 
-	async getAllMeetRooms(filters: MeetRoomServiceQueryWithFields): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>>;
+	async getAllMeetRooms(
+		filters: MeetRoomRepositoryQueryWithFields
+	): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>>;
 
 	async getAllMeetRooms(
-		filters: MeetRoomServiceQueryWithFields = {}
+		filters: MeetRoomRepositoryQueryWithFields = {}
 	): Promise<MeetRoomPage<MeetRoom | ProjectedMeetRoom<readonly MeetRoomField[]>>> {
-		const queryOptions: MeetRoomRepositoryQueryWithFields = { ...filters };
-		const user = this.requestSessionService.getAuthenticatedUser();
-
-		// TODO: This logic may move to a controller  because it is related to access control for HTTP requests,
-		// TODO: while this service is also used in non-HTTP contexts (e.g., scheduler for auto-deletion, background jobs for recording management, etc).
-		// Admin can see all rooms - no additional filters needed
-		if (user && user.role !== MeetUserRole.ADMIN) {
-			// For USER and ROOM_MEMBER roles, get the list of room IDs they are members of
-			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(user.userId);
-			queryOptions.roomIds = memberRoomIds;
-
-			// If USER role, also filter by rooms they own
-			if (user.role === MeetUserRole.USER) {
-				queryOptions.owner = user.userId;
-			}
-		}
-
-		return this.roomRepository.find(queryOptions);
+		return this.roomRepository.find(filters);
 	}
 
 	/**
