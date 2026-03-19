@@ -1,5 +1,5 @@
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { del, get } from '../utils/http';
-import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { configService } from './configService';
 
 export const getAllRecordings = async (): Promise<{

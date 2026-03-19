@@ -1,6 +1,6 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
-import { TokenMetadata } from '../../models/token.model.js';
+import type { TokenMetadata } from '../../models/token.model.js';
 import { LoginReqSchema, TokenMetadataSchema } from '../../models/zod-schemas/auth.schema.js';
 
 export const validateLoginReq = (req: Request, res: Response, next: NextFunction) => {

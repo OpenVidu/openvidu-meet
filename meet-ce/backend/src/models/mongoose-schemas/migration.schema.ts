@@ -1,5 +1,6 @@
 import { model, Schema } from 'mongoose';
-import { isSchemaMigrationName, MeetMigration, MigrationStatus } from '../migration.model.js';
+import type { MeetMigration} from '../migration.model.js';
+import { isSchemaMigrationName, MigrationStatus } from '../migration.model.js';
 
 /**
  * Mongoose Document interface for migrations.

@@ -1,13 +1,12 @@
 import { EgressStatus } from '@livekit/protocol';
-import {
+import { MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import type {
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingField,
-	MeetRecordingInfo,
-	MeetRecordingLayout,
-	MeetRecordingStatus
+	MeetRecordingInfo
 } from '@openvidu-meet/typings';
-import { EgressInfo } from 'livekit-server-sdk';
+import type { EgressInfo } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
 import { EncodingConverter } from './encoding-converter.helper.js';

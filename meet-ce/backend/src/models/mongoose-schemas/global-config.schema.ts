@@ -1,8 +1,9 @@
-import { GlobalConfig, OAuthProvider } from '@openvidu-meet/typings';
+import type { GlobalConfig} from '@openvidu-meet/typings';
+import { OAuthProvider } from '@openvidu-meet/typings';
 import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
-import { DocumentOnlyField } from '../database.model.js';
-import { SchemaMigratableDocument } from '../migration.model.js';
+import type { DocumentOnlyField } from '../database.model.js';
+import type { SchemaMigratableDocument } from '../migration.model.js';
 import { MeetAppearanceConfigSchema } from './room.schema.js';
 
 /**

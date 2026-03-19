@@ -1,15 +1,17 @@
 import { inject, injectable } from 'inversify';
-import { Model, QueryFilter, Require_id, Types } from 'mongoose';
+import type { Model, QueryFilter, Require_id, Types } from 'mongoose';
 import ms from 'ms';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { runtimeMigrationRegistry } from '../migrations/migration-registry.js';
-import {
+import type {
 	CollectionMigrationRegistry,
-	generateSchemaMigrationName,
 	MigrationResult,
 	SchemaMigratableDocument,
 	SchemaMigrationStep,
 	SchemaVersion
+} from '../models/migration.model.js';
+import {
+	generateSchemaMigrationName
 } from '../models/migration.model.js';
 import { MigrationRepository } from '../repositories/migration.repository.js';
 import { LoggerService } from './logger.service.js';

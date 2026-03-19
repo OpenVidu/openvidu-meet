@@ -1,8 +1,9 @@
-import { MeetRoomMember, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import type { MeetRoomMember} from '@openvidu-meet/typings';
+import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
-import { DocumentOnlyField } from '../database.model.js';
-import { SchemaMigratableDocument } from '../migration.model.js';
+import type { DocumentOnlyField } from '../database.model.js';
+import type { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
  * Mongoose Document interface for room members.

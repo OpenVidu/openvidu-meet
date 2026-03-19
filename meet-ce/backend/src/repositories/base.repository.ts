@@ -1,7 +1,8 @@
-import { SortAndPagination, SortOrder } from '@openvidu-meet/typings';
+import type { SortAndPagination } from '@openvidu-meet/typings';
+import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
-import { Model, QueryFilter, Require_id, UpdateQuery } from 'mongoose';
-import { DocumentOnlyField, PaginatedResult, PaginationCursor } from '../models/database.model.js';
+import type { Model, QueryFilter, Require_id, UpdateQuery } from 'mongoose';
+import type { DocumentOnlyField, PaginatedResult, PaginationCursor } from '../models/database.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
 /**

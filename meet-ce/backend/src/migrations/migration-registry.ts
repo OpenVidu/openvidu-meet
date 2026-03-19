@@ -1,27 +1,33 @@
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { CollectionMigrationRegistry, SchemaMigratableDocument } from '../models/migration.model.js';
+import type { CollectionMigrationRegistry, SchemaMigratableDocument } from '../models/migration.model.js';
+import type {
+	MeetApiKeyDocument} from '../models/mongoose-schemas/api-key.schema.js';
 import {
 	meetApiKeyCollectionName,
-	MeetApiKeyDocument,
 	MeetApiKeyModel
 } from '../models/mongoose-schemas/api-key.schema.js';
+import type {
+	MeetGlobalConfigDocument} from '../models/mongoose-schemas/global-config.schema.js';
 import {
 	meetGlobalConfigCollectionName,
-	MeetGlobalConfigDocument,
 	MeetGlobalConfigModel
 } from '../models/mongoose-schemas/global-config.schema.js';
+import type {
+	MeetRecordingDocument} from '../models/mongoose-schemas/recording.schema.js';
 import {
 	meetRecordingCollectionName,
-	MeetRecordingDocument,
 	MeetRecordingModel
 } from '../models/mongoose-schemas/recording.schema.js';
+import type {
+	MeetRoomMemberDocument} from '../models/mongoose-schemas/room-member.schema.js';
 import {
 	meetRoomMemberCollectionName,
-	MeetRoomMemberDocument,
 	MeetRoomMemberModel
 } from '../models/mongoose-schemas/room-member.schema.js';
-import { meetRoomCollectionName, MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
-import { meetUserCollectionName, MeetUserDocument, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
+import type { MeetRoomDocument} from '../models/mongoose-schemas/room.schema.js';
+import { meetRoomCollectionName, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
+import type { MeetUserDocument} from '../models/mongoose-schemas/user.schema.js';
+import { meetUserCollectionName, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { apiKeyMigrations } from './api-key-migrations.js';
 import { globalConfigMigrations } from './global-config-migrations.js';
 import { recordingMigrations } from './recording-migrations.js';

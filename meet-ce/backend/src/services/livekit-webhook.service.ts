@@ -1,6 +1,8 @@
-import { MeetingEndAction, MeetRecordingInfo, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingInfo} from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
+import type { EgressInfo, ParticipantInfo, Room, WebhookEvent} from 'livekit-server-sdk';
+import { WebhookReceiver } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';

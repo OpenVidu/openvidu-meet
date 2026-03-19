@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
-import { Room } from 'livekit-server-sdk';
+import type { Room } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { IScheduledTask } from '../models/task-scheduler.model.js';
+import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { LivekitWebhookService } from './livekit-webhook.service.js';
 import { LiveKitService } from './livekit.service.js';

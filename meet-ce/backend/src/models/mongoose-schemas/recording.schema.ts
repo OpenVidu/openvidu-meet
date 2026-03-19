@@ -1,8 +1,9 @@
-import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingInfo} from '@openvidu-meet/typings';
+import { MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
-import { DocumentOnlyField } from '../database.model.js';
-import { SchemaMigratableDocument } from '../migration.model.js';
+import type { DocumentOnlyField } from '../database.model.js';
+import type { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
  * Mongoose Document interface for Recordings.

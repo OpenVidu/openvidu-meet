@@ -1,5 +1,5 @@
-import { MeetRoomMemberRole, MeetWebhookEvent } from '@openvidu-meet/typings';
-import { Request, Response } from 'express';
+import type { MeetRoomMemberRole, MeetWebhookEvent } from '@openvidu-meet/typings';
+import type { Request, Response } from 'express';
 import { Server as IOServer } from 'socket.io';
 import { configService } from '../services/configService';
 

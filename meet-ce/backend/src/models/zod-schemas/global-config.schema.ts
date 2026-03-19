@@ -1,4 +1,5 @@
-import { AuthenticationConfig, OAuthProvider, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import type { AuthenticationConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import { OAuthProvider } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { AppearanceConfigSchema } from './room.schema.js';
 

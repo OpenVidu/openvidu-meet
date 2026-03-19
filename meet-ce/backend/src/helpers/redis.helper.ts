@@ -1,4 +1,4 @@
-import { WebhookEvent } from 'livekit-server-sdk';
+import type { WebhookEvent } from 'livekit-server-sdk';
 import { RedisLockName, RedisLockPrefix } from '../models/redis.model.js';
 
 export class MeetLock {

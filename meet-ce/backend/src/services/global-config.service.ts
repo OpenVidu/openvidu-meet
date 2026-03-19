@@ -1,4 +1,4 @@
-import { GlobalConfig, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import type { GlobalConfig, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { GlobalConfigRepository } from '../repositories/global-config.repository.js';

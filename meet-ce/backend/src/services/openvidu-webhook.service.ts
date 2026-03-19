@@ -1,10 +1,12 @@
-import {
+import type {
 	MeetApiKey,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetWebhookEvent,
-	MeetWebhookEventType,
 	MeetWebhookPayload
+} from '@openvidu-meet/typings';
+import {
+	MeetWebhookEventType
 } from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';

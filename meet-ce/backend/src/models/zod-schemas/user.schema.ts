@@ -1,7 +1,8 @@
+import type {
+	MeetUserFilters,
+	MeetUserOptions} from '@openvidu-meet/typings';
 import {
 	MEET_USER_SORT_FIELDS,
-	MeetUserFilters,
-	MeetUserOptions,
 	MeetUserRole,
 	SortOrder
 } from '@openvidu-meet/typings';

@@ -1,25 +1,27 @@
-import {
-	MeetingEndAction,
+import type {
 	MeetRoom,
 	MeetRoomAccess,
 	MeetRoomAccessConfig,
 	MeetRoomConfig,
-	MeetRoomDeletionErrorCode,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomDeletionSuccessCode,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
 	MeetRoomOptions,
 	MeetRoomRoles,
 	MeetRoomRolesConfig,
-	MeetRoomStatus,
 	MeetUser,
-	MeetUserRole,
 	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
+import {
+	MeetingEndAction,
+	MeetRoomDeletionErrorCode,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomStatus,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { CreateOptions, Room } from 'livekit-server-sdk';
+import type { CreateOptions, Room } from 'livekit-server-sdk';
 import merge from 'lodash.merge';
 import ms from 'ms';
 import { uid as secureUid } from 'uid/secure';
@@ -37,7 +39,7 @@ import {
 	OpenViduMeetError
 } from '../models/error.model.js';
 
-import { MeetRoomDeletionOptions } from '../models/request-context.model.js';
+import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import type {

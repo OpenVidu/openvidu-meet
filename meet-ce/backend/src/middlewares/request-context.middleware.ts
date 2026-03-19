@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 

@@ -1,8 +1,10 @@
 import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
 import { uid as secureUid } from 'uid/secure';
 import { MEET_ENV } from '../environment.js';
-import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
-import { meetRoomCollectionName, MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
+import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
+import { generateSchemaMigrationName } from '../models/migration.model.js';
+import type { MeetRoomDocument } from '../models/mongoose-schemas/room.schema.js';
+import { meetRoomCollectionName } from '../models/mongoose-schemas/room.schema.js';
 
 const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
 const roomMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomCollectionName, 2, 3);

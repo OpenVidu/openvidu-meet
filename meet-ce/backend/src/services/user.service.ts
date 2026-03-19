@@ -1,10 +1,10 @@
-import {
+import { MeetUserRole } from '@openvidu-meet/typings';
+import type {
 	MeetUser,
 	MeetUserDTO,
 	MeetUserField,
 	MeetUserFilters,
-	MeetUserOptions,
-	MeetUserRole
+	MeetUserOptions
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';

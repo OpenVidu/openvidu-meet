@@ -1,7 +1,10 @@
-import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
-import {
-	meetGlobalConfigCollectionName,
+import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
+import { generateSchemaMigrationName } from '../models/migration.model.js';
+import type {
 	MeetGlobalConfigDocument
+} from '../models/mongoose-schemas/global-config.schema.js';
+import {
+	meetGlobalConfigCollectionName
 } from '../models/mongoose-schemas/global-config.schema.js';
 
 const globalConfigMigrationV1ToV2Name = generateSchemaMigrationName(meetGlobalConfigCollectionName, 1, 2);

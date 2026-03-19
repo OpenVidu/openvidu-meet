@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { errorMalformedBody, errorUnsupportedMediaType, rejectRequestFromMeetError } from '../models/error.model.js';
 
 export const mediaTypeValidatorMiddleware = (req: Request, res: Response, next: NextFunction) => {

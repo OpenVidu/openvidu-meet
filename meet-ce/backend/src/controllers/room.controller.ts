@@ -1,21 +1,20 @@
-import {
+import type {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomDeletionSuccessCode,
 	MeetRoomExtraField,
 	MeetRoomField,
-	MeetRoomFilters,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
-import { Request, Response } from 'express';
+import { MeetRoomDeletionSuccessCode } from '@openvidu-meet/typings';
+import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { handleError, internalError } from '../models/error.model.js';
-import { MeetRoomDeletionOptions } from '../models/request-context.model.js';
+import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
-import { MeetRoomRepositoryQueryWithFields } from '../types/room-projection.types.js';
+import type { MeetRoomRepositoryQueryWithFields } from '../types/room-projection.types.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
 export const createRoom = async (req: Request, res: Response) => {

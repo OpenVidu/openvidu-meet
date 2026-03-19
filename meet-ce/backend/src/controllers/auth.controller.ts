@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import {
 	errorInvalidCredentials,

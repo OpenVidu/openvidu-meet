@@ -1,4 +1,4 @@
-import { MeetAnalytics } from '@openvidu-meet/typings';
+import type { MeetAnalytics } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';

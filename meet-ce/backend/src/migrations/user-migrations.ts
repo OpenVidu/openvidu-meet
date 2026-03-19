@@ -1,6 +1,8 @@
 import { MeetUserRole } from '@openvidu-meet/typings';
-import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
-import { meetUserCollectionName, MeetUserDocument } from '../models/mongoose-schemas/user.schema.js';
+import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
+import { generateSchemaMigrationName } from '../models/migration.model.js';
+import type { MeetUserDocument } from '../models/mongoose-schemas/user.schema.js';
+import { meetUserCollectionName } from '../models/mongoose-schemas/user.schema.js';
 
 const userMigrationV1ToV2Name = generateSchemaMigrationName(meetUserCollectionName, 1, 2);
 

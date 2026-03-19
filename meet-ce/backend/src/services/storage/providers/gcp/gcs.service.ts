@@ -1,6 +1,7 @@
-import { Bucket, File, GetFilesOptions, Storage } from '@google-cloud/storage';
+import type { Bucket, File, GetFilesOptions} from '@google-cloud/storage';
+import { Storage } from '@google-cloud/storage';
 import { inject, injectable } from 'inversify';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';

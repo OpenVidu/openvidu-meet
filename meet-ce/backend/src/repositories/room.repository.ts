@@ -1,12 +1,13 @@
-import type { MeetRoom, MeetRoomField } from '@openvidu-meet/typings';
-import { MeetRoomStatus, ProjectedMeetRoom, SortOrder } from '@openvidu-meet/typings';
+import type { MeetRoom, MeetRoomField , ProjectedMeetRoom} from '@openvidu-meet/typings';
+import { MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { QueryFilter, Require_id } from 'mongoose';
+import type { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type {
+	MeetRoomDocument,
+	MeetRoomDocumentOnlyField} from '../models/mongoose-schemas/room.schema.js';
 import {
 	MEET_ROOM_DOCUMENT_ONLY_FIELDS,
-	MeetRoomDocument,
-	MeetRoomDocumentOnlyField,
 	MeetRoomModel
 } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';

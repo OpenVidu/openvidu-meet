@@ -1,7 +1,7 @@
-import { MeetRoomMemberPermissions, MeetRoomMemberTokenMetadata, MeetUser, MeetUserRole } from '@openvidu-meet/typings';
+import type { MeetRoomMemberPermissions, MeetRoomMemberTokenMetadata, MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import { AsyncLocalStorage } from 'async_hooks';
 import { injectable } from 'inversify';
-import { RequestContext } from '../models/request-context.model.js';
+import type { RequestContext } from '../models/request-context.model.js';
 
 /**
  * Service that manages request-scoped session data using Node.js AsyncLocalStorage.

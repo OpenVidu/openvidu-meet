@@ -1,7 +1,8 @@
+import type {
+	MeetRecordingField} from '@openvidu-meet/typings';
 import {
 	MEET_RECORDING_FIELDS,
 	MEET_RECORDING_SORT_FIELDS,
-	MeetRecordingField,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
 	SortOrder

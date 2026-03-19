@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { errorInsufficientPermissions, handleError, rejectRequestFromMeetError } from '../models/error.model.js';
 import { AiAssistantService } from '../services/ai-assistant.service.js';

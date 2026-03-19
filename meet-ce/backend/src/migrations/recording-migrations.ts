@@ -1,6 +1,8 @@
 import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
-import { generateSchemaMigrationName, SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
-import { meetRecordingCollectionName, MeetRecordingDocument } from '../models/mongoose-schemas/recording.schema.js';
+import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
+import { generateSchemaMigrationName } from '../models/migration.model.js';
+import type { MeetRecordingDocument } from '../models/mongoose-schemas/recording.schema.js';
+import { meetRecordingCollectionName } from '../models/mongoose-schemas/recording.schema.js';
 
 const recordingMigrationV1ToV2Name = generateSchemaMigrationName(meetRecordingCollectionName, 1, 2);
 

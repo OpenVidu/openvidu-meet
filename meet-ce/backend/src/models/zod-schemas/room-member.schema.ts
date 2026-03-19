@@ -1,12 +1,13 @@
-import {
-	MEET_ROOM_MEMBER_FIELDS,
-	MEET_ROOM_MEMBER_SORT_FIELDS,
+import type {
 	MeetRoomMemberField,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
-	MeetRoomMemberTokenOptions,
+	MeetRoomMemberTokenOptions} from '@openvidu-meet/typings';
+import {
+	MEET_ROOM_MEMBER_FIELDS,
+	MEET_ROOM_MEMBER_SORT_FIELDS,
+	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
 	SortOrder
 } from '@openvidu-meet/typings';

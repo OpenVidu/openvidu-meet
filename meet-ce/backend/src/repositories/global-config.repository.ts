@@ -1,11 +1,12 @@
-import { GlobalConfig } from '@openvidu-meet/typings';
+import type { GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { Require_id } from 'mongoose';
+import type { Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type {
+	MeetGlobalConfigDocument,
+	MeetGlobalConfigDocumentOnlyField} from '../models/mongoose-schemas/global-config.schema.js';
 import {
 	MEET_GLOBAL_CONFIG_DOCUMENT_ONLY_FIELDS,
-	MeetGlobalConfigDocument,
-	MeetGlobalConfigDocumentOnlyField,
 	MeetGlobalConfigModel
 } from '../models/mongoose-schemas/global-config.schema.js';
 import { LoggerService } from '../services/logger.service.js';

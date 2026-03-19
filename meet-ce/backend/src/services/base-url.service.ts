@@ -1,4 +1,4 @@
-import { Request } from 'express';
+import type { Request } from 'express';
 import { injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 

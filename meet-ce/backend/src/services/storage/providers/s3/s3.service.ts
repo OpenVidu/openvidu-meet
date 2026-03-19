@@ -1,19 +1,21 @@
-import {
-	DeleteObjectsCommand,
+import type {
 	DeleteObjectsCommandOutput,
-	GetObjectCommand,
 	GetObjectCommandOutput,
-	HeadObjectCommand,
 	HeadObjectCommandOutput,
-	ListObjectsV2Command,
 	ListObjectsV2CommandOutput,
-	PutObjectCommand,
 	PutObjectCommandOutput,
-	S3Client,
 	S3ClientConfig
 } from '@aws-sdk/client-s3';
+import {
+	DeleteObjectsCommand,
+	GetObjectCommand,
+	HeadObjectCommand,
+	ListObjectsV2Command,
+	PutObjectCommand,
+	S3Client
+} from '@aws-sdk/client-s3';
 import { inject, injectable } from 'inversify';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';

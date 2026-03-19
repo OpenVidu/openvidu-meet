@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { deleteAllRecordings, getAllRecordings } from '../services/recordingService';
 import { createRoom, deleteAllRooms, deleteRoom, getAllRooms } from '../services/roomService';
 

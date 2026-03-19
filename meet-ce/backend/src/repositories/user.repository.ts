@@ -1,11 +1,13 @@
-import { MeetUser, MeetUserField, MeetUserFilters, SortOrder } from '@openvidu-meet/typings';
+import type { MeetUser, MeetUserField, MeetUserFilters} from '@openvidu-meet/typings';
+import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { QueryFilter, Require_id } from 'mongoose';
+import type { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type {
+	MeetUserDocument,
+	MeetUserDocumentOnlyField} from '../models/mongoose-schemas/user.schema.js';
 import {
 	MEET_USER_DOCUMENT_ONLY_FIELDS,
-	MeetUserDocument,
-	MeetUserDocumentOnlyField,
 	MeetUserModel
 } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';

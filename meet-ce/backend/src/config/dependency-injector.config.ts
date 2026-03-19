@@ -39,7 +39,7 @@ import { GCSStorageProvider } from '../services/storage/providers/gcp/gcs-storag
 
 import { MongoDBService } from '../services/storage/mongodb.service.js';
 import { StorageInitService } from '../services/storage/storage-init.service.js';
-import { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
+import type { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
 import { StorageFactory } from '../services/storage/storage.factory.js';
 import { BlobStorageService } from '../services/storage/blob-storage.service.js';
 

@@ -1,4 +1,5 @@
-import { Lock, Redlock } from '@sesamecare-oss/redlock';
+import type { Redlock } from '@sesamecare-oss/redlock';
+import { Lock } from '@sesamecare-oss/redlock';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { MeetLock } from '../helpers/redis.helper.js';

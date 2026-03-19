@@ -1,7 +1,8 @@
 import chalk from 'chalk';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Express, Request, Response, Router } from 'express';
+import type { Express, Request, Response, Router } from 'express';
+import express from 'express';
 import { initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_ENV, logEnvVars } from './environment.js';

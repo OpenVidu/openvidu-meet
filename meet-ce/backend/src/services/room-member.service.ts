@@ -1,21 +1,22 @@
-import {
+import type {
 	LiveKitPermissions,
-	MeetParticipantModerationAction,
 	MeetRoomMember,
 	MeetRoomMemberField,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
+	MeetRoomRoles} from '@openvidu-meet/typings';
+import {
+	MeetParticipantModerationAction,
+	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
-	MeetRoomRoles,
 	MeetRoomStatus,
 	MeetUserRole,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { ParticipantInfo } from 'livekit-server-sdk';
+import type { ParticipantInfo } from 'livekit-server-sdk';
 import merge from 'lodash.merge';
 import { uid as secureUid } from 'uid/secure';
 import { uid } from 'uid/single';

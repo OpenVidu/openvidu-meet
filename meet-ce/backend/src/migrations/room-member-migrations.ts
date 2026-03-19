@@ -1,5 +1,5 @@
-import { SchemaMigrationMap } from '../models/migration.model.js';
-import { MeetRoomMemberDocument } from '../models/mongoose-schemas/room-member.schema.js';
+import type { SchemaMigrationMap } from '../models/migration.model.js';
+import type { MeetRoomMemberDocument } from '../models/mongoose-schemas/room-member.schema.js';
 
 /**
  * Schema migrations for MeetRoomMember.

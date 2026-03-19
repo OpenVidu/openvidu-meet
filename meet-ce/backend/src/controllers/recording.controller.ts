@@ -1,7 +1,7 @@
-import { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
+import type { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
 import archiver from 'archiver';
-import { Request, Response } from 'express';
-import { Readable } from 'stream';
+import type { Request, Response } from 'express';
+import type { Readable } from 'stream';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';

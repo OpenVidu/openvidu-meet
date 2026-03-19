@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../models/error.model.js';
 import { ApiKeyService } from '../services/api-key.service.js';

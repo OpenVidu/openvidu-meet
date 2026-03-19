@@ -1,7 +1,8 @@
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import type {
+	ApplicationConfig} from '@angular/core';
 import {
-	ApplicationConfig,
 	importProvidersFrom,
 	inject,
 	provideAppInitializer,
@@ -21,11 +22,13 @@ import {
 	RoomMemberInterceptorErrorHandlerService,
 	ThemeService
 } from '@openvidu-meet/shared-components';
+import type {
+	OpenViduComponentsConfig,
+	ParticipantProperties
+} from 'openvidu-components-angular';
 import {
 	LayoutService,
-	OpenViduComponentsConfig,
-	OpenViduComponentsModule,
-	ParticipantProperties
+	OpenViduComponentsModule
 } from 'openvidu-components-angular';
 
 const ovComponentsconfig: OpenViduComponentsConfig = {

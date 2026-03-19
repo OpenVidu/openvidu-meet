@@ -1,14 +1,16 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingInfo} from '@openvidu-meet/typings';
+import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { IScheduledTask } from '../models/task-scheduler.model.js';
+import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import { MutexService, RedisLock } from './mutex.service.js';
+import type { RedisLock } from './mutex.service.js';
+import { MutexService } from './mutex.service.js';
 import { RecordingService } from './recording.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
 

@@ -1,5 +1,6 @@
-import { MeetRoomMemberPermissions, MeetRoomMemberTokenOptions, MeetUserRole } from '@openvidu-meet/typings';
-import { NextFunction, Request, Response } from 'express';
+import type { MeetRoomMemberPermissions, MeetRoomMemberTokenOptions} from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
+import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import {
 	errorInsufficientPermissions,
@@ -12,7 +13,8 @@ import {
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
-import { accessTokenValidator, allowAnonymous, AuthValidator, withAuth } from './auth.middleware.js';
+import type { AuthValidator} from './auth.middleware.js';
+import { accessTokenValidator, allowAnonymous, withAuth } from './auth.middleware.js';
 
 /**
  * Middleware to authorize access to specific room member information.

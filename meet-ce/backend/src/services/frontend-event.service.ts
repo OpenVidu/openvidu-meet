@@ -1,17 +1,18 @@
-import {
+import type {
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomConfigUpdatedPayload,
 	MeetRoomMemberUIBadge,
-	MeetSignalPayload,
+	MeetSignalPayload} from '@openvidu-meet/typings';
+import {
 	MeetSignalType
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { SendDataOptions } from 'livekit-server-sdk';
+import type { SendDataOptions } from 'livekit-server-sdk';
 import { OpenViduComponentsAdapterHelper } from '../helpers/ov-components-adapter.helper.js';
-import { OpenViduComponentsSignalPayload } from '../models/ov-components-signal.model.js';
+import type { OpenViduComponentsSignalPayload } from '../models/ov-components-signal.model.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 

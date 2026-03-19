@@ -1,5 +1,5 @@
-import { StringValue } from 'ms';
-import { SchemaVersion } from '../models/migration.model.js';
+import type { StringValue } from 'ms';
+import type { SchemaVersion } from '../models/migration.model.js';
 
 export const INTERNAL_CONFIG = {
 	// Base paths for the API

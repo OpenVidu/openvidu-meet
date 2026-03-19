@@ -1,5 +1,5 @@
-import { MeetRoomMemberFilters, MeetRoomMemberTokenOptions } from '@openvidu-meet/typings';
-import { Request, Response } from 'express';
+import type { MeetRoomMemberFilters, MeetRoomMemberTokenOptions } from '@openvidu-meet/typings';
+import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { errorRoomMemberNotFound, errorUnauthorized, handleError } from '../models/error.model.js';

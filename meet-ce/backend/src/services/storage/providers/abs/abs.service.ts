@@ -1,12 +1,14 @@
-import {
+import type {
 	BlobItem,
-	BlobServiceClient,
 	BlockBlobClient,
 	BlockBlobUploadResponse,
 	ContainerClient
 } from '@azure/storage-blob';
+import {
+	BlobServiceClient
+} from '@azure/storage-blob';
 import { inject, injectable } from 'inversify';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../logger.service.js';

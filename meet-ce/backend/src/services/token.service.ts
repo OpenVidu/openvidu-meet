@@ -1,12 +1,14 @@
-import { MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
+import type { MeetRoomMemberTokenMetadata, MeetUser } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
-import { AccessToken, AccessTokenOptions, ClaimGrants, TokenVerifier, VideoGrant } from 'livekit-server-sdk';
+import type { AccessTokenOptions, ClaimGrants, VideoGrant } from 'livekit-server-sdk';
+import { AccessToken, TokenVerifier } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { validateTokenMetadata } from '../middlewares/request-validators/auth-validator.middleware.js';
 import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-member-validator.middleware.js';
-import { MeetRoomMemberTokenOptions, TokenMetadata, TokenType } from '../models/token.model.js';
+import type { MeetRoomMemberTokenOptions, TokenMetadata} from '../models/token.model.js';
+import { TokenType } from '../models/token.model.js';
 import { LoggerService } from './logger.service.js';
 
 @injectable()

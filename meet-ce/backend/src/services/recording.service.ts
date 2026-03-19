@@ -1,17 +1,18 @@
-import {
+import { MeetRecordingStatus } from '@openvidu-meet/typings';
+import type {
 	MeetRecordingConfig,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingField,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
-	MeetRecordingStatus,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
+import type { RoomCompositeOptions } from 'livekit-server-sdk';
+import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
 import { inject, injectable } from 'inversify';
-import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
 import ms from 'ms';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { uid } from 'uid';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -47,7 +48,8 @@ import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import { MutexService, RedisLock } from './mutex.service.js';
+import type { RedisLock } from './mutex.service.js';
+import { MutexService } from './mutex.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import type { RoomService } from './room.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';

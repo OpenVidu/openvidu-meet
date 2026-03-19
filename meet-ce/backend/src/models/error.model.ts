@@ -1,6 +1,6 @@
-import { MeetRoomDeletionErrorCode, MeetRoomMemberRole } from '@openvidu-meet/typings';
-import { Response } from 'express';
-import { z } from 'zod';
+import type { MeetRoomDeletionErrorCode, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import type { Response } from 'express';
+import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
 import { LoggerService } from '../services/logger.service.js';
 

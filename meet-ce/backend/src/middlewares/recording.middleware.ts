@@ -1,5 +1,6 @@
-import { MeetRoomMemberPermissions, MeetUserRole } from '@openvidu-meet/typings';
-import { NextFunction, Request, Response } from 'express';
+import type { MeetRoomMemberPermissions} from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
+import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import {
 	errorInsufficientPermissions,

@@ -1,4 +1,4 @@
-import { StringValue } from 'ms';
+import type { StringValue } from 'ms';
 
 export type TaskType = 'cron' | 'timeout';
 

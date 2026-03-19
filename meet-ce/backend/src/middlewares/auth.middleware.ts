@@ -1,5 +1,5 @@
-import { MeetUserRole } from '@openvidu-meet/typings';
-import { NextFunction, Request, RequestHandler, Response } from 'express';
+import type { MeetUserRole } from '@openvidu-meet/typings';
+import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit from 'express-rate-limit';
 import ms from 'ms';
 import { container } from '../config/dependency-injector.config.js';

@@ -1,6 +1,6 @@
+import type { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
 import { del, get, post } from '../utils/http';
 import { configService } from './configService';
-import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
 
 export async function getAllRooms(): Promise<{
     pagination: any;

@@ -1,6 +1,7 @@
+import type {
+	MeetRoom} from '@openvidu-meet/typings';
 import {
 	MeetRecordingLayout,
-	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomStatus,
@@ -9,8 +10,8 @@ import {
 } from '@openvidu-meet/typings';
 import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
-import { DocumentOnlyField } from '../database.model.js';
-import { SchemaMigratableDocument } from '../migration.model.js';
+import type { DocumentOnlyField } from '../database.model.js';
+import type { SchemaMigratableDocument } from '../migration.model.js';
 import { MeetRoomMemberPermissionsSchema } from './room-member.schema.js';
 
 /**

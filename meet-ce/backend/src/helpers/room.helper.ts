@@ -1,13 +1,15 @@
 import {
 	MEET_ROOM_EXTRA_FIELDS,
 	MEET_ROOM_FIELDS,
+	SENSITIVE_ROOM_FIELDS_ENTRIES
+} from '@openvidu-meet/typings';
+import type {
 	MeetRoom,
 	MeetRoomAccess,
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomMemberPermissions,
-	MeetRoomOptions,
-	SENSITIVE_ROOM_FIELDS_ENTRIES
+	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../environment.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';

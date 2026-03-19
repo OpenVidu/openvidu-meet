@@ -1,4 +1,4 @@
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import { UpdateParticipantRoleReqSchema } from '../../models/zod-schemas/meeting.schema.js';
 

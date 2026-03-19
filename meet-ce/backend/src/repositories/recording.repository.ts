@@ -1,17 +1,17 @@
-import {
+import type {
 	MeetRecordingField,
-	MeetRecordingInfo,
-	MeetRecordingStatus,
-	SortOrder
+	MeetRecordingInfo
 } from '@openvidu-meet/typings';
+import { MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { QueryFilter, Require_id } from 'mongoose';
+import type { QueryFilter, Require_id } from 'mongoose';
 import { uid as secureUid } from 'uid/secure';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type {
+	MeetRecordingDocument,
+	MeetRecordingDocumentOnlyField} from '../models/mongoose-schemas/recording.schema.js';
 import {
 	MEET_RECORDING_DOCUMENT_ONLY_FIELDS,
-	MeetRecordingDocument,
-	MeetRecordingDocumentOnlyField,
 	MeetRecordingModel
 } from '../models/mongoose-schemas/recording.schema.js';
 import { LoggerService } from '../services/logger.service.js';

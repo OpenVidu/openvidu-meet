@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
 import { container, STORAGE_TYPES } from '../../config/dependency-injector.config.js';
 import { LoggerService } from '../logger.service.js';
-import { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
+import type { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
 
 /**
  * Factory class responsible for creating the appropriate basic storage provider

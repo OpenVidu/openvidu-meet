@@ -1,5 +1,5 @@
-import { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
-import { NextFunction, Request, Response } from 'express';
+import type { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
+import type { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteRoomMembersReqSchema,

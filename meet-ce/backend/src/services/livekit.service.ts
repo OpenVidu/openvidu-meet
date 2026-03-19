@@ -1,20 +1,23 @@
-import { AgentDispatch, ParticipantInfo_Kind } from '@livekit/protocol';
+import type { AgentDispatch} from '@livekit/protocol';
+import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
-import {
-	AgentDispatchClient,
+import type {
 	CreateOptions,
-	DataPacket_Kind,
-	EgressClient,
 	EgressInfo,
-	EgressStatus,
 	EncodedFileOutput,
 	ListEgressOptions,
 	ParticipantInfo,
 	Room,
 	RoomCompositeOptions,
-	RoomServiceClient,
 	SendDataOptions,
 	StreamOutput
+} from 'livekit-server-sdk';
+import {
+	AgentDispatchClient,
+	DataPacket_Kind,
+	EgressClient,
+	EgressStatus,
+	RoomServiceClient
 } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';

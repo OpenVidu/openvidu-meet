@@ -1,4 +1,5 @@
-import { MeetAssistantCapabilityName, MeetCreateAssistantResponse } from '@openvidu-meet/typings';
+import type { MeetCreateAssistantResponse } from '@openvidu-meet/typings';
+import { MeetAssistantCapabilityName } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';

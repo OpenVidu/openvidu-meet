@@ -1,30 +1,31 @@
-import {
-	MEET_ROOM_EXTRA_FIELDS,
-	MEET_ROOM_FIELDS,
-	MEET_ROOM_SORT_FIELDS,
+import type {
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
-	MeetRecordingAudioCodec,
 	MeetRecordingConfig,
 	MeetRecordingEncodingOptions,
-	MeetRecordingEncodingPreset,
-	MeetRecordingLayout,
-	MeetRecordingVideoCodec,
 	MeetRoomAccessConfig,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomCaptionsConfig,
 	MeetRoomConfig,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomExtraField,
 	MeetRoomField,
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
-	MeetRoomStatus,
 	MeetRoomTheme,
+	MeetVirtualBackgroundConfig} from '@openvidu-meet/typings';
+import {
+	MEET_ROOM_EXTRA_FIELDS,
+	MEET_ROOM_FIELDS,
+	MEET_ROOM_SORT_FIELDS,
+	MeetRecordingAudioCodec,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout,
+	MeetRecordingVideoCodec,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomStatus,
 	MeetRoomThemeMode,
-	MeetVirtualBackgroundConfig,
 	SortOrder
 } from '@openvidu-meet/typings';
 import ms from 'ms';

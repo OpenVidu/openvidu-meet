@@ -1,4 +1,4 @@
-import { MeetApiKey } from '@openvidu-meet/typings';
+import type { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';

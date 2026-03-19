@@ -1,5 +1,5 @@
-import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
-import { Request, Response } from 'express';
+import type { MeetParticipantModerationAction } from '@openvidu-meet/typings';
+import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';

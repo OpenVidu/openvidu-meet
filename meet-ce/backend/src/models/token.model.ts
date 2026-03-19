@@ -1,4 +1,4 @@
-import { LiveKitPermissions, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
+import type { LiveKitPermissions, MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
 
 /**
  * Metadata associated with access, refresh, and temporary tokens.

@@ -703,8 +703,8 @@ importers:
         specifier: 20.3.15
         version: 20.3.15(@angular/common@20.3.15(@angular/core@20.3.15(@angular/compiler@20.3.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.15(@angular/compiler@20.3.15)(rxjs@7.8.2)(zone.js@0.15.1))(@angular/platform-browser@20.3.15(@angular/animations@20.3.15(@angular/core@20.3.15(@angular/compiler@20.3.15)(rxjs@7.8.2)(zone.js@0.15.1)))(@angular/common@20.3.15(@angular/core@20.3.15(@angular/compiler@20.3.15)(rxjs@7.8.2)(zone.js@0.15.1))(rxjs@7.8.2))(@angular/core@20.3.15(@angular/compiler@20.3.15)(rxjs@7.8.2)(zone.js@0.15.1)))(rxjs@7.8.2)
       '@livekit/track-processors':
-        specifier: 0.7.0
-        version: 0.7.0(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.16.1(@types/dom-mediacapture-record@1.0.22))
+        specifier: 0.7.2
+        version: 0.7.2(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.16.1(@types/dom-mediacapture-record@1.0.22))
       '@openvidu-meet/shared-components':
         specifier: workspace:*
         version: link:../../meet-ce/frontend/projects/shared-meet-components
@@ -2967,12 +2967,6 @@ packages:
 
   '@livekit/protocol@1.43.4':
     resolution: {integrity: sha512-mJDFt/p+G2OKmIGizYiACK7Jb06wd42m9Pe7Y9cAOfdYpvwCqHlw4yul5Z7iRU3VKPsYJ27WL3oeHEoiu+HuAA==}
-
-  '@livekit/track-processors@0.7.0':
-    resolution: {integrity: sha512-ERdByDrHPLA8xzZNFcqWiLt5ZJs4AZo1RjDlYplb//xeaWURaJdulqrds5EHSMHmELmTzlEOSgvSrzFlatlJQQ==}
-    peerDependencies:
-      '@types/dom-mediacapture-transform': ^0.1.9
-      livekit-client: 2.16.1
 
   '@livekit/track-processors@0.7.2':
     resolution: {integrity: sha512-lzARBKTbBwqycdR/SwTu6//N0l20BzfDd7grxCXl07676SwRApNtZAK1GJjL1m3dCM3KBqH1aVxjMpNcbOw5uQ==}
@@ -13585,12 +13579,6 @@ snapshots:
   '@livekit/protocol@1.43.4':
     dependencies:
       '@bufbuild/protobuf': 1.10.1
-
-  '@livekit/track-processors@0.7.0(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.16.1(@types/dom-mediacapture-record@1.0.22))':
-    dependencies:
-      '@mediapipe/tasks-vision': 0.10.14
-      '@types/dom-mediacapture-transform': 0.1.11
-      livekit-client: 2.16.1(@types/dom-mediacapture-record@1.0.22)
 
   '@livekit/track-processors@0.7.2(@types/dom-mediacapture-transform@0.1.11)(livekit-client@2.16.1(@types/dom-mediacapture-record@1.0.22))':
     dependencies:
