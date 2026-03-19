@@ -8,10 +8,10 @@ export interface MeetRoomClientResponseOptions {
 	 * Array of fields to include in the response.
 	 * If not specified, all fields are included.
 	 */
-	fields?: MeetRoomField[];
+	fields?: readonly MeetRoomField[];
 	/**
 	 * Array of extra properties to include in the response.
 	 * These are not included by default.
 	 */
-	extraFields?: MeetRoomExtraField[];
+	extraFields?: readonly MeetRoomExtraField[];
 }

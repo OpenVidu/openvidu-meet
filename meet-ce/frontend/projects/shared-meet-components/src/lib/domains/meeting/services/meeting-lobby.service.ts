@@ -38,7 +38,7 @@ export class MeetingLobbyService {
 	 * This state is only relevant during the lobby phase - before a participant joins the meeting.
 	 */
 	private readonly _roomId = signal<string | undefined>(undefined);
-	private readonly _room = signal<MeetRoom | undefined>(undefined);
+	private readonly _room = signal<Partial<MeetRoom> | undefined>(undefined);
 	private readonly _showRecordingCard = signal<boolean>(false);
 	private readonly _showBackButton = signal<boolean>(true);
 	private readonly _backButtonText = signal<string>('Back');
@@ -55,7 +55,7 @@ export class MeetingLobbyService {
 	/** Readonly signal for whether the room is closed */
 	readonly roomClosed = computed(() => this._room()?.status === MeetRoomStatus.CLOSED);
 	/** Readonly signal for whether E2EE is enabled in the room */
-	readonly hasRoomE2EEEnabled = computed(() => this._room()?.config.e2ee.enabled ?? false);
+	readonly hasRoomE2EEEnabled = computed(() => this._room()?.config?.e2ee?.enabled ?? false);
 	/**
 	 * Computed signal to determine if the E2EE key input should be shown.
 	 * When E2EE key is provided via URL query param, the control is disabled and should not be displayed.

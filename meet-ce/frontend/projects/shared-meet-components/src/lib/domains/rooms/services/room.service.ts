@@ -6,14 +6,17 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
+	MeetRoomField,
 	MeetRoomFilters,
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
-	MeetRoomStatus
+	MeetRoomStatus,
+	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
-import { MeetRoomClientResponseOptions } from '../models/room-request';
+import type { MeetRoomClientResponseOptions } from '../models/room-request';
+import type { MeetRoomQueryOptionsWithFields } from '../types/room-projection.types';
 import { RoomFeatureService } from './room-feature.service';
 
 @Injectable({
@@ -37,7 +40,17 @@ export class RoomService {
 	 * @param options - The options for creating the room
 	 * @returns A promise that resolves to the created MeetRoom object
 	 */
-	async createRoom(options?: MeetRoomOptions, responseOptions?: MeetRoomClientResponseOptions): Promise<MeetRoom> {
+	async createRoom(options?: MeetRoomOptions): Promise<MeetRoom>;
+
+	async createRoom<const TFields extends readonly [MeetRoomField, ...MeetRoomField[]]>(
+		options: MeetRoomOptions | undefined,
+		responseOptions: MeetRoomQueryOptionsWithFields<TFields>
+	): Promise<ProjectedMeetRoom<TFields>>;
+
+	async createRoom(
+		options?: MeetRoomOptions,
+		responseOptions?: MeetRoomClientResponseOptions
+	): Promise<MeetRoom | Partial<MeetRoom>> {
 		const headers: Record<string, string> = {
 			'X-Fields': responseOptions?.fields ? responseOptions.fields.join(',') : '',
 			'X-ExtraFields': responseOptions?.extraFields ? responseOptions.extraFields.join(',') : ''
@@ -76,7 +89,6 @@ export class RoomService {
 				path += `?${queryString}`;
 			}
 		}
-
 		return this.httpService.getRequest(path);
 	}
 
@@ -86,7 +98,22 @@ export class RoomService {
 	 * @param roomId - The unique identifier of the room
 	 * @return A promise that resolves to the MeetRoom object
 	 */
-	async getRoom(roomId: string, responseOptions?: MeetRoomClientResponseOptions): Promise<MeetRoom> {
+	async getRoom(roomId: string): Promise<MeetRoom>;
+
+	async getRoom<const TFields extends readonly [MeetRoomField, ...MeetRoomField[]]>(
+		roomId: string,
+		responseOptions: MeetRoomQueryOptionsWithFields<TFields>
+	): Promise<ProjectedMeetRoom<TFields>>;
+
+	async getRoom(
+		roomId: string,
+		responseOptions?: MeetRoomClientResponseOptions
+	): Promise<MeetRoom | Partial<MeetRoom>>;
+
+	async getRoom(
+		roomId: string,
+		responseOptions?: MeetRoomClientResponseOptions
+	): Promise<MeetRoom | Partial<MeetRoom>> {
 		const queryParams = new URLSearchParams();
 		if (responseOptions?.fields) {
 			queryParams.set('fields', responseOptions.fields.join(','));
