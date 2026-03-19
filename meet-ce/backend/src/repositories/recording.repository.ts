@@ -1,7 +1,4 @@
-import type {
-	MeetRecordingField,
-	MeetRecordingInfo
-} from '@openvidu-meet/typings';
+import type { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter, Require_id } from 'mongoose';
@@ -9,7 +6,8 @@ import { uid as secureUid } from 'uid/secure';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type {
 	MeetRecordingDocument,
-	MeetRecordingDocumentOnlyField} from '../models/mongoose-schemas/recording.schema.js';
+	MeetRecordingDocumentOnlyField
+} from '../models/mongoose-schemas/recording.schema.js';
 import {
 	MEET_RECORDING_DOCUMENT_ONLY_FIELDS,
 	MeetRecordingModel
@@ -255,8 +253,8 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param recordingId - The ID of the recording to delete
 	 * @throws Error if the recording was not found or could not be deleted
 	 */
-	async deleteByRecordingId(recordingId: string): Promise<void> {
-		this.deleteOne({ recordingId });
+	deleteByRecordingId(recordingId: string): Promise<void> {
+		return this.deleteOne({ recordingId });
 	}
 
 	/**
@@ -265,21 +263,21 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param recordingIds - Array of recording IDs to delete
 	 * @throws Error if any recording was not found or could not be deleted
 	 */
-	async deleteByRecordingIds(recordingIds: string[]): Promise<void> {
-		this.deleteMany({ recordingId: { $in: recordingIds } });
+	deleteByRecordingIds(recordingIds: string[]): Promise<void> {
+		return this.deleteMany({ recordingId: { $in: recordingIds } });
 	}
 
 	/**
 	 * Counts the total number of recordings.
 	 */
-	async countTotal(): Promise<number> {
+	countTotal(): Promise<number> {
 		return this.count();
 	}
 
 	/**
 	 * Counts the number of recordings with status 'complete'.
 	 */
-	async countCompleteRecordings(): Promise<number> {
-		return await this.count({ status: 'complete' });
+	countCompleteRecordings(): Promise<number> {
+		return this.count({ status: 'complete' });
 	}
 }
