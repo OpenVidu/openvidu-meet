@@ -6,7 +6,8 @@ import type {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
-	MeetRoomRoles} from '@openvidu-meet/typings';
+	MeetRoomRoles
+} from '@openvidu-meet/typings';
 import {
 	MeetParticipantModerationAction,
 	MeetRoomMemberRole,
@@ -400,9 +401,10 @@ export class RoomMemberService {
 	}> {
 		const membersToDelete = await this.roomMemberRepository.findByRoomAndMemberIds(roomId, memberIds, ['memberId']);
 		const foundMemberIds = membersToDelete.map((m) => m.memberId);
+		const foundMemberIdsSet = new Set(foundMemberIds);
 
 		const failed = memberIds
-			.filter((id) => !foundMemberIds.includes(id))
+			.filter((id) => !foundMemberIdsSet.has(id))
 			.map((id) => ({ memberId: id, error: 'Room member not found' }));
 
 		if (foundMemberIds.length > 0) {
