@@ -773,19 +773,16 @@ export class RoomMemberService {
 		first?: MeetRoomMemberPermissions,
 		second?: MeetRoomMemberPermissions
 	): MeetRoomMemberPermissions {
-		const merged = this.getNoPermissions();
+		const sources = [first, second].filter((p): p is MeetRoomMemberPermissions => !!p);
+		const basePermissions = this.getNoPermissions();
 
-		const sources = [first, second].filter(
-			(permissions): permissions is MeetRoomMemberPermissions => !!permissions
+		return (Object.keys(basePermissions) as Array<keyof MeetRoomMemberPermissions>).reduce(
+			(merged, permission) => ({
+				...merged,
+				[permission]: sources.some((source) => source[permission] === true)
+			}),
+			basePermissions
 		);
-
-		for (const source of sources) {
-			for (const [key, value] of Object.entries(source) as [keyof MeetRoomMemberPermissions, boolean][]) {
-				merged[key] = merged[key] || value;
-			}
-		}
-
-		return merged;
 	}
 
 	protected resolveBadgeFromPermissions(
