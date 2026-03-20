@@ -18,7 +18,8 @@ import {
 	endMeeting,
 	generateRoomMemberToken,
 	getFullPath,
-	startTestServer
+	startTestServer,
+	updateRoomAccessConfig
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
@@ -631,6 +632,34 @@ describe('Room Members API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
+		it('should succeed when user is authenticated as USER without membership and registered access is enabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send({
+					joinMeeting: false
+				});
+			expect(response.status).toBe(200);
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+			// Regenerate moderator token since room config was updated
+			roomData.moderatorToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.moderatorSecret
+			});
+		});
+
 		it('should succeed when user is authenticated as ROOM_MEMBER and is room member without secret', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token`)
@@ -649,6 +678,34 @@ describe('Room Members API Security Tests', () => {
 					joinMeeting: false
 				});
 			expect(response.status).toBe(403);
+		});
+
+		it('should succeed when user is authenticated as ROOM_MEMBER without membership and registered access is disabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await request(app)
+				.post(`${INTERNAL_ROOMS_PATH}/${roomId}/members/token`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send({
+					joinMeeting: false
+				});
+			expect(response.status).toBe(200);
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+			// Regenerate moderator token since room config was updated
+			roomData.moderatorToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.moderatorSecret
+			});
 		});
 
 		it('should fail when user is not authenticated and no secret provided', async () => {

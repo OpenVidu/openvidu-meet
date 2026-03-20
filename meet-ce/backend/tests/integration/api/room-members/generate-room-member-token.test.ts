@@ -310,6 +310,31 @@ describe('Room Members API Tests', () => {
 			});
 		});
 
+		it('should generate token for registered user non-member when registered access is enabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await generateRoomMemberTokenRequest(roomId, {}, testUsers.roomMember.accessToken);
+			expectValidRoomMemberTokenResponse(response, {
+				roomId,
+				userId: testUsers.roomMember.user.userId,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				permissions: roomRoles.speaker.permissions
+			});
+			expect(response.body.memberId).toBeUndefined();
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+		});
+
 		it('should generate token for external room member', async () => {
 			// Create external room member
 			const createResponse = await createRoomMember(roomId, {
@@ -524,7 +549,7 @@ describe('Room Members API Tests', () => {
 		});
 
 		it('should generate token when specifying joinMeeting true and participant already exists in the room', async () => {
-			const participantName = `Alice Smith`;
+			const participantName = 'Alice Smith Unique';
 
 			// Create token for the first participant
 			let response = await generateRoomMemberTokenRequest(roomId, {
@@ -538,7 +563,7 @@ describe('Room Members API Tests', () => {
 				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName,
-				participantIdentityPrefix: 'alice_smith'
+				participantIdentityPrefix: 'alice_smith_unique'
 			});
 
 			// Create token for the second participant with the same name
@@ -553,7 +578,7 @@ describe('Room Members API Tests', () => {
 				permissions: roomRoles.moderator.permissions,
 				joinMeeting: true,
 				participantName: participantName + '_1', // Suffix is added to avoid conflict with the first participant
-				participantIdentityPrefix: 'alice_smith_1'
+				participantIdentityPrefix: 'alice_smith_unique_1'
 			});
 		});
 

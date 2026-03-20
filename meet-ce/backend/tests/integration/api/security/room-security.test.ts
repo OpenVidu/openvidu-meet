@@ -3,7 +3,14 @@ import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { deleteAllRooms, deleteAllUsers, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	deleteAllRooms,
+	deleteAllUsers,
+	generateRoomMemberToken,
+	getFullPath,
+	startTestServer,
+	updateRoomAccessConfig
+} from '../../../helpers/request-helpers.js';
 import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
@@ -64,6 +71,7 @@ describe('Room API Security Tests', () => {
 
 	describe('Get Rooms Tests', () => {
 		let roomData: RoomData;
+		let roomId: string;
 		let roomUsers: RoomTestUsers;
 
 		beforeAll(async () => {
@@ -71,6 +79,8 @@ describe('Room API Security Tests', () => {
 			await deleteAllRooms();
 
 			roomData = await setupSingleRoom();
+			roomId = roomData.room.roomId;
+
 			roomData = await setupTestUsersForRoom(roomData);
 			roomUsers = roomData.users!;
 		});
@@ -115,6 +125,33 @@ describe('Room API Security Tests', () => {
 			expect(response.body.rooms.length).toBe(0);
 		});
 
+		it('should return rooms when user is authenticated as USER and registered access is enabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(1);
+			expect(response.body.rooms[0].roomId).toBe(roomId);
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+			// Regenerate moderator token since room config was updated
+			roomData.moderatorToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.moderatorSecret
+			});
+		});
+
 		it('should succeed when user is authenticated as ROOM_MEMBER and is room member', async () => {
 			const response = await request(app)
 				.get(ROOMS_PATH)
@@ -129,6 +166,33 @@ describe('Room API Security Tests', () => {
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(200);
 			expect(response.body.rooms.length).toBe(0);
+		});
+
+		it('should return rooms when user is authenticated as ROOM_MEMBER and registered access is enabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await request(app)
+				.get(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+			expect(response.body.rooms.length).toBe(1);
+			expect(response.body.rooms[0].roomId).toBe(roomId);
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+			// Regenerate moderator token since room config was updated
+			roomData.moderatorToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.moderatorSecret
+			});
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -291,6 +355,31 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
+		it('should succeed when user is authenticated as USER without membership and registered access is enabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(200);
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+			// Regenerate moderator token since room config was updated
+			roomData.moderatorToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.moderatorSecret
+			});
+		});
+
 		it('should succeed when user is authenticated as ROOM_MEMBER and is room member', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}`)
@@ -303,6 +392,29 @@ describe('Room API Security Tests', () => {
 				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(403);
+		});
+
+		it('should succeed when user is authenticated as ROOM_MEMBER without membership and registered access is enabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+			// Regenerate moderator token since room config was updated
+			roomData.moderatorToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -467,6 +579,29 @@ describe('Room API Security Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
+		it('should succeed when user is authenticated as USER without membership and registered access is enabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(200);
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+			// Regenerate moderator token since room config was updated
+			roomData.moderatorToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
+		});
+
 		it('should succeed when user is authenticated as ROOM_MEMBER and is room member', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}/config`)
@@ -479,6 +614,29 @@ describe('Room API Security Tests', () => {
 				.get(`${ROOMS_PATH}/${roomId}/config`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(403);
+		});
+
+		it('should succeed when user is authenticated as ROOM_MEMBER without membership and registered access is enabled', async () => {
+			// Enable registered access for the room
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: true
+				}
+			});
+
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomId}/config`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+
+			// Disable registered access after test
+			await updateRoomAccessConfig(roomId, {
+				registered: {
+					enabled: false
+				}
+			});
+			// Regenerate moderator token since room config was updated
+			roomData.moderatorToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
 		});
 
 		it('should fail when user is not authenticated', async () => {

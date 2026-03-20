@@ -10,12 +10,14 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteAllUsers,
+	endMeeting,
 	getFullPath,
 	getRecordingAccessSecret,
 	sleep,
 	startRecording,
 	startTestServer,
-	stopAllRecordings
+	stopAllRecordings,
+	updateRoomAccessConfig
 } from '../../../helpers/request-helpers.js';
 
 import {
@@ -1336,6 +1338,124 @@ describe('Recording API Security Tests', () => {
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId, secret });
 				expect(response.status).toBe(401);
+			});
+		});
+
+		describe('Registered Access Recording Resource Operations', () => {
+			let roomData: RoomData;
+			let roomId: string;
+			let recordingId: string;
+
+			beforeAll(async () => {
+				// Ensure no recordings exist before starting tests
+				await deleteAllRecordings();
+
+				roomData = await setupSingleRoomWithRecording(true);
+				roomId = roomData.room.roomId;
+				recordingId = roomData.recordingId!;
+
+				// End the meeting
+				await disconnectFakeParticipants();
+				await endMeeting(roomId, roomData.moderatorToken);
+
+				// Enable registered access for the room
+				await updateRoomAccessConfig(roomId, {
+					registered: {
+						enabled: true
+					}
+				});
+			});
+
+			it('should return recordings for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(RECORDINGS_PATH)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				expect(response.status).toBe(200);
+				expect(response.body.recordings.length).toBe(1);
+				expect(response.body.recordings[0].recordingId).toBe(recordingId);
+			});
+
+			it('should return recordings for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(RECORDINGS_PATH)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+				expect(response.status).toBe(200);
+				expect(response.body.recordings.length).toBe(1);
+				expect(response.body.recordings[0].recordingId).toBe(recordingId);
+			});
+
+			it('should retrieve recording for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				expect(response.status).toBe(200);
+			});
+
+			it('should retrieve recording for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+				expect(response.status).toBe(200);
+			});
+
+			it('should fail bulk delete for USER when registered access is enabled (speaker role does not have canDeleteRecordings permission)', async () => {
+				const response = await request(app)
+					.delete(RECORDINGS_PATH)
+					.query({ recordingIds: recordingId })
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				expect(response.status).toBe(400);
+			});
+
+			it('should fail bulk delete for ROOM_MEMBER when registered access is enabled (speaker role does not have canDeleteRecordings permission)', async () => {
+				const response = await request(app)
+					.delete(RECORDINGS_PATH)
+					.query({ recordingIds: recordingId })
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+				expect(response.status).toBe(400);
+			});
+
+			it('should get recording media for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				expect(response.status).toBe(200);
+			});
+
+			it('should get recording media for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+				expect(response.status).toBe(200);
+			});
+
+			it('should get recording URL for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				expect(response.status).toBe(200);
+			});
+
+			it('should get recording URL for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+				expect(response.status).toBe(200);
+			});
+
+			it('should download recordings ZIP for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(`${RECORDINGS_PATH}/download`)
+					.query({ recordingIds: recordingId })
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				expect(response.status).toBe(200);
+			});
+
+			it('should download recordings ZIP for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+				const response = await request(app)
+					.get(`${RECORDINGS_PATH}/download`)
+					.query({ recordingIds: recordingId })
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+				expect(response.status).toBe(200);
 			});
 		});
 	});
