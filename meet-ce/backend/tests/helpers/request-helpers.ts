@@ -666,7 +666,7 @@ export const runExpiredRoomsGC = async () => {
 	// Capture expired rooms without active meetings — these are synchronously deleted by the GC,
 	// which in turn causes LiveKit to emit room_finished webhooks that the backend must process.
 	const roomRepository = container.get(RoomRepository);
-	const expiredRooms = await roomRepository.findExpiredRooms();
+	const { rooms: expiredRooms } = await roomRepository.findExpiredRooms();
 	const expiredRoomIdsToWait = expiredRooms
 		.filter((r) => r.status !== MeetRoomStatus.ACTIVE_MEETING)
 		.map((r) => r.roomId);

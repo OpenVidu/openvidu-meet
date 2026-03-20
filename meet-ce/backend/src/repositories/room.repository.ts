@@ -1,15 +1,10 @@
-import type { MeetRoom, MeetRoomField , ProjectedMeetRoom} from '@openvidu-meet/typings';
+import type { MeetRoom, MeetRoomField, ProjectedMeetRoom } from '@openvidu-meet/typings';
 import { MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import type {
-	MeetRoomDocument,
-	MeetRoomDocumentOnlyField} from '../models/mongoose-schemas/room.schema.js';
-import {
-	MEET_ROOM_DOCUMENT_ONLY_FIELDS,
-	MeetRoomModel
-} from '../models/mongoose-schemas/room.schema.js';
+import type { MeetRoomDocument, MeetRoomDocumentOnlyField } from '../models/mongoose-schemas/room.schema.js';
+import { MEET_ROOM_DOCUMENT_ONLY_FIELDS, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import type {
 	MeetRoomPage,
@@ -219,32 +214,60 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Finds all rooms that have expired (autoDeletionDate < now).
-	 * Returns all expired rooms without pagination.
+	 * Finds expired rooms (autoDeletionDate < now) in paginated batches.
 	 *
-	 * @returns Array of expired rooms with enriched URLs
+	 * @param batchSize - Number of rooms to retrieve per page
+	 * @param pageToken - Optional cursor token from a previous call
+	 * @returns A paginated page of expired rooms
 	 */
-	async findExpiredRooms(): Promise<MeetRoom[]> {
+	async findExpiredRooms(batchSize = 100, pageToken?: string): Promise<MeetRoomPage<MeetRoom>> {
 		const now = Date.now();
 
-		// Find all rooms where autoDeletionDate exists and is less than now
-		return this.findAll({
-			autoDeletionDate: { $exists: true, $lt: now }
-		});
+		const { items, isTruncated, nextPageToken } = await this.findMany(
+			{
+				autoDeletionDate: { $exists: true, $lt: now }
+			},
+			{
+				maxItems: batchSize,
+				nextPageToken: pageToken,
+				sortField: 'autoDeletionDate',
+				sortOrder: SortOrder.ASC
+			}
+		);
+
+		return {
+			rooms: items,
+			isTruncated,
+			nextPageToken
+		};
 	}
 
 	/**
-	 * Finds all rooms with active meetings.
+	 * Finds active rooms in paginated batches, projecting only roomId.
 	 *
-	 * @returns Array of all active rooms with ONLY the roomId field and without pagination.
+	 * @param batchSize - Number of rooms to retrieve per page
+	 * @param pageToken - Optional cursor token from a previous call
+	 * @returns A paginated page of active room identifiers
 	 */
-	async findActiveRooms(): Promise<MeetRoom[]> {
-		return this.findAll(
+	async findActiveRooms(batchSize = 100, pageToken?: string): Promise<MeetRoomPage<Pick<MeetRoom, 'roomId'>>> {
+		const { items, isTruncated, nextPageToken } = await this.findMany(
 			{
 				status: MeetRoomStatus.ACTIVE_MEETING
 			},
+			{
+				maxItems: batchSize,
+				nextPageToken: pageToken,
+				sortField: 'creationDate',
+				sortOrder: SortOrder.DESC
+			},
 			['roomId']
 		);
+
+		return {
+			rooms: items as Pick<MeetRoom, 'roomId'>[],
+			isTruncated,
+			nextPageToken
+		};
 	}
 
 	/**

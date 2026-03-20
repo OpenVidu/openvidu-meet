@@ -52,6 +52,8 @@ export const INTERNAL_CONFIG = {
 
 	// Batch and concurrency processing settings
 	DEFAULT_CONCURRENCY: 10, // Default concurrency limit for concurrent operations
+	BATCH_SIZE_ROOMS_EXPIRED_GC: 100, // Number of expired rooms to process per batch during GC
+	BATCH_SIZE_ROOMS_STATUS_VALIDATION_GC: 100, // Number of active rooms to validate per batch during status consistency GC
 	BATCH_SIZE_RECORDINGS: 100, // Process 100 recordings at a time to balance throughput and memory
 	BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL: 100, // Number of recording locks to retrieve from registry in each batch during orphaned locks GC
 	CONCURRENCY_STALE_RECORDINGS_GC: 20, // Concurrency limit for processing stale recordings garbage collection
