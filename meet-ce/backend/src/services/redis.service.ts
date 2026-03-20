@@ -150,15 +150,15 @@ export class RedisService extends EventEmitter {
 	 */
 	async getKeys(pattern: string): Promise<string[]> {
 		let cursor = '0';
-		const keys: Set<string> = new Set();
+		const keys: string[] = [];
 
 		do {
 			const [nextCursor, partialKeys] = await this.redisPublisher.scan(cursor, 'MATCH', pattern);
-			partialKeys.forEach((key) => keys.add(key));
+			keys.push(...partialKeys);
 			cursor = nextCursor;
 		} while (cursor !== '0');
 
-		return Array.from(keys);
+		return keys;
 	}
 
 	/**
