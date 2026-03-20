@@ -371,39 +371,55 @@ export class RecordingService {
 	async bulkDeleteRecordings(
 		recordingIds: string[]
 	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
-		const validRecordingIds: Set<string> = new Set<string>();
-		const deletedRecordings: Set<string> = new Set<string>();
-		const failedRecordings: Set<{ recordingId: string; error: string }> = new Set();
+		type BulkDeleteFailed = { recordingId: string; error: string };
 
-		// Process each recording: first check existence, then permissions, then deletability
-		for (const recordingId of recordingIds) {
-			try {
-				// Validate recording exists and user has permission to delete
-				const { status } = await this.validateRecordingAccess(recordingId, 'canDeleteRecordings', ['status']);
+		const settledResults = await runConcurrently<string, string>(
+			recordingIds,
+			async (recordingId) => {
+				try {
+					// Validate recording exists and user has permission to delete
+					const { status } = await this.validateRecordingAccess(recordingId, 'canDeleteRecordings', ['status']);
 
-				// Check if the recording can be deleted (must be stopped)
-				if (!RecordingHelper.canBeDeleted(status)) {
-					throw errorRecordingNotStopped(recordingId);
+					// Check if the recording can be deleted (must be stopped)
+					if (!RecordingHelper.canBeDeleted(status)) {
+						throw errorRecordingNotStopped(recordingId);
+					}
+
+					return recordingId;
+				} catch (error) {
+					this.logger.error(`BulkDelete: Error processing recording '${recordingId}': ${error}`);
+					const message = error instanceof OpenViduMeetError ? error.message : 'Unexpected error';
+					throw { recordingId, error: message } as BulkDeleteFailed;
 				}
+			},
+			{ concurrency: 10 }
+		);
 
-				validRecordingIds.add(recordingId);
-				deletedRecordings.add(recordingId);
-			} catch (error) {
-				this.logger.error(`BulkDelete: Error processing recording '${recordingId}': ${error}`);
-				failedRecordings.add({ recordingId, error: (error as OpenViduMeetError).message });
+		const validRecordingIds = new Set<string>();
+		const failedRecordings: BulkDeleteFailed[] = [];
+
+		settledResults.forEach((result) => {
+			if (result.status === 'fulfilled') {
+				validRecordingIds.add(result.value);
+			} else {
+				failedRecordings.push(result.reason as BulkDeleteFailed);
 			}
-		}
+		});
+
+		const deletedRecordings = Array.from(validRecordingIds);
 
 		if (validRecordingIds.size === 0) {
 			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
-			return { deleted: Array.from(deletedRecordings), failed: Array.from(failedRecordings) };
+			return { deleted: deletedRecordings, failed: failedRecordings };
 		}
+
+		const validRecordingIdsArray = Array.from(validRecordingIds);
 
 		// Delete recordings metadata from MongoDB and media files from blob storage
 		try {
 			await Promise.all([
-				this.recordingRepository.deleteByRecordingIds(Array.from(validRecordingIds)),
-				this.blobStorageService.deleteRecordingMediaBatch(Array.from(validRecordingIds))
+				this.recordingRepository.deleteByRecordingIds(validRecordingIdsArray),
+				this.blobStorageService.deleteRecordingMediaBatch(validRecordingIdsArray)
 			]);
 			this.logger.info(`BulkDelete: Successfully deleted ${validRecordingIds.size} recordings.`);
 		} catch (error) {
@@ -412,8 +428,8 @@ export class RecordingService {
 		}
 
 		return {
-			deleted: Array.from(deletedRecordings),
-			failed: Array.from(failedRecordings)
+			deleted: deletedRecordings,
+			failed: failedRecordings
 		};
 	}
 
