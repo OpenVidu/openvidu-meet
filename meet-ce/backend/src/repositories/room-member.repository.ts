@@ -1,16 +1,12 @@
-import type {
-	MeetRoomMember,
-	MeetRoomMemberField,
-	MeetRoomMemberPermissions} from '@openvidu-meet/typings';
-import {
-	SortOrder
-} from '@openvidu-meet/typings';
+import type { MeetRoomMember, MeetRoomMemberField, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type {
 	MeetRoomMemberDocument,
-	MeetRoomMemberDocumentOnlyField} from '../models/mongoose-schemas/room-member.schema.js';
+	MeetRoomMemberDocumentOnlyField
+} from '../models/mongoose-schemas/room-member.schema.js';
 import {
 	MEET_ROOM_MEMBER_DOCUMENT_ONLY_FIELDS,
 	MeetRoomMemberModel
@@ -21,7 +17,7 @@ import type {
 	MeetRoomMemberQueryWithFields,
 	ProjectedMeetRoomMember,
 	RoomMemberQuery,
-	RoomMemberQueryWithProjection,
+	RoomMemberQueryWithProjection
 } from '../types/room-member-projection.types.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -146,34 +142,20 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	}
 
 	/**
-	 * Gets all room IDs where a user is a member.
+	 * Gets all room IDs where a user is a member, optionally filtered by permission.
 	 *
 	 * @param memberId - The ID of the member (userId)
-	 * @returns Array of room IDs where the user is a member
+	 * @param permission - Optional permission key to filter memberships
+	 * @returns Array of room IDs where the user is a member and has the permission (if provided)
 	 */
-	async getRoomIdsByMemberId(memberId: string): Promise<string[]> {
-		const members = await this.findAll({ memberId }, ['roomId']);
-		return members.map((m) => m.roomId);
-	}
+	async getRoomIdsByMemberId(memberId: string, permission?: keyof MeetRoomMemberPermissions): Promise<string[]> {
+		const filter: QueryFilter<MeetRoomMemberDocument> = { memberId };
 
-	/**
-	 * Gets all room IDs where a member has a specific permission enabled.
-	 *
-	 * @param memberId - The ID of the member (userId)
-	 * @param permission - The permission key to check
-	 * @returns Array of room IDs where the member has the specified permission
-	 */
-	async getRoomIdsByMemberIdWithPermission(
-		memberId: string,
-		permission: keyof MeetRoomMemberPermissions
-	): Promise<string[]> {
-		const members = await this.findAll(
-			{
-				memberId,
-				[`effectivePermissions.${permission}`]: true
-			},
-			['roomId']
-		);
+		if (permission) {
+			filter[`effectivePermissions.${permission}`] = true;
+		}
+
+		const members = await this.findAll(filter, ['roomId']);
 		return members.map((member) => member.roomId);
 	}
 
@@ -190,10 +172,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing members array, pagination info, and optional next page token
 	 */
-	async findByRoomId(
-		roomId: string,
-		options?: RoomMemberQuery
-	): Promise<MeetRoomMemberPage<MeetRoomMember>>;
+	async findByRoomId(roomId: string, options?: RoomMemberQuery): Promise<MeetRoomMemberPage<MeetRoomMember>>;
 
 	async findByRoomId<const TFields extends readonly MeetRoomMemberField[]>(
 		roomId: string,

@@ -394,9 +394,10 @@ export class RoomService {
 		}
 
 		// Get room IDs where user is member with the specified permission (if provided)
-		const memberRoomIds = permission
-			? await this.roomMemberRepository.getRoomIdsByMemberIdWithPermission(user.userId, permission)
-			: await this.roomMemberRepository.getRoomIdsByMemberId(user.userId);
+		const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(
+			user.userId,
+			permission
+		);
 
 		let ownedRoomIds: string[] = [];
 
