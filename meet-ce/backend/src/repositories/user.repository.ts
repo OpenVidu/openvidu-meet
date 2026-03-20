@@ -1,7 +1,7 @@
 import type { MeetUser, MeetUserField, MeetUserFilters } from '@openvidu-meet/typings';
 import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import type { QueryFilter, Require_id } from 'mongoose';
+import type { QueryFilter } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type { MeetUserDocument, MeetUserDocumentOnlyField } from '../models/mongoose-schemas/user.schema.js';
 import { MEET_USER_DOCUMENT_ONLY_FIELDS, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
@@ -18,9 +18,9 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 		super(logger, MeetUserModel);
 	}
 
-	protected toDomain(dbObject: Require_id<MeetUserDocument> & { __v: number }): MeetUser {
-		const { _id, __v, schemaVersion, ...user } = dbObject;
-		(void _id, __v, schemaVersion);
+	protected toDomain(dbObject: MeetUserDocument): MeetUser {
+		const { schemaVersion, ...user } = dbObject;
+		void schemaVersion;
 		return user as MeetUser;
 	}
 

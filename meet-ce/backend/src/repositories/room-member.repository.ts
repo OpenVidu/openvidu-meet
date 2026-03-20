@@ -1,7 +1,7 @@
 import type { MeetRoomMember, MeetRoomMemberField, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import type { QueryFilter, Require_id } from 'mongoose';
+import type { QueryFilter } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type {
 	MeetRoomMemberDocument,
@@ -31,9 +31,9 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		super(logger, MeetRoomMemberModel);
 	}
 
-	protected toDomain(dbObject: Require_id<MeetRoomMemberDocument> & { __v: number }): MeetRoomMember {
-		const { _id, __v, schemaVersion, ...member } = dbObject;
-		(void _id, __v, schemaVersion);
+	protected toDomain(dbObject: MeetRoomMemberDocument): MeetRoomMember {
+		const { schemaVersion, ...member } = dbObject;
+		void schemaVersion;
 		return member as MeetRoomMember;
 	}
 

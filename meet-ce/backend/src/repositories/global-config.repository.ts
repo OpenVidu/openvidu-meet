@@ -1,6 +1,5 @@
 import type { GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import type { Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type {
 	MeetGlobalConfigDocument,
@@ -25,9 +24,9 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 		super(logger, MeetGlobalConfigModel);
 	}
 
-	protected toDomain(dbObject: Require_id<MeetGlobalConfigDocument> & { __v: number }): GlobalConfig {
-		const { _id, __v, schemaVersion, ...globalConfig } = dbObject;
-		(void _id, __v, schemaVersion);
+	protected toDomain(dbObject: MeetGlobalConfigDocument): GlobalConfig {
+		const { schemaVersion, ...globalConfig } = dbObject;
+		void schemaVersion;
 		return globalConfig as GlobalConfig;
 	}
 

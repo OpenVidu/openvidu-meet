@@ -26,7 +26,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param dbObject - The persisted object to transform
 	 * @returns The domain object
 	 */
-	protected abstract toDomain(dbObject: Require_id<TDocument> & { __v: number }): TDomain;
+	protected abstract toDomain(dbObject: TDocument): TDomain;
 
 	/**
 	 * Returns the list of fields that exist only in the persistence model (TDocument)
@@ -56,7 +56,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 		try {
 			const document = await this.model.create(data);
 			this.logger.debug(`Document created with ID: ${document._id}`);
-			return this.toDomain(document.toObject());
+			return this.toDomain(this.stripMetadataFromDocument(document.toObject()));
 		} catch (error) {
 			this.logger.error('Error creating document:', error);
 			throw error;
@@ -72,10 +72,8 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 */
 	protected async findOne(filter: QueryFilter<TDocument>, fields?: string[]): Promise<TDomain | null> {
 		try {
-			const projection = fields && fields.length > 0 ? fields.join(' ') : undefined;
-			const document = (await this.model.findOne(filter, projection).lean().exec()) as
-				| (Require_id<TDocument> & { __v: number })
-				| null;
+			const projection = this.buildProjection(fields);
+			const document = (await this.model.findOne(filter, projection).lean().exec()) as TDocument | null;
 			return document ? this.toDomain(document) : null;
 		} catch (error) {
 			this.logger.error('Error finding document with filter:', filter, error);
@@ -93,10 +91,8 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 */
 	protected async findAll(filter: QueryFilter<TDocument> = {}, fields?: string[]): Promise<TDomain[]> {
 		try {
-			const projection = fields && fields.length > 0 ? fields.join(' ') : undefined;
-			const documents = (await this.model.find(filter, projection).lean().exec()) as Array<
-				Require_id<TDocument> & { __v: number }
-			>;
+			const projection = this.buildProjection(fields);
+			const documents = (await this.model.find(filter, projection).lean().exec()) as TDocument[];
 			return documents.map((doc) => this.toDomain(doc));
 		} catch (error) {
 			this.logger.error('Error finding all documents with filter:', filter, error);
@@ -141,9 +137,9 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 		// Fetch one more than requested to check if there are more results
 		const limit = maxItems + 1;
 
-		const projection = fields && fields.length > 0 ? fields.join(' ') : undefined;
+		const projection = this.buildProjection(fields, true);
 		const documents = (await this.model.find(filter, projection).sort(sort).limit(limit).lean().exec()) as Array<
-			Require_id<TDocument> & { __v: number }
+			Require_id<TDocument> & { __v?: number }
 		>;
 
 		// Check if there are more results
@@ -151,7 +147,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 		const resultDocuments = hasMore ? documents.slice(0, maxItems) : documents;
 
 		// Transform documents to domain objects
-		const items = resultDocuments.map((doc) => this.toDomain(doc));
+		const items = resultDocuments.map((doc) => this.toDomain(this.stripMetadataFromDocument(doc)));
 
 		// Generate next page token (encode last document's sort field value and _id)
 		const nextToken =
@@ -193,16 +189,17 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 					returnDocument: 'after', // Return the document after replacement
 					runValidators: true, // Ensure update data is validated against schema
 					lean: true, // Return plain JavaScript object instead of Mongoose document
+					projection: { _id: 0, __v: 0 }, // Exclude persistence-only metadata fields
 					upsert: false // Do not create a new document if none matches the filter
 				})
-				.exec()) as (Require_id<TDocument> & { __v: number }) | null;
+				.exec()) as TDocument | null;
 
 			if (!document) {
 				this.logger.error('No document found to update with filter:', filter);
 				throw new Error('Document not found for update');
 			}
 
-			this.logger.debug(`Document with ID '${document._id}' updated`);
+			this.logger.debug('Document updated');
 			return this.toDomain(document);
 		} catch (error) {
 			this.logger.error('Error updating document:', error);
@@ -249,16 +246,17 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 					returnDocument: 'after', // Return the document after replacement
 					runValidators: true, // Validate replacement document against schema
 					lean: true, // Return plain JavaScript object instead of Mongoose document
+					projection: { _id: 0, __v: 0 }, // Exclude persistence-only metadata fields
 					upsert: false // Do not create a new document if none matches the filter
 				})
-				.exec()) as (Require_id<TDocument> & { __v: number }) | null;
+				.exec()) as TDocument | null;
 
 			if (!document) {
 				this.logger.error('No document found to replace with filter:', filter);
 				throw new Error('Document not found for replacement');
 			}
 
-			this.logger.debug(`Document with ID '${document._id}' replaced`);
+			this.logger.debug('Document replaced');
 			return this.toDomain(document);
 		} catch (error) {
 			this.logger.error('Error replacing document:', error);
@@ -340,6 +338,38 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	// ==========================================
 
 	/**
+	 * Builds query projection while excluding persistence-only metadata fields.
+	 *
+	 * @param fields - Optional list of fields to include
+	 * @param includeId - Whether to keep _id in the result (required for cursor pagination)
+	 */
+	private buildProjection(fields?: string[], includeId = false): Record<string, 0 | 1> {
+		if (fields && fields.length > 0) {
+			const sanitizedFields = fields.filter((field) => field !== '_id' && field !== '__v');
+			const projection: Record<string, 0 | 1> = Object.fromEntries(
+				sanitizedFields.map((field) => [field, 1] as const)
+			);
+
+			if (!includeId) {
+				projection._id = 0;
+			}
+
+			return projection;
+		}
+
+		return includeId ? { __v: 0 } : { _id: 0, __v: 0 };
+	}
+
+	/**
+	 * Removes persistence-only metadata fields from a document before mapping it to domain.
+	 */
+	private stripMetadataFromDocument(document: Require_id<TDocument> & { __v?: number }): TDocument {
+		const { _id, __v, ...domainDocument } = document;
+		(void _id, __v);
+		return domainDocument as TDocument;
+	}
+
+	/**
 	 * Builds a MongoDB update query from a partial object, converting undefined values to $unset operators.
 	 * Handles nested objects recursively.
 	 *
@@ -408,7 +438,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @param sortField - The field used for sorting
 	 * @returns Base64-encoded cursor token
 	 */
-	protected encodeCursor(document: Require_id<TDocument> & { __v: number }, sortField: string): string {
+	protected encodeCursor(document: Require_id<TDocument>, sortField: string): string {
 		const fieldValue = document[sortField as keyof Require_id<TDocument>];
 
 		const cursor: PaginationCursor = {

@@ -1,7 +1,7 @@
 import type { MeetRoom, MeetRoomField, ProjectedMeetRoom } from '@openvidu-meet/typings';
 import { MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import type { QueryFilter, Require_id } from 'mongoose';
+import type { QueryFilter } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type { MeetRoomDocument, MeetRoomDocumentOnlyField } from '../models/mongoose-schemas/room.schema.js';
 import { MEET_ROOM_DOCUMENT_ONLY_FIELDS, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
@@ -33,9 +33,9 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param dbObject - The MongoDB document representing a room
 	 * @returns Room with complete URLs
 	 */
-	protected toDomain(dbObject: Require_id<MeetRoomDocument> & { __v: number }): MeetRoom {
-		const { _id, __v, schemaVersion, ...room } = dbObject;
-		(void _id, __v, schemaVersion);
+	protected toDomain(dbObject: MeetRoomDocument): MeetRoom {
+		const { schemaVersion, ...room } = dbObject;
+		void schemaVersion;
 		return this.enrichRoomWithBaseUrls(room as MeetRoom);
 	}
 

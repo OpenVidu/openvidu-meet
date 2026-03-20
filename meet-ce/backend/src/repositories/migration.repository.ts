@@ -1,5 +1,4 @@
 import { inject, injectable } from 'inversify';
-import type { Require_id } from 'mongoose';
 import type { MeetMigration, MigrationName } from '../models/migration.model.js';
 import { MigrationStatus } from '../models/migration.model.js';
 import type { MeetMigrationDocument } from '../models/mongoose-schemas/migration.schema.js';
@@ -13,10 +12,8 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 		super(logger, MeetMigrationModel);
 	}
 
-	protected toDomain(dbObject: Require_id<MeetMigrationDocument> & { __v: number }): MeetMigration {
-		const { _id, __v, ...migration } = dbObject;
-		(void _id, __v);
-		return migration as MeetMigration;
+	protected toDomain(dbObject: MeetMigrationDocument): MeetMigration {
+		return dbObject as MeetMigration;
 	}
 
 	/**

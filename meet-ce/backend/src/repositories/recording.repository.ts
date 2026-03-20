@@ -1,7 +1,7 @@
 import type { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import type { QueryFilter, Require_id } from 'mongoose';
+import type { QueryFilter } from 'mongoose';
 import { uid as secureUid } from 'uid/secure';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type {
@@ -32,9 +32,9 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		super(logger, MeetRecordingModel);
 	}
 
-	protected toDomain(dbObject: Require_id<MeetRecordingDocument> & { __v: number }): MeetRecordingInfo {
-		const { _id, __v, schemaVersion, accessSecrets, ...recording } = dbObject;
-		(void _id, __v, schemaVersion, accessSecrets);
+	protected toDomain(dbObject: MeetRecordingDocument): MeetRecordingInfo {
+		const { schemaVersion, accessSecrets, ...recording } = dbObject;
+		(void schemaVersion, accessSecrets);
 		return recording as MeetRecordingInfo;
 	}
 
@@ -223,7 +223,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	async findAccessSecretsByRecordingId(
 		recordingId: string
 	): Promise<{ publicAccessSecret: string; privateAccessSecret: string } | null> {
-		const result = await this.model.findOne({ recordingId }).select('accessSecrets').exec();
+		const result = await this.model.findOne({ recordingId }).select({ _id: 0, accessSecrets: 1 }).exec();
 
 		if (!result || !result.accessSecrets) {
 			return null;
