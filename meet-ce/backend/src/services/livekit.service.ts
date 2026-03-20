@@ -1,4 +1,4 @@
-import type { AgentDispatch} from '@livekit/protocol';
+import type { AgentDispatch } from '@livekit/protocol';
 import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
 import type {
@@ -28,7 +28,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { chunkArray } from '../utils/array.utils.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LoggerService } from './logger.service.js';
 
 @injectable()
@@ -194,24 +194,25 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Deletes multiple LiveKit rooms in batches to avoid overwhelming the server.
+	 * Deletes multiple LiveKit rooms with bounded concurrency to avoid overwhelming the server.
 	 *
 	 * @param roomNames - Array of room names to delete
-	 * @param batchSize - Number of rooms to delete per batch (default: 10)
-	 * @returns Promise that resolves when all batches have been processed
+	 * @returns Promise that resolves when all room deletions have been processed
 	 */
-	async batchDeleteRooms(roomNames: string[], batchSize = 10): Promise<void> {
-		const batches = chunkArray(roomNames, batchSize);
-
-		for (const batch of batches) {
-			try {
-				await Promise.allSettled(batch.map((roomId) => this.deleteRoom(roomId)));
-				this.logger.debug(`Deleted LiveKit batch: ${batch.join(', ')}`);
-			} catch (error) {
-				this.logger.warn(`Error deleting LiveKit batch ${batch.join(', ')}: ${error}`);
-				// Continue with next batch even if this one fails
-			}
-		}
+	async batchDeleteRooms(roomNames: string[]): Promise<void> {
+		await runConcurrently<string, void>(
+			roomNames,
+			async (roomName) => {
+				try {
+					await this.deleteRoom(roomName);
+					this.logger.verbose(`Deleted LiveKit room '${roomName}' successfully.`);
+				} catch (error) {
+					this.logger.warn(`Error deleting LiveKit room '${roomName}': ${error}`);
+					// Continue with deletion of other rooms even if one fails
+				}
+			},
+			{ concurrency: 10, failFast: true }
+		);
 	}
 
 	/**

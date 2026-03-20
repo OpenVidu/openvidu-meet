@@ -46,8 +46,9 @@ import type {
 	MeetRoomMemberQueryWithFields,
 	ProjectedMeetRoomMember,
 	RoomMemberQuery,
-	RoomMemberQueryWithProjection,
+	RoomMemberQueryWithProjection
 } from '../types/room-member-projection.types.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -217,10 +218,7 @@ export class RoomMemberService {
 	 * @param filters - Filters for the query
 	 * @returns A promise that resolves to an object containing the members and pagination info
 	 */
-	async getAllRoomMembers(
-		roomId: string,
-		filters?: RoomMemberQuery
-	): Promise<MeetRoomMemberPage<MeetRoomMember>>;
+	async getAllRoomMembers(roomId: string, filters?: RoomMemberQuery): Promise<MeetRoomMemberPage<MeetRoomMember>>;
 
 	async getAllRoomMembers<const TFields extends readonly MeetRoomMemberField[]>(
 		roomId: string,
@@ -296,7 +294,6 @@ export class RoomMemberService {
 	async updateAllRoomMemberPermissions(roomId: string, roomRoles: MeetRoomRoles): Promise<void> {
 		this.logger.verbose(`Updating effective permissions for all members in room '${roomId}'`);
 
-		const BATCH_SIZE = 20; // Process members in smaller batches
 		let batchNumber = 0;
 		let nextPageToken: string | undefined;
 		let totalUpdated = 0;
@@ -310,7 +307,7 @@ export class RoomMemberService {
 				isTruncated,
 				nextPageToken: token
 			} = await this.getAllRoomMembers(roomId, {
-				maxItems: BATCH_SIZE,
+				maxItems: 100,
 				nextPageToken,
 				fields: ['memberId', 'baseRole', 'customPermissions']
 			});
@@ -322,35 +319,36 @@ export class RoomMemberService {
 			this.logger.verbose(`Processing batch ${batchNumber} with ${members.length} members in room '${roomId}'`);
 
 			// Update each member's effective permissions in this batch
-			const updatePromises = members.map(async (member) => {
-				try {
-					// Recalculate effective permissions based on new room roles
-					const effectivePermissions = this.computeEffectivePermissions(
-						roomRoles,
-						member.baseRole,
-						member.customPermissions
-					);
+			await runConcurrently(
+				members,
+				async (member) => {
+					try {
+						// Recalculate effective permissions based on new room roles
+						const effectivePermissions = this.computeEffectivePermissions(
+							roomRoles,
+							member.baseRole,
+							member.customPermissions
+						);
 
-					// Update the member with new effective permissions
-					await this.roomMemberRepository.updatePartial(roomId, member.memberId, {
-						effectivePermissions,
-						permissionsUpdatedAt: Date.now()
-					});
+						// Update the member with new effective permissions
+						await this.roomMemberRepository.updatePartial(roomId, member.memberId, {
+							effectivePermissions,
+							permissionsUpdatedAt: Date.now()
+						});
 
-					this.logger.verbose(
-						`Updated effective permissions for member '${member.memberId}' in room '${roomId}'`
-					);
-				} catch (error) {
-					this.logger.error(
-						`Failed to update effective permissions for member '${member.memberId}' in room '${roomId}':`,
-						error
-					);
-					// Continue with other members even if one fails
-				}
-			});
-
-			// Wait for all updates in this batch to complete before moving to the next batch
-			await Promise.all(updatePromises);
+						this.logger.verbose(
+							`Updated effective permissions for member '${member.memberId}' in room '${roomId}'`
+						);
+					} catch (error) {
+						this.logger.error(
+							`Failed to update effective permissions for member '${member.memberId}' in room '${roomId}':`,
+							error
+						);
+						// Continue with other members even if one fails
+					}
+				},
+				{ concurrency: 20, failFast: true }
+			);
 
 			totalUpdated += members.length;
 			nextPageToken = isTruncated ? token : undefined;
@@ -1008,46 +1006,51 @@ export class RoomMemberService {
 			return;
 		}
 
+		type KickOutcome = 'kicked' | 'skipped' | 'failed';
+
+		const kickResults = await runConcurrently<string, KickOutcome>(
+			memberIds,
+			async (memberId) => {
+				try {
+					await this.kickParticipantFromMeeting(roomId, memberId);
+					this.logger.verbose(`Kicked participant '${memberId}' from meeting in room '${roomId}'`);
+					return 'kicked';
+				} catch (error) {
+					const isParticipantNotFound = error instanceof OpenViduMeetError && error.statusCode === 404;
+
+					if (!isParticipantNotFound) {
+						// Real error, log warning
+						this.logger.warn(
+							`Failed to kick participant '${memberId}' from meeting in room '${roomId}':`,
+							error
+						);
+						return 'failed';
+					}
+
+					// Participant not in meeting, nothing to do
+					this.logger.verbose(
+						`Skipping participant '${memberId}' in room '${roomId}' because they are not in the meeting`
+					);
+					return 'skipped';
+				}
+			},
+			{ concurrency: batchSize, failFast: true }
+		);
+
 		let kickedCount = 0;
+		let skippedCount = 0;
 		let failedCount = 0;
 
-		// Process kicks in batches to avoid overwhelming the system
-		for (let i = 0; i < memberIds.length; i += batchSize) {
-			const batch = memberIds.slice(i, i + batchSize);
-
-			const results = await Promise.all(
-				batch.map(async (memberId) => {
-					try {
-						await this.kickParticipantFromMeeting(roomId, memberId);
-						this.logger.verbose(`Kicked participant '${memberId}' from meeting in room '${roomId}'`);
-						return true;
-					} catch (error) {
-						const isParticipantNotFound = error instanceof OpenViduMeetError && error.statusCode === 404;
-
-						if (!isParticipantNotFound) {
-							// Real error, log warning
-							this.logger.warn(
-								`Failed to kick participant '${memberId}' from meeting in room '${roomId}':`,
-								error
-							);
-							return false;
-						}
-
-						// Participant not in meeting, nothing to do
-						return true;
-					}
-				})
-			);
-
-			// Count only successful kicks and real failures (not "participant not found")
-			results.forEach((result) => {
-				if (result) {
-					kickedCount++;
-				} else {
-					failedCount++;
-				}
-			});
-		}
+		// Count outcomes separately to distinguish real kicks from skipped/non-present members.
+		kickResults.forEach((result) => {
+			if (result === 'kicked') {
+				kickedCount++;
+			} else if (result === 'skipped') {
+				skippedCount++;
+			} else {
+				failedCount++;
+			}
+		});
 
 		if (kickedCount > 0) {
 			this.logger.info(`Kicked ${kickedCount} participant(s) from meeting in room '${roomId}'`);
@@ -1055,6 +1058,10 @@ export class RoomMemberService {
 
 		if (failedCount > 0) {
 			this.logger.warn(`Failed to kick ${failedCount} participant(s) from meeting in room '${roomId}'`);
+		}
+
+		if (skippedCount > 0) {
+			this.logger.info(`Skipped ${skippedCount} participant(s) not present in meeting in room '${roomId}'`);
 		}
 	}
 

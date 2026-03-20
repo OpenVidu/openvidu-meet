@@ -1,4 +1,3 @@
-import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import type {
 	MeetRecordingConfig,
 	MeetRecordingEncodingOptions,
@@ -8,9 +7,10 @@ import type {
 	MeetRecordingLayout,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
+import { MeetRecordingStatus } from '@openvidu-meet/typings';
+import { inject, injectable } from 'inversify';
 import type { RoomCompositeOptions } from 'livekit-server-sdk';
 import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
-import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import type { Readable } from 'stream';
 import { uid } from 'uid';
@@ -44,6 +44,7 @@ import type {
 	MeetRecordingServiceQueryWithProjection,
 	ProjectedRecording
 } from '../types/recording-projection.types.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
@@ -435,32 +436,33 @@ export class RecordingService {
 					`Found ${activeRecordings.length} active recording(s) for room '${roomId}', stopping them first`
 				);
 
-				// Stop all active recordings
-				const stopPromises = activeRecordings.map(async (egressInfo) => {
-					const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
+				await runConcurrently(
+					activeRecordings,
+					async (egressInfo) => {
+						const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
 
-					try {
-						this.logger.info(`Stopping active recording '${recordingId}'`);
-						await this.livekitService.stopEgress(egressInfo.egressId);
-						// Wait a bit for recording to fully stop
-						await new Promise((resolve) => setTimeout(resolve, 1000));
+						try {
+							this.logger.info(`Stopping active recording '${recordingId}'`);
+							await this.livekitService.stopEgress(egressInfo.egressId);
+							// Wait a bit for recording to fully stop
+							await new Promise((resolve) => setTimeout(resolve, 1000));
 
-						// Check if the recording has stopped and update status if needed
-						const { status } = await this.getRecording(recordingId, ['status']);
+							// Check if the recording has stopped and update status if needed
+							const { status } = await this.getRecording(recordingId, ['status']);
 
-						if (status !== MeetRecordingStatus.COMPLETE) {
-							this.logger.warn(`Recording '${recordingId}' did not complete successfully`);
-							await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
+							if (status !== MeetRecordingStatus.COMPLETE) {
+								this.logger.warn(`Recording '${recordingId}' did not complete successfully`);
+								await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
+							}
+
+							this.logger.info(`Successfully stopped recording '${recordingId}'`);
+						} catch (error) {
+							this.logger.error(`Failed to stop recording '${recordingId}': ${error}`);
+							// Continue with deletion anyway
 						}
-
-						this.logger.info(`Successfully stopped recording '${recordingId}'`);
-					} catch (error) {
-						this.logger.error(`Failed to stop recording '${recordingId}': ${error}`);
-						// Continue with deletion anyway
-					}
-				});
-
-				await Promise.allSettled(stopPromises);
+					},
+					{ concurrency: 10, failFast: true }
+				);
 			}
 
 			// Get all recording IDs for the room

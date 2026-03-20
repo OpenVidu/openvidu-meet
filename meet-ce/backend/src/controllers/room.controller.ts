@@ -15,6 +15,7 @@ import type { MeetRoomDeletionOptions } from '../models/request-context.model.js
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
 import type { MeetRoomRepositoryQueryWithFields } from '../types/room-projection.types.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
 export const createRoom = async (req: Request, res: Response) => {
@@ -58,15 +59,17 @@ export const getRooms = async (_req: Request, res: Response) => {
 		const optimizedQueryParams: MeetRoomRepositoryQueryWithFields = { ...queryParams, fields: fieldsForQuery };
 
 		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(optimizedQueryParams);
-		const filteredRooms = await Promise.all(
-			rooms.map(async (room) => {
+		const filteredRooms = await runConcurrently(
+			rooms,
+			async (room) => {
 				if (!room.roomId) {
 					throw internalError('applying permission filtering to rooms without roomId');
 				}
 
 				const permissions = await roomService.getAuthenticatedRoomMemberPermissions(room.roomId);
 				return MeetRoomHelper.applyPermissionFiltering(room, permissions);
-			})
+			},
+			{ concurrency: 20, failFast: true }
 		);
 		const maxItems = Number(queryParams.maxItems);
 

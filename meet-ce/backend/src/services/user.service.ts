@@ -1,11 +1,5 @@
+import type { MeetUser, MeetUserDTO, MeetUserField, MeetUserFilters, MeetUserOptions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
-import type {
-	MeetUser,
-	MeetUserDTO,
-	MeetUserField,
-	MeetUserFilters,
-	MeetUserOptions
-} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
@@ -23,6 +17,7 @@ import {
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LoggerService } from './logger.service.js';
 import { RequestSessionService } from './request-session.service.js';
 
@@ -275,40 +270,34 @@ export class UserService {
 	 */
 	private async bulkCleanupUserResources(userIds: string[]): Promise<void> {
 		const adminUserId = MEET_ENV.INITIAL_ADMIN_USER;
-		const USER_BATCH_SIZE = 10; // Process users in batches of 10
-		const ROOM_UPDATE_BATCH_SIZE = 50; // Update rooms in batches of 50
 
-		// Process users in batches
-		for (let i = 0; i < userIds.length; i += USER_BATCH_SIZE) {
-			const userBatch = userIds.slice(i, i + USER_BATCH_SIZE);
+		const userCleanupResults = await runConcurrently(
+			userIds,
+			async (userId) => {
+				const [, ownedRooms] = await Promise.all([
+					this.roomMemberRepository.deleteAllByMemberId(userId),
+					this.roomRepository.findByOwner(userId, ['roomId'])
+				]);
 
-			// Delete all memberships and fetch all owned rooms for this batch in parallel
-			const [, ownedRoomsPerUser] = await Promise.all([
-				// Delete memberships for all users in this batch in parallel
-				Promise.all(userBatch.map((userId) => this.roomMemberRepository.deleteAllByMemberId(userId))),
-				// Fetch owned rooms for all users in this batch in parallel
-				Promise.all(userBatch.map((userId) => this.roomRepository.findByOwner(userId, ['roomId'])))
-			]);
+				return ownedRooms;
+			},
+			{ concurrency: 10, failFast: true }
+		);
 
-			// Flatten all owned rooms from this batch
-			const batchOwnedRooms = ownedRoomsPerUser.flat();
+		const allOwnedRooms = userCleanupResults.flat();
 
-			if (batchOwnedRooms.length > 0) {
-				// Update rooms in sub-batches to avoid overwhelming the database
-				for (let j = 0; j < batchOwnedRooms.length; j += ROOM_UPDATE_BATCH_SIZE) {
-					const roomBatch = batchOwnedRooms.slice(j, j + ROOM_UPDATE_BATCH_SIZE);
+		if (allOwnedRooms.length > 0) {
+			await runConcurrently(
+				allOwnedRooms,
+				async (room) => {
+					await this.roomRepository.updatePartial(room.roomId, { owner: adminUserId });
+				},
+				{ concurrency: 50, failFast: true }
+			);
 
-					await Promise.all(
-						roomBatch.map((room) => {
-							return this.roomRepository.updatePartial(room.roomId, { owner: adminUserId });
-						})
-					);
-				}
-
-				this.logger.info(
-					`Processed batch: Transferred ownership of ${batchOwnedRooms.length} room(s) from ${userBatch.length} user(s) to admin '${adminUserId}'`
-				);
-			}
+			this.logger.info(
+				`Transferred ownership of ${allOwnedRooms.length} room(s) from ${userIds.length} user(s) to admin '${adminUserId}'`
+			);
 		}
 
 		this.logger.info(`Completed cleanup for ${userIds.length} user(s)`);

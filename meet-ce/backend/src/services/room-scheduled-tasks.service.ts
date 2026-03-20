@@ -3,6 +3,7 @@ import type { Room } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LivekitWebhookService } from './livekit-webhook.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -98,7 +99,6 @@ export class RoomScheduledTasksService {
 			const roomsToCleanup = activeRooms.filter((room) => {
 				const exists = roomExistenceMap.get(room.roomId);
 				return !exists;
-
 			});
 
 			if (roomsToCleanup.length === 0) {
@@ -108,18 +108,18 @@ export class RoomScheduledTasksService {
 
 			this.logger.warn(`Found ${roomsToCleanup.length} rooms active in DB but not in LiveKit. Cleaning up...`);
 
-			const BATCH_SIZE = 10;
-
-			for (let i = 0; i < roomsToCleanup.length; i += BATCH_SIZE) {
-				const batch = roomsToCleanup.slice(i, i + BATCH_SIZE);
-				await Promise.all(
-					batch.map((room) =>
-						this.livekitWebhookService
-							.handleRoomFinished({ name: room.roomId } as unknown as Room)
-							.catch((error) => this.logger.error(`Error cleaning up room '${room.roomId}':`, error))
-					)
-				);
-			}
+			await runConcurrently(
+				roomsToCleanup,
+				async (room) => {
+					try {
+						await this.livekitWebhookService.handleRoomFinished({ name: room.roomId } as unknown as Room);
+					} catch (error) {
+						this.logger.error(`Error cleaning up room '${room.roomId}':`, error);
+						// Continue with other rooms even if one fails
+					}
+				},
+				{ concurrency: 10, failFast: true }
+			);
 		} catch (error) {
 			this.logger.error('Error checking inconsistent rooms:', error);
 		}

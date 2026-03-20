@@ -1,10 +1,11 @@
-import type { Bucket, File, GetFilesOptions} from '@google-cloud/storage';
+import type { Bucket, File, GetFilesOptions } from '@google-cloud/storage';
 import { Storage } from '@google-cloud/storage';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
+import { runConcurrently } from '../../../../utils/concurrency.utils.js';
 import { LoggerService } from '../../../logger.service.js';
 
 @injectable()
@@ -86,12 +87,14 @@ export class GCSService {
 			);
 
 			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
-			const deletePromises = keys.map((key) => {
-				const file = bucketObj.file(this.getFullKey(key));
-				return file.delete();
-			});
-
-			await Promise.all(deletePromises);
+			await runConcurrently(
+				keys,
+				async (key) => {
+					const file = bucketObj.file(this.getFullKey(key));
+					await file.delete();
+				},
+				{ concurrency: 20, failFast: true }
+			);
 
 			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
 			this.logger.info(`Successfully deleted ${keys.length} objects from bucket '${bucket}'`);

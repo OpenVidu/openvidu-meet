@@ -1,4 +1,4 @@
-import type { MeetRecordingInfo} from '@openvidu-meet/typings';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
@@ -7,6 +7,7 @@ import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import type { RedisLock } from './mutex.service.js';
@@ -91,21 +92,19 @@ export class RecordingScheduledTasksService {
 			const lockPrefix = lockPattern.replace('*', '');
 			const roomIds = recordingLocks.map((lock) => lock.resources[0].replace(lockPrefix, ''));
 
-			const BATCH_SIZE = 10;
-
-			for (let i = 0; i < roomIds.length; i += BATCH_SIZE) {
-				const batch = roomIds.slice(i, i + BATCH_SIZE);
-
-				const results = await Promise.allSettled(
-					batch.map((roomId) => this.evaluateAndReleaseOrphanedLock(roomId, lockPrefix))
-				);
-
-				results.forEach((result, index) => {
-					if (result.status === 'rejected') {
-						this.logger.error(`Failed to process lock for room ${batch[index]}:`, result.reason);
+			await runConcurrently(
+				roomIds,
+				async (roomId) => {
+					try {
+						await this.evaluateAndReleaseOrphanedLock(roomId, lockPrefix);
+						this.logger.verbose(`Processed orphaned lock for room ${roomId} successfully.`);
+					} catch (error) {
+						this.logger.error(`Failed to process lock for room ${roomId}:`, error);
+						// Continue processing other locks even if one fails
 					}
-				});
-			}
+				},
+				{ concurrency: 10, failFast: true }
+			);
 		} catch (error) {
 			this.logger.error('Error retrieving recording locks:', error);
 		}
@@ -220,29 +219,27 @@ export class RecordingScheduledTasksService {
 
 			this.logger.debug(`Found ${activeRecordings.length} active recordings in database to check`);
 
-			// Process in batches to avoid overwhelming the system
-			const BATCH_SIZE = 10;
 			let totalProcessed = 0;
 			let totalAborted = 0;
 
-			for (let i = 0; i < activeRecordings.length; i += BATCH_SIZE) {
-				const batch = activeRecordings.slice(i, i + BATCH_SIZE);
+			const results = await runConcurrently<MeetRecordingInfo, boolean>(
+				activeRecordings,
+				(recording) => this.evaluateAndAbortStaleRecording(recording),
+				{ concurrency: 10 }
+			);
 
-				const results = await Promise.allSettled(
-					batch.map((recording: MeetRecordingInfo) => this.evaluateAndAbortStaleRecording(recording))
-				);
+			results.forEach((result: PromiseSettledResult<boolean>, index: number) => {
+				totalProcessed++;
 
-				results.forEach((result: PromiseSettledResult<boolean>, index: number) => {
-					totalProcessed++;
-
-					if (result.status === 'fulfilled' && result.value) {
-						totalAborted++;
-					} else if (result.status === 'rejected') {
-						const recordingId = batch[index].recordingId;
-						this.logger.error(`Failed to process recording ${recordingId}:`, result.reason);
-					}
-				});
-			}
+				if (result.status === 'fulfilled' && result.value) {
+					totalAborted++;
+				} else if (result.status === 'rejected') {
+					this.logger.error(
+						`Failed to process recording ${activeRecordings[index].recordingId}:`,
+						result.reason
+					);
+				}
+			});
 
 			this.logger.info(
 				`Stale recordings cleanup completed: processed=${totalProcessed}, aborted=${totalAborted}`

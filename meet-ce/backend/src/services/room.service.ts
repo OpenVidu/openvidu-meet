@@ -46,8 +46,9 @@ import type {
 	MeetRoomPage,
 	MeetRoomRepositoryQuery,
 	MeetRoomRepositoryQueryWithFields,
-	MeetRoomRepositoryQueryWithProjection,
+	MeetRoomRepositoryQueryWithProjection
 } from '../types/room-projection.types.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -724,13 +725,11 @@ export class RoomService {
 	 * @param roomsOrRoomIds - Array of room identifiers to be deleted.
 	 * If an array of MeetRoom objects is provided, the roomId will be extracted from each object.
 	 * @param options - Deletion options including policies for handling active meetings and recordings
-	 * @param batchSize - Number of rooms to process in each batch (default: 10)
 	 * @returns Promise with arrays of successful and failed deletions
 	 */
 	async bulkDeleteMeetRooms(
 		roomsOrRoomIds: string[] | MeetRoom[],
-		options: MeetRoomDeletionOptions = {},
-		batchSize = 10
+		options: MeetRoomDeletionOptions = {}
 	): Promise<{
 		successful: {
 			roomId: string;
@@ -754,106 +753,79 @@ export class RoomService {
 			`Starting bulk deletion of ${roomsOrRoomIds.length} rooms with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
 		);
 
-		const successful: {
+		type SuccessfulDelete = {
 			roomId: string;
 			successCode: MeetRoomDeletionSuccessCode;
 			message: string;
 			room?: MeetRoom;
-		}[] = [];
-		const failed: {
+		};
+		type FailedDelete = {
 			roomId: string;
 			error: string;
 			message: string;
-		}[] = [];
+		};
 
-		// Process rooms in batches
-		for (let i = 0; i < roomsOrRoomIds.length; i += batchSize) {
-			const batch = roomsOrRoomIds.slice(i, i + batchSize);
-			const batchNumber = Math.floor(i / batchSize) + 1;
-			const totalBatches = Math.ceil(roomsOrRoomIds.length / batchSize);
+		const settledResults = await runConcurrently<string | MeetRoom, SuccessfulDelete>(
+			roomsOrRoomIds,
+			async (room) => {
+				const roomId = typeof room === 'string' ? room : room.roomId;
 
-			this.logger.debug(`Processing batch ${batchNumber}/${totalBatches} with ${batch.length} rooms`);
+				try {
+					const user = this.requestSessionService.getAuthenticatedUser();
 
-			// Process all rooms in the current batch concurrently
-			const batchResults = await Promise.all(
-				batch.map(async (room) => {
-					const roomId = typeof room === 'string' ? room : room.roomId;
+					// !FIXME: This permission check is necessary for HTTP requests,
+					// !but it is not ideal to have it here in the service layer,
+					// !as this method can also be called from non-HTTP contexts (e.g., scheduled jobs for auto-deletion, background jobs for recording management, etc).
+					// !This should be refactored and moved to a controller or a separate layer responsible for access control for HTTP requests.
+					// Check permissions if user is authenticated and not an admin
+					if (user && user.role !== MeetUserRole.ADMIN) {
+						const isOwner = await this.isRoomOwner(roomId, user.userId);
 
-					try {
-						const user = this.requestSessionService.getAuthenticatedUser();
-
-						// !FIXME: This permission check is necessary for HTTP requests,
-						// !but it is not ideal to have it here in the service layer,
-						// !as this method can also be called from non-HTTP contexts (e.g., scheduled jobs for auto-deletion, background jobs for recording management, etc).
-						// !This should be refactored and moved to a controller or a separate layer responsible for access control for HTTP requests.
-						// Check permissions if user is authenticated and not an admin
-						if (user && user.role !== MeetUserRole.ADMIN) {
-							const isOwner = await this.isRoomOwner(roomId, user.userId);
-
-							if (!isOwner) {
-								throw errorInsufficientPermissions();
-							}
+						if (!isOwner) {
+							throw errorInsufficientPermissions();
 						}
-
-						let result;
-
-						if (typeof room === 'string') {
-							result = await this.deleteMeetRoom(roomId, { withMeeting, withRecordings, fields });
-						} else {
-							// Extract deletion policies from the room object
-							result = await this.deleteMeetRoom(roomId, {
-								withMeeting: room.autoDeletionPolicy?.withMeeting,
-								withRecordings: room.autoDeletionPolicy?.withRecordings,
-								fields
-							});
-						}
-
-						this.logger.info(result.message);
-						return {
-							roomId,
-							success: true,
-							result
-						};
-					} catch (error) {
-						return {
-							roomId,
-							success: false,
-							error
-						};
 					}
-				})
-			);
 
-			// Process batch results
-			batchResults.forEach((result) => {
-				const { roomId, success, result: deletionResult, error } = result;
+					const deletionResult =
+						typeof room === 'string'
+							? await this.deleteMeetRoom(roomId, { withMeeting, withRecordings, fields })
+							: await this.deleteMeetRoom(roomId, {
+									withMeeting: room.autoDeletionPolicy?.withMeeting,
+									withRecordings: room.autoDeletionPolicy?.withRecordings,
+									fields
+								});
+					this.logger.info(deletionResult.message);
 
-				if (success) {
-					successful.push({
+					return {
 						roomId,
-						successCode: deletionResult!.successCode,
-						message: deletionResult!.message,
-						room: deletionResult!.room
-					});
-				} else {
-					let meetError: OpenViduMeetError;
+						successCode: deletionResult.successCode,
+						message: deletionResult.message,
+						room: deletionResult.room
+					};
+				} catch (error) {
+					const meetError =
+						error instanceof OpenViduMeetError ? error : internalError(`deleting room '${roomId}'`);
 
-					if (error instanceof OpenViduMeetError) {
-						meetError = error;
-					} else {
-						meetError = internalError(`deleting room '${roomId}'`);
-					}
-
-					failed.push({
+					throw {
 						roomId,
 						error: meetError.name,
 						message: meetError.message
-					});
+					} as FailedDelete;
 				}
-			});
+			},
+			{ concurrency: 10 }
+		);
 
-			this.logger.debug(`Batch ${batchNumber} completed`);
-		}
+		const successful: SuccessfulDelete[] = [];
+		const failed: FailedDelete[] = [];
+
+		settledResults.forEach((result) => {
+			if (result.status === 'fulfilled') {
+				successful.push(result.value);
+			} else {
+				failed.push(result.reason as FailedDelete);
+			}
+		});
 
 		this.logger.info(
 			`Bulk deletion completed: ${successful.length}/${roomsOrRoomIds.length} successful, ${failed.length}/${roomsOrRoomIds.length} failed`

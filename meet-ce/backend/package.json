@@ -60,6 +60,7 @@
 		"@google-cloud/storage": "7.19.0",
 		"@openvidu-meet/typings": "workspace:*",
 		"@sesamecare-oss/redlock": "1.4.0",
+		"@supercharge/promise-pool": "3.3.0",
 		"archiver": "7.0.1",
 		"bcrypt": "5.1.1",
 		"body-parser": "2.2.2",
