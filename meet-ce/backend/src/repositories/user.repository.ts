@@ -1,15 +1,10 @@
-import type { MeetUser, MeetUserField, MeetUserFilters} from '@openvidu-meet/typings';
+import type { MeetUser, MeetUserField, MeetUserFilters } from '@openvidu-meet/typings';
 import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter, Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import type {
-	MeetUserDocument,
-	MeetUserDocumentOnlyField} from '../models/mongoose-schemas/user.schema.js';
-import {
-	MEET_USER_DOCUMENT_ONLY_FIELDS,
-	MeetUserModel
-} from '../models/mongoose-schemas/user.schema.js';
+import type { MeetUserDocument, MeetUserDocumentOnlyField } from '../models/mongoose-schemas/user.schema.js';
+import { MEET_USER_DOCUMENT_ONLY_FIELDS, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -39,7 +34,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @param user - The user data to create
 	 * @returns The created user
 	 */
-	async create(user: MeetUser): Promise<MeetUser> {
+	create(user: MeetUser): Promise<MeetUser> {
 		const document: MeetUserDocument = {
 			...user,
 			schemaVersion: INTERNAL_CONFIG.USER_SCHEMA_VERSION
@@ -55,7 +50,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @returns The updated user
 	 * @throws Error if user not found
 	 */
-	async updatePartial(userId: string, fieldsToUpdate: Partial<MeetUser>): Promise<MeetUser> {
+	updatePartial(userId: string, fieldsToUpdate: Partial<MeetUser>): Promise<MeetUser> {
 		return this.updatePartialOne({ userId }, fieldsToUpdate);
 	}
 
@@ -66,7 +61,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @returns The updated user
 	 * @throws Error if user not found
 	 */
-	async replace(user: MeetUser): Promise<MeetUser> {
+	replace(user: MeetUser): Promise<MeetUser> {
 		return this.replaceOne({ userId: user.userId }, user);
 	}
 
@@ -77,7 +72,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @param fields - Array of field names to include in the result
 	 * @returns The user or null if not found
 	 */
-	async findByUserId(userId: string, fields?: MeetUserField[]): Promise<MeetUser | null> {
+	findByUserId(userId: string, fields?: MeetUserField[]): Promise<MeetUser | null> {
 		return this.findOne({ userId }, fields);
 	}
 
@@ -88,7 +83,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @param fields - Optional array of field names to include in the result
 	 * @returns Array of found users
 	 */
-	async findByUserIds(userIds: string[], fields?: MeetUserField[]): Promise<MeetUser[]> {
+	findByUserIds(userIds: string[], fields?: MeetUserField[]): Promise<MeetUser[]> {
 		return this.findAll({ userId: { $in: userIds } }, fields);
 	}
 
@@ -159,8 +154,8 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @param userId - The unique user identifier
 	 * @throws Error if the user was not found or could not be deleted
 	 */
-	async deleteByUserId(userId: string): Promise<void> {
-		await this.deleteOne({ userId });
+	deleteByUserId(userId: string): Promise<void> {
+		return this.deleteOne({ userId });
 	}
 
 	/**
@@ -169,7 +164,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @param userIds - Array of user identifiers
 	 * @throws Error if no users were found or could not be deleted
 	 */
-	async deleteByUserIds(userIds: string[]): Promise<void> {
-		await this.deleteMany({ userId: { $in: userIds } });
+	deleteByUserIds(userIds: string[]): Promise<void> {
+		return this.deleteMany({ userId: { $in: userIds } });
 	}
 }

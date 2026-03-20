@@ -4,7 +4,8 @@ import type { Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type {
 	MeetGlobalConfigDocument,
-	MeetGlobalConfigDocumentOnlyField} from '../models/mongoose-schemas/global-config.schema.js';
+	MeetGlobalConfigDocumentOnlyField
+} from '../models/mongoose-schemas/global-config.schema.js';
 import {
 	MEET_GLOBAL_CONFIG_DOCUMENT_ONLY_FIELDS,
 	MeetGlobalConfigModel
@@ -43,7 +44,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 * @param config - The global configuration data to create
 	 * @returns The created global configuration
 	 */
-	async create(config: GlobalConfig): Promise<GlobalConfig> {
+	create(config: GlobalConfig): Promise<GlobalConfig> {
 		const document: MeetGlobalConfigDocument = {
 			...config,
 			schemaVersion: INTERNAL_CONFIG.GLOBAL_CONFIG_SCHEMA_VERSION
@@ -60,7 +61,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 * @returns The updated global configuration
 	 * @throws Error if no config exists
 	 */
-	async replace(config: GlobalConfig): Promise<GlobalConfig> {
+	replace(config: GlobalConfig): Promise<GlobalConfig> {
 		// Update the first document in the collection (there should only be one)
 		return this.replaceOne({}, config);
 	}
@@ -74,7 +75,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 * @returns The updated global configuration
 	 * @throws Error if no config exists
 	 */
-	async updatePartial(fieldsToUpdate: Partial<GlobalConfig>): Promise<GlobalConfig> {
+	updatePartial(fieldsToUpdate: Partial<GlobalConfig>): Promise<GlobalConfig> {
 		return this.updatePartialOne({}, fieldsToUpdate);
 	}
 
@@ -84,7 +85,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 * @param fields - Optional array of field names to include in the result
 	 * @returns The global configuration or null if not found
 	 */
-	async get(fields?: (keyof GlobalConfig)[]): Promise<GlobalConfig | null> {
+	get(fields?: (keyof GlobalConfig)[]): Promise<GlobalConfig | null> {
 		// Get the first (and only) document from the collection
 		return this.findOne({}, fields);
 	}
@@ -95,7 +96,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	 * WARNING: This will remove the global config document from the database.
 	 * Use with caution.
 	 */
-	async delete(): Promise<void> {
-		await this.deleteMany({});
+	delete(): Promise<void> {
+		return this.deleteMany({});
 	}
 }

@@ -54,7 +54,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param recording - The recording information to create (excluding access secrets)
 	 * @returns The created recording (without access secrets)
 	 */
-	async create(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
+	create(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
 		const document: MeetRecordingDocument = {
 			...recording,
 			accessSecrets: {
@@ -74,7 +74,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @returns The updated recording (without access secrets)
 	 * @throws Error if recording not found
 	 */
-	async updatePartial(recordingId: string, fieldsToUpdate: Partial<MeetRecordingInfo>): Promise<MeetRecordingInfo> {
+	updatePartial(recordingId: string, fieldsToUpdate: Partial<MeetRecordingInfo>): Promise<MeetRecordingInfo> {
 		return this.updatePartialOne({ recordingId }, fieldsToUpdate);
 	}
 
@@ -85,7 +85,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @returns The updated recording (without access secrets)
 	 * @throws Error if recording not found
 	 */
-	async replace(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
+	replace(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
 		return this.replaceOne({ recordingId: recording.recordingId }, recording);
 	}
 
@@ -96,19 +96,19 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param fields - Array of field names to include in the result
 	 * @returns The recording (without access secrets), or null if not found
 	 */
-	async findByRecordingId(recordingId: string): Promise<MeetRecordingInfo | null>;
+	findByRecordingId(recordingId: string): Promise<MeetRecordingInfo | null>;
 
-	async findByRecordingId<const TFields extends readonly MeetRecordingField[]>(
+	findByRecordingId<const TFields extends readonly MeetRecordingField[]>(
 		recordingId: string,
 		fields: TFields
 	): Promise<ProjectedRecording<TFields> | null>;
 
-	async findByRecordingId(
+	findByRecordingId(
 		recordingId: string,
 		fields?: readonly MeetRecordingField[]
 	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo> | null>;
 
-	async findByRecordingId(
+	findByRecordingId(
 		recordingId: string,
 		fields?: readonly MeetRecordingField[]
 	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo> | null> {
@@ -209,8 +209,8 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param roomId - The ID of the room
 	 * @returns Array of recordings for the specified room
 	 */
-	async findAllByRoomId(roomId: string): Promise<MeetRecordingInfo[]> {
-		return await this.findAll({ roomId });
+	findAllByRoomId(roomId: string): Promise<MeetRecordingInfo[]> {
+		return this.findAll({ roomId });
 	}
 
 	/**

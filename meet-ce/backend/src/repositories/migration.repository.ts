@@ -1,8 +1,8 @@
 import { inject, injectable } from 'inversify';
 import type { Require_id } from 'mongoose';
-import type { MeetMigration, MigrationName} from '../models/migration.model.js';
+import type { MeetMigration, MigrationName } from '../models/migration.model.js';
 import { MigrationStatus } from '../models/migration.model.js';
-import type { MeetMigrationDocument} from '../models/mongoose-schemas/migration.schema.js';
+import type { MeetMigrationDocument } from '../models/mongoose-schemas/migration.schema.js';
 import { MeetMigrationModel } from '../models/mongoose-schemas/migration.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
@@ -64,7 +64,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 	 * @param metadata - Optional metadata about the migration execution
 	 * @returns The updated migration document
 	 */
-	async markAsCompleted(name: MigrationName, metadata?: Record<string, unknown>): Promise<MeetMigration> {
+	markAsCompleted(name: MigrationName, metadata?: Record<string, unknown>): Promise<MeetMigration> {
 		return this.updatePartialOne(
 			{ name },
 			{
@@ -85,7 +85,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 	 * @param error - Error message describing the failure
 	 * @returns The updated migration document
 	 */
-	async markAsFailed(name: MigrationName, error: string): Promise<MeetMigration> {
+	markAsFailed(name: MigrationName, error: string): Promise<MeetMigration> {
 		return this.updatePartialOne(
 			{ name },
 			{

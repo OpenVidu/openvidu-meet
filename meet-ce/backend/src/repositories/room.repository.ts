@@ -56,7 +56,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param room - The room data to create
 	 * @returns The created room with enriched URLs
 	 */
-	async create(room: MeetRoom): Promise<MeetRoom> {
+	create(room: MeetRoom): Promise<MeetRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room) as MeetRoom;
 		const document: MeetRoomDocument = {
 			...normalizedRoom,
@@ -73,7 +73,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @returns The updated room with enriched URLs
 	 * @throws Error if room not found
 	 */
-	async updatePartial(roomId: string, fieldsToUpdate: Partial<MeetRoom>): Promise<MeetRoom> {
+	updatePartial(roomId: string, fieldsToUpdate: Partial<MeetRoom>): Promise<MeetRoom> {
 		const normalizedFieldsToUpdate = this.normalizeRoomForStorage(fieldsToUpdate);
 		return this.updatePartialOne({ roomId }, normalizedFieldsToUpdate);
 	}
@@ -86,7 +86,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @returns The updated room with enriched URLs
 	 * @throws Error if room not found
 	 */
-	async replace(room: MeetRoom): Promise<MeetRoom> {
+	replace(room: MeetRoom): Promise<MeetRoom> {
 		const normalizedRoom = this.normalizeRoomForStorage(room) as MeetRoom;
 		return this.replaceOne({ roomId: room.roomId }, normalizedRoom);
 	}
@@ -99,19 +99,16 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param fields - Array of field names to include in the result
 	 * @returns The room or null if not found
 	 */
-	async findByRoomId(roomId: string): Promise<MeetRoom | null>;
+	findByRoomId(roomId: string): Promise<MeetRoom | null>;
 
-	async findByRoomId<const TFields extends readonly MeetRoomField[]>(
+	findByRoomId<const TFields extends readonly MeetRoomField[]>(
 		roomId: string,
 		fields: TFields
 	): Promise<ProjectedMeetRoom<TFields> | null>;
 
-	async findByRoomId(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom> | null>;
+	findByRoomId(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom> | null>;
 
-	async findByRoomId(
-		roomId: string,
-		fields?: readonly MeetRoomField[]
-	): Promise<MeetRoom | Partial<MeetRoom> | null> {
+	findByRoomId(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom> | null> {
 		return this.findOne({ roomId }, fields as string[]) as Promise<MeetRoom | Partial<MeetRoom> | null>;
 	}
 
@@ -123,14 +120,14 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param fields - Array of field names to include in the result
 	 * @returns Array of rooms owned by the user
 	 */
-	async findByOwner(owner: string): Promise<MeetRoom[]>;
+	findByOwner(owner: string): Promise<MeetRoom[]>;
 
-	async findByOwner<const TFields extends readonly MeetRoomField[]>(
+	findByOwner<const TFields extends readonly MeetRoomField[]>(
 		owner: string,
 		fields: TFields
 	): Promise<ProjectedMeetRoom<TFields>[]>;
 
-	async findByOwner(owner: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom[] | Partial<MeetRoom>[]> {
+	findByOwner(owner: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom[] | Partial<MeetRoom>[]> {
 		return this.findAll({ owner }, fields as string[]) as Promise<MeetRoom[] | Partial<MeetRoom>[]>;
 	}
 
@@ -299,8 +296,8 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param roomId - The unique room identifier
 	 * @throws Error if the room was not found or could not be deleted
 	 */
-	async deleteByRoomId(roomId: string): Promise<void> {
-		await this.deleteOne({ roomId });
+	deleteByRoomId(roomId: string): Promise<void> {
+		return this.deleteOne({ roomId });
 	}
 
 	/**
@@ -309,21 +306,21 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param roomIds - Array of room identifiers
 	 * @throws Error if no rooms were found or could not be deleted
 	 */
-	async deleteByRoomIds(roomIds: string[]): Promise<void> {
-		await this.deleteMany({ roomId: { $in: roomIds } });
+	deleteByRoomIds(roomIds: string[]): Promise<void> {
+		return this.deleteMany({ roomId: { $in: roomIds } });
 	}
 
 	/**
 	 * Counts the total number of rooms.
 	 */
-	async countTotal(): Promise<number> {
+	countTotal(): Promise<number> {
 		return this.count();
 	}
 
 	/**
 	 * Counts the number of rooms with active meetings.
 	 */
-	async countActiveRooms(): Promise<number> {
+	countActiveRooms(): Promise<number> {
 		return this.count({ status: MeetRoomStatus.ACTIVE_MEETING });
 	}
 

@@ -2,13 +2,8 @@ import type { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { Require_id } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import type {
-	MeetApiKeyDocument,
-	MeetApiKeyDocumentOnlyField} from '../models/mongoose-schemas/api-key.schema.js';
-import {
-	MEET_API_KEY_DOCUMENT_ONLY_FIELDS,
-	MeetApiKeyModel
-} from '../models/mongoose-schemas/api-key.schema.js';
+import type { MeetApiKeyDocument, MeetApiKeyDocumentOnlyField } from '../models/mongoose-schemas/api-key.schema.js';
+import { MEET_API_KEY_DOCUMENT_ONLY_FIELDS, MeetApiKeyModel } from '../models/mongoose-schemas/api-key.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -34,7 +29,7 @@ export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocum
 	/**
 	 * Creates a new API key.
 	 */
-	async create(apiKey: MeetApiKey): Promise<MeetApiKey> {
+	create(apiKey: MeetApiKey): Promise<MeetApiKey> {
 		const document: MeetApiKeyDocument = {
 			...apiKey,
 			schemaVersion: INTERNAL_CONFIG.API_KEY_SCHEMA_VERSION
@@ -45,7 +40,7 @@ export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocum
 	/**
 	 * Returns all API keys.
 	 */
-	async findAll(): Promise<MeetApiKey[]> {
+	findAll(): Promise<MeetApiKey[]> {
 		return super.findAll();
 	}
 
