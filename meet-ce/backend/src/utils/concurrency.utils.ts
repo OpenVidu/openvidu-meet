@@ -70,7 +70,7 @@ export async function runConcurrently<T, R>(
 			.handleError(async (error) => {
 				throw error;
 			})
-			.process(async (item, index) => workerFn(item, index));
+			.process(workerFn);
 
 		return results;
 	}
