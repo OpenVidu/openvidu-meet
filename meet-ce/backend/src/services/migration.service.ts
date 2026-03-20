@@ -10,9 +10,7 @@ import type {
 	SchemaMigrationStep,
 	SchemaVersion
 } from '../models/migration.model.js';
-import {
-	generateSchemaMigrationName
-} from '../models/migration.model.js';
+import { generateSchemaMigrationName } from '../models/migration.model.js';
 import { MigrationRepository } from '../repositories/migration.repository.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
@@ -100,11 +98,8 @@ export class MigrationService {
 		const droppedIndexes = await registry.model.syncIndexes();
 
 		const indexesAfterSync = await registry.model.collection.indexes();
-		const indexNamesAfterSync = new Set(indexesAfterSync.map((index) => index.name));
-
-		const createdIndexes = Array.from(indexNamesAfterSync).filter(
-			(indexName) => !indexNamesBeforeSync.has(indexName)
-		);
+		const indexNamesAfterSync = new Set(indexesAfterSync.map((index) => index.name!));
+		const createdIndexes = [...indexNamesAfterSync].filter((indexName) => !indexNamesBeforeSync.has(indexName));
 
 		if (droppedIndexes.length === 0 && createdIndexes.length === 0) {
 			this.logger.debug(`No index changes for collection: ${registry.collectionName}`);
