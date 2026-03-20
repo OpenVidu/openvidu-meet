@@ -635,6 +635,15 @@ export class RoomMemberService {
 		});
 	}
 
+	/**
+	 * Validates a room member token and extracts the participant identity and name from its claims, as well as the token metadata.
+	 * This method is used during token refresh to ensure the previous token is valid and to obtain the participant's current context in the meeting.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param roomMemberToken - The room member token to validate
+	 * @returns An object containing the participant identity, name, and token metadata if valid
+	 * @throws Error if the token is invalid, expired, or if the room ID in the token does not match
+	 */
 	protected async getValidatedRoomMemberTokenContext(
 		roomId: string,
 		roomMemberToken: string
@@ -670,6 +679,19 @@ export class RoomMemberService {
 		}
 	}
 
+	/**
+	 * Resolves permission source from a room secret, which can be either an external member secret or an anonymous access secret.
+	 *
+	 * - If the secret starts with 'ext-', it is treated as an external member ID and looks up the corresponding member record in the database.
+	 * - If the secret does not start with 'ext-', it is treated as an anonymous access secret
+	 * and resolves permissions based on matching it to the room's anonymous access secrets for moderator, speaker, or recording roles.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param secret - The secret provided for access
+	 * @returns The resolved permission source for the secret
+	 * @throws Error if the secret is invalid, if no member is found for an external member secret,
+	 * or if anonymous access for the corresponding role is disabled
+	 */
 	protected async resolvePermissionSourceFromSecret(
 		roomId: string,
 		secret: string
@@ -698,6 +720,11 @@ export class RoomMemberService {
 	 *
 	 * - Moderator and speaker secrets map to their room role permissions.
 	 * - Recording secret maps to read-only recording permissions.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param secret - The secret provided for anonymous access
+	 * @returns The resolved permission source for the anonymous user
+	 * @throws Error if the secret is invalid or if anonymous access for the corresponding role is disabled
 	 */
 	protected async resolveAnonymousAccessBySecret(roomId: string, secret: string): Promise<ResolvedPermissionSource> {
 		const { roles, access } = await this.roomService.getMeetRoom(roomId, ['roles', 'access']);
@@ -731,6 +758,13 @@ export class RoomMemberService {
 		};
 	}
 
+	/**
+	 * Resolves permission source for an authenticated user by checking their role, room ownership, and membership.
+	 * Registered users without a member record may still get permissions based on registered access settings.
+	 *
+	 * @param roomId - The ID of the room
+	 * @returns The resolved permission source for the authenticated user, or undefined if no access
+	 */
 	protected async resolvePermissionSourceFromAuthenticatedUser(
 		roomId: string
 	): Promise<ResolvedPermissionSource | undefined> {
@@ -755,18 +789,38 @@ export class RoomMemberService {
 
 		const member = await this.getRoomMember(roomId, user.userId, ['name', 'effectivePermissions']);
 
-		if (!member) {
+		if (member) {
+			return {
+				memberId: user.userId,
+				userId: user.userId,
+				name: member.name,
+				permissions: member.effectivePermissions
+			};
+		}
+
+		// If user is not a member, they may still have access if registered access is enabled,
+		// granting them the speaker role permissions as a default for registered users without a member record.
+		const { access, roles } = await this.roomService.getMeetRoom(roomId, ['access', 'roles']);
+
+		if (!access.registered.enabled) {
 			return undefined;
 		}
 
 		return {
-			memberId: user.userId,
 			userId: user.userId,
-			name: member.name,
-			permissions: member.effectivePermissions
+			name: user.name,
+			permissions: roles.speaker.permissions
 		};
 	}
 
+	/**
+	 * Merges two sets of permissions by taking the logical OR of each permission field.
+	 * If a permission is true in either set, it will be true in the merged result.
+	 *
+	 * @param first - The first set of permissions to merge
+	 * @param second - The second set of permissions to merge
+	 * @returns The merged permissions object
+	 */
 	protected mergePermissions(
 		first?: MeetRoomMemberPermissions,
 		second?: MeetRoomMemberPermissions
@@ -783,6 +837,13 @@ export class RoomMemberService {
 		);
 	}
 
+	/**
+	 * Determines the UI badge for a room member based on their permissions compared to moderator permissions.
+	 *
+	 * @param permissions - The effective permissions of the room member
+	 * @param moderatorPermissions - The permissions associated with the moderator role for the room
+	 * @returns The UI badge to display for the room member (MODERATOR or OTHER)
+	 */
 	protected resolveBadgeFromPermissions(
 		permissions: MeetRoomMemberPermissions,
 		moderatorPermissions: MeetRoomMemberPermissions
@@ -798,6 +859,15 @@ export class RoomMemberService {
 		return hasModeratorPermissions ? MeetRoomMemberUIBadge.MODERATOR : MeetRoomMemberUIBadge.OTHER;
 	}
 
+	/**
+	 * Builds token metadata for a room member token based on the current LiveKit participant metadata.
+	 * This is used when refreshing a token while in a meeting to ensure the new token reflects any permission changes
+	 * that may have occurred during the meeting (e.g., being promoted to moderator).
+	 *
+	 * @param roomId - The ID of the room
+	 * @param participantIdentity - The LiveKit identity of the participant
+	 * @returns The token metadata to include in the refreshed token
+	 */
 	protected async buildTokenMetadataFromParticipant(
 		roomId: string,
 		participantIdentity: string

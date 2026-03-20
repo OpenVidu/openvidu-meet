@@ -10,35 +10,40 @@ import {
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
-
-type RoomListValidatedQuery = {
-	owner?: string;
-	roomIds?: string[];
-};
+import { MeetRoomRepositoryQueryWithFields } from '../types/room-projection.types.js';
 
 /**
  * Middleware to apply room list access filters to validated query options.
  *
- * - ADMIN or API key: can list all rooms (no extra filters)
- * - USER: can list rooms they own or where they are members
- * - ROOM_MEMBER: can list only rooms where they are members
+ * - ADMIN: can list all rooms (no extra filters)
+ * - USER: can list rooms they own or where they are members (and rooms with registered access enabled)
+ * - ROOM_MEMBER: can list only rooms where they are members (and rooms with registered access enabled)
  */
 export const applyRoomListAccessFilters = async (_req: Request, res: Response, next: NextFunction) => {
 	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getAuthenticatedUser();
 
-	// API key requests and ADMIN users can list all rooms.
-	if (!user || user.role === MeetUserRole.ADMIN) {
+	if (!user) {
+		// If there is no authenticated user, reject the request
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	// ADMIN users can list all rooms.
+	if (user.role === MeetUserRole.ADMIN) {
 		return next();
 	}
 
 	try {
 		const roomMemberRepository = container.get(RoomMemberRepository);
-		const queryOptions = res.locals.validatedQuery as RoomListValidatedQuery;
+		const queryOptions = res.locals.validatedQuery as MeetRoomRepositoryQueryWithFields;
 
+		// Include rooms where the user is a member or rooms with registered access enabled
 		const memberRoomIds = await roomMemberRepository.getRoomIdsByMemberId(user.userId);
 		queryOptions.roomIds = memberRoomIds;
+		queryOptions.includeRegisteredAccessEnabled = true;
 
+		// USER role can also list rooms they own
 		if (user.role === MeetUserRole.USER) {
 			queryOptions.owner = user.userId;
 		}

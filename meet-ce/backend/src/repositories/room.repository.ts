@@ -135,6 +135,16 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
+	 * Finds room IDs where registered access is enabled.
+	 *
+	 * @returns Array of rooms including only roomId
+	 */
+	async findRoomIdsWithRegisteredAccessEnabled(): Promise<string[]> {
+		const rooms = await this.findAll({ 'access.registered.enabled': true }, ['roomId']);
+		return rooms.map((room) => room.roomId);
+	}
+
+	/**
 	 * Finds rooms with optional filtering, pagination, and sorting.
 	 * Returns rooms with enriched URLs (including base URL).
 	 *
@@ -146,6 +156,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param options.status - Optional room status to filter by
 	 * @param options.owner - Optional owner userId to filter by
 	 * @param options.roomIds - Optional array of room IDs to filter by, representing rooms the user is a member of
+	 * @param options.includeRegisteredAccessEnabled - If true, includes rooms with registered access enabled
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
@@ -167,6 +178,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 			status,
 			owner,
 			roomIds,
+			includeRegisteredAccessEnabled,
 			fields,
 			maxItems = 100,
 			nextPageToken,
@@ -177,13 +189,24 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		// Build base filter
 		const filter: QueryFilter<MeetRoomDocument> = {};
 
-		// Handle owner and roomIds with $or when both are present
-		if (owner && roomIds) {
-			filter.$or = [{ owner }, { roomId: { $in: roomIds } }];
-		} else if (owner) {
-			filter.owner = owner;
-		} else if (roomIds) {
-			filter.roomId = { $in: roomIds };
+		const accessScopeOrFilters: QueryFilter<MeetRoomDocument>[] = [];
+
+		if (owner) {
+			accessScopeOrFilters.push({ owner });
+		}
+
+		if (roomIds !== undefined) {
+			accessScopeOrFilters.push({ roomId: { $in: roomIds } });
+		}
+
+		if (includeRegisteredAccessEnabled) {
+			accessScopeOrFilters.push({ 'access.registered.enabled': true });
+		}
+
+		if (accessScopeOrFilters.length === 1) {
+			Object.assign(filter, accessScopeOrFilters[0]);
+		} else if (accessScopeOrFilters.length > 1) {
+			filter.$or = accessScopeOrFilters;
 		}
 
 		if (roomName) {

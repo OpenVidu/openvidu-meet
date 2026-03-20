@@ -365,6 +365,7 @@ export class RoomService {
 	 * - If the user is an ADMIN, null is returned indicating access to all rooms.
 	 * - If the user is a USER, room IDs they own and are members of are returned.
 	 * - If the user is a ROOM_MEMBER, only room IDs they are members of are returned.
+	 * - If registered access is enabled, those room IDs are also included for USER and ROOM_MEMBER roles.
 	 *
 	 * @param permission - Optional permission to filter rooms (e.g., 'canRetrieveRecordings')
 	 * @returns A promise that resolves to an array of accessible room IDs, or null if user is ADMIN
@@ -394,11 +395,12 @@ export class RoomService {
 			return null;
 		}
 
-		// Get room IDs where user is member with the specified permission (if provided)
-		const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(
-			user.userId,
-			permission
-		);
+		const [memberRoomIds, registeredRoomIds] = await Promise.all([
+			// Get room IDs where user is member with the specified permission (if provided)
+			this.roomMemberRepository.getRoomIdsByMemberId(user.userId, permission),
+			// Get room IDs with registered access enabled
+			this.roomRepository.findRoomIdsWithRegisteredAccessEnabled()
+		]);
 
 		let ownedRoomIds: string[] = [];
 
@@ -409,7 +411,7 @@ export class RoomService {
 		}
 
 		// Combine owned rooms and member rooms
-		return [...new Set([...ownedRoomIds, ...memberRoomIds])];
+		return [...new Set([...ownedRoomIds, ...memberRoomIds, ...registeredRoomIds])];
 	}
 
 	/**
@@ -867,8 +869,10 @@ export class RoomService {
 	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata.
 	 * - If the user is admin or the room owner, they have all permissions.
 	 * - If the user is a registered room member, their permissions are obtained from their room member info.
+	 * - If the user is registered but not a room member, permissions depend on whether registered access is enabled
+	 * (speaker permissions if enabled, no permissions if not).
 	 * - If there's no authenticated user nor room member token, returns all permissions.
-	 *   This is necessary for methods invoked by system processes (e.g., room auto-deletion).
+	 * This is necessary for methods invoked by system processes (e.g., room auto-deletion).
 	 *
 	 * @param roomId The ID of the room.
 	 * @returns A promise that resolves to the MeetRoomMemberPermissions object.
@@ -897,13 +901,21 @@ export class RoomService {
 				return roomMemberService.getAllPermissions();
 			}
 
+			// Get permissions for registered room members
 			const member = await roomMemberService.getRoomMember(roomId, user.userId, ['effectivePermissions']);
 
-			if (!member) {
-				return roomMemberService.getNoPermissions();
+			if (member) {
+				return member.effectivePermissions;
 			}
 
-			return member.effectivePermissions;
+			// If not a room member, check if registered access is enabled to determine if we should return speaker permissions or no permissions
+			const { access, roles } = await this.getMeetRoom(roomId, ['access', 'roles']);
+
+			if (access.registered.enabled) {
+				return roles.speaker.permissions;
+			}
+
+			return roomMemberService.getNoPermissions();
 		}
 
 		// No authenticated user nor room member token - return all permissions for system processes
@@ -920,10 +932,15 @@ export class RoomService {
 	 */
 	async canUserAccessRoom(roomId: string, user: MeetUser): Promise<boolean> {
 		// Verify room exists first (throws 404 if not found)
-		const { owner } = await this.getMeetRoom(roomId, ['owner']);
+		const { owner, access } = await this.getMeetRoom(roomId, ['owner', 'access']);
 
 		if (user.role === MeetUserRole.ADMIN) {
 			// Admins can access all rooms
+			return true;
+		}
+
+		if (access.registered.enabled) {
+			// Users can access rooms with registered access enabled
 			return true;
 		}
 
