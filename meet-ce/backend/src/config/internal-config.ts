@@ -12,11 +12,7 @@ export const INTERNAL_CONFIG = {
 	REFRESH_TOKEN_HEADER: 'x-refresh-token',
 	ROOM_MEMBER_TOKEN_HEADER: 'x-room-member-token',
 
-	// Token expiration times
-	ACCESS_TOKEN_EXPIRATION: '2h',
-	REFRESH_TOKEN_EXPIRATION: '1d',
-	ROOM_MEMBER_TOKEN_EXPIRATION: '2h',
-	PASSWORD_CHANGE_TOKEN_EXPIRATION: '15m',
+	// Token verification settings
 	REFRESH_CLOCK_TOLERANCE_SECONDS: 10, // Time in seconds to allow for clock skew when validating token expiration
 
 	// S3 configuration

@@ -7,6 +7,7 @@ import {
 } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { TokenService } from '../../../../src/services/token.service.js';
 import { expectValidRoomMemberTokenResponse } from '../../../helpers/assertion-helpers.js';
 import {
@@ -95,12 +96,12 @@ describe('Room Members API Tests', () => {
 		});
 
 		it('should succeed when previous token is expired but still within clock tolerance', async () => {
-			const initialTokenTtl = INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION;
+			const initialTokenTtl = MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION;
 			const initialClockTolerance = INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS;
 
 			try {
 				// Set token TTL to 1 second and clock tolerance to 5 seconds for testing
-				INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
+				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
 				INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS = 5;
 
 				const previousToken = await generateRoomMemberToken(roomId, {
@@ -124,18 +125,18 @@ describe('Room Members API Tests', () => {
 				expect(response.status).toBe(200);
 			} finally {
 				// Restore original config values after the test
-				INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenTtl;
+				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenTtl;
 				INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS = initialClockTolerance;
 			}
 		});
 
 		it('should fail when previous token is totally expired', async () => {
-			const initialTokenTtl = INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION;
+			const initialTokenTtl = MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION;
 			const initialClockTolerance = INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS;
 
 			try {
 				// Set token TTL to 1 second and clock tolerance to 1 second for testing
-				INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
+				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
 				INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS = 1;
 
 				const previousToken = await generateRoomMemberToken(roomId, {
@@ -159,7 +160,7 @@ describe('Room Members API Tests', () => {
 				expect(response.status).toBe(401);
 			} finally {
 				// Restore original config values after the test
-				INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenTtl;
+				MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenTtl;
 				INTERNAL_CONFIG.REFRESH_CLOCK_TOLERANCE_SECONDS = initialClockTolerance;
 			}
 		});

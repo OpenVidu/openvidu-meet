@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import dotenv from 'dotenv';
+import type { StringValue } from 'ms';
 
 let envPath: string | undefined;
 
@@ -30,6 +31,11 @@ export const MEET_ENV = {
 	INITIAL_ADMIN_USER: process.env.MEET_INITIAL_ADMIN_USER || 'admin',
 	INITIAL_ADMIN_PASSWORD: process.env.MEET_INITIAL_ADMIN_PASSWORD || 'admin',
 	INITIAL_API_KEY: process.env.MEET_INITIAL_API_KEY ?? '',
+	ACCESS_TOKEN_EXPIRATION: (process.env.MEET_ACCESS_TOKEN_EXPIRATION || '2h') as StringValue,
+	REFRESH_TOKEN_EXPIRATION: (process.env.MEET_REFRESH_TOKEN_EXPIRATION || '1d') as StringValue,
+	ROOM_MEMBER_TOKEN_EXPIRATION: (process.env.MEET_ROOM_MEMBER_TOKEN_EXPIRATION || '2h') as StringValue,
+	PASSWORD_CHANGE_TOKEN_EXPIRATION: (process.env.MEET_PASSWORD_CHANGE_TOKEN_EXPIRATION || '15m') as StringValue,
+	REFRESH_TOKEN_ROTATION_ENABLED: process.env.MEET_REFRESH_TOKEN_ROTATION_ENABLED || 'true',
 
 	// Webhook configuration
 	INITIAL_WEBHOOK_ENABLED: process.env.MEET_INITIAL_WEBHOOK_ENABLED || 'false',

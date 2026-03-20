@@ -3,11 +3,10 @@ import { inject, injectable } from 'inversify';
 import { jwtDecode } from 'jwt-decode';
 import type { AccessTokenOptions, ClaimGrants, VideoGrant } from 'livekit-server-sdk';
 import { AccessToken, TokenVerifier } from 'livekit-server-sdk';
-import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { validateTokenMetadata } from '../middlewares/request-validators/auth-validator.middleware.js';
 import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-member-validator.middleware.js';
-import type { MeetRoomMemberTokenOptions, TokenMetadata} from '../models/token.model.js';
+import type { MeetRoomMemberTokenOptions, TokenMetadata } from '../models/token.model.js';
 import { TokenType } from '../models/token.model.js';
 import { LoggerService } from './logger.service.js';
 
@@ -23,9 +22,7 @@ export class TokenService {
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.userId,
 			name: user.name,
-			ttl: isTemporary
-				? INTERNAL_CONFIG.PASSWORD_CHANGE_TOKEN_EXPIRATION
-				: INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION,
+			ttl: isTemporary ? MEET_ENV.PASSWORD_CHANGE_TOKEN_EXPIRATION : MEET_ENV.ACCESS_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(tokenMetadata)
 		};
 		return await this.generateJwtToken(tokenOptions);
@@ -49,7 +46,7 @@ export class TokenService {
 		const tokenOptions: AccessTokenOptions = {
 			identity: user.userId,
 			name: user.name,
-			ttl: INTERNAL_CONFIG.REFRESH_TOKEN_EXPIRATION,
+			ttl: MEET_ENV.REFRESH_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(tokenMetadata)
 		};
 		return await this.generateJwtToken(tokenOptions);
@@ -61,7 +58,7 @@ export class TokenService {
 		const tokenOptions: AccessTokenOptions = {
 			identity: participantIdentity,
 			name: participantName,
-			ttl: INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION,
+			ttl: MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION,
 			metadata: JSON.stringify(tokenMetadata)
 		};
 		return await this.generateJwtToken(tokenOptions, livekitPermissions);

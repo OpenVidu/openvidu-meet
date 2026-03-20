@@ -1,5 +1,6 @@
 import { beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetUserRole } from '@openvidu-meet/typings';
+import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	deleteAllRooms,
 	deleteAllUsers,
@@ -24,19 +25,41 @@ describe('Authentication API Tests', () => {
 	describe('Refresh Token Tests', () => {
 		let accessToken: string;
 		let refreshToken: string;
+		let initialRefreshRotationEnabled: string;
 
 		beforeAll(async () => {
+			initialRefreshRotationEnabled = MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED;
 			// Login to get a valid refresh token
 			({ accessToken, refreshToken } = await loginRootAdmin());
 		});
 
+		afterAll(() => {
+			MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED = initialRefreshRotationEnabled;
+		});
+
 		it('should succeed when providing valid refresh token', async () => {
+			MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED = 'false';
 			const response = await refreshTokenReq(refreshToken);
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('successfully refreshed');
 			expect(response.body).toHaveProperty('accessToken');
 			expect(response.body).not.toHaveProperty('refreshToken');
+		});
+
+		it('should return a new refresh token when refresh rotation is enabled', async () => {
+			MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED = 'true';
+
+			const response = await refreshTokenReq(refreshToken);
+			expect(response.status).toBe(200);
+			expect(response.body).toHaveProperty('accessToken');
+			expect(response.body).toHaveProperty('refreshToken');
+
+			const rotatedRefreshToken = `Bearer ${response.body.refreshToken}`;
+			const secondRefreshResponse = await refreshTokenReq(rotatedRefreshToken);
+			expect(secondRefreshResponse.status).toBe(200);
+			expect(secondRefreshResponse.body).toHaveProperty('accessToken');
+			expect(secondRefreshResponse.body).toHaveProperty('refreshToken');
 		});
 
 		it('should fail when refresh token is missing', async () => {

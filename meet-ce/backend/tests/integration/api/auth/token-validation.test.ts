@@ -3,6 +3,7 @@ import { MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	createUser,
 	deleteAllRooms,
@@ -87,8 +88,8 @@ describe('Token Validation Tests', () => {
 
 		it('should fail when access token is expired', async () => {
 			// Set short access token expiration
-			const initialTokenExpiration = INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION;
-			INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION = '1s';
+			const initialTokenExpiration = MEET_ENV.ACCESS_TOKEN_EXPIRATION;
+			MEET_ENV.ACCESS_TOKEN_EXPIRATION = '1s';
 
 			// Create a user and get their access token
 			const userData = await setupUser({
@@ -101,7 +102,7 @@ describe('Token Validation Tests', () => {
 			await sleep('2s'); // Ensure the token is expired
 
 			// Restore original expiration after setup
-			INTERNAL_CONFIG.ACCESS_TOKEN_EXPIRATION = initialTokenExpiration;
+			MEET_ENV.ACCESS_TOKEN_EXPIRATION = initialTokenExpiration;
 
 			const response = await request(app)
 				.get(`${USERS_PATH}/me`)
@@ -299,14 +300,14 @@ describe('Token Validation Tests', () => {
 
 		it('should fail when room member token is expired', async () => {
 			// Set short room member token expiration
-			const initialTokenExpiration = INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION;
-			INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
+			const initialTokenExpiration = MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION;
+			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
 
 			const roomData = await setupSingleRoom();
 			await sleep('2s'); // Ensure the token is expired
 
 			// Restore original expiration after setup
-			INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
+			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
 
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
@@ -343,14 +344,14 @@ describe('Token Validation Tests', () => {
 
 		it('should fail when room member token is expired, even if user access token is valid', async () => {
 			// Set short room member token expiration
-			const initialTokenExpiration = INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION;
-			INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
+			const initialTokenExpiration = MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION;
+			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = '1s';
 
 			const roomData = await setupSingleRoom();
 			await sleep('2s'); // Ensure the token is expired
 
 			// Restore original expiration after setup
-			INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
+			MEET_ENV.ROOM_MEMBER_TOKEN_EXPIRATION = initialTokenExpiration;
 
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)

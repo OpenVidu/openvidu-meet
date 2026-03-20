@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
+import { MEET_ENV } from '../environment.js';
 import {
 	errorInvalidCredentials,
 	errorInvalidRefreshToken,
@@ -121,11 +122,14 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 	try {
 		const accessToken = await tokenService.generateAccessToken(user);
+		const shouldRotateRefreshToken = MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED.toLowerCase() === 'true';
+		const newRefreshToken = shouldRotateRefreshToken ? await tokenService.generateRefreshToken(user) : undefined;
 
 		logger.info(`Access token refreshed for user '${userId}'`);
 		return res.status(200).json({
 			message: `Access token for user '${userId}' successfully refreshed`,
-			accessToken
+			accessToken,
+			...(newRefreshToken ? { refreshToken: newRefreshToken } : {})
 		});
 	} catch (error) {
 		handleError(res, error, 'refreshing token');
