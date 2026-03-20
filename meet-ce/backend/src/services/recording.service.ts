@@ -375,13 +375,16 @@ export class RecordingService {
 		recordingIds: string[]
 	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
 		type BulkDeleteFailed = { recordingId: string; error: string };
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_RECORDINGS;
 
 		const settledResults = await runConcurrently<string, string>(
 			recordingIds,
 			async (recordingId) => {
 				try {
 					// Validate recording exists and user has permission to delete
-					const { status } = await this.validateRecordingAccess(recordingId, 'canDeleteRecordings', ['status']);
+					const { status } = await this.validateRecordingAccess(recordingId, 'canDeleteRecordings', [
+						'status'
+					]);
 
 					// Check if the recording can be deleted (must be stopped)
 					if (!RecordingHelper.canBeDeleted(status)) {
@@ -395,7 +398,7 @@ export class RecordingService {
 					throw { recordingId, error: message } as BulkDeleteFailed;
 				}
 			},
-			{ concurrency: 10 }
+			{ concurrency }
 		);
 
 		const validRecordingIds = new Set<string>();
@@ -445,12 +448,13 @@ export class RecordingService {
 	 */
 	async createRecordingsZipArchive(recordingIds: string[]): Promise<Archiver> {
 		const validRecordings: MeetRecordingInfo[] = [];
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_RECORDINGS;
 
 		// Validate recordings with bounded concurrency: first check existence, then permissions
 		const validationResults = await runConcurrently<string, MeetRecordingInfo>(
 			recordingIds,
 			(recordingId) => this.validateRecordingAccess(recordingId, 'canRetrieveRecordings'),
-			{ concurrency: 10 }
+			{ concurrency, failFast: false }
 		);
 
 		validationResults.forEach((result, index) => {
@@ -493,6 +497,8 @@ export class RecordingService {
 	 * @param roomId - The unique identifier of the room whose recordings should be deleted.
 	 */
 	async deleteAllRoomRecordings(roomId: string): Promise<void> {
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_ROOM_RECORDINGS;
+
 		try {
 			this.logger.info(`Starting deletion of all recordings for room '${roomId}'`);
 
@@ -529,7 +535,7 @@ export class RecordingService {
 							// Continue with deletion anyway
 						}
 					},
-					{ concurrency: 10, failFast: true }
+					{ concurrency, failFast: true }
 				);
 			}
 

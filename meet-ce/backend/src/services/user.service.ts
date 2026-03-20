@@ -1,6 +1,7 @@
 import type { MeetUser, MeetUserDTO, MeetUserField, MeetUserFilters, MeetUserOptions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
 import {
@@ -270,6 +271,7 @@ export class UserService {
 	 */
 	private async bulkCleanupUserResources(userIds: string[]): Promise<void> {
 		const adminUserId = MEET_ENV.INITIAL_ADMIN_USER;
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_USER_RESOURCES;
 
 		const userCleanupResults = await runConcurrently(
 			userIds,
@@ -281,7 +283,7 @@ export class UserService {
 
 				return ownedRooms;
 			},
-			{ concurrency: 10, failFast: true }
+			{ concurrency, failFast: true }
 		);
 
 		const allOwnedRooms = userCleanupResults.flat();
@@ -290,9 +292,10 @@ export class UserService {
 			await runConcurrently(
 				allOwnedRooms,
 				async (room) => {
+					// Transfer ownership to admin user
 					await this.roomRepository.updatePartial(room.roomId, { owner: adminUserId });
 				},
-				{ concurrency: 50, failFast: true }
+				{ concurrency, failFast: true }
 			);
 
 			this.logger.info(

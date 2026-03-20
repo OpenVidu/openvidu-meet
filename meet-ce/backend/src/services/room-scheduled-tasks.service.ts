@@ -118,7 +118,7 @@ export class RoomScheduledTasksService {
 						// Continue with other rooms even if one fails
 					}
 				},
-				{ concurrency: 10, failFast: true }
+				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_VALIDATE_ROOMS_STATUS, failFast: true }
 			);
 		} catch (error) {
 			this.logger.error('Error checking inconsistent rooms:', error);

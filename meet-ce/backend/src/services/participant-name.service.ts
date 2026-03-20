@@ -133,7 +133,7 @@ export class ParticipantNameService {
 	}
 
 	/**
-	 * Cleans up expired participant reservations for a room.
+	 * Cleans up expired participant name reservations for a room.
 	 * This should be called periodically or when a room is cleaned up.
 	 *
 	 * @param roomId - The room identifier
@@ -143,6 +143,7 @@ export class ParticipantNameService {
 		const participantsPoolKey = `${RedisKeyName.PARTICIPANT_NAME_POOL}${roomId}`;
 		const pattern = `${participantsKey}:*`;
 		const poolPattern = `${participantsPoolKey}:*`;
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS;
 
 		try {
 			const [participantKeys, poolKeys] = await Promise.all([
@@ -159,7 +160,7 @@ export class ParticipantNameService {
 				async (key) => {
 					await this.redisService.delete(key);
 				},
-				{ concurrency: 50, failFast: true }
+				{ concurrency, failFast: true }
 			);
 			this.logger.verbose(
 				`Cleaned up ${participantKeys.length} expired participant names reservations for room '${roomId}'`
@@ -172,7 +173,7 @@ export class ParticipantNameService {
 				async (key) => {
 					await this.redisService.delete(key);
 				},
-				{ concurrency: 50, failFast: true }
+				{ concurrency, failFast: true }
 			);
 			this.logger.verbose(`Cleaned up ${poolKeys.length} expired participant name numbers for room '${roomId}'`);
 		} catch (error) {

@@ -81,6 +81,8 @@ export class GCSService {
 	 * @param bucket GCS bucket name (default: S3_BUCKET)
 	 */
 	async deleteObjects(keys: string[], bucket: string = MEET_ENV.S3_BUCKET): Promise<any> {
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_STORAGE;
+
 		try {
 			this.logger.verbose(
 				`GCS deleteObjects: attempting to delete ${keys.length} objects from bucket '${bucket}'`
@@ -93,7 +95,7 @@ export class GCSService {
 					const file = bucketObj.file(this.getFullKey(key));
 					await file.delete();
 				},
-				{ concurrency: 20, failFast: true }
+				{ concurrency, failFast: true }
 			);
 
 			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);

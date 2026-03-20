@@ -50,6 +50,24 @@ export const INTERNAL_CONFIG = {
 	CAPTIONS_AGENT_NAME: 'speech-processing',
 	ASSISTANT_STATE_LOCK_TTL: '15s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 
+	// Batch and concurrency processing settings
+	DEFAULT_CONCURRENCY: 10, // Default concurrency limit for concurrent operations
+	BATCH_SIZE_RECORDINGS: 100, // Process 100 recordings at a time to balance throughput and memory
+	BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL: 100, // Number of recording locks to retrieve from registry in each batch during orphaned locks GC
+	CONCURRENCY_STALE_RECORDINGS_GC: 20, // Concurrency limit for processing stale recordings garbage collection
+	CONCURRENCY_ORPHANED_LOCKS_GC: 10, // Concurrency limit for processing orphaned recording locks with failFast enabled
+	CONCURRENCY_VALIDATE_ROOMS_STATUS: 10, // Concurrency limit for validating and cleaning up inconsistent rooms
+	CONCURRENCY_BULK_DELETE_ROOMS: 10, // Concurrency limit for bulk deleting rooms
+	CONCURRENCY_BULK_RETRIEVE_ROOMS: 20, // Concurrency limit for bulk retrieving room info
+	CONCURRENCY_BULK_DELETE_RECORDINGS: 20, // Concurrency limit for bulk deleting recordings
+	CONCURRENCY_BULK_DELETE_ROOM_RECORDINGS: 10, // Concurrency limit for bulk deleting recordings of a room
+	CONCURRENCY_BULK_RETRIEVE_RECORDINGS: 10, // Concurrency limit for bulk retrieving recording info
+	CONCURRENCY_BULK_DELETE_STORAGE: 20, // Concurrency limit for bulk deleting objects in storage
+	CONCURRENCY_BULK_KICK_MEMBERS: 20, // Concurrency limit for bulk kicking members from a room
+	CONCURRENCY_BULK_UPDATE_PERMISSIONS: 20, // Concurrency limit for bulk updating room members' permissions
+	CONCURRENCY_BULK_CLEANUP_USER_RESOURCES: 20, // Concurrency limit for bulk cleanup of user resources
+	CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS: 20, // Concurrency limit for bulk cleanup of participant name reservations
+
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection
 	// Increment when making breaking changes to the schema structure

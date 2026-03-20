@@ -103,7 +103,7 @@ export class RecordingScheduledTasksService {
 						// Continue processing other locks even if one fails
 					}
 				},
-				{ concurrency: 10, failFast: true }
+				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_ORPHANED_LOCKS_GC, failFast: true }
 			);
 		} catch (error) {
 			this.logger.error('Error retrieving recording locks:', error);
@@ -212,7 +212,7 @@ export class RecordingScheduledTasksService {
 	protected async performStaleRecordingsGC(): Promise<void> {
 		this.logger.debug('Starting stale recordings cleanup process');
 
-		const BATCH_SIZE = 100; // Process 100 recordings at a time to balance throughput and memory
+		const BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_RECORDINGS;
 		let totalProcessed = 0;
 		let totalAborted = 0;
 		let nextPageToken: string | undefined;
@@ -236,7 +236,7 @@ export class RecordingScheduledTasksService {
 				const results = await runConcurrently<MeetRecordingInfo, boolean>(
 					batch.recordings,
 					(recording) => this.evaluateAndAbortStaleRecording(recording),
-					{ concurrency: 20 }
+					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_STALE_RECORDINGS_GC }
 				);
 
 				results.forEach((result: PromiseSettledResult<boolean>, index: number) => {

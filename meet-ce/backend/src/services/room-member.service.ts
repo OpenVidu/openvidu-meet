@@ -347,7 +347,7 @@ export class RoomMemberService {
 						// Continue with other members even if one fails
 					}
 				},
-				{ concurrency: 20, failFast: true }
+				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_UPDATE_PERMISSIONS, failFast: true }
 			);
 
 			totalUpdated += members.length;
@@ -995,12 +995,12 @@ export class RoomMemberService {
 	 *
 	 * @param roomId - The ID of the room
 	 * @param memberIds - Array of member IDs to kick from the meeting
-	 * @param batchSize - Number of kicks to process in parallel (default: 10)
+	 * @param concurrency - Number of kicks to process in parallel (default: {@link INTERNAL_CONFIG.CONCURRENCY_BULK_KICK_MEMBERS})
 	 */
 	protected async kickMembersFromMeetingInBatches(
 		roomId: string,
 		memberIds: string[],
-		batchSize = 10
+		concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_KICK_MEMBERS
 	): Promise<void> {
 		if (memberIds.length === 0) {
 			return;
@@ -1034,7 +1034,7 @@ export class RoomMemberService {
 					return 'skipped';
 				}
 			},
-			{ concurrency: batchSize, failFast: true }
+			{ concurrency, failFast: true }
 		);
 
 		let kickedCount = 0;

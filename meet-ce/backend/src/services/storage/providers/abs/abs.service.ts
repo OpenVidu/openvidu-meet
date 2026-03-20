@@ -2,6 +2,7 @@ import type { BlobItem, BlockBlobClient, BlockBlobUploadResponse, ContainerClien
 import { BlobServiceClient } from '@azure/storage-blob';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
+import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
 import { runConcurrently } from '../../../../utils/concurrency.utils.js';
@@ -78,6 +79,8 @@ export class ABSService {
 	 * @returns A promise that resolves when all blobs are deleted.
 	 */
 	async deleteObjects(keys: string[]): Promise<void> {
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_STORAGE;
+
 		try {
 			this.logger.verbose(`Azure deleteObjects: attempting to delete ${keys.length} blobs`);
 			await runConcurrently(
@@ -85,7 +88,7 @@ export class ABSService {
 				async (key) => {
 					await this.deleteObject(this.getFullKey(key));
 				},
-				{ concurrency: 20, failFast: true }
+				{ concurrency, failFast: true }
 			);
 			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
 			this.logger.info(`Successfully deleted ${keys.length} objects`);

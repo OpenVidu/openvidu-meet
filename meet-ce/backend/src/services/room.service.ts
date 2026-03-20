@@ -813,7 +813,7 @@ export class RoomService {
 					} as FailedDelete;
 				}
 			},
-			{ concurrency: 10 }
+			{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_ROOMS }
 		);
 
 		const successful: SuccessfulDelete[] = [];

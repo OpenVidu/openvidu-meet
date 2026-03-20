@@ -19,6 +19,7 @@ import {
 	EgressStatus,
 	RoomServiceClient
 } from 'livekit-server-sdk';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
@@ -200,6 +201,7 @@ export class LiveKitService {
 	 * @returns Promise that resolves when all room deletions have been processed
 	 */
 	async batchDeleteRooms(roomNames: string[]): Promise<void> {
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_ROOMS;
 		await runConcurrently<string, void>(
 			roomNames,
 			async (roomName) => {
@@ -211,7 +213,7 @@ export class LiveKitService {
 					// Continue with deletion of other rooms even if one fails
 				}
 			},
-			{ concurrency: 10, failFast: true }
+			{ concurrency, failFast: true }
 		);
 	}
 
