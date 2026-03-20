@@ -236,15 +236,31 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	/**
-	 * Finds all active recordings (status 'ACTIVE' or 'ENDING').
-	 * Returns all active recordings without pagination.
+	 * Finds active recordings (status 'ACTIVE' or 'ENDING') with pagination.
+	 * This method should be used instead of findActiveRecordings() when dealing with potentially large result sets.
+	 * Allows processing active recordings in batches without blocking or loading all into memory at once.
 	 *
-	 * @returns Array of active recordings
+	 * @param batchSize - Number of recordings to fetch per batch (default: 100)
+	 * @param nextPageToken - Optional pagination token from previous call
+	 * @returns Object containing current batch of recordings, pagination flag, and optional next page token
 	 */
-	async findActiveRecordings(): Promise<MeetRecordingInfo[]> {
-		return this.findAll({
+	async findActiveRecordings(batchSize = 100, pageToken?: string): Promise<MeetRecordingPage<MeetRecordingInfo>> {
+		const filter: QueryFilter<MeetRecordingDocument> = {
 			status: { $in: [MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING] }
+		};
+
+		const { items, isTruncated, nextPageToken } = await this.findMany(filter, {
+			maxItems: batchSize,
+			nextPageToken: pageToken,
+			sortField: 'startDate',
+			sortOrder: SortOrder.DESC
 		});
+
+		return {
+			recordings: items,
+			isTruncated,
+			nextPageToken
+		};
 	}
 
 	/**

@@ -196,10 +196,14 @@ export class RecordingScheduledTasksService {
 	 * Performs garbage collection for stale recordings in the system.
 	 *
 	 * This method identifies and aborts recordings that have become stale by:
-	 * 1. Getting all active recordings from database (ACTIVE or ENDING status)
-	 * 2. Checking if there's a corresponding in-progress egress in LiveKit
-	 * 3. If no egress exists, marking the recording as ABORTED
-	 * 4. If egress exists, checking last update time and aborting if stale
+	 * 1. Getting active recordings from database in paginated batches (ACTIVE status only)
+	 * 2. Processing each batch with bounded concurrency to avoid memory overhead
+	 * 3. For each recording, checking if there's a corresponding in-progress egress in LiveKit
+	 * 4. If no egress exists, marking the recording as ABORTED
+	 * 5. If egress exists, checking last update time and aborting if stale
+	 *
+	 * Uses pagination to avoid loading all active recordings into memory at once,
+	 * which is critical when dealing with thousands of concurrent recordings.
 	 *
 	 * Stale recordings can occur when:
 	 * - Network issues prevent normal completion
@@ -208,40 +212,52 @@ export class RecordingScheduledTasksService {
 	protected async performStaleRecordingsGC(): Promise<void> {
 		this.logger.debug('Starting stale recordings cleanup process');
 
-		try {
-			// Get all active recordings from database (ACTIVE or ENDING status)
-			const activeRecordings = await this.recordingRepository.findActiveRecordings();
+		const BATCH_SIZE = 100; // Process 100 recordings at a time to balance throughput and memory
+		let totalProcessed = 0;
+		let totalAborted = 0;
+		let nextPageToken: string | undefined;
+		let hasMore = true;
 
-			if (activeRecordings.length === 0) {
-				this.logger.debug('No active recordings found in database');
-				return;
+		try {
+			while (hasMore) {
+				// Fetch one batch of active recordings
+				const batch = await this.recordingRepository.findActiveRecordings(BATCH_SIZE, nextPageToken);
+
+				if (batch.recordings.length === 0) {
+					this.logger.debug('No more active recordings found in database');
+					break;
+				}
+
+				this.logger.debug(
+					`Processing batch of ${batch.recordings.length} active recordings (total processed: ${totalProcessed})`
+				);
+
+				// Process this batch with bounded concurrency
+				const results = await runConcurrently<MeetRecordingInfo, boolean>(
+					batch.recordings,
+					(recording) => this.evaluateAndAbortStaleRecording(recording),
+					{ concurrency: 20 }
+				);
+
+				results.forEach((result: PromiseSettledResult<boolean>, index: number) => {
+					totalProcessed++;
+
+					if (result.status === 'fulfilled' && result.value) {
+						totalAborted++;
+					} else if (result.status === 'rejected') {
+						this.logger.error(
+							`Failed to process recording ${batch.recordings[index].recordingId}:`,
+							result.reason
+						);
+					}
+				});
+
+				// Check if there are more batches to process
+				hasMore = batch.isTruncated;
+				nextPageToken = batch.nextPageToken;
 			}
 
-			this.logger.debug(`Found ${activeRecordings.length} active recordings in database to check`);
-
-			let totalProcessed = 0;
-			let totalAborted = 0;
-
-			const results = await runConcurrently<MeetRecordingInfo, boolean>(
-				activeRecordings,
-				(recording) => this.evaluateAndAbortStaleRecording(recording),
-				{ concurrency: 10 }
-			);
-
-			results.forEach((result: PromiseSettledResult<boolean>, index: number) => {
-				totalProcessed++;
-
-				if (result.status === 'fulfilled' && result.value) {
-					totalAborted++;
-				} else if (result.status === 'rejected') {
-					this.logger.error(
-						`Failed to process recording ${activeRecordings[index].recordingId}:`,
-						result.reason
-					);
-				}
-			});
-
-			this.logger.info(
+			this.logger.debug(
 				`Stale recordings cleanup completed: processed=${totalProcessed}, aborted=${totalAborted}`
 			);
 		} catch (error) {
