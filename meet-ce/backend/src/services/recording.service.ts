@@ -8,6 +8,8 @@ import type {
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
+import type { Archiver } from 'archiver';
+import archiver from 'archiver';
 import { inject, injectable } from 'inversify';
 import type { RoomCompositeOptions } from 'livekit-server-sdk';
 import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
@@ -29,6 +31,7 @@ import {
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
 	errorRecordingStartTimeout,
+	errorRecordingsZipEmpty,
 	errorRoomHasNoParticipants,
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
@@ -431,6 +434,55 @@ export class RecordingService {
 			deleted: deletedRecordings,
 			failed: failedRecordings
 		};
+	}
+
+	/**
+	 * Creates a ZIP archive stream with all recordings accessible by the current user.
+	 * It skips recording IDs that are not accessible and throws if none are valid.
+	 *
+	 * @param recordingIds Array of recording identifiers requested for ZIP download.
+	 * @returns An Archiver instance already populated with the selected recordings.
+	 */
+	async createRecordingsZipArchive(recordingIds: string[]): Promise<Archiver> {
+		const validRecordings: MeetRecordingInfo[] = [];
+
+		// Validate recordings with bounded concurrency: first check existence, then permissions
+		const validationResults = await runConcurrently<string, MeetRecordingInfo>(
+			recordingIds,
+			(recordingId) => this.validateRecordingAccess(recordingId, 'canRetrieveRecordings'),
+			{ concurrency: 10 }
+		);
+
+		validationResults.forEach((result, index) => {
+			if (result.status === 'fulfilled') {
+				validRecordings.push(result.value);
+			} else {
+				this.logger.warn(`Skipping recording '${recordingIds[index]}' for ZIP`);
+			}
+		});
+
+		if (validRecordings.length === 0) {
+			this.logger.error(`None of the provided recording IDs are available for ZIP download`);
+			throw errorRecordingsZipEmpty();
+		}
+
+		const archive = archiver('zip', { zlib: { level: 0 } });
+
+		for (const recording of validRecordings) {
+			const recordingId = recording.recordingId;
+
+			try {
+				this.logger.debug(`Adding recording '${recordingId}' to ZIP`);
+				const result = await this.getRecordingAsStream(recordingId);
+
+				const filename = recording.filename || `${recordingId}.mp4`;
+				archive.append(result.fileStream, { name: filename });
+			} catch (error) {
+				this.logger.error(`Error adding recording '${recordingId}' to ZIP: ${error}`);
+			}
+		}
+
+		return archive;
 	}
 
 	/**

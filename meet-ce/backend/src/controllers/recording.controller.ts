@@ -1,12 +1,10 @@
-import type { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
-import archiver from 'archiver';
+import type { MeetRecordingField } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import type { Readable } from 'stream';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
-	errorRecordingsZipEmpty,
 	handleError,
 	internalError,
 	rejectRequestFromMeetError
@@ -241,54 +239,27 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const recordingService = container.get(RecordingService);
 
 	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
-	const validRecordings: MeetRecordingInfo[] = [];
 
 	logger.info(`Preparing ZIP download for recordings: ${recordingIds}`);
 
-	// Validate each recording: first check existence, then permissions
-	for (const recordingId of recordingIds) {
-		try {
-			const recordingInfo = await recordingService.validateRecordingAccess(recordingId, 'canRetrieveRecordings');
-			validRecordings.push(recordingInfo);
-		} catch (error) {
-			logger.warn(`Skipping recording '${recordingId}' for ZIP`);
-		}
+	try {
+		const archive = await recordingService.createRecordingsZipArchive(recordingIds);
+
+		res.setHeader('Content-Type', 'application/zip');
+		res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
+
+		// Handle errors in the archive
+		archive.on('error', (err) => {
+			logger.error(`ZIP archive error: ${err.message}`);
+			res.status(500).end();
+		});
+
+		// Pipe the archive to the response
+		archive.pipe(res);
+
+		// Finalize the archive
+		archive.finalize();
+	} catch (error) {
+		handleError(res, error, 'downloading recordings ZIP');
 	}
-
-	if (validRecordings.length === 0) {
-		logger.error(`None of the provided recording IDs are available for ZIP download`);
-		const error = errorRecordingsZipEmpty();
-		return rejectRequestFromMeetError(res, error);
-	}
-
-	res.setHeader('Content-Type', 'application/zip');
-	res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
-
-	const archive = archiver('zip', { zlib: { level: 0 } });
-
-	// Handle errors in the archive
-	archive.on('error', (err) => {
-		logger.error(`ZIP archive error: ${err.message}`);
-		res.status(500).end();
-	});
-
-	// Pipe the archive to the response
-	archive.pipe(res);
-
-	for (const recording of validRecordings) {
-		const recordingId = recording.recordingId;
-
-		try {
-			logger.debug(`Adding recording '${recordingId}' to ZIP`);
-			const result = await recordingService.getRecordingAsStream(recordingId);
-
-			const filename = recording.filename || `${recordingId}.mp4`;
-			archive.append(result.fileStream, { name: filename });
-		} catch (error) {
-			logger.error(`Error adding recording '${recordingId}' to ZIP: ${error}`);
-		}
-	}
-
-	// Finalize the archive
-	archive.finalize();
 };
