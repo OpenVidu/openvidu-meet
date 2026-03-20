@@ -155,11 +155,8 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 			filter[`effectivePermissions.${permission}`] = true;
 		}
 
-		const documents = await this.model
-			.aggregate<{ roomId: string }>([{ $match: filter }, { $project: { _id: 0, roomId: 1 } }])
-			.exec();
-
-		return documents.map((doc) => doc.roomId);
+		const members = await this.findAll(filter, ['roomId']);
+		return members.map((member) => member.roomId);
 	}
 
 	/**
