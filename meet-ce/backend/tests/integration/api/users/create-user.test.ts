@@ -29,6 +29,8 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('name', 'Test User');
 			expect(response.body).toHaveProperty('role', MeetUserRole.USER);
 			expect(response.body).toHaveProperty('registrationDate');
+			expect(response.body).toHaveProperty('roleUpdatedAt');
+			expect(response.body.roleUpdatedAt).toBe(response.body.registrationDate);
 			expect(response.body).not.toHaveProperty('passwordHash');
 			expect(response.body).not.toHaveProperty('mustChangePassword');
 

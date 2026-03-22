@@ -27,6 +27,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('name', 'Admin');
 			expect(response.body).toHaveProperty('role', MeetUserRole.ADMIN);
 			expect(response.body).toHaveProperty('registrationDate');
+			expect(response.body).toHaveProperty('roleUpdatedAt', response.body.registrationDate);
 			expect(response.body).not.toHaveProperty('passwordHash');
 			expect(response.body).not.toHaveProperty('mustChangePassword');
 		});
@@ -39,6 +40,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('name', user.user.name);
 			expect(response.body).toHaveProperty('role', user.user.role);
 			expect(response.body).toHaveProperty('registrationDate', user.user.registrationDate);
+			expect(response.body).toHaveProperty('roleUpdatedAt', user.user.roleUpdatedAt);
 			expect(response.body).not.toHaveProperty('passwordHash');
 			expect(response.body).not.toHaveProperty('mustChangePassword');
 		});
@@ -51,6 +53,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('name', user.user.name);
 			expect(response.body).toHaveProperty('role', user.user.role);
 			expect(response.body).toHaveProperty('registrationDate', user.user.registrationDate);
+			expect(response.body).toHaveProperty('roleUpdatedAt', user.user.roleUpdatedAt);
 			expect(response.body).not.toHaveProperty('passwordHash');
 			expect(response.body).not.toHaveProperty('mustChangePassword');
 		});
@@ -63,6 +66,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('name', user.user.name);
 			expect(response.body).toHaveProperty('role', user.user.role);
 			expect(response.body).toHaveProperty('registrationDate', user.user.registrationDate);
+			expect(response.body).toHaveProperty('roleUpdatedAt', user.user.roleUpdatedAt);
 			expect(response.body).not.toHaveProperty('passwordHash');
 			expect(response.body).not.toHaveProperty('mustChangePassword');
 		});

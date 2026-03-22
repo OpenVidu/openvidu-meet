@@ -25,6 +25,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('name', testUsers.admin.user.name);
 			expect(response.body).toHaveProperty('role', MeetUserRole.ADMIN);
 			expect(response.body).toHaveProperty('registrationDate');
+			expect(response.body).toHaveProperty('roleUpdatedAt');
 		});
 
 		it('should get root admin user', async () => {
@@ -54,6 +55,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('name');
 			expect(response.body).toHaveProperty('role');
 			expect(response.body).toHaveProperty('registrationDate');
+			expect(response.body).toHaveProperty('roleUpdatedAt');
 		});
 
 		it('should return 404 when user does not exist', async () => {

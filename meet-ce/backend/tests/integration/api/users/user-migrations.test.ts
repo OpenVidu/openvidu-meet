@@ -37,6 +37,7 @@ const expectMigratedUserToCurrentVersion = (migratedUser: Record<string, unknown
 		name: 'Admin',
 		registrationDate: expect.any(Number),
 		role: MeetUserRole.ADMIN,
+		roleUpdatedAt: expect.any(Number),
 		passwordHash: 'password',
 		mustChangePassword: false
 	});
@@ -69,6 +70,7 @@ describe('User Schema Migrations', () => {
 				name: 'Admin',
 				registrationDate: expect.any(Number),
 				role: MeetUserRole.ADMIN,
+				roleUpdatedAt: expect.any(Number),
 				passwordHash: 'password',
 				mustChangePassword: false
 			});

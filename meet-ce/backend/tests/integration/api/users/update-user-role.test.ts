@@ -36,6 +36,7 @@ describe('Users API Tests', () => {
 			expect(response.body).toHaveProperty('user');
 			expect(response.body.user).toHaveProperty('userId', testUsers.user.user.userId);
 			expect(response.body.user).toHaveProperty('role', MeetUserRole.ADMIN);
+			expect(response.body.user).toHaveProperty('roleUpdatedAt');
 		});
 
 		it('should successfully update user role to USER', async () => {
@@ -85,11 +86,15 @@ describe('Users API Tests', () => {
 			// Update role to ADMIN
 			const updateResponse = await updateUserRole(userId, MeetUserRole.ADMIN);
 			expect(updateResponse.status).toBe(200);
+			expect(updateResponse.body.user).toHaveProperty('roleUpdatedAt');
 
 			// Verify role persisted by getting user
 			const getUserResponse = await getUser(userId);
 			expect(getUserResponse.status).toBe(200);
 			expect(getUserResponse.body).toHaveProperty('role', MeetUserRole.ADMIN);
+			expect(getUserResponse.body).toHaveProperty('roleUpdatedAt');
+			expect(getUserResponse.body.roleUpdatedAt).toBe(updateResponse.body.user.roleUpdatedAt);
+			expect(getUserResponse.body.roleUpdatedAt).toBeGreaterThanOrEqual(getUserResponse.body.registrationDate);
 		});
 
 		it('should not expose sensitive fields in response', async () => {
@@ -101,6 +106,7 @@ describe('Users API Tests', () => {
 			expect(response.body.user).toHaveProperty('name');
 			expect(response.body.user).toHaveProperty('role');
 			expect(response.body.user).toHaveProperty('registrationDate');
+			expect(response.body.user).toHaveProperty('roleUpdatedAt');
 		});
 
 		it('should fail when trying to update own role', async () => {

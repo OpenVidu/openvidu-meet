@@ -49,6 +49,7 @@ export class UserService {
 			name: 'Admin',
 			registrationDate: Date.now(),
 			role: MeetUserRole.ADMIN,
+			roleUpdatedAt: Date.now(),
 			passwordHash: await PasswordHelper.hashPassword(MEET_ENV.INITIAL_ADMIN_PASSWORD),
 			mustChangePassword: false
 		};
@@ -65,11 +66,13 @@ export class UserService {
 		}
 
 		const passwordHash = await PasswordHelper.hashPassword(userOptions.password);
+		const now = Date.now();
 		const user: MeetUser = {
 			userId: userOptions.userId,
 			name: userOptions.name,
-			registrationDate: Date.now(),
+			registrationDate: now,
 			role: userOptions.role,
+			roleUpdatedAt: now,
 			passwordHash,
 			mustChangePassword: true
 		};
@@ -181,7 +184,16 @@ export class UserService {
 			throw errorUserNotFound(userId);
 		}
 
-		const updatedUser = await this.userRepository.updatePartial(userId, { role: newRole });
+		// If the role is the same, no update is needed
+		if (user.role === newRole) {
+			this.logger.info(`User '${userId}' already has role '${newRole}', no update needed`);
+			return user;
+		}
+
+		const updatedUser = await this.userRepository.updatePartial(userId, {
+			role: newRole,
+			roleUpdatedAt: Date.now()
+		});
 
 		this.logger.info(`Role for user '${userId}' changed to '${newRole}' by admin`);
 		return updatedUser;

@@ -24,3 +24,8 @@ properties:
             - admin: Has full control over the entire application (configuration, users, rooms, recordings, etc).
             - user: Can create and manage their own created rooms and associated recordings. Can also access rooms they are a member of, but without management permissions.
             - room_member: Can only access rooms (and recordings) they are a member of, without ability to create or manage rooms.
+    roleUpdatedAt:
+        type: number
+        example: 1620000000000
+        description: |
+            Timestamp in milliseconds since the Unix epoch of the last time the user's role was updated.

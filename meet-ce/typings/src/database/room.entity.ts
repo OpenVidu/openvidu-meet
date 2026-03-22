@@ -46,7 +46,7 @@ export interface MeetRoom {
 	 */
 	status: MeetRoomStatus;
 	/**
-	 * Timestamp in milliseconds since epoch of the last time the room's role permissions or anonymous access were updated
+	 * Timestamp in milliseconds since epoch of the last time the room's role permissions or access configuration were updated
 	 */
 	rolesUpdatedAt: number;
 	/**

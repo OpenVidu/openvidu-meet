@@ -16,7 +16,9 @@ const userMigrationV1ToV2Transform: SchemaTransform<MeetUserDocument> = (user: M
 	// which is the root admin user created during the initial setup.
 	user.userId = legacyUser.username!;
 	user.name = 'Admin';
-	user.registrationDate = Date.now();
+	const now = Date.now();
+	user.registrationDate = now;
+	user.roleUpdatedAt = now;
 	user.role = MeetUserRole.ADMIN;
 	user.mustChangePassword = false;
 

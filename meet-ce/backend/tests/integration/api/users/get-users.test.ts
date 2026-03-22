@@ -100,7 +100,7 @@ describe('Users API Tests', () => {
 		it('should filter users by role', async () => {
 			const response = await getUsers({ role: MeetUserRole.ADMIN });
 			expect(response.status).toBe(200);
-			
+
 			// We created 2 admins + 1 root admin = 3 total
 			expect(response.body.users).toHaveLength(3);
 			response.body.users.forEach((user: MeetUser) => {
@@ -232,6 +232,7 @@ describe('Users API Tests', () => {
 				expect(user).toHaveProperty('name');
 				expect(user).toHaveProperty('role');
 				expect(user).toHaveProperty('registrationDate');
+				expect(user).toHaveProperty('roleUpdatedAt');
 			});
 		});
 	});

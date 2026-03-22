@@ -1,4 +1,4 @@
-import type { MeetUser} from '@openvidu-meet/typings';
+import type { MeetUser } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
@@ -48,6 +48,10 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 		role: {
 			type: String,
 			enum: Object.values(MeetUserRole),
+			required: true
+		},
+		roleUpdatedAt: {
+			type: Number,
 			required: true
 		},
 		passwordHash: {

@@ -15,6 +15,7 @@ export const MEET_USER_FIELDS = [
 	'name',
 	'registrationDate',
 	'role',
+	'roleUpdatedAt',
 	'passwordHash',
 	'mustChangePassword'
 ] as const satisfies readonly (keyof MeetUser)[];

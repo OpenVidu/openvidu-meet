@@ -10,6 +10,8 @@ export interface MeetUser {
 	registrationDate: number;
 	/** Role of the user. See {@link MeetUserRole} for details. */
 	role: MeetUserRole;
+	/** Timestamp in milliseconds since epoch when the user's role was last updated */
+	roleUpdatedAt: number;
 	/** Hashed password for the user */
 	passwordHash: string;
 	/** Indicates whether the user must change their password on next login */
