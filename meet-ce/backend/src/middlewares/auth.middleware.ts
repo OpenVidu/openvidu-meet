@@ -113,6 +113,7 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 
 			let userId: string | undefined;
 			let tokenType: TokenType;
+			let issuedAt: number;
 
 			try {
 				// Verify the token and extract the user ID and token metadata
@@ -127,6 +128,7 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 				const parsedMetadata = tokenService.parseTokenMetadata(tokenMetadata);
 				userId = sub;
 				tokenType = parsedMetadata.tokenType;
+				issuedAt = parsedMetadata.iat;
 
 				if (tokenType === TokenType.REFRESH) {
 					throw new Error('Invalid token type for access');
@@ -142,6 +144,11 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 
 			if (!user) {
 				throw errorInvalidTokenSubject();
+			}
+
+			// Invalidate access tokens issued before the user's latest role change
+			if (issuedAt < user.roleUpdatedAt) {
+				throw errorInvalidToken();
 			}
 
 			// Restrict access if password change is required or if token is temporary
@@ -200,7 +207,15 @@ export const roomMemberTokenValidator: AuthValidator = {
 
 			// Validate the room member token metadata
 			const parsedMetadata = tokenService.parseRoomMemberTokenMetadata(tokenMetadata);
-			const { iat, roomId, memberId } = parsedMetadata;
+			const { iat, roomId, memberId, userId } = parsedMetadata;
+
+			const roomRepository = container.get(RoomRepository);
+			const room = await roomRepository.findByRoomId(roomId, ['rolesUpdatedAt']);
+
+			// Always validate room role/access updates for any room member token
+			if (!room || iat < room.rolesUpdatedAt) {
+				throw new Error('Token has outdated permissions');
+			}
 
 			// If the token has a memberId, validate that permissions haven't been updated after token issuance
 			if (memberId) {
@@ -213,13 +228,15 @@ export const roomMemberTokenValidator: AuthValidator = {
 				if (!roomMember || iat < roomMember.permissionsUpdatedAt) {
 					throw new Error('Token has outdated permissions');
 				}
-			} else {
-				// If the token has no memberId (anonymous access), validate that room roles/anonymous haven't been updated
-				const roomRepository = container.get(RoomRepository);
-				const room = await roomRepository.findByRoomId(roomId, ['rolesUpdatedAt']);
+			}
 
-				// If room not found or roles/anonymous were updated after token issuance, invalidate token
-				if (!room || iat < room.rolesUpdatedAt) {
+			// If the token is associated with a registered user, validate user role wasn't updated after token issuance
+			if (userId) {
+				const userService = container.get(UserService);
+				const user = await userService.getUser(userId, ['roleUpdatedAt']);
+
+				// If user not found or role was updated after token issuance, invalidate token
+				if (!user || iat < user.roleUpdatedAt) {
 					throw new Error('Token has outdated permissions');
 				}
 			}

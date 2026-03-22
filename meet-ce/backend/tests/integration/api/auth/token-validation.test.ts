@@ -19,7 +19,8 @@ import {
 	updateRoomAccessConfig,
 	updateRoomConfig,
 	updateRoomMember,
-	updateRoomRoles
+	updateRoomRoles,
+	updateUserRole
 } from '../../../helpers/request-helpers.js';
 import { setupRoomMember, setupSingleRoom, setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
 import { TestUsers, UserData } from '../../../interfaces/scenarios.js';
@@ -103,6 +104,27 @@ describe('Token Validation Tests', () => {
 
 			// Restore original expiration after setup
 			MEET_ENV.ACCESS_TOKEN_EXPIRATION = initialTokenExpiration;
+
+			const response = await request(app)
+				.get(`${USERS_PATH}/me`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when access token was issued before user role update', async () => {
+			const userData = await setupUser({
+				userId: `user_${Date.now()}`,
+				name: 'User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+
+			// Update the user's role
+			await sleep('100ms'); // Small delay to ensure timestamp difference
+			const roleUpdateResponse = await updateUserRole(userData.user.userId, MeetUserRole.ROOM_MEMBER);
+			expect(roleUpdateResponse.status).toBe(200);
 
 			const response = await request(app)
 				.get(`${USERS_PATH}/me`)
@@ -479,7 +501,7 @@ describe('Token Validation Tests', () => {
 			expect(response.body.message).toContain('Invalid token');
 		});
 
-		it('should succeed when room access config is updated after room member token issuance', async () => {
+		it('should fail when room access config is updated after room member token issuance', async () => {
 			// Create a room with an external member
 			const roomData = await setupSingleRoom();
 			const roomMember = await setupRoomMember(roomData.room.roomId, {
@@ -503,11 +525,89 @@ describe('Token Validation Tests', () => {
 				}
 			});
 
-			// The original token should still be valid
+			// The original token should now be invalid
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
-			expect(response.status).toBe(200);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when user role is updated after room member token issuance for registered user member', async () => {
+			// Create a room with a registered user as member
+			const roomData = await setupSingleRoom();
+			const userData = await setupUser({
+				userId: `user_${Date.now()}`,
+				name: 'User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+
+			const roomMember = await setupRoomMember(
+				roomData.room.roomId,
+				{
+					userId: userData.user.userId,
+					baseRole: MeetRoomMemberRole.SPEAKER
+				},
+				userData.accessToken
+			);
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Update the user's role
+			await sleep('100ms'); // Small delay to ensure timestamp difference
+			const roleUpdateResponse = await updateUserRole(userData.user.userId, MeetUserRole.ROOM_MEMBER);
+			expect(roleUpdateResponse.status).toBe(200);
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
+		});
+
+		it('should fail when user is deleted after room member token issuance for registered user member', async () => {
+			// Create a room with a registered user as member
+			const roomData = await setupSingleRoom();
+			const userData = await setupUser({
+				userId: `user_${Date.now()}`,
+				name: 'User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+
+			const roomMember = await setupRoomMember(
+				roomData.room.roomId,
+				{
+					userId: userData.user.userId,
+					baseRole: MeetRoomMemberRole.SPEAKER
+				},
+				userData.accessToken
+			);
+
+			// Verify the token works initially
+			const initialResponse = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(initialResponse.status).toBe(200);
+
+			// Delete the user
+			await deleteUser(userData.user.userId);
+
+			// The original token should now be invalid
+			const response = await request(app)
+				.get(`${ROOMS_PATH}/${roomData.room.roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+			expect(response.status).toBe(401);
+			expect(response.body).toHaveProperty('message');
+			expect(response.body.message).toContain('Invalid token');
 		});
 
 		it('should fail when room access config is updated after anonymous room member token issuance', async () => {
