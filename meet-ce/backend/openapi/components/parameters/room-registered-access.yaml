@@ -1,0 +1,6 @@
+name: registeredAccess
+in: query
+required: false
+description: Include rooms with registered access enabled.
+schema:
+    type: boolean

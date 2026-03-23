@@ -43,9 +43,9 @@ import {
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import type {
 	MeetRoomMemberPage,
-	MeetRoomMemberQueryWithFields,
 	ProjectedMeetRoomMember,
 	RoomMemberQuery,
+	RoomMemberQueryWithFields,
 	RoomMemberQueryWithProjection
 } from '../types/room-member-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
@@ -227,12 +227,12 @@ export class RoomMemberService {
 
 	async getAllRoomMembers(
 		roomId: string,
-		filters: MeetRoomMemberQueryWithFields
+		filters: RoomMemberQueryWithFields
 	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>>;
 
 	async getAllRoomMembers(
 		roomId: string,
-		filters: MeetRoomMemberQueryWithFields = {}
+		filters: RoomMemberQueryWithFields = {}
 	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>> {
 		const response = await this.roomMemberRepository.findByRoomId(roomId, filters);
 		return response;

@@ -44,9 +44,9 @@ import { RoomMemberRepository } from '../repositories/room-member.repository.js'
 import { RoomRepository } from '../repositories/room.repository.js';
 import type {
 	MeetRoomPage,
-	MeetRoomRepositoryQuery,
-	MeetRoomRepositoryQueryWithFields,
-	MeetRoomRepositoryQueryWithProjection
+	RoomQuery,
+	RoomQueryWithFields,
+	RoomQueryWithProjection
 } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -342,18 +342,16 @@ export class RoomService {
 	 * @returns A Promise that resolves to paginated room list (with DB-optimized fields, but no HTTP filtering)
 	 * @throws If there was an error retrieving the rooms
 	 */
-	async getAllMeetRooms(filters?: MeetRoomRepositoryQuery): Promise<MeetRoomPage<MeetRoom>>;
+	async getAllMeetRooms(filters?: RoomQuery): Promise<MeetRoomPage<MeetRoom>>;
 
 	async getAllMeetRooms<const TFields extends readonly MeetRoomField[]>(
-		_filters: MeetRoomRepositoryQueryWithProjection<TFields>
+		_filters: RoomQueryWithProjection<TFields>
 	): Promise<MeetRoomPage<ProjectedMeetRoom<TFields>>>;
 
-	async getAllMeetRooms(
-		filters: MeetRoomRepositoryQueryWithFields
-	): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>>;
+	async getAllMeetRooms(filters: RoomQueryWithFields): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>>;
 
 	async getAllMeetRooms(
-		filters: MeetRoomRepositoryQueryWithFields = {}
+		filters: RoomQueryWithFields = {}
 	): Promise<MeetRoomPage<MeetRoom | ProjectedMeetRoom<readonly MeetRoomField[]>>> {
 		return this.roomRepository.find(filters);
 	}

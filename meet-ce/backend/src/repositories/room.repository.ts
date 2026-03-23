@@ -8,13 +8,14 @@ import { MEET_ROOM_DOCUMENT_ONLY_FIELDS, MeetRoomModel } from '../models/mongoos
 import { LoggerService } from '../services/logger.service.js';
 import type {
 	MeetRoomPage,
-	MeetRoomRepositoryQuery,
-	MeetRoomRepositoryQueryWithFields,
-	MeetRoomRepositoryQueryWithProjection
+	RoomQuery,
+	RoomQueryWithFields,
+	RoomQueryWithProjection
 } from '../types/room-projection.types.js';
 import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 import { BaseRepository } from './base.repository.js';
+import { RoomMemberRepository } from './room-member.repository.js';
 
 /**
  * Repository for managing MeetRoom entities in MongoDB.
@@ -22,7 +23,10 @@ import { BaseRepository } from './base.repository.js';
  */
 @injectable()
 export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
-	constructor(@inject(LoggerService) logger: LoggerService) {
+	constructor(
+		@inject(LoggerService) protected logger: LoggerService,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository
+	) {
 		super(logger, MeetRoomModel);
 	}
 
@@ -152,8 +156,8 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param options.roomName - Optional room name to filter by (case-insensitive partial match)
 	 * @param options.status - Optional room status to filter by
 	 * @param options.owner - Optional owner userId to filter by
-	 * @param options.roomIds - Optional array of room IDs to filter by, representing rooms the user is a member of
-	 * @param options.includeRegisteredAccessEnabled - If true, includes rooms with registered access enabled
+	 * @param options.member - Optional member userId to filter rooms where user is a member
+	 * @param options.registeredAccess - If true, includes rooms with registered access enabled
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
@@ -161,21 +165,21 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing rooms array, pagination info, and optional next page token
 	 */
-	async find(options?: MeetRoomRepositoryQuery): Promise<MeetRoomPage<MeetRoom>>;
+	async find(options?: RoomQuery): Promise<MeetRoomPage<MeetRoom>>;
 
 	async find<const TFields extends readonly MeetRoomField[]>(
-		options: MeetRoomRepositoryQueryWithProjection<TFields>
+		options: RoomQueryWithProjection<TFields>
 	): Promise<MeetRoomPage<ProjectedMeetRoom<TFields>>>;
 
-	async find(options: MeetRoomRepositoryQueryWithFields): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>>;
+	async find(options: RoomQueryWithFields): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>>;
 
-	async find(options: MeetRoomRepositoryQueryWithFields = {}): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>> {
+	async find(options: RoomQueryWithFields = {}): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>> {
 		const {
 			roomName,
 			status,
 			owner,
-			roomIds,
-			includeRegisteredAccessEnabled,
+			member,
+			registeredAccess,
 			fields,
 			maxItems = 100,
 			nextPageToken,
@@ -192,11 +196,12 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 			accessScopeOrFilters.push({ owner });
 		}
 
-		if (roomIds !== undefined) {
-			accessScopeOrFilters.push({ roomId: { $in: roomIds } });
+		if (member) {
+			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(member);
+			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
 		}
 
-		if (includeRegisteredAccessEnabled) {
+		if (registeredAccess) {
 			accessScopeOrFilters.push({ 'access.registered.enabled': true });
 		}
 

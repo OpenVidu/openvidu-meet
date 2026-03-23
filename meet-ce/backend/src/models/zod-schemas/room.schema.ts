@@ -13,7 +13,8 @@ import type {
 	MeetRoomOptions,
 	MeetRoomRolesConfig,
 	MeetRoomTheme,
-	MeetVirtualBackgroundConfig} from '@openvidu-meet/typings';
+	MeetVirtualBackgroundConfig
+} from '@openvidu-meet/typings';
 import {
 	MEET_ROOM_EXTRA_FIELDS,
 	MEET_ROOM_FIELDS,
@@ -440,6 +441,9 @@ const fieldsSchema = z
 
 export const RoomFiltersSchema = z.object({
 	roomName: z.string().optional(),
+	owner: z.string().min(1, 'owner cannot be empty').optional(),
+	member: z.string().min(1, 'member cannot be empty').optional(),
+	registeredAccess: z.boolean().optional(),
 	status: z.nativeEnum(MeetRoomStatus).optional(),
 	fields: fieldsSchema,
 	extraFields: extraFieldsSchema,

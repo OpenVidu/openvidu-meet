@@ -41,11 +41,10 @@ import {
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import type {
 	MeetRecordingPage,
-	MeetRecordingRepositoryQueryWithFields,
-	MeetRecordingServiceQuery,
-	MeetRecordingServiceQueryWithFields,
-	MeetRecordingServiceQueryWithProjection,
-	ProjectedRecording
+	ProjectedRecording,
+	RecordingQuery,
+	RecordingQueryWithFields,
+	RecordingQueryWithProjection
 } from '../types/recording-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { DistributedEventService } from './distributed-event.service.js';
@@ -264,21 +263,21 @@ export class RecordingService {
 	 * - `nextPageToken`: (Optional) A token to retrieve the next page of results, if available.
 	 * @throws Will throw an error if there is an issue retrieving the recordings.
 	 */
-	async getAllRecordings(filters?: MeetRecordingServiceQuery): Promise<MeetRecordingPage<MeetRecordingInfo>>;
+	async getAllRecordings(filters?: RecordingQuery): Promise<MeetRecordingPage<MeetRecordingInfo>>;
 
 	async getAllRecordings<const TFields extends readonly MeetRecordingField[]>(
-		filters: MeetRecordingServiceQueryWithProjection<TFields>
+		filters: RecordingQueryWithProjection<TFields>
 	): Promise<MeetRecordingPage<ProjectedRecording<TFields>>>;
 
 	async getAllRecordings(
-		filters: MeetRecordingServiceQueryWithFields
+		filters: RecordingQueryWithFields
 	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>>;
 
 	async getAllRecordings(
-		filters: MeetRecordingServiceQueryWithFields = {}
+		filters: RecordingQueryWithFields = {}
 	): Promise<MeetRecordingPage<MeetRecordingInfo | ProjectedRecording<readonly MeetRecordingField[]>>> {
 		try {
-			const queryOptions: MeetRecordingRepositoryQueryWithFields = { ...filters };
+			const queryOptions: RecordingQueryWithFields = { ...filters };
 
 			// Get accessible room IDs based on authenticated user and their permissions
 			const roomService = await this.getRoomService();

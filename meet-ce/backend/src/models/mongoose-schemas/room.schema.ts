@@ -353,6 +353,7 @@ MeetRoomSchema.index({ creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ roomName: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ status: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ owner: 1, creationDate: -1, _id: -1 });
+MeetRoomSchema.index({ 'access.registered.enabled': 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ autoDeletionDate: 1, _id: 1 });
 
 export const meetRoomCollectionName = 'MeetRoom';

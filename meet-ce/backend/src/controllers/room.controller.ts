@@ -14,7 +14,7 @@ import { handleError, internalError } from '../models/error.model.js';
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
-import type { MeetRoomRepositoryQueryWithFields } from '../types/room-projection.types.js';
+import type { RoomQueryWithFields } from '../types/room-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
@@ -47,7 +47,7 @@ export const createRoom = async (req: Request, res: Response) => {
 export const getRooms = async (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const queryParams = res.locals.validatedQuery as MeetRoomRepositoryQueryWithFields;
+	const queryParams = res.locals.validatedQuery as RoomQueryWithFields;
 
 	logger.verbose(`Getting all rooms with filters: ${JSON.stringify(queryParams)}`);
 
@@ -56,7 +56,7 @@ export const getRooms = async (_req: Request, res: Response) => {
 			queryParams.fields ? [...queryParams.fields] : undefined,
 			queryParams.extraFields
 		);
-		const optimizedQueryParams: MeetRoomRepositoryQueryWithFields = { ...queryParams, fields: fieldsForQuery };
+		const optimizedQueryParams: RoomQueryWithFields = { ...queryParams, fields: fieldsForQuery };
 
 		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(optimizedQueryParams);
 		const filteredRooms = await runConcurrently(

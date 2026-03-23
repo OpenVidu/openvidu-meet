@@ -7,10 +7,9 @@ import {
 	handleError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
-import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
-import { MeetRoomRepositoryQueryWithFields } from '../types/room-projection.types.js';
+import { RoomQueryWithFields } from '../types/room-projection.types.js';
 
 /**
  * Middleware to apply room list access filters to validated query options.
@@ -35,17 +34,33 @@ export const applyRoomListAccessFilters = async (_req: Request, res: Response, n
 	}
 
 	try {
-		const roomMemberRepository = container.get(RoomMemberRepository);
-		const queryOptions = res.locals.validatedQuery as MeetRoomRepositoryQueryWithFields;
+		const queryOptions = res.locals.validatedQuery as RoomQueryWithFields;
+		const hasScopeFilters =
+			queryOptions.owner !== undefined ||
+			queryOptions.member !== undefined ||
+			queryOptions.registeredAccess !== undefined;
 
-		// Include rooms where the user is a member or rooms with registered access enabled
-		const memberRoomIds = await roomMemberRepository.getRoomIdsByMemberId(user.userId);
-		queryOptions.roomIds = memberRoomIds;
-		queryOptions.includeRegisteredAccessEnabled = true;
+		// Non-admin users can only scope owner/member filters to their own userId.
+		if (queryOptions.owner && queryOptions.owner !== user.userId) {
+			const error = errorInsufficientPermissions();
+			return rejectRequestFromMeetError(res, error);
+		}
 
-		// USER role can also list rooms they own
-		if (user.role === MeetUserRole.USER) {
-			queryOptions.owner = user.userId;
+		if (queryOptions.member && queryOptions.member !== user.userId) {
+			const error = errorInsufficientPermissions();
+			return rejectRequestFromMeetError(res, error);
+		}
+
+		// Default behavior when client does not provide explicit scope filters:
+		// USER => owned OR member OR registered access
+		// ROOM_MEMBER => member OR registered access
+		if (!hasScopeFilters) {
+			if (user.role === MeetUserRole.USER) {
+				queryOptions.owner = user.userId;
+			}
+
+			queryOptions.member = user.userId;
+			queryOptions.registeredAccess = true;
 		}
 
 		res.locals.validatedQuery = queryOptions;

@@ -80,6 +80,18 @@ export interface MeetRoomFilters extends SortAndPagination<MeetRoomSortField> {
 	 */
 	roomName?: string;
 	/**
+	 * Filter rooms by owner user ID.
+	 */
+	owner?: string;
+	/**
+	 * Filter rooms where the given user ID is a member.
+	 */
+	member?: string;
+	/**
+	 * Include rooms with registered access enabled.
+	 */
+	registeredAccess?: boolean;
+	/**
 	 * Filter rooms by status
 	 */
 	status?: MeetRoomStatus;

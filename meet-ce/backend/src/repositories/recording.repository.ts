@@ -15,10 +15,10 @@ import {
 import { LoggerService } from '../services/logger.service.js';
 import type {
 	MeetRecordingPage,
-	MeetRecordingRepositoryQuery,
-	MeetRecordingRepositoryQueryWithFields,
-	MeetRecordingRepositoryQueryWithProjection,
-	ProjectedRecording
+	ProjectedRecording,
+	RecordingQuery,
+	RecordingQueryWithFields,
+	RecordingQueryWithProjection
 } from '../types/recording-projection.types.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -136,18 +136,18 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing recordings array, pagination info, and optional next page token
 	 */
-	async find(options?: MeetRecordingRepositoryQuery): Promise<MeetRecordingPage<MeetRecordingInfo>>;
+	async find(options?: RecordingQuery): Promise<MeetRecordingPage<MeetRecordingInfo>>;
 
 	async find<const TFields extends readonly MeetRecordingField[]>(
-		options: MeetRecordingRepositoryQueryWithProjection<TFields>
+		options: RecordingQueryWithProjection<TFields>
 	): Promise<MeetRecordingPage<ProjectedRecording<TFields>>>;
 
 	async find(
-		options: MeetRecordingRepositoryQueryWithFields
+		options: RecordingQueryWithFields
 	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>>;
 
 	async find(
-		options: MeetRecordingRepositoryQueryWithFields = {}
+		options: RecordingQueryWithFields = {}
 	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>> {
 		const {
 			roomIds,

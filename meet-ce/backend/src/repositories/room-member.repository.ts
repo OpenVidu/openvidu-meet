@@ -14,9 +14,9 @@ import {
 import { LoggerService } from '../services/logger.service.js';
 import type {
 	MeetRoomMemberPage,
-	MeetRoomMemberQueryWithFields,
 	ProjectedMeetRoomMember,
 	RoomMemberQuery,
+	RoomMemberQueryWithFields,
 	RoomMemberQueryWithProjection
 } from '../types/room-member-projection.types.js';
 import { BaseRepository } from './base.repository.js';
@@ -181,12 +181,12 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 
 	async findByRoomId(
 		roomId: string,
-		options: MeetRoomMemberQueryWithFields
+		options: RoomMemberQueryWithFields
 	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>>;
 
 	async findByRoomId(
 		roomId: string,
-		options: MeetRoomMemberQueryWithFields = {}
+		options: RoomMemberQueryWithFields = {}
 	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>> {
 		const {
 			name,
