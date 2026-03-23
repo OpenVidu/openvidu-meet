@@ -1,15 +1,20 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
+	createRoom,
+	createRoomMember,
 	createUser,
+	deleteAllRooms,
 	deleteAllUsers,
+	getRoom,
+	getRoomMember,
 	getUser,
 	startTestServer,
 	updateUserRole
 } from '../../../helpers/request-helpers.js';
-import { setupTestUsers } from '../../../helpers/test-scenarios.js';
+import { setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
 import { TestUsers } from '../../../interfaces/scenarios.js';
 
 describe('Users API Tests', () => {
@@ -21,6 +26,7 @@ describe('Users API Tests', () => {
 	});
 
 	afterAll(async () => {
+		await deleteAllRooms();
 		await deleteAllUsers();
 	});
 
@@ -143,6 +149,62 @@ describe('Users API Tests', () => {
 			expect(response.status).toBe(404);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('not found');
+		});
+
+		it('should transfer owned rooms to root admin when USER is changed to ROOM_MEMBER', async () => {
+			// Create user with USER role first
+			const userId = `user_${Date.now()}`;
+			const userData = await setupUser({
+				userId,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+
+			// Create a room owned by this user
+			const room = await createRoom(undefined, userData.accessToken);
+
+			// Update role to ROOM_MEMBER
+			const result = await updateUserRole(userId, MeetUserRole.ROOM_MEMBER);
+			expect(result.status).toBe(200);
+			expect(result.body.user.role).toBe(MeetUserRole.ROOM_MEMBER);
+
+			// Verify the room ownership has been transferred to root admin
+			const updatedRoomResponse = await getRoom(room.roomId);
+			expect(updatedRoomResponse.status).toBe(200);
+			expect(updatedRoomResponse.body.owner).toBe(MEET_ENV.INITIAL_ADMIN_USER);
+		});
+
+		it('should remove memberships when USER is changed to ADMIN', async () => {
+			// Create user with USER role first
+			const userId = `user_${Date.now()}`;
+			await createUser({
+				userId,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.USER
+			});
+
+			// Create a room and add the user as a member
+			const room = await createRoom();
+			await createRoomMember(room.roomId, {
+				userId,
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+
+			// Verify membership exists
+			const getMemberResponse = await getRoomMember(room.roomId, userId);
+			expect(getMemberResponse.status).toBe(200);
+			expect(getMemberResponse.body).toHaveProperty('memberId', userId);
+
+			// Update role to ADMIN
+			const result = await updateUserRole(userId, MeetUserRole.ADMIN);
+			expect(result.status).toBe(200);
+			expect(result.body.user.role).toBe(MeetUserRole.ADMIN);
+
+			// Verify the user is no longer a member of the room
+			const getMemberAfterResponse = await getRoomMember(room.roomId, userId);
+			expect(getMemberAfterResponse.status).toBe(404);
 		});
 	});
 

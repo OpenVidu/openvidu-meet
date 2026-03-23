@@ -178,16 +178,45 @@ export class UserService {
 			throw errorCannotChangeOwnRole();
 		}
 
-		const user = await this.userRepository.findByUserId(userId, ['userId']);
+		const user = await this.userRepository.findByUserId(userId);
 
 		if (!user) {
 			throw errorUserNotFound(userId);
 		}
 
+		const oldRole = user.role;
+
 		// If the role is the same, no update is needed
-		if (user.role === newRole) {
+		if (oldRole === newRole) {
 			this.logger.info(`User '${userId}' already has role '${newRole}', no update needed`);
 			return user;
+		}
+
+		// If ADMIN or USER becomes ROOM_MEMBER, transfer owned rooms to root admin.
+		if ((oldRole === MeetUserRole.ADMIN || oldRole === MeetUserRole.USER) && newRole === MeetUserRole.ROOM_MEMBER) {
+			const ownedRooms = await this.roomRepository.findByOwner(userId, ['roomId']);
+
+			if (ownedRooms.length > 0) {
+				await runConcurrently(
+					ownedRooms,
+					async (room) => {
+						await this.roomRepository.updatePartial(room.roomId, { owner: MEET_ENV.INITIAL_ADMIN_USER });
+					},
+					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_USER_RESOURCES, failFast: true }
+				);
+
+				this.logger.info(
+					`Transferred ownership of ${ownedRooms.length} room(s) from user '${userId}' to admin '${MEET_ENV.INITIAL_ADMIN_USER}' due to role change to '${MeetUserRole.ROOM_MEMBER}'`
+				);
+			}
+		}
+
+		// If USER or ROOM_MEMBER becomes ADMIN, remove room memberships.
+		if ((oldRole === MeetUserRole.USER || oldRole === MeetUserRole.ROOM_MEMBER) && newRole === MeetUserRole.ADMIN) {
+			await this.roomMemberRepository.deleteAllByMemberId(userId);
+			this.logger.info(
+				`Removed room memberships for user '${userId}' due to role change to '${MeetUserRole.ADMIN}'`
+			);
 		}
 
 		const updatedUser = await this.userRepository.updatePartial(userId, {
