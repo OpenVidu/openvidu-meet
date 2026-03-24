@@ -1,5 +1,5 @@
 import type { MeetRoomMember, MeetRoomMemberField, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { SortOrder } from '@openvidu-meet/typings';
+import { SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -19,6 +19,7 @@ import type {
 	RoomMemberQueryWithFields,
 	RoomMemberQueryWithProjection
 } from '../types/room-member-projection.types.js';
+import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
@@ -164,7 +165,9 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 *
 	 * @param roomId - The ID of the room
 	 * @param options - Query options
-	 * @param options.name - Optional member name to filter by (case-insensitive partial match)
+	 * @param options.name - Optional member name to filter by
+	 * @param options.nameMatchMode - Match mode for name filtering (default: 'exact')
+	 * @param options.nameCaseInsensitive - Whether name filtering should ignore case (default: false)
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination
@@ -190,6 +193,8 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	): Promise<MeetRoomMemberPage<MeetRoomMember | Partial<MeetRoomMember>>> {
 		const {
 			name,
+			nameMatchMode = TextMatchMode.EXACT,
+			nameCaseInsensitive = false,
 			fields,
 			maxItems = 100,
 			nextPageToken,
@@ -201,7 +206,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		const filter: QueryFilter<MeetRoomMemberDocument> = { roomId };
 
 		if (name) {
-			filter.name = new RegExp(name, 'i');
+			filter.name = buildStringMatchFilter(name, nameMatchMode, nameCaseInsensitive);
 		}
 
 		// Use base repository's pagination method

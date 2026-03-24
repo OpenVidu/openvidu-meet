@@ -1,6 +1,7 @@
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
 import { MeetRoomMember } from '../database/room-member.entity.js';
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
+import { TextMatchMode } from './text-match.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRoomMember.
@@ -40,8 +41,18 @@ export type MeetRoomMemberSortField = (typeof MEET_ROOM_MEMBER_SORT_FIELDS)[numb
  * Filters for querying room members with pagination, sorting, and field selection support.
  */
 export interface MeetRoomMemberFilters extends SortAndPagination<MeetRoomMemberSortField> {
-	/** Filter by member name (partial match) */
+	/** Filter members by name. */
 	name?: string;
+	/**
+	 * Match mode used to apply the name filter.
+	 * Defaults to 'exact'.
+	 */
+	nameMatchMode?: TextMatchMode;
+	/**
+	 * Whether name matching should ignore case.
+	 * Defaults to false.
+	 */
+	nameCaseInsensitive?: boolean;
 	/** Array of fields to include in the response */
 	fields?: MeetRoomMemberField[];
 }

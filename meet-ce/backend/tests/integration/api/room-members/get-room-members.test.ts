@@ -123,21 +123,48 @@ describe('Room Members API Tests', () => {
 			expect(Object.keys(member).length).toBe(2); // Only memberId and name should be present
 		});
 
-		it('should filter members by name (case-insensitive partial match)', async () => {
-			const response = await getRoomMembers(roomId, { name: 'alice' });
+		it('should filter members by name using exact match by default', async () => {
+			const response = await getRoomMembers(roomId, { name: 'Alice Smith' });
 			expect(response.status).toBe(200);
 			expect(response.body.members.length).toBe(1);
 			expect(response.body.members[0].name).toBe('Alice Smith');
 		});
 
-		it('should filter members by name with partial match', async () => {
-			const response = await getRoomMembers(roomId, { name: 'son' });
+		it('should filter members by name with prefix match mode', async () => {
+			const response = await getRoomMembers(roomId, { name: 'Ali', nameMatchMode: 'prefix' });
+			expect(response.status).toBe(200);
+			expect(response.body.members.length).toBe(1);
+			expect(response.body.members[0].name).toBe('Alice Smith');
+		});
+
+		it('should filter members by name with partial match mode', async () => {
+			const response = await getRoomMembers(roomId, { name: 'son', nameMatchMode: 'partial' });
 			expect(response.status).toBe(200);
 			expect(response.body.members.length).toBe(2);
 
 			// Bob Johnson, Eve Anderson
 			const names = response.body.members.map((m: MeetRoomMember) => m.name);
 			expect(names).toEqual(expect.arrayContaining(['Bob Johnson', 'Eve Anderson']));
+		});
+
+		it('should filter members by name with regex match mode', async () => {
+			const response = await getRoomMembers(roomId, {
+				name: '^Alice\\sSmith$',
+				nameMatchMode: 'regex'
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.members.length).toBe(1);
+			expect(response.body.members[0].name).toBe('Alice Smith');
+		});
+
+		it('should filter members by name using case-insensitive exact match', async () => {
+			const response = await getRoomMembers(roomId, {
+				name: 'alice smith',
+				nameCaseInsensitive: true
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.members.length).toBe(1);
+			expect(response.body.members[0].name).toBe('Alice Smith');
 		});
 
 		it('should return empty array when name filter matches no members', async () => {
@@ -249,6 +276,7 @@ describe('Room Members API Tests', () => {
 		it('should combine filtering, pagination, and sorting', async () => {
 			const response = await getRoomMembers(roomId, {
 				name: 'e', // Should match Alice, Charlie, Diana, Eve (4 members)
+				nameMatchMode: 'partial',
 				maxItems: 2,
 				sortField: 'name',
 				sortOrder: 'asc'
@@ -289,6 +317,21 @@ describe('Room Members API Tests', () => {
 		it('should fail when sortOrder is invalid', async () => {
 			const response = await getRoomMembers(roomId, { sortOrder: 'invalid' });
 			expectValidationError(response, 'sortOrder', 'Invalid enum value');
+		});
+
+		it('should fail when nameMatchMode is invalid', async () => {
+			const response = await getRoomMembers(roomId, { name: 'Alice', nameMatchMode: 'invalid' });
+			expectValidationError(response, 'nameMatchMode', 'Invalid enum value');
+		});
+
+		it('should fail when nameCaseInsensitive is not a boolean', async () => {
+			const response = await getRoomMembers(roomId, { nameCaseInsensitive: 'not-a-boolean' });
+			expectValidationError(response, 'nameCaseInsensitive', 'Expected boolean, received string');
+		});
+
+		it('should fail when name regex pattern is invalid', async () => {
+			const response = await getRoomMembers(roomId, { name: '[invalid-regex', nameMatchMode: 'regex' });
+			expectValidationError(response, 'name', 'Invalid regular expression pattern');
 		});
 	});
 });

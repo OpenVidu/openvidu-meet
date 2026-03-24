@@ -3,13 +3,15 @@ import type {
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenMetadata,
-	MeetRoomMemberTokenOptions} from '@openvidu-meet/typings';
+	MeetRoomMemberTokenOptions
+} from '@openvidu-meet/typings';
 import {
 	MEET_ROOM_MEMBER_FIELDS,
 	MEET_ROOM_MEMBER_SORT_FIELDS,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
-	SortOrder
+	SortOrder,
+	TextMatchMode
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
 
@@ -96,23 +98,47 @@ export const RoomMemberOptionsSchema: z.ZodType<MeetRoomMemberOptions> = z
 		}
 	);
 
-export const RoomMemberFiltersSchema = z.object({
-	name: z.string().optional(),
-	fields: fieldsSchema,
-	maxItems: z.coerce
-		.number()
-		.positive('maxItems must be a positive number')
-		.transform((val) => {
-			// Convert the value to a number
-			const intVal = Math.floor(val);
-			// Ensure it's not greater than 100
-			return intVal > 100 ? 100 : intVal;
-		})
-		.default(10),
-	nextPageToken: z.string().optional(),
-	sortField: z.enum(MEET_ROOM_MEMBER_SORT_FIELDS).optional().default('membershipDate'),
-	sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
-});
+export const RoomMemberFiltersSchema = z
+	.object({
+		name: z.string().optional(),
+		nameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		nameCaseInsensitive: z.preprocess((arg) => {
+			if (typeof arg === 'string') {
+				if (arg.toLowerCase() === 'true') return true;
+
+				if (arg.toLowerCase() === 'false') return false;
+			}
+
+			return arg;
+		}, z.boolean().optional().default(false)),
+		fields: fieldsSchema,
+		maxItems: z.coerce
+			.number()
+			.positive('maxItems must be a positive number')
+			.transform((val) => {
+				// Convert the value to a number
+				const intVal = Math.floor(val);
+				// Ensure it's not greater than 100
+				return intVal > 100 ? 100 : intVal;
+			})
+			.default(10),
+		nextPageToken: z.string().optional(),
+		sortField: z.enum(MEET_ROOM_MEMBER_SORT_FIELDS).optional().default('membershipDate'),
+		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+	})
+	.superRefine((data, ctx) => {
+		if (data.nameMatchMode === TextMatchMode.REGEX && data.name) {
+			try {
+				new RegExp(String(data.name));
+			} catch {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ['name'],
+					message: 'Invalid regular expression pattern'
+				});
+			}
+		}
+	});
 
 export const BulkDeleteRoomMembersReqSchema = z.object({
 	memberIds: z.preprocess(
