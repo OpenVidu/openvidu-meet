@@ -205,6 +205,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 			accessScopeOrFilters.push({ 'access.registered.enabled': true });
 		}
 
+		// Combine access scope filters with $or if there are multiple, or merge directly if only one
 		if (accessScopeOrFilters.length === 1) {
 			Object.assign(filter, accessScopeOrFilters[0]);
 		} else if (accessScopeOrFilters.length > 1) {

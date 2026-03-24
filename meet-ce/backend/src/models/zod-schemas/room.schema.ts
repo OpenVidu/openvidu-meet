@@ -443,7 +443,15 @@ export const RoomFiltersSchema = z.object({
 	roomName: z.string().optional(),
 	owner: z.string().min(1, 'owner cannot be empty').optional(),
 	member: z.string().min(1, 'member cannot be empty').optional(),
-	registeredAccess: z.boolean().optional(),
+	registeredAccess: z.preprocess((arg) => {
+		if (typeof arg === 'string') {
+			if (arg.toLowerCase() === 'true') return true;
+
+			if (arg.toLowerCase() === 'false') return false;
+		}
+
+		return arg;
+	}, z.boolean().optional()),
 	status: z.nativeEnum(MeetRoomStatus).optional(),
 	fields: fieldsSchema,
 	extraFields: extraFieldsSchema,

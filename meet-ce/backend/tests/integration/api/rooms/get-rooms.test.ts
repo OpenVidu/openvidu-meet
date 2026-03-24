@@ -1,6 +1,13 @@
-import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRecordingEncodingPreset, MeetRecordingLayout, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import {
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout,
+	MeetRoom,
+	MeetRoomMemberRole,
+	MeetRoomStatus
+} from '@openvidu-meet/typings';
 import ms from 'ms';
+import { Response } from 'supertest';
 import {
 	expectExtraFieldsInResponse,
 	expectSuccessRoomsResponse,
@@ -8,8 +15,16 @@ import {
 	expectValidRoom,
 	expectValidRoomWithFields
 } from '../../../helpers/assertion-helpers.js';
-import { createRoom, deleteAllRooms, getRooms, startTestServer } from '../../../helpers/request-helpers.js';
-import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
+import {
+	createRoom,
+	createRoomMember,
+	deleteAllRooms,
+	deleteAllUsers,
+	getRooms,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
+import { setupSingleRoom, setupTestUsers } from '../../../helpers/test-scenarios.js';
+import { TestUsers } from '../../../interfaces/scenarios.js';
 
 describe('Room API Tests', () => {
 	const validAutoDeletionDate = Date.now() + ms('2h');
@@ -18,15 +33,18 @@ describe('Room API Tests', () => {
 		await startTestServer();
 	});
 
-	afterEach(async () => {
-		// Remove all rooms created
+	afterAll(async () => {
 		await deleteAllRooms();
 	});
 
 	describe('List Rooms Tests', () => {
+		afterEach(async () => {
+			// Remove all rooms created
+			await deleteAllRooms();
+		});
+
 		it('should return an empty list of rooms', async () => {
 			const response = await getRooms();
-
 			expectSuccessRoomsResponse(response, 0, 10, false, false);
 		});
 
@@ -214,6 +232,26 @@ describe('Room API Tests', () => {
 	});
 
 	describe('List Room Validation failures', () => {
+		it('should fail when owner is provided but empty', async () => {
+			const response = await getRooms({ owner: '' });
+			expectValidationError(response, 'owner', 'owner cannot be empty');
+		});
+
+		it('should fail when member is provided but empty', async () => {
+			const response = await getRooms({ member: '' });
+			expectValidationError(response, 'member', 'member cannot be empty');
+		});
+
+		it('should fail when registeredAccess is not a boolean', async () => {
+			const response = await getRooms({ registeredAccess: 'not-a-boolean' });
+			expectValidationError(response, 'registeredAccess', 'Expected boolean, received string');
+		});
+
+		it('should fail when status is invalid', async () => {
+			const response = await getRooms({ status: 'invalid_status' });
+			expectValidationError(response, 'status', 'Invalid enum value');
+		});
+
 		it('should fail when maxItems is not a number', async () => {
 			const response = await getRooms({ maxItems: 'not-a-number' });
 			expectValidationError(response, 'maxItems', 'Expected number, received nan');
@@ -238,14 +276,212 @@ describe('Room API Tests', () => {
 			const response = await getRooms({ sortOrder: 'invalid' });
 			expectValidationError(response, 'sortOrder', 'Invalid enum value');
 		});
+	});
 
-		it('should fail when status is invalid', async () => {
-			const response = await getRooms({ status: 'invalid_status' });
-			expectValidationError(response, 'status', 'Invalid enum value');
+	describe('List Rooms Access Scope Tests', () => {
+		let testUsers: TestUsers;
+		let testRooms: {
+			adminRoom: string;
+			userRoom: string;
+			membersRoom: string;
+			openRoom: string;
+		};
+
+		beforeAll(async () => {
+			testUsers = await setupTestUsers();
+
+			// Create room with ADMIN as owner
+			const adminRoom = await createRoom(undefined, testUsers.admin.accessToken);
+
+			// Create room with USER as owner
+			const userRoom = await createRoom(undefined, testUsers.user.accessToken);
+
+			// Create room with USER and ROOM_MEMBER as members
+			const membersRoom = await createRoom();
+			await createRoomMember(membersRoom.roomId, {
+				userId: testUsers.user.user.userId,
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			await createRoomMember(membersRoom.roomId, {
+				userId: testUsers.roomMember.user.userId,
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+
+			// Create room with registered access enabled
+			const openRoom = await createRoom({ access: { registered: { enabled: true } } });
+
+			testRooms = {
+				adminRoom: adminRoom.roomId,
+				userRoom: userRoom.roomId,
+				membersRoom: membersRoom.roomId,
+				openRoom: openRoom.roomId
+			};
+		});
+
+		afterAll(async () => {
+			await deleteAllRooms();
+			await deleteAllUsers();
+		});
+
+		const expectRoomsToContainOnly = (response: Response, expectedRoomIds: string[]) => {
+			expect(response.status).toBe(200);
+			const responseRoomIds = response.body.rooms.map((room: MeetRoom) => room.roomId);
+			expect(responseRoomIds.length).toBe(expectedRoomIds.length);
+			expectedRoomIds.forEach((roomId) => {
+				expect(responseRoomIds).toContain(roomId);
+			});
+		};
+
+		it('should return all rooms for ADMIN user', async () => {
+			const response = await getRooms(undefined, undefined, testUsers.admin.accessToken);
+			expectRoomsToContainOnly(response, [
+				testRooms.adminRoom,
+				testRooms.userRoom,
+				testRooms.membersRoom,
+				testRooms.openRoom
+			]);
+		});
+
+		it('should return only accessible rooms for USER room owner', async () => {
+			const response = await getRooms(undefined, undefined, testUsers.user.accessToken);
+			expectRoomsToContainOnly(response, [testRooms.userRoom, testRooms.membersRoom, testRooms.openRoom]);
+		});
+
+		it('should return only accessible rooms for ROOM_MEMBER room member', async () => {
+			const response = await getRooms(undefined, undefined, testUsers.roomMember.accessToken);
+			expectRoomsToContainOnly(response, [testRooms.membersRoom, testRooms.openRoom]);
+		});
+
+		it('should filter rooms by owner for ADMIN user', async () => {
+			const response = await getRooms(
+				{ owner: testUsers.admin.user.userId },
+				undefined,
+				testUsers.admin.accessToken
+			);
+			expectRoomsToContainOnly(response, [testRooms.adminRoom]);
+		});
+
+		it('should filter rooms by USER owner for ADMIN user', async () => {
+			const response = await getRooms(
+				{ owner: testUsers.user.user.userId },
+				undefined,
+				testUsers.admin.accessToken
+			);
+			expectRoomsToContainOnly(response, [testRooms.userRoom]);
+		});
+
+		it('should filter rooms by owner for USER room owner', async () => {
+			const response = await getRooms(
+				{ owner: testUsers.user.user.userId },
+				undefined,
+				testUsers.user.accessToken
+			);
+			expectRoomsToContainOnly(response, [testRooms.userRoom]);
+		});
+
+		it('should fail filtering rooms by owner different from the user for USER room owner', async () => {
+			const response = await getRooms(
+				{ owner: testUsers.admin.user.userId },
+				undefined,
+				testUsers.user.accessToken
+			);
+			expect(response.status).toBe(403);
+		});
+
+		it('should not return rooms when filtering by member for ADMIN user', async () => {
+			const response = await getRooms(
+				{ member: testUsers.admin.user.userId },
+				undefined,
+				testUsers.admin.accessToken
+			);
+			expectRoomsToContainOnly(response, []);
+		});
+
+		it('should filter rooms by USER member for ADMIN user', async () => {
+			const response = await getRooms(
+				{ member: testUsers.user.user.userId },
+				undefined,
+				testUsers.admin.accessToken
+			);
+			expectRoomsToContainOnly(response, [testRooms.membersRoom]);
+		});
+
+		it('should filter rooms by member for USER member', async () => {
+			const response = await getRooms(
+				{ member: testUsers.user.user.userId },
+				undefined,
+				testUsers.user.accessToken
+			);
+			expectRoomsToContainOnly(response, [testRooms.membersRoom]);
+		});
+
+		it('should fail filtering rooms by member different from the user for USER member', async () => {
+			const response = await getRooms(
+				{ member: testUsers.roomMember.user.userId },
+				undefined,
+				testUsers.user.accessToken
+			);
+			expect(response.status).toBe(403);
+		});
+
+		it('should filter rooms by member for ROOM_MEMBER member', async () => {
+			const response = await getRooms(
+				{ member: testUsers.roomMember.user.userId },
+				undefined,
+				testUsers.roomMember.accessToken
+			);
+			expectRoomsToContainOnly(response, [testRooms.membersRoom]);
+		});
+
+		it('should fail filtering rooms by member different from the user for ROOM_MEMBER member', async () => {
+			const response = await getRooms(
+				{ member: testUsers.user.user.userId },
+				undefined,
+				testUsers.roomMember.accessToken
+			);
+			expect(response.status).toBe(403);
+		});
+
+		it('should filter rooms by registeredAccess for ADMIN user', async () => {
+			const response = await getRooms({ registeredAccess: true }, undefined, testUsers.admin.accessToken);
+			expectRoomsToContainOnly(response, [testRooms.openRoom]);
+		});
+
+		it('should filter rooms by registeredAccess for USER room owner', async () => {
+			const response = await getRooms({ registeredAccess: true }, undefined, testUsers.user.accessToken);
+			expectRoomsToContainOnly(response, [testRooms.openRoom]);
+		});
+
+		it('should filter rooms by registeredAccess for ROOM_MEMBER member', async () => {
+			const response = await getRooms({ registeredAccess: true }, undefined, testUsers.roomMember.accessToken);
+			expectRoomsToContainOnly(response, [testRooms.openRoom]);
+		});
+
+		it('should filter rooms by combination of owner and member for USER member', async () => {
+			const response = await getRooms(
+				{ owner: testUsers.user.user.userId, member: testUsers.user.user.userId },
+				undefined,
+				testUsers.user.accessToken
+			);
+			expectRoomsToContainOnly(response, [testRooms.userRoom, testRooms.membersRoom]);
+		});
+
+		it('should filter rooms by combination of member and registeredAccess for ROOM_MEMBER member', async () => {
+			const response = await getRooms(
+				{ member: testUsers.roomMember.user.userId, registeredAccess: true },
+				undefined,
+				testUsers.roomMember.accessToken
+			);
+			expectRoomsToContainOnly(response, [testRooms.membersRoom, testRooms.openRoom]);
 		});
 	});
 
 	describe('List Rooms with ExtraFields Parameter Tests', () => {
+		afterEach(async () => {
+			// Remove all rooms created
+			await deleteAllRooms();
+		});
+
 		it('should return rooms without config when extraFields parameter is not provided', async () => {
 			await createRoom({
 				roomName: 'no-extrafields-list-test'

@@ -450,14 +450,20 @@ export const createRoom = async (
 
 export const getRooms = async (
 	query: Record<string, unknown> = {},
-	headers?: { xFields?: string; xExtraFields?: string }
+	headers?: { xFields?: string; xExtraFields?: string },
+	accessToken?: string
 ) => {
 	checkAppIsRunning();
 
 	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
+
+	if (accessToken) {
+		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
 
 	if (headers?.xFields) {
 		req.set('x-fields', headers.xFields);
