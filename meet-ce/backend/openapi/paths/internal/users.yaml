@@ -40,6 +40,8 @@
         parameters:
             - $ref: '../../components/parameters/internal/user-id-query.yaml'
             - $ref: '../../components/parameters/internal/user-name.yaml'
+            - $ref: '../../components/parameters/internal/user-name-match-mode.yaml'
+            - $ref: '../../components/parameters/internal/user-name-case-insensitive.yaml'
             - $ref: '../../components/parameters/internal/user-role.yaml'
             - $ref: '../../components/parameters/max-items.yaml'
             - $ref: '../../components/parameters/next-page-token.yaml'

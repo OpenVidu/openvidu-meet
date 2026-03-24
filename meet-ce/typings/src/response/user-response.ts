@@ -1,5 +1,6 @@
 import { MeetUser, MeetUserRole } from '../database/user.entity.js';
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
+import { TextMatchMode } from './text-match.js';
 
 /**
  * Data Transfer Object (DTO) for MeetUser, excluding sensitive fields.
@@ -42,10 +43,14 @@ export type MeetUserSortField = (typeof MEET_USER_SORT_FIELDS)[number];
  * Filters for querying Meet users, extending sorting and pagination options.
  */
 export interface MeetUserFilters extends SortAndPagination<MeetUserSortField> {
-	/** Optional filter by user ID (supports partial matches) */
+	/** Optional filter by user ID. */
 	userId?: string;
-	/** Optional filter by user name (supports partial matches) */
+	/** Optional filter by user name. */
 	name?: string;
+	/** Match mode used to apply name filter. Defaults to 'exact'. */
+	nameMatchMode?: TextMatchMode;
+	/** Whether name matching should ignore case. Defaults to false. */
+	nameCaseInsensitive?: boolean;
 	/** Optional filter by user role */
 	role?: MeetUserRole;
 }

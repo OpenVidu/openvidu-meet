@@ -1,11 +1,12 @@
 import type { MeetUser, MeetUserField, MeetUserFilters } from '@openvidu-meet/typings';
-import { SortOrder } from '@openvidu-meet/typings';
+import { SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type { MeetUserDocument, MeetUserDocumentOnlyField } from '../models/mongoose-schemas/user.schema.js';
 import { MEET_USER_DOCUMENT_ONLY_FIELDS, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';
+import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
@@ -91,8 +92,10 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * Finds users with optional filtering, pagination, and sorting.
 	 *
 	 * @param options - Query options
-	 * @param options.userId - Optional user ID to filter by (case-insensitive partial match)
-	 * @param options.name - Optional name to filter by (case-insensitive partial match)
+	 * @param options.userId - Optional user ID to filter by (exact match)
+	 * @param options.name - Optional name to filter by
+	 * @param options.nameMatchMode - Match mode for name filtering (default: 'exact')
+	 * @param options.nameCaseInsensitive - Whether name filtering should ignore case (default: false)
 	 * @param options.role - Optional role to filter by
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination
@@ -108,6 +111,8 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 		const {
 			userId,
 			name,
+			nameMatchMode = TextMatchMode.EXACT,
+			nameCaseInsensitive = false,
 			role,
 			maxItems = 100,
 			nextPageToken,
@@ -119,14 +124,15 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 		const filter: QueryFilter<MeetUserDocument> = {};
 
 		if (userId && name) {
-			// Both defined: OR filter with regex userId match and regex name match
-			filter.$or = [{ userId: new RegExp(userId, 'i') }, { name: new RegExp(name, 'i') }];
+			// When both are provided, return users matching either userId (exact) or name criteria.
+			filter.$or = [
+				{ userId },
+				{ name: buildStringMatchFilter(name, nameMatchMode, nameCaseInsensitive) }
+			];
 		} else if (userId) {
-			// Only userId defined: regex match (case-insensitive)
-			filter.userId = new RegExp(userId, 'i');
+			filter.userId = userId;
 		} else if (name) {
-			// Only name defined: regex match (case-insensitive)
-			filter.name = new RegExp(name, 'i');
+			filter.name = buildStringMatchFilter(name, nameMatchMode, nameCaseInsensitive);
 		}
 
 		if (role) {

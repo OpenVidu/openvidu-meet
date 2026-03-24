@@ -61,32 +61,50 @@ describe('Users API Tests', () => {
 			expect(response.body.pagination).toHaveProperty('isTruncated', false);
 		});
 
-		it('should filter users by userId using partial match', async () => {
-			const response = await getUsers({ userId: 'alice' });
+		it('should filter users by userId', async () => {
+			const allUsersResponse = await getUsers();
+			const aliceUser = allUsersResponse.body.users.find((u: MeetUser) => u.userId.startsWith('alice_'));
+			expect(aliceUser).toBeDefined();
+
+			const response = await getUsers({ userId: aliceUser.userId });
 			expect(response.status).toBe(200);
 			expect(response.body.users).toHaveLength(1);
 			expect(response.body.users[0].userId).toContain('alice');
 		});
 
-		it('should filter users by userId case-insensitive', async () => {
-			const response = await getUsers({ userId: 'ALICE' });
-			expect(response.status).toBe(200);
-			expect(response.body.users).toHaveLength(1);
-			expect(response.body.users[0].userId).toContain('alice');
-		});
-
-		it('should filter users by name using partial match', async () => {
-			const response = await getUsers({ name: 'Anderson' });
+		it('should filter users by name using exact match by default', async () => {
+			const response = await getUsers({ name: 'Alice Anderson' });
 			expect(response.status).toBe(200);
 			expect(response.body.users).toHaveLength(1);
 			expect(response.body.users[0].name).toContain('Anderson');
 		});
 
-		it('should filter users by name case-insensitive', async () => {
-			const response = await getUsers({ name: 'brown' });
+		it('should filter users by name with prefix match mode', async () => {
+			const response = await getUsers({ name: 'Alice', nameMatchMode: 'prefix' });
+			expect(response.status).toBe(200);
+			expect(response.body.users).toHaveLength(1);
+			expect(response.body.users[0].name).toContain('Alice');
+		});
+
+		it('should filter users by name with partial match mode', async () => {
+			const response = await getUsers({ name: 'row', nameMatchMode: 'partial' });
 			expect(response.status).toBe(200);
 			expect(response.body.users).toHaveLength(1);
 			expect(response.body.users[0].name).toContain('Brown');
+		});
+
+		it('should filter users by name with regex match mode', async () => {
+			const response = await getUsers({ name: '^Bob\\sBrown$', nameMatchMode: 'regex' });
+			expect(response.status).toBe(200);
+			expect(response.body.users).toHaveLength(1);
+			expect(response.body.users[0].name).toContain('Bob Brown');
+		});
+
+		it('should filter users by name case-insensitive exact match', async () => {
+			const response = await getUsers({ name: 'bob brown', nameCaseInsensitive: true });
+			expect(response.status).toBe(200);
+			expect(response.body.users).toHaveLength(1);
+			expect(response.body.users[0].name).toContain('Bob Brown');
 		});
 
 		it('should filter root admin by userId', async () => {
@@ -238,6 +256,21 @@ describe('Users API Tests', () => {
 	});
 
 	describe('Get Users Validation Tests', () => {
+		it('should fail when nameMatchMode is invalid', async () => {
+			const response = await getUsers({ name: 'Alice', nameMatchMode: 'invalid' });
+			expectValidationError(response, 'nameMatchMode', 'Invalid enum value');
+		});
+
+		it('should fail when nameCaseInsensitive is invalid', async () => {
+			const response = await getUsers({ nameCaseInsensitive: 'not-a-boolean' });
+			expectValidationError(response, 'nameCaseInsensitive', 'Expected boolean, received string');
+		});
+
+		it('should fail when name regex pattern is invalid', async () => {
+			const response = await getUsers({ name: '[invalid-regex', nameMatchMode: 'regex' });
+			expectValidationError(response, 'name', 'Invalid regular expression pattern');
+		});
+
 		it('should fail when maxItems is zero', async () => {
 			const response = await getUsers({ maxItems: 0 });
 			expectValidationError(response, 'maxItems', 'must be a positive number');

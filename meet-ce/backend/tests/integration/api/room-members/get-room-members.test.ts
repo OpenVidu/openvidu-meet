@@ -112,7 +112,7 @@ describe('Room Members API Tests', () => {
 			expect(member).toHaveProperty('permissionsUpdatedAt');
 		});
 
-        it('should return members with only specified fields', async () => {
+		it('should return members with only specified fields', async () => {
 			const response = await getRoomMembers(roomId, { fields: 'memberId,name' });
 			expect(response.status).toBe(200);
 			expect(response.body.members.length).toBe(5);
@@ -299,6 +299,21 @@ describe('Room Members API Tests', () => {
 	});
 
 	describe('Get Room Members Validation Tests', () => {
+		it('should fail when nameMatchMode is invalid', async () => {
+			const response = await getRoomMembers(roomId, { name: 'Alice', nameMatchMode: 'invalid' });
+			expectValidationError(response, 'nameMatchMode', 'Invalid enum value');
+		});
+
+		it('should fail when nameCaseInsensitive is not a boolean', async () => {
+			const response = await getRoomMembers(roomId, { nameCaseInsensitive: 'not-a-boolean' });
+			expectValidationError(response, 'nameCaseInsensitive', 'Expected boolean, received string');
+		});
+
+		it('should fail when name regex pattern is invalid', async () => {
+			const response = await getRoomMembers(roomId, { name: '[invalid-regex', nameMatchMode: 'regex' });
+			expectValidationError(response, 'name', 'Invalid regular expression pattern');
+		});
+
 		it('should fail when maxItems is zero', async () => {
 			const response = await getRoomMembers(roomId, { maxItems: 0 });
 			expectValidationError(response, 'maxItems', 'must be a positive number');
@@ -317,21 +332,6 @@ describe('Room Members API Tests', () => {
 		it('should fail when sortOrder is invalid', async () => {
 			const response = await getRoomMembers(roomId, { sortOrder: 'invalid' });
 			expectValidationError(response, 'sortOrder', 'Invalid enum value');
-		});
-
-		it('should fail when nameMatchMode is invalid', async () => {
-			const response = await getRoomMembers(roomId, { name: 'Alice', nameMatchMode: 'invalid' });
-			expectValidationError(response, 'nameMatchMode', 'Invalid enum value');
-		});
-
-		it('should fail when nameCaseInsensitive is not a boolean', async () => {
-			const response = await getRoomMembers(roomId, { nameCaseInsensitive: 'not-a-boolean' });
-			expectValidationError(response, 'nameCaseInsensitive', 'Expected boolean, received string');
-		});
-
-		it('should fail when name regex pattern is invalid', async () => {
-			const response = await getRoomMembers(roomId, { name: '[invalid-regex', nameMatchMode: 'regex' });
-			expectValidationError(response, 'name', 'Invalid regular expression pattern');
 		});
 	});
 });
