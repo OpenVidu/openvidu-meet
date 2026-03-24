@@ -3,6 +3,7 @@ import { MeetRoom, MeetRoomStatus } from '../database/room.entity.js';
 import { ExtraFieldKey } from './extra-field.js';
 import { ProjectedEntityByFields } from './field-projection.js';
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
+import { TextMatchMode } from './text-match.js';
 
 /** Room entity projected to the requested fields tuple. */
 export type ProjectedMeetRoom<TFields extends readonly MeetRoomField[]> = ProjectedEntityByFields<MeetRoom, TFields>;
@@ -76,9 +77,19 @@ export const SENSITIVE_ROOM_FIELDS_ENTRIES = Object.entries(SENSITIVE_ROOM_FIELD
  */
 export interface MeetRoomFilters extends SortAndPagination<MeetRoomSortField> {
 	/**
-	 * Filter rooms by name (case-insensitive partial match)
+	 * Filter rooms by name. The match behavior can be customized with roomNameMatchMode.
 	 */
 	roomName?: string;
+	/**
+	 * Match mode used to apply roomName filter.
+	 * Defaults to 'exact'.
+	 */
+	roomNameMatchMode?: TextMatchMode;
+	/**
+	 * Whether roomName matching should ignore case.
+	 * Defaults to false.
+	 */
+	roomNameCaseInsensitive?: boolean;
 	/**
 	 * Filter rooms by owner user ID.
 	 */

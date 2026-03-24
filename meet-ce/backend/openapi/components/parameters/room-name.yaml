@@ -2,8 +2,9 @@ name: roomName
 in: query
 required: false
 description: >
-    Filter rooms by name. The search is case-insensitive and matches rooms that contain the specified text.
-    For example, 'room' will match 'MyRoom', 'room123', and 'Conference Room'.
+    Filter rooms by name.
+    By default, roomName uses exact and case-sensitive matching.
+    Use roomNameMatchMode and roomNameCaseInsensitive to customize matching behavior.
 schema:
     type: string
 example: 'room'

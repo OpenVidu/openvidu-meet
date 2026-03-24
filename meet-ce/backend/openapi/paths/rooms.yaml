@@ -42,6 +42,8 @@
             - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
             - $ref: '../components/parameters/room-x-fields-header.yaml'
             - $ref: '../components/parameters/room-name.yaml'
+            - $ref: '../components/parameters/room-name-match-mode.yaml'
+            - $ref: '../components/parameters/room-name-case-insensitive.yaml'
             - $ref: '../components/parameters/room-owner.yaml'
             - $ref: '../components/parameters/room-member.yaml'
             - $ref: '../components/parameters/room-registered-access.yaml'

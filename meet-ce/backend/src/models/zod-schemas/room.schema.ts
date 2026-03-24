@@ -27,7 +27,8 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomStatus,
 	MeetRoomThemeMode,
-	SortOrder
+	SortOrder,
+	TextMatchMode
 } from '@openvidu-meet/typings';
 import ms from 'ms';
 import { z } from 'zod';
@@ -439,36 +440,60 @@ const fieldsSchema = z
 		return unique.length > 0 ? unique : undefined;
 	});
 
-export const RoomFiltersSchema = z.object({
-	roomName: z.string().optional(),
-	owner: z.string().min(1, 'owner cannot be empty').optional(),
-	member: z.string().min(1, 'member cannot be empty').optional(),
-	registeredAccess: z.preprocess((arg) => {
-		if (typeof arg === 'string') {
-			if (arg.toLowerCase() === 'true') return true;
+export const RoomFiltersSchema = z
+	.object({
+		roomName: z.string().optional(),
+		roomNameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		roomNameCaseInsensitive: z.preprocess((arg) => {
+			if (typeof arg === 'string') {
+				if (arg.toLowerCase() === 'true') return true;
 
-			if (arg.toLowerCase() === 'false') return false;
+				if (arg.toLowerCase() === 'false') return false;
+			}
+
+			return arg;
+		}, z.boolean().optional().default(false)),
+		owner: z.string().min(1, 'owner cannot be empty').optional(),
+		member: z.string().min(1, 'member cannot be empty').optional(),
+		registeredAccess: z.preprocess((arg) => {
+			if (typeof arg === 'string') {
+				if (arg.toLowerCase() === 'true') return true;
+
+				if (arg.toLowerCase() === 'false') return false;
+			}
+
+			return arg;
+		}, z.boolean().optional()),
+		status: z.nativeEnum(MeetRoomStatus).optional(),
+		fields: fieldsSchema,
+		extraFields: extraFieldsSchema,
+		maxItems: z.coerce
+			.number()
+			.positive('maxItems must be a positive number')
+			.transform((val) => {
+				// Convert the value to a number
+				const intVal = Math.floor(val);
+				// Ensure it's not greater than 100
+				return intVal > 100 ? 100 : intVal;
+			})
+			.default(10),
+		nextPageToken: z.string().optional(),
+		sortField: z.enum(MEET_ROOM_SORT_FIELDS).optional().default('creationDate'),
+		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+	})
+	.superRefine((data, ctx) => {
+		if (data.roomNameMatchMode === TextMatchMode.REGEX && data.roomName) {
+			try {
+				new RegExp(String(data.roomName));
+			} catch {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ['roomName'],
+					message: 'Invalid regular expression pattern'
+				});
+			}
 		}
-
-		return arg;
-	}, z.boolean().optional()),
-	status: z.nativeEnum(MeetRoomStatus).optional(),
-	fields: fieldsSchema,
-	extraFields: extraFieldsSchema,
-	maxItems: z.coerce
-		.number()
-		.positive('maxItems must be a positive number')
-		.transform((val) => {
-			// Convert the value to a number
-			const intVal = Math.floor(val);
-			// Ensure it's not greater than 100
-			return intVal > 100 ? 100 : intVal;
-		})
-		.default(10),
-	nextPageToken: z.string().optional(),
-	sortField: z.enum(MEET_ROOM_SORT_FIELDS).optional().default('creationDate'),
-	sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
-});
+	});
 
 export const RoomQueryFieldsSchema = z.object({
 	fields: fieldsSchema,

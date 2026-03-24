@@ -1,5 +1,5 @@
 import type { MeetRoom, MeetRoomField, ProjectedMeetRoom } from '@openvidu-meet/typings';
-import { MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
+import { MeetRoomStatus, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
@@ -13,6 +13,7 @@ import type {
 	RoomQueryWithProjection
 } from '../types/room-projection.types.js';
 import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
+import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 import { BaseRepository } from './base.repository.js';
 import { RoomMemberRepository } from './room-member.repository.js';
@@ -153,7 +154,9 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * even when the sort field has duplicate values.
 	 *
 	 * @param options - Query options
-	 * @param options.roomName - Optional room name to filter by (case-insensitive partial match)
+	 * @param options.roomName - Optional room name to filter by
+	 * @param options.roomNameMatchMode - Match mode for room name filtering (default: 'exact')
+	 * @param options.roomNameCaseInsensitive - Whether room name matching should ignore case (default: false)
 	 * @param options.status - Optional room status to filter by
 	 * @param options.owner - Optional owner userId to filter by
 	 * @param options.member - Optional member userId to filter rooms where user is a member
@@ -176,6 +179,8 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	async find(options: RoomQueryWithFields = {}): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>> {
 		const {
 			roomName,
+			roomNameMatchMode = TextMatchMode.EXACT,
+			roomNameCaseInsensitive = false,
 			status,
 			owner,
 			member,
@@ -213,7 +218,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		}
 
 		if (roomName) {
-			filter.roomName = new RegExp(roomName, 'i');
+			filter.roomName = buildStringMatchFilter(roomName, roomNameMatchMode, roomNameCaseInsensitive);
 		}
 
 		if (status) {

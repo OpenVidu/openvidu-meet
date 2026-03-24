@@ -80,6 +80,9 @@ describe('Room API Tests', () => {
 					roomName: 'test-room'
 				}),
 				createRoom({
+					roomName: 'test-room-2'
+				}),
+				createRoom({
 					roomName: 'other-room'
 				})
 			]);
@@ -90,6 +93,66 @@ describe('Room API Tests', () => {
 			expectSuccessRoomsResponse(response, 1, 10, false, false);
 			expectValidRoom(rooms[0], 'test-room');
 			expectExtraFieldsInResponse(response.body);
+		});
+
+		it('should apply roomName prefix matching', async () => {
+			await Promise.all([
+				createRoom({ roomName: 'test-room' }),
+				createRoom({ roomName: 'test-room-2' }),
+				createRoom({ roomName: 'other-room' })
+			]);
+
+			const response = await getRooms({ roomName: 'test', roomNameMatchMode: 'prefix' });
+			const responseRoomNames = response.body.rooms.map((room: MeetRoom) => room.roomName);
+
+			expectSuccessRoomsResponse(response, 2, 10, false, false);
+			expect(responseRoomNames).toContain('test-room');
+			expect(responseRoomNames).toContain('test-room-2');
+			expect(responseRoomNames).not.toContain('other-room');
+		});
+
+		it('should apply roomName partial matching', async () => {
+			await Promise.all([
+				createRoom({ roomName: 'my-test-room' }),
+				createRoom({ roomName: 'test-suite-room' }),
+				createRoom({ roomName: 'other-room' })
+			]);
+
+			const response = await getRooms({ roomName: 'test', roomNameMatchMode: 'partial' });
+			const responseRoomNames = response.body.rooms.map((room: MeetRoom) => room.roomName);
+
+			expectSuccessRoomsResponse(response, 2, 10, false, false);
+			expect(responseRoomNames).toContain('my-test-room');
+			expect(responseRoomNames).toContain('test-suite-room');
+			expect(responseRoomNames).not.toContain('other-room');
+		});
+
+		it('should apply roomName regex matching', async () => {
+			await Promise.all([
+				createRoom({ roomName: 'test-room-1' }),
+				createRoom({ roomName: 'test-room-2' }),
+				createRoom({ roomName: 'other-room' })
+			]);
+
+			const response = await getRooms({ roomName: '^test-room-[12]$', roomNameMatchMode: 'regex' });
+			const responseRoomNames = response.body.rooms.map((room: MeetRoom) => room.roomName);
+
+			expectSuccessRoomsResponse(response, 2, 10, false, false);
+			expect(responseRoomNames).toContain('test-room-1');
+			expect(responseRoomNames).toContain('test-room-2');
+			expect(responseRoomNames).not.toContain('other-room');
+		});
+
+		it('should apply roomName case-insensitive exact matching', async () => {
+			await Promise.all([createRoom({ roomName: 'Test-Room' }), createRoom({ roomName: 'test-room-2' })]);
+
+			const response = await getRooms({
+				roomName: 'test-room',
+				roomNameCaseInsensitive: true
+			});
+
+			expectSuccessRoomsResponse(response, 1, 10, false, false);
+			expectValidRoom(response.body.rooms[0], 'Test-Room');
 		});
 
 		it('should return a list of rooms applying status filter', async () => {
@@ -232,6 +295,21 @@ describe('Room API Tests', () => {
 	});
 
 	describe('List Room Validation failures', () => {
+		it('should fail when roomNameMatchMode is invalid', async () => {
+			const response = await getRooms({ roomName: 'test-room', roomNameMatchMode: 'invalid' });
+			expectValidationError(response, 'roomNameMatchMode', 'Invalid enum value');
+		});
+
+		it('should fail when roomNameCaseInsensitive is not a boolean', async () => {
+			const response = await getRooms({ roomNameCaseInsensitive: 'not-a-boolean' });
+			expectValidationError(response, 'roomNameCaseInsensitive', 'Expected boolean, received string');
+		});
+
+		it('should fail when roomName regex pattern is invalid', async () => {
+			const response = await getRooms({ roomName: '[invalid-regex', roomNameMatchMode: 'regex' });
+			expectValidationError(response, 'roomName', 'Invalid regular expression pattern');
+		});
+
 		it('should fail when owner is provided but empty', async () => {
 			const response = await getRooms({ owner: '' });
 			expectValidationError(response, 'owner', 'owner cannot be empty');
