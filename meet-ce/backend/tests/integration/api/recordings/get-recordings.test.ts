@@ -82,6 +82,80 @@ describe('Recordings API Tests', () => {
 			expect(response.body.recordings[0].roomId).toBe(room.roomId);
 		});
 
+		it('should filter recordings by roomName using exact match by default', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Extra'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const response = await getAllRecordings({ roomName: 'Focus Room' });
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(response.body.recordings[0].roomName).toBe('Focus Room');
+		});
+
+		it('should filter recordings by roomName prefix match mode', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Extra'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const response = await getAllRecordings({ roomName: 'Focus', roomNameMatchMode: 'prefix' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+			const roomNames = response.body.recordings.map((recording: MeetRecordingInfo) => recording.roomName);
+			expect(roomNames).toContain('Focus Room');
+			expect(roomNames).toContain('Focus Room Extra');
+			expect(roomNames).not.toContain('Other Room');
+		});
+
+		it('should filter recordings by roomName partial match mode', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Alpha Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Beta'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const response = await getAllRecordings({ roomName: 'Focus', roomNameMatchMode: 'partial' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+			const roomNames = response.body.recordings.map((recording: MeetRecordingInfo) => recording.roomName);
+			expect(roomNames).toContain('Alpha Focus Room');
+			expect(roomNames).toContain('Focus Room Beta');
+			expect(roomNames).not.toContain('Other Room');
+		});
+
+		it('should filter recordings by roomName regex match mode', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Extra'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const response = await getAllRecordings({
+				roomName: '^Focus Room( Extra)?$',
+				roomNameMatchMode: 'regex'
+			});
+			expectSuccessListRecordingResponse(response, 2, false, false);
+			const roomNames = response.body.recordings.map((recording: MeetRecordingInfo) => recording.roomName);
+			expect(roomNames).toContain('Focus Room');
+			expect(roomNames).toContain('Focus Room Extra');
+			expect(roomNames).not.toContain('Other Room');
+		});
+
+		it('should filter recordings by roomName using case-insensitive exact match', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus ROOM'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Extra')
+			]);
+
+			const response = await getAllRecordings({
+				roomName: 'focus room',
+				roomNameCaseInsensitive: true
+			});
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(response.body.recordings[0].roomName).toBe('Focus ROOM');
+		});
+
 		it('should filter recordings by status', async () => {
 			// Create recordings with different statuses
 			const [roomData] = await Promise.all([
@@ -366,6 +440,21 @@ describe('Recordings API Tests', () => {
 	});
 
 	describe('List Recordings Validation', () => {
+		it('should fail when roomNameMatchMode is invalid', async () => {
+			const response = await getAllRecordings({ roomName: 'Focus Room', roomNameMatchMode: 'invalid' });
+			expectValidationError(response, 'roomNameMatchMode', 'Invalid enum value');
+		});
+
+		it('should fail when roomNameCaseInsensitive is not a boolean', async () => {
+			const response = await getAllRecordings({ roomNameCaseInsensitive: 'not-a-boolean' });
+			expectValidationError(response, 'roomNameCaseInsensitive', 'Expected boolean, received string');
+		});
+
+		it('should fail when roomName regex pattern is invalid', async () => {
+			const response = await getAllRecordings({ roomName: '[invalid-regex', roomNameMatchMode: 'regex' });
+			expectValidationError(response, 'roomName', 'Invalid regular expression pattern');
+		});
+
 		it('should fail when maxItems is not a number', async () => {
 			const response = await getAllRecordings({ maxItems: 'not-a-number' });
 			expectValidationError(response, 'maxItems', 'Expected number');

@@ -1,11 +1,13 @@
 import type {
-	MeetRecordingField} from '@openvidu-meet/typings';
+	MeetRecordingField
+} from '@openvidu-meet/typings';
 import {
 	MEET_RECORDING_FIELDS,
 	MEET_RECORDING_SORT_FIELDS,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
-	SortOrder
+	SortOrder,
+	TextMatchMode
 } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
@@ -94,25 +96,49 @@ export const StartRecordingReqSchema = z.object({
 		.optional()
 });
 
-export const RecordingFiltersSchema = z.object({
-	roomId: nonEmptySanitizedRoomId('roomId').optional(),
-	roomName: z.string().optional(),
-	status: z.nativeEnum(MeetRecordingStatus).optional(),
-	fields: fieldsSchema,
-	maxItems: z.coerce
-		.number()
-		.positive('maxItems must be a positive number')
-		.transform((val) => {
-			// Convert the value to a number
-			const intVal = Math.floor(val);
-			// Ensure it's not greater than 100
-			return intVal > 100 ? 100 : intVal;
-		})
-		.default(10),
-	nextPageToken: z.string().optional(),
-	sortField: z.enum(MEET_RECORDING_SORT_FIELDS).optional().default('startDate'),
-	sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
-});
+export const RecordingFiltersSchema = z
+	.object({
+		roomId: nonEmptySanitizedRoomId('roomId').optional(),
+		roomName: z.string().optional(),
+		roomNameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		roomNameCaseInsensitive: z.preprocess((arg) => {
+			if (typeof arg === 'string') {
+				if (arg.toLowerCase() === 'true') return true;
+
+				if (arg.toLowerCase() === 'false') return false;
+			}
+
+			return arg;
+		}, z.boolean().optional().default(false)),
+		status: z.nativeEnum(MeetRecordingStatus).optional(),
+		fields: fieldsSchema,
+		maxItems: z.coerce
+			.number()
+			.positive('maxItems must be a positive number')
+			.transform((val) => {
+				// Convert the value to a number
+				const intVal = Math.floor(val);
+				// Ensure it's not greater than 100
+				return intVal > 100 ? 100 : intVal;
+			})
+			.default(10),
+		nextPageToken: z.string().optional(),
+		sortField: z.enum(MEET_RECORDING_SORT_FIELDS).optional().default('startDate'),
+		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+	})
+	.superRefine((data, ctx) => {
+		if (data.roomNameMatchMode === TextMatchMode.REGEX && data.roomName) {
+			try {
+				new RegExp(String(data.roomName));
+			} catch {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ['roomName'],
+					message: 'Invalid regular expression pattern'
+				});
+			}
+		}
+	});
 
 export const BulkDeleteRecordingsReqSchema = z.object({
 	recordingIds: z.preprocess(

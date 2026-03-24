@@ -1,5 +1,5 @@
 import type { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
-import { MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
+import { MeetRecordingStatus, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
 import { uid as secureUid } from 'uid/secure';
@@ -20,6 +20,7 @@ import type {
 	RecordingQueryWithFields,
 	RecordingQueryWithProjection
 } from '../types/recording-projection.types.js';
+import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
@@ -127,7 +128,9 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param options - Query options
 	 * @param options.roomIds - Optional array of room IDs to filter by
 	 * @param options.roomId - Optional room ID for exact match filtering
-	 * @param options.roomName - Optional room name for regex match filtering (case-insensitive)
+	 * @param options.roomName - Optional room name for filtering
+	 * @param options.roomNameMatchMode - Optional room name match mode (default: exact)
+	 * @param options.roomNameCaseInsensitive - Optional room name case-insensitive flag (default: false)
 	 * @param options.status - Optional recording status to filter by
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 10)
@@ -153,6 +156,8 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 			roomIds,
 			roomId,
 			roomName,
+			roomNameMatchMode = TextMatchMode.EXACT,
+			roomNameCaseInsensitive = false,
 			status,
 			fields,
 			maxItems = 10,
@@ -170,14 +175,14 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		}
 
 		if (roomId && roomName) {
-			// Both defined: OR filter with exact roomId match and regex roomName match
-			filter.$or = [{ roomId }, { roomName: new RegExp(roomName, 'i') }];
+			// Both defined: OR filter with exact roomId match and roomName match condition
+			filter.$or = [{ roomId }, { roomName: buildStringMatchFilter(roomName, roomNameMatchMode, roomNameCaseInsensitive) }];
 		} else if (roomId) {
 			// Only roomId defined: exact match
 			filter.roomId = roomId;
 		} else if (roomName) {
-			// Only roomName defined: regex match (case-insensitive)
-			filter.roomName = new RegExp(roomName, 'i');
+			// Only roomName defined: apply selected match mode
+			filter.roomName = buildStringMatchFilter(roomName, roomNameMatchMode, roomNameCaseInsensitive);
 		}
 
 		if (status) {

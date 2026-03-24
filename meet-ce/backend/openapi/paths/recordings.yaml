@@ -61,6 +61,8 @@
             - $ref: '../components/parameters/recording-x-fields-header.yaml'
             - $ref: '../components/parameters/room-id-query.yaml'
             - $ref: '../components/parameters/room-name.yaml'
+            - $ref: '../components/parameters/room-name-match-mode.yaml'
+            - $ref: '../components/parameters/room-name-case-insensitive.yaml'
             - $ref: '../components/parameters/recording-status.yaml'
             - $ref: '../components/parameters/recording-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'

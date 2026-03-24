@@ -1,5 +1,6 @@
 import { MeetRecordingInfo, MeetRecordingStatus } from '../database/recording.entity.js';
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
+import { TextMatchMode } from './text-match.js';
 
 /**
  * List of all valid fields that can be selected from a MeetRecordingInfo.
@@ -51,9 +52,19 @@ export interface MeetRecordingFilters extends SortAndPagination<MeetRecordingSor
 	 */
 	roomId?: string;
 	/**
-	 * Filter recordings by room name (case-insensitive partial match)
+	 * Filter recordings by room name.
 	 */
 	roomName?: string;
+	/**
+	 * Match mode used to apply roomName filter.
+	 * Defaults to 'exact'.
+	 */
+	roomNameMatchMode?: TextMatchMode;
+	/**
+	 * Whether roomName matching should ignore case.
+	 * Defaults to false.
+	 */
+	roomNameCaseInsensitive?: boolean;
 	/**
 	 * Filter recordings by status
 	 */
