@@ -181,6 +181,7 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 		withMeeting: MeetRoomDeletionPolicyWithMeeting;
 		withRecordings: MeetRoomDeletionPolicyWithRecordings;
 	};
+	const bulkValidation = res.locals.bulkValidation;
 
 	try {
 		logger.verbose(`Deleting rooms: ${roomIds} with options: ${JSON.stringify(res.locals.validatedQuery)}`);
@@ -190,7 +191,15 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 			withRecordings,
 			fields: MeetRoomHelper.computeFieldsForRoomQuery(fields, extraFields)
 		};
-		const { successful, failed } = await roomService.bulkDeleteMeetRooms(roomIds, deleteOpts);
+
+		const roomIdsToProcess = bulkValidation?.processableIds ?? [];
+		const preFailed = (bulkValidation?.failed as { roomId: string; error: string; message: string }[]) ?? [];
+
+		const { successful, failed } =
+			roomIdsToProcess.length > 0
+				? await roomService.bulkDeleteMeetRooms(roomIdsToProcess, deleteOpts)
+				: { successful: [], failed: [] };
+		const allFailed = [...preFailed, ...failed];
 
 		successful.forEach((item) => {
 			if (item.room) {
@@ -199,18 +208,18 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 		});
 
 		logger.info(
-			`Bulk delete operation - Successfully processed rooms: ${successful.length}, failed to process: ${failed.length}`
+			`Bulk delete operation - Successfully processed rooms: ${successful.length}, failed to process: ${allFailed.length}`
 		);
 
-		if (failed.length === 0) {
+		if (allFailed.length === 0) {
 			// All rooms were successfully processed
 			return res.status(200).json({ message: 'All rooms successfully processed for deletion', successful });
 		} else {
 			// Some rooms failed to process
 			const response = {
-				message: `${failed.length} room(s) failed to process while deleting`,
+				message: `${allFailed.length} room(s) failed to process while deleting`,
 				successful,
-				failed
+				failed: allFailed
 			};
 			return res.status(400).json(response);
 		}

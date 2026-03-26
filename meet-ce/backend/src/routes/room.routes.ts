@@ -36,7 +36,8 @@ import {
 import {
 	applyRoomListAccessFilters,
 	authorizeRoomAccess,
-	authorizeRoomManagement
+	authorizeRoomManagement,
+	validateBulkDeleteRoomManagement
 } from '../middlewares/room.middleware.js';
 
 export const roomRouter: Router = Router();
@@ -61,6 +62,7 @@ roomRouter.delete(
 	'/',
 	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	validateBulkDeleteRoomsReq,
+	validateBulkDeleteRoomManagement,
 	roomCtrl.bulkDeleteRooms
 );
 

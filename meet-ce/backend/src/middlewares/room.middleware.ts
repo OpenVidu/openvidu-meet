@@ -1,15 +1,19 @@
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
 	errorInsufficientPermissions,
 	errorRoomNotFound,
 	handleError,
+	internalError,
+	OpenViduMeetError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RoomQueryWithFields } from '../types/room-projection.types.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 
 /**
  * Middleware to apply room list access filters to validated query options.
@@ -158,4 +162,69 @@ export const authorizeRoomManagement = async (req: Request, res: Response, next:
 	} catch (error) {
 		return handleError(res, error, 'checking room ownership');
 	}
+};
+
+/**
+ * Middleware to partition roomIds for bulk delete into processable and failed entries.
+ *
+ * Failed entries include:
+ * - Rooms that do not exist.
+ * - Rooms the authenticated non-admin user cannot manage.
+ */
+export const validateBulkDeleteRoomManagement = async (_req: Request, res: Response, next: NextFunction) => {
+	const roomService = container.get(RoomService);
+	const requestSessionService = container.get(RequestSessionService);
+	const user = requestSessionService.getAuthenticatedUser();
+	const { roomIds } = res.locals.validatedQuery as { roomIds: string[] };
+
+	type BulkDeleteRoomFailed = {
+		roomId: string;
+		error: string;
+		message: string;
+	};
+
+	const settledResults = await runConcurrently(
+		roomIds,
+		async (roomId) => {
+			try {
+				// Check that user is admin or owner of the room
+				if (user && user.role !== MeetUserRole.ADMIN) {
+					const isOwner = await roomService.isRoomOwner(roomId, user.userId);
+
+					if (!isOwner) {
+						throw errorInsufficientPermissions();
+					}
+				}
+
+				return roomId;
+			} catch (error) {
+				const meetError =
+					error instanceof OpenViduMeetError ? error : internalError(`deleting room '${roomId}'`);
+
+				throw {
+					roomId,
+					error: meetError.name,
+					message: meetError.message
+				} as BulkDeleteRoomFailed;
+			}
+		},
+		{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_ROOMS }
+	);
+
+	const processableIds: string[] = [];
+	const failed: BulkDeleteRoomFailed[] = [];
+
+	settledResults.forEach((result) => {
+		if (result.status === 'fulfilled') {
+			processableIds.push(result.value);
+		} else {
+			failed.push(result.reason as BulkDeleteRoomFailed);
+		}
+	});
+
+	res.locals.bulkValidation = {
+		processableIds,
+		failed
+	};
+	return next();
 };

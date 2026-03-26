@@ -32,7 +32,6 @@ import { MEET_ENV } from '../environment.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import {
 	errorDeletingRoom,
-	errorInsufficientPermissions,
 	errorRoomActiveMeeting,
 	errorRoomNotFound,
 	internalError,
@@ -737,21 +736,6 @@ export class RoomService {
 				const roomId = typeof room === 'string' ? room : room.roomId;
 
 				try {
-					const user = this.requestSessionService.getAuthenticatedUser();
-
-					// !FIXME: This permission check is necessary for HTTP requests,
-					// !but it is not ideal to have it here in the service layer,
-					// !as this method can also be called from non-HTTP contexts (e.g., scheduled jobs for auto-deletion, background jobs for recording management, etc).
-					// !This should be refactored and moved to a controller or a separate layer responsible for access control for HTTP requests.
-					// Check permissions if user is authenticated and not an admin
-					if (user && user.role !== MeetUserRole.ADMIN) {
-						const isOwner = await this.isRoomOwner(roomId, user.userId);
-
-						if (!isOwner) {
-							throw errorInsufficientPermissions();
-						}
-					}
-
 					const deletionResult =
 						typeof room === 'string'
 							? await this.deleteMeetRoom(roomId, { withMeeting, withRecordings, fields })
