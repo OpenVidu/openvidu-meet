@@ -858,7 +858,8 @@ export class RoomService {
 		// Registered user
 		if (user) {
 			const isAdmin = user.role === MeetUserRole.ADMIN;
-			const isOwner = await this.isRoomOwner(roomId, user.userId);
+			const { owner, access, roles } = await this.getMeetRoom(roomId, ['owner', 'access', 'roles']);
+			const isOwner = owner === user.userId;
 
 			// Admins and owners have all permissions
 			if (isAdmin || isOwner) {
@@ -873,8 +874,6 @@ export class RoomService {
 			}
 
 			// If not a room member, check if registered access is enabled to determine if we should return speaker permissions or no permissions
-			const { access, roles } = await this.getMeetRoom(roomId, ['access', 'roles']);
-
 			if (access.registered.enabled) {
 				return roles.speaker.permissions;
 			}

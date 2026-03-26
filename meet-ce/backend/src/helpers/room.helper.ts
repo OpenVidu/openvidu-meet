@@ -1,8 +1,3 @@
-import {
-	MEET_ROOM_EXTRA_FIELDS,
-	MEET_ROOM_FIELDS,
-	SENSITIVE_ROOM_FIELDS_ENTRIES
-} from '@openvidu-meet/typings';
 import type {
 	MeetRoom,
 	MeetRoomAccess,
@@ -11,6 +6,7 @@ import type {
 	MeetRoomMemberPermissions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
+import { MEET_ROOM_EXTRA_FIELDS, MEET_ROOM_FIELDS, SENSITIVE_ROOM_FIELDS_ENTRIES } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../environment.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 
@@ -221,6 +217,29 @@ export class MeetRoomHelper {
 		}
 
 		return filteredRoom;
+	}
+
+	/**
+	 * Determines if permission filtering may be needed based on requested room fields.
+	 *
+	 * If no explicit field projection is provided, all fields may be present and filtering must be applied.
+	 * If fields are provided, filtering is only needed when they include the first segment of any sensitive path.
+	 */
+	static shouldApplyPermissionFilteringForFields(fields?: MeetRoomField[]): boolean {
+		if (!fields) {
+			return true;
+		}
+
+		const sensitiveFieldFirstSegments = new Set<MeetRoomField>();
+
+		for (const [, fieldPaths] of SENSITIVE_ROOM_FIELDS_ENTRIES) {
+			fieldPaths.forEach((fieldPath) => {
+				const firstSegment = fieldPath.split('.')[0] as MeetRoomField;
+				sensitiveFieldFirstSegments.add(firstSegment);
+			});
+		}
+
+		return fields.some((field) => sensitiveFieldFirstSegments.has(field));
 	}
 
 	/**

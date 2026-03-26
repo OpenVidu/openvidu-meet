@@ -430,6 +430,39 @@ describe('Room API Tests', () => {
 			expectRoomsToContainOnly(response, [testRooms.membersRoom, testRooms.openRoom]);
 		});
 
+		it("should not include access.anonymous when user doesn't have canShareAccessLinks permission", async () => {
+			const response = await getRooms(undefined, undefined, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+
+			for (const room of response.body.rooms as MeetRoom[]) {
+				expect(room.access).toBeDefined();
+				expect(room.access.anonymous).toBeUndefined();
+			}
+		});
+
+		it('should not fail to apply permission filtering when requesting specific fields without including roomId', async () => {
+			const response = await getRooms({ fields: 'roomName,access' }, undefined, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+
+			for (const room of response.body.rooms as MeetRoom[]) {
+				expect(room.roomName).toBeDefined();
+				expect(room.roomId).toBeUndefined();
+				expect(room.access).toBeDefined();
+				expect(room.access.anonymous).toBeUndefined();
+			}
+		});
+
+		it('should avoid to apply permission filtering when requesting specific fields without including sensitive ones', async () => {
+			const response = await getRooms({ fields: 'roomName' }, undefined, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(200);
+
+			for (const room of response.body.rooms as MeetRoom[]) {
+				expect(room.roomName).toBeDefined();
+				expect(room.roomId).toBeUndefined();
+				expect(room.access).toBeUndefined();
+			}
+		});
+
 		it('should filter rooms by owner for ADMIN user', async () => {
 			const response = await getRooms(
 				{ owner: testUsers.admin.user.userId },

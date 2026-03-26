@@ -10,7 +10,7 @@ import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { handleError, internalError } from '../models/error.model.js';
+import { handleError } from '../models/error.model.js';
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomService } from '../services/room.service.js';
@@ -56,21 +56,35 @@ export const getRooms = async (_req: Request, res: Response) => {
 			queryParams.fields ? [...queryParams.fields] : undefined,
 			queryParams.extraFields
 		);
+
+		const shouldApplyPermissionFiltering = MeetRoomHelper.shouldApplyPermissionFilteringForFields(fieldsForQuery);
+		const mustAddRoomIdInFields = fieldsForQuery && !fieldsForQuery.includes('roomId');
+
+		// If permission filtering needs to be applied and roomId is not included in the requested fields,
+		// we need to include it in the query to properly filter the rooms.
+		// It will be removed from the final response if it was not originally requested.
+		if (shouldApplyPermissionFiltering && mustAddRoomIdInFields) {
+			fieldsForQuery.push('roomId');
+		}
+
 		const optimizedQueryParams: RoomQueryWithFields = { ...queryParams, fields: fieldsForQuery };
-
 		const { rooms, isTruncated, nextPageToken } = await roomService.getAllMeetRooms(optimizedQueryParams);
-		const filteredRooms = await runConcurrently(
-			rooms,
-			async (room) => {
-				if (!room.roomId) {
-					throw internalError('applying permission filtering to rooms without roomId');
-				}
 
-				const permissions = await roomService.getAuthenticatedRoomMemberPermissions(room.roomId);
-				return MeetRoomHelper.applyPermissionFiltering(room, permissions);
-			},
-			{ concurrency: 20, failFast: true }
-		);
+		const filteredRooms = shouldApplyPermissionFiltering
+			? await runConcurrently(
+					rooms,
+					async (room) => {
+						const permissions = await roomService.getAuthenticatedRoomMemberPermissions(room.roomId!);
+
+						if (mustAddRoomIdInFields) {
+							delete room.roomId;
+						}
+
+						return MeetRoomHelper.applyPermissionFiltering(room, permissions);
+					},
+					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_ROOMS, failFast: true }
+				)
+			: rooms;
 		const maxItems = Number(queryParams.maxItems);
 
 		// Add metadata at response root level (multiple rooms strategy)
@@ -100,9 +114,13 @@ export const getRoom = async (req: Request, res: Response) => {
 
 		let room = await roomService.getMeetRoom(roomId, fieldsForQuery);
 
-		// Apply permission filtering to the room based on the authenticated user's permissions
-		const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
-		room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
+		const shouldApplyPermissionFiltering = MeetRoomHelper.shouldApplyPermissionFilteringForFields(fieldsForQuery);
+
+		if (shouldApplyPermissionFiltering) {
+			// Apply permission filtering to the room based on the authenticated user's permissions
+			const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
+			room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
+		}
 
 		room = MeetRoomHelper.addResponseMetadata(room);
 		return res.status(200).json(room);

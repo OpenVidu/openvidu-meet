@@ -107,11 +107,13 @@ describe('Room API Tests', () => {
 			expectSuccessRoomResponse(response, 'deletion-date', 'deletion_date', validAutoDeletionDate);
 		});
 
-		it('should retrieve a room without moderatorUrl when participant is speaker', async () => {
+		it("should not include access.anonymous when user doesn't have canShareAccessLinks permission", async () => {
 			const roomData = await setupSingleRoom();
 			const response = await getRoom(roomData.room.roomId, undefined, undefined, roomData.speakerToken);
+
 			expect(response.status).toBe(200);
-			expect(response.body.moderatorUrl).toBeUndefined();
+			expect(response.body.access).toBeDefined();
+			expect(response.body.access.anonymous).toBeUndefined();
 		});
 
 		it('should retrieve a room with encoding preset', async () => {
