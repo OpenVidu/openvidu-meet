@@ -248,6 +248,16 @@ export class RecordingService {
 	}
 
 	/**
+	 * Synchronizes room-derived access metadata on existing recordings for a room.
+	 */
+	updateRoomRecordingsAccessScopeMetadata(
+		roomId: string,
+		updates: { roomOwner?: string; roomRegisteredAccess?: boolean }
+	): Promise<void> {
+		return this.recordingRepository.updateAccessScopeMetadataByRoomId(roomId, updates);
+	}
+
+	/**
 	 * Retrieves a list of recordings based on the provided filtering, pagination, and sorting options.
 	 *
 	 * If the request is made with a room member token, only recordings for the associated room are returned.
@@ -277,27 +287,7 @@ export class RecordingService {
 		filters: RecordingQueryWithFields = {}
 	): Promise<MeetRecordingPage<MeetRecordingInfo | ProjectedRecording<readonly MeetRecordingField[]>>> {
 		try {
-			const queryOptions: RecordingQueryWithFields = { ...filters };
-
-			// Get accessible room IDs based on authenticated user and their permissions
-			const roomService = await this.getRoomService();
-			const accessibleRoomIds = await roomService.getAccessibleRoomIds('canRetrieveRecordings');
-
-			// If accessibleRoomIds is null, user is ADMIN and no filter is applied
-			if (accessibleRoomIds !== null) {
-				if (accessibleRoomIds.length === 0) {
-					// User has no access to any rooms, return empty result
-					return {
-						recordings: [],
-						isTruncated: false
-					};
-				}
-
-				// Apply roomIds filter
-				queryOptions.roomIds = accessibleRoomIds;
-			}
-
-			const response = await this.recordingRepository.find(queryOptions);
+			const response = await this.recordingRepository.find(filters);
 			this.logger.info(`Retrieved ${response.recordings.length} recordings.`);
 			return response;
 		} catch (error) {

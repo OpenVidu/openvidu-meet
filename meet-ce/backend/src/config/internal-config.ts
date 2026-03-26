@@ -76,7 +76,7 @@ export const INTERNAL_CONFIG = {
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
 	ROOM_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1771580869366
 	ROOM_MEMBER_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	RECORDING_SCHEMA_VERSION: 2 as SchemaVersion // MIGRATION_REV: 1771328577054
+	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion // MIGRATION_REV: 1774426613463
 };
 
 // This function is used to set private configuration values for testing purposes.

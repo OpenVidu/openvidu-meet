@@ -1,4 +1,4 @@
-import type { MeetRecordingInfo} from '@openvidu-meet/typings';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
@@ -11,6 +11,8 @@ import type { SchemaMigratableDocument } from '../migration.model.js';
  * and internal access secrets.
  */
 export interface MeetRecordingDocument extends MeetRecordingInfo, SchemaMigratableDocument {
+	roomOwner: string;
+	roomRegisteredAccess: boolean;
 	accessSecrets: {
 		public: string;
 		private: string;
@@ -28,6 +30,8 @@ export type MeetRecordingDocumentOnlyField = DocumentOnlyField<MeetRecordingDocu
  */
 export const MEET_RECORDING_DOCUMENT_ONLY_FIELDS = [
 	'schemaVersion',
+	'roomOwner',
+	'roomRegisteredAccess',
 	'accessSecrets'
 ] as const satisfies readonly MeetRecordingDocumentOnlyField[];
 
@@ -52,6 +56,14 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 		},
 		roomName: {
 			type: String,
+			required: true
+		},
+		roomOwner: {
+			type: String,
+			required: true
+		},
+		roomRegisteredAccess: {
+			type: Boolean,
 			required: true
 		},
 		status: {
@@ -121,6 +133,8 @@ MeetRecordingSchema.index({ recordingId: 1 }, { unique: true });
 MeetRecordingSchema.index({ startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomId: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomName: 1, startDate: -1, _id: -1 });
+MeetRecordingSchema.index({ roomOwner: 1, startDate: -1, _id: -1 });
+MeetRecordingSchema.index({ roomRegisteredAccess: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ status: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ duration: -1, _id: -1 });
 MeetRecordingSchema.index({ size: -1, _id: -1 });

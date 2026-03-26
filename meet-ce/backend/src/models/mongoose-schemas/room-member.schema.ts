@@ -1,4 +1,4 @@
-import type { MeetRoomMember} from '@openvidu-meet/typings';
+import type { MeetRoomMember } from '@openvidu-meet/typings';
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
@@ -120,7 +120,7 @@ MeetRoomMemberSchema.index({ roomId: 1, memberId: 1 }, { unique: true });
 MeetRoomMemberSchema.index({ roomId: 1, membershipDate: -1, _id: -1 });
 MeetRoomMemberSchema.index({ roomId: 1, name: 1, membershipDate: -1, _id: -1 });
 MeetRoomMemberSchema.index({ roomId: 1, name: 1, _id: 1 });
-MeetRoomMemberSchema.index({ memberId: 1 });
+MeetRoomMemberSchema.index({ memberId: 1, 'effectivePermissions.canRetrieveRecordings': 1 });
 
 export const meetRoomMemberCollectionName = 'MeetRoomMember';
 

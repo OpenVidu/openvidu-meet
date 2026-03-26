@@ -9,7 +9,11 @@ import type {
 type RecordingQueryBase = Omit<MeetRecordingFilters, 'fields'>;
 
 /** Base repository query inputs with internal access-control scope. */
-type RecordingRepositoryQueryBase = RecordingQueryBase & { roomIds?: string[] };
+type RecordingRepositoryQueryBase = RecordingQueryBase & {
+	roomOwner?: string;
+	roomMember?: string;
+	roomRegisteredAccess?: boolean;
+};
 
 /** Full recordings, no projection. */
 export type RecordingQuery = RecordingRepositoryQueryBase & { fields?: undefined };

@@ -1,4 +1,4 @@
-import type { MeetRoomMemberPermissions} from '@openvidu-meet/typings';
+import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
@@ -11,7 +11,9 @@ import {
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
+import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
+import { RecordingQueryWithFields } from '../types/recording-projection.types.js';
 import {
 	accessTokenValidator,
 	allowAnonymous,
@@ -93,6 +95,61 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	];
 	return withAuth(...authValidators)(req, res, next);
+};
+
+/**
+ * Middleware to apply recording list access filters to validated query options.
+ *
+ * - Room member token: can list recordings from the associated room when token has canRetrieveRecordings permission.
+ * - ADMIN: can list all recordings.
+ * - USER: defaults to owner OR member OR registered-access scopes.
+ * - ROOM_MEMBER: defaults to member OR registered-access scopes.
+ */
+export const applyRecordingListAccessFilters = async (_req: Request, res: Response, next: NextFunction) => {
+	const requestSessionService = container.get(RequestSessionService);
+	const memberRoomId = requestSessionService.getRoomIdFromMember();
+
+	const queryOptions = res.locals.validatedQuery as RecordingQueryWithFields;
+
+	// If request is made with room member token,
+	// scope recordings to the associated room and check canRetrieveRecordings permission.
+	if (memberRoomId) {
+		const permissions = requestSessionService.getRoomMemberPermissions();
+
+		// If member token does not have canRetrieveRecordings permission, reject the request
+		if (!permissions?.canRetrieveRecordings) {
+			const error = errorInsufficientPermissions();
+			return rejectRequestFromMeetError(res, error);
+		}
+
+		queryOptions.roomId = memberRoomId;
+		queryOptions.roomOwner = undefined;
+		queryOptions.roomRegisteredAccess = undefined;
+		res.locals.validatedQuery = queryOptions;
+		return next();
+	}
+
+	const user = requestSessionService.getAuthenticatedUser();
+
+	// If there is no authenticated user, reject the request
+	if (!user) {
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	// ADMIN can list all recordings.
+	if (user.role === MeetUserRole.ADMIN) {
+		return next();
+	}
+
+	if (user.role === MeetUserRole.USER) {
+		queryOptions.roomOwner = user.userId;
+	}
+
+	queryOptions.roomMember = user.userId;
+	queryOptions.roomRegisteredAccess = true;
+	res.locals.validatedQuery = queryOptions;
+	return next();
 };
 
 /**

@@ -15,6 +15,7 @@ import {
 	errorUserAlreadyExists,
 	errorUserNotFound
 } from '../models/error.model.js';
+import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
@@ -29,6 +30,7 @@ export class UserService {
 		@inject(UserRepository) protected userRepository: UserRepository,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
+		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
 
@@ -200,7 +202,12 @@ export class UserService {
 				await runConcurrently(
 					ownedRooms,
 					async (room) => {
-						await this.roomRepository.updatePartial(room.roomId, { owner: MEET_ENV.INITIAL_ADMIN_USER });
+						await Promise.all([
+							this.roomRepository.updatePartial(room.roomId, { owner: MEET_ENV.INITIAL_ADMIN_USER }),
+							this.recordingRepository.updateAccessScopeMetadataByRoomId(room.roomId, {
+								roomOwner: MEET_ENV.INITIAL_ADMIN_USER
+							})
+						]);
 					},
 					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_USER_RESOURCES, failFast: true }
 				);
@@ -333,8 +340,13 @@ export class UserService {
 			await runConcurrently(
 				allOwnedRooms,
 				async (room) => {
-					// Transfer ownership to admin user
-					await this.roomRepository.updatePartial(room.roomId, { owner: adminUserId });
+					await Promise.all([
+						// Transfer ownership to admin user
+						this.roomRepository.updatePartial(room.roomId, { owner: adminUserId }),
+						this.recordingRepository.updateAccessScopeMetadataByRoomId(room.roomId, {
+							roomOwner: adminUserId
+						})
+					]);
 				},
 				{ concurrency, failFast: true }
 			);

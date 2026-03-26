@@ -9,6 +9,7 @@ import {
 	withAuth
 } from '../middlewares/auth.middleware.js';
 import {
+	applyRecordingListAccessFilters,
 	authorizeRecordingAccess,
 	authorizeRecordingControl,
 	setupRecordingAuthentication,
@@ -46,6 +47,7 @@ recordingRouter.get(
 		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingsReq,
+	applyRecordingListAccessFilters,
 	recordingCtrl.getRecordings
 );
 recordingRouter.delete(

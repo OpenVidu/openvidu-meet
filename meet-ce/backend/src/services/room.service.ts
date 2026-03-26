@@ -298,6 +298,16 @@ export class RoomService {
 		const roomMemberService = await this.getRoomMemberService();
 		await roomMemberService.updateAllRoomMemberPermissions(roomId, updatedRoom.roles);
 
+		// If speaker role's canRetrieveRecordings permission has changed, update recordings access scope metadata
+		const previousSpeakerCanRetrieveRecordings = room.roles.speaker.permissions.canRetrieveRecordings;
+		const updatedSpeakerCanRetrieveRecordings = updatedRoom.roles.speaker.permissions.canRetrieveRecordings;
+
+		if (updatedSpeakerCanRetrieveRecordings !== previousSpeakerCanRetrieveRecordings) {
+			await this.recordingService.updateRoomRecordingsAccessScopeMetadata(roomId, {
+				roomRegisteredAccess: updatedRoom.access.registered.enabled && updatedSpeakerCanRetrieveRecordings
+			});
+		}
+
 		return updatedRoom;
 	}
 
@@ -317,11 +327,23 @@ export class RoomService {
 
 		// Merge existing access config with new access config (partial update)
 		const updatedAccess = merge({}, room.access, access);
-
-		return this.roomRepository.updatePartial(roomId, {
+		const updatedRoom = await this.roomRepository.updatePartial(roomId, {
 			access: updatedAccess,
 			rolesUpdatedAt: Date.now()
 		});
+
+		// If registered access enabled/disabled, update recordings access scope metadata
+		const previousRegisteredAccessEnabled = room.access.registered.enabled;
+		const updatedRegisteredAccessEnabled = updatedRoom.access.registered.enabled;
+
+		if (updatedRegisteredAccessEnabled !== previousRegisteredAccessEnabled) {
+			await this.recordingService.updateRoomRecordingsAccessScopeMetadata(roomId, {
+				roomRegisteredAccess:
+					updatedRoom.access.registered.enabled && updatedRoom.roles.speaker.permissions.canRetrieveRecordings
+			});
+		}
+
+		return updatedRoom;
 	}
 
 	/**
@@ -354,62 +376,6 @@ export class RoomService {
 		filters: RoomQueryWithFields = {}
 	): Promise<MeetRoomPage<MeetRoom | ProjectedMeetRoom<readonly MeetRoomField[]>>> {
 		return this.roomRepository.find(filters);
-	}
-
-	/**
-	 * Gets the list of room IDs accessible by the authenticated user based on their role and permissions.
-	 *
-	 * - If the request is made with a room member token, only that room ID is returned (if permissions allow).
-	 * - If the user is an ADMIN, null is returned indicating access to all rooms.
-	 * - If the user is a USER, room IDs they own and are members of are returned.
-	 * - If the user is a ROOM_MEMBER, only room IDs they are members of are returned.
-	 * - If registered access is enabled, those room IDs are also included for USER and ROOM_MEMBER roles.
-	 *
-	 * @param permission - Optional permission to filter rooms (e.g., 'canRetrieveRecordings')
-	 * @returns A promise that resolves to an array of accessible room IDs, or null if user is ADMIN
-	 */
-	async getAccessibleRoomIds(permission?: keyof MeetRoomMemberPermissions): Promise<string[] | null> {
-		const memberRoomId = this.requestSessionService.getRoomIdFromMember();
-
-		// If request is made with room member token,
-		// the only accessible room is the one associated with the token
-		if (memberRoomId) {
-			// Check permissions from token if specified
-			if (permission) {
-				const permissions = this.requestSessionService.getRoomMemberPermissions();
-
-				if (!permissions || !permissions[permission]) {
-					return [];
-				}
-			}
-
-			return [memberRoomId];
-		}
-
-		const user = this.requestSessionService.getAuthenticatedUser();
-
-		// Admin has access to all rooms
-		if (!user || user.role === MeetUserRole.ADMIN) {
-			return null;
-		}
-
-		const [memberRoomIds, registeredRoomIds] = await Promise.all([
-			// Get room IDs where user is member with the specified permission (if provided)
-			this.roomMemberRepository.getRoomIdsByMemberId(user.userId, permission),
-			// Get room IDs with registered access enabled
-			this.roomRepository.findRoomIdsWithRegisteredAccessEnabled()
-		]);
-
-		let ownedRoomIds: string[] = [];
-
-		// If USER role, also get owned room IDs
-		if (user.role === MeetUserRole.USER) {
-			const ownedRooms = await this.roomRepository.findByOwner(user.userId, ['roomId']);
-			ownedRoomIds = ownedRooms.map((r) => r.roomId);
-		}
-
-		// Combine owned rooms and member rooms
-		return [...new Set([...ownedRoomIds, ...memberRoomIds, ...registeredRoomIds])];
 	}
 
 	/**

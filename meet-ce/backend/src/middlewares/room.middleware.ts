@@ -22,8 +22,8 @@ export const applyRoomListAccessFilters = async (_req: Request, res: Response, n
 	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getAuthenticatedUser();
 
+	// If there is no authenticated user, reject the request
 	if (!user) {
-		// If there is no authenticated user, reject the request
 		const error = errorInsufficientPermissions();
 		return rejectRequestFromMeetError(res, error);
 	}
@@ -33,38 +33,34 @@ export const applyRoomListAccessFilters = async (_req: Request, res: Response, n
 		return next();
 	}
 
-	try {
-		const queryOptions = res.locals.validatedQuery as RoomQueryWithFields;
-		const hasScopeFilters = !!queryOptions.owner || !!queryOptions.member || queryOptions.registeredAccess;
+	const queryOptions = res.locals.validatedQuery as RoomQueryWithFields;
+	const hasScopeFilters = !!queryOptions.owner || !!queryOptions.member || queryOptions.registeredAccess;
 
-		// Non-admin users can only scope owner/member filters to their own userId.
-		if (queryOptions.owner && queryOptions.owner !== user.userId) {
-			const error = errorInsufficientPermissions();
-			return rejectRequestFromMeetError(res, error);
-		}
-
-		if (queryOptions.member && queryOptions.member !== user.userId) {
-			const error = errorInsufficientPermissions();
-			return rejectRequestFromMeetError(res, error);
-		}
-
-		// Default behavior when client does not provide explicit scope filters:
-		// USER => owned OR member OR registered access
-		// ROOM_MEMBER => member OR registered access
-		if (!hasScopeFilters) {
-			if (user.role === MeetUserRole.USER) {
-				queryOptions.owner = user.userId;
-			}
-
-			queryOptions.member = user.userId;
-			queryOptions.registeredAccess = true;
-		}
-
-		res.locals.validatedQuery = queryOptions;
-		return next();
-	} catch (error) {
-		return handleError(res, error, 'applying room list access filters');
+	// Non-admin users can only scope owner/member filters to their own userId.
+	if (queryOptions.owner && queryOptions.owner !== user.userId) {
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
 	}
+
+	if (queryOptions.member && queryOptions.member !== user.userId) {
+		const error = errorInsufficientPermissions();
+		return rejectRequestFromMeetError(res, error);
+	}
+
+	// Default behavior when client does not provide explicit scope filters:
+	// USER => owned OR member OR registered access
+	// ROOM_MEMBER => member OR registered access
+	if (!hasScopeFilters) {
+		if (user.role === MeetUserRole.USER) {
+			queryOptions.owner = user.userId;
+		}
+
+		queryOptions.member = user.userId;
+		queryOptions.registeredAccess = true;
+	}
+
+	res.locals.validatedQuery = queryOptions;
+	return next();
 };
 
 /**

@@ -4,6 +4,7 @@ import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
 import { uid as secureUid } from 'uid/secure';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { internalError } from '../models/error.model.js';
 import type {
 	MeetRecordingDocument,
 	MeetRecordingDocumentOnlyField
@@ -22,6 +23,8 @@ import type {
 } from '../types/recording-projection.types.js';
 import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
 import { BaseRepository } from './base.repository.js';
+import { RoomMemberRepository } from './room-member.repository.js';
+import { RoomRepository } from './room.repository.js';
 
 /**
  * Repository for managing recording entities in MongoDB.
@@ -29,13 +32,17 @@ import { BaseRepository } from './base.repository.js';
  */
 @injectable()
 export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetRecordingDocument> {
-	constructor(@inject(LoggerService) logger: LoggerService) {
+	constructor(
+		@inject(LoggerService) logger: LoggerService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository
+	) {
 		super(logger, MeetRecordingModel);
 	}
 
 	protected toDomain(dbObject: MeetRecordingDocument): MeetRecordingInfo {
-		const { schemaVersion, accessSecrets, ...recording } = dbObject;
-		(void schemaVersion, accessSecrets);
+		const { schemaVersion, roomOwner, roomRegisteredAccess, accessSecrets, ...recording } = dbObject;
+		(void schemaVersion, roomOwner, roomRegisteredAccess, accessSecrets);
 		return recording as MeetRecordingInfo;
 	}
 
@@ -55,9 +62,20 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param recording - The recording information to create (excluding access secrets)
 	 * @returns The created recording (without access secrets)
 	 */
-	create(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
+	async create(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
+		const room = await this.roomRepository.findByRoomId(recording.roomId, ['owner', 'access', 'roles']);
+
+		if (!room) {
+			throw internalError(
+				`Cannot create recording '${recording.recordingId}' for non-existent room '${recording.roomId}'`
+			);
+		}
+
 		const document: MeetRecordingDocument = {
 			...recording,
+			roomOwner: room.owner,
+			roomRegisteredAccess:
+				room.access.registered.enabled && room.roles.speaker.permissions.canRetrieveRecordings,
 			accessSecrets: {
 				public: secureUid(10),
 				private: secureUid(10)
@@ -88,6 +106,36 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 */
 	replace(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
 		return this.replaceOne({ recordingId: recording.recordingId }, recording);
+	}
+
+	/**
+	 * Updates access-scope metadata fields for all recordings in a room.
+	 *
+	 * @param roomId - The ID of the room whose recordings should be updated
+	 * @param updates - Partial access-scope metadata to apply
+	 */
+	async updateAccessScopeMetadataByRoomId(
+		roomId: string,
+		updates: { roomOwner?: string; roomRegisteredAccess?: boolean }
+	): Promise<void> {
+		const $set: { roomOwner?: string; roomRegisteredAccess?: boolean } = {};
+
+		if (updates.roomOwner !== undefined) {
+			$set.roomOwner = updates.roomOwner;
+		}
+
+		if (updates.roomRegisteredAccess !== undefined) {
+			$set.roomRegisteredAccess = updates.roomRegisteredAccess;
+		}
+
+		if (Object.keys($set).length === 0) {
+			return;
+		}
+
+		const result = await this.model.updateMany({ roomId }, { $set }).exec();
+		this.logger.debug(
+			`Updated recording access-scope metadata for room '${roomId}': matched=${result.matchedCount}, modified=${result.modifiedCount}`
+		);
 	}
 
 	/**
@@ -126,11 +174,13 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * even when the sort field has duplicate values.
 	 *
 	 * @param options - Query options
-	 * @param options.roomIds - Optional array of room IDs to filter by
 	 * @param options.roomId - Optional room ID for exact match filtering
 	 * @param options.roomName - Optional room name for filtering
 	 * @param options.roomNameMatchMode - Optional room name match mode (default: exact)
 	 * @param options.roomNameCaseInsensitive - Optional room name case-insensitive flag (default: false)
+	 * @param options.roomOwner - Optional room owner ID for access control filtering
+	 * @param options.roomMember - Optional room member ID for access control filtering (requires 'canRetrieveRecordings' permission)
+	 * @param options.roomRegisteredAccess - Optional flag to include recordings from rooms with registered access enabled
 	 * @param options.status - Optional recording status to filter by
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 10)
@@ -153,11 +203,13 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		options: RecordingQueryWithFields = {}
 	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>> {
 		const {
-			roomIds,
 			roomId,
 			roomName,
 			roomNameMatchMode = TextMatchMode.EXACT,
 			roomNameCaseInsensitive = false,
+			roomOwner,
+			roomMember,
+			roomRegisteredAccess,
 			status,
 			fields,
 			maxItems = 10,
@@ -169,16 +221,33 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		// Build base filter
 		const filter: QueryFilter<MeetRecordingDocument> = {};
 
-		if (roomIds) {
-			// Filter by multiple room IDs
-			filter.roomId = { $in: roomIds };
+		const accessScopeOrFilters: QueryFilter<MeetRecordingDocument>[] = [];
+
+		if (roomOwner) {
+			accessScopeOrFilters.push({ roomOwner });
 		}
 
-		if (roomId && roomName) {
-			// Both defined: OR filter with exact roomId match and roomName match condition
-			filter.$or = [{ roomId }, { roomName: buildStringMatchFilter(roomName, roomNameMatchMode, roomNameCaseInsensitive) }];
-		} else if (roomId) {
-			// Only roomId defined: exact match
+		if (roomMember) {
+			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(
+				roomMember,
+				'canRetrieveRecordings'
+			);
+			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
+		}
+
+		if (roomRegisteredAccess) {
+			accessScopeOrFilters.push({ roomRegisteredAccess: true });
+		}
+
+		// Combine access scope filters with $or if multiple, or directly if only one
+		if (accessScopeOrFilters.length === 1) {
+			Object.assign(filter, accessScopeOrFilters[0]);
+		} else if (accessScopeOrFilters.length > 1) {
+			filter.$or = accessScopeOrFilters;
+		}
+
+		if (roomId) {
+			// roomId takes precedence. If both roomId and roomName are provided, roomName is ignored.
 			filter.roomId = roomId;
 		} else if (roomName) {
 			// Only roomName defined: apply selected match mode
