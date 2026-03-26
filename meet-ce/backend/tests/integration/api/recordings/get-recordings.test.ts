@@ -82,6 +82,22 @@ describe('Recordings API Tests', () => {
 			expect(response.body.recordings[0].roomId).toBe(room.roomId);
 		});
 
+		it('should prioritize roomId and ignore roomName when both filters are provided', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const exactRoomResponse = await getAllRecordings({ roomName: 'Other Room' });
+			expectSuccessListRecordingResponse(exactRoomResponse, 1, false, false);
+			const prioritizedRoomId = exactRoomResponse.body.recordings[0].roomId;
+
+			const response = await getAllRecordings({ roomId: prioritizedRoomId, roomName: 'Focus Room' });
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(response.body.recordings[0].roomId).toBe(prioritizedRoomId);
+			expect(response.body.recordings[0].roomName).toBe('Other Room');
+		});
+
 		it('should filter recordings by roomName using exact match by default', async () => {
 			await Promise.all([
 				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),

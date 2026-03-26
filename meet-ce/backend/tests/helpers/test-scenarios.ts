@@ -13,7 +13,9 @@ import http from 'http';
 import { StringValue } from 'ms';
 import { container } from '../../src/config/dependency-injector.config';
 import { MeetRoomHelper } from '../../src/helpers/room.helper';
+import { RecordingRepository } from '../../src/repositories/recording.repository';
 import { RoomRepository } from '../../src/repositories/room.repository';
+import { LiveKitService } from '../../src/services/livekit.service.js';
 import { RoomData, RoomMemberData, RoomTestUsers, TestContext, TestUsers, UserData } from '../interfaces/scenarios';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
 import { joinFakeParticipant } from './livekit-cli-helpers.js';
@@ -29,6 +31,7 @@ import {
 	stopRecording,
 	updateRoomMember
 } from './request-helpers';
+import { waitForMeetingToEnd } from './wait-helpers.js';
 
 let mockWebhookServer: http.Server;
 
@@ -157,6 +160,32 @@ export const setupCompletedRecording = async (roomData: RoomData, stopDelay?: St
 
 	// Stop recording
 	await stopRecording(recordingId);
+
+	return recordingId;
+};
+
+/**
+ * Creates a recording for a room and ensures it is stopped, returning the recording ID.
+ *
+ * @param roomId The ID of the room where the recording will be created
+ * @returns      The recording ID of the created recording
+ */
+export const createRecordingForRoom = async (roomId: string): Promise<string> => {
+	// Join a participant to ensure the meeting is active
+	await joinFakeParticipant(roomId, `usr-${Date.now()}`);
+
+	// Start recording
+	const startResponse = await startRecording(roomId);
+	expect(startResponse.status).toBe(201);
+	const recordingId = startResponse.body.recordingId as string;
+
+	// Stop recording
+	await stopRecording(recordingId);
+
+	// End the meeting
+	const livekitService = container.get(LiveKitService);
+	await livekitService.deleteRoom(roomId);
+	await waitForMeetingToEnd(roomId);
 
 	return recordingId;
 };
@@ -411,7 +440,11 @@ export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomDat
 
 	// Change room ownership to userOwner
 	const roomRepository = container.get(RoomRepository);
+	const recordingRepository = container.get(RecordingRepository);
 	const updatedRoom = await roomRepository.updatePartial(roomData.room.roomId, { owner: userOwner.user.userId });
+	await recordingRepository.updateAccessScopeMetadataByRoomId(roomData.room.roomId, {
+		roomOwner: userOwner.user.userId
+	});
 	roomData.room = updatedRoom;
 
 	// Add userMember and roomMember as room members

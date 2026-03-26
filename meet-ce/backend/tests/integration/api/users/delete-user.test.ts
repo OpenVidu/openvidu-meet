@@ -1,9 +1,12 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	createRoomMember,
+	deleteAllRecordings,
 	deleteAllRooms,
 	deleteAllUsers,
 	deleteUser,
@@ -12,7 +15,7 @@ import {
 	getUser,
 	startTestServer
 } from '../../../helpers/request-helpers.js';
-import { setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
+import { createRecordingForRoom, setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
 import { TestUsers, UserData } from '../../../interfaces/scenarios.js';
 
 describe('Users API Tests', () => {
@@ -24,7 +27,9 @@ describe('Users API Tests', () => {
 	});
 
 	afterAll(async () => {
+		await disconnectFakeParticipants();
 		await deleteAllRooms();
+		await deleteAllRecordings();
 		await deleteAllUsers();
 	});
 
@@ -130,6 +135,29 @@ describe('Users API Tests', () => {
 			const getRoomAfterResponse = await getRoom(room.roomId);
 			expect(getRoomAfterResponse.status).toBe(200);
 			expect(getRoomAfterResponse.body).toHaveProperty('owner', MEET_ENV.INITIAL_ADMIN_USER);
+		});
+
+		it('should update recording roomOwner when deleting a room owner', async () => {
+			// Create user who will own a room
+			const userData = await createUserWithRole(MeetUserRole.ADMIN);
+
+			// Create a room owned by this user and a recording for that room
+			const room = await createRoom(undefined, userData.accessToken);
+			const recordingId = await createRecordingForRoom(room.roomId);
+
+			// Verify initial recording roomOwner
+			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomOwner').lean().exec();
+			expect(recording).toBeTruthy();
+			expect(recording?.roomOwner).toBe(userData.user.userId);
+
+			// Delete the user
+			const deleteResponse = await deleteUser(userData.user.userId);
+			expect(deleteResponse.status).toBe(200);
+
+			// Verify the recording's roomOwner has been transferred to root admin
+			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomOwner').lean().exec();
+			expect(recording).toBeTruthy();
+			expect(recording?.roomOwner).toBe(MEET_ENV.INITIAL_ADMIN_USER);
 		});
 
 		it('should transfer ownership of multiple rooms when deleting room owner', async () => {

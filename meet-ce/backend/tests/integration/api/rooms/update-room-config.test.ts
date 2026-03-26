@@ -370,7 +370,7 @@ describe('Room API Tests', () => {
 						// No audio encoding
 					}
 				}
-			} as any;
+			} as unknown as MeetRoomConfig;
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
 			expectValidationError(
@@ -403,7 +403,7 @@ describe('Room API Tests', () => {
 						// No video encoding
 					}
 				}
-			} as any;
+			} as unknown as MeetRoomConfig;
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
 			expectValidationError(

@@ -2,6 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRecordingEncodingPreset, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
+import { MEET_ENV } from '../../../../src/environment.js';
 import { recordingMigrations } from '../../../../src/migrations/recording-migrations.js';
 import { generateSchemaMigrationName } from '../../../../src/models/migration.model.js';
 import {
@@ -33,6 +34,25 @@ const buildLegacyRecordingV1 = (recordingId: string) => ({
 	}
 });
 
+const buildLegacyRecordingV2 = (recordingId: string) => ({
+	schemaVersion: 2,
+	recordingId,
+	roomId: 'room-123',
+	roomName: 'Legacy Room',
+	status: MeetRecordingStatus.COMPLETE,
+	filename: `${recordingId}.mp4`,
+	startDate: Date.now() - 1000,
+	endDate: Date.now(),
+	duration: 1000,
+	size: 1024,
+	layout: MeetRecordingLayout.GRID,
+	encoding: MeetRecordingEncodingPreset.H264_720P_30,
+	accessSecrets: {
+		public: 'public-secret',
+		private: 'private-secret'
+	}
+});
+
 /**
  * Single assertion function for migrated recording documents in integration tests.
  * This ensures all fields are validated consistently across test cases, and serves
@@ -54,6 +74,8 @@ const expectMigratedRecordingToCurrentVersion = (migratedRecording: Record<strin
 		size: 1024,
 		layout: MeetRecordingLayout.GRID,
 		encoding: MeetRecordingEncodingPreset.H264_720P_30,
+		roomOwner: MEET_ENV.INITIAL_ADMIN_USER,
+		roomRegisteredAccess: false,
 		accessSecrets: {
 			public: 'public-secret',
 			private: 'private-secret'
@@ -108,6 +130,48 @@ describe('Recording Schema Migrations', () => {
 				}
 			});
 		});
+
+		it('should transform recording schema from v2 to v3', () => {
+			const migrationName = generateSchemaMigrationName(meetRecordingCollectionName, 2, 3);
+			const transform = recordingMigrations.get(migrationName);
+			expect(transform).toBeDefined();
+
+			const recordingV2 = {
+				schemaVersion: 2,
+				recordingId: 'recording-v2',
+				roomId: 'room-v2',
+				roomName: 'Legacy Room',
+				status: MeetRecordingStatus.COMPLETE,
+				filename: 'recording-v2.mp4',
+				startDate: Date.now() - 1000,
+				endDate: Date.now(),
+				duration: 1000,
+				size: 1024,
+				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30,
+				accessSecrets: {
+					public: 'public-secret',
+					private: 'private-secret'
+				}
+			} as unknown as MeetRecordingDocument;
+
+			const migratedRecording = transform!(recordingV2);
+			expect(migratedRecording).toMatchObject({
+				recordingId: 'recording-v2',
+				roomId: 'room-v2',
+				roomName: 'Legacy Room',
+				status: MeetRecordingStatus.COMPLETE,
+				filename: 'recording-v2.mp4',
+				layout: MeetRecordingLayout.GRID,
+				encoding: MeetRecordingEncodingPreset.H264_720P_30,
+				roomOwner: MEET_ENV.INITIAL_ADMIN_USER,
+				roomRegisteredAccess: false,
+				accessSecrets: {
+					public: 'public-secret',
+					private: 'private-secret'
+				}
+			});
+		});
 	});
 
 	describe('Recording Migration Integration', () => {
@@ -127,7 +191,10 @@ describe('Recording Schema Migrations', () => {
 		 * Integration tests validate that any legacy version reaches the CURRENT version.
 		 * Keep one case per supported legacy version in this matrix.
 		 */
-		it.each([{ fromVersion: 1, buildDocument: buildLegacyRecordingV1 }])(
+		it.each([
+			{ fromVersion: 1, buildDocument: buildLegacyRecordingV1 },
+			{ fromVersion: 2, buildDocument: buildLegacyRecordingV2 }
+		])(
 			'should migrate a legacy recording document from v$fromVersion to current version',
 			async ({ buildDocument }) => {
 				const recordingId = `legacy-recording-${Date.now()}`;

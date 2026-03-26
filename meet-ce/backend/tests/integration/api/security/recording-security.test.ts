@@ -341,7 +341,7 @@ describe('Recording API Security Tests', () => {
 				expect(response.body.recordings.length).toBe(1);
 			});
 
-			it('should not return recordings when using room member token without canRetrieveRecordings permission', async () => {
+			it('should fail when using room member token without canRetrieveRecordings permission', async () => {
 				// Update room member to not have canRetrieveRecordings permission
 				roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
 					canRetrieveRecordings: false
@@ -350,17 +350,7 @@ describe('Recording API Security Tests', () => {
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
 					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
-				expect(response.status).toBe(200);
-				expect(response.body.recordings.length).toBe(0);
-			});
-
-			it('should not return recordings when using room member token from a different room', async () => {
-				const newRoomData = await setupSingleRoom();
-				const response = await request(app)
-					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, newRoomData.moderatorToken);
-				expect(response.status).toBe(200);
-				expect(response.body.recordings.length).toBe(0);
+				expect(response.status).toBe(403);
 			});
 
 			it('should fail when using recording access secret', async () => {
