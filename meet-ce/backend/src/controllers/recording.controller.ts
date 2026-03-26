@@ -5,6 +5,7 @@ import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
+	errorRecordingsZipEmpty,
 	handleError,
 	internalError,
 	rejectRequestFromMeetError
@@ -81,19 +82,29 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
+	const bulkValidation = res.locals.bulkValidation;
 
 	logger.info(`Deleting recordings: ${recordingIds}`);
 
 	try {
-		const { deleted, failed } = await recordingService.bulkDeleteRecordings(recordingIds);
+		const recordingIdsToProcess = bulkValidation?.processableIds ?? [];
+		const preFailed = (bulkValidation?.failed as { recordingId: string; error: string }[]) ?? [];
+
+		const { deleted, failed } =
+			recordingIdsToProcess.length > 0
+				? await recordingService.bulkDeleteRecordings(recordingIdsToProcess)
+				: { deleted: [], failed: [] };
+		const allFailed = [...preFailed, ...failed];
 
 		// All recordings were successfully deleted
-		if (deleted.length > 0 && failed.length === 0) {
+		if (deleted.length > 0 && allFailed.length === 0) {
 			return res.status(200).json({ message: 'All recordings deleted successfully', deleted });
 		}
 
 		// Some or all recordings could not be deleted
-		return res.status(400).json({ message: `${failed.length} recording(s) could not be deleted`, deleted, failed });
+		return res
+			.status(400)
+			.json({ message: `${allFailed.length} recording(s) could not be deleted`, deleted, failed: allFailed });
 	} catch (error) {
 		handleError(res, error, 'deleting recordings');
 	}
@@ -239,11 +250,25 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const recordingService = container.get(RecordingService);
 
 	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
+	const bulkValidation = res.locals.bulkValidation;
 
 	logger.info(`Preparing ZIP download for recordings: ${recordingIds}`);
 
 	try {
-		const archive = await recordingService.createRecordingsZipArchive(recordingIds);
+		const recordingIdsToProccess = bulkValidation?.processableIds ?? [];
+		const failed = (bulkValidation?.failed as { recordingId: string; error: string }[]) ?? [];
+
+		failed.forEach((failure) => {
+			logger.warn(
+				`Skipping recording '${failure.recordingId}' from ZIP download due to access issue: ${failure.error}`
+			);
+		});
+
+		if (recordingIdsToProccess.length === 0) {
+			throw errorRecordingsZipEmpty();
+		}
+
+		const archive = await recordingService.createRecordingsZipArchive(recordingIdsToProccess);
 
 		res.setHeader('Content-Type', 'application/zip');
 		res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');

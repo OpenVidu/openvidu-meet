@@ -13,6 +13,8 @@ import {
 	authorizeRecordingAccess,
 	authorizeRecordingControl,
 	setupRecordingAuthentication,
+	validateBulkDeleteRecordingsAccess,
+	validateDownloadRecordingsAccess,
 	withRecordingEnabled
 } from '../middlewares/recording.middleware.js';
 import {
@@ -58,6 +60,7 @@ recordingRouter.delete(
 		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
+	validateBulkDeleteRecordingsAccess,
 	recordingCtrl.bulkDeleteRecordings
 );
 recordingRouter.get(
@@ -68,6 +71,7 @@ recordingRouter.get(
 		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
+	validateDownloadRecordingsAccess,
 	recordingCtrl.downloadRecordingsZip
 );
 recordingRouter.get(

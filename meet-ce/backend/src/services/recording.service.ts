@@ -31,7 +31,6 @@ import {
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
 	errorRecordingStartTimeout,
-	errorRecordingsZipEmpty,
 	errorRoomHasNoParticipants,
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
@@ -370,10 +369,8 @@ export class RecordingService {
 			recordingIds,
 			async (recordingId) => {
 				try {
-					// Validate recording exists and user has permission to delete
-					const { status } = await this.validateRecordingAccess(recordingId, 'canDeleteRecordings', [
-						'status'
-					]);
+					// Access validation is handled by HTTP middleware; service keeps business validation (deletable status).
+					const { status } = await this.getRecording(recordingId, ['status']);
 
 					// Check if the recording can be deleted (must be stopped)
 					if (!RecordingHelper.canBeDeleted(status)) {
@@ -429,50 +426,43 @@ export class RecordingService {
 	}
 
 	/**
-	 * Creates a ZIP archive stream with all recordings accessible by the current user.
-	 * It skips recording IDs that are not accessible and throws if none are valid.
+	 * Creates a ZIP archive stream with all recordings
 	 *
 	 * @param recordingIds Array of recording identifiers requested for ZIP download.
-	 * @returns An Archiver instance already populated with the selected recordings.
+	 * @returns An Archiver instance already populated with recordings.
 	 */
 	async createRecordingsZipArchive(recordingIds: string[]): Promise<Archiver> {
-		const validRecordings: MeetRecordingInfo[] = [];
+		const archive = archiver('zip', { zlib: { level: 0 } });
 		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_RECORDINGS;
 
-		// Validate recordings with bounded concurrency: first check existence, then permissions
-		const validationResults = await runConcurrently<string, MeetRecordingInfo>(
+		const settledResults = await runConcurrently(
 			recordingIds,
-			(recordingId) => this.validateRecordingAccess(recordingId, 'canRetrieveRecordings'),
+			async (recordingId) => {
+				this.logger.debug(`Preparing recording '${recordingId}' for ZIP`);
+
+				const [{ filename }, { fileStream }] = await Promise.all([
+					this.getRecording(recordingId, ['filename']),
+					this.getRecordingAsStream(recordingId)
+				]);
+
+				return {
+					fileName: filename || `${recordingId}.mp4`,
+					fileStream
+				};
+			},
 			{ concurrency, failFast: false }
 		);
 
-		validationResults.forEach((result, index) => {
-			if (result.status === 'fulfilled') {
-				validRecordings.push(result.value);
-			} else {
-				this.logger.warn(`Skipping recording '${recordingIds[index]}' for ZIP`);
+		for (let index = 0; index < settledResults.length; index++) {
+			const result = settledResults[index];
+			const recordingId = recordingIds[index];
+
+			if (result.status === 'rejected') {
+				this.logger.error(`Error adding recording '${recordingId}' to ZIP: ${result.reason}`);
+				continue;
 			}
-		});
 
-		if (validRecordings.length === 0) {
-			this.logger.error(`None of the provided recording IDs are available for ZIP download`);
-			throw errorRecordingsZipEmpty();
-		}
-
-		const archive = archiver('zip', { zlib: { level: 0 } });
-
-		for (const recording of validRecordings) {
-			const recordingId = recording.recordingId;
-
-			try {
-				this.logger.debug(`Adding recording '${recordingId}' to ZIP`);
-				const result = await this.getRecordingAsStream(recordingId);
-
-				const filename = recording.filename || `${recordingId}.mp4`;
-				archive.append(result.fileStream, { name: filename });
-			} catch (error) {
-				this.logger.error(`Error adding recording '${recordingId}' to ZIP: ${error}`);
-			}
+			archive.append(result.value.fileStream, { name: result.value.fileName });
 		}
 
 		return archive;

@@ -2,11 +2,13 @@ import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
 	errorInsufficientPermissions,
 	errorInvalidRecordingSecret,
 	errorRecordingDisabled,
 	handleError,
+	OpenViduMeetError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
@@ -14,6 +16,7 @@ import { RecordingService } from '../services/recording.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomService } from '../services/room.service.js';
 import { RecordingQueryWithFields } from '../types/recording-projection.types.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import {
 	accessTokenValidator,
 	allowAnonymous,
@@ -181,7 +184,7 @@ export const authorizeRecordingAccess = (
 		try {
 			// Check recording existence and permissions based on the authenticated context
 			const recordingService = container.get(RecordingService);
-			await recordingService.validateRecordingAccess(recordingId, permission);
+			await recordingService.validateRecordingAccess(recordingId, permission, ['roomId']);
 			return next();
 		} catch (error) {
 			return handleError(res, error, 'checking recording permissions');
@@ -220,10 +223,66 @@ export const authorizeRecordingControl = async (req: Request, res: Response, nex
 		try {
 			// Check that the recording exists and the authenticated user has 'canRecord' permission
 			const recordingService = container.get(RecordingService);
-			await recordingService.validateRecordingAccess(recordingId, 'canRecord');
+			await recordingService.validateRecordingAccess(recordingId, 'canRecord', ['roomId']);
 			return next();
 		} catch (error) {
 			return handleError(res, error, 'checking recording permissions');
 		}
 	}
+};
+
+type BulkRecordingFailed = { recordingId: string; error: string };
+
+/**
+ * Helper function to validate access for multiple recordings in bulk.
+ *
+ * - Checks if the authenticated user has the specified permission for each recording ID.
+ * - Populates res.locals with the list of processable recording IDs and any failures.
+ *
+ * @param res - The Express response object.
+ * @param permission - The permission to check for each recording (e.g., canRetrieveRecordings, canDeleteRecordings).
+ */
+const validateBulkRecordingAccess = async (
+	res: Response,
+	permission: keyof MeetRoomMemberPermissions
+): Promise<void> => {
+	const recordingService = container.get(RecordingService);
+	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
+
+	const settledResults = await runConcurrently(
+		recordingIds,
+		async (recordingId) => {
+			try {
+				await recordingService.validateRecordingAccess(recordingId, permission, ['recordingId']);
+				return recordingId;
+			} catch (error) {
+				const message = error instanceof OpenViduMeetError ? error.message : 'Unexpected error';
+				throw { recordingId, error: message } as BulkRecordingFailed;
+			}
+		},
+		{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_RECORDINGS }
+	);
+
+	const processableIds: string[] = [];
+	const failed: BulkRecordingFailed[] = [];
+
+	settledResults.forEach((result) => {
+		if (result.status === 'fulfilled') {
+			processableIds.push(result.value);
+		} else {
+			failed.push(result.reason as BulkRecordingFailed);
+		}
+	});
+
+	res.locals.bulkValidation = { processableIds, failed };
+};
+
+export const validateBulkDeleteRecordingsAccess = async (_req: Request, res: Response, next: NextFunction) => {
+	await validateBulkRecordingAccess(res, 'canDeleteRecordings');
+	return next();
+};
+
+export const validateDownloadRecordingsAccess = async (_req: Request, res: Response, next: NextFunction) => {
+	await validateBulkRecordingAccess(res, 'canRetrieveRecordings');
+	return next();
 };
