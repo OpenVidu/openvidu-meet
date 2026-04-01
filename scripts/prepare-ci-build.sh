@@ -38,6 +38,7 @@ NC='\033[0m' # No Color
 # Variables
 NPM_VERSION=""
 TARBALL_PATH=""
+MANIFESTS_UPDATED=false
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
@@ -48,8 +49,11 @@ update_package_json() {
 
   if [ -f "$package_path" ]; then
     # Replace workspace:* with specific version
-    sed -i 's#"openvidu-components-angular": "workspace:\*"#"openvidu-components-angular": "'"$version"'"#g' "$package_path"
-    echo "✓ Updated $package_path: workspace:* → $version"
+    if grep -q '"openvidu-components-angular": "workspace:\*"' "$package_path"; then
+      sed -i 's#"openvidu-components-angular": "workspace:\*"#"openvidu-components-angular": "'"$version"'"#g' "$package_path"
+      MANIFESTS_UPDATED=true
+      echo "✓ Updated $package_path: workspace:* → $version"
+    fi
   fi
 }
 
@@ -200,6 +204,12 @@ echo ""
 
 # Step 4: Install all dependencies
 echo -e "${YELLOW}[4/4] Installing all dependencies...${NC}"
+
+if [ "$MANIFESTS_UPDATED" = true ]; then
+  echo -e "  ${BLUE}Synchronizing lockfile after dependency rewrites...${NC}"
+  pnpm install --lockfile-only --no-frozen-lockfile
+fi
+
 pnpm install --frozen-lockfile
 echo -e "${GREEN}✓ All dependencies installed${NC}"
 echo ""
