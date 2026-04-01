@@ -41,4 +41,4 @@ jobs:
 
       - name: Clean up
         if: always()
-        uses: OpenVidu/actions/cleanup@0c51b405b662af257ae8e9b2333840cd46dd997e # v1.0.3
+        uses: OpenVidu/actions/cleanup@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
