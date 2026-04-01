@@ -127,6 +127,7 @@ export class MeetingLobbyService {
 	 */
 	setParticipantName(name: string): void {
 		this._state().participantForm.get('name')?.setValue(name);
+		this._state.update((state) => ({ ...state }));
 	}
 
 	/**
@@ -134,6 +135,7 @@ export class MeetingLobbyService {
 	 */
 	setE2eeKey(key: string): void {
 		this._state().participantForm.get('e2eeKey')?.setValue(key);
+		this._state.update((state) => ({ ...state }));
 	}
 
 	/**

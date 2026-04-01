@@ -16,7 +16,7 @@
 } @else if (!isMeetingLeft()) {
 	<ov-videoconference
 		[token]="roomMemberToken()!"
-		[prejoin]="true"
+		[prejoin]="!skipPrejoin()"
 		[prejoinDisplayParticipantName]="false"
 		[videoEnabled]="features().videoEnabled"
 		[audioEnabled]="features().audioEnabled"

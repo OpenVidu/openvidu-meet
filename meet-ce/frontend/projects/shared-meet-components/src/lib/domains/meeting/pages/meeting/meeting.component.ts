@@ -95,6 +95,10 @@ export class MeetingComponent implements OnInit {
 	protected roomSecret = computed(() => this.meetingContextService.roomSecret());
 	protected hasRecordings = computed(() => this.meetingContextService.hasRecordings());
 
+	// === CONFIGURABLE SKIP SIGNALS (from query params) ===
+	protected skipPrejoin = computed(() => this.meetingContextService.skipPrejoin());
+	protected shouldSkipLobby = computed(() => this.meetingContextService.skipLobby());
+
 	constructor() {
 		this.features = this.featureConfService.features;
 
@@ -134,6 +138,10 @@ export class MeetingComponent implements OnInit {
 		try {
 			await this.lobbyService.initialize();
 			this.isLobbyReady = true;
+
+			if (this.shouldSkipLobby()) {
+				await this.lobbyService.submitAccess();
+			}
 		} catch (error) {
 			console.error('Error initializing lobby state:', error);
 			this.notificationService.showDialog({

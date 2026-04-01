@@ -19,6 +19,16 @@ export interface MeetingContextAdapter {
 	 * Sets the E2EE encryption key for the current meeting
 	 */
 	setE2eeKey(key: string): void;
+
+	/**
+	 * Sets whether to skip the lobby screen
+	 */
+	setSkipLobby(skip: boolean): void;
+
+	/**
+	 * Sets whether to skip the prejoin screen
+	 */
+	setSkipPrejoin(skip: boolean): void;
 }
 
 /**
