@@ -1,4 +1,4 @@
-import { AgentDispatch, ParticipantInfo_Kind } from '@livekit/protocol';
+import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
 import {
 	AgentDispatchClient,
@@ -27,6 +27,9 @@ import {
 } from '../models/error.model.js';
 import { chunkArray } from '../utils/array.utils.js';
 import { LoggerService } from './logger.service.js';
+
+type LiveKitAgentDispatch = Awaited<ReturnType<AgentDispatchClient['createDispatch']>>;
+type LiveKitAgentDispatchList = Awaited<ReturnType<AgentDispatchClient['listDispatch']>>;
 
 @injectable()
 export class LiveKitService {
@@ -286,7 +289,7 @@ export class LiveKitService {
 	async createAgent(
 		roomName: string,
 		agentName: string /*, options: CreateDispatchOptions*/
-	): Promise<AgentDispatch> {
+	): Promise<LiveKitAgentDispatch> {
 		try {
 			return await this.agentClient.createDispatch(roomName, agentName);
 		} catch (error) {
@@ -300,7 +303,7 @@ export class LiveKitService {
 	 * @param roomName
 	 * @returns An array of agents in the specified room
 	 */
-	async listAgents(roomName: string): Promise<AgentDispatch[]> {
+	async listAgents(roomName: string): Promise<LiveKitAgentDispatchList> {
 		try {
 			return await this.agentClient.listDispatch(roomName);
 		} catch (error) {
@@ -315,7 +318,7 @@ export class LiveKitService {
 	 * @param agentId
 	 * @returns The agent if found, otherwise undefined
 	 */
-	async getAgent(roomName: string, agentId: string): Promise<AgentDispatch | undefined> {
+	async getAgent(roomName: string, agentId: string): Promise<LiveKitAgentDispatch | undefined> {
 		try {
 			return await this.agentClient.getDispatch(agentId, roomName);
 		} catch (error) {

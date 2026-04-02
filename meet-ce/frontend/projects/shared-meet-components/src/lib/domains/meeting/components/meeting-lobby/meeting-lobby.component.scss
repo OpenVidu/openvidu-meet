@@ -227,6 +227,23 @@
 		animation: slideDown 0.3s ease-out;
 	}
 
+	.captcha-wrapper {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+		align-items: flex-start;
+		margin: var(--ov-meet-spacing-xs) 0;
+	}
+
+	.captcha-container {
+		min-height: 78px;
+	}
+
+	.captcha-error {
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-color-error, #d32f2f);
+	}
+
 	.mat-mdc-form-field-icon-suffix {
 		color: var(--ov-meet-text-hint);
 	}

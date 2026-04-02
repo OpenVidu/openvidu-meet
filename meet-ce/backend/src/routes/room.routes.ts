@@ -9,6 +9,7 @@ import {
 	tokenAndRoleValidator,
 	withAuth
 } from '../middlewares/auth.middleware.js';
+import { validateGuestCaptcha } from '../middlewares/captcha.middleware.js';
 import { configureRoomMemberTokenAuth } from '../middlewares/participant.middleware.js';
 import {
 	validateBulkDeleteRoomsReq,
@@ -93,6 +94,7 @@ internalRoomRouter.post(
 	withValidRoomId,
 	validateCreateRoomMemberTokenReq,
 	configureRoomMemberTokenAuth,
+	validateGuestCaptcha,
 	roomCtrl.generateRoomMemberToken
 );
 internalRoomRouter.get(

@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
 import { handleError } from '../models/error.model.js';
+import { CaptchaService } from '../services/captcha.service.js';
 import { GlobalConfigService } from '../services/global-config.service.js';
 import { LoggerService } from '../services/logger.service.js';
 import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
@@ -120,5 +121,19 @@ export const getCaptionsConfig = async (_req: Request, res: Response) => {
 		return res.status(200).json({ enabled: captionsEnabled });
 	} catch (error) {
 		handleError(res, error, 'getting captions config');
+	}
+};
+
+export const getGuestCaptchaConfig = async (_req: Request, res: Response) => {
+	const logger = container.get(LoggerService);
+	const captchaService = container.get(CaptchaService);
+
+	logger.verbose('Getting guest captcha config');
+
+	try {
+		const guestCaptchaConfig = captchaService.getGuestCaptchaConfig();
+		return res.status(200).json(guestCaptchaConfig);
+	} catch (error) {
+		handleError(res, error, 'getting guest captcha config');
 	}
 };

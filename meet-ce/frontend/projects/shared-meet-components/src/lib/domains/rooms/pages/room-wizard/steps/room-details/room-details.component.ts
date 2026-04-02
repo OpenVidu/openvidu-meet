@@ -18,20 +18,20 @@ import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../services';
 
 @Component({
-    selector: 'ov-room-details',
-    imports: [
-        ReactiveFormsModule,
-        MatButtonModule,
-        MatIconModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatDatepickerModule,
-        MatNativeDateModule,
-        MatSelectModule,
-        MatTooltipModule
-    ],
-    templateUrl: './room-details.component.html',
-    styleUrl: './room-details.component.scss'
+	selector: 'ov-room-details',
+	imports: [
+		ReactiveFormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatInputModule,
+		MatFormFieldModule,
+		MatDatepickerModule,
+		MatNativeDateModule,
+		MatSelectModule,
+		MatTooltipModule
+	],
+	templateUrl: './room-details.component.html',
+	styleUrl: './room-details.component.scss'
 })
 export class RoomWizardRoomDetailsComponent implements OnDestroy {
 	roomDetailsForm: FormGroup;
@@ -85,6 +85,7 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 	private saveFormData(formValue: any) {
 		let autoDeletionDateTime: number | undefined = undefined;
 		let autoDeletionPolicy: MeetRoomAutoDeletionPolicy | undefined = undefined;
+		const normalizedPasscode = formValue.passcode?.toUpperCase();
 
 		// If date is selected
 		if (formValue.autoDeletionDate) {
@@ -105,6 +106,8 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 
 		const stepData: Partial<MeetRoomOptions> = {
 			roomName: formValue.roomName,
+			passcode: normalizedPasscode,
+			maxParticipants: formValue.maxParticipants,
 			autoDeletionDate: autoDeletionDateTime,
 			autoDeletionPolicy
 		};
@@ -165,5 +168,21 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 		const selectedValue = this.roomDetailsForm.get('autoDeletionPolicyWithRecordings')?.value;
 		const option = this.recordingPolicyOptions.find((opt) => opt.value === selectedValue);
 		return option?.description || '';
+	}
+
+	onGeneratePasscode(): void {
+		const generated = this.generatePasscode();
+		this.roomDetailsForm.get('passcode')?.setValue(generated);
+	}
+
+	private generatePasscode(): string {
+		const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+		let result = '';
+
+		for (let i = 0; i < 8; i++) {
+			result += charset[Math.floor(Math.random() * charset.length)];
+		}
+
+		return result;
 	}
 }

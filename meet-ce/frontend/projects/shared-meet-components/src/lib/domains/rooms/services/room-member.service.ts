@@ -19,6 +19,7 @@ export class RoomMemberService {
 
 	protected participantName?: string;
 	protected participantIdentity?: string;
+	protected roomPasscode?: string;
 	protected role: MeetRoomMemberRole = MeetRoomMemberRole.SPEAKER;
 	protected permissions?: MeetRoomMemberPermissions;
 
@@ -47,6 +48,10 @@ export class RoomMemberService {
 		return this.participantIdentity;
 	}
 
+	getRoomPasscode(): string | undefined {
+		return this.roomPasscode;
+	}
+
 	clearParticipantIdentity(): void {
 		this.participantIdentity = undefined;
 	}
@@ -58,6 +63,10 @@ export class RoomMemberService {
 	 * @return A promise that resolves to the room member token
 	 */
 	async generateToken(roomId: string, tokenOptions: MeetRoomMemberTokenOptions, e2eeKey?: string): Promise<string> {
+		if (tokenOptions.roomPasscode) {
+			this.roomPasscode = tokenOptions.roomPasscode;
+		}
+
 		if (tokenOptions.participantName && e2eeKey) {
 			// Assign E2EE key and encrypt participant name
 			await this.e2eeService.setE2EEKey(e2eeKey);

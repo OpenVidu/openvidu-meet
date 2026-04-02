@@ -6,7 +6,9 @@ import {
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomOptions
+	MeetRoomMediaMode,
+	MeetRoomOptions,
+	MeetScreenShareAccess
 } from '@openvidu-meet/typings';
 import { WizardNavigationConfig, WizardStep } from '../models';
 
@@ -20,7 +22,9 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
-	captions: { enabled: true }
+	captions: { enabled: true },
+	media: { mode: MeetRoomMediaMode.STANDARD },
+	screenShare: { allowAccessTo: MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER }
 };
 
 /**
@@ -61,9 +65,14 @@ export class RoomWizardStateService {
 	 * @param existingData - Existing room options to prefill the wizard
 	 */
 	initializeWizard(editMode: boolean = false, existingData?: MeetRoomOptions): void {
+		const initialPasscode = existingData?.passcode || this.generatePasscode();
+		const initialMaxParticipants = existingData?.maxParticipants ?? 10;
+
 		// Initialize room options with defaults merged with existing data
 		const initialRoomOptions: MeetRoomOptions = {
 			...existingData,
+			passcode: initialPasscode,
+			maxParticipants: initialMaxParticipants,
 			config: {
 				...DEFAULT_CONFIG,
 				...(existingData?.config || {})
@@ -85,6 +94,21 @@ export class RoomWizardStateService {
 						roomName: [
 							{ value: initialRoomOptions.roomName || 'Room', disabled: editMode },
 							editMode ? [] : [Validators.maxLength(50)]
+						],
+						passcode: [
+							{ value: initialPasscode, disabled: editMode },
+							editMode
+								? []
+								: [
+										Validators.required,
+										Validators.minLength(8),
+										Validators.maxLength(8),
+										Validators.pattern(/^[a-zA-Z0-9]{8}$/)
+									]
+						],
+						maxParticipants: [
+							{ value: initialMaxParticipants, disabled: editMode },
+							editMode ? [] : [Validators.required, Validators.min(1)]
 						],
 						autoDeletionDate: [
 							{
@@ -194,7 +218,9 @@ export class RoomWizardStateService {
 					chatEnabled: initialRoomOptions.config!.chat!.enabled,
 					virtualBackgroundEnabled: initialRoomOptions.config!.virtualBackground!.enabled,
 					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled,
-					captionsEnabled: initialRoomOptions.config!.captions!.enabled
+					captionsEnabled: initialRoomOptions.config!.captions!.enabled,
+					mediaMode: initialRoomOptions.config!.media!.mode,
+					screenShareAccess: initialRoomOptions.config!.screenShare!.allowAccessTo
 				})
 			}
 		];
@@ -226,6 +252,12 @@ export class RoomWizardStateService {
 				// Only update fields that are explicitly provided
 				if ('roomName' in stepData) {
 					updatedOptions.roomName = stepData.roomName;
+				}
+				if ('passcode' in stepData) {
+					updatedOptions.passcode = stepData.passcode;
+				}
+				if ('maxParticipants' in stepData) {
+					updatedOptions.maxParticipants = stepData.maxParticipants;
 				}
 				if ('autoDeletionDate' in stepData) {
 					updatedOptions.autoDeletionDate = stepData.autoDeletionDate;
@@ -269,6 +301,14 @@ export class RoomWizardStateService {
 							...currentOptions.config?.e2ee,
 							...stepData.config?.e2ee
 						},
+						media: {
+							...currentOptions.config?.media,
+							...stepData.config?.media
+						},
+						screenShare: {
+							...currentOptions.config?.screenShare,
+							...stepData.config?.screenShare
+						},
 						captions: {
 							...currentOptions.config?.captions,
 							...stepData.config?.captions
@@ -290,6 +330,17 @@ export class RoomWizardStateService {
 
 		this._roomOptions.set(updatedOptions);
 		this.updateStepsVisibility();
+	}
+
+	private generatePasscode(): string {
+		const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+		let result = '';
+
+		for (let i = 0; i < 8; i++) {
+			result += charset[Math.floor(Math.random() * charset.length)];
+		}
+
+		return result;
 	}
 
 	/**

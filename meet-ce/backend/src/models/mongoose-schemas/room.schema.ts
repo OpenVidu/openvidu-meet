@@ -4,8 +4,10 @@ import {
 	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomMediaMode,
 	MeetRoomStatus,
 	MeetRoomThemeMode,
+	MeetScreenShareAccess,
 	MeetingEndAction
 } from '@openvidu-meet/typings';
 import { Document, Schema, model } from 'mongoose';
@@ -120,6 +122,28 @@ const MeetCaptionsConfigSchema = new Schema(
 	{ _id: false }
 );
 
+const MeetMediaConfigSchema = new Schema(
+	{
+		mode: {
+			type: String,
+			enum: Object.values(MeetRoomMediaMode),
+			required: true
+		}
+	},
+	{ _id: false }
+);
+
+const MeetScreenShareConfigSchema = new Schema(
+	{
+		allowAccessTo: {
+			type: String,
+			enum: Object.values(MeetScreenShareAccess),
+			required: true
+		}
+	},
+	{ _id: false }
+);
+
 /**
  * Sub-schema for room theme configuration.
  */
@@ -199,6 +223,14 @@ const MeetRoomConfigSchema = new Schema(
 		captions: {
 			type: MeetCaptionsConfigSchema,
 			required: true
+		},
+		media: {
+			type: MeetMediaConfigSchema,
+			required: true
+		},
+		screenShare: {
+			type: MeetScreenShareConfigSchema,
+			required: true
 		}
 	},
 	{ _id: false }
@@ -223,9 +255,19 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			type: String,
 			required: true
 		},
+		passcode: {
+			type: String,
+			required: false,
+			unique: true,
+			sparse: true
+		},
 		creationDate: {
 			type: Number,
 			required: true
+		},
+		maxParticipants: {
+			type: Number,
+			required: false
 		},
 		autoDeletionDate: {
 			type: Number,

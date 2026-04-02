@@ -10,24 +10,26 @@ import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../services';
 
 @Component({
-    selector: 'ov-room-basic-creation',
-    imports: [
-        ReactiveFormsModule,
-        MatButtonModule,
-        MatIconModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatTooltipModule
-    ],
-    templateUrl: './room-basic-creation.component.html',
-    styleUrl: './room-basic-creation.component.scss'
+	selector: 'ov-room-basic-creation',
+	imports: [
+		ReactiveFormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatInputModule,
+		MatFormFieldModule,
+		MatTooltipModule
+	],
+	templateUrl: './room-basic-creation.component.html',
+	styleUrl: './room-basic-creation.component.scss'
 })
 export class RoomBasicCreationComponent implements OnDestroy {
-	@Output() createRoom = new EventEmitter<string | undefined>();
+	@Output() createRoom = new EventEmitter<Pick<MeetRoomOptions, 'roomName' | 'passcode' | 'maxParticipants'>>();
 	@Output() openAdvancedMode = new EventEmitter<void>();
 
 	roomDetailsForm = new FormGroup({
-		roomName: new FormControl('Room', [Validators.maxLength(50)])
+		roomName: new FormControl('Room', [Validators.maxLength(50)]),
+		passcode: new FormControl(''),
+		maxParticipants: new FormControl(10, [Validators.required, Validators.min(1)])
 	});
 
 	private destroy$ = new Subject<void>();
@@ -51,8 +53,11 @@ export class RoomBasicCreationComponent implements OnDestroy {
 	}
 
 	private saveFormData(formValue: any) {
+		const normalizedPasscode = formValue.passcode?.toUpperCase();
 		const stepData: Partial<MeetRoomOptions> = {
-			roomName: formValue.roomName
+			roomName: formValue.roomName,
+			passcode: normalizedPasscode,
+			maxParticipants: formValue.maxParticipants
 		};
 		this.wizardService.updateStepData('roomDetails', stepData);
 	}
@@ -60,8 +65,29 @@ export class RoomBasicCreationComponent implements OnDestroy {
 	onCreateRoom() {
 		if (this.roomDetailsForm.valid) {
 			const formValue = this.roomDetailsForm.value;
-			this.createRoom.emit(formValue.roomName || undefined);
+			const normalizedPasscode = formValue.passcode?.toUpperCase();
+			this.createRoom.emit({
+				roomName: formValue.roomName || undefined,
+				passcode: normalizedPasscode || undefined,
+				maxParticipants: formValue.maxParticipants || undefined
+			});
 		}
+	}
+
+	onGeneratePasscode(): void {
+		const generated = this.generatePasscode();
+		this.roomDetailsForm.get('passcode')?.setValue(generated);
+	}
+
+	private generatePasscode(): string {
+		const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+		let result = '';
+
+		for (let i = 0; i < 8; i++) {
+			result += charset[Math.floor(Math.random() * charset.length)];
+		}
+
+		return result;
 	}
 
 	onOpenAdvancedMode() {

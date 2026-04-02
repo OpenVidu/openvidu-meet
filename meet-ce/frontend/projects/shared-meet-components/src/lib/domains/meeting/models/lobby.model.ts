@@ -1,5 +1,5 @@
 import { FormGroup } from '@angular/forms';
-import { MeetRoom } from '@openvidu-meet/typings';
+import { GuestCaptchaConfig, MeetRoom } from '@openvidu-meet/typings';
 
 /**
  * State interface representing the lobby phase of a meeting.
@@ -15,6 +15,8 @@ export interface LobbyState {
 	showBackButton: boolean;
 	backButtonText: string;
 	hasRoomE2EEEnabled: boolean;
+	guestCaptchaConfig?: GuestCaptchaConfig;
+	captchaToken?: string;
 	participantForm: FormGroup;
 	roomMemberToken?: string;
 }

@@ -44,6 +44,10 @@ export class MeetingCustomLayoutComponent {
 	};
 
 	protected readonly meetingUrl = computed(() => this.meetingContextService.meetingUrl());
+	protected readonly passcodeInfo = computed(() => {
+		const passcode = this.meetingContextService.meetRoom()?.passcode;
+		return passcode ? `Passcode: ${passcode}` : undefined;
+	});
 	protected readonly remoteParticipants = computed(() => this.meetingContextService.remoteParticipants());
 	protected readonly shouldShowLinkOverlay = computed(() => {
 		const hasNoRemotes = this.meetingContextService.remoteParticipants().length === 0;

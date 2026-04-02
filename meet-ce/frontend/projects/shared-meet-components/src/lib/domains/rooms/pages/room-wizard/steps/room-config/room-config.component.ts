@@ -1,19 +1,39 @@
 import { Component, OnDestroy } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
+import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MeetRoomMediaMode, MeetScreenShareAccess } from '@openvidu-meet/typings';
 import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../services';
 
 @Component({
 	selector: 'ov-room-config',
-	imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule],
+	imports: [
+		ReactiveFormsModule,
+		MatCardModule,
+		MatIconModule,
+		MatSlideToggleModule,
+		MatFormFieldModule,
+		MatSelectModule
+	],
 	templateUrl: './room-config.component.html',
 	styleUrl: './room-config.component.scss'
 })
 export class RoomConfigComponent implements OnDestroy {
 	configForm: FormGroup;
+	readonly mediaModeOptions = [
+		{ value: MeetRoomMediaMode.STANDARD, label: 'Standard (audio + video)' },
+		{ value: MeetRoomMediaMode.VIDEO_DISABLED, label: 'Video disabled (audio only camera off)' },
+		{ value: MeetRoomMediaMode.AUDIO_ONLY, label: 'Audio-only room (camera and screen share off)' }
+	];
+	readonly screenShareAccessOptions = [
+		{ value: MeetScreenShareAccess.ADMIN, label: 'Admin only' },
+		{ value: MeetScreenShareAccess.ADMIN_MODERATOR, label: 'Admin and moderators' },
+		{ value: MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER, label: 'All users' }
+	];
 
 	private destroy$ = new Subject<void>();
 	// Store the previous recording state before E2EE disables it
@@ -44,6 +64,12 @@ export class RoomConfigComponent implements OnDestroy {
 				},
 				e2ee: {
 					enabled: formValue.e2eeEnabled ?? false
+				},
+				media: {
+					mode: formValue.mediaMode ?? MeetRoomMediaMode.STANDARD
+				},
+				screenShare: {
+					allowAccessTo: formValue.screenShareAccess ?? MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER
 				},
 				captions: {
 					enabled: formValue.captionsEnabled ?? false
@@ -110,6 +136,14 @@ export class RoomConfigComponent implements OnDestroy {
 		this.configForm.patchValue({ captionsEnabled: isEnabled });
 	}
 
+	onMediaModeChange(mode: MeetRoomMediaMode): void {
+		this.configForm.patchValue({ mediaMode: mode });
+	}
+
+	onScreenShareAccessChange(access: MeetScreenShareAccess): void {
+		this.configForm.patchValue({ screenShareAccess: access });
+	}
+
 	get chatEnabled(): boolean {
 		return this.configForm.value.chatEnabled || false;
 	}
@@ -124,5 +158,37 @@ export class RoomConfigComponent implements OnDestroy {
 
 	get captionsEnabled(): boolean {
 		return this.configForm.value.captionsEnabled ?? false;
+	}
+
+	get mediaMode(): MeetRoomMediaMode {
+		return this.configForm.value.mediaMode ?? MeetRoomMediaMode.STANDARD;
+	}
+
+	get screenShareAccess(): MeetScreenShareAccess {
+		return this.configForm.value.screenShareAccess ?? MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER;
+	}
+
+	get isRoomVideoEnabled(): boolean {
+		return this.mediaMode === MeetRoomMediaMode.STANDARD;
+	}
+
+	get isRoomAudioEnabled(): boolean {
+		return true;
+	}
+
+	get isRoomScreenShareEnabled(): boolean {
+		return this.mediaMode !== MeetRoomMediaMode.AUDIO_ONLY;
+	}
+
+	get screenShareAccessLabel(): string {
+		switch (this.screenShareAccess) {
+			case MeetScreenShareAccess.ADMIN:
+				return 'Admin only';
+			case MeetScreenShareAccess.ADMIN_MODERATOR:
+				return 'Admin and moderators';
+			case MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER:
+			default:
+				return 'All users';
+		}
 	}
 }

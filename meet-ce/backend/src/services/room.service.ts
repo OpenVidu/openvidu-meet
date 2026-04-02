@@ -34,7 +34,6 @@ import { LoggerService } from './logger.service.js';
 import { RecordingService } from './recording.service.js';
 import { RequestSessionService } from './request-session.service.js';
 
-
 /**
  * Service for managing OpenVidu Meet rooms.
  *
@@ -62,18 +61,20 @@ export class RoomService {
 	 *
 	 */
 	async createMeetRoom(roomOptions: MeetRoomOptions): Promise<MeetRoom> {
-		const { roomName, autoDeletionDate, autoDeletionPolicy, config } = roomOptions;
+		const { roomName, passcode, maxParticipants, autoDeletionDate, autoDeletionPolicy, config } = roomOptions;
 
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
 		const roomId = `${roomIdPrefix}-${uid(15)}`;
 		const roomConfig: MeetRoomConfig = config as MeetRoomConfig;
+		const roomPasscode = await this.resolveUniqueRoomPasscode(passcode);
 
 		const meetRoom: MeetRoom = {
 			roomId,
 			roomName: roomName!,
+			passcode: roomPasscode,
 			creationDate: Date.now(),
-			// maxParticipants,
+			maxParticipants,
 			autoDeletionDate,
 			autoDeletionPolicy,
 			config: roomConfig,
@@ -83,6 +84,30 @@ export class RoomService {
 			meetingEndAction: MeetingEndAction.NONE
 		};
 		return await this.roomRepository.create(meetRoom);
+	}
+
+	private async resolveUniqueRoomPasscode(inputPasscode?: string): Promise<string> {
+		const maxAttempts = 20;
+		let attempts = 0;
+
+		const firstCandidate = inputPasscode
+			? MeetRoomHelper.sanitizeRoomPasscode(inputPasscode)
+			: MeetRoomHelper.createRoomPasscode();
+
+		let candidate = firstCandidate;
+
+		while (attempts < maxAttempts) {
+			const existingRoom = await this.roomRepository.findByPasscode(candidate, 'roomId');
+
+			if (!existingRoom) {
+				return candidate;
+			}
+
+			candidate = MeetRoomHelper.createRoomPasscode();
+			attempts += 1;
+		}
+
+		throw internalError('generating a unique room passcode');
 	}
 
 	/**
@@ -108,8 +133,8 @@ export class RoomService {
 				roomOptions: MeetRoomHelper.toOpenViduOptions(meetRoom)
 			}),
 			emptyTimeout: MEETING_EMPTY_TIMEOUT ? ms(MEETING_EMPTY_TIMEOUT) / 1000 : undefined,
-			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined
-			// maxParticipants: maxParticipants || undefined,
+			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined,
+			maxParticipants: meetRoom.maxParticipants
 		};
 
 		const room = await this.livekitService.createRoom(livekitRoomOptions);

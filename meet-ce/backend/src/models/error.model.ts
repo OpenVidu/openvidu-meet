@@ -205,8 +205,20 @@ export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
 };
 
+export const errorRoomMaxParticipantsReached = (roomId: string, maxParticipants: number): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Error',
+		`Room '${roomId}' has reached the maximum number of participants (${maxParticipants})`,
+		409
+	);
+};
+
 export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Secret '${secret}' is not recognized for room '${roomId}'`, 400);
+};
+
+export const errorInvalidRoomPasscode = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `Invalid passcode for room '${roomId}'`, 403);
 };
 
 export const errorDeletingRoom = (errorCode: MeetRoomDeletionErrorCode, message: string): OpenViduMeetError => {
@@ -243,6 +255,24 @@ export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {
 		'There are no API keys configured yet. Please, create one to use webhooks.',
 		400
 	);
+};
+
+// Captcha errors
+
+export const errorCaptchaNotConfigured = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Captcha Error',
+		'Captcha is enabled but not configured correctly on server side',
+		500
+	);
+};
+
+export const errorCaptchaTokenRequired = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Captcha Error', 'Captcha token is required to join the meeting', 400);
+};
+
+export const errorCaptchaValidationFailed = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Captcha Error', 'Captcha validation failed', 403);
 };
 
 // Handlers

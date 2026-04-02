@@ -35,6 +35,11 @@ export class MeetingInvitePanelComponent {
 		return this.meetingContextService.meetingUrl();
 	});
 
+	protected passcodeInfo = computed(() => {
+		const passcode = this.meetingContextService.meetRoom()?.passcode;
+		return passcode ? `Passcode: ${passcode}` : undefined;
+	});
+
 	onCopyClicked(): void {
 		const room = this.meetingContextService.meetRoom();
 		if (!room) {

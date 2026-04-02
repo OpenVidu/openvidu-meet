@@ -2,6 +2,9 @@ import { MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../environment.js';
 
 export class MeetRoomHelper {
+	private static readonly ROOM_PASSCODE_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	private static readonly ROOM_PASSCODE_LENGTH = 8;
+
 	private constructor() {
 		// Prevent instantiation of this utility class
 	}
@@ -26,6 +29,26 @@ export class MeetRoomHelper {
 	 */
 	static sanitizeRoomId(val: string): string {
 		return val.replace(/[^a-zA-Z0-9_-]/g, ''); // Allow only letters, numbers, hyphens and underscores
+	}
+
+	/**
+	 * Sanitizes a room passcode by trimming and uppercasing it.
+	 */
+	static sanitizeRoomPasscode(val: string): string {
+		return val.trim().toUpperCase();
+	}
+
+	/**
+	 * Creates a random 8-character alphanumeric room passcode.
+	 */
+	static createRoomPasscode(): string {
+		let passcode = '';
+		for (let i = 0; i < MeetRoomHelper.ROOM_PASSCODE_LENGTH; i++) {
+			const randomIndex = Math.floor(Math.random() * MeetRoomHelper.ROOM_PASSCODE_CHARSET.length);
+			passcode += MeetRoomHelper.ROOM_PASSCODE_CHARSET[randomIndex];
+		}
+
+		return passcode;
 	}
 
 	/**
@@ -62,10 +85,10 @@ export class MeetRoomHelper {
 	static toOpenViduOptions(room: MeetRoom): MeetRoomOptions {
 		return {
 			roomName: room.roomName,
+			maxParticipants: room.maxParticipants,
 			autoDeletionDate: room.autoDeletionDate,
 			autoDeletionPolicy: room.autoDeletionPolicy,
 			config: room.config
-			// maxParticipants: room.maxParticipants
 		};
 	}
 

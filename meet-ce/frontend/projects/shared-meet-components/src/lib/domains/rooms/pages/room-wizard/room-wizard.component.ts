@@ -90,8 +90,8 @@ export class RoomWizardComponent implements OnInit {
 		if (!this.roomId) return;
 
 		try {
-			const { roomName, autoDeletionDate, config } = await this.roomService.getRoom(this.roomId);
-			this.existingRoomData = { roomName, autoDeletionDate, config };
+			const { roomName, passcode, autoDeletionDate, config } = await this.roomService.getRoom(this.roomId);
+			this.existingRoomData = { roomName, passcode, autoDeletionDate, config };
 			if (this.existingRoomData) {
 				this.isBasicCreation.set(false);
 			}
@@ -128,10 +128,14 @@ export class RoomWizardComponent implements OnInit {
 		await this.navigationService.navigateTo('rooms', undefined, true);
 	}
 
-	async createRoomBasic(roomName?: string) {
+	async createRoomBasic({
+		roomName,
+		passcode,
+		maxParticipants
+	}: Pick<MeetRoomOptions, 'roomName' | 'passcode' | 'maxParticipants'>) {
 		try {
 			// Create room with basic config including e2ee: false (default settings)
-			const { moderatorUrl } = await this.roomService.createRoom({ roomName });
+			const { moderatorUrl } = await this.roomService.createRoom({ roomName, passcode, maxParticipants });
 
 			// Extract the path and query parameters from the moderator URL and navigate to it
 			const url = new URL(moderatorUrl);

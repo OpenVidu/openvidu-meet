@@ -10,13 +10,15 @@
 	}
 
 	<div class="meeting-url-badge-container" (click)="copyClicked.emit()">
-		<span class="meeting-url-text">{{ meetingUrl }}</span>
-		<button matIconButton class="copy-url-btn" matTooltip="Copy meeting link">
-			<mat-icon>content_copy</mat-icon>
-		</button>
-	</div>
+		<div class="meeting-url-row">
+			<span class="meeting-url-text">{{ meetingUrl }}</span>
+			<button matIconButton class="copy-url-btn" matTooltip="Copy meeting link">
+				<mat-icon>content_copy</mat-icon>
+			</button>
+		</div>
 
-	@if (additionalInfo) {
-		<div class="meeting-url-badge-additional-info">{{ additionalInfo }}</div>
-	}
+		@if (additionalInfo) {
+			<div class="meeting-url-additional-info">{{ additionalInfo }}</div>
+		}
+	</div>
 </div>

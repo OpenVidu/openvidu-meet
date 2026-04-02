@@ -5,6 +5,7 @@ import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { AppDataService } from '../../../shared/services/app-data.service';
+import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
@@ -34,8 +35,11 @@ export class MeetingLobbyService {
 		showBackButton: true,
 		backButtonText: 'Back',
 		hasRoomE2EEEnabled: false,
+		guestCaptchaConfig: undefined,
+		captchaToken: undefined,
 		participantForm: new FormGroup({
 			name: new FormControl('', [Validators.required]),
+			passcode: new FormControl(''),
 			e2eeKey: new FormControl('')
 		}),
 		roomMemberToken: undefined
@@ -49,6 +53,7 @@ export class MeetingLobbyService {
 	protected roomMemberService: RoomMemberService = inject(RoomMemberService);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected appDataService: AppDataService = inject(AppDataService);
+	protected globalConfigService: GlobalConfigService = inject(GlobalConfigService);
 	protected wcManagerService: MeetingWebComponentManagerService = inject(MeetingWebComponentManagerService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingLobbyService');
@@ -116,6 +121,19 @@ export class MeetingLobbyService {
 	 */
 	readonly roomName = computed(() => this._state().room?.roomName);
 
+	readonly roomPasscode = computed(() => this._state().room?.passcode);
+
+	readonly roomRequiresPasscode = computed(() => !!this._state().room?.passcode);
+
+	readonly guestCaptchaConfig = computed(() => this._state().guestCaptchaConfig);
+
+	readonly guestCaptchaEnabled = computed(() => {
+		const config = this._state().guestCaptchaConfig;
+		return !!config?.enabled && !!config.siteKey;
+	});
+
+	readonly captchaToken = computed(() => this._state().captchaToken);
+
 	/**
 	 * Computed signal for has recordings.
 	 * Obtained from MeetingContextService
@@ -136,6 +154,10 @@ export class MeetingLobbyService {
 		this._state().participantForm.get('e2eeKey')?.setValue(key);
 	}
 
+	setCaptchaToken(token?: string): void {
+		this._state.update((state) => ({ ...state, captchaToken: token }));
+	}
+
 	/**
 	 * Initializes the lobby state by fetching room data and configuring UI
 	 */
@@ -150,7 +172,8 @@ export class MeetingLobbyService {
 				this.roomService.getRoom(roomId),
 				this.setBackButtonText(),
 				this.checkForRecordings(),
-				this.initializeParticipantName()
+				this.initializeParticipantName(),
+				this.initializeGuestCaptchaConfig()
 			]);
 
 			const roomClosed = room.status === MeetRoomStatus.CLOSED;
@@ -176,6 +199,14 @@ export class MeetingLobbyService {
 					form.get('e2eeKey')?.disable();
 				}
 				form.get('e2eeKey')?.updateValueAndValidity();
+			}
+
+			const form = this._state().participantForm;
+			if (room.passcode) {
+				form
+					.get('passcode')
+					?.setValidators([Validators.required, Validators.minLength(8), Validators.maxLength(8)]);
+				form.get('passcode')?.updateValueAndValidity();
 			}
 		} catch (error) {
 			this.clearLobbyState();
@@ -245,6 +276,14 @@ export class MeetingLobbyService {
 		}
 		this.setParticipantName(sanitized);
 
+		const participantForm = this._state().participantForm;
+		const passcodeControl = participantForm.get('passcode');
+		const roomPasscode = this._state().room?.passcode;
+		if (roomPasscode && passcodeControl) {
+			const normalizedPasscode = (passcodeControl.value || '').trim().toUpperCase();
+			passcodeControl.setValue(normalizedPasscode, { emitEvent: false });
+		}
+
 		// For E2EE rooms, validate passkey
 		const { hasRoomE2EEEnabled, roomId } = this._state();
 		if (hasRoomE2EEEnabled) {
@@ -256,7 +295,10 @@ export class MeetingLobbyService {
 			this.meetingContextService.setE2eeKey(e2eeKey);
 		}
 
-		await this.generateRoomMemberToken();
+		const tokenGenerated = await this.generateRoomMemberToken();
+		if (!tokenGenerated) {
+			return;
+		}
 		await Promise.all([this.addParticipantNameToUrl(), this.roomService.loadRoomConfig(roomId!)]);
 	}
 
@@ -343,24 +385,35 @@ export class MeetingLobbyService {
 	 *
 	 * @returns Promise that resolves when token is generated
 	 */
-	protected async generateRoomMemberToken() {
+	protected async generateRoomMemberToken(): Promise<boolean> {
 		try {
 			const roomId = this._state().roomId;
 			const roomSecret = this.meetingContextService.roomSecret();
+			const captchaToken = this._state().captchaToken;
+			const roomPasscode = this._state().participantForm.get('passcode')?.value as string | undefined;
 			const roomMemberToken = await this.roomMemberService.generateToken(
 				roomId!,
 				{
 					secret: roomSecret!,
 					grantJoinMeetingPermission: true,
-					participantName: this.participantName()
+					participantName: this.participantName(),
+					captchaToken,
+					roomPasscode
 				},
 				this.e2eeKeyValue()
 			);
 			const updatedName = this.roomMemberService.getParticipantName()!;
 			this.setParticipantName(updatedName);
 			this._state.update((state) => ({ ...state, roomMemberToken }));
+			return true;
 		} catch (error: any) {
 			this.log.e('Error generating room member token:', error);
+			const message = (error?.error?.message || error?.message || '').toString();
+			if (error.status === 403 && /passcode/i.test(message)) {
+				this._state().participantForm.get('passcode')?.setErrors({ invalidPasscode: true });
+				return false;
+			}
+
 			switch (error.status) {
 				case 400:
 					// Invalid secret
@@ -391,6 +444,24 @@ export class MeetingLobbyService {
 		});
 	}
 
+	protected async initializeGuestCaptchaConfig(): Promise<void> {
+		try {
+			this.log.d('[captcha] Loading guest captcha config...');
+			const guestCaptchaConfig = await this.globalConfigService.getGuestCaptchaConfig();
+			this.log.d('[captcha] Guest captcha config loaded', guestCaptchaConfig);
+			this._state.update((state) => ({ ...state, guestCaptchaConfig }));
+		} catch (error) {
+			this.log.w('Unable to load guest captcha config. Continuing without captcha.', error);
+			this._state.update((state) => ({
+				...state,
+				guestCaptchaConfig: {
+					enabled: false,
+					provider: 'recaptcha-v2'
+				}
+			}));
+		}
+	}
+
 	protected clearLobbyState() {
 		this._state.set({
 			roomId: undefined,
@@ -399,8 +470,11 @@ export class MeetingLobbyService {
 			showBackButton: true,
 			backButtonText: 'Back',
 			hasRoomE2EEEnabled: false,
+			guestCaptchaConfig: undefined,
+			captchaToken: undefined,
 			participantForm: new FormGroup({
 				name: new FormControl('', [Validators.required]),
+				passcode: new FormControl(''),
 				e2eeKey: new FormControl('')
 			}),
 			roomMemberToken: undefined

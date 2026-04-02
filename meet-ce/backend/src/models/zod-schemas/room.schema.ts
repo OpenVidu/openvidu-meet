@@ -16,13 +16,17 @@ import {
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomFilters,
+	MeetRoomMediaConfig,
+	MeetRoomMediaMode,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
 	MeetRoomOptions,
+	MeetRoomScreenShareConfig,
 	MeetRoomStatus,
 	MeetRoomTheme,
 	MeetRoomThemeMode,
+	MeetScreenShareAccess,
 	MeetVirtualBackgroundConfig
 } from '@openvidu-meet/typings';
 import ms from 'ms';
@@ -175,6 +179,14 @@ const CaptionsConfigSchema: z.ZodType<MeetRoomCaptionsConfig> = z.object({
 	enabled: z.boolean()
 });
 
+const MediaConfigSchema: z.ZodType<MeetRoomMediaConfig> = z.object({
+	mode: z.nativeEnum(MeetRoomMediaMode)
+});
+
+const ScreenShareConfigSchema: z.ZodType<MeetRoomScreenShareConfig> = z.object({
+	allowAccessTo: z.nativeEnum(MeetScreenShareAccess)
+});
+
 const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.nativeEnum(MeetRoomThemeMode);
 
 const hexColorSchema = z
@@ -213,7 +225,9 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		chat: ChatConfigSchema.optional(),
 		virtualBackground: VirtualBackgroundConfigSchema.optional(),
 		e2ee: E2EEConfigSchema.optional(),
-		captions: CaptionsConfigSchema.optional()
+		captions: CaptionsConfigSchema.optional(),
+		media: MediaConfigSchema.optional(),
+		screenShare: ScreenShareConfigSchema.optional()
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data: Partial<MeetRoomConfig>) => {
@@ -246,7 +260,11 @@ const CreateRoomConfigSchema = z
 		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
 		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
 		e2ee: E2EEConfigSchema.optional().default(() => ({ enabled: false })),
-		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true }))
+		captions: CaptionsConfigSchema.optional().default(() => ({ enabled: true })),
+		media: MediaConfigSchema.optional().default(() => ({ mode: MeetRoomMediaMode.STANDARD })),
+		screenShare: ScreenShareConfigSchema.optional().default(() => ({
+			allowAccessTo: MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER
+		}))
 		// appearance: AppearanceConfigSchema,
 	})
 	.transform((data) => {
@@ -296,6 +314,12 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		.transform(MeetRoomHelper.sanitizeRoomName)
 		.optional()
 		.default('Room'),
+	passcode: z
+		.string()
+		.trim()
+		.regex(/^[a-zA-Z0-9]{8}$/, 'passcode must be an 8 character alphanumeric string')
+		.transform((value) => value.toUpperCase())
+		.optional(),
 	autoDeletionDate: z
 		.number()
 		.positive('autoDeletionDate must be a positive integer')
@@ -337,14 +361,15 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: true }
-	})
-	// maxParticipants: z
-	// 	.number()
-	// 	.positive('Max participants must be a positive integer')
-	// 	.nullable()
-	// 	.optional()
-	// 	.default(null)
+		captions: { enabled: true },
+		media: { mode: MeetRoomMediaMode.STANDARD },
+		screenShare: { allowAccessTo: MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER }
+	}),
+	maxParticipants: z
+		.number()
+		.int('maxParticipants must be an integer')
+		.positive('maxParticipants must be a positive integer')
+		.optional()
 });
 
 export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
@@ -423,7 +448,13 @@ export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions>
 		secret: z.string().nonempty('Secret is required'),
 		grantJoinMeetingPermission: z.boolean().optional().default(false),
 		participantName: z.string().optional(),
-		participantIdentity: z.string().optional()
+		participantIdentity: z.string().optional(),
+		captchaToken: z.string().optional(),
+		roomPasscode: z
+			.string()
+			.trim()
+			.transform((value) => value.toUpperCase())
+			.optional()
 	})
 	.refine(
 		(data) => {

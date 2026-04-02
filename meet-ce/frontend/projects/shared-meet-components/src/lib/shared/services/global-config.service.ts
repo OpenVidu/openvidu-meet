@@ -1,5 +1,11 @@
 import { inject, Injectable } from '@angular/core';
-import { AuthMode, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import {
+	AuthMode,
+	GuestCaptchaConfig,
+	MeetAppearanceConfig,
+	SecurityConfig,
+	WebhookConfig
+} from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { FeatureConfigurationService } from './feature-configuration.service';
 import { HttpService } from './http.service';
@@ -10,6 +16,7 @@ import { HttpService } from './http.service';
 export class GlobalConfigService {
 	protected readonly GLOBAL_CONFIG_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/config`;
 	protected securityConfig?: SecurityConfig;
+	protected guestCaptchaConfig?: GuestCaptchaConfig;
 	protected loggerService: LoggerService = inject(LoggerService);
 	protected httpService: HttpService = inject(HttpService);
 	protected featureConfService: FeatureConfigurationService = inject(FeatureConfigurationService);
@@ -90,5 +97,15 @@ export class GlobalConfigService {
 			this.log.e('Error loading captions config:', error);
 			throw error;
 		}
+	}
+
+	async getGuestCaptchaConfig(forceRefresh = false): Promise<GuestCaptchaConfig> {
+		if (this.guestCaptchaConfig && !forceRefresh) {
+			return this.guestCaptchaConfig;
+		}
+
+		const path = `${this.GLOBAL_CONFIG_API}/captcha/guest`;
+		this.guestCaptchaConfig = await this.httpService.getRequest<GuestCaptchaConfig>(path);
+		return this.guestCaptchaConfig;
 	}
 }

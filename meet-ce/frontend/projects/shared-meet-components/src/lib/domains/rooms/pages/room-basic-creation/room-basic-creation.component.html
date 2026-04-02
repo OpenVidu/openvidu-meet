@@ -24,6 +24,44 @@
 				}
 			</mat-form-field>
 
+			<mat-form-field appearance="outline" class="form-field">
+				<mat-label>Meeting Passcode</mat-label>
+				<input matInput formControlName="passcode" placeholder="8-character code" maxlength="8" />
+				<button
+					mat-icon-button
+					matSuffix
+					type="button"
+					(click)="onGeneratePasscode()"
+					matTooltip="Generate new passcode"
+				>
+					<mat-icon class="ov-settings-icon">refresh</mat-icon>
+				</button>
+				<mat-hint>Share this passcode with participants to join the room.</mat-hint>
+				@if (roomDetailsForm.get('passcode')?.hasError('required')) {
+					<mat-error>Passcode is required</mat-error>
+				}
+				@if (
+					roomDetailsForm.get('passcode')?.hasError('minlength') ||
+					roomDetailsForm.get('passcode')?.hasError('maxlength') ||
+					roomDetailsForm.get('passcode')?.hasError('pattern')
+				) {
+					<mat-error>Passcode must contain exactly 8 letters or numbers</mat-error>
+				}
+			</mat-form-field>
+
+			<mat-form-field appearance="outline" class="form-field">
+				<mat-label>Max participants</mat-label>
+				<input matInput type="number" formControlName="maxParticipants" min="1" placeholder="e.g. 10" />
+				<mat-icon matSuffix class="ov-settings-icon">groups</mat-icon>
+				<mat-hint>Default is 10 participants for new rooms.</mat-hint>
+				@if (roomDetailsForm.get('maxParticipants')?.hasError('required')) {
+					<mat-error>Max participants is required</mat-error>
+				}
+				@if (roomDetailsForm.get('maxParticipants')?.hasError('min')) {
+					<mat-error>Max participants must be at least 1</mat-error>
+				}
+			</mat-form-field>
+
 			<!-- Action Buttons -->
 			<div class="action-buttons">
 				<button

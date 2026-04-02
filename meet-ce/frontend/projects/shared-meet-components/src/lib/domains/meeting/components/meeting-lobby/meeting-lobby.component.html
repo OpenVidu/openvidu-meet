@@ -30,9 +30,9 @@
 					</div>
 				</mat-card-header>
 
-			<mat-card-content class="card-content">
-				@if (!roomClosed()) {
-					<form [formGroup]="participantForm()" (ngSubmit)="onFormSubmit()" class="join-form">
+				<mat-card-content class="card-content">
+					@if (!roomClosed()) {
+						<form [formGroup]="participantForm()" (ngSubmit)="onFormSubmit()" class="join-form">
 							<!-- Participant Name Input -->
 							<mat-form-field appearance="outline" class="name-field">
 								<mat-label>Your display name</mat-label>
@@ -49,6 +49,26 @@
 								}
 							</mat-form-field>
 
+							@if (roomRequiresPasscode()) {
+								<mat-form-field appearance="outline" class="name-field fade-in">
+									<mat-label>Meeting passcode</mat-label>
+									<input
+										id="participant-passcode-input"
+										matInput
+										placeholder="Enter room passcode"
+										formControlName="passcode"
+										required
+									/>
+									<mat-icon matSuffix class="ov-action-icon">password</mat-icon>
+									@if (participantForm().get('passcode')?.hasError('required')) {
+										<mat-error> The passcode is <strong>required</strong> </mat-error>
+									}
+									@if (participantForm().get('passcode')?.hasError('invalidPasscode')) {
+										<mat-error> Invalid passcode. Please verify it and try again. </mat-error>
+									}
+								</mat-form-field>
+							}
+
 							<!-- E2EE Key Input (shown when E2EE is enabled and key is not pre-filled from URL) -->
 							@if (showE2EEKeyInput()) {
 								<mat-form-field appearance="outline" class="e2eekey-field fade-in">
@@ -61,12 +81,23 @@
 										formControlName="e2eeKey"
 										required
 									/>
-								<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
-								@if (participantForm().get('e2eeKey')?.hasError('required')) {
-									<mat-error> The encryption key is <strong>required</strong> </mat-error>
-								}
+									<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
+									@if (participantForm().get('e2eeKey')?.hasError('required')) {
+										<mat-error> The encryption key is <strong>required</strong> </mat-error>
+									}
 									<mat-hint>This room requires an encryption key to join</mat-hint>
 								</mat-form-field>
+							}
+
+							@if (isGuestCaptchaEnabled()) {
+								<div class="captcha-wrapper fade-in">
+									<div #captchaContainer class="captcha-container"></div>
+									@if (captchaMissing()) {
+										<div class="captcha-error">
+											Please complete the captcha challenge to continue.
+										</div>
+									}
+								</div>
 							}
 
 							<button
@@ -75,7 +106,7 @@
 								id="participant-name-submit"
 								type="submit"
 								class="join-button"
-								[disabled]="!participantForm().valid"
+								[disabled]="!participantForm().valid || captchaMissing()"
 							>
 								<span>Join Meeting</span>
 							</button>
@@ -127,7 +158,11 @@
 
 		<!-- Room URL Badge -->
 		@if (!roomClosed() && showShareLink()) {
-			<ov-share-meeting-link [meetingUrl]="meetingUrl()" (copyClicked)="onCopyLinkClick()"></ov-share-meeting-link>
+			<ov-share-meeting-link
+				[meetingUrl]="meetingUrl()"
+				[additionalInfo]="passcodeInfo()"
+				(copyClicked)="onCopyLinkClick()"
+			></ov-share-meeting-link>
 		}
 
 		<!-- Quick Actions -->

@@ -48,6 +48,29 @@ const DEFAULT_FEATURES: ApplicationFeatures = {
 export class FeatureConfigurationService {
 	protected log;
 
+	private normalizeTrackSource(source: unknown): TrackSource | undefined {
+		if (typeof source === 'number') {
+			return source as TrackSource;
+		}
+
+		if (typeof source !== 'string') {
+			return undefined;
+		}
+
+		switch (source.toUpperCase()) {
+			case 'CAMERA':
+				return TrackSource.CAMERA;
+			case 'MICROPHONE':
+				return TrackSource.MICROPHONE;
+			case 'SCREEN_SHARE':
+				return TrackSource.SCREEN_SHARE;
+			case 'SCREEN_SHARE_AUDIO':
+				return TrackSource.SCREEN_SHARE_AUDIO;
+			default:
+				return undefined;
+		}
+	}
+
 	// Signals to handle reactive
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
 	protected roomMemberRole = signal<MeetRoomMemberRole | undefined>(undefined);
@@ -147,11 +170,21 @@ export class FeatureConfigurationService {
 			// Media features
 			const canPublish = permissions.livekit.canPublish;
 			const canPublishSources = permissions.livekit.canPublishSources ?? [];
-			features.videoEnabled = canPublish || canPublishSources.includes(TrackSource.CAMERA);
-			features.audioEnabled = canPublish || canPublishSources.includes(TrackSource.MICROPHONE);
+			const normalizedPublishSources = canPublishSources
+				.map((source) => this.normalizeTrackSource(source))
+				.filter((source): source is TrackSource => source !== undefined);
+			const hasSourceRestrictions = normalizedPublishSources.length > 0;
+			features.videoEnabled = hasSourceRestrictions
+				? normalizedPublishSources.includes(TrackSource.CAMERA)
+				: !!canPublish;
+			features.audioEnabled = hasSourceRestrictions
+				? normalizedPublishSources.includes(TrackSource.MICROPHONE)
+				: !!canPublish;
 			features.showCamera = features.videoEnabled;
 			features.showMicrophone = features.audioEnabled;
-			features.showScreenShare = canPublish || canPublishSources.includes(TrackSource.SCREEN_SHARE);
+			features.showScreenShare = hasSourceRestrictions
+				? normalizedPublishSources.includes(TrackSource.SCREEN_SHARE)
+				: !!canPublish;
 		}
 
 		// Apply role-based configurations

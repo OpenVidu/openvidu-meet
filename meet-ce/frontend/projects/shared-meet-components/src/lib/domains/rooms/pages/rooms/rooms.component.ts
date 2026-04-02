@@ -219,13 +219,19 @@ export class RoomsComponent implements OnInit {
 	}
 
 	private copyModeratorLink(room: MeetRoom) {
-		this.clipboard.copy(room.moderatorUrl);
-		this.notificationService.showSnackbar('Moderator link copied to clipboard');
+		const text = room.passcode ? `${room.moderatorUrl}\nPasscode: ${room.passcode}` : room.moderatorUrl;
+		this.clipboard.copy(text);
+		this.notificationService.showSnackbar(
+			room.passcode ? 'Moderator link and passcode copied to clipboard' : 'Moderator link copied to clipboard'
+		);
 	}
 
 	private copySpeakerLink(room: MeetRoom) {
-		this.clipboard.copy(room.speakerUrl);
-		this.notificationService.showSnackbar('Speaker link copied to clipboard');
+		const text = room.passcode ? `${room.speakerUrl}\nPasscode: ${room.passcode}` : room.speakerUrl;
+		this.clipboard.copy(text);
+		this.notificationService.showSnackbar(
+			room.passcode ? 'Speaker link and passcode copied to clipboard' : 'Speaker link copied to clipboard'
+		);
 	}
 
 	private async viewRecordings(room: MeetRoom) {

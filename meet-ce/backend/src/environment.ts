@@ -83,11 +83,15 @@ export const MEET_ENV = {
 	// Live Captions configuration
 	CAPTIONS_ENABLED: process.env.MEET_CAPTIONS_ENABLED || 'false',
 
+	// Guest captcha configuration
+	GUEST_CAPTCHA_ENABLED: process.env.MEET_GUEST_CAPTCHA_ENABLED || 'false',
+	GUEST_CAPTCHA_SITE_KEY: process.env.MEET_GUEST_CAPTCHA_SITE_KEY ?? '',
+	GUEST_CAPTCHA_SECRET_KEY: process.env.MEET_GUEST_CAPTCHA_SECRET_KEY ?? '',
+
 	// Deployment configuration
 	MODULES_FILE: process.env.MODULES_FILE || undefined,
 	MODULE_NAME: process.env.MODULE_NAME || 'openviduMeet',
-	ENABLED_MODULES: process.env.ENABLED_MODULES ?? '',
-
+	ENABLED_MODULES: process.env.ENABLED_MODULES ?? ''
 };
 
 export function checkModuleEnabled() {

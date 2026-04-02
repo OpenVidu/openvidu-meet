@@ -1,17 +1,26 @@
 import {
 	MeetRecordingAccess,
+	MeetRoomMediaMode,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
-	MeetRoomStatus
+	MeetRoomStatus,
+	MeetScreenShareAccess,
+	TrackSource
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { ParticipantInfo } from 'livekit-server-sdk';
 import { uid } from 'uid/single';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { validateRoomMemberTokenMetadata } from '../middlewares/request-validators/room-validator.middleware.js';
-import { errorInvalidRoomSecret, errorParticipantNotFound, errorRoomClosed } from '../models/error.model.js';
+import {
+	errorInvalidRoomPasscode,
+	errorInvalidRoomSecret,
+	errorParticipantNotFound,
+	errorRoomClosed,
+	errorRoomMaxParticipantsReached
+} from '../models/error.model.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -64,7 +73,17 @@ export class RoomMemberService {
 	 * @returns A promise that resolves to the generated token
 	 */
 	async generateOrRefreshRoomMemberToken(roomId: string, tokenOptions: MeetRoomMemberTokenOptions): Promise<string> {
-		const { secret, grantJoinMeetingPermission = false, participantName, participantIdentity } = tokenOptions;
+		const {
+			secret,
+			grantJoinMeetingPermission = false,
+			participantName,
+			participantIdentity,
+			roomPasscode
+		} = tokenOptions;
+
+		if (grantJoinMeetingPermission) {
+			await this.validateRoomPasscode(roomId, roomPasscode);
+		}
 
 		// Get room member role from secret
 		const role = await this.getRoomMemberRoleBySecret(roomId, secret);
@@ -73,6 +92,19 @@ export class RoomMemberService {
 			return this.generateTokenWithJoinMeetingPermission(roomId, role, participantName, participantIdentity);
 		} else {
 			return this.generateTokenWithoutJoinMeetingPermission(roomId, role);
+		}
+	}
+
+	private async validateRoomPasscode(roomId: string, roomPasscode?: string): Promise<void> {
+		const room = await this.roomService.getMeetRoom(roomId, 'roomId,passcode');
+
+		if (!room.passcode) {
+			return;
+		}
+
+		const normalizedInput = roomPasscode ? MeetRoomHelper.sanitizeRoomPasscode(roomPasscode) : '';
+		if (normalizedInput !== room.passcode) {
+			throw errorInvalidRoomPasscode(roomId);
 		}
 	}
 
@@ -103,6 +135,13 @@ export class RoomMemberService {
 
 			// Create the Livekit room if it doesn't exist
 			await this.roomService.createLivekitRoom(roomId);
+
+			if (typeof room.maxParticipants === 'number' && room.maxParticipants > 0) {
+				const participants = await this.livekitService.listRoomParticipants(roomId);
+				if (participants.length >= room.maxParticipants) {
+					throw errorRoomMaxParticipantsReached(roomId, room.maxParticipants);
+				}
+			}
 
 			try {
 				// Reserve a unique name for the participant
@@ -169,11 +208,17 @@ export class RoomMemberService {
 		addJoinPermission = true
 	): Promise<MeetRoomMemberPermissions> {
 		const recordingPermissions = await this.getRecordingPermissions(roomId, role);
+		const room = await this.roomService.getMeetRoom(roomId, 'config');
+		const roomMediaMode = room.config.media?.mode || MeetRoomMediaMode.STANDARD;
+		const screenShareAccess =
+			room.config.screenShare?.allowAccessTo || MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER;
 
 		switch (role) {
 			case MeetRoomMemberRole.MODERATOR:
 				return this.generateModeratorPermissions(
 					roomId,
+					roomMediaMode,
+					screenShareAccess,
 					recordingPermissions.canRetrieveRecordings,
 					recordingPermissions.canDeleteRecordings,
 					addJoinPermission
@@ -181,6 +226,8 @@ export class RoomMemberService {
 			case MeetRoomMemberRole.SPEAKER:
 				return this.generateSpeakerPermissions(
 					roomId,
+					roomMediaMode,
+					screenShareAccess,
 					recordingPermissions.canRetrieveRecordings,
 					recordingPermissions.canDeleteRecordings,
 					addJoinPermission
@@ -190,15 +237,24 @@ export class RoomMemberService {
 
 	protected generateModeratorPermissions(
 		roomId: string,
+		roomMediaMode: MeetRoomMediaMode,
+		screenShareAccess: MeetScreenShareAccess,
 		canRetrieveRecordings: boolean,
 		canDeleteRecordings: boolean,
 		addJoinPermission: boolean
 	): MeetRoomMemberPermissions {
+		const canPublishSources = this.getAllowedPublishSources(
+			roomMediaMode,
+			screenShareAccess,
+			MeetRoomMemberRole.MODERATOR
+		);
+
 		return {
 			livekit: {
 				roomJoin: addJoinPermission,
 				room: roomId,
 				canPublish: true,
+				canPublishSources,
 				canSubscribe: true,
 				canPublishData: true,
 				canUpdateOwnMetadata: true
@@ -215,15 +271,24 @@ export class RoomMemberService {
 
 	protected generateSpeakerPermissions(
 		roomId: string,
+		roomMediaMode: MeetRoomMediaMode,
+		screenShareAccess: MeetScreenShareAccess,
 		canRetrieveRecordings: boolean,
 		canDeleteRecordings: boolean,
 		addJoinPermission: boolean
 	): MeetRoomMemberPermissions {
+		const canPublishSources = this.getAllowedPublishSources(
+			roomMediaMode,
+			screenShareAccess,
+			MeetRoomMemberRole.SPEAKER
+		);
+
 		return {
 			livekit: {
 				roomJoin: addJoinPermission,
 				room: roomId,
 				canPublish: true,
+				canPublishSources,
 				canSubscribe: true,
 				canPublishData: true,
 				canUpdateOwnMetadata: true
@@ -236,6 +301,40 @@ export class RoomMemberService {
 				canChangeVirtualBackground: true
 			}
 		};
+	}
+
+	protected getAllowedPublishSources(
+		roomMediaMode: MeetRoomMediaMode,
+		screenShareAccess: MeetScreenShareAccess,
+		role: MeetRoomMemberRole
+	): TrackSource[] {
+		const sources: TrackSource[] = [TrackSource.MICROPHONE];
+
+		if (roomMediaMode !== MeetRoomMediaMode.AUDIO_ONLY && roomMediaMode !== MeetRoomMediaMode.VIDEO_DISABLED) {
+			sources.push(TrackSource.CAMERA);
+		}
+
+		if (
+			roomMediaMode !== MeetRoomMediaMode.AUDIO_ONLY &&
+			this.isScreenShareAllowedForRole(screenShareAccess, role)
+		) {
+			sources.push(TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO);
+		}
+
+		return sources;
+	}
+
+	protected isScreenShareAllowedForRole(screenShareAccess: MeetScreenShareAccess, role: MeetRoomMemberRole): boolean {
+		switch (screenShareAccess) {
+			case MeetScreenShareAccess.ADMIN:
+				return role === MeetRoomMemberRole.MODERATOR;
+			case MeetScreenShareAccess.ADMIN_MODERATOR:
+				return role === MeetRoomMemberRole.MODERATOR;
+			case MeetScreenShareAccess.ADMIN_MODERATOR_SPEAKER:
+				return role === MeetRoomMemberRole.MODERATOR || role === MeetRoomMemberRole.SPEAKER;
+			default:
+				return false;
+		}
 	}
 
 	protected async getRecordingPermissions(

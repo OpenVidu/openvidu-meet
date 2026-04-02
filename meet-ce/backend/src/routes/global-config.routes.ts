@@ -44,3 +44,6 @@ configRouter.get('/rooms/appearance', withAuth(allowAnonymous), globalConfigCtrl
 
 // Captions config
 configRouter.get('/captions', withAuth(allowAnonymous), globalConfigCtrl.getCaptionsConfig);
+
+// Guest captcha config
+configRouter.get('/captcha/guest', withAuth(allowAnonymous), globalConfigCtrl.getGuestCaptchaConfig);

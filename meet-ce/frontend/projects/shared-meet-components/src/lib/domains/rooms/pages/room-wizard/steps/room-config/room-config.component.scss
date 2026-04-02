@@ -4,7 +4,7 @@
 	@include design-tokens.ov-page-content;
 	@include design-tokens.ov-container;
 
-    justify-content: center;
+	justify-content: center;
 
 	.step-header {
 		display: flex;
@@ -44,6 +44,62 @@
 		.config-form {
 			display: flex;
 			flex-direction: column;
+			gap: var(--ov-meet-spacing-md);
+
+			.form-field-row {
+				display: grid;
+				grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+				gap: var(--ov-meet-spacing-sm);
+
+				.config-select-field {
+					width: 100%;
+				}
+			}
+		}
+	}
+
+	.media-preview-card {
+		mat-card-content {
+			padding: 0;
+		}
+
+		.media-preview-list {
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-sm);
+			margin-top: var(--ov-meet-spacing-sm);
+		}
+
+		.media-preview-item {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: var(--ov-meet-spacing-xs) 0;
+			border-bottom: 1px solid var(--ov-meet-border-secondary);
+
+			&:last-child {
+				border-bottom: 0;
+			}
+		}
+
+		.media-preview-label {
+			display: inline-flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+			color: var(--ov-meet-text-primary);
+			font-size: var(--ov-meet-font-size-sm);
+			font-weight: var(--ov-meet-font-weight-medium);
+		}
+
+		.media-preview-icon {
+			@include design-tokens.ov-icon(md);
+			color: var(--ov-meet-icon-primary);
+		}
+
+		.media-preview-hint {
+			margin: var(--ov-meet-spacing-sm) 0 0;
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
 		}
 	}
 

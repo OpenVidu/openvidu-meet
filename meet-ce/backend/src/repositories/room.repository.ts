@@ -70,6 +70,18 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
+	 * Finds a room by its passcode.
+	 *
+	 * @param passcode - The room passcode
+	 * @param fields - Optional comma-separated list of fields to include in the result
+	 * @returns The room or null if not found
+	 */
+	async findByPasscode(passcode: string, fields?: string): Promise<TRoom | null> {
+		const document = await this.findOne({ passcode }, fields);
+		return document ? this.enrichRoomWithBaseUrls(document) : null;
+	}
+
+	/**
 	 * Finds rooms with optional filtering, pagination, and sorting.
 	 * Returns rooms with enriched URLs (including base URL).
 	 *

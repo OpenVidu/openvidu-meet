@@ -43,9 +43,11 @@
 		margin: var(--ov-meet-spacing-sm);
 	}
 	.meeting-url-badge-container {
-		@include design-tokens.ov-flex-center;
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
 		@include design-tokens.ov-theme-transition;
-		gap: var(--ov-meet-spacing-sm);
+		gap: var(--ov-meet-spacing-xs);
 		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
 		background-color: var(--ov-surface-color); // Use ov-components variable
 		border: 1px solid var(--ov-meet-border-color-light);
@@ -54,6 +56,11 @@
 		max-width: fit-content;
 		margin: auto;
 		cursor: pointer;
+
+		.meeting-url-row {
+			@include design-tokens.ov-flex-center;
+			gap: var(--ov-meet-spacing-sm);
+		}
 
 		.meeting-url-text {
 			font-family: var(--ov-meet-font-family-mono, 'Roboto Mono', monospace);
@@ -91,6 +98,14 @@
 				background-color: var(--ov-hover-color);
 				color: var(--ov-text-surface-color);
 			}
+		}
+
+		.meeting-url-additional-info {
+			font-size: var(--ov-meet-font-size-sm);
+			font-weight: var(--ov-meet-font-weight-medium);
+			text-align: left;
+			color: var(--ov-text-surface-color);
+			word-break: break-word;
 		}
 	}
 }

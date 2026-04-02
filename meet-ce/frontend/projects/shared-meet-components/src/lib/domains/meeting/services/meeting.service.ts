@@ -23,10 +23,12 @@ export class MeetingService {
 	 */
 	copyMeetingSpeakerLink(room: MeetRoom): void {
 		const speakerLink = room.speakerUrl;
-		this.clipboard.copy(speakerLink);
-		this.notificationService.showSnackbar('Speaker link copied to clipboard');
+		const textToCopy = room.passcode ? `${speakerLink}\nPasscode: ${room.passcode}` : speakerLink;
+		this.clipboard.copy(textToCopy);
+		this.notificationService.showSnackbar(
+			room.passcode ? 'Speaker link and passcode copied to clipboard' : 'Speaker link copied to clipboard'
+		);
 	}
-
 
 	/**
 	 * Ends a meeting by its room ID.

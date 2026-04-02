@@ -11,6 +11,76 @@
 	<!-- Form Section -->
 	<main class="step-content">
 		<form [formGroup]="configForm" class="config-form">
+			<div class="form-field-row">
+				<mat-form-field appearance="outline" class="config-select-field">
+					<mat-label>Media mode</mat-label>
+					<mat-select [value]="mediaMode" (selectionChange)="onMediaModeChange($event.value)">
+						@for (option of mediaModeOptions; track option.value) {
+							<mat-option [value]="option.value">{{ option.label }}</mat-option>
+						}
+					</mat-select>
+				</mat-form-field>
+
+				<mat-form-field appearance="outline" class="config-select-field">
+					<mat-label>Screen sharing access</mat-label>
+					<mat-select [value]="screenShareAccess" (selectionChange)="onScreenShareAccessChange($event.value)">
+						@for (option of screenShareAccessOptions; track option.value) {
+							<mat-option [value]="option.value">{{ option.label }}</mat-option>
+						}
+					</mat-select>
+				</mat-form-field>
+			</div>
+
+			<mat-card class="config-card media-preview-card">
+				<mat-card-content>
+					<div class="card-header">
+						<div class="icon-title-group">
+							<mat-icon class="feature-icon">tune</mat-icon>
+							<div class="title-group">
+								<h4 class="card-title">Media controls preview</h4>
+								<p class="card-description">
+									The controls available during the meeting are derived from the selected media mode.
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="media-preview-list">
+						<div class="media-preview-item">
+							<div class="media-preview-label">
+								<mat-icon class="media-preview-icon">videocam</mat-icon>
+								<span>Video</span>
+							</div>
+							<mat-slide-toggle [checked]="isRoomVideoEnabled" disabled></mat-slide-toggle>
+						</div>
+
+						<div class="media-preview-item">
+							<div class="media-preview-label">
+								<mat-icon class="media-preview-icon">mic</mat-icon>
+								<span>Audio</span>
+							</div>
+							<mat-slide-toggle [checked]="isRoomAudioEnabled" disabled></mat-slide-toggle>
+						</div>
+
+						<div class="media-preview-item">
+							<div class="media-preview-label">
+								<mat-icon class="media-preview-icon">screen_share</mat-icon>
+								<span>Screen share</span>
+							</div>
+							<mat-slide-toggle [checked]="isRoomScreenShareEnabled" disabled></mat-slide-toggle>
+						</div>
+					</div>
+
+					<p class="media-preview-hint">
+						@if (isRoomScreenShareEnabled) {
+							Allowed for: {{ screenShareAccessLabel }}
+						} @else {
+							Screen sharing is disabled in Audio-only mode.
+						}
+					</p>
+				</mat-card-content>
+			</mat-card>
+
 			<!-- Config Cards Grid -->
 			<div class="config-grid">
 				<!-- End-to-End Encryption Card -->

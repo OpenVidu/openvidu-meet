@@ -22,6 +22,7 @@ export class MeetingShareLinkOverlayComponent {
 	 * The meeting URL to share
 	 */
 	@Input({ required: true }) meetingUrl = '';
+	@Input() passcodeInfo?: string;
 
 	/**
 	 * Title text for the overlay
