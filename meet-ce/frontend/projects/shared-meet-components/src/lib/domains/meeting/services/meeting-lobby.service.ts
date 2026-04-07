@@ -151,15 +151,25 @@ export class MeetingLobbyService {
 
 			this._roomId.set(roomId);
 
-			const [room] = await Promise.all([
+			// Non-critical tasks should not block lobby rendering.
+			void this.setBackButtonText().catch((error) => {
+				this.log.w('Error setting back button text:', error);
+			});
+			void this.checkForRecordings().catch((error) => {
+				this.log.w('Error checking recordings during lobby initialization:', error);
+			});
+			void this.initializeParticipantName().catch((error) => {
+				this.log.w('Error initializing participant name:', error);
+			});
+
+			const room = await this.withTimeout(
 				this.roomService.getRoom(roomId, {
 					fields: ['roomId', 'roomName', 'status', 'config'],
 					extraFields: ['config']
 				}),
-				this.setBackButtonText(),
-				this.checkForRecordings(),
-				this.initializeParticipantName()
-			]);
+				12000,
+				'Timeout loading room data'
+			);
 			this._room.set(room);
 
 			if (this.hasRoomE2EEEnabled()) {
@@ -180,6 +190,19 @@ export class MeetingLobbyService {
 			this.clearLobbyState();
 			throw error;
 		}
+	}
+
+	private withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> {
+		let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+		const timeoutPromise = new Promise<T>((_, reject) => {
+			timeoutHandle = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+		});
+
+		return Promise.race([promise, timeoutPromise]).finally(() => {
+			if (timeoutHandle) {
+				clearTimeout(timeoutHandle);
+			}
+		});
 	}
 
 	/**
