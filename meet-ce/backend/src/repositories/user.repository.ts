@@ -1,4 +1,4 @@
-import type { MeetUser, MeetUserField, MeetUserFilters } from '@openvidu-meet/typings';
+import type { MeetUser, MeetUserField } from '@openvidu-meet/typings';
 import { SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
@@ -6,6 +6,13 @@ import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import type { MeetUserDocument, MeetUserDocumentOnlyField } from '../models/mongoose-schemas/user.schema.js';
 import { MEET_USER_DOCUMENT_ONLY_FIELDS, MeetUserModel } from '../models/mongoose-schemas/user.schema.js';
 import { LoggerService } from '../services/logger.service.js';
+import type {
+	MeetUserPage,
+	ProjectedMeetUser,
+	UserQuery,
+	UserQueryWithFields,
+	UserQueryWithProjection
+} from '../types/user-projection.types.js';
 import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -73,8 +80,20 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @param fields - Array of field names to include in the result
 	 * @returns The user or null if not found
 	 */
-	findByUserId(userId: string, fields?: MeetUserField[]): Promise<MeetUser | null> {
-		return this.findOne({ userId }, fields);
+	findByUserId(userId: string): Promise<MeetUser | null>;
+
+	findByUserId<const TFields extends readonly MeetUserField[]>(
+		userId: string,
+		fields: TFields
+	): Promise<ProjectedMeetUser<TFields> | null>;
+
+	findByUserId(userId: string, fields?: readonly MeetUserField[]): Promise<MeetUser | Partial<MeetUser> | null>;
+
+	findByUserId(
+		userId: string,
+		fields?: readonly MeetUserField[]
+	): Promise<MeetUser | Partial<MeetUser> | null> {
+		return this.findOne({ userId }, fields as string[]) as Promise<MeetUser | Partial<MeetUser> | null>;
 	}
 
 	/**
@@ -84,8 +103,22 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @param fields - Optional array of field names to include in the result
 	 * @returns Array of found users
 	 */
-	findByUserIds(userIds: string[], fields?: MeetUserField[]): Promise<MeetUser[]> {
-		return this.findAll({ userId: { $in: userIds } }, fields);
+	findByUserIds(userIds: string[]): Promise<MeetUser[]>;
+
+	findByUserIds<const TFields extends readonly MeetUserField[]>(
+		userIds: string[],
+		fields: TFields
+	): Promise<ProjectedMeetUser<TFields>[]>;
+
+	findByUserIds(userIds: string[], fields?: readonly MeetUserField[]): Promise<MeetUser[] | Partial<MeetUser>[]>;
+
+	findByUserIds(
+		userIds: string[],
+		fields?: readonly MeetUserField[]
+	): Promise<MeetUser[] | Partial<MeetUser>[]> {
+		return this.findAll({ userId: { $in: userIds } }, fields as string[]) as Promise<
+			MeetUser[] | Partial<MeetUser>[]
+		>;
 	}
 
 	/**
@@ -103,17 +136,22 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing users array, pagination info, and optional next page token
 	 */
-	async find(options: MeetUserFilters = {}): Promise<{
-		users: MeetUser[];
-		isTruncated: boolean;
-		nextPageToken?: string;
-	}> {
+	async find(options?: UserQuery): Promise<MeetUserPage<MeetUser>>;
+
+	async find<const TFields extends readonly MeetUserField[]>(
+		options: UserQueryWithProjection<TFields>
+	): Promise<MeetUserPage<ProjectedMeetUser<TFields>>>;
+
+	async find(options: UserQueryWithFields): Promise<MeetUserPage<MeetUser | Partial<MeetUser>>>;
+
+	async find(options: UserQueryWithFields = {}): Promise<MeetUserPage<MeetUser | Partial<MeetUser>>> {
 		const {
 			userId,
 			name,
 			nameMatchMode = TextMatchMode.EXACT,
 			nameCaseInsensitive = false,
 			role,
+			fields,
 			maxItems = 100,
 			nextPageToken,
 			sortField = 'registrationDate',
@@ -140,12 +178,16 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 		}
 
 		// Use base repository's pagination method
-		const result = await this.findMany(filter, {
-			maxItems,
-			nextPageToken,
-			sortField,
-			sortOrder
-		});
+		const result = await this.findMany(
+			filter,
+			{
+				maxItems,
+				nextPageToken,
+				sortField,
+				sortOrder
+			},
+			fields as string[]
+		);
 
 		return {
 			users: result.items,

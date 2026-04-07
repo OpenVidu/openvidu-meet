@@ -20,6 +20,7 @@ import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
+import type { ProjectedMeetUser } from '../types/user-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
@@ -112,7 +113,16 @@ export class UserService {
 		return user;
 	}
 
-	async getUser(userId: string, fields?: MeetUserField[]): Promise<MeetUser | null> {
+	async getUser(userId: string): Promise<MeetUser | null>;
+
+	async getUser<const TFields extends readonly MeetUserField[]>(
+		userId: string,
+		fields: TFields
+	): Promise<ProjectedMeetUser<TFields> | null>;
+
+	async getUser(userId: string, fields?: readonly MeetUserField[]): Promise<MeetUser | Partial<MeetUser> | null>;
+
+	async getUser(userId: string, fields?: readonly MeetUserField[]): Promise<MeetUser | Partial<MeetUser> | null> {
 		return this.userRepository.findByUserId(userId, fields);
 	}
 
@@ -399,7 +409,7 @@ export class UserService {
 				allOwnedRooms,
 				async (room) => {
 					await Promise.all([
-						// Transfer ownership to admin user
+					// Transfer ownership to admin user
 						this.roomRepository.updatePartial(room.roomId, { owner: adminUserId }),
 						this.recordingRepository.updateAccessScopeMetadataByRoomId(room.roomId, {
 							roomOwner: adminUserId
