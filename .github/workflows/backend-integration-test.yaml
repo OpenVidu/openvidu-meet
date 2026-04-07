@@ -51,7 +51,7 @@ jobs:
         run: curl -sSL https://get.livekit.io/cli | bash
 
       - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: '22.13'
       - name: Setup pnpm
@@ -189,7 +189,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
           node-version: '22.13'
       - name: Setup pnpm
