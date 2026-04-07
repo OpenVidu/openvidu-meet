@@ -1,7 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomMember, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
-import { MEET_ENV } from '../../../../src/environment.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import {
@@ -16,11 +15,7 @@ import {
 	startTestServer
 } from '../../../helpers/request-helpers.js';
 
-import {
-	disconnectFakeParticipants,
-	joinFakeParticipant,
-	updateParticipantMetadata
-} from '../../../helpers/livekit-cli-helpers.js';
+import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 
 describe('Room Members API Tests', () => {
 	let roomId: string;
@@ -113,14 +108,6 @@ describe('Room Members API Tests', () => {
 			// Join fake participant to the room to simulate real join
 			const participantIdentity = memberId; // Participant identity is the same as memberId for members
 			await joinFakeParticipant(roomId, participantIdentity);
-			await updateParticipantMetadata(roomId, participantIdentity, {
-				iat: Date.now(),
-				livekitUrl: MEET_ENV.LIVEKIT_URL,
-				roomId,
-				memberId,
-				baseRole: MeetRoomMemberRole.SPEAKER,
-				effectivePermissions: member.effectivePermissions
-			});
 
 			// Verify participant exists before deletion
 			const livekitService = container.get(LiveKitService);

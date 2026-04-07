@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { deleteAllUsers, getMe, loginRootAdmin, startTestServer } from '../../../helpers/request-helpers.js';

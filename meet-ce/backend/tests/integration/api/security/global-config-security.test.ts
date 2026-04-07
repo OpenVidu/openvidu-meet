@@ -1,4 +1,4 @@
-import { beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
