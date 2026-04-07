@@ -24,6 +24,7 @@ import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import {
+	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
@@ -46,6 +47,7 @@ import type {
 	RecordingQueryWithProjection
 } from '../types/recording-projection.types.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
+import { getBaseUrl } from '../utils/url.utils.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
@@ -603,6 +605,29 @@ export class RecordingService {
 		}
 
 		return recordingSecrets;
+	}
+
+	/**
+	 * Generates a recording access URL.
+	 *
+	 * Public URLs are only generated when anonymous recording access is enabled in the room config.
+	 * Private URLs are always allowed and require authenticated access when used.
+	 */
+	async generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<string> {
+		const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+		const recordingSecrets = await this.getRecordingAccessSecrets(recordingId);
+
+		if (!privateAccess) {
+			const roomService = await this.getRoomService();
+			const { access } = await roomService.getMeetRoom(roomId, ['access']);
+
+			if (!access.anonymous.recording.enabled) {
+				throw errorAnonymousAccessDisabled(roomId, 'recording');
+			}
+		}
+
+		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
+		return `${getBaseUrl()}/recording/${recordingId}?secret=${secret}`;
 	}
 
 	/**

@@ -334,8 +334,11 @@
             Retrieves the URL of a recording with the specified recording ID.
             This URL is intended to be shared with people who do not have direct access to the recording.
 
-        # It can be configured to be accessible by anyone (public access) or restricted to authenticated users only,
-        # depending on the `privateAccess` query parameter.
+            It can be configured to be accessible by anyone (public access) or restricted to authenticated users only,
+            depending on the `privateAccess` query parameter.
+
+            > **Note:** If `privateAccess=false`, public URL generation requires `access.anonymous.recording.enabled=true` in the room configuration.
+            > Otherswise, a 403 error is returned.
         tags:
             - OpenVidu Meet - Recordings
         security:
@@ -344,14 +347,14 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../components/parameters/recording-id.yaml'
-            # - $ref: '../components/parameters/private-access.yaml'
+            - $ref: '../components/parameters/private-access.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-recording-url.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
-                $ref: '../components/responses/forbidden-error.yaml'
+                $ref: '../components/responses/forbidden-anonymous-recording-disabled-error.yaml'
             '404':
                 $ref: '../components/responses/error-recording-not-found.yaml'
             '422':

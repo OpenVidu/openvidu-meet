@@ -229,16 +229,12 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
-	const { privateAccess } = res.locals.validatedQuery as { privateAccess: string };
-	const isPrivateAccess = privateAccess === 'true';
+	const { privateAccess } = res.locals.validatedQuery as { privateAccess: boolean };
 
 	logger.info(`Getting URL for recording '${recordingId}'`);
 
 	try {
-		const recordingSecrets = await recordingService.getRecordingAccessSecrets(recordingId);
-		const secret = isPrivateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
-		const recordingUrl = `${getBaseUrl()}/recording/${recordingId}?secret=${secret}`;
-
+		const recordingUrl = await recordingService.generateRecordingUrl(recordingId, privateAccess);
 		return res.status(200).json({ url: recordingUrl });
 	} catch (error) {
 		handleError(res, error, `getting URL for recording '${recordingId}'`);

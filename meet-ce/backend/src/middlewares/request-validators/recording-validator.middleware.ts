@@ -143,6 +143,6 @@ export const validateGetRecordingUrlReq = (req: Request, res: Response, next: Ne
 	}
 
 	req.params.recordingId = data.params.recordingId;
-	res.locals.validatedQuery = { privateAccess: data.query.privateAccess ? 'true' : 'false' };
+	res.locals.validatedQuery = { privateAccess: data.query.privateAccess };
 	next();
 };
