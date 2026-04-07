@@ -16,14 +16,13 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import {
-    MeetRoom,
-    MeetRoomDeletionErrorCode,
-    MeetRoomDeletionPolicyWithMeeting,
-    MeetRoomDeletionPolicyWithRecordings,
-    MeetRoomDeletionSuccessCode,
-    MeetRoomFilters,
-    MeetRoomStatus,
-    SortOrder
+	MeetRoom,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomFilters,
+	MeetRoomStatus,
+	SortOrder
 } from '@openvidu-meet/typings';
 import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -32,9 +31,9 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import {
-    RoomsListsComponent,
-    RoomTableAction,
-    RoomTableFilter
+	RoomsListsComponent,
+	RoomTableAction,
+	RoomTableFilter
 } from '../../components/rooms-lists/rooms-lists.component';
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
@@ -86,6 +85,7 @@ export class RoomsComponent implements OnInit {
 	private roomService = inject(RoomService);
 	private notificationService = inject(NotificationService);
 	protected navigationService = inject(NavigationService);
+	protected roomDeletionService = inject(RoomDeletionService);
 	private clipboard = inject(Clipboard);
 	private dialog = inject(MatDialog);
 
