@@ -28,7 +28,7 @@
     "@angular/platform-browser": "21.2.0",
     "@angular/platform-browser-dynamic": "21.2.0",
     "@angular/router": "21.2.0",
-    "@livekit/track-processors": "0.7.0",
+    "@livekit/track-processors": "0.7.2",
     "@openvidu-meet/shared-components": "workspace:*",
     "@openvidu-meet/typings": "workspace:*",
     "autolinker": "4.1.5",
