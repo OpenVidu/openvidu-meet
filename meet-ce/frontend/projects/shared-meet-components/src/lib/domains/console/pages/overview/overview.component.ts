@@ -1,5 +1,4 @@
-import { Component, OnInit } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -28,7 +27,8 @@ export class OverviewComponent implements OnInit {
 
 	constructor(
 		private analyticsService: AnalyticsService,
-		private navigationService: NavigationService
+		private navigationService: NavigationService,
+		private cdr: ChangeDetectorRef
 	) {}
 
 	async ngOnInit() {
@@ -37,6 +37,7 @@ export class OverviewComponent implements OnInit {
 
 	private async loadStats() {
 		this.isLoading = true;
+		this.cdr.markForCheck();
 
 		try {
 			this.stats = await this.analyticsService.getAnalytics();
@@ -45,6 +46,7 @@ export class OverviewComponent implements OnInit {
 			console.error('Error loading analytics data');
 		} finally {
 			this.isLoading = false;
+			this.cdr.markForCheck();
 		}
 	}
 

@@ -1,5 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -32,6 +31,7 @@ export class UsersComponent implements OnInit {
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
 	private loggerService = inject(LoggerService);
+	private cdr = inject(ChangeDetectorRef);
 	protected log: ILogger;
 
 	users = signal<MeetUserDTO[]>([]);
@@ -58,6 +58,7 @@ export class UsersComponent implements OnInit {
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader = true;
+			this.cdr.markForCheck();
 		}, 200);
 
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
@@ -66,6 +67,7 @@ export class UsersComponent implements OnInit {
 		clearTimeout(delayLoader);
 		this.showInitialLoader = false;
 		this.isInitializing = false;
+		this.cdr.markForCheck();
 	}
 
 	async onUserAction(action: UserTableAction) {
@@ -162,6 +164,7 @@ export class UsersComponent implements OnInit {
 	private async loadUsers(filters: UserTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
 			this.isLoading = true;
+			this.cdr.markForCheck();
 		}, 200);
 
 		try {
@@ -196,6 +199,7 @@ export class UsersComponent implements OnInit {
 		} finally {
 			clearTimeout(delayLoader);
 			this.isLoading = false;
+			this.cdr.markForCheck();
 		}
 	}
 }

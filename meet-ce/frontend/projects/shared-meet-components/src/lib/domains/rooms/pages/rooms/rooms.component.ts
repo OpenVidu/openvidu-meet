@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -88,6 +88,7 @@ export class RoomsComponent implements OnInit {
 	protected roomDeletionService = inject(RoomDeletionService);
 	private clipboard = inject(Clipboard);
 	private dialog = inject(MatDialog);
+	private cdr = inject(ChangeDetectorRef);
 
 	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
@@ -96,6 +97,7 @@ export class RoomsComponent implements OnInit {
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader = true;
+			this.cdr.markForCheck();
 		}, 200);
 
 		await this.loadRooms(this.initialFilters());
@@ -103,6 +105,7 @@ export class RoomsComponent implements OnInit {
 		clearTimeout(delayLoader);
 		this.showInitialLoader = false;
 		this.isInitializing = false;
+		this.cdr.markForCheck();
 	}
 
 	async onRoomAction(action: RoomTableAction) {
@@ -143,6 +146,7 @@ export class RoomsComponent implements OnInit {
 	private async loadRooms(filters: RoomTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
 			this.isLoading = true;
+			this.cdr.markForCheck();
 		}, 200);
 
 		try {
@@ -184,6 +188,7 @@ export class RoomsComponent implements OnInit {
 		} finally {
 			clearTimeout(delayLoader);
 			this.isLoading = false;
+			this.cdr.markForCheck();
 		}
 	}
 

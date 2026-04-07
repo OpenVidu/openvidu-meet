@@ -49,8 +49,8 @@ export class MeetingComponent implements OnInit {
 	protected participantItemTemplate = computed(() => this._participantItem?.template);
 
 	/** Controls whether to show lobby (true) or meeting view (false) */
-	showLobby = true;
-	isLobbyReady = false;
+	showLobby = signal(true);
+	isLobbyReady = signal(false);
 
 	/** Controls whether to show the videoconference component */
 	isMeetingLeft = signal(false);
@@ -86,8 +86,8 @@ export class MeetingComponent implements OnInit {
 		// When roomMemberToken is set, transition from lobby to meeting
 		effect(async () => {
 			const token = this.roomMemberToken();
-			if (token && this.showLobby) {
-				this.showLobby = false;
+			if (token && this.showLobby()) {
+				this.showLobby.set(false);
 			}
 		});
 	}
@@ -95,9 +95,10 @@ export class MeetingComponent implements OnInit {
 	async ngOnInit() {
 		try {
 			await this.lobbyService.initialize();
-			this.isLobbyReady = true;
+			this.isLobbyReady.set(true);
 		} catch (error) {
 			console.error('Error initializing lobby state:', error);
+			this.isLobbyReady.set(false);
 			this.notificationService.showDialog({
 				title: 'Error',
 				message: 'An error occurred while initializing the meeting lobby. Please try again later.',

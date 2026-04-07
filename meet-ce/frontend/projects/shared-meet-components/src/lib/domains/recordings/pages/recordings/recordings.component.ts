@@ -1,5 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
@@ -43,6 +42,7 @@ export class RecordingsComponent implements OnInit {
 	protected route: ActivatedRoute = inject(ActivatedRoute);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected log: ILogger;
+	private cdr = inject(ChangeDetectorRef);
 
 	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
@@ -62,6 +62,7 @@ export class RecordingsComponent implements OnInit {
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader = true;
+			this.cdr.markForCheck();
 		}, 200);
 
 		await this.loadRecordings(this.initialFilters());
@@ -69,6 +70,7 @@ export class RecordingsComponent implements OnInit {
 		clearTimeout(delayLoader);
 		this.showInitialLoader = false;
 		this.isInitializing = false;
+		this.cdr.markForCheck();
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
@@ -106,6 +108,7 @@ export class RecordingsComponent implements OnInit {
 	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
 			this.isLoading = true;
+			this.cdr.markForCheck();
 		}, 200);
 
 		try {
@@ -148,6 +151,7 @@ export class RecordingsComponent implements OnInit {
 		} finally {
 			clearTimeout(delayLoader);
 			this.isLoading = false;
+			this.cdr.markForCheck();
 		}
 	}
 
