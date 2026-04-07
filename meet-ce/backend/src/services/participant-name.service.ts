@@ -8,7 +8,7 @@ import { RedisService } from './redis.service.js';
 
 @injectable()
 export class ParticipantNameService {
-	private readonly MAX_CONCURRENT_NAME_REQUESTS = Number(INTERNAL_CONFIG.PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS);
+	private readonly MAX_CONCURRENT_NAME_REQUESTS = INTERNAL_CONFIG.PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS;
 	private readonly PARTICIPANT_NAME_TTL = ms(INTERNAL_CONFIG.PARTICIPANT_NAME_RESERVATION_TTL);
 
 	constructor(

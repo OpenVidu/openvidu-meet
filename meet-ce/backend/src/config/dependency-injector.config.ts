@@ -49,6 +49,7 @@ import { FrontendEventService } from '../services/frontend-event.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { RoomService } from '../services/room.service.js';
 import { ParticipantNameService } from '../services/participant-name.service.js';
+import { MeetingPresenceService } from '../services/meeting-presence.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
@@ -110,6 +111,7 @@ export const registerDependencies = () => {
 	container.bind(RecordingService).toSelf().inSingletonScope();
 	container.bind(RoomService).toSelf().inSingletonScope();
 	container.bind(ParticipantNameService).toSelf().inSingletonScope();
+	container.bind(MeetingPresenceService).toSelf().inSingletonScope();
 	container.bind(RoomMemberService).toSelf().inSingletonScope();
 	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();

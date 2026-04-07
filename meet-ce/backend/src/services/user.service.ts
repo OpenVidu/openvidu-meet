@@ -1,6 +1,7 @@
 import type { MeetUser, MeetUserDTO, MeetUserField, MeetUserFilters, MeetUserOptions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { PasswordHelper } from '../helpers/password.helper.js';
@@ -21,7 +22,9 @@ import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LoggerService } from './logger.service.js';
+import { MeetingPresenceService } from './meeting-presence.service.js';
 import { RequestSessionService } from './request-session.service.js';
+import type { RoomMemberService } from './room-member.service.js';
 
 @injectable()
 export class UserService {
@@ -31,8 +34,17 @@ export class UserService {
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
+		@inject(MeetingPresenceService) protected meetingPresenceService: MeetingPresenceService,
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
+
+	/**
+	 * TODO: Prevent circular imports when refactoring backend code
+	 */
+	private async getRoomMemberService(): Promise<RoomMemberService> {
+		const { RoomMemberService } = await import('./room-member.service.js');
+		return container.get(RoomMemberService);
+	}
 
 	/**
 	 * Initializes the default admin user
@@ -231,6 +243,28 @@ export class UserService {
 			roleUpdatedAt: Date.now()
 		});
 
+		const activeMeetings = await this.meetingPresenceService.getUserMeetings(userId);
+
+		if (activeMeetings.length > 0) {
+			const roomMemberService = await this.getRoomMemberService();
+			const notifyResults = await runConcurrently(
+				activeMeetings,
+				async ({ roomId, participantIdentity }) => {
+					await roomMemberService.notifyParticipantPermissionsUpdate(roomId, participantIdentity);
+					return { roomId, participantIdentity };
+				},
+				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_UPDATE_PERMISSIONS }
+			);
+
+			const failedNotifications = notifyResults.filter((result) => result.status === 'rejected');
+
+			if (failedNotifications.length > 0) {
+				this.logger.warn(
+					`Failed to notify ${failedNotifications.length} active participant(s) about role update for user '${userId}'`
+				);
+			}
+		}
+
 		this.logger.info(`Role for user '${userId}' changed to '${newRole}' by admin`);
 		return updatedUser;
 	}
@@ -314,19 +348,43 @@ export class UserService {
 	 * Cleans up resources for multiple users in batches:
 	 * - Deletes all room memberships
 	 * - Transfers ownership of owned rooms to the global admin
+	 * - Removes user from all active meetings
 	 *
 	 * @param userIds - Array of user IDs to clean up
 	 */
 	private async bulkCleanupUserResources(userIds: string[]): Promise<void> {
 		const adminUserId = MEET_ENV.INITIAL_ADMIN_USER;
 		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_USER_RESOURCES;
+		const roomMemberService = await this.getRoomMemberService();
 
 		const userCleanupResults = await runConcurrently(
 			userIds,
 			async (userId) => {
-				const [, ownedRooms] = await Promise.all([
+				const activeMeetings = await this.meetingPresenceService.getUserMeetings(userId);
+
+				if (activeMeetings.length > 0) {
+					const kickResults = await runConcurrently(
+						activeMeetings,
+						async ({ roomId, participantIdentity }) => {
+							await roomMemberService.kickParticipantFromMeeting(roomId, participantIdentity);
+							return { roomId, participantIdentity };
+						},
+						{ concurrency }
+					);
+
+					const failedKicks = kickResults.filter((result) => result.status === 'rejected');
+
+					if (failedKicks.length > 0) {
+						this.logger.warn(
+							`Failed to kick ${failedKicks.length} participant(s) for user '${userId}' during account cleanup`
+						);
+					}
+				}
+
+				const [ownedRooms] = await Promise.all([
+					this.roomRepository.findByOwner(userId, ['roomId']),
 					this.roomMemberRepository.deleteAllByMemberId(userId),
-					this.roomRepository.findByOwner(userId, ['roomId'])
+					this.meetingPresenceService.removeUserFromAllRooms(userId)
 				]);
 
 				return ownedRooms;

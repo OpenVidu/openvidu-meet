@@ -1,9 +1,18 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetUserRole } from '@openvidu-meet/typings';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
+import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { TokenService } from '../../../../src/services/token.service.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteUsers,
 	createRoom,
@@ -11,6 +20,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteAllUsers,
+	generateRoomMemberToken,
 	getRoom,
 	getRoomMember,
 	getUser,
@@ -242,6 +252,81 @@ describe('Users API Tests', () => {
 
 			const getMember2Room2Response = await getRoomMember(room2.roomId, user2Data.user.userId);
 			expect(getMember2Room2Response.status).toBe(404);
+		});
+
+		it('should kick users from active meetings when bulk deleting users', async () => {
+			// Create admin users
+			const user1Data = await createUserWithRole(MeetUserRole.ADMIN);
+			const user2Data = await createUserWithRole(MeetUserRole.ADMIN);
+
+			// Create a room
+			const room = await createRoom();
+
+			// Generate tokens to join the meeting
+			const [roomMemberToken1, roomMemberToken2] = await Promise.all([
+				generateRoomMemberToken(
+					room.roomId,
+					{
+						joinMeeting: true
+					},
+					user1Data.accessToken
+				),
+				generateRoomMemberToken(
+					room.roomId,
+					{
+						joinMeeting: true
+					},
+					user2Data.accessToken
+				)
+			]);
+
+			// Extract participant identities and metadata from tokens
+			const tokenService = container.get(TokenService);
+			const claims1 = tokenService.getClaimsIgnoringExpiration(roomMemberToken1);
+			const claims2 = tokenService.getClaimsIgnoringExpiration(roomMemberToken2);
+
+			const participantIdentity1 = claims1.sub;
+			const participantIdentity2 = claims2.sub;
+			expect(participantIdentity1).toBeDefined();
+			expect(participantIdentity2).toBeDefined();
+
+			const metadata1 = JSON.parse(claims1.metadata || '{}') as MeetRoomMemberTokenMetadata;
+			const metadata2 = JSON.parse(claims2.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// Simulate participants joining the meeting and then receiving metadata update
+			await Promise.all([
+				joinFakeParticipant(room.roomId, participantIdentity1!),
+				joinFakeParticipant(room.roomId, participantIdentity2!)
+			]);
+			await Promise.all([
+				updateParticipantMetadata(room.roomId, participantIdentity1!, metadata1),
+				updateParticipantMetadata(room.roomId, participantIdentity2!, metadata2)
+			]);
+
+			// Verify participant exists before deletion
+			const livekitService = container.get(LiveKitService);
+			const livekitWebhookService = container.get(LivekitWebhookService);
+			const roomInfo = await livekitService.getRoom(room.roomId);
+
+			let participant = await livekitService.getParticipant(room.roomId, participantIdentity1!);
+			expect(participant.identity).toBe(participantIdentity1);
+			await livekitWebhookService.handleParticipantJoined(roomInfo, participant);
+
+			participant = await livekitService.getParticipant(room.roomId, participantIdentity2!);
+			expect(participant.identity).toBe(participantIdentity2);
+			await livekitWebhookService.handleParticipantJoined(roomInfo, participant);
+
+			// Bulk delete both users
+			const deleteResponse = await bulkDeleteUsers([user1Data.user.userId, user2Data.user.userId]);
+			expect(deleteResponse.status).toBe(200);
+
+			// Check if participants have been removed from LiveKit
+			await expect(livekitService.getParticipant(room.roomId, participantIdentity1!)).rejects.toThrow(
+				OpenViduMeetError
+			);
+			await expect(livekitService.getParticipant(room.roomId, participantIdentity2!)).rejects.toThrow(
+				OpenViduMeetError
+			);
 		});
 
 		it('should handle complex cleanup with multiple users having mixed roles', async () => {

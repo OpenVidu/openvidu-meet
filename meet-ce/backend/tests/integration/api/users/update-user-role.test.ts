@@ -1,9 +1,18 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetSignalType, MeetUserRole } from '@openvidu-meet/typings';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
+import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
+import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { TokenService } from '../../../../src/services/token.service.js';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
-import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	createRoomMember,
@@ -11,6 +20,7 @@ import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteAllUsers,
+	generateRoomMemberToken,
 	getRoom,
 	getRoomMember,
 	getUser,
@@ -239,6 +249,67 @@ describe('Users API Tests', () => {
 			// Verify the user is no longer a member of the room
 			const getMemberAfterResponse = await getRoomMember(room.roomId, userId);
 			expect(getMemberAfterResponse.status).toBe(404);
+		});
+
+		it('should send permissions-updated signal when role changes and user is in an active meeting', async () => {
+			// Create user with ADMIN role first
+			const userId = `user_${Date.now()}`;
+			const userData = await setupUser({
+				userId,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.ADMIN
+			});
+
+			// Create a room
+			const room = await createRoom();
+
+			// Generate token to join the meeting
+			const roomMemberToken = await generateRoomMemberToken(
+				room.roomId,
+				{
+					joinMeeting: true
+				},
+				userData.accessToken
+			);
+
+			// Extract participant identity and metadata from the token
+			const tokenService = container.get(TokenService);
+			const claims = tokenService.getClaimsIgnoringExpiration(roomMemberToken);
+			const participantIdentity = claims.sub;
+			expect(participantIdentity).toBeDefined();
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// Simulate participant joining the meeting and then receiving metadata update
+			await joinFakeParticipant(room.roomId, participantIdentity!);
+			await updateParticipantMetadata(room.roomId, participantIdentity!, metadata);
+
+			// Simulate the participant_joined handling with metadata already available
+			const livekitService = container.get(LiveKitService);
+			const livekitWebhookService = container.get(LivekitWebhookService);
+			const roomInfo = await livekitService.getRoom(room.roomId);
+			const participant = await livekitService.getParticipant(room.roomId, participantIdentity!);
+			await livekitWebhookService.handleParticipantJoined(roomInfo, participant);
+
+			const frontendEventService = container.get(FrontendEventService);
+			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
+
+			// Update role to USER
+			const response = await updateUserRole(userId, MeetUserRole.USER);
+			expect(response.status).toBe(200);
+
+			expect(sendSignalSpy).toHaveBeenCalledWith(
+				room.roomId,
+				{
+					roomId: room.roomId,
+					participantIdentity,
+					timestamp: expect.any(Number)
+				},
+				{
+					topic: MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
+					destinationIdentities: [participantIdentity]
+				}
+			);
 		});
 	});
 

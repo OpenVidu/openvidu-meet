@@ -1,8 +1,17 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetUserRole } from '@openvidu-meet/typings';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
-import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
+import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
+import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { TokenService } from '../../../../src/services/token.service.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	createRoomMember,
@@ -10,6 +19,7 @@ import {
 	deleteAllRooms,
 	deleteAllUsers,
 	deleteUser,
+	generateRoomMemberToken,
 	getRoom,
 	getRoomMember,
 	getUser,
@@ -251,6 +261,55 @@ describe('Users API Tests', () => {
 
 			const getMember3AfterResponse = await getRoomMember(room3.roomId, userId);
 			expect(getMember3AfterResponse.status).toBe(404);
+		});
+
+		it('should kick user from active meeting when deleting user', async () => {
+			// Create admin user
+			const userData = await createUserWithRole(MeetUserRole.ADMIN);
+			const userId = userData.user.userId;
+
+			// Create a room
+			const room = await createRoom();
+
+			// Generate token to join the meeting
+			const roomMemberToken = await generateRoomMemberToken(
+				room.roomId,
+				{
+					joinMeeting: true
+				},
+				userData.accessToken
+			);
+
+			// Extract participant identity and metadata from the token
+			const tokenService = container.get(TokenService);
+			const claims = tokenService.getClaimsIgnoringExpiration(roomMemberToken);
+			const participantIdentity = claims.sub;
+			expect(participantIdentity).toBeDefined();
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// Simulate participant joining the meeting and then receiving metadata update
+			await joinFakeParticipant(room.roomId, participantIdentity!);
+			await updateParticipantMetadata(room.roomId, participantIdentity!, metadata);
+
+			// Verify participant exists before deletion
+			const livekitService = container.get(LiveKitService);
+			const participant = await livekitService.getParticipant(room.roomId, participantIdentity!);
+			expect(participant).toBeDefined();
+			expect(participant.identity).toBe(participantIdentity);
+
+			// Simulate the participant_joined handling with metadata already available
+			const livekitWebhookService = container.get(LivekitWebhookService);
+			const roomInfo = await livekitService.getRoom(room.roomId);
+			await livekitWebhookService.handleParticipantJoined(roomInfo, participant);
+
+			// Delete the user
+			const deleteResponse = await deleteUser(userId);
+			expect(deleteResponse.status).toBe(200);
+
+			// Check if the participant has been removed from LiveKit
+			await expect(livekitService.getParticipant(room.roomId, participantIdentity!)).rejects.toThrow(
+				OpenViduMeetError
+			);
 		});
 
 		it('should handle both room ownership transfer and membership removal when deleting user', async () => {

@@ -1,7 +1,7 @@
-import type { MeetRecordingInfo} from '@openvidu-meet/typings';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetingEndAction, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import type { EgressInfo, ParticipantInfo, Room, WebhookEvent} from 'livekit-server-sdk';
+import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
@@ -15,10 +15,12 @@ import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
+import { MeetingPresenceService } from './meeting-presence.service.js';
 import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 import { RecordingService } from './recording.service.js';
 import { RoomMemberService } from './room-member.service.js';
 import { RoomService } from './room.service.js';
+import { TokenService } from './token.service.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -33,8 +35,10 @@ export class LivekitWebhookService {
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
+		@inject(MeetingPresenceService) protected meetingPresenceService: MeetingPresenceService,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(AiAssistantService) protected aiAssistantService: AiAssistantService,
+		@inject(TokenService) protected tokenService: TokenService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
@@ -163,6 +167,12 @@ export class LivekitWebhookService {
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		try {
+			const userId = this.getUserIdFromParticipant(participant);
+
+			if (userId) {
+				await this.meetingPresenceService.upsertUserInRoom(userId, room.name, participant.identity);
+			}
+
 			const { recordings } = await this.recordingService.getAllRecordings({ roomId: room.name });
 			await this.frontendEventService.sendRoomStatusSignalToOpenViduComponents(
 				room.name,
@@ -185,6 +195,12 @@ export class LivekitWebhookService {
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		try {
+			const userId = this.getUserIdFromParticipant(participant);
+
+			if (userId) {
+				await this.meetingPresenceService.removeUserFromRoom(userId, room.name);
+			}
+
 			await Promise.all([
 				this.roomMemberService.releaseParticipantName(room.name, participant.name),
 				this.aiAssistantService.cleanupState(room.name, participant.identity)
@@ -274,6 +290,7 @@ export class LivekitWebhookService {
 			this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom);
 
 			tasks.push(
+				this.meetingPresenceService.removeRoomFromAllUsers(roomId),
 				this.roomMemberService.cleanupParticipantNames(roomId),
 				this.recordingService.releaseRecordingLockIfNoEgress(roomId),
 				this.aiAssistantService.cleanupState(roomId)
@@ -358,6 +375,25 @@ export class LivekitWebhookService {
 			this.logger.warn(
 				`Error processing recording_${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
 			);
+		}
+	}
+
+	/**
+	 * Extracts the user ID from a LiveKit participant's metadata.
+	 *
+	 * @param participant - The LiveKit participant from which to extract the user ID.
+	 * @returns The user ID if it can be extracted, or undefined if it cannot be determined.
+	 */
+	protected getUserIdFromParticipant(participant: ParticipantInfo): string | undefined {
+		if (!participant.metadata) {
+			return undefined;
+		}
+
+		try {
+			const tokenMetadata = this.tokenService.parseRoomMemberTokenMetadata(participant.metadata);
+			return tokenMetadata.userId;
+		} catch {
+			return undefined;
 		}
 	}
 }

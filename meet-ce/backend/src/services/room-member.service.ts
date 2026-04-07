@@ -1045,7 +1045,7 @@ export class RoomMemberService {
 	 * @param roomId - The ID of the room
 	 * @param participantIdentity - The identity of the participant to send the signal to
 	 */
-	protected async notifyParticipantPermissionsUpdate(roomId: string, participantIdentity: string): Promise<void> {
+	async notifyParticipantPermissionsUpdate(roomId: string, participantIdentity: string): Promise<void> {
 		const isParticipantInMeeting = await this.existsParticipantInMeeting(roomId, participantIdentity);
 
 		if (!isParticipantInMeeting) {
