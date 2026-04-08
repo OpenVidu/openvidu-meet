@@ -1,6 +1,7 @@
 import { MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { RecordingRepository } from '../../src/repositories/recording.repository.js';
+import { RoomMemberRepository } from '../../src/repositories/room-member.repository.js';
 import { RoomRepository } from '../../src/repositories/room.repository.js';
 import { LiveKitService } from '../../src/services/livekit.service.js';
 
@@ -46,26 +47,43 @@ const pollUntil = async (
 // ─── ROOM WAIT HELPERS ────────────────────────────────────────────────────────
 
 /**
- * Waits until a room no longer exists in the repository.
+ * Waits until a room and its related data are fully removed.
  *
  * This helper is intended for flows where the expected backend side effect is
- * deletion of the room document.
+ * deletion of the room document plus associated room recordings and members.
  *
- * Polls `RoomRepository` directly to observe the persisted backend state with
- * no HTTP indirection.
+ * Polls repositories directly to observe persisted backend state with no HTTP
+ * indirection.
  *
  * @param roomId    - Room identifier to poll.
  * @param timeoutMs - Maximum wait time in milliseconds (default: 15 000).
  */
 export const waitForRoomToDelete = async (roomId: string, timeoutMs = DEFAULT_ROOM_TIMEOUT_MS): Promise<void> => {
 	const roomRepository = container.get(RoomRepository);
+	const recordingRepository = container.get(RecordingRepository);
+	const roomMemberRepository = container.get(RoomMemberRepository);
 
 	await pollUntil(
 		async () => {
-			const room = await roomRepository.findByRoomId(roomId);
-			return !room;
+			const [room, recordings, roomMembers] = await Promise.all([
+				roomRepository.findByRoomId(roomId, ['roomId']),
+				recordingRepository.find({
+					roomId,
+					fields: ['recordingId'],
+					maxItems: 1
+				}),
+				roomMemberRepository.findByRoomId(roomId, {
+					fields: ['roomId'],
+					maxItems: 1
+				})
+			]);
+
+			return !room && recordings.recordings.length === 0 && roomMembers.members.length === 0;
 		},
-		{ timeoutMs, errorMessage: `Room '${roomId}': meeting did not end` }
+		{
+			timeoutMs,
+			errorMessage: `Room '${roomId}' and its related recordings/members were not fully deleted`
+		}
 	);
 };
 
@@ -82,27 +100,6 @@ export const waitForAllRoomsToDelete = async (
 	timeoutMs = DEFAULT_ROOM_TIMEOUT_MS
 ): Promise<void> => {
 	await Promise.all(roomIds.map((id) => waitForRoomToDelete(id, timeoutMs)));
-};
-
-/**
- * Waits until a room has been created and is available in the repository.
- *
- * Polls `RoomRepository` directly until `findByRoomId(roomId)` returns a
- * document.
- *
- * @param roomId    - Room identifier to poll.
- * @param timeoutMs - Maximum wait time in milliseconds (default: 15 000).
- */
-export const waitForRoomToCreate = async (roomId: string, timeoutMs = DEFAULT_ROOM_TIMEOUT_MS): Promise<void> => {
-	const roomRepository = container.get(RoomRepository);
-
-	await pollUntil(
-		async () => {
-			const room = await roomRepository.findByRoomId(roomId);
-			return !!room;
-		},
-		{ timeoutMs, errorMessage: `Room '${roomId}' was not created` }
-	);
 };
 
 // ─── PARTICIPANT WAIT HELPERS ─────────────────────────────────────────────────
