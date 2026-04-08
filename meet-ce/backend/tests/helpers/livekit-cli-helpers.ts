@@ -58,7 +58,11 @@ export const updateParticipantMetadata = async (
 		'--metadata',
 		JSON.stringify(metadata)
 	]);
-	await waitForParticipantToUpdateMetadata(roomId, participantIdentity, metadata);
+	await waitForParticipantToUpdateMetadata(
+		roomId,
+		participantIdentity,
+		metadata as unknown as Record<string, unknown>
+	);
 };
 
 export const disconnectFakeParticipants = async () => {
@@ -77,15 +81,22 @@ export const disconnectFakeParticipants = async () => {
 		const identities = await listRoomParticipantIdentities(roomId);
 
 		for (const identity of identities) {
-			await executeLivekitCliCommand([
-				'room',
-				'participants',
-				'remove',
-				'--room',
-				roomId,
-				'--identity',
-				identity
-			]);
+			try {
+				await executeLivekitCliCommand([
+					'room',
+					'participants',
+					'remove',
+					'--room',
+					roomId,
+					'--identity',
+					identity
+				]);
+			} catch (error) {
+				const errorMessage = error instanceof Error ? error.message : String(error);
+				console.warn(
+					`Could not remove participant '${identity}' from room '${roomId}'. Continuing cleanup. Reason: ${errorMessage}`
+				);
+			}
 		}
 	}
 
