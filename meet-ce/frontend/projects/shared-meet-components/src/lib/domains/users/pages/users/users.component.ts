@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -31,17 +31,16 @@ export class UsersComponent implements OnInit {
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
 	private loggerService = inject(LoggerService);
-	private cdr = inject(ChangeDetectorRef);
 	protected log: ILogger;
 
 	users = signal<MeetUserDTO[]>([]);
 	currentUserId = signal<string>('');
 
-	isInitializing = true;
-	showInitialLoader = false;
-	isLoading = false;
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+	isLoading = signal(false);
 
-	hasMoreUsers = false;
+	hasMoreUsers = signal(false);
 	private nextPageToken?: string;
 
 	initialFilters = signal<UserTableFilter>({
@@ -57,17 +56,15 @@ export class UsersComponent implements OnInit {
 
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
-			this.showInitialLoader = true;
-			this.cdr.markForCheck();
+			this.showInitialLoader.set(true);
 		}, 200);
 
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
 		await this.loadUsers(this.initialFilters());
 
 		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
-		this.cdr.markForCheck();
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	async onUserAction(action: UserTableAction) {
@@ -163,8 +160,7 @@ export class UsersComponent implements OnInit {
 
 	private async loadUsers(filters: UserTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
-			this.isLoading = true;
-			this.cdr.markForCheck();
+			this.isLoading.set(true);
 		}, 200);
 
 		try {
@@ -192,14 +188,13 @@ export class UsersComponent implements OnInit {
 			}
 
 			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreUsers = response.pagination.isTruncated;
+			this.hasMoreUsers.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.log.e('Error loading users:', error);
 			this.notificationService.showSnackbar('Failed to load users');
 		} finally {
 			clearTimeout(delayLoader);
-			this.isLoading = false;
-			this.cdr.markForCheck();
+			this.isLoading.set(false);
 		}
 	}
 }

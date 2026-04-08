@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -15,20 +15,19 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OverviewComponent implements OnInit {
-	stats: MeetAnalytics = {
+	stats = signal<MeetAnalytics>({
 		totalRooms: 0,
 		activeRooms: 0,
 		totalRecordings: 0,
 		completeRecordings: 0
-	};
+	});
 
-	isLoading = true;
-	hasData = false;
+	isLoading = signal(true);
+	hasData = signal(false);
 
 	constructor(
 		private analyticsService: AnalyticsService,
-		private navigationService: NavigationService,
-		private cdr: ChangeDetectorRef
+		private navigationService: NavigationService
 	) {}
 
 	async ngOnInit() {
@@ -36,17 +35,16 @@ export class OverviewComponent implements OnInit {
 	}
 
 	private async loadStats() {
-		this.isLoading = true;
-		this.cdr.markForCheck();
+		this.isLoading.set(true);
 
 		try {
-			this.stats = await this.analyticsService.getAnalytics();
-			this.hasData = this.stats.totalRooms > 0 || this.stats.totalRecordings > 0;
+			const stats = await this.analyticsService.getAnalytics();
+			this.stats.set(stats);
+			this.hasData.set(stats.totalRooms > 0 || stats.totalRecordings > 0);
 		} catch {
 			console.error('Error loading analytics data');
 		} finally {
-			this.isLoading = false;
-			this.cdr.markForCheck();
+			this.isLoading.set(false);
 		}
 	}
 

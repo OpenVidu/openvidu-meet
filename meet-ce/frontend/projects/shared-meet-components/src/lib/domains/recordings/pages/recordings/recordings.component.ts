@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
@@ -21,9 +21,9 @@ export class RecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
 
 	// Loading state
-	isInitializing = true;
-	showInitialLoader = false;
-	isLoading = false;
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+	isLoading = signal(false);
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
@@ -33,7 +33,7 @@ export class RecordingsComponent implements OnInit {
 	});
 
 	// Pagination
-	hasMoreRecordings = false;
+	hasMoreRecordings = signal(false);
 	private nextPageToken?: string;
 
 	protected loggerService: LoggerService = inject(LoggerService);
@@ -42,7 +42,6 @@ export class RecordingsComponent implements OnInit {
 	protected route: ActivatedRoute = inject(ActivatedRoute);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected log: ILogger;
-	private cdr = inject(ChangeDetectorRef);
 
 	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
@@ -61,16 +60,14 @@ export class RecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
-			this.showInitialLoader = true;
-			this.cdr.markForCheck();
+			this.showInitialLoader.set(true);
 		}, 200);
 
 		await this.loadRecordings(this.initialFilters());
 
 		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
-		this.cdr.markForCheck();
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
@@ -107,8 +104,7 @@ export class RecordingsComponent implements OnInit {
 
 	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
-			this.isLoading = true;
-			this.cdr.markForCheck();
+			this.isLoading.set(true);
 		}, 200);
 
 		try {
@@ -144,19 +140,18 @@ export class RecordingsComponent implements OnInit {
 
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRecordings = response.pagination.isTruncated;
+			this.hasMoreRecordings.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.notificationService.showSnackbar('Failed to load recordings');
 			this.log.e('Error loading recordings:', error);
 		} finally {
 			clearTimeout(delayLoader);
-			this.isLoading = false;
-			this.cdr.markForCheck();
+			this.isLoading.set(false);
 		}
 	}
 
 	async loadMoreRecordings(filters: RecordingTableFilter) {
-		if (!this.hasMoreRecordings || this.isLoading) return;
+		if (!this.hasMoreRecordings() || this.isLoading()) return;
 		await this.loadRecordings(filters);
 	}
 

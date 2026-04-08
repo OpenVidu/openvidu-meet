@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -65,9 +65,9 @@ export class RoomsComponent implements OnInit {
 	rooms = signal<MeetRoom[]>([]);
 
 	// Loading state
-	isInitializing = true;
-	showInitialLoader = false;
-	isLoading = false;
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+	isLoading = signal(false);
 
 	initialFilters = signal<RoomTableFilter>({
 		nameFilter: '',
@@ -77,7 +77,7 @@ export class RoomsComponent implements OnInit {
 	});
 
 	// Pagination
-	hasMoreRooms = false;
+	hasMoreRooms = signal(false);
 	private nextPageToken?: string;
 
 	protected log: ILogger;
@@ -88,7 +88,6 @@ export class RoomsComponent implements OnInit {
 	protected roomDeletionService = inject(RoomDeletionService);
 	private clipboard = inject(Clipboard);
 	private dialog = inject(MatDialog);
-	private cdr = inject(ChangeDetectorRef);
 
 	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
@@ -96,16 +95,14 @@ export class RoomsComponent implements OnInit {
 
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
-			this.showInitialLoader = true;
-			this.cdr.markForCheck();
+			this.showInitialLoader.set(true);
 		}, 200);
 
 		await this.loadRooms(this.initialFilters());
 
 		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
-		this.cdr.markForCheck();
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	async onRoomAction(action: RoomTableAction) {
@@ -145,8 +142,7 @@ export class RoomsComponent implements OnInit {
 
 	private async loadRooms(filters: RoomTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
-			this.isLoading = true;
-			this.cdr.markForCheck();
+			this.isLoading.set(true);
 		}, 200);
 
 		try {
@@ -181,19 +177,18 @@ export class RoomsComponent implements OnInit {
 
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRooms = response.pagination.isTruncated;
+			this.hasMoreRooms.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.notificationService.showSnackbar('Error loading rooms');
 			this.log.e('Error loading rooms:', error);
 		} finally {
 			clearTimeout(delayLoader);
-			this.isLoading = false;
-			this.cdr.markForCheck();
+			this.isLoading.set(false);
 		}
 	}
 
 	async loadMoreRooms(filters: RoomTableFilter) {
-		if (!this.hasMoreRooms || this.isLoading) return;
+		if (!this.hasMoreRooms() || this.isLoading()) return;
 		await this.loadRooms(filters);
 	}
 

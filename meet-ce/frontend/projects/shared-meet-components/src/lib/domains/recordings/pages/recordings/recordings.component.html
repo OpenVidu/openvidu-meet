@@ -1,5 +1,5 @@
 <!-- Loading State -->
-@if (isInitializing && showInitialLoader) {
+@if (isInitializing() && showInitialLoader()) {
 	<div class="ov-page-loading">
 		<div class="loading-content">
 			<div class="loading-header">
@@ -17,7 +17,7 @@
 	</div>
 }
 
-@if (!isInitializing) {
+@if (!isInitializing()) {
 	<div class="ov-page-container ov-mb-xxl">
 		<!-- Recordings Header -->
 		<div class="page-header">
@@ -33,11 +33,11 @@
 			<ov-recording-lists
 				[recordings]="recordings()"
 				[canDeleteRecordings]="true"
-				[loading]="isLoading"
+				[loading]="isLoading()"
 				[showSearchBox]="true"
 				[showFilters]="true"
 				[showSelection]="true"
-				[showLoadMore]="hasMoreRecordings"
+				[showLoadMore]="hasMoreRecordings()"
 				[initialFilters]="initialFilters()"
 				(recordingAction)="onRecordingAction($event)"
 				(recordingClicked)="onRecordingClick($event)"

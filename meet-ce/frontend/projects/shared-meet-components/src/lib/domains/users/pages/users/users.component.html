@@ -1,5 +1,5 @@
 <!-- Loading State -->
-@if (isInitializing && showInitialLoader) {
+@if (isInitializing() && showInitialLoader()) {
 	<div class="ov-page-loading">
 		<div class="loading-content">
 			<div class="loading-header">
@@ -16,7 +16,7 @@
 	</div>
 }
 
-@if (!isInitializing) {
+@if (!isInitializing()) {
 	<div class="ov-page-container ov-mb-xxl" id="users-page-container">
 		<!-- Users Header -->
 		<div class="page-header" id="users-page-header">
@@ -33,11 +33,11 @@
 				id="users-list"
 				[users]="users()"
 				[currentUserId]="currentUserId()"
-				[loading]="isLoading"
+				[loading]="isLoading()"
 				[showSearchBox]="true"
 				[showFilters]="true"
 				[showSelection]="true"
-				[showLoadMore]="hasMoreUsers"
+				[showLoadMore]="hasMoreUsers()"
 				[initialFilters]="initialFilters()"
 				(userAction)="onUserAction($event)"
 				(loadMore)="loadMoreUsers($event)"
