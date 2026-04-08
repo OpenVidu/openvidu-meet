@@ -1,0 +1,26 @@
+<div class="panel-container" id="participants-container">
+	<div class="panel-header-container">
+		<h3 class="panel-title">{{ 'PANEL.PARTICIPANTS.TITLE' | translate }}</h3>
+		<button class="panel-close-button" mat-icon-button matTooltip="{{ 'PANEL.CLOSE' | translate }}" (click)="close()">
+			<mat-icon>close</mat-icon>
+		</button>
+	</div>
+
+	<div class="scrollable">
+		<div class="local-participant-container" *ngIf="localParticipant">
+			<ng-container *ngTemplateOutlet="participantPanelItemTemplate; context: { $implicit: localParticipant }"></ng-container>
+			<mat-divider *ngIf="true"></mat-divider>
+		</div>
+		<ng-container *ngTemplateOutlet="participantPanelAfterLocalParticipantTemplate"></ng-container>
+
+		<div class="remote-participants-container" id="remote-participants-container" *ngIf="remoteParticipants.length > 0">
+			<div *ngFor="let participant of this.remoteParticipants" id="remote-participant-item">
+				<ng-container *ngTemplateOutlet="participantPanelItemTemplate; context: { $implicit: participant }"></ng-container>
+			</div>
+		</div>
+	</div>
+</div>
+
+<ng-template #defaultParticipantPanelItem let-participant>
+	<ov-participant-panel-item [participant]="participant" id="default-participant-panel-item"></ov-participant-panel-item>
+</ng-template>

@@ -1,0 +1,863 @@
+import { Injectable, signal, Signal } from '@angular/core';
+import {
+	BackgroundProcessor,
+	BackgroundProcessorWrapper,
+	supportsBackgroundProcessors,
+	supportsModernBackgroundProcessors,
+	SwitchBackgroundProcessorOptions
+} from '@livekit/track-processors';
+import {
+	AudioCaptureOptions,
+	ConnectionState,
+	createLocalTracks,
+	CreateLocalTracksOptions,
+	E2EEOptions,
+	ExternalE2EEKeyProvider,
+	LocalAudioTrack,
+	LocalTrack,
+	LocalVideoTrack,
+	Room,
+	RoomOptions,
+	Track,
+	VideoCaptureOptions,
+	VideoPresets
+} from 'livekit-client';
+import { ILogger } from '../../models/logger.model';
+import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { DeviceService } from '../device/device.service';
+import { LoggerService } from '../logger/logger.service';
+import { StorageService } from '../storage/storage.service';
+
+@Injectable({
+	providedIn: 'root'
+})
+export class OpenViduService {
+	/*
+	 * @internal
+	 */
+	// isSttReadyObs: Observable<boolean>;
+	// private STT_TIMEOUT_MS = 2 * 1000;
+	// private sttReconnectionTimeout: NodeJS.Timeout;
+	// private _isSttReady: BehaviorSubject<boolean> = new BehaviorSubject(true);
+
+	private room: Room;
+	private keyProvider: ExternalE2EEKeyProvider | undefined;
+
+	/**
+	 * @internal
+	 * Indicates whether the client initiated disconnect event should be handled.
+	 * This is used to determine if the disconnect event should be emitted when the 'Disconnect' event is triggered
+	 */
+	shouldHandleClientInitiatedDisconnectEvent = true;
+
+	/*
+	 * Tracks used in the prejoin component. They are created when the room is not yet created.
+	 */
+	private localTracks: LocalTrack[] = [];
+	private livekitToken = '';
+	private livekitUrl = '';
+	private log: ILogger;
+
+	/**
+	 * Background processor for video tracks. Initialized in disabled mode.
+	 * This processor is shared between prejoin and in-room states.
+	 * Only initialized if browser supports background processing (GPU available).
+	 */
+	private backgroundProcessor?: BackgroundProcessorWrapper;
+
+	/**
+	 * Signal to track if background processor is supported (requires GPU).
+	 * Set to false if browser doesn't support it or processor initialization fails.
+	 */
+	private _isBackgroundProcessorSupported = signal(false);
+
+	/**
+	 * Public readonly signal for background processor support status.
+	 */
+	readonly isBackgroundProcessorSupported: Signal<boolean> = this._isBackgroundProcessorSupported.asReadonly();
+
+	/**
+	 * Stores the last applied background options so they can be re-applied after a camera switch.
+	 */
+	private currentBackgroundOptions: SwitchBackgroundProcessorOptions | null = null;
+
+	/**
+	 * @internal
+	 */
+	constructor(
+		private loggerSrv: LoggerService,
+		private deviceService: DeviceService,
+		private storageService: StorageService,
+		private configService: OpenViduComponentsConfigService
+	) {
+		this.log = this.loggerSrv.get('OpenViduService');
+		// this.isSttReadyObs = this._isSttReady.asObservable();
+
+		// Check if browser supports background processors
+		if (!supportsBackgroundProcessors()) {
+			this.log.w('Background processors not supported in this browser (GPU may be disabled)');
+			this._isBackgroundProcessorSupported.set(false);
+			return;
+		}
+
+		// Only initialize processor immediately for browsers supporting modern processors
+		// Browsers without modern support (e.g., Firefox) will initialize on-demand
+		if (supportsModernBackgroundProcessors()) {
+			try {
+				this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled' });
+				this._isBackgroundProcessorSupported.set(true);
+				this.log.d('Background processor initialized at startup (modern processors supported)');
+			} catch (error: any) {
+				this.log.w('Failed to initialize background processor:', error?.message || error);
+				this._isBackgroundProcessorSupported.set(false);
+			}
+		} else {
+			// Mark as supported but don't initialize yet - will be created on-demand
+			this._isBackgroundProcessorSupported.set(true);
+			this.log.d('Background processors supported but not modern - will initialize on-demand');
+		}
+	}
+
+	/**
+	 * Creates a new Room with audio and video devices selected or default ones.
+	 * @internal
+	 */
+	initRoom(): void {
+		// Check if E2EE configuration needs to be applied
+		const e2eeKey = this.configService.getE2EEKey();
+		const needsE2EEConfig = e2eeKey && e2eeKey.trim() !== '' && !this.keyProvider;
+
+		// If room already exists and doesn't need E2EE reconfiguration, don't recreate it
+		if (this.room && !needsE2EEConfig) {
+			this.log.d('Room already initialized, skipping re-initialization');
+			return;
+		}
+
+		// If room exists but needs E2EE configuration, we need to recreate it
+		if (this.room && needsE2EEConfig) {
+			this.log.d('Room needs E2EE configuration, recreating room');
+			this.room = null as any;
+		}
+
+		const videoDeviceId = this.deviceService.getCameraSelected()?.device ?? undefined;
+		const audioDeviceId = this.deviceService.getMicrophoneSelected()?.device ?? undefined;
+
+		const roomOptions: RoomOptions = {
+			adaptiveStream: true,
+			dynacast: true,
+			audioCaptureDefaults: {
+				deviceId: audioDeviceId,
+				echoCancellation: true,
+				noiseSuppression: true,
+				autoGainControl: true
+			},
+			videoCaptureDefaults: {
+				deviceId: videoDeviceId,
+				resolution: VideoPresets.h720.resolution
+			},
+			publishDefaults: {
+				dtx: true,
+				simulcast: true,
+				stopMicTrackOnMute: true
+			},
+			stopLocalTrackOnUnpublish: true,
+			disconnectOnPageLeave: true
+		};
+
+		// Configure E2EE if key is provided and keyProvider exists
+		if (needsE2EEConfig) {
+			// Create worker using the copied livekit-client e2ee worker from assets
+			roomOptions.encryption = this.buildE2EEOptions();
+		}
+
+		this.room = new Room(roomOptions);
+		this.log.d('Room initialized successfully');
+	}
+
+	private buildE2EEOptions(): E2EEOptions {
+		this.log.d('Configuring E2EE with provided key');
+		this.keyProvider = new ExternalE2EEKeyProvider();
+		// Create worker using the copied livekit-client e2ee worker from assets
+		return {
+			keyProvider: this.keyProvider,
+			worker: new Worker('./assets/livekit/livekit-client.e2ee.worker.mjs', { type: 'module' })
+		};
+	}
+
+	/**
+	 * Connects local participant to the room
+	 */
+	async connectRoom(): Promise<void> {
+		try {
+			// Configure E2EE if key provider was initialized
+			if (this.keyProvider) {
+				const e2eeKey = this.configService.getE2EEKey();
+				if (e2eeKey) {
+					this.log.d('Setting E2EE key and enabling encryption');
+					await this.keyProvider.setKey(e2eeKey);
+					await this.room.setE2EEEnabled(true);
+					this.log.d('E2EE successfully enabled');
+				}
+			}
+			await this.room.connect(this.livekitUrl, this.livekitToken);
+			this.log.d(`Successfully connected to room ${this.room.name}`);
+
+			const participantName = this.storageService.getParticipantName();
+			if (participantName) {
+				this.room.localParticipant.setName(participantName);
+			}
+		} catch (error) {
+			this.log.e('Error connecting to room:', error);
+			throw { code: 'CONNECTION_ERROR', message: `Error connecting to the server at the following URL: ${this.livekitUrl}` };
+		}
+	}
+
+	/**
+	 * Disconnects from the current room.
+	 *
+	 * This method will check if there's an active connection to a room before attempting to disconnect.
+	 * If the room is connected, it will perform the disconnection and call the optional callback function.
+	 *
+	 * @param callback - Optional function to be executed after a successful disconnection
+	 * @returns A Promise that resolves once the disconnection is complete
+	 */
+	async disconnectRoom(callback?: () => void, shouldHandleClientInitiatedDisconnectEvent: boolean = true): Promise<void> {
+		this.shouldHandleClientInitiatedDisconnectEvent = shouldHandleClientInitiatedDisconnectEvent;
+		if (this.isRoomConnected()) {
+			this.log.d('Disconnecting from room');
+			await this.room.disconnect();
+			if (callback) callback();
+		}
+	}
+
+	/**
+	 * @returns Room instance
+	 */
+	getRoom(): Room {
+		if (!this.room) {
+			this.log.e('Room is not initialized. Make sure token is set before accessing the room.');
+			throw new Error('Room is not initialized. Make sure token is set before accessing the room.');
+		}
+		return this.room;
+	}
+
+	/**
+	 * Checks if room is initialized without throwing an error
+	 * @returns true if room is initialized, false otherwise
+	 */
+	isRoomInitialized(): boolean {
+		return !!this.room;
+	}
+
+	/**
+	 * Returns the room name
+	 */
+	getRoomName(): string {
+		return this.room?.name;
+	}
+
+	/**
+	 * Returns if local participant is connected to the room
+	 * @returns
+	 */
+	isRoomConnected(): boolean {
+		return this.room?.state === ConnectionState.Connected;
+	}
+
+	hasRoomTracksPublished(): boolean {
+		const { localParticipant, remoteParticipants } = this.getRoom();
+		const localTracks = localParticipant.getTrackPublications();
+		const remoteTracks = Array.from(remoteParticipants.values()).flatMap((p) => p.getTrackPublications());
+
+		return localTracks.length > 0 || remoteTracks.length > 0;
+	}
+
+	/**
+	 * @internal
+	 */
+	initializeAndSetToken(token: string, livekitUrl?: string): void {
+		const { livekitUrl: urlFromToken } = this.extractLivekitData(token);
+
+		this.livekitToken = token;
+		const url = livekitUrl || urlFromToken;
+
+		if (!url) {
+			this.log.e('LiveKit URL is not defined. Please, check the livekitUrl parameter of the VideoConferenceComponent');
+			throw new Error('Livekit URL is not defined');
+		}
+
+		this.livekitUrl = url;
+		// this.livekitRoomAdmin = !!livekitRoomAdmin;
+
+		// Initialize room if it doesn't exist yet
+		// This ensures that getRoom() won't fail if token is set before onTokenRequested
+		if (!this.room) {
+			this.log.d('Room not initialized yet, initializing room due to token assignment');
+			this.initRoom();
+		}
+		// return this.room.prepareConnection(this.livekitUrl, this.livekitToken);
+	}
+
+	/**
+	 * Sets the local tracks for the OpenVidu service.
+	 *
+	 * @param tracks - An array of LocalTrack objects representing the local tracks to be set.
+	 * @returns void
+	 * @internal
+	 */
+	setLocalTracks(tracks: LocalTrack[]): void {
+		this.localTracks = tracks.filter((track) => track !== undefined) as LocalTrack[];
+	}
+
+	/**
+	 * @internal
+	 * @returns
+	 */
+	getLocalTracks(): LocalTrack[] {
+		return this.localTracks;
+	}
+
+	/**
+	 * Switches the background mode on the local video track.
+	 * Works both in prejoin and in-room states.
+	 * For Firefox: applies processor when effect is activated to avoid performance issues
+	 * For other browsers: processor is pre-attached, so just switch mode
+	 * @param options - The switch options (mode, blurRadius, imagePath)
+	 * @returns Promise<void>
+	 * @internal
+	 */
+	async switchBackgroundMode(options: SwitchBackgroundProcessorOptions): Promise<void> {
+		if (!this.isBackgroundProcessorSupported()) {
+			this.log.w('Background processor not supported (GPU disabled). Virtual background is disabled.');
+			return;
+		}
+
+		try {
+			// For browsers without modern processor support: attach processor on-demand when effect is activated
+			if (!supportsModernBackgroundProcessors()) {
+				await this.handleLazyProcessorAttachment(options.mode);
+			}
+
+			// If processor exists, switch mode (either pre-initialized or just created on-demand)
+			if (this.backgroundProcessor) {
+				await this.backgroundProcessor.switchTo(options);
+				this.currentBackgroundOptions = options;
+				this.log.d('Background mode switched:', options);
+			}
+		} catch (error: any) {
+			this.log.e('Failed to switch background mode:', error?.message || error);
+			this._isBackgroundProcessorSupported.set(false);
+			// Don't throw - gracefully disable virtual background instead of crashing
+		}
+	}
+
+	/**
+	 * Handles lazy processor attachment for browsers without modern processor support.
+	 * Creates and attaches processor on-demand when effect is activated.
+	 * This is used for browsers like Firefox that don't support modern background processors.
+	 * @internal
+	 */
+	private async handleLazyProcessorAttachment(mode: SwitchBackgroundProcessorOptions['mode']): Promise<void> {
+		const videoTrack = await this.getVideoTrack();
+		if (!videoTrack) return;
+
+		const hasProcessor = Boolean(videoTrack.getProcessor());
+		const isDisabled = mode === 'disabled';
+
+		if (!isDisabled && !hasProcessor) {
+			try {
+				// Create processor on-demand if not already created
+				if (!this.backgroundProcessor) {
+					this.log.d('Creating background processor on-demand');
+					this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled' });
+				}
+
+				this.log.d('Attaching processor on effect activation (lazy loading)');
+				await videoTrack.setProcessor(this.backgroundProcessor);
+			} catch (error: any) {
+				this.log.w('Failed to attach background processor (GPU may be disabled):', error?.message || error);
+				this._isBackgroundProcessorSupported.set(false);
+				// Continue without crashing - virtual background will be disabled
+			}
+			return;
+		}
+
+		if (isDisabled && hasProcessor) {
+			this.log.d('Stopping processor on effect deactivation');
+			await videoTrack.stopProcessor();
+		}
+	}
+
+	/**
+	 * @internal
+	 **/
+	removeLocalTracks(): void {
+		this.localTracks.forEach((track) => {
+			track.stop();
+			track.detach();
+		});
+		this.localTracks = [];
+	}
+
+	/**
+	 * Creates local tracks for video and audio devices.
+	 *
+	 * @param videoDeviceId - The ID of the video device to use. If not provided, the default video device will be used.
+	 * @param audioDeviceId - The ID of the audio device to use. If not provided, the default audio device will be used.
+	 * @param allowPartialCreation - If true, allows creating tracks even if some devices fail
+	 * @returns A promise that resolves to an array of LocalTrack objects representing the created tracks.
+	 * @internal
+	 */
+	async createLocalTracks(
+		videoDeviceId: string | boolean | undefined = undefined,
+		audioDeviceId: string | boolean | undefined = undefined,
+		allowPartialCreation: boolean = true
+	): Promise<LocalTrack[]> {
+		// Default values: true if device is enabled, false otherwise
+		videoDeviceId ??= this.deviceService.isCameraEnabled();
+		audioDeviceId ??= this.deviceService.isMicrophoneEnabled();
+
+		const options: CreateLocalTracksOptions = {
+			audio: { echoCancellation: true, noiseSuppression: true },
+			video: {}
+		};
+
+		// Video device
+		if (videoDeviceId === true) {
+			if (this.deviceService.hasVideoDeviceAvailable()) {
+				const selectedCamera = this.deviceService.getCameraSelected();
+				options.video = { deviceId: this.toDeviceConstraint(selectedCamera?.device) };
+			} else {
+				options.video = false;
+			}
+		} else if (videoDeviceId === false) {
+			options.video = false;
+		} else {
+			(options.video as VideoCaptureOptions).deviceId = this.toDeviceConstraint(videoDeviceId);
+		}
+
+		// Audio device
+		if (audioDeviceId === true) {
+			if (this.deviceService.hasAudioDeviceAvailable()) {
+				const selectedMic = this.deviceService.getMicrophoneSelected();
+				(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(selectedMic?.device);
+			} else {
+				options.audio = false;
+			}
+		} else if (audioDeviceId === false) {
+			options.audio = false;
+		} else {
+			(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(audioDeviceId);
+		}
+
+		let newLocalTracks: LocalTrack[] = [];
+
+		if (options.audio || options.video) {
+			this.log.d('Creating local tracks with options', options);
+
+			if (allowPartialCreation) {
+				// Try to create tracks separately to handle device conflicts gracefully
+				newLocalTracks = await this.createTracksWithFallback(options);
+			} else {
+				// Original behavior - all or nothing
+				newLocalTracks = await createLocalTracks(options);
+			}
+
+			// Apply background processor to the new video track.
+			// applyProcessorToVideoTrack handles both modern (pre-attach + auto-restore via
+			// transformer.options) and Firefox/non-modern (lazy attach only when a VBG is active).
+			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
+			if (videoTrack) {
+				await this.applyProcessorToVideoTrack(videoTrack);
+			}
+
+			// Mute tracks if devices are disabled
+			if (!this.deviceService.isCameraEnabled()) {
+				newLocalTracks.find((t) => t.kind === Track.Kind.Video)?.mute();
+			}
+			if (!this.deviceService.isMicrophoneEnabled()) {
+				newLocalTracks.find((t) => t.kind === Track.Kind.Audio)?.mute();
+			}
+		}
+		return newLocalTracks;
+	}
+
+	/**
+	 * Creates tracks with fallback strategy to handle device conflicts
+	 * @param options - The track creation options
+	 * @returns Array of successfully created tracks
+	 * @internal
+	 */
+	private async createTracksWithFallback(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
+		const tracks: LocalTrack[] = [];
+
+		// Try to create video track separately
+		if (options.video) {
+			try {
+				const videoTracks = await createLocalTracks({ video: options.video });
+				tracks.push(...videoTracks);
+				this.log.d('Video track created successfully');
+			} catch (error) {
+				this.log.w('Failed to create video track, device may be busy:', error);
+				// Still continue to try audio track
+			}
+		}
+
+		// Try to create audio track separately
+		if (options.audio) {
+			try {
+				const audioTracks = await createLocalTracks({ audio: options.audio });
+				tracks.push(...audioTracks);
+				this.log.d('Audio track created successfully');
+			} catch (error) {
+				this.log.w('Failed to create audio track, device may be busy:', error);
+			}
+		}
+
+		return tracks;
+	}
+
+	private toDeviceConstraint(deviceId?: string): ConstrainDOMString {
+		if (!deviceId || deviceId === 'default') {
+			return { ideal: 'default' };
+		}
+		return { exact: deviceId };
+	}
+
+	/**
+	 * @internal
+	 * As the Room is not created yet, we need to handle the media tracks with a temporary array of tracks.
+	 * This method must be only called from the prejoin component.
+	 **/
+	async setVideoTrackEnabled(enabled: boolean) {
+		let videoTrack = this.localTracks?.find((track) => track.kind === Track.Kind.Video);
+		// Room is not connected, so we can't enable/disable the camera
+		if (enabled) {
+			await videoTrack?.unmute();
+		} else {
+			await videoTrack?.mute();
+		}
+	}
+
+	/**
+	 * @internal
+	 * As the Room is not created yet, we need to handle the media tracks with a temporary array of tracks.
+	 * This method must be only called from the prejoin component.
+	 **/
+	async setAudioTrackEnabled(enabled: boolean) {
+		const audioTrack = this.localTracks?.find((track) => track.kind === Track.Kind.Audio);
+		// Session is not connected, so we can't enable/disable the camera
+		if (enabled) {
+			await audioTrack?.unmute();
+		} else {
+			await audioTrack?.mute();
+		}
+	}
+
+	/**
+	 * @internal
+	 * As the Room is not created yet, we need to handle the media tracks with a temporary array of tracks.
+	 * This method must be only called before connect to room.
+	 **/
+	isVideoTrackEnabled(): boolean {
+		if (this.localTracks.length === 0) {
+			return this.deviceService.isCameraEnabled();
+		}
+		const videoTrack = this.localTracks.find((track) => track.kind === Track.Kind.Video);
+		return !!videoTrack && !videoTrack.isMuted && videoTrack?.mediaStreamTrack?.enabled;
+	}
+
+	/**
+	 * @internal
+	 * As the Room is not created yet, we need to handle the media tracks with a temporary array of tracks.
+	 * This method must be only called before connect to room.
+	 **/
+	isAudioTrackEnabled(): boolean {
+		if (this.localTracks.length === 0) {
+			return this.deviceService.isMicrophoneEnabled();
+		}
+		const audioTrack = this.localTracks.find((track) => track.kind === Track.Kind.Audio);
+		return !!audioTrack && !audioTrack.isMuted && audioTrack?.mediaStreamTrack?.enabled;
+	}
+
+	/**
+	 * Switches the camera device in prejoin (room not yet connected).
+	 *
+	 * Uses `LocalVideoTrack.restartTrack({ deviceId })` on the existing track when available.
+	 * This is the correct LiveKit pattern: `restartTrack` internally calls `setMediaStreamTrack`,
+	 * which automatically calls `processor.restart(newTrack)` if a background processor is
+	 * attached — preserving any active virtual-background effect without extra work.
+	 *
+	 * Falls back to creating a new track (with processor reattachment) when no track exists.
+	 * @param deviceId - The new video device ID
+	 * @internal
+	 */
+	async switchCamera(deviceId: string): Promise<void> {
+		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
+		const options: VideoCaptureOptions = { deviceId: this.toDeviceConstraint(deviceId) };
+		if (existingTrack) {
+			try {
+				// restartTrack replaces the underlying MediaStreamTrack in-place.
+				// LiveKit's setMediaStreamTrack will call processor.restart(newTrack) automatically
+				// if a background processor is attached, preserving the active effect.
+				await existingTrack.restartTrack(options);
+				if (!this.deviceService.isCameraEnabled()) {
+					await existingTrack.mute();
+				}
+				this.log.d('Camera switched via restartTrack:', deviceId);
+			} catch (error) {
+				this.log.e('Failed to switch camera via restartTrack:', error);
+				throw error;
+			}
+			return;
+		}
+
+		// No existing track (edge case: camera was unavailable/unpublished) → create a fresh one
+		try {
+			const newVideoTracks = await createLocalTracks({ video: options });
+			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
+			if (videoTrack) {
+				if (!this.deviceService.isCameraEnabled()) {
+					await videoTrack.mute();
+				}
+				// Attach processor (and restore active background if any) to the fresh track
+				await this.applyProcessorToVideoTrack(videoTrack);
+				this.localTracks.push(videoTrack);
+				this.log.d('New camera track created and added:', deviceId);
+			}
+		} catch (error) {
+			this.log.e('Failed to create new video track:', error);
+			const message = error instanceof Error ? error.message : 'Unknown error';
+			throw new Error(`Failed to switch camera: ${message}`);
+		}
+	}
+
+	/**
+	 * Attaches the background processor to a freshly-created video track.
+	 * Called only for brand-new track objects (createLocalTracks or the no-existing-track fallback).
+	 *
+	 * - Modern browsers: pre-attaches the shared processor object; `processor.init()` uses the
+	 *   transformer's stored options so any previously active mode is automatically restored.
+	 * - Firefox (non-modern / stream fallback): lazily attaches the processor only when a
+	 *   background effect was already active, then re-applies the stored options.
+	 * @internal
+	 */
+	private async applyProcessorToVideoTrack(videoTrack: LocalVideoTrack): Promise<void> {
+		if (!this.isBackgroundProcessorSupported()) return;
+
+		if (supportsModernBackgroundProcessors()) {
+			if (!this.backgroundProcessor) return;
+			try {
+				// setProcessor calls processor.init() which re-initialises the pipeline using
+				// transformer.options (updated by every switchTo call), so the active background
+				// effect is restored without an explicit switchTo here.
+				await videoTrack.setProcessor(this.backgroundProcessor);
+				this.log.d('Background processor applied to video track');
+			} catch (error: any) {
+				this.log.w('Failed to apply background processor to video track:', error?.message || error);
+				this._isBackgroundProcessorSupported.set(false);
+			}
+		} else if (this.currentBackgroundOptions && this.currentBackgroundOptions.mode !== 'disabled') {
+			// Firefox / non-modern: processor is not pre-allocated; create on first use
+			try {
+				if (!this.backgroundProcessor) {
+					this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled' });
+				}
+				await videoTrack.setProcessor(this.backgroundProcessor);
+				// For the non-modern path the processor's transformer options are reset on init;
+				// we must explicitly re-apply the active effect.
+				await this.backgroundProcessor.switchTo(this.currentBackgroundOptions);
+				this.log.d('Background effect restored on new track (non-modern):', this.currentBackgroundOptions);
+			} catch (error: any) {
+				this.log.w('Failed to restore background processor (non-modern):', error?.message || error);
+			}
+		}
+	}
+
+	/**
+	 * Switches the microphone device in prejoin (room not yet connected).
+	 *
+	 * Uses `LocalAudioTrack.restartTrack({ deviceId })` on the existing track when available,
+	 * preserving echo-cancellation, noise-suppression and auto-gain-control constraints.
+	 * Falls back to creating a new audio track when none exists.
+	 * @param deviceId - The new audio device ID
+	 * @internal
+	 */
+	async switchMicrophone(deviceId: string): Promise<void> {
+		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Audio) as LocalAudioTrack | undefined;
+		const options: AudioCaptureOptions = {
+			deviceId: this.toDeviceConstraint(deviceId),
+			echoCancellation: true,
+			noiseSuppression: true,
+			autoGainControl: true
+		};
+
+		if (existingTrack) {
+			try {
+				await existingTrack.restartTrack(options);
+				if (!this.deviceService.isMicrophoneEnabled()) {
+					await existingTrack.mute();
+				}
+				this.log.d('Microphone switched via restartTrack:', deviceId);
+			} catch (error) {
+				this.log.e('Failed to switch microphone via restartTrack:', error);
+				throw error;
+			}
+			return;
+		}
+
+		// No existing track (edge case) → create a fresh one
+		try {
+			const newAudioTracks = await createLocalTracks(options as CreateLocalTracksOptions);
+			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
+			if (audioTrack) {
+				if (!this.deviceService.isMicrophoneEnabled()) {
+					await audioTrack.mute();
+				}
+				this.localTracks.push(audioTrack);
+				this.log.d('New microphone track created and added:', deviceId);
+			}
+		} catch (error) {
+			this.log.e('Failed to create new audio track:', error);
+			const message = error instanceof Error ? error.message : 'Unknown error';
+			throw new Error(`Failed to switch microphone: ${message}`);
+		}
+	}
+
+	/**
+	 * Gets the current video track from local tracks or room
+	 * @returns LocalVideoTrack or undefined
+	 * @internal
+	 */
+	private async getVideoTrack(): Promise<LocalVideoTrack | undefined> {
+		// First try to get from local tracks (prejoin state)
+		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
+
+		// If not found and room is connected, get from published tracks
+		if (!videoTrack && this.isRoomConnected()) {
+			const localParticipant = this.room.localParticipant;
+			const videoPublication = localParticipant.getTrackPublications().find((pub) => pub.kind === Track.Kind.Video);
+			videoTrack = videoPublication?.track as LocalVideoTrack | undefined;
+		}
+
+		return videoTrack;
+	}
+
+	/**
+	 * Extracts Livekit data from the provided token and returns an object containing the Livekit URL and room admin status.
+	 * @param token - The token to extract Livekit data from.
+	 * @param livekitUrl - The default Livekit URL to use if no Livekit URL is found in the token metadata.
+	 * @returns An object containing the Livekit URL and room admin status.
+	 * @throws Error if there is an error decoding and parsing the token.
+	 * @internal
+	 */
+	private extractLivekitData(token: string): { livekitUrl?: string; livekitRoomAdmin: boolean } {
+		try {
+			const base64Url = token.split('.')[1];
+			const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+			const jsonPayload = decodeURIComponent(
+				window
+					.atob(base64)
+					.split('')
+					.map((c) => {
+						return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+					})
+					.join('')
+			);
+
+			const payload = JSON.parse(jsonPayload);
+			if (payload?.metadata) {
+				const tokenMetadata = JSON.parse(payload.metadata);
+				return {
+					livekitUrl: tokenMetadata.livekitUrl,
+					livekitRoomAdmin: !!tokenMetadata.roomAdmin
+				};
+			}
+
+			return { livekitRoomAdmin: false };
+		} catch (error) {
+			throw new Error('Error decoding and parsing token: ' + error);
+		}
+	}
+
+	/**
+	 * @internal
+	 * Whether the STT service is ready or not
+	 * This will be `false` when the app receives a SPEECH_TO_TEXT_DISCONNECTED exception
+	 * and it cannot subscribe to STT
+	 */
+	// isSttReady(): boolean {
+	// 	return this._isSttReady.getValue();
+	// }
+
+	/**
+	 * @internal
+	 */
+	// setSTTReady(value: boolean): void {
+	// 	if (this._isSttReady.getValue() !== value) {
+	// 		this._isSttReady.next(value);
+	// 	}
+	// }
+
+	/**
+	 * @internal
+	 * Subscribe all `CAMERA` stream types to speech-to-text
+	 * It will retry the subscription each `STT_TIMEOUT_MS`
+	 *
+	 * @param lang The language of the Stream's audio track.
+	 */
+	// async subscribeRemotesToSTT(lang: string): Promise<void> {
+	// 	const participantService = this.injector.get(ParticipantService);
+	// 	const remoteParticipants = participantService.getRemoteParticipants();
+	// 	let successNumber = 0;
+	// 	for (const p of remoteParticipants) {
+	// 		const stream = p.getCameraConnection()?.streamManager?.stream;
+	// 		if (stream) {
+	// 			try {
+	// 				await this.subscribeStreamToStt(stream, lang);
+	// 				successNumber++;
+	// 			} catch (error) {
+	// 				this.log.e(`Error subscribing ${stream.streamId} to STT:`, error);
+	// 				break;
+	// 			}
+	// 		}
+	// 	}
+	// 	this.setSTTReady(successNumber === remoteParticipants.length);
+	// 	if (!this.isSttReady()) {
+	// 		this.log.w('STT is not ready. Retrying subscription...');
+	// 		this.sttReconnectionTimeout = setTimeout(this.subscribeRemotesToSTT.bind(this, lang), this.STT_TIMEOUT_MS);
+	// 	}
+	// }
+
+	/**
+	 * @internal
+	 * Subscribe a stream to speech-to-text
+	 * @param stream
+	 * @param lang
+	 */
+	// async subscribeStreamToStt(stream: Stream, lang: string): Promise<void> {
+	// 	await this.getWebcamSession().subscribeToSpeechToText(stream, lang);
+	// 	this.log.d(`Subscribed stream ${stream.streamId} to STT with ${lang} language.`);
+	// }
+
+	/**
+	 * @internal
+	 * Unsubscribe to all `CAMERA` stream types to speech-to-text if STT is up(ready)
+	 */
+	// async unsubscribeRemotesFromSTT(): Promise<void> {
+	// 	const participantService = this.injector.get(ParticipantService);
+	// 	clearTimeout(this.sttReconnectionTimeout);
+	// 	if (this.isSttReady()) {
+	// 		for (const p of participantService.getRemoteParticipants()) {
+	// 			const stream = p.getCameraConnection().streamManager.stream;
+	// 			if (stream) {
+	// 				try {
+	// 					await this.getWebcamSession().unsubscribeFromSpeechToText(stream);
+	// 				} catch (error) {
+	// 					this.log.e(`Error unsubscribing ${stream.streamId} from STT:`, error);
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
+}

@@ -1,0 +1,33 @@
+<div class="language-selector-container">
+	@if (compact) {
+		<!-- Compact version (icon only) -->
+		<button mat-icon-button [matMenuTriggerFor]="langMenu" class="compact-lang-button" [matTooltip]="'Change language'" disableRipple>
+			<mat-icon>translate</mat-icon>
+		</button>
+	} @else {
+		<!-- Full version (with text) -->
+		<button mat-flat-button [matMenuTriggerFor]="langMenu" class="full-lang-button">
+			<!-- <mat-icon class="lang-icon">translate</mat-icon> -->
+			<span class="lang-name">
+				{{ langSelected?.name }}
+				<mat-icon class="expand-icon">expand_more</mat-icon>
+			</span>
+		</button>
+	}
+
+	<!-- Language Menu -->
+	<mat-menu #langMenu="matMenu" class="language-menu">
+		@for (lang of languages; track lang.lang) {
+			<button
+				mat-menu-item
+				(click)="onLangSelected(lang.lang)"
+				[attr.id]="'lang-opt-' + lang.lang"
+				[class.selected]="langSelected?.lang === lang.lang"
+				class="language-option"
+			>
+				<mat-icon *ngIf="langSelected?.lang === lang.lang" class="check-icon">check</mat-icon>
+				<span class="lang-option-name">{{ lang.name }}</span>
+			</button>
+		}
+	</mat-menu>
+</div>
