@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -25,10 +25,10 @@ export class OverviewComponent implements OnInit {
 	isLoading = signal(true);
 	hasData = signal(false);
 
-	constructor(
-		private analyticsService: AnalyticsService,
-		private navigationService: NavigationService
-	) {}
+	private analyticsService: AnalyticsService = inject(AnalyticsService);
+	private navigationService: NavigationService = inject(NavigationService);
+
+	constructor() {}
 
 	async ngOnInit() {
 		await this.loadStats();
