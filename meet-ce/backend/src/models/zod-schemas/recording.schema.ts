@@ -1,6 +1,4 @@
-import type {
-	MeetRecordingField
-} from '@openvidu-meet/typings';
+import type { MeetRecordingField } from '@openvidu-meet/typings';
 import {
 	MEET_RECORDING_FIELDS,
 	MEET_RECORDING_SORT_FIELDS,
@@ -203,7 +201,7 @@ export const GetRecordingReqSchema = z.object({
 	}),
 	query: z.object({
 		fields: fieldsSchema,
-		secret: z.string().optional()
+		recordingSecret: z.string().optional()
 	})
 });
 
@@ -221,7 +219,7 @@ export const GetRecordingMediaReqSchema = z.object({
 		recordingId: nonEmptySanitizedRecordingId('recordingId')
 	}),
 	query: z.object({
-		secret: z.string().optional()
+		recordingSecret: z.string().optional()
 	}),
 	headers: z
 		.object({

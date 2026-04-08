@@ -1039,7 +1039,7 @@ export const getRecordingAccessSecret = async (recordingId: string, privateAcces
 
 	// Parse the URL to extract the secret from the query parameters
 	const parsedUrl = new URL(recordingUrl);
-	const secret = parsedUrl.searchParams.get('secret');
+	const secret = parsedUrl.searchParams.get('recordingSecret');
 	return secret!;
 };
 

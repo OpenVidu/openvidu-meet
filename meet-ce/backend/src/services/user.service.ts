@@ -409,7 +409,7 @@ export class UserService {
 				allOwnedRooms,
 				async (room) => {
 					await Promise.all([
-					// Transfer ownership to admin user
+						// Transfer ownership to admin user
 						this.roomRepository.updatePartial(room.roomId, { owner: adminUserId }),
 						this.recordingRepository.updateAccessScopeMetadataByRoomId(room.roomId, {
 							roomOwner: adminUserId

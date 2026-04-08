@@ -127,7 +127,7 @@ export const validateGetRecordingMediaReq = (req: Request, res: Response, next: 
 	}
 
 	req.params.recordingId = data.params.recordingId;
-	req.query.secret = data.query.secret;
+	req.query.recordingSecret = data.query.recordingSecret;
 	req.headers.range = data.headers.range;
 	next();
 };

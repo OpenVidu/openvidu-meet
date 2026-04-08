@@ -60,12 +60,12 @@ describe('Recording API Tests', () => {
 
 			// Parse the URL to extract the secret from the query parameters
 			const parsedUrl = new URL(response.body.url);
-			const secret = parsedUrl.searchParams.get('secret');
+			const secret = parsedUrl.searchParams.get('recordingSecret');
 
 			// Verify that the URL is publicly accessible
-			const recordingResponse = await request(app).get(
-				`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`
-			);
+			const recordingResponse = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+				.query({ recordingSecret: secret });
 			expect(recordingResponse.status).toBe(200);
 		});
 
@@ -102,16 +102,19 @@ describe('Recording API Tests', () => {
 
 			// Parse the URL to extract the secret from the query parameters
 			const parsedUrl = new URL(response.body.url);
-			const secret = parsedUrl.searchParams.get('secret');
+			const secret = parsedUrl.searchParams.get('recordingSecret');
 
 			// Verify that the URL is not publicly accessible
-			let recordingResponse = await request(app).get(`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`);
+			let recordingResponse = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+				.query({ recordingSecret: secret });
 			expect(recordingResponse.status).toBe(401);
 
 			// Verify that the URL is accessible with authentication
 			const { accessToken } = await loginRootAdmin();
 			recordingResponse = await request(app)
-				.get(`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`)
+				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+				.query({ recordingSecret: secret })
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
 			expect(recordingResponse.status).toBe(200);
 		});
@@ -132,16 +135,19 @@ describe('Recording API Tests', () => {
 
 			// Parse the URL to extract the secret from the query parameters
 			const parsedUrl = new URL(response.body.url);
-			const secret = parsedUrl.searchParams.get('secret');
+			const secret = parsedUrl.searchParams.get('recordingSecret');
 
 			// Verify that the URL is not publicly accessible
-			let recordingResponse = await request(app).get(`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`);
+			let recordingResponse = await request(app)
+				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+				.query({ recordingSecret: secret });
 			expect(recordingResponse.status).toBe(401);
 
 			// Verify that the URL is accessible with authentication
 			const { accessToken } = await loginRootAdmin();
 			recordingResponse = await request(app)
-				.get(`${RECORDINGS_PATH}/${recordingId}/media?secret=${secret}`)
+				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+				.query({ recordingSecret: secret })
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
 			expect(recordingResponse.status).toBe(200);
 		});

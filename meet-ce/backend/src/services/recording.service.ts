@@ -627,7 +627,7 @@ export class RecordingService {
 		}
 
 		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
-		return `${getBaseUrl()}/recording/${recordingId}?secret=${secret}`;
+		return `${getBaseUrl()}/recording/${recordingId}?recordingSecret=${secret}`;
 	}
 
 	/**

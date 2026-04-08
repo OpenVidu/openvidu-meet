@@ -3,7 +3,9 @@ import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
+	errorAnonymousAccessDisabled,
 	errorInsufficientPermissions,
 	errorInvalidRecordingSecret,
 	errorRecordingDisabled,
@@ -49,17 +51,17 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 };
 
 /**
- * Middleware to configure authentication for retrieving recording based on the provided secret.
+ * Middleware to configure authentication for retrieving recording based on the provided recording secret.
  *
- * - If a valid secret is provided in the query, access is granted according to the secret type.
- * - If no secret is provided, the default authentication logic is applied, i.e., API key, admin and room member token access.
+ * - If a valid recordingSecret is provided in the query, access is granted according to the secret type.
+ * - If no recordingSecret is provided, the default authentication logic is applied, i.e., API key, user and room member token access.
  */
 export const setupRecordingAuthentication = async (req: Request, res: Response, next: NextFunction) => {
-	const secret = req.query.secret as string;
+	const recordingSecret = req.query.recordingSecret as string;
 
-	// If a secret is provided, validate it against the stored secrets
+	// If a recording secret is provided, validate it against the stored secrets
 	// and apply the appropriate authentication logic.
-	if (secret) {
+	if (recordingSecret) {
 		try {
 			const recordingId = req.params.recordingId as string;
 
@@ -68,11 +70,25 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 
 			const authValidators = [];
 
-			switch (secret) {
-				case recordingSecrets.publicAccessSecret:
+			switch (recordingSecret) {
+				case recordingSecrets.publicAccessSecret: {
+					// Public recording secret is only valid if anonymous recording access is enabled in the room
+					const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+					const roomService = container.get(RoomService);
+					const { access } = await roomService.getMeetRoom(roomId, ['access']);
+
+					if (!access.anonymous.recording.enabled) {
+						return rejectRequestFromMeetError(
+							res,
+							errorAnonymousAccessDisabled(roomId, 'recording')
+						);
+					}
+
 					// Public access secret allows anonymous access
 					authValidators.push(allowAnonymous);
 					break;
+				}
+
 				case recordingSecrets.privateAccessSecret:
 					// Private access secret requires authentication
 					authValidators.push(
@@ -81,7 +97,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 					break;
 				default:
 					// Invalid secret provided
-					return rejectRequestFromMeetError(res, errorInvalidRecordingSecret(recordingId, secret));
+					return rejectRequestFromMeetError(res, errorInvalidRecordingSecret(recordingId, recordingSecret));
 			}
 
 			return withAuth(...authValidators)(req, res, next);
@@ -90,7 +106,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 		}
 	}
 
-	// If no secret is provided, we proceed with the default authentication logic.
+	// If no recording secret is provided, we proceed with the default authentication logic.
 	// This will allow API key, registered user and room member token access.
 	const authValidators = [
 		apiKeyValidator,
@@ -158,9 +174,9 @@ export const applyRecordingListAccessFilters = async (_req: Request, res: Respon
 /**
  * Middleware to authorize access (retrieval or deletion) for a single recording.
  *
- * - If a valid secret is provided in the query and `allowAccessWithSecret` is true,
+ * - If a valid recordingSecret is provided in the query and `allowAccessWithSecret` is true,
  *   access is granted directly for retrieval requests.
- * - If no secret is provided, the recording's existence and permissions are checked
+ * - If no recordingSecret is provided, the recording's existence and permissions are checked
  *   based on the authenticated context (room member token or registered user).
  *
  * @param permission - The permission to check (canRetrieveRecordings or canDeleteRecordings).
@@ -172,12 +188,12 @@ export const authorizeRecordingAccess = (
 ) => {
 	return async (req: Request, res: Response, next: NextFunction) => {
 		const recordingId = req.params.recordingId as string;
-		const secret = req.query.secret as string | undefined;
+		const recordingSecret = req.query.recordingSecret as string | undefined;
 
-		// If allowAccessWithSecret is true and a secret is provided,
+		// If allowAccessWithSecret is true and a recordingSecret is provided,
 		// we assume that the secret has been validated by setupRecordingAuthentication.
 		// In that case, grant access directly for retrieval requests.
-		if (allowAccessWithSecret && secret && permission === 'canRetrieveRecordings') {
+		if (allowAccessWithSecret && recordingSecret && permission === 'canRetrieveRecordings') {
 			return next();
 		}
 
