@@ -1,5 +1,5 @@
 import { Component, ElementRef, Inject, ViewChild } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { RecordingDialogData } from '../../models/dialog.model';
 
 /**
@@ -42,9 +42,9 @@ import { RecordingDialogData } from '../../models/dialog.model';
     standalone: false
 })
 export class RecordingDialogComponent {
-	@ViewChild('videoElement', { static: true }) videoElement: ElementRef<HTMLVideoElement>;
+	@ViewChild('videoElement', { static: true }) videoElement: ElementRef<HTMLVideoElement> | undefined = undefined;
 
-	src: string;
+	src: string = '';
 
 	constructor(
 		public dialogRef: MatDialogRef<RecordingDialogComponent>,
@@ -57,6 +57,7 @@ export class RecordingDialogComponent {
 	}
 
 	handleError() {
+		if (!this.videoElement) return;
 		const videoElement = this.videoElement.nativeElement;
 		this.dialogRef.close({ manageError: true, error: videoElement.error });
 	}

@@ -1,4 +1,4 @@
-import { Component, OnInit, Output, EventEmitter, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit, Output } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { RecordingDeleteRequestedEvent, RecordingInfo, RecordingStatus } from '../../models/recording.model';
 import { ActionService } from '../../services/action/action.service';
@@ -61,8 +61,8 @@ export class AdminDashboardComponent implements OnInit, OnDestroy {
 	 * @internal
 	 */
 	recordingStatusEnum = RecordingStatus;
-	private recordingsSub: Subscription;
-	private titleSub: Subscription;
+	private recordingsSub: Subscription = new Subscription();
+	private titleSub: Subscription = new Subscription();
 
 	/**
 	 * @internal

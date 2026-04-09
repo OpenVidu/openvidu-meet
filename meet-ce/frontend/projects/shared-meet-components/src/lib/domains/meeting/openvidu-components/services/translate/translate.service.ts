@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { BehaviorSubject, Observable } from 'rxjs';
 import * as cn from '../../lang/cn.json';
 import * as de from '../../lang/de.json';
 import * as en from '../../lang/en.json';
@@ -9,9 +10,8 @@ import * as it from '../../lang/it.json';
 import * as ja from '../../lang/ja.json';
 import * as nl from '../../lang/nl.json';
 import * as pt from '../../lang/pt.json';
-import { StorageService } from '../storage/storage.service';
 import { AdditionalTranslationsType, AvailableLangs, LangOption } from '../../models/lang.model';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { StorageService } from '../storage/storage.service';
 
 /**
  * Service responsible for managing translations for the application.
@@ -27,7 +27,7 @@ export class TranslateService {
 	private translationsByLanguage: Record<AvailableLangs, any> = { en, es, de, fr, cn, hi, it, ja, nl, pt };
 
 	// Stores additional translations provided by the application
-	private additionalTranslations: Record<AvailableLangs, any> | {} = {};
+	private additionalTranslations: Partial<Record<AvailableLangs, any>> = {};
 
 	// List of available language options with their display names and language codes
 	private languageOptions: LangOption[] = [
@@ -44,10 +44,10 @@ export class TranslateService {
 	];
 
 	// The currently active translations for the selected language
-	private activeTranslations: any;
+	private activeTranslations: any = {};
 
 	// The currently selected language option
-	private selectedLanguageOption: LangOption;
+	private selectedLanguageOption: LangOption = { name: 'English', lang: 'en' };
 
 	// BehaviorSubject to manage the currently selected language option
 	private _selectedLanguageSubject: BehaviorSubject<LangOption> = new BehaviorSubject<LangOption>({ name: 'English', lang: 'en' });
@@ -135,7 +135,7 @@ export class TranslateService {
 
 		if (!translation) {
 			// If not found, look for the translation in the additional translations
-			const additionalLangTranslations = this.additionalTranslations[this.selectedLanguageOption.lang];
+			const additionalLangTranslations = this.additionalTranslations[this.selectedLanguageOption.lang] ?? {};
 			translation = this.findTranslation(additionalLangTranslations, key);
 		}
 

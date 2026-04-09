@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import {
-	BroadcastingStartRequestedEvent,
-	BroadcastingStatus,
-	BroadcastingStatusInfo,
-	BroadcastingStopRequestedEvent
+    BroadcastingStartRequestedEvent,
+    BroadcastingStatus,
+    BroadcastingStatusInfo,
+    BroadcastingStopRequestedEvent
 } from '../../../../models/broadcasting.model';
 import { BroadcastingService } from '../../../../services/broadcasting/broadcasting.service';
-import { ParticipantService } from '../../../../services/participant/participant.service';
 import { OpenViduService } from '../../../../services/openvidu/openvidu.service';
+import { ParticipantService } from '../../../../services/participant/participant.service';
 
 /**
  * The **BroadcastingActivityComponent** is the component that allows showing the broadcasting activity.
@@ -52,7 +52,7 @@ export class BroadcastingActivityComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	@Input() expanded: boolean;
+	@Input() expanded: boolean = false;
 
 	/**
 	 * @internal
@@ -113,7 +113,7 @@ export class BroadcastingActivityComponent implements OnInit {
 	/**
 	 * @ignore
 	 */
-	eventKeyPress(event) {
+	eventKeyPress(event: KeyboardEvent) {
 		// Pressed 'Enter' key
 		if (event && event.keyCode === 13) {
 			event.preventDefault();

@@ -1,13 +1,13 @@
 import {
-	ChangeDetectionStrategy,
-	ChangeDetectorRef,
-	Component,
-	EventEmitter,
-	HostListener,
-	Input,
-	OnDestroy,
-	OnInit,
-	Output
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    EventEmitter,
+    HostListener,
+    Input,
+    OnDestroy,
+    OnInit,
+    Output
 } from '@angular/core';
 import { LocalTrack, Track } from 'livekit-client';
 import { filter, Subject, take, takeUntil } from 'rxjs';
@@ -65,7 +65,12 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	isVideoEnabled: boolean = false;
 	hasVideoDevices: boolean = true;
 	private tracks: LocalTrack[] = [];
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 	private destroy$ = new Subject<void>();
 	private shouldRemoveTracksWhenComponentIsDestroyed: boolean = true;
 

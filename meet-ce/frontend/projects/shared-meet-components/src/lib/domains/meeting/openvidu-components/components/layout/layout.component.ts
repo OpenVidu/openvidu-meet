@@ -1,6 +1,6 @@
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 
-import { CdkDrag } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
@@ -40,27 +40,27 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	@ContentChild('stream', { read: TemplateRef }) streamTemplate: TemplateRef<any>;
+	@ContentChild('stream', { read: TemplateRef }) streamTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('layoutAdditionalElements', { read: TemplateRef }) layoutAdditionalElementsTemplate: TemplateRef<any>;
+	@ContentChild('layoutAdditionalElements', { read: TemplateRef }) layoutAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild('layout', { static: false, read: ViewContainerRef }) layoutContainer: ViewContainerRef;
+	@ViewChild('layout', { static: false, read: ViewContainerRef }) layoutContainer: ViewContainerRef | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild(CdkDrag) cdkDrag: CdkDrag;
+	@ViewChild(CdkDrag) cdkDrag: CdkDrag | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild('localLayoutElement', { static: false, read: ElementRef }) localLayoutElement: ElementRef;
+	@ViewChild('localLayoutElement', { static: false, read: ElementRef }) localLayoutElement: ElementRef | undefined = undefined;
 	/**
 	 * @ignore
 	 */
@@ -102,8 +102,8 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	private _externalLayoutAdditionalElements?: LayoutAdditionalElementsDirective;
 
 	private destroy$ = new Subject<void>();
-	private resizeObserver: ResizeObserver;
-	private resizeTimeout: NodeJS.Timeout;
+	private resizeObserver: ResizeObserver | undefined = undefined;
+	private resizeTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 	private videoIsAtRight: boolean = false;
 	private lastLayoutWidth: number = 0;
 	private lastLayoutHeight: number = 0;
@@ -130,8 +130,11 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	ngAfterViewInit() {
 		console.log('LayoutComponent.ngAfterViewInit');
-		this.layoutService.initialize(this.layoutContainer.element.nativeElement);
-		const rect = this.layoutContainer.element.nativeElement.getBoundingClientRect();
+		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		if (!layoutContainer) return;
+
+		this.layoutService.initialize(layoutContainer);
+		const rect = layoutContainer.getBoundingClientRect();
 		this.lastLayoutWidth = rect.width;
 		this.lastLayoutHeight = rect.height;
 		this.listenToResizeLayout();
@@ -219,6 +222,10 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	private listenToResizeLayout() {
+		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		const cdkDrag = this.cdkDrag;
+		if (!layoutContainer || !cdkDrag) return;
+
 		this.resizeObserver = new ResizeObserver((entries) => {
 			const { width: parentWidth, height: parentHeight } = entries[0].contentRect;
 
@@ -244,7 +251,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 						} else {
 							// Layout is smaller than before. Emit resize event to update video position.
 							window.dispatchEvent(new Event('resize'));
-							const { x, width } = this.cdkDrag.element.nativeElement.getBoundingClientRect();
+							const { x, width } = cdkDrag.element.nativeElement.getBoundingClientRect();
 							this.videoIsAtRight = x + width >= parentWidth;
 						}
 					} else {
@@ -260,20 +267,28 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 			}, 100);
 		});
 
-		this.resizeObserver.observe(this.layoutContainer.element.nativeElement);
+		this.resizeObserver.observe(layoutContainer);
 	}
 	private moveStreamToRight(parentWidth: number) {
-		const { y, width: elementWidth } = this.cdkDrag.element.nativeElement.getBoundingClientRect();
+		const cdkDrag = this.cdkDrag;
+		if (!cdkDrag) return;
+
+		const { y, width: elementWidth } = cdkDrag.element.nativeElement.getBoundingClientRect();
 		const margin = 10;
 		const newX = parentWidth - elementWidth - margin;
-		this.cdkDrag.setFreeDragPosition({ x: newX, y });
+		cdkDrag.setFreeDragPosition({ x: newX, y });
 	}
 
 	private listenToCdkDrag() {
-		const handler = (event) => {
+		const cdkDrag = this.cdkDrag;
+		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		const localLayoutElement = this.localLayoutElement?.nativeElement;
+		if (!cdkDrag || !layoutContainer || !localLayoutElement) return;
+
+		const handler = (_event: CdkDragRelease<any>) => {
 			if (!this.panelService.isPanelOpened()) return;
-			const { x, width } = this.localLayoutElement.nativeElement.getBoundingClientRect();
-			const { width: parentWidth } = this.layoutContainer.element.nativeElement.getBoundingClientRect();
+			const { x, width } = localLayoutElement.getBoundingClientRect();
+			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
 			if (x === 0) {
 				// Video is at the left
 				this.videoIsAtRight = false;
@@ -286,14 +301,14 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 			}
 		};
 
-		this.cdkDrag.released.pipe(takeUntil(this.destroy$)).subscribe(handler);
+		cdkDrag.released.pipe(takeUntil(this.destroy$)).subscribe(handler);
 
 		if (this.globalService.isProduction()) return;
 		// Just for allow E2E testing with drag and drop
-		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', handler);
+		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', handler as unknown as EventListener);
 		document.addEventListener('webcomponentTestingEndedDragAndDropRightEvent', (event: any) => {
 			const { x, y } = event.detail;
-			this.cdkDrag.setFreeDragPosition({ x, y });
+			cdkDrag.setFreeDragPosition({ x, y });
 		});
 	}
 }

@@ -148,7 +148,7 @@
 			<button
 				mat-menu-item
 				id="toolbar-broadcasting-btn"
-				[disabled]="broadcastingStatus() === _broadcastingStatus.STARTING || recordingStatus() === _broadcastingStatus.STOPPING"
+				[disabled]="broadcastingStatus() === _broadcastingStatus.STARTING || recordingStatus() === _recordingStatus.STOPPING"
 				(click)="onBroadcastingToggle()"
 			>
 				<mat-icon>sensors</mat-icon>

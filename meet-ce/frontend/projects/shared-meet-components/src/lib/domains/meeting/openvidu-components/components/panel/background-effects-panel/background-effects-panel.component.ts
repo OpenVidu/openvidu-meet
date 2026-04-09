@@ -19,12 +19,12 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 	@Input() mode: 'prejoin' | 'meeting' = 'meeting';
 	@Output() onClose = new EventEmitter<void>();
 
-	backgroundSelectedId: string;
+	backgroundSelectedId: string = '';
 	effectType = EffectType;
 	backgroundImages: BackgroundEffect[] = [];
 	noEffectAndBlurredBackground: BackgroundEffect[] = [];
 	private backgrounds: BackgroundEffect[] = [];
-	private backgroundSubs: Subscription;
+	private backgroundSubs: Subscription = new Subscription();
 
 	/**
 	 * @internal

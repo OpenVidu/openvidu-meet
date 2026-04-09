@@ -1,11 +1,11 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
+import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
-import { TemplateManagerService, ParticipantPanelItemTemplateConfiguration } from '../../../../services/template/template-manager.service';
+import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } from '../../../../services/template/template-manager.service';
 
 /**
  * The **ParticipantPanelItemComponent** is hosted inside of the {@link ParticipantsPanelComponent}.
@@ -23,13 +23,13 @@ export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@ContentChild('participantPanelItemElements', { read: TemplateRef }) participantPanelItemElementsTemplate: TemplateRef<any>;
+	@ContentChild('participantPanelItemElements', { read: TemplateRef }) participantPanelItemElementsTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
 	showMuteButton: boolean = true;
-	private muteButtonSub: Subscription;
+	private muteButtonSub: Subscription = new Subscription();
 
 	/**
 	 * @ignore
@@ -76,7 +76,7 @@ export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	 * @internal
 	 * Current participant being displayed
 	 */
-	_participant: ParticipantModel;
+	_participant: ParticipantModel | undefined = undefined;
 
 	/**
 	 * Whether to show the mute button for remote participants

@@ -1,10 +1,10 @@
-import { Component, OnInit, Output, ViewChild, EventEmitter, Input, OnDestroy } from '@angular/core';
+import { Component, EventEmitter, Input, OnDestroy, OnInit, Output, ViewChild } from '@angular/core';
 import { MatMenuTrigger } from '@angular/material/menu';
 import { MatSelect } from '@angular/material/select';
+import { Subscription } from 'rxjs';
+import { AvailableLangs, LangOption } from '../../../models/lang.model';
 import { StorageService } from '../../../services/storage/storage.service';
 import { TranslateService } from '../../../services/translate/translate.service';
-import { AvailableLangs, LangOption } from '../../../models/lang.model';
-import { Subscription } from 'rxjs';
 
 /**
  * @internal
@@ -19,22 +19,22 @@ export class LangSelectorComponent implements OnInit, OnDestroy {
 	/**
 	 * @internal
 	 */
-	@Input() compact: boolean;
+	@Input() compact: boolean = false;
 	@Output() onLangChanged: EventEmitter<LangOption> = new EventEmitter<LangOption>();
-	langSelected: LangOption;
+	langSelected: LangOption = { name: 'English', lang: 'en' };
 	languages: LangOption[] = [];
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild(MatMenuTrigger) public menuTrigger: MatMenuTrigger;
+	@ViewChild(MatMenuTrigger) public menuTrigger: MatMenuTrigger | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild(MatSelect) matSelect: MatSelect;
+	@ViewChild(MatSelect) matSelect: MatSelect | undefined = undefined;
 
-	private langSub: Subscription;
+	private langSub: Subscription = new Subscription();
 
 	constructor(
 		private translateService: TranslateService,

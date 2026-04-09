@@ -30,7 +30,7 @@ export class StreamDisplayParticipantNameDirective implements AfterViewInit, OnD
 		this.update(this.displayParticipantNameValue);
 	}
 
-	displayParticipantNameValue: boolean;
+	displayParticipantNameValue: boolean = true;
 
 	constructor(
 		public elementRef: ElementRef,
@@ -83,7 +83,7 @@ export class StreamDisplayAudioDetectionDirective implements AfterViewInit, OnDe
 		this.update(this.displayAudioDetectionValue);
 	}
 
-	displayAudioDetectionValue: boolean;
+	displayAudioDetectionValue: boolean = true;
 
 	constructor(
 		public elementRef: ElementRef,
@@ -134,7 +134,7 @@ export class StreamVideoControlsDirective implements AfterViewInit, OnDestroy {
 		this.update(this.videoControlsValue);
 	}
 
-	videoControlsValue: boolean;
+	videoControlsValue: boolean = true;
 
 	constructor(
 		public elementRef: ElementRef,

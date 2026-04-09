@@ -1,7 +1,7 @@
 
-import { Inject, Injectable } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
-import { ParticipantFactoryFunction, OpenViduComponentsConfig } from '../../config/openvidu-components-angular.config';
+import { Inject, Injectable } from '@angular/core';
+import { OpenViduComponentsConfig, ParticipantFactoryFunction } from '../../config/openvidu-components-angular.config';
 
 /**
  * @internal
@@ -10,7 +10,7 @@ import { ParticipantFactoryFunction, OpenViduComponentsConfig } from '../../conf
 	providedIn: 'root'
 })
 export class GlobalConfigService {
-	private configuration: OpenViduComponentsConfig;
+	private configuration: OpenViduComponentsConfig = {} as OpenViduComponentsConfig;
 
 	constructor(
 		@Inject('OPENVIDU_COMPONENTS_CONFIG') config: OpenViduComponentsConfig,
@@ -43,7 +43,11 @@ export class GlobalConfigService {
 	}
 
 	getParticipantFactory(): ParticipantFactoryFunction {
-		return this.getConfig().participantFactory;
+		const participantFactory = this.getConfig().participantFactory;
+		if (!participantFactory) {
+			throw new Error('Participant factory is not configured');
+		}
+		return participantFactory;
 	}
 
 	getConfig(): OpenViduComponentsConfig {

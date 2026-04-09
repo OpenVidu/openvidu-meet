@@ -22,16 +22,21 @@ import { TranslateService } from '../translate/translate.service';
 })
 export class ChatService {
 	chatMessages$: Observable<ChatMessage[]>;
-	private messageSound: HTMLAudioElement;
+	private messageSound: HTMLAudioElement = new Audio();
 	private _messageList = <BehaviorSubject<ChatMessage[]>>new BehaviorSubject<ChatMessage[]>([]);
 	private messageList: ChatMessage[] = [];
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 	constructor(
 		private loggerSrv: LoggerService,
 		private participantService: ParticipantService,
 		private panelService: PanelService,
 		private actionService: ActionService,
-		private translateService: TranslateService,
+		private translateService: TranslateService
 	) {
 		this.log = this.loggerSrv.get('ChatService');
 		this.chatMessages$ = this._messageList.asObservable();
@@ -41,8 +46,7 @@ export class ChatService {
 		this.messageSound.volume = 0.6;
 	}
 
-	/**
-	 * Adds a new message to the chat from a remote participant
+	/** Adds a new message to the chat from a remote participant
 	 * @param message
 	 * @param participantName
 	 */
@@ -95,6 +99,9 @@ export class ChatService {
 	}
 
 	private launchNotification(options: INotificationOptions) {
-		this.actionService.launchNotification(options, this.panelService.togglePanel.bind(this.panelService, PanelType.CHAT));
+		this.actionService.launchNotification(
+			options,
+			this.panelService.togglePanel.bind(this.panelService, PanelType.CHAT)
+		);
 	}
 }

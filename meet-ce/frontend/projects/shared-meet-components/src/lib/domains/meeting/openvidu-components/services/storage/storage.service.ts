@@ -1,16 +1,16 @@
 import { Injectable, OnDestroy } from '@angular/core';
+import { CustomDevice } from '../../models/device.model';
 import { ILogger } from '../../models/logger.model';
 import {
-	STORAGE_PREFIX,
-	StorageKeys,
-	SESSION_KEYS,
-	TAB_MANAGEMENT_KEYS,
-	TAB_SPECIFIC_KEYS,
-	SHARED_PERSISTENT_KEYS
+    SESSION_KEYS,
+    SHARED_PERSISTENT_KEYS,
+    STORAGE_PREFIX,
+    StorageKeys,
+    TAB_MANAGEMENT_KEYS,
+    TAB_SPECIFIC_KEYS
 } from '../../models/storage.model';
-import { LoggerService } from '../logger/logger.service';
-import { CustomDevice } from '../../models/device.model';
 import { OpenViduThemeMode } from '../../models/theme.model';
+import { LoggerService } from '../logger/logger.service';
 
 /**
  * @internal
@@ -24,7 +24,7 @@ export class StorageService implements OnDestroy {
 	private readonly tabId: string;
 	private readonly TAB_CLEANUP_INTERVAL = 30000; // 30 seconds
 	private readonly TAB_TIMEOUT_THRESHOLD = 60000; // 60 seconds
-	private cleanupInterval: NodeJS.Timeout | null = null;
+	private cleanupInterval: ReturnType<typeof setInterval> | null = null;
 	private broadcastChannel: BroadcastChannel | null = null;
 	private isStorageAvailable = false;
 	private lastHeartbeat = 0;

@@ -28,7 +28,12 @@ export class VideoDevicesComponent implements OnInit {
 	protected readonly cameraSelected: WritableSignal<CustomDevice | undefined>;
 	protected readonly hasVideoDevices: Signal<boolean>;
 
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	constructor(
 		private storageSrv: StorageService,

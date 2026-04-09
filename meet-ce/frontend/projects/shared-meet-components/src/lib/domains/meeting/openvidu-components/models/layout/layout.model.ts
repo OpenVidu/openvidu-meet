@@ -1,17 +1,14 @@
 // Re-export all public types and constants for backward compatibility
-export {
-	BestDimensions,
-	BigFirstOption,
-	ElementDimensions,
-	ExtendedLayoutOptions,
-	LAYOUT_CONSTANTS,
-	LayoutAlignment,
-	LayoutArea,
-	LayoutBox,
-	LayoutClass,
-	LayoutRow,
-	OpenViduLayoutOptions,
-	SidenavMode
+export { LAYOUT_CONSTANTS, LayoutAlignment, LayoutClass, SidenavMode } from './layout-types.model';
+export type {
+    BestDimensions,
+    BigFirstOption,
+    ElementDimensions,
+    ExtendedLayoutOptions,
+    LayoutArea,
+    LayoutBox,
+    LayoutRow,
+    OpenViduLayoutOptions
 } from './layout-types.model';
 
 import { LayoutCalculator } from './layout-calculator.model';

@@ -44,7 +44,12 @@ export class VirtualBackgroundService {
 	private SOFT_BLUR_INTENSITY = 20;
 	private HARD_BLUR_INTENSITY = 60;
 
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	constructor(
 		private openviduService: OpenViduService,

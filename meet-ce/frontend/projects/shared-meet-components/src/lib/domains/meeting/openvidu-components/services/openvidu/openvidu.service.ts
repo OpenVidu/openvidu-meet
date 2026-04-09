@@ -1,26 +1,26 @@
 import { Injectable, signal, Signal } from '@angular/core';
 import {
-	BackgroundProcessor,
-	BackgroundProcessorWrapper,
-	supportsBackgroundProcessors,
-	supportsModernBackgroundProcessors,
-	SwitchBackgroundProcessorOptions
+    BackgroundProcessor,
+    BackgroundProcessorWrapper,
+    supportsBackgroundProcessors,
+    supportsModernBackgroundProcessors,
+    SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
 import {
-	AudioCaptureOptions,
-	ConnectionState,
-	createLocalTracks,
-	CreateLocalTracksOptions,
-	E2EEOptions,
-	ExternalE2EEKeyProvider,
-	LocalAudioTrack,
-	LocalTrack,
-	LocalVideoTrack,
-	Room,
-	RoomOptions,
-	Track,
-	VideoCaptureOptions,
-	VideoPresets
+    AudioCaptureOptions,
+    ConnectionState,
+    createLocalTracks,
+    CreateLocalTracksOptions,
+    E2EEOptions,
+    ExternalE2EEKeyProvider,
+    LocalAudioTrack,
+    LocalTrack,
+    LocalVideoTrack,
+    Room,
+    RoomOptions,
+    Track,
+    VideoCaptureOptions,
+    VideoPresets
 } from 'livekit-client';
 import { ILogger } from '../../models/logger.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
@@ -40,7 +40,7 @@ export class OpenViduService {
 	// private sttReconnectionTimeout: NodeJS.Timeout;
 	// private _isSttReady: BehaviorSubject<boolean> = new BehaviorSubject(true);
 
-	private room: Room;
+	private room: Room | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
 
 	/**
@@ -56,7 +56,12 @@ export class OpenViduService {
 	private localTracks: LocalTrack[] = [];
 	private livekitToken = '';
 	private livekitUrl = '';
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	/**
 	 * Background processor for video tracks. Initialized in disabled mode.
@@ -189,22 +194,24 @@ export class OpenViduService {
 	 */
 	async connectRoom(): Promise<void> {
 		try {
+			const room = this.getRoom();
+
 			// Configure E2EE if key provider was initialized
 			if (this.keyProvider) {
 				const e2eeKey = this.configService.getE2EEKey();
 				if (e2eeKey) {
 					this.log.d('Setting E2EE key and enabling encryption');
 					await this.keyProvider.setKey(e2eeKey);
-					await this.room.setE2EEEnabled(true);
+					await room.setE2EEEnabled(true);
 					this.log.d('E2EE successfully enabled');
 				}
 			}
-			await this.room.connect(this.livekitUrl, this.livekitToken);
-			this.log.d(`Successfully connected to room ${this.room.name}`);
+			await room.connect(this.livekitUrl, this.livekitToken);
+			this.log.d(`Successfully connected to room ${room.name}`);
 
 			const participantName = this.storageService.getParticipantName();
 			if (participantName) {
-				this.room.localParticipant.setName(participantName);
+				room.localParticipant.setName(participantName);
 			}
 		} catch (error) {
 			this.log.e('Error connecting to room:', error);
@@ -223,9 +230,10 @@ export class OpenViduService {
 	 */
 	async disconnectRoom(callback?: () => void, shouldHandleClientInitiatedDisconnectEvent: boolean = true): Promise<void> {
 		this.shouldHandleClientInitiatedDisconnectEvent = shouldHandleClientInitiatedDisconnectEvent;
-		if (this.isRoomConnected()) {
+		const room = this.room;
+		if (room && this.isRoomConnected()) {
 			this.log.d('Disconnecting from room');
-			await this.room.disconnect();
+			await room.disconnect();
 			if (callback) callback();
 		}
 	}
@@ -253,7 +261,7 @@ export class OpenViduService {
 	 * Returns the room name
 	 */
 	getRoomName(): string {
-		return this.room?.name;
+		return this.room?.name ?? '';
 	}
 
 	/**
@@ -734,7 +742,7 @@ export class OpenViduService {
 		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 
 		// If not found and room is connected, get from published tracks
-		if (!videoTrack && this.isRoomConnected()) {
+		if (!videoTrack && this.isRoomConnected() && this.room) {
 			const localParticipant = this.room.localParticipant;
 			const videoPublication = localParticipant.getTrackPublications().find((pub) => pub.kind === Track.Kind.Video);
 			videoTrack = videoPublication?.track as LocalVideoTrack | undefined;

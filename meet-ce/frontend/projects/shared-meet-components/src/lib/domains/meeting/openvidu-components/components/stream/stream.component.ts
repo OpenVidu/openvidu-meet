@@ -22,12 +22,12 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@ViewChild(MatMenuTrigger) public menuTrigger: MatMenuTrigger;
+	@ViewChild(MatMenuTrigger) public menuTrigger: MatMenuTrigger | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild('menu') menu: MatMenuPanel;
+	@ViewChild('menu') menu: MatMenuPanel | undefined = undefined;
 
 	/**
 	 * @ignore
@@ -58,7 +58,11 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	showVideo: boolean;
+	showVideo: boolean = false;
+	/**
+	 * @ignore
+	 */
+	isFullscreen: boolean = false;
 
 	/**
 	 * @ignore
@@ -68,7 +72,7 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	hoveringTimeout: ReturnType<typeof setTimeout>;
+	hoveringTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 
 	/**
 	 * @ignore
@@ -91,7 +95,7 @@ export class StreamComponent implements OnInit, OnDestroy {
 		this._track = track;
 	}
 
-	private _streamContainer: ElementRef;
+	private _streamContainer: ElementRef | undefined = undefined;
 	private destroy$ = new Subject<void>();
 	private readonly HOVER_TIMEOUT = 2000;
 
@@ -147,7 +151,8 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	toggleVideoMenu(event) {
+	toggleVideoMenu(event: MouseEvent) {
+		if (!this.menuTrigger) return;
 		if (this.menuTrigger.menuOpen) {
 			this.menuTrigger.closeMenu();
 			return;

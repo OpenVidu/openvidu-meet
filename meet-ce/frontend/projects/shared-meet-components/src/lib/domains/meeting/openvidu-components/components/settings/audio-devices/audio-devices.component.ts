@@ -22,7 +22,12 @@ export class AudioDevicesComponent implements OnInit {
 
 	microphoneStatusChanging: boolean = false;
 	isMicrophoneEnabled: boolean = false;
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	// Expose signals directly from service (reactive)
 	protected readonly microphones: WritableSignal<CustomDevice[]>;

@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ILogger } from '../../models/logger.model';
-import { PanelStatusInfo, PanelSettingsOptions, PanelType } from '../../models/panel.model';
+import { PanelSettingsOptions, PanelStatusInfo, PanelType } from '../../models/panel.model';
 import { LoggerService } from '../logger/logger.service';
 
 @Injectable({
@@ -12,7 +12,12 @@ export class PanelService {
 	 * Panel Observable which pushes the panel status in every update.
 	 */
 	panelStatusObs: Observable<PanelStatusInfo>;
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 	private isExternalOpened: boolean = false;
 	private externalType: string = '';
 	private _panelOpened = <BehaviorSubject<PanelStatusInfo>>new BehaviorSubject({ isOpened: false });

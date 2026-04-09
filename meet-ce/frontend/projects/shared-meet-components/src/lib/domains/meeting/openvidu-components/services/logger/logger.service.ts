@@ -9,7 +9,7 @@ import { GlobalConfigService } from '../config/global-config.service';
 	providedIn: 'root'
 })
 export class LoggerService implements ILogService {
-	private log: Console;
+	private log: Console = window.console;
 	private LOG_FNS: Function[] = [];
 	private MSG_PREFIXES: string[][] = [
 		['[', '] DEBUG: '],

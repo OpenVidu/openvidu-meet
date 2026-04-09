@@ -11,7 +11,7 @@
 		<mat-sidenav-container #container #videoContainer class="sidenav-container">
 			<mat-sidenav
 				#sidenav
-				mode="{{ sidenavMode }}"
+				[mode]="sidenavMode"
 				position="end"
 				class="sidenav-menu"
 				[ngClass]="{ big: settingsPanelOpened }"

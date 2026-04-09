@@ -1,55 +1,55 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import {
-	AfterViewInit,
-	Component,
-	ContentChild,
-	EventEmitter,
-	OnDestroy,
-	Output,
-	TemplateRef,
-	ViewChild
+    AfterViewInit,
+    Component,
+    ContentChild,
+    EventEmitter,
+    OnDestroy,
+    Output,
+    TemplateRef,
+    ViewChild
 } from '@angular/core';
 import { Room } from 'livekit-client';
 import { Subject, filter, skip, take, takeUntil } from 'rxjs';
 import {
-	LayoutAdditionalElementsDirective,
-	LeaveButtonDirective,
-	ParticipantPanelAfterLocalParticipantDirective,
-	PreJoinDirective,
-	SettingsPanelGeneralAdditionalElementsDirective,
-	ToolbarMoreOptionsAdditionalMenuItemsDirective
+    LayoutAdditionalElementsDirective,
+    LeaveButtonDirective,
+    ParticipantPanelAfterLocalParticipantDirective,
+    PreJoinDirective,
+    SettingsPanelGeneralAdditionalElementsDirective,
+    ToolbarMoreOptionsAdditionalMenuItemsDirective
 } from '../../directives/template/internals.directive';
 import {
-	ActivitiesPanelDirective,
-	AdditionalPanelsDirective,
-	ChatPanelDirective,
-	LayoutDirective,
-	PanelDirective,
-	ParticipantPanelItemDirective,
-	ParticipantPanelItemElementsDirective,
-	ParticipantsPanelDirective,
-	StreamDirective,
-	ToolbarAdditionalButtonsDirective,
-	ToolbarAdditionalPanelButtonsDirective,
-	ToolbarDirective
+    ActivitiesPanelDirective,
+    AdditionalPanelsDirective,
+    ChatPanelDirective,
+    LayoutDirective,
+    PanelDirective,
+    ParticipantPanelItemDirective,
+    ParticipantPanelItemElementsDirective,
+    ParticipantsPanelDirective,
+    StreamDirective,
+    ToolbarAdditionalButtonsDirective,
+    ToolbarAdditionalPanelButtonsDirective,
+    ToolbarDirective
 } from '../../directives/template/openvidu-components-angular.directive';
 import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../models/broadcasting.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
 import {
-	ActivitiesPanelStatusEvent,
-	ChatPanelStatusEvent,
-	ParticipantsPanelStatusEvent,
-	SettingsPanelStatusEvent
+    ActivitiesPanelStatusEvent,
+    ChatPanelStatusEvent,
+    ParticipantsPanelStatusEvent,
+    SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantModel } from '../../models/participant.model';
 import {
-	RecordingDeleteRequestedEvent,
-	RecordingDownloadClickedEvent,
-	RecordingPlayClickedEvent,
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent
+    RecordingDeleteRequestedEvent,
+    RecordingDownloadClickedEvent,
+    RecordingPlayClickedEvent,
+    RecordingStartRequestedEvent,
+    RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { VideoconferenceState, VideoconferenceStateInfo } from '../../models/videoconference-state.model';
 import { ActionService } from '../../services/action/action.service';
@@ -60,10 +60,10 @@ import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { StorageService } from '../../services/storage/storage.service';
 import {
-	DefaultTemplates,
-	ExternalDirectives,
-	TemplateConfiguration,
-	TemplateManagerService
+    DefaultTemplates,
+    ExternalDirectives,
+    TemplateConfiguration,
+    TemplateManagerService
 } from '../../services/template/template-manager.service';
 import { OpenViduThemeService } from '../../services/theme/theme.service';
 
@@ -410,46 +410,46 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultToolbar', { static: false, read: TemplateRef }) defaultToolbarTemplate: TemplateRef<any>;
+	@ViewChild('defaultToolbar', { static: false, read: TemplateRef }) defaultToolbarTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultPanel', { static: false, read: TemplateRef }) defaultPanelTemplate: TemplateRef<any>;
+	@ViewChild('defaultPanel', { static: false, read: TemplateRef }) defaultPanelTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultChatPanel', { static: false, read: TemplateRef }) defaultChatPanelTemplate: TemplateRef<any>;
+	@ViewChild('defaultChatPanel', { static: false, read: TemplateRef }) defaultChatPanelTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultParticipantsPanel', { static: false, read: TemplateRef }) defaultParticipantsPanelTemplate: TemplateRef<any>;
+	@ViewChild('defaultParticipantsPanel', { static: false, read: TemplateRef }) defaultParticipantsPanelTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
 	@ViewChild('defaultActivitiesPanel', { static: false, read: TemplateRef })
-	defaultActivitiesPanelTemplate: TemplateRef<any>;
+	defaultActivitiesPanelTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultParticipantPanelItem', { static: false, read: TemplateRef }) defaultParticipantPanelItemTemplate: TemplateRef<any>;
+	@ViewChild('defaultParticipantPanelItem', { static: false, read: TemplateRef }) defaultParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultLayout', { static: false, read: TemplateRef }) defaultLayoutTemplate: TemplateRef<any>;
+	@ViewChild('defaultLayout', { static: false, read: TemplateRef }) defaultLayoutTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultStream', { static: false, read: TemplateRef }) defaultStreamTemplate: TemplateRef<any>;
+	@ViewChild('defaultStream', { static: false, read: TemplateRef }) defaultStreamTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @internal
 	 */
-	openviduAngularToolbarTemplate: TemplateRef<any>;
+	openviduAngularToolbarTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularToolbarAdditionalButtonsTemplate: TemplateRef<any>;
+	openviduAngularToolbarAdditionalButtonsTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @internal
@@ -459,70 +459,70 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @internal
 	 */
-	openviduAngularActivitiesPanelTemplate: TemplateRef<any>;
+	openviduAngularActivitiesPanelTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @internal
 	 */
-	openviduAngularToolbarAdditionalPanelButtonsTemplate: TemplateRef<any>;
+	openviduAngularToolbarAdditionalPanelButtonsTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularPanelTemplate: TemplateRef<any>;
+	openviduAngularPanelTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularChatPanelTemplate: TemplateRef<any>;
+	openviduAngularChatPanelTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularParticipantsPanelTemplate: TemplateRef<any>;
+	openviduAngularParticipantsPanelTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularAdditionalPanelsTemplate: TemplateRef<any>;
+	openviduAngularAdditionalPanelsTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularParticipantPanelAfterLocalParticipantTemplate: TemplateRef<any>;
+	openviduAngularParticipantPanelAfterLocalParticipantTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularParticipantPanelItemTemplate: TemplateRef<any>;
+	openviduAngularParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularParticipantPanelItemElementsTemplate: TemplateRef<any>;
+	openviduAngularParticipantPanelItemElementsTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularLayoutTemplate: TemplateRef<any>;
+	openviduAngularLayoutTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularStreamTemplate: TemplateRef<any>;
+	openviduAngularStreamTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	openviduAngularPreJoinTemplate: TemplateRef<any>;
+	openviduAngularPreJoinTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	ovLayoutAdditionalElementsTemplate: TemplateRef<any>;
+	ovLayoutAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	ovSettingsPanelGeneralAdditionalElementsTemplate: TemplateRef<any>;
+	ovSettingsPanelGeneralAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	ovToolbarMoreOptionsAdditionalMenuItemsTemplate: TemplateRef<any>;
+	ovToolbarMoreOptionsAdditionalMenuItemsTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @internal
 	 * Template configuration managed by TemplateManagerService
 	 */
-	private templateConfig: TemplateConfiguration;
+	private templateConfig: TemplateConfiguration = {} as TemplateConfiguration;
 
 	/**
 	 * Provides event notifications that fire when the local participant is ready to join to the room.
@@ -832,14 +832,14 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		};
 
 		const defaultTemplates: DefaultTemplates = {
-			toolbar: this.defaultToolbarTemplate,
-			panel: this.defaultPanelTemplate,
-			chatPanel: this.defaultChatPanelTemplate,
-			participantsPanel: this.defaultParticipantsPanelTemplate,
-			activitiesPanel: this.defaultActivitiesPanelTemplate,
-			participantPanelItem: this.defaultParticipantPanelItemTemplate,
-			layout: this.defaultLayoutTemplate,
-			stream: this.defaultStreamTemplate
+			toolbar: this.defaultToolbarTemplate!,
+			panel: this.defaultPanelTemplate!,
+			chatPanel: this.defaultChatPanelTemplate!,
+			participantsPanel: this.defaultParticipantsPanelTemplate!,
+			activitiesPanel: this.defaultActivitiesPanelTemplate!,
+			participantPanelItem: this.defaultParticipantPanelItemTemplate!,
+			layout: this.defaultLayoutTemplate!,
+			stream: this.defaultStreamTemplate!
 		};
 
 		// Use the template manager service to set up all templates

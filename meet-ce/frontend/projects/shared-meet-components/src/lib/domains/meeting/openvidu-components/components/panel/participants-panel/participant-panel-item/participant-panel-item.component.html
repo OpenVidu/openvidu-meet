@@ -1,11 +1,12 @@
 <mat-list>
 	<mat-list-item>
-		<!-- Main participant container with improved structure -->
-		<div class="participant-container" [attr.data-participant-id]="_participant?.sid" [attr.data-participant-name]="participantDisplayName">
+		@if (_participant) {
+			<!-- Main participant container with improved structure -->
+			<div class="participant-container" [attr.data-participant-id]="_participant.sid" [attr.data-participant-name]="participantDisplayName">
 			<!-- Avatar section with dynamic color -->
 			<div
 				class="participant-avatar"
-				[style.background-color]="_participant?.colorProfile"
+				[style.background-color]="_participant.colorProfile"
 				[attr.aria-label]="'Avatar for ' + participantDisplayName"
 			>
 				<mat-icon>{{ _participant.hasEncryptionError ? 'lock_person' : 'person' }}</mat-icon>
@@ -70,6 +71,7 @@
 					</div>
 				</div>
 			}
-		</div>
+			</div>
+		}
 	</mat-list-item>
 </mat-list>

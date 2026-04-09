@@ -1,18 +1,30 @@
 import {
-	AudioCaptureOptions,
-	DataPublishOptions,
-	LocalParticipant,
-	LocalTrack,
-	LocalTrackPublication,
-	RemoteParticipant,
-	Room,
-	ScreenShareCaptureOptions,
-	Track,
-	TrackPublication,
-	TrackPublishOptions,
-	VideoCaptureOptions
+    AudioCaptureOptions,
+    DataPublishOptions,
+    LocalParticipant,
+    LocalTrack,
+    LocalTrackPublication,
+    RemoteParticipant,
+    Room,
+    ScreenShareCaptureOptions,
+    Track,
+    TrackPublication,
+    TrackPublishOptions,
+    VideoCaptureOptions
 } from 'livekit-client';
 import { DeviceType } from './device.model';
+
+type ParticipantTrackPublicationExtras = {
+	participant: ParticipantModel;
+	isPinned: boolean;
+	isMinimized: boolean;
+	isCameraTrack: boolean;
+	isScreenTrack: boolean;
+	isAudioTrack: boolean;
+	isMutedForcibly?: boolean;
+};
+
+type ParticipantTrackPublicationWithExtras = TrackPublication & ParticipantTrackPublicationExtras;
 
 export interface ParticipantLeftEvent {
 	roomName: string;
@@ -219,14 +231,15 @@ export class ParticipantModel {
 	 */
 	get tracks(): ParticipantTrackPublication[] {
 		const defaultTracks = this.participant.getTrackPublications().map((track: TrackPublication) => {
-			track['participant'] = this;
-			track['isPinned'] = track['isPinned'];
-			track['isMinimized'] = track['isMinimized'];
-			track['isMutedForcibly'] = track['isMutedForcibly'] || false;
-			track['isCameraTrack'] = track.source === Track.Source.Camera;
-			track['isScreenTrack'] = track.source === Track.Source.ScreenShare;
-			track['isAudioTrack'] = track.kind === Track.Kind.Audio;
-			return track as ParticipantTrackPublication;
+			const participantTrack = track as ParticipantTrackPublicationWithExtras;
+			participantTrack.participant = this;
+			participantTrack.isPinned = participantTrack.isPinned;
+			participantTrack.isMinimized = participantTrack.isMinimized;
+			participantTrack.isMutedForcibly = participantTrack.isMutedForcibly || false;
+			participantTrack.isCameraTrack = track.source === Track.Source.Camera;
+			participantTrack.isScreenTrack = track.source === Track.Source.ScreenShare;
+			participantTrack.isAudioTrack = track.kind === Track.Kind.Audio;
+			return participantTrack as ParticipantTrackPublication;
 		});
 
 		const hasCameraTrack = defaultTracks.some((track) => track.source === Track.Source.Camera);

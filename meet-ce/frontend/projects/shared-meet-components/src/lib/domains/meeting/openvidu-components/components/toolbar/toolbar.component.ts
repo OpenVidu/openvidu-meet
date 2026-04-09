@@ -1,18 +1,18 @@
 import {
-	AfterViewInit,
-	ChangeDetectionStrategy,
-	ChangeDetectorRef,
-	Component,
-	computed,
-	ContentChild,
-	effect,
-	EventEmitter,
-	HostListener,
-	OnDestroy,
-	OnInit,
-	Output,
-	TemplateRef,
-	ViewChild
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    computed,
+    ContentChild,
+    effect,
+    EventEmitter,
+    HostListener,
+    OnDestroy,
+    OnInit,
+    Output,
+    TemplateRef,
+    ViewChild
 } from '@angular/core';
 import { fromEvent, skip, Subject, takeUntil } from 'rxjs';
 import { ChatService } from '../../services/chat/chat.service';
@@ -23,8 +23,8 @@ import { MatMenuTrigger } from '@angular/material/menu';
 import { Room, RoomEvent } from 'livekit-client';
 import { LeaveButtonDirective, ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import {
-	ToolbarAdditionalButtonsDirective,
-	ToolbarAdditionalPanelButtonsDirective
+    ToolbarAdditionalButtonsDirective,
+    ToolbarAdditionalPanelButtonsDirective
 } from '../../directives/template/openvidu-components-angular.directive';
 import { BroadcastingStatus, BroadcastingStatusInfo, BroadcastingStopRequestedEvent } from '../../models/broadcasting.model';
 import { ChatMessage } from '../../models/chat.model';
@@ -32,11 +32,11 @@ import { ILogger } from '../../models/logger.model';
 import { PanelStatusInfo, PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
-	RecordingInfo,
-	RecordingStartRequestedEvent,
-	RecordingStatus,
-	RecordingStatusInfo,
-	RecordingStopRequestedEvent
+    RecordingInfo,
+    RecordingStartRequestedEvent,
+    RecordingStatus,
+    RecordingStatusInfo,
+    RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
 import { ActionService } from '../../services/action/action.service';
@@ -427,7 +427,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private _externalLeaveButton?: LeaveButtonDirective;
 	private _externalAdditionalPanelButtons?: ToolbarAdditionalPanelButtonsDirective;
 
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 	private destroy$ = new Subject<void>();
 	private currentWindowHeight = window.innerHeight;
 
@@ -517,6 +522,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			this.currentWindowHeight = window.innerHeight;
 			return false;
 		}
+		return true;
 	}
 
 	async ngOnInit() {

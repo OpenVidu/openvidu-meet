@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
+import { ILogger } from '../../models/logger.model';
 import { RecordingInfo, RecordingStatus, RecordingStatusInfo } from '../../models/recording.model';
 import { ActionService } from '../action/action.service';
-import { LoggerService } from '../logger/logger.service';
-import { ILogger } from '../../models/logger.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { LoggerService } from '../logger/logger.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -14,7 +14,7 @@ export class RecordingService {
 	 * Recording status Observable which pushes the recording state in every update.
 	 */
 	recordingStatusObs: Observable<RecordingStatusInfo>;
-	private recordingTimeInterval: NodeJS.Timeout;
+	private recordingTimeInterval: ReturnType<typeof setInterval> | undefined = undefined;
 	private recordingStartTimestamp: number | null = null;
 
 	private recordingStatus = <BehaviorSubject<RecordingStatusInfo>>new BehaviorSubject({
@@ -22,7 +22,12 @@ export class RecordingService {
 		recordingList: [] as RecordingInfo[],
 		startedAt: new Date(0, 0, 0, 0, 0, 0)
 	});
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	/**
 	 * @internal

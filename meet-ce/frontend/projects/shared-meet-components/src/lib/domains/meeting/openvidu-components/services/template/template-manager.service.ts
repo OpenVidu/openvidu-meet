@@ -1,25 +1,25 @@
 import { Injectable, TemplateRef } from '@angular/core';
 import {
-	LayoutAdditionalElementsDirective,
-	LeaveButtonDirective,
-	ParticipantPanelAfterLocalParticipantDirective,
-	PreJoinDirective,
-	SettingsPanelGeneralAdditionalElementsDirective,
-	ToolbarMoreOptionsAdditionalMenuItemsDirective
+    LayoutAdditionalElementsDirective,
+    LeaveButtonDirective,
+    ParticipantPanelAfterLocalParticipantDirective,
+    PreJoinDirective,
+    SettingsPanelGeneralAdditionalElementsDirective,
+    ToolbarMoreOptionsAdditionalMenuItemsDirective
 } from '../../directives/template/internals.directive';
 import {
-	ActivitiesPanelDirective,
-	AdditionalPanelsDirective,
-	ChatPanelDirective,
-	LayoutDirective,
-	PanelDirective,
-	ParticipantPanelItemDirective,
-	ParticipantPanelItemElementsDirective,
-	ParticipantsPanelDirective,
-	StreamDirective,
-	ToolbarAdditionalButtonsDirective,
-	ToolbarAdditionalPanelButtonsDirective,
-	ToolbarDirective
+    ActivitiesPanelDirective,
+    AdditionalPanelsDirective,
+    ChatPanelDirective,
+    LayoutDirective,
+    PanelDirective,
+    ParticipantPanelItemDirective,
+    ParticipantPanelItemElementsDirective,
+    ParticipantsPanelDirective,
+    StreamDirective,
+    ToolbarAdditionalButtonsDirective,
+    ToolbarAdditionalPanelButtonsDirective,
+    ToolbarDirective
 } from '../../directives/template/openvidu-components-angular.directive';
 import { ILogger } from '../../models/logger.model';
 import { LoggerService } from '../logger/logger.service';
@@ -162,7 +162,12 @@ export interface DefaultTemplates {
 	providedIn: 'root'
 })
 export class TemplateManagerService {
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	constructor(private loggerSrv: LoggerService) {
 		this.log = this.loggerSrv.get('TemplateManagerService');

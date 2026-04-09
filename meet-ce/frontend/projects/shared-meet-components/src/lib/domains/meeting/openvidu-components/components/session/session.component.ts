@@ -1,16 +1,16 @@
 import {
-	ChangeDetectionStrategy,
-	ChangeDetectorRef,
-	Component,
-	ContentChild,
-	ElementRef,
-	EventEmitter,
-	HostListener,
-	OnDestroy,
-	OnInit,
-	Output,
-	TemplateRef,
-	ViewChild
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    ContentChild,
+    ElementRef,
+    EventEmitter,
+    HostListener,
+    OnDestroy,
+    OnInit,
+    Output,
+    TemplateRef,
+    ViewChild
 } from '@angular/core';
 
 import { animate, style, transition, trigger } from '@angular/animations';
@@ -25,16 +25,16 @@ import { ActionService } from '../../services/action/action.service';
 import { BroadcastingService } from '../../services/broadcasting/broadcasting.service';
 // import { CaptionService } from '../../services/caption/caption.service';
 import {
-	DataPacket_Kind,
-	DisconnectReason,
-	LocalParticipant,
-	Participant,
-	RemoteParticipant,
-	RemoteTrack,
-	RemoteTrackPublication,
-	Room,
-	RoomEvent,
-	Track
+    DataPacket_Kind,
+    DisconnectReason,
+    LocalParticipant,
+    Participant,
+    RemoteParticipant,
+    RemoteTrack,
+    RemoteTrackPublication,
+    Room,
+    RoomEvent,
+    Track
 } from 'livekit-client';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStatus } from '../../models/recording.model';
@@ -105,10 +105,10 @@ export class SessionComponent implements OnInit, OnDestroy {
 	@Output() onParticipantLeft: EventEmitter<ParticipantLeftEvent> = new EventEmitter<ParticipantLeftEvent>();
 
 	room!: Room;
-	sideMenu: MatSidenav;
+	sideMenu: MatSidenav | undefined = undefined;
 	sidenavMode: SidenavMode = SidenavMode.SIDE;
-	settingsPanelOpened: boolean;
-	drawer: MatDrawerContainer;
+	settingsPanelOpened: boolean = false;
+	drawer: MatDrawerContainer | undefined = undefined;
 	loading: boolean = true;
 
 	/**
@@ -120,8 +120,13 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private shouldDisconnectRoomWhenComponentIsDestroyed: boolean = true;
 	private readonly SIDENAV_WIDTH_LIMIT_MODE = 790;
 	private destroy$ = new Subject<void>();
-	private updateLayoutInterval: NodeJS.Timeout;
-	private log: ILogger;
+	private updateLayoutInterval: ReturnType<typeof setInterval> | undefined = undefined;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	constructor(
 		private layoutService: LayoutService,
@@ -185,7 +190,9 @@ export class SessionComponent implements OnInit, OnDestroy {
 					setTimeout(() => {
 						this.stopUpdateLayoutInterval();
 						this.layoutService.update();
-						this.drawer.autosize = false;
+						if (this.drawer) {
+							this.drawer.autosize = false;
+						}
 					}, 250);
 				});
 			}
@@ -221,7 +228,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		try {
 			this.room = this.openviduService.getRoom();
 			this.log.d('Room successfully obtained for SessionComponent');
-		} catch (error) {
+		} catch (error: any) {
 			this.log.e('Unexpected error getting room:', error);
 			this.actionService.openDialog(
 				this.translateService.translate('ERRORS.SESSION'),
@@ -258,8 +265,8 @@ export class SessionComponent implements OnInit, OnDestroy {
 			this.cd.markForCheck();
 			this.loading = false;
 			this.onParticipantConnected.emit(this.participantService.getLocalParticipant());
-		} catch (error) {
-			this.log.e('There was an error connecting to the room:', error.code, error.message);
+		} catch (error: any) {
+			this.log.e('There was an error connecting to the room:', error?.code, error?.message);
 			this.actionService.openDialog(this.translateService.translate('ERRORS.SESSION'), error?.error || error?.message || error);
 		}
 	}
@@ -318,16 +325,20 @@ export class SessionComponent implements OnInit, OnDestroy {
 	}
 
 	private subscribeToTogglingMenu() {
-		this.sideMenu.openedChange.subscribe(() => {
+		const sideMenu = this.sideMenu;
+		const drawer = this.drawer;
+		if (!sideMenu || !drawer) return;
+
+		sideMenu.openedChange.subscribe(() => {
 			this.stopUpdateLayoutInterval();
 			this.layoutService.update();
 		});
 
-		this.sideMenu.openedStart.subscribe(() => {
+		sideMenu.openedStart.subscribe(() => {
 			this.startUpdateLayoutInterval();
 		});
 
-		this.sideMenu.closedStart.subscribe(() => {
+		sideMenu.closedStart.subscribe(() => {
 			this.startUpdateLayoutInterval();
 		});
 
@@ -340,7 +351,9 @@ export class SessionComponent implements OnInit, OnDestroy {
 						// Switch from SETTINGS to another panel and vice versa.
 						// As the SETTINGS panel will be bigger than others, the sidenav container must be updated.
 						// Setting autosize to 'true' allows update it.
-						this.drawer.autosize = true;
+						if (this.drawer) {
+							this.drawer.autosize = true;
+						}
 						this.startUpdateLayoutInterval();
 					}
 				}
@@ -551,6 +564,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 				if (isBroadcastingStarted) {
 					this.broadcastingService.setBroadcastingStarted(broadcastingId);
 				}
+				break;
 
 			default:
 				break;

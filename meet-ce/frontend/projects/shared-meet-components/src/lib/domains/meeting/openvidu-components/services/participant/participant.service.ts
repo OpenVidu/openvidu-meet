@@ -1,16 +1,16 @@
 import { Injectable, Signal, WritableSignal, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
-	AudioCaptureOptions,
-	DataPublishOptions,
-	LocalParticipant,
-	LocalTrackPublication,
-	Participant,
-	RemoteParticipant,
-	ScreenShareCaptureOptions,
-	Track,
-	VideoCaptureOptions,
-	VideoPresets
+    AudioCaptureOptions,
+    DataPublishOptions,
+    LocalParticipant,
+    LocalTrackPublication,
+    Participant,
+    RemoteParticipant,
+    ScreenShareCaptureOptions,
+    Track,
+    VideoCaptureOptions,
+    VideoPresets
 } from 'livekit-client';
 import { Observable } from 'rxjs';
 import { ILogger } from '../../models/logger.model';
@@ -57,7 +57,12 @@ export class ParticipantService {
 	private localParticipant: ParticipantModel | undefined;
 	private lastLocalParticipantSnapshot: ParticipantModel | undefined;
 	private remoteParticipants: ParticipantModel[] = [];
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	/**
 	 * @internal

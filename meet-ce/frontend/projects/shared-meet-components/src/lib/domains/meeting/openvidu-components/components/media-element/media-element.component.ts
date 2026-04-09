@@ -28,9 +28,9 @@ import { Track } from 'livekit-client';
 	standalone: false
 })
 export class MediaElementComponent implements AfterViewInit, OnDestroy {
-	_track: Track;
-	_videoElement: ElementRef;
-	_audioElement: ElementRef;
+	_track: Track | undefined = undefined;
+	_videoElement: ElementRef | undefined = undefined;
+	_audioElement: ElementRef | undefined = undefined;
 	type: Track.Source = Track.Source.Camera;
 	private _muted: boolean = false;
 	private previousTrack: Track | null = null;
@@ -100,16 +100,20 @@ export class MediaElementComponent implements AfterViewInit, OnDestroy {
 	}
 
 	private updateVideoStyles() {
-		this.type = this._track.source;
+		const track = this._track;
+		const videoElement = this._videoElement;
+		if (!track || !videoElement) return;
+
+		this.type = track.source;
 		if (this.type === Track.Source.ScreenShare) {
-			this._videoElement.nativeElement.style.objectFit = 'contain';
-			this._videoElement.nativeElement.classList.add('screen-type');
+			videoElement.nativeElement.style.objectFit = 'contain';
+			videoElement.nativeElement.classList.add('screen-type');
 		} else if (this.type === Track.Source.Camera) {
 			if (this.isLocal) {
-				this._videoElement.nativeElement.style.transform = 'scaleX(-1)';
+				videoElement.nativeElement.style.transform = 'scaleX(-1)';
 			}
-			this._videoElement.nativeElement.style.objectFit = 'cover';
-			this._videoElement.nativeElement.classList.add('camera-type');
+			videoElement.nativeElement.style.objectFit = 'cover';
+			videoElement.nativeElement.classList.add('camera-type');
 		}
 	}
 
@@ -123,16 +127,28 @@ export class MediaElementComponent implements AfterViewInit, OnDestroy {
 	}
 
 	private attachVideoTrack() {
-		this._track.attach(this._videoElement.nativeElement);
+		const track = this._track;
+		const videoElement = this._videoElement;
+		if (!track || !videoElement) return;
+
+		track.attach(videoElement.nativeElement);
 	}
 
 	private attachAudioTrack() {
-		this._track.attach(this._audioElement.nativeElement);
+		const track = this._track;
+		const audioElement = this._audioElement;
+		if (!track || !audioElement) return;
+
+		track.attach(audioElement.nativeElement);
 		this.muteAudioTrack(this._muted);
 	}
 	private muteAudioTrack(mute: boolean) {
-		this._audioElement.nativeElement.muted = mute;
-		this._track.mediaStreamTrack.enabled = !mute;
+		const track = this._track;
+		const audioElement = this._audioElement;
+		if (!track || !audioElement) return;
+
+		audioElement.nativeElement.muted = mute;
+		track.mediaStreamTrack.enabled = !mute;
 	}
 
 	private isAudioTrack(): boolean {

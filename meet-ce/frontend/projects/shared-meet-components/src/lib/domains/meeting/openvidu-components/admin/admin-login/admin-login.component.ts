@@ -1,5 +1,5 @@
 import { Component, EventEmitter, OnInit, Output } from '@angular/core';
-import { Validators, FormGroup, FormBuilder } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
@@ -24,7 +24,7 @@ export class AdminLoginComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	title: string;
+	title: string = '';
 
 	/**
 	 * @internal
@@ -41,8 +41,8 @@ export class AdminLoginComponent implements OnInit {
 	 */
 	loginForm: FormGroup;
 
-	private errorSub: Subscription;
-	private titleSub: Subscription;
+	private errorSub: Subscription = new Subscription();
+	private titleSub: Subscription = new Subscription();
 
 	/**
 	 * @internal

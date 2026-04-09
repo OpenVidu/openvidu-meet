@@ -28,9 +28,9 @@
 						<div class="video-preview-container" [class.compact]="showBackgroundPanel">
 							<div class="video-frame">
 								<ov-media-element
-									[track]="videoTrack"
+									[track]="videoTrack!"
 									[showAvatar]="!isVideoEnabled"
-									[avatarName]="participantName"
+									[avatarName]="participantName ?? ''"
 									[avatarColor]="'hsl(48, 100%, 50%)'"
 									[isLocal]="true"
 									class="video-element"

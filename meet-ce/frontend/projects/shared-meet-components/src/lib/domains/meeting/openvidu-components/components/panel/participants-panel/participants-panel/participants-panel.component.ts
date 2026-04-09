@@ -1,22 +1,22 @@
 import {
-	AfterViewInit,
-	ChangeDetectionStrategy,
-	ChangeDetectorRef,
-	Component,
-	ContentChild,
-	OnDestroy,
-	OnInit,
-	TemplateRef,
-	ViewChild
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    ContentChild,
+    OnDestroy,
+    OnInit,
+    TemplateRef,
+    ViewChild
 } from '@angular/core';
 // import { ParticipantModel } from '../../../../models/participant.model';
-import { ParticipantService } from '../../../../services/participant/participant.service';
-import { PanelService } from '../../../../services/panel/panel.service';
-import { ParticipantPanelItemDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { Subject, takeUntil } from 'rxjs';
+import { ParticipantPanelItemDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
-import { TemplateManagerService, ParticipantsPanelTemplateConfiguration } from '../../../../services/template/template-manager.service';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
+import { PanelService } from '../../../../services/panel/panel.service';
+import { ParticipantService } from '../../../../services/participant/participant.service';
+import { ParticipantsPanelTemplateConfiguration, TemplateManagerService } from '../../../../services/template/template-manager.service';
 
 /**
  * The **ParticipantsPanelComponent** is hosted inside of the {@link PanelComponent}.
@@ -43,18 +43,19 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	/**
 	 * @ignore
 	 */
-	@ViewChild('defaultParticipantPanelItem', { static: false, read: TemplateRef }) defaultParticipantPanelItemTemplate: TemplateRef<any>;
+	@ViewChild('defaultParticipantPanelItem', { static: false, read: TemplateRef })
+	defaultParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('participantPanelItem', { read: TemplateRef }) participantPanelItemTemplate: TemplateRef<any>;
+	@ContentChild('participantPanelItem', { read: TemplateRef }) participantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
 	@ContentChild('participantPanelAfterLocalParticipant', { read: TemplateRef })
-	participantPanelAfterLocalParticipantTemplate: TemplateRef<any>;
+	participantPanelAfterLocalParticipantTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore

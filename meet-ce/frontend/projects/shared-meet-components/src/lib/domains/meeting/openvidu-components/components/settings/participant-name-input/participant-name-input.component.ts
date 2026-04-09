@@ -13,10 +13,10 @@ import { StorageService } from '../../../services/storage/storage.service';
 	standalone: false
 })
 export class ParticipantNameInputComponent implements OnInit {
-	name: string;
-	localParticipantSubscription: Subscription;
-	@Input() isPrejoinPage: boolean;
-	@Input() error: boolean;
+	name = '';
+	localParticipantSubscription = new Subscription();
+	@Input() isPrejoinPage = false;
+	@Input() error = false;
 	@Output() onNameUpdated = new EventEmitter<string>();
 	@Output() onEnterPressed = new EventEmitter<void>();
 
@@ -55,7 +55,7 @@ export class ParticipantNameInputComponent implements OnInit {
 	/**
 	 * @ignore
 	 */
-	eventKeyPress(event) {
+	eventKeyPress(event: KeyboardEvent) {
 		// Pressed 'Enter' key
 		if (event && event.keyCode === 13 && this.name) {
 			event.preventDefault();

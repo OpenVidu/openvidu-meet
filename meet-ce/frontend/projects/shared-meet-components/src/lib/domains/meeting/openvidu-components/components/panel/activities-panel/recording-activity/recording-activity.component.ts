@@ -1,22 +1,22 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, OnDestroy, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
+import { ILogger } from '../../../../models/logger.model';
 import {
-	RecordingDeleteRequestedEvent,
-	RecordingDownloadClickedEvent,
-	RecordingInfo,
-	RecordingPlayClickedEvent,
-	RecordingStartRequestedEvent,
-	RecordingStatus,
-	RecordingStatusInfo,
-	RecordingStopRequestedEvent
+    RecordingDeleteRequestedEvent,
+    RecordingDownloadClickedEvent,
+    RecordingInfo,
+    RecordingPlayClickedEvent,
+    RecordingStartRequestedEvent,
+    RecordingStatus,
+    RecordingStatusInfo,
+    RecordingStopRequestedEvent
 } from '../../../../models/recording.model';
 import { ActionService } from '../../../../services/action/action.service';
+import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
+import { LoggerService } from '../../../../services/logger/logger.service';
+import { OpenViduService } from '../../../../services/openvidu/openvidu.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { RecordingService } from '../../../../services/recording/recording.service';
-import { OpenViduService } from '../../../../services/openvidu/openvidu.service';
-import { ILogger } from '../../../../models/logger.model';
-import { LoggerService } from '../../../../services/logger/logger.service';
-import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 
 /**
  * The **RecordingActivityComponent** is the component that allows showing the recording activity.
@@ -36,7 +36,7 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 	/**
 	 * @internal
 	 */
-	@Input() expanded: boolean;
+	@Input() expanded: boolean = false;
 
 	/**
 	 * This event is fired when the user clicks on the start recording button.
@@ -89,7 +89,7 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 	/**
 	 * @internal
 	 */
-	oldRecordingStatus: RecordingStatus;
+	oldRecordingStatus: RecordingStatus = RecordingStatus.STOPPED;
 	/**
 	 * @internal
 	 */
@@ -159,7 +159,12 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 		externalView: false
 	};
 
-	private log: ILogger;
+	private log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 	private destroy$ = new Subject<void>();
 
 	/**

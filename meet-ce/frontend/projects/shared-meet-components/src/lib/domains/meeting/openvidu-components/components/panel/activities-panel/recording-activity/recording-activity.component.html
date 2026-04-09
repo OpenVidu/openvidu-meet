@@ -210,11 +210,11 @@
 										<div class="recording-metadata">
 											<span class="metadata-item">
 												<mat-icon class="metadata-icon">schedule</mat-icon>
-												{{ formatDuration(recording.duration) }}
+												{{ formatDuration(recording.duration ?? 0) }}
 											</span>
 											<span class="metadata-item">
 												<mat-icon class="metadata-icon">storage</mat-icon>
-												{{ formatFileSize(recording.size) }}
+												{{ formatFileSize(recording.size ?? 0) }}
 											</span>
 											<span class="metadata-item">
 												<mat-icon class="metadata-icon">today</mat-icon>

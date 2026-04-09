@@ -1,31 +1,30 @@
 import {
-	ChangeDetectionStrategy,
-	ChangeDetectorRef,
-	Component,
-	ContentChild,
-	EventEmitter,
-	OnInit,
-	Output,
-	TemplateRef
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    ContentChild,
+    EventEmitter,
+    OnInit,
+    Output,
+    TemplateRef
 } from '@angular/core';
 import { skip, Subject, takeUntil } from 'rxjs';
 import {
-	ActivitiesPanelDirective,
-	AdditionalPanelsDirective,
-	ChatPanelDirective,
-	ParticipantsPanelDirective
+    ActivitiesPanelDirective,
+    AdditionalPanelsDirective,
+    ChatPanelDirective,
+    ParticipantsPanelDirective
 } from '../../directives/template/openvidu-components-angular.directive';
 import {
-	ActivitiesPanelStatusEvent,
-	ChatPanelStatusEvent,
-	PanelStatusInfo,
-	PanelType,
-	ParticipantsPanelStatusEvent,
-	SettingsPanelStatusEvent
+    ActivitiesPanelStatusEvent,
+    ChatPanelStatusEvent,
+    PanelStatusInfo,
+    PanelType,
+    ParticipantsPanelStatusEvent,
+    SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { PanelService } from '../../services/panel/panel.service';
-import { BackgroundEffect } from '../../models/background-effect.model';
-import { TemplateManagerService, PanelTemplateConfiguration } from '../../services/template/template-manager.service';
+import { PanelTemplateConfiguration, TemplateManagerService } from '../../services/template/template-manager.service';
 
 /**
  *
@@ -45,31 +44,31 @@ export class PanelComponent implements OnInit {
 	/**
 	 * @ignore
 	 */
-	@ContentChild('participantsPanel', { read: TemplateRef }) participantsPanelTemplate: TemplateRef<any>;
+	@ContentChild('participantsPanel', { read: TemplateRef }) participantsPanelTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('backgroundEffectsPanel', { read: TemplateRef }) backgroundEffectsPanelTemplate: TemplateRef<any>;
+	@ContentChild('backgroundEffectsPanel', { read: TemplateRef }) backgroundEffectsPanelTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('settingsPanel', { read: TemplateRef }) settingsPanelTemplate: TemplateRef<any>;
+	@ContentChild('settingsPanel', { read: TemplateRef }) settingsPanelTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('activitiesPanel', { read: TemplateRef }) activitiesPanelTemplate: TemplateRef<any>;
+	@ContentChild('activitiesPanel', { read: TemplateRef }) activitiesPanelTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @ignore
 	 */
-	@ContentChild('chatPanel', { read: TemplateRef }) chatPanelTemplate: TemplateRef<any>;
+	@ContentChild('chatPanel', { read: TemplateRef }) chatPanelTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('additionalPanels', { read: TemplateRef }) additionalPanelsTemplate: TemplateRef<any>;
+	@ContentChild('additionalPanels', { read: TemplateRef }) additionalPanelsTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
@@ -150,28 +149,28 @@ export class PanelComponent implements OnInit {
 	/**
 	 * @ignore
 	 */
-	isParticipantsPanelOpened: boolean;
+	isParticipantsPanelOpened: boolean = false;
 	/**
 	 * @ignore
 	 */
-	isChatPanelOpened: boolean;
+	isChatPanelOpened: boolean = false;
 	/**
 	 * @ignore
 	 */
-	isBackgroundEffectsPanelOpened: boolean;
+	isBackgroundEffectsPanelOpened: boolean = false;
 	/**
 	 * @ignore
 	 */
-	isSettingsPanelOpened: boolean;
+	isSettingsPanelOpened: boolean = false;
 	/**
 	 * @ignore
 	 */
-	isActivitiesPanelOpened: boolean;
+	isActivitiesPanelOpened: boolean = false;
 
 	/**
 	 * @internal
 	 */
-	isExternalPanelOpened: boolean;
+	isExternalPanelOpened: boolean = false;
 
 	/**
 	 * @internal

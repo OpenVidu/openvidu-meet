@@ -19,7 +19,12 @@ export class LayoutService {
 	protected openviduLayout: OpenViduLayout | undefined;
 	protected openviduLayoutOptions!: OpenViduLayoutOptions;
 	protected captionsToggling: BehaviorSubject<boolean> = new BehaviorSubject(false);
-	protected log: ILogger;
+	protected log: ILogger = {
+		d: () => {},
+		v: () => {},
+		w: () => {},
+		e: () => {}
+	};
 
 	constructor(
 		protected loggerSrv: LoggerService,
