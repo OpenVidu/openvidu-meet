@@ -1,16 +1,9 @@
 import { NgClass } from '@angular/common';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
-import {
-	LoggerService,
-	OpenViduComponentsUiModule,
-	PanelService,
-	PanelType,
-	ParticipantModel
-} from 'openvidu-components-angular';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { HiddenParticipantsIndicatorComponent } from '../../components/hidden-participants-indicator/hidden-participants-indicator.component';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { CustomParticipantModel } from '../../models/custom-participant.model';
+import { OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from '../../openvidu-components';
 import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';

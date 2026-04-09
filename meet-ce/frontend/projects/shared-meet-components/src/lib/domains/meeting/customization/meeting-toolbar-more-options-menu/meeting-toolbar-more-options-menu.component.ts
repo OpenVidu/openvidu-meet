@@ -1,10 +1,9 @@
-import { Component, computed, inject } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { PanelService, PanelType, ViewportService } from 'openvidu-components-angular';
+import { PanelService, PanelType, ViewportService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 
 /**

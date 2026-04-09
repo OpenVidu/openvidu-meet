@@ -1,20 +1,20 @@
 import { inject, Injectable } from '@angular/core';
 import {
-	MeetRoom,
-	MeetRoomAccessConfig,
-	MeetRoomConfig,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomDeletionSuccessCode,
-	MeetRoomField,
-	MeetRoomFilters,
-	MeetRoomOptions,
-	MeetRoomRolesConfig,
-	MeetRoomStatus,
-	ProjectedMeetRoom
+    MeetRoom,
+    MeetRoomAccessConfig,
+    MeetRoomConfig,
+    MeetRoomDeletionPolicyWithMeeting,
+    MeetRoomDeletionPolicyWithRecordings,
+    MeetRoomDeletionSuccessCode,
+    MeetRoomField,
+    MeetRoomFilters,
+    MeetRoomOptions,
+    MeetRoomRolesConfig,
+    MeetRoomStatus,
+    ProjectedMeetRoom
 } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
+import { ILogger, LoggerService } from '../../meeting/openvidu-components';
 import type { MeetRoomClientResponseOptions } from '../models/room-request';
 import type { MeetRoomQueryOptionsWithFields } from '../types/room-projection.types';
 import { RoomFeatureService } from './room-feature.service';

@@ -16,8 +16,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingInfo, MeetRecordingSortField, MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
-import { ViewportService } from 'openvidu-components-angular';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
+import { ViewportService } from '../../../meeting/openvidu-components';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingUiUtils } from '../../utils/ui';
 

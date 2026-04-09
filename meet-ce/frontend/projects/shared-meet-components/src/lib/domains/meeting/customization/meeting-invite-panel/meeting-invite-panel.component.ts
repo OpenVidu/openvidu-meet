@@ -1,6 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
-import { LoggerService } from 'openvidu-components-angular';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingContextService } from '../../services/meeting-context.service';

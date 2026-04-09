@@ -1,11 +1,10 @@
-import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
-import { ViewportService } from 'openvidu-components-angular';
+import { ViewportService } from '../../../meeting/openvidu-components';
 import { RecordingUiUtils } from '../../utils/ui';
 
 @Component({

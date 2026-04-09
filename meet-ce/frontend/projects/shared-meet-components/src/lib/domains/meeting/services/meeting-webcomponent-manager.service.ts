@@ -1,13 +1,13 @@
 import { effect, inject, Injectable } from '@angular/core';
 import {
-	WebComponentCommand,
-	WebComponentEvent,
-	WebComponentInboundCommandMessage,
-	WebComponentOutboundEventMessage
+    WebComponentCommand,
+    WebComponentEvent,
+    WebComponentInboundCommandMessage,
+    WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
-import { LoggerService, OpenViduService } from 'openvidu-components-angular';
 import { AppContextService } from '../../../shared/services/app-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { LoggerService, OpenViduService } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingService } from './meeting.service';
 

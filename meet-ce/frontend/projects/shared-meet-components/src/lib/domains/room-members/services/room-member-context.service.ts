@@ -1,15 +1,15 @@
 import { computed, Injectable, signal } from '@angular/core';
 import {
-	MeetRoomMember,
-	MeetRoomMemberPermissions,
-	MeetRoomMemberTokenOptions,
-	MeetRoomMemberUIBadge
+    MeetRoomMember,
+    MeetRoomMemberPermissions,
+    MeetRoomMemberTokenOptions,
+    MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
-import { E2eeService, LoggerService } from 'openvidu-components-angular';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { decodeToken } from '../../../shared/utils/token.utils';
 import { AuthService } from '../../auth/services/auth.service';
+import { E2eeService, LoggerService } from '../../meeting/openvidu-components';
 import { RoomMemberService } from './room-member.service';
 
 @Injectable({

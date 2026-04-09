@@ -1,7 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
-import { LoggerService } from 'openvidu-components-angular';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { AppContextService } from '../../../shared/services/app-context.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -9,6 +8,7 @@ import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
+import { LoggerService } from '../openvidu-components';
 import { MeetingAccessLinkService } from './meeting-access-link.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';

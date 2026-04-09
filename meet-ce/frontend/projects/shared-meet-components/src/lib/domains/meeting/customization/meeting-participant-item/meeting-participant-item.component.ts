@@ -1,12 +1,11 @@
-import { Component, TemplateRef, ViewChild, inject } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetParticipantModerationAction, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
-import { LoggerService, OpenViduComponentsUiModule } from 'openvidu-components-angular';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { CustomParticipantModel, ParticipantDisplayProperties } from '../../models/custom-participant.model';
+import { LoggerService, OpenViduComponentsUiModule } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
 

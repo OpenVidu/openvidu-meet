@@ -1,5 +1,5 @@
 import { MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
-import { ParticipantModel, ParticipantProperties } from 'openvidu-components-angular';
+import { ParticipantModel, ParticipantProperties } from '../openvidu-components/models/participant.model';
 
 /**
  * Interface for computed participant display properties
