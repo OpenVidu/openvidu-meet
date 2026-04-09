@@ -3,8 +3,6 @@
  */
 
 // Components
-export * from './admin/admin-dashboard/admin-dashboard.component';
-export * from './admin/admin-login/admin-login.component';
 export * from './components/landscape-warning/landscape-warning.component';
 export * from './components/layout/layout.component';
 export * from './components/panel/activities-panel/activities-panel.component';

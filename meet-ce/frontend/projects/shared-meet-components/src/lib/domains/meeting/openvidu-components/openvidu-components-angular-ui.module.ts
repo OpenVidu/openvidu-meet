@@ -28,8 +28,6 @@ import { ParticipantsPanelComponent } from './components/panel/participants-pane
 import { PreJoinComponent } from './components/pre-join/pre-join.component';
 import { VideoconferenceComponent } from './components/videoconference/videoconference.component';
 
-import { AdminDashboardComponent } from './admin/admin-dashboard/admin-dashboard.component';
-import { AdminLoginComponent } from './admin/admin-login/admin-login.component';
 // import { CaptionsComponent } from './components/captions/captions.component';
 import { ProFeatureDialogTemplateComponent } from './components/dialogs/pro-feature-dialog.component';
 import { ActivitiesPanelComponent } from './components/panel/activities-panel/activities-panel.component';
@@ -50,8 +48,6 @@ import { OpenViduComponentsDirectiveModule } from './directives/template/openvid
 import { AppMaterialModule } from './openvidu-components-angular.material.module';
 
 const publicComponents = [
-	AdminDashboardComponent,
-	AdminLoginComponent,
 	VideoconferenceComponent,
 	ToolbarComponent,
 	PanelComponent,
