@@ -50,7 +50,7 @@ export class MeetingComponent implements OnInit {
 
 	/** Controls whether to show lobby (true) or meeting view (false) */
 	showLobby = signal(true);
-	isLobbyReady = signal(false);
+	lobbyState = signal<'loading' | 'ready' | 'error'>('loading');
 
 	/** Controls whether to show the videoconference component */
 	isMeetingLeft = signal(false);
@@ -94,11 +94,12 @@ export class MeetingComponent implements OnInit {
 
 	async ngOnInit() {
 		try {
+			this.lobbyState.set('loading');
 			await this.lobbyService.initialize();
-			this.isLobbyReady.set(true);
+			this.lobbyState.set('ready');
 		} catch (error) {
 			console.error('Error initializing lobby state:', error);
-			this.isLobbyReady.set(false);
+			this.lobbyState.set('error');
 			this.notificationService.showDialog({
 				title: 'Error',
 				message: 'An error occurred while initializing the meeting lobby. Please try again later.',

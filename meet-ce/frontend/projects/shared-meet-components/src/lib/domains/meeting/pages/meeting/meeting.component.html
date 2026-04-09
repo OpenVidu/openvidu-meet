@@ -1,7 +1,12 @@
 @if (showLobby()) {
 	<!-- Lobby phase (before joining meeting) -->
-	@if (isLobbyReady()) {
+	@if (lobbyState() === 'ready') {
 		<ov-meeting-lobby></ov-meeting-lobby>
+	} @else if (lobbyState() === 'error') {
+		<div class="prejoin-loading-container">
+			<mat-icon>error</mat-icon>
+			<p class="prejoin-loading-text">Unable to prepare your meeting.</p>
+		</div>
 	} @else {
 		<div class="prejoin-loading-container">
 			<mat-spinner diameter="30"></mat-spinner>

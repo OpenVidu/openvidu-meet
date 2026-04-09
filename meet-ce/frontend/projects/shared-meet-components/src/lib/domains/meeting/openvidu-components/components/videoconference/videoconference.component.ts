@@ -1,6 +1,7 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import {
     AfterViewInit,
+    ChangeDetectorRef,
     Component,
     ContentChild,
     EventEmitter,
@@ -754,7 +755,8 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		private libService: OpenViduComponentsConfigService,
 		private templateManagerService: TemplateManagerService,
 		private themeService: OpenViduThemeService,
-		private e2eeService: E2eeService
+		private e2eeService: E2eeService,
+		private cd: ChangeDetectorRef
 	) {
 		this.log = this.loggerSrv.get('VideoconferenceComponent');
 
@@ -785,11 +787,24 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 */
 	ngAfterViewInit() {
 		this.setupTemplates();
-		this.deviceSrv.initializeDevices().then(() => {
-			this.updateComponentState({
-				isLoading: false
+		this.deviceSrv
+			.initializeDevices()
+			.catch((error) => {
+				this.log.w('Device initialization failed. Continuing without blocking UI.', error);
+				this.updateComponentState({
+					state: VideoconferenceState.PREJOIN_SHOWN,
+					error: {
+						hasError: false,
+						message: ''
+					}
+				});
+			})
+			.finally(() => {
+				this.updateComponentState({
+					isLoading: false
+				});
+				this.cd.markForCheck();
 			});
-		});
 	}
 
 	/**

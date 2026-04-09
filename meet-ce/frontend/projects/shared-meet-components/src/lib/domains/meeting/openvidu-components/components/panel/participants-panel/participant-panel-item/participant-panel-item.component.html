@@ -46,23 +46,23 @@
 						mat-icon-button
 						id="mute-btn"
 						*ngIf="!isLocalParticipant && showMuteButton"
-						[class.warn-btn]="_participant?.isMutedForcibly"
+						[class.warn-btn]="_participant.isMutedForcibly"
 						(click)="toggleMuteForcibly()"
 						[disabled]="!_participant"
 						[disableRipple]="true"
 						[attr.aria-label]="
-							_participant?.isMutedForcibly
+							_participant.isMutedForcibly
 								? ('PANEL.PARTICIPANTS.UNMUTE' | translate) + ' ' + participantDisplayName
 								: ('PANEL.PARTICIPANTS.MUTE' | translate) + ' ' + participantDisplayName
 						"
 						[matTooltip]="
-							_participant?.isMutedForcibly
+							_participant.isMutedForcibly
 								? ('PANEL.PARTICIPANTS.UNMUTE' | translate)
 								: ('PANEL.PARTICIPANTS.MUTE' | translate)
 						"
 					>
-						<mat-icon *ngIf="!_participant?.isMutedForcibly">volume_up</mat-icon>
-						<mat-icon *ngIf="_participant?.isMutedForcibly">volume_off</mat-icon>
+						<mat-icon *ngIf="!_participant.isMutedForcibly">volume_up</mat-icon>
+						<mat-icon *ngIf="_participant.isMutedForcibly">volume_off</mat-icon>
 					</button>
 
 					<!-- External item elements with improved structure -->

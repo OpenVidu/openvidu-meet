@@ -1,16 +1,16 @@
 import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    ContentChild,
-    ElementRef,
-    EventEmitter,
-    HostListener,
-    OnDestroy,
-    OnInit,
-    Output,
-    TemplateRef,
-    ViewChild
+	ChangeDetectionStrategy,
+	ChangeDetectorRef,
+	Component,
+	ContentChild,
+	ElementRef,
+	EventEmitter,
+	HostListener,
+	OnDestroy,
+	OnInit,
+	Output,
+	TemplateRef,
+	ViewChild
 } from '@angular/core';
 
 import { animate, style, transition, trigger } from '@angular/animations';
@@ -25,16 +25,16 @@ import { ActionService } from '../../services/action/action.service';
 import { BroadcastingService } from '../../services/broadcasting/broadcasting.service';
 // import { CaptionService } from '../../services/caption/caption.service';
 import {
-    DataPacket_Kind,
-    DisconnectReason,
-    LocalParticipant,
-    Participant,
-    RemoteParticipant,
-    RemoteTrack,
-    RemoteTrackPublication,
-    Room,
-    RoomEvent,
-    Track
+	DataPacket_Kind,
+	DisconnectReason,
+	LocalParticipant,
+	Participant,
+	RemoteParticipant,
+	RemoteTrack,
+	RemoteTrackPublication,
+	Room,
+	RoomEvent,
+	Track
 } from 'livekit-client';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStatus } from '../../models/recording.model';
@@ -110,6 +110,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	settingsPanelOpened: boolean = false;
 	drawer: MatDrawerContainer | undefined = undefined;
 	loading: boolean = true;
+	private sidenavSubscriptionsInitialized: boolean = false;
 
 	/**
 	 * @internal
@@ -165,7 +166,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		setTimeout(() => {
 			if (menu) {
 				this.sideMenu = menu;
-				this.subscribeToTogglingMenu();
+				this.initializeSidenavBindings();
 			}
 		}, 0);
 	}
@@ -186,7 +187,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		setTimeout(() => {
 			if (container) {
 				this.drawer = container;
-				this.drawer._contentMarginChanges.subscribe(() => {
+				this.drawer._contentMarginChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
 					setTimeout(() => {
 						this.stopUpdateLayoutInterval();
 						this.layoutService.update();
@@ -195,6 +196,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 						}
 					}, 250);
 				});
+				this.initializeSidenavBindings();
 			}
 		}, 0);
 	}
@@ -245,6 +247,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		this.subscribeToTrackUnsubscribed();
 		this.subscribeToParticipantDisconnected();
 		this.subscribeToParticipantMetadataChanged();
+		this.subscribeToLayoutWidth();
 
 		// this.subscribeToParticipantNameChanged();
 		this.subscribeToDataMessage();
@@ -361,6 +364,13 @@ export class SessionComponent implements OnInit, OnDestroy {
 			}
 		});
 	}
+
+		private initializeSidenavBindings(): void {
+			if (this.sidenavSubscriptionsInitialized || !this.sideMenu || !this.drawer) return;
+
+			this.sidenavSubscriptionsInitialized = true;
+			this.subscribeToTogglingMenu();
+		}
 
 	private subscribeToLayoutWidth() {
 		this.layoutService.layoutWidthObs.pipe(takeUntil(this.destroy$)).subscribe((width) => {
