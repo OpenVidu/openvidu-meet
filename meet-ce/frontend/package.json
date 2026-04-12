@@ -57,6 +57,7 @@
     "@types/node": "22.18.13",
     "@types/pixelmatch": "5.2.6",
     "@types/pngjs": "6.0.5",
+    "@playwright/test": "1.59.1",
     "@typescript-eslint/eslint-plugin": "8.46.4",
     "@typescript-eslint/parser": "8.46.4",
     "chai": "4.5.0",
