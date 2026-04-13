@@ -92,7 +92,9 @@ export class SessionStorageService {
 	 * Clears all data stored in sessionStorage.
 	 */
 	public clear(): void {
-		sessionStorage.clear();
+		this.removeRoomSecret();
+		this.removeRedirectUrl();
+		this.removeE2EEData();
 	}
 
 	/**

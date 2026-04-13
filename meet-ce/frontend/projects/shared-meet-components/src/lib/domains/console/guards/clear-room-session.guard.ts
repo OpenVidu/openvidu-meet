@@ -18,10 +18,8 @@ export const clearRoomSessionGuard: CanActivateFn = () => {
 	roomMemberContextService.clearContext();
 	meetingContextService.clearContext();
 
-	// Clear room-related data from session storage
-	sessionStorageService.removeRoomSecret();
-	sessionStorageService.removeE2EEData();
-	sessionStorageService.removeRedirectUrl();
+	// Clear data from session storage
+	sessionStorageService.clear();
 
 	return true;
 };
