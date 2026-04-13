@@ -430,13 +430,19 @@ describe('Room API Tests', () => {
 			expectRoomsToContainOnly(response, [testRooms.membersRoom, testRooms.openRoom]);
 		});
 
-		it("should not include access.anonymous when user doesn't have canShareAccessLinks permission", async () => {
+		it("should not include access.anonymous URLs when user doesn't have canShareAccessLinks permission", async () => {
 			const response = await getRooms(undefined, undefined, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(200);
 
 			for (const room of response.body.rooms as MeetRoom[]) {
 				expect(room.access).toBeDefined();
-				expect(room.access.anonymous).toBeUndefined();
+				expect(room.access.anonymous).toBeDefined();
+				expect(room.access.anonymous.moderator).toBeDefined();
+				expect(room.access.anonymous.moderator.url).toBeUndefined();
+				expect(room.access.anonymous.speaker).toBeDefined();
+				expect(room.access.anonymous.speaker.url).toBeUndefined();
+				expect(room.access.anonymous.recording).toBeDefined();
+				expect(room.access.anonymous.recording.url).toBeUndefined();
 			}
 		});
 
@@ -448,7 +454,9 @@ describe('Room API Tests', () => {
 				expect(room.roomName).toBeDefined();
 				expect(room.roomId).toBeUndefined();
 				expect(room.access).toBeDefined();
-				expect(room.access.anonymous).toBeUndefined();
+				expect(room.access.anonymous).toBeDefined();
+				expect(room.access.anonymous.moderator).toBeDefined();
+				expect(room.access.anonymous.moderator.url).toBeUndefined();
 			}
 		});
 
