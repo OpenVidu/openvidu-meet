@@ -85,12 +85,17 @@
 
 		.action-button {
 			&.download-button,
-			&.share-button {
+			&.share-button,
+			&.delete-button {
 				color: var(--ov-meet-text-primary);
 			}
 
 			&.download-button {
 				color: var(--ov-meet-color-info);
+			}
+
+			&.delete-button {
+				color: var(--ov-meet-color-error);
 			}
 
 			mat-icon {
@@ -118,7 +123,6 @@
 		font-weight: var(--ov-meet-font-weight-medium);
 	}
 }
-
 
 // === MAIN PAGE LAYOUT ===
 
@@ -215,6 +219,19 @@
 
 		.recording-info {
 			width: 50%;
+
+			.desktop-back-button {
+				display: inline-flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-xs);
+				padding-left: 0;
+				margin-bottom: var(--ov-meet-spacing-sm);
+				color: var(--ov-meet-text-secondary);
+
+				mat-icon {
+					@include design-tokens.ov-icon(sm);
+				}
+			}
 		}
 
 		.recording-title {
@@ -311,6 +328,11 @@
 			mat-icon {
 				@include design-tokens.ov-icon(sm);
 			}
+
+			&.delete-btn {
+				background-color: var(--ov-meet-color-error);
+				color: var(--ov-meet-text-on-primary);
+			}
 		}
 	}
 }
@@ -330,6 +352,18 @@
 		.action-btn {
 			width: 100%;
 			justify-content: center;
+		}
+		.desktop-back-button {
+			display: inline-flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+			padding-left: 0;
+			margin-bottom: var(--ov-meet-spacing-sm);
+			color: var(--ov-meet-text-secondary);
+
+			mat-icon {
+				@include design-tokens.ov-icon(sm);
+			}
 		}
 	}
 }

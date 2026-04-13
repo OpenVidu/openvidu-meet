@@ -10,7 +10,10 @@ import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { ViewportService } from 'openvidu-components-angular';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
+import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { MeetingWebComponentManagerService } from '../../../meeting/services/meeting-webcomponent-manager.service';
+import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
 import { RecordingService } from '../../services/recording.service';
 import { RecordingUiUtils } from '../../utils/ui';
@@ -34,6 +37,8 @@ export class ViewRecordingComponent implements OnInit {
 	recording?: MeetRecordingInfo;
 	recordingUrl?: string;
 	recordingSecret?: string;
+	canRetrieveRecordings = false;
+	canDeleteRecordings = false;
 
 	isLoading = true;
 	hasError = false;
@@ -42,11 +47,16 @@ export class ViewRecordingComponent implements OnInit {
 		protected recordingService: RecordingService,
 		protected notificationService: NotificationService,
 		protected navigationService: NavigationService,
+		protected appCtxService: AppContextService,
+		protected wcManagerService: MeetingWebComponentManagerService,
+		protected roomMemberContextService: RoomMemberContextService,
 		protected route: ActivatedRoute,
 		public viewportService: ViewportService
 	) {}
 
 	async ngOnInit() {
+		this.canRetrieveRecordings = this.roomMemberContextService.hasPermission('canRetrieveRecordings');
+		this.canDeleteRecordings = this.roomMemberContextService.hasPermission('canDeleteRecordings');
 		await this.loadRecording();
 	}
 
@@ -86,8 +96,47 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	openShareDialog() {
-		const url = window.location.href;
-		this.recordingService.openShareRecordingDialog(this.recording!.recordingId, url);
+		this.recordingService.openShareRecordingDialog(this.recording!.recordingId);
+	}
+
+	canDeleteRecording(): boolean {
+		if (!this.recording) return false;
+
+		const deletableStatuses = [
+			MeetRecordingStatus.COMPLETE,
+			MeetRecordingStatus.FAILED,
+			MeetRecordingStatus.ABORTED,
+			MeetRecordingStatus.LIMIT_REACHED
+		];
+
+		return this.canDeleteRecordings && deletableStatuses.includes(this.recording.status);
+	}
+
+	deleteRecording() {
+		if (!this.recording || !this.canDeleteRecording()) return;
+
+		const recording = this.recording;
+		const deleteCallback = async () => {
+			try {
+				await this.recordingService.deleteRecording(recording.recordingId);
+				this.notificationService.showSnackbar('Recording deleted successfully');
+
+				// After deletion, navigate back to the room recordings page
+				this.navigationService.navigateTo(`/room/${recording.roomId}/recordings`);
+			} catch (error) {
+				console.error('Error deleting recording:', error);
+				this.notificationService.showSnackbar('Failed to delete recording');
+			}
+		};
+
+		this.notificationService.showDialog({
+			title: 'Delete Recording',
+			icon: 'delete_outline',
+			message: `Are you sure you want to delete the recording <b>${recording.recordingId}</b>?`,
+			confirmText: 'Delete',
+			cancelText: 'Cancel',
+			confirmCallback: deleteCallback
+		});
 	}
 
 	async retryLoad() {
@@ -109,12 +158,41 @@ export class ViewRecordingComponent implements OnInit {
 		return RecordingUiUtils.formatDuration(duration);
 	}
 
-	goBack(): void {
-		// Try to go back in browser history, otherwise navigate to room recordings
-		if (window.history.length > 1) {
-			window.history.back();
-		} else {
-			this.navigationService.navigateTo(`/room/${this.recording?.roomId}/recordings`);
+	/**
+	 * Determines whether to show the back button based on the following conditions:
+	 * - The user has permission to retrieve recordings and the recording info is available (to navigate back to the room recordings page)
+	 * - The app is in embedded mode (to close the WebComponentManagerService)
+	 * - A leave redirect URL is configured (to navigate to that URL)
+	 */
+	shouldShowBackButton(): boolean {
+		return (
+			(this.canRetrieveRecordings && !!this.recording?.roomId) ||
+			this.appCtxService.isEmbeddedMode() ||
+			!!this.navigationService.getLeaveRedirectURL()
+		);
+	}
+
+	/**
+	 * Handles the back button click event and navigates accordingly
+	 * If the user has permission to retrieve recordings and the recording info is available, it navigates back to the room recordings page.
+	 * If in embedded mode, it closes the WebComponentManagerService
+	 * If the redirect URL is set, it navigates to that URL
+	 * Otherwise, it does nothing (the back button should not be shown in this case)
+	 */
+	async goBack(): Promise<void> {
+		if (this.canRetrieveRecordings && this.recording?.roomId) {
+			// Navigate back to the room recordings page
+			await this.navigationService.navigateTo(`/room/${this.recording.roomId}/recordings`);
+			return;
+		}
+
+		if (this.appCtxService.isEmbeddedMode()) {
+			this.wcManagerService.close();
+		}
+
+		if (this.navigationService.getLeaveRedirectURL()) {
+			// Redirect to the configured leave URL if it exists
+			await this.navigationService.redirectToLeaveUrl();
 		}
 	}
 }

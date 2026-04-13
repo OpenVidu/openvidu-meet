@@ -35,10 +35,12 @@
 			<!-- Fixed Header Toolbar -->
 			<div class="mobile-header-toolbar">
 				<div class="toolbar-content">
-					<!-- Left: Back button -->
-					<button mat-icon-button class="back-button" (click)="goBack()">
-						<mat-icon>arrow_back</mat-icon>
-					</button>
+					@if (shouldShowBackButton()) {
+						<!-- Left: Back button -->
+						<button mat-icon-button class="back-button" (click)="goBack()">
+							<mat-icon>arrow_back</mat-icon>
+						</button>
+					}
 
 					<!-- Center: Recording info -->
 					<div class="recording-info">
@@ -58,26 +60,39 @@
 					</div>
 
 					<!-- Right: Actions -->
-					@if (recordingUrl) {
+					@if (recordingUrl || canDeleteRecording()) {
 						<div class="header-actions">
-							<button
-								mat-icon-button
-								(click)="downloadRecording()"
-								matTooltip="Download"
-								class="action-button download-button"
-							>
-								<mat-icon>download</mat-icon>
-							</button>
+							@if (recordingUrl) {
+								<button
+									mat-icon-button
+									(click)="downloadRecording()"
+									matTooltip="Download"
+									class="action-button download-button"
+								>
+									<mat-icon>download</mat-icon>
+								</button>
 
-							<button
-								mat-icon-button
-								color="accent"
-								(click)="openShareDialog()"
-								matTooltip="Share"
-								class="action-button share-button"
-							>
-								<mat-icon>share</mat-icon>
-							</button>
+								<button
+									mat-icon-button
+									color="accent"
+									(click)="openShareDialog()"
+									matTooltip="Share"
+									class="action-button share-button"
+								>
+									<mat-icon>share</mat-icon>
+								</button>
+							}
+
+							@if (canDeleteRecording()) {
+								<button
+									mat-icon-button
+									(click)="deleteRecording()"
+									matTooltip="Delete"
+									class="action-button delete-button"
+								>
+									<mat-icon>delete</mat-icon>
+								</button>
+							}
 						</div>
 					}
 				</div>
@@ -110,6 +125,12 @@
 					<div class="header-content">
 						<div class="header-info">
 							<div class="recording-info">
+								@if (shouldShowBackButton()) {
+									<button mat-button class="desktop-back-button" (click)="goBack()">
+										<mat-icon>arrow_back</mat-icon>
+										<span>Back</span>
+									</button>
+								}
 								<h1 class="recording-title">{{ recording.roomName }}</h1>
 								<div class="recording-metadata">
 									<span class="recording-date">
@@ -131,29 +152,43 @@
 								</div>
 							</div>
 							<!-- Actions Section -->
-							@if (recordingUrl) {
+							@if (recordingUrl || canDeleteRecording()) {
 								<div class="actions-section">
 									<div class="primary-actions">
-										<button
-											mat-button
-											(click)="downloadRecording()"
-											matTooltip="Download recording"
-											class="action-btn primary-button"
-										>
-											<mat-icon>download</mat-icon>
-											<span>Download</span>
-										</button>
+										@if (recordingUrl) {
+											<button
+												mat-button
+												(click)="downloadRecording()"
+												matTooltip="Download recording"
+												class="action-btn primary-button"
+											>
+												<mat-icon>download</mat-icon>
+												<span>Download</span>
+											</button>
 
-										<button
-											mat-raised-button
-											color="accent"
-											(click)="openShareDialog()"
-											matTooltip="Share recording"
-											class="action-btn"
-										>
-											<mat-icon>share</mat-icon>
-											<span>Share</span>
-										</button>
+											<button
+												mat-raised-button
+												color="accent"
+												(click)="openShareDialog()"
+												matTooltip="Share recording"
+												class="action-btn"
+											>
+												<mat-icon>share</mat-icon>
+												<span>Share</span>
+											</button>
+										}
+
+										@if (canDeleteRecording()) {
+											<button
+												mat-raised-button
+												(click)="deleteRecording()"
+												matTooltip="Delete recording"
+												class="action-btn delete-btn"
+											>
+												<mat-icon>delete</mat-icon>
+												<span>Delete</span>
+											</button>
+										}
 									</div>
 								</div>
 							}
