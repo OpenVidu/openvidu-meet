@@ -4,13 +4,14 @@ import {
     ChangeDetectorRef,
     Component,
     ContentChild,
+    DestroyRef,
+    inject,
     OnDestroy,
     OnInit,
     TemplateRef,
     ViewChild
 } from '@angular/core';
-// import { ParticipantModel } from '../../../../models/participant.model';
-import { Subject, takeUntil } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ParticipantPanelItemDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
@@ -77,18 +78,16 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	// Store directive references for template setup
 	private _externalParticipantPanelItem?: ParticipantPanelItemDirective;
 
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 
 	/**
 	 * @ignore
 	 */
-	constructor(
-		private participantService: ParticipantService,
-		private panelService: PanelService,
-		private cd: ChangeDetectorRef,
-		private templateManagerService: TemplateManagerService,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	private readonly participantService = inject(ParticipantService);
+	private readonly panelService = inject(PanelService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore
@@ -103,8 +102,6 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	 * @ignore
 	 */
 	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 
 	/**
@@ -120,14 +117,14 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	}
 
 	private subscribeToParticipantsChanges() {
-		this.participantService.localParticipant$.pipe(takeUntil(this.destroy$)).subscribe((p: ParticipantModel | undefined) => {
+		this.participantService.localParticipant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p: ParticipantModel | undefined) => {
 			if (p) {
 				this.localParticipant = p;
 				this.cd.markForCheck();
 			}
 		});
 
-		this.participantService.remoteParticipants$.pipe(takeUntil(this.destroy$)).subscribe((p: ParticipantModel[]) => {
+		this.participantService.remoteParticipants$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p: ParticipantModel[]) => {
 			this.remoteParticipants = p;
 			this.cd.markForCheck();
 		});

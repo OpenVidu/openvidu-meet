@@ -1,7 +1,7 @@
-import { Component, ElementRef, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
 import { Track } from 'livekit-client';
-import { Subject, takeUntil } from 'rxjs';
 import { ParticipantTrackPublication } from '../../models/participant.model';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
@@ -96,18 +96,13 @@ export class StreamComponent implements OnInit, OnDestroy {
 	}
 
 	private _streamContainer: ElementRef | undefined;
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 	private readonly HOVER_TIMEOUT = 2000;
 
-	/**
-	 * @ignore
-	 */
-	constructor(
-		private layoutService: LayoutService,
-		private participantService: ParticipantService,
-		private cdkSrv: CdkOverlayService,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	private readonly layoutService = inject(LayoutService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly cdkSrv = inject(CdkOverlayService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngOnInit() {
 		this.subscribeToStreamDirectives();
@@ -189,30 +184,27 @@ export class StreamComponent implements OnInit, OnDestroy {
 
 	private subscribeToStreamDirectives() {
 		this.libService.minimal$
-			.pipe(takeUntil(this.destroy$))
+			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((value: boolean) => {
 				this.isMinimal = value;
 			});
 
 		this.libService.displayParticipantName$
-			.pipe(takeUntil(this.destroy$))
+			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((value: boolean) => {
 				this.showParticipantName = value;
-				// this.cd.markForCheck();
 			});
 
 		this.libService.displayAudioDetection$
-			.pipe(takeUntil(this.destroy$))
+			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((value: boolean) => {
 				this.showAudioDetection = value;
-				// this.cd.markForCheck();
 			});
 
 		this.libService.streamVideoControls$
-			.pipe(takeUntil(this.destroy$))
+			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((value: boolean) => {
 				this.showVideoControls = value;
-				// this.cd.markForCheck();
 			});
 	}
 }

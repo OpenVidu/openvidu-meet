@@ -3,18 +3,21 @@ import {
     ChangeDetectorRef,
     Component,
     ContentChild,
+    DestroyRef,
     ElementRef,
     HostListener,
+    inject,
     OnDestroy,
     OnInit,
     output,
     TemplateRef,
     ViewChild
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { animate, style, transition, trigger } from '@angular/animations';
 import { MatDrawerContainer, MatSidenav } from '@angular/material/sidenav';
-import { skip, Subject, takeUntil } from 'rxjs';
+import { skip } from 'rxjs';
 import { DataTopic } from '../../models/data-topic.model';
 import { SidenavMode } from '../../models/layout/layout.model';
 import { ILogger } from '../../models/logger.model';
@@ -119,7 +122,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 
 	private shouldDisconnectRoomWhenComponentIsDestroyed: boolean = true;
 	private readonly SIDENAV_WIDTH_LIMIT_MODE = 790;
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 	private updateLayoutInterval: ReturnType<typeof setInterval> | undefined = undefined;
 	private log: ILogger = {
 		d: () => {},
@@ -128,24 +131,23 @@ export class SessionComponent implements OnInit, OnDestroy {
 		e: () => {}
 	};
 
-	constructor(
-		private layoutService: LayoutService,
-		private actionService: ActionService,
-		private openviduService: OpenViduService,
-		private participantService: ParticipantService,
-		private loggerSrv: LoggerService,
-		private chatService: ChatService,
-		private libService: OpenViduComponentsConfigService,
-		private panelService: PanelService,
-		private recordingService: RecordingService,
-		private broadcastingService: BroadcastingService,
-		private translateService: TranslateService,
-		// private captionService: CaptionService,
-		private backgroundService: VirtualBackgroundService,
-		private cd: ChangeDetectorRef,
-		private templateManagerService: TemplateManagerService,
-		protected viewportService: ViewportService,
-	) {
+	private readonly layoutService = inject(LayoutService);
+	private readonly actionService = inject(ActionService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly chatService = inject(ChatService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly panelService = inject(PanelService);
+	private readonly recordingService = inject(RecordingService);
+	private readonly broadcastingService = inject(BroadcastingService);
+	private readonly translateService = inject(TranslateService);
+	private readonly backgroundService = inject(VirtualBackgroundService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly templateManagerService = inject(TemplateManagerService);
+	protected readonly viewportService = inject(ViewportService);
+
+	constructor() {
 		this.log = this.loggerSrv.get('SessionComponent');
 		this.setupTemplates();
 	}
@@ -186,7 +188,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		setTimeout(() => {
 			if (container) {
 				this.drawer = container;
-				this.drawer._contentMarginChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {
+				this.drawer._contentMarginChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 					setTimeout(() => {
 						this.stopUpdateLayoutInterval();
 						this.layoutService.update();
@@ -310,9 +312,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 		}
 		if (this.room) this.room.removeAllListeners();
 		this.participantService.clear();
-		// this.room = undefined;
-		this.destroy$.next();
-		this.destroy$.complete();
 		// 	if (this.captionLanguageSubscription) this.captionLanguageSubscription.unsubscribe();
 	}
 
@@ -347,7 +346,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 			this.startUpdateLayoutInterval();
 		});
 
-		this.panelService.panelStatusObs.pipe(skip(1), takeUntil(this.destroy$)).subscribe((ev: PanelStatusInfo) => {
+		this.panelService.panelStatusObs.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
 			if (this.sideMenu) {
 				this.settingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
 
@@ -375,7 +374,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		}
 
 	private subscribeToLayoutWidth() {
-		this.layoutService.layoutWidthObs.pipe(takeUntil(this.destroy$)).subscribe((width) => {
+		this.layoutService.layoutWidthObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((width) => {
 			this.sidenavMode = width <= this.SIDENAV_WIDTH_LIMIT_MODE ? SidenavMode.OVER : SidenavMode.SIDE;
 		});
 	}

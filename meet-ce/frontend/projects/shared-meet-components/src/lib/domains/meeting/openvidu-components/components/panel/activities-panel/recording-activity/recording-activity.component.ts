@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnDestroy, OnInit, output } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ILogger } from '../../../../models/logger.model';
 import {
     RecordingDeleteRequestedEvent,
@@ -32,7 +32,7 @@ import { RecordingService } from '../../../../services/recording/recording.servi
 // TODO: Allow to add more than one recording type
 // TODO: Allow to choose where the recording is stored (s3, google cloud, etc)
 // TODO: Allow to choose the layout of the recording
-export class RecordingActivityComponent implements OnInit, OnDestroy {
+export class RecordingActivityComponent implements OnInit {
 	/**
 	 * @internal
 	 */
@@ -165,18 +165,18 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 		w: () => {},
 		e: () => {}
 	};
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 
 	/**
 	 * @internal
 	 */
-	private recordingService = inject(RecordingService);
-	private participantService = inject(ParticipantService);
-	private actionService = inject(ActionService);
-	private openviduService = inject(OpenViduService);
-	private cd = inject(ChangeDetectorRef);
-	private loggerSrv = inject(LoggerService);
-	private libService = inject(OpenViduComponentsConfigService);
+	private readonly recordingService = inject(RecordingService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly actionService = inject(ActionService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	constructor() {
 		this.log = this.loggerSrv.get('RecordingActivityComponent');
@@ -189,14 +189,6 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 		this.subscribeToRecordingStatus();
 		this.subscribeToTracksChanges();
 		this.subscribeToConfigChanges();
-	}
-
-	/**
-	 * @internal
-	 */
-	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 
 	/**
@@ -359,36 +351,36 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 	}
 
 	private subscribeToConfigChanges() {
-		this.libService.recordingActivityReadOnly$.pipe(takeUntil(this.destroy$)).subscribe((readOnly: boolean) => {
+		this.libService.recordingActivityReadOnly$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((readOnly: boolean) => {
 			this.isReadOnlyMode = readOnly;
 			this.cd.markForCheck();
 		});
 
 		this.libService.recordingActivityShowControls$
-			.pipe(takeUntil(this.destroy$))
+			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((controls: { play?: boolean; download?: boolean; delete?: boolean; externalView?: boolean }) => {
 				this.showControls = controls;
 				this.cd.markForCheck();
 			});
 
-		this.libService.recordingActivityStartStopRecordingButton$.pipe(takeUntil(this.destroy$)).subscribe((show: boolean) => {
+		this.libService.recordingActivityStartStopRecordingButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((show: boolean) => {
 			this.showStartStopRecordingButton = show;
 			this.cd.markForCheck();
 		});
 
-		this.libService.recordingActivityViewRecordingsButton$.pipe(takeUntil(this.destroy$)).subscribe((show: boolean) => {
+		this.libService.recordingActivityViewRecordingsButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((show: boolean) => {
 			this.showViewRecordingsButton = show;
 			this.cd.markForCheck();
 		});
 
-		this.libService.recordingActivityShowRecordingsList$.pipe(takeUntil(this.destroy$)).subscribe((show: boolean) => {
+		this.libService.recordingActivityShowRecordingsList$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((show: boolean) => {
 			this.showRecordingList = show;
 			this.cd.markForCheck();
 		});
 	}
 
 	private subscribeToRecordingStatus() {
-		this.recordingService.recordingStatusObs.pipe(takeUntil(this.destroy$)).subscribe((event: RecordingStatusInfo) => {
+		this.recordingService.recordingStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event: RecordingStatusInfo) => {
 			const { status, recordingList, error } = event;
 			this.recordingStatus = status;
 			this.recordingList = recordingList;
@@ -404,7 +396,7 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 	private subscribeToTracksChanges() {
 		this.hasRoomTracksPublished = this.openviduService.hasRoomTracksPublished();
 
-		this.participantService.localParticipant$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+		this.participantService.localParticipant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 			const newValue = this.openviduService.hasRoomTracksPublished();
 			if (this.hasRoomTracksPublished !== newValue) {
 				this.hasRoomTracksPublished = newValue;
@@ -412,7 +404,7 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 			}
 		});
 
-		this.participantService.remoteParticipants$.pipe(takeUntil(this.destroy$)).subscribe(() => {
+		this.participantService.remoteParticipants$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 			const newValue = this.openviduService.hasRoomTracksPublished();
 			if (this.hasRoomTracksPublished !== newValue) {
 				this.hasRoomTracksPublished = newValue;

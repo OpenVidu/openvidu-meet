@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
-    BroadcastingStartRequestedEvent,
-    BroadcastingStatus,
-    BroadcastingStatusInfo,
-    BroadcastingStopRequestedEvent
+	BroadcastingStartRequestedEvent,
+	BroadcastingStatus,
+	BroadcastingStatusInfo,
+	BroadcastingStopRequestedEvent
 } from '../../../../models/broadcasting.model';
 import { BroadcastingService } from '../../../../services/broadcasting/broadcasting.service';
 import { OpenViduService } from '../../../../services/openvidu/openvidu.service';
@@ -74,29 +74,21 @@ export class BroadcastingActivityComponent implements OnInit {
 	 */
 	isPanelOpened: boolean = false;
 
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 
 	/**
 	 * @internal
 	 */
-	private broadcastingService = inject(BroadcastingService);
-	private participantService = inject(ParticipantService);
-	private openviduService = inject(OpenViduService);
-	private cd = inject(ChangeDetectorRef);
+	private readonly broadcastingService = inject(BroadcastingService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly cd = inject(ChangeDetectorRef);
 
 	/**
 	 * @internal
 	 */
 	ngOnInit(): void {
 		this.subscribeToBroadcastingStatus();
-	}
-
-	/**
-	 * @internal
-	 */
-	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 
 	/**
@@ -111,7 +103,7 @@ export class BroadcastingActivityComponent implements OnInit {
 	 */
 	eventKeyPress(event: KeyboardEvent) {
 		// Pressed 'Enter' key
-		if (event && event.keyCode === 13) {
+		if (event && event.key === 'Enter') {
 			event.preventDefault();
 			this.startBroadcasting();
 		}
@@ -144,7 +136,7 @@ export class BroadcastingActivityComponent implements OnInit {
 	}
 
 	private subscribeToBroadcastingStatus() {
-		this.broadcastingService.broadcastingStatusObs.pipe(takeUntil(this.destroy$)).subscribe((event: BroadcastingStatusInfo | undefined) => {
+		this.broadcastingService.broadcastingStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event: BroadcastingStatusInfo | undefined) => {
 			if (!!event) {
 				const { status, broadcastingId, error } = event;
 				this.broadcastingStatus = status;

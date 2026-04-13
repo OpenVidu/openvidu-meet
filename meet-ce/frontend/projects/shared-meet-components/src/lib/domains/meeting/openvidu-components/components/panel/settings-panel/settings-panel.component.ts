@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, ContentChild, inject, OnInit, output, TemplateRef } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, Component, ContentChild, DestroyRef, inject, OnInit, output, TemplateRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
 import { CustomDevice } from '../../../models/device.model';
 import { LangOption } from '../../../models/lang.model';
@@ -40,7 +40,7 @@ export class SettingsPanelComponent implements OnInit {
 	showCaptions: boolean = true;
 	showThemeSelector: boolean = false;
 	isMobile: boolean = false;
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 
 	/**
 	 * @internal
@@ -50,10 +50,10 @@ export class SettingsPanelComponent implements OnInit {
 		return this.externalGeneralAdditionalElements?.template;
 	}
 
-	private panelService = inject(PanelService);
-	private platformService = inject(PlatformService);
-	private libService = inject(OpenViduComponentsConfigService);
-	public viewportService = inject(ViewportService);
+	private readonly panelService = inject(PanelService);
+	private readonly platformService = inject(PlatformService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	public readonly viewportService = inject(ViewportService);
 
 	// Computed properties for responsive behavior
 	get isCompactView(): boolean {
@@ -73,11 +73,6 @@ export class SettingsPanelComponent implements OnInit {
 		this.subscribeToDirectives();
 	}
 
-	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
-	}
-
 	close() {
 		this.panelService.togglePanel(PanelType.SETTINGS);
 	}
@@ -86,14 +81,14 @@ export class SettingsPanelComponent implements OnInit {
 	}
 
 	private subscribeToDirectives() {
-		this.libService.cameraButton$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => (this.showCameraButton = value));
-		this.libService.microphoneButton$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => (this.showMicrophoneButton = value));
-		this.libService.captionsButton$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => (this.showCaptions = value));
-		this.libService.showThemeSelector$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => (this.showThemeSelector = value));
+		this.libService.cameraButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => (this.showCameraButton = value));
+		this.libService.microphoneButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => (this.showMicrophoneButton = value));
+		this.libService.captionsButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => (this.showCaptions = value));
+		this.libService.showThemeSelector$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => (this.showThemeSelector = value));
 	}
 
 	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs.pipe(takeUntil(this.destroy$)).subscribe((ev: PanelStatusInfo) => {
+		this.panelService.panelStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
 			if (ev.panelType === PanelType.SETTINGS && !!ev.subOptionType) {
 				this.selectedOption = ev.subOptionType as PanelSettingsOptions;
 			}

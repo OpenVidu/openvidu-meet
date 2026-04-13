@@ -1,5 +1,5 @@
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, ElementRef, inject, OnInit, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ChatMessage } from '../../../models/chat.model';
 import { PanelType } from '../../../models/panel.model';
 import { ChatService } from '../../../services/chat/chat.service';
@@ -22,11 +22,11 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	@ViewChild('chatScroll') chatScroll: ElementRef = new ElementRef(null);
+	readonly chatScroll = viewChild<ElementRef>('chatScroll');
 	/**
 	 * @ignore
 	 */
-	@ViewChild('chatInput') chatInput: ElementRef = new ElementRef(null);
+	readonly chatInput = viewChild<ElementRef>('chatInput');
 	/**
 	 * @ignore
 	 */
@@ -36,18 +36,12 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 	 */
 	messageList: ChatMessage[] = [];
 
-	private destroy$ = new Subject<void>();
-
-	/**
-	 * @ignore
-	 */
-	constructor(
-		private chatService: ChatService,
-		private panelService: PanelService,
-		private cd: ChangeDetectorRef,
-		private e2eeService: E2eeService,
-		private participantService: ParticipantService
-	) {	}
+	private readonly chatService = inject(ChatService);
+	private readonly panelService = inject(PanelService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly e2eeService = inject(E2eeService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly destroyRef = inject(DestroyRef);
 
 	/**
 	 * @ignore
@@ -62,16 +56,8 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 	ngAfterViewInit() {
 		setTimeout(() => {
 			this.scrollToBottom();
-			this.chatInput.nativeElement.focus();
+			this.chatInput()?.nativeElement.focus();
 		}, 100);
-	}
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 
 	/**
@@ -79,7 +65,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 	 */
 	eventKeyPress(event: KeyboardEvent): void {
 		// Pressed 'Enter' key
-		if (event && event.keyCode === 13) {
+		if (event && event.key === 'Enter') {
 			event.preventDefault();
 			this.sendMessage();
 		}
@@ -99,9 +85,12 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 	 * @ignore
 	 */
 	scrollToBottom(): void {
+		const chatScroll = this.chatScroll();
+		if (!chatScroll) return;
+
 		setTimeout(() => {
 			try {
-				this.chatScroll.nativeElement.scrollTop = this.chatScroll.nativeElement.scrollHeight;
+				chatScroll.nativeElement.scrollTop = chatScroll.nativeElement.scrollHeight;
 			} catch (err) {}
 		}, 20);
 	}
@@ -124,10 +113,8 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 		return remoteParticipants.some(p => p.hasEncryptionError);
 	});
 
-
-
 	private subscribeToMessages() {
-		this.chatService.chatMessages$.pipe(takeUntil(this.destroy$)).subscribe((messages: ChatMessage[]) => {
+		this.chatService.chatMessages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((messages: ChatMessage[]) => {
 			this.messageList = messages;
 			if (this.panelService.isChatPanelOpened()) {
 				this.scrollToBottom();

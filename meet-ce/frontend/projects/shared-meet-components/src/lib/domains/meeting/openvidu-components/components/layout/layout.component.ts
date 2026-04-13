@@ -7,14 +7,17 @@ import {
 	ChangeDetectorRef,
 	Component,
 	ContentChild,
+	DestroyRef,
 	ElementRef,
+	inject,
 	OnDestroy,
 	OnInit,
 	TemplateRef,
 	ViewChild,
 	ViewContainerRef
 } from '@angular/core';
-import { combineLatest, map, Subject, takeUntil } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { combineLatest, map } from 'rxjs';
 import { StreamDirective } from '../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel, ParticipantTrackPublication } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
@@ -101,7 +104,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	private _externalStream?: StreamDirective;
 	private _externalLayoutAdditionalElements?: LayoutAdditionalElementsDirective;
 
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 	private resizeObserver: ResizeObserver | undefined = undefined;
 	private resizeTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 	private mutationObserver: MutationObserver | undefined = undefined;
@@ -110,18 +113,13 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	private lastLayoutWidth: number = 0;
 	private lastLayoutHeight: number = 0;
 
-	/**
-	 * @ignore
-	 */
-	constructor(
-		private layoutService: LayoutService,
-		private panelService: PanelService,
-		private participantService: ParticipantService,
-		private globalService: GlobalConfigService,
-		private directiveService: OpenViduComponentsConfigService,
-		private cd: ChangeDetectorRef,
-		private templateManagerService: TemplateManagerService
-	) {}
+	private readonly layoutService = inject(LayoutService);
+	private readonly panelService = inject(PanelService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly globalService = inject(GlobalConfigService);
+	private readonly directiveService = inject(OpenViduComponentsConfigService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly templateManagerService = inject(TemplateManagerService);
 
 	ngOnInit(): void {
 		this.setupTemplates();
@@ -145,8 +143,6 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
 		this.localParticipant = undefined;
 		this.remoteParticipants = [];
 		this.resizeObserver?.disconnect();
@@ -218,7 +214,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	private subscribeToCaptions() {
-		this.layoutService.captionsTogglingObs.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.layoutService.captionsTogglingObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.captionsEnabled = value;
 			this.cd.markForCheck();
 			this.layoutService.update();
@@ -226,7 +222,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	private subscribeToParticipants() {
-		this.participantService.localParticipant$.pipe(takeUntil(this.destroy$)).subscribe((p) => {
+		this.participantService.localParticipant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
 			if (p) {
 				this.localParticipant = p;
 				if (!this.localParticipant?.isMinimized) {
@@ -242,7 +238,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 				map(([serviceParticipants, directiveParticipants]) =>
 					directiveParticipants !== undefined ? directiveParticipants : serviceParticipants
 				),
-				takeUntil(this.destroy$)
+				takeUntilDestroyed(this.destroyRef)
 			)
 			.subscribe((participants) => {
 				this.remoteParticipants = participants;
@@ -331,7 +327,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 			}
 		};
 
-		cdkDrag.released.pipe(takeUntil(this.destroy$)).subscribe(handler);
+		cdkDrag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(handler);
 
 		if (this.globalService.isProduction()) return;
 		// Just for allow E2E testing with drag and drop

@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { DestroyRef, inject, Injectable, OnDestroy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { createKeyMaterialFromString, deriveKeys } from 'livekit-client';
-import { Subject, takeUntil } from 'rxjs';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 
 /**
@@ -17,20 +17,20 @@ import { OpenViduComponentsConfigService } from '../config/directive-config.serv
 @Injectable({
 	providedIn: 'root',
 })
-export class E2eeService {
+export class E2eeService implements OnDestroy {
 	private static readonly ENCRYPTION_ALGORITHM = 'AES-GCM';
 	private static readonly IV_LENGTH = 12;
 	private static readonly SALT = 'livekit-e2ee-data'; // Salt for HKDF key derivation
 
+	private readonly destroyRef = inject(DestroyRef);
 	private decryptionCache = new Map<string, string>();
-	private destroy$ = new Subject<void>();
 	private isE2EEEnabled = false;
 
 	private encryptionKey: CryptoKey | undefined;
 
 	constructor(protected configService: OpenViduComponentsConfigService) {
 		// Monitor E2EE key changes
-		this.configService.e2eeKey$.pipe(takeUntil(this.destroy$)).subscribe(async (key: any) => {
+		this.configService.e2eeKey$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (key: any) => {
 			await this.setE2EEKey(key);
 		});
 	}
@@ -331,8 +331,6 @@ export class E2eeService {
 	 * Cleanup on service destroy
 	 */
 	ngOnDestroy(): void {
-		this.destroy$.next();
-		this.destroy$.complete();
 		this.clearCache();
 	}
 }

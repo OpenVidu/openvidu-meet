@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, output } from '@angular/core';
-import { Subject, takeUntil } from 'rxjs';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../../models/broadcasting.model';
 import { PanelStatusInfo, PanelType } from '../../../models/panel.model';
 import {
@@ -93,14 +93,14 @@ export class ActivitiesPanelComponent implements OnInit {
 	 * @internal
 	 */
 	showBroadcastingActivity: boolean = true;
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 
 	/**
 	 * @internal
 	 */
-	private panelService = inject(PanelService);
-	private libService = inject(OpenViduComponentsConfigService);
-	private cd = inject(ChangeDetectorRef);
+	private readonly panelService = inject(PanelService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly cd = inject(ChangeDetectorRef);
 
 	/**
 	 * @internal
@@ -113,20 +113,12 @@ export class ActivitiesPanelComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
-	}
-
-	/**
-	 * @internal
-	 */
 	close() {
 		this.panelService.togglePanel(PanelType.ACTIVITIES);
 	}
 
 	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs.pipe(takeUntil(this.destroy$)).subscribe((ev: PanelStatusInfo) => {
+		this.panelService.panelStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
 			if (ev.panelType === PanelType.ACTIVITIES && !!ev.subOptionType) {
 				this.expandedPanel = ev.subOptionType;
 			}
@@ -134,12 +126,12 @@ export class ActivitiesPanelComponent implements OnInit {
 	}
 
 	private subscribeToActivitiesPanelDirective() {
-		this.libService.recordingActivity$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.libService.recordingActivity$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.showRecordingActivity = value;
 			this.cd.markForCheck();
 		});
 
-		this.libService.broadcastingActivity$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.libService.broadcastingActivity$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.showBroadcastingActivity = value;
 			this.cd.markForCheck();
 		});

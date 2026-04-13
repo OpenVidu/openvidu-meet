@@ -1,8 +1,9 @@
-import { Injectable, signal, computed, OnDestroy } from '@angular/core';
-import { fromEvent, Subject, debounceTime, distinctUntilChanged } from 'rxjs';
-import { takeUntil } from 'rxjs/operators';
-import { PlatformService } from '../platform/platform.service';
+import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { fromEvent } from 'rxjs';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 import { DeviceOrientation, ViewportInfo, ViewportSize } from '../../models/viewport.model';
+import { PlatformService } from '../platform/platform.service';
 
 /**
  * Service for responsive viewport detection and device type identification.
@@ -12,7 +13,7 @@ import { DeviceOrientation, ViewportInfo, ViewportSize } from '../../models/view
 @Injectable({
 	providedIn: 'root'
 })
-export class ViewportService implements OnDestroy {
+export class ViewportService {
 	// Design system breakpoints
 	private readonly BREAKPOINTS = {
 		mobile: 480,
@@ -25,8 +26,8 @@ export class ViewportService implements OnDestroy {
 	private readonly _width = signal(this.getCurrentWidth());
 	private readonly _height = signal(this.getCurrentHeight());
 
-	// Cleanup subject
-	private readonly destroy$ = new Subject<void>();
+	// Cleanup
+	private readonly destroyRef = inject(DestroyRef);
 
 	constructor(protected platform: PlatformService) {
 		this.initializeResizeListener();
@@ -244,16 +245,11 @@ export class ViewportService implements OnDestroy {
 			.pipe(
 				debounceTime(150), // Debounce for performance
 				distinctUntilChanged(),
-				takeUntil(this.destroy$)
+				takeUntilDestroyed(this.destroyRef)
 			)
 			.subscribe(() => {
 				this._width.set(this.getCurrentWidth());
 				this._height.set(this.getCurrentHeight());
 			});
-	}
-
-	ngOnDestroy(): void {
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 }

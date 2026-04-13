@@ -3,12 +3,14 @@ import {
     ChangeDetectorRef,
     Component,
     ContentChild,
+    DestroyRef,
     inject,
     OnInit,
     output,
     TemplateRef
 } from '@angular/core';
-import { skip, Subject, takeUntil } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { skip } from 'rxjs';
 import {
     ActivitiesPanelDirective,
     AdditionalPanelsDirective,
@@ -183,7 +185,7 @@ export class PanelComponent implements OnInit {
 	private _externalActivitiesPanel?: ActivitiesPanelDirective;
 	private _externalAdditionalPanels?: AdditionalPanelsDirective;
 
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 
 	private panelEmitersHandler: Map<
 		PanelType,
@@ -193,9 +195,9 @@ export class PanelComponent implements OnInit {
 	/**
 	 * @ignore
 	 */
-	private panelService = inject(PanelService);
-	private cd = inject(ChangeDetectorRef);
-	private templateManagerService = inject(TemplateManagerService);
+	private readonly panelService = inject(PanelService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly templateManagerService = inject(TemplateManagerService);
 
 	/**
 	 * @ignore
@@ -259,12 +261,10 @@ export class PanelComponent implements OnInit {
 	ngOnDestroy() {
 		this.isChatPanelOpened = false;
 		this.isParticipantsPanelOpened = false;
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 
 	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs.pipe(skip(1), takeUntil(this.destroy$)).subscribe((ev: PanelStatusInfo) => {
+		this.panelService.panelStatusObs.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
 			this.isChatPanelOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
 			this.isParticipantsPanelOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
 			this.isBackgroundEffectsPanelOpened = ev.isOpened && ev.panelType === PanelType.BACKGROUND_EFFECTS;
