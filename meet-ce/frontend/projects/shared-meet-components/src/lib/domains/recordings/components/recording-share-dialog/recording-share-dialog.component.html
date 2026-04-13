@@ -14,49 +14,51 @@
 					</div>
 				}
 
-				<!-- <div class="access-type-section">
-					<h3 class="section-label">Access Type</h3>
-					<mat-radio-group [(ngModel)]="accessType" class="access-options">
-						<mat-radio-button value="public" class="access-option">
-							<div class="option-content">
-								<mat-icon class="option-icon">public</mat-icon>
-								<div class="option-details">
-									<span class="option-title">Public Access</span>
-									<span class="option-description">Anyone with the link can view</span>
+				@if (canGenerateUrls) {
+					<div class="access-type-section">
+						<h3 class="section-label">Access Type</h3>
+						<mat-radio-group [(ngModel)]="accessType" class="access-options">
+							<mat-radio-button value="public" class="access-option" [disabled]="!canGeneratePublicUrls">
+								<div class="option-content">
+									<mat-icon class="option-icon">public</mat-icon>
+									<div class="option-details">
+										<span class="option-title">Public Access</span>
+										<span class="option-description">Anyone with the link can view</span>
+									</div>
 								</div>
-							</div>
-						</mat-radio-button>
-						<mat-radio-button value="private" class="access-option">
-							<div class="option-content">
-								<mat-icon class="option-icon">lock</mat-icon>
-								<div class="option-details">
-									<span class="option-title">Private Access</span>
-									<span class="option-description">Only authenticated users can view</span>
+							</mat-radio-button>
+							<mat-radio-button value="private" class="access-option">
+								<div class="option-content">
+									<mat-icon class="option-icon">lock</mat-icon>
+									<div class="option-details">
+										<span class="option-title">Private Access</span>
+										<span class="option-description">Only registered users can view</span>
+									</div>
 								</div>
-							</div>
-						</mat-radio-button>
-					</mat-radio-group>
-				</div> -->
+							</mat-radio-button>
+						</mat-radio-group>
+					</div>
 
-				<div class="generate-section">
-					@if (loading) {
-						<div class="loading-state">
-							<mat-spinner diameter="20"></mat-spinner>
-							<span class="loading-text">Generating secure link...</span>
-						</div>
-					} @else {
-						<button
-							mat-flat-button
-							color="primary"
-							(click)="getRecordingUrl()"
-							[disabled]="loading"
-							class="generate-button"
-						>
-							<mat-icon>link</mat-icon>
-							Generate Shareable Link
-						</button>
-					}
-				</div>
+					<div class="generate-section">
+						@if (loading) {
+							<div class="loading-state">
+								<mat-spinner diameter="20"></mat-spinner>
+								<span class="loading-text">Generating secure link...</span>
+							</div>
+						} @else {
+							<button
+								mat-flat-button
+								color="primary"
+								(click)="getRecordingUrl()"
+								[disabled]="loading"
+								class="generate-button"
+							>
+								<mat-icon>link</mat-icon>
+								Generate Shareable Link
+							</button>
+						}
+					</div>
+				}
 			</div>
 		}
 

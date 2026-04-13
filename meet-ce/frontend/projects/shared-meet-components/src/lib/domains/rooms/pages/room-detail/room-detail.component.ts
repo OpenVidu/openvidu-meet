@@ -280,7 +280,7 @@ export class RoomDetailComponent implements OnInit {
 				this.recordingService.downloadRecording(recording);
 				break;
 			case 'shareLink':
-				this.recordingService.openShareRecordingDialog(recording.recordingId);
+				this.recordingService.openShareRecordingDialog(recording.recordingId, true);
 				break;
 			case 'delete':
 			case 'bulkDelete':

@@ -104,7 +104,7 @@ export class RecordingDetailComponent implements OnInit {
 	async shareRecording() {
 		const rec = this.recording();
 		if (!rec) return;
-		this.recordingService.openShareRecordingDialog(rec.recordingId);
+		this.recordingService.openShareRecordingDialog(rec.recordingId, true);
 	}
 
 	copyRecordingId() {

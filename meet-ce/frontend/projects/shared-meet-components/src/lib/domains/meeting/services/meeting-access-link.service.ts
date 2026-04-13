@@ -70,7 +70,7 @@ export class MeetingAccessLinkService {
 	private setSpeakerLinksFromRoomAccess(access: MeetRoomAccess): void {
 		const publicLink = this.getPublicLinkFromAccessUrl(access.registered.url);
 		this._speakerPublicLink.set(publicLink);
-		this._speakerCopyLink.set(access.anonymous?.speaker.url);
+		this._speakerCopyLink.set(access.anonymous.speaker.url);
 	}
 
 	/**

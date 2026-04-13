@@ -167,7 +167,7 @@ export class RecordingsComponent implements OnInit {
 	}
 
 	private shareRecordingLink(recording: MeetRecordingInfo) {
-		this.recordingService.openShareRecordingDialog(recording.recordingId);
+		this.recordingService.openShareRecordingDialog(recording.recordingId, true);
 	}
 
 	private deleteRecording(recording: MeetRecordingInfo) {

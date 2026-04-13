@@ -15,6 +15,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
+import { RoomService } from '../../../rooms/services/room.service';
+import { RecordingService } from '../../services/recording.service';
 
 @Component({
 	selector: 'ov-share-recording-dialog',
@@ -37,8 +40,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 })
 export class RecordingShareDialogComponent implements OnInit {
 	accessType: 'private' | 'public' = 'public';
+	canGenerateUrls = false;
+	canGeneratePublicUrls = false;
 	recordingUrl?: string;
-	private initialRecordingUrl?: string;
 
 	loading = false;
 	erroMessage?: string;
@@ -48,26 +52,58 @@ export class RecordingShareDialogComponent implements OnInit {
 		@Inject(MAT_DIALOG_DATA)
 		public data: {
 			recordingId: string;
-			recordingUrl?: string;
-			generateRecordingUrl?: (privateAccess: boolean) => Promise<{ url: string }>;
+			hasRecordingAccess?: boolean;
 		},
-		private clipboard: Clipboard
-	) {
-		this.recordingUrl = data.recordingUrl;
-		this.initialRecordingUrl = data.recordingUrl;
+		private clipboard: Clipboard,
+		private recordingService: RecordingService,
+		private roomService: RoomService,
+		private roomMemberContextService: RoomMemberContextService
+	) {}
+
+	async ngOnInit() {
+		const hasRecordingAccess = this.data.hasRecordingAccess ?? true;
+		this.canGenerateUrls =
+			this.roomMemberContextService.hasPermission('canRetrieveRecordings') || hasRecordingAccess;
+
+		// If the user cannot generate URLs, we can still show the current page URL for sharing,
+		// but we won't attempt to generate a recording-specific URL
+		if (!this.canGenerateUrls) {
+			this.recordingUrl = window.location.href;
+			return;
+		}
+
+		await this.loadAnonymousRecordingAccess();
 	}
 
-	// TODO: Remove this when having multiple users
-	async ngOnInit() {
-		if (!this.initialRecordingUrl) {
-			await this.getRecordingUrl();
-			this.initialRecordingUrl = this.recordingUrl;
+	/**
+	 * Loads the room access configuration to determine if public recording URLs can be generated
+	 * based on whether anonymous recording access is enabled for the room.
+	 * Sets the canGeneratePublicUrls flag accordingly and defaults to private access if public URLs cannot be generated.
+	 */
+	private async loadAnonymousRecordingAccess() {
+		this.canGeneratePublicUrls = false;
+		try {
+			const roomId = this.data.recordingId.split('--')[0];
+			const { access } = await this.roomService.getRoom(roomId, { fields: ['access'] });
+			this.canGeneratePublicUrls = access.anonymous.recording.enabled;
+			if (!this.canGeneratePublicUrls) {
+				this.accessType = 'private';
+			}
+		} catch (error) {
+			console.error('Error checking room access config for recording URL generation:', error);
+			this.canGeneratePublicUrls = false;
+			this.accessType = 'private';
 		}
 	}
 
 	async getRecordingUrl() {
-		if (!this.data.generateRecordingUrl) {
-			this.erroMessage = 'URL generation function not available.';
+		if (!this.canGenerateUrls) {
+			this.erroMessage = 'You do not have permission to generate recording URLs.';
+			return;
+		}
+
+		if (this.accessType === 'public' && !this.canGeneratePublicUrls) {
+			this.erroMessage = 'Public recording URLs are not enabled for this room.';
 			return;
 		}
 
@@ -76,7 +112,7 @@ export class RecordingShareDialogComponent implements OnInit {
 
 		try {
 			const privateAccess = this.accessType === 'private';
-			const { url } = await this.data.generateRecordingUrl(privateAccess);
+			const { url } = await this.recordingService.generateRecordingUrl(this.data.recordingId, privateAccess);
 			this.recordingUrl = url;
 		} catch (error) {
 			this.erroMessage = 'Failed to generate recording URL. Please try again later.';
@@ -101,7 +137,7 @@ export class RecordingShareDialogComponent implements OnInit {
 	}
 
 	get shouldShowGoBackButton(): boolean {
-		return !this.initialRecordingUrl;
+		return this.canGenerateUrls;
 	}
 
 	goBack() {
