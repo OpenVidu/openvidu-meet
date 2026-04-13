@@ -1,6 +1,7 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { HttpService } from '../../../shared/services/http.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
@@ -73,7 +74,7 @@ export class AuthService {
 		let headers: Record<string, string> | undefined;
 		if (refreshToken) {
 			headers = {};
-			headers['x-refresh-token'] = `Bearer ${refreshToken}`;
+			headers[HTTP_HEADERS.REFRESH_TOKEN] = `Bearer ${refreshToken}`;
 		}
 
 		const response = await this.httpService.postRequest<any>(path, {}, headers);

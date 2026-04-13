@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import {
 	HttpHeaderContext,
 	HttpHeaderProvider,
@@ -42,7 +43,7 @@ export class AuthHeaderProviderService implements HttpHeaderProvider {
 		}
 
 		return {
-			authorization: `Bearer ${accessToken}`
+			[HTTP_HEADERS.AUTHORIZATION]: `Bearer ${accessToken}`
 		};
 	}
 }

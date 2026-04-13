@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, from, switchMap } from 'rxjs';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import {
 	HttpErrorContext,
 	HttpErrorHandler,
@@ -47,11 +48,6 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 			return false;
 		}
 
-		// Special case: room member token generation failed, need to refresh access token first
-		if (error.url?.includes('/members/token')) {
-			return true;
-		}
-
 		// Handle if not on login page OR if there's a refresh token available
 		return !pageUrl.startsWith('/login') || !!this.tokenStorageService.getRefreshToken();
 	}
@@ -62,7 +58,7 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	handle(context: HttpErrorContext): Observable<HttpEvent<unknown>> {
 		const { error } = context;
 
-		// Special case: room member token generation failed
+		// Special case: room member token generation failed, need to refresh access token first
 		if (error.url?.includes('/members/token')) {
 			console.log('Generating room member token failed. Refreshing access token first...');
 		}
@@ -94,7 +90,7 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 					// logout and redirect to the login page
 					if (
 						!originalRequest.url.includes('/users/me') &&
-						originalRequest.headers.get('x-ov-skip-auth-recovery') !== 'true'
+						originalRequest.headers.get(HTTP_HEADERS.SKIP_AUTH_RECOVERY) !== 'true'
 					) {
 						console.log('Logging out...');
 						await this.authService.logout(pageUrl);

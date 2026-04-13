@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import {
 	HttpHeaderContext,
 	HttpHeaderProvider,
@@ -47,7 +48,7 @@ export class RoomMemberHeaderProviderService implements HttpHeaderProvider {
 		}
 
 		return {
-			'x-room-member-token': `Bearer ${roomMemberToken}`
+			[HTTP_HEADERS.ROOM_MEMBER_TOKEN]: `Bearer ${roomMemberToken}`
 		};
 	}
 }

@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -17,7 +18,7 @@ export class RoomAccessService {
 
 	/**
 	 * Validates access to the current room by attempting to generate a room member token.
-	 * 
+	 *
 	 * @param options Validation options:
 	 * - requireRecordingsPermission: if true, also checks that the generated token has permission to retrieve recordings
 	 * - skipAuthRecoveryOn401: if true, adds a header to skip auth recovery in case of a 401 response (useful when validating access for recording secrets)
@@ -36,7 +37,7 @@ export class RoomAccessService {
 		}
 
 		const secret = this.meetingContextService.roomSecret();
-		const headers = skipAuthRecoveryOn401 ? { 'x-ov-skip-auth-recovery': 'true' } : undefined;
+		const headers = skipAuthRecoveryOn401 ? { [HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true' } : undefined;
 
 		try {
 			await this.roomMemberContextService.generateToken(
