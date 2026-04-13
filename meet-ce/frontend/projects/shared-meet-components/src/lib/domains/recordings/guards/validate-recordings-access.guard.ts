@@ -1,5 +1,6 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
@@ -41,24 +42,30 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 	const roomAccessService = inject(RoomAccessService);
 
 	const recordingId = route.params['recording-id'] as string;
-	const recordingSecret = route.queryParams['recordingSecret'] as string;
+	const recordingSecret = route.queryParams['recordingSecret'] as string | undefined;
 
 	const roomAccessResult = await roomAccessService.validateAccess({
 		requireRecordingsPermission: true,
 		skipAuthRecoveryOn401: !!recordingSecret
 	});
 
-	if (roomAccessResult.allowed) {
+	// If the user has access to the room and no recording secret is provided, allow access
+	// This covers the case of users with permissions accessing the recording through the room
+	if (roomAccessResult.allowed && !recordingSecret) {
 		return true;
 	}
 
-	if (!recordingSecret) {
+	// If the user doesn't have access to the room and no recording secret is provided, deny access
+	// This covers the case of users without permissions trying to access the recording without a secret
+	if (!roomAccessResult.allowed && !recordingSecret) {
 		return navigationService.redirectToErrorPage(roomAccessResult.reason!);
 	}
 
 	try {
-		// Fallback path: validate recording secret when room-based access fails.
-		await recordingService.getRecording(recordingId, recordingSecret);
+		// If a recording secret is provided, attempt to validate it directly by fetching the recording with the secret.
+		// This covers the case of users without permissions but with a valid recording secret trying to access the recording.
+		const headers = { [HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true' };
+		await recordingService.getRecording(recordingId, recordingSecret, headers);
 		return true;
 	} catch (error: any) {
 		console.error('Error checking recording access:', error);

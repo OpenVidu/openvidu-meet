@@ -102,15 +102,20 @@ export class RecordingService {
 	 *
 	 * @param recordingId - The ID of the recording to retrieve
 	 * @param recordingSecret - Optional recording secret for accessing the recording
+	 * @param headers - Optional additional headers to include in the request
 	 * @return A promise that resolves to the recording information
 	 */
-	async getRecording(recordingId: string, recordingSecret?: string): Promise<MeetRecordingInfo> {
+	async getRecording(
+		recordingId: string,
+		recordingSecret?: string,
+		headers?: Record<string, string>
+	): Promise<MeetRecordingInfo> {
 		let path = `${this.RECORDINGS_API}/${recordingId}`;
 		if (recordingSecret) {
 			path += `?recordingSecret=${recordingSecret}`;
 		}
 
-		return this.httpService.getRequest(path);
+		return this.httpService.getRequest(path, headers);
 	}
 
 	/**

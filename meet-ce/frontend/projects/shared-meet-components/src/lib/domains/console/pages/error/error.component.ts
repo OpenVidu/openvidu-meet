@@ -100,7 +100,7 @@ export class ErrorComponent implements OnInit {
 			[NavigationErrorReason.ROOM_ACCESS_REVOKED]: {
 				title: 'Room access revoked',
 				message:
-					'Your permissions in this room have been changed, and you no longer have access. Please contact a moderator for more information'
+					'Your permissions in this room have been changed, and you no longer have access (nor its recordings). Please contact a moderator for more information'
 			},
 			[NavigationErrorReason.INTERNAL_ERROR]: {
 				title: 'Internal error',

@@ -146,6 +146,7 @@ export class RoomMemberService {
 	 *
 	 * @param roomId - The unique identifier of the room
 	 * @param tokenOptions - The options for the token generation
+	 * @param headers - Optional additional headers to include in the token generation request
 	 * @returns A promise that resolves to an object containing the generated token
 	 */
 	async generateRoomMemberToken(

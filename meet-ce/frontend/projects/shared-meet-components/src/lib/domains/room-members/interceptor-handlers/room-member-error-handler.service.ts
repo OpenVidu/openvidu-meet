@@ -1,6 +1,7 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable, catchError, from, switchMap } from 'rxjs';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import {
 	HttpErrorContext,
@@ -50,9 +51,25 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 			return false;
 		}
 
-		// Only handle errors that occur in room or recording pages (excluding profile endpoint)
+		// Do not attempt room-member refresh more than once for the same request.
+		if (request.headers.get(HTTP_HEADERS.ROOM_REFRESH_ATTEMPTED) === 'true') {
+			return false;
+		}
+
+		const hasRecordingSecretInRequest = request.url.includes('recordingSecret=');
+		const hasRoomMemberToken = !!this.roomMemberContextService.roomMemberToken();
+
+		// Private-recording-secret-only flow: skip room-member refresh and let auth handler recover.
+		if (hasRecordingSecretInRequest && !hasRoomMemberToken) {
+			return false;
+		}
+
+		// Only handle errors that occur in room or recording pages,
+		// excluding requests to the profile endpoint and that do not have the skip-auth-recovery header
 		return (
-			(pageUrl.startsWith('/room/') || pageUrl.startsWith('/recording/')) && !request.url.includes('/users/me')
+			(pageUrl.startsWith('/room/') || pageUrl.startsWith('/recording/')) &&
+			!request.url.includes('/users/me') &&
+			request.headers.get(HTTP_HEADERS.SKIP_AUTH_RECOVERY) !== 'true'
 		);
 	}
 
@@ -89,7 +106,12 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 
 				// Update the request with the new token
 				const headers = this.roomMemberHeaderProvider.provideHeaders();
-				const updatedRequest = headers ? originalRequest.clone({ setHeaders: headers }) : originalRequest;
+				const updatedRequest = originalRequest.clone({
+					setHeaders: {
+						...(headers || {}),
+						[HTTP_HEADERS.ROOM_REFRESH_ATTEMPTED]: 'true'
+					}
+				});
 
 				return next(updatedRequest);
 			}),

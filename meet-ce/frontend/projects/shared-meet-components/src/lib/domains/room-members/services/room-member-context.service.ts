@@ -64,7 +64,7 @@ export class RoomMemberContextService {
 	}
 
 	/**
-	 * Sets the participant's display name and optionally stores it in localStorage.
+	 * Sets the participant's display name.
 	 *
 	 * @param participantName - The display name of the participant
 	 * @param fromUrl - Whether the name came from a URL parameter
@@ -110,6 +110,7 @@ export class RoomMemberContextService {
 	 * @param roomId - The unique identifier of the room
 	 * @param tokenOptions - The options for the token generation
 	 * @param e2eeKey - Optional E2EE encryption key
+	 * @param headers - Optional additional headers to include in the token generation request
 	 * @return A promise that resolves to the room member token
 	 */
 	async generateToken(
