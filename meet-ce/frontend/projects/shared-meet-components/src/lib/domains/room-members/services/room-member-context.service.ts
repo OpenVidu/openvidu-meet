@@ -112,7 +112,12 @@ export class RoomMemberContextService {
 	 * @param e2eeKey - Optional E2EE encryption key
 	 * @return A promise that resolves to the room member token
 	 */
-	async generateToken(roomId: string, tokenOptions: MeetRoomMemberTokenOptions, e2eeKey?: string): Promise<string> {
+	async generateToken(
+		roomId: string,
+		tokenOptions: MeetRoomMemberTokenOptions,
+		e2eeKey?: string,
+		headers?: Record<string, string>
+	): Promise<string> {
 		// Best effort: keep access token fresh for authenticated users before generating room member tokens.
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 		if (isAuthenticated) {
@@ -130,7 +135,7 @@ export class RoomMemberContextService {
 			tokenOptions.participantName = encryptedName;
 		}
 
-		const { token } = await this.roomMemberService.generateRoomMemberToken(roomId, tokenOptions);
+		const { token } = await this.roomMemberService.generateRoomMemberToken(roomId, tokenOptions, headers);
 		this._roomMemberToken.set(token);
 		await this.updateContextFromToken(token);
 		return token;

@@ -1,9 +1,14 @@
 import { removeQueryParamsGuard } from '../../../shared/guards/remove-query-params.guard';
 import { runGuardsSerially } from '../../../shared/guards/run-serially.guard';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
-import { validateRoomRecordingsAccessGuard } from '../../meeting/guards/validate-room-access.guard';
-import { extractRoomRecordingsParamsGuard } from '../guards/extract-params.guard';
-import { validateRecordingAccessGuard } from '../guards/recording-validate-access.guard';
+import {
+	extractRecordingParamsGuard,
+	extractRoomRecordingsParamsGuard
+} from '../guards/extract-recordings-params.guard';
+import {
+	validateRecordingAccessGuard,
+	validateRoomRecordingsAccessGuard
+} from '../guards/validate-recordings-access.guard';
 
 /**
  * Recordings domain public route configurations
@@ -30,7 +35,13 @@ export const recordingsDomainRoutes: DomainRouteConfig[] = [
 			path: 'recording/:recording-id',
 			loadComponent: () =>
 				import('../pages/view-recording/view-recording.component').then((m) => m.ViewRecordingComponent),
-			canActivate: [validateRecordingAccessGuard]
+			canActivate: [
+				runGuardsSerially(
+					extractRecordingParamsGuard,
+					validateRecordingAccessGuard,
+					removeQueryParamsGuard(['secret'])
+				)
+			]
 		}
 	}
 ];
@@ -56,9 +67,7 @@ export const recordingsConsoleRoutes: DomainRouteConfig[] = [
 		route: {
 			path: 'recordings/:recordingId',
 			loadComponent: () =>
-				import('../pages/recording-detail/recording-detail.component').then(
-					(m) => m.RecordingDetailComponent
-				)
+				import('../pages/recording-detail/recording-detail.component').then((m) => m.RecordingDetailComponent)
 		}
 	}
 ];

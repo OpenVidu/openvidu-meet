@@ -6,7 +6,7 @@ import { extractParams } from '../../../shared/utils/url-params.utils';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { MeetingContextService } from '../services/meeting-context.service';
 
-export const extractRoomParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
+export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const navigationService = inject(NavigationService);
 	const meetingContextService = inject(MeetingContextService);
 	const roomMemberContextService = inject(RoomMemberContextService);

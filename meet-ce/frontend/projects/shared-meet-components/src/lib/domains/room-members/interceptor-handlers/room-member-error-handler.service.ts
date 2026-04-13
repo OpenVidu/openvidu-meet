@@ -50,8 +50,10 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 			return false;
 		}
 
-		// Only handle errors that occur in room pages (excluding profile endpoint)
-		return pageUrl.startsWith('/room/') && !request.url.includes('/users/me');
+		// Only handle errors that occur in room or recording pages (excluding profile endpoint)
+		return (
+			(pageUrl.startsWith('/room/') || pageUrl.startsWith('/recording/')) && !request.url.includes('/users/me')
+		);
 	}
 
 	/**

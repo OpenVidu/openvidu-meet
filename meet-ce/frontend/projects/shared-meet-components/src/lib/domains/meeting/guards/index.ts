@@ -1,2 +1,2 @@
-export * from './extract-params.guard';
-export * from './validate-room-access.guard';
+export * from './extract-room-meeting-params.guard';
+export * from './validate-room-meeting-access.guard';

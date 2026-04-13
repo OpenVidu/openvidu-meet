@@ -18,6 +18,51 @@ export class NavigationService {
 		private runtimeConfigService: RuntimeConfigService
 	) {}
 
+	private getBasePathPrefix(): string {
+		const basePath = this.runtimeConfigService.basePath;
+		if (!basePath || basePath === '/') {
+			return '';
+		}
+
+		return basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+	}
+
+	/**
+	 * Adds configured base path to an internal URL path.
+	 *
+	 * @param url - The internal URL path to add the base path to
+	 * @return The URL with the base path prefixed, if a base path is configured; otherwise, returns the original URL
+	 */
+	addBasePath(url: string): string {
+		if (!url) {
+			return this.getBasePathPrefix() || '/';
+		}
+
+		const basePathPrefix = this.getBasePathPrefix();
+		const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+
+		if (!basePathPrefix || normalizedUrl.startsWith(`${basePathPrefix}/`)) {
+			return normalizedUrl;
+		}
+
+		return `${basePathPrefix}${normalizedUrl}`;
+	}
+
+	/**
+	 * Removes configured base path prefix from an internal URL path.
+	 *
+	 * @param url - The internal URL path to strip the base path from
+	 * @return The URL with the base path stripped, if a base path is configured; otherwise, returns the original URL
+	 */
+	stripBasePath(url: string): string {
+		const basePathPrefix = this.getBasePathPrefix();
+		if (!basePathPrefix || !url.startsWith(basePathPrefix)) {
+			return url;
+		}
+
+		return url.slice(basePathPrefix.length) || '/';
+	}
+
 	/**
 	 * Sets the leave redirect URL and stores it in session storage for persistence across page reloads.
 	 *
@@ -163,18 +208,15 @@ export class NavigationService {
 	 * Redirects to internal URL
 	 *
 	 * @param url - The URL to redirect to
+	 * @param replaceUrl - If true, replaces the current URL in the browser history
 	 */
-	async redirectTo(url: string): Promise<void> {
+	async redirectTo(url: string, replaceUrl: boolean = true): Promise<void> {
 		try {
 			// Strip basePath prefix if present, since Angular router operates relative to <base href>
-			const basePath = this.runtimeConfigService.basePath;
-			const basePathPrefix = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-			if (basePathPrefix && url.startsWith(basePathPrefix)) {
-				url = url.slice(basePathPrefix.length) || '/';
-			}
+			url = this.stripBasePath(url);
 
 			let urlTree = this.router.parseUrl(url);
-			await this.router.navigateByUrl(urlTree, { replaceUrl: true });
+			await this.router.navigateByUrl(urlTree, { replaceUrl });
 		} catch (error) {
 			console.error('Error navigating to internal route:', error);
 		}

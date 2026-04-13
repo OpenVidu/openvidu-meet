@@ -1,2 +1,2 @@
-export * from './extract-params.guard';
-export * from './recording-validate-access.guard';
+export * from './extract-recordings-params.guard';
+export * from './validate-recordings-access.guard';

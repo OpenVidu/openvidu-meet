@@ -12,8 +12,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 
 @Component({
 	selector: 'ov-embedded',
@@ -32,7 +32,7 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 	styleUrl: './embedded.component.scss'
 })
 export class EmbeddedComponent implements OnInit {
-	private runtimeConfigServc = inject(RuntimeConfigService);
+	private navigationService = inject(NavigationService);
 	restApiDocsUrl = signal<string>('');
 
 	isLoading = signal(true);
@@ -90,8 +90,8 @@ export class EmbeddedComponent implements OnInit {
 
 	async ngOnInit() {
 		// Build the REST API documentation URL with base href
-		const docsPath = 'api/v1/docs/';
-		this.restApiDocsUrl.set(this.runtimeConfigServc.basePath ? `${this.runtimeConfigServc.basePath}${docsPath}` : `/${docsPath}`);
+		const docsPath = '/api/v1/docs/';
+		this.restApiDocsUrl.set(this.navigationService.addBasePath(docsPath));
 
 		this.isLoading.set(true);
 		await this.loadApiKeyData();

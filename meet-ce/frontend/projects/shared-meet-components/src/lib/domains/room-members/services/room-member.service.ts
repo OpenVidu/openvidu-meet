@@ -150,10 +150,11 @@ export class RoomMemberService {
 	 */
 	async generateRoomMemberToken(
 		roomId: string,
-		tokenOptions: MeetRoomMemberTokenOptions
+		tokenOptions: MeetRoomMemberTokenOptions,
+		headers?: Record<string, string>
 	): Promise<{ token: string }> {
 		const path = `${this.getRoomMemberApiPath(roomId, true)}/token`;
-		return this.httpService.postRequest(path, tokenOptions);
+		return this.httpService.postRequest(path, tokenOptions, headers);
 	}
 
 	/**

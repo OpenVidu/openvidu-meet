@@ -30,8 +30,11 @@ export class RoomMemberHeaderProviderService implements HttpHeaderProvider {
 	canProvide(context: HttpHeaderContext): boolean {
 		// Only provide if:
 		// 1. Room member token exists
-		// 2. Current page is a room page (starts with /room/)
-		return !!this.roomMemberContextService.roomMemberToken() && context.pageUrl.startsWith('/room/');
+		// 2. Current page is a room page (starts with /room/) or a recording page (starts with /recording/)
+		return (
+			!!this.roomMemberContextService.roomMemberToken() &&
+			(context.pageUrl.startsWith('/room/') || context.pageUrl.startsWith('/recording/'))
+		);
 	}
 
 	/**

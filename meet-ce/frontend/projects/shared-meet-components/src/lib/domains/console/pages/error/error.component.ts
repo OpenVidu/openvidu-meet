@@ -58,12 +58,16 @@ export class ErrorComponent implements OnInit {
 			},
 			[NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED]: {
 				title: 'Anonymous access disabled',
-				message: 'The anonymous access for your role has been disabled in this room'
+				message: 'The anonymous access for your role has been disabled in this room (and its recordings)'
+			},
+			[NavigationErrorReason.ANONYMOUS_RECORDING_ACCESS_DISABLED]: {
+				title: 'Anonymous access disabled',
+				message: 'The anonymous access for this recording has been disabled'
 			},
 			[NavigationErrorReason.INVALID_ROOM_SECRET]: {
 				title: 'Invalid link',
 				message:
-					'The link you used to access this room is not valid. Please ask a moderator to share the correct link using the share buttons available in the room'
+					'The link you used to access this room (or its recordings) is not valid. Please ask a moderator to share the correct link using the available share buttons'
 			},
 			[NavigationErrorReason.INVALID_RECORDING_SECRET]: {
 				title: 'Invalid link',
@@ -71,7 +75,7 @@ export class ErrorComponent implements OnInit {
 			},
 			[NavigationErrorReason.INVALID_ROOM]: {
 				title: 'Invalid room',
-				message: 'The room you are trying to access does not exist or has been deleted'
+				message: 'The room (or its recordings) you are trying to access does not exist or has been deleted'
 			},
 			[NavigationErrorReason.INVALID_RECORDING]: {
 				title: 'Invalid recording',
@@ -83,11 +87,15 @@ export class ErrorComponent implements OnInit {
 			},
 			[NavigationErrorReason.FORBIDDEN_ROOM_ACCESS]: {
 				title: 'Forbidden room access',
-				message: 'You are not authorized to access this room'
+				message: 'You are not authorized to access this room (nor its recordings)'
+			},
+			[NavigationErrorReason.FORBIDDEN_ROOM_RECORDINGS_ACCESS]: {
+				title: 'Forbidden recordings access',
+				message: 'You are not authorized to access the recordings in this room'
 			},
 			[NavigationErrorReason.FORBIDDEN_RECORDING_ACCESS]: {
 				title: 'Forbidden recording access',
-				message: 'You are not authorized to access the recordings in this room'
+				message: 'You are not authorized to access this recording'
 			},
 			[NavigationErrorReason.ROOM_ACCESS_REVOKED]: {
 				title: 'Room access revoked',

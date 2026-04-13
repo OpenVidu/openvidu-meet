@@ -33,7 +33,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 export class ViewRecordingComponent implements OnInit {
 	recording?: MeetRecordingInfo;
 	recordingUrl?: string;
-	secret?: string;
+	recordingSecret?: string;
 
 	isLoading = true;
 	hasError = false;
@@ -52,7 +52,7 @@ export class ViewRecordingComponent implements OnInit {
 
 	private async loadRecording() {
 		const recordingId = this.route.snapshot.params['recording-id'];
-		this.secret = this.route.snapshot.queryParams['secret'];
+		this.recordingSecret = this.route.snapshot.queryParams['recordingSecret'];
 
 		if (!recordingId) {
 			this.hasError = true;
@@ -61,10 +61,10 @@ export class ViewRecordingComponent implements OnInit {
 		}
 
 		try {
-			this.recording = await this.recordingService.getRecording(recordingId, this.secret);
+			this.recording = await this.recordingService.getRecording(recordingId, this.recordingSecret);
 
 			if (this.recording.status === MeetRecordingStatus.COMPLETE) {
-				this.recordingUrl = this.recordingService.getRecordingMediaUrl(recordingId, this.secret);
+				this.recordingUrl = this.recordingService.getRecordingMediaUrl(recordingId, this.recordingSecret);
 			}
 		} catch (error) {
 			console.error('Error fetching recording:', error);
@@ -81,7 +81,7 @@ export class ViewRecordingComponent implements OnInit {
 
 	downloadRecording() {
 		if (this.recording) {
-			this.recordingService.downloadRecording(this.recording, this.secret);
+			this.recordingService.downloadRecording(this.recording, this.recordingSecret);
 		}
 	}
 

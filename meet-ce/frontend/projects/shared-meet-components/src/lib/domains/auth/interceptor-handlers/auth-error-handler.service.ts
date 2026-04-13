@@ -90,8 +90,12 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 				if (error.url?.includes('/auth/refresh')) {
 					console.error('Error refreshing access token');
 
-					// If the original request was not to the profile endpoint, logout and redirect to the login page
-					if (!originalRequest.url.includes('/users/me')) {
+					// If the original request was not to the profile endpoint and does not have the skip-auth-recovery header,
+					// logout and redirect to the login page
+					if (
+						!originalRequest.url.includes('/users/me') &&
+						originalRequest.headers.get('x-ov-skip-auth-recovery') !== 'true'
+					) {
 						console.log('Logging out...');
 						await this.authService.logout(pageUrl);
 					}

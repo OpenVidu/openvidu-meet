@@ -3,7 +3,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
+import { NavigationService } from '../../../shared/services/navigation.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
+import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
 
@@ -18,8 +20,10 @@ export class RecordingService {
 	constructor(
 		protected loggerService: LoggerService,
 		private httpService: HttpService,
+		private navigationService: NavigationService,
 		protected tokenStorageService: TokenStorageService,
 		protected roomMemberContextService: RoomMemberContextService,
+		protected meetingContextService: MeetingContextService,
 		protected dialog: MatDialog
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
@@ -99,13 +103,13 @@ export class RecordingService {
 	 * Gets a specific recording by ID
 	 *
 	 * @param recordingId - The ID of the recording to retrieve
-	 * @param secret - Optional secret for accesing the recording
+	 * @param recordingSecret - Optional recording secret for accessing the recording
 	 * @return A promise that resolves to the recording information
 	 */
-	async getRecording(recordingId: string, secret?: string): Promise<MeetRecordingInfo> {
+	async getRecording(recordingId: string, recordingSecret?: string): Promise<MeetRecordingInfo> {
 		let path = `${this.RECORDINGS_API}/${recordingId}`;
-		if (secret) {
-			path += `?secret=${secret}`;
+		if (recordingSecret) {
+			path += `?recordingSecret=${recordingSecret}`;
 		}
 
 		return this.httpService.getRequest(path);
@@ -115,26 +119,26 @@ export class RecordingService {
 	 * Gets the media URL for a recording
 	 *
 	 * @param recordingId - The ID of the recording
-	 * @param secret - Optional secret for accessing the recording media
+	 * @param recordingSecret - Optional recording secret for accessing recording media
 	 * @return The URL to access the recording media
 	 */
-	getRecordingMediaUrl(recordingId: string, secret?: string): string {
+	getRecordingMediaUrl(recordingId: string, recordingSecret?: string): string {
 		const params = new URLSearchParams();
 
-		// If secret is provided, use it (public/private access mode)
-		if (secret) {
-			params.append('secret', secret);
-		} else {
-			// Otherwise, try to use access and/or room member token from sessionStorage
-			const accessToken = this.tokenStorageService.getAccessToken();
-			if (accessToken) {
-				params.append('accessToken', accessToken);
-			}
+		// If recordingSecret is provided, use it (public/private access mode)
+		if (recordingSecret) {
+			params.append('recordingSecret', recordingSecret);
+		}
 
-			const roomMemberToken = this.roomMemberContextService.roomMemberToken();
-			if (roomMemberToken) {
-				params.append('roomMemberToken', roomMemberToken);
-			}
+		// Also use access and/or room member token if available
+		const accessToken = this.tokenStorageService.getAccessToken();
+		if (accessToken) {
+			params.append('accessToken', accessToken);
+		}
+
+		const roomMemberToken = this.roomMemberContextService.roomMemberToken();
+		if (roomMemberToken) {
+			params.append('roomMemberToken', roomMemberToken);
 		}
 
 		const now = Date.now();
@@ -184,24 +188,31 @@ export class RecordingService {
 	}
 
 	/**
-	 * Plays a recording by generating a URL and opening it in a new tab
+	 * Plays a recording by opening the recording route in a new tab
 	 *
 	 * @param recordingId - The ID of the recording to play
 	 */
 	async playRecording(recordingId: string) {
-		// const privateAccess = await this.authService.isUserAuthenticated();
-		const { url } = await this.generateRecordingUrl(recordingId, false);
-		window.open(url, '_blank');
+		let recordingUrl = `/recording/${recordingId}`;
+
+		// Append room secret as query param if it exists
+		const secret = this.meetingContextService.roomSecret();
+		if (secret) {
+			recordingUrl += `?secret=${secret}`;
+		}
+
+		recordingUrl = this.navigationService.addBasePath(recordingUrl);
+		window.open(recordingUrl, '_blank');
 	}
 
 	/**
 	 * Downloads a recording by creating a link and triggering a click event
 	 *
 	 * @param recording - The recording information containing the ID and filename
-	 * @param secret - Optional secret for accessing the recording
+	 * @param recordingSecret - Optional recording secret for accessing the recording
 	 */
-	downloadRecording(recording: MeetRecordingInfo, secret?: string) {
-		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId, secret);
+	downloadRecording(recording: MeetRecordingInfo, recordingSecret?: string) {
+		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId, recordingSecret);
 		const link = document.createElement('a');
 		link.href = recordingUrl;
 		link.download = recording.filename || `${recording.recordingId}.mp4`;

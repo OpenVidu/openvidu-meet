@@ -5,8 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from 'openvidu-components-angular';
 import { Subject } from 'rxjs';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
@@ -36,9 +36,9 @@ export class MeetingComponent implements OnInit {
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected ovThemeService = inject(OpenViduThemeService);
+	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
-	protected runtimeConfigService = inject(RuntimeConfigService);
 
 	// Template reference for custom participant panel item
 	@ContentChild(MeetingParticipantItemComponent)
@@ -136,11 +136,12 @@ export class MeetingComponent implements OnInit {
 	}
 
 	async onViewRecordingsClicked() {
-		const basePath = this.runtimeConfigService.basePath;
-		const basePathForUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-
 		const roomId = this.meetingContextService.roomId();
-		let recordingsUrl = `${basePathForUrl}/room/${roomId}/recordings`;
+		if (!roomId) {
+			return;
+		}
+
+		let recordingsUrl = `/room/${roomId}/recordings`;
 
 		// Append room secret as query param if it exists
 		const secret = this.meetingContextService.roomSecret();
@@ -148,6 +149,7 @@ export class MeetingComponent implements OnInit {
 			recordingsUrl += `?secret=${secret}`;
 		}
 
+		recordingsUrl = this.navigationService.addBasePath(recordingsUrl);
 		window.open(recordingsUrl, '_blank');
 	}
 
