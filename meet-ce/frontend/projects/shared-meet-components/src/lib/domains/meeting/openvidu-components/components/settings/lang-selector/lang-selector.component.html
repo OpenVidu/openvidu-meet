@@ -1,5 +1,5 @@
 <div class="language-selector-container">
-	@if (compact) {
+	@if (compact()) {
 		<!-- Compact version (icon only) -->
 		<button mat-icon-button [matMenuTriggerFor]="langMenu" class="compact-lang-button" [matTooltip]="'Change language'" disableRipple>
 			<mat-icon>translate</mat-icon>
@@ -25,7 +25,9 @@
 				[class.selected]="langSelected.lang === lang.lang"
 				class="language-option"
 			>
-				<mat-icon *ngIf="langSelected.lang === lang.lang" class="check-icon">check</mat-icon>
+				@if (langSelected.lang === lang.lang) {
+					<mat-icon class="check-icon">check</mat-icon>
+				}
 				<span class="lang-option-name">{{ lang.name }}</span>
 			</button>
 		}

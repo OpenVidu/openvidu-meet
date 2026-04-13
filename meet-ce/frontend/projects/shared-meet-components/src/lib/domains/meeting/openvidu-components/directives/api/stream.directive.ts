@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
 /**
@@ -32,10 +32,8 @@ export class StreamDisplayParticipantNameDirective implements AfterViewInit, OnD
 
 	displayParticipantNameValue: boolean = true;
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngOnDestroy(): void {
 		this.clear();
@@ -85,10 +83,8 @@ export class StreamDisplayAudioDetectionDirective implements AfterViewInit, OnDe
 
 	displayAudioDetectionValue: boolean = true;
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.displayAudioDetectionValue);
@@ -136,10 +132,8 @@ export class StreamVideoControlsDirective implements AfterViewInit, OnDestroy {
 
 	videoControlsValue: boolean = true;
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.videoControlsValue);

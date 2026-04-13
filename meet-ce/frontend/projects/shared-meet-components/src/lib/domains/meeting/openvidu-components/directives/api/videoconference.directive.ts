@@ -1,10 +1,10 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, OnInit } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject } from '@angular/core';
 import { CaptionsLangOption } from '../../models/caption.model';
 // import { CaptionService } from '../../services/caption/caption.service';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
-import { TranslateService } from '../../services/translate/translate.service';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
+import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { StorageService } from '../../services/storage/storage.service';
+import { TranslateService } from '../../services/translate/translate.service';
 
 /**
  * The **livekitUrl** directive sets the livekitUrl to grant a participant access to a Room.
@@ -32,10 +32,8 @@ export class LivekitUrlDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore
@@ -85,10 +83,8 @@ export class TokenDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore
@@ -137,10 +133,8 @@ export class TokenErrorDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore
@@ -189,10 +183,8 @@ export class MinimalDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore
@@ -254,10 +246,8 @@ export class LangDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private translateService: TranslateService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly translateService = inject(TranslateService);
 
 	/**
 	 * @ignore
@@ -324,10 +314,8 @@ export class LangOptionsDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private translateService: TranslateService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly translateService = inject(TranslateService);
 
 	/**
 	 * @ignore
@@ -506,10 +494,8 @@ export class ParticipantNameDirective implements AfterViewInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore
@@ -567,10 +553,8 @@ export class PrejoinDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore
@@ -620,11 +604,9 @@ export class VideoEnabledDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService,
-		private storageService: StorageService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly storageService = inject(StorageService);
 
 	/**
 	 * @ignore
@@ -692,11 +674,9 @@ export class AudioEnabledDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService,
-		private storageService: StorageService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly storageService = inject(StorageService);
 
 	ngOnDestroy(): void {
 		this.clear();
@@ -759,10 +739,8 @@ export class ShowDisconnectionDialogDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore
@@ -825,10 +803,8 @@ export class RecordingStreamBaseUrlDirective implements AfterViewInit, OnDestroy
 	/**
 	 * @ignore
 	 */
-	constructor(
-		private elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @ignore

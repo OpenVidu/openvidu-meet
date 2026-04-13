@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
 /**
@@ -32,10 +32,8 @@ export class ActivitiesPanelRecordingActivityDirective implements AfterViewInit,
 
 	recordingActivityValue: boolean = true;
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.recordingActivityValue);
@@ -84,10 +82,8 @@ export class ActivitiesPanelBroadcastingActivityDirective implements AfterViewIn
 
 	broadcastingActivityValue: boolean = true;
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.broadcastingActivityValue);

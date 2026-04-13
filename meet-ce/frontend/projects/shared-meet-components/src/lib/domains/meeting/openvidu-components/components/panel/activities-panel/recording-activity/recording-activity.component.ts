@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnDestroy, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnDestroy, OnInit, output } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { ILogger } from '../../../../models/logger.model';
 import {
@@ -36,51 +36,51 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 	/**
 	 * @internal
 	 */
-	@Input() expanded: boolean = false;
+	expanded = input(false);
 
 	/**
 	 * This event is fired when the user clicks on the start recording button.
 	 * It provides the {@link RecordingStartRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingStartRequested: EventEmitter<RecordingStartRequestedEvent> = new EventEmitter<RecordingStartRequestedEvent>();
+	onRecordingStartRequested = output<RecordingStartRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when stop recording button has been clicked.
 	 * It provides the {@link RecordingStopRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingStopRequested: EventEmitter<RecordingStopRequestedEvent> = new EventEmitter<RecordingStopRequestedEvent>();
+	onRecordingStopRequested = output<RecordingStopRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when delete recording button has been clicked.
 	 * It provides the {@link RecordingDeleteRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingDeleteRequested: EventEmitter<RecordingDeleteRequestedEvent> = new EventEmitter<RecordingDeleteRequestedEvent>();
+	onRecordingDeleteRequested = output<RecordingDeleteRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when download recording button has been clicked.
 	 * It provides the {@link RecordingDownloadClickedEvent} payload as event data.
 	 */
-	@Output() onRecordingDownloadClicked: EventEmitter<RecordingDownloadClickedEvent> = new EventEmitter<RecordingDownloadClickedEvent>();
+	onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
 
 	/**
 	 * Provides event notifications that fire when play recording button has been clicked.
 	 * It provides the {@link RecordingPlayClickedEvent} payload as event data.
 	 */
-	@Output() onRecordingPlayClicked: EventEmitter<RecordingPlayClickedEvent> = new EventEmitter<RecordingPlayClickedEvent>();
+	onRecordingPlayClicked = output<RecordingPlayClickedEvent>();
 
 	/**
 	 * @internal
 	 * Provides event notifications that fire when view recordings button has been clicked.
 	 * This event is triggered when the user wants to view all recordings in an external page.
 	 */
-	@Output() onViewRecordingsClicked: EventEmitter<void> = new EventEmitter<void>();
+	onViewRecordingsClicked = output<void>();
 
 	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recording button.
 	 * It provides the recording ID as event data.
 	 */
-	@Output() onViewRecordingClicked: EventEmitter<string> = new EventEmitter<string>();
+	onViewRecordingClicked = output<string>();
 
 	/**
 	 * @internal
@@ -170,15 +170,15 @@ export class RecordingActivityComponent implements OnInit, OnDestroy {
 	/**
 	 * @internal
 	 */
-	constructor(
-		private recordingService: RecordingService,
-		private participantService: ParticipantService,
-		private actionService: ActionService,
-		private openviduService: OpenViduService,
-		private cd: ChangeDetectorRef,
-		private loggerSrv: LoggerService,
-		private libService: OpenViduComponentsConfigService
-	) {
+	private recordingService = inject(RecordingService);
+	private participantService = inject(ParticipantService);
+	private actionService = inject(ActionService);
+	private openviduService = inject(OpenViduService);
+	private cd = inject(ChangeDetectorRef);
+	private loggerSrv = inject(LoggerService);
+	private libService = inject(OpenViduComponentsConfigService);
+
+	constructor() {
 		this.log = this.loggerSrv.get('RecordingActivityComponent');
 	}
 

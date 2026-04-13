@@ -1,19 +1,24 @@
-import { Component, ElementRef, Inject, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { RecordingDialogData } from '../../models/dialog.model';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * @internal
  */
 @Component({
     selector: 'app-recording-dialog',
+	imports: [AppMaterialModule, TranslatePipe],
     template: `
 		<div mat-dialog-content>
-			<video #videoElement controls autoplay [src]="src" (error)="handleError()"></video>
+			<video #videoElement controls autoplay [src]="src()" (error)="handleError()"></video>
 		</div>
-		<div mat-dialog-actions *ngIf="data.showActionButtons" align="end">
-			<button mat-button [disableRipple]="true" (click)="close()">{{ 'PANEL.CLOSE' | translate }}</button>
-		</div>
+		@if (showActionButtons()) {
+			<div mat-dialog-actions align="end">
+				<button mat-button [disableRipple]="true" (click)="close()">{{ 'PANEL.CLOSE' | translate }}</button>
+			</div>
+		}
 	`,
     styles: [
         `
@@ -39,26 +44,22 @@ import { RecordingDialogData } from '../../models/dialog.model';
 			}
 		`
     ],
-    standalone: false
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingDialogComponent {
-	@ViewChild('videoElement', { static: true }) videoElement: ElementRef<HTMLVideoElement> | undefined = undefined;
+	private readonly dialogRef = inject(MatDialogRef<RecordingDialogComponent>);
+	private readonly data = signal(inject<RecordingDialogData>(MAT_DIALOG_DATA));
+	readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('videoElement');
+	readonly src = computed(() => this.data().src);
+	readonly showActionButtons = computed(() => this.data().showActionButtons);
 
-	src: string = '';
-
-	constructor(
-		public dialogRef: MatDialogRef<RecordingDialogComponent>,
-		@Inject(MAT_DIALOG_DATA) public data: RecordingDialogData
-	) {
-		this.src = data.src;
-	}
 	close() {
 		this.dialogRef.close({ manageError: false, error: null });
 	}
 
 	handleError() {
-		if (!this.videoElement) return;
-		const videoElement = this.videoElement.nativeElement;
-		this.dialogRef.close({ manageError: true, error: videoElement.error });
+		const videoElement = this.videoElement();
+		if (!videoElement) return;
+		this.dialogRef.close({ manageError: true, error: videoElement.nativeElement.error });
 	}
 }

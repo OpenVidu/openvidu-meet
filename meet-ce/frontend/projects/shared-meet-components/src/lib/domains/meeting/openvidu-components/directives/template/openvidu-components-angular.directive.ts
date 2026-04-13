@@ -1,4 +1,4 @@
-import { Directive, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 
 /**
  * The ***ovToolbar** directive allows to replace the default toolbar component with a custom one.
@@ -126,10 +126,8 @@ export class ToolbarDirective {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -266,10 +264,8 @@ export class ToolbarAdditionalButtonsDirective {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -389,10 +385,8 @@ export class ToolbarAdditionalPanelButtonsDirective {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -539,10 +533,8 @@ export class PanelDirective {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -726,10 +718,8 @@ export class AdditionalPanelsDirective {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -901,10 +891,8 @@ export class AdditionalPanelsDirective {
 	standalone: false
 })
 export class ChatPanelDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -916,10 +904,8 @@ export class ChatPanelDirective {
 	standalone: false
 })
 export class BackgroundEffectsPanelDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -1029,10 +1015,8 @@ export class BackgroundEffectsPanelDirective {
 	standalone: false
 })
 export class ActivitiesPanelDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -1200,10 +1184,8 @@ export class ActivitiesPanelDirective {
 	standalone: false
 })
 export class ParticipantsPanelDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -1338,10 +1320,8 @@ export class ParticipantsPanelDirective {
 	standalone: false
 })
 export class ParticipantPanelItemDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -1481,10 +1461,8 @@ export class ParticipantPanelItemDirective {
 	standalone: false
 })
 export class ParticipantPanelItemElementsDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public viewContainer: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public viewContainer = inject(ViewContainerRef);
 }
 
 /**
@@ -1677,10 +1655,8 @@ export class ParticipantPanelItemElementsDirective {
 	standalone: false
 })
 export class LayoutDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 }
 
 /**
@@ -1809,9 +1785,7 @@ export class LayoutDirective {
 	standalone: false
 })
 export class StreamDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 }
 

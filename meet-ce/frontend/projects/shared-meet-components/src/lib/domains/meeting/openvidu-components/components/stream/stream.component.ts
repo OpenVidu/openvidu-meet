@@ -72,7 +72,7 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	hoveringTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+	hoveringTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	/**
 	 * @ignore
@@ -95,7 +95,7 @@ export class StreamComponent implements OnInit, OnDestroy {
 		this._track = track;
 	}
 
-	private _streamContainer: ElementRef | undefined = undefined;
+	private _streamContainer: ElementRef | undefined;
 	private destroy$ = new Subject<void>();
 	private readonly HOVER_TIMEOUT = 2000;
 
@@ -114,8 +114,9 @@ export class StreamComponent implements OnInit, OnDestroy {
 	}
 
 	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
+		if (this.hoveringTimeout) {
+			clearTimeout(this.hoveringTimeout);
+		}
 		this.cdkSrv.setSelector('body');
 	}
 
@@ -123,10 +124,11 @@ export class StreamComponent implements OnInit, OnDestroy {
 	 * @ignore
 	 */
 	toggleVideoPinned() {
-		const sid = this._track?.trackSid;
-		if (this._track?.participant) {
-			if (this._track?.participant.isLocal) {
-				if (this._track?.participant.isMinimized) {
+		const activeTrack = this._track;
+		const sid = activeTrack?.trackSid;
+		if (activeTrack?.participant) {
+			if (activeTrack.participant.isLocal) {
+				if (activeTrack.participant.isMinimized) {
 					this.participantService.toggleMyVideoMinimized(sid);
 				}
 				this.participantService.toggleMyVideoPinned(sid);
@@ -141,8 +143,9 @@ export class StreamComponent implements OnInit, OnDestroy {
 	 * @ignore
 	 */
 	toggleMinimize() {
-		const sid = this._track?.trackSid;
-		if (this._track?.participant && this._track?.participant.isLocal) {
+		const activeTrack = this._track;
+		const sid = activeTrack?.trackSid;
+		if (activeTrack?.participant && activeTrack.participant.isLocal) {
 			this.participantService.toggleMyVideoMinimized(sid);
 			this.layoutService.update();
 		}
@@ -152,21 +155,23 @@ export class StreamComponent implements OnInit, OnDestroy {
 	 * @ignore
 	 */
 	toggleVideoMenu(event: MouseEvent) {
-		if (!this.menuTrigger) return;
-		if (this.menuTrigger.menuOpen) {
-			this.menuTrigger.closeMenu();
+		const trigger = this.menuTrigger;
+		if (!trigger) return;
+		if (trigger.menuOpen) {
+			trigger.closeMenu();
 			return;
 		}
 		this.cdkSrv.setSelector('#container-' + this._track?.trackSid);
-		this.menuTrigger.openMenu();
+		trigger.openMenu();
 	}
 
 	/**
 	 * @ignore
 	 */
 	toggleMuteForcibly() {
-		if (this._track?.participant) {
-			this.participantService.setRemoteMutedForcibly(this._track?.participant.sid, !this._track?.isMutedForcibly);
+		const activeTrack = this._track;
+		if (activeTrack?.participant) {
+			this.participantService.setRemoteMutedForcibly(activeTrack.participant.sid, !activeTrack.isMutedForcibly);
 		}
 	}
 

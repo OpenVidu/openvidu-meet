@@ -1,6 +1,6 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy } from '@angular/core';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject } from '@angular/core';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
+import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
 /**
  * The **cameraButton** directive allows show/hide the camera toolbar button.
@@ -43,10 +43,8 @@ export class ToolbarCameraButtonDirective implements AfterViewInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.cameraValue);
@@ -107,10 +105,8 @@ export class ToolbarMicrophoneButtonDirective implements AfterViewInit, OnDestro
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.microphoneValue);
@@ -171,10 +167,8 @@ export class ToolbarScreenshareButtonDirective implements AfterViewInit, OnDestr
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.screenshareValue);
@@ -233,10 +227,8 @@ export class ToolbarRecordingButtonDirective implements AfterViewInit, OnDestroy
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.recordingValue);
@@ -295,10 +287,8 @@ export class ToolbarBroadcastingButtonDirective implements AfterViewInit, OnDest
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.broadcastingValue);
@@ -357,10 +347,8 @@ export class ToolbarFullscreenButtonDirective implements AfterViewInit, OnDestro
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.fullscreenValue);
@@ -418,10 +406,8 @@ export class ToolbarBackgroundEffectsButtonDirective implements AfterViewInit, O
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.backgroundEffectsValue);
@@ -478,7 +464,8 @@ export class ToolbarBackgroundEffectsButtonDirective implements AfterViewInit, O
 // 	/**
 // 	 * @ignore
 // 	 */
-// 	constructor(public elementRef: ElementRef, private libService: OpenViduAngularConfigService) {}
+// 	public elementRef = inject(ElementRef);
+// 	private readonly libService = inject(OpenViduAngularConfigService);
 
 // 	ngAfterViewInit() {
 // 		this.update(this.captionsButtonValue);
@@ -538,10 +525,8 @@ export class ToolbarSettingsButtonDirective implements AfterViewInit, OnDestroy 
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.settingsValue);
@@ -599,10 +584,8 @@ export class ToolbarLeaveButtonDirective implements AfterViewInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.leaveValue);
@@ -662,10 +645,8 @@ export class ToolbarParticipantsPanelButtonDirective implements AfterViewInit, O
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.participantsPanelValue);
@@ -723,10 +704,8 @@ export class ToolbarChatPanelButtonDirective implements AfterViewInit, OnDestroy
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.toolbarChatPanelValue);
@@ -784,10 +763,8 @@ export class ToolbarActivitiesPanelButtonDirective implements AfterViewInit, OnD
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.toolbarActivitiesPanelValue);
@@ -846,10 +823,8 @@ export class ToolbarDisplayRoomNameDirective implements AfterViewInit, OnDestroy
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.displayRoomValue);
@@ -908,10 +883,8 @@ export class ToolbarDisplayLogoDirective implements AfterViewInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.displayLogoValue);
@@ -963,10 +936,8 @@ export class ToolbarAdditionalButtonsPossitionDirective implements AfterViewInit
 	/**
 	 * @ignore
 	 */
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.additionalButtonsPosition);

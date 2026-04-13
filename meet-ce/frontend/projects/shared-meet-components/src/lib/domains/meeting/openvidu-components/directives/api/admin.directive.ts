@@ -1,4 +1,4 @@
-import { Directive, AfterViewInit, OnDestroy, Input, ElementRef } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, inject, Input, OnDestroy } from '@angular/core';
 import { RecordingInfo } from '../../models/recording.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
@@ -23,10 +23,8 @@ export class AdminDashboardRecordingsListDirective implements AfterViewInit, OnD
 
 	recordingsValue: RecordingInfo[] = [];
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.recordingsValue);
@@ -65,10 +63,8 @@ export class AdminDashboardTitleDirective implements AfterViewInit, OnDestroy {
 
 	navbarTitleValue: string = 'OpenVidu Dashboard';
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.navbarTitleValue);
@@ -78,10 +74,10 @@ export class AdminDashboardTitleDirective implements AfterViewInit, OnDestroy {
 	}
 	clear() {
 		this.navbarTitleValue = 'OpenVidu Dashboard';
-		this.update(null);
+		this.update(undefined);
 	}
 
-	update(value: any) {
+	update(value: string | undefined) {
 		this.libService.updateAdminConfig({ dashboardTitle: value });
 	}
 }
@@ -100,17 +96,15 @@ export class AdminDashboardTitleDirective implements AfterViewInit, OnDestroy {
 	standalone: false
 })
 export class AdminLoginTitleDirective implements AfterViewInit, OnDestroy {
-	@Input() set navbarTitle(value: any) {
+	@Input() set navbarTitle(value: string | undefined) {
 		this.navbarTitleValue = value;
 		this.update(this.navbarTitleValue);
 	}
 
-	navbarTitleValue: any = null;
+	navbarTitleValue: string | undefined = undefined;
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.navbarTitleValue);
@@ -119,11 +113,11 @@ export class AdminLoginTitleDirective implements AfterViewInit, OnDestroy {
 		this.clear();
 	}
 	clear() {
-		this.navbarTitleValue = null;
-		this.update(null);
+		this.navbarTitleValue = undefined;
+		this.update(undefined);
 	}
 
-	update(value: any) {
+	update(value: string | undefined) {
 		this.libService.updateAdminConfig({ loginTitle: value });
 	}
 }
@@ -142,17 +136,15 @@ export class AdminLoginTitleDirective implements AfterViewInit, OnDestroy {
 	standalone: false
 })
 export class AdminLoginErrorDirective implements AfterViewInit, OnDestroy {
-	@Input() set error(value: any) {
+	@Input() set error(value: unknown) {
 		this.errorValue = value;
 		this.update(this.errorValue);
 	}
 
-	errorValue: any = null;
+	errorValue: unknown = null;
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.errorValue);
@@ -165,7 +157,7 @@ export class AdminLoginErrorDirective implements AfterViewInit, OnDestroy {
 		this.update(null);
 	}
 
-	update(value: any) {
+	update(value: unknown) {
 		this.libService.updateAdminConfig({ loginError: value });
 	}
 }

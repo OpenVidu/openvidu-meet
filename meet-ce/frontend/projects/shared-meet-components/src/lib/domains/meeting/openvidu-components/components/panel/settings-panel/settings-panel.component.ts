@@ -1,13 +1,13 @@
-import { Component, ContentChild, EventEmitter, OnInit, Output, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ContentChild, inject, OnInit, output, TemplateRef } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { PanelStatusInfo, PanelSettingsOptions, PanelType } from '../../../models/panel.model';
+import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
+import { CustomDevice } from '../../../models/device.model';
+import { LangOption } from '../../../models/lang.model';
+import { PanelSettingsOptions, PanelStatusInfo, PanelType } from '../../../models/panel.model';
 import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
 import { PlatformService } from '../../../services/platform/platform.service';
 import { ViewportService } from '../../../services/viewport/viewport.service';
-import { CustomDevice } from '../../../models/device.model';
-import { LangOption } from '../../../models/lang.model';
-import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
 
 /**
  * @internal
@@ -16,14 +16,15 @@ import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../direct
 	selector: 'ov-settings-panel',
 	templateUrl: './settings-panel.component.html',
 	styleUrls: ['../panel.component.scss', './settings-panel.component.scss'],
+	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: false
 })
 export class SettingsPanelComponent implements OnInit {
-	@Output() onVideoEnabledChanged = new EventEmitter<boolean>();
-	@Output() onVideoDeviceChanged = new EventEmitter<CustomDevice>();
-	@Output() onAudioEnabledChanged = new EventEmitter<boolean>();
-	@Output() onAudioDeviceChanged = new EventEmitter<CustomDevice>();
-	@Output() onLangChanged = new EventEmitter<LangOption>();
+	onVideoEnabledChanged = output<boolean>();
+	onVideoDeviceChanged = output<CustomDevice>();
+	onAudioEnabledChanged = output<boolean>();
+	onAudioDeviceChanged = output<CustomDevice>();
+	onLangChanged = output<LangOption>();
 
 	/**
 	 * @internal
@@ -49,12 +50,10 @@ export class SettingsPanelComponent implements OnInit {
 		return this.externalGeneralAdditionalElements?.template;
 	}
 
-	constructor(
-		private panelService: PanelService,
-		private platformService: PlatformService,
-		private libService: OpenViduComponentsConfigService,
-		public viewportService: ViewportService
-	) {}
+	private panelService = inject(PanelService);
+	private platformService = inject(PlatformService);
+	private libService = inject(OpenViduComponentsConfigService);
+	public viewportService = inject(ViewportService);
 
 	// Computed properties for responsive behavior
 	get isCompactView(): boolean {

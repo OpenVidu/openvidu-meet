@@ -1,4 +1,4 @@
-import { Directive, AfterViewInit, OnDestroy, Input, ElementRef } from '@angular/core';
+import { AfterViewInit, Directive, ElementRef, inject, Input, OnDestroy } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
 /**
@@ -32,10 +32,8 @@ export class ParticipantPanelItemMuteButtonDirective implements AfterViewInit, O
 
 	muteValue: boolean = true;
 
-	constructor(
-		public elementRef: ElementRef,
-		private libService: OpenViduComponentsConfigService
-	) {}
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	ngAfterViewInit() {
 		this.update(this.muteValue);

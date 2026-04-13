@@ -1,6 +1,8 @@
-import { Component, Inject } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { DialogData } from '../../models/dialog.model';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 
 /**
@@ -9,21 +11,28 @@ import { DialogData } from '../../models/dialog.model';
 
 @Component({
     selector: 'ov-pro-feature-template',
+	imports: [AppMaterialModule, TranslatePipe],
     template: `
-		<h1 mat-dialog-title>{{ data.title }}</h1>
-		<div mat-dialog-content>{{ data.description }}</div>
-		<div mat-dialog-actions *ngIf="data.showActionButtons">
-			<button mat-button (click)="seeMore()">
-				<span>{{'PANEL.SEE_MORE' | translate}}</span>
-				<mat-icon>open_in_new</mat-icon>
-			</button>
-			<button mat-button (click)="close()">{{'PANEL.CLOSE' | translate}}</button>
-		</div>
+		<h1 mat-dialog-title>{{ title() }}</h1>
+		<div mat-dialog-content>{{ description() }}</div>
+		@if (showActionButtons()) {
+			<div mat-dialog-actions>
+				<button mat-button (click)="seeMore()">
+					<span>{{ 'PANEL.SEE_MORE' | translate }}</span>
+					<mat-icon>open_in_new</mat-icon>
+				</button>
+				<button mat-button (click)="close()">{{ 'PANEL.CLOSE' | translate }}</button>
+			</div>
+		}
 	`,
-    standalone: false
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProFeatureDialogTemplateComponent {
-	constructor(public dialogRef: MatDialogRef<ProFeatureDialogTemplateComponent>, @Inject(MAT_DIALOG_DATA) public data: DialogData) {}
+	private readonly dialogRef = inject(MatDialogRef<ProFeatureDialogTemplateComponent>);
+	private readonly data = signal(inject<DialogData>(MAT_DIALOG_DATA));
+	readonly title = computed(() => this.data().title);
+	readonly description = computed(() => this.data().description);
+	readonly showActionButtons = computed(() => this.data().showActionButtons);
 
 	close() {
 		this.dialogRef.close();

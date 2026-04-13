@@ -104,6 +104,8 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	private destroy$ = new Subject<void>();
 	private resizeObserver: ResizeObserver | undefined = undefined;
 	private resizeTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+	private mutationObserver: MutationObserver | undefined = undefined;
+	private mutationTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 	private videoIsAtRight: boolean = false;
 	private lastLayoutWidth: number = 0;
 	private lastLayoutHeight: number = 0;
@@ -137,6 +139,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 		const rect = layoutContainer.getBoundingClientRect();
 		this.lastLayoutWidth = rect.width;
 		this.lastLayoutHeight = rect.height;
+		this.listenToLayoutDomChanges();
 		this.listenToResizeLayout();
 		this.listenToCdkDrag();
 	}
@@ -147,6 +150,9 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.localParticipant = undefined;
 		this.remoteParticipants = [];
 		this.resizeObserver?.disconnect();
+		this.mutationObserver?.disconnect();
+		clearTimeout(this.resizeTimeout);
+		clearTimeout(this.mutationTimeout);
 		this.layoutService.clear();
 	}
 
@@ -185,6 +191,30 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	private updateTemplatesAndMarkForCheck(): void {
 		this.setupTemplates();
 		this.cd.markForCheck();
+		this.layoutService.update();
+	}
+
+	private listenToLayoutDomChanges() {
+		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		if (!layoutContainer) return;
+
+		this.mutationObserver = new MutationObserver((mutations) => {
+			const hasStructuralChanges = mutations.some(
+				(mutation) => mutation.type === 'childList' && (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)
+			);
+			if (!hasStructuralChanges) return;
+
+			clearTimeout(this.mutationTimeout);
+			this.mutationTimeout = setTimeout(() => {
+				this.layoutService.update();
+				this.cd.markForCheck();
+			}, 0);
+		});
+
+		this.mutationObserver.observe(layoutContainer, {
+			childList: true,
+			subtree: true
+		});
 	}
 
 	private subscribeToCaptions() {

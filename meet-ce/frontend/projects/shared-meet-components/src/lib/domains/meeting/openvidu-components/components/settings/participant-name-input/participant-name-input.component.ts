@@ -1,5 +1,7 @@
-import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, output } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { StorageService } from '../../../services/storage/storage.service';
 
@@ -8,22 +10,20 @@ import { StorageService } from '../../../services/storage/storage.service';
  */
 @Component({
 	selector: 'ov-participant-name-input',
+	imports: [FormsModule, AppMaterialModule, TranslatePipe],
 	templateUrl: './participant-name-input.component.html',
-	styleUrls: ['./participant-name-input.component.scss'],
-	standalone: false
+	styleUrl: './participant-name-input.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ParticipantNameInputComponent implements OnInit {
 	name = '';
-	localParticipantSubscription = new Subscription();
-	@Input() isPrejoinPage = false;
-	@Input() error = false;
-	@Output() onNameUpdated = new EventEmitter<string>();
-	@Output() onEnterPressed = new EventEmitter<void>();
+	readonly isPrejoinPage = input(false);
+	readonly error = input(false);
+	readonly onNameUpdated = output<string>();
+	readonly onEnterPressed = output<void>();
 
-	constructor(
-		private participantService: ParticipantService,
-		private storageSrv: StorageService
-	) {}
+	private readonly participantService = inject(ParticipantService);
+	private readonly storageSrv = inject(StorageService);
 
 	ngOnInit(): void {
 		this.subscribeToParticipantProperties();
@@ -44,7 +44,7 @@ export class ParticipantNameInputComponent implements OnInit {
 	 * we decided to not allow this feature for now.
 	 */
 	updateName() {
-		if (this.isPrejoinPage) {
+		if (this.isPrejoinPage()) {
 			this.name = this.name ?? this.participantService.getMyName();
 			// this.participantService.setMyName(this.name);
 			this.storageSrv.setParticipantName(this.name);
@@ -57,7 +57,7 @@ export class ParticipantNameInputComponent implements OnInit {
 	 */
 	eventKeyPress(event: KeyboardEvent) {
 		// Pressed 'Enter' key
-		if (event && event.keyCode === 13 && this.name) {
+		if (event.key === 'Enter' && this.name) {
 			event.preventDefault();
 			this.updateName();
 			this.onEnterPressed.emit();

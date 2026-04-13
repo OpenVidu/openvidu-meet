@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 /**
  * @internal
@@ -12,7 +12,7 @@ import { Component } from '@angular/core';
 			<div class="stick normal play"></div>
 		</div>
 	`,
-	styleUrls: ['./audio-wave.component.scss'],
-	standalone: false
+	styleUrl: './audio-wave.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AudioWaveComponent {}

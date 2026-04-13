@@ -1,7 +1,7 @@
-import { Pipe, PipeTransform } from '@angular/core';
-import { ParticipantTrackPublication, ParticipantModel } from '../models/participant.model';
-import { TranslateService } from '../services/translate/translate.service';
+import { Pipe, PipeTransform, inject } from '@angular/core';
 import { Track } from 'livekit-client';
+import { ParticipantModel, ParticipantTrackPublication } from '../models/participant.model';
+import { TranslateService } from '../services/translate/translate.service';
 
 /**
  * The **RemoteParticipantTracksPipe** allows us to get all the tracks from all remote participants.
@@ -10,8 +10,6 @@ import { Track } from 'livekit-client';
  */
 @Pipe({ name: 'tracks', standalone: false })
 export class RemoteParticipantTracksPipe implements PipeTransform {
-	constructor() {}
-
 	transform(participants: ParticipantModel[]): ParticipantTrackPublication[] {
 		return participants.map((p) => p.tracks).flat();
 	}
@@ -22,7 +20,7 @@ export class RemoteParticipantTracksPipe implements PipeTransform {
  */
 @Pipe({ name: 'tracksPublishedTypes', standalone: false })
 export class TrackPublishedTypesPipe implements PipeTransform {
-	constructor(private translateService: TranslateService) {}
+	private readonly translateService = inject(TranslateService);
 
 	transform(participant: ParticipantModel): string {
 		const trackTypes = participant?.getTracksPublishedTypes() ?? [];

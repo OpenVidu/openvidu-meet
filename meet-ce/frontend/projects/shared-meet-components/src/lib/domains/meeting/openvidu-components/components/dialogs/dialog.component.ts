@@ -1,6 +1,8 @@
-import { Component, Inject } from '@angular/core';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { DialogData } from '../../models/dialog.model';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * @internal
@@ -8,12 +10,15 @@ import { DialogData } from '../../models/dialog.model';
 
 @Component({
     selector: 'ov-dialog-template',
+	imports: [AppMaterialModule, TranslatePipe],
     template: `
-		<h1 mat-dialog-title>{{ data.title }}</h1>
-		<div mat-dialog-content id="openvidu-dialog">{{ data.description }}</div>
-		<div mat-dialog-actions *ngIf="data.showActionButtons">
-			<button mat-button [disableRipple]="true" (click)="close()">{{ 'PANEL.CLOSE' | translate }}</button>
-		</div>
+		<h1 mat-dialog-title>{{ title() }}</h1>
+		<div mat-dialog-content id="openvidu-dialog">{{ description() }}</div>
+		@if (showActionButtons()) {
+			<div mat-dialog-actions>
+				<button mat-button [disableRipple]="true" (click)="close()">{{ 'PANEL.CLOSE' | translate }}</button>
+			</div>
+		}
 	`,
     styles: [
         `
@@ -34,13 +39,14 @@ import { DialogData } from '../../models/dialog.model';
 			}
 		`
     ],
-    standalone: false
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DialogTemplateComponent {
-	constructor(
-		public dialogRef: MatDialogRef<DialogTemplateComponent>,
-		@Inject(MAT_DIALOG_DATA) public data: DialogData
-	) {}
+	private readonly dialogRef = inject(MatDialogRef<DialogTemplateComponent>);
+	private readonly data = signal(inject<DialogData>(MAT_DIALOG_DATA));
+	readonly title = computed(() => this.data().title);
+	readonly description = computed(() => this.data().description);
+	readonly showActionButtons = computed(() => this.data().showActionButtons);
 
 	close() {
 		this.dialogRef.close();

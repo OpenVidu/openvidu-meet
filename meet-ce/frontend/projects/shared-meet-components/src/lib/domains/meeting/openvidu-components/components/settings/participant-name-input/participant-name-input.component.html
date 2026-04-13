@@ -1,4 +1,4 @@
-<div class="participant-name-input-container" [class.error]="error">
+<div class="participant-name-input-container" [class.error]="error()">
 	<div class="input-wrapper">
 		<mat-icon class="input-icon">person</mat-icon>
 		<input
@@ -7,7 +7,7 @@
 			maxlength="20"
 			[(ngModel)]="name"
 			autocomplete="off"
-			[disabled]="!isPrejoinPage"
+			[disabled]="!isPrejoinPage()"
 			(input)="updateName()"
 			(keypress)="eventKeyPress($event)"
 			[placeholder]="'PREJOIN.NICKNAME' | translate"

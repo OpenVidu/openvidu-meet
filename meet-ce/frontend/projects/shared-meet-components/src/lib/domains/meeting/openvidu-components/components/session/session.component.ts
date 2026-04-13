@@ -1,16 +1,15 @@
 import {
-	ChangeDetectionStrategy,
-	ChangeDetectorRef,
-	Component,
-	ContentChild,
-	ElementRef,
-	EventEmitter,
-	HostListener,
-	OnDestroy,
-	OnInit,
-	Output,
-	TemplateRef,
-	ViewChild
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    ContentChild,
+    ElementRef,
+    HostListener,
+    OnDestroy,
+    OnInit,
+    output,
+    TemplateRef,
+    ViewChild
 } from '@angular/core';
 
 import { animate, style, transition, trigger } from '@angular/animations';
@@ -25,16 +24,16 @@ import { ActionService } from '../../services/action/action.service';
 import { BroadcastingService } from '../../services/broadcasting/broadcasting.service';
 // import { CaptionService } from '../../services/caption/caption.service';
 import {
-	DataPacket_Kind,
-	DisconnectReason,
-	LocalParticipant,
-	Participant,
-	RemoteParticipant,
-	RemoteTrack,
-	RemoteTrackPublication,
-	Room,
-	RoomEvent,
-	Track
+    DataPacket_Kind,
+    DisconnectReason,
+    LocalParticipant,
+    Participant,
+    RemoteParticipant,
+    RemoteTrack,
+    RemoteTrackPublication,
+    Room,
+    RoomEvent,
+    Track
 } from 'livekit-client';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStatus } from '../../models/recording.model';
@@ -76,33 +75,33 @@ export class SessionComponent implements OnInit, OnDestroy {
 	/**
 	 * Provides event notifications that fire when Room is created for the local participant.
 	 */
-	@Output() onRoomCreated: EventEmitter<Room> = new EventEmitter<Room>();
+	onRoomCreated = output<Room>();
 
 	/**
 	 * Provides event notifications that fire when Room is being reconnected for the local participant.
 	 */
-	@Output() onRoomReconnecting: EventEmitter<void> = new EventEmitter<void>();
+	onRoomReconnecting = output<void>();
 
 	/**
 	 * Provides event notifications that fire when Room is reconnected for the local participant.
 	 */
-	@Output() onRoomReconnected: EventEmitter<void> = new EventEmitter<void>();
+	onRoomReconnected = output<void>();
 
 	/**
 	 * Provides event notifications that fire when participant is disconnected from Room.
 	 * @deprecated Use {@link SessionComponent.onParticipantLeft} instead.
 	 */
-	@Output() onRoomDisconnected: EventEmitter<void> = new EventEmitter<void>();
+	onRoomDisconnected = output<void>();
 
 	/**
 	 * Provides event notifications that fire when local participant is connected to the Room.
 	 */
-	@Output() onParticipantConnected: EventEmitter<ParticipantModel> = new EventEmitter<ParticipantModel>();
+	onParticipantConnected = output<ParticipantModel>();
 
 	/**
 	 * This event is emitted when the local participant leaves the room.
 	 */
-	@Output() onParticipantLeft: EventEmitter<ParticipantLeftEvent> = new EventEmitter<ParticipantLeftEvent>();
+	onParticipantLeft = output<ParticipantLeftEvent>();
 
 	room!: Room;
 	sideMenu: MatSidenav | undefined = undefined;
@@ -267,7 +266,10 @@ export class SessionComponent implements OnInit, OnDestroy {
 			this.onRoomCreated.emit(this.room);
 			this.cd.markForCheck();
 			this.loading = false;
-			this.onParticipantConnected.emit(this.participantService.getLocalParticipant());
+			const localParticipant = this.participantService.getLocalParticipant();
+			if (localParticipant) {
+				this.onParticipantConnected.emit(localParticipant);
+			}
 		} catch (error: any) {
 			this.log.e('There was an error connecting to the room:', error?.code, error?.message);
 			this.actionService.openDialog(this.translateService.translate('ERRORS.SESSION'), error?.error || error?.message || error);

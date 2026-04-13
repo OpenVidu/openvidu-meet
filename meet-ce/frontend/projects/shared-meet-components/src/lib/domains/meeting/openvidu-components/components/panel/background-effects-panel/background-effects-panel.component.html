@@ -1,5 +1,5 @@
-<div class="panel-container" id="background-effects-container" [class.prejoin-mode]="mode === 'prejoin'">
-	@if (mode === 'meeting') {
+<div class="panel-container" id="background-effects-container" [class.prejoin-mode]="mode() === 'prejoin'">
+	@if (mode() === 'meeting') {
 		<div class="panel-header-container">
 			<h3 class="panel-title">{{ 'PANEL.BACKGROUND.TITLE' | translate }}</h3>
 
@@ -24,8 +24,8 @@
 		<div>
 			<h4 class="background-title">{{ 'PANEL.BACKGROUND.BLURRED_SECTION' | translate }}</h4>
 			<div>
+				@for (effect of noEffectAndBlurredBackground; track effect.id) {
 				<button
-					*ngFor="let effect of noEffectAndBlurredBackground"
 					mat-icon-button
 					class="effect-button"
 					[class.active-effect-btn]="backgroundSelectedId === effect.id"
@@ -40,6 +40,7 @@
 				>
 					<mat-icon>{{ effect.thumbnail }}</mat-icon>
 				</button>
+				}
 			</div>
 		</div>
 		<hr />
@@ -47,8 +48,8 @@
 			<h4 class="background-title">{{ 'PANEL.BACKGROUND.IMAGES_SECTION' | translate }}</h4>
 
 			<div class="grid">
+				@for (effect of backgroundImages; track effect.id) {
 				<div
-					*ngFor="let effect of backgroundImages"
 					class="effect-button"
 					[id]="'effect-' + effect.id"
 					[class.active-effect-btn]="backgroundSelectedId === effect.id"
@@ -57,6 +58,7 @@
 				>
 					<img [src]="effect.thumbnail" />
 				</div>
+				}
 			</div>
 		</div>
 	</div>

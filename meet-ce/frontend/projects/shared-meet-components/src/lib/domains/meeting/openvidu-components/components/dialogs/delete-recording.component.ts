@@ -1,11 +1,14 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { MatDialogRef } from '@angular/material/dialog';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
  * @internal
  */
 @Component({
     selector: 'app-delete-dialog',
+	imports: [AppMaterialModule, TranslatePipe],
     template: `
 		<div mat-dialog-content>{{ 'PANEL.RECORDING.DELETE_QUESTION' | translate }}</div>
 		<div mat-dialog-actions>
@@ -37,12 +40,12 @@ import { MatDialogRef } from '@angular/material/dialog';
 			}
 		`
     ],
-    standalone: false
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DeleteDialogComponent {
-	constructor(public dialogRef: MatDialogRef<DeleteDialogComponent>) {}
+	private readonly dialogRef = inject(MatDialogRef<DeleteDialogComponent>);
 
-	close(succsess = false) {
-		this.dialogRef.close(succsess);
+	close(success = false) {
+		this.dialogRef.close(success);
 	}
 }

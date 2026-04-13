@@ -1,16 +1,16 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, OnInit, output } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
+import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../../models/broadcasting.model';
 import { PanelStatusInfo, PanelType } from '../../../models/panel.model';
+import {
+    RecordingDeleteRequestedEvent,
+    RecordingDownloadClickedEvent,
+    RecordingPlayClickedEvent,
+    RecordingStartRequestedEvent,
+    RecordingStopRequestedEvent
+} from '../../../models/recording.model';
 import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
-import {
-	RecordingDeleteRequestedEvent,
-	RecordingDownloadClickedEvent,
-	RecordingPlayClickedEvent,
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent
-} from '../../../models/recording.model';
-import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../../models/broadcasting.model';
 
 /**
  * The **ActivitiesPanelComponent** is the component that allows showing the activities panel.
@@ -28,38 +28,38 @@ export class ActivitiesPanelComponent implements OnInit {
 	 * This event is fired when the user clicks on the start recording button.
 	 * It provides the {@link RecordingStartRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingStartRequested: EventEmitter<RecordingStartRequestedEvent> = new EventEmitter<RecordingStartRequestedEvent>();
+	onRecordingStartRequested = output<RecordingStartRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when stop recording button has been clicked.
 	 * It provides the {@link RecordingStopRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingStopRequested: EventEmitter<RecordingStopRequestedEvent> = new EventEmitter<RecordingStopRequestedEvent>();
+	onRecordingStopRequested = output<RecordingStopRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when delete recording button has been clicked.
 	 * It provides the {@link RecordingDeleteRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingDeleteRequested: EventEmitter<RecordingDeleteRequestedEvent> = new EventEmitter<RecordingDeleteRequestedEvent>();
+	onRecordingDeleteRequested = output<RecordingDeleteRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when download recording button has been clicked.
 	 * It provides the {@link RecordingDownloadClickedEvent} payload as event data.
 	 */
-	@Output() onRecordingDownloadClicked: EventEmitter<RecordingDownloadClickedEvent> = new EventEmitter<RecordingDownloadClickedEvent>();
+	onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
 
 	/**
 	 * Provides event notifications that fire when play recording button has been clicked.
 	 * It provides the {@link RecordingPlayClickedEvent} payload as event data.
 	 */
-	@Output() onRecordingPlayClicked: EventEmitter<RecordingPlayClickedEvent> = new EventEmitter<RecordingPlayClickedEvent>();
+	onRecordingPlayClicked = output<RecordingPlayClickedEvent>();
 
 	/**
 	 * @internal
 	 * Provides event notifications that fire when view recordings button has been clicked.
 	 * This event is triggered when the user wants to view all recordings in an external page.
 	 */
-	@Output() onViewRecordingsClicked: EventEmitter<void> = new EventEmitter<void>();
+	onViewRecordingsClicked = output<void>();
 
 	/**
 	 * @internal
@@ -67,21 +67,19 @@ export class ActivitiesPanelComponent implements OnInit {
 	 * This event is triggered when the user wants to view a specific recording in an external page.
 	 * It provides the recording ID as event data.
 	 */
-	@Output() onViewRecordingClicked: EventEmitter<string> = new EventEmitter<string>();
+	onViewRecordingClicked = output<string>();
 
 	/**
 	 * Provides event notifications that fire when start broadcasting button is clicked.
 	 * It provides the {@link BroadcastingStartRequestedEvent} payload as event data.
 	 */
-	@Output() onBroadcastingStartRequested: EventEmitter<BroadcastingStartRequestedEvent> =
-		new EventEmitter<BroadcastingStartRequestedEvent>();
+	onBroadcastingStartRequested = output<BroadcastingStartRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when stop broadcasting button is clicked.
 	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
 	 */
-	@Output() onBroadcastingStopRequested: EventEmitter<BroadcastingStopRequestedEvent> =
-		new EventEmitter<BroadcastingStopRequestedEvent>();
+	onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
 
 	/**
 	 * @internal
@@ -100,11 +98,9 @@ export class ActivitiesPanelComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	constructor(
-		private panelService: PanelService,
-		private libService: OpenViduComponentsConfigService,
-		private cd: ChangeDetectorRef
-	) {}
+	private panelService = inject(PanelService);
+	private libService = inject(OpenViduComponentsConfigService);
+	private cd = inject(ChangeDetectorRef);
 
 	/**
 	 * @internal

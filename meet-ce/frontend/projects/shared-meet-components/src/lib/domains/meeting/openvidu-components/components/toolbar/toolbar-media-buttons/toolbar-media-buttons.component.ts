@@ -1,9 +1,9 @@
-import { Component, ContentChild, EventEmitter, Output, TemplateRef, computed, inject, input } from '@angular/core';
-import { RecordingStatus } from '../../../models/recording.model';
+import { ChangeDetectionStrategy, Component, ContentChild, TemplateRef, computed, inject, input, output } from '@angular/core';
+import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
 import { BroadcastingStatus } from '../../../models/broadcasting.model';
+import { RecordingStatus } from '../../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../../models/toolbar.model';
 import { ViewportService } from '../../../services/viewport/viewport.service';
-import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
 
 /**
  * @internal
@@ -12,6 +12,7 @@ import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directi
 	selector: 'ov-toolbar-media-buttons',
 	templateUrl: './toolbar-media-buttons.component.html',
 	styleUrl: './toolbar-media-buttons.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: false
 })
 export class ToolbarMediaButtonsComponent {
@@ -132,22 +133,22 @@ export class ToolbarMediaButtonsComponent {
 	});
 
 	// Media button outputs
-	@Output() cameraToggled = new EventEmitter<void>();
-	@Output() microphoneToggled = new EventEmitter<void>();
-	@Output() screenShareToggled = new EventEmitter<void>();
-	@Output() screenTrackReplaced = new EventEmitter<void>();
+	readonly cameraToggled = output<void>();
+	readonly microphoneToggled = output<void>();
+	readonly screenShareToggled = output<void>();
+	readonly screenTrackReplaced = output<void>();
 
 	// More options menu outputs
-	@Output() fullscreenToggled = new EventEmitter<void>();
-	@Output() recordingToggled = new EventEmitter<void>();
-	@Output() viewRecordingsClicked = new EventEmitter<void>();
-	@Output() broadcastingToggled = new EventEmitter<void>();
-	@Output() backgroundEffectsToggled = new EventEmitter<void>();
-	@Output() captionsToggled = new EventEmitter<void>();
-	@Output() settingsToggled = new EventEmitter<void>();
+	readonly fullscreenToggled = output<void>();
+	readonly recordingToggled = output<void>();
+	readonly viewRecordingsClicked = output<void>();
+	readonly broadcastingToggled = output<void>();
+	readonly backgroundEffectsToggled = output<void>();
+	readonly captionsToggled = output<void>();
+	readonly settingsToggled = output<void>();
 
 	// Leave button output
-	@Output() leaveClicked = new EventEmitter<void>();
+	readonly leaveClicked = output<void>();
 
 	// Event handler methods
 	onCameraToggle(): void {

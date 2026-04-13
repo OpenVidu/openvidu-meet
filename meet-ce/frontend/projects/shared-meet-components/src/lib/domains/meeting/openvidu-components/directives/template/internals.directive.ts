@@ -181,17 +181,15 @@
  * @internal
  */
 
-import { Directive, Input, TemplateRef, ViewContainerRef } from '@angular/core';
+import { Directive, Input, TemplateRef, ViewContainerRef, inject } from '@angular/core';
 
 @Directive({
 	selector: '[ovPreJoin]',
 	standalone: false
 })
 export class PreJoinDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 }
 
 /**
@@ -216,10 +214,8 @@ export class PreJoinDirective {
 	standalone: false
 })
 export class ParticipantPanelAfterLocalParticipantDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 }
 
 /**
@@ -242,10 +238,8 @@ export class ParticipantPanelAfterLocalParticipantDirective {
 	standalone: false
 })
 export class LeaveButtonDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 }
 
 /**
@@ -288,10 +282,8 @@ export class LayoutAdditionalElementsDirective {
 	 */
 	slot: 'top' | 'bottom' | 'default' = 'default';
 
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 
 	/**
 	 * @ignore
@@ -333,10 +325,8 @@ export class LayoutAdditionalElementsDirective {
 	standalone: false
 })
 export class ParticipantPanelParticipantBadgeDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 }
 
 /**
@@ -368,10 +358,8 @@ export class ParticipantPanelParticipantBadgeDirective {
 	standalone: false
 })
 export class SettingsPanelGeneralAdditionalElementsDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 }
 
 /**
@@ -403,8 +391,6 @@ export class SettingsPanelGeneralAdditionalElementsDirective {
 	standalone: false
 })
 export class ToolbarMoreOptionsAdditionalMenuItemsDirective {
-	constructor(
-		public template: TemplateRef<any>,
-		public container: ViewContainerRef
-	) {}
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
 }

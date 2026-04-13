@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, EventEmitter, Input, OnInit, Output, Signal } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, OnInit, output, Signal } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { BackgroundEffect, EffectType } from '../../../models/background-effect.model';
 import { PanelType } from '../../../models/panel.model';
@@ -16,8 +16,8 @@ import { VirtualBackgroundService } from '../../../services/virtual-background/v
 	standalone: false
 })
 export class BackgroundEffectsPanelComponent implements OnInit {
-	@Input() mode: 'prejoin' | 'meeting' = 'meeting';
-	@Output() onClose = new EventEmitter<void>();
+	mode = input<'prejoin' | 'meeting'>('meeting');
+	onClose = output<void>();
 
 	backgroundSelectedId: string = '';
 	effectType = EffectType;
@@ -32,11 +32,9 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 	 * @param backgroundService
 	 * @param cd
 	 */
-	constructor(
-		private panelService: PanelService,
-		private backgroundService: VirtualBackgroundService,
-		private cd: ChangeDetectorRef
-	) {}
+	private panelService = inject(PanelService);
+	private backgroundService = inject(VirtualBackgroundService);
+	private cd = inject(ChangeDetectorRef);
 
 	/**
 	 * Computed signal that reactively tracks if virtual background is supported.
@@ -64,7 +62,7 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 	}
 
 	close() {
-		if (this.mode === 'prejoin') {
+		if (this.mode() === 'prejoin') {
 			this.onClose.emit();
 		} else {
 			this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);

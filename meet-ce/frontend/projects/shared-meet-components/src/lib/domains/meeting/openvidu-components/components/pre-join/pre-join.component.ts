@@ -2,15 +2,17 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    EventEmitter,
-    HostListener,
-    Input,
+    DestroyRef,
+    effect,
+    inject,
+    input,
     OnDestroy,
     OnInit,
-    Output
+    output
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LocalTrack, Track } from 'livekit-client';
-import { filter, Subject, take, takeUntil } from 'rxjs';
+import { filter, take } from 'rxjs';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
@@ -27,20 +29,21 @@ import { ViewportService } from '../../services/viewport/viewport.service';
 @Component({
 	selector: 'ov-pre-join',
 	templateUrl: './pre-join.component.html',
-	styleUrls: ['./pre-join.component.scss'],
+	styleUrl: './pre-join.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'(window:resize)': 'sizeChange()'
+	},
 	standalone: false
 })
 export class PreJoinComponent implements OnInit, OnDestroy {
-	@Input() set error(error: { name: string; message: string } | undefined) {
-		if (error) this._error = error.message ?? error.name;
-	}
-	@Output() onVideoDeviceChanged = new EventEmitter<CustomDevice>();
-	@Output() onAudioDeviceChanged = new EventEmitter<CustomDevice>();
-	@Output() onVideoEnabledChanged = new EventEmitter<boolean>();
-	@Output() onAudioEnabledChanged = new EventEmitter<boolean>();
-	@Output() onLangChanged = new EventEmitter<LangOption>();
-	@Output() onReadyToJoin = new EventEmitter<any>();
+	readonly error = input<{ name: string; message: string } | undefined>(undefined);
+	readonly onVideoDeviceChanged = output<CustomDevice>();
+	readonly onAudioDeviceChanged = output<CustomDevice>();
+	readonly onVideoEnabledChanged = output<boolean>();
+	readonly onAudioEnabledChanged = output<boolean>();
+	readonly onLangChanged = output<LangOption>();
+	readonly onReadyToJoin = output<void>();
 
 	_error: string | undefined;
 	windowSize!: number;
@@ -65,30 +68,35 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	isVideoEnabled: boolean = false;
 	hasVideoDevices: boolean = true;
 	private tracks: LocalTrack[] = [];
+	private readonly destroyRef = inject(DestroyRef);
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly cdkSrv = inject(CdkOverlayService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly translateService = inject(TranslateService);
+	private readonly changeDetector = inject(ChangeDetectorRef);
+	protected readonly viewportService = inject(ViewportService);
 	private log: ILogger = {
 		d: () => {},
 		v: () => {},
 		w: () => {},
 		e: () => {}
 	};
-	private destroy$ = new Subject<void>();
 	private shouldRemoveTracksWhenComponentIsDestroyed: boolean = true;
 
-	@HostListener('window:resize')
 	sizeChange() {
 		this.windowSize = window.innerWidth;
 	}
 
-	constructor(
-		private loggerSrv: LoggerService,
-		private libService: OpenViduComponentsConfigService,
-		private cdkSrv: CdkOverlayService,
-		private openviduService: OpenViduService,
-		private translateService: TranslateService,
-		private changeDetector: ChangeDetectorRef,
-		protected viewportService: ViewportService
-	) {
+	constructor() {
 		this.log = this.loggerSrv.get('PreJoinComponent');
+		effect(() => {
+			const currentError = this.error();
+			if (currentError) {
+				this._error = currentError.message ?? currentError.name;
+				this.changeDetector.markForCheck();
+			}
+		});
 	}
 
 	async ngOnInit() {
@@ -105,8 +113,6 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	// }
 
 	async ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
 		this.cdkSrv.setSelector('body');
 
 		if (this.shouldRemoveTracksWhenComponentIsDestroyed) {
@@ -141,7 +147,8 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			this.libService.participantName$
 				.pipe(
 					filter((name) => name === this.participantName?.trim()),
-					take(1)
+					take(1),
+					takeUntilDestroyed(this.destroyRef)
 				)
 				.subscribe(() => this.onReadyToJoin.emit());
 		} else {
@@ -163,37 +170,38 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	}
 
 	private subscribeToPrejoinDirectives() {
-		this.libService.minimal$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.libService.minimal$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.isMinimal = value;
 			this.changeDetector.markForCheck();
 		});
 
-		this.libService.cameraButton$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.libService.cameraButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.showCameraButton = value;
 			this.changeDetector.markForCheck();
 		});
 
-		this.libService.microphoneButton$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.libService.microphoneButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.showMicrophoneButton = value;
 			this.changeDetector.markForCheck();
 		});
 
-		this.libService.displayLogo$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.libService.displayLogo$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.showLogo = value;
 			this.changeDetector.markForCheck();
 		});
 
-		this.libService.participantName$.pipe(takeUntil(this.destroy$)).subscribe((value: string) => {
+		this.libService.participantName$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: string) => {
 			if (value) {
 				this.participantName = value;
 				this.changeDetector.markForCheck();
 			}
 		});
 
-		this.libService.prejoinDisplayParticipantName$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.libService.prejoinDisplayParticipantName$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.showParticipantName = value;
 			this.changeDetector.markForCheck();
 		});
+
 	}
 
 	async videoEnabledChanged(enabled: boolean) {

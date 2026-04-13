@@ -6,11 +6,7 @@ import { Linkifier } from '../models/linkifier.model';
  */
 @Pipe({ name: 'linkify', standalone: false })
 export class LinkifyPipe implements PipeTransform {
-	private linkifer: Linkifier;
-
-	constructor() {
-		this.linkifer = new Linkifier();
-	}
+	private readonly linkifer = new Linkifier();
 
 	transform(str: string): string {
 		return str ? this.linkifer.link(str) : str;

@@ -1,10 +1,11 @@
-import { Component, TemplateRef, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, TemplateRef, computed, inject, input, output } from '@angular/core';
 import { ViewportService } from '../../../services/viewport/viewport.service';
 
 @Component({
 	selector: 'ov-toolbar-panel-buttons',
 	templateUrl: './toolbar-panel-buttons.component.html',
 	styleUrl: './toolbar-panel-buttons.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: false
 })
 export class ToolbarPanelButtonsComponent {
@@ -41,11 +42,11 @@ export class ToolbarPanelButtonsComponent {
 		return this.isActivitiesOpened() || this.isParticipantsOpened() || this.isChatOpened();
 	});
 
-	constructor(public viewportService: ViewportService) {}
+	readonly viewportService = inject(ViewportService);
 
 	// Computed property to determine if we should show collapsed menu
 	get shouldShowCollapsed(): boolean {
-		return this.viewportService.isMobileView()
+		return this.viewportService.isMobileView();
 	}
 
 	// Local methods that emit events

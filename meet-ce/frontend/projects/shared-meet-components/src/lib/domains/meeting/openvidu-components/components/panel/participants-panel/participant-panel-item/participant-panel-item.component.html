@@ -18,9 +18,9 @@
 				<div class="participant-name-row">
 					<div class="participant-name">
 						<span class="participant-name-text">{{ participantDisplayName }}</span>
-						<span *ngIf="isLocalParticipant" class="local-indicator">
-							{{ 'PANEL.PARTICIPANTS.YOU' | translate }}
-						</span>
+						@if (isLocalParticipant) {
+							<span class="local-indicator">{{ 'PANEL.PARTICIPANTS.YOU' | translate }}</span>
+						}
 					</div>
 
 					<!-- Participant badges in separate container -->
@@ -42,10 +42,10 @@
 			@if (!_participant.hasEncryptionError) {
 				<div class="participant-action-buttons">
 					<!-- Mute/Unmute button for remote participants -->
+					@if (!isLocalParticipant && showMuteButton) {
 					<button
 						mat-icon-button
 						id="mute-btn"
-						*ngIf="!isLocalParticipant && showMuteButton"
 						[class.warn-btn]="_participant.isMutedForcibly"
 						(click)="toggleMuteForcibly()"
 						[disabled]="!_participant"
@@ -61,14 +61,20 @@
 								: ('PANEL.PARTICIPANTS.MUTE' | translate)
 						"
 					>
-						<mat-icon *ngIf="!_participant.isMutedForcibly">volume_up</mat-icon>
-						<mat-icon *ngIf="_participant.isMutedForcibly">volume_off</mat-icon>
+						@if (!_participant.isMutedForcibly) {
+							<mat-icon>volume_up</mat-icon>
+						} @else {
+							<mat-icon>volume_off</mat-icon>
+						}
 					</button>
+					}
 
 					<!-- External item elements with improved structure -->
-					<div class="external-elements" *ngIf="hasExternalElements">
-						<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate"></ng-container>
-					</div>
+					@if (hasExternalElements) {
+						<div class="external-elements">
+							<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate"></ng-container>
+						</div>
+					}
 				</div>
 			}
 			</div>

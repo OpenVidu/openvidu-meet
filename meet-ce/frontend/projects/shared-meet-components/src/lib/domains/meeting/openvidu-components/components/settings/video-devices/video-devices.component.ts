@@ -1,6 +1,8 @@
-import { Component, effect, EventEmitter, Input, OnInit, Output, Signal, WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, Signal, WritableSignal, effect, inject, input, output } from '@angular/core';
 import { CustomDevice } from '../../../models/device.model';
 import { ILogger } from '../../../models/logger.model';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { DeviceService } from '../../../services/device/device.service';
 import { LoggerService } from '../../../services/logger/logger.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
@@ -11,15 +13,16 @@ import { StorageService } from '../../../services/storage/storage.service';
  */
 @Component({
 	selector: 'ov-video-devices-select',
+	imports: [AppMaterialModule, TranslatePipe],
 	templateUrl: './video-devices.component.html',
-	styleUrls: ['./video-devices.component.scss'],
-	standalone: false
+	styleUrl: './video-devices.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class VideoDevicesComponent implements OnInit {
-	@Input() compact: boolean = false;
-	@Output() onVideoDeviceChanged = new EventEmitter<CustomDevice>();
-	@Output() onVideoEnabledChanged = new EventEmitter<boolean>();
-	@Output() onVideoDevicesLoaded = new EventEmitter<CustomDevice[]>();
+	readonly compact = input(false);
+	readonly onVideoDeviceChanged = output<CustomDevice>();
+	readonly onVideoEnabledChanged = output<boolean>();
+	readonly onVideoDevicesLoaded = output<CustomDevice[]>();
 
 	cameraStatusChanging: boolean = false;
 	isCameraEnabled: boolean = false;
@@ -35,12 +38,12 @@ export class VideoDevicesComponent implements OnInit {
 		e: () => {}
 	};
 
-	constructor(
-		private storageSrv: StorageService,
-		private deviceSrv: DeviceService,
-		private participantService: ParticipantService,
-		private loggerSrv: LoggerService
-	) {
+	private readonly storageSrv = inject(StorageService);
+	private readonly deviceSrv = inject(DeviceService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly loggerSrv = inject(LoggerService);
+
+	constructor() {
 		this.log = this.loggerSrv.get('VideoDevicesComponent');
 		this.cameras = this.deviceSrv.cameras;
 		this.cameraSelected = this.deviceSrv.cameraSelected;
@@ -62,7 +65,7 @@ export class VideoDevicesComponent implements OnInit {
 		this.isCameraEnabled = this.participantService.isMyCameraEnabled();
 	}
 
-	async toggleCam(event: any) {
+	async toggleCam(event: MouseEvent) {
 		event.stopPropagation();
 		this.cameraStatusChanging = true;
 		this.isCameraEnabled = !this.isCameraEnabled;
@@ -72,7 +75,7 @@ export class VideoDevicesComponent implements OnInit {
 		this.cameraStatusChanging = false;
 	}
 
-	async onCameraSelected(event: any) {
+	async onCameraSelected(event: { value: CustomDevice }) {
 		try {
 			const device: CustomDevice = event?.value;
 
@@ -81,7 +84,10 @@ export class VideoDevicesComponent implements OnInit {
 				this.cameraStatusChanging = true;
 				await this.participantService.switchCamera(device.device);
 				this.deviceSrv.setCameraSelected(device.device);
-				this.onVideoDeviceChanged.emit(this.cameraSelected());
+				const selectedCamera = this.cameraSelected();
+				if (selectedCamera) {
+					this.onVideoDeviceChanged.emit(selectedCamera);
+				}
 			}
 		} catch (error) {
 			this.log.e('Error switching camera', error);

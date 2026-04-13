@@ -1,4 +1,4 @@
-@if (hasEncryptionError) {
+@if (hasEncryptionError()) {
 	<div class="encryption-error-poster">
 		<div class="encryption-error-content">
 			<svg
@@ -20,11 +20,11 @@
 			<p>{{ 'ERRORS.E2EE_ERROR_CONTENT' | translate }}</p>
 		</div>
 	</div>
-} @else if (showAvatar) {
+} @else if (showAvatar()) {
 	<div class="poster" id="video-poster">
-		@if (letter) {
-			<div class="initial" [ngStyle]="{ 'background-color': color }">
-				<span id="poster-text">{{ letter }}</span>
+		@if (letter()) {
+			<div class="initial" [ngStyle]="{ 'background-color': color() }">
+				<span id="poster-text">{{ letter() }}</span>
 			</div>
 		}
 	</div>

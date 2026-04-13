@@ -3,9 +3,9 @@ import {
     ChangeDetectorRef,
     Component,
     ContentChild,
-    EventEmitter,
+    inject,
     OnInit,
-    Output,
+    output,
     TemplateRef
 } from '@angular/core';
 import { skip, Subject, takeUntil } from 'rxjs';
@@ -118,26 +118,25 @@ export class PanelComponent implements OnInit {
 	 * This event is fired when the chat panel status has been changed.
 	 * It provides the new status of the chat panel represented by the {@link ChatPanelStatusEvent} object.
 	 */
-	@Output() onChatPanelStatusChanged: EventEmitter<ChatPanelStatusEvent> = new EventEmitter<ChatPanelStatusEvent>();
+	onChatPanelStatusChanged = output<ChatPanelStatusEvent>();
 
 	/**
 	 * This event is fired when the participants panel status has been changed.
 	 * It provides the new status of the participants panel represented by the {@link ParticipantsPanelStatusEvent} object.
 	 */
-	@Output() onParticipantsPanelStatusChanged: EventEmitter<ParticipantsPanelStatusEvent> =
-		new EventEmitter<ParticipantsPanelStatusEvent>();
+	onParticipantsPanelStatusChanged = output<ParticipantsPanelStatusEvent>();
 
 	/**
 	 * This event is fired when the settings panel status has been changed.
 	 * It provides the new status of the settings panel represented by the {@link SettingsPanelStatusEvent} object.
 	 */
-	@Output() onSettingsPanelStatusChanged: EventEmitter<SettingsPanelStatusEvent> = new EventEmitter<SettingsPanelStatusEvent>();
+	onSettingsPanelStatusChanged = output<SettingsPanelStatusEvent>();
 
 	/**
 	 * This event is fired when the activities panel status has been changed.
 	 * It provides the new status of the activities panel represented by the {@link ActivitiesPanelStatusEvent} object.
 	 */
-	@Output() onActivitiesPanelStatusChanged: EventEmitter<ActivitiesPanelStatusEvent> = new EventEmitter<ActivitiesPanelStatusEvent>();
+	onActivitiesPanelStatusChanged = output<ActivitiesPanelStatusEvent>();
 
 	/**
 	 * This event is fired when the background effects panel status has been changed.
@@ -188,17 +187,15 @@ export class PanelComponent implements OnInit {
 
 	private panelEmitersHandler: Map<
 		PanelType,
-		EventEmitter<ChatPanelStatusEvent | ParticipantsPanelStatusEvent | SettingsPanelStatusEvent | ActivitiesPanelStatusEvent>
+		{ emit: (value: ChatPanelStatusEvent | ParticipantsPanelStatusEvent | SettingsPanelStatusEvent | ActivitiesPanelStatusEvent) => void }
 	> = new Map();
 
 	/**
 	 * @ignore
 	 */
-	constructor(
-		private panelService: PanelService,
-		private cd: ChangeDetectorRef,
-		private templateManagerService: TemplateManagerService
-	) {}
+	private panelService = inject(PanelService);
+	private cd = inject(ChangeDetectorRef);
+	private templateManagerService = inject(TemplateManagerService);
 
 	/**
 	 * @ignore

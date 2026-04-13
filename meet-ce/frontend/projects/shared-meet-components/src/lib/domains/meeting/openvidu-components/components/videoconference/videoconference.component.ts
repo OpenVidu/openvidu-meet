@@ -4,14 +4,16 @@ import {
     ChangeDetectorRef,
     Component,
     ContentChild,
-    EventEmitter,
+    DestroyRef,
     OnDestroy,
-    Output,
     TemplateRef,
-    ViewChild
+    ViewChild,
+    inject,
+    output
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Room } from 'livekit-client';
-import { Subject, filter, skip, take, takeUntil } from 'rxjs';
+import { filter, skip, take } from 'rxjs';
 import {
     LayoutAdditionalElementsDirective,
     LeaveButtonDirective,
@@ -529,168 +531,165 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * Provides event notifications that fire when the local participant is ready to join to the room.
 	 * This event emits the participant name as data.
 	 */
-	@Output() onTokenRequested: EventEmitter<string> = new EventEmitter<string>();
+	readonly onTokenRequested = output<string>();
 
 	/**
 	 * Provides event notifications that fire when the local participant is ready to join to the room.
 	 * This event is only emitted when the prejoin page has been shown.
 	 */
-	@Output() onReadyToJoin: EventEmitter<void> = new EventEmitter<void>();
+	readonly onReadyToJoin = output<void>();
 
 	/**
 	 * Provides event notifications that fire when Room is disconnected for the local participant.
 	 * @deprecated Use {@link VideoconferenceComponent.onParticipantLeft} instead
 	 */
-	@Output() onRoomDisconnected: EventEmitter<void> = new EventEmitter<void>();
+	readonly onRoomDisconnected = output<void>();
 
 	/**
 	 * Provides event notifications that fire when Room is being reconnected for the local participant.
 	 */
-	@Output() onRoomReconnecting: EventEmitter<void> = new EventEmitter<void>();
+	readonly onRoomReconnecting = output<void>();
 
 	/**
 	 * Provides event notifications that fire when Room is reconnected for the local participant.
 	 */
-	@Output() onRoomReconnected: EventEmitter<void> = new EventEmitter<void>();
+	readonly onRoomReconnected = output<void>();
 
 	/**
 	 * This event is emitted when the local participant leaves the room.
 	 */
-	@Output() onParticipantLeft: EventEmitter<ParticipantLeftEvent> = new EventEmitter<ParticipantLeftEvent>();
+	readonly onParticipantLeft = output<ParticipantLeftEvent>();
 
 	/**
 	 * This event is emitted when the video state changes, providing information about if the video is enabled (true) or disabled (false).
 	 */
-	@Output() onVideoEnabledChanged: EventEmitter<boolean> = new EventEmitter<boolean>();
+	readonly onVideoEnabledChanged = output<boolean>();
 	/**
 	 * This event is emitted when the selected video device changes, providing information about the new custom device that has been selected.
 	 */
-	@Output() onVideoDeviceChanged: EventEmitter<CustomDevice> = new EventEmitter<CustomDevice>();
+	readonly onVideoDeviceChanged = output<CustomDevice>();
 
 	/**
 	 * This event is emitted when the audio state changes, providing information about if the audio is enabled (true) or disabled (false).
 	 */
-	@Output() onAudioEnabledChanged: EventEmitter<boolean> = new EventEmitter<boolean>();
+	readonly onAudioEnabledChanged = output<boolean>();
 
 	/**
 	 * This event is emitted when the selected audio device changes, providing information about the new custom device that has been selected.
 	 */
-	@Output() onAudioDeviceChanged: EventEmitter<CustomDevice> = new EventEmitter<CustomDevice>();
+	readonly onAudioDeviceChanged = output<CustomDevice>();
 
 	/**
 	 * This event is emitted when the language changes, providing information about the new language that has been selected.
 	 */
-	@Output() onLangChanged: EventEmitter<LangOption> = new EventEmitter<LangOption>();
+	readonly onLangChanged = output<LangOption>();
 
 	/**
 	 * This event is emitted when the screen share state changes, providing information about if the screen share is enabled (true) or disabled (false).
 	 */
-	@Output() onScreenShareEnabledChanged: EventEmitter<boolean> = new EventEmitter<boolean>();
+	readonly onScreenShareEnabledChanged = output<boolean>();
 
 	/**
 	 * The event is emitted when the fullscreen state changes, providing information about if the fullscreen is enabled (true) or disabled (false).
 	 */
-	@Output() onFullscreenEnabledChanged: EventEmitter<boolean> = new EventEmitter<boolean>();
+	readonly onFullscreenEnabledChanged = output<boolean>();
 
 	/**
 	 * This event is fired when the chat panel status has been changed.
 	 * It provides the new status of the chat panel as {@link ChatPanelStatusEvent} payload.
 	 */
-	@Output() onChatPanelStatusChanged: EventEmitter<ChatPanelStatusEvent> = new EventEmitter<ChatPanelStatusEvent>();
+	readonly onChatPanelStatusChanged = output<ChatPanelStatusEvent>();
 
 	/**
 	 * This event is fired when the participants panel status has been changed.
 	 * It provides the new status of the participants panel as {@link ParticipantsPanelStatusEvent} payload.
 	 */
-	@Output() onParticipantsPanelStatusChanged: EventEmitter<ParticipantsPanelStatusEvent> =
-		new EventEmitter<ParticipantsPanelStatusEvent>();
+	readonly onParticipantsPanelStatusChanged = output<ParticipantsPanelStatusEvent>();
 
 	/**
 	 * This event is fired when the settings panel status has been changed.
 	 * It provides the new status of the settings panel as {@link SettingsPanelStatusEvent} payload.
 	 */
-	@Output() onSettingsPanelStatusChanged: EventEmitter<SettingsPanelStatusEvent> = new EventEmitter<SettingsPanelStatusEvent>();
+	readonly onSettingsPanelStatusChanged = output<SettingsPanelStatusEvent>();
 
 	/**
 	 * This event is fired when the activities panel status has been changed.
 	 * It provides the new status of the activities panel as {@link ActivitiesPanelStatusEvent} payload.
 	 */
-	@Output() onActivitiesPanelStatusChanged: EventEmitter<ActivitiesPanelStatusEvent> = new EventEmitter<ActivitiesPanelStatusEvent>();
+	readonly onActivitiesPanelStatusChanged = output<ActivitiesPanelStatusEvent>();
 
 	/**
 	 * Provides event notifications that fire when stop recording button has been clicked.
 	 * It provides the {@link RecordingStopRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingStopRequested: EventEmitter<RecordingStopRequestedEvent> = new EventEmitter<RecordingStopRequestedEvent>();
+	readonly onRecordingStopRequested = output<RecordingStopRequestedEvent>();
 
 	/**
 	 * This event is fired when the user clicks on the start recording button.
 	 * It provides the {@link RecordingStartRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingStartRequested: EventEmitter<RecordingStartRequestedEvent> = new EventEmitter<RecordingStartRequestedEvent>();
+	readonly onRecordingStartRequested = output<RecordingStartRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when delete recording button has been clicked.
 	 * It provides the {@link RecordingDeleteRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingDeleteRequested: EventEmitter<RecordingDeleteRequestedEvent> = new EventEmitter<RecordingDeleteRequestedEvent>();
+	readonly onRecordingDeleteRequested = output<RecordingDeleteRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when play recording button is clicked from {@link ActivitiesPanelComponent}.
 	 * It provides the {@link RecordingPlayClickedEvent} payload as event data.
 	 */
-	@Output() onRecordingPlayClicked: EventEmitter<RecordingPlayClickedEvent> = new EventEmitter<RecordingPlayClickedEvent>();
+	readonly onRecordingPlayClicked = output<RecordingPlayClickedEvent>();
 
 	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recording button.
 	 * It provides the recording ID as event data.
 	 */
-	@Output() onViewRecordingClicked: EventEmitter<string> = new EventEmitter<string>();
+	readonly onViewRecordingClicked = output<string>();
 
 	/**
 	 * Provides event notifications that fire when download recording button is clicked from {@link ActivitiesPanelComponent}.
 	 * It provides the {@link RecordingDownloadClickedEvent} payload as event data.
 	 */
-	@Output() onRecordingDownloadClicked: EventEmitter<RecordingDownloadClickedEvent> = new EventEmitter<RecordingDownloadClickedEvent>();
+	readonly onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
 
 	/**
 	 * Provides event notifications that fire when start broadcasting button is clicked.
 	 * It provides the {@link BroadcastingStartRequestedEvent} payload as event data.
 	 */
-	@Output() onBroadcastingStartRequested: EventEmitter<BroadcastingStartRequestedEvent> =
-		new EventEmitter<BroadcastingStartRequestedEvent>();
+	readonly onBroadcastingStartRequested = output<BroadcastingStartRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when stop broadcasting button is clicked.
 	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
 	 */
-	@Output() onBroadcastingStopRequested: EventEmitter<BroadcastingStopRequestedEvent> =
-		new EventEmitter<BroadcastingStopRequestedEvent>();
+	readonly onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
 
 	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recordings button.
 	 */
-	@Output() onViewRecordingsClicked: EventEmitter<void> = new EventEmitter<void>();
+	readonly onViewRecordingsClicked = output<void>();
 
 	/**
 	 * Provides event notifications that fire when Room is created for the local participant.
 	 * It provides the {@link https://openvidu.io/latest/docs/getting-started/#room Room} payload as event data.
 	 */
-	@Output() onRoomCreated: EventEmitter<Room> = new EventEmitter<Room>();
+	readonly onRoomCreated = output<Room>();
 
 	/**
 	 * Provides event notifications that fire when local participant is created and connected to the Room.
 	 * @deprecated Use `onParticipantConnected` instead
 	 */
-	@Output() onParticipantCreated: EventEmitter<ParticipantModel> = new EventEmitter<ParticipantModel>();
+	readonly onParticipantCreated = output<ParticipantModel>();
 
 	/**
 	 * Provides event notifications that fire when local participant is connected to the Room.
 	 * It provides the {@link ParticipantModel} payload as event data.
 	 */
-	@Output() onParticipantConnected: EventEmitter<ParticipantModel> = new EventEmitter<ParticipantModel>();
+	readonly onParticipantConnected = output<ParticipantModel>();
 
 	/**
 	 * @internal
@@ -713,7 +712,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		}
 	};
 
-	private destroy$ = new Subject<void>();
+	private readonly destroyRef = inject(DestroyRef);
 	private log: ILogger;
 	private latestParticipantName: string | undefined;
 
@@ -777,8 +776,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	}
 
 	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
 		this.deviceSrv.clear();
 	}
 
@@ -1008,7 +1005,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	}
 
 	private subscribeToVideconferenceDirectives() {
-		this.libService.token$.pipe(skip(1), takeUntil(this.destroy$)).subscribe((token: string) => {
+		this.libService.token$.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((token: string) => {
 			try {
 				if (!token) {
 					this.log.e('Token is empty');
@@ -1049,7 +1046,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 			}
 		});
 
-		this.libService.tokenError$.pipe(takeUntil(this.destroy$)).subscribe((error: any) => {
+		this.libService.tokenError$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((error: any) => {
 			if (!error) return;
 
 			this.log.e('Token error received', error);
@@ -1067,7 +1064,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 			}
 		});
 
-		this.libService.prejoin$.pipe(takeUntil(this.destroy$)).subscribe((value: boolean) => {
+		this.libService.prejoin$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
 			this.updateComponentState({
 				showPrejoin: value
 			});
@@ -1087,7 +1084,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 						.pipe(
 							filter((name) => !!name),
 							take(1),
-							takeUntil(this.destroy$)
+							takeUntilDestroyed(this.destroyRef)
 						)
 						.subscribe(() => {
 							// Now we have the name in latestParticipantName
@@ -1109,7 +1106,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 			}
 		});
 
-		this.libService.participantName$.pipe(takeUntil(this.destroy$)).subscribe(async (name: string) => {
+		this.libService.participantName$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (name: string) => {
 			if (name) {
 				this.latestParticipantName = await this.e2eeService.decrypt(name);
 				this.storageSrv.setParticipantName(name);

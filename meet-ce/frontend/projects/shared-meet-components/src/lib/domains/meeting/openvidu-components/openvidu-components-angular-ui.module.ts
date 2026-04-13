@@ -2,9 +2,7 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { DeleteDialogComponent } from './components/dialogs/delete-recording.component';
-import { DialogTemplateComponent } from './components/dialogs/dialog.component';
-import { RecordingDialogComponent } from './components/dialogs/recording-dialog.component';
+import { AudioWaveComponent } from './components/audio-wave/audio-wave.component';
 import { LayoutComponent } from './components/layout/layout.component';
 import { MediaElementComponent } from './components/media-element/media-element.component';
 import { ChatPanelComponent } from './components/panel/chat-panel/chat-panel.component';
@@ -20,8 +18,6 @@ import { DurationFromSecondsPipe, SearchByStringPropertyPipe, ThumbnailFromUrlPi
 import { TranslatePipe } from './pipes/translate.pipe';
 
 import { DragDropModule } from '@angular/cdk/drag-drop';
-
-import { AudioWaveComponent } from './components/audio-wave/audio-wave.component';
 import { PanelComponent } from './components/panel/panel.component';
 import { ParticipantPanelItemComponent } from './components/panel/participants-panel/participant-panel-item/participant-panel-item.component';
 import { ParticipantsPanelComponent } from './components/panel/participants-panel/participants-panel/participants-panel.component';
@@ -29,7 +25,6 @@ import { PreJoinComponent } from './components/pre-join/pre-join.component';
 import { VideoconferenceComponent } from './components/videoconference/videoconference.component';
 
 // import { CaptionsComponent } from './components/captions/captions.component';
-import { ProFeatureDialogTemplateComponent } from './components/dialogs/pro-feature-dialog.component';
 import { ActivitiesPanelComponent } from './components/panel/activities-panel/activities-panel.component';
 import { BroadcastingActivityComponent } from './components/panel/activities-panel/broadcasting-activity/broadcasting-activity.component';
 import { RecordingActivityComponent } from './components/panel/activities-panel/recording-activity/recording-activity.component';
@@ -65,21 +60,9 @@ const privateComponents = [
 	SessionComponent,
 	BackgroundEffectsPanelComponent,
 	SettingsPanelComponent,
-	AudioWaveComponent,
-	DialogTemplateComponent,
-	ProFeatureDialogTemplateComponent,
-	RecordingDialogComponent,
-	DeleteDialogComponent,
-	VideoPosterComponent,
 	MediaElementComponent,
-	VideoDevicesComponent,
-	AudioDevicesComponent,
-	ParticipantNameInputComponent,
-	LangSelectorComponent,
 	ToolbarMediaButtonsComponent,
-	ToolbarPanelButtonsComponent,
-	ThemeSelectorComponent,
-	LandscapeWarningComponent
+	ToolbarPanelButtonsComponent
 ];
 
 @NgModule({
@@ -91,14 +74,22 @@ const privateComponents = [
 		DurationFromSecondsPipe,
 		SearchByStringPropertyPipe,
 		ThumbnailFromUrlPipe,
-		TrackPublishedTypesPipe,
-		TranslatePipe
+		TrackPublishedTypesPipe
 	],
 	imports: [
 		CommonModule,
 		FormsModule,
 		ReactiveFormsModule,
 		AppMaterialModule,
+		AudioWaveComponent,
+		LandscapeWarningComponent,
+		AudioDevicesComponent,
+		LangSelectorComponent,
+		ParticipantNameInputComponent,
+		ThemeSelectorComponent,
+		VideoDevicesComponent,
+		VideoPosterComponent,
+		TranslatePipe,
 		OpenViduComponentsDirectiveModule,
 		ApiDirectiveModule,
 		DragDropModule

@@ -24,10 +24,12 @@
 					[matTooltipDisabled]="!shouldHideMenuText"
 				>
 					<mat-icon matListItemIcon>manage_accounts</mat-icon>
-					<div *ngIf="!shouldHideMenuText" class="option-text">{{ 'PANEL.SETTINGS.GENERAL' | translate }}</div>
+					@if (!shouldHideMenuText) {
+						<div class="option-text">{{ 'PANEL.SETTINGS.GENERAL' | translate }}</div>
+					}
 				</mat-list-option>
+				@if (showCameraButton) {
 				<mat-list-option
-					*ngIf="showCameraButton"
 					class="option"
 					id="video-opt"
 					[selected]="selectedOption === settingsOptions.VIDEO"
@@ -36,10 +38,13 @@
 					[matTooltipDisabled]="!shouldHideMenuText"
 				>
 					<mat-icon matListItemIcon>videocam</mat-icon>
-					<div *ngIf="!shouldHideMenuText" class="option-text">{{ 'PANEL.SETTINGS.VIDEO' | translate }}</div>
+					@if (!shouldHideMenuText) {
+						<div class="option-text">{{ 'PANEL.SETTINGS.VIDEO' | translate }}</div>
+					}
 				</mat-list-option>
+				}
+				@if (showMicrophoneButton) {
 				<mat-list-option
-					*ngIf="showMicrophoneButton"
 					class="option"
 					id="audio-opt"
 					[selected]="selectedOption === settingsOptions.AUDIO"
@@ -48,8 +53,11 @@
 					[matTooltipDisabled]="!shouldHideMenuText"
 				>
 					<mat-icon matListItemIcon>mic</mat-icon>
-					<div *ngIf="!shouldHideMenuText" class="option-text">{{ 'PANEL.SETTINGS.AUDIO' | translate }}</div>
+					@if (!shouldHideMenuText) {
+						<div class="option-text">{{ 'PANEL.SETTINGS.AUDIO' | translate }}</div>
+					}
 				</mat-list-option>
+				}
 				<!-- <mat-list-option
 					*ngIf="showCaptions"
 					class="option"
@@ -66,7 +74,8 @@
 		</div>
 
 		<div class="item-content" [class.full-width]="isVerticalLayout">
-			<div *ngIf="selectedOption === settingsOptions.GENERAL" class="general-settings">
+			@if (selectedOption === settingsOptions.GENERAL) {
+			<div class="general-settings">
 				<div class="nickname-section">
 					<mat-label class="input-label">{{ 'PREJOIN.NICKNAME' | translate }}</mat-label>
 					<div class="nickname-input-container">
@@ -100,18 +109,23 @@
 					</div>
 				}
 			</div>
-			<div *ngIf="showCameraButton && selectedOption === settingsOptions.VIDEO" class="video-settings">
+			}
+			@if (showCameraButton && selectedOption === settingsOptions.VIDEO) {
+			<div class="video-settings">
 				<ov-video-devices-select
 					(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
 					(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
 				></ov-video-devices-select>
 			</div>
-			<div *ngIf="showMicrophoneButton && selectedOption === settingsOptions.AUDIO" class="audio-settings">
+			}
+			@if (showMicrophoneButton && selectedOption === settingsOptions.AUDIO) {
+			<div class="audio-settings">
 				<ov-audio-devices-select
 					(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
 					(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
 				></ov-audio-devices-select>
 			</div>
+			}
 			<!-- <div *ngIf="selectedOption === settingsOptions.CAPTIONS && showCaptions" class="captions-settings">
 				<ov-captions-settings></ov-captions-settings>
 			</div> -->

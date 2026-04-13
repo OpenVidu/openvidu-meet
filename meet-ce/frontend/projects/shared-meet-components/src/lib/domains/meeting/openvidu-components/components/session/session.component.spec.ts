@@ -2,8 +2,8 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ActionService } from '../../services/action/action.service';
 import { ActionServiceMock } from '../../../test-helpers/action.service.mock';
+import { ActionService } from '../../services/action/action.service';
 
 import { ChatService } from '../../services/chat/chat.service';
 import { ChatServiceMock } from '../../services/chat/chat.service.mock';
@@ -15,11 +15,11 @@ import { LoggerServiceMock } from '../../services/logger/logger.service.mock';
 import { PlatformService } from '../../services/platform/platform.service';
 import { PlatformServiceMock } from '../../services/platform/platform.service.mock';
 
-import { SessionComponent } from './session.component';
 import { Room, RoomEvent } from 'livekit-client';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslateService } from '../../services/translate/translate.service';
 import { TranslateServiceMock } from '../../services/translate/translate.service.mock';
-import { TranslatePipe } from '../../pipes/translate.pipe';
+import { SessionComponent } from './session.component';
 
 describe('SessionComponent', () => {
 	let component: SessionComponent;
@@ -28,8 +28,8 @@ describe('SessionComponent', () => {
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			declarations: [SessionComponent, TranslatePipe],
-			imports: [MatProgressSpinnerModule, NoopAnimationsModule],
+			declarations: [SessionComponent],
+			imports: [MatProgressSpinnerModule, NoopAnimationsModule, TranslatePipe],
 			providers: [
 				{ provide: LoggerService, useClass: LoggerServiceMock },
 				{ provide: ActionService, useClass: ActionServiceMock },

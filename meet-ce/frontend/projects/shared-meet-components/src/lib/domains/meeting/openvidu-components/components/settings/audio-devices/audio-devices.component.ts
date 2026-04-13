@@ -1,6 +1,8 @@
-import { Component, effect, EventEmitter, Input, OnInit, Output, Signal, WritableSignal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, Signal, WritableSignal, effect, inject, input, output } from '@angular/core';
 import { CustomDevice } from '../../../models/device.model';
 import { ILogger } from '../../../models/logger.model';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { DeviceService } from '../../../services/device/device.service';
 import { LoggerService } from '../../../services/logger/logger.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
@@ -11,14 +13,15 @@ import { StorageService } from '../../../services/storage/storage.service';
  */
 @Component({
 	selector: 'ov-audio-devices-select',
+	imports: [AppMaterialModule, TranslatePipe],
 	templateUrl: './audio-devices.component.html',
-	styleUrls: ['./audio-devices.component.scss'],
-	standalone: false
+	styleUrl: './audio-devices.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AudioDevicesComponent implements OnInit {
-	@Input() compact: boolean = false;
-	@Output() onAudioDeviceChanged = new EventEmitter<CustomDevice>();
-	@Output() onAudioEnabledChanged = new EventEmitter<boolean>();
+	readonly compact = input(false);
+	readonly onAudioDeviceChanged = output<CustomDevice>();
+	readonly onAudioEnabledChanged = output<boolean>();
 
 	microphoneStatusChanging: boolean = false;
 	isMicrophoneEnabled: boolean = false;
@@ -34,12 +37,12 @@ export class AudioDevicesComponent implements OnInit {
 	protected readonly microphoneSelected: WritableSignal<CustomDevice | undefined>;
 	protected readonly hasAudioDevices: Signal<boolean>;
 
-	constructor(
-		private deviceSrv: DeviceService,
-		private storageSrv: StorageService,
-		private participantService: ParticipantService,
-		private loggerSrv: LoggerService
-	) {
+	private readonly deviceSrv = inject(DeviceService);
+	private readonly storageSrv = inject(StorageService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly loggerSrv = inject(LoggerService);
+
+	constructor() {
 		this.log = this.loggerSrv.get('AudioDevicesComponent');
 		this.microphones = this.deviceSrv.microphones;
 		this.microphoneSelected = this.deviceSrv.microphoneSelected;
@@ -59,7 +62,7 @@ export class AudioDevicesComponent implements OnInit {
 		this.isMicrophoneEnabled = this.participantService.isMyMicrophoneEnabled();
 	}
 
-	async toggleMic(event: any) {
+	async toggleMic(event: MouseEvent) {
 		event.stopPropagation();
 		this.microphoneStatusChanging = true;
 		this.isMicrophoneEnabled = !this.isMicrophoneEnabled;
@@ -69,14 +72,17 @@ export class AudioDevicesComponent implements OnInit {
 		this.onAudioEnabledChanged.emit(this.isMicrophoneEnabled);
 	}
 
-	async onMicrophoneSelected(event: any) {
+	async onMicrophoneSelected(event: { value: CustomDevice }) {
 		try {
 			const device: CustomDevice = event?.value;
 			if (this.deviceSrv.needUpdateAudioTrack(device)) {
 				this.microphoneStatusChanging = true;
 				await this.participantService.switchMicrophone(device.device);
 				this.deviceSrv.setMicSelected(device.device);
-				this.onAudioDeviceChanged.emit(this.microphoneSelected());
+				const selectedMicrophone = this.microphoneSelected();
+				if (selectedMicrophone) {
+					this.onAudioDeviceChanged.emit(selectedMicrophone);
+				}
 			}
 		} catch (error) {
 			this.log.e('Error switching microphone', error);

@@ -1,10 +1,12 @@
-import { Component } from '@angular/core';
-import { OpenViduThemeService } from '../../../services/theme/theme.service';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 import { OpenViduThemeMode } from '../../../models/theme.model';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { OpenViduThemeService } from '../../../services/theme/theme.service';
 
 @Component({
 	selector: 'ov-theme-selector',
-	standalone: false,
+	imports: [AppMaterialModule],
+	changeDetection: ChangeDetectionStrategy.OnPush,
 	template: `
 		<div class="theme-selector-container">
 			<button
@@ -41,9 +43,9 @@ import { OpenViduThemeMode } from '../../../models/theme.model';
 	`,
 	styleUrl: './theme-selector.component.scss'
 })
-export class ThemeSelectorComponent {
+export class ThemeSelectorComponent implements OnInit {
 	protected predefinedThemes: OpenViduThemeMode[] = [];
-	constructor(private themeService: OpenViduThemeService) {}
+	private readonly themeService = inject(OpenViduThemeService);
 
 	ngOnInit() {
 		this.predefinedThemes = this.themeService.getAllThemes();

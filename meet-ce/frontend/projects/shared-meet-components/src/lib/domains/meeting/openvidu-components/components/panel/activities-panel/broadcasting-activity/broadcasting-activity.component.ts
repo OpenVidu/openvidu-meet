@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, input, OnInit, output } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import {
     BroadcastingStartRequestedEvent,
@@ -29,15 +29,13 @@ export class BroadcastingActivityComponent implements OnInit {
 	 * Provides event notifications that fire when start broadcasting button is clicked.
 	 * It provides the {@link BroadcastingStartRequestedEvent} payload as event data.
 	 */
-	@Output() onBroadcastingStartRequested: EventEmitter<BroadcastingStartRequestedEvent> =
-		new EventEmitter<BroadcastingStartRequestedEvent>();
+	onBroadcastingStartRequested = output<BroadcastingStartRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when stop broadcasting button is clicked.
 	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
 	 */
-	@Output() onBroadcastingStopRequested: EventEmitter<BroadcastingStopRequestedEvent> =
-		new EventEmitter<BroadcastingStopRequestedEvent>();
+	onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
 
 	/**
 	 * @internal
@@ -52,7 +50,7 @@ export class BroadcastingActivityComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	@Input() expanded: boolean = false;
+	expanded = input(false);
 
 	/**
 	 * @internal
@@ -81,12 +79,10 @@ export class BroadcastingActivityComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	constructor(
-		private broadcastingService: BroadcastingService,
-		private participantService: ParticipantService,
-		private openviduService: OpenViduService,
-		private cd: ChangeDetectorRef
-	) {}
+	private broadcastingService = inject(BroadcastingService);
+	private participantService = inject(ParticipantService);
+	private openviduService = inject(OpenViduService);
+	private cd = inject(ChangeDetectorRef);
 
 	/**
 	 * @internal

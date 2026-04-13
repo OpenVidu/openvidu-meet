@@ -6,11 +6,9 @@ import {
     computed,
     ContentChild,
     effect,
-    EventEmitter,
-    HostListener,
     OnDestroy,
     OnInit,
-    Output,
+    output,
     TemplateRef,
     ViewChild
 } from '@angular/core';
@@ -61,8 +59,12 @@ import { TranslateService } from '../../services/translate/translate.service';
 @Component({
 	selector: 'ov-toolbar',
 	templateUrl: './toolbar.component.html',
-	styleUrls: ['./toolbar.component.scss'],
+	styleUrl: './toolbar.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'(window:resize)': 'sizeChange($event)',
+		'(document:keydown)': 'keyDown($event)'
+	},
 	standalone: false
 })
 export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
@@ -141,56 +143,55 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * This event is emitted when the room has been disconnected.
 	 *  @deprecated Use {@link ToolbarComponent.onParticipantLeft} instead.
 	 */
-	@Output() onRoomDisconnected: EventEmitter<void> = new EventEmitter<void>();
+	readonly onRoomDisconnected = output<void>();
 
 	/**
 	 * This event is emitted when the local participant leaves the room.
 	 */
-	@Output() onParticipantLeft: EventEmitter<ParticipantLeftEvent> = new EventEmitter<ParticipantLeftEvent>();
+	readonly onParticipantLeft = output<ParticipantLeftEvent>();
 
 	/**
 	 * This event is emitted when the video state changes, providing information about if the video is enabled (true) or disabled (false).
 	 */
-	@Output() onVideoEnabledChanged: EventEmitter<boolean> = new EventEmitter<boolean>();
+	readonly onVideoEnabledChanged = output<boolean>();
 
 	/**
 	 * This event is emitted when the video state changes, providing information about if the video is enabled (true) or disabled (false).
 	 */
-	@Output() onAudioEnabledChanged: EventEmitter<boolean> = new EventEmitter<boolean>();
+	readonly onAudioEnabledChanged = output<boolean>();
 
 	/**
 	 * This event is emitted when the fullscreen state changes, providing information about if the fullscreen is enabled (true) or disabled (false).
 	 */
-	@Output() onFullscreenEnabledChanged: EventEmitter<boolean> = new EventEmitter<boolean>();
+	readonly onFullscreenEnabledChanged = output<boolean>();
 
 	/**
 	 * This event is emitted when the screen share state changes, providing information about if the screen share is enabled (true) or disabled (false).
 	 */
-	@Output() onScreenShareEnabledChanged: EventEmitter<boolean> = new EventEmitter<boolean>();
+	readonly onScreenShareEnabledChanged = output<boolean>();
 
 	/**
 	 * This event is fired when the user clicks on the start recording button.
 	 * It provides the {@link RecordingStartRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingStartRequested: EventEmitter<RecordingStartRequestedEvent> = new EventEmitter<RecordingStartRequestedEvent>();
+	readonly onRecordingStartRequested = output<RecordingStartRequestedEvent>();
 	/**
 	 * Provides event notifications that fire when stop recording has been requested.
 	 * It provides the {@link RecordingStopRequestedEvent} payload as event data.
 	 */
-	@Output() onRecordingStopRequested: EventEmitter<RecordingStopRequestedEvent> = new EventEmitter<RecordingStopRequestedEvent>();
+	readonly onRecordingStopRequested = output<RecordingStopRequestedEvent>();
 
 	/**
 	 * Provides event notifications that fire when stop broadcasting has been requested.
 	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
 	 */
-	@Output() onBroadcastingStopRequested: EventEmitter<BroadcastingStopRequestedEvent> =
-		new EventEmitter<BroadcastingStopRequestedEvent>();
+	readonly onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
 
 	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recordings button.
 	 */
-	@Output() onViewRecordingsClicked: EventEmitter<void> = new EventEmitter<void>();
+	readonly onViewRecordingsClicked = output<void>();
 
 	/**
 	 * @ignore
@@ -503,7 +504,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	@HostListener('window:resize', ['$event'])
 	sizeChange(_: Event) {
 		if (this.currentWindowHeight >= window.innerHeight) {
 			// The user has exit the fullscreen mode
@@ -514,7 +514,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	@HostListener('document:keydown', ['$event'])
 	keyDown(event: KeyboardEvent) {
 		if (event.key === 'F11') {
 			event.preventDefault();

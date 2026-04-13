@@ -1,5 +1,5 @@
 import { animate, style, transition, trigger } from '@angular/animations';
-import { AfterViewInit, Component, ElementRef, Input, OnDestroy, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, viewChild } from '@angular/core';
 import { Track } from 'livekit-client';
 
 /**
@@ -10,15 +10,20 @@ import { Track } from 'livekit-client';
 	template: `
 		<ov-video-poster
 			@posterAnimation
-			[showAvatar]="showAvatar"
-			[nickname]="avatarName"
-			[color]="avatarColor"
-			[hasEncryptionError]="hasEncryptionError"
+			[showAvatar]="showAvatar()"
+			[nickname]="avatarName()"
+			[color]="avatarColor()"
+			[hasEncryptionError]="hasEncryptionError()"
 		></ov-video-poster>
-		<video #videoElement *ngIf="_track?.kind === 'video'" class="OV_video-element" [attr.id]="_track?.sid"></video>
-		<audio #audioElement *ngIf="_track?.kind === 'audio'" [attr.id]="_track?.sid"></audio>
+		@if (track()?.kind === 'video') {
+			<video #videoElement class="OV_video-element" [attr.id]="track()?.sid"></video>
+		}
+		@if (track()?.kind === 'audio') {
+			<audio #audioElement [attr.id]="track()?.sid"></audio>
+		}
 	`,
-	styleUrls: ['./media-element.component.scss'],
+	styleUrl: './media-element.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 	animations: [
 		trigger('posterAnimation', [
 			transition(':enter', [style({ opacity: 0 }), animate('100ms', style({ opacity: 1 }))]),
@@ -27,135 +32,70 @@ import { Track } from 'livekit-client';
 	],
 	standalone: false
 })
-export class MediaElementComponent implements AfterViewInit, OnDestroy {
-	_track: Track | undefined = undefined;
-	_videoElement: ElementRef | undefined = undefined;
-	_audioElement: ElementRef | undefined = undefined;
-	type: Track.Source = Track.Source.Camera;
-	private _muted: boolean = false;
+export class MediaElementComponent implements OnDestroy {
+	readonly track = input<Track | undefined>(undefined);
+	readonly muted = input(false);
+	readonly showAvatar = input(false);
+	readonly avatarColor = input('#000000');
+	readonly avatarName = input('User');
+	readonly isLocal = input(false);
+	readonly hasEncryptionError = input(false);
+	readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('videoElement');
+	readonly audioElement = viewChild<ElementRef<HTMLAudioElement>>('audioElement');
+
 	private previousTrack: Track | null = null;
 
-	@Input() showAvatar: boolean = false;
-	@Input() avatarColor: string = '#000000';
-	@Input() avatarName: string = 'User';
-	@Input() isLocal: boolean = false;
-	@Input() hasEncryptionError: boolean = false;
+	constructor() {
+		effect(() => {
+			const activeTrack = this.track();
+			const video = this.videoElement()?.nativeElement;
+			const audio = this.audioElement()?.nativeElement;
+			const local = this.isLocal();
+			const muted = this.muted();
 
-	@ViewChild('videoElement', { static: false })
-	set videoElement(element: ElementRef) {
-		this._videoElement = element;
-		this.attachTracks();
-	}
+			if (this.previousTrack && this.previousTrack !== activeTrack) {
+				if (video) this.previousTrack.detach(video);
+				if (audio) this.previousTrack.detach(audio);
+			}
 
-	@ViewChild('audioElement', { static: false })
-	set audioElement(element: ElementRef) {
-		this._audioElement = element;
-		this.attachTracks();
-	}
+			if (!activeTrack) return;
+			this.previousTrack = activeTrack;
 
-	@Input()
-	set track(track: Track) {
-		if (!track) return;
+			if (activeTrack.kind === Track.Kind.Video && video) {
+				this.updateVideoStyles(activeTrack, video, local);
+				activeTrack.attach(video);
+			}
 
-		// Detach previous track if it's different
-		if (this.previousTrack && this.previousTrack !== track) {
-			this.detachPreviousTrack();
-		}
-
-		this._track = track;
-		this.previousTrack = track;
-		this.attachTracks();
-	}
-
-	@Input()
-	set muted(muted: boolean) {
-		this._muted = muted;
-		if (this._audioElement && !this.isLocal) {
-			this.muteAudioTrack(this._muted);
-		}
-	}
-
-	ngAfterViewInit() {
-		setTimeout(() => {
-			if (!this._track) return;
-			this.attachTracks();
+			if (activeTrack.kind === Track.Kind.Audio && audio && !local) {
+				audio.muted = muted;
+				activeTrack.mediaStreamTrack.enabled = !muted;
+				activeTrack.attach(audio);
+			}
 		});
 	}
 
 	ngOnDestroy() {
-		this.detachPreviousTrack();
-	}
-
-	private detachPreviousTrack() {
 		if (this.previousTrack) {
-			// Detach from video element
-			if (this.isVideoTrack() && this._videoElement?.nativeElement) {
-				this.previousTrack.detach(this._videoElement.nativeElement);
-			}
-			// Detach from audio element
-			if (this.isAudioTrack() && this._audioElement?.nativeElement) {
-				this.previousTrack.detach(this._audioElement.nativeElement);
-			}
+			const video = this.videoElement()?.nativeElement;
+			const audio = this.audioElement()?.nativeElement;
+			if (video) this.previousTrack.detach(video);
+			if (audio) this.previousTrack.detach(audio);
 		}
 	}
 
-	private updateVideoStyles() {
-		const track = this._track;
-		const videoElement = this._videoElement;
-		if (!track || !videoElement) return;
+	private updateVideoStyles(track: Track, videoElement: HTMLVideoElement, isLocal: boolean) {
+		videoElement.classList.remove('screen-type', 'camera-type');
+		videoElement.style.transform = '';
 
-		this.type = track.source;
-		if (this.type === Track.Source.ScreenShare) {
-			videoElement.nativeElement.style.objectFit = 'contain';
-			videoElement.nativeElement.classList.add('screen-type');
-		} else if (this.type === Track.Source.Camera) {
-			if (this.isLocal) {
-				videoElement.nativeElement.style.transform = 'scaleX(-1)';
+		if (track.source === Track.Source.ScreenShare) {
+			videoElement.style.objectFit = 'contain';
+			videoElement.classList.add('screen-type');
+		} else if (track.source === Track.Source.Camera) {
+			if (isLocal) {
+				videoElement.style.transform = 'scaleX(-1)';
 			}
-			videoElement.nativeElement.style.objectFit = 'cover';
-			videoElement.nativeElement.classList.add('camera-type');
+			videoElement.style.objectFit = 'cover';
+			videoElement.classList.add('camera-type');
 		}
-	}
-
-	private attachTracks() {
-		if (this.isAudioTrack() && !!this._audioElement && !this.isLocal) {
-			this.attachAudioTrack();
-		} else if (this.isVideoTrack() && !!this._videoElement) {
-			this.updateVideoStyles();
-			this.attachVideoTrack();
-		}
-	}
-
-	private attachVideoTrack() {
-		const track = this._track;
-		const videoElement = this._videoElement;
-		if (!track || !videoElement) return;
-
-		track.attach(videoElement.nativeElement);
-	}
-
-	private attachAudioTrack() {
-		const track = this._track;
-		const audioElement = this._audioElement;
-		if (!track || !audioElement) return;
-
-		track.attach(audioElement.nativeElement);
-		this.muteAudioTrack(this._muted);
-	}
-	private muteAudioTrack(mute: boolean) {
-		const track = this._track;
-		const audioElement = this._audioElement;
-		if (!track || !audioElement) return;
-
-		audioElement.nativeElement.muted = mute;
-		track.mediaStreamTrack.enabled = !mute;
-	}
-
-	private isAudioTrack(): boolean {
-		return this._track?.kind === Track.Kind.Audio;
-	}
-
-	private isVideoTrack(): boolean {
-		return this._track?.kind === Track.Kind.Video;
 	}
 }
