@@ -5,7 +5,6 @@ import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
-import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
 
@@ -23,7 +22,6 @@ export class RecordingService {
 		private navigationService: NavigationService,
 		protected tokenStorageService: TokenStorageService,
 		protected roomMemberContextService: RoomMemberContextService,
-		protected meetingContextService: MeetingContextService,
 		protected dialog: MatDialog
 	) {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
@@ -194,13 +192,6 @@ export class RecordingService {
 	 */
 	async playRecording(recordingId: string) {
 		let recordingUrl = `/recording/${recordingId}`;
-
-		// Append room secret as query param if it exists
-		const secret = this.meetingContextService.roomSecret();
-		if (secret) {
-			recordingUrl += `?secret=${secret}`;
-		}
-
 		recordingUrl = this.navigationService.addBasePath(recordingUrl);
 		window.open(recordingUrl, '_blank');
 	}
@@ -232,7 +223,7 @@ export class RecordingService {
 		const params = new URLSearchParams();
 		params.append('recordingIds', recordingIds.join(','));
 
-		// Try to add access and/or recording token from sessionStorage (header mode)
+		// Try to add access and/or room member token if available
 		const accessToken = this.tokenStorageService.getAccessToken();
 		if (accessToken) {
 			params.append('accessToken', accessToken);

@@ -142,13 +142,6 @@ export class MeetingComponent implements OnInit {
 		}
 
 		let recordingsUrl = `/room/${roomId}/recordings`;
-
-		// Append room secret as query param if it exists
-		const secret = this.meetingContextService.roomSecret();
-		if (secret) {
-			recordingsUrl += `?secret=${secret}`;
-		}
-
 		recordingsUrl = this.navigationService.addBasePath(recordingsUrl);
 		window.open(recordingsUrl, '_blank');
 	}
