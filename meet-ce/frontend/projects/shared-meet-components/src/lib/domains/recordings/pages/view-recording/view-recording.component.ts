@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, computed, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -37,8 +37,9 @@ export class ViewRecordingComponent implements OnInit {
 	recording?: MeetRecordingInfo;
 	recordingUrl?: string;
 	recordingSecret?: string;
-	canRetrieveRecordings = false;
-	canDeleteRecordings = false;
+
+	canRetrieveRecordings = computed(() => this.roomMemberContextService.permissions()?.canRetrieveRecordings ?? false);
+	canDeleteRecordings = computed(() => this.roomMemberContextService.permissions()?.canDeleteRecordings ?? false);
 
 	isLoading = true;
 	hasError = false;
@@ -55,8 +56,6 @@ export class ViewRecordingComponent implements OnInit {
 	) {}
 
 	async ngOnInit() {
-		this.canRetrieveRecordings = this.roomMemberContextService.hasPermission('canRetrieveRecordings');
-		this.canDeleteRecordings = this.roomMemberContextService.hasPermission('canDeleteRecordings');
 		await this.loadRecording();
 	}
 
@@ -109,7 +108,7 @@ export class ViewRecordingComponent implements OnInit {
 			MeetRecordingStatus.LIMIT_REACHED
 		];
 
-		return this.canDeleteRecordings && deletableStatuses.includes(this.recording.status);
+		return this.canDeleteRecordings() && deletableStatuses.includes(this.recording.status);
 	}
 
 	deleteRecording() {
@@ -166,7 +165,7 @@ export class ViewRecordingComponent implements OnInit {
 	 */
 	shouldShowBackButton(): boolean {
 		return (
-			(this.canRetrieveRecordings && !!this.recording?.roomId) ||
+			(this.canRetrieveRecordings() && !!this.recording?.roomId) ||
 			this.appCtxService.isEmbeddedMode() ||
 			!!this.navigationService.getLeaveRedirectURL()
 		);
@@ -180,7 +179,7 @@ export class ViewRecordingComponent implements OnInit {
 	 * Otherwise, it does nothing (the back button should not be shown in this case)
 	 */
 	async goBack(): Promise<void> {
-		if (this.canRetrieveRecordings && this.recording?.roomId) {
+		if (this.canRetrieveRecordings() && this.recording?.roomId) {
 			// Navigate back to the room recordings page
 			await this.navigationService.navigateTo(`/room/${this.recording.roomId}/recordings`);
 			return;
