@@ -18,6 +18,7 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		participantName,
 		leaveRedirectUrl,
 		showOnlyRecordings,
+		showRecording,
 		e2eeKey: queryE2eeKey
 	} = extractParams(route);
 	const secret = querySecret || sessionStorageService.getRoomSecret();
@@ -29,6 +30,11 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 	meetingContextService.setRoomId(roomId);
 	if (secret) {
 		meetingContextService.setRoomSecret(secret, true);
+	}
+
+	// If a specific recording is requested, redirect to it.
+	if (showRecording) {
+		return navigationService.createRedirectionTo(`/recording/${showRecording}`);
 	}
 
 	// If the showOnlyRecordings flag is set, redirect to the recordings page for the room

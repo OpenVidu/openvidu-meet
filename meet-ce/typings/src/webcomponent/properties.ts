@@ -29,5 +29,10 @@ export enum WebComponentProperty {
 	/**
 	 * Whether to show only recordings instead of live meetings.
 	 */
-	SHOW_ONLY_RECORDINGS = 'show-only-recordings'
+	SHOW_ONLY_RECORDINGS = 'show-only-recordings',
+	/**
+	 * Recording identifier to open directly.
+	 * When provided, the app redirects to `/recording/:recordingId`.
+	 */
+	SHOW_RECORDING = 'show-recording'
 }
