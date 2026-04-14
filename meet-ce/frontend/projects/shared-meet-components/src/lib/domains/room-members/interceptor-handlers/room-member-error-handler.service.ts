@@ -4,6 +4,7 @@ import { Observable, catchError, from, switchMap } from 'rxjs';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import {
+	ContinueWithNextHandlerError,
 	HttpErrorContext,
 	HttpErrorHandler,
 	HttpErrorNotifierService
@@ -51,15 +52,10 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 			return false;
 		}
 
-		// Do not attempt room-member refresh more than once for the same request.
-		if (request.headers.get(HTTP_HEADERS.ROOM_REFRESH_ATTEMPTED) === 'true') {
-			return false;
-		}
-
 		const hasRecordingSecretInRequest = request.url.includes('recordingSecret=');
 		const hasRoomMemberToken = !!this.roomMemberContextService.roomMemberToken();
 
-		// Private-recording-secret-only flow: skip room-member refresh and let auth handler recover.
+		// Recording-secret-only flow: skip room-member refresh and let auth handler recover.
 		if (hasRecordingSecretInRequest && !hasRoomMemberToken) {
 			return false;
 		}
@@ -106,20 +102,43 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 
 				// Update the request with the new token
 				const headers = this.roomMemberHeaderProvider.provideHeaders();
-				const updatedRequest = originalRequest.clone({
-					setHeaders: {
-						...(headers || {}),
-						[HTTP_HEADERS.ROOM_REFRESH_ATTEMPTED]: 'true'
-					}
-				});
+				const updatedRequest = headers ? originalRequest.clone({ setHeaders: headers }) : originalRequest;
 
 				return next(updatedRequest);
 			}),
 			catchError(async (error: HttpErrorResponse) => {
+				const authRedirectHandled = (
+					error as HttpErrorResponse & {
+						authRedirectHandled?: boolean;
+					}
+				).authRedirectHandled;
+
 				if (error.url?.includes('/members/token')) {
 					console.error('Error regenerating room member token');
-					await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
+
+					// If token regeneration failed and the auth error handler did not already handle an auth redirect,
+					// redirect to the error page
+					if (!authRedirectHandled) {
+						console.log('Redirecting to error page...');
+						await this.navigationService.redirectToErrorPage(
+							NavigationErrorReason.ROOM_ACCESS_REVOKED,
+							true
+						);
+					}
+
 					throw originalError;
+				}
+
+				// Special case: if it's a 401 error, it might be due to the access token being expired rather than the room member token.
+				// In that case, let the auth error handler try to recover by delegating the error to it.
+				// Add a flag to the error to indicate that the next available handler should attempt to handle it
+				// (instead of skipping all handlers as is the default behavior when throwing an error).
+				if (error.status === 401) {
+					const continueError: ContinueWithNextHandlerError = {
+						continueWithNextHandler: true,
+						error
+					};
+					throw continueError;
 				}
 
 				throw error;

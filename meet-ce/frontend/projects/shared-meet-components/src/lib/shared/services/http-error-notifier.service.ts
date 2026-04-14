@@ -1,6 +1,6 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { catchError, Observable } from 'rxjs';
 
 /**
  * Context information about an HTTP error
@@ -26,6 +26,11 @@ export interface HttpErrorHandler {
 	canHandle(context: HttpErrorContext): boolean;
 	/** Handles the error and returns a recovery Observable */
 	handle(context: HttpErrorContext): Observable<HttpEvent<unknown>>;
+}
+
+export interface ContinueWithNextHandlerError {
+	continueWithNextHandler: boolean;
+	error?: unknown;
 }
 
 /**
@@ -57,13 +62,43 @@ export class HttpErrorNotifierService {
 	 * @returns Observable to retry the request, or null if no handler can recover
 	 */
 	public handle(context: HttpErrorContext): Observable<HttpEvent<unknown>> | null {
-		for (const handler of this.handlers) {
-			if (handler.canHandle(context)) {
-				return handler.handle(context);
-			}
-		}
+		const tryHandleFromIndex = (startIndex: number): Observable<HttpEvent<unknown>> | null => {
+			for (let i = startIndex; i < this.handlers.length; i++) {
+				const handler = this.handlers[i];
+				if (!handler.canHandle(context)) {
+					continue;
+				}
 
-		// No handler could handle this error
-		return null;
+				return handler.handle(context).pipe(
+					catchError((err: unknown) => {
+						// If the handler throws an error, we check if it's a special case where we want to continue to the next handler
+						// instead of failing immediately.
+						// This allows a handler to delegate to the next one if it determines that it cannot recover from the error after all.
+						const shouldContinue = !!(
+							err &&
+							typeof err === 'object' &&
+							'continueWithNextHandler' in err &&
+							(err as ContinueWithNextHandlerError).continueWithNextHandler
+						);
+
+						if (!shouldContinue) {
+							throw err;
+						}
+
+						const nextHandler$ = tryHandleFromIndex(i + 1);
+						if (nextHandler$) {
+							return nextHandler$;
+						}
+
+						const delegatedError = (err as ContinueWithNextHandlerError).error ?? err;
+						throw delegatedError;
+					})
+				);
+			}
+
+			return null;
+		};
+
+		return tryHandleFromIndex(0);
 	}
 }

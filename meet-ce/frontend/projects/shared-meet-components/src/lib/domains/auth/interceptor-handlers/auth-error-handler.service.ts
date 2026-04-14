@@ -94,6 +94,13 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 					) {
 						console.log('Logging out...');
 						await this.authService.logout(pageUrl);
+
+						// Add a flag to the error to indicate that the auth redirect has been handled
+						const handledError = originalError as HttpErrorResponse & {
+							authRedirectHandled?: boolean;
+						};
+						handledError.authRedirectHandled = true;
+						throw handledError;
 					}
 
 					throw originalError;
