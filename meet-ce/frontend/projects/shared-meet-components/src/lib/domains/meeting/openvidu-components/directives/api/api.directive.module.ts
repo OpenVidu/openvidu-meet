@@ -1,25 +1,19 @@
 import { NgModule } from '@angular/core';
 import { ActivitiesPanelBroadcastingActivityDirective, ActivitiesPanelRecordingActivityDirective } from './activities-panel.directive';
 import {
-	AdminDashboardRecordingsListDirective,
-	AdminDashboardTitleDirective,
-	AdminLoginErrorDirective,
-	AdminLoginTitleDirective
-} from './admin.directive';
-import {
+	E2EEKeyDirective,
 	FallbackLogoDirective,
 	LayoutRemoteParticipantsDirective,
 	PrejoinDisplayParticipantName,
-	ToolbarBrandingLogoDirective,
-	ToolbarViewRecordingsButtonDirective,
 	RecordingActivityReadOnlyDirective,
 	RecordingActivityShowControlsDirective,
-	StartStopRecordingButtonsDirective,
-	RecordingActivityViewRecordingsButtonDirective,
 	RecordingActivityShowRecordingsListDirective,
-	ToolbarRoomNameDirective,
+	RecordingActivityViewRecordingsButtonDirective,
 	ShowThemeSelectorDirective,
-	E2EEKeyDirective
+	StartStopRecordingButtonsDirective,
+	ToolbarBrandingLogoDirective,
+	ToolbarRoomNameDirective,
+	ToolbarViewRecordingsButtonDirective
 } from './internals.directive';
 import { ParticipantPanelItemMuteButtonDirective } from './participant-panel-item.directive';
 import {
@@ -105,10 +99,6 @@ const directives = [
 	ParticipantNameDirective,
 	ActivitiesPanelRecordingActivityDirective,
 	ActivitiesPanelBroadcastingActivityDirective,
-	AdminDashboardRecordingsListDirective,
-	AdminLoginTitleDirective,
-	AdminLoginErrorDirective,
-	AdminDashboardTitleDirective,
 	LayoutRemoteParticipantsDirective,
 	StartStopRecordingButtonsDirective,
 	RecordingActivityViewRecordingsButtonDirective,

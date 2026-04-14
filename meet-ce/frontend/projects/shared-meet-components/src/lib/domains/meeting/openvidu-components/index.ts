@@ -20,7 +20,6 @@ export * from './components/videoconference/videoconference.component';
 export * from './config/openvidu-components-angular.config';
 // Directives
 export * from './directives/api/activities-panel.directive';
-export * from './directives/api/admin.directive';
 export * from './directives/api/api.directive.module';
 export * from './directives/api/internals.directive';
 export * from './directives/api/participant-panel-item.directive';
