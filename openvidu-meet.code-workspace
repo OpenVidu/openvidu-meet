@@ -1,10 +1,6 @@
 {
 	"folders": [
 		{
-			"name": "openvidu-components-angular",
-			"path": "../openvidu/openvidu-components-angular"
-		},
-		{
 			"name": "openvidu-meet (root)",
 			"path": "."
 		},
@@ -48,7 +44,6 @@
 		},
 		"jest.disabledWorkspaceFolders": [
 			"openvidu-meet (root)",
-			"openvidu-components-angular",
 			"shared-meet-components",
 			"meet-testapp"
 		],

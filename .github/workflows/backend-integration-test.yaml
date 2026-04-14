@@ -20,19 +20,8 @@ on:
         default: 'c5.2xlarge'
 
 jobs:
-  build-components:
-    name: Build OpenVidu Components Angular
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    steps:
-      - name: Build Components
-        id: build
-        uses: OpenVidu/actions/build-openvidu-components-angular@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
-    outputs:
-      artifact_name: ${{ steps.build.outputs.artifact_name }}
-
   test-api:
     name: ${{ matrix.test-name }}
-    needs: build-components
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     strategy:
       fail-fast: false
@@ -75,9 +64,6 @@ jobs:
 
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
-        with:
-          build_components_angular: 'true'
-          components_artifact_name: ${{ needs.build-components.outputs.artifact_name }}
 
       - name: Run tests
         run: pnpm run ${{ matrix.test-script }}
@@ -179,7 +165,6 @@ jobs:
       - start-aws-runner-s3
       - start-aws-runner-abs
       - start-aws-runner-gcs
-      - build-components
     if: ${{ always() && (needs.start-aws-runner-s3.result == 'success' || needs.start-aws-runner-s3.result == 'skipped') && (needs.start-aws-runner-abs.result == 'success' || needs.start-aws-runner-abs.result == 'skipped') && (needs.start-aws-runner-gcs.result == 'success' || needs.start-aws-runner-gcs.result == 'skipped') }}
     runs-on: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.label) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.label) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.label) || vars.LABEL_WORKER_SELFHOSTED }}
     strategy:
@@ -209,7 +194,7 @@ jobs:
           if [[ "${{ matrix.storage-provider }}" == "abs" ]]; then
             echo "Installing Azure CLI..."
             curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-            
+
             echo "Logging into Azure..."
             az storage blob delete-batch \
               --account-name "${{ vars.MEET_AZURE_ACCOUNT_NAME }}" \
@@ -218,16 +203,16 @@ jobs:
               --pattern "openvidu-meet/*" \
               --delete-snapshots include || echo "No files found to delete or container doesn't exist"
             echo "Existing blobs deleted from Azure Blob Storage container."
-              
+
           elif [[ "${{ matrix.storage-provider }}" == "gcs" ]]; then
             echo "Installing Google Cloud CLI..."
             curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz | tar -xz
             ./google-cloud-sdk/install.sh --quiet
             export PATH=$PATH:$(pwd)/google-cloud-sdk/bin
-            
+
             echo "Authenticating with Google Cloud..."
             gcloud auth activate-service-account --key-file=/tmp/credentials.json
-            
+
             echo "Removing openvidu-meet folder from GCS bucket..."
             gsutil -m rm -r gs://openvidu-appdata/openvidu-meet/ || echo "No files found to delete or bucket doesn't exist"
           fi
@@ -267,9 +252,6 @@ jobs:
 
       - name: Setup OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
-        with:
-          build_components_angular: 'true'
-          components_artifact_name: ${{ needs.build-components.outputs.artifact_name }}
         env:
           MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
           # ABS variables
@@ -347,7 +329,6 @@ jobs:
   remove-components-artifact:
     name: Remove OpenVidu Components Angular Artifact
     needs:
-      - build-components
       - test-api
       - test-recordings
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}

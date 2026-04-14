@@ -116,6 +116,9 @@ show_help() {
   echo "    Run end-to-end tests for the webcomponent project"
   echo -e "    ${YELLOW}Options:${NC} --force-install    Force reinstall of Playwright browsers"
   echo
+  echo -e "  ${BLUE}test-e2e-frontend${NC}"
+  echo "    Run migrated OpenVidu Components end-to-end tests in frontend project"
+  echo
   echo -e "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
   echo
@@ -135,12 +138,6 @@ show_help() {
   echo
   echo -e "  ${BLUE}build-docker${NC} <image-name> [--demos]"
   echo "    Build Docker image (use --demos for demo deployment)"
-  echo
-  echo -e "  ${BLUE}prepare-ci-build${NC} [--components-angular-version <version> | --components-angular-tarball <path>]"
-  echo "    Prepare workspace for CI/Docker builds by installing specific openvidu-components-angular version"
-  echo
-  echo -e "  ${BLUE}restore-dev-config${NC}"
-  echo "    Restore development workspace configuration after CI builds"
   echo
   echo -e "  ${BLUE}help${NC}"
   echo "    Show this help message"
@@ -325,6 +322,19 @@ test_e2e_webcomponent() {
   pnpm run test:e2e-webcomponent
 }
 
+# Run migrated e2e tests for frontend
+test_e2e_frontend() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Running Frontend E2E Components Tests${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+
+  echo -e "${GREEN}Running frontend migrated E2E tests...${NC}"
+  pnpm run test:e2e-frontend-components
+}
+
 # Helper: Prompt user to select edition (CE or PRO)
 select_edition() {
   # This function performs interactive selection and stores the
@@ -361,29 +371,8 @@ select_edition() {
   esac
 }
 
-# Helper: Add common commands (components, typings, docs)
+# Helper: Add common commands (typings, docs)
 add_common_dev_commands() {
-  local components_path="$1"
-
-  OV_COMPONENTS_DIR="../openvidu/openvidu-components-angular"
-  OV_PACKAGE_JSON="$OV_COMPONENTS_DIR/package.json"
-
-  # Check if the OpenVidu Angular components directory exists
-  if [ ! -d "$OV_COMPONENTS_DIR" ] || [ ! -f "$OV_PACKAGE_JSON" ]; then
-    echo -e "${RED}Error: OpenVidu Angular components not found or incomplete at:${NC} $OV_COMPONENTS_DIR"
-    echo -e "${YELLOW}Please clone the OpenVidu repository alongside meet to enable development mode.${NC}"
-    echo
-    echo -e "  ${YELLOW}Run this command:${NC}"
-    echo -e "    git clone https://github.com/OpenVidu/openvidu.git ../openvidu${NC}"
-    echo
-    exit 1
-  fi
-
-  # Components watcher
-  CMD_NAMES+=("components-angular")
-  CMD_COLORS+=("bgRed.white")
-  CMD_COMMANDS+=("npm --prefix $OV_COMPONENTS_DIR install && npm --prefix $OV_COMPONENTS_DIR run lib:serve")
-
   # Typings watcher. It generates the typings-ready.flag file when done for other watchers to wait on.
   CMD_NAMES+=("typings-ce")
   CMD_COLORS+=("bgGreen.black")
@@ -392,7 +381,7 @@ add_common_dev_commands() {
   # shared-meet-components watcher
   CMD_NAMES+=("shared-meet-components")
   CMD_COLORS+=("bgYellow.dark")
-  CMD_COMMANDS+=("wait-on ${components_path} && pnpm --filter @openvidu-meet/frontend run lib:serve")
+  CMD_COMMANDS+=("pnpm --filter @openvidu-meet/frontend run lib:serve")
 
   # Testapp
   CMD_NAMES+=("testapp")
@@ -408,8 +397,7 @@ add_common_dev_commands() {
 
 # Helper: Add CE-specific commands (backend, frontend)
 add_ce_commands() {
-  local components_path="$1"
-  local shared_meet_components_path="$2"
+  local shared_meet_components_path="$1"
 
   # REST API docs watcher
   CMD_NAMES+=("rest-api-docs")
@@ -421,16 +409,15 @@ add_ce_commands() {
   CMD_COLORS+=("cyan")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:backend'")
 
-  # Run frontend after components-angular and shared-meet-components are ready
+  # Run frontend after shared-meet-components is ready
   CMD_NAMES+=("frontend")
   CMD_COLORS+=("magenta")
-  CMD_COMMANDS+=("wait-on ${components_path} && wait-on ${shared_meet_components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'")
+  CMD_COMMANDS+=("wait-on ${shared_meet_components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:frontend'")
 }
 
 # Helper: Add PRO-specific commands (backend-pro, backend-ce-watch, frontend-pro)
 add_pro_commands() {
-  local components_path="$1"
-  local shared_meet_components_path="$2"
+  local shared_meet_components_path="$1"
 
   # Run backend-pro
   CMD_NAMES+=("backend-pro")
@@ -442,10 +429,10 @@ add_pro_commands() {
   CMD_COLORS+=("bgCyan.white")
   CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run --filter @openvidu-meet/backend build:watch'")
 
-  # Run frontend-pro after components-angular and shared-meet-components are ready
+  # Run frontend-pro after shared-meet-components are ready
   CMD_NAMES+=("frontend-pro")
   CMD_COLORS+=("magenta")
-  CMD_COMMANDS+=("wait-on ${components_path} && wait-on ${shared_meet_components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-frontend'")
+  CMD_COMMANDS+=("wait-on ${shared_meet_components_path} && sleep 1 && node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:pro-frontend'")
 
   # Typings watcher for PRO edition. It generates the typings-ready.flag file when done for other watchers to wait on.
   CMD_NAMES+=("typings-pro")
@@ -496,15 +483,12 @@ add_browsersync_commands() {
 # Helper: Launch all development watchers using concurrently
 launch_dev_watchers() {
   local edition="$1"
-  local components_path="$2"
+  local shared_meet_components_path="$2"
 
   echo -e "${YELLOW}⏳ Launching all development watchers...${NC}"
   echo -e "${BLUE}Edition: ${edition}${NC}"
   echo -e "${BLUE}Processes: ${#CMD_NAMES[@]}${NC}"
   echo
-
-  # Clean up components package.json to ensure wait-on works
-  rm -rf "${components_path}"
 
   # Clean up shared-meet-components package.json to ensure wait-on works
   rm -rf "${shared_meet_components_path}"
@@ -535,7 +519,6 @@ dev() {
   echo
 
   # Define paths
-  local components_path="../openvidu/openvidu-components-angular/projects/openvidu-components-angular/dist/package.json"
   local shared_meet_components_path="meet-ce/frontend/projects/shared-meet-components/dist/package.json"
   local browsersync_path
 
@@ -544,23 +527,23 @@ dev() {
   CMD_COLORS=()
   CMD_COMMANDS=()
 
-  # Add common commands (components-angular, typings, shared-meet-components)
-  add_common_dev_commands "$components_path"
+  # Add common commands (typings, shared-meet-components)
+  add_common_dev_commands
 
   # Add edition-specific commands and set paths
   if [ "$edition" = "pro" ]; then
     browsersync_path="meet-pro/backend/public/**/*"
-    add_pro_commands "$components_path" "$shared_meet_components_path"
+    add_pro_commands "$shared_meet_components_path"
   else
     browsersync_path="meet-ce/backend/public/**/*"
-    add_ce_commands "$components_path" "$shared_meet_components_path"
+    add_ce_commands "$shared_meet_components_path"
   fi
 
   # Add browser-sync commands
   add_browsersync_commands "$browsersync_path"
 
   # Launch all watchers
-  launch_dev_watchers "$edition" "$components_path"
+  launch_dev_watchers "$edition" "$shared_meet_components_path"
 }
 
 # Start OpenVidu Meet services in prod or ci mode
@@ -760,41 +743,6 @@ clone_meet_pro() {
   fi
 }
 
-# Prepare CI build workspace
-prepare_ci_build() {
-  echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Preparing CI Build Workspace${NC}"
-  echo -e "${BLUE}=====================================${NC}"
-  echo
-
-  # Check if any arguments were provided
-  if [ $# -eq 0 ]; then
-    echo -e "${YELLOW}No arguments provided. Running with default settings...${NC}"
-    echo -e "${BLUE}This will install the latest version from npm registry.${NC}"
-    echo
-    ./scripts/prepare-ci-build.sh --components-angular-version latest
-  else
-    ./scripts/prepare-ci-build.sh "$@"
-  fi
-
-  echo
-  echo -e "${GREEN}✓ CI build workspace prepared successfully!${NC}"
-  echo -e "${YELLOW}Note: Run './meet.sh restore-dev-config' to restore development configuration.${NC}"
-}
-
-# Restore development configuration
-restore_dev_config() {
-  echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Restoring Development Configuration${NC}"
-  echo -e "${BLUE}=====================================${NC}"
-  echo
-
-  ./scripts/restore-dev-config.sh
-
-  echo
-  echo -e "${GREEN}✓ Development configuration restored successfully!${NC}"
-}
-
 # Build Docker image
 build_docker() {
   local image_name="$1"
@@ -809,22 +757,12 @@ build_docker() {
 
   # Parse flags
   local is_demos=false
-  local components_version=""
-  local components_tarball=""
 
   while [ $# -gt 0 ]; do
     case "$1" in
       --demos)
         is_demos=true
         shift
-        ;;
-      --components-angular-version)
-        components_version="$2"
-        shift 2
-        ;;
-      --components-angular-tarball)
-        components_tarball="$2"
-        shift 2
         ;;
       *)
         # ignore unknown flags for forward compatibility
@@ -849,33 +787,15 @@ build_docker() {
   echo -e "${BLUE}=====================================${NC}"
   echo
 
-  # Optionally install specific components version
-  if [ -n "$components_tarball" ]; then
-    echo -e "${BLUE}🔧 Installing OpenVidu Components Angular from tarball: $components_tarball${NC}"
-    ./scripts/prepare-ci-build.sh --components-angular-tarball "$components_tarball"
-  elif [ -n "$components_version" ]; then
-    echo -e "${BLUE}🔧 Installing OpenVidu Components Angular version: $components_version${NC}"
-    ./scripts/prepare-ci-build.sh --components-angular-version "$components_version"
-  else
-    echo -e "${YELLOW}⚠️  No specific components version specified, using latest from registry${NC}"
-    ./scripts/prepare-ci-build.sh --components-angular-version latest
-  fi
-
   echo -e "${GREEN}Using BASE_HREF: $base_href${NC}"
 
   export BUILDKIT_PROGRESS=plain
   if docker build --pull --no-cache --rm=true -f meet-ce/docker/Dockerfile -t "$final_image_name" --build-arg BASE_HREF="$base_href" .; then
     echo
     echo -e "${GREEN}✓ Docker image '$final_image_name' built successfully!${NC}"
-     # Restore dev config
-    echo "🔧 Restoring dev config ..."
-    ./scripts/restore-dev-config.sh > /dev/null
   else
     echo
     echo -e "${RED}✗ Failed to build Docker image '$final_image_name'${NC}"
-     # Restore dev config
-    echo "🔧 Restoring dev config ..."
-    ./scripts/restore-dev-config.sh > /dev/null
     exit 1
   fi
 
@@ -924,6 +844,9 @@ main() {
     test-e2e-webcomponent)
       test_e2e_webcomponent "$@"
       ;;
+    test-e2e-frontend)
+      test_e2e_frontend
+      ;;
     dev)
       dev
       ;;
@@ -941,12 +864,6 @@ main() {
       ;;
     build-docker)
       build_docker "$@"
-      ;;
-    prepare-ci-build)
-      prepare_ci_build "$@"
-      ;;
-    restore-dev-config)
-      restore_dev_config
       ;;
     clone-pro)
       clone_meet_pro
