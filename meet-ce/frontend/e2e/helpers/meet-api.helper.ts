@@ -34,8 +34,7 @@ interface CreateRoomMemberResponse {
 
 const MEET_BASE_URL = process.env.E2E_BASE_URL || 'http://localhost:6080/meet';
 const API_BASE_URL = process.env.E2E_API_BASE_URL || buildDefaultApiBaseUrl(MEET_BASE_URL);
-const INTERNAL_API_BASE_URL =
-	process.env.E2E_INTERNAL_API_BASE_URL || buildDefaultInternalApiBaseUrl(MEET_BASE_URL);
+const INTERNAL_API_BASE_URL = process.env.E2E_INTERNAL_API_BASE_URL || buildDefaultInternalApiBaseUrl(MEET_BASE_URL);
 const API_KEY = process.env.E2E_API_KEY || 'meet-api-key';
 
 function buildDefaultApiBaseUrl(meetBaseUrl: string): string {
@@ -156,16 +155,9 @@ export async function deleteRooms(roomIds: Iterable<string>): Promise<void> {
 	await Promise.all(Array.from(roomIds).map((roomId) => deleteRoom(roomId)));
 }
 
-export function toAbsoluteMeetUrl(accessUrl: string, queryParams?: Record<string, string>): string {
+export function toAbsoluteMeetUrl(accessUrl: string): string {
 	if (accessUrl.startsWith('http://') || accessUrl.startsWith('https://')) {
 		const absoluteUrl = new URL(accessUrl);
-
-		if (queryParams) {
-			for (const [key, value] of Object.entries(queryParams)) {
-				absoluteUrl.searchParams.set(key, value);
-			}
-		}
-
 		return absoluteUrl.toString();
 	}
 
@@ -174,19 +166,12 @@ export function toAbsoluteMeetUrl(accessUrl: string, queryParams?: Record<string
 	const normalizedAccessPath = accessUrl.startsWith('/') ? `${basePath}${accessUrl}` : `${basePath}/${accessUrl}`;
 	const url = new URL(normalizedAccessPath, meetBaseUrl.origin);
 
-	if (queryParams) {
-		for (const [key, value] of Object.entries(queryParams)) {
-			url.searchParams.set(key, value);
-		}
-	}
-
 	return url.toString();
 }
 
 export async function createRoomAndGetAccessUrl(
 	participantName: string,
-	room?: E2ERoom,
-	queryParams: Record<string, string> = { prejoin: 'false' }
+	room?: E2ERoom
 ): Promise<{ room: E2ERoom; accessUrl: string }> {
 	const createdRoom = room || (await createRoom({ roomName: `chat-pw-${Date.now()}` }));
 	const member = await createExternalRoomMember({
@@ -197,6 +182,6 @@ export async function createRoomAndGetAccessUrl(
 
 	return {
 		room: createdRoom,
-		accessUrl: toAbsoluteMeetUrl(member.accessUrl, queryParams)
+		accessUrl: toAbsoluteMeetUrl(member.accessUrl)
 	};
 }

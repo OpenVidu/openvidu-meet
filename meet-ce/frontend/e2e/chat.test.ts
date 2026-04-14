@@ -13,7 +13,7 @@ import {
 } from './helpers/meeting-ui.helper';
 
 test.describe('Chat features', () => {
-    test.describe.configure({ timeout: 90_000 });
+    // test.describe.configure({ timeout: 90_000 });
 
     test('should send messages', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
