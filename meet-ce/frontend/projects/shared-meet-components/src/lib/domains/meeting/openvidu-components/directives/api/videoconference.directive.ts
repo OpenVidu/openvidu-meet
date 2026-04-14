@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { CaptionsLangOption } from '../../models/caption.model';
 // import { CaptionService } from '../../services/caption/caption.service';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
@@ -25,15 +25,16 @@ export class LivekitUrlDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set livekitUrl(value: string) {
-		this.update(value);
-	}
+	readonly livekitUrl = input<string>('');
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly livekitUrlEffect = effect(() => {
+		this.update(this.livekitUrl());
+	});
 
 	/**
 	 * @ignore
@@ -76,15 +77,16 @@ export class TokenDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set token(value: string) {
-		this.update(value);
-	}
+	readonly token = input<string>('');
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly tokenEffect = effect(() => {
+		this.update(this.token());
+	});
 
 	/**
 	 * @ignore
@@ -126,15 +128,16 @@ export class TokenErrorDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set tokenError(value: any) {
-		this.update(value);
-	}
+	readonly tokenError = input<any>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly tokenErrorEffect = effect(() => {
+		this.update(this.tokenError());
+	});
 
 	/**
 	 * @ignore
@@ -176,15 +179,16 @@ export class MinimalDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set minimal(value: boolean) {
-		this.update(value);
-	}
+	readonly minimal = input<boolean>(false);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly minimalEffect = effect(() => {
+		this.update(this.minimal());
+	});
 
 	/**
 	 * @ignore
@@ -239,15 +243,16 @@ export class LangDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set lang(value: AvailableLangs) {
-		this.update(value);
-	}
+	readonly lang = input<AvailableLangs>('en');
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly translateService = inject(TranslateService);
+	private readonly langEffect = effect(() => {
+		this.update(this.lang());
+	});
 
 	/**
 	 * @ignore
@@ -307,15 +312,16 @@ export class LangOptionsDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set langOptions(value: LangOption[]) {
-		this.update(value);
-	}
+	readonly langOptions = input<LangOption[] | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly translateService = inject(TranslateService);
+	private readonly langOptionsEffect = effect(() => {
+		this.update(this.langOptions());
+	});
 
 	/**
 	 * @ignore
@@ -483,26 +489,20 @@ export class LangOptionsDirective implements OnDestroy {
 	selector: 'ov-videoconference[participantName]',
 	standalone: false
 })
-export class ParticipantNameDirective implements AfterViewInit, OnDestroy {
+export class ParticipantNameDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set participantName(name: string) {
-		this.update(name);
-	}
+	readonly participantName = input<string>('');
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	/**
-	 * @ignore
-	 */
-	ngAfterViewInit(): void {
-		this.update(this.participantName);
-	}
+	private readonly participantNameEffect = effect(() => {
+		this.update(this.participantName());
+	});
 
 	/**
 	 * @ignore
@@ -546,15 +546,16 @@ export class PrejoinDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set prejoin(value: boolean) {
-		this.update(value);
-	}
+	readonly prejoin = input<boolean>(true);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly prejoinEffect = effect(() => {
+		this.update(this.prejoin());
+	});
 
 	/**
 	 * @ignore
@@ -597,9 +598,7 @@ export class VideoEnabledDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set videoEnabled(value: boolean) {
-		this.update(value);
-	}
+	readonly videoEnabled = input<boolean>(true);
 
 	/**
 	 * @ignore
@@ -607,6 +606,9 @@ export class VideoEnabledDirective implements OnDestroy {
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly storageService = inject(StorageService);
+	private readonly videoEnabledEffect = effect(() => {
+		this.update(this.videoEnabled());
+	});
 
 	/**
 	 * @ignore
@@ -667,9 +669,7 @@ export class AudioEnabledDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set audioEnabled(value: boolean) {
-		this.update(value);
-	}
+	readonly audioEnabled = input<boolean>(true);
 
 	/**
 	 * @ignore
@@ -677,6 +677,9 @@ export class AudioEnabledDirective implements OnDestroy {
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly storageService = inject(StorageService);
+	private readonly audioEnabledEffect = effect(() => {
+		this.update(this.audioEnabled());
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
@@ -732,15 +735,16 @@ export class ShowDisconnectionDialogDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set showDisconnectionDialog(value: boolean) {
-		this.update(value);
-	}
+	readonly showDisconnectionDialog = input<boolean>(true);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly showDisconnectionDialogEffect = effect(() => {
+		this.update(this.showDisconnectionDialog());
+	});
 
 	/**
 	 * @ignore
@@ -792,26 +796,20 @@ export class ShowDisconnectionDialogDirective implements OnDestroy {
 	selector: 'ov-videoconference[recordingStreamBaseUrl]',
 	standalone: false
 })
-export class RecordingStreamBaseUrlDirective implements AfterViewInit, OnDestroy {
+export class RecordingStreamBaseUrlDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set recordingStreamBaseUrl(url: string) {
-		this.update(url);
-	}
+	readonly recordingStreamBaseUrl = input<string>('');
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	/**
-	 * @ignore
-	 */
-	ngAfterViewInit(): void {
-		this.update(this.recordingStreamBaseUrl);
-	}
+	private readonly recordingStreamBaseUrlEffect = effect(() => {
+		this.update(this.recordingStreamBaseUrl());
+	});
 
 	/**
 	 * @ignore

@@ -1,17 +1,18 @@
 import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    ContentChild,
-    DestroyRef,
-    ElementRef,
-    HostListener,
-    inject,
-    OnDestroy,
-    OnInit,
-    output,
-    TemplateRef,
-    ViewChild
+	ChangeDetectionStrategy,
+	ChangeDetectorRef,
+	Component,
+	contentChild,
+	DestroyRef,
+	effect,
+	ElementRef,
+	HostListener,
+	inject,
+	OnDestroy,
+	OnInit,
+	output,
+	TemplateRef,
+	viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -27,16 +28,16 @@ import { ActionService } from '../../services/action/action.service';
 import { BroadcastingService } from '../../services/broadcasting/broadcasting.service';
 // import { CaptionService } from '../../services/caption/caption.service';
 import {
-    DataPacket_Kind,
-    DisconnectReason,
-    LocalParticipant,
-    Participant,
-    RemoteParticipant,
-    RemoteTrack,
-    RemoteTrackPublication,
-    Room,
-    RoomEvent,
-    Track
+	DataPacket_Kind,
+	DisconnectReason,
+	LocalParticipant,
+	Participant,
+	RemoteParticipant,
+	RemoteTrack,
+	RemoteTrackPublication,
+	Room,
+	RoomEvent,
+	Track
 } from 'livekit-client';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStatus } from '../../models/recording.model';
@@ -72,9 +73,12 @@ import { safeJsonParse } from '../../utils/utils';
 	standalone: false
 })
 export class SessionComponent implements OnInit, OnDestroy {
-	@ContentChild('toolbar', { read: TemplateRef }) toolbarTemplate: TemplateRef<any> | undefined;
-	@ContentChild('panel', { read: TemplateRef }) panelTemplate: TemplateRef<any> | undefined;
-	@ContentChild('layout', { read: TemplateRef }) layoutTemplate: TemplateRef<any> | undefined;
+	readonly toolbarTemplateQuery = contentChild('toolbar', { read: TemplateRef });
+	toolbarTemplate: TemplateRef<any> | undefined;
+	readonly panelTemplateQuery = contentChild('panel', { read: TemplateRef });
+	panelTemplate: TemplateRef<any> | undefined;
+	readonly layoutTemplateQuery = contentChild('layout', { read: TemplateRef });
+	layoutTemplate: TemplateRef<any> | undefined;
 	/**
 	 * Provides event notifications that fire when Room is created for the local participant.
 	 */
@@ -146,6 +150,71 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly cd = inject(ChangeDetectorRef);
 	private readonly templateManagerService = inject(TemplateManagerService);
 	protected readonly viewportService = inject(ViewportService);
+	readonly sidenavMenuQuery = viewChild<MatSidenav>('sidenav');
+	readonly videoContainerQuery = viewChild<ElementRef>('videoContainer');
+	readonly containerQuery = viewChild<MatDrawerContainer>('container');
+	readonly layoutContainerQuery = viewChild<ElementRef>('layoutContainer');
+	private readonly querySyncEffect = effect(() => {
+		this.toolbarTemplate = this.toolbarTemplateQuery();
+		this.panelTemplate = this.panelTemplateQuery();
+		this.layoutTemplate = this.layoutTemplateQuery();
+		this.setupTemplates();
+		this.cd.markForCheck();
+	});
+	private readonly sidenavMenuEffect = effect(() => {
+		const menu = this.sidenavMenuQuery();
+		if (menu && this.sideMenu !== menu) {
+			setTimeout(() => {
+				if (menu) {
+					this.sideMenu = menu;
+					this.initializeSidenavBindings();
+				}
+			}, 0);
+		}
+	});
+	private readonly videoContainerEffect = effect(() => {
+		const container = this.videoContainerQuery();
+		if (container && !this.toolbarTemplate) {
+			setTimeout(() => {
+				if (container && !this.toolbarTemplate) {
+					container.nativeElement.style.height = '100%';
+					container.nativeElement.style.minHeight = '100%';
+					this.layoutService.update();
+				}
+			}, 0);
+		}
+	});
+	private readonly containerEffect = effect(() => {
+		const container = this.containerQuery();
+		if (container && this.drawer !== container) {
+			setTimeout(() => {
+				if (container && this.drawer !== container) {
+					this.drawer = container;
+					this.drawer._contentMarginChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+						setTimeout(() => {
+							this.stopUpdateLayoutInterval();
+							this.layoutService.update();
+							if (this.drawer) {
+								this.drawer.autosize = false;
+							}
+						}, 250);
+					});
+					this.initializeSidenavBindings();
+				}
+			}, 0);
+		}
+	});
+	private readonly layoutContainerEffect = effect(() => {
+		const container = this.layoutContainerQuery();
+		if (container) {
+			setTimeout(async () => {
+				if (container && this.libService.showBackgroundEffectsButton()) {
+					// Apply background from storage when layout container is in DOM only when background effects button is enabled
+					await this.backgroundService.applyBackgroundFromStorage();
+				}
+			}, 0);
+		}
+	});
 
 	constructor() {
 		this.log = this.loggerSrv.get('SessionComponent');
@@ -160,58 +229,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 	@HostListener('window:resize')
 	sizeChange() {
 		this.layoutService.update();
-	}
-
-	@ViewChild('sidenav')
-	set sidenavMenu(menu: MatSidenav) {
-		setTimeout(() => {
-			if (menu) {
-				this.sideMenu = menu;
-				this.initializeSidenavBindings();
-			}
-		}, 0);
-	}
-
-	@ViewChild('videoContainer', { static: false, read: ElementRef })
-	set videoContainer(container: ElementRef) {
-		setTimeout(() => {
-			if (container && !this.toolbarTemplate) {
-				container.nativeElement.style.height = '100%';
-				container.nativeElement.style.minHeight = '100%';
-				this.layoutService.update();
-			}
-		}, 0);
-	}
-
-	@ViewChild('container')
-	set container(container: MatDrawerContainer) {
-		setTimeout(() => {
-			if (container) {
-				this.drawer = container;
-				this.drawer._contentMarginChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-					setTimeout(() => {
-						this.stopUpdateLayoutInterval();
-						this.layoutService.update();
-						if (this.drawer) {
-							this.drawer.autosize = false;
-						}
-					}, 250);
-				});
-				this.initializeSidenavBindings();
-			}
-		}, 0);
-	}
-
-	@ViewChild('layoutContainer')
-	set layoutContainer(container: ElementRef) {
-		setTimeout(async () => {
-			if (container) {
-				if (this.libService.showBackgroundEffectsButton()) {
-					// Apply background from storage when layout container is in DOM only when background effects button is enabled
-					await this.backgroundService.applyBackgroundFromStorage();
-				}
-			}
-		}, 0);
 	}
 
 	async ngOnInit() {

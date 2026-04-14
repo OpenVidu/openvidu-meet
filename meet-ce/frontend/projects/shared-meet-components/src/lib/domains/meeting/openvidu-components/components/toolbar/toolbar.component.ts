@@ -1,18 +1,18 @@
 import {
-    AfterViewInit,
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    computed,
-    ContentChild,
-    DestroyRef,
-    effect,
-    inject,
-    OnDestroy,
-    OnInit,
-    output,
-    TemplateRef,
-    ViewChild
+	AfterViewInit,
+	ChangeDetectionStrategy,
+	ChangeDetectorRef,
+	Component,
+	computed,
+	contentChild,
+	DestroyRef,
+	effect,
+	inject,
+	OnDestroy,
+	OnInit,
+	output,
+	TemplateRef,
+	viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent, skip } from 'rxjs';
@@ -24,8 +24,8 @@ import { MatMenuTrigger } from '@angular/material/menu';
 import { Room, RoomEvent } from 'livekit-client';
 import { LeaveButtonDirective, ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import {
-    ToolbarAdditionalButtonsDirective,
-    ToolbarAdditionalPanelButtonsDirective
+	ToolbarAdditionalButtonsDirective,
+	ToolbarAdditionalPanelButtonsDirective
 } from '../../directives/template/openvidu-components-angular.directive';
 import { BroadcastingStatus, BroadcastingStatusInfo, BroadcastingStopRequestedEvent } from '../../models/broadcasting.model';
 import { ChatMessage } from '../../models/chat.model';
@@ -33,11 +33,11 @@ import { ILogger } from '../../models/logger.model';
 import { PanelStatusInfo, PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
-    RecordingInfo,
-    RecordingStartRequestedEvent,
-    RecordingStatus,
-    RecordingStatusInfo,
-    RecordingStopRequestedEvent
+	RecordingInfo,
+	RecordingStartRequestedEvent,
+	RecordingStatus,
+	RecordingStatusInfo,
+	RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
 import { ActionService } from '../../services/action/action.service';
@@ -74,18 +74,19 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	@ContentChild('toolbarAdditionalButtons', { read: TemplateRef }) toolbarAdditionalButtonsTemplate: TemplateRef<any> | undefined;
+	readonly toolbarAdditionalButtonsTemplateQuery = contentChild('toolbarAdditionalButtons', { read: TemplateRef });
+	toolbarAdditionalButtonsTemplate: TemplateRef<any> | undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('toolbarLeaveButton', { read: TemplateRef }) toolbarLeaveButtonTemplate: TemplateRef<any> | undefined;
+	readonly toolbarLeaveButtonTemplateQuery = contentChild('toolbarLeaveButton', { read: TemplateRef });
+	toolbarLeaveButtonTemplate: TemplateRef<any> | undefined;
 	/**
 	 * @ignore
 	 */
-	@ContentChild('toolbarAdditionalPanelButtons', { read: TemplateRef }) toolbarAdditionalPanelButtonsTemplate:
-		| TemplateRef<any>
-		| undefined;
+	readonly toolbarAdditionalPanelButtonsTemplateQuery = contentChild('toolbarAdditionalPanelButtons', { read: TemplateRef });
+	toolbarAdditionalPanelButtonsTemplate: TemplateRef<any> | undefined;
 
 	/**
 	 * @internal
@@ -94,14 +95,15 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	moreOptionsAdditionalMenuItemsTemplate: TemplateRef<any> | undefined;
 
 	private _externalMoreOptionsAdditionalMenuItems?: ToolbarMoreOptionsAdditionalMenuItemsDirective;
+	private readonly externalMoreOptionsAdditionalMenuItemsQuery = contentChild(ToolbarMoreOptionsAdditionalMenuItemsDirective);
 	/**
 	 * @internal
 	 */
-	@ContentChild(ToolbarMoreOptionsAdditionalMenuItemsDirective)
-	set externalMoreOptionsAdditionalMenuItems(value: ToolbarMoreOptionsAdditionalMenuItemsDirective) {
-		this._externalMoreOptionsAdditionalMenuItems = value;
+	private readonly externalMoreOptionsAdditionalMenuItemsEffect = effect(() => {
+		this._externalMoreOptionsAdditionalMenuItems = this.externalMoreOptionsAdditionalMenuItemsQuery();
 		this.setupTemplates();
-	}
+		this.cd.markForCheck();
+	});
 	/**
 	 * @internal
 	 */
@@ -112,35 +114,29 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	@ContentChild(ToolbarAdditionalButtonsDirective)
-	set externalAdditionalButtons(externalAdditionalButtons: ToolbarAdditionalButtonsDirective) {
-		this._externalAdditionalButtons = externalAdditionalButtons;
-		if (externalAdditionalButtons) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	private readonly externalAdditionalButtonsQuery = contentChild(ToolbarAdditionalButtonsDirective);
+	private readonly externalAdditionalButtonsEffect = effect(() => {
+		this._externalAdditionalButtons = this.externalAdditionalButtonsQuery();
+		this.updateTemplatesAndMarkForCheck();
+	});
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(LeaveButtonDirective)
-	set externalLeaveButton(externalLeaveButton: LeaveButtonDirective) {
-		this._externalLeaveButton = externalLeaveButton;
-		if (externalLeaveButton) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	private readonly externalLeaveButtonQuery = contentChild(LeaveButtonDirective);
+	private readonly externalLeaveButtonEffect = effect(() => {
+		this._externalLeaveButton = this.externalLeaveButtonQuery();
+		this.updateTemplatesAndMarkForCheck();
+	});
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(ToolbarAdditionalPanelButtonsDirective)
-	set externalAdditionalPanelButtons(externalAdditionalPanelButtons: ToolbarAdditionalPanelButtonsDirective) {
-		this._externalAdditionalPanelButtons = externalAdditionalPanelButtons;
-		if (externalAdditionalPanelButtons) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	private readonly externalAdditionalPanelButtonsQuery = contentChild(ToolbarAdditionalPanelButtonsDirective);
+	private readonly externalAdditionalPanelButtonsEffect = effect(() => {
+		this._externalAdditionalPanelButtons = this.externalAdditionalPanelButtonsQuery();
+		this.updateTemplatesAndMarkForCheck();
+	});
 
 	/**
 	 * This event is emitted when the room has been disconnected.
@@ -199,7 +195,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	@ViewChild(MatMenuTrigger) public menuTrigger: MatMenuTrigger | undefined;
+	readonly menuTriggerQuery = viewChild(MatMenuTrigger);
+	public menuTrigger: MatMenuTrigger | undefined;
 
 	/**
 	 * @ignore
@@ -461,6 +458,14 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly storageSrv = inject(StorageService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);
 	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly querySyncEffect = effect(() => {
+		this.menuTrigger = this.menuTriggerQuery();
+		this.toolbarAdditionalButtonsTemplate = this.toolbarAdditionalButtonsTemplateQuery();
+		this.toolbarLeaveButtonTemplate = this.toolbarLeaveButtonTemplateQuery();
+		this.toolbarAdditionalPanelButtonsTemplate = this.toolbarAdditionalPanelButtonsTemplateQuery();
+		this.setupTemplates();
+		this.cd.markForCheck();
+	});
 
 	constructor() {
 		this.log = this.loggerSrv.get('ToolbarComponent');

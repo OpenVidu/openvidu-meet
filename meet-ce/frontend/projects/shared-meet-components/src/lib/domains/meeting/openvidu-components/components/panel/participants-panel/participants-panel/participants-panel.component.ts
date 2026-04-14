@@ -3,13 +3,14 @@ import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
     Component,
-    ContentChild,
+    contentChild,
     DestroyRef,
+    effect,
     inject,
     OnDestroy,
     OnInit,
     TemplateRef,
-    ViewChild
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ParticipantPanelItemDirective } from '../../../../directives/template/openvidu-components-angular.directive';
@@ -44,30 +45,25 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	/**
 	 * @ignore
 	 */
-	@ViewChild('defaultParticipantPanelItem', { static: false, read: TemplateRef })
+	readonly defaultParticipantPanelItemTemplateQuery = viewChild('defaultParticipantPanelItem', { read: TemplateRef });
 	defaultParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('participantPanelItem', { read: TemplateRef }) participantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
+	readonly participantPanelItemTemplateQuery = contentChild('participantPanelItem', { read: TemplateRef });
+	participantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('participantPanelAfterLocalParticipant', { read: TemplateRef })
+	readonly participantPanelAfterLocalParticipantTemplateQuery = contentChild('participantPanelAfterLocalParticipant', { read: TemplateRef });
 	participantPanelAfterLocalParticipantTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(ParticipantPanelItemDirective)
-	set externalParticipantPanelItem(externalParticipantPanelItem: ParticipantPanelItemDirective) {
-		this._externalParticipantPanelItem = externalParticipantPanelItem;
-		if (externalParticipantPanelItem) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	readonly externalParticipantPanelItem = contentChild(ParticipantPanelItemDirective);
 
 	/**
 	 * @internal
@@ -75,10 +71,15 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	 */
 	templateConfig: ParticipantsPanelTemplateConfiguration = {};
 
-	// Store directive references for template setup
-	private _externalParticipantPanelItem?: ParticipantPanelItemDirective;
-
 	private readonly destroyRef = inject(DestroyRef);
+	private readonly querySyncEffect = effect(() => {
+		this.defaultParticipantPanelItemTemplate = this.defaultParticipantPanelItemTemplateQuery() ?? this.defaultParticipantPanelItemTemplate;
+		this.participantPanelItemTemplate = this.participantPanelItemTemplateQuery() ?? this.participantPanelItemTemplate;
+		this.participantPanelAfterLocalParticipantTemplate =
+			this.participantPanelAfterLocalParticipantTemplateQuery() ?? this.participantPanelAfterLocalParticipantTemplate;
+		this.setupTemplates();
+		this.cd.markForCheck();
+	});
 
 	/**
 	 * @ignore
@@ -93,8 +94,6 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	 * @ignore
 	 */
 	ngOnInit(): void {
-		this.setupTemplates();
-
 		this.subscribeToParticipantsChanges();
 	}
 
@@ -137,7 +136,7 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	 */
 	private setupTemplates(): void {
 		this.templateConfig = this.templateManagerService.setupParticipantsPanelTemplates(
-			this._externalParticipantPanelItem,
+			this.externalParticipantPanelItem(),
 			this.defaultParticipantPanelItemTemplate
 		);
 
@@ -156,15 +155,6 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 		if (this.templateConfig.participantPanelAfterLocalParticipantTemplate) {
 			this.participantPanelAfterLocalParticipantTemplate = this.templateConfig.participantPanelAfterLocalParticipantTemplate;
 		}
-	}
-
-	/**
-	 * @internal
-	 * Updates templates and triggers change detection
-	 */
-	private updateTemplatesAndMarkForCheck(): void {
-		this.setupTemplates();
-		this.cd.markForCheck();
 	}
 
 	/**

@@ -1,4 +1,4 @@
-import { Component, DestroyRef, ElementRef, inject, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, DestroyRef, effect, ElementRef, inject, Input, OnDestroy, OnInit, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
 import { Track } from 'livekit-client';
@@ -22,12 +22,14 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@ViewChild(MatMenuTrigger) public menuTrigger: MatMenuTrigger | undefined = undefined;
+	readonly menuTriggerQuery = viewChild(MatMenuTrigger);
+	public menuTrigger: MatMenuTrigger | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild('menu') menu: MatMenuPanel | undefined = undefined;
+	readonly menuQuery = viewChild<MatMenuPanel>('menu');
+	menu: MatMenuPanel | undefined = undefined;
 
 	/**
 	 * @ignore
@@ -77,18 +79,7 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@ViewChild('streamContainer', { static: false, read: ElementRef })
-	set streamContainer(streamContainer: ElementRef) {
-		setTimeout(() => {
-			if (streamContainer) {
-				this._streamContainer = streamContainer;
-				// This is a workaround for fixing a layout bug which provide a bad UX with each new elements created.
-				setTimeout(() => {
-					this.showVideo = true;
-				}, 100);
-			}
-		}, 0);
-	}
+	readonly streamContainerQuery = viewChild('streamContainer', { read: ElementRef });
 
 	@Input()
 	set track(track: ParticipantTrackPublication) {
@@ -98,6 +89,17 @@ export class StreamComponent implements OnInit, OnDestroy {
 	private _streamContainer: ElementRef | undefined;
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly HOVER_TIMEOUT = 2000;
+	private readonly querySyncEffect = effect(() => {
+		this.menuTrigger = this.menuTriggerQuery();
+		this.menu = this.menuQuery();
+		const streamContainer = this.streamContainerQuery();
+		if (streamContainer) {
+			this._streamContainer = streamContainer;
+			setTimeout(() => {
+				this.showVideo = true;
+			}, 100);
+		}
+	});
 
 	private readonly layoutService = inject(LayoutService);
 	private readonly participantService = inject(ParticipantService);

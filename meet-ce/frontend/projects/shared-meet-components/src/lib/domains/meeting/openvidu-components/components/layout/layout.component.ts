@@ -6,14 +6,15 @@ import {
 	ChangeDetectionStrategy,
 	ChangeDetectorRef,
 	Component,
-	ContentChild,
+	contentChild,
 	DestroyRef,
+	effect,
 	ElementRef,
 	inject,
 	OnDestroy,
 	OnInit,
 	TemplateRef,
-	ViewChild,
+	viewChild,
 	ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -43,51 +44,41 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	@ContentChild('stream', { read: TemplateRef }) streamTemplate: TemplateRef<any> | undefined = undefined;
+	readonly streamTemplateQuery = contentChild('stream', { read: TemplateRef });
+	streamTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('layoutAdditionalElements', { read: TemplateRef }) layoutAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
+	readonly layoutAdditionalElementsTemplateQuery = contentChild('layoutAdditionalElements', { read: TemplateRef });
+	layoutAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild('layout', { static: false, read: ViewContainerRef }) layoutContainer: ViewContainerRef | undefined = undefined;
+	readonly layoutContainerQuery = viewChild('layout', { read: ViewContainerRef });
+	layoutContainer: ViewContainerRef | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild(CdkDrag) cdkDrag: CdkDrag | undefined = undefined;
+	readonly cdkDragQuery = viewChild(CdkDrag);
+	cdkDrag: CdkDrag | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	@ViewChild('localLayoutElement', { static: false, read: ElementRef }) localLayoutElement: ElementRef | undefined = undefined;
+	readonly localLayoutElementQuery = viewChild('localLayoutElement', { read: ElementRef });
+	localLayoutElement: ElementRef | undefined = undefined;
 	/**
 	 * @ignore
 	 */
-	@ContentChild(StreamDirective)
-	set externalStream(externalStream: StreamDirective) {
-		// This directive will has value only when STREAM component tagget with '*ovStream' directive
-		// is inside of the layout component tagged with '*ovLayout' directive
-		if (externalStream) {
-			this.streamTemplate = externalStream.template;
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	readonly externalStream = contentChild(StreamDirective);
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(LayoutAdditionalElementsDirective) set externalAdditionalElements(
-		externalAdditionalElements: LayoutAdditionalElementsDirective
-	) {
-		if (externalAdditionalElements) {
-			this._externalLayoutAdditionalElements = externalAdditionalElements;
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	readonly externalLayoutAdditionalElements = contentChild(LayoutAdditionalElementsDirective);
 
 	/**
 	 * @ignore
@@ -100,9 +91,6 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	captionsEnabled = true;
-
-	private _externalStream?: StreamDirective;
-	private _externalLayoutAdditionalElements?: LayoutAdditionalElementsDirective;
 
 	private readonly destroyRef = inject(DestroyRef);
 	private resizeObserver: ResizeObserver | undefined = undefined;
@@ -120,10 +108,17 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly cd = inject(ChangeDetectorRef);
 	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly querySyncEffect = effect(() => {
+		this.streamTemplate = this.streamTemplateQuery() ?? this.streamTemplate;
+		this.layoutAdditionalElementsTemplate = this.layoutAdditionalElementsTemplateQuery() ?? this.layoutAdditionalElementsTemplate;
+		this.layoutContainer = this.layoutContainerQuery() ?? this.layoutContainer;
+		this.cdkDrag = this.cdkDragQuery() ?? this.cdkDrag;
+		this.localLayoutElement = this.localLayoutElementQuery() ?? this.localLayoutElement;
+		this.setupTemplates();
+		this.cd.markForCheck();
+	});
 
 	ngOnInit(): void {
-		this.setupTemplates();
-
 		this.subscribeToParticipants();
 		this.subscribeToCaptions();
 	}
@@ -163,8 +158,8 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	private setupTemplates() {
 		this.templateConfig = this.templateManagerService.setupLayoutTemplates(
-			this._externalStream,
-			this._externalLayoutAdditionalElements
+			this.externalStream(),
+			this.externalLayoutAdditionalElements()
 		);
 
 		// Apply templates to component properties for backward compatibility
@@ -178,16 +173,6 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 		if (this.templateConfig.layoutAdditionalElementsTemplate) {
 			this.layoutAdditionalElementsTemplate = this.templateConfig.layoutAdditionalElementsTemplate;
 		}
-	}
-
-	/**
-	 * @internal
-	 * Updates templates and triggers change detection
-	 */
-	private updateTemplatesAndMarkForCheck(): void {
-		this.setupTemplates();
-		this.cd.markForCheck();
-		this.layoutService.update();
 	}
 
 	private listenToLayoutDomChanges() {
