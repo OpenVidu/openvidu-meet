@@ -29,7 +29,8 @@ export default defineConfig({
 					args: [
 						'--use-fake-ui-for-media-stream',
 						'--use-fake-device-for-media-stream',
-						`--use-file-for-fake-audio-capture=${fakeAudioPath}`
+						`--use-file-for-fake-audio-capture=${fakeAudioPath}`,
+						'--window-size=1366,900'
 					]
 				}
 			}
@@ -41,7 +42,7 @@ export default defineConfig({
 				...devices['Desktop Chrome'],
 				permissions: [],
 				launchOptions: {
-					args: []
+					args: ['--window-size=1366,900']
 				}
 			}
 		}
