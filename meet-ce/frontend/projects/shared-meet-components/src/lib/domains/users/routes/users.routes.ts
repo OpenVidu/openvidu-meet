@@ -28,6 +28,12 @@ export const usersConsoleRoutes: DomainRouteConfig[] = [
 			loadComponent: () => import('../pages/create-user/create-user.component').then((m) => m.CreateUserComponent)
 		}
 	},
+	{
+		route: {
+			path: 'users/:user-id',
+			loadComponent: () => import('../pages/profile/profile.component').then((m) => m.ProfileComponent)
+		}
+	},
 	// Profile page is not shown in the main navigation, but we want it to be a child route of the console shell
 	{
 		route: {

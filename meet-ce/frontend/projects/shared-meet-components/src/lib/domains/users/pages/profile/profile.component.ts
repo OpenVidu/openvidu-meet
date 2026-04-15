@@ -107,12 +107,12 @@ export class ProfileComponent implements OnInit {
 		this.changePasswordForm.get('newPassword')?.addValidators(this.newPasswordValidator.bind(this));
 		this.changePasswordForm.get('confirmPassword')?.addValidators(this.confirmPasswordValidator.bind(this));
 
-		const queryUserId = this.route.snapshot.queryParamMap.get('userId');
+		const userId = this.route.snapshot.paramMap.get('user-id');
 		const authenticatedUserId = await this.authService.getUserId();
 		const isAdmin = await this.authService.isAdmin();
 
 		try {
-			if (queryUserId && queryUserId !== authenticatedUserId) {
+			if (userId && userId !== authenticatedUserId) {
 				// Admin viewing another user's profile
 				if (!isAdmin) {
 					// Non-admin trying to access another user's profile - redirect to own profile
@@ -122,7 +122,7 @@ export class ProfileComponent implements OnInit {
 					this.isOwnProfile.set(true);
 					this.isAdminViewing.set(false);
 				} else {
-					const user = await this.userService.getUser(queryUserId);
+					const user = await this.userService.getUser(userId);
 					this.targetUser.set(user);
 					this.isOwnProfile.set(false);
 					this.isAdminViewing.set(true);
