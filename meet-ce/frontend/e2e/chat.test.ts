@@ -7,9 +7,9 @@ import {
     expectChatMessageTextAt,
     expectFirstMessageSender,
     expectSnackbarNotification,
-    openChatPanel,
     openMeeting,
-    sendChatMessage
+    sendChatMessage,
+    toggleChatPanel
 } from './helpers/meeting-ui.helper';
 
 test.describe('Chat features', () => {
@@ -20,7 +20,7 @@ test.describe('Chat features', () => {
         const { accessUrl } = await createRoomAndGetAccessUrl(senderName);
 
         await openMeeting(page, accessUrl);
-        await openChatPanel(page);
+        await toggleChatPanel(page);
 
         await sendChatMessage(page, 'Test message');
         await expectChatMessageCount(page, 1);
@@ -45,10 +45,10 @@ test.describe('Chat features', () => {
         const senderPage = await browser.newPage();
         await openMeeting(senderPage, senderAccessUrl);
 
-        await openChatPanel(senderPage);
+        await toggleChatPanel(senderPage);
         await sendChatMessage(senderPage, 'hello from sender');
 
-        await openChatPanel(receiverPage);
+        await toggleChatPanel(receiverPage);
         await expectChatMessageCount(receiverPage, 1);
         await expectChatMessageTextAt(receiverPage, 0, 'hello from sender');
         await expectFirstMessageSender(receiverPage, senderName);
@@ -62,7 +62,7 @@ test.describe('Chat features', () => {
         const { accessUrl } = await createRoomAndGetAccessUrl(senderName);
 
         await openMeeting(page, accessUrl);
-        await openChatPanel(page);
+        await toggleChatPanel(page);
         await sendChatMessage(page, 'demos.openvidu.io');
         await expectChatLinkCount(page, 1);
         await expectChatLinkHrefContains(page, 0, 'demos\\.openvidu\\.io');
@@ -82,12 +82,12 @@ test.describe('Chat features', () => {
         const senderPage = await browser.newPage();
         await openMeeting(senderPage, senderAccessUrl);
 
-        await openChatPanel(senderPage);
+        await toggleChatPanel(senderPage);
         await sendChatMessage(senderPage, 'message while chat is closed');
 
         await expectSnackbarNotification(receiverPage);
 
-        await openChatPanel(receiverPage);
+        await toggleChatPanel(receiverPage);
         await expectChatMessageCount(receiverPage, 1);
         await expectChatMessageTextAt(receiverPage, 0, 'message while chat is closed');
 
@@ -100,7 +100,7 @@ test.describe('Chat features', () => {
         const { accessUrl } = await createRoomAndGetAccessUrl(senderName);
 
         await openMeeting(page, accessUrl);
-        await openChatPanel(page);
+        await toggleChatPanel(page);
 
         await sendChatMessage(page, 'message-1');
         await sendChatMessage(page, 'message-2');
