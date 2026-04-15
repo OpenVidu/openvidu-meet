@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { ILogService, ILogger } from '../../models/logger.model';
 import { GlobalConfigService } from '../config/global-config.service';
 
@@ -9,6 +9,8 @@ import { GlobalConfigService } from '../config/global-config.service';
 	providedIn: 'root'
 })
 export class LoggerService implements ILogService {
+	private readonly globalService = inject(GlobalConfigService);
+
 	private log: Console = window.console;
 	private LOG_FNS: Function[] = [];
 	private MSG_PREFIXES: string[][] = [
@@ -19,7 +21,7 @@ export class LoggerService implements ILogService {
 	];
 	private loggerCache: Map<string, ILogger> = new Map();
 
-	constructor(private globalService: GlobalConfigService) {
+	constructor() {
 		this.initializeLogger();
 	}
 

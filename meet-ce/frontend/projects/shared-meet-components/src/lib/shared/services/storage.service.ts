@@ -1,14 +1,14 @@
 import { Injectable } from '@angular/core';
 import { MeetLayoutMode } from '../../domains/meeting/models/layout.model';
-import { LoggerService, StorageService } from '../../domains/meeting/openvidu-components';
+import { StorageService } from '../../domains/meeting/openvidu-components';
 import { MeetStorageKeys, STORAGE_PREFIX } from '../models/storage.model';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class MeetStorageService extends StorageService {
-	constructor(loggerSrv: LoggerService) {
-		super(loggerSrv);
+	constructor() {
+		super();
 		this.PREFIX_KEY = STORAGE_PREFIX;
 	}
 

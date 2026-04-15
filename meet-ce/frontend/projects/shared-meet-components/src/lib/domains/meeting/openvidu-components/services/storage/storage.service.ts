@@ -1,4 +1,4 @@
-import { Injectable, OnDestroy } from '@angular/core';
+import { inject, Injectable, OnDestroy } from '@angular/core';
 import { CustomDevice } from '../../models/device.model';
 import { ILogger } from '../../models/logger.model';
 import {
@@ -19,6 +19,8 @@ import { LoggerService } from '../logger/logger.service';
 	providedIn: 'root'
 })
 export class StorageService implements OnDestroy {
+	protected readonly loggerSrv = inject(LoggerService);
+
 	public log: ILogger;
 	protected PREFIX_KEY = STORAGE_PREFIX;
 	private readonly tabId: string;
@@ -34,7 +36,7 @@ export class StorageService implements OnDestroy {
 	private cacheTimeout = new Map<string, number>();
 	private readonly CACHE_TTL = 5000; // 5 seconds cache TTL
 
-	constructor(protected loggerSrv: LoggerService) {
+	constructor() {
 		this.log = this.loggerSrv.get('StorageService');
 
 		// Generate unique tab ID

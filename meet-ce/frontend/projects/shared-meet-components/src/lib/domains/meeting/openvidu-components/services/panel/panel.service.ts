@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ILogger } from '../../models/logger.model';
 import { PanelSettingsOptions, PanelStatusInfo, PanelType } from '../../models/panel.model';
@@ -8,6 +8,8 @@ import { LoggerService } from '../logger/logger.service';
 	providedIn: 'root'
 })
 export class PanelService {
+	private readonly loggerSrv = inject(LoggerService);
+
 	/**
 	 * Panel Observable which pushes the panel status in every update.
 	 */
@@ -26,7 +28,7 @@ export class PanelService {
 	/**
 	 * @internal
 	 */
-	constructor(private loggerSrv: LoggerService) {
+	constructor() {
 		this.log = this.loggerSrv.get('PanelService');
 		this.panelStatusObs = this._panelOpened.asObservable();
 	}
