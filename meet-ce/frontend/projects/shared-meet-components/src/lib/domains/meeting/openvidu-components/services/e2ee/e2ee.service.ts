@@ -1,6 +1,6 @@
 import { DestroyRef, inject, Injectable, OnDestroy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { createKeyMaterialFromString, deriveKeys } from 'livekit-client';
+import { createKeyMaterialFromString, deriveKeys } from '../livekit/livekit-sdk.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 
 /**
@@ -18,6 +18,8 @@ import { OpenViduComponentsConfigService } from '../config/directive-config.serv
 	providedIn: 'root',
 })
 export class E2eeService implements OnDestroy {
+	private readonly configService = inject(OpenViduComponentsConfigService);
+
 	private static readonly ENCRYPTION_ALGORITHM = 'AES-GCM';
 	private static readonly IV_LENGTH = 12;
 	private static readonly SALT = 'livekit-e2ee-data'; // Salt for HKDF key derivation
@@ -28,7 +30,7 @@ export class E2eeService implements OnDestroy {
 
 	private encryptionKey: CryptoKey | undefined;
 
-	constructor(protected configService: OpenViduComponentsConfigService) {
+	constructor() {
 		// Monitor E2EE key changes
 		this.configService.e2eeKey$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (key: any) => {
 			await this.setE2EEKey(key);

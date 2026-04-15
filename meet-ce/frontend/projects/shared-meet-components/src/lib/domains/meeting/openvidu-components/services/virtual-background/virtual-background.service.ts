@@ -1,4 +1,4 @@
-import { computed, Injectable, Signal } from '@angular/core';
+import { computed, inject, Injectable, Signal } from '@angular/core';
 import { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { BackgroundEffect, EffectType } from '../../models/background-effect.model';
@@ -14,6 +14,10 @@ import { StorageService } from '../storage/storage.service';
 	providedIn: 'root'
 })
 export class VirtualBackgroundService {
+	private readonly openviduService = inject(OpenViduService);
+	private readonly storageService = inject(StorageService);
+	private readonly loggerSrv = inject(LoggerService);
+
 	backgroundIdSelected = <BehaviorSubject<string>>new BehaviorSubject('');
 	backgroundIdSelected$: Observable<string>;
 	backgrounds: BackgroundEffect[] = [
@@ -51,11 +55,7 @@ export class VirtualBackgroundService {
 		e: () => {}
 	};
 
-	constructor(
-		private openviduService: OpenViduService,
-		private storageService: StorageService,
-		private loggerSrv: LoggerService
-	) {
+	constructor() {
 		this.log = this.loggerSrv.get('VirtualBackgroundService');
 		this.backgroundIdSelected$ = this.backgroundIdSelected.asObservable();
 	}
