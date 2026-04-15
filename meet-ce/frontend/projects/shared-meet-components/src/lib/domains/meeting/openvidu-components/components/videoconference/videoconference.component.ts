@@ -90,6 +90,17 @@ import { OpenViduThemeService } from '../../services/theme/theme.service';
 	standalone: false
 })
 export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly storageSrv = inject(StorageService);
+	private readonly deviceSrv = inject(DeviceService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly actionService = inject(ActionService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly themeService = inject(OpenViduThemeService);
+	private readonly e2eeService = inject(E2eeService);
+	private readonly cd = inject(ChangeDetectorRef);
+
 	// Constants
 	private static readonly PARTICIPANT_NAME_TIMEOUT_MS = 1000;
 	private static readonly ANIMATION_DURATION_MS = 300;
@@ -745,18 +756,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @internal
 	 */
-	constructor(
-		private loggerSrv: LoggerService,
-		private storageSrv: StorageService,
-		private deviceSrv: DeviceService,
-		private openviduService: OpenViduService,
-		private actionService: ActionService,
-		private libService: OpenViduComponentsConfigService,
-		private templateManagerService: TemplateManagerService,
-		private themeService: OpenViduThemeService,
-		private e2eeService: E2eeService,
-		private cd: ChangeDetectorRef
-	) {
+	constructor() {
 		this.log = this.loggerSrv.get('VideoconferenceComponent');
 
 		this.addMaterialIconsIfNeeded();

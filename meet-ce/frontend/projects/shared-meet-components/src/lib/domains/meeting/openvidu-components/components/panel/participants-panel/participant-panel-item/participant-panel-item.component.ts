@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef, inject } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
@@ -20,6 +20,11 @@ import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } fro
 	standalone: false
 })
 export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly templateManagerService = inject(TemplateManagerService);
+
 	/**
 	 * @ignore
 	 */
@@ -87,12 +92,7 @@ export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	constructor(
-		private libService: OpenViduComponentsConfigService,
-		private participantService: ParticipantService,
-		private cd: ChangeDetectorRef,
-		private templateManagerService: TemplateManagerService
-	) {}
+	constructor() {}
 
 	/**
 	 * @ignore
