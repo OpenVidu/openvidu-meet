@@ -7,16 +7,18 @@ import { OpenViduComponentsConfigService } from '../config/directive-config.serv
 import { GlobalConfigService } from '../config/global-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
 import {
-    AudioCaptureOptions,
-    DataPublishOptions,
-    LocalParticipant,
-    LocalTrackPublication,
-    Participant,
-    RemoteParticipant,
-    ScreenShareCaptureOptions,
     Track,
-    VideoCaptureOptions,
     VideoPresets
+} from '../livekit-adapter';
+import type {
+	IAudioCaptureOptions,
+	IDataPublishOptions,
+	ILocalParticipant,
+	ILocalTrackPublication,
+	IParticipant,
+	IRemoteParticipant,
+	IScreenShareCaptureOptions,
+	IVideoCaptureOptions
 } from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
@@ -102,7 +104,7 @@ export class ParticipantService {
 	 * Setting up the local participant object.
 	 * @param participant
 	 */
-	setLocalParticipant(participant: LocalParticipant) {
+	setLocalParticipant(participant: ILocalParticipant) {
 		const room = this.openviduService.getRoom();
 		this.localParticipant = this.newParticipant({ participant, room });
 	}
@@ -135,7 +137,7 @@ export class ParticipantService {
 		const videoTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Video);
 		const audioTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Audio);
 
-		const promises: Promise<LocalTrackPublication>[] = [];
+		const promises: Promise<ILocalTrackPublication>[] = [];
 		if (this.localParticipant && videoTrack) {
 			promises.push(this.localParticipant.publishTrack(videoTrack));
 		}
@@ -159,7 +161,7 @@ export class ParticipantService {
 	 * @param data
 	 * @param {DataPublishOptions} publishOptions [DataPublishOptions](https://docs.livekit.io/client-sdk-js/types/DataPublishOptions.html)
 	 */
-	publishData(data: Uint8Array, publishOptions: DataPublishOptions): Promise<void> {
+	publishData(data: Uint8Array, publishOptions: IDataPublishOptions): Promise<void> {
 		if (this.localParticipant) {
 			return this.localParticipant.publishData(data, publishOptions);
 		}
@@ -228,7 +230,7 @@ export class ParticipantService {
 	async setCameraEnabled(enabled: boolean): Promise<void> {
 		if (this.openviduService.isRoomConnected()) {
 			const storageDevice = this.storageSrv.getVideoDevice();
-			let options: VideoCaptureOptions | undefined;
+			let options: IVideoCaptureOptions | undefined;
 			if (storageDevice) {
 				options = {
 					deviceId: storageDevice.device,
@@ -250,7 +252,7 @@ export class ParticipantService {
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
 		if (this.openviduService.isRoomConnected()) {
 			const storageDevice = this.storageSrv.getAudioDevice();
-			let options: AudioCaptureOptions | undefined;
+			let options: IAudioCaptureOptions | undefined;
 			if (storageDevice) {
 				options = {
 					deviceId: storageDevice.device
@@ -308,7 +310,7 @@ export class ParticipantService {
 	 * @param speakers
 	 * @internal
 	 */
-	setSpeaking(speakers: Participant[]) {
+	setSpeaking(speakers: IParticipant[]) {
 		// Set all participants' isSpeaking property to false
 		this.localParticipant?.setSpeaking(false);
 		this.remoteParticipants.forEach((participant) => participant.setSpeaking(false));
@@ -553,7 +555,7 @@ export class ParticipantService {
 	/**
 	 * @internal
 	 */
-	addRemoteParticipant(participant: RemoteParticipant) {
+	addRemoteParticipant(participant: IRemoteParticipant) {
 		const index = this.remoteParticipants.findIndex((p) => p.sid === participant.sid);
 		if (index >= 0) {
 			const remoteParticipant = this.remoteParticipants[index];
@@ -572,7 +574,7 @@ export class ParticipantService {
 	 * @param trackSid
 	 * @internal
 	 */
-	removeRemoteParticipantTrack(participant: RemoteParticipant, trackSid: string) {
+	removeRemoteParticipantTrack(participant: IRemoteParticipant, trackSid: string) {
 		const index = this.remoteParticipants.findIndex((p) => p.sid === participant.sid);
 		if (index >= 0) {
 			const track = this.remoteParticipants[index].tracks.find((t) => t.trackSid === trackSid);
@@ -691,7 +693,7 @@ export class ParticipantService {
 		}
 	}
 
-	private getScreenCaptureOptions(): ScreenShareCaptureOptions {
+	private getScreenCaptureOptions(): IScreenShareCaptureOptions {
 		return {
 			audio: true,
 			video: {
