@@ -2,8 +2,8 @@ import { Injectable, inject, signal } from '@angular/core';
 import { AiAssistantService } from '../../../shared/services/ai-assistant.service';
 import { Caption, CaptionsConfig } from '../models/captions.model';
 import { CustomParticipantModel } from '../models/custom-participant.model';
-import { ILogger, LoggerService, ParticipantService, Room } from '../openvidu-components';
 import type { TextStreamReader } from '../openvidu-components';
+import { ILogger, LoggerService, ParticipantService, Room } from '../openvidu-components';
 
 /**
  * Service responsible for managing live transcription captions.

@@ -1,16 +1,16 @@
 import {
-    AudioCaptureOptions,
-    DataPublishOptions,
-    LocalParticipant,
-    LocalTrack,
-    LocalTrackPublication,
-    RemoteParticipant,
-    Room,
-    ScreenShareCaptureOptions,
-    Track,
-    TrackPublication,
-    TrackPublishOptions,
-    VideoCaptureOptions
+	AudioCaptureOptions,
+	DataPublishOptions,
+	LocalParticipant,
+	LocalTrack,
+	LocalTrackPublication,
+	RemoteParticipant,
+	Room,
+	ScreenShareCaptureOptions,
+	Track,
+	TrackPublication,
+	TrackPublishOptions,
+	VideoCaptureOptions
 } from '../services/livekit/livekit-sdk.service';
 import { DeviceType } from './device.model';
 

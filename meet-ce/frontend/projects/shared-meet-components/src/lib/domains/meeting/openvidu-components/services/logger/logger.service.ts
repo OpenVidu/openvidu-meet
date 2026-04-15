@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { ILogService, ILogger } from '../../models/logger.model';
+import { ILogger, ILogService } from '../../models/logger.model';
 import { GlobalConfigService } from '../config/global-config.service';
 
 /**

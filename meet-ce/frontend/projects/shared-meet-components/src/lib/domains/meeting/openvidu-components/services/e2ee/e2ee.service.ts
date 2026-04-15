@@ -1,7 +1,7 @@
 import { DestroyRef, inject, Injectable, OnDestroy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { createKeyMaterialFromString, deriveKeys } from '../livekit/livekit-sdk.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { createKeyMaterialFromString, deriveKeys } from '../livekit/livekit-sdk.service';
 
 /**
  * Independent E2EE Service for encrypting and decrypting text-based content

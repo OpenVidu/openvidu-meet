@@ -1,5 +1,11 @@
-import { Injectable, inject, Signal, WritableSignal, signal } from '@angular/core';
+import { Injectable, Signal, WritableSignal, inject, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
+import { Observable } from 'rxjs';
+import { ILogger } from '../../models/logger.model';
+import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
+import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { GlobalConfigService } from '../config/global-config.service';
+import { E2eeService } from '../e2ee/e2ee.service';
 import {
     AudioCaptureOptions,
     DataPublishOptions,
@@ -12,12 +18,6 @@ import {
     VideoCaptureOptions,
     VideoPresets
 } from '../livekit/livekit-sdk.service';
-import { Observable } from 'rxjs';
-import { ILogger } from '../../models/logger.model';
-import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
-import { OpenViduComponentsConfigService } from '../config/directive-config.service';
-import { GlobalConfigService } from '../config/global-config.service';
-import { E2eeService } from '../e2ee/e2ee.service';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';

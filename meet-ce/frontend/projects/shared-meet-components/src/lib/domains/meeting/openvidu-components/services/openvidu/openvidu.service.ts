@@ -1,31 +1,31 @@
-import { Injectable, inject, signal, Signal } from '@angular/core';
+import { inject, Injectable, signal, Signal } from '@angular/core';
 import {
-    BackgroundProcessor,
-    BackgroundProcessorWrapper,
-    supportsBackgroundProcessors,
-    supportsModernBackgroundProcessors,
-    SwitchBackgroundProcessorOptions
+	BackgroundProcessor,
+	BackgroundProcessorWrapper,
+	supportsBackgroundProcessors,
+	supportsModernBackgroundProcessors,
+	SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
-import {
-    AudioCaptureOptions,
-    ConnectionState,
-    CreateLocalTracksOptions,
-    E2EEOptions,
-    ExternalE2EEKeyProvider,
-    LocalAudioTrack,
-    LocalTrack,
-    LocalVideoTrack,
-	Room,
-    RoomOptions,
-    Track,
-    VideoCaptureOptions,
-    VideoPresets
-} from '../livekit/livekit-sdk.service';
 import { ILogger } from '../../models/logger.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { DeviceService } from '../device/device.service';
+import {
+	AudioCaptureOptions,
+	ConnectionState,
+	CreateLocalTracksOptions,
+	E2EEOptions,
+	ExternalE2EEKeyProvider,
+	LivekitSdkService,
+	LocalAudioTrack,
+	LocalTrack,
+	LocalVideoTrack,
+	Room,
+	RoomOptions,
+	Track,
+	VideoCaptureOptions,
+	VideoPresets
+} from '../livekit/livekit-sdk.service';
 import { LoggerService } from '../logger/logger.service';
-import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { StorageService } from '../storage/storage.service';
 
 @Injectable({

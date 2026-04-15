@@ -1,14 +1,12 @@
 import { Injectable } from '@angular/core';
+import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import {
-	AudioCaptureOptions,
 	ConnectionState,
 	createKeyMaterialFromString,
 	createLocalTracks,
-	CreateLocalTracksOptions,
-	DataPublishOptions,
 	DataPacket_Kind,
+	deriveKeys,
 	DisconnectReason,
-	E2EEOptions,
 	ExternalE2EEKeyProvider,
 	LocalAudioTrack,
 	LocalParticipant,
@@ -21,17 +19,22 @@ import {
 	RemoteTrackPublication,
 	Room,
 	RoomEvent,
+	Track,
+	TrackPublication,
+	VideoPresets
+} from 'livekit-client';
+
+import type {
+	AudioCaptureOptions,
+	CreateLocalTracksOptions,
+	DataPublishOptions,
+	E2EEOptions,
 	RoomOptions,
 	ScreenShareCaptureOptions,
 	TextStreamReader,
-	deriveKeys,
-	Track,
-	TrackPublication,
 	TrackPublishOptions,
-	VideoCaptureOptions,
-	VideoPresets
+	VideoCaptureOptions
 } from 'livekit-client';
-import { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 
 @Injectable({
 	providedIn: 'root'
@@ -59,11 +62,16 @@ export class LivekitSdkService {
 }
 
 export {
+	AudioCaptureOptions,
 	ConnectionState,
-	createLocalTracks,
 	createKeyMaterialFromString,
+	createLocalTracks,
+	CreateLocalTracksOptions,
 	DataPacket_Kind,
+	DataPublishOptions,
+	deriveKeys,
 	DisconnectReason,
+	E2EEOptions,
 	ExternalE2EEKeyProvider,
 	LocalAudioTrack,
 	LocalParticipant,
@@ -76,21 +84,13 @@ export {
 	RemoteTrackPublication,
 	Room,
 	RoomEvent,
-	Track,
-	TrackPublication,
-	deriveKeys,
-	VideoPresets
-};
-
-export type {
-	AudioCaptureOptions,
-	CreateLocalTracksOptions,
-	DataPublishOptions,
-	E2EEOptions,
 	RoomOptions,
 	ScreenShareCaptureOptions,
-	TextStreamReader,
 	SwitchBackgroundProcessorOptions,
+	TextStreamReader,
+	Track,
+	TrackPublication,
 	TrackPublishOptions,
-	VideoCaptureOptions
+	VideoCaptureOptions,
+	VideoPresets
 };

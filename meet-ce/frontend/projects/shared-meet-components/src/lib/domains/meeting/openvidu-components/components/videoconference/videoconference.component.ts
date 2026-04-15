@@ -1,72 +1,72 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import {
-    AfterViewInit,
-    ChangeDetectorRef,
-    Component,
-    ContentChild,
-    DestroyRef,
-    OnDestroy,
-    TemplateRef,
-    ViewChild,
-    inject,
-    output
+	AfterViewInit,
+	ChangeDetectorRef,
+	Component,
+	ContentChild,
+	DestroyRef,
+	OnDestroy,
+	TemplateRef,
+	ViewChild,
+	inject,
+	output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Room } from '../../services/livekit/livekit-sdk.service';
 import { filter, skip, take } from 'rxjs';
 import {
-    LayoutAdditionalElementsDirective,
-    LeaveButtonDirective,
-    ParticipantPanelAfterLocalParticipantDirective,
-    PreJoinDirective,
-    SettingsPanelGeneralAdditionalElementsDirective,
-    ToolbarMoreOptionsAdditionalMenuItemsDirective
+	LayoutAdditionalElementsDirective,
+	LeaveButtonDirective,
+	ParticipantPanelAfterLocalParticipantDirective,
+	PreJoinDirective,
+	SettingsPanelGeneralAdditionalElementsDirective,
+	ToolbarMoreOptionsAdditionalMenuItemsDirective
 } from '../../directives/template/internals.directive';
 import {
-    ActivitiesPanelDirective,
-    AdditionalPanelsDirective,
-    ChatPanelDirective,
-    LayoutDirective,
-    PanelDirective,
-    ParticipantPanelItemDirective,
-    ParticipantPanelItemElementsDirective,
-    ParticipantsPanelDirective,
-    StreamDirective,
-    ToolbarAdditionalButtonsDirective,
-    ToolbarAdditionalPanelButtonsDirective,
-    ToolbarDirective
+	ActivitiesPanelDirective,
+	AdditionalPanelsDirective,
+	ChatPanelDirective,
+	LayoutDirective,
+	PanelDirective,
+	ParticipantPanelItemDirective,
+	ParticipantPanelItemElementsDirective,
+	ParticipantsPanelDirective,
+	StreamDirective,
+	ToolbarAdditionalButtonsDirective,
+	ToolbarAdditionalPanelButtonsDirective,
+	ToolbarDirective
 } from '../../directives/template/openvidu-components-angular.directive';
 import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../models/broadcasting.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
 import {
-    ActivitiesPanelStatusEvent,
-    ChatPanelStatusEvent,
-    ParticipantsPanelStatusEvent,
-    SettingsPanelStatusEvent
+	ActivitiesPanelStatusEvent,
+	ChatPanelStatusEvent,
+	ParticipantsPanelStatusEvent,
+	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantModel } from '../../models/participant.model';
 import {
-    RecordingDeleteRequestedEvent,
-    RecordingDownloadClickedEvent,
-    RecordingPlayClickedEvent,
-    RecordingStartRequestedEvent,
-    RecordingStopRequestedEvent
+	RecordingDeleteRequestedEvent,
+	RecordingDownloadClickedEvent,
+	RecordingPlayClickedEvent,
+	RecordingStartRequestedEvent,
+	RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { VideoconferenceState, VideoconferenceStateInfo } from '../../models/videoconference-state.model';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { E2eeService } from '../../services/e2ee/e2ee.service';
+import { Room } from '../../services/livekit/livekit-sdk.service';
 import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { StorageService } from '../../services/storage/storage.service';
 import {
-    DefaultTemplates,
-    ExternalDirectives,
-    TemplateConfiguration,
-    TemplateManagerService
+	DefaultTemplates,
+	ExternalDirectives,
+	TemplateConfiguration,
+	TemplateManagerService
 } from '../../services/template/template-manager.service';
 import { OpenViduThemeService } from '../../services/theme/theme.service';
 
