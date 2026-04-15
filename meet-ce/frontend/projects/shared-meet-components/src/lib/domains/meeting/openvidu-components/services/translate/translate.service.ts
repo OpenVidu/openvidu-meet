@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import * as cn from '../../lang/cn.json';
 import * as de from '../../lang/de.json';
@@ -23,6 +23,8 @@ import { StorageService } from '../storage/storage.service';
 	providedIn: 'root'
 })
 export class TranslateService {
+	private readonly storageService = inject(StorageService);
+
 	// Maps language codes to their respective translations
 	private translationsByLanguage: Record<AvailableLangs, any> = { en, es, de, fr, cn, hi, it, ja, nl, pt };
 
@@ -55,7 +57,7 @@ export class TranslateService {
 	// Observable that emits changes to the selected language option
 	selectedLanguageOption$: Observable<LangOption>;
 
-	constructor(private storageService: StorageService) {
+	constructor() {
 		this.selectedLanguageOption$ = this._selectedLanguageSubject.asObservable();
 		this.refreshSelectedLanguage();
 	}

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Subscription } from 'rxjs';
@@ -16,17 +16,17 @@ import { TranslateService } from '../translate/translate.service';
 	providedIn: 'root'
 })
 export class ActionService {
+	private readonly snackBar = inject(MatSnackBar);
+	public readonly dialog = inject(MatDialog);
+	private readonly translateService = inject(TranslateService);
+
 	private dialogRef:
 		| MatDialogRef<DialogTemplateComponent | RecordingDialogComponent | DeleteDialogComponent | ProFeatureDialogTemplateComponent>
 		| undefined;
 	private connectionDialogRef: MatDialogRef<DialogTemplateComponent> | undefined;
 	private isConnectionDialogOpen = false;
 
-	constructor(
-		private snackBar: MatSnackBar,
-		public dialog: MatDialog,
-		private translateService: TranslateService
-	) {}
+	constructor() {}
 
 	launchNotification(options: INotificationOptions, callback?: () => void): void {
 		if (!options.config) {

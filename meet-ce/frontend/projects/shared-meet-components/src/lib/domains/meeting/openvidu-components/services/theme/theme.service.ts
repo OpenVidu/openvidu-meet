@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@angular/core';
+import { Injectable, Inject, inject } from '@angular/core';
 import { DOCUMENT } from '@angular/common';
 import { BehaviorSubject, Observable } from 'rxjs';
 import {
@@ -24,6 +24,8 @@ import { StorageService } from '../storage/storage.service';
 	providedIn: 'root'
 })
 export class OpenViduThemeService {
+	private readonly storageService = inject(StorageService);
+
 	private readonly THEME_ATTRIBUTE = 'data-ov-theme';
 	private currentThemeSubject = new BehaviorSubject<OpenViduThemeMode>(OpenViduThemeMode.Classic);
 	private currentVariablesSubject = new BehaviorSubject<OpenViduThemeVariables>({});
@@ -38,10 +40,7 @@ export class OpenViduThemeService {
 	 */
 	public readonly currentVariables$: Observable<OpenViduThemeVariables> = this.currentVariablesSubject.asObservable();
 
-	constructor(
-		@Inject(DOCUMENT) private document: Document,
-		protected storageService: StorageService
-	) {}
+	constructor(@Inject(DOCUMENT) private document: Document) {}
 
 	initializeTheme(): void {
 		const savedTheme = this.storageService.getTheme();
