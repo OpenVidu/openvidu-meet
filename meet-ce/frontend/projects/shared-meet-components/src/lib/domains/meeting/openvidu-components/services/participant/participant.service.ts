@@ -1,4 +1,4 @@
-import { Injectable, Signal, WritableSignal, signal } from '@angular/core';
+import { Injectable, inject, Signal, WritableSignal, signal } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import {
     AudioCaptureOptions,
@@ -11,7 +11,7 @@ import {
     Track,
     VideoCaptureOptions,
     VideoPresets
-} from 'livekit-client';
+} from '../livekit/livekit-sdk.service';
 import { Observable } from 'rxjs';
 import { ILogger } from '../../models/logger.model';
 import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
@@ -26,6 +26,13 @@ import { StorageService } from '../storage/storage.service';
 	providedIn: 'root'
 })
 export class ParticipantService {
+	private readonly globalService = inject(GlobalConfigService);
+	private readonly directiveService = inject(OpenViduComponentsConfigService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly storageSrv = inject(StorageService);
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly e2eeService = inject(E2eeService);
+
 	/**
 	 * Local participant Observable which pushes the local participant object in every update.
 	 * @deprecated Please prefer `localParticipantSignal` for reactive updates and `localParticipant$` when using RxJS.
@@ -67,14 +74,7 @@ export class ParticipantService {
 	/**
 	 * @internal
 	 */
-	constructor(
-		private globalService: GlobalConfigService,
-		private directiveService: OpenViduComponentsConfigService,
-		private openviduService: OpenViduService,
-		private storageSrv: StorageService,
-		private loggerSrv: LoggerService,
-		private e2eeService: E2eeService
-	) {
+	constructor() {
 		this.log = this.loggerSrv.get('ParticipantService');
 
 		// Expose readonly signals

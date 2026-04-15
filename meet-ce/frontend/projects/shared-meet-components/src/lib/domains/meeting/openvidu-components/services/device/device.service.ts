@@ -1,7 +1,7 @@
-import { computed, Injectable, OnDestroy, signal } from '@angular/core';
-import { createLocalTracks, LocalTrack, Room, Track } from 'livekit-client';
+import { computed, Injectable, inject, OnDestroy, signal } from '@angular/core';
 import { CameraType, CustomDevice, DeviceType } from '../../models/device.model';
 import { ILogger } from '../../models/logger.model';
+import { LivekitSdkService, LocalTrack, Track } from '../livekit/livekit-sdk.service';
 import { LoggerService } from '../logger/logger.service';
 import { PlatformService } from '../platform/platform.service';
 import { StorageService } from '../storage/storage.service';
@@ -33,6 +33,11 @@ interface DeviceAvailabilityState {
 	providedIn: 'root'
 })
 export class DeviceService implements OnDestroy {
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly platformSrv = inject(PlatformService);
+	private readonly storageSrv = inject(StorageService);
+	private readonly livekitSdkService = inject(LivekitSdkService);
+
 	// Reactive device lists with Signals
 	readonly cameras = signal<CustomDevice[]>([]);
 	readonly microphones = signal<CustomDevice[]>([]);
@@ -85,11 +90,7 @@ export class DeviceService implements OnDestroy {
 	private initializationPromise: Promise<void> | null = null;
 	private deviceChangeHandler: (() => void) | null = null;
 
-	constructor(
-		private loggerSrv: LoggerService,
-		private platformSrv: PlatformService,
-		private storageSrv: StorageService
-	) {
+	constructor() {
 		this.log = this.loggerSrv.get('DeviceService');
 	}
 
@@ -207,7 +208,7 @@ export class DeviceService implements OnDestroy {
 		// Strategy 1: Try requesting both together (single prompt)
 		try {
 			this.log.d('Requesting both audio and video permissions together');
-			const tracks = await createLocalTracks({ audio: true, video: true });
+			const tracks = await this.livekitSdkService.createLocalTracks({ audio: true, video: true });
 
 			// Check which tracks we got
 			const videoTrack = tracks.find(t => t.kind === Track.Kind.Video);
@@ -287,7 +288,7 @@ export class DeviceService implements OnDestroy {
 	 */
 	private async requestVideoPermission(): Promise<LocalTrack[]> {
 		try {
-			return await createLocalTracks({ audio: false, video: true });
+			return await this.livekitSdkService.createLocalTracks({ audio: false, video: true });
 		} catch (error: any) {
 			this.videoState.update(state => ({
 				...state,
@@ -303,7 +304,7 @@ export class DeviceService implements OnDestroy {
 	 */
 	private async requestAudioPermission(): Promise<LocalTrack[]> {
 		try {
-			return await createLocalTracks({ audio: true, video: false });
+			return await this.livekitSdkService.createLocalTracks({ audio: true, video: false });
 		} catch (error: any) {
 			this.audioState.update(state => ({
 				...state,
@@ -320,7 +321,7 @@ export class DeviceService implements OnDestroy {
 	private async enumerateDevices(): Promise<MediaDeviceInfo[]> {
 		try {
 			// Use LiveKit's Room.getLocalDevices if available, otherwise fallback to browser API
-			const devices = await Room.getLocalDevices();
+			const devices = await this.livekitSdkService.getLocalDevices();
 			return this.filterValidDevices(devices);
 		} catch (error) {
 			this.log.w('LiveKit device enumeration failed, using browser API', error);
