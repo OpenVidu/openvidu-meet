@@ -17,7 +17,7 @@ import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
-import { LocalTrack, Track } from '../../services/livekit/livekit-sdk.service';
+import { LocalTrack, Track } from '../../services/livekit-adapter';
 import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { TranslateService } from '../../services/translate/translate.service';

@@ -1,3 +1,4 @@
 export * from './interfaces';
-export * from './implementations';
 export * from './livekit-adapter.factory';
+export * from './livekit-sdk.compat';
+

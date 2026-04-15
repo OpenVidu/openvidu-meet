@@ -16,7 +16,7 @@ import { PlatformService } from '../../services/platform/platform.service';
 import { PlatformServiceMock } from '../../services/platform/platform.service.mock';
 
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { Room, RoomEvent } from '../../services/livekit/livekit-sdk.service';
+import { Room, RoomEvent } from '../../services/livekit-adapter';
 import { TranslateService } from '../../services/translate/translate.service';
 import { TranslateServiceMock } from '../../services/translate/translate.service.mock';
 import { SessionComponent } from './session.component';

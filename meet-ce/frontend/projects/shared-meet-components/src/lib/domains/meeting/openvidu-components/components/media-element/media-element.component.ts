@@ -1,6 +1,6 @@
 import { animate, style, transition, trigger } from '@angular/animations';
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, viewChild } from '@angular/core';
-import { Track } from '../../services/livekit/livekit-sdk.service';
+import { Track } from '../../services/livekit-adapter';
 
 /**
  * @internal

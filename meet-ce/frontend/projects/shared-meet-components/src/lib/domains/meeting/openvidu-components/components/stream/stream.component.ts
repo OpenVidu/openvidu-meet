@@ -5,7 +5,7 @@ import { ParticipantTrackPublication } from '../../models/participant.model';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
-import { Track } from '../../services/livekit/livekit-sdk.service';
+import { Track } from '../../services/livekit-adapter';
 import { ParticipantService } from '../../services/participant/participant.service';
 
 /**

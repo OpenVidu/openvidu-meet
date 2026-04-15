@@ -44,7 +44,7 @@ import {
 	RoomEvent,
 	Track,
 	TrackPublication
-} from '../../services/livekit/livekit-sdk.service';
+} from '../../services/livekit-adapter';
 import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { PanelService } from '../../services/panel/panel.service';

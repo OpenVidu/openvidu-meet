@@ -1,38 +1,33 @@
 import { inject, Injectable, signal, Signal } from '@angular/core';
 import {
-	BackgroundProcessor,
-	BackgroundProcessorWrapper,
-	supportsBackgroundProcessors,
-	supportsModernBackgroundProcessors,
-	SwitchBackgroundProcessorOptions
+    BackgroundProcessor,
+    BackgroundProcessorWrapper,
+    supportsBackgroundProcessors,
+    supportsModernBackgroundProcessors,
+    SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
 import { ILogger } from '../../models/logger.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { DeviceService } from '../device/device.service';
 import {
-	IAudioCaptureOptions,
-	ICreateLocalTracksOptions,
-	IE2EEOptions,
-	ILocalAudioTrack,
-	ILocalTrack,
-	ILocalVideoTrack,
-	IRoom,
-	IRoomOptions,
+    ICreateLocalTracksOptions,
+    IE2EEOptions,
+    ILocalAudioTrack,
+    ILocalTrack,
+    ILocalVideoTrack,
+    IRoom,
+    IRoomOptions
 } from '../livekit-adapter';
-import { LivekitAdapterFactory } from '../livekit-adapter/livekit-adapter.factory';
 import { LivekitAdapterInterface } from '../livekit-adapter/interfaces/livekit.adapter.interface';
+import { LivekitAdapterFactory } from '../livekit-adapter/livekit-adapter.factory';
 import {
-	AudioCaptureOptions,
-	ConnectionState,
-	CreateLocalTracksOptions,
-	ExternalE2EEKeyProvider,
-	LocalAudioTrack,
-	LocalTrack,
-	LocalVideoTrack,
-	Track,
-	VideoCaptureOptions,
-	VideoPresets
-} from '../livekit/livekit-sdk.service';
+    AudioCaptureOptions,
+    ConnectionState,
+    ExternalE2EEKeyProvider,
+    Track,
+    VideoCaptureOptions,
+    VideoPresets
+} from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { StorageService } from '../storage/storage.service';
 

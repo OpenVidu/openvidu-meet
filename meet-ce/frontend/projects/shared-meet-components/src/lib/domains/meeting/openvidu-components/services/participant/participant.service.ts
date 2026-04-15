@@ -17,7 +17,7 @@ import {
     Track,
     VideoCaptureOptions,
     VideoPresets
-} from '../livekit/livekit-sdk.service';
+} from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
