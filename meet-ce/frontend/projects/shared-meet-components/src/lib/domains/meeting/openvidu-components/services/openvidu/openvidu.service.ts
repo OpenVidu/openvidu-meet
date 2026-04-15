@@ -1,4 +1,4 @@
-import { Injectable, signal, Signal } from '@angular/core';
+import { Injectable, inject, signal, Signal } from '@angular/core';
 import {
     BackgroundProcessor,
     BackgroundProcessorWrapper,
@@ -9,29 +9,35 @@ import {
 import {
     AudioCaptureOptions,
     ConnectionState,
-    createLocalTracks,
     CreateLocalTracksOptions,
     E2EEOptions,
     ExternalE2EEKeyProvider,
     LocalAudioTrack,
     LocalTrack,
     LocalVideoTrack,
-    Room,
+	Room,
     RoomOptions,
     Track,
     VideoCaptureOptions,
     VideoPresets
-} from 'livekit-client';
+} from '../livekit/livekit-sdk.service';
 import { ILogger } from '../../models/logger.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { DeviceService } from '../device/device.service';
 import { LoggerService } from '../logger/logger.service';
+import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { StorageService } from '../storage/storage.service';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class OpenViduService {
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly deviceService = inject(DeviceService);
+	private readonly storageService = inject(StorageService);
+	private readonly configService = inject(OpenViduComponentsConfigService);
+	private readonly livekitSdkService = inject(LivekitSdkService);
+
 	/*
 	 * @internal
 	 */
@@ -89,12 +95,7 @@ export class OpenViduService {
 	/**
 	 * @internal
 	 */
-	constructor(
-		private loggerSrv: LoggerService,
-		private deviceService: DeviceService,
-		private storageService: StorageService,
-		private configService: OpenViduComponentsConfigService
-	) {
+	constructor() {
 		this.log = this.loggerSrv.get('OpenViduService');
 		// this.isSttReadyObs = this._isSttReady.asObservable();
 
@@ -141,7 +142,7 @@ export class OpenViduService {
 		// If room exists but needs E2EE configuration, we need to recreate it
 		if (this.room && needsE2EEConfig) {
 			this.log.d('Room needs E2EE configuration, recreating room');
-			this.room = null as any;
+			this.room = undefined;
 		}
 
 		const videoDeviceId = this.deviceService.getCameraSelected()?.device ?? undefined;
@@ -175,7 +176,7 @@ export class OpenViduService {
 			roomOptions.encryption = this.buildE2EEOptions();
 		}
 
-		this.room = new Room(roomOptions);
+		this.room = this.livekitSdkService.createRoom(roomOptions);
 		this.log.d('Room initialized successfully');
 	}
 
@@ -206,7 +207,7 @@ export class OpenViduService {
 					this.log.d('E2EE successfully enabled');
 				}
 			}
-			await room.connect(this.livekitUrl, this.livekitToken);
+			await this.livekitSdkService.connectRoom(room, this.livekitUrl, this.livekitToken);
 			this.log.d(`Successfully connected to room ${room.name}`);
 
 			const participantName = this.storageService.getParticipantName();
@@ -233,7 +234,7 @@ export class OpenViduService {
 		const room = this.room;
 		if (room && this.isRoomConnected()) {
 			this.log.d('Disconnecting from room');
-			await room.disconnect();
+			await this.livekitSdkService.disconnectRoom(room);
 			if (callback) callback();
 		}
 	}
@@ -468,7 +469,7 @@ export class OpenViduService {
 				newLocalTracks = await this.createTracksWithFallback(options);
 			} else {
 				// Original behavior - all or nothing
-				newLocalTracks = await createLocalTracks(options);
+				newLocalTracks = await this.livekitSdkService.createLocalTracks(options);
 			}
 
 			// Apply background processor to the new video track.
@@ -502,7 +503,7 @@ export class OpenViduService {
 		// Try to create video track separately
 		if (options.video) {
 			try {
-				const videoTracks = await createLocalTracks({ video: options.video });
+				const videoTracks = await this.livekitSdkService.createLocalTracks({ video: options.video });
 				tracks.push(...videoTracks);
 				this.log.d('Video track created successfully');
 			} catch (error) {
@@ -514,7 +515,7 @@ export class OpenViduService {
 		// Try to create audio track separately
 		if (options.audio) {
 			try {
-				const audioTracks = await createLocalTracks({ audio: options.audio });
+				const audioTracks = await this.livekitSdkService.createLocalTracks({ audio: options.audio });
 				tracks.push(...audioTracks);
 				this.log.d('Audio track created successfully');
 			} catch (error) {
@@ -622,7 +623,7 @@ export class OpenViduService {
 
 		// No existing track (edge case: camera was unavailable/unpublished) → create a fresh one
 		try {
-			const newVideoTracks = await createLocalTracks({ video: options });
+			const newVideoTracks = await this.livekitSdkService.createLocalTracks({ video: options });
 			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 			if (videoTrack) {
 				if (!this.deviceService.isCameraEnabled()) {
@@ -716,7 +717,7 @@ export class OpenViduService {
 
 		// No existing track (edge case) → create a fresh one
 		try {
-			const newAudioTracks = await createLocalTracks(options as CreateLocalTracksOptions);
+			const newAudioTracks = await this.livekitSdkService.createLocalTracks(options as CreateLocalTracksOptions);
 			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
 			if (audioTrack) {
 				if (!this.deviceService.isMicrophoneEnabled()) {
