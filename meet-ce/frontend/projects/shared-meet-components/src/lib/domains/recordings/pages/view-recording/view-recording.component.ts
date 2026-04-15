@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,9 +11,9 @@ import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { ViewportService } from '../../../meeting/openvidu-components';
 import { MeetingWebComponentManagerService } from '../../../meeting/services/meeting-webcomponent-manager.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
-import { ViewportService } from '../../../meeting/openvidu-components';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
 import { RecordingService } from '../../services/recording.service';
 import { RecordingUiUtils } from '../../utils/ui';

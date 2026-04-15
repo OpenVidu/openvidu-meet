@@ -3,6 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, ContentChild, effect, inj
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
