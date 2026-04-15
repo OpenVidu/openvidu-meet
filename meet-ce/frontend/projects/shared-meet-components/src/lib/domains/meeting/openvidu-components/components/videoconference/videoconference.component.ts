@@ -424,19 +424,27 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultToolbar', { static: false, read: TemplateRef }) defaultToolbarTemplate: TemplateRef<any> | undefined = undefined;
+	@ViewChild('defaultToolbar', { static: false, read: TemplateRef }) defaultToolbarTemplate:
+		| TemplateRef<any>
+		| undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultPanel', { static: false, read: TemplateRef }) defaultPanelTemplate: TemplateRef<any> | undefined = undefined;
+	@ViewChild('defaultPanel', { static: false, read: TemplateRef }) defaultPanelTemplate:
+		| TemplateRef<any>
+		| undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultChatPanel', { static: false, read: TemplateRef }) defaultChatPanelTemplate: TemplateRef<any> | undefined = undefined;
+	@ViewChild('defaultChatPanel', { static: false, read: TemplateRef }) defaultChatPanelTemplate:
+		| TemplateRef<any>
+		| undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultParticipantsPanel', { static: false, read: TemplateRef }) defaultParticipantsPanelTemplate: TemplateRef<any> | undefined = undefined;
+	@ViewChild('defaultParticipantsPanel', { static: false, read: TemplateRef }) defaultParticipantsPanelTemplate:
+		| TemplateRef<any>
+		| undefined = undefined;
 	/**
 	 * @internal
 	 */
@@ -446,15 +454,20 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultParticipantPanelItem', { static: false, read: TemplateRef }) defaultParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
+	@ViewChild('defaultParticipantPanelItem', { static: false, read: TemplateRef })
+	defaultParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultLayout', { static: false, read: TemplateRef }) defaultLayoutTemplate: TemplateRef<any> | undefined = undefined;
+	@ViewChild('defaultLayout', { static: false, read: TemplateRef }) defaultLayoutTemplate:
+		| TemplateRef<any>
+		| undefined = undefined;
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultStream', { static: false, read: TemplateRef }) defaultStreamTemplate: TemplateRef<any> | undefined = undefined;
+	@ViewChild('defaultStream', { static: false, read: TemplateRef }) defaultStreamTemplate:
+		| TemplateRef<any>
+		| undefined = undefined;
 
 	/**
 	 * @internal
@@ -877,16 +890,25 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		assignIfChanged('openviduAngularChatPanelTemplate', this.templateConfig.chatPanelTemplate);
 		assignIfChanged('openviduAngularParticipantsPanelTemplate', this.templateConfig.participantsPanelTemplate);
 		assignIfChanged('openviduAngularActivitiesPanelTemplate', this.templateConfig.activitiesPanelTemplate);
-		assignIfChanged('openviduAngularParticipantPanelItemTemplate', this.templateConfig.participantPanelItemTemplate);
+		assignIfChanged(
+			'openviduAngularParticipantPanelItemTemplate',
+			this.templateConfig.participantPanelItemTemplate
+		);
 		assignIfChanged('openviduAngularLayoutTemplate', this.templateConfig.layoutTemplate);
 		assignIfChanged('openviduAngularStreamTemplate', this.templateConfig.streamTemplate);
 
 		// Optional templates
 		if (this.templateConfig.toolbarAdditionalButtonsTemplate) {
-			assignIfChanged('openviduAngularToolbarAdditionalButtonsTemplate', this.templateConfig.toolbarAdditionalButtonsTemplate);
+			assignIfChanged(
+				'openviduAngularToolbarAdditionalButtonsTemplate',
+				this.templateConfig.toolbarAdditionalButtonsTemplate
+			);
 		}
 		if (this.templateConfig.toolbarLeaveButtonTemplate) {
-			assignIfChanged('openviduAngularToolbarLeaveButtonTemplate', this.templateConfig.toolbarLeaveButtonTemplate);
+			assignIfChanged(
+				'openviduAngularToolbarLeaveButtonTemplate',
+				this.templateConfig.toolbarLeaveButtonTemplate
+			);
 		}
 		if (this.templateConfig.toolbarAdditionalPanelButtonsTemplate) {
 			assignIfChanged(
@@ -916,10 +938,16 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 			assignIfChanged('ovLayoutAdditionalElementsTemplate', this.templateConfig.layoutAdditionalElementsTemplate);
 		}
 		if (this.templateConfig.settingsPanelGeneralAdditionalElementsTemplate) {
-			assignIfChanged('ovSettingsPanelGeneralAdditionalElementsTemplate', this.templateConfig.settingsPanelGeneralAdditionalElementsTemplate);
+			assignIfChanged(
+				'ovSettingsPanelGeneralAdditionalElementsTemplate',
+				this.templateConfig.settingsPanelGeneralAdditionalElementsTemplate
+			);
 		}
 		if (this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate) {
-			assignIfChanged('ovToolbarMoreOptionsAdditionalMenuItemsTemplate', this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate);
+			assignIfChanged(
+				'ovToolbarMoreOptionsAdditionalMenuItemsTemplate',
+				this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate
+			);
 		}
 	}
 

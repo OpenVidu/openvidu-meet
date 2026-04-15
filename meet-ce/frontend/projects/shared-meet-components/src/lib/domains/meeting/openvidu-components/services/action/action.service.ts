@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Subscription } from 'rxjs';
 import { DeleteDialogComponent } from '../../components/dialogs/delete-recording.component';
 import { DialogTemplateComponent } from '../../components/dialogs/dialog.component';
 import { ProFeatureDialogTemplateComponent } from '../../components/dialogs/pro-feature-dialog.component';
@@ -21,7 +20,12 @@ export class ActionService {
 	private readonly translateService = inject(TranslateService);
 
 	private dialogRef:
-		| MatDialogRef<DialogTemplateComponent | RecordingDialogComponent | DeleteDialogComponent | ProFeatureDialogTemplateComponent>
+		| MatDialogRef<
+				| DialogTemplateComponent
+				| RecordingDialogComponent
+				| DeleteDialogComponent
+				| ProFeatureDialogTemplateComponent
+		  >
 		| undefined;
 	private connectionDialogRef: MatDialogRef<DialogTemplateComponent> | undefined;
 	private isConnectionDialogOpen = false;

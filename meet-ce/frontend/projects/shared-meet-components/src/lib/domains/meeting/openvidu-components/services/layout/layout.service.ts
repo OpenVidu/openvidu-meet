@@ -1,4 +1,4 @@
-import { inject, Injectable, effect } from '@angular/core';
+import { effect, inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LayoutAlignment, LayoutClass, OpenViduLayout, OpenViduLayoutOptions } from '../../models/layout/layout.model';
 import { ILogger } from '../../models/logger.model';
@@ -238,7 +238,9 @@ export class LayoutService {
 		];
 
 		return significantProps.some(
-			(prop) => Math.abs((oldOptions[prop] as number) - (newOptions[prop] as number)) > 0.01 || oldOptions[prop] !== newOptions[prop]
+			(prop) =>
+				Math.abs((oldOptions[prop] as number) - (newOptions[prop] as number)) > 0.01 ||
+				oldOptions[prop] !== newOptions[prop]
 		);
 	}
 
