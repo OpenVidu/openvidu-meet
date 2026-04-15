@@ -21,7 +21,7 @@ import { DocumentService } from '../../services/document/document.service';
 import { PanelService } from '../../services/panel/panel.service';
 
 import { MatMenuTrigger } from '@angular/material/menu';
-import { Room, RoomEvent } from 'livekit-client';
+import { Room, RoomEvent } from '../../services/livekit/livekit-sdk.service';
 import { LeaveButtonDirective, ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import {
 	ToolbarAdditionalButtonsDirective,

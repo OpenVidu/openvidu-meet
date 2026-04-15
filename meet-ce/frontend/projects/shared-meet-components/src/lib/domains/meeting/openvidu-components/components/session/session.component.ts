@@ -39,7 +39,7 @@ import {
 	RoomEvent,
 	Track,
 	TrackPublication
-} from 'livekit-client';
+} from '../../services/livekit/livekit-sdk.service';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStatus } from '../../models/recording.model';
 import { ChatService } from '../../services/chat/chat.service';

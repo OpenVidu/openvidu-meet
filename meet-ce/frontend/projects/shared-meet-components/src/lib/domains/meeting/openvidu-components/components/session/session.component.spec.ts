@@ -15,7 +15,7 @@ import { LoggerServiceMock } from '../../services/logger/logger.service.mock';
 import { PlatformService } from '../../services/platform/platform.service';
 import { PlatformServiceMock } from '../../services/platform/platform.service.mock';
 
-import { Room, RoomEvent } from 'livekit-client';
+import { Room, RoomEvent } from '../../services/livekit/livekit-sdk.service';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { TranslateService } from '../../services/translate/translate.service';
 import { TranslateServiceMock } from '../../services/translate/translate.service.mock';

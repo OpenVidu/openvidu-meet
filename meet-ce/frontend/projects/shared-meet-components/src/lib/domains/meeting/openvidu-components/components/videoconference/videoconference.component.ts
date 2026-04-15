@@ -12,7 +12,7 @@ import {
     output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Room } from 'livekit-client';
+import { Room } from '../../services/livekit/livekit-sdk.service';
 import { filter, skip, take } from 'rxjs';
 import {
     LayoutAdditionalElementsDirective,

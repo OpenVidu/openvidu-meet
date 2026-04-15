@@ -67,4 +67,4 @@ export * from './config/custom-cdk-overlay';
 export * from './openvidu-components-angular-ui.module';
 export * from './openvidu-components-angular.module';
 
-export * from 'livekit-client';
+export * from './services/livekit/livekit-sdk.service';

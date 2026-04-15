@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { E2eeService } from './e2ee.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { OpenViduComponentsConfigServiceMock } from '../../../test-helpers/mocks';
-import * as livekit from 'livekit-client';
+import * as livekit from '../livekit/livekit-sdk.service';
 
 describe('E2eeService', () => {
   let service: E2eeService;

@@ -11,7 +11,7 @@ import {
     output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { LocalTrack, Track } from 'livekit-client';
+import { LocalTrack, Track } from '../../services/livekit/livekit-sdk.service';
 import { filter, take } from 'rxjs';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';

@@ -1,7 +1,7 @@
 import { Component, DestroyRef, effect, ElementRef, inject, Input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
-import { Track } from 'livekit-client';
+import { Track } from '../../services/livekit/livekit-sdk.service';
 import { ParticipantTrackPublication } from '../../models/participant.model';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';

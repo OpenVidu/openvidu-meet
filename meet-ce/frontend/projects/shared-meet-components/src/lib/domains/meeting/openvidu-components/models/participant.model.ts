@@ -11,7 +11,7 @@ import {
     TrackPublication,
     TrackPublishOptions,
     VideoCaptureOptions
-} from 'livekit-client';
+} from '../services/livekit/livekit-sdk.service';
 import { DeviceType } from './device.model';
 
 type ParticipantTrackPublicationExtras = {
