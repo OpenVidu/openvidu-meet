@@ -83,6 +83,19 @@
 						</mat-card-header>
 
 						<mat-card-content>
+							@if (isMandatoryChangePasswordMode()) {
+								<div class="mandatory-password-banner">
+									<mat-icon class="banner-icon">info</mat-icon>
+									<div>
+										<p class="banner-title">Password update required</p>
+										<p class="banner-description">
+											Your password was recently created or reset. You must set a new password
+											before continuing.
+										</p>
+									</div>
+								</div>
+							}
+
 							<form [formGroup]="changePasswordForm" (ngSubmit)="onChangePassword()">
 								<div class="password-form">
 									<!-- Current Password -->

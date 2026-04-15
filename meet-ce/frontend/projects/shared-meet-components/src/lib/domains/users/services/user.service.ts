@@ -92,9 +92,16 @@ export class UserService {
 	 *
 	 * @param currentPassword - The current password of the user
 	 * @param newPassword - The new password to set
-	 * @returns A promise that resolves when the password change is successful
+	 * @returns A promise that resolves when the password change is successful and may include new authentication tokens
 	 */
-	async changePassword(currentPassword: string, newPassword: string): Promise<any> {
+	async changePassword(
+		currentPassword: string,
+		newPassword: string
+	): Promise<{
+		message: string;
+		accessToken?: string;
+		refreshToken?: string;
+	}> {
 		const path = `${this.USERS_API}/change-password`;
 		return this.httpService.postRequest(path, { currentPassword, newPassword });
 	}

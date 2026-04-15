@@ -20,10 +20,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TokenStorageService } from '../../../../shared/services/token-storage.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { UserService } from '../../services/user.service';
 
+// TODO: Obtain root admin user ID from backend instead of hardcoding
 /** The userId of the non-deletable root admin (matches the backend default INITIAL_ADMIN_USER) */
 const ROOT_ADMIN_USER_ID = 'admin';
 
@@ -50,6 +53,7 @@ export class ProfileComponent implements OnInit {
 	isOwnProfile = signal(true);
 	isAdminViewing = signal(false);
 	isRootAdmin = signal(false);
+	isMandatoryChangePasswordMode = signal(false);
 
 	showCurrentPassword = signal(false);
 	showNewPassword = signal(false);
@@ -62,7 +66,7 @@ export class ProfileComponent implements OnInit {
 	targetUser = signal<MeetUserDTO | null>(null);
 	editableRole = signal<MeetUserRole | null>(null);
 
-	availableRoles: MeetUserRole[] = [MeetUserRole.ADMIN, MeetUserRole.USER];
+	availableRoles: MeetUserRole[] = [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER];
 
 	changePasswordForm = new FormGroup({
 		currentPassword: new FormControl('', [Validators.required]),
@@ -74,7 +78,9 @@ export class ProfileComponent implements OnInit {
 		private authService: AuthService,
 		private userService: UserService,
 		private notificationService: NotificationService,
-		private route: ActivatedRoute
+		private route: ActivatedRoute,
+		private tokenStorageService: TokenStorageService,
+		private navigationService: NavigationService
 	) {
 		// Clear invalid password error when user types on current password
 		this.changePasswordForm.get('currentPassword')?.valueChanges.subscribe(() => {
@@ -102,6 +108,9 @@ export class ProfileComponent implements OnInit {
 
 	async ngOnInit() {
 		this.isLoading.set(true);
+		this.isMandatoryChangePasswordMode.set(
+			this.route.snapshot.queryParamMap.get('mandatoryChangePassword') === 'true'
+		);
 
 		// Add custom validators
 		this.changePasswordForm.get('newPassword')?.addValidators(this.newPasswordValidator.bind(this));
@@ -169,13 +178,29 @@ export class ProfileComponent implements OnInit {
 		this.isSavingPassword.set(true);
 
 		try {
-			await this.userService.changePassword(currentPassword!, newPassword!);
-			this.notificationService.showSnackbar('Password updated successfully');
+			const response = await this.userService.changePassword(currentPassword!, newPassword!);
 
 			this.changePasswordForm.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
 			this.showCurrentPassword.set(false);
 			this.showNewPassword.set(false);
 			this.showConfirmPassword.set(false);
+
+			if (this.isMandatoryChangePasswordMode()) {
+				if (!response.accessToken) {
+					throw new Error('No renewed access token received after mandatory password change');
+				}
+
+				this.tokenStorageService.setAccessToken(response.accessToken);
+				if (response.refreshToken) {
+					this.tokenStorageService.setRefreshToken(response.refreshToken);
+				}
+
+				this.notificationService.showSnackbar('Password updated successfully');
+				await this.navigationService.navigateTo('/overview', {}, true);
+				return;
+			}
+
+			this.notificationService.showSnackbar('Password updated successfully');
 		} catch (error) {
 			console.error('Error changing password:', error);
 			if ((error as HttpErrorResponse).status === 400) {
@@ -311,7 +336,7 @@ export class ProfileComponent implements OnInit {
 	}
 
 	private generateTemporaryPassword(): string {
-		const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
+		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789.+!@#$%';
 		return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 	}
 }

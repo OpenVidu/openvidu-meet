@@ -28,9 +28,9 @@ export class AuthService {
 	 *
 	 * @param userId - The unique identifier of the user
 	 * @param password - The user's password
-	 * @returns A promise that resolves when the login is successful
+	 * @returns A promise that resolves with login metadata
 	 */
-	async login(userId: string, password: string) {
+	async login(userId: string, password: string): Promise<{ mustChangePassword: boolean }> {
 		try {
 			const path = `${this.AUTH_API}/login`;
 			const body = { userId, password };
@@ -47,13 +47,8 @@ export class AuthService {
 				this.tokenStorageService.setRefreshToken(response.refreshToken);
 			}
 
-			// TODO: Redirect user to profile page in order to change password on first login if required by backend
-			// if (response.mustChangePassword) {
-			// 	this.navigationService.redirectToProfilePage();
-			// 	return;
-			// }
-
 			await this.getAuthenticatedUser(true);
+			return { mustChangePassword: response.mustChangePassword ?? false };
 		} catch (err) {
 			const error = err as HttpErrorResponse;
 			console.error(error.error.message || error.error);

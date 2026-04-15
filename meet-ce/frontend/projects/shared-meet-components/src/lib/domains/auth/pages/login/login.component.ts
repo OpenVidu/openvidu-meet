@@ -57,7 +57,14 @@ export class LoginComponent implements OnInit {
 		const { userId, password } = this.loginForm.value;
 
 		try {
-			await this.authService.login(userId!, password!);
+			const { mustChangePassword } = await this.authService.login(userId!, password!);
+
+			// Redirect user to profile page in order to change password on first login or password reset
+			if (mustChangePassword) {
+				await this.navigationService.navigateTo('/profile', { mandatoryChangePassword: true }, true);
+				return;
+			}
+
 			await this.navigationService.redirectTo(this.redirectTo);
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {
