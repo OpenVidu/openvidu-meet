@@ -16,19 +16,19 @@ import type {
 	VideoPresets
 } from '../../livekit/livekit-sdk.service';
 
-export type ITrack = Track;
-export type ITrackPublication = TrackPublication;
-export type ILocalTrack = LocalTrack;
-export type ILocalTrackPublication = LocalTrackPublication;
-export type ILocalVideoTrack = LocalVideoTrack;
-export type ILocalAudioTrack = LocalAudioTrack;
-export type IRemoteTrack = RemoteTrack;
-export type IRemoteTrackPublication = RemoteTrackPublication;
+export type OVTrack = Track;
+export type OVTrackPublication = TrackPublication;
+export type OVLocalTrack = LocalTrack;
+export type OVLocalTrackPublication = LocalTrackPublication;
+export type OVLocalVideoTrack = LocalVideoTrack;
+export type OVLocalAudioTrack = LocalAudioTrack;
+export type OVRemoteTrack = RemoteTrack;
+export type OVRemoteTrackPublication = RemoteTrackPublication;
 
-export type ITrackPublishOptions = TrackPublishOptions;
-export type IScreenShareCaptureOptions = ScreenShareCaptureOptions;
-export type IVideoCaptureOptions = VideoCaptureOptions;
-export type IAudioCaptureOptions = AudioCaptureOptions;
-export type ICreateLocalTracksOptions = CreateLocalTracksOptions;
-export type ITextStreamReader = TextStreamReader;
-export type IVideoPresets = typeof VideoPresets;
+export type OVTrackPublishOptions = TrackPublishOptions;
+export type OVScreenShareCaptureOptions = ScreenShareCaptureOptions;
+export type OVVideoCaptureOptions = VideoCaptureOptions;
+export type OVAudioCaptureOptions = AudioCaptureOptions;
+export type OVCreateLocalTracksOptions = CreateLocalTracksOptions;
+export type OVTextStreamReader = TextStreamReader;
+export type OVVideoPresets = typeof VideoPresets;

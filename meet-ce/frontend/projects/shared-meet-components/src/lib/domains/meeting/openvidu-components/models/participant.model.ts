@@ -1,28 +1,19 @@
 import type {
-    IAudioCaptureOptions,
-    IDataPublishOptions,
-    ILocalParticipant,
-    ILocalTrack,
-    ILocalTrackPublication,
-    IRemoteParticipant,
-    IRoom,
-    IScreenShareCaptureOptions,
-    ITrack,
-    ITrackPublication,
-    ITrackPublishOptions,
-    IVideoCaptureOptions
+	OVLocalParticipant,
+	OVRemoteParticipant,
+	OVRoom,
+	OVTrackPublication
 } from '../services/livekit-adapter';
 import {
-    AudioCaptureOptions,
-    DataPublishOptions,
-    LocalParticipant,
-    LocalTrack,
-    LocalTrackPublication,
-    ScreenShareCaptureOptions,
-    Track,
-    TrackPublishOptions,
-    VideoCaptureOptions,
-    VideoPresets
+	AudioCaptureOptions,
+	DataPublishOptions,
+	LocalParticipant,
+	LocalTrack,
+	LocalTrackPublication,
+	ScreenShareCaptureOptions,
+	Track,
+	TrackPublishOptions,
+	VideoCaptureOptions
 } from '../services/livekit-adapter';
 import { DeviceType } from './device.model';
 
@@ -36,7 +27,7 @@ type ParticipantTrackPublicationExtras = {
 	isMutedForcibly?: boolean;
 };
 
-type ParticipantTrackPublicationWithExtras = ITrackPublication & ParticipantTrackPublicationExtras;
+type ParticipantTrackPublicationWithExtras = OVTrackPublication & ParticipantTrackPublicationExtras;
 
 export interface ParticipantLeftEvent {
 	roomName: string;
@@ -67,7 +58,7 @@ export enum ParticipantLeftReason {
 /**
  * Interface that defines the properties of the participant track publication.
  */
-export interface ParticipantTrackPublication extends ITrackPublication {
+export interface ParticipantTrackPublication extends OVTrackPublication {
 	/**
 	 * The participant who published the track.
 	 */
@@ -111,12 +102,12 @@ export interface ParticipantProperties {
 	/**
 	 * The participant instance, which can be either a local participant or a remote participant.
 	 */
-	participant: ILocalParticipant | IRemoteParticipant;
+	participant: OVLocalParticipant | OVRemoteParticipant;
 
 	/**
 	 * The room in which the participant is located, applicable only for local participants.
 	 */
-	room?: IRoom;
+	room?: OVRoom;
 
 	/**
 	 * The color profile associated with the participant.
@@ -147,8 +138,8 @@ export class ParticipantModel {
 	 * It specifies the visual representation of the participant in the user interface.
 	 */
 	colorProfile: string;
-	private participant: ILocalParticipant | IRemoteParticipant;
-	private room: IRoom | undefined;
+	private participant: OVLocalParticipant | OVRemoteParticipant;
+	private room: OVRoom | undefined;
 	private speaking: boolean = false;
 	private customVideoTrack: Partial<ParticipantTrackPublication>;
 	private _hasEncryptionError: boolean = false;
@@ -242,7 +233,7 @@ export class ParticipantModel {
 	 * @return ParticipantTrackPublication[]
 	 */
 	get tracks(): ParticipantTrackPublication[] {
-		const defaultTracks = this.participant.getTrackPublications().map((track: ITrackPublication) => {
+		const defaultTracks = this.participant.getTrackPublications().map((track: OVTrackPublication) => {
 			const participantTrack = track as ParticipantTrackPublicationWithExtras;
 			participantTrack.participant = this;
 			participantTrack.isPinned = participantTrack.isPinned;
@@ -274,7 +265,7 @@ export class ParticipantModel {
 	 * @return ParticipantTrackPublication[]
 	 */
 	get videoTracks(): ParticipantTrackPublication[] {
-		return this.tracks.filter((track: ITrackPublication) => track.kind === Track.Kind.Video);
+		return this.tracks.filter((track: OVTrackPublication) => track.kind === Track.Kind.Video);
 	}
 
 	/**
@@ -282,7 +273,7 @@ export class ParticipantModel {
 	 * @return ParticipantTrackPublication[]
 	 */
 	get audioTracks(): ParticipantTrackPublication[] {
-		return this.tracks.filter((track: ITrackPublication) => track.kind === Track.Kind.Audio);
+		return this.tracks.filter((track: OVTrackPublication) => track.kind === Track.Kind.Audio);
 	}
 
 	/**
@@ -290,7 +281,9 @@ export class ParticipantModel {
 	 * @return ParticipantTrackPublication[]
 	 */
 	get cameraTracks(): ParticipantTrackPublication[] {
-		return this.tracks.filter((track: ITrackPublication) => track.source === Track.Source.Camera && track.kind === Track.Kind.Video);
+		return this.tracks.filter(
+			(track: OVTrackPublication) => track.source === Track.Source.Camera && track.kind === Track.Kind.Video
+		);
 	}
 
 	/**

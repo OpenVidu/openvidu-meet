@@ -33,13 +33,7 @@ import { ChatService } from '../../services/chat/chat.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
 import type {
-	ILocalParticipant,
-	IParticipant,
-	IRemoteParticipant,
-	IRemoteTrack,
-	IRemoteTrackPublication,
-	IRoom,
-	IRoomEvent
+	OVRoom
 } from '../../services/livekit-adapter';
 import {
 	DataPacket_Kind,
@@ -92,7 +86,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	/**
 	 * Provides event notifications that fire when Room is created for the local participant.
 	 */
-	onRoomCreated = output<IRoom>();
+	onRoomCreated = output<OVRoom>();
 
 	/**
 	 * Provides event notifications that fire when Room is being reconnected for the local participant.

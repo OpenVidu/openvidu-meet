@@ -1,8 +1,8 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { CameraType, CustomDevice, DeviceType } from '../../models/device.model';
 import { ILogger } from '../../models/logger.model';
+import type { OVLocalTrack } from '../livekit-adapter';
 import { LivekitAdapterFactory, LivekitAdapterInterface, Track } from '../livekit-adapter';
-import type { ILocalTrack } from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { PlatformService } from '../platform/platform.service';
 import { StorageService } from '../storage/storage.service';
@@ -288,7 +288,7 @@ export class DeviceService implements OnDestroy {
 	/**
 	 * Request video permission independently
 	 */
-	private async requestVideoPermission(): Promise<ILocalTrack[]> {
+	private async requestVideoPermission(): Promise<OVLocalTrack[]> {
 		try {
 			return await this.livekitAdapter.createLocalTracks({ audio: false, video: true });
 		} catch (error: any) {
@@ -304,7 +304,7 @@ export class DeviceService implements OnDestroy {
 	/**
 	 * Request audio permission independently
 	 */
-	private async requestAudioPermission(): Promise<ILocalTrack[]> {
+	private async requestAudioPermission(): Promise<OVLocalTrack[]> {
 		try {
 			return await this.livekitAdapter.createLocalTracks({ audio: true, video: false });
 		} catch (error: any) {

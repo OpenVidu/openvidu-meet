@@ -6,8 +6,8 @@ import type {
 	RoomOptions
 } from '../../livekit/livekit-sdk.service';
 
-export type IRoom = Room;
-export type IRoomOptions = RoomOptions;
-export type IDataPublishOptions = DataPublishOptions;
-export type IE2EEOptions = E2EEOptions;
-export type IConnectionState = typeof ConnectionState;
+export type OVRoom = Room;
+export type OVRoomOptions = RoomOptions;
+export type OVDataPublishOptions = DataPublishOptions;
+export type OVE2EEOptions = E2EEOptions;
+export type OVConnectionState = typeof ConnectionState;

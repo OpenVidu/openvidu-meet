@@ -1,18 +1,18 @@
 import {
-	AfterViewInit,
-	ChangeDetectionStrategy,
-	ChangeDetectorRef,
-	Component,
-	computed,
-	contentChild,
-	DestroyRef,
-	effect,
-	inject,
-	OnDestroy,
-	OnInit,
-	output,
-	TemplateRef,
-	viewChild
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    computed,
+    contentChild,
+    DestroyRef,
+    effect,
+    inject,
+    OnDestroy,
+    OnInit,
+    output,
+    TemplateRef,
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent, skip } from 'rxjs';
@@ -23,8 +23,8 @@ import { PanelService } from '../../services/panel/panel.service';
 import { MatMenuTrigger } from '@angular/material/menu';
 import { LeaveButtonDirective, ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import {
-	ToolbarAdditionalButtonsDirective,
-	ToolbarAdditionalPanelButtonsDirective
+    ToolbarAdditionalButtonsDirective,
+    ToolbarAdditionalPanelButtonsDirective
 } from '../../directives/template/openvidu-components-angular.directive';
 import { BroadcastingStatus, BroadcastingStatusInfo, BroadcastingStopRequestedEvent } from '../../models/broadcasting.model';
 import { ChatMessage } from '../../models/chat.model';
@@ -32,11 +32,11 @@ import { ILogger } from '../../models/logger.model';
 import { PanelStatusInfo, PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
-	RecordingInfo,
-	RecordingStartRequestedEvent,
-	RecordingStatus,
-	RecordingStatusInfo,
-	RecordingStopRequestedEvent
+    RecordingInfo,
+    RecordingStartRequestedEvent,
+    RecordingStatus,
+    RecordingStatusInfo,
+    RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
 import { ActionService } from '../../services/action/action.service';

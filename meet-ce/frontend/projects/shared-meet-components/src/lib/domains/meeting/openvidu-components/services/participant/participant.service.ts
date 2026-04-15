@@ -6,20 +6,17 @@ import { ParticipantModel, ParticipantProperties } from '../../models/participan
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { GlobalConfigService } from '../config/global-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
-import {
-    Track,
-    VideoPresets
-} from '../livekit-adapter';
 import type {
-	IAudioCaptureOptions,
-	IDataPublishOptions,
-	ILocalParticipant,
-	ILocalTrackPublication,
-	IParticipant,
-	IRemoteParticipant,
-	IScreenShareCaptureOptions,
-	IVideoCaptureOptions
+	OVAudioCaptureOptions,
+	OVDataPublishOptions,
+	OVLocalParticipant,
+	OVLocalTrackPublication,
+	OVParticipant,
+	OVRemoteParticipant,
+	OVScreenShareCaptureOptions,
+	OVVideoCaptureOptions
 } from '../livekit-adapter';
+import { Track, VideoPresets } from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
@@ -53,7 +50,9 @@ export class ParticipantService {
 	 * @since Angular 16+
 	 */
 	localParticipantSignal: Signal<ParticipantModel | undefined>;
-	private localParticipantWritableSignal: WritableSignal<ParticipantModel | undefined> = signal<ParticipantModel | undefined>(undefined);
+	private localParticipantWritableSignal: WritableSignal<ParticipantModel | undefined> = signal<
+		ParticipantModel | undefined
+	>(undefined);
 
 	/**
 	 * Remote participants Signal for reactive programming with Angular signals.
@@ -104,7 +103,7 @@ export class ParticipantService {
 	 * Setting up the local participant object.
 	 * @param participant
 	 */
-	setLocalParticipant(participant: ILocalParticipant) {
+	setLocalParticipant(participant: OVLocalParticipant) {
 		const room = this.openviduService.getRoom();
 		this.localParticipant = this.newParticipant({ participant, room });
 	}
@@ -137,7 +136,7 @@ export class ParticipantService {
 		const videoTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Video);
 		const audioTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Audio);
 
-		const promises: Promise<ILocalTrackPublication>[] = [];
+		const promises: Promise<OVLocalTrackPublication>[] = [];
 		if (this.localParticipant && videoTrack) {
 			promises.push(this.localParticipant.publishTrack(videoTrack));
 		}
@@ -161,7 +160,7 @@ export class ParticipantService {
 	 * @param data
 	 * @param {DataPublishOptions} publishOptions [DataPublishOptions](https://docs.livekit.io/client-sdk-js/types/DataPublishOptions.html)
 	 */
-	publishData(data: Uint8Array, publishOptions: IDataPublishOptions): Promise<void> {
+	publishData(data: Uint8Array, publishOptions: OVDataPublishOptions): Promise<void> {
 		if (this.localParticipant) {
 			return this.localParticipant.publishData(data, publishOptions);
 		}
@@ -230,7 +229,7 @@ export class ParticipantService {
 	async setCameraEnabled(enabled: boolean): Promise<void> {
 		if (this.openviduService.isRoomConnected()) {
 			const storageDevice = this.storageSrv.getVideoDevice();
-			let options: IVideoCaptureOptions | undefined;
+			let options: OVVideoCaptureOptions | undefined;
 			if (storageDevice) {
 				options = {
 					deviceId: storageDevice.device,
@@ -252,7 +251,7 @@ export class ParticipantService {
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
 		if (this.openviduService.isRoomConnected()) {
 			const storageDevice = this.storageSrv.getAudioDevice();
-			let options: IAudioCaptureOptions | undefined;
+			let options: OVAudioCaptureOptions | undefined;
 			if (storageDevice) {
 				options = {
 					deviceId: storageDevice.device
@@ -310,7 +309,7 @@ export class ParticipantService {
 	 * @param speakers
 	 * @internal
 	 */
-	setSpeaking(speakers: IParticipant[]) {
+	setSpeaking(speakers: OVParticipant[]) {
 		// Set all participants' isSpeaking property to false
 		this.localParticipant?.setSpeaking(false);
 		this.remoteParticipants.forEach((participant) => participant.setSpeaking(false));
@@ -555,7 +554,7 @@ export class ParticipantService {
 	/**
 	 * @internal
 	 */
-	addRemoteParticipant(participant: IRemoteParticipant) {
+	addRemoteParticipant(participant: OVRemoteParticipant) {
 		const index = this.remoteParticipants.findIndex((p) => p.sid === participant.sid);
 		if (index >= 0) {
 			const remoteParticipant = this.remoteParticipants[index];
@@ -574,7 +573,7 @@ export class ParticipantService {
 	 * @param trackSid
 	 * @internal
 	 */
-	removeRemoteParticipantTrack(participant: IRemoteParticipant, trackSid: string) {
+	removeRemoteParticipantTrack(participant: OVRemoteParticipant, trackSid: string) {
 		const index = this.remoteParticipants.findIndex((p) => p.sid === participant.sid);
 		if (index >= 0) {
 			const track = this.remoteParticipants[index].tracks.find((t) => t.trackSid === trackSid);
@@ -693,7 +692,7 @@ export class ParticipantService {
 		}
 	}
 
-	private getScreenCaptureOptions(): IScreenShareCaptureOptions {
+	private getScreenCaptureOptions(): OVScreenShareCaptureOptions {
 		return {
 			audio: true,
 			video: {

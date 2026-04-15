@@ -1,14 +1,14 @@
 import {
-	ChangeDetectionStrategy,
-	ChangeDetectorRef,
-	Component,
-	DestroyRef,
-	effect,
-	inject,
-	input,
-	OnDestroy,
-	OnInit,
-	output
+    ChangeDetectionStrategy,
+    ChangeDetectorRef,
+    Component,
+    DestroyRef,
+    effect,
+    inject,
+    input,
+    OnDestroy,
+    OnInit,
+    output
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, take } from 'rxjs';

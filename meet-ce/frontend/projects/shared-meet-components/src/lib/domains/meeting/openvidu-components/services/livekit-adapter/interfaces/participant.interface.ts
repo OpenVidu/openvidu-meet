@@ -1,9 +1,5 @@
-import type {
-	LocalParticipant,
-	Participant,
-	RemoteParticipant
-} from '../../livekit/livekit-sdk.service';
+import type { LocalParticipant, Participant, RemoteParticipant } from '../../livekit/livekit-sdk.service';
 
-export type IParticipant = Participant;
-export type ILocalParticipant = LocalParticipant;
-export type IRemoteParticipant = RemoteParticipant;
+export type OVParticipant = Participant;
+export type OVLocalParticipant = LocalParticipant;
+export type OVRemoteParticipant = RemoteParticipant;

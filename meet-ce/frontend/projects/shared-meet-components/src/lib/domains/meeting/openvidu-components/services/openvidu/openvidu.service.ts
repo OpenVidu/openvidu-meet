@@ -1,33 +1,31 @@
 import { inject, Injectable, signal, Signal } from '@angular/core';
 import {
-    BackgroundProcessor,
-    BackgroundProcessorWrapper,
-    supportsBackgroundProcessors,
-    supportsModernBackgroundProcessors,
-    SwitchBackgroundProcessorOptions
+	BackgroundProcessor,
+	BackgroundProcessorWrapper,
+	supportsBackgroundProcessors,
+	supportsModernBackgroundProcessors,
+	SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
 import { ILogger } from '../../models/logger.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { DeviceService } from '../device/device.service';
 import {
-    ICreateLocalTracksOptions,
-    IE2EEOptions,
-    ILocalAudioTrack,
-    ILocalTrack,
-    ILocalVideoTrack,
-    IRoom,
-    IRoomOptions
+	AudioCaptureOptions,
+	ConnectionState,
+	ExternalE2EEKeyProvider,
+	OVCreateLocalTracksOptions,
+	OVE2EEOptions,
+	OVLocalAudioTrack,
+	OVLocalTrack,
+	OVLocalVideoTrack,
+	OVRoom,
+	OVRoomOptions,
+	Track,
+	VideoCaptureOptions,
+	VideoPresets
 } from '../livekit-adapter';
 import { LivekitAdapterInterface } from '../livekit-adapter/interfaces/livekit.adapter.interface';
 import { LivekitAdapterFactory } from '../livekit-adapter/livekit-adapter.factory';
-import {
-    AudioCaptureOptions,
-    ConnectionState,
-    ExternalE2EEKeyProvider,
-    Track,
-    VideoCaptureOptions,
-    VideoPresets
-} from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { StorageService } from '../storage/storage.service';
 
@@ -50,7 +48,7 @@ export class OpenViduService {
 	// private sttReconnectionTimeout: NodeJS.Timeout;
 	// private _isSttReady: BehaviorSubject<boolean> = new BehaviorSubject(true);
 
-	private room: IRoom | undefined = undefined;
+	private room: OVRoom | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
 
 	/**
@@ -63,7 +61,7 @@ export class OpenViduService {
 	/*
 	 * Tracks used in the prejoin component. They are created when the room is not yet created.
 	 */
-	private localTracks: ILocalTrack[] = [];
+	private localTracks: OVLocalTrack[] = [];
 	private livekitToken = '';
 	private livekitUrl = '';
 	private log: ILogger = {
@@ -152,7 +150,7 @@ export class OpenViduService {
 		const videoDeviceId = this.deviceService.getCameraSelected()?.device ?? undefined;
 		const audioDeviceId = this.deviceService.getMicrophoneSelected()?.device ?? undefined;
 
-		const roomOptions: IRoomOptions = {
+		const roomOptions: OVRoomOptions = {
 			adaptiveStream: true,
 			dynacast: true,
 			audioCaptureDefaults: {
@@ -184,7 +182,7 @@ export class OpenViduService {
 		this.log.d('Room initialized successfully');
 	}
 
-	private buildE2EEOptions(): IE2EEOptions {
+	private buildE2EEOptions(): OVE2EEOptions {
 		this.log.d('Configuring E2EE with provided key');
 		this.keyProvider = new ExternalE2EEKeyProvider();
 		// Create worker using the copied livekit-client e2ee worker from assets
@@ -220,7 +218,10 @@ export class OpenViduService {
 			}
 		} catch (error) {
 			this.log.e('Error connecting to room:', error);
-			throw { code: 'CONNECTION_ERROR', message: `Error connecting to the server at the following URL: ${this.livekitUrl}` };
+			throw {
+				code: 'CONNECTION_ERROR',
+				message: `Error connecting to the server at the following URL: ${this.livekitUrl}`
+			};
 		}
 	}
 
@@ -233,7 +234,10 @@ export class OpenViduService {
 	 * @param callback - Optional function to be executed after a successful disconnection
 	 * @returns A Promise that resolves once the disconnection is complete
 	 */
-	async disconnectRoom(callback?: () => void, shouldHandleClientInitiatedDisconnectEvent: boolean = true): Promise<void> {
+	async disconnectRoom(
+		callback?: () => void,
+		shouldHandleClientInitiatedDisconnectEvent: boolean = true
+	): Promise<void> {
 		this.shouldHandleClientInitiatedDisconnectEvent = shouldHandleClientInitiatedDisconnectEvent;
 		const room = this.room;
 		if (room && this.isRoomConnected()) {
@@ -246,7 +250,7 @@ export class OpenViduService {
 	/**
 	 * @returns Room instance
 	 */
-	getRoom(): IRoom {
+	getRoom(): OVRoom {
 		if (!this.room) {
 			this.log.e('Room is not initialized. Make sure token is set before accessing the room.');
 			throw new Error('Room is not initialized. Make sure token is set before accessing the room.');
@@ -295,7 +299,9 @@ export class OpenViduService {
 		const url = livekitUrl || urlFromToken;
 
 		if (!url) {
-			this.log.e('LiveKit URL is not defined. Please, check the livekitUrl parameter of the VideoConferenceComponent');
+			this.log.e(
+				'LiveKit URL is not defined. Please, check the livekitUrl parameter of the VideoConferenceComponent'
+			);
 			throw new Error('Livekit URL is not defined');
 		}
 
@@ -318,15 +324,15 @@ export class OpenViduService {
 	 * @returns void
 	 * @internal
 	 */
-	setLocalTracks(tracks: ILocalTrack[]): void {
-		this.localTracks = tracks.filter((track) => track !== undefined) as ILocalTrack[];
+	setLocalTracks(tracks: OVLocalTrack[]): void {
+		this.localTracks = tracks.filter((track) => track !== undefined) as OVLocalTrack[];
 	}
 
 	/**
 	 * @internal
 	 * @returns
 	 */
-	getLocalTracks(): ILocalTrack[] {
+	getLocalTracks(): OVLocalTrack[] {
 		return this.localTracks;
 	}
 
@@ -425,12 +431,12 @@ export class OpenViduService {
 		videoDeviceId: string | boolean | undefined = undefined,
 		audioDeviceId: string | boolean | undefined = undefined,
 		allowPartialCreation: boolean = true
-	): Promise<ILocalTrack[]> {
+	): Promise<OVLocalTrack[]> {
 		// Default values: true if device is enabled, false otherwise
 		videoDeviceId ??= this.deviceService.isCameraEnabled();
 		audioDeviceId ??= this.deviceService.isMicrophoneEnabled();
 
-		const options: ICreateLocalTracksOptions = {
+		const options: OVCreateLocalTracksOptions = {
 			audio: { echoCancellation: true, noiseSuppression: true },
 			video: {}
 		};
@@ -463,7 +469,7 @@ export class OpenViduService {
 			(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(audioDeviceId);
 		}
 
-		let newLocalTracks: ILocalTrack[] = [];
+		let newLocalTracks: OVLocalTrack[] = [];
 
 		if (options.audio || options.video) {
 			this.log.d('Creating local tracks with options', options);
@@ -479,7 +485,7 @@ export class OpenViduService {
 			// Apply background processor to the new video track.
 			// applyProcessorToVideoTrack handles both modern (pre-attach + auto-restore via
 			// transformer.options) and Firefox/non-modern (lazy attach only when a VBG is active).
-		const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as ILocalVideoTrack | undefined;
+			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
 			if (videoTrack) {
 				await this.applyProcessorToVideoTrack(videoTrack);
 			}
@@ -501,8 +507,8 @@ export class OpenViduService {
 	 * @returns Array of successfully created tracks
 	 * @internal
 	 */
-	private async createTracksWithFallback(options: ICreateLocalTracksOptions): Promise<ILocalTrack[]> {
-		const tracks: ILocalTrack[] = [];
+	private async createTracksWithFallback(options: OVCreateLocalTracksOptions): Promise<OVLocalTrack[]> {
+		const tracks: OVLocalTrack[] = [];
 
 		// Try to create video track separately
 		if (options.video) {
@@ -606,7 +612,9 @@ export class OpenViduService {
 	 * @internal
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as ILocalVideoTrack | undefined;
+		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as
+			| OVLocalVideoTrack
+			| undefined;
 		const options: VideoCaptureOptions = { deviceId: this.toDeviceConstraint(deviceId) };
 		if (existingTrack) {
 			try {
@@ -628,7 +636,7 @@ export class OpenViduService {
 		// No existing track (edge case: camera was unavailable/unpublished) → create a fresh one
 		try {
 			const newVideoTracks = await this.livekitAdapter.createLocalTracks({ video: options });
-			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as ILocalVideoTrack | undefined;
+			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
 			if (videoTrack) {
 				if (!this.deviceService.isCameraEnabled()) {
 					await videoTrack.mute();
@@ -655,7 +663,7 @@ export class OpenViduService {
 	 *   background effect was already active, then re-applies the stored options.
 	 * @internal
 	 */
-	private async applyProcessorToVideoTrack(videoTrack: ILocalVideoTrack): Promise<void> {
+	private async applyProcessorToVideoTrack(videoTrack: OVLocalVideoTrack): Promise<void> {
 		if (!this.isBackgroundProcessorSupported()) return;
 
 		if (supportsModernBackgroundProcessors()) {
@@ -697,7 +705,9 @@ export class OpenViduService {
 	 * @internal
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
-		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Audio) as ILocalAudioTrack | undefined;
+		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Audio) as
+			| OVLocalAudioTrack
+			| undefined;
 		const options: AudioCaptureOptions = {
 			deviceId: this.toDeviceConstraint(deviceId),
 			echoCancellation: true,
@@ -721,7 +731,7 @@ export class OpenViduService {
 
 		// No existing track (edge case) → create a fresh one
 		try {
-			const newAudioTracks = await this.livekitAdapter.createLocalTracks(options as ICreateLocalTracksOptions);
+			const newAudioTracks = await this.livekitAdapter.createLocalTracks(options as OVCreateLocalTracksOptions);
 			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
 			if (audioTrack) {
 				if (!this.deviceService.isMicrophoneEnabled()) {
@@ -742,15 +752,17 @@ export class OpenViduService {
 	 * @returns LocalVideoTrack or undefined
 	 * @internal
 	 */
-	private async getVideoTrack(): Promise<ILocalVideoTrack | undefined> {
+	private async getVideoTrack(): Promise<OVLocalVideoTrack | undefined> {
 		// First try to get from local tracks (prejoin state)
-		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as ILocalVideoTrack | undefined;
+		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
 
 		// If not found and room is connected, get from published tracks
 		if (!videoTrack && this.isRoomConnected() && this.room) {
 			const localParticipant = this.room.localParticipant;
-			const videoPublication = localParticipant.getTrackPublications().find((pub) => pub.kind === Track.Kind.Video);
-			videoTrack = videoPublication?.track as ILocalVideoTrack | undefined;
+			const videoPublication = localParticipant
+				.getTrackPublications()
+				.find((pub) => pub.kind === Track.Kind.Video);
+			videoTrack = videoPublication?.track as OVLocalVideoTrack | undefined;
 		}
 
 		return videoTrack;

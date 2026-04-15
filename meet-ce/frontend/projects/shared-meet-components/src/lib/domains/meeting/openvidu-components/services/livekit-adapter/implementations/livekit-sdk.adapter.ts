@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { LivekitSdkService } from '../../livekit/livekit-sdk.service';
 import { LivekitAdapterInterface } from '../interfaces/livekit.adapter.interface';
-import { IRoom, IRoomOptions } from '../interfaces/room.interface';
-import { ICreateLocalTracksOptions, ILocalTrack } from '../interfaces/track.interface';
+import { OVRoom, OVRoomOptions } from '../interfaces/room.interface';
+import { OVCreateLocalTracksOptions, OVLocalTrack } from '../interfaces/track.interface';
 
 @Injectable({
 	providedIn: 'root'
@@ -10,19 +10,19 @@ import { ICreateLocalTracksOptions, ILocalTrack } from '../interfaces/track.inte
 export class LiveKitSdkAdapter implements LivekitAdapterInterface {
 	private readonly livekitSdkService = inject(LivekitSdkService);
 
-	createRoom(roomOptions: IRoomOptions): IRoom {
+	createRoom(roomOptions: OVRoomOptions): OVRoom {
 		return this.livekitSdkService.createRoom(roomOptions);
 	}
 
-	connectRoom(room: IRoom, livekitUrl: string, livekitToken: string): Promise<void> {
+	connectRoom(room: OVRoom, livekitUrl: string, livekitToken: string): Promise<void> {
 		return this.livekitSdkService.connectRoom(room, livekitUrl, livekitToken);
 	}
 
-	disconnectRoom(room: IRoom): Promise<void> {
+	disconnectRoom(room: OVRoom): Promise<void> {
 		return this.livekitSdkService.disconnectRoom(room);
 	}
 
-	createLocalTracks(options: ICreateLocalTracksOptions): Promise<ILocalTrack[]> {
+	createLocalTracks(options: OVCreateLocalTracksOptions): Promise<OVLocalTrack[]> {
 		return this.livekitSdkService.createLocalTracks(options);
 	}
 
