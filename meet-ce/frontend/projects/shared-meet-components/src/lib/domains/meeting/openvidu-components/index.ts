@@ -68,3 +68,4 @@ export * from './openvidu-components-angular-ui.module';
 export * from './openvidu-components-angular.module';
 
 export * from './services/livekit/livekit-sdk.service';
+export * from './services/livekit-adapter';
