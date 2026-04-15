@@ -1,4 +1,4 @@
-import { Injectable, effect } from '@angular/core';
+import { inject, Injectable, effect } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { LayoutAlignment, LayoutClass, OpenViduLayout, OpenViduLayoutOptions } from '../../models/layout/layout.model';
 import { ILogger } from '../../models/logger.model';
@@ -12,6 +12,9 @@ import { ViewportService } from '../viewport/viewport.service';
 	providedIn: 'root'
 })
 export class LayoutService {
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly viewportSrv = inject(ViewportService);
+
 	layoutContainer: HTMLElement | undefined = undefined;
 	layoutWidthObs: Observable<number>;
 	captionsTogglingObs: Observable<boolean>;
@@ -26,10 +29,7 @@ export class LayoutService {
 		e: () => {}
 	};
 
-	constructor(
-		protected loggerSrv: LoggerService,
-		protected viewportSrv: ViewportService
-	) {
+	constructor() {
 		this.layoutWidthObs = this.layoutWidth.asObservable();
 		this.captionsTogglingObs = this.captionsToggling.asObservable();
 		this.log = this.loggerSrv.get('LayoutService');

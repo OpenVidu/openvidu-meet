@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { ILogger } from '../../models/logger.model';
 import { RecordingInfo, RecordingStatus, RecordingStatusInfo } from '../../models/recording.model';
@@ -10,6 +10,10 @@ import { LoggerService } from '../logger/logger.service';
 	providedIn: 'root'
 })
 export class RecordingService {
+	private readonly actionService = inject(ActionService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly loggerService = inject(LoggerService);
+
 	/**
 	 * Recording status Observable which pushes the recording state in every update.
 	 */
@@ -32,11 +36,7 @@ export class RecordingService {
 	/**
 	 * @internal
 	 */
-	constructor(
-		private actionService: ActionService,
-		private libService: OpenViduComponentsConfigService,
-		private loggerService: LoggerService
-	) {
+	constructor() {
 		this.log = this.loggerService.get('RecordingService');
 		this.recordingStatusObs = this.recordingStatus.asObservable();
 	}

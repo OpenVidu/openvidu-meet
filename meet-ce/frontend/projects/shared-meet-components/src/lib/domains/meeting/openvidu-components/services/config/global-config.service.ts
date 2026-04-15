@@ -1,6 +1,6 @@
 
 import { DOCUMENT } from '@angular/common';
-import { Inject, Injectable } from '@angular/core';
+import { Inject, inject, Injectable } from '@angular/core';
 import { OpenViduComponentsConfig, ParticipantFactoryFunction } from '../../config/openvidu-components-angular.config';
 
 /**
@@ -10,12 +10,10 @@ import { OpenViduComponentsConfig, ParticipantFactoryFunction } from '../../conf
 	providedIn: 'root'
 })
 export class GlobalConfigService {
+	private readonly document = inject(DOCUMENT);
 	private configuration: OpenViduComponentsConfig = {} as OpenViduComponentsConfig;
 
-	constructor(
-		@Inject('OPENVIDU_COMPONENTS_CONFIG') config: OpenViduComponentsConfig,
-		@Inject(DOCUMENT) private document: Document
-	) {
+	constructor(@Inject('OPENVIDU_COMPONENTS_CONFIG') config: OpenViduComponentsConfig) {
 		this.configuration = config;
 		if (this.isProduction()) console.log('OpenVidu Angular Production Mode');
 	}

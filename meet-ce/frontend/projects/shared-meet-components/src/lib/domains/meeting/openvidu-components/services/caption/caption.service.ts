@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Observable, Subject } from 'rxjs';
 import { CaptionsLangOption } from '../../models/caption.model';
 import { StorageService } from '../storage/storage.service';
@@ -10,6 +10,8 @@ import { StorageService } from '../storage/storage.service';
 	providedIn: 'root'
 })
 export class CaptionService {
+	private readonly storageService = inject(StorageService);
+
 	private langsOptions: CaptionsLangOption[] = [
 		{ name: 'English', lang: 'en-US' },
 		{ name: 'Español', lang: 'es-ES' },
@@ -26,7 +28,7 @@ export class CaptionService {
 	private _captionLang: Subject<CaptionsLangOption> = new Subject();
 	private captionsEnabled: boolean = false;
 
-	constructor(private storageService: StorageService) {
+	constructor() {
 		this.updateLangSelected();
 		this.captionLangObs = this._captionLang.asObservable();
 	}

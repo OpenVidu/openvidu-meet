@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs/internal/BehaviorSubject';
 import { Observable } from 'rxjs/internal/Observable';
 
@@ -21,6 +21,12 @@ import { TranslateService } from '../translate/translate.service';
 	providedIn: 'root'
 })
 export class ChatService {
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly panelService = inject(PanelService);
+	private readonly actionService = inject(ActionService);
+	private readonly translateService = inject(TranslateService);
+
 	chatMessages$: Observable<ChatMessage[]>;
 	private messageSound: HTMLAudioElement = new Audio();
 	private _messageList = <BehaviorSubject<ChatMessage[]>>new BehaviorSubject<ChatMessage[]>([]);
@@ -31,13 +37,7 @@ export class ChatService {
 		w: () => {},
 		e: () => {}
 	};
-	constructor(
-		private loggerSrv: LoggerService,
-		private participantService: ParticipantService,
-		private panelService: PanelService,
-		private actionService: ActionService,
-		private translateService: TranslateService
-	) {
+	constructor() {
 		this.log = this.loggerSrv.get('ChatService');
 		this.chatMessages$ = this._messageList.asObservable();
 		this.messageSound = new Audio(

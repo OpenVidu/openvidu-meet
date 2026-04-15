@@ -6,6 +6,9 @@ import { LayoutService, LoggerService, ViewportService } from '../openvidu-compo
 
 @Injectable({ providedIn: 'root' })
 export class MeetingLayoutService extends LayoutService {
+	private readonly loggerService = inject(LoggerService);
+	private readonly viewPortService = inject(ViewportService);
+	private readonly storageService = inject(MeetStorageService);
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly INITIAL_SPEAKERS_COUNT = 4;
 	readonly MIN_REMOTE_SPEAKERS = 1;
@@ -72,12 +75,8 @@ export class MeetingLayoutService extends LayoutService {
 	private currentRoom: Room | null = null;
 	private isSpeakerTrackingActive = false;
 
-	constructor(
-		protected loggerService: LoggerService,
-		protected viewPortService: ViewportService,
-		private storageService: MeetStorageService
-	) {
-		super(loggerService, viewPortService);
+	constructor() {
+		super();
 		this.log = this.loggerService.get('MeetLayoutService');
 
 		const isMobileOrTablet = this.viewPortService.isPhysicalMobile() || this.viewPortService.isPhysicalTablet();
