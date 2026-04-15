@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, ElementRef, inject, Input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, DestroyRef, effect, ElementRef, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
 import { ParticipantTrackPublication } from '../../models/participant.model';
@@ -19,6 +19,8 @@ import { ParticipantService } from '../../services/participant/participant.servi
 	standalone: false
 })
 export class StreamComponent implements OnInit, OnDestroy {
+	readonly trackInput = input<ParticipantTrackPublication | undefined>(undefined, { alias: 'track' });
+
 	/**
 	 * @ignore
 	 */
@@ -39,7 +41,9 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	_track: ParticipantTrackPublication | undefined;
+	get _track(): ParticipantTrackPublication | undefined {
+		return this.trackInput();
+	}
 
 	/**
 	 * @ignore
@@ -81,11 +85,6 @@ export class StreamComponent implements OnInit, OnDestroy {
 	 * @ignore
 	 */
 	readonly streamContainerQuery = viewChild('streamContainer', { read: ElementRef });
-
-	@Input()
-	set track(track: ParticipantTrackPublication) {
-		this._track = track;
-	}
 
 	private _streamContainer: ElementRef | undefined;
 	private readonly destroyRef = inject(DestroyRef);

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, Input, OnDestroy, OnInit, TemplateRef, inject } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, OnDestroy, OnInit, TemplateRef, inject, input } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
@@ -20,6 +20,9 @@ import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } fro
 	standalone: false
 })
 export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
+	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });
+	readonly muteButtonInput = input(true, { alias: 'muteButton' });
+
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly cd = inject(ChangeDetectorRef);
@@ -68,26 +71,9 @@ export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	private _externalItemElements?: ParticipantPanelItemElementsDirective;
 	private _externalParticipantBadge?: ParticipantPanelParticipantBadgeDirective;
 
-	/**
-	 * The participant to be displayed
-	 */
-	@Input()
-	set participant(participant: ParticipantModel) {
-		this._participant = participant;
-		this.cd.markForCheck();
+	get _participant(): ParticipantModel | undefined {
+		return this.participantInput();
 	}
-
-	/**
-	 * @internal
-	 * Current participant being displayed
-	 */
-	_participant: ParticipantModel | undefined = undefined;
-
-	/**
-	 * Whether to show the mute button for remote participants
-	 */
-	@Input()
-	muteButton: boolean = true;
 
 	/**
 	 * @ignore
