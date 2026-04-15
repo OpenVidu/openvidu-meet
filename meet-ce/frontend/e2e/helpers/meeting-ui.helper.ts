@@ -73,10 +73,16 @@ export async function openPrejoin(page: Page, accessUrl: string, timeoutMs = 45_
 	await expect(page.locator('#prejoin-container')).toBeVisible({ timeout: timeoutMs });
 }
 
-export async function openChatPanel(page: Page): Promise<void> {
+export async function toggleChatPanel(page: Page, action: 'open' | 'close' = 'open'): Promise<void> {
 	await page.locator('#chat-panel-btn').click();
-	await expect(page.locator('.sidenav-menu')).toBeVisible();
-	await expect(page.locator('#chat-input')).toBeVisible();
+
+	if (action === 'open') {
+		await expect(page.locator('#chat-container')).toBeVisible();
+		await expect(page.locator('#chat-input')).toBeVisible();
+	} else {
+		await expect(page.locator('#chat-container')).toHaveCount(0);
+		await expect(page.locator('#chat-input')).toHaveCount(0);
+	}
 }
 
 export async function sendChatMessage(page: Page, message: string): Promise<void> {
@@ -207,7 +213,7 @@ export async function stopScreensharing(page: Page, timeoutMs = 10_000): Promise
 	await expect
 		.poll(
 			async () => {
-				return await page.locator('.OV_screen').count();
+				return await page.locator('.OV_screen.local').count();
 			},
 			{ timeout: timeoutMs }
 		)
