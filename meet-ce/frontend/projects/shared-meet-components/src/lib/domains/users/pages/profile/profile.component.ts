@@ -22,7 +22,7 @@ import { ActivatedRoute } from '@angular/router';
 import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
-import { UserService } from '../../../users/services/user.service';
+import { UserService } from '../../services/user.service';
 
 /** The userId of the non-deletable root admin (matches the backend default INITIAL_ADMIN_USER) */
 const ROOT_ADMIN_USER_ID = 'admin';
@@ -219,10 +219,7 @@ export class ProfileComponent implements OnInit {
 		const tempPassword = this.generateTemporaryPassword();
 		try {
 			await this.userService.resetUserPassword(user.userId, tempPassword);
-			this.notificationService.showSnackbar(
-				`Password reset. Temporary password: ${tempPassword}`,
-				10000
-			);
+			this.notificationService.showSnackbar(`Password reset. Temporary password: ${tempPassword}`, 10000);
 		} catch (error) {
 			console.error('Error resetting password:', error);
 			this.notificationService.showSnackbar('Failed to reset password');
@@ -263,7 +260,8 @@ export class ProfileComponent implements OnInit {
 		if (control?.errors && control.touched) {
 			const errors = control.errors;
 			if (errors['required']) return 'New password is required';
-			if (errors['minlength']) return `Password must be at least ${errors['minlength'].requiredLength} characters long`;
+			if (errors['minlength'])
+				return `Password must be at least ${errors['minlength'].requiredLength} characters long`;
 			if (errors['samePassword']) return 'New password must be different from current password';
 		}
 		return null;
