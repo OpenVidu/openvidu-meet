@@ -28,8 +28,9 @@ export class ViewportService {
 
 	// Cleanup
 	private readonly destroyRef = inject(DestroyRef);
+	private readonly platform = inject(PlatformService);
 
-	constructor(protected platform: PlatformService) {
+	constructor() {
 		this.initializeResizeListener();
 	}
 

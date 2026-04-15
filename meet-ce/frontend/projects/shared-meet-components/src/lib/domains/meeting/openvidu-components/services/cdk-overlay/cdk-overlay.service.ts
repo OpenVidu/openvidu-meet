@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { CdkOverlayContainer } from '../../config/custom-cdk-overlay';
 
 /**
@@ -8,7 +8,9 @@ import { CdkOverlayContainer } from '../../config/custom-cdk-overlay';
 	providedIn: 'root'
 })
 export class CdkOverlayService {
-	constructor(private cdkOverlayModel: CdkOverlayContainer) {}
+	private readonly cdkOverlayModel = inject(CdkOverlayContainer);
+
+	constructor() {}
 
 	setSelector(selector: string) {
 		this.cdkOverlayModel.setContainerSelector(selector);

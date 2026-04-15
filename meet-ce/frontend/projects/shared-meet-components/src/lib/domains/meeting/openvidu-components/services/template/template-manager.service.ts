@@ -1,4 +1,4 @@
-import { Injectable, TemplateRef } from '@angular/core';
+import { inject, Injectable, TemplateRef } from '@angular/core';
 import {
     LayoutAdditionalElementsDirective,
     LeaveButtonDirective,
@@ -162,6 +162,8 @@ export interface DefaultTemplates {
 	providedIn: 'root'
 })
 export class TemplateManagerService {
+	private readonly loggerSrv = inject(LoggerService);
+
 	private log: ILogger = {
 		d: () => {},
 		v: () => {},
@@ -169,7 +171,7 @@ export class TemplateManagerService {
 		e: () => {}
 	};
 
-	constructor(private loggerSrv: LoggerService) {
+	constructor() {
 		this.log = this.loggerSrv.get('TemplateManagerService');
 	}
 
