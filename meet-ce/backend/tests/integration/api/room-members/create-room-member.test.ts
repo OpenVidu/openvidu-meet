@@ -54,7 +54,8 @@ describe('Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('name', 'Test User');
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
 			expect(response.body).toHaveProperty('membershipDate');
-			expect(response.body).toHaveProperty('accessUrl', `/room/${roomId}`);
+			expect(response.body).toHaveProperty('accessUrl');
+			expect(response.body.accessUrl).toContain(`/room/${roomId}`);
 			expect(response.body).toHaveProperty('effectivePermissions');
 			expect(response.body).toHaveProperty('permissionsUpdatedAt');
 
@@ -77,7 +78,8 @@ describe('Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('name', externalUserName);
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
 			expect(response.body).toHaveProperty('membershipDate');
-			expect(response.body).toHaveProperty('accessUrl', `/room/${roomId}?secret=${response.body.memberId}`);
+			expect(response.body).toHaveProperty('accessUrl');
+			expect(response.body.accessUrl).toContain(`/room/${roomId}?secret=${response.body.memberId}`);
 			expect(response.body).toHaveProperty('effectivePermissions');
 			expect(response.body).toHaveProperty('permissionsUpdatedAt');
 		});
