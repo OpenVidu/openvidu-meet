@@ -46,7 +46,7 @@ export class RecordingsComponent implements OnInit {
 		this.log = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
 
 		// Get room ID from route query params and set initial filters before component initialization
-		const roomId = this.route.snapshot.queryParamMap.get('room-id');
+		const roomId = this.route.snapshot.queryParamMap.get('roomId');
 		if (roomId) {
 			this.initialFilters.set({
 				nameFilter: roomId,

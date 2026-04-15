@@ -233,7 +233,7 @@ export class RoomsComponent implements OnInit {
 	private async viewRecordings(room: MeetRoom) {
 		// Navigate to recordings page for this room
 		try {
-			await this.navigationService.navigateTo('/recordings', { 'room-id': room.roomId });
+			await this.navigationService.navigateTo('/recordings', { 'roomId': room.roomId });
 		} catch (error) {
 			this.notificationService.showSnackbar('Error navigating to recordings');
 			this.log.e('Error navigating to recordings:', error);

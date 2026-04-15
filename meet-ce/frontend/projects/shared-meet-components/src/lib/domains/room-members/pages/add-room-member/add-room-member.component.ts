@@ -71,7 +71,7 @@ export class AddRoomMemberComponent implements OnInit, OnDestroy {
 	}
 
 	ngOnInit(): void {
-		const roomId = this.route.snapshot.paramMap.get('roomId');
+		const roomId = this.route.snapshot.paramMap.get('room-id');
 		if (!roomId) {
 			this.notificationService.showSnackbar('Room ID is required');
 			this.navigationService.navigateTo('/rooms');

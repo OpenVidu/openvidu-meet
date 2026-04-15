@@ -57,7 +57,7 @@ export class RecordingDetailComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		const recordingId = this.route.snapshot.paramMap.get('recordingId');
+		const recordingId = this.route.snapshot.paramMap.get('recording-id');
 		if (!recordingId) {
 			this.hasError.set(true);
 			this.isLoading.set(false);

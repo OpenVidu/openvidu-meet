@@ -86,7 +86,7 @@ export class RoomWizardComponent implements OnInit {
 
 		// Get roomId from route parameters when in edit mode
 		if (this.editMode) {
-			this.roomId = this.route.snapshot.paramMap.get('roomId') || undefined;
+			this.roomId = this.route.snapshot.paramMap.get('room-id') || undefined;
 		}
 	}
 

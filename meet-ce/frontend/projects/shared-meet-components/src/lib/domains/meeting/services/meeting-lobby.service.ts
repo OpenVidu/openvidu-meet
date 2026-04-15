@@ -1,6 +1,5 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
 import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import { LoggerService } from 'openvidu-components-angular';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
@@ -29,7 +28,6 @@ export class MeetingLobbyService {
 	protected navigationService = inject(NavigationService);
 	protected appCtxService = inject(AppContextService);
 	protected wcManagerService = inject(MeetingWebComponentManagerService);
-	protected route = inject(ActivatedRoute);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingLobbyService');
 

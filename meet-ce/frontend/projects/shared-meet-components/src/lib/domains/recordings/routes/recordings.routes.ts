@@ -65,7 +65,7 @@ export const recordingsConsoleRoutes: DomainRouteConfig[] = [
 	},
 	{
 		route: {
-			path: 'recordings/:recordingId',
+			path: 'recordings/:recording-id',
 			loadComponent: () =>
 				import('../pages/recording-detail/recording-detail.component').then((m) => m.RecordingDetailComponent)
 		}

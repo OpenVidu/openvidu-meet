@@ -7,7 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, RouterModule } from '@angular/router';
 import {
 	MeetRecordingInfo,
 	MeetRoom,
@@ -78,7 +78,6 @@ export class RoomDetailComponent implements OnInit {
 
 	constructor(
 		private route: ActivatedRoute,
-		private router: Router,
 		private roomService: RoomService,
 		private roomDeletionService: RoomDeletionService,
 		private roomMemberService: RoomMemberService,
@@ -92,7 +91,7 @@ export class RoomDetailComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		const roomId = this.route.snapshot.paramMap.get('roomId');
+		const roomId = this.route.snapshot.paramMap.get('room-id');
 		if (!roomId) {
 			this.notificationService.showSnackbar('Room ID is required');
 			await this.navigationService.navigateTo('/rooms');

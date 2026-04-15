@@ -11,7 +11,7 @@ export const roomMembersDomainRoutes: DomainRouteConfig[] = [];
 export const roomMembersConsoleRoutes: DomainRouteConfig[] = [
 	{
 		route: {
-			path: 'rooms/:roomId/members/new',
+			path: 'rooms/:room-id/members/new',
 			loadComponent: () =>
 				import('../pages/add-room-member/add-room-member.component').then((m) => m.AddRoomMemberComponent)
 		}
