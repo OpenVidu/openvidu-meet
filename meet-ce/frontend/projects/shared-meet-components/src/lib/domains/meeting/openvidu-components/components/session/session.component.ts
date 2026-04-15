@@ -37,7 +37,8 @@ import {
 	RemoteTrackPublication,
 	Room,
 	RoomEvent,
-	Track
+	Track,
+	TrackPublication
 } from 'livekit-client';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStatus } from '../../models/recording.model';
@@ -263,6 +264,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		this.subscribeToParticipantConnected();
 		this.subscribeToTrackSubscribed();
 		this.subscribeToTrackUnsubscribed();
+		this.subscribeToTrackMuteStateChanged();
 		this.subscribeToParticipantDisconnected();
 		this.subscribeToParticipantMetadataChanged();
 		this.subscribeToLayoutWidth();
@@ -467,6 +469,27 @@ export class SessionComponent implements OnInit, OnDestroy {
 				// 	}
 			}
 		);
+	}
+
+	private subscribeToTrackMuteStateChanged() {
+		const refreshParticipantState = (participant: Participant | RemoteParticipant | LocalParticipant) => {
+			if (!participant) return;
+
+			if (participant.isLocal) {
+				this.participantService.updateLocalParticipant();
+				return;
+			}
+
+			this.participantService.updateRemoteParticipants();
+		};
+
+		this.room.on(RoomEvent.TrackMuted, (_publication: TrackPublication, participant: Participant) => {
+			refreshParticipantState(participant);
+		});
+
+		this.room.on(RoomEvent.TrackUnmuted, (_publication: TrackPublication, participant: Participant) => {
+			refreshParticipantState(participant);
+		});
 	}
 
 	private subscribeToParticipantDisconnected() {
