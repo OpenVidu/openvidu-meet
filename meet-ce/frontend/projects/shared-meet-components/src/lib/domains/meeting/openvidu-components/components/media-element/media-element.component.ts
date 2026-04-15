@@ -16,10 +16,10 @@ import { Track } from 'livekit-client';
 			[hasEncryptionError]="hasEncryptionError()"
 		></ov-video-poster>
 		@if (track()?.kind === 'video') {
-			<video #videoElement class="OV_video-element" [attr.id]="track()?.sid"></video>
+			<video #videoElement class="OV_media-element OV_video-element" [attr.id]="track()?.sid"></video>
 		}
 		@if (track()?.kind === 'audio') {
-			<audio #audioElement [attr.id]="track()?.sid"></audio>
+			<audio #audioElement class="OV_media-element OV_audio-element" [attr.id]="track()?.sid"></audio>
 		}
 	`,
 	styleUrl: './media-element.component.scss',

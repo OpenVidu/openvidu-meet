@@ -4,8 +4,8 @@
 			[ovRemoteParticipants]="visibleRemoteParticipants()"
 			[ngClass]="{ withFooter: areCaptionsEnabledByUser() }"
 		>
-			@if (shouldShowLinkOverlay()) {
-				<ng-container *ovLayoutAdditionalElements>
+			<ng-container *ovLayoutAdditionalElements>
+				@if (shouldShowLinkOverlay()) {
 					<div id="share-link-overlay" class="main-share-meeting-link-container fade-in-delayed OV_big">
 						<ov-share-meeting-link
 							class="main-share-meeting-link"
@@ -17,10 +17,12 @@
 							(copyClicked)="onCopyMeetingLinkClicked()"
 						></ov-share-meeting-link>
 					</div>
-				</ng-container>
-			} @else if (isSmartMosaicActive() && hiddenParticipantsCount() > 0) {
-				<!-- Use bottom slot to position indicator at the end -->
-				<ng-container *ovLayoutAdditionalElements="'bottom'">
+				}
+			</ng-container>
+
+			<!-- Use bottom slot to position indicator at the end -->
+			<ng-container *ovLayoutAdditionalElements="'bottom'">
+				@if (!shouldShowLinkOverlay() && isSmartMosaicActive() && hiddenParticipantsCount() > 0) {
 					<div
 						[ngClass]="{
 							'OV_top-bar': showTopBarHiddenParticipantsIndicator(),
@@ -34,8 +36,8 @@
 							[hiddenParticipantNames]="hiddenParticipantNames()"
 						/>
 					</div>
-				</ng-container>
-			}
+				}
+			</ng-container>
 
 			<ng-template #stream let-track>
 				<ov-stream [track]="track"></ov-stream>

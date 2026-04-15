@@ -1,4 +1,4 @@
-import { Component, DestroyRef, effect, ElementRef, inject, Input, OnDestroy, OnInit, viewChild } from '@angular/core';
+import { Component, DestroyRef, effect, ElementRef, inject, Input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
 import { Track } from 'livekit-client';
@@ -60,7 +60,7 @@ export class StreamComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	showVideo: boolean = false;
+	readonly showVideo = signal(false);
 	/**
 	 * @ignore
 	 */
@@ -75,6 +75,7 @@ export class StreamComponent implements OnInit, OnDestroy {
 	 * @ignore
 	 */
 	hoveringTimeout: ReturnType<typeof setTimeout> | undefined;
+	private showVideoTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	/**
 	 * @ignore
@@ -89,15 +90,19 @@ export class StreamComponent implements OnInit, OnDestroy {
 	private _streamContainer: ElementRef | undefined;
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly HOVER_TIMEOUT = 2000;
+	private readonly NO_SIZE_TIMEOUT = 100;
 	private readonly querySyncEffect = effect(() => {
 		this.menuTrigger = this.menuTriggerQuery();
 		this.menu = this.menuQuery();
 		const streamContainer = this.streamContainerQuery();
 		if (streamContainer) {
 			this._streamContainer = streamContainer;
-			setTimeout(() => {
-				this.showVideo = true;
-			}, 100);
+			if (this.showVideoTimeout) {
+				clearTimeout(this.showVideoTimeout);
+			}
+			this.showVideoTimeout = setTimeout(() => {
+				this.showVideo.set(true);
+			}, this.NO_SIZE_TIMEOUT);
 		}
 	});
 
@@ -111,6 +116,9 @@ export class StreamComponent implements OnInit, OnDestroy {
 	}
 
 	ngOnDestroy() {
+		if (this.showVideoTimeout) {
+			clearTimeout(this.showVideoTimeout);
+		}
 		if (this.hoveringTimeout) {
 			clearTimeout(this.hoveringTimeout);
 		}

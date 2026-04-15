@@ -102,9 +102,9 @@
 		border-radius: 20px;
 		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 
-		#status-mic,
-		#status-muted-forcibly,
-		#status-pinned {
+		#mic-off,
+		#muted-forcibly,
+		#pinned {
 			font-size: 20px;
 			width: 20px;
 			height: 20px;
@@ -112,11 +112,11 @@
 			align-items: center;
 			justify-content: center;
 		}
-		#status-mic,
-		#status-muted-forcibly {
+		#mic-off,
+		#muted-forcibly {
 			color: var(--ov-error-color);
 		}
-		#status-pinned {
+		#pinned {
 			color: var(--ov-accent-action-color);
 		}
 	}
