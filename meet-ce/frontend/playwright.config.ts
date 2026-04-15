@@ -12,7 +12,7 @@ export default defineConfig({
 	workers: 1,
 	reporter: 'list',
 	use: {
-		headless: false,
+		headless: true,
 		viewport: { width: 1366, height: 900 },
 		trace: 'on-first-retry',
 		video: 'off',
