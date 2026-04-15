@@ -12,7 +12,7 @@ import { getBasePath } from './html-dynamic-base-path.utils.js';
  *
  * The configured BASE_PATH is appended to the URL (without trailing slash).
  *
- * @returns {string} The base URL as a string (e.g., 'https://example.com/meet').
+ * @returns The base URL as a string (e.g., 'https://example.com/meet').
  */
 export const getBaseUrl = (): string => {
 	let hostUrl: string;
@@ -43,4 +43,56 @@ export const getBaseUrl = (): string => {
 
 	// Remove trailing slash from base path for the final URL
 	return `${hostUrl}${basePath.slice(0, -1)}`;
+};
+
+/**
+ * Combines the base URL (including the configured base path) with the provided path,
+ * ensuring there is exactly one slash between them.
+ *
+ * @param path - The path to append to the base URL (e.g., '/api/endpoint')
+ * @returns  The full URL as a string (e.g., 'https://example.com/meet/api/endpoint')
+ */
+export const addBaseUrlToPath = (path: string): string => {
+	const baseUrl = getBaseUrl();
+	return `${baseUrl}${path.startsWith('/') ? '' : '/'}${path}`;
+};
+
+/**
+ * Extracts the path from a URL, removing the configured basePath when present.
+ * If the input is a relative path, it is returned with the basePath stripped if applicable.
+ * 
+ * @param url - The full URL or absolute path to extract the path from
+ * @return The extracted path with the basePath removed if it was present
+ */
+export const extractPathFromUrl = (url: string): string => {
+	// If the URL is an absolute path, strip basePath and return
+	if (url.startsWith('/')) {
+		return stripBasePath(url);
+	}
+
+	try {
+		const urlObject = new URL(url);
+		const pathname = stripBasePath(urlObject.pathname);
+		return pathname + urlObject.search + urlObject.hash;
+	} catch {
+		// If URL parsing fails, preserve the original value.
+		return url;
+	}
+};
+
+/**
+ * Strips the configured basePath from a given absolute path when present.
+ * 
+ * @param path - The absolute path to strip the basePath from
+ * @return The path with the basePath removed if it was present, otherwise the original path
+ */
+export const stripBasePath = (path: string): string => {
+	const basePath = getBasePath();
+	const basePathWithoutTrailingSlash = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+
+	if (basePathWithoutTrailingSlash && path.startsWith(basePathWithoutTrailingSlash)) {
+		return path.slice(basePathWithoutTrailingSlash.length) || '/';
+	}
+
+	return path;
 };

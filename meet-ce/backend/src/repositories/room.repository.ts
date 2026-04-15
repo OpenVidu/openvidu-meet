@@ -12,9 +12,8 @@ import type {
 	RoomQueryWithFields,
 	RoomQueryWithProjection
 } from '../types/room-projection.types.js';
-import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
 import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
-import { getBaseUrl } from '../utils/url.utils.js';
+import { addBaseUrlToPath, extractPathFromUrl } from '../utils/url.utils.js';
 import { BaseRepository } from './base.repository.js';
 import { RoomMemberRepository } from './room-member.repository.js';
 
@@ -354,63 +353,22 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		const recordingUrl = room.access?.anonymous.recording.url;
 
 		if (registeredUrl) {
-			room.access!.registered.url = this.extractPathFromUrl(registeredUrl);
+			room.access!.registered.url = extractPathFromUrl(registeredUrl);
 		}
 
 		if (moderatorUrl) {
-			room.access!.anonymous.moderator.url = this.extractPathFromUrl(moderatorUrl);
+			room.access!.anonymous.moderator.url = extractPathFromUrl(moderatorUrl);
 		}
 
 		if (speakerUrl) {
-			room.access!.anonymous.speaker.url = this.extractPathFromUrl(speakerUrl);
+			room.access!.anonymous.speaker.url = extractPathFromUrl(speakerUrl);
 		}
 
 		if (recordingUrl) {
-			room.access!.anonymous.recording.url = this.extractPathFromUrl(recordingUrl);
+			room.access!.anonymous.recording.url = extractPathFromUrl(recordingUrl);
 		}
 
 		return room;
-	}
-
-	/**
-	 * Extracts the path from a URL, removing the base URL and basePath if present.
-	 * This ensures only the route path is stored in the database, without the basePath prefix.
-	 *
-	 * @param url - The URL to process
-	 * @returns The path portion of the URL without the basePath prefix
-	 */
-	private extractPathFromUrl(url: string): string {
-		// If already a path, strip basePath and return
-		if (url.startsWith('/')) {
-			return this.stripBasePath(url);
-		}
-
-		try {
-			const urlObj = new URL(url);
-			const pathname = this.stripBasePath(urlObj.pathname);
-			return pathname + urlObj.search + urlObj.hash;
-		} catch {
-			// If URL parsing fails, assume it's already a path
-			return url;
-		}
-	}
-
-	/**
-	 * Strips the basePath from a given path if it starts with it.
-	 *
-	 * @param path - The path to process
-	 * @returns The path without the basePath prefix
-	 */
-	private stripBasePath(path: string): string {
-		const basePath = getBasePath();
-		// Remove trailing slash from basePath for comparison (e.g., '/meet/' -> '/meet')
-		const basePathWithoutTrailingSlash = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-
-		if (basePathWithoutTrailingSlash && path.startsWith(basePathWithoutTrailingSlash)) {
-			return path.slice(basePathWithoutTrailingSlash.length) || '/';
-		}
-
-		return path;
 	}
 
 	/**
@@ -421,27 +379,25 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @returns Room data with complete URLs
 	 */
 	private enrichRoomWithBaseUrls(room: MeetRoom): MeetRoom {
-		const baseUrl = getBaseUrl();
-
 		const registeredUrl = room.access?.registered.url;
 		const moderatorUrl = room.access?.anonymous.moderator.url;
 		const speakerUrl = room.access?.anonymous.speaker.url;
 		const recordingUrl = room.access?.anonymous.recording.url;
 
 		if (registeredUrl) {
-			room.access!.registered.url = `${baseUrl}${registeredUrl}`;
+			room.access!.registered.url = addBaseUrlToPath(registeredUrl);
 		}
 
 		if (moderatorUrl) {
-			room.access!.anonymous.moderator.url = `${baseUrl}${moderatorUrl}`;
+			room.access!.anonymous.moderator.url = addBaseUrlToPath(moderatorUrl);
 		}
 
 		if (speakerUrl) {
-			room.access!.anonymous.speaker.url = `${baseUrl}${speakerUrl}`;
+			room.access!.anonymous.speaker.url = addBaseUrlToPath(speakerUrl);
 		}
 
 		if (recordingUrl) {
-			room.access!.anonymous.recording.url = `${baseUrl}${recordingUrl}`;
+			room.access!.anonymous.recording.url = addBaseUrlToPath(recordingUrl);
 		}
 
 		return room;

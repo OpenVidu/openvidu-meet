@@ -20,6 +20,7 @@ import type {
 	RoomMemberQueryWithProjection
 } from '../types/room-member-projection.types.js';
 import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
+import { addBaseUrlToPath, extractPathFromUrl } from '../utils/url.utils.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
@@ -35,7 +36,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	protected toDomain(dbObject: MeetRoomMemberDocument): MeetRoomMember {
 		const { schemaVersion, ...member } = dbObject;
 		void schemaVersion;
-		return member as MeetRoomMember;
+		return this.enrichRoomMemberWithBaseUrl(member as MeetRoomMember);
 	}
 
 	protected override getDocumentOnlyFields(): readonly MeetRoomMemberDocumentOnlyField[] {
@@ -48,9 +49,10 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param member - The room member data to add
 	 * @returns The created room member
 	 */
-	async create(member: MeetRoomMember): Promise<MeetRoomMember> {
+	create(member: MeetRoomMember): Promise<MeetRoomMember> {
+		const normalizedMember = this.normalizeRoomMemberForStorage(member) as MeetRoomMember;
 		const document: MeetRoomMemberDocument = {
-			...member,
+			...normalizedMember,
 			schemaVersion: INTERNAL_CONFIG.ROOM_MEMBER_SCHEMA_VERSION
 		};
 		return this.createDocument(document);
@@ -65,12 +67,9 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @returns The updated room member
 	 * @throws Error if room member not found
 	 */
-	async updatePartial(
-		roomId: string,
-		memberId: string,
-		fieldsToUpdate: Partial<MeetRoomMember>
-	): Promise<MeetRoomMember> {
-		return this.updatePartialOne({ roomId, memberId }, fieldsToUpdate);
+	updatePartial(roomId: string, memberId: string, fieldsToUpdate: Partial<MeetRoomMember>): Promise<MeetRoomMember> {
+		const normalizedFieldsToUpdate = this.normalizeRoomMemberForStorage(fieldsToUpdate);
+		return this.updatePartialOne({ roomId, memberId }, normalizedFieldsToUpdate);
 	}
 
 	/**
@@ -80,8 +79,9 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @returns The updated room member
 	 * @throws Error if room member not found
 	 */
-	async replace(member: MeetRoomMember): Promise<MeetRoomMember> {
-		return this.replaceOne({ roomId: member.roomId, memberId: member.memberId }, member);
+	replace(member: MeetRoomMember): Promise<MeetRoomMember> {
+		const normalizedMember = this.normalizeRoomMemberForStorage(member) as MeetRoomMember;
+		return this.replaceOne({ roomId: member.roomId, memberId: member.memberId }, normalizedMember);
 	}
 
 	/**
@@ -92,21 +92,21 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param fields - Array of field names to include in the result
 	 * @returns The room member or null if not found
 	 */
-	async findByRoomAndMemberId(roomId: string, memberId: string): Promise<MeetRoomMember | null>;
+	findByRoomAndMemberId(roomId: string, memberId: string): Promise<MeetRoomMember | null>;
 
-	async findByRoomAndMemberId<const TFields extends readonly MeetRoomMemberField[]>(
+	findByRoomAndMemberId<const TFields extends readonly MeetRoomMemberField[]>(
 		roomId: string,
 		memberId: string,
 		fields: TFields
 	): Promise<ProjectedMeetRoomMember<TFields> | null>;
 
-	async findByRoomAndMemberId(
+	findByRoomAndMemberId(
 		roomId: string,
 		memberId: string,
 		fields?: readonly MeetRoomMemberField[]
 	): Promise<MeetRoomMember | Partial<MeetRoomMember> | null>;
 
-	async findByRoomAndMemberId(
+	findByRoomAndMemberId(
 		roomId: string,
 		memberId: string,
 		fields?: readonly MeetRoomMemberField[]
@@ -124,15 +124,15 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param fields - Array of field names to include in the result
 	 * @returns Array of found room members
 	 */
-	async findByRoomAndMemberIds(roomId: string, memberIds: string[]): Promise<MeetRoomMember[]>;
+	findByRoomAndMemberIds(roomId: string, memberIds: string[]): Promise<MeetRoomMember[]>;
 
-	async findByRoomAndMemberIds<const TFields extends readonly MeetRoomMemberField[]>(
+	findByRoomAndMemberIds<const TFields extends readonly MeetRoomMemberField[]>(
 		roomId: string,
 		memberIds: string[],
 		fields: TFields
 	): Promise<ProjectedMeetRoomMember<TFields>[]>;
 
-	async findByRoomAndMemberIds(
+	findByRoomAndMemberIds(
 		roomId: string,
 		memberIds: string[],
 		fields?: readonly MeetRoomMemberField[]
@@ -235,8 +235,8 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param memberId - The ID of the member to remove
 	 * @throws Error if room member not found or could not be deleted
 	 */
-	async deleteByRoomAndMemberId(roomId: string, memberId: string): Promise<void> {
-		await this.deleteOne({ roomId, memberId });
+	deleteByRoomAndMemberId(roomId: string, memberId: string): Promise<void> {
+		return this.deleteOne({ roomId, memberId });
 	}
 
 	/**
@@ -246,8 +246,8 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param memberIds - Array of member IDs to remove
 	 * @throws Error if no room members were found or could not be deleted
 	 */
-	async deleteByRoomIdAndMemberIds(roomId: string, memberIds: string[]): Promise<void> {
-		await this.deleteMany({ roomId, memberId: { $in: memberIds } });
+	deleteByRoomIdAndMemberIds(roomId: string, memberIds: string[]): Promise<void> {
+		return this.deleteMany({ roomId, memberId: { $in: memberIds } });
 	}
 
 	/**
@@ -256,8 +256,8 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 *
 	 * @param roomId - The ID of the room
 	 */
-	async deleteAllByRoomId(roomId: string): Promise<void> {
-		await this.deleteMany({ roomId }, false);
+	deleteAllByRoomId(roomId: string): Promise<void> {
+		return this.deleteMany({ roomId }, false);
 	}
 
 	/**
@@ -267,7 +267,41 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 *
 	 * @param memberId - The ID of the member whose memberships should be deleted
 	 */
-	async deleteAllByMemberId(memberId: string): Promise<void> {
-		await this.deleteMany({ memberId }, false);
+	deleteAllByMemberId(memberId: string): Promise<void> {
+		return this.deleteMany({ memberId }, false);
+	}
+
+	// ==========================================
+	// PRIVATE HELPER METHODS
+	// ==========================================
+
+	/**
+	 * Normalizes room member data for storage by removing the base URL from access URL.
+	 * This ensures only the path is stored in the database.
+	 * NOTE: Only normalizes accessUrl when it is present in a partial payload.
+	 * 
+	 * @param member - The room member data to normalize
+	 * @returns The normalized room member with access URL stripped to path
+	 */
+	private normalizeRoomMemberForStorage(member: Partial<MeetRoomMember>): Partial<MeetRoomMember> {
+		if (member.accessUrl) {
+			member.accessUrl = extractPathFromUrl(member.accessUrl);
+		}
+
+		return member;
+	}
+
+	/**
+	 * Enriches room member data by adding the base URL to access URL when present.
+	 * 
+	 * @param member - The room member data to enrich
+	 * @returns The enriched room member with complete access URL
+	 */
+	private enrichRoomMemberWithBaseUrl(member: MeetRoomMember): MeetRoomMember {
+		if (member.accessUrl) {
+			member.accessUrl = addBaseUrlToPath(member.accessUrl);
+		}
+
+		return member;
 	}
 }
