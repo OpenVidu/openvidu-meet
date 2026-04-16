@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, TemplateRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, TemplateRef, inject, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -22,7 +22,7 @@ import { MeetingService } from '../../services/meeting.service';
 })
 export class MeetingParticipantItemComponent {
 	// Template reference for the component's template
-	@ViewChild('template', { static: true }) template!: TemplateRef<any>;
+	readonly template = viewChild.required<TemplateRef<any>>('template');
 
 	protected meetingService = inject(MeetingService);
 	protected meetingContextService = inject(MeetingContextService);

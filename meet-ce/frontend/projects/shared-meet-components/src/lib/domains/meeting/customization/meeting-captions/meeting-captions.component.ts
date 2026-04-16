@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, effect, ElementRef, input, QueryList, signal, untracked, ViewChildren } from '@angular/core';
+import { Component, effect, ElementRef, input, signal, untracked, viewChildren } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { Caption } from '../../models/captions.model';
 
@@ -18,8 +18,7 @@ export class MeetingCaptionsComponent {
 	captionAnimationState = signal<Map<string, 'entering' | 'active' | 'leaving'>>(new Map());
 
 	// ViewChildren to access caption text containers for auto-scroll
-	@ViewChildren('captionTextContainer')
-	captionTextContainers!: QueryList<ElementRef<HTMLDivElement>>;
+	readonly captionTextContainers = viewChildren<ElementRef<HTMLDivElement>>('captionTextContainer');
 
 	constructor() {
 		// Monitor caption changes and update animation states
@@ -86,8 +85,9 @@ export class MeetingCaptionsComponent {
 	private scrollCaptionsToBottom(): void {
 		// Use setTimeout to ensure DOM has updated
 		setTimeout(() => {
-			if (this.captionTextContainers) {
-				this.captionTextContainers.forEach((container: ElementRef<HTMLDivElement>) => {
+			const captionTextContainers = this.captionTextContainers();
+			if (captionTextContainers) {
+				captionTextContainers.forEach((container: ElementRef<HTMLDivElement>) => {
 					const element = container.nativeElement;
 					element.scrollTop = element.scrollHeight;
 				});

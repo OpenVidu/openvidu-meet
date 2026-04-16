@@ -1,4 +1,4 @@
-import { Component, effect, EventEmitter, OnDestroy, Output } from '@angular/core';
+import { Component, effect, OnDestroy, output } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,22 +11,22 @@ import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../services';
 
 @Component({
-    selector: 'ov-room-basic-creation',
-    imports: [
-        ReactiveFormsModule,
-        MatButtonModule,
-        MatIconModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatTooltipModule
-    ],
-    templateUrl: './room-basic-creation.component.html',
-    styleUrl: './room-basic-creation.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+	selector: 'ov-room-basic-creation',
+	imports: [
+		ReactiveFormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatInputModule,
+		MatFormFieldModule,
+		MatTooltipModule
+	],
+	templateUrl: './room-basic-creation.component.html',
+	styleUrl: './room-basic-creation.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomBasicCreationComponent implements OnDestroy {
-	@Output() createRoom = new EventEmitter<string | undefined>();
-	@Output() openAdvancedMode = new EventEmitter<void>();
+	readonly createRoom = output<string | undefined>();
+	readonly openAdvancedMode = output<void>();
 
 	roomDetailsForm = new FormGroup({
 		roomName: new FormControl('Room', [Validators.maxLength(50)])
@@ -67,6 +67,8 @@ export class RoomBasicCreationComponent implements OnDestroy {
 	}
 
 	onOpenAdvancedMode() {
+		// TODO: The 'emit' function requires a mandatory void argument
+		// TODO: The 'emit' function requires a mandatory void argument
 		this.openAdvancedMode.emit();
 	}
 

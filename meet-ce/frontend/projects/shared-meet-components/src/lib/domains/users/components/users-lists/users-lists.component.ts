@@ -1,5 +1,5 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal, untracked } from '@angular/core';
+import { Component, effect, HostBinding, input, OnInit, signal, untracked, output } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
@@ -104,11 +104,11 @@ export class UsersListsComponent implements OnInit {
 	}
 
 	// Output events
-	@Output() userAction = new EventEmitter<UserTableAction>();
-	@Output() filterChange = new EventEmitter<UserTableFilter>();
-	@Output() loadMore = new EventEmitter<UserTableFilter>();
-	@Output() refresh = new EventEmitter<UserTableFilter>();
-	@Output() userClicked = new EventEmitter<string>();
+	readonly userAction = output<UserTableAction>();
+	readonly filterChange = output<UserTableFilter>();
+	readonly loadMore = output<UserTableFilter>();
+	readonly refresh = output<UserTableFilter>();
+	readonly userClicked = output<string>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
