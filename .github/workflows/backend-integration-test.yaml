@@ -325,16 +325,3 @@ jobs:
           github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
           label: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.label) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.label) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.label) }}
           ec2-instance-id: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.ec2-instance-id) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.ec2-instance-id) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.ec2-instance-id) }}
-
-  remove-components-artifact:
-    name: Remove OpenVidu Components Angular Artifact
-    needs:
-      - test-api
-      - test-recordings
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    if: ${{ always() }}
-    steps:
-      - name: Remove Artifact
-        uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b # v5.1.0
-        with:
-          name: ${{ needs.build-components.outputs.artifact_name }}
