@@ -1,4 +1,4 @@
-import type { OnInit} from '@angular/core';
+import type { OnInit } from '@angular/core';
 import { Component, inject } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
@@ -7,7 +7,7 @@ import packageInfo from '../../package.json';
 
 @Component({
 	selector: 'app-root',
-	template: ` <router-outlet></router-outlet> `,
+	template: ` <router-outlet /> `,
 	styles: '',
 	imports: [RouterOutlet],
 	changeDetection: ChangeDetectionStrategy.OnPush
