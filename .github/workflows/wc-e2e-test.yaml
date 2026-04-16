@@ -34,13 +34,13 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Build and Start OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
+        uses: OpenVidu/actions/start-openvidu-meet@f8077872a34c5f0b38ebac90a75384db8257873e # v1.0.4
         env:
           MEET_INITIAL_WEBHOOK_ENABLED: true
           MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
 
       - name: Start OpenVidu Meet Testapp
-        uses: OpenVidu/actions/start-openvidu-meet-testapp@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@f8077872a34c5f0b38ebac90a75384db8257873e # v1.0.4
         with:
           skip_install: 'true'
           skip_checkout: 'true'
