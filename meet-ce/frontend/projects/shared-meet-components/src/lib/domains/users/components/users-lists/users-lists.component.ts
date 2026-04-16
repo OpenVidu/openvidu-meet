@@ -17,6 +17,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetUserDTO, MeetUserRole, MeetUserSortField, SortOrder } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
+import { UsersUiUtils } from '../../utils/ui';
 
 export interface UserTableAction {
 	users: MeetUserDTO[];
@@ -132,8 +133,7 @@ export class UsersListsComponent implements OnInit {
 		{ value: MeetUserRole.USER, label: 'User' },
 		{ value: MeetUserRole.ROOM_MEMBER, label: 'Room Member' }
 	];
-
-	protected readonly ROOT_ADMIN_USER_ID = 'admin';
+	protected readonly UsersUiUtils = UsersUiUtils;
 
 	constructor() {
 		effect(() => {
@@ -319,41 +319,5 @@ export class UsersListsComponent implements OnInit {
 	clearFilters() {
 		this.nameFilterControl.setValue('');
 		this.roleFilterControl.setValue('');
-	}
-
-	// ===== DISPLAY HELPERS =====
-
-	getInitials(name: string): string {
-		return name
-			.split(' ')
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((w) => w[0].toUpperCase())
-			.join('');
-	}
-
-	getRoleLabel(role: MeetUserRole): string {
-		switch (role) {
-			case MeetUserRole.ADMIN:
-				return 'Admin';
-			case MeetUserRole.USER:
-				return 'User';
-			case MeetUserRole.ROOM_MEMBER:
-				return 'Room Member';
-			default:
-				return role;
-		}
-	}
-
-	isRootAdmin(user: MeetUserDTO): boolean {
-		return user.userId === this.ROOT_ADMIN_USER_ID;
-	}
-
-	isSelf(user: MeetUserDTO): boolean {
-		return user.userId === this.currentUserId();
-	}
-
-	isProtected(user: MeetUserDTO): boolean {
-		return this.isRootAdmin(user) || this.isSelf(user);
 	}
 }

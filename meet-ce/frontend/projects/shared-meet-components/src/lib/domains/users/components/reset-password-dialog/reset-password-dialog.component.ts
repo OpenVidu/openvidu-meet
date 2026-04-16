@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetUserDTO } from '@openvidu-meet/typings';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { UserService } from '../../services/user.service';
+import { UsersUiUtils } from '../../utils/ui';
 
 export interface ResetPasswordDialogData {
 	user: MeetUserDTO;
@@ -54,8 +55,7 @@ export class ResetPasswordDialogComponent {
 	copied = signal(false);
 
 	generatePassword() {
-		const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
-		this.password = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+		this.password = UsersUiUtils.generateTemporaryPassword();
 		this.showPassword.set(true);
 	}
 

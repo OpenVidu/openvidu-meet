@@ -12,6 +12,7 @@ import { MeetUserRole } from '@openvidu-meet/typings';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { UserService } from '../../services/user.service';
+import { UsersUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-create-user',
@@ -38,7 +39,8 @@ export class CreateUserComponent {
 	showPassword = signal(false);
 	autoGenerate = signal(false);
 
-	availableRoles: MeetUserRole[] = [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER];
+	availableRoles: MeetUserRole[] = [...UsersUiUtils.AVAILABLE_ROLES];
+	protected readonly UsersUiUtils = UsersUiUtils;
 
 	form = new FormGroup({
 		userId: new FormControl('', [Validators.required, Validators.pattern(/^[a-z0-9_-]+$/)]),
@@ -47,23 +49,8 @@ export class CreateUserComponent {
 		password: new FormControl('', [Validators.required, Validators.minLength(5)])
 	});
 
-	getRoleLabel(role: MeetUserRole): string {
-		switch (role) {
-			case MeetUserRole.ADMIN:
-				return 'Admin';
-			case MeetUserRole.USER:
-				return 'User';
-			case MeetUserRole.ROOM_MEMBER:
-				return 'Room Member';
-			default:
-				return role;
-		}
-	}
-
 	generatePassword() {
-		const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%';
-		const generated = Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-		this.form.get('password')?.setValue(generated);
+		this.form.get('password')?.setValue(UsersUiUtils.generateTemporaryPassword());
 		this.showPassword.set(true);
 	}
 

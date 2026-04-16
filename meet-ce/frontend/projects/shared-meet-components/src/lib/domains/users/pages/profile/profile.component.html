@@ -39,21 +39,21 @@
 					<mat-card-content>
 						<!-- Avatar -->
 						<div class="profile-avatar">
-							<span class="avatar-initials">{{ getInitials() }}</span>
+							<span class="avatar-initials">{{ UsersUiUtils.getInitials(targetUser()!.name) }}</span>
 						</div>
 
 						<!-- Identity -->
 						<div class="profile-identity">
 							<h2 class="profile-name">{{ targetUser()!.name }}</h2>
 							<span class="role-chip" [ngClass]="'role-' + targetUser()!.role">
-								{{ getRoleLabel(targetUser()!.role) }}
+								{{ UsersUiUtils.getRoleLabel(targetUser()!.role) }}
 							</span>
 						</div>
 
 						<!-- Meta -->
 						<p class="profile-since">
 							<mat-icon class="meta-icon">calendar_today</mat-icon>
-							Member since {{ formatDate(targetUser()!.registrationDate) }}
+							Member since {{ UsersUiUtils.formatDate(targetUser()!.registrationDate) }}
 						</p>
 
 						<mat-divider class="sidebar-divider"></mat-divider>
@@ -236,7 +236,9 @@
 										<mat-label>Role</mat-label>
 										<mat-select [value]="editableRole()" (valueChange)="editableRole.set($event)">
 											@for (role of availableRoles; track role) {
-												<mat-option [value]="role">{{ getRoleLabel(role) }}</mat-option>
+												<mat-option [value]="role">{{
+													UsersUiUtils.getRoleLabel(role)
+												}}</mat-option>
 											}
 										</mat-select>
 									</mat-form-field>

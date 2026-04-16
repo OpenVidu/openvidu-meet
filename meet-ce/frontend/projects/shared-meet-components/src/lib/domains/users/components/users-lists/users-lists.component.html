@@ -198,7 +198,7 @@
 								id="user-avatar-{{ user.userId }}"
 							>
 								<span class="avatar-initials" id="user-initials-{{ user.userId }}">{{
-									getInitials(user.name)
+									UsersUiUtils.getInitials(user.name)
 								}}</span>
 							</div>
 							<div class="user-info" id="user-text-info-{{ user.userId }}">
@@ -206,7 +206,7 @@
 								<span class="user-id" id="user-id-{{ user.userId }}">{{ user.userId }}</span>
 							</div>
 							<div class="user-badges" id="user-badges-{{ user.userId }}">
-								@if (isRootAdmin(user)) {
+								@if (UsersUiUtils.isRootAdmin(user)) {
 									<span
 										class="badge badge-root"
 										matTooltip="Root admin — cannot be modified"
@@ -215,7 +215,7 @@
 										Root
 									</span>
 								}
-								@if (isSelf(user)) {
+								@if (UsersUiUtils.isSelf(user, currentUserId())) {
 									<span class="badge badge-self" id="badge-self-{{ user.userId }}">You</span>
 								}
 							</div>
@@ -228,7 +228,7 @@
 					<th mat-header-cell *matHeaderCellDef id="role-header">Role</th>
 					<td mat-cell *matCellDef="let user" id="role-cell-{{ user.userId }}">
 						<span class="role-chip" [ngClass]="'role-' + user.role" id="role-chip-{{ user.userId }}">{{
-							getRoleLabel(user.role)
+							UsersUiUtils.getRoleLabel(user.role)
 						}}</span>
 					</td>
 				</ng-container>
@@ -268,10 +268,12 @@
 							<button
 								mat-icon-button
 								[matTooltip]="
-									isProtected(user) ? 'Cannot reset password for this user' : 'Reset password'
+									UsersUiUtils.isProtectedUser(user, currentUserId())
+										? 'Cannot reset password for this user'
+										: 'Reset password'
 								"
 								(click)="$event.stopPropagation(); resetPassword(user)"
-								[disabled]="loading() || isProtected(user)"
+								[disabled]="loading() || UsersUiUtils.isProtectedUser(user, currentUserId())"
 								id="reset-password-btn-{{ user.userId }}"
 							>
 								<mat-icon>key</mat-icon>
@@ -280,9 +282,13 @@
 							<!-- Delete Button -->
 							<button
 								mat-icon-button
-								[matTooltip]="isProtected(user) ? 'Cannot delete this user' : 'Delete user'"
+								[matTooltip]="
+									UsersUiUtils.isProtectedUser(user, currentUserId())
+										? 'Cannot delete this user'
+										: 'Delete user'
+								"
 								(click)="$event.stopPropagation(); deleteUser(user)"
-								[disabled]="loading() || isProtected(user)"
+								[disabled]="loading() || UsersUiUtils.isProtectedUser(user, currentUserId())"
 								class="delete-action"
 								id="delete-user-btn-{{ user.userId }}"
 							>
@@ -297,8 +303,8 @@
 					mat-row
 					*matRowDef="let row; columns: displayedColumns"
 					[class.selected-row]="isUserSelected(row)"
-					[class.protected-row]="isProtected(row)"
-					[class.root-row]="isRootAdmin(row)"
+					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId())"
+					[class.root-row]="UsersUiUtils.isRootAdmin(row)"
 					id="table-row-{{ row.userId }}"
 					(click)="onUserClick(row)"
 				></tr>

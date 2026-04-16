@@ -25,10 +25,7 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { TokenStorageService } from '../../../../shared/services/token-storage.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { UserService } from '../../services/user.service';
-
-// TODO: Obtain root admin user ID from backend instead of hardcoding
-/** The userId of the non-deletable root admin (matches the backend default INITIAL_ADMIN_USER) */
-const ROOT_ADMIN_USER_ID = 'admin';
+import { UsersUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-profile',
@@ -66,7 +63,8 @@ export class ProfileComponent implements OnInit {
 	targetUser = signal<MeetUserDTO | null>(null);
 	editableRole = signal<MeetUserRole | null>(null);
 
-	availableRoles: MeetUserRole[] = [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER];
+	availableRoles: MeetUserRole[] = [...UsersUiUtils.AVAILABLE_ROLES];
+	protected readonly UsersUiUtils = UsersUiUtils;
 
 	changePasswordForm = new FormGroup({
 		currentPassword: new FormControl('', [Validators.required]),
@@ -135,7 +133,7 @@ export class ProfileComponent implements OnInit {
 					this.targetUser.set(user);
 					this.isOwnProfile.set(false);
 					this.isAdminViewing.set(true);
-					this.isRootAdmin.set(user.userId === ROOT_ADMIN_USER_ID);
+					this.isRootAdmin.set(UsersUiUtils.isRootAdmin(user));
 					this.editableRole.set(user.role);
 				}
 			} else {
@@ -241,7 +239,7 @@ export class ProfileComponent implements OnInit {
 		const user = this.targetUser();
 		if (!user) return;
 
-		const tempPassword = this.generateTemporaryPassword();
+		const tempPassword = UsersUiUtils.generateTemporaryPassword();
 		try {
 			await this.userService.resetUserPassword(user.userId, tempPassword);
 			this.notificationService.showSnackbar(`Password reset. Temporary password: ${tempPassword}`, 10000);
@@ -299,44 +297,5 @@ export class ProfileComponent implements OnInit {
 			if (control.errors['passwordMismatch']) return 'Passwords do not match';
 		}
 		return null;
-	}
-
-	// ─── Utilities ──────────────────────────────────────────────────────────────
-
-	/** Returns up to two uppercase initials derived from the user's name. */
-	getInitials(): string {
-		const name = this.targetUser()?.name ?? '';
-		return name
-			.split(' ')
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((w) => w[0].toUpperCase())
-			.join('');
-	}
-
-	formatDate(timestamp: number): string {
-		return new Date(timestamp).toLocaleDateString(undefined, {
-			year: 'numeric',
-			month: 'long',
-			day: 'numeric'
-		});
-	}
-
-	getRoleLabel(role: MeetUserRole): string {
-		switch (role) {
-			case MeetUserRole.ADMIN:
-				return 'Admin';
-			case MeetUserRole.USER:
-				return 'User';
-			case MeetUserRole.ROOM_MEMBER:
-				return 'Room Member';
-			default:
-				return role;
-		}
-	}
-
-	private generateTemporaryPassword(): string {
-		const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789.+!@#$%';
-		return Array.from({ length: 12 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
 	}
 }
