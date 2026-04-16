@@ -47,7 +47,7 @@ export class MeetingComponent implements OnInit {
 		this._participantItem = value;
 	}
 	protected _participantItem?: MeetingParticipantItemComponent;
-	protected participantItemTemplate = computed(() => this._participantItem?.template);
+	protected participantItemTemplate = computed(() => this._participantItem?.template());
 
 	/** Controls whether to show lobby (true) or meeting view (false) */
 	showLobby = signal(true);
