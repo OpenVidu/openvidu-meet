@@ -1,5 +1,4 @@
-import { Component, effect, OnDestroy, output } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, OnDestroy, output } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -67,8 +66,6 @@ export class RoomBasicCreationComponent implements OnDestroy {
 	}
 
 	onOpenAdvancedMode() {
-		// TODO: The 'emit' function requires a mandatory void argument
-		// TODO: The 'emit' function requires a mandatory void argument
 		this.openAdvancedMode.emit();
 	}
 
