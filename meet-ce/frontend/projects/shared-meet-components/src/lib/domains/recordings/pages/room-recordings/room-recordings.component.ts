@@ -25,13 +25,13 @@ import { RecordingService } from '../../services/recording.service';
 export class RoomRecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
 	roomId = '';
-	roomName = '';
+	roomName = signal('');
 	canDeleteRecordings = false;
 
 	// Loading state
-	isInitializing = true;
-	showInitialLoader = false;
-	isLoading = false;
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+	isLoading = signal(false);
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
@@ -41,7 +41,7 @@ export class RoomRecordingsComponent implements OnInit {
 	});
 
 	// Pagination
-	hasMoreRecordings = false;
+	hasMoreRecordings = signal(false);
 	private nextPageToken?: string;
 
 	protected log: ILogger;
@@ -65,23 +65,23 @@ export class RoomRecordingsComponent implements OnInit {
 
 		// Load recordings
 		const delayLoader = setTimeout(() => {
-			this.showInitialLoader = true;
+			this.showInitialLoader.set(true);
 		}, 200);
 
 		await this.loadRecordings(this.initialFilters());
 
 		// Set room name based on recordings
 		if (this.recordings().length > 0) {
-			this.roomName = this.recordings()[0].roomName;
+			this.roomName.set(this.recordings()[0].roomName);
 		} else {
 			// If no recordings, fetch room name from room service
 			const { roomName } = await this.roomService.getRoom(this.roomId, { fields: ['roomName'] });
-			this.roomName = roomName;
+			this.roomName.set(roomName);
 		}
 
 		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	async goBackToRoom() {
@@ -117,7 +117,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
-			this.isLoading = true;
+			this.isLoading.set(true);
 		}, 200);
 
 		try {
@@ -148,18 +148,18 @@ export class RoomRecordingsComponent implements OnInit {
 
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRecordings = response.pagination.isTruncated;
+			this.hasMoreRecordings.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.notificationService.showSnackbar('Failed to load recordings');
 			this.log.e('Error loading recordings:', error);
 		} finally {
 			clearTimeout(delayLoader);
-			this.isLoading = false;
+			this.isLoading.set(false);
 		}
 	}
 
 	async loadMoreRecordings(filters: RecordingTableFilter) {
-		if (!this.hasMoreRecordings || this.isLoading) return;
+		if (!this.hasMoreRecordings() || this.isLoading()) return;
 		await this.loadRecordings(filters);
 	}
 

@@ -13,7 +13,7 @@
 				<h1 class="room-title">
 					Recordings for room
 					<span class="room-name">
-						{{ roomName }}
+						{{ roomName() }}
 					</span>
 				</h1>
 			</div>
@@ -21,7 +21,7 @@
 	</div>
 
 	<!-- Loading State -->
-	@if (isInitializing && showInitialLoader) {
+	@if (isInitializing() && showInitialLoader()) {
 		<div class="recordings-loading-container fade-in">
 			<div class="loading-card">
 				<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
@@ -35,19 +35,19 @@
 	}
 
 	<!-- Content -->
-	@if (!isInitializing) {
+	@if (!isInitializing()) {
 		<div class="recordings-content fade-in-delayed">
 			<div class="section-content">
 				<ov-recording-lists
 					[recordings]="recordings()"
 					[canDeleteRecordings]="canDeleteRecordings"
-					[loading]="isLoading"
+					[loading]="isLoading()"
 					[showSearchBox]="false"
 					[showFilters]="true"
 					[showSelection]="true"
 					[showRoomInfo]="false"
-					[showLoadMore]="hasMoreRecordings"
-					[roomName]="roomName"
+					[showLoadMore]="hasMoreRecordings()"
+					[roomName]="roomName()"
 					[initialFilters]="initialFilters()"
 					(recordingAction)="onRecordingAction($event)"
 					(loadMore)="loadMoreRecordings($event)"
