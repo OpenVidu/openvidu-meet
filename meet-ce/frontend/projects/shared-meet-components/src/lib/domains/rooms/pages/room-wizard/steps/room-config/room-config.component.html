@@ -11,7 +11,6 @@
 	<!-- Form Section -->
 	<main class="step-content">
 		<form [formGroup]="configForm" class="config-form">
-
 			<!-- ── Security ─────────────────────────────── -->
 			<div class="feature-category">
 				<div class="category-header">
@@ -27,8 +26,8 @@
 								<div class="feature-text">
 									<span class="feature-label">End-to-End Encryption</span>
 									<span class="feature-description">
-										Add an extra layer of security to your meetings. No one outside the
-										meeting, not even anyone with server access, can see or hear the conversation.
+										Add an extra layer of security to your meetings. No one outside the meeting, not
+										even anyone with server access, can see or hear the conversation.
 									</span>
 								</div>
 							</div>
@@ -37,7 +36,7 @@
 								(change)="onE2EEToggleChange($event)"
 								color="primary"
 								class="feature-toggle"
-							></mat-slide-toggle>
+							/>
 						</div>
 						@if (e2eeEnabled) {
 							<div class="e2ee-info-section fade-in">
@@ -47,7 +46,8 @@
 										<p class="warning-title">Restrictions</p>
 										<ul class="restrictions-list">
 											<li>
-												All participants must use the same encryption key to see and hear each other.
+												All participants must use the same encryption key to see and hear each
+												other.
 												<span class="restriction-detail">
 													Participants who enter an incorrect key will not receive an error
 													message but will be unable to see or hear others.
@@ -86,7 +86,7 @@
 							(change)="onCaptionsToggleChange($event)"
 							color="primary"
 							class="feature-toggle"
-						></mat-slide-toggle>
+						/>
 					</div>
 
 					<!-- Chat -->
@@ -105,7 +105,7 @@
 							(change)="onChatToggleChange($event)"
 							color="primary"
 							class="feature-toggle"
-						></mat-slide-toggle>
+						/>
 					</div>
 				</div>
 			</div>
@@ -133,8 +133,10 @@
 							(change)="onVirtualBackgroundToggleChange($event)"
 							color="primary"
 							class="feature-toggle"
-						></mat-slide-toggle>
+						/>
 					</div>
 				</div>
 			</div>
-
+		</form>
+	</main>
+</div>

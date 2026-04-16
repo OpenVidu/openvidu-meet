@@ -19,7 +19,7 @@
 				</div>
 
 				<div class="loading-spinner-container">
-					<mat-spinner diameter="48"></mat-spinner>
+					<mat-spinner diameter="48" />
 				</div>
 			</div>
 		</div>
@@ -133,7 +133,7 @@
 								formControlName="isEnabled"
 								[matTooltip]="!canEnableWebhooks ? 'API key is required to enable webhooks' : ''"
 								[matTooltipDisabled]="canEnableWebhooks"
-							></mat-slide-toggle>
+							/>
 						</div>
 
 						<!-- Webhook URL -->

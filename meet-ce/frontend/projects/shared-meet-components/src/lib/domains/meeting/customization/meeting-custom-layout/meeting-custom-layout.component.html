@@ -15,7 +15,7 @@
 							[titleWeight]="linkOverlayConfig.titleWeight"
 							[meetingUrl]="meetingUrl() ?? ''"
 							(copyClicked)="onCopyMeetingLinkClicked()"
-						></ov-share-meeting-link>
+						/>
 					</div>
 				}
 			</ng-container>
@@ -40,12 +40,12 @@
 			</ng-container>
 
 			<ng-template #stream let-track>
-				<ov-stream [track]="track"></ov-stream>
+				<ov-stream [track]="track" />
 			</ng-template>
 		</ov-layout>
 	</div>
 	<!-- Live Captions Component -->
 	@if (areCaptionsEnabledByUser()) {
-		<ov-meeting-captions [captions]="captions()"></ov-meeting-captions>
+		<ov-meeting-captions [captions]="captions()" />
 	}
 }

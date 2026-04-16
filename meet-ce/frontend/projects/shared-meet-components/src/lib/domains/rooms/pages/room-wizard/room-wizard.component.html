@@ -17,66 +17,65 @@
 						[allowNavigation]="true"
 						[editMode]="editMode"
 						(stepClick)="onStepClick($event)"
-					>
-					</ov-step-indicator>
+					/>
 				</aside>
 			}
 
 			<main class="wizard-content">
 				<section class="step-content ov-surface">
-				@if (isCreatingRoom()) {
-					<!-- Room Creation Loading State -->
-					<div class="room-creation-loading">
-						<div class="loading-content">
-							<div class="loading-header">
-								<div class="loading-title">
-									<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
-									<h2>{{ editMode ? 'Updating Room' : 'Creating Room' }}</h2>
+					@if (isCreatingRoom()) {
+						<!-- Room Creation Loading State -->
+						<div class="room-creation-loading">
+							<div class="loading-content">
+								<div class="loading-header">
+									<div class="loading-title">
+										<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
+										<h2>{{ editMode ? 'Updating Room' : 'Creating Room' }}</h2>
+									</div>
+									<p class="loading-subtitle">
+										{{
+											editMode
+												? 'Please wait while we update your room settings...'
+												: 'Please wait while we set up your video room...'
+										}}
+									</p>
 								</div>
-								<p class="loading-subtitle">
-									{{
-										editMode
-											? 'Please wait while we update your room settings...'
-											: 'Please wait while we set up your video room...'
-									}}
-								</p>
-							</div>
-							<div class="loading-spinner-container">
-								<mat-spinner diameter="48"></mat-spinner>
+								<div class="loading-spinner-container">
+									<mat-spinner diameter="48" />
+								</div>
 							</div>
 						</div>
-					</div>
-				} @else {
-					@if (isBasicCreation()) {
-						<!-- Basic Room Creation -->
-						<ov-room-basic-creation
-							(createRoom)="createRoomBasic($event)"
-							(openAdvancedMode)="onOpenAdvancedMode()"
-						></ov-room-basic-creation>
 					} @else {
-						<!-- Room Wizard Steps -->
-						@switch (currentStep()?.id) {
-							@case ('roomDetails') {
-								<ov-room-details></ov-room-details>
-							}
-							@case ('roomAccess') {
-								<ov-room-access></ov-room-access>
-							}
-							@case ('recording') {
-								<ov-recording-config></ov-recording-config>
-							}
-							@case ('recordingTrigger') {
-								<ov-recording-trigger></ov-recording-trigger>
-							}
-							@case ('recordingLayout') {
-								<ov-recording-layout></ov-recording-layout>
-							}
-							@case ('config') {
-								<ov-room-config></ov-room-config>
+						@if (isBasicCreation()) {
+							<!-- Basic Room Creation -->
+							<ov-room-basic-creation
+								(createRoom)="createRoomBasic($event)"
+								(openAdvancedMode)="onOpenAdvancedMode()"
+							/>
+						} @else {
+							<!-- Room Wizard Steps -->
+							@switch (currentStep()?.id) {
+								@case ('roomDetails') {
+									<ov-room-details />
+								}
+								@case ('roomAccess') {
+									<ov-room-access />
+								}
+								@case ('recording') {
+									<ov-recording-config />
+								}
+								@case ('recordingTrigger') {
+									<ov-recording-trigger />
+								}
+								@case ('recordingLayout') {
+									<ov-recording-layout />
+								}
+								@case ('config') {
+									<ov-room-config />
+								}
 							}
 						}
 					}
-				}
 				</section>
 			</main>
 		</div>
@@ -102,8 +101,7 @@
 					(cancel)="onCancel()"
 					(back)="onBack()"
 					(finish)="createRoomAdvance()"
-				>
-				</ov-wizard-nav>
+				/>
 			}
 		</footer>
 	}

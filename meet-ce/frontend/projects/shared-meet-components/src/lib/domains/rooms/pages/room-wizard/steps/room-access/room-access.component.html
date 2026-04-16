@@ -4,15 +4,12 @@
 		<mat-icon class="step-icon">lock_open</mat-icon>
 		<div class="step-title-group">
 			<h3 class="step-title">Room Access</h3>
-			<p class="step-description">
-				Define who can access this room and what permissions they have.
-			</p>
+			<p class="step-description">Define who can access this room and what permissions they have.</p>
 		</div>
 	</header>
 
 	<main class="step-content">
 		<form [formGroup]="roomAccessForm">
-
 			<!-- ── Access Settings Section ── -->
 			<section class="access-section">
 				<p class="section-label">ACCESS POLICY</p>
@@ -32,7 +29,7 @@
 						formControlName="anonymousModeratorEnabled"
 						color="primary"
 						class="access-toggle"
-					></mat-slide-toggle>
+					/>
 				</div>
 
 				<!-- Anonymous Speaker Access -->
@@ -41,16 +38,10 @@
 						<mat-icon class="access-icon">record_voice_over</mat-icon>
 						<div class="access-text">
 							<span class="access-label">Anonymous Speaker</span>
-							<span class="access-description">
-								Allow users to join as Speaker without logging in
-							</span>
+							<span class="access-description"> Allow users to join as Speaker without logging in </span>
 						</div>
 					</div>
-					<mat-slide-toggle
-						formControlName="anonymousSpeakerEnabled"
-						color="primary"
-						class="access-toggle"
-					></mat-slide-toggle>
+					<mat-slide-toggle formControlName="anonymousSpeakerEnabled" color="primary" class="access-toggle" />
 				</div>
 
 				<!-- Registered Users Access -->
@@ -59,16 +50,10 @@
 						<mat-icon class="access-icon">people</mat-icon>
 						<div class="access-text">
 							<span class="access-label">Registered Users</span>
-							<span class="access-description">
-								Allow all non-members to access the room
-							</span>
+							<span class="access-description"> Allow all non-members to access the room </span>
 						</div>
 					</div>
-					<mat-slide-toggle
-						formControlName="registeredEnabled"
-						color="primary"
-						class="access-toggle"
-					></mat-slide-toggle>
+					<mat-slide-toggle formControlName="registeredEnabled" color="primary" class="access-toggle" />
 				</div>
 			</section>
 
@@ -77,7 +62,6 @@
 				<p class="section-label">ROLE PERMISSIONS</p>
 
 				<mat-accordion class="roles-accordion" multi>
-
 					<!-- Moderator Permissions -->
 					<mat-expansion-panel class="role-expansion-panel">
 						<mat-expansion-panel-header>
@@ -114,7 +98,7 @@
 												[formControlName]="permission.key"
 												color="primary"
 												class="permission-toggle"
-											></mat-slide-toggle>
+											/>
 										</div>
 									}
 								</div>
@@ -158,29 +142,24 @@
 												[formControlName]="permission.key"
 												color="primary"
 												class="permission-toggle"
-											></mat-slide-toggle>
+											/>
 										</div>
 									}
 								</div>
 							}
 						</div>
 					</mat-expansion-panel>
-
 				</mat-accordion>
 			</section>
-
 		</form>
 
 		<!-- ── Members Section ── -->
 		<section class="members-section">
 			<p class="section-label">MEMBERS</p>
-			<p class="section-subtitle">
-				Add specific users to this room and assign them a role.
-			</p>
+			<p class="section-subtitle">Add specific users to this room and assign them a role.</p>
 
 			<!-- Add Member Form -->
 			<div class="add-member-form" [formGroup]="addMemberForm">
-
 				<!-- User ID Autocomplete -->
 				<mat-form-field subscriptSizing="dynamic" appearance="outline" class="user-field">
 					<mat-label>User ID</mat-label>
@@ -192,7 +171,7 @@
 						[matAutocomplete]="userAutocomplete"
 					/>
 					@if (isLoadingUsers()) {
-						<mat-spinner matSuffix diameter="18" class="search-spinner"></mat-spinner>
+						<mat-spinner matSuffix diameter="18" class="search-spinner" />
 					} @else {
 						<mat-icon matSuffix class="field-suffix-icon">search</mat-icon>
 					}
@@ -276,6 +255,5 @@
 				</div>
 			}
 		</section>
-
 	</main>
 </div>

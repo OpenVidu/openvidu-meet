@@ -21,7 +21,6 @@
 
 			<mat-card-content>
 				<form [formGroup]="form" class="create-form">
-
 					<!-- User ID (Autocomplete) -->
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
 						<mat-label>User ID</mat-label>
@@ -34,7 +33,7 @@
 							autofocus
 						/>
 						@if (isLoadingUsers()) {
-							<mat-spinner matSuffix diameter="18" class="search-spinner"></mat-spinner>
+							<mat-spinner matSuffix diameter="18" class="search-spinner" />
 						} @else {
 							<mat-icon matSuffix class="field-suffix-icon">search</mat-icon>
 						}
@@ -132,8 +131,7 @@
 														[formControlName]="permission.key"
 														color="primary"
 														class="permission-toggle"
-													>
-													</mat-slide-toggle>
+													/>
 												</div>
 											}
 										</div>
@@ -160,7 +158,7 @@
 					(click)="onSubmit()"
 				>
 					@if (isSaving()) {
-						<mat-spinner diameter="18"></mat-spinner>
+						<mat-spinner diameter="18" />
 					} @else {
 						<mat-icon>person_add</mat-icon>
 					}

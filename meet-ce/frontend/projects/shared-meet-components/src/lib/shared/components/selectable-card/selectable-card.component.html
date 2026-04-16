@@ -13,7 +13,7 @@
 >
 	<!-- Pro Badge -->
 	@if (option().isPro && showProBadge()) {
-		<ov-pro-feature-badge [badgeText]="proBadgeText()" [badgeIcon]="proBadgeIcon()"></ov-pro-feature-badge>
+		<ov-pro-feature-badge [badgeText]="proBadgeText()" [badgeIcon]="proBadgeIcon()" />
 	} @else if (showSelectionIndicator()) {
 		<!-- Selection Indicator -->
 		<div class="selection-indicator">

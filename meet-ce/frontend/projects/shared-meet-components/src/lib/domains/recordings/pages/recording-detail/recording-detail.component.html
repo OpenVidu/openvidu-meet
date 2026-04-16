@@ -10,7 +10,7 @@
 				<p class="loading-subtitle">Please wait while we fetch the recording information...</p>
 			</div>
 			<div class="loading-spinner-container">
-				<mat-spinner diameter="48"></mat-spinner>
+				<mat-spinner diameter="48" />
 			</div>
 		</div>
 	</div>
@@ -41,7 +41,7 @@
 		<!-- ── Header ───────────────────────────────────────────────── -->
 		<div class="page-header">
 			<div class="header-top">
-				<ov-breadcrumb [items]="breadcrumbItems()"></ov-breadcrumb>
+				<ov-breadcrumb [items]="breadcrumbItems()" />
 			</div>
 
 			<div class="header-content">
@@ -219,7 +219,7 @@
 
 					<!-- Error / details block -->
 					@if (recording()?.error || recording()?.details) {
-						<mat-divider class="divider"></mat-divider>
+						<mat-divider class="divider" />
 						<div class="error-block">
 							@if (recording()?.error) {
 								<div class="error-row">

@@ -28,7 +28,7 @@
 				<h2 class="loading-title">Loading Recordings</h2>
 				<p class="loading-subtitle">Please wait while we fetch your recordings...</p>
 				<div class="loading-spinner-container">
-					<mat-spinner diameter="48"></mat-spinner>
+					<mat-spinner diameter="48" />
 				</div>
 			</div>
 		</div>
@@ -54,8 +54,7 @@
 					(refresh)="refreshRecordings($event)"
 					(filterChange)="refreshRecordings($event)"
 					class="recordings-list"
-				>
-				</ov-recording-lists>
+				/>
 			</div>
 		</div>
 	}

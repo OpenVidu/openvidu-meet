@@ -11,7 +11,7 @@
 			</div>
 
 			<div class="loading-spinner-container">
-				<mat-spinner diameter="48"></mat-spinner>
+				<mat-spinner diameter="48" />
 			</div>
 		</div>
 	</div>
@@ -23,7 +23,7 @@
 		<div class="page-header">
 			<div class="header-top">
 				<!-- Breadcrumb -->
-				<ov-breadcrumb [items]="breadcrumbItems()"></ov-breadcrumb>
+				<ov-breadcrumb [items]="breadcrumbItems()" />
 			</div>
 
 			<div class="header-content">
@@ -149,7 +149,7 @@
 								(refresh)="refreshRoomMembers($event)"
 								(filterChange)="refreshRoomMembers($event)"
 								(addMember)="onAddMember()"
-							></ov-room-members-list>
+							/>
 						</div>
 					</mat-tab>
 
@@ -171,8 +171,7 @@
 								(recordingAction)="onRecordingAction($event)"
 								(loadMore)="loadMoreRecordings($event)"
 								(refresh)="refreshRecordings($event)"
-							>
-							</ov-recording-lists>
+							/>
 						</div>
 					</mat-tab>
 				</mat-tab-group>

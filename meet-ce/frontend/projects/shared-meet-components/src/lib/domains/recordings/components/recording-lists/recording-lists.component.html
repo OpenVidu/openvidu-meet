@@ -130,7 +130,7 @@
 	<!-- Loading Spinner -->
 	@if (loading()) {
 		<div class="loading-container">
-			<mat-spinner diameter="40"></mat-spinner>
+			<mat-spinner diameter="40" />
 			<span>Loading recordings...</span>
 		</div>
 	} @else if (recordings().length === 0 && showEmptyFilterMessage) {
@@ -163,8 +163,7 @@
 										[disabled]="loading"
 										class="card-checkbox"
 										[attr.aria-label]="'Select recording ' + recording.recordingId"
-									>
-									</mat-checkbox>
+									/>
 								}
 
 								@if (showRoomInfo()) {
@@ -300,7 +299,7 @@
 										<span>Share link</span>
 									</button>
 									@if (canDeleteRecording(recording)) {
-										<mat-divider></mat-divider>
+										<mat-divider />
 										<button
 											mat-menu-item
 											(click)="deleteRecording(recording)"
@@ -341,8 +340,7 @@
 									(click)="$event.stopPropagation()"
 									[disabled]="loading()"
 									[attr.aria-label]="allSelected() ? 'Deselect all' : 'Select all'"
-								>
-								</mat-checkbox>
+								/>
 							</th>
 							<td mat-cell *matCellDef="let recording" class="select-cell">
 								@if (canSelectRecording(recording)) {
@@ -352,8 +350,7 @@
 										(click)="$event.stopPropagation()"
 										[disabled]="loading()"
 										[attr.aria-label]="'Select recording ' + recording.recordingId"
-									>
-									</mat-checkbox>
+									/>
 								}
 							</td>
 						</ng-container>
@@ -492,7 +489,7 @@
 										</button>
 
 										@if (canDeleteRecording(recording)) {
-											<mat-divider></mat-divider>
+											<mat-divider />
 											<button
 												mat-menu-item
 												(click)="$event.stopPropagation(); deleteRecording(recording)"

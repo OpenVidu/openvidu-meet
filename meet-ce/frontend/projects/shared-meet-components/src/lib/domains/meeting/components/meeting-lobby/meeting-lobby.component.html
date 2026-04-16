@@ -30,9 +30,9 @@
 					</div>
 				</mat-card-header>
 
-			<mat-card-content class="card-content">
-				@if (!roomClosed()) {
-					<form [formGroup]="participantForm()" (ngSubmit)="onFormSubmit()" class="join-form">
+				<mat-card-content class="card-content">
+					@if (!roomClosed()) {
+						<form [formGroup]="participantForm()" (ngSubmit)="onFormSubmit()" class="join-form">
 							<!-- Participant Name Input -->
 							<mat-form-field appearance="outline" class="name-field">
 								<mat-label>Your display name</mat-label>
@@ -61,10 +61,10 @@
 										formControlName="e2eeKey"
 										required
 									/>
-								<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
-								@if (participantForm().get('e2eeKey')?.hasError('required')) {
-									<mat-error> The encryption key is <strong>required</strong> </mat-error>
-								}
+									<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
+									@if (participantForm().get('e2eeKey')?.hasError('required')) {
+										<mat-error> The encryption key is <strong>required</strong> </mat-error>
+									}
 									<mat-hint>This room requires an encryption key to join</mat-hint>
 								</mat-form-field>
 							}
@@ -127,7 +127,7 @@
 
 		<!-- Room URL Badge -->
 		@if (!roomClosed() && showShareLink()) {
-			<ov-share-meeting-link [meetingUrl]="meetingUrl()" (copyClicked)="onCopyLinkClick()"></ov-share-meeting-link>
+			<ov-share-meeting-link [meetingUrl]="meetingUrl()" (copyClicked)="onCopyLinkClick()" />
 		}
 
 		<!-- Quick Actions -->

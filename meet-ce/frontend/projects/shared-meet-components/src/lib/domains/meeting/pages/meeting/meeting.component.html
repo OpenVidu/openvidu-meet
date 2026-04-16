@@ -1,7 +1,7 @@
 @if (showLobby()) {
 	<!-- Lobby phase (before joining meeting) -->
 	@if (lobbyState() === 'ready') {
-		<ov-meeting-lobby></ov-meeting-lobby>
+		<ov-meeting-lobby />
 	} @else if (lobbyState() === 'error') {
 		<div class="prejoin-loading-container">
 			<mat-icon>error</mat-icon>
@@ -9,7 +9,7 @@
 		</div>
 	} @else {
 		<div class="prejoin-loading-container">
-			<mat-spinner diameter="30"></mat-spinner>
+			<mat-spinner diameter="30" />
 			<p class="prejoin-loading-text">Preparing your meeting...</p>
 		</div>
 	}
@@ -61,22 +61,22 @@
 	>
 		<!-- Toolbar Leave Button (for moderators) -->
 		<ng-container *ovToolbarLeaveButton>
-			<ng-content select="ov-meeting-toolbar-leave-button"></ng-content>
+			<ng-content select="ov-meeting-toolbar-leave-button" />
 		</ng-container>
 
 		<!-- Toolbar Additional Buttons -->
 		<div *ovToolbarAdditionalButtons>
-			<ng-content select="ov-meeting-toolbar-extra-buttons"></ng-content>
+			<ng-content select="ov-meeting-toolbar-extra-buttons" />
 		</div>
 
 		<!-- Toolbar More Options Additional Items -->
 		<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
-			<ng-content select="ov-meeting-toolbar-more-options-menu"></ng-content>
+			<ng-content select="ov-meeting-toolbar-more-options-menu" />
 		</ng-container>
 
 		<!-- Share Link Panel After Local Participant -->
 		<div *ovParticipantPanelAfterLocalParticipant>
-			<ng-content select="ov-meeting-invite-panel"></ng-content>
+			<ng-content select="ov-meeting-invite-panel" />
 		</div>
 
 		<!-- Participant Panel Item Template -->
@@ -84,17 +84,16 @@
 			<ng-container
 				[ngTemplateOutlet]="participantItemTemplate()"
 				[ngTemplateOutletContext]="{ participant: participant }"
-			>
-			</ng-container>
+			/>
 		</div>
 
 		<ng-container *ovSettingsPanelGeneralAdditionalElements>
-			<ng-content select="ov-meeting-settings-extensions"></ng-content>
+			<ng-content select="ov-meeting-settings-extensions" />
 		</ng-container>
 
 		<!-- Custom layout component -->
 		<ng-container *ovLayout>
-			<ng-content select="ov-meeting-custom-layout"></ng-content>
+			<ng-content select="ov-meeting-custom-layout" />
 		</ng-container>
 	</ov-videoconference>
 }

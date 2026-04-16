@@ -10,7 +10,7 @@
 				<p class="loading-subtitle">Please wait while we fetch registered users...</p>
 			</div>
 			<div class="loading-spinner-container">
-				<mat-spinner diameter="48"></mat-spinner>
+				<mat-spinner diameter="48" />
 			</div>
 		</div>
 	</div>
@@ -43,7 +43,7 @@
 				(loadMore)="loadMoreUsers($event)"
 				(refresh)="refreshUsers($event)"
 				(filterChange)="refreshUsers($event)"
-			></ov-users-lists>
+			/>
 		</div>
 	</div>
 }
