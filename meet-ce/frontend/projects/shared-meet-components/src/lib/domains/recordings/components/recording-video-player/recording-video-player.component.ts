@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, inject, input, output, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -18,58 +18,58 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 	/**
 	 * URL of the recording video to play
 	 */
-	@Input() recordingUrl?: string;
+	recordingUrl = input<string | undefined>(undefined);
 
 	/**
 	 * Recording status (to show appropriate messages)
 	 */
-	@Input() recordingStatus: MeetRecordingStatus = MeetRecordingStatus.COMPLETE;
+	recordingStatus = input<MeetRecordingStatus>(MeetRecordingStatus.COMPLETE);
 
 	/**
 	 * Whether to show download button
 	 */
-	@Input() showDownload = true;
+	showDownload = input(true);
 
 	/**
 	 * Whether to show share button
 	 */
-	@Input() showShare = true;
+	showShare = input(true);
 
 	/**
 	 * Emitted when video successfully loads
 	 */
-	@Output() videoLoaded = new EventEmitter<void>();
+	videoLoaded = output<void>();
 
 	/**
 	 * Emitted when video fails to load
 	 */
-	@Output() videoError = new EventEmitter<void>();
+	videoError = output<void>();
 
 	/**
 	 * Emitted when download button is clicked
 	 */
-	@Output() download = new EventEmitter<void>();
+	download = output<void>();
 
 	/**
 	 * Emitted when share button is clicked
 	 */
-	@Output() share = new EventEmitter<void>();
+	share = output<void>();
 
 	/**
 	 * Emitted when retry button is clicked
 	 */
-	@Output() retry = new EventEmitter<void>();
+	retry = output<void>();
 
 	// Internal state
 	hasVideoError = false;
 	isVideoLoaded = false;
 	showMobileControls = true;
 
-	@ViewChild('videoPlayer', { static: false }) videoPlayer?: ElementRef<HTMLVideoElement>;
+	videoPlayer = viewChild<ElementRef<HTMLVideoElement>>('videoPlayer');
 
 	private controlsTimeout?: number;
 
-	constructor(public viewportService: ViewportService) {}
+	viewportService = inject(ViewportService);
 
 	async onVideoLoaded() {
 		this.isVideoLoaded = true;
@@ -82,14 +82,15 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 		}
 
 		// try play unmuted and if it fails, mute and play again
-		if (this.videoPlayer && this.videoPlayer.nativeElement) {
+		const videoElement = this.videoPlayer()?.nativeElement;
+		if (videoElement) {
 			try {
-				await this.videoPlayer.nativeElement.play();
+				await videoElement.play();
 				// Autoplay started successfully without muting
 			} catch (error) {
 				// Autoplay was prevented, mute and try again
-				this.videoPlayer!.nativeElement.muted = true;
-				this.videoPlayer!.nativeElement.play().catch((err) => {
+				videoElement.muted = true;
+				videoElement.play().catch((err) => {
 					console.error('Error playing video after muting:', err);
 				});
 			}
@@ -118,16 +119,16 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 	}
 
 	getStatusIcon(): string {
-		return RecordingUiUtils.getPlayerStatusIcon(this.recordingStatus);
+		return RecordingUiUtils.getPlayerStatusIcon(this.recordingStatus());
 	}
 
 	getStatusMessage(): string {
-		return RecordingUiUtils.getPlayerStatusMessage(this.recordingStatus);
+		return RecordingUiUtils.getPlayerStatusMessage(this.recordingStatus());
 	}
 
 	isRecordingInProgress(): boolean {
 		return [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING].includes(
-			this.recordingStatus
+			this.recordingStatus()
 		);
 	}
 

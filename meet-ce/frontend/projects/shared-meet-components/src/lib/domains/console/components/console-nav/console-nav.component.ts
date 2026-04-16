@@ -1,6 +1,4 @@
-import { NgClass } from '@angular/common';
-import { Component, EventEmitter, Input, Output, Signal, ViewChild } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Signal, inject, input, output, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -15,7 +13,6 @@ import { ThemeService } from '../../../../shared/services/theme.service';
 @Component({
 	selector: 'ov-console-nav',
 	imports: [
-		NgClass,
 		MatToolbarModule,
 		MatListModule,
 		MatButtonModule,
@@ -29,32 +26,31 @@ import { ThemeService } from '../../../../shared/services/theme.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConsoleNavComponent {
-	@ViewChild(MatSidenav) sidenav!: MatSidenav;
+	private appCtxService = inject(AppContextService);
+	private themeService = inject(ThemeService);
+
+	readonly sidenav = viewChild.required(MatSidenav);
 	isMobile = false;
 	isTablet = false;
 	isSideMenuCollapsed = false;
-	version = '';
+	readonly version = `v${this.appCtxService.version()} (${this.appCtxService.edition()})`;
 
-	isDarkMode: Signal<boolean>;
+	readonly isDarkMode: Signal<boolean>;
 
-	@Input() navLinks: ConsoleNavLink[] = [];
-	@Output() onLogoutClicked: EventEmitter<void> = new EventEmitter<void>();
+	navLinks = input<ConsoleNavLink[]>([]);
+	onLogoutClicked = output<void>();
 
-	constructor(
-		private appCtxService: AppContextService,
-		private themeService: ThemeService
-	) {
-		this.version = `v${this.appCtxService.version()} (${this.appCtxService.edition()})`;
+	constructor() {
 		this.isDarkMode = this.themeService.isDark;
 	}
 
 	async toggleSideMenu() {
 		if (this.isMobile) {
 			this.isSideMenuCollapsed = false;
-			await this.sidenav.toggle();
+			await this.sidenav().toggle();
 		} else {
 			this.isSideMenuCollapsed = !this.isSideMenuCollapsed;
-			await this.sidenav.open();
+			await this.sidenav().open();
 		}
 	}
 

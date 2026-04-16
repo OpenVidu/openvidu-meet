@@ -1,5 +1,4 @@
-import { Component, Input } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 @Component({
@@ -10,6 +9,6 @@ import { MatIconModule } from '@angular/material/icon';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProFeatureBadgeComponent {
-	@Input() badgeIcon: string = 'crown'; // Default icon
-	@Input() badgeText: string = 'Pro Feature'; // Default text
+    badgeIcon = input<string>('crown'); // Default icon
+    badgeText = input<string>('Pro Feature'); // Default text
 }
