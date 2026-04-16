@@ -1,0 +1,216 @@
+:host {
+	#toolbar {
+		height: 100%;
+		background-color: transparent;
+		color: var(--ov-text-primary-color);
+
+		.mat-mdc-icon-button {
+			--mat-mdc-button-persistent-ripple-color: transparent !important;
+			--mat-mdc-button-ripple-color: transparent !important;
+		}
+	}
+
+	.toolbar-container {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 40px;
+	}
+
+	.info-container {
+		flex: 20%;
+		display: flex;
+		justify-content: flex-start;
+		align-items: center;
+	}
+
+	.media-buttons-container {
+		flex: 60%;
+		order: 2;
+		display: flex;
+		justify-content: center;
+		align-items: center;
+
+		// ov-toolbar-media-buttons {
+		// 	display: flex;
+		// 	justify-content: center;
+		// 	align-items: center;
+		// 	flex: 1;
+		// }
+	}
+	.menu-buttons-container {
+		flex: 20%;
+		order: 3;
+		display: flex;
+		justify-content: flex-end;
+		align-items: center;
+
+		ov-toolbar-panel-buttons {
+			display: contents;
+		}
+	}
+	::ng-deep .menu-buttons-container:has(.collapsed-menu-container) {
+		flex: 0;
+	}
+
+	#info-container > div {
+		display: flex;
+		align-items: center;
+	}
+	#media-buttons-container {
+		max-height: 100% !important;
+	}
+
+	#branding-logo {
+		background-color: var(--ov-secondary-action-color);
+		border-radius: var(--ov-surface-radius);
+		max-width: 35px;
+		max-height: 35px;
+		padding: 10px;
+	}
+
+	#session-name {
+		font-family: 'Ubuntu', sans-serif;
+		font-weight: bold;
+		font-size: 15px;
+		height: fit-content;
+		padding: 0px 5px;
+		color: var(--ov-text-primary-color);
+	}
+	#session-info-container {
+		display: flex;
+	}
+
+	.collapsed {
+		flex-direction: column;
+	}
+
+	#activities-tag {
+		display: inline-flex;
+	}
+
+	#activities-tag > div {
+		margin-left: 5px;
+	}
+	.recording-tag,
+	.broadcasting-tag {
+		padding: 0 10px;
+		border-radius: var(--ov-surface-radius);
+		width: fit-content;
+		font-size: 12px;
+		text-align: center;
+		line-height: 20px;
+		margin: auto;
+		cursor: pointer;
+		color: #ffffff;
+	}
+
+	.recording-tag {
+		background-color: var(--ov-error-color);
+	}
+	.broadcasting-tag {
+		background-color: var(--ov-broadcasting-color, #5903ca);
+	}
+
+	.recording-tag mat-icon,
+	.broadcasting-tag mat-icon {
+		font-size: 16px;
+		display: inline;
+		vertical-align: sub;
+		margin-right: 5px;
+	}
+
+	.blink {
+		animation: blinker 1.5s linear infinite;
+	}
+
+	::ng-deep .mat-badge-content {
+		background-color: var(--ov-warn-color);
+	}
+
+	/* Styles for XS screens */
+	@media (max-width: 599px) {
+		/* Hide info-container */
+		.info-container {
+			display: none;
+		}
+
+		/* Animation for recording blinking */
+		@keyframes blinker-recording {
+			50% {
+				background-color: var(--ov-recording-color, var(--ov-error-color));
+			}
+		}
+
+		/* Animation for broadcasting blinking */
+		@keyframes blinker-broadcasting {
+			50% {
+				background-color: var(--ov-broadcasting-color, #5903ca);
+			}
+		}
+
+		/* Apply blinking animations to buttons */
+		.blinking-broadcasting-button {
+			animation: blinker-broadcasting 1.5s linear infinite;
+		}
+		.blinking-recording-button {
+			animation: blinker-recording 1.5s linear infinite;
+		}
+	}
+
+	/* Styles for screens <= 750px */
+	@media (max-width: 750px) {
+		/* Hide elements on smaller screens */
+		#session-name {
+			display: none;
+		}
+
+		/* Display tags in a grid */
+		#activities-tag {
+			display: grid;
+			gap: 5px;
+		}
+	}
+
+	/* Styles for screens <= 850px */
+	@media (max-width: 850px) {
+		/* Hide logo on smaller screens */
+		#branding-logo {
+			display: none;
+		}
+
+		/* Display session info container inline */
+		#session-info-container {
+			display: inline-flex;
+		}
+	}
+
+	/* Styles for screens <= 550px */
+	@media (max-width: 550px) {
+		/* Toolbar design adjustments */
+	}
+}
+
+::ng-deep .mat-mdc-menu-item {
+	color: var(--ov-text-surface-color) !important;
+}
+::ng-deep .mat-mdc-menu-item mat-icon {
+	color: var(--ov-text-surface-color) !important;
+}
+::ng-deep #toolbar-broadcasting-btn > .mat-icon {
+	color: var(--ov-broadcasting-color, #5903ca) !important;
+}
+::ng-deep #recording-btn > .mat-icon {
+	color: var(--ov-recording-color, var(--ov-error-color)) !important;
+}
+
+::ng-deep .mat-mdc-menu-panel {
+	border-radius: var(--ov-surface-radius) !important;
+	background-color: var(--ov-surface-color) !important;
+	border: 1px solid var(--ov-secondary-action-color) !important;
+
+	.mat-divider {
+		color: var(--ov-secondary-action-color) !important;
+		border-top-color: var(--ov-secondary-action-color) !important;
+	}
+}

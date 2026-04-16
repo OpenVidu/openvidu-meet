@@ -1,13 +1,13 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo, SortOrder } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { MeetingContextService } from '../../../meeting/services';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RoomService } from '../../../rooms/services/room.service';
@@ -19,7 +19,8 @@ import { RecordingService } from '../../services/recording.service';
 	selector: 'ov-room-recordings',
 	templateUrl: './room-recordings.component.html',
 	styleUrls: ['./room-recordings.component.scss'],
-	imports: [MatToolbarModule, MatButtonModule, RecordingListsComponent, MatIconModule, MatProgressSpinnerModule]
+	imports: [MatToolbarModule, MatButtonModule, RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomRecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);

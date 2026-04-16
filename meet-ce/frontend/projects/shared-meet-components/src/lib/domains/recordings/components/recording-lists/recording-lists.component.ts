@@ -1,5 +1,5 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { Component, computed, effect, EventEmitter, input, OnInit, Output, signal, untracked } from '@angular/core';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, effect, input, OnInit, output, signal, untracked } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -16,8 +16,8 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingInfo, MeetRecordingSortField, MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
-import { ViewportService } from 'openvidu-components-angular';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
+import { ViewportService } from '../../../meeting/openvidu-components';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingUiUtils } from '../../utils/ui';
 
@@ -47,7 +47,6 @@ import { RecordingUiUtils } from '../../utils/ui';
 @Component({
 	selector: 'ov-recording-lists',
 	imports: [
-		CommonModule,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,
@@ -66,7 +65,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 		DatePipe
 	],
 	templateUrl: './recording-lists.component.html',
-	styleUrl: './recording-lists.component.scss'
+	styleUrl: './recording-lists.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingListsComponent implements OnInit {
 	recordings = input<MeetRecordingInfo[]>([]);
@@ -86,11 +86,11 @@ export class RecordingListsComponent implements OnInit {
 	});
 
 	// Output events
-	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
-	@Output() recordingClicked = new EventEmitter<string>();
-	@Output() filterChange = new EventEmitter<RecordingTableFilter>();
-	@Output() loadMore = new EventEmitter<RecordingTableFilter>();
-	@Output() refresh = new EventEmitter<RecordingTableFilter>();
+	recordingAction = output<RecordingTableAction>();
+	recordingClicked = output<string>();
+	filterChange = output<RecordingTableFilter>();
+	loadMore = output<RecordingTableFilter>();
+	refresh = output<RecordingTableFilter>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');

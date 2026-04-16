@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,7 +17,6 @@ import { MeetingLayoutService } from '../../services/meeting-layout.service';
 @Component({
 	selector: 'ov-meeting-settings-extensions',
 	imports: [
-		CommonModule,
 		MatIconModule,
 		MatListModule,
 		MatRadioModule,
@@ -27,7 +26,8 @@ import { MeetingLayoutService } from '../../services/meeting-layout.service';
 		FormsModule
 	],
 	templateUrl: './meeting-settings-extensions.component.html',
-	styleUrl: './meeting-settings-extensions.component.scss'
+	styleUrl: './meeting-settings-extensions.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingSettingsExtensionsComponent {
 	protected readonly meetingContextService = inject(MeetingContextService);

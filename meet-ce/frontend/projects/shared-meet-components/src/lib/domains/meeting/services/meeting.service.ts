@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
-import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
+import { LoggerService } from '../openvidu-components';
 
 @Injectable({
 	providedIn: 'root'

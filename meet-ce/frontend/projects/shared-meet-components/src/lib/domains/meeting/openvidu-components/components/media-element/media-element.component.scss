@@ -1,0 +1,13 @@
+video {
+	-o-object-fit: cover;
+	object-fit: cover;
+	width: 100%;
+	height: 100%;
+	color: var(--ov-text-primary-color);
+	margin: 0;
+	padding: 0;
+	border: 0;
+	font-size: 100%;
+	border-radius: var(--ov-video-radius);
+	background-color: var(--ov-video-background, var(--ov-primary-action-color));
+}

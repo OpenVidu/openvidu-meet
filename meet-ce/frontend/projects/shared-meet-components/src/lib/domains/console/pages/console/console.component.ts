@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ConsoleNavComponent } from '../../components/console-nav/console-nav.component';
@@ -8,12 +8,14 @@ import { consoleChildRoutes } from '../../routes/console.routes';
 	selector: 'ov-console',
 	imports: [ConsoleNavComponent],
 	templateUrl: './console.component.html',
-	styleUrl: './console.component.scss'
+	styleUrl: './console.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConsoleComponent {
 	navLinks: ConsoleNavLink[];
+	private authService = inject(AuthService);
 
-	constructor(private authService: AuthService) {
+	constructor() {
 		// Build navigation links from console child route configurations
 		this.navLinks = consoleChildRoutes
 			.filter((config) => config.navMetadata) // Only include routes with navigation metadata

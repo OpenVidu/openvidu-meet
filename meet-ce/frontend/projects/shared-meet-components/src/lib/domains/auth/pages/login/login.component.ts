@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -25,7 +25,8 @@ import { AuthService } from '../../services/auth.service';
 		RouterModule
 	],
 	templateUrl: './login.component.html',
-	styleUrl: './login.component.scss'
+	styleUrl: './login.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginComponent implements OnInit {
 	loginForm = new FormGroup({
@@ -37,12 +38,9 @@ export class LoginComponent implements OnInit {
 	loginErrorMessage: string | undefined;
 
 	redirectTo = ''; // By default, redirect to home page
-
-	constructor(
-		private navigationService: NavigationService,
-		private route: ActivatedRoute,
-		private authService: AuthService
-	) {}
+	private navigationService = inject(NavigationService);
+	private route = inject(ActivatedRoute);
+	private authService = inject(AuthService);
 
 	ngOnInit() {
 		this.route.queryParams.subscribe((params) => {

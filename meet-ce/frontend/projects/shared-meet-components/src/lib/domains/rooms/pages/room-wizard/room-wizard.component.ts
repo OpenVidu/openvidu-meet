@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, Signal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, Signal, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -39,7 +39,8 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 		RoomConfigComponent
 	],
 	templateUrl: './room-wizard.component.html',
-	styleUrl: './room-wizard.component.scss'
+	styleUrl: './room-wizard.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomWizardComponent implements OnInit {
 	editMode: boolean = false;
@@ -52,14 +53,13 @@ export class RoomWizardComponent implements OnInit {
 	currentStep: Signal<WizardStep | undefined>;
 	currentStepIndex: Signal<number>;
 	navigationConfig: Signal<WizardNavigationConfig>;
+	private wizardService = inject(RoomWizardStateService);
+	protected roomService = inject(RoomService);
+	protected notificationService = inject(NotificationService);
+	private navigationService = inject(NavigationService);
+	private route = inject(ActivatedRoute);
 
-	constructor(
-		private wizardService: RoomWizardStateService,
-		protected roomService: RoomService,
-		protected notificationService: NotificationService,
-		private navigationService: NavigationService,
-		private route: ActivatedRoute
-	) {
+	constructor() {
 		this.steps = this.wizardService.steps;
 		this.currentStep = this.wizardService.currentStep;
 		this.currentStepIndex = this.wizardService.currentStepIndex;

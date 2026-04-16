@@ -1,6 +1,7 @@
 import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import {
 	AbstractControl,
 	FormControl,
@@ -43,7 +44,8 @@ import { UsersUiUtils } from '../../utils/ui';
 		ReactiveFormsModule
 	],
 	templateUrl: './profile.component.html',
-	styleUrl: './profile.component.scss'
+	styleUrl: './profile.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProfileComponent implements OnInit {
 	isLoading = signal(true);

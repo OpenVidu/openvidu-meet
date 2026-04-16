@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -16,24 +16,24 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import {
-	MeetRoom,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomDeletionSuccessCode,
-	MeetRoomFilters,
-	MeetRoomStatus,
-	SortOrder
+    MeetRoom,
+    MeetRoomDeletionPolicyWithMeeting,
+    MeetRoomDeletionPolicyWithRecordings,
+    MeetRoomDeletionSuccessCode,
+    MeetRoomFilters,
+    MeetRoomStatus,
+    SortOrder
 } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import {
-	RoomsListsComponent,
-	RoomTableAction,
-	RoomTableFilter
+    RoomsListsComponent,
+    RoomTableAction,
+    RoomTableFilter
 } from '../../components/rooms-lists/rooms-lists.component';
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
@@ -58,15 +58,16 @@ import { RoomService } from '../../services/room.service';
 		RoomsListsComponent
 	],
 	templateUrl: './rooms.component.html',
-	styleUrl: './rooms.component.scss'
+	styleUrl: './rooms.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomsComponent implements OnInit {
 	rooms = signal<MeetRoom[]>([]);
 
 	// Loading state
-	isInitializing = true;
-	showInitialLoader = false;
-	isLoading = false;
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+	isLoading = signal(false);
 
 	initialFilters = signal<RoomTableFilter>({
 		nameFilter: '',
@@ -76,33 +77,32 @@ export class RoomsComponent implements OnInit {
 	});
 
 	// Pagination
-	hasMoreRooms = false;
+	hasMoreRooms = signal(false);
 	private nextPageToken?: string;
 
 	protected log: ILogger;
+	protected loggerService = inject(LoggerService);
+	private roomService = inject(RoomService);
+	private notificationService = inject(NotificationService);
+	protected navigationService = inject(NavigationService);
+	protected roomDeletionService = inject(RoomDeletionService);
+	private clipboard = inject(Clipboard);
+	private dialog = inject(MatDialog);
 
-	constructor(
-		protected loggerService: LoggerService,
-		private roomService: RoomService,
-		private roomDeletionService: RoomDeletionService,
-		private notificationService: NotificationService,
-		protected navigationService: NavigationService,
-		private clipboard: Clipboard,
-		private dialog: MatDialog
-	) {
+	constructor() {
 		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
 	}
 
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
-			this.showInitialLoader = true;
+			this.showInitialLoader.set(true);
 		}, 200);
 
 		await this.loadRooms(this.initialFilters());
 
 		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	async onRoomAction(action: RoomTableAction) {
@@ -142,7 +142,7 @@ export class RoomsComponent implements OnInit {
 
 	private async loadRooms(filters: RoomTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
-			this.isLoading = true;
+			this.isLoading.set(true);
 		}, 200);
 
 		try {
@@ -177,18 +177,18 @@ export class RoomsComponent implements OnInit {
 
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRooms = response.pagination.isTruncated;
+			this.hasMoreRooms.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.notificationService.showSnackbar('Error loading rooms');
 			this.log.e('Error loading rooms:', error);
 		} finally {
 			clearTimeout(delayLoader);
-			this.isLoading = false;
+			this.isLoading.set(false);
 		}
 	}
 
 	async loadMoreRooms(filters: RoomTableFilter) {
-		if (!this.hasMoreRooms || this.isLoading) return;
+		if (!this.hasMoreRooms() || this.isLoading()) return;
 		await this.loadRooms(filters);
 	}
 

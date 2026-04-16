@@ -26,16 +26,9 @@
 - Use `meet.sh` or `pnpm --filter` commands instead of ad-hoc `cd` workflows for routine tasks.
 - Backend DI registration order is intentional; keep dependency bind order coherent when adding services (`meet-ce/backend/src/config/dependency-injector.config.ts`).
 - Treat `meet-ce/typings` as the source of shared API/domain contracts; update typings first when frontend/backend payloads change.
-- For CI/Docker dependency switching of `openvidu-components-angular`, use only:
-	- `./meet.sh prepare-ci-build --components-angular-version <version>` or
-	- `./meet.sh prepare-ci-build --components-angular-tarball <path>`
-	- `./meet.sh restore-dev-config` after build/test.
-- Do not manually rewrite workspace dependencies (`workspace:*`) or `pnpm-workspace.yaml`; use scripts above.
 
 ## Integration Points
-- External sibling repo dependency is `../openvidu/openvidu-components-angular/projects/openvidu-components-angular` (declared in `pnpm-workspace.yaml`).
-- Development workspace uses `pnpm-workspace.yaml`; CI/Docker mode is switched via `pnpm-workspace.docker.yaml` through `prepare-ci-build`.
-- Frontend integration relies on `@openvidu-meet/shared-components` and `openvidu-components-angular` via workspace links.
+- Development and Docker builds use the same `pnpm-workspace.yaml` and `.npmrc` configuration.
 - Backend integrations include LiveKit and optional blob providers (S3/ABS/GCS) configured through storage factory and environment (`meet-ce/backend/src/config/dependency-injector.config.ts`).
 - Local backend development env is `meet-ce/backend/.env.development` (LiveKit URL/API key/secret expected).
 

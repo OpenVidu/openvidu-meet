@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,7 +14,8 @@ import { MeetingWebComponentManagerService } from '../../services/meeting-webcom
 	selector: 'ov-end-meeting',
 	imports: [MatCardModule, MatButtonModule, MatIconModule],
 	templateUrl: './end-meeting.component.html',
-	styleUrl: './end-meeting.component.scss'
+	styleUrl: './end-meeting.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndMeetingComponent implements OnInit {
 	disconnectedTitle = 'You Left the Meeting';

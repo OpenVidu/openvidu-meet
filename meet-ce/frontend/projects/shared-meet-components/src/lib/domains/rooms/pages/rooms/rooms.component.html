@@ -1,5 +1,5 @@
 <!-- Loading State -->
-@if (isInitializing && showInitialLoader) {
+@if (isInitializing() && showInitialLoader()) {
 	<div class="ov-page-loading">
 		<div class="loading-content">
 			<div class="loading-header">
@@ -17,7 +17,7 @@
 	</div>
 }
 
-@if (!isInitializing) {
+@if (!isInitializing()) {
 	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container">
 		<!-- Rooms Header -->
 		<div class="page-header" id="rooms-page-header">
@@ -35,11 +35,11 @@
 			<ov-rooms-lists
 				id="rooms-list"
 				[rooms]="rooms()"
-				[loading]="isLoading"
+				[loading]="isLoading()"
 				[showSearchBox]="true"
 				[showFilters]="true"
 				[showSelection]="true"
-				[showLoadMore]="hasMoreRooms"
+				[showLoadMore]="hasMoreRooms()"
 				[initialFilters]="initialFilters()"
 				(roomAction)="onRoomAction($event)"
 				(roomClicked)="onRoomClick($event)"

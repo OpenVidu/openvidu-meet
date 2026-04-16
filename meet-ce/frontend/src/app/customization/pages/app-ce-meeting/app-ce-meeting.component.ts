@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import {
 	MeetingComponent,
 	MeetingCustomLayoutComponent,
@@ -33,6 +34,7 @@ import {
 			<ov-meeting-custom-layout></ov-meeting-custom-layout>
 		</ov-meeting>
 	`,
-	styles: ''
+	styles: '',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppCeMeetingComponent {}

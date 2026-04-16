@@ -20,26 +20,10 @@ USER node
 # =============================================================================
 # Workspace Configuration for Docker/CI
 # =============================================================================
-# We use Docker-specific configuration files to handle external dependencies:
-#
-# 1. pnpm-workspace.docker.yaml: Excludes external packages (openvidu-components-angular)
-# 2. .npmrc.docker: Disables workspace linking, forces registry/tarball installation
-#
-# This allows openvidu-components-angular to be installed from:
-#   - npm registry (e.g., openvidu-components-angular@3.4.0)
-#   - Local tarball (e.g., ./meet-ce/frontend/openvidu-components-angular-3.4.0.tgz)
-#
-# The package.json should already have the correct dependency specified by CI
-# before docker build is executed.
-#
-# See docs/ci-docker-dependencies-strategy.md for more information.
-# =============================================================================
 
 # Copy workspace configuration files
-# Use Docker-specific workspace file that excludes external packages
-COPY --chown=node:node pnpm-workspace.docker.yaml ./pnpm-workspace.yaml
-# Use Docker-specific npmrc that disables workspace linking
-COPY --chown=node:node .npmrc.docker ./.npmrc
+COPY --chown=node:node pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --chown=node:node .npmrc ./.npmrc
 COPY --chown=node:node package.json pnpm-lock.yaml ./
 
 # Copy package.json files for all workspace packages

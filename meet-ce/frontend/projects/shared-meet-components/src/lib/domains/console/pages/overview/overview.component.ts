@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -11,38 +11,40 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 	selector: 'ov-overview',
 	imports: [MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
 	templateUrl: './overview.component.html',
-	styleUrl: './overview.component.scss'
+	styleUrl: './overview.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OverviewComponent implements OnInit {
-	stats: MeetAnalytics = {
+	stats = signal<MeetAnalytics>({
 		totalRooms: 0,
 		activeRooms: 0,
 		totalRecordings: 0,
 		completeRecordings: 0
-	};
+	});
 
-	isLoading = true;
-	hasData = false;
+	isLoading = signal(true);
+	hasData = signal(false);
 
-	constructor(
-		private analyticsService: AnalyticsService,
-		private navigationService: NavigationService
-	) {}
+	private analyticsService: AnalyticsService = inject(AnalyticsService);
+	private navigationService: NavigationService = inject(NavigationService);
+
+	constructor() {}
 
 	async ngOnInit() {
 		await this.loadStats();
 	}
 
 	private async loadStats() {
-		this.isLoading = true;
+		this.isLoading.set(true);
 
 		try {
-			this.stats = await this.analyticsService.getAnalytics();
-			this.hasData = this.stats.totalRooms > 0 || this.stats.totalRecordings > 0;
+			const stats = await this.analyticsService.getAnalytics();
+			this.stats.set(stats);
+			this.hasData.set(stats.totalRooms > 0 || stats.totalRecordings > 0);
 		} catch {
 			console.error('Error loading analytics data');
 		} finally {
-			this.isLoading = false;
+			this.isLoading.set(false);
 		}
 	}
 

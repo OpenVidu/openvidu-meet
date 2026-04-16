@@ -1,4 +1,5 @@
 import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -28,7 +29,8 @@ import { UsersUiUtils } from '../../utils/ui';
 		MatProgressSpinnerModule
 	],
 	templateUrl: './create-user.component.html',
-	styleUrl: './create-user.component.scss'
+	styleUrl: './create-user.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CreateUserComponent {
 	private userService = inject(UserService);

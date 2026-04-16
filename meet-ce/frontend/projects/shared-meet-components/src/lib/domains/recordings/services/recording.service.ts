@@ -1,10 +1,10 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
-import { LoggerService } from 'openvidu-components-angular';
 import { HttpService } from '../../../shared/services/http.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
+import { LoggerService } from '../../meeting/openvidu-components';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
 

@@ -1,10 +1,10 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { effect, inject, Injectable, signal } from '@angular/core';
 import { MeetRoomAccess } from '@openvidu-meet/typings';
-import { LoggerService } from 'openvidu-components-angular';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
+import { LoggerService } from '../openvidu-components';
 
 @Injectable({
 	providedIn: 'root'

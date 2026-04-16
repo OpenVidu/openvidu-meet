@@ -1,10 +1,9 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { PanelService, PanelType, ViewportService } from 'openvidu-components-angular';
+import { PanelService, PanelType, ViewportService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 
 /**
@@ -13,9 +12,10 @@ import { MeetingContextService } from '../../services/meeting-context.service';
  */
 @Component({
 	selector: 'ov-meeting-toolbar-more-options-menu',
-	imports: [CommonModule, MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule],
+	imports: [MatIconModule, MatButtonModule, MatMenuModule, MatTooltipModule],
 	templateUrl: './meeting-toolbar-more-options-menu.component.html',
-	styleUrl: './meeting-toolbar-more-options-menu.component.scss'
+	styleUrl: './meeting-toolbar-more-options-menu.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarMoreOptionsMenuComponent {
 	private meetingContextService = inject(MeetingContextService);

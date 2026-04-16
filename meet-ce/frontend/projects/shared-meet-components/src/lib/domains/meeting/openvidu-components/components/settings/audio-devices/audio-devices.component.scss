@@ -1,0 +1,30 @@
+@use '../selector-shared' as shared;
+
+:host {
+	display: flex;
+	align-items: center;
+	height: 100%;
+
+	.audio-device-selector {
+		@include shared.device-selector-base();
+
+		// Audio-specific overrides for normal mode
+		// &:not(.compact) {
+		// 	.normal-device-selector {
+		// 		.device-input-selector {
+		// 			&:not(.disabled) {
+		// 				.selector-button {
+		// 					// Audio-specific hover effect (simpler than video)
+		// 					&:hover:not([disabled]) {
+		// 						border-color: var(--ov-primary-action-color, #4285f4);
+		// 					}
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+	}
+}
+
+// Include shared device menu styles
+@include shared.device-menu-styles();

@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
 import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 /**
@@ -11,9 +11,10 @@ import { MatIconModule } from '@angular/material/icon';
  */
 @Component({
 	selector: 'ov-hidden-participants-indicator',
-	imports: [CommonModule, MatIconModule],
+	imports: [MatIconModule],
 	templateUrl: './hidden-participants-indicator.component.html',
-	styleUrl: './hidden-participants-indicator.component.scss'
+	styleUrl: './hidden-participants-indicator.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HiddenParticipantsIndicatorComponent {
 	/**

@@ -1,35 +1,32 @@
-import { Component, OnDestroy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { Subject, takeUntil } from 'rxjs';
 import { RoomWizardStateService } from '../../../../services';
 
 @Component({
 	selector: 'ov-room-config',
 	imports: [ReactiveFormsModule, MatIconModule, MatSlideToggleModule],
 	templateUrl: './room-config.component.html',
-	styleUrl: './room-config.component.scss'
+	styleUrl: './room-config.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RoomConfigComponent implements OnDestroy {
+export class RoomConfigComponent {
 	configForm: FormGroup;
 
-	private destroy$ = new Subject<void>();
 	// Store the previous recording state before E2EE disables it
 	private recordingStateBeforeE2EE: string | null = null;
+	private destroyRef = inject(DestroyRef);
+	private wizardService = inject(RoomWizardStateService);
 
-	constructor(private wizardService: RoomWizardStateService) {
+	constructor() {
 		const currentStep = this.wizardService.currentStep();
 		this.configForm = currentStep!.formGroup;
 
-		this.configForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+		this.configForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
 			this.saveFormData(value);
 		});
-	}
-
-	ngOnDestroy(): void {
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 
 	private saveFormData(formValue: any): void {

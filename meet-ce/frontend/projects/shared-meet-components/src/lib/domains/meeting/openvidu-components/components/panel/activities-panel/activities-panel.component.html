@@ -1,0 +1,34 @@
+<div class="panel-container" id="activities-container">
+	<div class="panel-header-container">
+		<h3 class="panel-title">{{ 'PANEL.ACTIVITIES.TITLE' | translate }}</h3>
+		<button class="panel-close-button" mat-icon-button matTooltip="{{ 'PANEL.CLOSE' | translate }}" (click)="close()">
+			<mat-icon>close</mat-icon>
+		</button>
+	</div>
+
+	<div class="activities-body-container">
+		<mat-accordion [multi]="false">
+			@if (showRecordingActivity) {
+				<ov-recording-activity
+					id="recording-activity"
+					[expanded]="expandedPanel === 'recording'"
+					(onRecordingStartRequested)="onRecordingStartRequested.emit($event)"
+					(onRecordingStopRequested)="onRecordingStopRequested.emit($event)"
+					(onRecordingDeleteRequested)="onRecordingDeleteRequested.emit($event)"
+					(onRecordingDownloadClicked)="onRecordingDownloadClicked.emit($event)"
+					(onRecordingPlayClicked)="onRecordingPlayClicked.emit($event)"
+					(onViewRecordingClicked)="onViewRecordingClicked.emit($event)"
+					(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
+				></ov-recording-activity>
+			}
+			@if (showBroadcastingActivity) {
+				<ov-broadcasting-activity
+					id="broadcasting-activity"
+					[expanded]="expandedPanel === 'broadcasting'"
+					(onBroadcastingStartRequested)="onBroadcastingStartRequested.emit($event)"
+					(onBroadcastingStopRequested)="onBroadcastingStopRequested.emit($event)"
+				></ov-broadcasting-activity>
+			}
+		</mat-accordion>
+	</div>
+</div>

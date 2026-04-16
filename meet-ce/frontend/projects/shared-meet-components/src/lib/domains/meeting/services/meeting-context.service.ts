@@ -1,9 +1,9 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { CustomParticipantModel } from '../models';
+import { ParticipantService, Room, ViewportService } from '../openvidu-components';
 import { MeetingAccessLinkService } from './meeting-access-link.service';
 
 /**

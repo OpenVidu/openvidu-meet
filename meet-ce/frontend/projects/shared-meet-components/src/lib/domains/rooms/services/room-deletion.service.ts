@@ -1,15 +1,15 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import {
-	MeetRoom,
-	MeetRoomDeletionErrorCode,
-	MeetRoomDeletionPolicyWithMeeting,
-	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomDeletionSuccessCode
+    MeetRoom,
+    MeetRoomDeletionErrorCode,
+    MeetRoomDeletionPolicyWithMeeting,
+    MeetRoomDeletionPolicyWithRecordings,
+    MeetRoomDeletionSuccessCode
 } from '@openvidu-meet/typings';
-import { ILogger } from 'openvidu-components-angular';
 import { DeleteRoomDialogOptions } from '../../../shared/models/notification.model';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { ILogger } from '../../meeting/openvidu-components';
 import { DeleteRoomDialogComponent } from '../components/delete-room-dialog/delete-room-dialog.component';
 import { RoomService } from './room.service';
 

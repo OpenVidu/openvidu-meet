@@ -1,0 +1,159 @@
+:host {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 2px;
+
+	.mat-mdc-icon-button {
+		--mat-mdc-button-persistent-ripple-color: transparent !important;
+		--mat-mdc-button-ripple-color: transparent !important;
+	}
+
+	// Responsive container adjustments
+	@media (max-width: 767px) {
+		gap: 1px;
+		padding: 0 4px;
+	}
+
+	mat-icon {
+		font-size: 24px;
+	}
+
+	button {
+		border-radius: var(--ov-toolbar-buttons-radius);
+		color: var(--ov-text-primary-color);
+
+		&.disabled {
+			background-color: var(--ov-error-color) !important;
+			color: #fff !important;
+		}
+	}
+
+	button:not(mat-menu-item),
+	button:not(.mat-mdc-menu-item) ::ng-deep button:not(mat-menu-item),
+	::ng-deep button:not(#screenshare-menu) {
+		background-color: var(--ov-primary-action-color);
+		color: var(--ov-text-primary-color);
+		margin: 6px;
+		transition: all 0.2s ease-in-out;
+
+		// Mobile responsive styles
+		&.mobile-btn {
+			padding: 8px 0;
+			width: 36px;
+			height: 36px;
+
+			mat-icon {
+				font-size: 20px;
+			}
+		}
+	}
+
+	#disable-screen-button > mat-icon {
+		color: var(--ov-error-color) !important;
+	}
+
+	.active-btn,
+	::ng-deep .active-btn {
+		background-color: var(--ov-accent-action-color) !important;
+	}
+
+	#leave-btn,
+	::ng-deep #leave-btn {
+		background-color: var(--ov-error-color) !important;
+		border-radius: var(--ov-leave-button-radius) !important;
+		width: 65px !important;
+		color: #ffffff !important;
+
+		&.mobile-btn {
+			width: 56px !important;
+			height: 36px !important;
+			text-align: center;
+		}
+	}
+
+	.mat-mdc-icon-button[disabled] {
+		color: #fff;
+	}
+
+	.blink {
+		animation: blinker 1.5s linear infinite;
+	}
+
+	/* Animation for general blinking */
+	@keyframes blinker {
+		50% {
+			opacity: 0.3;
+		}
+	}
+
+	::ng-deep .mat-badge-content {
+		background-color: var(--ov-warn-color);
+	}
+
+	::ng-deep .mat-mdc-menu-item {
+		height: 40px;
+		line-height: 40px;
+		color: var(--ov-text-surface-color) !important;
+	}
+
+	::ng-deep .mat-mdc-menu-item mat-icon {
+		color: var(--ov-text-surface-color) !important;
+	}
+
+	::ng-deep #toolbar-broadcasting-btn > .mat-icon {
+		color: var(--ov-broadcasting-color, #5903ca) !important;
+	}
+
+	::ng-deep #recording-btn > .mat-icon {
+		color: var(--ov-recording-color, var(--ov-error-color)) !important;
+	}
+
+	::ng-deep .mat-mdc-menu-panel {
+		border-radius: var(--ov-surface-radius) !important;
+		background-color: var(--ov-surface-color) !important;
+		border: 1px solid var(--ov-secondary-action-color) !important;
+
+		// Mobile menu improvements
+		@media (max-width: 767px) {
+			min-width: 200px;
+			max-width: 280px;
+		}
+	}
+
+	// Mobile badge styling
+	::ng-deep .mat-badge-content {
+		background-color: var(--ov-accent-action-color) !important;
+		color: white !important;
+		font-size: 10px !important;
+		font-weight: bold !important;
+		width: 16px !important;
+		height: 16px !important;
+		line-height: 16px !important;
+	}
+
+	/* Styles for XS screens */
+	@media (max-width: 599px) {
+		/* Animation for recording blinking */
+		@keyframes blinker-recording {
+			50% {
+				background-color: var(--ov-recording-color, var(--ov-error-color));
+			}
+		}
+
+		/* Animation for broadcasting blinking */
+		@keyframes blinker-broadcasting {
+			50% {
+				background-color: var(--ov-broadcasting-color, #5903ca);
+			}
+		}
+
+		/* Apply blinking animations to buttons */
+		.blinking-broadcasting-button {
+			animation: blinker-broadcasting 1.5s linear infinite;
+		}
+		.blinking-recording-button {
+			animation: blinker-recording 1.5s linear infinite;
+		}
+	}
+}

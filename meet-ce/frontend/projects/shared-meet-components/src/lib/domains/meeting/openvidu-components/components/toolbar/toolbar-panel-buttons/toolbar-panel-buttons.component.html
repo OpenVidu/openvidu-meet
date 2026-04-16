@@ -1,0 +1,133 @@
+<!-- Responsive container: show individual buttons on larger screens, collapsed menu on smaller screens -->
+@if (shouldShowCollapsed) {
+	@if (visibleButtonsCount() > 0) {
+		<div class="collapsed-menu-container">
+			<button
+				mat-icon-button
+				class="fab-menu-trigger"
+				[matMenuTriggerFor]="panelsMenu"
+				[disabled]="isConnectionLost()"
+				[class.active-btn]="isAnyPanelOpened()"
+				matTooltip="{{ 'TOOLBAR.PANELS' | translate }}"
+				#menuTrigger="matMenuTrigger"
+			>
+				<mat-icon class="material-symbols-outlined" [class.rotated]="menuTrigger.menuOpen">keyboard_arrow_up</mat-icon>
+			</button>
+
+			<!-- Vertical panels menu -->
+			<mat-menu #panelsMenu="matMenu" class="panels-menu">
+				@if (!isMinimal() && showActivitiesPanelButton()) {
+					<button
+						mat-menu-item
+						class="panel-menu-item"
+						(click)="onToggleActivities()"
+						[disabled]="isConnectionLost()"
+						[class.active-menu-item]="isActivitiesOpened()"
+					>
+						<mat-icon>category</mat-icon>
+					</button>
+				}
+
+				@if (!isMinimal() && showParticipantsPanelButton()) {
+					<button
+						mat-menu-item
+						[matBadge]="totalParticipants()"
+						[matBadgeHidden]="totalParticipants() === 0"
+						matBadgePosition="above before"
+						class="panel-menu-item"
+						(click)="onToggleParticipants()"
+						[disabled]="isConnectionLost()"
+						[class.active-menu-item]="isParticipantsOpened()"
+					>
+						<mat-icon aria-hidden="false"> people</mat-icon>
+					</button>
+				}
+
+				@if (!isMinimal() && showChatPanelButton()) {
+					<button
+						mat-menu-item
+						class="panel-menu-item"
+						(click)="onToggleChat()"
+						[disabled]="isConnectionLost()"
+						[class.active-menu-item]="isChatOpened()"
+					>
+						<mat-icon
+							[matBadge]="unreadMessages()"
+							[matBadgeHidden]="unreadMessages() === 0"
+							matBadgePosition="above before"
+							matBadgeSize="small"
+							aria-hidden="false"
+						>
+							chat
+						</mat-icon>
+					</button>
+				}
+
+				@if (toolbarAdditionalPanelButtonsTemplate()) {
+					<ng-container *ngTemplateOutlet="toolbarAdditionalPanelButtonsTemplate()"></ng-container>
+				}
+			</mat-menu>
+		</div>
+	}
+} @else {
+	@if (!isMinimal() && showActivitiesPanelButton()) {
+		<button
+			mat-icon-button
+			id="activities-panel-btn"
+			class="panel-button"
+			matTooltip="{{ 'TOOLBAR.ACTIVITIES' | translate }}"
+			(click)="onToggleActivities()"
+			[disabled]="isConnectionLost()"
+			[class.active-btn]="isActivitiesOpened()"
+		>
+			<mat-icon>category</mat-icon>
+		</button>
+	}
+
+	@if (!isMinimal() && showParticipantsPanelButton()) {
+		<button
+			mat-icon-button
+			class="panel-button"
+			id="participants-panel-btn"
+			matTooltip="{{ 'TOOLBAR.PARTICIPANTS' | translate }}"
+			(click)="onToggleParticipants()"
+			[disabled]="isConnectionLost()"
+			[class.active-btn]="isParticipantsOpened()"
+		>
+			<mat-icon
+				[matBadge]="totalParticipants()"
+				[matBadgeHidden]="totalParticipants() === 0"
+				matBadgePosition="above before"
+				matBadgeSize="small"
+				aria-hidden="false"
+				>people</mat-icon
+			>
+		</button>
+	}
+
+	@if (!isMinimal() && showChatPanelButton()) {
+		<button
+			mat-icon-button
+			class="panel-button"
+			id="chat-panel-btn"
+			matTooltip="{{ 'TOOLBAR.CHAT' | translate }}"
+			(click)="onToggleChat()"
+			[disabled]="isConnectionLost()"
+			[class.active-btn]="isChatOpened()"
+		>
+			<mat-icon
+				[matBadge]="unreadMessages()"
+				[matBadgeHidden]="unreadMessages() === 0"
+				matBadgePosition="above before"
+				matBadgeSize="small"
+				aria-hidden="false"
+			>
+				chat
+			</mat-icon>
+		</button>
+	}
+
+	@if (toolbarAdditionalPanelButtonsTemplate()) {
+		<ng-container *ngTemplateOutlet="toolbarAdditionalPanelButtonsTemplate()"></ng-container>
+	}
+}

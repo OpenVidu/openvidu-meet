@@ -35,13 +35,14 @@
 <mat-sidenav-container autosize class="sidenav-container" id="sidenav-container">
 	<mat-sidenav
 		#sidenav
-		[ngClass]="isSideMenuCollapsed ? 'collapsed' : 'expanded'"
+		[class.collapsed]="isSideMenuCollapsed"
+		[class.expanded]="!isSideMenuCollapsed"
 		[mode]="isMobile ? 'over' : 'side'"
-		[opened]="isMobile ? 'false' : 'true'"
+		[opened]="!isMobile"
 		id="side-navigation"
 	>
 		<mat-nav-list id="nav-list">
-			@for (link of navLinks; track link.route) {
+			@for (link of navLinks(); track link.route) {
 				<ng-container>
 					<a
 						mat-list-item
@@ -56,8 +57,8 @@
 						[matTooltipDisabled]="!isSideMenuCollapsed"
 						[id]="'nav-link-' + link.route!.replace('/', '')"
 					>
-						<span class="entry" [ngClass]="isSideMenuCollapsed ? 'centeredEntry' : 'entry'">
-							<mat-icon [ngClass]="link.iconClass">{{ link.icon }}</mat-icon>
+						<span class="entry" [class.centeredEntry]="isSideMenuCollapsed">
+							<mat-icon [class]="link.iconClass">{{ link.icon }}</mat-icon>
 							@if (!isSideMenuCollapsed) {
 								{{ link.label }}
 							}

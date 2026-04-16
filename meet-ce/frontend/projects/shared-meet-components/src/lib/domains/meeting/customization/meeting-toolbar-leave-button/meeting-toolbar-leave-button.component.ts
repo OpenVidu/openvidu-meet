@@ -1,11 +1,10 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { LoggerService, OpenViduService } from 'openvidu-components-angular';
+import { LoggerService, OpenViduService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
 
@@ -16,7 +15,8 @@ import { MeetingService } from '../../services/meeting.service';
 	selector: 'ov-meeting-toolbar-leave-button',
 	templateUrl: './meeting-toolbar-leave-button.component.html',
 	styleUrls: ['./meeting-toolbar-leave-button.component.scss'],
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDividerModule]
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDividerModule],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarLeaveButtonComponent {
 	protected meetingContextService = inject(MeetingContextService);

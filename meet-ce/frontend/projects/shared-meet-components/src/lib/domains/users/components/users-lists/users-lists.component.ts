@@ -1,5 +1,6 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe, NgClass } from '@angular/common';
 import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -59,7 +60,7 @@ export interface UserTableFilter {
 @Component({
 	selector: 'ov-users-lists',
 	imports: [
-		CommonModule,
+		NgClass,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,
@@ -78,7 +79,8 @@ export interface UserTableFilter {
 		DatePipe
 	],
 	templateUrl: './users-lists.component.html',
-	styleUrl: './users-lists.component.scss'
+	styleUrl: './users-lists.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UsersListsComponent implements OnInit {
 	users = input<MeetUserDTO[]>([]);

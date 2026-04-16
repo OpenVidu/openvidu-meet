@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { LoggerService } from 'openvidu-components-angular';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
+import { LoggerService } from '../../meeting/openvidu-components';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from '../utils/features.utils';

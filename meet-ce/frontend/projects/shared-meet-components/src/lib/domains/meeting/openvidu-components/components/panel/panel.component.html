@@ -1,0 +1,30 @@
+<!-- CHAT panel -->
+@if (isChatPanelOpened) {
+	<ng-container *ngTemplateOutlet="chatPanelTemplate"></ng-container>
+}
+
+
+<!-- PARTICIPANTS panel -->
+@if (isParticipantsPanelOpened) {
+	<ng-container *ngTemplateOutlet="participantsPanelTemplate"></ng-container>
+}
+
+<!-- Background effects panel -->
+@if (isBackgroundEffectsPanelOpened) {
+	<ng-container *ngTemplateOutlet="backgroundEffectsPanelTemplate"></ng-container>
+}
+
+<!-- Settings panel -->
+@if (isSettingsPanelOpened) {
+	<ng-container *ngTemplateOutlet="settingsPanelTemplate"></ng-container>
+}
+
+<!-- Activities panel -->
+@if (isActivitiesPanelOpened) {
+	<ng-container *ngTemplateOutlet="activitiesPanelTemplate"></ng-container>
+}
+
+<!-- External additional panels  -->
+@if (additionalPanelsTemplate && isExternalPanelOpened) {
+	<ng-container *ngTemplateOutlet="additionalPanelsTemplate"></ng-container>
+}

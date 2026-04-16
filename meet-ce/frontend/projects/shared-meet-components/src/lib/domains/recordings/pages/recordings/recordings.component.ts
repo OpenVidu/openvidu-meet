@@ -1,11 +1,11 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo, SortOrder } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingService } from '../../services/recording.service';
@@ -14,15 +14,16 @@ import { RecordingService } from '../../services/recording.service';
 	selector: 'ov-recordings',
 	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
 	templateUrl: './recordings.component.html',
-	styleUrl: './recordings.component.scss'
+	styleUrl: './recordings.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
 
 	// Loading state
-	isInitializing = true;
-	showInitialLoader = false;
-	isLoading = false;
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+	isLoading = signal(false);
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
@@ -32,7 +33,7 @@ export class RecordingsComponent implements OnInit {
 	});
 
 	// Pagination
-	hasMoreRecordings = false;
+	hasMoreRecordings = signal(false);
 	private nextPageToken?: string;
 
 	protected loggerService: LoggerService = inject(LoggerService);
@@ -59,14 +60,14 @@ export class RecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
-			this.showInitialLoader = true;
+			this.showInitialLoader.set(true);
 		}, 200);
 
 		await this.loadRecordings(this.initialFilters());
 
 		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
@@ -103,7 +104,7 @@ export class RecordingsComponent implements OnInit {
 
 	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
-			this.isLoading = true;
+			this.isLoading.set(true);
 		}, 200);
 
 		try {
@@ -139,18 +140,18 @@ export class RecordingsComponent implements OnInit {
 
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRecordings = response.pagination.isTruncated;
+			this.hasMoreRecordings.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.notificationService.showSnackbar('Failed to load recordings');
 			this.log.e('Error loading recordings:', error);
 		} finally {
 			clearTimeout(delayLoader);
-			this.isLoading = false;
+			this.isLoading.set(false);
 		}
 	}
 
 	async loadMoreRecordings(filters: RecordingTableFilter) {
-		if (!this.hasMoreRecordings || this.isLoading) return;
+		if (!this.hasMoreRecordings() || this.isLoading()) return;
 		await this.loadRecordings(filters);
 	}
 

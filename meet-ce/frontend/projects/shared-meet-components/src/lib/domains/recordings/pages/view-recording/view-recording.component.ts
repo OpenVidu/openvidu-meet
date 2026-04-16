@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { Component, computed, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, OnInit } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,10 +8,10 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
-import { ViewportService } from 'openvidu-components-angular';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { ViewportService } from '../../../meeting/openvidu-components';
 import { MeetingWebComponentManagerService } from '../../../meeting/services/meeting-webcomponent-manager.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
@@ -31,7 +31,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 		MatTooltipModule,
 		MatSnackBarModule,
 		RecordingVideoPlayerComponent
-	]
+	],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ViewRecordingComponent implements OnInit {
 	recording?: MeetRecordingInfo;

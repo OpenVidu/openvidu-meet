@@ -1,13 +1,13 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
 import { UsersListsComponent, UserTableAction, UserTableFilter } from '../../components/users-lists/users-lists.component';
 import { UserService } from '../../services/user.service';
@@ -21,7 +21,8 @@ import { UserService } from '../../services/user.service';
 		UsersListsComponent
 	],
 	templateUrl: './users.component.html',
-	styleUrl: './users.component.scss'
+	styleUrl: './users.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UsersComponent implements OnInit {
 	private userService = inject(UserService);
@@ -35,11 +36,11 @@ export class UsersComponent implements OnInit {
 	users = signal<MeetUserDTO[]>([]);
 	currentUserId = signal<string>('');
 
-	isInitializing = true;
-	showInitialLoader = false;
-	isLoading = false;
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+	isLoading = signal(false);
 
-	hasMoreUsers = false;
+	hasMoreUsers = signal(false);
 	private nextPageToken?: string;
 
 	initialFilters = signal<UserTableFilter>({
@@ -55,15 +56,15 @@ export class UsersComponent implements OnInit {
 
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
-			this.showInitialLoader = true;
+			this.showInitialLoader.set(true);
 		}, 200);
 
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
 		await this.loadUsers(this.initialFilters());
 
 		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	async onUserAction(action: UserTableAction) {
@@ -159,7 +160,7 @@ export class UsersComponent implements OnInit {
 
 	private async loadUsers(filters: UserTableFilter, refresh = false) {
 		const delayLoader = setTimeout(() => {
-			this.isLoading = true;
+			this.isLoading.set(true);
 		}, 200);
 
 		try {
@@ -187,13 +188,13 @@ export class UsersComponent implements OnInit {
 			}
 
 			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreUsers = response.pagination.isTruncated;
+			this.hasMoreUsers.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.log.e('Error loading users:', error);
 			this.notificationService.showSnackbar('Failed to load users');
 		} finally {
 			clearTimeout(delayLoader);
-			this.isLoading = false;
+			this.isLoading.set(false);
 		}
 	}
 }

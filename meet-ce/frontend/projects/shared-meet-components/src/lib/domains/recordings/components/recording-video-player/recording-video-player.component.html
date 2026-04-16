@@ -1,10 +1,10 @@
 <div class="video-player-wrapper" [class.mobile]="viewportService.isMobileView()">
 	<!-- Video Player -->
-	@if (recordingUrl && !hasVideoError) {
+	@if (recordingUrl() && !hasVideoError) {
 		<div class="video-container" [class.mobile]="viewportService.isMobileView()">
 			<video
 				#videoPlayer
-				[src]="recordingUrl"
+				[src]="recordingUrl()"
 				controls
 				controlsList="nodownload"
 				playsinline

@@ -1,11 +1,11 @@
-<div class="step-indicator-wrapper" [attr.data-layout]="layoutType$ | async">
+<div class="step-indicator-wrapper" [attr.data-layout]="layoutType()">
 	<mat-stepper
 		#stepper
 		[selectedIndex]="currentStepIndex()"
-		[orientation]="(stepperOrientation$ | async)!"
+		[orientation]="stepperOrientation()"
 		[linear]="false"
 		class="wizard-stepper"
-		[attr.data-layout]="layoutType$ | async"
+		[attr.data-layout]="layoutType()"
 		(selectionChange)="onStepClick($event)"
 	>
 		@for (step of visibleSteps(); track step.id; let i = $index) {

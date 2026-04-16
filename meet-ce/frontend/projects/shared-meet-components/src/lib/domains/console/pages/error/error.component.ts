@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,7 +14,8 @@ import { MeetingWebComponentManagerService } from '../../../meeting/services/mee
 	selector: 'ov-error',
 	imports: [MatCardModule, MatIconModule, MatButtonModule],
 	templateUrl: './error.component.html',
-	styleUrl: './error.component.scss'
+	styleUrl: './error.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ErrorComponent implements OnInit {
 	errorName = 'Error';

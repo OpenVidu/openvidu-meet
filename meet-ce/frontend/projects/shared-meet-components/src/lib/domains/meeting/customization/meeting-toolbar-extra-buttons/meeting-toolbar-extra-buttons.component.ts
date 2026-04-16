@@ -1,10 +1,10 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject, signal } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { LoggerService } from 'openvidu-components-angular';
+import { LoggerService } from '../../openvidu-components';
 import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -17,7 +17,8 @@ import { MeetingContextService } from '../../services/meeting-context.service';
 	selector: 'ov-meeting-toolbar-extra-buttons',
 	templateUrl: './meeting-toolbar-extra-buttons.component.html',
 	styleUrls: ['./meeting-toolbar-extra-buttons.component.scss'],
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule]
+	imports: [NgClass, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarExtraButtonsComponent {
 	protected meetingContextService = inject(MeetingContextService);

@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -9,24 +9,24 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import {
-	MeetRecordingInfo,
-	MeetRoom,
-	MeetRoomDeletionSuccessCode,
-	MeetRoomMember,
-	MeetRoomStatus,
-	SortOrder
+    MeetRecordingInfo,
+    MeetRoom,
+    MeetRoomDeletionSuccessCode,
+    MeetRoomMember,
+    MeetRoomStatus,
+    SortOrder
 } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from 'openvidu-components-angular';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { RecordingListsComponent } from '../../../recordings/components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../../recordings/models/recording-list.model';
 import { RecordingService } from '../../../recordings/services/recording.service';
 import {
-	MemberTableAction,
-	MemberTableFilter,
-	RoomMembersListsComponent
+    MemberTableAction,
+    MemberTableFilter,
+    RoomMembersListsComponent
 } from '../../../room-members/components/room-members-list/room-members-list.component';
 import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { RoomDeletionService } from '../../services/room-deletion.service';
@@ -49,7 +49,8 @@ import { RoomUiUtils } from '../../utils/ui';
 		RoomMembersListsComponent
 	],
 	templateUrl: './room-detail.component.html',
-	styleUrl: './room-detail.component.scss'
+	styleUrl: './room-detail.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomDetailComponent implements OnInit {
 	room = signal<MeetRoom | undefined>(undefined);

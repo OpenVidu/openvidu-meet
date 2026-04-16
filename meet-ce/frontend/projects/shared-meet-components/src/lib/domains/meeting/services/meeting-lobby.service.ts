@@ -1,7 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
-import { LoggerService } from 'openvidu-components-angular';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { AppContextService } from '../../../shared/services/app-context.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -9,6 +8,7 @@ import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
+import { LoggerService } from '../openvidu-components';
 import { MeetingAccessLinkService } from './meeting-access-link.service';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
@@ -151,15 +151,25 @@ export class MeetingLobbyService {
 
 			this._roomId.set(roomId);
 
-			const [room] = await Promise.all([
+			// Non-critical tasks should not block lobby rendering.
+			void this.setBackButtonText().catch((error) => {
+				this.log.w('Error setting back button text:', error);
+			});
+			void this.checkForRecordings().catch((error) => {
+				this.log.w('Error checking recordings during lobby initialization:', error);
+			});
+			void this.initializeParticipantName().catch((error) => {
+				this.log.w('Error initializing participant name:', error);
+			});
+
+			const room = await this.withTimeout(
 				this.roomService.getRoom(roomId, {
 					fields: ['roomId', 'roomName', 'status', 'config'],
 					extraFields: ['config']
 				}),
-				this.setBackButtonText(),
-				this.checkForRecordings(),
-				this.initializeParticipantName()
-			]);
+				12000,
+				'Timeout loading room data'
+			);
 			this._room.set(room);
 
 			if (this.hasRoomE2EEEnabled()) {
@@ -180,6 +190,19 @@ export class MeetingLobbyService {
 			this.clearLobbyState();
 			throw error;
 		}
+	}
+
+	private withTimeout<T>(promise: Promise<T>, timeoutMs: number, timeoutMessage: string): Promise<T> {
+		let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
+		const timeoutPromise = new Promise<T>((_, reject) => {
+			timeoutHandle = setTimeout(() => reject(new Error(timeoutMessage)), timeoutMs);
+		});
+
+		return Promise.race([promise, timeoutPromise]).finally(() => {
+			if (timeoutHandle) {
+				clearTimeout(timeoutHandle);
+			}
+		});
 	}
 
 	/**

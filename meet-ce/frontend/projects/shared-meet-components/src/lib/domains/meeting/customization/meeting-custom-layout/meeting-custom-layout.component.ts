@@ -1,9 +1,9 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from 'openvidu-components-angular';
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { HiddenParticipantsIndicatorComponent } from '../../components/hidden-participants-indicator/hidden-participants-indicator.component';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { CustomParticipantModel } from '../../models/custom-participant.model';
+import { OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from '../../openvidu-components';
 import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -13,14 +13,15 @@ import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.c
 @Component({
 	selector: 'ov-meeting-custom-layout',
 	imports: [
-		CommonModule,
+		NgClass,
 		OpenViduComponentsUiModule,
 		ShareMeetingLinkComponent,
 		HiddenParticipantsIndicatorComponent,
 		MeetingCaptionsComponent
 	],
 	templateUrl: './meeting-custom-layout.component.html',
-	styleUrl: './meeting-custom-layout.component.scss'
+	styleUrl: './meeting-custom-layout.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingCustomLayoutComponent {
 	protected meetingContextService = inject(MeetingContextService);

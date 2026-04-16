@@ -1,16 +1,16 @@
-@if (showLobby) {
+@if (showLobby()) {
 	<!-- Lobby phase (before joining meeting) -->
-	@if (isLobbyReady) {
+	@if (lobbyState() === 'ready') {
 		<ov-meeting-lobby></ov-meeting-lobby>
-	} @else if (!isLobbyReady) {
+	} @else if (lobbyState() === 'error') {
+		<div class="prejoin-loading-container">
+			<mat-icon>error</mat-icon>
+			<p class="prejoin-loading-text">Unable to prepare your meeting.</p>
+		</div>
+	} @else {
 		<div class="prejoin-loading-container">
 			<mat-spinner diameter="30"></mat-spinner>
 			<p class="prejoin-loading-text">Preparing your meeting...</p>
-		</div>
-	} @else {
-		<div class="prejoin-error-container">
-			<mat-icon class="prejoin-error-icon">error_outline</mat-icon>
-			<p class="prejoin-error-text">Unable to load the lobby. Please try reloading the page.</p>
 		</div>
 	}
 } @else if (!isMeetingLeft()) {

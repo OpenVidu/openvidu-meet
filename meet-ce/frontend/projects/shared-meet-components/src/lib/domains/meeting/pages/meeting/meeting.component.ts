@@ -1,15 +1,14 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, ContentChild, effect, inject, OnInit, signal } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, ContentChild, effect, inject, OnInit, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from 'openvidu-components-angular';
-import { Subject } from 'rxjs';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
+import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
@@ -21,14 +20,15 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	styleUrls: ['./meeting.component.scss'],
 	imports: [
 		OpenViduComponentsUiModule,
-		CommonModule,
+		NgTemplateOutlet,
 		FormsModule,
 		ReactiveFormsModule,
 		MatIconModule,
 		MatProgressSpinnerModule,
 		MeetingLobbyComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService]
+	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingComponent implements OnInit {
 	protected meetingContextService = inject(MeetingContextService);
@@ -50,8 +50,8 @@ export class MeetingComponent implements OnInit {
 	protected participantItemTemplate = computed(() => this._participantItem?.template);
 
 	/** Controls whether to show lobby (true) or meeting view (false) */
-	showLobby = true;
-	isLobbyReady = false;
+	showLobby = signal(true);
+	lobbyState = signal<'loading' | 'ready' | 'error'>('loading');
 
 	/** Controls whether to show the videoconference component */
 	isMeetingLeft = signal(false);
@@ -62,8 +62,6 @@ export class MeetingComponent implements OnInit {
 	e2eeKey = this.lobbyService.e2eeKeyValue;
 	features = this.meetingContextService.meetingUI;
 	hasRecordings = this.meetingContextService.hasRecordings;
-
-	protected destroy$ = new Subject<void>();
 
 	constructor() {
 		// Change theme variables when custom theme is enabled
@@ -89,18 +87,20 @@ export class MeetingComponent implements OnInit {
 		// When roomMemberToken is set, transition from lobby to meeting
 		effect(async () => {
 			const token = this.roomMemberToken();
-			if (token && this.showLobby) {
-				this.showLobby = false;
+			if (token && this.showLobby()) {
+				this.showLobby.set(false);
 			}
 		});
 	}
 
 	async ngOnInit() {
 		try {
+			this.lobbyState.set('loading');
 			await this.lobbyService.initialize();
-			this.isLobbyReady = true;
+			this.lobbyState.set('ready');
 		} catch (error) {
 			console.error('Error initializing lobby state:', error);
+			this.lobbyState.set('error');
 			this.notificationService.showDialog({
 				title: 'Error',
 				message: 'An error occurred while initializing the meeting lobby. Please try again later.',
@@ -111,9 +111,6 @@ export class MeetingComponent implements OnInit {
 	}
 
 	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
-
 		// Cleanup captions service
 		this.captionsService.destroy();
 	}

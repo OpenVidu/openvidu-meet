@@ -1,18 +1,20 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { StepperOrientation, StepperSelectionEvent, StepState } from '@angular/cdk/stepper';
-import { CommonModule } from '@angular/common';
-import { Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
-import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { WizardStep } from '../../models';
 
+type LayoutType = 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact';
+
 @Component({
-	selector: 'ov-step-indicator',
-	imports: [CommonModule, MatStepperModule, ReactiveFormsModule],
-	templateUrl: './step-indicator.component.html',
-	styleUrl: './step-indicator.component.scss'
+    selector: 'ov-step-indicator',
+	imports: [MatStepperModule, ReactiveFormsModule],
+    templateUrl: './step-indicator.component.html',
+    styleUrl: './step-indicator.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StepIndicatorComponent {
 	steps = input.required<WizardStep[]>();
@@ -23,38 +25,27 @@ export class StepIndicatorComponent {
 	stepClick = output<{ index: number; step: WizardStep }>();
 
 	visibleSteps = computed<WizardStep[]>(() => this.steps().filter((step) => step.isVisible));
+	private breakpointObserver = inject(BreakpointObserver);
+	layoutType = toSignal(
+		this.breakpointObserver
+			.observe(['(min-width: 1200px)', '(min-width: 768px)', Breakpoints.HandsetPortrait])
+			.pipe(
+				map((): LayoutType => {
+					const isLargeDesktop = this.breakpointObserver.isMatched('(min-width: 1200px)');
+					const isMediumDesktop = this.breakpointObserver.isMatched('(min-width: 768px)') && !isLargeDesktop;
 
-	stepperOrientation$: Observable<StepperOrientation>;
-	layoutType$: Observable<'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact'>;
+					if (isLargeDesktop) return 'vertical-sidebar';
+					if (isMediumDesktop) return 'horizontal-compact';
+					return 'vertical-compact';
+				})
+			),
+		{ initialValue: 'vertical-compact' }
+	);
+	stepperOrientation = computed<StepperOrientation>(() =>
+		this.layoutType() === 'horizontal-compact' ? 'horizontal' : 'vertical'
+	);
 
-	constructor(private breakpointObserver: BreakpointObserver) {
-		// Enhanced responsive strategy:
-		// - Large desktop (>1200px): Vertical sidebar for space efficiency
-		// - Medium desktop (768-1200px): Horizontal compact
-		// - Tablet/Mobile (<768px): Vertical compact
-		const breakpointState$ = this.breakpointObserver.observe([
-			'(min-width: 1200px)',
-			'(min-width: 768px)',
-			Breakpoints.HandsetPortrait
-		]);
-
-		this.layoutType$ = breakpointState$.pipe(
-			map(() => {
-				const isLargeDesktop = this.breakpointObserver.isMatched('(min-width: 1200px)');
-				const isMediumDesktop = this.breakpointObserver.isMatched('(min-width: 768px)') && !isLargeDesktop;
-
-				if (isLargeDesktop) return 'vertical-sidebar';
-				if (isMediumDesktop) return 'horizontal-compact';
-				return 'vertical-compact';
-			})
-		);
-
-		this.stepperOrientation$ = this.layoutType$.pipe(
-			map((layoutType) => {
-				return layoutType === 'horizontal-compact' ? 'horizontal' : 'vertical';
-			})
-		);
-	}
+	constructor() {}
 
 	onStepClick(event: StepperSelectionEvent) {
 		if (this.allowNavigation()) {

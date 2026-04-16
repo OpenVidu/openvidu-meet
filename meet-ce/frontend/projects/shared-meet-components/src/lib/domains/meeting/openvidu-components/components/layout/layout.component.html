@@ -1,0 +1,60 @@
+<div class="container" [ngClass]="{ withCaptions: captionsEnabled, withMargin: localParticipant?.isMinimized }">
+	<div id="layout" class="layout" #layout>
+		<!-- Top slot: Render elements that should appear at the top -->
+		@if (layoutAdditionalElementsTemplate && templateConfig.layoutAdditionalElementsSlot === 'top') {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate"></ng-container>
+		}
+
+		@if (localParticipant; as participant) {
+			@for (track of participant.tracks; track trackParticipantElement($index, track)) {
+				<div
+					#localLayoutElement
+					[ngClass]="{
+						local_participant: true,
+						OV_root: !track.isAudioTrack && !track.isMinimized,
+						OV_publisher: !track.isAudioTrack && !track.isMinimized,
+						OV_minimized: track.isMinimized,
+						OV_big: track.isPinned,
+						OV_ignored: track.isAudioTrack && !track.participant.onlyHasAudioTracks,
+						OV_screen: track.isScreenTrack
+					}"
+					[id]="'participant-' + track.participant.identity"
+					cdkDrag
+					cdkDragBoundary=".layout"
+					[cdkDragDisabled]="!track.isMinimized"
+					[cdkDragFreeDragPosition]="{ x: 0, y: 0 }"
+				>
+					<ng-container *ngTemplateOutlet="streamTemplate; context: { $implicit: track }"></ng-container>
+				</div>
+			}
+		}
+
+		<!-- Default slot: Render additional layout elements (backward compatibility and default position) -->
+		@if (layoutAdditionalElementsTemplate && (templateConfig.layoutAdditionalElementsSlot === 'default' || !templateConfig.layoutAdditionalElementsSlot)) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate"></ng-container>
+		}
+
+		@for (track of remoteParticipants | tracks; track trackParticipantElement($index, track)) {
+			<div
+				class="remote-participant"
+				[id]="'participant-' + track.participant.identity"
+				[ngClass]="{
+					OV_root: !track.isAudioTrack,
+					OV_publisher: !track.isAudioTrack,
+					OV_big: track.isPinned,
+					OV_ignored: track.isAudioTrack && !track.participant.onlyHasAudioTracks,
+					OV_screen: track.isScreenTrack
+				}"
+			>
+				<ng-container *ngTemplateOutlet="streamTemplate; context: { $implicit: track }"></ng-container>
+			</div>
+		}
+
+		<!-- Bottom slot: Render elements that should appear at the bottom -->
+		@if (layoutAdditionalElementsTemplate && templateConfig.layoutAdditionalElementsSlot === 'bottom') {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate"></ng-container>
+		}
+	</div>
+
+	<!-- <ov-captions *ngIf="captionsEnabled" class="OV_ignored"></ov-captions> -->
+</div>

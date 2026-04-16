@@ -1,5 +1,5 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal, untracked } from '@angular/core';
+import { DatePipe, NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, effect, HostBinding, input, OnInit, output, signal, untracked } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -69,7 +69,7 @@ export interface RoomTableFilter {
 @Component({
 	selector: 'ov-rooms-lists',
 	imports: [
-		CommonModule,
+		NgClass,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,
@@ -88,7 +88,8 @@ export interface RoomTableFilter {
 		DatePipe
 	],
 	templateUrl: './rooms-lists.component.html',
-	styleUrl: './rooms-lists.component.scss'
+	styleUrl: './rooms-lists.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomsListsComponent implements OnInit {
 	rooms = input<MeetRoom[]>([]);
@@ -111,11 +112,11 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	// Output events
-	@Output() roomAction = new EventEmitter<RoomTableAction>();
-	@Output() filterChange = new EventEmitter<RoomTableFilter>();
-	@Output() loadMore = new EventEmitter<RoomTableFilter>();
-	@Output() refresh = new EventEmitter<RoomTableFilter>();
-	@Output() roomClicked = new EventEmitter<string>();
+	roomAction = output<RoomTableAction>();
+	filterChange = output<RoomTableFilter>();
+	loadMore = output<RoomTableFilter>();
+	refresh = output<RoomTableFilter>();
+	roomClicked = output<string>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');

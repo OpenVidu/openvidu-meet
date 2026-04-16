@@ -1,0 +1,55 @@
+<div class="panel-container" id="chat-container">
+	<div class="panel-header-container">
+		<h3 class="panel-title">{{ 'PANEL.CHAT.TITLE' | translate }}</h3>
+		<button class="panel-close-button" mat-icon-button matTooltip="{{ 'PANEL.CLOSE' | translate }}" (click)="close()">
+			<mat-icon>close</mat-icon>
+		</button>
+	</div>
+
+	@if (hasEncryptionKeyMismatch()) {
+		<div class="encryption-warning">
+			<mat-icon>warning</mat-icon>
+			<p>{{ 'PANEL.CHAT.ENCRYPTION_KEY_MISMATCH' | translate }}</p>
+		</div>
+	}
+
+	<div class="text-container">
+		<p class="text-info">{{ 'PANEL.CHAT.SUBTITLE' | translate }}</p>
+	</div>
+
+	<div class="messages-container" #chatScroll>
+		@for (data of messageList; track data) {
+		<div class="message" [ngClass]="data.isLocal ? 'right' : 'left'">
+			<div class="msg-detail">
+				<div class="participant-name-container">
+					@if (data.isLocal) {
+						<p>{{ 'PANEL.CHAT.YOU' | translate }}</p>
+					} @else {
+						<p>{{ data.participantName }}</p>
+					}
+				</div>
+				<div class="chat-message">
+					<p [innerHTML]="data.message | linkify"></p>
+				</div>
+			</div>
+		</div>
+		}
+	</div>
+
+	<div class="input-container">
+		<textarea
+			#chatInput
+			maxlength="500"
+			rows="4"
+			placeholder="{{ 'PANEL.CHAT.PLACEHOLDER' | translate }}"
+			autocomplete="off"
+			(keypress)="eventKeyPress($event)"
+			[(ngModel)]="message"
+			id="chat-input"
+			[ngClass]="{ 'vertical-align': !message }"
+		></textarea>
+		<button mat-icon-button id="send-btn" (click)="sendMessage()" matTooltip="{{ 'PANEL.CHAT.SEND' | translate }}">
+			<mat-icon>send</mat-icon>
+		</button>
+	</div>
+</div>

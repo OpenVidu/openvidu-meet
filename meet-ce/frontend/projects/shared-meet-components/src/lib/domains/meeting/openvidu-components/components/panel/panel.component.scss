@@ -1,0 +1,61 @@
+.panel-container {
+	margin: 20px;
+	background-color: var(--ov-surface-color);
+	border-radius: var(--ov-surface-radius);
+	max-height: calc(100% - 40px);
+	min-height: calc(100% - 40px);
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+}
+
+// Mobile responsiveness - ensure panels occupy full width on mobile devices
+@media only screen and (max-width: 768px) {
+	.panel-container {
+		margin: 8px;
+		max-height: calc(100% - 16px);
+		min-height: calc(100% - 16px);
+		border-radius: 8px;
+	}
+}
+
+.panel-header-container {
+	padding: 10px;
+	flex: inherit;
+	display: flex;
+	align-items: center;
+}
+
+.panel-title,
+.panel-close-button {
+	color: var(--ov-text-surface-color);
+}
+
+.panel-title {
+	margin-left: 5px;
+	margin-top: auto;
+	margin-bottom: auto;
+}
+
+.panel-close-button {
+	margin-left: auto;
+	border-radius: 50%;
+}
+
+::-webkit-scrollbar {
+	width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+	background: var(--ov-selection-color-btn);
+	border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: var(--ov-text-disabled-color);
+}
+
+::-webkit-scrollbar-track {
+	background: var(--ov-secondary-action-color);
+	border-radius: 4px;
+}

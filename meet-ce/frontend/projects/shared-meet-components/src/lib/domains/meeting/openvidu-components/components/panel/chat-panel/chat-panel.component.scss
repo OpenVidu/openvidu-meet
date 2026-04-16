@@ -1,0 +1,158 @@
+.encryption-warning {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	padding: 12px;
+	margin: 10px;
+	background-color: rgba(255, 152, 0, 0.1);
+	border: 1px solid rgba(255, 152, 0, 0.5);
+	border-radius: var(--ov-surface-radius);
+	color: var(--ov-warn-color, #ff9800);
+	font-size: 13px;
+
+	mat-icon {
+		font-size: 20px;
+		width: 20px;
+		height: 20px;
+	}
+
+	p {
+		margin: 0;
+		line-height: 1.4;
+		width: fit-content;
+	}
+}
+
+.text-container {
+	color: var(--ov-text-primary-color);
+	text-align: center;
+	font-size: 12px;
+	flex: inherit;
+}
+
+.text-info {
+	margin: auto;
+	color: var(--ov-text-surface-color);
+}
+
+.vertical-align {
+	line-height: 59px;
+}
+
+.messages-container {
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 10px;
+	flex: 75%;
+	display: block;
+	justify-content: space-evenly;
+	align-items: none;
+}
+
+.input-container {
+	height: 65px;
+	display: flex;
+	border: 1px solid var(--ov-secondary-action-color);
+	padding: 10px 5px 10px 10px;
+	margin: 10px;
+	border-radius: var(--ov-surface-radius);
+	order: 3;
+	justify-content: space-evenly;
+	align-items: none;
+	color: var(--ov-text-surface-color);
+}
+
+.input-container textarea {
+	width: 100%;
+	height: 60px;
+	margin: auto;
+	margin-right: 3px;
+	background-color: transparent;
+	display: block;
+	border: none;
+	padding: 0;
+	word-wrap: break-word;
+	white-space: pre-wrap;
+	resize: none;
+	outline: none;
+	font-size: 16px;
+	-webkit-box-shadow: none;
+	-moz-box-shadow: none;
+	box-shadow: none;
+	font-family: 'Roboto', 'RobotoDraft', Helvetica, Arial, sans-serif;
+	color: var(--ov-text-surface-color);
+
+	&::placeholder {
+		color: var(--ov-text-surface-color);
+	}
+}
+
+.message {
+	position: relative;
+	padding: 3px 0;
+}
+
+.msg-detail {
+	width: 95%;
+	display: inline-block;
+}
+
+.msg-detail p {
+	margin: 0;
+	font-size: 14px;
+}
+
+.participant-name-container p {
+	font-size: 13px;
+	font-style: italic;
+	color: var(--ov-text-surface-color);
+	padding: 5px;
+}
+
+.chat-message {
+	position: relative;
+	border-radius: var(--ov-surface-radius);
+	padding: 8px;
+	color: var(--ov-text-surface-color);
+	width: auto;
+	max-width: 95%;
+	font-size: 14px;
+	word-break: break-all;
+	background-color: var(--ov-secondary-action-color);
+}
+
+#send-btn {
+	background-color: var(--ov-primary-action-color);
+	color: var(--ov-text-primary-color);
+	border-radius: var(--ov-surface-radius);
+	align-self: center;
+	height: 75px;
+}
+
+/* Start message from other user */
+
+.message.left .msg-detail .participant-name-container {
+	text-align: left;
+}
+
+.message.left .msg-detail .chat-message {
+	float: left;
+}
+
+/* End message from other user */
+
+/* Start my messages */
+
+.message.right .msg-detail .participant-name-container {
+	text-align: right;
+}
+
+.message.right .msg-detail .chat-message {
+	float: right;
+}
+
+::ng-deep a:-webkit-any-link {
+	color: #37a1f8;
+	font-weight: 500;
+}

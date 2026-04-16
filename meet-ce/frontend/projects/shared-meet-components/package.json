@@ -4,9 +4,6 @@
 	"main": "dist/fesm2022/openvidu-meet-shared-components.mjs",
 	"module": "dist/fesm2022/openvidu-meet-shared-components.mjs",
 	"typings": "dist/index.d.ts",
-	"peerDependencies": {
-		"openvidu-components-angular": "workspace:*"
-	},
 	"dependencies": {
 		"tslib": "^2.3.0"
 	},

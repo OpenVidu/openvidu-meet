@@ -1,0 +1,117 @@
+<mat-toolbar id="toolbar" class="toolbar-container">
+	<!-- Info container (logo, room name, recording/broadcasting status) -->
+	<div id="info-container" class="info-container">
+		<div>
+			<!-- Branding Logo -->
+			@if (!isMinimal && showLogo) {
+				<img id="branding-logo" [ovLogo]="brandingLogo" />
+			}
+
+			<!-- Session Info -->
+			<div id="session-info-container" [class.collapsed]="isRecordingStarted || isBroadcastingStarted">
+				<!-- Room Name -->
+				@if (!isMinimal && showRoomName) {
+					<span id="session-name">{{ roomName }}</span>
+				}
+
+				<!-- Activities (Recording / Broadcasting) -->
+				@if (isRecordingStarted || isBroadcastingStarted) {
+					<div id="activities-tag">
+						@if (isRecordingStarted) {
+							<div id="recording-tag" class="recording-tag" (click)="openRecordingActivityPanel()">
+								<mat-icon class="blink">radio_button_checked</mat-icon>
+								<span class="blink">REC</span>
+								@if (recordingTime) {
+									<span> | {{ recordingTime | date: 'H:mm:ss' }}</span>
+								}
+							</div>
+						}
+
+						@if (isBroadcastingStarted) {
+							<!-- Broadcasting tag -->
+							<div id="broadcasting-tag" class="broadcasting-tag">
+								<mat-icon class="blink">sensors</mat-icon>
+								<span class="blink">LIVE</span>
+							</div>
+						}
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+
+	<!-- Media and menu buttons container -->
+	<div class="media-buttons-container" id="media-buttons-container">
+		<ov-toolbar-media-buttons
+			[showCameraButton]="showCameraButton"
+			[isCameraEnabled]="isCameraEnabled"
+			[cameraMuteChanging]="cameraMuteChanging"
+			[showMicrophoneButton]="showMicrophoneButton"
+			[isMicrophoneEnabled]="isMicrophoneEnabled"
+			[microphoneMuteChanging]="microphoneMuteChanging"
+			[showScreenshareButton]="showScreenshareButton"
+			[isScreenShareEnabled]="isScreenShareEnabled"
+			[isFirefoxBrowser]="isFirefoxBrowser"
+			[hasVideoDevices]="hasVideoDevices"
+			[hasAudioDevices]="hasAudioDevices"
+			[isConnectionLost]="isConnectionLost"
+			[isMinimal]="isMinimal"
+			[showMoreOptionsButton]="showMoreOptionsButton"
+			[showFullscreenButton]="showFullscreenButton"
+			[showRecordingButton]="showRecordingButton"
+			[showViewRecordingsButton]="showViewRecordingsButton"
+			[showBroadcastingButton]="showBroadcastingButton"
+			[showBackgroundEffectsButton]="showBackgroundEffectsButton"
+			[showCaptionsButton]="showCaptionsButton"
+			[showSettingsButton]="showSettingsButton"
+			[isFullscreenActive]="isFullscreenActive"
+			[recordingStatus]="recordingStatus"
+			[hasRoomTracksPublished]="hasRoomTracksPublished"
+			[broadcastingStatus]="broadcastingStatus"
+			[captionsEnabled]="captionsEnabled"
+			[showLeaveButton]="showLeaveButton"
+			[toolbarAdditionalButtonsTemplate]="toolbarAdditionalButtonsTemplate ?? null"
+			[additionalButtonsPosition]="additionalButtonsPosition"
+			[toolbarLeaveButtonTemplate]="toolbarLeaveButtonTemplate ?? null"
+			(cameraToggled)="toggleCamera()"
+			(microphoneToggled)="toggleMicrophone()"
+			(screenShareToggled)="toggleScreenShare()"
+			(screenTrackReplaced)="replaceScreenTrack()"
+			(fullscreenToggled)="toggleFullscreen()"
+			(recordingToggled)="toggleRecording()"
+			(viewRecordingsClicked)="onViewRecordingsClicked.emit()"
+			(broadcastingToggled)="toggleBroadcasting()"
+			(backgroundEffectsToggled)="toggleBackgroundEffects()"
+			(captionsToggled)="onCaptionsToggle()"
+			(settingsToggled)="toggleSettings()"
+			(leaveClicked)="disconnect()"
+		>
+			<!-- Inject additional menu items via content projection -->
+			<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
+				<ng-container *ngTemplateOutlet="externalMoreOptionsAdditionalMenuItems?.template"></ng-container>
+			</ng-container>
+		</ov-toolbar-media-buttons>
+	</div>
+
+	<!-- Panel buttons -->
+	<div class="menu-buttons-container" id="menu-buttons-container">
+		<ov-toolbar-panel-buttons
+			[isMinimal]="isMinimal"
+			[isConnectionLost]="isConnectionLost"
+			[isActivitiesOpened]="isActivitiesOpened"
+			[isParticipantsOpened]="isParticipantsOpened"
+			[isChatOpened]="isChatOpened"
+			[unreadMessages]="unreadMessages"
+			[showActivitiesPanelButton]="showActivitiesPanelButton"
+			[showParticipantsPanelButton]="showParticipantsPanelButton"
+			[showChatPanelButton]="showChatPanelButton"
+			[recordingStatus]="recordingStatus"
+			[broadcastingStatus]="broadcastingStatus"
+			[totalParticipants]="totalParticipants()"
+			[toolbarAdditionalPanelButtonsTemplate]="toolbarAdditionalPanelButtonsTemplate"
+			(toggleActivitiesPanel)="toggleActivitiesPanel($event ?? '')"
+			(toggleParticipantsPanel)="toggleParticipantsPanel()"
+			(toggleChatPanel)="toggleChatPanel()"
+		></ov-toolbar-panel-buttons>
+	</div>
+</mat-toolbar>
