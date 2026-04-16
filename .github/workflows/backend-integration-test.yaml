@@ -14,7 +14,7 @@ on:
     inputs:
       use-aws:
         description: 'Run recording tests in AWS EC2 runner'
-        default: 'true'
+        default: 'false'
       aws-instance-type:
         description: 'AWS EC2 instance type'
         default: 'c5.2xlarge'
