@@ -1,5 +1,5 @@
 <!-- Loading State -->
-@if (isLoading) {
+@if (isLoading()) {
 	<div class="ov-page-container">
 		<div class="loading-container fade-in">
 			<mat-spinner diameter="48"></mat-spinner>
@@ -9,7 +9,7 @@
 }
 
 <!-- Error State -->
-@else if (hasError) {
+@else if (hasError()) {
 	<div class="ov-page-container">
 		<div class="error-container fade-in">
 			<div class="error-content">
@@ -28,7 +28,7 @@
 }
 
 <!-- Recording Content -->
-@else if (recording) {
+@else if (recording()) {
 	@if (viewportService.isMobileView()) {
 		<!-- Mobile Experience -->
 		<div class="mobile-container">
@@ -44,25 +44,25 @@
 
 					<!-- Center: Recording info -->
 					<div class="recording-info">
-						<h1 class="recording-title">{{ recording.roomName }}</h1>
+						<h1 class="recording-title">{{ recording()!.roomName }}</h1>
 						<div class="recording-metadata">
 							<span class="recording-date">
 								<mat-icon>schedule</mat-icon>
-								{{ recording.startDate | date: 'MMM d, y' }}
+								{{ recording()!.startDate | date: 'MMM d, y' }}
 							</span>
-							@if (recording.duration) {
+							@if (recording()!.duration) {
 								<span class="recording-duration">
 									<mat-icon>timer</mat-icon>
-									{{ formatDuration(recording.duration) }}
+									{{ formatDuration(recording()!.duration!) }}
 								</span>
 							}
 						</div>
 					</div>
 
 					<!-- Right: Actions -->
-					@if (recordingUrl || canDeleteRecording()) {
+					@if (recordingUrl() || canDeleteRecording()) {
 						<div class="header-actions">
-							@if (recordingUrl) {
+							@if (recordingUrl()) {
 								<button
 									mat-icon-button
 									(click)="downloadRecording()"
@@ -98,7 +98,7 @@
 				</div>
 
 				<!-- Status indicator for non-complete recordings -->
-				@if (recording.status !== 'complete') {
+				@if (recording()!.status !== 'complete') {
 					<div class="status-bar">
 						<mat-icon class="status-icon">{{ getStatusIcon() }}</mat-icon>
 						<span class="status-text">{{ getStatusMessage() }}</span>
@@ -108,8 +108,8 @@
 
 			<!-- Video Player Component -->
 			<ov-recording-video-player
-				[recordingUrl]="recordingUrl"
-				[recordingStatus]="recording.status"
+				[recordingUrl]="recordingUrl()"
+				[recordingStatus]="recording()!.status"
 				[showDownload]="false"
 				[showShare]="false"
 				(videoError)="onVideoError()"
@@ -131,31 +131,31 @@
 										<span>Back</span>
 									</button>
 								}
-								<h1 class="recording-title">{{ recording.roomName }}</h1>
+								<h1 class="recording-title">{{ recording()!.roomName }}</h1>
 								<div class="recording-metadata">
 									<span class="recording-date">
 										<mat-icon class="ov-action-icon">schedule</mat-icon>
-										{{ recording.startDate | date: 'MMM d, y - h:mm a' }}
+										{{ recording()!.startDate | date: 'MMM d, y - h:mm a' }}
 									</span>
-									@if (recording.duration) {
+									@if (recording()!.duration) {
 										<span class="recording-duration">
 											<mat-icon class="ov-action-icon">timer</mat-icon>
-											{{ formatDuration(recording.duration) }}
+											{{ formatDuration(recording()!.duration!) }}
 										</span>
 									}
 								</div>
 								<div class="recording-status">
-									<mat-icon [class]="'status-icon ' + recording.status">{{
+									<mat-icon [class]="'status-icon ' + recording()!.status">{{
 										getStatusIcon()
 									}}</mat-icon>
 									<span class="status-text">{{ getStatusMessage() }}</span>
 								</div>
 							</div>
 							<!-- Actions Section -->
-							@if (recordingUrl || canDeleteRecording()) {
+							@if (recordingUrl() || canDeleteRecording()) {
 								<div class="actions-section">
 									<div class="primary-actions">
-										@if (recordingUrl) {
+										@if (recordingUrl()) {
 											<button
 												mat-button
 												(click)="downloadRecording()"
@@ -198,8 +198,8 @@
 
 				<!-- Video Player Component -->
 				<ov-recording-video-player
-					[recordingUrl]="recordingUrl"
-					[recordingStatus]="recording.status"
+					[recordingUrl]="recordingUrl()"
+					[recordingStatus]="recording()!.status"
 					[showDownload]="false"
 					[showShare]="false"
 					(videoError)="onVideoError()"

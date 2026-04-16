@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -35,15 +35,15 @@ import { RecordingUiUtils } from '../../utils/ui';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ViewRecordingComponent implements OnInit {
-	recording?: MeetRecordingInfo;
-	recordingUrl?: string;
+	recording = signal<MeetRecordingInfo | undefined>(undefined);
+	recordingUrl = signal<string | undefined>(undefined);
 	recordingSecret?: string;
 
 	canRetrieveRecordings = computed(() => this.roomMemberContextService.permissions()?.canRetrieveRecordings ?? false);
 	canDeleteRecordings = computed(() => this.roomMemberContextService.permissions()?.canDeleteRecordings ?? false);
 
-	isLoading = true;
-	hasError = false;
+	isLoading = signal(true);
+	hasError = signal(false);
 
 	constructor(
 		protected recordingService: RecordingService,
@@ -65,22 +65,23 @@ export class ViewRecordingComponent implements OnInit {
 		this.recordingSecret = this.route.snapshot.queryParams['recordingSecret'];
 
 		if (!recordingId) {
-			this.hasError = true;
-			this.isLoading = false;
+			this.hasError.set(true);
+			this.isLoading.set(false);
 			return;
 		}
 
 		try {
-			this.recording = await this.recordingService.getRecording(recordingId, this.recordingSecret);
+			const recording = await this.recordingService.getRecording(recordingId, this.recordingSecret);
+			this.recording.set(recording);
 
-			if (this.recording.status === MeetRecordingStatus.COMPLETE) {
-				this.recordingUrl = this.recordingService.getRecordingMediaUrl(recordingId, this.recordingSecret);
+			if (recording.status === MeetRecordingStatus.COMPLETE) {
+				this.recordingUrl.set(this.recordingService.getRecordingMediaUrl(recordingId, this.recordingSecret));
 			}
 		} catch (error) {
 			console.error('Error fetching recording:', error);
-			this.hasError = true;
+			this.hasError.set(true);
 		} finally {
-			this.isLoading = false;
+			this.isLoading.set(false);
 		}
 	}
 
@@ -90,17 +91,22 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	downloadRecording() {
-		if (this.recording) {
-			this.recordingService.downloadRecording(this.recording, this.recordingSecret);
+		const recording = this.recording();
+		if (recording) {
+			this.recordingService.downloadRecording(recording, this.recordingSecret);
 		}
 	}
 
 	openShareDialog() {
-		this.recordingService.openShareRecordingDialog(this.recording!.recordingId);
+		const recording = this.recording();
+		if (recording) {
+			this.recordingService.openShareRecordingDialog(recording.recordingId);
+		}
 	}
 
 	canDeleteRecording(): boolean {
-		if (!this.recording) return false;
+		const recording = this.recording();
+		if (!recording) return false;
 
 		const deletableStatuses = [
 			MeetRecordingStatus.COMPLETE,
@@ -109,13 +115,13 @@ export class ViewRecordingComponent implements OnInit {
 			MeetRecordingStatus.LIMIT_REACHED
 		];
 
-		return this.canDeleteRecordings() && deletableStatuses.includes(this.recording.status);
+		return this.canDeleteRecordings() && deletableStatuses.includes(recording.status);
 	}
 
 	deleteRecording() {
-		if (!this.recording || !this.canDeleteRecording()) return;
+		const recording = this.recording();
+		if (!recording || !this.canDeleteRecording()) return;
 
-		const recording = this.recording;
 		const deleteCallback = async () => {
 			try {
 				await this.recordingService.deleteRecording(recording.recordingId);
@@ -140,18 +146,19 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	async retryLoad() {
-		this.isLoading = true;
-		this.hasError = false;
+		this.isLoading.set(true);
+		this.hasError.set(false);
 		await this.loadRecording();
 	}
 
 	getStatusIcon(): string {
-		return RecordingUiUtils.getPlayerStatusIcon(this.recording?.status);
+		return RecordingUiUtils.getPlayerStatusIcon(this.recording()?.status);
 	}
 
 	getStatusMessage(): string {
-		if (!this.recording) return 'Recording not found';
-		return RecordingUiUtils.getPlayerStatusMessage(this.recording.status);
+		const recording = this.recording();
+		if (!recording) return 'Recording not found';
+		return RecordingUiUtils.getPlayerStatusMessage(recording.status);
 	}
 
 	formatDuration(duration: number): string {
@@ -165,8 +172,9 @@ export class ViewRecordingComponent implements OnInit {
 	 * - A leave redirect URL is configured (to navigate to that URL)
 	 */
 	shouldShowBackButton(): boolean {
+		const recording = this.recording();
 		return (
-			(this.canRetrieveRecordings() && !!this.recording?.roomId) ||
+			(this.canRetrieveRecordings() && !!recording?.roomId) ||
 			this.appCtxService.isEmbeddedMode() ||
 			!!this.navigationService.getLeaveRedirectURL()
 		);
@@ -180,9 +188,10 @@ export class ViewRecordingComponent implements OnInit {
 	 * Otherwise, it does nothing (the back button should not be shown in this case)
 	 */
 	async goBack(): Promise<void> {
-		if (this.canRetrieveRecordings() && this.recording?.roomId) {
+		const recording = this.recording();
+		if (this.canRetrieveRecordings() && recording?.roomId) {
 			// Navigate back to the room recordings page
-			await this.navigationService.navigateTo(`/room/${this.recording.roomId}/recordings`);
+			await this.navigationService.navigateTo(`/room/${recording.roomId}/recordings`);
 			return;
 		}
 
