@@ -95,4 +95,7 @@ jobs:
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Available files:" >> $GITHUB_STEP_SUMMARY
             find meet-ce/frontend/test-results -type f 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
+
+      - name: Cleanup
+        if: always()
         uses: OpenVidu/actions/cleanup@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
