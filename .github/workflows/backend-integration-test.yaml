@@ -14,7 +14,7 @@ on:
     inputs:
       use-aws:
         description: 'Run recording tests in AWS EC2 runner'
-        default: 'true'
+        default: 'false'
       aws-instance-type:
         description: 'AWS EC2 instance type'
         default: 'c5.2xlarge'
@@ -214,7 +214,7 @@ jobs:
           if [[ "${{ matrix.storage-provider }}" == "abs" ]]; then
             echo "Installing Azure CLI..."
             curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-            
+
             echo "Logging into Azure..."
             az storage blob delete-batch \
               --account-name "${{ vars.MEET_AZURE_ACCOUNT_NAME }}" \
@@ -223,16 +223,16 @@ jobs:
               --pattern "openvidu-meet/*" \
               --delete-snapshots include || echo "No files found to delete or container doesn't exist"
             echo "Existing blobs deleted from Azure Blob Storage container."
-              
+
           elif [[ "${{ matrix.storage-provider }}" == "gcs" ]]; then
             echo "Installing Google Cloud CLI..."
             curl https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-x86_64.tar.gz | tar -xz
             ./google-cloud-sdk/install.sh --quiet
             export PATH=$PATH:$(pwd)/google-cloud-sdk/bin
-            
+
             echo "Authenticating with Google Cloud..."
             gcloud auth activate-service-account --key-file=/tmp/credentials.json
-            
+
             echo "Removing openvidu-meet folder from GCS bucket..."
             gsutil -m rm -r gs://openvidu-appdata/openvidu-meet/ || echo "No files found to delete or bucket doesn't exist"
           fi
