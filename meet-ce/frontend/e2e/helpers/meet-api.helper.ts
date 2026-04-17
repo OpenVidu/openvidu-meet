@@ -136,12 +136,15 @@ export async function createExternalRoomMember(params: {
 }
 
 export async function deleteRoom(roomId: string): Promise<void> {
-	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}`), {
-		method: 'DELETE',
-		headers: {
-			'x-api-key': API_KEY
+	const response = await fetch(
+		withApiPath(`/rooms/${encodeURIComponent(roomId)}?withMeeting=force&withRecordings=force`),
+		{
+			method: 'DELETE',
+			headers: {
+				'x-api-key': API_KEY
+			}
 		}
-	});
+	);
 
 	if (response.status === 404) {
 		return;
