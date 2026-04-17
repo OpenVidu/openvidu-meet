@@ -68,6 +68,33 @@ jobs:
           path: meet-ce/frontend/test-results/
           retention-days: 2
 
+      - name: Generate test report
+        if: always()
+        run: |
+          echo "# Frontend E2E Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          if [ -f "meet-ce/frontend/test-results/results.json" ]; then
+            TOTAL=$(jq '.stats.expected' meet-ce/frontend/test-results/results.json)
+            PASSED=$(jq '.stats.expected - .stats.unexpected - .stats.skipped' meet-ce/frontend/test-results/results.json)
+            FAILED=$(jq '.stats.unexpected' meet-ce/frontend/test-results/results.json)
+            SKIPPED=$(jq '.stats.skipped' meet-ce/frontend/test-results/results.json)
+
+            echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
+            echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+            echo "| Total Tests | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
+            echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
+            echo "| ⏭️ Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+
+            if [ "$FAILED" -gt 0 ]; then
+              echo "## Failed Tests" >> $GITHUB_STEP_SUMMARY
+              jq -r '.suites[] | select(.specs[] | select(.ok == false)) | .file as $file | .specs[] | select(.ok == false) | "\n### \($file)\n- \(.title)"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+            fi
+          else
+            echo "⚠️ Test results file not found" >> $GITHUB_STEP_SUMMARY
+          fi
+
       - name: Upload OpenVidu Meet logs on failure
         if: failure()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
