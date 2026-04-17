@@ -1,29 +1,29 @@
 import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    ContentChild,
-    DestroyRef,
-    inject,
-    OnInit,
-    output,
-    TemplateRef
+	ChangeDetectionStrategy,
+	ChangeDetectorRef,
+	Component,
+	contentChild,
+	DestroyRef,
+	inject,
+	OnInit,
+	output,
+	TemplateRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { skip } from 'rxjs';
 import {
-    ActivitiesPanelDirective,
-    AdditionalPanelsDirective,
-    ChatPanelDirective,
-    ParticipantsPanelDirective
+	ActivitiesPanelDirective,
+	AdditionalPanelsDirective,
+	ChatPanelDirective,
+	ParticipantsPanelDirective
 } from '../../directives/template/openvidu-components-angular.directive';
 import {
-    ActivitiesPanelStatusEvent,
-    ChatPanelStatusEvent,
-    PanelStatusInfo,
-    PanelType,
-    ParticipantsPanelStatusEvent,
-    SettingsPanelStatusEvent
+	ActivitiesPanelStatusEvent,
+	ChatPanelStatusEvent,
+	PanelStatusInfo,
+	PanelType,
+	ParticipantsPanelStatusEvent,
+	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { PanelService } from '../../services/panel/panel.service';
 import { PanelTemplateConfiguration, TemplateManagerService } from '../../services/template/template-manager.service';
@@ -46,75 +46,51 @@ export class PanelComponent implements OnInit {
 	/**
 	 * @ignore
 	 */
-	@ContentChild('participantsPanel', { read: TemplateRef }) participantsPanelTemplate: TemplateRef<any> | undefined = undefined;
+	readonly participantsPanelTemplate = contentChild('participantsPanel', { read: TemplateRef });
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('backgroundEffectsPanel', { read: TemplateRef }) backgroundEffectsPanelTemplate: TemplateRef<any> | undefined = undefined;
+	readonly backgroundEffectsPanelTemplate = contentChild('backgroundEffectsPanel', { read: TemplateRef });
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('settingsPanel', { read: TemplateRef }) settingsPanelTemplate: TemplateRef<any> | undefined = undefined;
+	readonly settingsPanelTemplate = contentChild('settingsPanel', { read: TemplateRef });
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('activitiesPanel', { read: TemplateRef }) activitiesPanelTemplate: TemplateRef<any> | undefined = undefined;
+	readonly activitiesPanelTemplate = contentChild('activitiesPanel', { read: TemplateRef });
 	/**
 	 * @ignore
 	 */
-	@ContentChild('chatPanel', { read: TemplateRef }) chatPanelTemplate: TemplateRef<any> | undefined = undefined;
+	readonly chatPanelTemplate = contentChild('chatPanel', { read: TemplateRef });
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('additionalPanels', { read: TemplateRef }) additionalPanelsTemplate: TemplateRef<any> | undefined = undefined;
+	readonly additionalPanelsTemplate = contentChild('additionalPanels', { read: TemplateRef });
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(ParticipantsPanelDirective)
-	set externalParticipantPanel(externalParticipantsPanel: ParticipantsPanelDirective) {
-		this._externalParticipantPanel = externalParticipantsPanel;
-		if (externalParticipantsPanel) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	readonly externalParticipantPanel = contentChild(ParticipantsPanelDirective);
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(ActivitiesPanelDirective)
-	set externalActivitiesPanel(externalActivitiesPanel: ActivitiesPanelDirective) {
-		this._externalActivitiesPanel = externalActivitiesPanel;
-		if (externalActivitiesPanel) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	readonly externalActivitiesPanel = contentChild(ActivitiesPanelDirective);
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(ChatPanelDirective)
-	set externalChatPanel(externalChatPanel: ChatPanelDirective) {
-		this._externalChatPanel = externalChatPanel;
-		if (externalChatPanel) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	readonly externalChatPanel = contentChild(ChatPanelDirective);
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(AdditionalPanelsDirective)
-	set externalAdditionalPanels(externalAdditionalPanels: AdditionalPanelsDirective) {
-		this._externalAdditionalPanels = externalAdditionalPanels;
-		if (externalAdditionalPanels) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	readonly externalAdditionalPanels = contentChild(AdditionalPanelsDirective);
 
 	/**
 	 * This event is fired when the chat panel status has been changed.
@@ -189,7 +165,15 @@ export class PanelComponent implements OnInit {
 
 	private panelEmitersHandler: Map<
 		PanelType,
-		{ emit: (value: ChatPanelStatusEvent | ParticipantsPanelStatusEvent | SettingsPanelStatusEvent | ActivitiesPanelStatusEvent) => void }
+		{
+			emit: (
+				value:
+					| ChatPanelStatusEvent
+					| ParticipantsPanelStatusEvent
+					| SettingsPanelStatusEvent
+					| ActivitiesPanelStatusEvent
+			) => void;
+		}
 	> = new Map();
 
 	/**
@@ -217,10 +201,10 @@ export class PanelComponent implements OnInit {
 	 */
 	private setupTemplates(): void {
 		this.templateConfig = this.templateManagerService.setupPanelTemplates(
-			this._externalParticipantPanel,
-			this._externalChatPanel,
-			this._externalActivitiesPanel,
-			this._externalAdditionalPanels
+			this.externalParticipantPanel(),
+			this.externalChatPanel(),
+			this.externalActivitiesPanel(),
+			this.externalAdditionalPanels()
 		);
 
 		// Apply templates to component properties for backward compatibility
@@ -232,18 +216,7 @@ export class PanelComponent implements OnInit {
 	 * Applies the template configuration to component properties
 	 */
 	private applyTemplateConfiguration(): void {
-		if (this.templateConfig.participantsPanelTemplate) {
-			this.participantsPanelTemplate = this.templateConfig.participantsPanelTemplate;
-		}
-		if (this.templateConfig.chatPanelTemplate) {
-			this.chatPanelTemplate = this.templateConfig.chatPanelTemplate;
-		}
-		if (this.templateConfig.activitiesPanelTemplate) {
-			this.activitiesPanelTemplate = this.templateConfig.activitiesPanelTemplate;
-		}
-		if (this.templateConfig.additionalPanelsTemplate) {
-			this.additionalPanelsTemplate = this.templateConfig.additionalPanelsTemplate;
-		}
+		// Template refs are now read directly from signals in the template.
 	}
 
 	/**
@@ -264,23 +237,25 @@ export class PanelComponent implements OnInit {
 	}
 
 	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
-			this.isChatPanelOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
-			this.isParticipantsPanelOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
-			this.isBackgroundEffectsPanelOpened = ev.isOpened && ev.panelType === PanelType.BACKGROUND_EFFECTS;
-			this.isSettingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
-			this.isActivitiesPanelOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
-			this.isExternalPanelOpened =
-				ev.isOpened &&
-				!this.isSettingsPanelOpened &&
-				!this.isBackgroundEffectsPanelOpened &&
-				!this.isChatPanelOpened &&
-				!this.isParticipantsPanelOpened &&
-				!this.isActivitiesPanelOpened;
-			this.cd.markForCheck();
+		this.panelService.panelStatusObs
+			.pipe(skip(1), takeUntilDestroyed(this.destroyRef))
+			.subscribe((ev: PanelStatusInfo) => {
+				this.isChatPanelOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
+				this.isParticipantsPanelOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
+				this.isBackgroundEffectsPanelOpened = ev.isOpened && ev.panelType === PanelType.BACKGROUND_EFFECTS;
+				this.isSettingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
+				this.isActivitiesPanelOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
+				this.isExternalPanelOpened =
+					ev.isOpened &&
+					!this.isSettingsPanelOpened &&
+					!this.isBackgroundEffectsPanelOpened &&
+					!this.isChatPanelOpened &&
+					!this.isParticipantsPanelOpened &&
+					!this.isActivitiesPanelOpened;
+				this.cd.markForCheck();
 
-			this.sendPanelStatusChangedEvent(ev);
-		});
+				this.sendPanelStatusChangedEvent(ev);
+			});
 	}
 
 	private sendPanelStatusChangedEvent(event: PanelStatusInfo) {

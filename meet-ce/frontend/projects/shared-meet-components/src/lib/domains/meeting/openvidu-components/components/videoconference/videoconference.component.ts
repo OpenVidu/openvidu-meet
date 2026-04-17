@@ -3,13 +3,13 @@ import {
 	AfterViewInit,
 	ChangeDetectorRef,
 	Component,
-	ContentChild,
 	DestroyRef,
 	OnDestroy,
 	TemplateRef,
-	ViewChild,
+	contentChild,
 	inject,
-	output
+	output,
+	viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, skip, take } from 'rxjs';
@@ -109,365 +109,67 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private static readonly SPINNER_DIAMETER = 50;
 	// *** Toolbar ***
 
-	private _externalToolbar?: ToolbarDirective;
-	/**
-	 * @internal
-	 */
-	@ContentChild(ToolbarDirective)
-	set externalToolbar(value: ToolbarDirective) {
-		this._externalToolbar = value;
-		this.setupTemplates();
-	}
-
-	get externalToolbar(): ToolbarDirective | undefined {
-		return this._externalToolbar;
-	}
-
-	private _externalToolbarAdditionalButtons?: ToolbarAdditionalButtonsDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(ToolbarAdditionalButtonsDirective)
-	set externalToolbarAdditionalButtons(value: ToolbarAdditionalButtonsDirective) {
-		this._externalToolbarAdditionalButtons = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalToolbarAdditionalButtons(): ToolbarAdditionalButtonsDirective | undefined {
-		return this._externalToolbarAdditionalButtons;
-	}
-
-	private _externalToolbarLeaveButton?: LeaveButtonDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(LeaveButtonDirective)
-	set externalToolbarLeaveButton(value: LeaveButtonDirective) {
-		this._externalToolbarLeaveButton = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalToolbarLeaveButton(): LeaveButtonDirective | undefined {
-		return this._externalToolbarLeaveButton;
-	}
-
-	private _externalToolbarAdditionalPanelButtons?: ToolbarAdditionalPanelButtonsDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(ToolbarAdditionalPanelButtonsDirective)
-	set externalToolbarAdditionalPanelButtons(value: ToolbarAdditionalPanelButtonsDirective) {
-		this._externalToolbarAdditionalPanelButtons = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalToolbarAdditionalPanelButtons(): ToolbarAdditionalPanelButtonsDirective | undefined {
-		return this._externalToolbarAdditionalPanelButtons;
-	}
-
-	private _externalAdditionalPanels?: AdditionalPanelsDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(AdditionalPanelsDirective)
-	set externalAdditionalPanels(value: AdditionalPanelsDirective) {
-		this._externalAdditionalPanels = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalAdditionalPanels(): AdditionalPanelsDirective | undefined {
-		return this._externalAdditionalPanels;
-	}
+	readonly externalToolbar = contentChild(ToolbarDirective);
+	readonly externalToolbarAdditionalButtons = contentChild(ToolbarAdditionalButtonsDirective);
+	readonly externalToolbarLeaveButton = contentChild(LeaveButtonDirective);
+	readonly externalToolbarAdditionalPanelButtons = contentChild(ToolbarAdditionalPanelButtonsDirective);
+	readonly externalAdditionalPanels = contentChild(AdditionalPanelsDirective);
 
 	// *** Panels ***
 
-	private _externalPanel?: PanelDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(PanelDirective)
-	set externalPanel(value: PanelDirective) {
-		this._externalPanel = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalPanel(): PanelDirective | undefined {
-		return this._externalPanel;
-	}
-
-	private _externalChatPanel?: ChatPanelDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(ChatPanelDirective)
-	set externalChatPanel(value: ChatPanelDirective) {
-		this._externalChatPanel = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalChatPanel(): ChatPanelDirective | undefined {
-		return this._externalChatPanel;
-	}
-
-	private _externalActivitiesPanel?: ActivitiesPanelDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(ActivitiesPanelDirective)
-	set externalActivitiesPanel(value: ActivitiesPanelDirective) {
-		this._externalActivitiesPanel = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalActivitiesPanel(): ActivitiesPanelDirective | undefined {
-		return this._externalActivitiesPanel;
-	}
-
-	private _externalParticipantsPanel?: ParticipantsPanelDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(ParticipantsPanelDirective)
-	set externalParticipantsPanel(value: ParticipantsPanelDirective) {
-		this._externalParticipantsPanel = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalParticipantsPanel(): ParticipantsPanelDirective | undefined {
-		return this._externalParticipantsPanel;
-	}
-
-	private _externalParticipantPanelItem?: ParticipantPanelItemDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(ParticipantPanelItemDirective)
-	set externalParticipantPanelItem(value: ParticipantPanelItemDirective) {
-		this._externalParticipantPanelItem = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalParticipantPanelItem(): ParticipantPanelItemDirective | undefined {
-		return this._externalParticipantPanelItem;
-	}
-
-	private _externalParticipantPanelItemElements?: ParticipantPanelItemElementsDirective;
-
-	/**
-	 * @internal
-	 */
-	@ContentChild(ParticipantPanelItemElementsDirective)
-	set externalParticipantPanelItemElements(value: ParticipantPanelItemElementsDirective) {
-		this._externalParticipantPanelItemElements = value;
-		this.setupTemplates();
-	}
-
-	/**
-	 * @internal
-	 */
-	get externalParticipantPanelItemElements(): ParticipantPanelItemElementsDirective | undefined {
-		return this._externalParticipantPanelItemElements;
-	}
+	readonly externalPanel = contentChild(PanelDirective);
+	readonly externalChatPanel = contentChild(ChatPanelDirective);
+	readonly externalActivitiesPanel = contentChild(ActivitiesPanelDirective);
+	readonly externalParticipantsPanel = contentChild(ParticipantsPanelDirective);
+	readonly externalParticipantPanelItem = contentChild(ParticipantPanelItemDirective);
+	readonly externalParticipantPanelItemElements = contentChild(ParticipantPanelItemElementsDirective);
 
 	// *** Layout ***
 
-	private _externalLayout?: LayoutDirective;
-	/**
-	 * @internal
-	 */
-	@ContentChild(LayoutDirective)
-	set externalLayout(value: LayoutDirective) {
-		this._externalLayout = value;
-		this.setupTemplates();
-	}
-	/**
-	 * @internal
-	 */
-	get externalLayout(): LayoutDirective | undefined {
-		return this._externalLayout;
-	}
-
-	private _externalStream?: StreamDirective;
-	/**
-	 * @internal
-	 */
-	@ContentChild(StreamDirective)
-	set externalStream(value: StreamDirective) {
-		this._externalStream = value;
-		this.setupTemplates();
-	}
-	/**
-	 * @internal
-	 */
-	get externalStream(): StreamDirective | undefined {
-		return this._externalStream;
-	}
+	readonly externalLayout = contentChild(LayoutDirective);
+	readonly externalStream = contentChild(StreamDirective);
 
 	// *** PreJoin ***
 
-	private _externalPreJoin?: PreJoinDirective;
-	/**
-	 * @internal
-	 */
-	@ContentChild(PreJoinDirective)
-	set externalPreJoin(value: PreJoinDirective) {
-		this._externalPreJoin = value;
-		this.setupTemplates();
-	}
-	/**
-	 * @internal
-	 */
-	get externalPreJoin(): PreJoinDirective | undefined {
-		return this._externalPreJoin;
-	}
-
-	private _externalParticipantPanelAfterLocalParticipant?: ParticipantPanelAfterLocalParticipantDirective;
-	/**
-	 * @internal
-	 */
-	@ContentChild(ParticipantPanelAfterLocalParticipantDirective)
-	set externalParticipantPanelAfterLocalParticipant(value: ParticipantPanelAfterLocalParticipantDirective) {
-		this._externalParticipantPanelAfterLocalParticipant = value;
-		this.setupTemplates();
-	}
-	/**
-	 * @internal
-	 */
-	get externalParticipantPanelAfterLocalParticipant(): ParticipantPanelAfterLocalParticipantDirective | undefined {
-		return this._externalParticipantPanelAfterLocalParticipant;
-	}
-
-	private _externalLayoutAdditionalElements?: LayoutAdditionalElementsDirective;
-	/**
-	 * @internal
-	 */
-	@ContentChild(LayoutAdditionalElementsDirective)
-	set externalLayoutAdditionalElements(value: LayoutAdditionalElementsDirective) {
-		this._externalLayoutAdditionalElements = value;
-		this.setupTemplates();
-	}
-	/**
-	 * @internal
-	 */
-	get externalLayoutAdditionalElements(): LayoutAdditionalElementsDirective | undefined {
-		return this._externalLayoutAdditionalElements;
-	}
-
-	private _externalSettingsPanelGeneralAdditionalElements?: SettingsPanelGeneralAdditionalElementsDirective;
-	/**
-	 * @internal
-	 */
-	@ContentChild(SettingsPanelGeneralAdditionalElementsDirective)
-	set externalSettingsPanelGeneralAdditionalElements(value: SettingsPanelGeneralAdditionalElementsDirective) {
-		this._externalSettingsPanelGeneralAdditionalElements = value;
-		this.setupTemplates();
-	}
-	/**
-	 * @internal
-	 */
-	get externalSettingsPanelGeneralAdditionalElements(): SettingsPanelGeneralAdditionalElementsDirective | undefined {
-		return this._externalSettingsPanelGeneralAdditionalElements;
-	}
-
-	private _externalToolbarMoreOptionsAdditionalMenuItems?: ToolbarMoreOptionsAdditionalMenuItemsDirective;
-	/**
-	 * @internal
-	 */
-	@ContentChild(ToolbarMoreOptionsAdditionalMenuItemsDirective)
-	set externalToolbarMoreOptionsAdditionalMenuItems(value: ToolbarMoreOptionsAdditionalMenuItemsDirective) {
-		this._externalToolbarMoreOptionsAdditionalMenuItems = value;
-		this.setupTemplates();
-	}
-	/**
-	 * @internal
-	 */
-	get externalToolbarMoreOptionsAdditionalMenuItems(): ToolbarMoreOptionsAdditionalMenuItemsDirective | undefined {
-		return this._externalToolbarMoreOptionsAdditionalMenuItems;
-	}
+	readonly externalPreJoin = contentChild(PreJoinDirective);
+	readonly externalParticipantPanelAfterLocalParticipant = contentChild(ParticipantPanelAfterLocalParticipantDirective);
+	readonly externalLayoutAdditionalElements = contentChild(LayoutAdditionalElementsDirective);
+	readonly externalSettingsPanelGeneralAdditionalElements = contentChild(SettingsPanelGeneralAdditionalElementsDirective);
+	readonly externalToolbarMoreOptionsAdditionalMenuItems = contentChild(ToolbarMoreOptionsAdditionalMenuItemsDirective);
 
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultToolbar', { static: false, read: TemplateRef }) defaultToolbarTemplate:
-		| TemplateRef<any>
-		| undefined = undefined;
+	readonly defaultToolbarTemplate = viewChild('defaultToolbar', { read: TemplateRef });
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultPanel', { static: false, read: TemplateRef }) defaultPanelTemplate:
-		| TemplateRef<any>
-		| undefined = undefined;
+	readonly defaultPanelTemplate = viewChild('defaultPanel', { read: TemplateRef });
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultChatPanel', { static: false, read: TemplateRef }) defaultChatPanelTemplate:
-		| TemplateRef<any>
-		| undefined = undefined;
+	readonly defaultChatPanelTemplate = viewChild('defaultChatPanel', { read: TemplateRef });
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultParticipantsPanel', { static: false, read: TemplateRef }) defaultParticipantsPanelTemplate:
-		| TemplateRef<any>
-		| undefined = undefined;
+	readonly defaultParticipantsPanelTemplate = viewChild('defaultParticipantsPanel', { read: TemplateRef });
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultActivitiesPanel', { static: false, read: TemplateRef })
-	defaultActivitiesPanelTemplate: TemplateRef<any> | undefined = undefined;
+	readonly defaultActivitiesPanelTemplate = viewChild('defaultActivitiesPanel', { read: TemplateRef });
 
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultParticipantPanelItem', { static: false, read: TemplateRef })
-	defaultParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
+	readonly defaultParticipantPanelItemTemplate = viewChild('defaultParticipantPanelItem', { read: TemplateRef });
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultLayout', { static: false, read: TemplateRef }) defaultLayoutTemplate:
-		| TemplateRef<any>
-		| undefined = undefined;
+	readonly defaultLayoutTemplate = viewChild('defaultLayout', { read: TemplateRef });
 	/**
 	 * @internal
 	 */
-	@ViewChild('defaultStream', { static: false, read: TemplateRef }) defaultStreamTemplate:
-		| TemplateRef<any>
-		| undefined = undefined;
+	readonly defaultStreamTemplate = viewChild('defaultStream', { read: TemplateRef });
 
 	/**
 	 * @internal
@@ -836,35 +538,35 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 */
 	private setupTemplates(): void {
 		const externalDirectives: ExternalDirectives = {
-			toolbar: this.externalToolbar,
-			toolbarAdditionalButtons: this.externalToolbarAdditionalButtons,
-			toolbarAdditionalPanelButtons: this.externalToolbarAdditionalPanelButtons,
-			toolbarLeaveButton: this.externalToolbarLeaveButton,
-			additionalPanels: this.externalAdditionalPanels,
-			panel: this.externalPanel,
-			chatPanel: this.externalChatPanel,
-			activitiesPanel: this.externalActivitiesPanel,
-			participantsPanel: this.externalParticipantsPanel,
-			participantPanelAfterLocalParticipant: this.externalParticipantPanelAfterLocalParticipant,
-			participantPanelItem: this.externalParticipantPanelItem,
-			participantPanelItemElements: this.externalParticipantPanelItemElements,
-			layout: this.externalLayout,
-			stream: this.externalStream,
-			preJoin: this.externalPreJoin,
-			layoutAdditionalElements: this.externalLayoutAdditionalElements,
-			settingsPanelGeneralAdditionalElements: this.externalSettingsPanelGeneralAdditionalElements,
-			toolbarMoreOptionsAdditionalMenuItems: this.externalToolbarMoreOptionsAdditionalMenuItems
+			toolbar: this.externalToolbar(),
+			toolbarAdditionalButtons: this.externalToolbarAdditionalButtons(),
+			toolbarAdditionalPanelButtons: this.externalToolbarAdditionalPanelButtons(),
+			toolbarLeaveButton: this.externalToolbarLeaveButton(),
+			additionalPanels: this.externalAdditionalPanels(),
+			panel: this.externalPanel(),
+			chatPanel: this.externalChatPanel(),
+			activitiesPanel: this.externalActivitiesPanel(),
+			participantsPanel: this.externalParticipantsPanel(),
+			participantPanelAfterLocalParticipant: this.externalParticipantPanelAfterLocalParticipant(),
+			participantPanelItem: this.externalParticipantPanelItem(),
+			participantPanelItemElements: this.externalParticipantPanelItemElements(),
+			layout: this.externalLayout(),
+			stream: this.externalStream(),
+			preJoin: this.externalPreJoin(),
+			layoutAdditionalElements: this.externalLayoutAdditionalElements(),
+			settingsPanelGeneralAdditionalElements: this.externalSettingsPanelGeneralAdditionalElements(),
+			toolbarMoreOptionsAdditionalMenuItems: this.externalToolbarMoreOptionsAdditionalMenuItems()
 		};
 
 		const defaultTemplates: DefaultTemplates = {
-			toolbar: this.defaultToolbarTemplate!,
-			panel: this.defaultPanelTemplate!,
-			chatPanel: this.defaultChatPanelTemplate!,
-			participantsPanel: this.defaultParticipantsPanelTemplate!,
-			activitiesPanel: this.defaultActivitiesPanelTemplate!,
-			participantPanelItem: this.defaultParticipantPanelItemTemplate!,
-			layout: this.defaultLayoutTemplate!,
-			stream: this.defaultStreamTemplate!
+			toolbar: this.defaultToolbarTemplate()!,
+			panel: this.defaultPanelTemplate()!,
+			chatPanel: this.defaultChatPanelTemplate()!,
+			participantsPanel: this.defaultParticipantsPanelTemplate()!,
+			activitiesPanel: this.defaultActivitiesPanelTemplate()!,
+			participantPanelItem: this.defaultParticipantPanelItemTemplate()!,
+			layout: this.defaultLayoutTemplate()!,
+			stream: this.defaultStreamTemplate()!
 		};
 
 		// Use the template manager service to set up all templates
