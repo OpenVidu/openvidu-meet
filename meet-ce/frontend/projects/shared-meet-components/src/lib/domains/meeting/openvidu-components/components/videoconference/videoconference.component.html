@@ -2,14 +2,14 @@
 	<!-- Loading spinner -->
 	@if (componentState.isLoading) {
 		<div id="spinner">
-			<mat-spinner [diameter]="spinnerDiameter"></mat-spinner>
+			<mat-spinner [diameter]="spinnerDiameter" />
 			<span>{{ 'PREJOIN.PREPARING' | translate }}</span>
 		</div>
 	} @else if (componentState.showPrejoin) {
 		<!-- Prejoin -->
 		<div [@inOutAnimation] id="pre-join-container">
 			@if (openviduAngularPreJoinTemplate) {
-				<ng-container *ngTemplateOutlet="openviduAngularPreJoinTemplate"></ng-container>
+				<ng-container *ngTemplateOutlet="openviduAngularPreJoinTemplate" />
 			} @else {
 				<ov-pre-join
 					[error]="componentState.error?.tokenError"
@@ -19,7 +19,7 @@
 					(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
 					(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
 					(onLangChanged)="onLangChanged.emit($event)"
-				></ov-pre-join>
+				/>
 			}
 		</div>
 	} @else if (componentState.error?.hasError) {
@@ -52,19 +52,19 @@
 			>
 				<ng-template #toolbar>
 					@if (openviduAngularToolbarTemplate) {
-						<ng-container *ngTemplateOutlet="openviduAngularToolbarTemplate"></ng-container>
+						<ng-container *ngTemplateOutlet="openviduAngularToolbarTemplate" />
 					}
 				</ng-template>
 
 				<ng-template #panel>
 					@if (openviduAngularPanelTemplate) {
-						<ng-container *ngTemplateOutlet="openviduAngularPanelTemplate"></ng-container>
+						<ng-container *ngTemplateOutlet="openviduAngularPanelTemplate" />
 					}
 				</ng-template>
 
 				<ng-template #layout>
 					@if (openviduAngularLayoutTemplate) {
-						<ng-container *ngTemplateOutlet="openviduAngularLayoutTemplate"></ng-container>
+						<ng-container *ngTemplateOutlet="openviduAngularLayoutTemplate" />
 					}
 				</ng-template>
 			</ov-session>
@@ -93,20 +93,20 @@
 		(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
 	>
 		<ng-template #toolbarAdditionalButtons>
-			<ng-container *ngTemplateOutlet="openviduAngularToolbarAdditionalButtonsTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularToolbarAdditionalButtonsTemplate" />
 		</ng-template>
 
 		<ng-template #toolbarAdditionalPanelButtons>
-			<ng-container *ngTemplateOutlet="openviduAngularToolbarAdditionalPanelButtonsTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularToolbarAdditionalPanelButtonsTemplate" />
 		</ng-template>
 
 		<ng-template #toolbarLeaveButton>
-			<ng-container *ngTemplateOutlet="openviduAngularToolbarLeaveButtonTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularToolbarLeaveButtonTemplate" />
 		</ng-template>
 
 		<!-- Inject additional menu items in toolbar more options -->
 		<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
-			<ng-container *ngTemplateOutlet="ovToolbarMoreOptionsAdditionalMenuItemsTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="ovToolbarMoreOptionsAdditionalMenuItemsTemplate" />
 		</ng-container>
 	</ov-toolbar>
 </ng-template>
@@ -120,15 +120,15 @@
 		(onActivitiesPanelStatusChanged)="onActivitiesPanelStatusChanged.emit($event)"
 	>
 		<ng-template #chatPanel>
-			<ng-container *ngTemplateOutlet="openviduAngularChatPanelTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularChatPanelTemplate" />
 		</ng-template>
 
 		<ng-template #participantsPanel>
-			<ng-container *ngTemplateOutlet="openviduAngularParticipantsPanelTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularParticipantsPanelTemplate" />
 		</ng-template>
 
 		<ng-template #backgroundEffectsPanel>
-			<ov-background-effects-panel id="default-background-effects-panel"></ov-background-effects-panel>
+			<ov-background-effects-panel id="default-background-effects-panel" />
 		</ng-template>
 
 		<ng-template #settingsPanel>
@@ -141,23 +141,23 @@
 				(onLangChanged)="onLangChanged.emit($event)"
 			>
 				<ng-container *ovSettingsPanelGeneralAdditionalElements>
-					<ng-container *ngTemplateOutlet="ovSettingsPanelGeneralAdditionalElementsTemplate"></ng-container>
+					<ng-container *ngTemplateOutlet="ovSettingsPanelGeneralAdditionalElementsTemplate" />
 				</ng-container>
 			</ov-settings-panel>
 		</ng-template>
 
 		<ng-template #activitiesPanel>
-			<ng-container *ngTemplateOutlet="openviduAngularActivitiesPanelTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularActivitiesPanelTemplate" />
 		</ng-template>
 
 		<ng-template #additionalPanels>
-			<ng-container *ngTemplateOutlet="openviduAngularAdditionalPanelsTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularAdditionalPanelsTemplate" />
 		</ng-template>
 	</ov-panel>
 </ng-template>
 
 <ng-template #defaultChatPanel>
-	<ov-chat-panel id="default-chat-panel"></ov-chat-panel>
+	<ov-chat-panel id="default-chat-panel" />
 </ng-template>
 
 <ng-template #defaultActivitiesPanel>
@@ -172,7 +172,7 @@
 		(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
 		(onBroadcastingStartRequested)="onBroadcastingStartRequested.emit($event)"
 		(onBroadcastingStopRequested)="onBroadcastingStopRequested.emit($event)"
-	></ov-activities-panel>
+	/>
 </ng-template>
 
 <ng-template #defaultParticipantsPanel>
@@ -180,10 +180,10 @@
 		<ng-template #participantPanelItem let-participant>
 			<ng-container
 				*ngTemplateOutlet="openviduAngularParticipantPanelItemTemplate; context: { $implicit: participant }"
-			></ng-container>
+			/>
 		</ng-template>
 		<ng-template #participantPanelAfterLocalParticipant>
-			<ng-container *ngTemplateOutlet="openviduAngularParticipantPanelAfterLocalParticipantTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularParticipantPanelAfterLocalParticipantTemplate" />
 		</ng-template>
 	</ov-participants-panel>
 </ng-template>
@@ -192,8 +192,11 @@
 	<ov-participant-panel-item [participant]="participant" id="default-participant-panel-item">
 		<ng-template #participantPanelItemElements>
 			<ng-container
-				*ngTemplateOutlet="openviduAngularParticipantPanelItemElementsTemplate; context: { $implicit: participant }"
-			></ng-container>
+				*ngTemplateOutlet="
+					openviduAngularParticipantPanelItemElementsTemplate;
+					context: { $implicit: participant }
+				"
+			/>
 		</ng-template>
 	</ov-participant-panel-item>
 </ng-template>
@@ -201,15 +204,15 @@
 <ng-template #defaultLayout>
 	<ov-layout id="default-layout">
 		<ng-template #stream let-track>
-			<ng-container *ngTemplateOutlet="openviduAngularStreamTemplate; context: { $implicit: track }"></ng-container>
+			<ng-container *ngTemplateOutlet="openviduAngularStreamTemplate; context: { $implicit: track }" />
 		</ng-template>
 
 		<ng-template #layoutAdditionalElements>
-			<ng-container *ngTemplateOutlet="ovLayoutAdditionalElementsTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="ovLayoutAdditionalElementsTemplate" />
 		</ng-template>
 	</ov-layout>
 </ng-template>
 
 <ng-template #defaultStream let-track>
-	<ov-stream [track]="track" id="default-stream"></ov-stream>
+	<ov-stream [track]="track" id="default-stream" />
 </ng-template>

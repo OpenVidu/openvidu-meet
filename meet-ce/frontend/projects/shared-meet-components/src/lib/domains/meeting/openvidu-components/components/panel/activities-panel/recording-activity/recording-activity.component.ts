@@ -2,14 +2,14 @@ import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inje
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ILogger } from '../../../../models/logger.model';
 import {
-    RecordingDeleteRequestedEvent,
-    RecordingDownloadClickedEvent,
-    RecordingInfo,
-    RecordingPlayClickedEvent,
-    RecordingStartRequestedEvent,
-    RecordingStatus,
-    RecordingStatusInfo,
-    RecordingStopRequestedEvent
+	RecordingDeleteRequestedEvent,
+	RecordingDownloadClickedEvent,
+	RecordingInfo,
+	RecordingPlayClickedEvent,
+	RecordingStartRequestedEvent,
+	RecordingStatus,
+	RecordingStatusInfo,
+	RecordingStopRequestedEvent
 } from '../../../../models/recording.model';
 import { ActionService } from '../../../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
@@ -30,7 +30,6 @@ import { RecordingService } from '../../../../services/recording/recording.servi
 })
 
 // TODO: Allow to add more than one recording type
-// TODO: Allow to choose where the recording is stored (s3, google cloud, etc)
 // TODO: Allow to choose the layout of the recording
 export class RecordingActivityComponent implements OnInit {
 	/**

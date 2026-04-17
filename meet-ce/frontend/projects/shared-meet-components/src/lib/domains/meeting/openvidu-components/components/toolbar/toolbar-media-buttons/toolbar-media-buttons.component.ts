@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, ContentChild, TemplateRef, computed, inject, input, output } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	TemplateRef,
+	computed,
+	inject,
+	input,
+	output,
+	contentChild
+} from '@angular/core';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
 import { BroadcastingStatus } from '../../../models/broadcasting.model';
 import { RecordingStatus } from '../../../models/recording.model';
@@ -78,15 +87,16 @@ export class ToolbarMediaButtonsComponent {
 	 * @internal
 	 * ContentChild for custom menu items in more options menu
 	 */
-	@ContentChild(ToolbarMoreOptionsAdditionalMenuItemsDirective)
-	externalMoreOptionsAdditionalMenuItems!: ToolbarMoreOptionsAdditionalMenuItemsDirective;
+	readonly externalMoreOptionsAdditionalMenuItems = contentChild.required(
+		ToolbarMoreOptionsAdditionalMenuItemsDirective
+	);
 
 	/**
 	 * @internal
 	 * Gets the template for additional menu items in more options
 	 */
 	get moreOptionsAdditionalMenuItemsTemplate(): TemplateRef<any> | undefined {
-		return this.externalMoreOptionsAdditionalMenuItems?.template;
+		return this.externalMoreOptionsAdditionalMenuItems()?.template;
 	}
 
 	// Status enums for template usage

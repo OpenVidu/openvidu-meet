@@ -14,7 +14,7 @@ import { Track } from '../../services/livekit-adapter';
 			[nickname]="avatarName()"
 			[color]="avatarColor()"
 			[hasEncryptionError]="hasEncryptionError()"
-		></ov-video-poster>
+		/>
 		@if (track()?.kind === 'video') {
 			<video #videoElement class="OV_media-element OV_video-element" [attr.id]="track()?.sid"></video>
 		}

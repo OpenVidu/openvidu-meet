@@ -30,7 +30,7 @@
 
 		@if (!isMinimal && showAudioDetection && track.participant.isSpeaking && track.isCameraTrack) {
 			<div id="audio-wave-container">
-				<ov-audio-wave></ov-audio-wave>
+				<ov-audio-wave />
 			</div>
 		}
 
@@ -44,7 +44,7 @@
 			[muted]="track.isMutedForcibly ?? false"
 			[isLocal]="track.participant.isLocal"
 			[hasEncryptionError]="track.participant.hasEncryptionError"
-		></ov-media-element>
+		/>
 
 		@if (
 			!track.participant.hasEncryptionError &&
@@ -52,13 +52,13 @@
 		) {
 			<div class="status-icons">
 				@if (!track.participant.isMicrophoneEnabled) {
-					<mat-icon id="mic-off" fontIcon="mic_off"></mat-icon>
+					<mat-icon id="mic-off" fontIcon="mic_off" />
 				}
 				@if (track.isMutedForcibly) {
-					<mat-icon id="muted-forcibly" fontIcon="volume_off"></mat-icon>
+					<mat-icon id="muted-forcibly" fontIcon="volume_off" />
 				}
 				@if (track.isPinned) {
-					<mat-icon id="pinned" fontIcon="push_pin"></mat-icon>
+					<mat-icon id="pinned" fontIcon="push_pin" />
 				}
 			</div>
 		}
@@ -75,7 +75,7 @@
 						@if (track.isPinned) {
 							<mat-icon fontSet="material-symbols-outlined" fontIcon="keep">keep_off</mat-icon>
 						} @else {
-							<mat-icon id="pinned" fontIcon="push_pin"></mat-icon>
+							<mat-icon id="pinned" fontIcon="push_pin" />
 						}
 					</button>
 					@if (!track.participant.isLocal) {
@@ -85,7 +85,9 @@
 							(click)="toggleMuteForcibly()"
 							[class.muted-btn]="track.isMutedForcibly"
 							[matTooltip]="
-								track.isMutedForcibly ? ('STREAM.UNMUTE_SOUND' | translate) : ('STREAM.MUTE_SOUND' | translate)
+								track.isMutedForcibly
+									? ('STREAM.UNMUTE_SOUND' | translate)
+									: ('STREAM.MUTE_SOUND' | translate)
 							"
 						>
 							@if (track.isMutedForcibly) {

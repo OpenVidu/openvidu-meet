@@ -88,7 +88,7 @@
 		>
 			<!-- Inject additional menu items via content projection -->
 			<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
-				<ng-container *ngTemplateOutlet="externalMoreOptionsAdditionalMenuItems?.template"></ng-container>
+				<ng-container *ngTemplateOutlet="externalMoreOptionsAdditionalMenuItems?.template" />
 			</ng-container>
 		</ov-toolbar-media-buttons>
 	</div>
@@ -112,6 +112,6 @@
 			(toggleActivitiesPanel)="toggleActivitiesPanel($event ?? '')"
 			(toggleParticipantsPanel)="toggleParticipantsPanel()"
 			(toggleChatPanel)="toggleChatPanel()"
-		></ov-toolbar-panel-buttons>
+		/>
 	</div>
 </mat-toolbar>

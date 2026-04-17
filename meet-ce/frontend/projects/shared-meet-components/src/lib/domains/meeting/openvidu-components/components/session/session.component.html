@@ -1,11 +1,11 @@
 @if (loading) {
 	<div id="spinner" [@inOutAnimation]>
-		<mat-spinner [diameter]="50"></mat-spinner>
+		<mat-spinner [diameter]="50" />
 		<span>{{ 'ROOM.JOINING' | translate }}</span>
 	</div>
 } @else {
 	@if (viewportService.shouldShowLandscapeWarning()) {
-		<ov-landscape-warning></ov-landscape-warning>
+		<ov-landscape-warning />
 	}
 	<div id="session-container" [@inOutAnimation]>
 		<mat-sidenav-container #container #videoContainer class="sidenav-container">
@@ -19,19 +19,19 @@
 				fixedTopGap="0"
 				fixedBottomGap="0"
 			>
-				<ng-container *ngTemplateOutlet="panelTemplate"></ng-container>
+				<ng-container *ngTemplateOutlet="panelTemplate" />
 			</mat-sidenav>
 
 			<mat-sidenav-content class="sidenav-main">
 				<div id="layout-container" #layoutContainer>
-					<ng-container *ngTemplateOutlet="layoutTemplate"></ng-container>
+					<ng-container *ngTemplateOutlet="layoutTemplate" />
 				</div>
 			</mat-sidenav-content>
 		</mat-sidenav-container>
 
 		@if (toolbarTemplate) {
 			<div id="footer-container">
-				<ng-container *ngTemplateOutlet="toolbarTemplate"></ng-container>
+				<ng-container *ngTemplateOutlet="toolbarTemplate" />
 			</div>
 		}
 	</div>

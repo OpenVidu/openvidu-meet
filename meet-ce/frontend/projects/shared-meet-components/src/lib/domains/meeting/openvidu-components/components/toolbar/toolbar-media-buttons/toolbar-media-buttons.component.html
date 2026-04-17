@@ -43,7 +43,9 @@
 			[disabled]="isConnectionLost()"
 			[class.active-btn]="isScreenShareEnabled()"
 			[class.mobile-btn]="isMobileView()"
-			matTooltip="{{ isScreenShareEnabled() ? ('TOOLBAR.DISABLE_SCREEN' | translate) : ('TOOLBAR.ENABLE_SCREEN' | translate) }}"
+			matTooltip="{{
+				isScreenShareEnabled() ? ('TOOLBAR.DISABLE_SCREEN' | translate) : ('TOOLBAR.ENABLE_SCREEN' | translate)
+			}}"
 			(click)="onScreenShareToggle()"
 		>
 			<mat-icon>screen_share</mat-icon>
@@ -56,7 +58,9 @@
 			[disabled]="isConnectionLost()"
 			[class.active-btn]="isScreenShareEnabled()"
 			[class.mobile-btn]="isMobileView()"
-			matTooltip="{{ isScreenShareEnabled() ? ('TOOLBAR.DISABLE_SCREEN' | translate) : ('TOOLBAR.ENABLE_SCREEN' | translate) }}"
+			matTooltip="{{
+				isScreenShareEnabled() ? ('TOOLBAR.DISABLE_SCREEN' | translate) : ('TOOLBAR.ENABLE_SCREEN' | translate)
+			}}"
 			(click)="!isScreenShareEnabled() && onScreenShareToggle()"
 		>
 			<mat-icon>screen_share</mat-icon>
@@ -68,7 +72,7 @@
 				<mat-icon>picture_in_picture</mat-icon>
 				<span>{{ 'STREAM.REPLACE_SCREEN' | translate }}</span>
 			</button>
-			<mat-divider class="divider"></mat-divider>
+			<mat-divider class="divider" />
 			<button mat-menu-item (click)="onScreenShareToggle()" id="disable-screen-button">
 				<mat-icon>stop_screen_share</mat-icon>
 				<span>{{ 'TOOLBAR.DISABLE_SCREEN' | translate }}</span>
@@ -79,7 +83,9 @@
 
 <!-- Additional buttons injection from parent component (desktop/tablet only) -->
 @if (showAdditionalButtonsOutside() && additionalButtonsPosition() === 'beforeMenu') {
-	<ng-container *ngTemplateOutlet="toolbarAdditionalButtonsTemplate(); context: { $implicit: additionalButtonsPosition() }"></ng-container>
+	<ng-container
+		*ngTemplateOutlet="toolbarAdditionalButtonsTemplate(); context: { $implicit: additionalButtonsPosition() }"
+	/>
 }
 
 <!-- More options button -->
@@ -97,15 +103,21 @@
 	<mat-menu #settingsMenu="matMenu" id="more-options-menu">
 		<!-- Additional buttons injection inside menu (mobile only) -->
 		@if (showAdditionalButtonsInsideMenu() && additionalButtonsPosition() === 'beforeMenu') {
-			<ng-container *ngTemplateOutlet="toolbarAdditionalButtonsTemplate(); context: { $implicit: additionalButtonsPosition() }">
-			</ng-container>
+			<ng-container
+				*ngTemplateOutlet="
+					toolbarAdditionalButtonsTemplate();
+					context: { $implicit: additionalButtonsPosition() }
+				"
+			/>
 		}
 
 		<!-- Fullscreen button -->
 		@if (showFullscreenButton()) {
 			<button mat-menu-item id="fullscreen-btn" (click)="onFullscreenToggle()">
 				<mat-icon>{{ isFullscreenActive() ? 'fullscreen_exit' : 'fullscreen' }}</mat-icon>
-				<span>{{ isFullscreenActive() ? ('TOOLBAR.EXIT_FULLSCREEN' | translate) : ('TOOLBAR.FULLSCREEN' | translate) }}</span>
+				<span>{{
+					isFullscreenActive() ? ('TOOLBAR.EXIT_FULLSCREEN' | translate) : ('TOOLBAR.FULLSCREEN' | translate)
+				}}</span>
 			</button>
 		}
 
@@ -148,7 +160,10 @@
 			<button
 				mat-menu-item
 				id="toolbar-broadcasting-btn"
-				[disabled]="broadcastingStatus() === _broadcastingStatus.STARTING || recordingStatus() === _recordingStatus.STOPPING"
+				[disabled]="
+					broadcastingStatus() === _broadcastingStatus.STARTING ||
+					recordingStatus() === _recordingStatus.STOPPING
+				"
 				(click)="onBroadcastingToggle()"
 			>
 				<mat-icon>sensors</mat-icon>
@@ -166,7 +181,12 @@
 
 		<!-- Virtual background button -->
 		@if (showBackgroundEffectsButton()) {
-			<button mat-menu-item id="virtual-bg-btn" [disabled]="!isCameraEnabled()" (click)="onBackgroundEffectsToggle()">
+			<button
+				mat-menu-item
+				id="virtual-bg-btn"
+				[disabled]="!isCameraEnabled()"
+				(click)="onBackgroundEffectsToggle()"
+			>
 				<mat-icon><span class="material-symbols-outlined">background_replace</span></mat-icon>
 				<span>{{ 'TOOLBAR.BACKGROUND' | translate }}</span>
 			</button>
@@ -187,18 +207,22 @@
 
 		<!-- Additional buttons injection inside menu (mobile only) -->
 		@if (showAdditionalButtonsInsideMenu() && additionalButtonsPosition() === 'afterMenu') {
-			<ng-container *ngTemplateOutlet="toolbarAdditionalButtonsTemplate(); context: { $implicit: additionalButtonsPosition() }">
-			</ng-container>
+			<ng-container
+				*ngTemplateOutlet="
+					toolbarAdditionalButtonsTemplate();
+					context: { $implicit: additionalButtonsPosition() }
+				"
+			/>
 		}
 
 		<!-- Additional menu items injected via directive -->
 		@if (moreOptionsAdditionalMenuItemsTemplate) {
-			<ng-container *ngTemplateOutlet="moreOptionsAdditionalMenuItemsTemplate"></ng-container>
+			<ng-container *ngTemplateOutlet="moreOptionsAdditionalMenuItemsTemplate" />
 		}
 
 		<!-- Divider before settings -->
 		@if (showSettingsButton()) {
-			<mat-divider class="divider"></mat-divider>
+			<mat-divider class="divider" />
 		}
 
 		<!-- Settings button -->
@@ -213,7 +237,7 @@
 
 <!-- Additional buttons injection from parent component (desktop/tablet only) -->
 @if (showAdditionalButtonsOutside() && additionalButtonsPosition() === 'afterMenu') {
-	<ng-container *ngTemplateOutlet="toolbarAdditionalButtonsTemplate()"></ng-container>
+	<ng-container *ngTemplateOutlet="toolbarAdditionalButtonsTemplate()" />
 }
 
 <!-- Leave session button -->
@@ -230,5 +254,5 @@
 }
 
 @if (toolbarLeaveButtonTemplate()) {
-	<ng-container *ngTemplateOutlet="toolbarLeaveButtonTemplate()"></ng-container>
+	<ng-container *ngTemplateOutlet="toolbarLeaveButtonTemplate()" />
 }

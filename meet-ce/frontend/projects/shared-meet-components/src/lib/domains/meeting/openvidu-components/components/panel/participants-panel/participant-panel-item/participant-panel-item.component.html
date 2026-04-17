@@ -2,81 +2,85 @@
 	<mat-list-item>
 		@if (_participant) {
 			<!-- Main participant container with improved structure -->
-			<div class="participant-container" [attr.data-participant-id]="_participant.sid" [attr.data-participant-name]="participantDisplayName">
-			<!-- Avatar section with dynamic color -->
 			<div
-				class="participant-avatar"
-				[style.background-color]="_participant.colorProfile"
-				[attr.aria-label]="'Avatar for ' + participantDisplayName"
+				class="participant-container"
+				[attr.data-participant-id]="_participant.sid"
+				[attr.data-participant-name]="participantDisplayName"
 			>
-				<mat-icon>{{ _participant.hasEncryptionError ? 'lock_person' : 'person' }}</mat-icon>
-			</div>
-
-			<!-- Content section with name and status -->
-			<div class="participant-content">
-				<!-- Name row with better space management -->
-				<div class="participant-name-row">
-					<div class="participant-name">
-						<span class="participant-name-text">{{ participantDisplayName }}</span>
-						@if (isLocalParticipant) {
-							<span class="local-indicator">{{ 'PANEL.PARTICIPANTS.YOU' | translate }}</span>
-						}
-					</div>
-
-					<!-- Participant badges in separate container -->
-					<div class="participant-badges">
-						<ng-container *ngTemplateOutlet="participantBadgeTemplate"></ng-container>
-					</div>
+				<!-- Avatar section with dynamic color -->
+				<div
+					class="participant-avatar"
+					[style.background-color]="_participant.colorProfile"
+					[attr.aria-label]="'Avatar for ' + participantDisplayName"
+				>
+					<mat-icon>{{ _participant.hasEncryptionError ? 'lock_person' : 'person' }}</mat-icon>
 				</div>
 
-				@if (!_participant.hasEncryptionError) {
-					<div class="participant-subtitle">
-						<span class="status-indicator">
-							{{ _participant | tracksPublishedTypes }}
-						</span>
+				<!-- Content section with name and status -->
+				<div class="participant-content">
+					<!-- Name row with better space management -->
+					<div class="participant-name-row">
+						<div class="participant-name">
+							<span class="participant-name-text">{{ participantDisplayName }}</span>
+							@if (isLocalParticipant) {
+								<span class="local-indicator">{{ 'PANEL.PARTICIPANTS.YOU' | translate }}</span>
+							}
+						</div>
+
+						<!-- Participant badges in separate container -->
+						<div class="participant-badges">
+							<ng-container *ngTemplateOutlet="participantBadgeTemplate" />
+						</div>
 					</div>
-				}
-			</div>
 
-			<!-- Action buttons section -->
-			@if (!_participant.hasEncryptionError) {
-				<div class="participant-action-buttons">
-					<!-- Mute/Unmute button for remote participants -->
-					@if (!isLocalParticipant && showMuteButton) {
-					<button
-						mat-icon-button
-						id="mute-btn"
-						[class.warn-btn]="_participant.isMutedForcibly"
-						(click)="toggleMuteForcibly()"
-						[disabled]="!_participant"
-						[disableRipple]="true"
-						[attr.aria-label]="
-							_participant.isMutedForcibly
-								? ('PANEL.PARTICIPANTS.UNMUTE' | translate) + ' ' + participantDisplayName
-								: ('PANEL.PARTICIPANTS.MUTE' | translate) + ' ' + participantDisplayName
-						"
-						[matTooltip]="
-							_participant.isMutedForcibly
-								? ('PANEL.PARTICIPANTS.UNMUTE' | translate)
-								: ('PANEL.PARTICIPANTS.MUTE' | translate)
-						"
-					>
-						@if (!_participant.isMutedForcibly) {
-							<mat-icon>volume_up</mat-icon>
-						} @else {
-							<mat-icon>volume_off</mat-icon>
-						}
-					</button>
-					}
-
-					<!-- External item elements with improved structure -->
-					@if (hasExternalElements) {
-						<div class="external-elements">
-							<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate"></ng-container>
+					@if (!_participant.hasEncryptionError) {
+						<div class="participant-subtitle">
+							<span class="status-indicator">
+								{{ _participant | tracksPublishedTypes }}
+							</span>
 						</div>
 					}
 				</div>
-			}
+
+				<!-- Action buttons section -->
+				@if (!_participant.hasEncryptionError) {
+					<div class="participant-action-buttons">
+						<!-- Mute/Unmute button for remote participants -->
+						@if (!isLocalParticipant && showMuteButton) {
+							<button
+								mat-icon-button
+								id="mute-btn"
+								[class.warn-btn]="_participant.isMutedForcibly"
+								(click)="toggleMuteForcibly()"
+								[disabled]="!_participant"
+								[disableRipple]="true"
+								[attr.aria-label]="
+									_participant.isMutedForcibly
+										? ('PANEL.PARTICIPANTS.UNMUTE' | translate) + ' ' + participantDisplayName
+										: ('PANEL.PARTICIPANTS.MUTE' | translate) + ' ' + participantDisplayName
+								"
+								[matTooltip]="
+									_participant.isMutedForcibly
+										? ('PANEL.PARTICIPANTS.UNMUTE' | translate)
+										: ('PANEL.PARTICIPANTS.MUTE' | translate)
+								"
+							>
+								@if (!_participant.isMutedForcibly) {
+									<mat-icon>volume_up</mat-icon>
+								} @else {
+									<mat-icon>volume_off</mat-icon>
+								}
+							</button>
+						}
+
+						<!-- External item elements with improved structure -->
+						@if (hasExternalElements) {
+							<div class="external-elements">
+								<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate" />
+							</div>
+						}
+					</div>
+				}
 			</div>
 		}
 	</mat-list-item>

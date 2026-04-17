@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, ContentChild, DestroyRef, inject, OnInit, output, TemplateRef } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	contentChild,
+	DestroyRef,
+	inject,
+	OnInit,
+	output,
+	TemplateRef
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
 import { CustomDevice } from '../../../models/device.model';
@@ -30,8 +39,7 @@ export class SettingsPanelComponent implements OnInit {
 	 * @internal
 	 * ContentChild for custom elements in general section
 	 */
-	@ContentChild(SettingsPanelGeneralAdditionalElementsDirective)
-	externalGeneralAdditionalElements!: SettingsPanelGeneralAdditionalElementsDirective;
+	readonly externalGeneralAdditionalElements = contentChild.required(SettingsPanelGeneralAdditionalElementsDirective);
 
 	settingsOptions: typeof PanelSettingsOptions = PanelSettingsOptions;
 	selectedOption: PanelSettingsOptions = PanelSettingsOptions.GENERAL;
@@ -47,7 +55,7 @@ export class SettingsPanelComponent implements OnInit {
 	 * Gets the template for additional elements in general section
 	 */
 	get generalAdditionalElementsTemplate(): TemplateRef<any> | undefined {
-		return this.externalGeneralAdditionalElements?.template;
+		return this.externalGeneralAdditionalElements()?.template;
 	}
 
 	private readonly panelService = inject(PanelService);
@@ -81,10 +89,18 @@ export class SettingsPanelComponent implements OnInit {
 	}
 
 	private subscribeToDirectives() {
-		this.libService.cameraButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => (this.showCameraButton = value));
-		this.libService.microphoneButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => (this.showMicrophoneButton = value));
-		this.libService.captionsButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => (this.showCaptions = value));
-		this.libService.showThemeSelector$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => (this.showThemeSelector = value));
+		this.libService.cameraButton$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((value: boolean) => (this.showCameraButton = value));
+		this.libService.microphoneButton$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((value: boolean) => (this.showMicrophoneButton = value));
+		this.libService.captionsButton$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((value: boolean) => (this.showCaptions = value));
+		this.libService.showThemeSelector$
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((value: boolean) => (this.showThemeSelector = value));
 	}
 
 	private subscribeToPanelToggling() {

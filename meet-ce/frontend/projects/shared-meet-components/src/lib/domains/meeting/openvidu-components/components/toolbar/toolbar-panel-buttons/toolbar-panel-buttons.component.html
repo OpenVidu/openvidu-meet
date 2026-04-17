@@ -11,7 +11,9 @@
 				matTooltip="{{ 'TOOLBAR.PANELS' | translate }}"
 				#menuTrigger="matMenuTrigger"
 			>
-				<mat-icon class="material-symbols-outlined" [class.rotated]="menuTrigger.menuOpen">keyboard_arrow_up</mat-icon>
+				<mat-icon class="material-symbols-outlined" [class.rotated]="menuTrigger.menuOpen"
+					>keyboard_arrow_up</mat-icon
+				>
 			</button>
 
 			<!-- Vertical panels menu -->
@@ -64,7 +66,7 @@
 				}
 
 				@if (toolbarAdditionalPanelButtonsTemplate()) {
-					<ng-container *ngTemplateOutlet="toolbarAdditionalPanelButtonsTemplate()"></ng-container>
+					<ng-container *ngTemplateOutlet="toolbarAdditionalPanelButtonsTemplate()" />
 				}
 			</mat-menu>
 		</div>
@@ -128,6 +130,6 @@
 	}
 
 	@if (toolbarAdditionalPanelButtonsTemplate()) {
-		<ng-container *ngTemplateOutlet="toolbarAdditionalPanelButtonsTemplate()"></ng-container>
+		<ng-container *ngTemplateOutlet="toolbarAdditionalPanelButtonsTemplate()" />
 	}
 }

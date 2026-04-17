@@ -1,12 +1,20 @@
 @if (viewportService.shouldShowLandscapeWarning()) {
-	<ov-landscape-warning></ov-landscape-warning>
+	<ov-landscape-warning />
 } @else {
-	<div class="prejoin-container" id="prejoin-container" [class.mobile]="viewportService.isMobile()" [class.name-error]="!!_error">
+	<div
+		class="prejoin-container"
+		id="prejoin-container"
+		[class.mobile]="viewportService.isMobile()"
+		[class.name-error]="!!_error"
+	>
 		<!-- Top Language Toolbar -->
 		@if (!isMinimal) {
 			<div class="top-toolbar">
-				<ov-lang-selector [compact]="false" class="language-selector" (onLangChanged)="onLangChanged.emit($event)">
-				</ov-lang-selector>
+				<ov-lang-selector
+					[compact]="false"
+					class="language-selector"
+					(onLangChanged)="onLangChanged.emit($event)"
+				/>
 			</div>
 		}
 
@@ -14,7 +22,7 @@
 		@if (isLoading) {
 			<div class="loading-overlay">
 				<div class="loading-content">
-					<mat-spinner [diameter]="40"></mat-spinner>
+					<mat-spinner [diameter]="40" />
 					<span class="loading-text">{{ 'PREJOIN.PREPARING' | translate }}</span>
 				</div>
 			</div>
@@ -35,8 +43,7 @@
 									[isLocal]="true"
 									class="video-element"
 									[id]="videoTrack?.id || 'no-video'"
-								>
-								</ov-media-element>
+								/>
 
 								<!-- Video Controls Overlay -->
 								<div class="video-overlay">
@@ -49,8 +56,7 @@
 													(onVideoEnabledChanged)="videoEnabledChanged($event)"
 													(onVideoDevicesLoaded)="onVideoDevicesLoaded($event)"
 													class="device-selector"
-												>
-												</ov-video-devices-select>
+												/>
 											</div>
 										}
 
@@ -62,8 +68,7 @@
 													(onAudioEnabledChanged)="audioEnabledChanged($event)"
 													(onDeviceSelectorClicked)="onDeviceSelectorClicked()"
 													class="device-selector"
-												>
-												</ov-audio-devices-select>
+												/>
 											</div>
 										}
 									</div>
@@ -79,7 +84,9 @@
 												[disabled]="!isVideoEnabled"
 												id="backgrounds-button"
 											>
-												<mat-icon class="material-symbols-outlined">background_replace</mat-icon>
+												<mat-icon class="material-symbols-outlined"
+													>background_replace</mat-icon
+												>
 											</button>
 										</div>
 									}
@@ -90,8 +97,7 @@
 
 					@if (showBackgroundPanel) {
 						<div class="vb-container">
-							<ov-background-effects-panel [mode]="'prejoin'" (onClose)="closeBackgroundPanel()">
-							</ov-background-effects-panel>
+							<ov-background-effects-panel [mode]="'prejoin'" (onClose)="closeBackgroundPanel()" />
 						</div>
 					} @else {
 						<!-- Configuration Section -->
@@ -105,8 +111,7 @@
 										(onNameUpdated)="onParticipantNameChanged($event)"
 										(onEnterPressed)="onEnterPressed()"
 										class="name-input"
-									>
-									</ov-participant-name-input>
+									/>
 								</div>
 							}
 

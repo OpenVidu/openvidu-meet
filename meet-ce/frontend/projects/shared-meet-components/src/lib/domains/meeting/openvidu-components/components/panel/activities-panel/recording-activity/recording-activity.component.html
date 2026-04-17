@@ -14,7 +14,8 @@
 						started: recordingStatus === recStatusEnum.STARTED,
 						stopped: recordingStatus === recStatusEnum.STOPPED,
 						failed: recordingStatus === recStatusEnum.FAILED,
-						starting: recordingStatus === recStatusEnum.STARTING || recordingStatus === recStatusEnum.STOPPING
+						starting:
+							recordingStatus === recStatusEnum.STARTING || recordingStatus === recStatusEnum.STOPPING
 					}"
 				>
 					@if (recordingStatus !== recStatusEnum.FAILED && recordingStatus !== recStatusEnum.STARTED) {
@@ -30,7 +31,11 @@
 				<h3 matListItemTitle class="activity-title">{{ 'PANEL.RECORDING.TITLE' | translate }}</h3>
 
 				<p matListItemLine class="activity-subtitle">
-					{{ isReadOnlyMode ? ('PANEL.RECORDING.VIEW_ONLY_SUBTITLE' | translate) : ('PANEL.RECORDING.SUBTITLE' | translate) }}
+					{{
+						isReadOnlyMode
+							? ('PANEL.RECORDING.VIEW_ONLY_SUBTITLE' | translate)
+							: ('PANEL.RECORDING.SUBTITLE' | translate)
+					}}
 				</p>
 				<div class="activity-action-buttons" matListItemMeta>
 					<div
@@ -40,7 +45,8 @@
 							started: recordingStatus === recStatusEnum.STARTED,
 							stopped: recordingStatus === recStatusEnum.STOPPED,
 							failed: recordingStatus === recStatusEnum.FAILED,
-							starting: recordingStatus === recStatusEnum.STARTING || recordingStatus === recStatusEnum.STOPPING
+							starting:
+								recordingStatus === recStatusEnum.STARTING || recordingStatus === recStatusEnum.STOPPING
 						}"
 					>
 						<span>{{ recordingStatus | uppercase }}</span>
@@ -127,7 +133,12 @@
 				@if (isReadOnlyMode) {
 					<!-- View all recordings button -->
 					<div class="item recording-action-buttons">
-						<button mat-flat-button id="view-recordings-btn" (click)="viewAllRecordings()" class="view-recordings-button">
+						<button
+							mat-flat-button
+							id="view-recordings-btn"
+							(click)="viewAllRecordings()"
+							class="view-recordings-button"
+						>
 							<span>{{ 'TOOLBAR.VIEW_RECORDINGS' | translate }}</span>
 							<mat-icon class="external-link-icon">open_in_new</mat-icon>
 						</button>
@@ -144,7 +155,9 @@
 						<!-- Start recording button -->
 						@if (recordingStatus === recStatusEnum.STOPPED && showStartStopRecordingButton) {
 							<div
-								[matTooltip]="!hasRoomTracksPublished ? ('PANEL.RECORDING.NO_TRACKS_PUBLISHED' | translate) : ''"
+								[matTooltip]="
+									!hasRoomTracksPublished ? ('PANEL.RECORDING.NO_TRACKS_PUBLISHED' | translate) : ''
+								"
 								[matTooltipDisabled]="hasRoomTracksPublished"
 								class="start-recording-button-container"
 							>
@@ -180,11 +193,14 @@
 
 			<!-- Recording list -->
 			@if (showRecordingList && recordingList.length > 0) {
-				<mat-divider></mat-divider>
+				<mat-divider />
 
 				<div class="recording-list-container">
 					@for (recording of recordingList; track trackByRecordingId($index, recording)) {
-						<div class="recording-card" [class.recording-active]="recording.status === recStatusEnum.STARTED">
+						<div
+							class="recording-card"
+							[class.recording-active]="recording.status === recStatusEnum.STARTED"
+						>
 							<!-- Recording header with status indicator and info -->
 							<div class="recording-header">
 								<div class="recording-status-indicator">
