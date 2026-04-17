@@ -23,8 +23,7 @@ test.describe('Recordings: E2E UI flows', () => {
 	});
 
 	async function createTrackedAccessUrl(participantName: string): Promise<string> {
-		const { room, accessUrl } = await createRoomAndGetAccessUrl(participantName);
-		createdRoomIds.add(room.roomId);
+		const { accessUrl } = await createRoomAndGetAccessUrl(participantName, undefined, undefined, createdRoomIds);
 		return accessUrl;
 	}
 

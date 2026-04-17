@@ -16,12 +16,11 @@ export async function createCaptionsAccessUrlWithRoomConfig(params: {
 		}
 	});
 
-	params.createdRoomIds.add(room.roomId);
-
 	const { accessUrl } = await createRoomAndGetAccessUrl(
 		params.participantName,
 		room,
-		params.queryParams ?? { prejoin: 'false' }
+		params.queryParams ?? { prejoin: 'false' },
+		params.createdRoomIds
 	);
 
 	return accessUrl;

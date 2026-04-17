@@ -1,19 +1,22 @@
 import { expect, test } from '@playwright/test';
-import { assertHasVideoDeviceOption, cleanupMediaDevicesRooms, createMediaDevicesAccessUrl, getFirstVideoTrackLabel, getScreenTrackLabel } from './helpers/media-devices.helper';
+import { assertHasVideoDeviceOption, getFirstVideoTrackLabel, getScreenTrackLabel } from './helpers/media-devices.helper';
+import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting, openPrejoin, openSettingsPanel, startScreensharing } from './helpers/meeting-ui.helper';
+
+const createdRoomIds = new Set<string>();
 
 test.describe('Media Devices: Virtual Device Replacement and Permissions Handling', () => {
     test.describe.configure({ timeout: 60_000 });
 
     test.afterAll(async () => {
-        await cleanupMediaDevicesRooms();
+        await deleteRooms(createdRoomIds);
     });
 
     test('should allow selecting and replacing the video track with a custom virtual device in the prejoin page', async ({ page }) => {
-        const accessUrl = await createMediaDevicesAccessUrl(`md-prejoin-${Date.now()}`, {
+        const { accessUrl } = await createRoomAndGetAccessUrl(`md-prejoin-${Date.now()}`, undefined, {
             prejoin: 'true',
             fakeDevices: 'true'
-        });
+        }, createdRoomIds);
         await openPrejoin(page, accessUrl);
 
         const videoDropdown = page.locator('#video-dropdown');
@@ -42,10 +45,10 @@ test.describe('Media Devices: Virtual Device Replacement and Permissions Handlin
     });
 
     test('should allow selecting and replacing the video track with a custom virtual device in the videoconference page', async ({ page }) => {
-        const accessUrl = await createMediaDevicesAccessUrl(`md-room-${Date.now()}`, {
+        const { accessUrl } = await createRoomAndGetAccessUrl(`md-room-${Date.now()}`, undefined, {
             prejoin: 'false',
             fakeDevices: 'true'
-        });
+        }, createdRoomIds);
         await openMeeting(page, accessUrl);
 
         await openSettingsPanel(page);
@@ -78,10 +81,10 @@ test.describe('Media Devices: Virtual Device Replacement and Permissions Handlin
     });
 
     test('should replace the screen track with a custom virtual device', async ({ page }) => {
-        const accessUrl = await createMediaDevicesAccessUrl(`md-screen-${Date.now()}`, {
+        const { accessUrl } = await createRoomAndGetAccessUrl(`md-screen-${Date.now()}`, undefined, {
             prejoin: 'false',
             fakeDevices: 'true'
-        });
+        }, createdRoomIds);
         await openMeeting(page, accessUrl);
 
         await startScreensharing(page);
@@ -107,12 +110,8 @@ test.describe('Media Devices: UI Behavior Without Media Device Permissions @no-m
     test.describe.configure({ timeout: 60_000 });
     test.use({ permissions: [] });
 
-    test.afterAll(async () => {
-        await cleanupMediaDevicesRooms();
-    });
-
     test('should camera and microphone buttons be disabled in the prejoin page when permissions are denied', async ({ page }) => {
-        const accessUrl = await createMediaDevicesAccessUrl(`md-denied-prejoin-${Date.now()}`, { prejoin: 'true' });
+        const { accessUrl } = await createRoomAndGetAccessUrl(`md-denied-prejoin-${Date.now()}`, undefined, { prejoin: 'true' }, createdRoomIds);
         await openPrejoin(page, accessUrl);
 
         await expect(page.locator('#no-video-device-message')).toBeVisible();
@@ -125,7 +124,7 @@ test.describe('Media Devices: UI Behavior Without Media Device Permissions @no-m
     });
 
     test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({ page }) => {
-        const accessUrl = await createMediaDevicesAccessUrl(`md-denied-room-${Date.now()}`, { prejoin: 'true' });
+        const { accessUrl } = await createRoomAndGetAccessUrl(`md-denied-room-${Date.now()}`, undefined, { prejoin: 'true' }, createdRoomIds);
         await openPrejoin(page, accessUrl);
         await page.locator('#join-button').click();
         await expect(page.locator('#layout-container')).toBeVisible();
@@ -135,9 +134,9 @@ test.describe('Media Devices: UI Behavior Without Media Device Permissions @no-m
     });
 
     test('should camera and microphone buttons be disabled in the room page without prejoin when permissions are denied', async ({ page }) => {
-        const accessUrl = await createMediaDevicesAccessUrl(`md-denied-noprejoin-${Date.now()}`, {
+        const { accessUrl } = await createRoomAndGetAccessUrl(`md-denied-noprejoin-${Date.now()}`, undefined, {
             prejoin: 'false'
-        });
+        }, createdRoomIds);
         await openMeeting(page, accessUrl);
 
         await expect(page.locator('#camera-btn')).toBeDisabled();
@@ -145,9 +144,9 @@ test.describe('Media Devices: UI Behavior Without Media Device Permissions @no-m
     });
 
     test('should show an audio and video device warning in settings when permissions are denied', async ({ page }) => {
-        const accessUrl = await createMediaDevicesAccessUrl(`md-denied-settings-${Date.now()}`, {
+        const { accessUrl } = await createRoomAndGetAccessUrl(`md-denied-settings-${Date.now()}`, undefined, {
             prejoin: 'false'
-        });
+        }, createdRoomIds);
         await openMeeting(page, accessUrl);
 
         await openSettingsPanel(page);

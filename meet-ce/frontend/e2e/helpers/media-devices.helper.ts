@@ -1,21 +1,4 @@
 import { type Page, expect } from '@playwright/test';
-import { createRoomAndGetAccessUrl, deleteRooms } from './meet-api.helper';
-
-const createdRoomIds = new Set<string>();
-
-export async function createMediaDevicesAccessUrl(
-	participantName: string,
-	queryParams?: Record<string, string>
-): Promise<string> {
-	const { room, accessUrl } = await createRoomAndGetAccessUrl(participantName, undefined, queryParams);
-	createdRoomIds.add(room.roomId);
-	return accessUrl;
-}
-
-export async function cleanupMediaDevicesRooms(): Promise<void> {
-	await deleteRooms(createdRoomIds);
-	createdRoomIds.clear();
-}
 
 export async function getFirstVideoTrackLabel(page: Page): Promise<string | null> {
 	return await page.evaluate(() => {

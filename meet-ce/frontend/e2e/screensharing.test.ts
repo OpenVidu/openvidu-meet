@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createRoom, createRoomAndGetAccessUrl } from './helpers/meet-api.helper';
+import { createRoom, createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
     expectPinnedStreamCount,
     expectScreenTypeCount,
@@ -16,236 +16,248 @@ import {
 } from './helpers/meeting-ui.helper';
 
 test.describe('E2E: Screensharing features', () => {
-    test.describe.configure({ timeout: 120_000 });
+	test.describe.configure({ timeout: 120_000 });
+	const createdRoomIds = new Set<string>();
 
-    test('should toggle screensharing on and off twice, updating video count', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`);
-        await openMeeting(page, accessUrl);
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
+	});
 
-        await startScreensharing(page);
-        await expectScreenTypeCount(page, 1);
-        await expectPinnedStreamCount(page, 1);
-        await expectVideoCount(page, 2);
+	test('should toggle screensharing on and off twice, updating video count', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`, undefined, undefined, createdRoomIds);
+		await openMeeting(page, accessUrl);
 
-        await stopScreensharing(page);
-        await expectScreenTypeCount(page, 0);
-        await expectVideoCount(page, 1);
+		await startScreensharing(page);
+		await expectScreenTypeCount(page, 1);
+		await expectPinnedStreamCount(page, 1);
+		await expectVideoCount(page, 2);
 
-        await startScreensharing(page);
-        await expectScreenTypeCount(page, 1);
-        await expectPinnedStreamCount(page, 1);
-        await expectVideoCount(page, 2);
+		await stopScreensharing(page);
+		await expectScreenTypeCount(page, 0);
+		await expectVideoCount(page, 1);
 
-        await stopScreensharing(page);
-        await expectScreenTypeCount(page, 0);
-        await expectVideoCount(page, 1);
-    });
+		await startScreensharing(page);
+		await expectScreenTypeCount(page, 1);
+		await expectPinnedStreamCount(page, 1);
+		await expectVideoCount(page, 2);
 
-    test('should show screenshare and muted camera (camera off, screenshare on)', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`);
-        await openMeeting(page, accessUrl);
+		await stopScreensharing(page);
+		await expectScreenTypeCount(page, 0);
+		await expectVideoCount(page, 1);
+	});
 
-        await toggleCamera(page);
-        await startScreensharing(page);
-        await expectScreenTypeCount(page, 1);
-        await expectPinnedStreamCount(page, 1);
-        await expectVideoCount(page, 2);
+	test('should show screenshare and muted camera (camera off, screenshare on)', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`, undefined, undefined, createdRoomIds);
+		await openMeeting(page, accessUrl);
 
-        await stopScreensharing(page);
-        await expectScreenTypeCount(page, 0);
-        await expectVideoCount(page, 1);
-    });
+		await toggleCamera(page);
+		await startScreensharing(page);
+		await expectScreenTypeCount(page, 1);
+		await expectPinnedStreamCount(page, 1);
+		await expectVideoCount(page, 2);
 
-    test('should display screensharing with a single pinned video', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`);
-        await openMeeting(page, accessUrl);
+		await stopScreensharing(page);
+		await expectScreenTypeCount(page, 0);
+		await expectVideoCount(page, 1);
+	});
 
-        await startScreensharing(page);
-        await expectScreenTypeCount(page, 1);
-        await expectPinnedStreamCount(page, 1);
-    });
+	test('should display screensharing with a single pinned video', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`, undefined, undefined, createdRoomIds);
+		await openMeeting(page, accessUrl);
 
-    test('should replace pinned video when a second participant starts screensharing', async ({ browser }) => {
-        const room = await createRoom({ roomName: `screensharing-e2e-${Date.now()}` });
-        const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room);
-        const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room);
+		await startScreensharing(page);
+		await expectScreenTypeCount(page, 1);
+		await expectPinnedStreamCount(page, 1);
+	});
 
-        const pageA = await browser.newPage();
-        const pageB = await browser.newPage();
+	test('should replace pinned video when a second participant starts screensharing', async ({ browser }) => {
+		const room = await createRoom({ roomName: `screensharing-e2e-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room, undefined, createdRoomIds);
+		const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room, undefined, createdRoomIds);
 
-        try {
-            await openMeeting(pageA, participantA.accessUrl);
-            await startScreensharing(pageA);
-            await expectPinnedStreamCount(pageA, 1);
+		const pageA = await browser.newPage();
+		const pageB = await browser.newPage();
 
-            await openMeeting(pageB, participantB.accessUrl);
-            await startScreensharing(pageB);
-            await expectVideoCount(pageB, 4);
-            await expectPinnedStreamCount(pageB, 1);
+		try {
+			await openMeeting(pageA, participantA.accessUrl);
+			await startScreensharing(pageA);
+			await expectPinnedStreamCount(pageA, 1);
 
-            await expectVideoCount(pageA, 4);
-            await expectPinnedStreamCount(pageA, 1);
-        } finally {
-            await pageB.close();
-            await pageA.close();
-        }
-    });
+			await openMeeting(pageB, participantB.accessUrl);
+			await startScreensharing(pageB);
+			await expectVideoCount(pageB, 4);
+			await expectPinnedStreamCount(pageB, 1);
 
-    test('should unpin screensharing and restore previous pinned video when disabled', async ({ browser }) => {
-        const room = await createRoom({ roomName: `screensharing-two-e2e-${Date.now()}` });
-        const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room);
-        const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room);
+			await expectVideoCount(pageA, 4);
+			await expectPinnedStreamCount(pageA, 1);
+		} finally {
+			await pageB.close();
+			await pageA.close();
+		}
+	});
 
-        const pageA = await browser.newPage();
-        const pageB = await browser.newPage();
+	test('should unpin screensharing and restore previous pinned video when disabled', async ({ browser }) => {
+		const room = await createRoom({ roomName: `screensharing-two-e2e-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room, undefined, createdRoomIds);
+		const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room, undefined, createdRoomIds);
 
-        try {
-            await openMeeting(pageA, participantA.accessUrl);
-            await startScreensharing(pageA);
-            await expectPinnedStreamCount(pageA, 1);
+		const pageA = await browser.newPage();
+		const pageB = await browser.newPage();
 
-            await openMeeting(pageB, participantB.accessUrl);
-            await startScreensharing(pageB);
-            await expectVideoCount(pageB, 4);
-            await expectPinnedStreamCount(pageB, 1);
+		try {
+			await openMeeting(pageA, participantA.accessUrl);
+			await startScreensharing(pageA);
+			await expectPinnedStreamCount(pageA, 1);
 
-            await stopScreensharing(pageB);
-            await expectVideoCount(pageB, 3);
-            await expectPinnedStreamCount(pageB, 1);
+			await openMeeting(pageB, participantB.accessUrl);
+			await startScreensharing(pageB);
+			await expectVideoCount(pageB, 4);
+			await expectPinnedStreamCount(pageB, 1);
 
-            await expectVideoCount(pageA, 3);
-            await expectPinnedStreamCount(pageA, 1);
-        } finally {
-            await pageB.close();
-            await pageA.close();
-        }
-    });
+			await stopScreensharing(pageB);
+			await expectVideoCount(pageB, 3);
+			await expectPinnedStreamCount(pageB, 1);
 
-    test('should correctly share screen with microphone muted and maintain proper track state', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`);
-        await openMeeting(page, accessUrl);
+			await expectVideoCount(pageA, 3);
+			await expectPinnedStreamCount(pageA, 1);
+		} finally {
+			await pageB.close();
+			await pageA.close();
+		}
+	});
 
-        await toggleMicrophone(page);
-        await startScreensharing(page);
-        await page.locator('.screen-type').first().waitFor({ state: 'attached' });
-        await expectScreenTypeCount(page, 1);
-        await expectVideoCount(page, 2);
+	test('should correctly share screen with microphone muted and maintain proper track state', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`, undefined, undefined, createdRoomIds);
+		await openMeeting(page, accessUrl);
 
-        const screenTracks = await getScreenTypeTracks(page);
-        expect(screenTracks.length).toBe(1);
-        expect(screenTracks[0].kind).toBe('video');
-        expect(screenTracks[0].enabled).toBe(true);
+		await toggleMicrophone(page);
+		await startScreensharing(page);
+		await page.locator('.screen-type').first().waitFor({ state: 'attached' });
+		await expectScreenTypeCount(page, 1);
+		await expectVideoCount(page, 2);
 
-        await stopScreensharing(page);
-        await expectScreenTypeCount(page, 0);
-        await expectVideoCount(page, 1);
-    });
+		const screenTracks = await getScreenTypeTracks(page);
+		expect(screenTracks.length).toBe(1);
+		expect(screenTracks[0].kind).toBe('video');
+		expect(screenTracks[0].enabled).toBe(true);
 
-    test('should keep single pinned stream when second participant joins without sharing screen', async ({ browser }) => {
-        const room = await createRoom({ roomName: `screensharing-join-only-${Date.now()}` });
-        const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room);
-        const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room);
+		await stopScreensharing(page);
+		await expectScreenTypeCount(page, 0);
+		await expectVideoCount(page, 1);
+	});
 
-        const pageA = await browser.newPage();
-        const pageB = await browser.newPage();
+	test('should keep single pinned stream when second participant joins without sharing screen', async ({
+		browser
+	}) => {
+		const room = await createRoom({ roomName: `screensharing-join-only-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room, undefined, createdRoomIds);
+		const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room, undefined, createdRoomIds);
 
-        try {
-            await openMeeting(pageA, participantA.accessUrl);
-            await startScreensharing(pageA);
-            await expectPinnedStreamCount(pageA, 1);
+		const pageA = await browser.newPage();
+		const pageB = await browser.newPage();
 
-            await openMeeting(pageB, participantB.accessUrl);
-            await expectVideoCount(pageB, 3);
-            await expectPinnedStreamCount(pageB, 1);
-            await expectScreenTypeCount(pageB, 1);
+		try {
+			await openMeeting(pageA, participantA.accessUrl);
+			await startScreensharing(pageA);
+			await expectPinnedStreamCount(pageA, 1);
 
-            await expectPinnedStreamCount(pageA, 1);
-            await expectScreenTypeCount(pageA, 1);
-        } finally {
-            await pageB.close();
-            await pageA.close();
-        }
-    });
+			await openMeeting(pageB, participantB.accessUrl);
+			await expectVideoCount(pageB, 3);
+			await expectPinnedStreamCount(pageB, 1);
+			await expectScreenTypeCount(pageB, 1);
 
-    test('should NOT have multiple screens pinned when both participants share screen', async ({ browser }) => {
-        const room = await createRoom({ roomName: `pin-bug-case-1-${Date.now()}` });
-        const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room);
-        const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room);
+			await expectPinnedStreamCount(pageA, 1);
+			await expectScreenTypeCount(pageA, 1);
+		} finally {
+			await pageB.close();
+			await pageA.close();
+		}
+	});
 
-        const pageA = await browser.newPage();
-        const pageB = await browser.newPage();
+	test('should NOT have multiple screens pinned when both participants share screen', async ({ browser }) => {
+		const room = await createRoom({ roomName: `pin-bug-case-1-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room, undefined, createdRoomIds);
+		const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room, undefined, createdRoomIds);
 
-        try {
-            await openMeeting(pageA, participantA.accessUrl);
-            await startScreensharing(pageA);
-            await expectPinnedStreamCount(pageA, 1);
-            expect(await getPinnedStreamCount(pageA)).toBe(1);
+		const pageA = await browser.newPage();
+		const pageB = await browser.newPage();
 
-            await openMeeting(pageB, participantB.accessUrl);
-            await expectVideoCount(pageB, 3);
-            await expectPinnedStreamCount(pageB, 1);
+		try {
+			await openMeeting(pageA, participantA.accessUrl);
+			await startScreensharing(pageA);
+			await expectPinnedStreamCount(pageA, 1);
+			expect(await getPinnedStreamCount(pageA)).toBe(1);
 
-            await startScreensharing(pageB);
-            await expectVideoCount(pageB, 4);
-            await expectPinnedStreamCount(pageB, 1);
+			await openMeeting(pageB, participantB.accessUrl);
+			await expectVideoCount(pageB, 3);
+			await expectPinnedStreamCount(pageB, 1);
 
-            await expectVideoCount(pageA, 4);
-            expect(await getPinnedStreamCount(pageA)).toBe(1);
-        } finally {
-            await pageB.close();
-            await pageA.close();
-        }
-    });
+			await startScreensharing(pageB);
+			await expectVideoCount(pageB, 4);
+			await expectPinnedStreamCount(pageB, 1);
 
-    test('should NOT re-pin manually unpinned screen when new participant joins', async ({ browser }) => {
-        const room = await createRoom({ roomName: `pin-bug-case-2-${Date.now()}` });
-        const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room);
-        const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room);
-        const participantC = await createRoomAndGetAccessUrl(`participant-c-${Date.now()}`, room);
+			await expectVideoCount(pageA, 4);
+			expect(await getPinnedStreamCount(pageA)).toBe(1);
+		} finally {
+			await pageB.close();
+			await pageA.close();
+		}
+	});
 
-        const pageA = await browser.newPage();
-        const pageB = await browser.newPage();
-        const pageC = await browser.newPage();
+	test('should NOT re-pin manually unpinned screen when new participant joins', async ({ browser }) => {
+		const room = await createRoom({ roomName: `pin-bug-case-2-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const participantA = await createRoomAndGetAccessUrl(`participant-a-${Date.now()}`, room, undefined, createdRoomIds);
+		const participantB = await createRoomAndGetAccessUrl(`participant-b-${Date.now()}`, room, undefined, createdRoomIds);
+		const participantC = await createRoomAndGetAccessUrl(`participant-c-${Date.now()}`, room, undefined, createdRoomIds);
 
-        try {
-            await openMeeting(pageA, participantA.accessUrl);
-            await startScreensharing(pageA);
-            await expectPinnedStreamCount(pageA, 1);
+		const pageA = await browser.newPage();
+		const pageB = await browser.newPage();
+		const pageC = await browser.newPage();
 
-            await openMeeting(pageB, participantB.accessUrl);
-            await startScreensharing(pageB);
-            await expectVideoCount(pageB, 4);
-            await expectPinnedStreamCount(pageB, 1);
+		try {
+			await openMeeting(pageA, participantA.accessUrl);
+			await startScreensharing(pageA);
+			await expectPinnedStreamCount(pageA, 1);
 
-            for (let i = 0; i < 3; i++) {
-                if ((await getPinnedStreamCount(pageB)) === 0) {
-                    break;
-                }
+			await openMeeting(pageB, participantB.accessUrl);
+			await startScreensharing(pageB);
+			await expectVideoCount(pageB, 4);
+			await expectPinnedStreamCount(pageB, 1);
 
-                await unpinCurrentPinnedStream(pageB);
-            }
+			for (let i = 0; i < 3; i++) {
+				if ((await getPinnedStreamCount(pageB)) === 0) {
+					break;
+				}
 
-            expect(await getPinnedStreamCount(pageB)).toBe(0);
+				await unpinCurrentPinnedStream(pageB);
+			}
 
-            for (let i = 0; i < 3; i++) {
-                await toggleStreamPin(pageB, '.OV_stream.remote .screen-type');
+			expect(await getPinnedStreamCount(pageB)).toBe(0);
 
-                if ((await getPinnedStreamCount(pageB)) === 1) {
-                    break;
-                }
-            }
+			for (let i = 0; i < 3; i++) {
+				await toggleStreamPin(pageB, '.OV_stream.remote .screen-type');
 
-            expect(await getPinnedStreamCount(pageB)).toBe(1);
+				if ((await getPinnedStreamCount(pageB)) === 1) {
+					break;
+				}
+			}
 
-            await openMeeting(pageC, participantC.accessUrl);
-            await expect(pageC.locator('#layout-container')).toBeVisible();
+			expect(await getPinnedStreamCount(pageB)).toBe(1);
 
-            expect(await getPinnedStreamCount(pageB)).toBe(1);
-            expect(await getPinnedStreamCount(pageA)).toBe(1);
-        } finally {
-            await pageC.close();
-            await pageB.close();
-            await pageA.close();
-        }
-    });
+			await openMeeting(pageC, participantC.accessUrl);
+			await expect(pageC.locator('#layout-container')).toBeVisible();
+
+			expect(await getPinnedStreamCount(pageB)).toBe(1);
+			expect(await getPinnedStreamCount(pageA)).toBe(1);
+		} finally {
+			await pageC.close();
+			await pageB.close();
+			await pageA.close();
+		}
+	});
 });

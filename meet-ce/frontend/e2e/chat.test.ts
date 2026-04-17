@@ -1,5 +1,5 @@
 import { test } from '@playwright/test';
-import { createRoom, createRoomAndGetAccessUrl } from './helpers/meet-api.helper';
+import { createRoom, createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
     expectChatLinkCount,
     expectChatLinkHrefContains,
@@ -14,10 +14,15 @@ import {
 
 test.describe('Chat features', () => {
     // test.describe.configure({ timeout: 90_000 });
+    const createdRoomIds = new Set<string>();
+
+    test.afterAll(async () => {
+        await deleteRooms(createdRoomIds);
+    });
 
     test('should send messages', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName);
+        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);
@@ -33,11 +38,12 @@ test.describe('Chat features', () => {
 
     test('should receive a message', async ({ browser }) => {
         const room = await createRoom({ roomName: `chat-pw-receive-${Date.now()}` });
+        createdRoomIds.add(room.roomId);
         const senderName = `sender-${Date.now()}`;
         const receiverName = `receiver-${Date.now()}`;
 
-        const { accessUrl: receiverAccessUrl } = await createRoomAndGetAccessUrl(receiverName, room);
-        const { accessUrl: senderAccessUrl } = await createRoomAndGetAccessUrl(senderName, room);
+        const { accessUrl: receiverAccessUrl } = await createRoomAndGetAccessUrl(receiverName, room, undefined, createdRoomIds);
+        const { accessUrl: senderAccessUrl } = await createRoomAndGetAccessUrl(senderName, room, undefined, createdRoomIds);
 
         const receiverPage = await browser.newPage();
         await openMeeting(receiverPage, receiverAccessUrl);
@@ -59,7 +65,7 @@ test.describe('Chat features', () => {
 
     test('should send an URL message and render it as link', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName);
+        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);
@@ -70,11 +76,12 @@ test.describe('Chat features', () => {
 
     test('should show snackbar notification when receiving a message with chat panel closed', async ({ browser }) => {
         const room = await createRoom({ roomName: `chat-pw-snackbar-${Date.now()}` });
+        createdRoomIds.add(room.roomId);
         const senderName = `sender-${Date.now()}`;
         const receiverName = `receiver-${Date.now()}`;
 
-        const { accessUrl: receiverAccessUrl } = await createRoomAndGetAccessUrl(receiverName, room);
-        const { accessUrl: senderAccessUrl } = await createRoomAndGetAccessUrl(senderName, room);
+        const { accessUrl: receiverAccessUrl } = await createRoomAndGetAccessUrl(receiverName, room, undefined, createdRoomIds);
+        const { accessUrl: senderAccessUrl } = await createRoomAndGetAccessUrl(senderName, room, undefined, createdRoomIds);
 
         const receiverPage = await browser.newPage();
         await openMeeting(receiverPage, receiverAccessUrl);
@@ -97,7 +104,7 @@ test.describe('Chat features', () => {
 
     test('should preserve message order when sending multiple messages quickly', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName);
+        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);

@@ -135,9 +135,11 @@ export async function createExternalRoomMember(params: {
 	};
 }
 
-export async function deleteRoom(roomId: string): Promise<void> {
+export async function deleteRooms(roomIds: Iterable<string>): Promise<void> {
 	const response = await fetch(
-		withApiPath(`/rooms/${encodeURIComponent(roomId)}?withMeeting=force&withRecordings=force`),
+		withApiPath(
+			`/rooms?roomIds=${Array.from(roomIds).map(encodeURIComponent).join(',')}&withMeeting=force&withRecordings=force`
+		),
 		{
 			method: 'DELETE',
 			headers: {
@@ -146,16 +148,8 @@ export async function deleteRoom(roomId: string): Promise<void> {
 		}
 	);
 
-	if (response.status === 404) {
-		return;
-	}
-
 	const responseText = await response.text();
-	assertOk(response, responseText, `delete room ${roomId}`);
-}
-
-export async function deleteRooms(roomIds: Iterable<string>): Promise<void> {
-	await Promise.all(Array.from(roomIds).map((roomId) => deleteRoom(roomId)));
+	assertOk(response, responseText, `delete rooms ${Array.from(roomIds).join(',')}`);
 }
 
 export function toAbsoluteMeetUrl(accessUrl: string): string {
@@ -174,7 +168,9 @@ export function toAbsoluteMeetUrl(accessUrl: string): string {
 
 export async function createRoomAndGetAccessUrl(
 	participantName: string,
-	room?: E2ERoom
+	room?: E2ERoom,
+	queryParams?: Record<string, string>,
+	createdRoomIds?: Set<string>
 ): Promise<{ room: E2ERoom; accessUrl: string }> {
 	const createdRoom = room || (await createRoom({ roomName: `chat-pw-${Date.now()}` }));
 	const member = await createExternalRoomMember({
@@ -183,8 +179,16 @@ export async function createRoomAndGetAccessUrl(
 		baseRole: 'moderator'
 	});
 
+	createdRoomIds?.add(createdRoom.roomId);
+
+	const accessUrl = new URL(toAbsoluteMeetUrl(member.accessUrl));
+
+	for (const [key, value] of Object.entries(queryParams ?? {})) {
+		accessUrl.searchParams.set(key, value);
+	}
+
 	return {
 		room: createdRoom,
-		accessUrl: toAbsoluteMeetUrl(member.accessUrl)
+		accessUrl: accessUrl.toString()
 	};
 }
