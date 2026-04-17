@@ -18,6 +18,12 @@ on:
       aws-instance-type:
         description: 'AWS EC2 instance type'
         default: 'c5.2xlarge'
+      run-runner-as-user:
+        description: 'User to run the runner as'
+        default: 'ubuntu'
+      market-type:
+        description: 'AWS EC2 market type'
+        default: 'spot'
 
 jobs:
   test-api:
@@ -112,6 +118,8 @@ jobs:
           security-group-id: ${{ vars.AWS_SECURITY_GROUP_ID }}
           workflow-name: ${{ github.workflow }}-s3
           repository-name: ${{ github.repository }}
+          run-runner-as-user: ${{ inputs.run-runner-as-user || 'ubuntu' }}
+          market-type: ${{ inputs.market-type || 'spot' }}
 
   start-aws-runner-abs:
     name: Prepare AWS runner (ABS)
@@ -135,6 +143,8 @@ jobs:
           security-group-id: ${{ vars.AWS_SECURITY_GROUP_ID }}
           workflow-name: ${{ github.workflow }}-abs
           repository-name: ${{ github.repository }}
+          run-runner-as-user: ${{ inputs.run-runner-as-user || 'ubuntu' }}
+          market-type: ${{ inputs.market-type || 'spot' }}
 
   start-aws-runner-gcs:
     name: Prepare AWS runner (GCS)
@@ -158,6 +168,8 @@ jobs:
           security-group-id: ${{ vars.AWS_SECURITY_GROUP_ID }}
           workflow-name: ${{ github.workflow }}-gcs
           repository-name: ${{ github.repository }}
+          run-runner-as-user: ${{ inputs.run-runner-as-user || 'ubuntu' }}
+          market-type: ${{ inputs.market-type || 'spot' }}
 
   test-recordings:
     name: Recordings API Tests (${{ matrix.storage-provider }})
