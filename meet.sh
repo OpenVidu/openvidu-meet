@@ -299,8 +299,10 @@ ensure_playwright_chromium() {
   fi
 
   echo -e "${GREEN}Installing Playwright browsers (chromium)...${NC}"
-  PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright install --with-deps chromium $force_arg
-  PLAYWRIGHT_VER=$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright --version 2>/dev/null || true)
+  # Use a single deterministic CLI path to avoid version-resolution discrepancies.
+  PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node ./node_modules/@playwright/test/cli.js install --with-deps chromium $force_arg
+  PLAYWRIGHT_VER=$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node ./node_modules/@playwright/test/cli.js --version 2>/dev/null || true)
+
   echo "installed_at=$(date --iso-8601=seconds)" > "$MARKER_FILE" || true
   echo "playwright_version=$PLAYWRIGHT_VER" >> "$MARKER_FILE" || true
 }
