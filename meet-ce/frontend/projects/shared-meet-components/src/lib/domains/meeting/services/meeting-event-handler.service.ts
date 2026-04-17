@@ -10,18 +10,6 @@ import {
 	WebComponentEvent,
 	WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
-import {
-	DataPacket_Kind,
-	LocalParticipant,
-	ParticipantLeftEvent,
-	ParticipantLeftReason,
-	ParticipantModel,
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent,
-	RemoteParticipant,
-	Room,
-	RoomEvent
-} from 'openvidu-components-angular';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -29,6 +17,17 @@ import { SoundService } from '../../../shared/services/sound.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
+import type {
+	DataPacket_Kind,
+	LocalParticipant,
+	ParticipantLeftEvent,
+	ParticipantModel,
+	RecordingStartRequestedEvent,
+	RecordingStopRequestedEvent,
+	RemoteParticipant,
+	Room
+} from '../openvidu-components';
+import { ParticipantLeftReason, RoomEvent } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
 

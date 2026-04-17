@@ -1,35 +1,24 @@
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import type {
-	ApplicationConfig} from '@angular/core';
-import {
-	importProvidersFrom,
-	inject,
-	provideAppInitializer,
-	provideZoneChangeDetection
-} from '@angular/core';
+import type { ApplicationConfig } from '@angular/core';
+import { importProvidersFrom, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { ceRoutes } from '@app/app.routes';
 import { environment } from '@environment/environment';
+import type { OpenViduComponentsConfig, ParticipantProperties } from '@openvidu-meet/shared-components';
 import {
 	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
 	CustomParticipantModel,
 	httpInterceptor,
+	LayoutService,
 	MeetingLayoutService,
+	OpenViduComponentsModule,
 	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
 	ThemeService
 } from '@openvidu-meet/shared-components';
-import type {
-	OpenViduComponentsConfig,
-	ParticipantProperties
-} from 'openvidu-components-angular';
-import {
-	LayoutService,
-	OpenViduComponentsModule
-} from 'openvidu-components-angular';
 
 const ovComponentsconfig: OpenViduComponentsConfig = {
 	production: environment.production,
