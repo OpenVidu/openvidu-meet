@@ -99,7 +99,7 @@ jobs:
   start-aws-runner-s3:
     name: Prepare AWS runner (S3)
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    if: ${{ inputs.use-aws != 'false' }}
+    if: ${{ inputs.use-aws == 'true' }}
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -124,7 +124,7 @@ jobs:
   start-aws-runner-abs:
     name: Prepare AWS runner (ABS)
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    if: ${{ inputs.use-aws != 'false' }}
+    if: ${{ inputs.use-aws == 'true' }}
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
@@ -149,7 +149,7 @@ jobs:
   start-aws-runner-gcs:
     name: Prepare AWS runner (GCS)
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    if: ${{ inputs.use-aws != 'false' }}
+    if: ${{ inputs.use-aws == 'true' }}
     outputs:
       label: ${{ steps.start-ec2-runner.outputs.label }}
       ec2-instance-id: ${{ steps.start-ec2-runner.outputs.ec2-instance-id }}
