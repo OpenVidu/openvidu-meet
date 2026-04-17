@@ -1,0 +1,81 @@
+name: Frontend E2E Tests
+
+on:
+  push:
+    paths:
+      - 'meet-ce/frontend/**'
+      - 'meet-ce/backend/**'
+      - 'meet.sh'
+      - '.github/workflows/frontend-e2e-test.yaml'
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  e2e-tests:
+    name: Frontend E2E Tests
+    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
+    steps:
+      - name: Checkout OpenVidu Meet
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: '24.13.1'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
+        with:
+          version: 10.18.3
+
+      - name: Install safe-chain
+        uses: OpenVidu/actions/install-safe-chain@a5d6165c017b522939a9bf180e2f73c76c44f000 # v1.0.17
+
+      - name: Install LK CLI
+        run: curl -sSL https://get.livekit.io/cli | bash
+
+      - name: Setup OpenVidu Local Deployment
+        uses: OpenVidu/actions/start-openvidu-local-deployment@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
+        with:
+          ref-openvidu-local-deployment: development
+          pre_startup_commands: |
+            cat <<'BASH' > pre_startup_commands.sh
+            #!/bin/bash
+            echo "Commenting out openvidu-meet container in docker-compose.yaml"
+            if [ -f docker-compose.yaml ]; then
+              yq e 'del(.services.openvidu-meet)' -i docker-compose.yaml
+            fi
+            BASH
+            chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
+
+      - name: Build and Start OpenVidu Meet
+        uses: OpenVidu/actions/start-openvidu-meet@71140a5995c61cf05c994955f49da71844f2ea3c # v1.0.4
+        env:
+          MEET_INITIAL_WEBHOOK_ENABLED: true
+          MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
+
+      - name: Run frontend E2E tests
+        run: ./meet.sh test-e2e-frontend --skip-install
+        env:
+          RUN_MODE: CI
+          PLAYWRIGHT_BROWSERS_PATH: /tmp/ms-playwright
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: frontend-e2e-test-results
+          path: meet-ce/frontend/test-results/
+          retention-days: 2
+
+      - name: Upload OpenVidu Meet logs on failure
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: frontend-e2e-openvidu-meet-logs
+          path: meet_backend.log
+          retention-days: 2
+
+      - name: Clean up
+        if: always()
+        uses: OpenVidu/actions/cleanup@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
