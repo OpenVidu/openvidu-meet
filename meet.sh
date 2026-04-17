@@ -114,10 +114,13 @@ show_help() {
   echo
   echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
   echo "    Run end-to-end tests for the webcomponent project"
-  echo -e "    ${YELLOW}Options:${NC} --force-install    Force reinstall of Playwright browsers"
+  echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
+  echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
   echo
   echo -e "  ${BLUE}test-e2e-frontend${NC}"
   echo "    Run migrated OpenVidu Components end-to-end tests in frontend project"
+  echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
+  echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
   echo
   echo -e "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
@@ -273,6 +276,35 @@ check_meet_pro_exists() {
   fi
 }
 
+# Ensure Playwright Chromium browser is installed in a shared cache
+ensure_playwright_chromium() {
+  local force_install="$1"
+  local skip_install_browsers="$2"
+
+  if [ "$skip_install_browsers" = true ]; then
+    echo -e "${YELLOW}Skipping Playwright browsers installation (--skip-install-browsers flag).${NC}"
+    return 0
+  fi
+
+  echo -e "${GREEN}Preparing Playwright browsers (chromium)...${NC}"
+  PW_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/tmp/ms-playwright}
+  mkdir -p "$PW_BROWSERS_PATH"
+
+  MARKER_FILE="$PW_BROWSERS_PATH/.playwright_chromium_installed"
+
+  local force_arg=""
+  if [ "$force_install" = true ]; then
+    echo -e "${YELLOW}Force install requested. Reinstalling Playwright browsers (chromium).${NC}"
+    force_arg="--force"
+  fi
+
+  echo -e "${GREEN}Installing Playwright browsers (chromium)...${NC}"
+  PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright install --with-deps chromium $force_arg
+  PLAYWRIGHT_VER=$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright --version 2>/dev/null || true)
+  echo "installed_at=$(date --iso-8601=seconds)" > "$MARKER_FILE" || true
+  echo "playwright_version=$PLAYWRIGHT_VER" >> "$MARKER_FILE" || true
+}
+
 # Run e2e tests for webcomponent
 test_e2e_webcomponent() {
   echo -e "${BLUE}=====================================${NC}"
@@ -282,41 +314,21 @@ test_e2e_webcomponent() {
 
   # Parse optional flags
   FORCE_INSTALL=false
+  SKIP_INSTALL_BROWSERS=false
   for arg in "$@"; do
     case "$arg" in
-      --force-install|-f)
+      --force-install-browsers|--force-install|-f)
         FORCE_INSTALL=true
+        ;;
+      --skip-install-browsers)
+        SKIP_INSTALL_BROWSERS=true
         ;;
     esac
   done
 
   install_dependencies
 
-  echo -e "${GREEN}Preparing Playwright browsers (chromium)...${NC}"
-  PW_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/tmp/ms-playwright}
-  mkdir -p "$PW_BROWSERS_PATH"
-
-  MARKER_FILE="$PW_BROWSERS_PATH/.playwright_chromium_installed"
-
-  chromium_present=false
-  if ls "$PW_BROWSERS_PATH" 2>/dev/null | grep -qi chromium; then
-    chromium_present=true
-  fi
-
-  if [ "$FORCE_INSTALL" = true ]; then
-    echo -e "${YELLOW}Force install requested. Will reinstall Playwright browsers.${NC}"
-    chromium_present=false
-  fi
-
-  if [ "$chromium_present" = true ] && [ -f "$MARKER_FILE" ]; then
-    echo -e "${GREEN}Chromium already installed in $PW_BROWSERS_PATH, skipping install.${NC}"
-  else
-    echo -e "${GREEN}Installing Playwright browsers...${NC}"
-    PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright install --with-deps chromium
-    PLAYWRIGHT_VER=$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" pnpm exec playwright --version 2>/dev/null || true)
-    echo "installed_at=$(date --iso-8601=seconds)" > "$MARKER_FILE" || true
-    echo "playwright_version=$PLAYWRIGHT_VER" >> "$MARKER_FILE" || true
-  fi
+  ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
   echo -e "${GREEN}Running webcomponent E2E tests...${NC}"
   pnpm run test:e2e-webcomponent
@@ -329,7 +341,23 @@ test_e2e_frontend() {
   echo -e "${BLUE}=====================================${NC}"
   echo
 
+  # Parse optional flags
+  FORCE_INSTALL=false
+  SKIP_INSTALL_BROWSERS=false
+  for arg in "$@"; do
+    case "$arg" in
+      --force-install-browsers|--force-install|-f)
+        FORCE_INSTALL=true
+        ;;
+      --skip-install-browsers)
+        SKIP_INSTALL_BROWSERS=true
+        ;;
+    esac
+  done
+
   install_dependencies
+
+  ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
   echo -e "${GREEN}Running frontend migrated E2E tests...${NC}"
   pnpm run test:e2e-frontend-components
@@ -845,7 +873,7 @@ main() {
       test_e2e_webcomponent "$@"
       ;;
     test-e2e-frontend)
-      test_e2e_frontend
+      test_e2e_frontend "$@"
       ;;
     dev)
       dev
