@@ -67,7 +67,6 @@ jobs:
           name: frontend-e2e-test-results
           path: meet-ce/frontend/test-results/
           retention-days: 2
-
       - name: Generate test report
         if: always()
         run: |
@@ -92,17 +91,8 @@ jobs:
               jq -r '.suites[] | select(.specs[] | select(.ok == false)) | .file as $file | .specs[] | select(.ok == false) | "\n### \($file)\n- \(.title)"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
             fi
           else
-            echo "⚠️ Test results file not found" >> $GITHUB_STEP_SUMMARY
-          fi
-
-      - name: Upload OpenVidu Meet logs on failure
-        if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
-        with:
-          name: frontend-e2e-openvidu-meet-logs
-          path: meet_backend.log
-          retention-days: 2
-
-      - name: Clean up
-        if: always()
+            echo "⚠️ Test results file not found at meet-ce/frontend/test-results/results.json" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Available files:" >> $GITHUB_STEP_SUMMARY
+            find meet-ce/frontend/test-results -type f 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
         uses: OpenVidu/actions/cleanup@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
