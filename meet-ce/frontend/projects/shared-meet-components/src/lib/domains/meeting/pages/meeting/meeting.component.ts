@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, ContentChild, effect, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, contentChild, effect, inject, OnInit, signal } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -41,13 +41,8 @@ export class MeetingComponent implements OnInit {
 	protected soundService = inject(SoundService);
 
 	// Template reference for custom participant panel item
-	@ContentChild(MeetingParticipantItemComponent)
-	set participantItem(value: MeetingParticipantItemComponent | undefined) {
-		// Store the reference to the custom participant panel item component
-		this._participantItem = value;
-	}
-	protected _participantItem?: MeetingParticipantItemComponent;
-	protected participantItemTemplate = computed(() => this._participantItem?.template());
+	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
+	protected participantItemTemplate = computed(() => this.participantItem().template());
 
 	/** Controls whether to show lobby (true) or meeting view (false) */
 	showLobby = signal(true);
