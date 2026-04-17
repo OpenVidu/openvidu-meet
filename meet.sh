@@ -156,7 +156,7 @@ install_dependencies() {
 
   check_pnpm
   echo -e "${BLUE}Installing dependencies...${NC}"
-  pnpm install
+  pnpm install --frozen-lockfile
 }
 
 # Build typings
