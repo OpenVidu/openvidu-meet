@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Inject, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -67,8 +67,8 @@ export class DeleteRoomDialogComponent {
 		}
 	];
 
-	selectedMeetingPolicy = MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS;
-	selectedRecordingPolicy = MeetRoomDeletionPolicyWithRecordings.CLOSE;
+	selectedMeetingPolicy = signal(MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS);
+	selectedRecordingPolicy = signal(MeetRoomDeletionPolicyWithRecordings.CLOSE);
 
 	constructor(@Inject(MAT_DIALOG_DATA) public data: DeleteRoomDialogOptions) {}
 
@@ -76,7 +76,7 @@ export class DeleteRoomDialogComponent {
 		this.dialogRef.close();
 
 		if (type === 'confirm') {
-			this.data.confirmCallback(this.selectedMeetingPolicy, this.selectedRecordingPolicy);
+			this.data.confirmCallback(this.selectedMeetingPolicy(), this.selectedRecordingPolicy());
 		}
 	}
 }

@@ -42,10 +42,10 @@
 <mat-sidenav-container autosize class="sidenav-container" id="sidenav-container">
 	<mat-sidenav
 		#sidenav
-		[class.collapsed]="isSideMenuCollapsed"
-		[class.expanded]="!isSideMenuCollapsed"
-		[mode]="isMobile ? 'over' : 'side'"
-		[opened]="!isMobile"
+		[class.collapsed]="isSideMenuCollapsed()"
+		[class.expanded]="!isSideMenuCollapsed()"
+		[mode]="isMobile() ? 'over' : 'side'"
+		[opened]="!isMobile()"
 		id="side-navigation"
 	>
 		<mat-nav-list id="nav-list">
@@ -58,15 +58,15 @@
 						routerLinkActive="active-nav-item"
 						[routerLinkActiveOptions]="{ exact: false }"
 						(click)="link.clickHandler ? link.clickHandler() : null"
-						[matTooltip]="isSideMenuCollapsed ? link.label : ''"
+						[matTooltip]="isSideMenuCollapsed() ? link.label : ''"
 						[matTooltipPosition]="'right'"
 						[matTooltipClass]="'nav-tooltip'"
-						[matTooltipDisabled]="!isSideMenuCollapsed"
+						[matTooltipDisabled]="!isSideMenuCollapsed()"
 						[id]="'nav-link-' + link.route!.replace('/', '')"
 					>
-						<span class="entry" [class.centeredEntry]="isSideMenuCollapsed">
+						<span class="entry" [class.centeredEntry]="isSideMenuCollapsed()">
 							<mat-icon [class]="link.iconClass">{{ link.icon }}</mat-icon>
-							@if (!isSideMenuCollapsed) {
+							@if (!isSideMenuCollapsed()) {
 								{{ link.label }}
 							}
 						</span>
@@ -75,7 +75,7 @@
 			}
 		</mat-nav-list>
 
-		@if (!isSideMenuCollapsed) {
+		@if (!isSideMenuCollapsed()) {
 			<div class="separator" id="nav-separator"></div>
 			<div class="version" id="version-info">
 				<p>{{ version }}</p>

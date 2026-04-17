@@ -49,29 +49,31 @@ export class ResetPasswordDialogComponent {
 	private userService = inject(UserService);
 	private notificationService = inject(NotificationService);
 
-	password = '';
+	password = signal('');
 	showPassword = signal(false);
 	isSaving = signal(false);
 	copied = signal(false);
 
 	generatePassword() {
-		this.password = UsersUiUtils.generateTemporaryPassword();
+		this.password.set(UsersUiUtils.generateTemporaryPassword());
 		this.showPassword.set(true);
 	}
 
 	copyToClipboard() {
-		if (!this.password) return;
-		this.clipboard.copy(this.password);
+		const password = this.password();
+		if (!password) return;
+		this.clipboard.copy(password);
 		this.copied.set(true);
 		setTimeout(() => this.copied.set(false), 2000);
 		this.notificationService.showSnackbar('Password copied to clipboard');
 	}
 
 	async confirm() {
-		if (!this.password) return;
+		const password = this.password();
+		if (!password) return;
 		this.isSaving.set(true);
 		try {
-			await this.userService.resetUserPassword(this.data.user.userId, this.password);
+			await this.userService.resetUserPassword(this.data.user.userId, password);
 			this.notificationService.showSnackbar(`Password reset successfully for ${this.data.user.name}`);
 			this.dialogRef.close(true);
 		} catch (error) {

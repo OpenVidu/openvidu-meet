@@ -12,7 +12,7 @@
 			@if (data.showWithMeetingPolicy) {
 				<div class="policy-section">
 					<h4>With Active Meeting Policy:</h4>
-					<mat-radio-group [(ngModel)]="selectedMeetingPolicy" class="policy-group">
+					<mat-radio-group [ngModel]="selectedMeetingPolicy()" (ngModelChange)="selectedMeetingPolicy.set($event)" class="policy-group">
 						@for (option of meetingPolicyOptions; track option.value) {
 							<mat-radio-button [value]="option.value" class="policy-option">
 								<div class="policy-option-content">
@@ -28,7 +28,7 @@
 			@if (data.showWithRecordingsPolicy) {
 				<div class="policy-section">
 					<h4>With Recordings Policy:</h4>
-					<mat-radio-group [(ngModel)]="selectedRecordingPolicy" class="policy-group">
+					<mat-radio-group [ngModel]="selectedRecordingPolicy()" (ngModelChange)="selectedRecordingPolicy.set($event)" class="policy-group">
 						@for (option of recordingPolicyOptions; track option.value) {
 							<mat-radio-button [value]="option.value" class="policy-option">
 								<div class="policy-option-content">

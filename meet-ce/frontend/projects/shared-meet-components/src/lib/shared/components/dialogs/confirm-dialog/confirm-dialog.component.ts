@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Inject, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Inject, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -29,7 +29,7 @@ import type { DialogOptions } from '../../../models/notification.model';
 })
 export class DialogComponent {
 	readonly dialogRef = inject(MatDialogRef<DialogComponent>);
-	force = false;
+	force = signal(false);
 
 	constructor(@Inject(MAT_DIALOG_DATA) public data: DialogOptions) {}
 
@@ -37,7 +37,7 @@ export class DialogComponent {
 		this.dialogRef.close();
 
 		if (type === 'confirm') {
-			if (this.force && this.data.forceConfirmCallback) {
+			if (this.force() && this.data.forceConfirmCallback) {
 				this.data.forceConfirmCallback();
 			} else if (this.data.confirmCallback) {
 				this.data.confirmCallback();

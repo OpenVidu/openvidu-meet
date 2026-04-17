@@ -97,10 +97,10 @@ export class RecordingListsComponent implements OnInit {
 	statusFilterControl = new FormControl('');
 
 	// Sort state
-	currentSortField: MeetRecordingSortField = 'startDate';
-	currentSortOrder: SortOrder = SortOrder.DESC;
+	currentSortField = signal<MeetRecordingSortField>('startDate');
+	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = false; // Show message when no recordings match filters
+	showEmptyFilterMessage = signal(false); // Show message when no recordings match filters
 
 	// Selection state
 	selectedRecordings = signal<Set<string>>(new Set());
@@ -164,7 +164,7 @@ export class RecordingListsComponent implements OnInit {
 			}
 
 			// Show message when no recordings match filters
-			this.showEmptyFilterMessage = recordings.length === 0 && this.hasActiveFilters();
+			this.showEmptyFilterMessage.set(recordings.length === 0 && this.hasActiveFilters());
 		});
 	}
 
@@ -173,7 +173,7 @@ export class RecordingListsComponent implements OnInit {
 		this.updateDisplayedColumns();
 
 		// Calculate showEmptyFilterMessage based on initial state
-		this.showEmptyFilterMessage = this.recordings().length === 0 && this.hasActiveFilters();
+		this.showEmptyFilterMessage.set(this.recordings().length === 0 && this.hasActiveFilters());
 	}
 
 	// ===== INITIALIZATION METHODS =====
@@ -183,8 +183,8 @@ export class RecordingListsComponent implements OnInit {
 		const filters = this.initialFilters();
 		this.nameFilterControl.setValue(filters.nameFilter);
 		this.statusFilterControl.setValue(filters.statusFilter);
-		this.currentSortField = filters.sortField;
-		this.currentSortOrder = filters.sortOrder;
+		this.currentSortField.set(filters.sortField);
+		this.currentSortOrder.set(filters.sortOrder);
 
 		// Set up name filter change detection
 		this.nameFilterControl.valueChanges.subscribe((value) => {
@@ -305,8 +305,8 @@ export class RecordingListsComponent implements OnInit {
 		this.loadMore.emit({
 			nameFilter,
 			statusFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 
@@ -316,14 +316,14 @@ export class RecordingListsComponent implements OnInit {
 		this.refresh.emit({
 			nameFilter,
 			statusFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 
 	onSortChange(sortState: Sort) {
-		this.currentSortField = sortState.active as MeetRecordingSortField;
-		this.currentSortOrder = sortState.direction as SortOrder;
+		this.currentSortField.set(sortState.active as MeetRecordingSortField);
+		this.currentSortOrder.set(sortState.direction as SortOrder);
 		this.emitFilterChange();
 	}
 
@@ -337,8 +337,8 @@ export class RecordingListsComponent implements OnInit {
 		this.filterChange.emit({
 			nameFilter: this.nameFilterControl.value || '',
 			statusFilter: (this.statusFilterControl.value || '') as MeetRecordingStatus | '',
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 

@@ -1,4 +1,4 @@
-@if (!loading() && recordings().length === 0 && !showEmptyFilterMessage) {
+@if (!loading() && recordings().length === 0 && !showEmptyFilterMessage()) {
 	<!-- Empty State -->
 	<div class="no-recordings-state">
 		<div class="empty-content">
@@ -133,7 +133,7 @@
 			<mat-spinner diameter="40" />
 			<span>Loading recordings...</span>
 		</div>
-	} @else if (recordings().length === 0 && showEmptyFilterMessage) {
+	} @else if (recordings().length === 0 && showEmptyFilterMessage()) {
 		<!-- No recordings match the current filters -->
 		<div class="no-recordings-state">
 			<div class="empty-content">
@@ -324,8 +324,8 @@
 					[dataSource]="recordings()"
 					matSort
 					matSortDisableClear
-					[matSortActive]="currentSortField"
-					[matSortDirection]="currentSortOrder"
+					[matSortActive]="currentSortField()"
+					[matSortDirection]="currentSortOrder()"
 					(matSortChange)="onSortChange($event)"
 					class="recordings-table"
 				>

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Signal, inject, input, output, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Signal, inject, input, output, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -30,9 +30,9 @@ export class ConsoleNavComponent {
 	private themeService = inject(ThemeService);
 
 	readonly sidenav = viewChild.required(MatSidenav);
-	isMobile = false;
-	isTablet = false;
-	isSideMenuCollapsed = false;
+	isMobile = signal(false);
+	isTablet = signal(false);
+	isSideMenuCollapsed = signal(false);
 	readonly version = `v${this.appCtxService.version()} (${this.appCtxService.edition()})`;
 
 	readonly isDarkMode: Signal<boolean>;
@@ -45,11 +45,11 @@ export class ConsoleNavComponent {
 	}
 
 	async toggleSideMenu() {
-		if (this.isMobile) {
-			this.isSideMenuCollapsed = false;
+		if (this.isMobile()) {
+			this.isSideMenuCollapsed.set(false);
 			await this.sidenav().toggle();
 		} else {
-			this.isSideMenuCollapsed = !this.isSideMenuCollapsed;
+			this.isSideMenuCollapsed.set(!this.isSideMenuCollapsed());
 			await this.sidenav().open();
 		}
 	}

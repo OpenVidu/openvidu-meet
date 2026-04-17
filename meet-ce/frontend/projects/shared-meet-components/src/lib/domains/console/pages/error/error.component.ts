@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -18,11 +18,11 @@ import { MeetingWebComponentManagerService } from '../../../meeting/services/mee
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ErrorComponent implements OnInit {
-	errorName = 'Error';
-	message = '';
+	errorName = signal('Error');
+	message = signal('');
 
-	showBackButton = true;
-	backButtonText = 'Back';
+	showBackButton = signal(true);
+	backButtonText = signal('Back');
 
 	constructor(
 		private route: ActivatedRoute,
@@ -44,8 +44,8 @@ export class ErrorComponent implements OnInit {
 		const reason = this.route.snapshot.queryParams['reason'];
 		if (reason) {
 			const { title, message } = this.mapReasonToNameAndMessage(reason);
-			this.errorName = title;
-			this.message = message;
+			this.errorName.set(title);
+			this.message.set(message);
 		}
 	}
 
@@ -127,12 +127,12 @@ export class ErrorComponent implements OnInit {
 		// If in standalone mode without redirection and user is not authenticated,
 		// hide back button (user has no where to go back to)
 		if (isStandaloneMode && !redirection && !isAuthenticated) {
-			this.showBackButton = false;
+			this.showBackButton.set(false);
 			return;
 		}
 
-		this.showBackButton = true;
-		this.backButtonText = isStandaloneMode && !redirection && isAuthenticated ? 'Back to Console' : 'Accept';
+		this.showBackButton.set(true);
+		this.backButtonText.set(isStandaloneMode && !redirection && isAuthenticated ? 'Back to Console' : 'Accept');
 	}
 
 	/**

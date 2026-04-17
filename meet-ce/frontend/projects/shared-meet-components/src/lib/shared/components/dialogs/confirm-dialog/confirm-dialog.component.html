@@ -11,7 +11,7 @@
 		<div class="dialog-message" [innerHTML]="data.message"></div>
 		@if (data.showForceCheckbox) {
 			<div class="force-checkbox-container">
-				<mat-checkbox [(ngModel)]="force" class="force-checkbox" color="warn">
+				<mat-checkbox [ngModel]="force()" (ngModelChange)="force.set($event)" class="force-checkbox" color="warn">
 					<span class="checkbox-text">{{ data.forceCheckboxText }}</span>
 				</mat-checkbox>
 				<div class="checkbox-warning">
@@ -35,7 +35,7 @@
 					cdkFocusInitial
 					(click)="close('confirm')"
 					class="confirm-button"
-					[class.force]="force"
+					[class.force]="force()"
 				>
 					{{ data.confirmText ?? 'Confirm' }}
 				</button>

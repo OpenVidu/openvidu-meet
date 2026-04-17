@@ -1,6 +1,6 @@
 <div class="video-player-wrapper" [class.mobile]="viewportService.isMobileView()">
 	<!-- Video Player -->
-	@if (recordingUrl() && !hasVideoError) {
+	@if (recordingUrl() && !hasVideoError()) {
 		<div class="video-container" [class.mobile]="viewportService.isMobileView()">
 			<video
 				#videoPlayer
@@ -15,7 +15,7 @@
 				(error)="onVideoError()"
 			></video>
 
-			@if (!isVideoLoaded) {
+			@if (!isVideoLoaded()) {
 				<div class="video-loading-overlay">
 					<mat-spinner diameter="40" />
 					<span>Loading video...</span>
@@ -24,7 +24,7 @@
 		</div>
 	}
 	<!-- Video Error State -->
-	@else if (hasVideoError) {
+	@else if (hasVideoError()) {
 		<div class="video-error-container">
 			<div class="error-content">
 				<mat-icon class="error-icon">error</mat-icon>

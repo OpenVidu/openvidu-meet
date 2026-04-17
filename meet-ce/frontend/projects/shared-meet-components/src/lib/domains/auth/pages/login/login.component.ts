@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -34,10 +34,10 @@ export class LoginComponent implements OnInit {
 		password: new FormControl('', [Validators.required])
 	});
 
-	showPassword = false;
-	loginErrorMessage: string | undefined;
+	showPassword = signal(false);
+	loginErrorMessage = signal<string | undefined>(undefined);
 
-	redirectTo = ''; // By default, redirect to home page
+	redirectTo = signal(''); // By default, redirect to home page
 	private navigationService = inject(NavigationService);
 	private route = inject(ActivatedRoute);
 	private authService = inject(AuthService);
@@ -45,13 +45,13 @@ export class LoginComponent implements OnInit {
 	ngOnInit() {
 		this.route.queryParams.subscribe((params) => {
 			if (params['redirectTo']) {
-				this.redirectTo = params['redirectTo'];
+				this.redirectTo.set(params['redirectTo']);
 			}
 		});
 	}
 
 	async login() {
-		this.loginErrorMessage = undefined;
+		this.loginErrorMessage.set(undefined);
 		const { userId, password } = this.loginForm.value;
 
 		try {
@@ -63,12 +63,12 @@ export class LoginComponent implements OnInit {
 				return;
 			}
 
-			await this.navigationService.redirectTo(this.redirectTo);
+			await this.navigationService.redirectTo(this.redirectTo());
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {
-				this.loginErrorMessage = 'Too many login attempts. Please try again later';
+				this.loginErrorMessage.set('Too many login attempts. Please try again later');
 			} else {
-				this.loginErrorMessage = 'Invalid user ID or password';
+				this.loginErrorMessage.set('Invalid user ID or password');
 			}
 		}
 	}

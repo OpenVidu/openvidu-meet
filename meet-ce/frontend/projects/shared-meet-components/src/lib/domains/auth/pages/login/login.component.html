@@ -27,7 +27,7 @@
 							<mat-label>Password</mat-label>
 							<input
 								matInput
-								[type]="showPassword ? 'text' : 'password'"
+								[type]="showPassword() ? 'text' : 'password'"
 								formControlName="password"
 								placeholder="Enter your password"
 								id="password-input"
@@ -37,15 +37,15 @@
 								mat-icon-button
 								matSuffix
 								type="button"
-								(click)="showPassword = !showPassword"
-								matTooltip="{{ showPassword ? 'Hide password' : 'Show password' }}"
+								(click)="showPassword.set(!showPassword())"
+								matTooltip="{{ showPassword() ? 'Hide password' : 'Show password' }}"
 							>
-								<mat-icon>{{ showPassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+								<mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
 							</button>
 						</mat-form-field>
 
-						@if (loginErrorMessage) {
-							<mat-error class="login-error">{{ loginErrorMessage }}</mat-error>
+						@if (loginErrorMessage()) {
+							<mat-error class="login-error">{{ loginErrorMessage() }}</mat-error>
 						}
 
 						<div class="login-actions">

@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, inject, input, output, viewChild } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	ElementRef,
+	OnDestroy,
+	inject,
+	input,
+	output,
+	signal,
+	viewChild
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -61,9 +71,9 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 	retry = output<void>();
 
 	// Internal state
-	hasVideoError = false;
-	isVideoLoaded = false;
-	showMobileControls = true;
+	hasVideoError = signal(false);
+	isVideoLoaded = signal(false);
+	showMobileControls = signal(true);
 
 	videoPlayer = viewChild<ElementRef<HTMLVideoElement>>('videoPlayer');
 
@@ -72,8 +82,8 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 	viewportService = inject(ViewportService);
 
 	async onVideoLoaded() {
-		this.isVideoLoaded = true;
-		this.hasVideoError = false;
+		this.isVideoLoaded.set(true);
+		this.hasVideoError.set(false);
 		this.videoLoaded.emit();
 
 		// Start controls timeout for mobile
@@ -99,8 +109,8 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 
 	onVideoError() {
 		console.error('Error loading video');
-		this.hasVideoError = true;
-		this.isVideoLoaded = false;
+		this.hasVideoError.set(true);
+		this.isVideoLoaded.set(false);
 		this.videoError.emit();
 	}
 
@@ -113,8 +123,8 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 	}
 
 	onRetryClick() {
-		this.hasVideoError = false;
-		this.isVideoLoaded = false;
+		this.hasVideoError.set(false);
+		this.isVideoLoaded.set(false);
 		this.retry.emit();
 	}
 
@@ -137,9 +147,9 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 			clearTimeout(this.controlsTimeout);
 		}
 
-		if (this.showMobileControls) {
+		if (this.showMobileControls()) {
 			this.controlsTimeout = window.setTimeout(() => {
-				this.showMobileControls = false;
+				this.showMobileControls.set(false);
 			}, 3000); // Hide controls after 3 seconds
 		}
 	}

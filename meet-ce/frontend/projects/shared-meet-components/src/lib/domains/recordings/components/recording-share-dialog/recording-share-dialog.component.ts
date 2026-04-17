@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, Inject, OnInit, signal } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -41,14 +41,14 @@ import { RecordingService } from '../../services/recording.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingShareDialogComponent implements OnInit {
-	accessType: 'private' | 'public' = 'public';
-	canGenerateUrls = false;
-	canGeneratePublicUrls = false;
-	recordingUrl?: string;
+	accessType = signal<'private' | 'public'>('public');
+	canGenerateUrls = signal(false);
+	canGeneratePublicUrls = signal(false);
+	recordingUrl = signal<string | undefined>(undefined);
 
-	loading = false;
-	erroMessage?: string;
-	copied = false;
+	loading = signal(false);
+	erroMessage = signal<string | undefined>(undefined);
+	copied = signal(false);
 
 	constructor(
 		@Inject(MAT_DIALOG_DATA)
@@ -64,13 +64,12 @@ export class RecordingShareDialogComponent implements OnInit {
 
 	async ngOnInit() {
 		const hasRecordingAccess = this.data.hasRecordingAccess ?? true;
-		this.canGenerateUrls =
-			this.roomMemberContextService.hasPermission('canRetrieveRecordings') || hasRecordingAccess;
+		this.canGenerateUrls.set(this.roomMemberContextService.hasPermission('canRetrieveRecordings') || hasRecordingAccess);
 
 		// If the user cannot generate URLs, we can still show the current page URL for sharing,
 		// but we won't attempt to generate a recording-specific URL
-		if (!this.canGenerateUrls) {
-			this.recordingUrl = window.location.href;
+		if (!this.canGenerateUrls()) {
+			this.recordingUrl.set(window.location.href);
 			return;
 		}
 
@@ -83,68 +82,69 @@ export class RecordingShareDialogComponent implements OnInit {
 	 * Sets the canGeneratePublicUrls flag accordingly and defaults to private access if public URLs cannot be generated.
 	 */
 	private async loadAnonymousRecordingAccess() {
-		this.canGeneratePublicUrls = false;
+		this.canGeneratePublicUrls.set(false);
 		try {
 			const roomId = this.data.recordingId.split('--')[0];
 			const { access } = await this.roomService.getRoom(roomId, { fields: ['access'] });
-			this.canGeneratePublicUrls = access.anonymous.recording.enabled;
-			if (!this.canGeneratePublicUrls) {
-				this.accessType = 'private';
+			this.canGeneratePublicUrls.set(access.anonymous.recording.enabled);
+			if (!this.canGeneratePublicUrls()) {
+				this.accessType.set('private');
 			}
 		} catch (error) {
 			console.error('Error checking room access config for recording URL generation:', error);
-			this.canGeneratePublicUrls = false;
-			this.accessType = 'private';
+			this.canGeneratePublicUrls.set(false);
+			this.accessType.set('private');
 		}
 	}
 
 	async getRecordingUrl() {
-		if (!this.canGenerateUrls) {
-			this.erroMessage = 'You do not have permission to generate recording URLs.';
+		if (!this.canGenerateUrls()) {
+			this.erroMessage.set('You do not have permission to generate recording URLs.');
 			return;
 		}
 
-		if (this.accessType === 'public' && !this.canGeneratePublicUrls) {
-			this.erroMessage = 'Public recording URLs are not enabled for this room.';
+		if (this.accessType() === 'public' && !this.canGeneratePublicUrls()) {
+			this.erroMessage.set('Public recording URLs are not enabled for this room.');
 			return;
 		}
 
-		this.loading = true;
-		this.erroMessage = undefined;
+		this.loading.set(true);
+		this.erroMessage.set(undefined);
 
 		try {
-			const privateAccess = this.accessType === 'private';
+			const privateAccess = this.accessType() === 'private';
 			const { url } = await this.recordingService.generateRecordingUrl(this.data.recordingId, privateAccess);
-			this.recordingUrl = url;
+			this.recordingUrl.set(url);
 		} catch (error) {
-			this.erroMessage = 'Failed to generate recording URL. Please try again later.';
+			this.erroMessage.set('Failed to generate recording URL. Please try again later.');
 			console.error('Error generating recording URL:', error);
 		} finally {
-			this.loading = false;
+			this.loading.set(false);
 		}
 	}
 
 	copyToClipboard() {
-		if (!this.recordingUrl) {
+		const url = this.recordingUrl();
+		if (!url) {
 			return;
 		}
 
-		this.clipboard.copy(this.recordingUrl!);
-		this.copied = true;
+		this.clipboard.copy(url);
+		this.copied.set(true);
 
 		// Reset copied state after 2 seconds
 		setTimeout(() => {
-			this.copied = false;
+			this.copied.set(false);
 		}, 2000);
 	}
 
 	get shouldShowGoBackButton(): boolean {
-		return this.canGenerateUrls;
+		return this.canGenerateUrls();
 	}
 
 	goBack() {
-		this.recordingUrl = undefined;
-		this.copied = false;
-		this.erroMessage = undefined;
+		this.recordingUrl.set(undefined);
+		this.copied.set(false);
+		this.erroMessage.set(undefined);
 	}
 }
