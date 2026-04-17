@@ -1,16 +1,16 @@
 import {
-    AfterViewInit,
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    contentChild,
-    DestroyRef,
-    effect,
-    inject,
-    OnDestroy,
-    OnInit,
-    TemplateRef,
-    viewChild
+	AfterViewInit,
+	ChangeDetectionStrategy,
+	ChangeDetectorRef,
+	Component,
+	contentChild,
+	DestroyRef,
+	effect,
+	inject,
+	OnDestroy,
+	OnInit,
+	TemplateRef,
+	viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ParticipantPanelItemDirective } from '../../../../directives/template/openvidu-components-angular.directive';
@@ -135,9 +135,13 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	 * Sets up all templates using the template manager service
 	 */
 	private setupTemplates(): void {
+		const participantPanelItemTemplate =
+			this.participantPanelItemTemplate ?? this.defaultParticipantPanelItemTemplate;
+
 		this.templateConfig = this.templateManagerService.setupParticipantsPanelTemplates(
 			this.externalParticipantPanelItem(),
-			this.defaultParticipantPanelItemTemplate
+			participantPanelItemTemplate,
+			this.participantPanelAfterLocalParticipantTemplate
 		);
 
 		// Apply templates to component properties for backward compatibility
