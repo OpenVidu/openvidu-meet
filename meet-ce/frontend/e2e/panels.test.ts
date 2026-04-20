@@ -1,13 +1,15 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
-    expectHidden,
-    expectVisible,
-    openMeeting,
-    openSettingsPanel,
-    toggleActivitiesPanel,
-    toggleChatPanel,
-    toggleParticipantsPanel
+	expectCopiedUrl,
+	expectHidden,
+	expectVisible,
+	installClipboardCapture,
+	openMeeting,
+	openSettingsPanel,
+	toggleActivitiesPanel,
+	toggleChatPanel,
+	toggleParticipantsPanel
 } from './helpers/meeting-ui.helper';
 
 test.describe('Panels: UI Navigation and Section Switching', () => {
@@ -41,6 +43,31 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 		await toggleParticipantsPanel(page);
 		await expectHidden(page, '.local-participant-container');
 		await expectHidden(page, 'ov-participant-panel-item');
+	});
+
+	test('should show participant role badge in participant panel item', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl(`panel-owner-badge-${Date.now()}`, undefined, undefined, createdRoomIds);
+		await openMeeting(page, accessUrl);
+
+		await toggleParticipantsPanel(page);
+		await expectVisible(page, '.local-participant-container');
+
+		const roleBadge = page.locator('[id^="participant-badge-"]').first();
+		await expect(roleBadge).toBeVisible();
+		await expect(roleBadge).toHaveClass(/owner-badge|admin-badge|moderator-badge/);
+	});
+
+	test('should copy meeting url from participant panel copy button', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl(`panel-copy-url-${Date.now()}`, undefined, undefined, createdRoomIds);
+		await openMeeting(page, accessUrl);
+
+		await toggleParticipantsPanel(page);
+		await expectVisible(page, '.local-participant-container');
+		await expectVisible(page, '.share-meeting-link-container .copy-url-btn');
+		await installClipboardCapture(page);
+
+		await page.locator('.share-meeting-link-container .copy-url-btn').first().click();
+		await expectCopiedUrl(page);
 	});
 
 	test('should open and close the ACTIVITIES panel and verify its content', async ({ page }) => {

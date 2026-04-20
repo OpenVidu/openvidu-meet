@@ -137,6 +137,58 @@ export async function expectHidden(page: Page, selector: string): Promise<void> 
 	await expect(page.locator(selector)).toHaveCount(0);
 }
 
+export async function installClipboardCapture(page: Page): Promise<void> {
+	await page.evaluate(() => {
+		const w = window as Window & {
+			__ovCopiedText?: string;
+			__ovClipboardCaptureInstalled?: boolean;
+		};
+
+		if (w.__ovClipboardCaptureInstalled) {
+			return;
+		}
+
+		w.__ovClipboardCaptureInstalled = true;
+		w.__ovCopiedText = '';
+
+		document.addEventListener(
+			'copy',
+			() => {
+				const activeElement = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
+				const activeValue =
+					activeElement && typeof activeElement.value === 'string' ? activeElement.value.trim() : '';
+				const selectedText = document.getSelection()?.toString().trim() ?? '';
+
+				w.__ovCopiedText = selectedText || activeValue || w.__ovCopiedText || '';
+			},
+			true
+		);
+	});
+}
+
+export async function getCopiedText(page: Page): Promise<string> {
+	return await page.evaluate(async () => {
+		const w = window as Window & {
+			__ovCopiedText?: string;
+		};
+
+		const capturedText = w.__ovCopiedText?.trim() ?? '';
+		if (capturedText) {
+			return capturedText;
+		}
+
+		try {
+			return (await navigator.clipboard.readText()).trim();
+		} catch {
+			return '';
+		}
+	});
+}
+
+export async function expectCopiedUrl(page: Page, timeoutMs = 5_000): Promise<void> {
+	await expect.poll(async () => await getCopiedText(page), { timeout: timeoutMs }).toMatch(/^https?:\/\//);
+}
+
 export async function openPrejoinBackgroundsPanel(page: Page): Promise<void> {
 	await page.locator('#backgrounds-button').click();
 	await expect(page.locator('#background-effects-container')).toBeVisible();
