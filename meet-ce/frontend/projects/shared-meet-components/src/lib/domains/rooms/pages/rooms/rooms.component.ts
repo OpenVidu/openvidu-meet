@@ -16,13 +16,13 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import {
-    MeetRoom,
-    MeetRoomDeletionPolicyWithMeeting,
-    MeetRoomDeletionPolicyWithRecordings,
-    MeetRoomDeletionSuccessCode,
-    MeetRoomFilters,
-    MeetRoomStatus,
-    SortOrder
+	MeetRoom,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomFilters,
+	MeetRoomStatus,
+	SortOrder
 } from '@openvidu-meet/typings';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -31,9 +31,9 @@ import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
 import {
-    RoomsListsComponent,
-    RoomTableAction,
-    RoomTableFilter
+	RoomsListsComponent,
+	RoomTableAction,
+	RoomTableFilter
 } from '../../components/rooms-lists/rooms-lists.component';
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
@@ -62,6 +62,15 @@ import { RoomService } from '../../services/room.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomsComponent implements OnInit {
+	private roomService = inject(RoomService);
+	private notificationService = inject(NotificationService);
+	protected navigationService = inject(NavigationService);
+	protected roomDeletionService = inject(RoomDeletionService);
+	private clipboard = inject(Clipboard);
+	private dialog = inject(MatDialog);
+	protected loggerService = inject(LoggerService);
+	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomsComponent');
+
 	rooms = signal<MeetRoom[]>([]);
 
 	// Loading state
@@ -79,19 +88,6 @@ export class RoomsComponent implements OnInit {
 	// Pagination
 	hasMoreRooms = signal(false);
 	private nextPageToken?: string;
-
-	protected log: ILogger;
-	protected loggerService = inject(LoggerService);
-	private roomService = inject(RoomService);
-	private notificationService = inject(NotificationService);
-	protected navigationService = inject(NavigationService);
-	protected roomDeletionService = inject(RoomDeletionService);
-	private clipboard = inject(Clipboard);
-	private dialog = inject(MatDialog);
-
-	constructor() {
-		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
-	}
 
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
@@ -233,7 +229,7 @@ export class RoomsComponent implements OnInit {
 	private async viewRecordings(room: MeetRoom) {
 		// Navigate to recordings page for this room
 		try {
-			await this.navigationService.navigateTo('/recordings', { 'roomId': room.roomId });
+			await this.navigationService.navigateTo('/recordings', { roomId: room.roomId });
 		} catch (error) {
 			this.notificationService.showSnackbar('Error navigating to recordings');
 			this.log.e('Error navigating to recordings:', error);
@@ -350,7 +346,7 @@ export class RoomsComponent implements OnInit {
 			title: 'Delete Rooms',
 			icon: 'delete_outline',
 			message: `Are you sure you want to delete <b>${rooms.length}</b> rooms?`,
-			confirmText: 'Delete all',
+			confirmText: 'Delete',
 			cancelText: 'Cancel',
 			confirmCallback: bulkDeleteCallback
 		});
@@ -447,5 +443,4 @@ export class RoomsComponent implements OnInit {
 			disableClose: true
 		});
 	}
-
 }

@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import {
-    MeetRoom,
-    MeetRoomDeletionErrorCode,
-    MeetRoomDeletionPolicyWithMeeting,
-    MeetRoomDeletionPolicyWithRecordings,
-    MeetRoomDeletionSuccessCode
+	MeetRoom,
+	MeetRoomDeletionErrorCode,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode
 } from '@openvidu-meet/typings';
 import { DeleteRoomDialogOptions } from '../../../shared/models/notification.model';
 import { NotificationService } from '../../../shared/services/notification.service';
@@ -105,7 +105,11 @@ export class RoomDeletionService {
 			recordingPolicy: MeetRoomDeletionPolicyWithRecordings
 		) => {
 			try {
-				const { successCode, message, room } = await this.roomService.deleteRoom(roomId, meetingPolicy, recordingPolicy);
+				const { successCode, message, room } = await this.roomService.deleteRoom(
+					roomId,
+					meetingPolicy,
+					recordingPolicy
+				);
 				await onSuccess({ roomId, successCode, message, room });
 			} catch (error) {
 				this.notificationService.showSnackbar('Failed to delete room');
