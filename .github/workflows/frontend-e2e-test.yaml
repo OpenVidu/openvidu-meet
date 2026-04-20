@@ -78,17 +78,28 @@ jobs:
             FAILED=$(jq '.stats.unexpected' meet-ce/frontend/test-results/results.json)
             SKIPPED=$(jq '.stats.skipped' meet-ce/frontend/test-results/results.json)
 
+            echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
             echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
             echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
-            echo "| Total Tests | $TOTAL |" >> $GITHUB_STEP_SUMMARY
+            echo "| 📊 Total Tests | $TOTAL |" >> $GITHUB_STEP_SUMMARY
             echo "| ✅ Passed | $PASSED |" >> $GITHUB_STEP_SUMMARY
             echo "| ❌ Failed | $FAILED |" >> $GITHUB_STEP_SUMMARY
             echo "| ⏭️ Skipped | $SKIPPED |" >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
 
             if [ "$FAILED" -gt 0 ]; then
-              echo "## Failed Tests" >> $GITHUB_STEP_SUMMARY
-              jq -r '.suites[] | select(.specs[] | select(.ok == false)) | .file as $file | .specs[] | select(.ok == false) | "\n### \($file)\n- \(.title)"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+              echo "## Failed Tests Details" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "| File | Test Name | Duration (ms) | Error |" >> $GITHUB_STEP_SUMMARY
+              echo "|------|-----------|---------------|-------|" >> $GITHUB_STEP_SUMMARY
+              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | {file: $file, title: .title, duration: (.duration // 0), error: (.failures[0].error.message // "Unknown error" | gsub("\n"; " ") | gsub("|"; "\\|"))} | "| \(.file | split("/")[-1]) | \(.title | .[0:50]) | \(.duration) | \(.error | .[0:70]) |"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              echo "<details><summary>📋 Full Error Messages</summary>" >> $GITHUB_STEP_SUMMARY
+              echo "" >> $GITHUB_STEP_SUMMARY
+              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | "### ❌ \(.title)\n**File:** `\($file)`\n**Error:**\n\`\`\`\n\(.failures[0].error.message // "Unknown error")\n\`\`\`\n"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+              echo "</details>" >> $GITHUB_STEP_SUMMARY
+            else
+              echo "## ✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
             fi
           else
             echo "⚠️ Test results file not found at meet-ce/frontend/test-results/results.json" >> $GITHUB_STEP_SUMMARY
