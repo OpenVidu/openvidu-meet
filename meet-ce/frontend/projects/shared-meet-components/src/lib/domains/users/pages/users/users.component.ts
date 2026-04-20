@@ -4,11 +4,13 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
+import { firstValueFrom } from 'rxjs';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
+import { UpdateRoleDialogComponent } from '../../components/update-role-dialog/update-role-dialog.component';
 import {
 	UsersListsComponent,
 	UserTableAction,
@@ -102,7 +104,23 @@ export class UsersComponent implements OnInit {
 	}
 
 	private async onUpdateRole(user: MeetUserDTO) {
-		await this.navigateToUserProfile(user.userId);
+		const updatedUser = await firstValueFrom(
+			this.dialog
+				.open(UpdateRoleDialogComponent, {
+					width: '520px',
+					data: { user },
+					panelClass: 'ov-meet-dialog'
+				})
+				.afterClosed()
+		);
+
+		if (!updatedUser) {
+			return;
+		}
+
+		this.users.update((currentUsers) =>
+			currentUsers.map((currentUser) => (currentUser.userId === updatedUser.userId ? updatedUser : currentUser))
+		);
 	}
 
 	private onResetPassword(user: MeetUserDTO) {

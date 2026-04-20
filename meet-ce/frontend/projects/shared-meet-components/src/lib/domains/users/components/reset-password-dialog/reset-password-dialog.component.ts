@@ -45,8 +45,8 @@ export class ResetPasswordDialogComponent {
 	readonly dialogRef = inject(MatDialogRef<ResetPasswordDialogComponent>);
 	readonly data: ResetPasswordDialogData = inject(MAT_DIALOG_DATA);
 
-	private clipboard = inject(Clipboard);
 	private userService = inject(UserService);
+	private clipboard = inject(Clipboard);
 	private notificationService = inject(NotificationService);
 
 	password = signal('');
@@ -62,6 +62,7 @@ export class ResetPasswordDialogComponent {
 	copyToClipboard() {
 		const password = this.password();
 		if (!password) return;
+
 		this.clipboard.copy(password);
 		this.copied.set(true);
 		setTimeout(() => this.copied.set(false), 2000);
@@ -71,14 +72,18 @@ export class ResetPasswordDialogComponent {
 	async confirm() {
 		const password = this.password();
 		if (!password) return;
-		this.isSaving.set(true);
+
+		const delayLoader = setTimeout(() => this.isSaving.set(true), 200);
+
 		try {
 			await this.userService.resetUserPassword(this.data.user.userId, password);
 			this.notificationService.showSnackbar(`Password reset successfully for ${this.data.user.name}`);
 			this.dialogRef.close(true);
 		} catch (error) {
+			console.error('Error while resetting password', error);
 			this.notificationService.showSnackbar('Failed to reset password');
 		} finally {
+			clearTimeout(delayLoader);
 			this.isSaving.set(false);
 		}
 	}

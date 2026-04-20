@@ -113,7 +113,7 @@ export class UserService {
 	 * @param role - The new role to assign to the user
 	 * @returns A promise that resolves to the updated MeetUserDTO object
 	 */
-	async updateUserRole(userId: string, role: MeetUserRole): Promise<MeetUserDTO> {
+	async updateUserRole(userId: string, role: MeetUserRole): Promise<{ message: string; user: MeetUserDTO }> {
 		const path = `${this.USERS_API}/${userId}/role`;
 		return this.httpService.putRequest(path, { role });
 	}

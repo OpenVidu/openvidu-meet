@@ -1,0 +1,54 @@
+<div class="dialog-container">
+	<h2 mat-dialog-title class="dialog-title">
+		<mat-icon class="dialog-icon">manage_accounts</mat-icon>
+		Update User Role
+	</h2>
+
+	<mat-dialog-content>
+		<p class="dialog-subtitle">
+			Update role for
+			<strong>{{ data.user.name }}</strong>
+			<span class="user-id-hint">({{ data.user.userId }})</span>
+		</p>
+
+		<div class="role-section">
+			<span class="input-label">Role</span>
+			<mat-form-field subscriptSizing="dynamic" appearance="outline" class="role-field">
+				<mat-label>Role</mat-label>
+				<mat-select [ngModel]="selectedRole()" (ngModelChange)="selectedRole.set($event)">
+					@for (role of availableRoles; track role) {
+						<mat-option [value]="role">{{ UsersUiUtils.getRoleLabel(role) }}</mat-option>
+					}
+				</mat-select>
+			</mat-form-field>
+		</div>
+
+		@if (roleChanged()) {
+			@if (roleSpecificWarning()) {
+				<div class="warning-banner role-warning-banner">
+					<mat-icon class="warning-icon">warning</mat-icon>
+					<p>{{ roleSpecificWarning() }}</p>
+				</div>
+			}
+
+			<div class="warning-banner">
+				<mat-icon class="warning-icon">gavel</mat-icon>
+				<p>
+					If the user is currently in a meeting and loses required permissions after this update, they will be
+					removed from the meeting.
+				</p>
+			</div>
+		}
+	</mat-dialog-content>
+
+	<mat-dialog-actions class="dialog-actions">
+		<button mat-button class="cancel-button" (click)="cancel()">Cancel</button>
+		<button mat-button class="primary-button" [disabled]="!roleChanged() || isSaving()" (click)="save()">
+			@if (isSaving()) {
+				<mat-spinner diameter="18" />
+			} @else {
+				Save Role
+			}
+		</button>
+	</mat-dialog-actions>
+</div>

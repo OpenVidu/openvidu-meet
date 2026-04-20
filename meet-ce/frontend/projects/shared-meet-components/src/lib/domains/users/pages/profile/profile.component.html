@@ -232,27 +232,8 @@
 									</div>
 								</div>
 								<div class="action-controls">
-									<mat-form-field subscriptSizing="dynamic" appearance="outline" class="role-select">
-										<mat-label>Role</mat-label>
-										<mat-select [value]="editableRole()" (valueChange)="editableRole.set($event)">
-											@for (role of availableRoles; track role) {
-												<mat-option [value]="role">{{
-													UsersUiUtils.getRoleLabel(role)
-												}}</mat-option>
-											}
-										</mat-select>
-									</mat-form-field>
-									<button
-										mat-button
-										class="primary-button"
-										[disabled]="editableRole() === targetUser()!.role || isSavingRole()"
-										(click)="onUpdateRole()"
-									>
-										@if (isSavingRole()) {
-											<mat-spinner diameter="18" />
-										} @else {
-											Save Role
-										}
+									<button mat-button class="primary-button" (click)="onUpdateRole()">
+										Update Role
 									</button>
 								</div>
 							</div>

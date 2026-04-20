@@ -1,7 +1,6 @@
 import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import {
 	AbstractControl,
 	FormControl,
@@ -12,19 +11,21 @@ import {
 } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatDialog } from '@angular/material/dialog';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetUserDTO } from '@openvidu-meet/typings';
+import { firstValueFrom } from 'rxjs';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TokenStorageService } from '../../../../shared/services/token-storage.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { UpdateRoleDialogComponent } from '../../components/update-role-dialog/update-role-dialog.component';
 import { UserService } from '../../services/user.service';
 import { UsersUiUtils } from '../../utils/ui';
 
@@ -37,7 +38,6 @@ import { UsersUiUtils } from '../../utils/ui';
 		MatIconModule,
 		MatInputModule,
 		MatFormFieldModule,
-		MatSelectModule,
 		MatTooltipModule,
 		MatProgressSpinnerModule,
 		MatDividerModule,
@@ -48,6 +48,14 @@ import { UsersUiUtils } from '../../utils/ui';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ProfileComponent implements OnInit {
+	private authService = inject(AuthService);
+	private userService = inject(UserService);
+	private notificationService = inject(NotificationService);
+	private route = inject(ActivatedRoute);
+	private tokenStorageService = inject(TokenStorageService);
+	private navigationService = inject(NavigationService);
+	private dialog = inject(MatDialog);
+
 	isLoading = signal(true);
 	isOwnProfile = signal(true);
 	isAdminViewing = signal(false);
@@ -60,12 +68,8 @@ export class ProfileComponent implements OnInit {
 
 	isSavingPassword = signal(false);
 	isDeletingUser = signal(false);
-	isSavingRole = signal(false);
 
 	targetUser = signal<MeetUserDTO | null>(null);
-	editableRole = signal<MeetUserRole | null>(null);
-
-	availableRoles: MeetUserRole[] = [...UsersUiUtils.AVAILABLE_ROLES];
 	protected readonly UsersUiUtils = UsersUiUtils;
 
 	changePasswordForm = new FormGroup({
@@ -74,40 +78,9 @@ export class ProfileComponent implements OnInit {
 		confirmPassword: new FormControl('', [Validators.required])
 	});
 
-	constructor(
-		private authService: AuthService,
-		private userService: UserService,
-		private notificationService: NotificationService,
-		private route: ActivatedRoute,
-		private tokenStorageService: TokenStorageService,
-		private navigationService: NavigationService
-	) {
-		// Clear invalid password error when user types on current password
-		this.changePasswordForm.get('currentPassword')?.valueChanges.subscribe(() => {
-			const control = this.changePasswordForm.get('currentPassword');
-			if (control?.errors?.['invalidPassword']) {
-				const errors = { ...control.errors };
-				delete errors['invalidPassword'];
-				control.setErrors(Object.keys(errors).length > 0 ? errors : null);
-			}
-
-			const newPasswordControl = this.changePasswordForm.get('newPassword');
-			if (newPasswordControl?.value) {
-				newPasswordControl.updateValueAndValidity();
-			}
-		});
-
-		// Revalidate confirm password when new password changes
-		this.changePasswordForm.get('newPassword')?.valueChanges.subscribe(() => {
-			const confirmPasswordControl = this.changePasswordForm.get('confirmPassword');
-			if (confirmPasswordControl?.value) {
-				confirmPasswordControl.updateValueAndValidity();
-			}
-		});
-	}
-
 	async ngOnInit() {
 		this.isLoading.set(true);
+		this.setupPasswordFormValidationListeners();
 		this.isMandatoryChangePasswordMode.set(
 			this.route.snapshot.queryParamMap.get('mandatoryChangePassword') === 'true'
 		);
@@ -136,7 +109,6 @@ export class ProfileComponent implements OnInit {
 					this.isOwnProfile.set(false);
 					this.isAdminViewing.set(true);
 					this.isRootAdmin.set(UsersUiUtils.isRootAdmin(user));
-					this.editableRole.set(user.role);
 				}
 			} else {
 				// Own profile
@@ -151,6 +123,31 @@ export class ProfileComponent implements OnInit {
 		} finally {
 			this.isLoading.set(false);
 		}
+	}
+
+	private setupPasswordFormValidationListeners() {
+		// Clear invalid password error when user types on current password
+		this.changePasswordForm.get('currentPassword')?.valueChanges.subscribe(() => {
+			const control = this.changePasswordForm.get('currentPassword');
+			if (control?.errors?.['invalidPassword']) {
+				const errors = { ...control.errors };
+				delete errors['invalidPassword'];
+				control.setErrors(Object.keys(errors).length > 0 ? errors : null);
+			}
+
+			const newPasswordControl = this.changePasswordForm.get('newPassword');
+			if (newPasswordControl?.value) {
+				newPasswordControl.updateValueAndValidity();
+			}
+		});
+
+		// Revalidate confirm password when new password changes
+		this.changePasswordForm.get('newPassword')?.valueChanges.subscribe(() => {
+			const confirmPasswordControl = this.changePasswordForm.get('confirmPassword');
+			if (confirmPasswordControl?.value) {
+				confirmPasswordControl.updateValueAndValidity();
+			}
+		});
 	}
 
 	// ─── Password validators ────────────────────────────────────────────────────
@@ -220,21 +217,25 @@ export class ProfileComponent implements OnInit {
 
 	async onUpdateRole() {
 		const user = this.targetUser();
-		const newRole = this.editableRole();
-		if (!user || !newRole || newRole === user.role) return;
-
-		this.isSavingRole.set(true);
-		try {
-			const updated = await this.userService.updateUserRole(user.userId, newRole);
-			this.targetUser.set(updated);
-			this.notificationService.showSnackbar(`Role updated to ${newRole}`);
-		} catch (error) {
-			console.error('Error updating role:', error);
-			this.notificationService.showSnackbar('Failed to update role');
-			this.editableRole.set(user.role); // revert
-		} finally {
-			this.isSavingRole.set(false);
+		if (!user) {
+			return;
 		}
+
+		const updatedUser = await firstValueFrom(
+			this.dialog
+				.open(UpdateRoleDialogComponent, {
+					width: '520px',
+					data: { user },
+					panelClass: 'ov-meet-dialog'
+				})
+				.afterClosed()
+		);
+
+		if (!updatedUser) {
+			return;
+		}
+
+		this.targetUser.set(updatedUser);
 	}
 
 	async onResetPassword() {
