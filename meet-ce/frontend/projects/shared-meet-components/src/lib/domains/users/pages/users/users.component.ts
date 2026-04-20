@@ -32,17 +32,15 @@ export class UsersComponent implements OnInit {
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
 	private loggerService = inject(LoggerService);
-	protected log: ILogger;
+	protected log: ILogger = this.loggerService.get('OpenVidu Meet - UsersComponent');
 
 	users = signal<MeetUserDTO[]>([]);
 	currentUserId = signal<string>('');
 
+	// Loading state
 	isInitializing = signal(true);
 	showInitialLoader = signal(false);
 	isLoading = signal(false);
-
-	hasMoreUsers = signal(false);
-	private nextPageToken?: string;
 
 	initialFilters = signal<UserTableFilter>({
 		nameFilter: '',
@@ -51,9 +49,9 @@ export class UsersComponent implements OnInit {
 		sortOrder: SortOrder.DESC
 	});
 
-	constructor() {
-		this.log = this.loggerService.get('OpenVidu Meet - UsersComponent');
-	}
+	// Pagination
+	hasMoreUsers = signal(false);
+	private nextPageToken?: string;
 
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
@@ -67,6 +65,65 @@ export class UsersComponent implements OnInit {
 		this.showInitialLoader.set(false);
 		this.isInitializing.set(false);
 	}
+
+	private async loadUsers(filters: UserTableFilter, refresh = false) {
+		const delayLoader = setTimeout(() => {
+			this.isLoading.set(true);
+		}, 200);
+
+		try {
+			const userFilters: MeetUserFilters = {
+				maxItems: 50,
+				nextPageToken: !refresh ? this.nextPageToken : undefined,
+				sortField: filters.sortField,
+				sortOrder: filters.sortOrder
+			};
+
+			// Apply user name filter if provided
+			if (filters.nameFilter) {
+				userFilters.name = filters.nameFilter;
+			}
+
+			// Apply role filter if provided
+			if (filters.roleFilter) {
+				userFilters.role = filters.roleFilter as MeetUserRole;
+			}
+
+			const response = await this.userService.listUsers(userFilters);
+
+			if (!refresh) {
+				// Update users list
+				this.users.set([...this.users(), ...response.users]);
+			} else {
+				// Replace users list
+				this.users.set(response.users);
+			}
+
+			// Update pagination
+			this.nextPageToken = response.pagination.nextPageToken;
+			this.hasMoreUsers.set(response.pagination.isTruncated);
+		} catch (error) {
+			this.log.e('Error loading users:', error);
+			this.notificationService.showSnackbar('Failed to load users');
+		} finally {
+			clearTimeout(delayLoader);
+			this.isLoading.set(false);
+		}
+	}
+
+	async loadMoreUsers(filters: UserTableFilter) {
+		if (!this.hasMoreUsers() || this.isLoading()) {
+			return;
+		}
+		await this.loadUsers(filters);
+	}
+
+	async refreshUsers(filters: UserTableFilter) {
+		this.nextPageToken = undefined;
+		await this.loadUsers(filters, true);
+	}
+
+	// ─── Actions ──────────────────────────────────────────────────────────────
 
 	async onUserAction(action: UserTableAction) {
 		switch (action.action) {
@@ -87,17 +144,6 @@ export class UsersComponent implements OnInit {
 				break;
 		}
 	}
-
-	async refreshUsers(filters: UserTableFilter) {
-		this.nextPageToken = undefined;
-		await this.loadUsers(filters, true);
-	}
-
-	async loadMoreUsers(filters: UserTableFilter) {
-		await this.loadUsers(filters);
-	}
-
-	// ─── Actions ──────────────────────────────────────────────────────────────
 
 	private async onCreateUser() {
 		await this.navigationService.navigateTo('/users/new');
@@ -135,12 +181,14 @@ export class UsersComponent implements OnInit {
 		this.notificationService.showDialog({
 			title: 'Delete User',
 			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete user <strong>${user.name}</strong> (${user.userId})? This action cannot be undone.`,
+			message: `Are you sure you want to permanently delete user <b>${user.name}</b> (${user.userId})? This action cannot be undone.`,
 			confirmText: 'Delete',
 			cancelText: 'Cancel',
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);
+
+					// Remove deleted user from the list
 					this.users.set(this.users().filter((u) => u.userId !== user.userId));
 					this.notificationService.showSnackbar(`User "${user.name}" deleted successfully`);
 				} catch (error) {
@@ -152,31 +200,51 @@ export class UsersComponent implements OnInit {
 	}
 
 	private onBulkDeleteUsers(usersToDelete: MeetUserDTO[]) {
+		const bulkDeleteCallback = async () => {
+			try {
+				const userIds = usersToDelete.map((u) => u.userId);
+				const { deleted } = await this.userService.bulkDeleteUsers(userIds);
+
+				// Remove deleted users from the list
+				this.users.set(this.users().filter((u) => !deleted.includes(u.userId)));
+				this.notificationService.showSnackbar(
+					`${deleted.length} user${deleted.length > 1 ? 's' : ''} deleted successfully`
+				);
+			} catch (error: any) {
+				this.log.e('Error deleting users:', error);
+
+				const deleted = (error?.error?.deleted ?? []) as string[];
+				const failed = (error?.error?.failed ?? []) as { userId: string; error: string }[];
+
+				// Some users were deleted, some not
+				if (failed.length > 0 || deleted.length > 0) {
+					if (deleted.length > 0) {
+						this.users.set(this.users().filter((u) => !deleted.includes(u.userId)));
+					}
+
+					let message = '';
+					if (deleted.length > 0) {
+						message += `${deleted.length} user${deleted.length > 1 ? 's' : ''} deleted successfully. `;
+					}
+					if (failed.length > 0) {
+						message += `${failed.length} user${failed.length > 1 ? 's' : ''} could not be deleted.`;
+					}
+
+					this.notificationService.showSnackbar(message.trim());
+				} else {
+					this.notificationService.showSnackbar('Failed to delete users');
+				}
+			}
+		};
+
 		const count = usersToDelete.length;
 		this.notificationService.showDialog({
 			title: 'Delete Users',
 			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete <strong>${count} user${count > 1 ? 's' : ''}</strong>? This action cannot be undone.`,
+			message: `Are you sure you want to permanently delete <b>${count} user${count > 1 ? 's' : ''}</b>? This action cannot be undone.`,
 			confirmText: 'Delete',
 			cancelText: 'Cancel',
-			confirmCallback: async () => {
-				const failed: string[] = [];
-				for (const user of usersToDelete) {
-					try {
-						await this.userService.deleteUser(user.userId);
-					} catch (error) {
-						this.log.e('Error deleting user:', user.userId, error);
-						failed.push(user.name);
-					}
-				}
-				const deletedIds = new Set(usersToDelete.map((u) => u.userId));
-				this.users.set(this.users().filter((u) => !deletedIds.has(u.userId)));
-				if (failed.length > 0) {
-					this.notificationService.showSnackbar(`Failed to delete: ${failed.join(', ')}`);
-				} else {
-					this.notificationService.showSnackbar(`${count} user${count > 1 ? 's' : ''} deleted successfully`);
-				}
-			}
+			confirmCallback: bulkDeleteCallback
 		});
 	}
 
@@ -196,47 +264,5 @@ export class UsersComponent implements OnInit {
 		}
 
 		await this.navigationService.navigateTo(`/users/${userId}`);
-	}
-
-	// ─── Data loading ─────────────────────────────────────────────────────────
-
-	private async loadUsers(filters: UserTableFilter, refresh = false) {
-		const delayLoader = setTimeout(() => {
-			this.isLoading.set(true);
-		}, 200);
-
-		try {
-			const userFilters: MeetUserFilters = {
-				maxItems: 50,
-				nextPageToken: !refresh ? this.nextPageToken : undefined,
-				sortField: filters.sortField,
-				sortOrder: filters.sortOrder
-			};
-
-			if (filters.nameFilter) {
-				userFilters.name = filters.nameFilter;
-			}
-
-			if (filters.roleFilter) {
-				userFilters.role = filters.roleFilter as MeetUserRole;
-			}
-
-			const response = await this.userService.listUsers(userFilters);
-
-			if (!refresh) {
-				this.users.set([...this.users(), ...response.users]);
-			} else {
-				this.users.set(response.users);
-			}
-
-			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreUsers.set(response.pagination.isTruncated);
-		} catch (error) {
-			this.log.e('Error loading users:', error);
-			this.notificationService.showSnackbar('Failed to load users');
-		} finally {
-			clearTimeout(delayLoader);
-			this.isLoading.set(false);
-		}
 	}
 }
