@@ -96,7 +96,7 @@ jobs:
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "<details><summary>📋 Full Error Messages</summary>" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | "### ❌ \(.title)\n**File:** \`\($file)\`\n**Error:**\n\`\`\`\n\(.failures[0].error.message // "Unknown error")\n\`\`\`\n"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | "### ❌ \(.title)\n**File:** `\($file)`\n**Error:**\n```\n\(.failures[0].error.message // "Unknown error")\n```\n"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
               echo "</details>" >> $GITHUB_STEP_SUMMARY
             else
               echo "## ✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
