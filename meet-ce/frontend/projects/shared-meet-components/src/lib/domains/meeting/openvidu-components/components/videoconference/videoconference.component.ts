@@ -1,4 +1,3 @@
-import { animate, style, transition, trigger } from '@angular/animations';
 import {
 	AfterViewInit,
 	ChangeDetectorRef,
@@ -78,15 +77,6 @@ import { OpenViduThemeService } from '../../services/theme/theme.service';
 	selector: 'ov-videoconference',
 	templateUrl: './videoconference.component.html',
 	styleUrls: ['./videoconference.component.scss'],
-	animations: [
-		trigger('inOutAnimation', [
-			transition(':enter', [
-				style({ opacity: 0 }),
-				animate(`${VideoconferenceComponent.ANIMATION_DURATION_MS}ms ease-out`, style({ opacity: 1 }))
-			])
-			// transition(':leave', [style({ opacity: 1 }), animate('50ms ease-in', style({ opacity: 0.9 }))])
-		])
-	],
 	standalone: false
 })
 export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
@@ -107,6 +97,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private static readonly MATERIAL_ICONS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined';
 	private static readonly MATERIAL_ICONS_SELECTOR = 'link[href*="Material+Symbols+Outlined"]';
 	private static readonly SPINNER_DIAMETER = 50;
+	private static readonly ENTER_ANIMATION_CLASS = 'ov-fade-in-enter';
 	// *** Toolbar ***
 
 	readonly externalToolbar = contentChild(ToolbarDirective);
@@ -445,6 +436,10 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	// Expose constants to template
 	get spinnerDiameter(): number {
 		return VideoconferenceComponent.SPINNER_DIAMETER;
+	}
+
+	get enterAnimationClass(): string {
+		return VideoconferenceComponent.ENTER_ANIMATION_CLASS;
 	}
 
 	/**

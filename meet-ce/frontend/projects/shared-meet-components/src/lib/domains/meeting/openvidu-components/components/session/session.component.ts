@@ -16,7 +16,6 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { animate, style, transition, trigger } from '@angular/animations';
 import { MatDrawerContainer, MatSidenav } from '@angular/material/sidenav';
 import { skip } from 'rxjs';
 import { DataTopic } from '../../models/data-topic.model';
@@ -67,12 +66,6 @@ import { safeJsonParse } from '../../utils/utils';
 	selector: 'ov-session',
 	templateUrl: './session.component.html',
 	styleUrls: ['./session.component.scss'],
-	animations: [
-		trigger('inOutAnimation', [
-			transition(':enter', [style({ opacity: 0 }), animate('200ms', style({ opacity: 1 }))]),
-			transition(':leave', [animate('200ms', style({ opacity: 0 }))])
-		])
-	],
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: false
 })

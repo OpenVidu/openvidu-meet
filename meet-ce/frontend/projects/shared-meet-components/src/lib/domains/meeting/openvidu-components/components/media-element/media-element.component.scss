@@ -11,3 +11,29 @@ video {
 	border-radius: var(--ov-video-radius);
 	background-color: var(--ov-video-background, var(--ov-primary-action-color));
 }
+
+.ov-poster-enter {
+	animation: ov-poster-enter 100ms ease;
+}
+
+.ov-poster-leave {
+	animation: ov-poster-leave 200ms ease;
+}
+
+@keyframes ov-poster-enter {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes ov-poster-leave {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}

@@ -4,6 +4,32 @@
 	height: 100%;
 }
 
+.ov-fade-in-200 {
+	animation: ov-fade-in-200 200ms ease;
+}
+
+.ov-fade-out-200 {
+	animation: ov-fade-out-200 200ms ease;
+}
+
+@keyframes ov-fade-in-200 {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes ov-fade-out-200 {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
 #spinner {
 	position: absolute;
 	top: 40%;

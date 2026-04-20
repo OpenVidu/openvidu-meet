@@ -1,4 +1,3 @@
-import { animate, style, transition, trigger } from '@angular/animations';
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, viewChild } from '@angular/core';
 import { Track } from '../../services/livekit-adapter';
 
@@ -9,7 +8,8 @@ import { Track } from '../../services/livekit-adapter';
 	selector: 'ov-media-element',
 	template: `
 		<ov-video-poster
-			@posterAnimation
+			[animate.enter]="'ov-poster-enter'"
+			[animate.leave]="'ov-poster-leave'"
 			[showAvatar]="showAvatar()"
 			[nickname]="avatarName()"
 			[color]="avatarColor()"
@@ -24,12 +24,6 @@ import { Track } from '../../services/livekit-adapter';
 	`,
 	styleUrl: './media-element.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	animations: [
-		trigger('posterAnimation', [
-			transition(':enter', [style({ opacity: 0 }), animate('100ms', style({ opacity: 1 }))]),
-			transition(':leave', [style({ opacity: 1 }), animate('200ms', style({ opacity: 0 }))])
-		])
-	],
 	standalone: false
 })
 export class MediaElementComponent implements OnDestroy {

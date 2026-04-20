@@ -7,7 +7,7 @@
 		</div>
 	} @else if (componentState.showPrejoin) {
 		<!-- Prejoin -->
-		<div [@inOutAnimation] id="pre-join-container">
+		<div [animate.enter]="enterAnimationClass" id="pre-join-container">
 			@if (openviduAngularPreJoinTemplate) {
 				<ng-container *ngTemplateOutlet="openviduAngularPreJoinTemplate" />
 			} @else {
@@ -40,7 +40,7 @@
 	} @else if (componentState.isRoomReady) {
 		<!-- VideoConference -->
 
-		<div [@inOutAnimation] id="vc-container">
+		<div [animate.enter]="enterAnimationClass" id="vc-container">
 			<ov-session
 				(onRoomCreated)="onRoomCreated.emit($event)"
 				(onRoomReconnecting)="onRoomDisconnected.emit()"
