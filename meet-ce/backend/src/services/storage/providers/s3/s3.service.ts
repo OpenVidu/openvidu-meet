@@ -18,6 +18,7 @@ import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../logger.service.js';
+import { parseCustomS3Headers } from './s3-custom-headers.util.js';
 
 @injectable()
 export class S3Service {
@@ -40,6 +41,30 @@ export class S3Service {
 		}
 
 		this.s3 = new S3Client(config);
+
+		const customHeaders = parseCustomS3Headers(MEET_ENV.S3_HEADERS);
+		if (Object.keys(customHeaders).length > 0) {
+			const logger = this.logger;
+			let warnedMissingHeaders = false;
+			this.s3.middlewareStack.add(
+				(next) => async (args) => {
+					const req = args.request as { headers?: Record<string, string> };
+					if (req && req.headers) {
+						for (const [k, v] of Object.entries(customHeaders)) {
+							req.headers[k] = v;
+						}
+					} else if (!warnedMissingHeaders) {
+						warnedMissingHeaders = true;
+						logger.warn(
+							'openviduCustomS3Headers: outgoing S3 request has no headers object; custom S3 headers not applied.'
+						);
+					}
+					return next(args);
+				},
+				{ step: 'build', name: 'openviduCustomS3Headers', priority: 'low' }
+			);
+		}
+
 		this.logger.debug('S3 Client initialized');
 	}
 
