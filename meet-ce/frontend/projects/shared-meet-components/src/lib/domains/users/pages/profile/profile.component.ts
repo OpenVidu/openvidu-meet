@@ -25,6 +25,7 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TokenStorageService } from '../../../../shared/services/token-storage.service';
 import { AuthService } from '../../../auth/services/auth.service';
+import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
 import { UpdateRoleDialogComponent } from '../../components/update-role-dialog/update-role-dialog.component';
 import { UserService } from '../../services/user.service';
 import { UsersUiUtils } from '../../utils/ui';
@@ -67,7 +68,6 @@ export class ProfileComponent implements OnInit {
 	showConfirmPassword = signal(false);
 
 	isSavingPassword = signal(false);
-	isDeletingUser = signal(false);
 
 	targetUser = signal<MeetUserDTO | null>(null);
 	protected readonly UsersUiUtils = UsersUiUtils;
@@ -93,23 +93,23 @@ export class ProfileComponent implements OnInit {
 		const authenticatedUserId = await this.authService.getUserId();
 		const isAdmin = await this.authService.isAdmin();
 
+		// Redirect to profile page if user tries to access their own profile through /users/:userId route
+		if (userId && userId === authenticatedUserId) {
+			await this.navigationService.navigateTo('/profile');
+			return;
+		}
+
 		try {
 			if (userId && userId !== authenticatedUserId) {
 				// Admin viewing another user's profile
-				if (!isAdmin) {
-					// Non-admin trying to access another user's profile - redirect to own profile
-					this.notificationService.showSnackbar('You do not have permission to view this profile');
-					const user = await this.userService.getMe();
-					this.targetUser.set(user);
-					this.isOwnProfile.set(true);
-					this.isAdminViewing.set(false);
-				} else {
-					const user = await this.userService.getUser(userId);
-					this.targetUser.set(user);
-					this.isOwnProfile.set(false);
+				if (isAdmin) {
 					this.isAdminViewing.set(true);
-					this.isRootAdmin.set(UsersUiUtils.isRootAdmin(user));
 				}
+
+				const user = await this.userService.getUser(userId);
+				this.targetUser.set(user);
+				this.isOwnProfile.set(false);
+				this.isRootAdmin.set(UsersUiUtils.isRootAdmin(user));
 			} else {
 				// Own profile
 				const user = await this.userService.getMe();
@@ -120,6 +120,7 @@ export class ProfileComponent implements OnInit {
 		} catch (error) {
 			console.error('Error loading profile:', error);
 			this.notificationService.showSnackbar('Failed to load user profile');
+			await this.navigationService.navigateTo('/users', {}, true);
 		} finally {
 			this.isLoading.set(false);
 		}
@@ -172,7 +173,7 @@ export class ProfileComponent implements OnInit {
 		if (this.changePasswordForm.invalid) return;
 
 		const { currentPassword, newPassword } = this.changePasswordForm.value;
-		this.isSavingPassword.set(true);
+		const delayLoader = setTimeout(() => this.isSavingPassword.set(true), 200);
 
 		try {
 			const response = await this.userService.changePassword(currentPassword!, newPassword!);
@@ -193,7 +194,7 @@ export class ProfileComponent implements OnInit {
 				}
 
 				this.notificationService.showSnackbar('Password updated successfully');
-				await this.navigationService.navigateTo('/overview', {}, true);
+				await this.navigationService.navigateTo('/', {}, true);
 				return;
 			}
 
@@ -209,6 +210,7 @@ export class ProfileComponent implements OnInit {
 				this.notificationService.showSnackbar('Failed to update password');
 			}
 		} finally {
+			clearTimeout(delayLoader);
 			this.isSavingPassword.set(false);
 		}
 	}
@@ -242,32 +244,34 @@ export class ProfileComponent implements OnInit {
 		const user = this.targetUser();
 		if (!user) return;
 
-		const tempPassword = UsersUiUtils.generateTemporaryPassword();
-		try {
-			await this.userService.resetUserPassword(user.userId, tempPassword);
-			this.notificationService.showSnackbar(`Password reset. Temporary password: ${tempPassword}`, 10000);
-		} catch (error) {
-			console.error('Error resetting password:', error);
-			this.notificationService.showSnackbar('Failed to reset password');
-		}
+		this.dialog.open(ResetPasswordDialogComponent, {
+			width: '520px',
+			data: { user },
+			panelClass: 'ov-meet-dialog'
+		});
 	}
 
 	async onDeleteUser() {
 		const user = this.targetUser();
 		if (!user) return;
 
-		this.isDeletingUser.set(true);
-		try {
-			await this.userService.deleteUser(user.userId);
-			this.notificationService.showSnackbar(`User '${user.userId}' deleted`);
-			// Navigate back
-			history.back();
-		} catch (error) {
-			console.error('Error deleting user:', error);
-			this.notificationService.showSnackbar('Failed to delete user');
-		} finally {
-			this.isDeletingUser.set(false);
-		}
+		this.notificationService.showDialog({
+			title: 'Delete User',
+			icon: 'delete_forever',
+			message: `Are you sure you want to permanently delete user <strong>${user.name}</strong> (${user.userId})? This action cannot be undone.`,
+			confirmText: 'Delete',
+			cancelText: 'Cancel',
+			confirmCallback: async () => {
+				try {
+					await this.userService.deleteUser(user.userId);
+					this.notificationService.showSnackbar(`User "${user.name}" deleted successfully`);
+					await this.navigationService.navigateTo('/users', {}, true);
+				} catch (error) {
+					console.error('Error deleting user:', error);
+					this.notificationService.showSnackbar('Failed to delete user');
+				}
+			}
+		});
 	}
 
 	// ─── Error helpers ──────────────────────────────────────────────────────────

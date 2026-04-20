@@ -272,17 +272,8 @@
 									</div>
 								</div>
 								<div class="action-controls">
-									<button
-										mat-button
-										class="danger-button"
-										[disabled]="isDeletingUser()"
-										(click)="onDeleteUser()"
-									>
-										@if (isDeletingUser()) {
-											<mat-spinner diameter="18" />
-										} @else {
-											Delete User
-										}
+									<button mat-button class="danger-button" (click)="onDeleteUser()">
+										Delete User
 									</button>
 								</div>
 							</div>
