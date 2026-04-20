@@ -72,11 +72,20 @@ jobs:
         run: |
           echo "# Frontend E2E Test Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+
+          # Try to find the results file (handle both results.json and .last-run.json)
+          RESULTS_FILE=""
           if [ -f "meet-ce/frontend/test-results/results.json" ]; then
-            TOTAL=$(jq '.stats.expected' meet-ce/frontend/test-results/results.json)
-            PASSED=$(jq '.stats.expected - .stats.unexpected - .stats.skipped' meet-ce/frontend/test-results/results.json)
-            FAILED=$(jq '.stats.unexpected' meet-ce/frontend/test-results/results.json)
-            SKIPPED=$(jq '.stats.skipped' meet-ce/frontend/test-results/results.json)
+            RESULTS_FILE="meet-ce/frontend/test-results/results.json"
+          elif [ -f "meet-ce/frontend/test-results/.last-run.json" ]; then
+            RESULTS_FILE="meet-ce/frontend/test-results/.last-run.json"
+          fi
+
+          if [ -n "$RESULTS_FILE" ]; then
+            TOTAL=$(jq '.stats.expected' "$RESULTS_FILE")
+            PASSED=$(jq '.stats.expected - .stats.unexpected - .stats.skipped' "$RESULTS_FILE")
+            FAILED=$(jq '.stats.unexpected' "$RESULTS_FILE")
+            SKIPPED=$(jq '.stats.skipped' "$RESULTS_FILE")
 
             echo "## Test Summary" >> $GITHUB_STEP_SUMMARY
             echo "| Metric | Count |" >> $GITHUB_STEP_SUMMARY
@@ -92,20 +101,22 @@ jobs:
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "| File | Test Name | Duration (ms) | Error |" >> $GITHUB_STEP_SUMMARY
               echo "|------|-----------|---------------|-------|" >> $GITHUB_STEP_SUMMARY
-              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | {file: $file, title: .title, duration: (.duration // 0), error: (.failures[0].error.message // "Unknown error" | gsub("\n"; " ") | gsub("|"; "\\|"))} | "| \(.file | split("/")[-1]) | \(.title | .[0:50]) | \(.duration) | \(.error | .[0:70]) |"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | {file: $file, title: .title, duration: (.duration // 0), error: (.failures[0].error.message // "Unknown error" | gsub("\n"; " ") | gsub("|"; "\\|"))} | "| \(.file | split("/")[-1]) | \(.title | .[0:50]) | \(.duration) | \(.error | .[0:70]) |"' "$RESULTS_FILE" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
               echo "<details><summary>📋 Full Error Messages</summary>" >> $GITHUB_STEP_SUMMARY
               echo "" >> $GITHUB_STEP_SUMMARY
-              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | "### ❌ \(.title)\n**File:** `\($file)`\n**Error:**\n\`\`\`\n\(.failures[0].error.message // "Unknown error")\n\`\`\`\n"' meet-ce/frontend/test-results/results.json >> $GITHUB_STEP_SUMMARY
+              jq -r '.suites[] | .file as $file | .specs[] | select(.ok == false) | "### ❌ \(.title)\n**File:** `\($file)`\n**Error:**\n\`\`\`\n\(.failures[0].error.message // "Unknown error")\n\`\`\`\n"' "$RESULTS_FILE" >> $GITHUB_STEP_SUMMARY
               echo "</details>" >> $GITHUB_STEP_SUMMARY
             else
               echo "## ✅ All tests passed!" >> $GITHUB_STEP_SUMMARY
             fi
           else
-            echo "⚠️ Test results file not found at meet-ce/frontend/test-results/results.json" >> $GITHUB_STEP_SUMMARY
+            echo "⚠️ No test results file found" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Looking for `.last-run.json` or `results.json` in test-results directory..." >> $GITHUB_STEP_SUMMARY
             echo "" >> $GITHUB_STEP_SUMMARY
             echo "Available files:" >> $GITHUB_STEP_SUMMARY
-            find meet-ce/frontend/test-results -type f 2>/dev/null | head -20 >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
+            find meet-ce/frontend/test-results -maxdepth 1 -type f 2>/dev/null >> $GITHUB_STEP_SUMMARY || echo "No test-results directory found" >> $GITHUB_STEP_SUMMARY
           fi
 
       - name: Cleanup
