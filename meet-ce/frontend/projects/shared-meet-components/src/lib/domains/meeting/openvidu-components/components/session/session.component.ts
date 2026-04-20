@@ -11,23 +11,23 @@ import {
 	OnDestroy,
 	OnInit,
 	output,
+	signal,
 	TemplateRef,
 	viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MatDrawerContainer, MatSidenav } from '@angular/material/sidenav';
-import { skip } from 'rxjs';
 import { DataTopic } from '../../models/data-topic.model';
 import { SidenavMode } from '../../models/layout/layout.model';
 import { ILogger } from '../../models/logger.model';
-import { PanelStatusInfo, PanelType } from '../../models/panel.model';
+import { PanelType } from '../../models/panel.model';
 import { RoomStatusData } from '../../models/room.model';
 import { ActionService } from '../../services/action/action.service';
 import { BroadcastingService } from '../../services/broadcasting/broadcasting.service';
 // import { CaptionService } from '../../services/caption/caption.service';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
-import { RecordingStatus } from '../../models/recording.model';
+import { RecordingState } from '../../models/recording.model';
 import { ChatService } from '../../services/chat/chat.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
@@ -109,8 +109,8 @@ export class SessionComponent implements OnInit, OnDestroy {
 
 	room!: Room;
 	sideMenu: MatSidenav | undefined = undefined;
-	sidenavMode: SidenavMode = SidenavMode.SIDE;
-	settingsPanelOpened: boolean = false;
+	readonly sidenavMode = signal<SidenavMode>(SidenavMode.SIDE);
+	readonly settingsPanelOpened = signal(false);
 	drawer: MatDrawerContainer | undefined = undefined;
 	loading: boolean = true;
 	private sidenavSubscriptionsInitialized: boolean = false;
@@ -212,6 +212,29 @@ export class SessionComponent implements OnInit, OnDestroy {
 			}, 0);
 		}
 	});
+	private readonly panelStateEffect = effect(() => {
+		const ev = this.panelService.panelOpened();
+		this.settingsPanelOpened.set(ev.isOpened && ev.panelType === PanelType.SETTINGS);
+
+		if (this.sideMenu) {
+			if (this.sideMenu.opened && ev.isOpened) {
+				if (ev.panelType === PanelType.SETTINGS || ev.previousPanelType === PanelType.SETTINGS) {
+					// Switch from SETTINGS to another panel and vice versa.
+					// As the SETTINGS panel will be bigger than others, the sidenav container must be updated.
+					// Setting autosize to 'true' allows update it.
+					if (this.drawer) {
+						this.drawer.autosize = true;
+					}
+					this.startUpdateLayoutInterval();
+				}
+			}
+			ev.isOpened ? this.sideMenu.open() : this.sideMenu.close();
+		}
+	});
+	private readonly layoutWidthEffect = effect(() => {
+		const width = this.layoutService.layoutWidth();
+		this.sidenavMode.set(width <= this.SIDENAV_WIDTH_LIMIT_MODE ? SidenavMode.OVER : SidenavMode.SIDE);
+	});
 
 	constructor() {
 		this.log = this.loggerSrv.get('SessionComponent');
@@ -263,7 +286,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 		this.subscribeToTrackMuteStateChanged();
 		this.subscribeToParticipantDisconnected();
 		this.subscribeToParticipantMetadataChanged();
-		this.subscribeToLayoutWidth();
 
 		// this.subscribeToParticipantNameChanged();
 		this.subscribeToDataMessage();
@@ -360,38 +382,18 @@ export class SessionComponent implements OnInit, OnDestroy {
 		sideMenu.closedStart.subscribe(() => {
 			this.startUpdateLayoutInterval();
 		});
-
-		this.panelService.panelStatusObs.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
-			if (this.sideMenu) {
-				this.settingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
-
-				if (this.sideMenu.opened && ev.isOpened) {
-					if (ev.panelType === PanelType.SETTINGS || ev.previousPanelType === PanelType.SETTINGS) {
-						// Switch from SETTINGS to another panel and vice versa.
-						// As the SETTINGS panel will be bigger than others, the sidenav container must be updated.
-						// Setting autosize to 'true' allows update it.
-						if (this.drawer) {
-							this.drawer.autosize = true;
-						}
-						this.startUpdateLayoutInterval();
-					}
-				}
-				ev.isOpened ? this.sideMenu.open() : this.sideMenu.close();
-			}
-		});
 	}
 
-		private initializeSidenavBindings(): void {
-			if (this.sidenavSubscriptionsInitialized || !this.sideMenu || !this.drawer) return;
+	private initializeSidenavBindings(): void {
+		if (this.sidenavSubscriptionsInitialized || !this.sideMenu || !this.drawer) return;
 
-			this.sidenavSubscriptionsInitialized = true;
-			this.subscribeToTogglingMenu();
-		}
+		this.sidenavSubscriptionsInitialized = true;
+		this.subscribeToTogglingMenu();
 
-	private subscribeToLayoutWidth() {
-		this.layoutService.layoutWidthObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((width) => {
-			this.sidenavMode = width <= this.SIDENAV_WIDTH_LIMIT_MODE ? SidenavMode.OVER : SidenavMode.SIDE;
-		});
+		// Sync current panel state once sidenav bindings are initialized.
+		const currentState = this.panelService.panelOpened();
+		this.settingsPanelOpened.set(currentState.isOpened && currentState.panelType === PanelType.SETTINGS);
+		currentState.isOpened ? this.sideMenu.open() : this.sideMenu.close();
 	}
 
 	private subscribeToParticipantConnected() {
@@ -605,7 +607,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 					this.recordingService.setRecordingList(recordingList);
 				}
 				if (isRecordingStarted) {
-					const recordingActive = recordingList.find((recording) => recording.status === RecordingStatus.STARTED);
+					const recordingActive = recordingList.find((recording) => recording.status === RecordingState.STARTED);
 					this.recordingService.setRecordingStarted(recordingActive);
 				}
 				if (isBroadcastingStarted) {

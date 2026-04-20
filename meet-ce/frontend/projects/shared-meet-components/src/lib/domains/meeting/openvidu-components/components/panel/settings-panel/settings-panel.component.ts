@@ -1,18 +1,19 @@
 import {
-	ChangeDetectionStrategy,
-	Component,
-	contentChild,
-	DestroyRef,
-	inject,
-	OnInit,
-	output,
-	TemplateRef
+    ChangeDetectionStrategy,
+    Component,
+    contentChild,
+    DestroyRef,
+    effect,
+    inject,
+    OnInit,
+    output,
+    TemplateRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
 import { CustomDevice } from '../../../models/device.model';
 import { LangOption } from '../../../models/lang.model';
-import { PanelSettingsOptions, PanelStatusInfo, PanelType } from '../../../models/panel.model';
+import { PanelSettingsOptions, PanelType } from '../../../models/panel.model';
 import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
 import { PlatformService } from '../../../services/platform/platform.service';
@@ -104,7 +105,8 @@ export class SettingsPanelComponent implements OnInit {
 	}
 
 	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
+		effect(() => {
+			const ev = this.panelService.panelOpened();
 			if (ev.panelType === PanelType.SETTINGS && !!ev.subOptionType) {
 				this.selectedOption = ev.subOptionType as PanelSettingsOptions;
 			}

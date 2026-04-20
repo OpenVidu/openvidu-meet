@@ -1,6 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { inject, Injectable, signal } from '@angular/core';
 import {
 	OPENVIDU_COMPONENTS_DARK_THEME,
 	OPENVIDU_COMPONENTS_LIGHT_THEME,
@@ -28,18 +27,15 @@ export class OpenViduThemeService {
 	private readonly storageService = inject(StorageService);
 
 	private readonly THEME_ATTRIBUTE = 'data-ov-theme';
-	private currentThemeSubject = new BehaviorSubject<OpenViduThemeMode>(OpenViduThemeMode.Classic);
-	private currentVariablesSubject = new BehaviorSubject<OpenViduThemeVariables>({});
+	/**
+	 * Signal that emits the current theme mode
+	 */
+	readonly currentTheme = signal<OpenViduThemeMode>(OpenViduThemeMode.Classic);
 
 	/**
-	 * Observable that emits the current theme mode
+	 * Signal that emits the current theme variables
 	 */
-	public readonly currentTheme$: Observable<OpenViduThemeMode> = this.currentThemeSubject.asObservable();
-
-	/**
-	 * Observable that emits the current theme variables
-	 */
-	public readonly currentVariables$: Observable<OpenViduThemeVariables> = this.currentVariablesSubject.asObservable();
+	readonly currentVariables = signal<OpenViduThemeVariables>({});
 
 	constructor() {}
 
@@ -47,7 +43,7 @@ export class OpenViduThemeService {
 		const savedTheme = this.storageService.getTheme();
 		const initialTheme = savedTheme || OpenViduThemeMode.Classic;
 		this.applyTheme(initialTheme);
-		this.currentThemeSubject.next(initialTheme);
+		this.currentTheme.set(initialTheme);
 	}
 
 	getAllThemes(): OpenViduThemeMode[] {
@@ -58,14 +54,14 @@ export class OpenViduThemeService {
 	 * Gets the current theme mode
 	 */
 	getCurrentTheme(): OpenViduThemeMode {
-		return this.currentThemeSubject.value;
+		return this.currentTheme();
 	}
 
 	/**
 	 * Gets the current theme variables
 	 */
 	getCurrentVariables(): OpenViduThemeVariables {
-		return this.currentVariablesSubject.value;
+		return this.currentVariables();
 	}
 
 	/**
@@ -74,7 +70,7 @@ export class OpenViduThemeService {
 	 */
 	setTheme(theme: OpenViduThemeMode): void {
 		this.applyTheme(theme);
-		this.currentThemeSubject.next(theme);
+		this.currentTheme.set(theme);
 		this.storageService.setTheme(theme);
 	}
 
@@ -83,8 +79,8 @@ export class OpenViduThemeService {
 	 * @param variables Object containing CSS variables to update
 	 */
 	updateThemeVariables(variables: OpenViduThemeVariables): void {
-		const mergedVariables = { ...this.currentVariablesSubject.value, ...variables };
-		this.currentVariablesSubject.next(mergedVariables);
+		const mergedVariables = { ...this.currentVariables(), ...variables };
+		this.currentVariables.set(mergedVariables);
 		this.applyCSSVariables(variables);
 	}
 
@@ -93,7 +89,7 @@ export class OpenViduThemeService {
 	 * @param variables Complete set of theme variables
 	 */
 	setThemeVariables(variables: OpenViduThemeVariables): void {
-		this.currentVariablesSubject.next(variables);
+		this.currentVariables.set(variables);
 		this.applyCSSVariables(variables);
 	}
 

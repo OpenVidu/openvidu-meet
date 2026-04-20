@@ -1,13 +1,13 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, OnInit, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../../models/broadcasting.model';
-import { PanelStatusInfo, PanelType } from '../../../models/panel.model';
+import { PanelType } from '../../../models/panel.model';
 import {
-    RecordingDeleteRequestedEvent,
-    RecordingDownloadClickedEvent,
-    RecordingPlayClickedEvent,
-    RecordingStartRequestedEvent,
-    RecordingStopRequestedEvent
+	RecordingDeleteRequestedEvent,
+	RecordingDownloadClickedEvent,
+	RecordingPlayClickedEvent,
+	RecordingStartRequestedEvent,
+	RecordingStopRequestedEvent
 } from '../../../models/recording.model';
 import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
@@ -118,7 +118,8 @@ export class ActivitiesPanelComponent implements OnInit {
 	}
 
 	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
+		effect(() => {
+			const ev = this.panelService.panelOpened();
 			if (ev.panelType === PanelType.ACTIVITIES && !!ev.subOptionType) {
 				this.expandedPanel = ev.subOptionType;
 			}

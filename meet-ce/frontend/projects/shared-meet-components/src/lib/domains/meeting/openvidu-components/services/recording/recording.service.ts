@@ -1,7 +1,6 @@
-import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { inject, Injectable, signal } from '@angular/core';
 import { ILogger } from '../../models/logger.model';
-import { RecordingInfo, RecordingStatus, RecordingStatusInfo } from '../../models/recording.model';
+import { RecordingInfo, RecordingState, RecordingStateInfo } from '../../models/recording.model';
 import { ActionService } from '../action/action.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { LoggerService } from '../logger/logger.service';
@@ -14,15 +13,14 @@ export class RecordingService {
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly loggerService = inject(LoggerService);
 
-	/**
-	 * Recording status Observable which pushes the recording state in every update.
-	 */
-	recordingStatusObs: Observable<RecordingStatusInfo>;
 	private recordingTimeInterval: ReturnType<typeof setInterval> | undefined = undefined;
 	private recordingStartTimestamp: number | null = null;
 
-	private recordingStatus = <BehaviorSubject<RecordingStatusInfo>>new BehaviorSubject({
-		status: RecordingStatus.STOPPED,
+	/**
+	 * Recording state signal which emits the recording state in every update.
+	 */
+	readonly recordingState = signal<RecordingStateInfo>({
+		status: RecordingState.STOPPED,
 		recordingList: [] as RecordingInfo[],
 		startedAt: new Date(0, 0, 0, 0, 0, 0)
 	});
@@ -38,7 +36,6 @@ export class RecordingService {
 	 */
 	constructor() {
 		this.log = this.loggerService.get('RecordingService');
-		this.recordingStatusObs = this.recordingStatus.asObservable();
 	}
 
 	/**
@@ -50,7 +47,7 @@ export class RecordingService {
 		// Priority: startTimestamp parameter > recordingInfo.startedAt > current time
 		this.recordingStartTimestamp = startTimestamp || recordingInfo?.startedAt || Date.now();
 
-		const { recordingList } = this.recordingStatus.getValue();
+		const { recordingList } = this.recordingState();
 		let updatedRecordingList = [...recordingList];
 
 		if (recordingInfo) {
@@ -72,7 +69,7 @@ export class RecordingService {
 		}
 
 		this.updateStatus({
-			status: RecordingStatus.STARTED,
+			status: RecordingState.STARTED,
 			recordingList: updatedRecordingList,
 			startedAt: recordingElapsedTime
 		});
@@ -87,7 +84,7 @@ export class RecordingService {
 	 */
 	setRecordingStopped(recordingInfo?: RecordingInfo) {
 		this.stopRecordingTimer();
-		const { recordingList } = this.recordingStatus.getValue();
+		const { recordingList } = this.recordingState();
 		let updatedRecordingList = [...recordingList];
 
 		// Update the recording list with the new recording info
@@ -101,7 +98,7 @@ export class RecordingService {
 		}
 
 		this.updateStatus({
-			status: RecordingStatus.STOPPED,
+			status: RecordingState.STOPPED,
 			recordingList: updatedRecordingList,
 			startedAt: new Date(0, 0, 0, 0, 0, 0)
 		});
@@ -110,13 +107,13 @@ export class RecordingService {
 	}
 
 	/**
-	 * Set the {@link RecordingStatus} to **starting**.
+	 * Set the {@link RecordingState} to **starting**.
 	 * The `started` stastus will be updated automatically when the recording is actually started.
 	 */
 	setRecordingStarting() {
-		const { recordingList, startedAt } = this.recordingStatus.getValue();
+		const { recordingList, startedAt } = this.recordingState();
 		this.updateStatus({
-			status: RecordingStatus.STARTING,
+			status: RecordingState.STARTING,
 			recordingList,
 			startedAt
 		});
@@ -128,9 +125,9 @@ export class RecordingService {
 	 */
 	setRecordingFailed(error: string) {
 		this.stopRecordingTimer();
-		const { startedAt, recordingList } = this.recordingStatus.getValue();
-		const statusInfo: RecordingStatusInfo = {
-			status: RecordingStatus.FAILED,
+		const { startedAt, recordingList } = this.recordingState();
+		const statusInfo: RecordingStateInfo = {
+			status: RecordingState.FAILED,
 			recordingList,
 			startedAt,
 			error
@@ -139,14 +136,14 @@ export class RecordingService {
 	}
 
 	/**
-	 * Set the {@link RecordingStatus} to **stopping**.
+	 * Set the {@link RecordingState} to **stopping**.
 	 * The `stopped` stastus will be updated automatically when the recording is actually stopped.
 	 */
 	setRecordingStopping() {
-		const { startedAt, recordingList } = this.recordingStatus.getValue();
+		const { startedAt, recordingList } = this.recordingState();
 
 		this.updateStatus({
-			status: RecordingStatus.STOPPING,
+			status: RecordingState.STOPPING,
 			recordingList,
 			startedAt
 		});
@@ -206,7 +203,7 @@ export class RecordingService {
 	 * @internal
 	 */
 	deleteRecording(recording: RecordingInfo) {
-		const { recordingList, status, startedAt } = this.recordingStatus.getValue();
+		const { recordingList, status, startedAt } = this.recordingState();
 		const updatedList = recordingList.filter((item) => item.id !== recording.id);
 
 		if (updatedList.length !== recordingList.length) {
@@ -226,7 +223,7 @@ export class RecordingService {
 	 * @internal
 	 */
 	setRecordingList(recordings: RecordingInfo[]) {
-		const { status, startedAt, error } = this.recordingStatus.getValue();
+		const { status, startedAt, error } = this.recordingState();
 		this.updateStatus({
 			status,
 			recordingList: recordings,
@@ -237,11 +234,11 @@ export class RecordingService {
 
 	/**
 	 * Updates the recording status.
-	 * @param status {@link RecordingStatus}
+	 * @param status {@link RecordingState}
 	 */
-	private updateStatus(statusInfo: RecordingStatusInfo) {
+	private updateStatus(statusInfo: RecordingStateInfo) {
 		const { status, recordingList, error, startedAt } = statusInfo;
-		this.recordingStatus.next({
+		this.recordingState.set({
 			status,
 			recordingList,
 			startedAt,
@@ -267,7 +264,7 @@ export class RecordingService {
 			const startedAt = new Date(0, 0, 0, 0, 0, 0);
 			startedAt.setSeconds(Math.max(0, elapsedSeconds)); // Ensure non-negative
 
-			const { recordingList, status } = this.recordingStatus.getValue();
+			const { recordingList, status } = this.recordingState();
 			this.updateStatus({
 				status,
 				recordingList,
@@ -280,8 +277,8 @@ export class RecordingService {
 		if (this.recordingTimeInterval) {
 			clearInterval(this.recordingTimeInterval);
 		}
-		const { recordingList, status, error } = this.recordingStatus.getValue();
-		const statusInfo: RecordingStatusInfo = {
+		const { recordingList, status, error } = this.recordingState();
+		const statusInfo: RecordingStateInfo = {
 			status,
 			recordingList,
 			startedAt: new Date(0, 0, 0, 0, 0, 0), // Reset elapsed time when stopped

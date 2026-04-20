@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 import { BroadcastingStatus, BroadcastingStatusInfo } from '../../models/broadcasting.model';
 
 @Injectable({
@@ -7,11 +6,9 @@ import { BroadcastingStatus, BroadcastingStatusInfo } from '../../models/broadca
 })
 export class BroadcastingService {
 	/**
-	 * Broadcasting status Observable which pushes the {@link BroadcastingStatusInfo} in every update.
+	 * Broadcasting status signal which emits the {@link BroadcastingStatusInfo} in every update.
 	 */
-	broadcastingStatusObs: Observable<BroadcastingStatusInfo>;
-
-	private broadcastingStatus = <BehaviorSubject<BroadcastingStatusInfo>>new BehaviorSubject({
+	readonly broadcastingStatus = signal<BroadcastingStatusInfo>({
 		status: BroadcastingStatus.STOPPED,
 		broadcastingId: undefined,
 		error: undefined
@@ -20,9 +17,7 @@ export class BroadcastingService {
 	/**
 	 * @internal
 	 */
-	constructor() {
-		this.broadcastingStatusObs = this.broadcastingStatus.asObservable();
-	}
+	constructor() {}
 
 	/**
 	 * @internal
@@ -81,7 +76,7 @@ export class BroadcastingService {
 	setBroadcastingStopping() {
 		const statusInfo: BroadcastingStatusInfo = {
 			status: BroadcastingStatus.STOPPING,
-			broadcastingId: this.broadcastingStatus.getValue().broadcastingId
+			broadcastingId: this.broadcastingStatus().broadcastingId
 		};
 		this.updateStatus(statusInfo);
 	}
@@ -93,7 +88,7 @@ export class BroadcastingService {
 	 */
 	private updateStatus(statusInfo: BroadcastingStatusInfo) {
 		const { status, broadcastingId, error } = statusInfo;
-		this.broadcastingStatus.next({
+		this.broadcastingStatus.set({
 			status,
 			broadcastingId,
 			error

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, output } from '@angular/core';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, input, OnInit, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ILogger } from '../../../../models/logger.model';
 import {
@@ -7,8 +7,7 @@ import {
 	RecordingInfo,
 	RecordingPlayClickedEvent,
 	RecordingStartRequestedEvent,
-	RecordingStatus,
-	RecordingStatusInfo,
+	RecordingState,
 	RecordingStopRequestedEvent
 } from '../../../../models/recording.model';
 import { ActionService } from '../../../../services/action/action.service';
@@ -84,11 +83,11 @@ export class RecordingActivityComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	recordingStatus: RecordingStatus = RecordingStatus.STOPPED;
+	recordingStatus: RecordingState = RecordingState.STOPPED;
 	/**
 	 * @internal
 	 */
-	oldRecordingStatus: RecordingStatus = RecordingStatus.STOPPED;
+	oldRecordingStatus: RecordingState = RecordingState.STOPPED;
 	/**
 	 * @internal
 	 */
@@ -97,7 +96,7 @@ export class RecordingActivityComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	recStatusEnum = RecordingStatus;
+	recStatusEnum = RecordingState;
 
 	/**
 	 * @internal
@@ -208,9 +207,9 @@ export class RecordingActivityComponent implements OnInit {
 	 * @internal
 	 */
 	resetStatus() {
-		if (this.oldRecordingStatus === RecordingStatus.STARTING) {
+		if (this.oldRecordingStatus === RecordingState.STARTING) {
 			this.recordingService.setRecordingStopped();
-		} else if (this.oldRecordingStatus === RecordingStatus.STOPPING) {
+		} else if (this.oldRecordingStatus === RecordingState.STOPPING) {
 			this.recordingService.setRecordingStarted();
 		} else {
 			this.recordingService.setRecordingStopped();
@@ -231,7 +230,7 @@ export class RecordingActivityComponent implements OnInit {
 	 * @internal
 	 */
 	stopRecording() {
-		const currentRecording = this.recordingList.find((rec) => rec.status === RecordingStatus.STARTED);
+		const currentRecording = this.recordingList.find((rec) => rec.status === RecordingState.STARTED);
 		const payload: RecordingStopRequestedEvent = {
 			roomName: this.openviduService.getRoomName(),
 			recordingId: currentRecording?.id
@@ -379,13 +378,14 @@ export class RecordingActivityComponent implements OnInit {
 	}
 
 	private subscribeToRecordingStatus() {
-		this.recordingService.recordingStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event: RecordingStatusInfo) => {
+		effect(() => {
+			const event = this.recordingService.recordingState();
 			const { status, recordingList, error } = event;
 			this.recordingStatus = status;
 			this.recordingList = recordingList;
 			this.recordingError = error;
-			this.recordingAlive = this.recordingStatus === RecordingStatus.STARTED;
-			if (this.recordingStatus !== RecordingStatus.FAILED) {
+			this.recordingAlive = this.recordingStatus === RecordingState.STARTED;
+			if (this.recordingStatus !== RecordingState.FAILED) {
 				this.oldRecordingStatus = this.recordingStatus;
 			}
 			this.cd.markForCheck();

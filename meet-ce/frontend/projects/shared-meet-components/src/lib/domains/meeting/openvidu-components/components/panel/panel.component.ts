@@ -4,13 +4,12 @@ import {
 	Component,
 	contentChild,
 	DestroyRef,
+	effect,
 	inject,
 	OnInit,
 	output,
 	TemplateRef
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { skip } from 'rxjs';
 import {
 	ActivitiesPanelDirective,
 	AdditionalPanelsDirective,
@@ -237,25 +236,24 @@ export class PanelComponent implements OnInit {
 	}
 
 	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs
-			.pipe(skip(1), takeUntilDestroyed(this.destroyRef))
-			.subscribe((ev: PanelStatusInfo) => {
-				this.isChatPanelOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
-				this.isParticipantsPanelOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
-				this.isBackgroundEffectsPanelOpened = ev.isOpened && ev.panelType === PanelType.BACKGROUND_EFFECTS;
-				this.isSettingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
-				this.isActivitiesPanelOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
-				this.isExternalPanelOpened =
-					ev.isOpened &&
-					!this.isSettingsPanelOpened &&
-					!this.isBackgroundEffectsPanelOpened &&
-					!this.isChatPanelOpened &&
-					!this.isParticipantsPanelOpened &&
-					!this.isActivitiesPanelOpened;
-				this.cd.markForCheck();
+		effect(() => {
+			const ev = this.panelService.panelOpened();
+			this.isChatPanelOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
+			this.isParticipantsPanelOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
+			this.isBackgroundEffectsPanelOpened = ev.isOpened && ev.panelType === PanelType.BACKGROUND_EFFECTS;
+			this.isSettingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
+			this.isActivitiesPanelOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
+			this.isExternalPanelOpened =
+				ev.isOpened &&
+				!this.isSettingsPanelOpened &&
+				!this.isBackgroundEffectsPanelOpened &&
+				!this.isChatPanelOpened &&
+				!this.isParticipantsPanelOpened &&
+				!this.isActivitiesPanelOpened;
+			this.cd.markForCheck();
 
-				this.sendPanelStatusChangedEvent(ev);
-			});
+			this.sendPanelStatusChangedEvent(ev);
+		});
 	}
 
 	private sendPanelStatusChangedEvent(event: PanelStatusInfo) {

@@ -1,9 +1,9 @@
+import { effect } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { PanelService } from './panel.service';
-import { LoggerService } from '../logger/logger.service';
-import { PanelType, PanelSettingsOptions } from '../../models/panel.model';
-import { PanelStatusInfo } from '../../models/panel.model';
 import { LoggerServiceMock } from '../../../test-helpers/mocks';
+import { PanelSettingsOptions, PanelType } from '../../models/panel.model';
+import { LoggerService } from '../logger/logger.service';
+import { PanelService } from './panel.service';
 
 describe('PanelService', () => {
   let service: PanelService;
@@ -23,9 +23,11 @@ describe('PanelService', () => {
     expect(service.isPanelOpened()).toBeFalse();
   });
 
-  it('panelStatusObs emits initial value and after toggle opens the CHAT panel', () => {
-    const emissions: PanelStatusInfo[] = [];
-    const sub = service.panelStatusObs.subscribe(v => emissions.push(v));
+  it('panelOpened signal tracks panel state changes for CHAT panel', () => {
+    const emissions: any[] = [];
+    const eff = effect(() => {
+      emissions.push(service.panelOpened());
+    });
 
     // initial emission
     expect(emissions.length).toBe(1);
@@ -40,13 +42,13 @@ describe('PanelService', () => {
     const last = emissions[emissions.length - 1];
     expect(last.isOpened).toBeTrue();
     expect(last.panelType).toBe(PanelType.CHAT);
-
-    sub.unsubscribe();
   });
 
   it('toggling same panel closes it and toggling different panel sets previousPanelType', () => {
-    const emissions: PanelStatusInfo[] = [];
-    const sub = service.panelStatusObs.subscribe(v => emissions.push(v));
+    const emissions: any[] = [];
+    const eff = effect(() => {
+      emissions.push(service.panelOpened());
+    });
 
     service.togglePanel(PanelType.PARTICIPANTS);
     expect(service.isParticipantsPanelOpened()).toBeTrue();
@@ -63,8 +65,6 @@ describe('PanelService', () => {
 
     const last = emissions[emissions.length - 1];
     expect(last.previousPanelType).toBe(PanelType.ACTIVITIES);
-
-    sub.unsubscribe();
   });
 
   it('supports external panels and subOptionType', () => {
@@ -75,9 +75,11 @@ describe('PanelService', () => {
     service.togglePanel(externalName, subOpt);
     expect(service.isExternalPanelOpened()).toBeTrue();
 
-    // panelStatusObs should contain the external panel type and subOptionType
-    const emitted = [] as PanelStatusInfo[];
-    const s = service.panelStatusObs.subscribe(v => emitted.push(v));
+    // panelOpened signal should contain the external panel type and subOptionType
+    const emitted: any[] = [];
+    const eff = effect(() => {
+      emitted.push(service.panelOpened());
+    });
     // last pushed value
     const last = emitted[emitted.length - 1];
     expect(last.panelType).toBe(externalName);
@@ -86,8 +88,6 @@ describe('PanelService', () => {
     // toggling the same external panel closes it
     service.togglePanel(externalName);
     expect(service.isExternalPanelOpened()).toBeFalse();
-
-    s.unsubscribe();
   });
 
   it('opens and closes the background effects panel correctly', () => {
@@ -95,17 +95,17 @@ describe('PanelService', () => {
     service.togglePanel(PanelType.BACKGROUND_EFFECTS);
     expect(service.isBackgroundEffectsPanelOpened()).toBeTrue();
 
-    // Verify panelStatusObs last emission has correct panelType
-    const emitted = [] as any[];
-    const sub = service.panelStatusObs.subscribe(v => emitted.push(v));
+    // Verify panelOpened signal has correct panelType
+    const emitted: any[] = [];
+    const eff = effect(() => {
+      emitted.push(service.panelOpened());
+    });
     const last = emitted[emitted.length - 1];
     expect(last.panelType).toBe(PanelType.BACKGROUND_EFFECTS);
 
     // Close it
     service.togglePanel(PanelType.BACKGROUND_EFFECTS);
     expect(service.isBackgroundEffectsPanelOpened()).toBeFalse();
-
-    sub.unsubscribe();
   });
 
   it('closePanel and clear close the panel and reset state', () => {

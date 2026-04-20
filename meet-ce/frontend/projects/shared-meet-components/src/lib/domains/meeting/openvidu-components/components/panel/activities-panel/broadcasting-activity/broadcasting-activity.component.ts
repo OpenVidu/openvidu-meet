@@ -1,9 +1,7 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, input, OnInit, output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, input, OnInit, output } from '@angular/core';
 import {
 	BroadcastingStartRequestedEvent,
 	BroadcastingStatus,
-	BroadcastingStatusInfo,
 	BroadcastingStopRequestedEvent
 } from '../../../../models/broadcasting.model';
 import { BroadcastingService } from '../../../../services/broadcasting/broadcasting.service';
@@ -136,7 +134,8 @@ export class BroadcastingActivityComponent implements OnInit {
 	}
 
 	private subscribeToBroadcastingStatus() {
-		this.broadcastingService.broadcastingStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event: BroadcastingStatusInfo | undefined) => {
+		effect(() => {
+			const event = this.broadcastingService.broadcastingStatus();
 			if (!!event) {
 				const { status, broadcastingId, error } = event;
 				this.broadcastingStatus = status;

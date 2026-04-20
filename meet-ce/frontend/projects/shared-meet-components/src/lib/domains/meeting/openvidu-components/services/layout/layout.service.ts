@@ -1,5 +1,4 @@
-import { effect, inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { effect, inject, Injectable, signal } from '@angular/core';
 import { LayoutAlignment, LayoutClass, OpenViduLayout, OpenViduLayoutOptions } from '../../models/layout/layout.model';
 import { ILogger } from '../../models/logger.model';
 import { LoggerService } from '../logger/logger.service';
@@ -16,8 +15,10 @@ export class LayoutService {
 	private readonly viewportSrv = inject(ViewportService);
 
 	layoutContainer: HTMLElement | undefined = undefined;
-	layoutWidthObs: Observable<number>;
-	protected layoutWidth: BehaviorSubject<number> = new BehaviorSubject(0);
+	/**
+	 * Signal that emits the current layout width in pixels
+	 */
+	readonly layoutWidth = signal(0);
 	protected openviduLayout: OpenViduLayout | undefined;
 	protected openviduLayoutOptions!: OpenViduLayoutOptions;
 	protected log: ILogger = {
@@ -28,7 +29,6 @@ export class LayoutService {
 	};
 
 	constructor() {
-		this.layoutWidthObs = this.layoutWidth.asObservable();
 		this.log = this.loggerSrv.get('LayoutService');
 		this.openviduLayoutOptions = this.getOptions();
 		this.setupViewportListener();
@@ -245,7 +245,7 @@ export class LayoutService {
 		}
 		const sidenavLayoutElement = this.getHTMLElementByClassName(layoutContainer, LayoutClass.SIDENAV_CONTAINER);
 		if (sidenavLayoutElement && sidenavLayoutElement.clientWidth) {
-			this.layoutWidth.next(sidenavLayoutElement.clientWidth);
+			this.layoutWidth.set(sidenavLayoutElement.clientWidth);
 		}
 	}
 

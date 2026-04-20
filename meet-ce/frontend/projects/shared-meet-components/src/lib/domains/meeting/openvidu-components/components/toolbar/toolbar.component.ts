@@ -14,8 +14,9 @@ import {
 	TemplateRef,
 	viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { fromEvent, skip } from 'rxjs';
+
+	import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { fromEvent } from 'rxjs';
 import { ChatService } from '../../services/chat/chat.service';
 import { DocumentService } from '../../services/document/document.service';
 import { PanelService } from '../../services/panel/panel.service';
@@ -31,18 +32,16 @@ import {
 } from '../../directives/template/openvidu-components-angular.directive';
 import {
 	BroadcastingStatus,
-	BroadcastingStatusInfo,
 	BroadcastingStopRequestedEvent
 } from '../../models/broadcasting.model';
 import { ChatMessage } from '../../models/chat.model';
 import { ILogger } from '../../models/logger.model';
-import { PanelStatusInfo, PanelType } from '../../models/panel.model';
+import { PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
 	RecordingInfo,
 	RecordingStartRequestedEvent,
-	RecordingStatus,
-	RecordingStatusInfo,
+	RecordingState,
 	RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { ActionService } from '../../services/action/action.service';
@@ -221,6 +220,10 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	messageList: ChatMessage[] = [];
 	/**
+	 * @internal
+	 */
+	firstChatMessageEmission: boolean = true;
+	/**
 	 * @ignore
 	 */
 	isScreenShareEnabled: boolean = false;
@@ -382,7 +385,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	recordingStatus: RecordingStatus = RecordingStatus.STOPPED;
+	recordingStatus: RecordingState = RecordingState.STOPPED;
 
 	/**
 	 * @ignore
@@ -405,7 +408,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	_recordingStatus = RecordingStatus;
+	_recordingStatus = RecordingState;
 	/**
 	 * @ignore
 	 */
@@ -722,7 +725,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	toggleRecording() {
-		if (this.recordingStatus === RecordingStatus.FAILED) {
+		if (this.recordingStatus === RecordingState.FAILED) {
 			this.openRecordingActivityPanel();
 			return;
 		}
@@ -730,11 +733,11 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		const payload: RecordingStartRequestedEvent = {
 			roomName: this.openviduService.getRoomName()
 		};
-		if (this.recordingStatus === RecordingStatus.STARTED) {
+		if (this.recordingStatus === RecordingState.STARTED) {
 			this.log.d('Stopping recording');
 			payload.recordingId = this.startedRecording?.id;
 			this.onRecordingStopRequested.emit(payload);
-		} else if (this.recordingStatus === RecordingStatus.STOPPED) {
+		} else if (this.recordingStatus === RecordingState.STOPPED) {
 			this.onRecordingStartRequested.emit(payload);
 			this.openRecordingActivityPanel();
 		}
@@ -841,7 +844,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	private subscribeToMenuToggling() {
-		this.panelService.panelStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
+		effect(() => {
+			const ev = this.panelService.panelOpened();
 			this.isChatOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
 			this.isParticipantsOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
 			this.isActivitiesOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
@@ -853,7 +857,13 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	private subscribeToChatMessages() {
-		this.chatService.chatMessages$.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((messages) => {
+		effect(() => {
+			const messages = this.chatService.chatMessages();
+			// Skip first emission like the old skip(1) operator
+			if (this.firstChatMessageEmission) {
+				this.firstChatMessageEmission = false;
+				return;
+			}
 			if (!this.panelService.isChatPanelOpened()) {
 				this.unreadMessages++;
 			}
@@ -870,34 +880,32 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 				this.cd.markForCheck();
 			});
 
-		this.recordingService.recordingStatusObs
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((event: RecordingStatusInfo) => {
-				const { status, startedAt } = event;
-				this.recordingStatus = status;
-				if (status === RecordingStatus.STARTED) {
-					this.startedRecording = event.recordingList.find((rec) => rec.status === RecordingStatus.STARTED);
-				} else {
-					this.startedRecording = undefined;
-				}
+		effect(() => {
+			const event = this.recordingService.recordingState();
+			const { status, startedAt } = event;
+			this.recordingStatus = status;
+			if (status === RecordingState.STARTED) {
+				this.startedRecording = event.recordingList.find((rec) => rec.status === RecordingState.STARTED);
+			} else {
+				this.startedRecording = undefined;
+			}
 
-				if (startedAt) {
-					this.recordingTime = startedAt;
-				}
-				this.cd.markForCheck();
-			});
+			if (startedAt) {
+				this.recordingTime = startedAt;
+			}
+			this.cd.markForCheck();
+		});
 	}
 
 	private subscribeToBroadcastingStatus() {
-		this.broadcastingService.broadcastingStatusObs
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((ev: BroadcastingStatusInfo) => {
-				if (!!ev) {
-					this.broadcastingStatus = ev.status;
-					this.broadcastingId = ev.broadcastingId;
-					this.cd.markForCheck();
-				}
-			});
+		effect(() => {
+			const ev = this.broadcastingService.broadcastingStatus();
+			if (!!ev) {
+				this.broadcastingStatus = ev.status;
+				this.broadcastingId = ev.broadcastingId;
+				this.cd.markForCheck();
+			}
+		});
 	}
 
 	private evalAndSetRoomName(value: string) {

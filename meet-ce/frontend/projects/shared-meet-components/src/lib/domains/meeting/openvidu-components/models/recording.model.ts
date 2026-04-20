@@ -1,7 +1,7 @@
 /**
  * Enum representing the possible status of a recording
  */
-export enum RecordingStatus {
+export enum RecordingState {
 	STARTING = 'STARTING',
 	STARTED = 'STARTED',
 	STOPPING = 'STOPPING',
@@ -18,8 +18,8 @@ export enum RecordingOutputMode {
 /**
  * Interface representing information related to the recording status
  */
-export interface RecordingStatusInfo {
-	status: RecordingStatus;
+export interface RecordingStateInfo {
+	status: RecordingState;
 	recordingList: RecordingInfo[];
 	startedAt?: Date;
 	error?: string;
@@ -33,7 +33,7 @@ export interface RecordingInfo {
 	roomName: string;
 	roomId: string;
 	outputMode: RecordingOutputMode;
-	status: RecordingStatus;
+	status: RecordingState;
 	filename?: string;
 	startedAt?: number;
 	endedAt?: number;

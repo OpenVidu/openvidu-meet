@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
 import { BroadcastingStatus } from '../../../models/broadcasting.model';
-import { RecordingStatus } from '../../../models/recording.model';
+import { RecordingState } from '../../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../../models/toolbar.model';
 import { ViewportService } from '../../../services/viewport/viewport.service';
 
@@ -63,7 +63,7 @@ export class ToolbarMediaButtonsComponent {
 	isFullscreenActive = input<boolean>(false);
 
 	// Recording related inputs
-	recordingStatus = input<RecordingStatus>(RecordingStatus.STOPPED);
+	recordingStatus = input<RecordingState>(RecordingState.STOPPED);
 	hasRoomTracksPublished = input<boolean>(false);
 
 	// Broadcasting related inputs
@@ -96,7 +96,7 @@ export class ToolbarMediaButtonsComponent {
 	}
 
 	// Status enums for template usage
-	_recordingStatus = RecordingStatus;
+	_recordingStatus = RecordingState;
 	_broadcastingStatus = BroadcastingStatus;
 
 	// Viewport service for responsive behavior

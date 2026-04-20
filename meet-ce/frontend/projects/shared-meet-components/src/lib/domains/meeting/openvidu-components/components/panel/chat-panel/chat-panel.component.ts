@@ -1,5 +1,4 @@
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, ElementRef, inject, OnInit, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, effect, ElementRef, inject, OnInit, viewChild } from '@angular/core';
 import { ChatMessage } from '../../../models/chat.model';
 import { PanelType } from '../../../models/panel.model';
 import { ChatService } from '../../../services/chat/chat.service';
@@ -114,7 +113,8 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 	});
 
 	private subscribeToMessages() {
-		this.chatService.chatMessages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((messages: ChatMessage[]) => {
+		effect(() => {
+			const messages = this.chatService.chatMessages();
 			this.messageList = messages;
 			if (this.panelService.isChatPanelOpened()) {
 				this.scrollToBottom();

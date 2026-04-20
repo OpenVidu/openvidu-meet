@@ -1,5 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, inject, input, output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, effect, inject, input, output } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../../models/lang.model';
 import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
 import { StorageService } from '../../../services/storage/storage.service';
@@ -38,7 +37,8 @@ export class LangSelectorComponent implements OnInit {
 	}
 
 	subscribeToLangSelected() {
-		this.translateService.selectedLanguageOption$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((lang) => {
+		effect(() => {
+			const lang = this.translateService.selectedLanguageOption();
 			this.langSelected = lang;
 			this.onLangChanged.emit(lang);
 		});
