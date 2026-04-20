@@ -8,7 +8,15 @@ export class UsersUiUtils {
 	// TODO: Obtain root admin user ID from backend instead of hardcoding
 	private static readonly ROOT_ADMIN_USER_ID = 'admin';
 
-	private static readonly PASSWORD_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz123456789.+!@#$%';
+	private static readonly LOWERCASE_CHARSET = 'abcdefghijklmnopqrstuvwxyz';
+	private static readonly UPPERCASE_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+	private static readonly DIGIT_CHARSET = '123456789';
+	private static readonly SYMBOL_CHARSET = '.+!@#$%';
+	private static readonly PASSWORD_CHARSET =
+		UsersUiUtils.LOWERCASE_CHARSET +
+		UsersUiUtils.UPPERCASE_CHARSET +
+		UsersUiUtils.DIGIT_CHARSET +
+		UsersUiUtils.SYMBOL_CHARSET;
 
 	static readonly AVAILABLE_ROLES: MeetUserRole[] = [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER];
 
@@ -94,14 +102,40 @@ export class UsersUiUtils {
 
 	/**
 	 * Generates a random temporary password using the configured character set.
+	 * The password always includes at least one lowercase letter, one uppercase letter,
+	 * one digit, and one symbol.
 	 *
 	 * @param length - Desired password length
 	 * @returns A randomly generated password
 	 */
 	static generateTemporaryPassword(length = 12): string {
-		return Array.from(
-			{ length },
-			() => UsersUiUtils.PASSWORD_CHARSET[Math.floor(Math.random() * UsersUiUtils.PASSWORD_CHARSET.length)]
-		).join('');
+		const normalizedLength = Math.max(4, length);
+
+		const requiredCharacters = [
+			UsersUiUtils.pickRandomChar(UsersUiUtils.LOWERCASE_CHARSET),
+			UsersUiUtils.pickRandomChar(UsersUiUtils.UPPERCASE_CHARSET),
+			UsersUiUtils.pickRandomChar(UsersUiUtils.DIGIT_CHARSET),
+			UsersUiUtils.pickRandomChar(UsersUiUtils.SYMBOL_CHARSET)
+		];
+
+		const remainingCharacters = Array.from({ length: normalizedLength - requiredCharacters.length }, () =>
+			UsersUiUtils.pickRandomChar(UsersUiUtils.PASSWORD_CHARSET)
+		);
+
+		const passwordChars = [...requiredCharacters, ...remainingCharacters];
+		UsersUiUtils.shuffle(passwordChars);
+
+		return passwordChars.join('');
+	}
+
+	private static pickRandomChar(charset: string): string {
+		return charset[Math.floor(Math.random() * charset.length)];
+	}
+
+	private static shuffle(values: string[]): void {
+		for (let i = values.length - 1; i > 0; i--) {
+			const j = Math.floor(Math.random() * (i + 1));
+			[values[i], values[j]] = [values[j], values[i]];
+		}
 	}
 }
