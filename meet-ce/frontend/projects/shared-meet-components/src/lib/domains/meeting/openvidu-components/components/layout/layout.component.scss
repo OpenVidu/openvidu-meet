@@ -6,9 +6,7 @@
 .container {
 	height: 100%;
 }
-.withCaptions {
-	height: calc(100% - var(--ov-captions-height, 250px)) !important;
-}
+
 .withMargin {
 	margin: 0px 5px;
 	max-height: calc(100% - 5px) !important;

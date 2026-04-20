@@ -192,19 +192,6 @@
 			</button>
 		}
 
-		<!-- Captions button -->
-		<!-- <button
-			*ngIf="!isMinimal && showCaptionsButton"
-			[disabled]="isConnectionLost"
-			mat-menu-item
-			id="captions-btn"
-			(click)="onCaptionsToggle()"
-		>
-			<mat-icon>closed_caption</mat-icon>
-			<span *ngIf="captionsEnabled">{{ 'TOOLBAR.DISABLE_CAPTIONS' | translate }}</span>
-			<span *ngIf="!captionsEnabled">{{ 'TOOLBAR.ENABLE_CAPTIONS' | translate }}</span>
-		</button> -->
-
 		<!-- Additional buttons injection inside menu (mobile only) -->
 		@if (showAdditionalButtonsInsideMenu() && additionalButtonsPosition() === 'afterMenu') {
 			<ng-container

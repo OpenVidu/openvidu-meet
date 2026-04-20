@@ -3,10 +3,10 @@ import {
 	Component,
 	TemplateRef,
 	computed,
+	contentChild,
 	inject,
 	input,
-	output,
-	contentChild
+	output
 } from '@angular/core';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
 import { BroadcastingStatus } from '../../../models/broadcasting.model';
@@ -57,7 +57,6 @@ export class ToolbarMediaButtonsComponent {
 	showViewRecordingsButton = input<boolean>(false);
 	showBroadcastingButton = input<boolean>(true);
 	showBackgroundEffectsButton = input<boolean>(true);
-	showCaptionsButton = input<boolean>(true);
 	showSettingsButton = input<boolean>(true);
 
 	// Fullscreen state
@@ -69,9 +68,6 @@ export class ToolbarMediaButtonsComponent {
 
 	// Broadcasting related inputs
 	broadcastingStatus = input<BroadcastingStatus>(BroadcastingStatus.STOPPED);
-
-	// Captions
-	captionsEnabled = input<boolean>(false);
 
 	// Leave button
 	showLeaveButton = input<boolean>(true);
@@ -154,7 +150,6 @@ export class ToolbarMediaButtonsComponent {
 	readonly viewRecordingsClicked = output<void>();
 	readonly broadcastingToggled = output<void>();
 	readonly backgroundEffectsToggled = output<void>();
-	readonly captionsToggled = output<void>();
 	readonly settingsToggled = output<void>();
 
 	// Leave button output
@@ -195,10 +190,6 @@ export class ToolbarMediaButtonsComponent {
 
 	onBackgroundEffectsToggle(): void {
 		this.backgroundEffectsToggled.emit();
-	}
-
-	onCaptionsToggle(): void {
-		this.captionsToggled.emit();
 	}
 
 	onSettingsToggle(): void {

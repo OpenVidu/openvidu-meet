@@ -17,11 +17,9 @@ export class LayoutService {
 
 	layoutContainer: HTMLElement | undefined = undefined;
 	layoutWidthObs: Observable<number>;
-	captionsTogglingObs: Observable<boolean>;
 	protected layoutWidth: BehaviorSubject<number> = new BehaviorSubject(0);
 	protected openviduLayout: OpenViduLayout | undefined;
 	protected openviduLayoutOptions!: OpenViduLayoutOptions;
-	protected captionsToggling: BehaviorSubject<boolean> = new BehaviorSubject(false);
 	protected log: ILogger = {
 		d: () => {},
 		v: () => {},
@@ -31,7 +29,6 @@ export class LayoutService {
 
 	constructor() {
 		this.layoutWidthObs = this.layoutWidth.asObservable();
-		this.captionsTogglingObs = this.captionsToggling.asObservable();
 		this.log = this.loggerSrv.get('LayoutService');
 		this.openviduLayoutOptions = this.getOptions();
 		this.setupViewportListener();
@@ -45,10 +42,6 @@ export class LayoutService {
 			this.openviduLayout.initLayoutContainer(this.layoutContainer, this.openviduLayoutOptions);
 		}
 		this.sendLayoutWidthEvent();
-	}
-
-	toggleCaptions() {
-		this.captionsToggling.next(!this.captionsToggling.getValue());
 	}
 
 	update(timeout: number | undefined = undefined) {

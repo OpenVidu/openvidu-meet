@@ -6,21 +6,20 @@ import {
 	ChangeDetectionStrategy,
 	ChangeDetectorRef,
 	Component,
+	computed,
 	contentChild,
 	DestroyRef,
 	effect,
 	ElementRef,
 	inject,
 	OnDestroy,
-	OnInit,
 	TemplateRef,
 	viewChild,
 	ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { combineLatest, map } from 'rxjs';
 import { StreamDirective } from '../../directives/template/openvidu-components-angular.directive';
-import { ParticipantModel, ParticipantTrackPublication } from '../../models/participant.model';
+import { ParticipantTrackPublication } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { GlobalConfigService } from '../../services/config/global-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
@@ -40,7 +39,15 @@ import { LayoutTemplateConfiguration, TemplateManagerService } from '../../servi
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: false
 })
-export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
+export class LayoutComponent implements OnDestroy, AfterViewInit {
+	private readonly layoutService = inject(LayoutService);
+	private readonly panelService = inject(PanelService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly globalService = inject(GlobalConfigService);
+	private readonly directiveService = inject(OpenViduComponentsConfigService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly templateManagerService = inject(TemplateManagerService);
+
 	/**
 	 * @ignore
 	 */
@@ -84,13 +91,13 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	templateConfig: LayoutTemplateConfiguration = {};
-
-	localParticipant: ParticipantModel | undefined;
-	remoteParticipants: ParticipantModel[] = [];
-	/**
-	 * @ignore
-	 */
-	captionsEnabled = true;
+	readonly localParticipant = this.participantService.localParticipantSignal;
+	readonly remoteParticipants = computed(() => {
+		const directiveParticipants = this.directiveService.layoutRemoteParticipantsSignal();
+		return directiveParticipants !== undefined
+			? directiveParticipants
+			: this.participantService.remoteParticipantsSignal();
+	});
 
 	private readonly destroyRef = inject(DestroyRef);
 	private resizeObserver: ResizeObserver | undefined = undefined;
@@ -101,16 +108,19 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	private lastLayoutWidth: number = 0;
 	private lastLayoutHeight: number = 0;
 
-	private readonly layoutService = inject(LayoutService);
-	private readonly panelService = inject(PanelService);
-	private readonly participantService = inject(ParticipantService);
-	private readonly globalService = inject(GlobalConfigService);
-	private readonly directiveService = inject(OpenViduComponentsConfigService);
-	private readonly cd = inject(ChangeDetectorRef);
-	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly reactiveStateEffect = effect(() => {
+		const localParticipant = this.localParticipant();
+		if (localParticipant && !localParticipant.isMinimized) {
+			this.videoIsAtRight = false;
+		}
+		this.remoteParticipants();
+		this.layoutService.update();
+		this.cd.markForCheck();
+	});
 	private readonly querySyncEffect = effect(() => {
 		this.streamTemplate = this.streamTemplateQuery() ?? this.streamTemplate;
-		this.layoutAdditionalElementsTemplate = this.layoutAdditionalElementsTemplateQuery() ?? this.layoutAdditionalElementsTemplate;
+		this.layoutAdditionalElementsTemplate =
+			this.layoutAdditionalElementsTemplateQuery() ?? this.layoutAdditionalElementsTemplate;
 		this.layoutContainer = this.layoutContainerQuery() ?? this.layoutContainer;
 		this.cdkDrag = this.cdkDragQuery() ?? this.cdkDrag;
 		this.localLayoutElement = this.localLayoutElementQuery() ?? this.localLayoutElement;
@@ -118,13 +128,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.cd.markForCheck();
 	});
 
-	ngOnInit(): void {
-		this.subscribeToParticipants();
-		this.subscribeToCaptions();
-	}
-
 	ngAfterViewInit() {
-		console.log('LayoutComponent.ngAfterViewInit');
 		const layoutContainer = this.layoutContainer?.element?.nativeElement;
 		if (!layoutContainer) return;
 
@@ -138,8 +142,6 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	ngOnDestroy() {
-		this.localParticipant = undefined;
-		this.remoteParticipants = [];
 		this.resizeObserver?.disconnect();
 		this.mutationObserver?.disconnect();
 		clearTimeout(this.resizeTimeout);
@@ -181,7 +183,9 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 
 		this.mutationObserver = new MutationObserver((mutations) => {
 			const hasStructuralChanges = mutations.some(
-				(mutation) => mutation.type === 'childList' && (mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)
+				(mutation) =>
+					mutation.type === 'childList' &&
+					(mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)
 			);
 			if (!hasStructuralChanges) return;
 
@@ -196,40 +200,6 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 			childList: true,
 			subtree: true
 		});
-	}
-
-	private subscribeToCaptions() {
-		this.layoutService.captionsTogglingObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.captionsEnabled = value;
-			this.cd.markForCheck();
-			this.layoutService.update();
-		});
-	}
-
-	private subscribeToParticipants() {
-		this.participantService.localParticipant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p) => {
-			if (p) {
-				this.localParticipant = p;
-				if (!this.localParticipant?.isMinimized) {
-					this.videoIsAtRight = false;
-				}
-				this.layoutService.update();
-				this.cd.markForCheck();
-			}
-		});
-
-		combineLatest([this.participantService.remoteParticipants$, this.directiveService.layoutRemoteParticipants$])
-			.pipe(
-				map(([serviceParticipants, directiveParticipants]) =>
-					directiveParticipants !== undefined ? directiveParticipants : serviceParticipants
-				),
-				takeUntilDestroyed(this.destroyRef)
-			)
-			.subscribe((participants) => {
-				this.remoteParticipants = participants;
-				this.layoutService.update();
-				this.cd.markForCheck();
-			});
 	}
 
 	private listenToResizeLayout() {
@@ -252,7 +222,7 @@ export class LayoutComponent implements OnInit, OnDestroy, AfterViewInit {
 					this.cd.markForCheck();
 				}
 				// Handle minimized participant positioning
-				if (this.localParticipant?.isMinimized) {
+				if (this.localParticipant()?.isMinimized) {
 					if (this.panelService.isPanelOpened()) {
 						if (this.lastLayoutWidth < parentWidth) {
 							// Layout is bigger than before. Maybe the settings panel(wider) has been transitioned to another panel.
