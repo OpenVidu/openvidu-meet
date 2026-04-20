@@ -5,7 +5,7 @@
 			<mat-icon>person_add</mat-icon>
 			<h1>Create User</h1>
 		</div>
-		<p class="subtitle">Configure the profile and permissions for the new user.</p>
+		<p class="subtitle">Configure the profile and role for the new user.</p>
 	</div>
 
 	<!-- Card -->
@@ -26,7 +26,7 @@
 						<mat-label>User ID</mat-label>
 						<mat-icon matPrefix class="field-prefix-icon">badge</mat-icon>
 						<input matInput formControlName="userId" placeholder="e.g. jsmith_123" autofocus />
-						<mat-hint>Lowercase letters, numbers, hyphens and underscores only</mat-hint>
+						<mat-hint>Lowercase letters, numbers and underscores only</mat-hint>
 						@if (getFieldError('userId')) {
 							<mat-error>{{ getFieldError('userId') }}</mat-error>
 						}
@@ -36,7 +36,7 @@
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
 						<mat-label>Name</mat-label>
 						<mat-icon matPrefix class="field-prefix-icon">person_outline</mat-icon>
-						<input matInput formControlName="name" placeholder="Enter your name" />
+						<input matInput formControlName="name" placeholder="Enter user's name" />
 						@if (getFieldError('name')) {
 							<mat-error>{{ getFieldError('name') }}</mat-error>
 						}
@@ -58,24 +58,15 @@
 
 					<!-- Password Section -->
 					<div class="password-section">
-						<div class="password-header">
-							<div class="password-header-text">
-								<h3>Password</h3>
-								<p>Set a manual password or auto-generate one.</p>
-							</div>
-							<button
-								mat-stroked-button
-								type="button"
-								class="autogenerate-toggle"
-								[class.active]="autoGenerate()"
-								(click)="toggleAutoGenerate()"
-							>
-								<mat-icon>{{ autoGenerate() ? 'autorenew' : 'casino' }}</mat-icon>
-								{{ autoGenerate() ? 'Auto-generated' : 'Auto-generate' }}
+						<div class="label-row">
+							<span class="input-label">Temporary Password</span>
+							<button mat-button class="generate-btn" type="button" (click)="generatePassword()">
+								<mat-icon>autorenew</mat-icon>
+								Auto-generate
 							</button>
 						</div>
 
-						<mat-form-field subscriptSizing="dynamic" appearance="outline">
+						<mat-form-field subscriptSizing="dynamic" appearance="outline" class="password-field">
 							<mat-label>Password</mat-label>
 							<input
 								matInput
@@ -83,47 +74,59 @@
 								formControlName="password"
 								placeholder="Enter or auto-generate a password"
 							/>
-							<button
-								mat-icon-button
-								matSuffix
-								type="button"
-								(click)="showPassword.set(!showPassword())"
-								[matTooltip]="showPassword() ? 'Hide password' : 'Show password'"
-							>
-								<mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
-							</button>
+							<div matSuffix class="suffix-btns">
+								<button
+									mat-icon-button
+									type="button"
+									(click)="copyPasswordToClipboard()"
+									[matTooltip]="copied() ? 'Copied!' : 'Copy to clipboard'"
+								>
+									<mat-icon>{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
+								</button>
+								<button
+									mat-icon-button
+									type="button"
+									(click)="showPassword.set(!showPassword())"
+									[matTooltip]="showPassword() ? 'Hide password' : 'Show password'"
+								>
+									<mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
+								</button>
+							</div>
 							<mat-hint>Minimum 5 characters</mat-hint>
 							@if (getFieldError('password')) {
 								<mat-error>{{ getFieldError('password') }}</mat-error>
 							}
 						</mat-form-field>
 					</div>
+
+					<!-- Footer note -->
+					<div class="info-banner">
+						<mat-icon class="info-icon">info</mat-icon>
+						<p>
+							Once created, you must send the credentials to the user. They will be required to change
+							their password upon their first login.
+						</p>
+					</div>
+
+					<!-- Actions -->
+					<div class="form-actions">
+						<button mat-button class="cancel-button" type="button" (click)="onCancel()">Cancel</button>
+						<button
+							mat-button
+							class="primary-button"
+							type="button"
+							[disabled]="form.invalid || isSaving()"
+							(click)="onSubmit()"
+						>
+							@if (isSaving()) {
+								<mat-spinner diameter="18" />
+							} @else {
+								Create User
+							}
+						</button>
+					</div>
 				</form>
 			</mat-card-content>
 		</mat-card>
-
-		<!-- Footer note -->
-		<p class="footer-note">
-			Once created, you must send the credentials to the user. They will be required to change their password upon
-			their first login.
-		</p>
-
-		<!-- Actions -->
-		<div class="form-actions">
-			<button mat-button class="cancel-button" type="button" (click)="onCancel()">Cancel</button>
-			<button
-				mat-button
-				class="primary-button"
-				type="button"
-				[disabled]="form.invalid || isSaving()"
-				(click)="onSubmit()"
-			>
-				@if (isSaving()) {
-					<mat-spinner diameter="18" />
-				} @else {
-					Create User
-				}
-			</button>
-		</div>
 	</div>
 </div>

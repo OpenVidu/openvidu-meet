@@ -38,61 +38,68 @@
 .password-section {
 	display: flex;
 	flex-direction: column;
-	gap: var(--ov-meet-spacing-md);
+	gap: var(--ov-meet-spacing-sm);
 	padding-top: var(--ov-meet-spacing-md);
 	border-top: 1px solid var(--ov-border-color-light);
 }
 
-.password-header {
+.label-row {
 	display: flex;
-	align-items: flex-start;
+	align-items: center;
 	justify-content: space-between;
-	gap: var(--ov-meet-spacing-md);
 
-	@include design-tokens.ov-tablet-down {
-		flex-direction: column;
+	.input-label {
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-medium);
+		color: var(--ov-meet-text-primary);
 	}
 
-	.password-header-text {
-		h3 {
-			margin: 0 0 var(--ov-meet-spacing-xs) 0;
-			font-size: var(--ov-meet-font-size-md);
-			font-weight: var(--ov-meet-font-weight-semibold);
-			color: var(--ov-meet-text-primary);
-		}
+	.generate-btn {
+		@include design-tokens.ov-button-base;
+		color: var(--ov-meet-color-primary) !important;
+		font-size: var(--ov-meet-font-size-sm);
 
-		p {
-			margin: 0;
-			font-size: var(--ov-meet-font-size-sm);
-			color: var(--ov-meet-text-secondary);
+		mat-icon {
+			@include design-tokens.ov-icon(sm);
+			margin-right: var(--ov-meet-spacing-xs);
 		}
 	}
 }
 
-.autogenerate-toggle {
-	flex-shrink: 0;
-	font-size: var(--ov-meet-font-size-sm);
-	border-color: var(--ov-meet-color-primary) !important;
-	color: var(--ov-meet-color-primary) !important;
+.password-field {
+	width: 100%;
+}
 
-	mat-icon {
-		@include design-tokens.ov-icon(sm);
-		margin-right: var(--ov-meet-spacing-xs);
-	}
-
-	&.active {
-		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 10%, transparent);
-	}
+.suffix-btns {
+	display: flex;
+	align-items: center;
 }
 
 // ─── Footer & Actions ──────────────────────────────────────────────────────────
 
-.footer-note {
-	margin: 0;
-	font-size: var(--ov-meet-font-size-sm);
-	color: var(--ov-meet-text-hint);
-	text-align: center;
-	line-height: var(--ov-meet-line-height-normal);
+.info-banner {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-md);
+	border-radius: var(--ov-meet-card-border-radius);
+	background-color: color-mix(in srgb, var(--ov-meet-color-primary) 8%, transparent);
+	border: 1px solid color-mix(in srgb, var(--ov-meet-color-primary) 25%, transparent);
+	margin-top: var(--ov-meet-spacing-sm);
+
+	.info-icon {
+		@include design-tokens.ov-icon(md);
+		color: var(--ov-meet-color-primary);
+		flex-shrink: 0;
+		margin-top: 1px;
+	}
+
+	p {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+		line-height: var(--ov-meet-line-height-normal);
+	}
 }
 
 .form-actions {
@@ -100,6 +107,7 @@
 	align-items: center;
 	justify-content: flex-end;
 	gap: var(--ov-meet-spacing-sm);
+	padding-top: var(--ov-meet-spacing-md);
 }
 
 // ─── Spinner inside buttons ───────────────────────────────────────────────────
