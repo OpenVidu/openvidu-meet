@@ -41,9 +41,15 @@ async function completeLobbyIfPresent(page: Page): Promise<void> {
 async function clickJoinIfPrejoinVisible(page: Page): Promise<boolean> {
 	const prejoinContainer = page.locator('#prejoin-container');
 	const joinButton = page.locator('#join-button');
+	const joiningSpinner = page.locator('#spinner');
 
 	if (!(await prejoinContainer.isVisible().catch(() => false))) {
 		return false;
+	}
+
+	// Join was already requested and the transition spinner is visible.
+	if (await joiningSpinner.isVisible().catch(() => false)) {
+		return true;
 	}
 
 	if (!(await joinButton.isVisible().catch(() => false))) {
@@ -54,8 +60,7 @@ async function clickJoinIfPrejoinVisible(page: Page): Promise<boolean> {
 		return true;
 	}
 
-	await joinButton.press('Enter').catch(() => Promise.resolve());
-	return true;
+	return false;
 }
 
 export async function openMeeting(page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> {
@@ -173,21 +178,24 @@ export async function expectHidden(page: Page, selector: string): Promise<void> 
 	const locator = page.locator(selector);
 
 	await expect
-		.poll(async () => {
-			const count = await locator.count();
+		.poll(
+			async () => {
+				const count = await locator.count();
 
-			if (count === 0) {
-				return true;
-			}
-
-			for (let index = 0; index < count; index += 1) {
-				if (await locator.nth(index).isVisible()) {
-					return false;
+				if (count === 0) {
+					return true;
 				}
-			}
 
-			return true;
-		}, { timeout: 10_000 })
+				for (let index = 0; index < count; index += 1) {
+					if (await locator.nth(index).isVisible()) {
+						return false;
+					}
+				}
+
+				return true;
+			},
+			{ timeout: 10_000 }
+		)
 		.toBeTruthy();
 }
 
@@ -227,6 +235,7 @@ export async function getCopiedText(page: Page): Promise<string> {
 		};
 
 		const capturedText = w.__ovCopiedText?.trim() ?? '';
+
 		if (capturedText) {
 			return capturedText;
 		}
