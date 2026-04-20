@@ -1,5 +1,15 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, effect, HostBinding, input, OnInit, signal, untracked, output } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	effect,
+	HostBinding,
+	input,
+	OnInit,
+	output,
+	signal,
+	untracked
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -8,7 +18,6 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
@@ -19,7 +28,7 @@ import { setsAreEqual } from '../../../../shared/utils/array.utils';
 
 export interface MemberTableAction {
 	members: MeetRoomMember[];
-	action: 'copyLink' | 'delete' | 'bulkDelete';
+	action: 'addMember' | 'edit' | 'copyLink' | 'delete' | 'bulkDelete';
 }
 
 export interface MemberTableFilter {
@@ -62,7 +71,6 @@ export interface MemberTableFilter {
 		MatIconModule,
 		MatFormFieldModule,
 		MatInputModule,
-		MatMenuModule,
 		MatTooltipModule,
 		MatProgressSpinnerModule,
 		MatToolbarModule,
@@ -72,7 +80,8 @@ export interface MemberTableFilter {
 		DatePipe
 	],
 	templateUrl: './room-members-list.component.html',
-	styleUrl: './room-members-list.component.scss'
+	styleUrl: './room-members-list.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomMembersListsComponent implements OnInit {
 	members = input<MeetRoomMember[]>([]);
@@ -98,7 +107,7 @@ export class RoomMembersListsComponent implements OnInit {
 	readonly filterChange = output<MemberTableFilter>();
 	readonly loadMore = output<MemberTableFilter>();
 	readonly refresh = output<MemberTableFilter>();
-	readonly addMember = output<void>();
+	readonly memberClicked = output<string>();
 
 	// Filter controls
 	nameFilterControl = new FormControl('');
@@ -173,7 +182,11 @@ export class RoomMembersListsComponent implements OnInit {
 		if (this.allSelected()) {
 			selected.clear();
 		} else {
-			this.members().forEach((member) => selected.add(member.memberId));
+			this.members().forEach((member) => {
+				if (this.canSelectMember(member)) {
+					selected.add(member.memberId);
+				}
+			});
 		}
 		this.selectedMembers.set(new Set(selected));
 		this.updateSelectionState();
@@ -191,15 +204,20 @@ export class RoomMembersListsComponent implements OnInit {
 	}
 
 	private updateSelectionState() {
-		const memberCount = this.members().length;
+		const selectableMembers = this.members().filter((m) => this.canSelectMember(m));
 		const selectedCount = this.selectedMembers().size;
+		const selectableCount = selectableMembers.length;
 
-		this.allSelected.set(selectedCount > 0 && selectedCount === memberCount);
-		this.someSelected.set(selectedCount > 0 && selectedCount < memberCount);
+		this.allSelected.set(selectedCount > 0 && selectedCount === selectableCount);
+		this.someSelected.set(selectedCount > 0 && selectedCount < selectableCount);
 	}
 
 	isMemberSelected(member: MeetRoomMember): boolean {
 		return this.selectedMembers().has(member.memberId);
+	}
+
+	canSelectMember(_member: MeetRoomMember): boolean {
+		return true;
 	}
 
 	getSelectedMembers(): MeetRoomMember[] {
@@ -209,8 +227,20 @@ export class RoomMembersListsComponent implements OnInit {
 
 	// ===== ACTION METHODS =====
 
+	addMember() {
+		this.memberAction.emit({ members: [], action: 'addMember' });
+	}
+
+	onMemberClick(member: MeetRoomMember) {
+		this.memberClicked.emit(member.memberId);
+	}
+
 	copyMemberLink(member: MeetRoomMember) {
 		this.memberAction.emit({ members: [member], action: 'copyLink' });
+	}
+
+	editMember(member: MeetRoomMember) {
+		this.memberAction.emit({ members: [member], action: 'edit' });
 	}
 
 	deleteMember(member: MeetRoomMember) {
@@ -224,18 +254,18 @@ export class RoomMembersListsComponent implements OnInit {
 		}
 	}
 
-	refreshMembers() {
+	loadMoreMembers() {
 		const nameFilter = this.nameFilterControl.value || '';
-		this.refresh.emit({
+		this.loadMore.emit({
 			nameFilter,
 			sortField: this.currentSortField,
 			sortOrder: this.currentSortOrder
 		});
 	}
 
-	loadMoreMembers() {
+	refreshMembers() {
 		const nameFilter = this.nameFilterControl.value || '';
-		this.loadMore.emit({
+		this.refresh.emit({
 			nameFilter,
 			sortField: this.currentSortField,
 			sortOrder: this.currentSortOrder
@@ -281,6 +311,11 @@ export class RoomMembersListsComponent implements OnInit {
 	}
 
 	getMemberInitials(member: MeetRoomMember): string {
-		return member.name.substring(0, 2).toUpperCase();
+		return member.name
+			.split(' ')
+			.filter(Boolean)
+			.slice(0, 2)
+			.map((word) => word[0].toUpperCase())
+			.join('');
 	}
 }

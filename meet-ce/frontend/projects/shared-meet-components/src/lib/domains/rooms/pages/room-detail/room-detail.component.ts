@@ -9,12 +9,12 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import {
-    MeetRecordingInfo,
-    MeetRoom,
-    MeetRoomDeletionSuccessCode,
-    MeetRoomMember,
-    MeetRoomStatus,
-    SortOrder
+	MeetRecordingInfo,
+	MeetRoom,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomMember,
+	MeetRoomStatus,
+	SortOrder
 } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -24,9 +24,9 @@ import { RecordingListsComponent } from '../../../recordings/components/recordin
 import { RecordingTableAction, RecordingTableFilter } from '../../../recordings/models/recording-list.model';
 import { RecordingService } from '../../../recordings/services/recording.service';
 import {
-    MemberTableAction,
-    MemberTableFilter,
-    RoomMembersListsComponent
+	MemberTableAction,
+	MemberTableFilter,
+	RoomMembersListsComponent
 } from '../../../room-members/components/room-members-list/room-members-list.component';
 import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { RoomDeletionService } from '../../services/room-deletion.service';
@@ -176,6 +176,21 @@ export class RoomDetailComponent implements OnInit {
 
 	async onMemberAction(action: MemberTableAction) {
 		switch (action.action) {
+			case 'addMember': {
+				const roomId = this.room()?.roomId;
+				if (roomId) {
+					await this.navigationService.navigateTo(`/rooms/${roomId}/members/new`);
+				}
+				break;
+			}
+			case 'edit': {
+				const member = action.members[0];
+				const roomId = this.room()?.roomId;
+				if (member && roomId) {
+					await this.navigationService.navigateTo(`/rooms/${roomId}/members/${member.memberId}/edit`);
+				}
+				break;
+			}
 			case 'copyLink': {
 				const member = action.members[0];
 				if (member?.accessUrl) {
@@ -231,13 +246,6 @@ export class RoomDetailComponent implements OnInit {
 				});
 				break;
 			}
-		}
-	}
-
-	async onAddMember(): Promise<void> {
-		const roomId = this.room()?.roomId;
-		if (roomId) {
-			await this.navigationService.navigateTo(`/rooms/${roomId}/members/new`);
 		}
 	}
 

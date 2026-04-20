@@ -6,7 +6,7 @@
 			<h3>No members yet</h3>
 			<p>This room doesn't have any members assigned.</p>
 			<div class="getting-started-actions">
-				<button mat-flat-button color="primary" class="primary-button" (click)="addMember.emit()">
+				<button mat-flat-button color="primary" class="primary-button" (click)="addMember()">
 					<mat-icon>person_add</mat-icon>
 					Add Member
 				</button>
@@ -85,6 +85,17 @@
 				id="members-refresh-btn"
 			>
 				<mat-icon>refresh</mat-icon>
+			</button>
+
+			<button
+				mat-button
+				class="primary-button"
+				(click)="addMember()"
+				[disabled]="loading()"
+				id="members-add-member-btn"
+			>
+				<mat-icon>person_add</mat-icon>
+				Add Member
 			</button>
 		</div>
 	</mat-toolbar>
@@ -248,29 +259,29 @@
 								<mat-icon>link</mat-icon>
 							</button>
 
-							<!-- More Actions Menu -->
+							<!-- Edit Member -->
 							<button
 								mat-icon-button
-								[matMenuTriggerFor]="memberActionsMenu"
-								matTooltip="More Actions"
-								(click)="$event.stopPropagation()"
+								matTooltip="Edit member"
+								(click)="$event.stopPropagation(); editMember(member)"
 								[disabled]="loading()"
-								id="member-more-actions-btn-{{ member.memberId }}"
+								class="edit-action"
+								id="edit-member-btn-{{ member.memberId }}"
 							>
-								<mat-icon>more_vert</mat-icon>
+								<mat-icon>edit</mat-icon>
 							</button>
 
-							<mat-menu #memberActionsMenu="matMenu" id="member-actions-menu-{{ member.memberId }}">
-								<button
-									mat-menu-item
-									(click)="$event.stopPropagation(); deleteMember(member)"
-									class="delete-action"
-									id="delete-member-btn-{{ member.memberId }}"
-								>
-									<mat-icon>person_remove</mat-icon>
-									<span>Remove member</span>
-								</button>
-							</mat-menu>
+							<!-- Remove Member -->
+							<button
+								mat-icon-button
+								matTooltip="Remove member"
+								(click)="$event.stopPropagation(); deleteMember(member)"
+								[disabled]="loading()"
+								class="delete-action"
+								id="delete-member-btn-{{ member.memberId }}"
+							>
+								<mat-icon>person_remove</mat-icon>
+							</button>
 						</div>
 					</td>
 				</ng-container>
@@ -281,6 +292,7 @@
 					*matRowDef="let row; columns: displayedColumns"
 					[class.selected-row]="isMemberSelected(row)"
 					id="members-table-row-{{ row.memberId }}"
+					(click)="onMemberClick(row)"
 				></tr>
 			</table>
 		</div>
