@@ -40,6 +40,7 @@
 				[showLoadMore]="hasMoreUsers()"
 				[initialFilters]="initialFilters()"
 				(userAction)="onUserAction($event)"
+				(userClicked)="onUserClick($event)"
 				(loadMore)="loadMoreUsers($event)"
 				(refresh)="refreshUsers($event)"
 				(filterChange)="refreshUsers($event)"

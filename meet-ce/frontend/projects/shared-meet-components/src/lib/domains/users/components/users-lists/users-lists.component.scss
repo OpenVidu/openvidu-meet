@@ -246,6 +246,10 @@
 .action-buttons {
 	@extend .ov-action-buttons;
 
+	.action-tooltip-target {
+		display: inline-flex;
+	}
+
 	::ng-deep button {
 		padding: var(--ov-meet-spacing-sm);
 	}
@@ -257,6 +261,11 @@
 
 		&.delete-action {
 			color: var(--ov-meet-color-error);
+		}
+
+		&[disabled] {
+			opacity: 0.5;
+			filter: grayscale(1);
 		}
 	}
 }

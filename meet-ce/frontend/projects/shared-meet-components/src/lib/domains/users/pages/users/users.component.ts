@@ -9,17 +9,16 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { AuthService } from '../../../auth/services/auth.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
-import { UsersListsComponent, UserTableAction, UserTableFilter } from '../../components/users-lists/users-lists.component';
+import {
+	UsersListsComponent,
+	UserTableAction,
+	UserTableFilter
+} from '../../components/users-lists/users-lists.component';
 import { UserService } from '../../services/user.service';
 
 @Component({
 	selector: 'ov-users',
-	imports: [
-		MatButtonModule,
-		MatIconModule,
-		MatProgressSpinnerModule,
-		UsersListsComponent
-	],
+	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, UsersListsComponent],
 	templateUrl: './users.component.html',
 	styleUrl: './users.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
@@ -72,6 +71,9 @@ export class UsersComponent implements OnInit {
 			case 'create':
 				await this.onCreateUser();
 				break;
+			case 'updateRole':
+				await this.onUpdateRole(action.users[0]);
+				break;
 			case 'resetPassword':
 				this.onResetPassword(action.users[0]);
 				break;
@@ -97,6 +99,10 @@ export class UsersComponent implements OnInit {
 
 	private async onCreateUser() {
 		await this.navigationService.navigateTo('/users/new');
+	}
+
+	private async onUpdateRole(user: MeetUserDTO) {
+		await this.navigateToUserProfile(user.userId);
 	}
 
 	private onResetPassword(user: MeetUserDTO) {
@@ -156,6 +162,24 @@ export class UsersComponent implements OnInit {
 		});
 	}
 
+	async onUserClick(userId: string) {
+		try {
+			await this.navigateToUserProfile(userId);
+		} catch (error) {
+			this.notificationService.showSnackbar('Error navigating to user profile');
+			this.log.e('Error navigating to user profile:', error);
+		}
+	}
+
+	private async navigateToUserProfile(userId: string) {
+		if (userId === this.currentUserId()) {
+			await this.navigationService.navigateTo('/profile');
+			return;
+		}
+
+		await this.navigationService.navigateTo(`/users/${userId}`);
+	}
+
 	// ─── Data loading ─────────────────────────────────────────────────────────
 
 	private async loadUsers(filters: UserTableFilter, refresh = false) {
@@ -198,4 +222,3 @@ export class UsersComponent implements OnInit {
 		}
 	}
 }
-

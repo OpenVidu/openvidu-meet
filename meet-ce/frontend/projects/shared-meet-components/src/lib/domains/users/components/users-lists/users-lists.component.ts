@@ -1,6 +1,15 @@
 import { DatePipe, NgClass } from '@angular/common';
-import { Component, effect, HostBinding, input, OnInit, signal, untracked, output } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	effect,
+	HostBinding,
+	input,
+	OnInit,
+	output,
+	signal,
+	untracked
+} from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -22,7 +31,7 @@ import { UsersUiUtils } from '../../utils/ui';
 
 export interface UserTableAction {
 	users: MeetUserDTO[];
-	action: 'create' | 'resetPassword' | 'delete' | 'bulkDelete';
+	action: 'create' | 'updateRole' | 'resetPassword' | 'delete' | 'bulkDelete';
 }
 
 export interface UserTableFilter {
@@ -237,8 +246,8 @@ export class UsersListsComponent implements OnInit {
 		return this.selectedUsers().has(user.userId);
 	}
 
-	canSelectUser(_user: MeetUserDTO): boolean {
-		return true;
+	canSelectUser(user: MeetUserDTO): boolean {
+		return !UsersUiUtils.isProtectedUser(user, this.currentUserId());
 	}
 
 	getSelectedUsers(): MeetUserDTO[] {
@@ -258,6 +267,10 @@ export class UsersListsComponent implements OnInit {
 
 	resetPassword(user: MeetUserDTO) {
 		this.userAction.emit({ users: [user], action: 'resetPassword' });
+	}
+
+	updateRole(user: MeetUserDTO) {
+		this.userAction.emit({ users: [user], action: 'updateRole' });
 	}
 
 	deleteUser(user: MeetUserDTO) {
