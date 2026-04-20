@@ -4,6 +4,7 @@ import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { HttpService } from '../../../shared/services/http.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
+import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { UserService } from '../../users/services/user.service';
 
@@ -20,7 +21,8 @@ export class AuthService {
 		protected httpService: HttpService,
 		protected userService: UserService,
 		protected tokenStorageService: TokenStorageService,
-		protected navigationService: NavigationService
+		protected navigationService: NavigationService,
+		protected sessionStorageService: SessionStorageService
 	) {}
 
 	/**
@@ -47,8 +49,11 @@ export class AuthService {
 				this.tokenStorageService.setRefreshToken(response.refreshToken);
 			}
 
+			const mustChangePassword = response.mustChangePassword ?? false;
+			this.sessionStorageService.setMustChangePasswordRequired(mustChangePassword);
+
 			await this.getAuthenticatedUser(true);
-			return { mustChangePassword: response.mustChangePassword ?? false };
+			return { mustChangePassword };
 		} catch (err) {
 			const error = err as HttpErrorResponse;
 			console.error(error.error.message || error.error);
@@ -97,6 +102,7 @@ export class AuthService {
 
 			// Clear tokens from localStorage if in header mode
 			this.tokenStorageService.clearAccessAndRefreshTokens();
+			this.sessionStorageService.removeMustChangePasswordRequired();
 
 			// Redirect to login page with a query parameter if provided
 			// to redirect to the original page after login

@@ -1,6 +1,6 @@
 import { Route } from '@angular/router';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
-import { checkUserAuthenticatedGuard } from '../../auth/guards/auth.guard';
+import { checkPasswordChangeNotRequiredGuard, checkUserAuthenticatedGuard } from '../../auth/guards/auth.guard';
 import { recordingsConsoleRoutes } from '../../recordings/routes/recordings.routes';
 import { roomMembersConsoleRoutes } from '../../room-members/routes/room-members.routes';
 import { roomsConsoleRoutes } from '../../rooms/routes/rooms.routes';
@@ -68,7 +68,7 @@ export const consoleDomainRoutes: Route[] = [
 	{
 		path: '',
 		loadComponent: () => import('../pages/console/console.component').then((m) => m.ConsoleComponent),
-		canActivate: [checkUserAuthenticatedGuard, clearRoomSessionGuard],
+		canActivate: [checkUserAuthenticatedGuard, checkPasswordChangeNotRequiredGuard, clearRoomSessionGuard],
 		children: [
 			{
 				path: '',

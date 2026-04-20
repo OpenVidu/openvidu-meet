@@ -57,9 +57,14 @@ export class LoginComponent implements OnInit {
 		try {
 			const { mustChangePassword } = await this.authService.login(userId!, password!);
 
-			// Redirect user to profile page in order to change password on first login or password reset
+			// Redirect to dedicated mandatory password page after first login or password reset
 			if (mustChangePassword) {
-				await this.navigationService.navigateTo('/profile', { mandatoryChangePassword: true }, true);
+				const redirectTo = this.redirectTo();
+				await this.navigationService.navigateTo(
+					'/change-password-required',
+					redirectTo ? { redirectTo } : undefined,
+					true
+				);
 				return;
 			}
 

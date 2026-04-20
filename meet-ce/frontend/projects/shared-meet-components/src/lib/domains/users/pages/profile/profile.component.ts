@@ -23,7 +23,6 @@ import { MeetUserDTO } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { TokenStorageService } from '../../../../shared/services/token-storage.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
 import { UpdateRoleDialogComponent } from '../../components/update-role-dialog/update-role-dialog.component';
@@ -53,7 +52,6 @@ export class ProfileComponent implements OnInit {
 	private userService = inject(UserService);
 	private notificationService = inject(NotificationService);
 	private route = inject(ActivatedRoute);
-	private tokenStorageService = inject(TokenStorageService);
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
 
@@ -61,7 +59,6 @@ export class ProfileComponent implements OnInit {
 	isOwnProfile = signal(true);
 	isAdminViewing = signal(false);
 	isRootAdmin = signal(false);
-	isMandatoryChangePasswordMode = signal(false);
 
 	showCurrentPassword = signal(false);
 	showNewPassword = signal(false);
@@ -81,9 +78,6 @@ export class ProfileComponent implements OnInit {
 	async ngOnInit() {
 		this.isLoading.set(true);
 		this.setupPasswordFormValidationListeners();
-		this.isMandatoryChangePasswordMode.set(
-			this.route.snapshot.queryParamMap.get('mandatoryChangePassword') === 'true'
-		);
 
 		// Add custom validators
 		this.changePasswordForm.get('newPassword')?.addValidators(this.newPasswordValidator.bind(this));
@@ -176,27 +170,12 @@ export class ProfileComponent implements OnInit {
 		const delayLoader = setTimeout(() => this.isSavingPassword.set(true), 200);
 
 		try {
-			const response = await this.userService.changePassword(currentPassword!, newPassword!);
+			await this.userService.changePassword(currentPassword!, newPassword!);
 
 			this.changePasswordForm.reset({ currentPassword: '', newPassword: '', confirmPassword: '' });
 			this.showCurrentPassword.set(false);
 			this.showNewPassword.set(false);
 			this.showConfirmPassword.set(false);
-
-			if (this.isMandatoryChangePasswordMode()) {
-				if (!response.accessToken) {
-					throw new Error('No renewed access token received after mandatory password change');
-				}
-
-				this.tokenStorageService.setAccessToken(response.accessToken);
-				if (response.refreshToken) {
-					this.tokenStorageService.setRefreshToken(response.refreshToken);
-				}
-
-				this.notificationService.showSnackbar('Password updated successfully');
-				await this.navigationService.navigateTo('/', {}, true);
-				return;
-			}
 
 			this.notificationService.showSnackbar('Password updated successfully');
 		} catch (error) {

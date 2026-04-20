@@ -11,6 +11,7 @@ export class SessionStorageService {
 	private readonly ROOM_SECRET_KEY = 'ovMeet-roomSecret';
 	private readonly REDIRECT_URL_KEY = 'ovMeet-redirectUrl';
 	private readonly E2EE_DATA_KEY = 'ovMeet-e2eeData';
+	private readonly MUST_CHANGE_PASSWORD_KEY = 'ovMeet-mustChangePassword';
 
 	/**
 	 * Stores the room secret.
@@ -89,9 +90,35 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Clears all data stored in sessionStorage.
+	 * Stores whether the authenticated user must change password before accessing the app.
+	 *
+	 * @param required True when password change is required.
 	 */
-	public clear(): void {
+	public setMustChangePasswordRequired(required: boolean): void {
+		this.set(this.MUST_CHANGE_PASSWORD_KEY, required);
+	}
+
+	/**
+	 * Retrieves whether the authenticated user must change password before continuing.
+	 *
+	 * @returns True if password change is required; otherwise false.
+	 */
+	public getMustChangePasswordRequired(): boolean {
+		return this.get<boolean>(this.MUST_CHANGE_PASSWORD_KEY) ?? false;
+	}
+
+	/**
+	 * Removes the stored mandatory password change flag.
+	 */
+	public removeMustChangePasswordRequired(): void {
+		this.remove(this.MUST_CHANGE_PASSWORD_KEY);
+	}
+
+	/**
+	 * Clears all session data related to the current meeting session,
+	 * including room secret, redirect URL, and E2EE data.
+	 */
+	public clearRoomSessionData(): void {
 		this.removeRoomSecret();
 		this.removeRedirectUrl();
 		this.removeE2EEData();
