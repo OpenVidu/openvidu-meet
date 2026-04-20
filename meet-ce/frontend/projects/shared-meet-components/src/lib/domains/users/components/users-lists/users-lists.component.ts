@@ -2,14 +2,17 @@ import { DatePipe, NgClass } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
+	computed,
+	DestroyRef,
 	effect,
-	HostBinding,
+	inject,
 	input,
 	OnInit,
 	output,
 	signal,
 	untracked
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -89,9 +92,14 @@ export interface UserTableFilter {
 	],
 	templateUrl: './users-lists.component.html',
 	styleUrl: './users-lists.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'[class.has-selections]': 'hasSelections()'
+	}
 })
 export class UsersListsComponent implements OnInit {
+	private destroyRef = inject(DestroyRef);
+
 	users = input<MeetUserDTO[]>([]);
 	currentUserId = input('');
 	showSearchBox = input(true);
@@ -106,11 +114,8 @@ export class UsersListsComponent implements OnInit {
 		sortOrder: SortOrder.DESC
 	});
 
-	// Host binding for styling when users are selected
-	@HostBinding('class.has-selections')
-	get hasSelections(): boolean {
-		return this.selectedUsers().size > 0;
-	}
+	// Host binding state for styling when users are selected
+	hasSelections = computed(() => this.selectedUsers().size > 0);
 
 	// Output events
 	readonly userAction = output<UserTableAction>();
@@ -120,14 +125,14 @@ export class UsersListsComponent implements OnInit {
 	readonly userClicked = output<string>();
 
 	// Filter controls
-	nameFilterControl = new FormControl('');
-	roleFilterControl = new FormControl('');
+	nameFilterControl = new FormControl<string>('', { nonNullable: true });
+	roleFilterControl = new FormControl<MeetUserRole | ''>('', { nonNullable: true });
 
 	// Sort state
-	currentSortField: MeetUserSortField = 'registrationDate';
-	currentSortOrder: SortOrder = SortOrder.DESC;
+	currentSortField = signal<MeetUserSortField>('registrationDate');
+	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = false; // Show message when no users match filters
+	showEmptyFilterMessage = signal(false); // Show message when no users match filters
 
 	// Selection state
 	selectedUsers = signal<Set<string>>(new Set());
@@ -135,7 +140,10 @@ export class UsersListsComponent implements OnInit {
 	someSelected = signal(false);
 
 	// Table configuration
-	displayedColumns: string[] = ['select', 'userName', 'role', 'registrationDate', 'actions'];
+	displayedColumns = computed(() => {
+		const columns = ['userName', 'role', 'registrationDate', 'actions'];
+		return this.showSelection() ? ['select', ...columns] : columns;
+	});
 
 	// Role options
 	roleOptions = [
@@ -163,13 +171,12 @@ export class UsersListsComponent implements OnInit {
 			}
 
 			// Show message when no users match filters
-			this.showEmptyFilterMessage = users.length === 0 && this.hasActiveFilters();
+			this.showEmptyFilterMessage.set(users.length === 0 && this.hasActiveFilters());
 		});
 	}
 
 	ngOnInit() {
 		this.setupFilters();
-		this.updateDisplayedColumns();
 	}
 
 	// ===== INITIALIZATION METHODS =====
@@ -178,11 +185,11 @@ export class UsersListsComponent implements OnInit {
 		// Initialize from initialFilters input
 		this.nameFilterControl.setValue(this.initialFilters().nameFilter);
 		this.roleFilterControl.setValue(this.initialFilters().roleFilter);
-		this.currentSortField = this.initialFilters().sortField;
-		this.currentSortOrder = this.initialFilters().sortOrder;
+		this.currentSortField.set(this.initialFilters().sortField);
+		this.currentSortOrder.set(this.initialFilters().sortOrder);
 
 		// Set up name filter change detection
-		this.nameFilterControl.valueChanges.subscribe((value) => {
+		this.nameFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
 			// Emit filter change if value is empty
 			if (!value) {
 				this.emitFilterChange();
@@ -190,19 +197,9 @@ export class UsersListsComponent implements OnInit {
 		});
 
 		// Set up role filter change detection
-		this.roleFilterControl.valueChanges.subscribe(() => {
+		this.roleFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 			this.emitFilterChange();
 		});
-	}
-
-	private updateDisplayedColumns() {
-		this.displayedColumns = [];
-
-		if (this.showSelection()) {
-			this.displayedColumns.push('select');
-		}
-
-		this.displayedColumns.push('userName', 'role', 'registrationDate', 'actions');
 	}
 
 	// ===== SELECTION METHODS =====
@@ -285,30 +282,30 @@ export class UsersListsComponent implements OnInit {
 	}
 
 	loadMoreUsers() {
-		const nameFilter = this.nameFilterControl.value || '';
-		const roleFilter = (this.roleFilterControl.value || '') as MeetUserRole | '';
+		const nameFilter = this.nameFilterControl.value;
+		const roleFilter = this.roleFilterControl.value;
 		this.loadMore.emit({
 			nameFilter,
 			roleFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 
 	refreshUsers() {
-		const nameFilter = this.nameFilterControl.value || '';
-		const roleFilter = (this.roleFilterControl.value || '') as MeetUserRole | '';
+		const nameFilter = this.nameFilterControl.value;
+		const roleFilter = this.roleFilterControl.value;
 		this.refresh.emit({
 			nameFilter,
 			roleFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 
 	onSortChange(sortState: Sort) {
-		this.currentSortField = sortState.active as MeetUserSortField;
-		this.currentSortOrder = sortState.direction as SortOrder;
+		this.currentSortField.set(sortState.active as MeetUserSortField);
+		this.currentSortOrder.set(sortState.direction as SortOrder);
 		this.emitFilterChange();
 	}
 
@@ -320,10 +317,10 @@ export class UsersListsComponent implements OnInit {
 
 	private emitFilterChange() {
 		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value || '',
-			roleFilter: (this.roleFilterControl.value || '') as MeetUserRole | '',
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			nameFilter: this.nameFilterControl.value,
+			roleFilter: this.roleFilterControl.value,
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 

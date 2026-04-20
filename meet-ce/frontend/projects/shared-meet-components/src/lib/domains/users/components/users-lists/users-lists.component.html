@@ -1,4 +1,4 @@
-@if (!loading() && users().length === 0 && !showEmptyFilterMessage) {
+@if (!loading() && users().length === 0 && !showEmptyFilterMessage()) {
 	<!-- Empty State -->
 	<div class="no-users-state">
 		<div class="empty-content">
@@ -122,7 +122,7 @@
 			<mat-spinner diameter="40" />
 			<span>Loading users...</span>
 		</div>
-	} @else if (users().length === 0 && showEmptyFilterMessage) {
+	} @else if (users().length === 0 && showEmptyFilterMessage()) {
 		<!-- No users match the current filters -->
 		<div class="no-users-state">
 			<div class="empty-content">
@@ -144,8 +144,8 @@
 				[dataSource]="users()"
 				matSort
 				matSortDisableClear
-				[matSortActive]="currentSortField"
-				[matSortDirection]="currentSortOrder"
+				[matSortActive]="currentSortField()"
+				[matSortDirection]="currentSortOrder()"
 				(matSortChange)="onSortChange($event)"
 				class="users-table"
 				id="users-table"
@@ -323,10 +323,10 @@
 					</td>
 				</ng-container>
 
-				<tr mat-header-row *matHeaderRowDef="displayedColumns" id="table-header-row"></tr>
+				<tr mat-header-row *matHeaderRowDef="displayedColumns()" id="table-header-row"></tr>
 				<tr
 					mat-row
-					*matRowDef="let row; columns: displayedColumns"
+					*matRowDef="let row; columns: displayedColumns()"
 					[class.selected-row]="isUserSelected(row)"
 					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId())"
 					[class.root-row]="UsersUiUtils.isRootAdmin(row)"

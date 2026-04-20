@@ -2,14 +2,17 @@ import { CommonModule, DatePipe } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
+	computed,
+	DestroyRef,
 	effect,
-	HostBinding,
+	inject,
 	input,
 	OnInit,
 	output,
 	signal,
 	untracked
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -81,9 +84,14 @@ export interface MemberTableFilter {
 	],
 	templateUrl: './room-members-list.component.html',
 	styleUrl: './room-members-list.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'[class.has-selections]': 'hasSelections()'
+	}
 })
 export class RoomMembersListsComponent implements OnInit {
+	private destroyRef = inject(DestroyRef);
+
 	members = input<MeetRoomMember[]>([]);
 	showSearchBox = input(true);
 	showFilters = input(false);
@@ -96,11 +104,8 @@ export class RoomMembersListsComponent implements OnInit {
 		sortOrder: SortOrder.DESC
 	});
 
-	// Host binding for styling when members are selected
-	@HostBinding('class.has-selections')
-	get hasSelections(): boolean {
-		return this.selectedMembers().size > 0;
-	}
+	// Host binding state for styling when members are selected
+	hasSelections = computed(() => this.selectedMembers().size > 0);
 
 	// Output events
 	readonly memberAction = output<MemberTableAction>();
@@ -110,13 +115,13 @@ export class RoomMembersListsComponent implements OnInit {
 	readonly memberClicked = output<string>();
 
 	// Filter controls
-	nameFilterControl = new FormControl('');
+	nameFilterControl = new FormControl<string>('', { nonNullable: true });
 
 	// Sort state
-	currentSortField: MeetRoomMemberSortField = 'membershipDate';
-	currentSortOrder: SortOrder = SortOrder.DESC;
+	currentSortField = signal<MeetRoomMemberSortField>('membershipDate');
+	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = false;
+	showEmptyFilterMessage = signal(false);
 
 	// Selection state
 	selectedMembers = signal<Set<string>>(new Set());
@@ -124,7 +129,10 @@ export class RoomMembersListsComponent implements OnInit {
 	someSelected = signal(false);
 
 	// Table configuration
-	displayedColumns: string[] = ['select', 'name', 'role', 'memberType', 'membershipDate', 'actions'];
+	displayedColumns = computed(() => {
+		const columns = ['name', 'role', 'memberType', 'membershipDate', 'actions'];
+		return this.showSelection() ? ['select', ...columns] : columns;
+	});
 
 	// Expose enum to template
 	protected readonly MeetRoomMemberRole = MeetRoomMemberRole;
@@ -142,37 +150,26 @@ export class RoomMembersListsComponent implements OnInit {
 				this.updateSelectionState();
 			}
 
-			this.showEmptyFilterMessage = members.length === 0 && this.hasActiveFilters();
+			this.showEmptyFilterMessage.set(members.length === 0 && this.hasActiveFilters());
 		});
 	}
 
 	ngOnInit() {
 		this.setupFilters();
-		this.updateDisplayedColumns();
 	}
 
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
 		this.nameFilterControl.setValue(this.initialFilters().nameFilter);
-		this.currentSortField = this.initialFilters().sortField;
-		this.currentSortOrder = this.initialFilters().sortOrder;
+		this.currentSortField.set(this.initialFilters().sortField);
+		this.currentSortOrder.set(this.initialFilters().sortOrder);
 
-		this.nameFilterControl.valueChanges.subscribe((value) => {
+		this.nameFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
 			if (!value) {
 				this.emitFilterChange();
 			}
 		});
-	}
-
-	private updateDisplayedColumns() {
-		this.displayedColumns = [];
-
-		if (this.showSelection()) {
-			this.displayedColumns.push('select');
-		}
-
-		this.displayedColumns.push('name', 'role', 'memberType', 'membershipDate', 'actions');
 	}
 
 	// ===== SELECTION METHODS =====
@@ -255,26 +252,26 @@ export class RoomMembersListsComponent implements OnInit {
 	}
 
 	loadMoreMembers() {
-		const nameFilter = this.nameFilterControl.value || '';
+		const nameFilter = this.nameFilterControl.value;
 		this.loadMore.emit({
 			nameFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 
 	refreshMembers() {
-		const nameFilter = this.nameFilterControl.value || '';
+		const nameFilter = this.nameFilterControl.value;
 		this.refresh.emit({
 			nameFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 
 	onSortChange(sortState: Sort) {
-		this.currentSortField = sortState.active as MeetRoomMemberSortField;
-		this.currentSortOrder = sortState.direction as SortOrder;
+		this.currentSortField.set(sortState.active as MeetRoomMemberSortField);
+		this.currentSortOrder.set(sortState.direction as SortOrder);
 		this.emitFilterChange();
 	}
 
@@ -286,9 +283,9 @@ export class RoomMembersListsComponent implements OnInit {
 
 	private emitFilterChange() {
 		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value || '',
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
+			nameFilter: this.nameFilterControl.value,
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
 		});
 	}
 

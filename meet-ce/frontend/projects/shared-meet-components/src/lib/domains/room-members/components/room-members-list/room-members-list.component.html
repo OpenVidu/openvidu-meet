@@ -1,4 +1,4 @@
-@if (!loading() && members().length === 0 && !showEmptyFilterMessage) {
+@if (!loading() && members().length === 0 && !showEmptyFilterMessage()) {
 	<!-- Empty State -->
 	<div class="no-members-state">
 		<div class="empty-content">
@@ -106,7 +106,7 @@
 			<mat-spinner diameter="40" />
 			<span>Loading members...</span>
 		</div>
-	} @else if (members().length === 0 && showEmptyFilterMessage) {
+	} @else if (members().length === 0 && showEmptyFilterMessage()) {
 		<!-- No members match the current filters -->
 		<div class="no-members-state">
 			<div class="empty-content">
@@ -128,8 +128,8 @@
 				[dataSource]="members()"
 				matSort
 				matSortDisableClear
-				[matSortActive]="currentSortField"
-				[matSortDirection]="currentSortOrder"
+				[matSortActive]="currentSortField()"
+				[matSortDirection]="currentSortOrder()"
 				(matSortChange)="onSortChange($event)"
 				class="members-table"
 				id="members-table"
@@ -286,10 +286,10 @@
 					</td>
 				</ng-container>
 
-				<tr mat-header-row *matHeaderRowDef="displayedColumns" id="members-table-header-row"></tr>
+				<tr mat-header-row *matHeaderRowDef="displayedColumns()" id="members-table-header-row"></tr>
 				<tr
 					mat-row
-					*matRowDef="let row; columns: displayedColumns"
+					*matRowDef="let row; columns: displayedColumns()"
 					[class.selected-row]="isMemberSelected(row)"
 					id="members-table-row-{{ row.memberId }}"
 					(click)="onMemberClick(row)"

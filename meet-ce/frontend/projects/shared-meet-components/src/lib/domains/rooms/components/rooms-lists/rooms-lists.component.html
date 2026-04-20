@@ -1,4 +1,4 @@
-@if (!loading() && rooms().length === 0 && !showEmptyFilterMessage) {
+@if (!loading() && rooms().length === 0 && !showEmptyFilterMessage()) {
 	<!-- Empty State -->
 	<div class="no-rooms-state">
 		<div class="empty-content">
@@ -122,7 +122,7 @@
 			<mat-spinner diameter="40" />
 			<span>Loading rooms...</span>
 		</div>
-	} @else if (rooms().length === 0 && showEmptyFilterMessage) {
+	} @else if (rooms().length === 0 && showEmptyFilterMessage()) {
 		<!-- No rooms match the current filters -->
 		<div class="no-rooms-state">
 			<div class="empty-content">
@@ -144,8 +144,8 @@
 				[dataSource]="rooms()"
 				matSort
 				matSortDisableClear
-				[matSortActive]="currentSortField"
-				[matSortDirection]="currentSortOrder"
+				[matSortActive]="currentSortField()"
+				[matSortDirection]="currentSortOrder()"
 				(matSortChange)="onSortChange($event)"
 				class="rooms-table"
 				id="rooms-table"
@@ -396,10 +396,10 @@
 					</td>
 				</ng-container>
 
-				<tr mat-header-row *matHeaderRowDef="displayedColumns" id="table-header-row"></tr>
+				<tr mat-header-row *matHeaderRowDef="displayedColumns()" id="table-header-row"></tr>
 				<tr
 					mat-row
-					*matRowDef="let row; columns: displayedColumns"
+					*matRowDef="let row; columns: displayedColumns()"
 					[class.selected-row]="isRoomSelected(row)"
 					id="table-row-{{ row.roomId }}"
 					(click)="onRoomClick(row)"

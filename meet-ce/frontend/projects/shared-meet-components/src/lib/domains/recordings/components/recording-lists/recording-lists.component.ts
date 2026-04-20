@@ -1,5 +1,18 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, input, OnInit, output, signal, untracked } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	DestroyRef,
+	effect,
+	inject,
+	input,
+	OnInit,
+	output,
+	signal,
+	untracked
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -66,9 +79,15 @@ import { RecordingUiUtils } from '../../utils/ui';
 	],
 	templateUrl: './recording-lists.component.html',
 	styleUrl: './recording-lists.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'[class.has-selections]': 'hasSelections()'
+	}
 })
 export class RecordingListsComponent implements OnInit {
+	private viewportService = inject(ViewportService);
+	private destroyRef = inject(DestroyRef);
+
 	recordings = input<MeetRecordingInfo[]>([]);
 	canDeleteRecordings = input(false);
 	showSearchBox = input(true);
@@ -85,6 +104,9 @@ export class RecordingListsComponent implements OnInit {
 		sortOrder: SortOrder.DESC
 	});
 
+	// Host binding state for styling when rooms are selected
+	hasSelections = computed(() => this.selectedRecordings().size > 0);
+
 	// Output events
 	recordingAction = output<RecordingTableAction>();
 	recordingClicked = output<string>();
@@ -93,8 +115,8 @@ export class RecordingListsComponent implements OnInit {
 	refresh = output<RecordingTableFilter>();
 
 	// Filter controls
-	nameFilterControl = new FormControl('');
-	statusFilterControl = new FormControl('');
+	nameFilterControl = new FormControl<string>('', { nonNullable: true });
+	statusFilterControl = new FormControl<MeetRecordingStatus | ''>('', { nonNullable: true });
 
 	// Sort state
 	currentSortField = signal<MeetRecordingSortField>('startDate');
@@ -108,7 +130,16 @@ export class RecordingListsComponent implements OnInit {
 	someSelected = signal(false);
 
 	// Table configuration
-	displayedColumns: string[] = ['select', 'roomInfo', 'status', 'startDate', 'duration', 'size', 'actions'];
+	displayedColumns = computed(() => {
+		const columns = ['status', 'startDate', 'duration', 'size', 'actions'];
+		if (this.showRoomInfo()) {
+			columns.unshift('roomInfo');
+		}
+		if (this.showSelection()) {
+			columns.unshift('select');
+		}
+		return columns;
+	});
 
 	// Status options using enum values
 	statusOptions = [
@@ -142,12 +173,12 @@ export class RecordingListsComponent implements OnInit {
 		DOWNLOADABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[]
 	} as const;
 
-	protected isMobileView = computed(() => this.viewportService.isMobileView());
+	protected isMobileView = this.viewportService.isMobileView;
 
 	// Make RecordingUiUtils available in template
 	protected readonly RecordingUiUtils = RecordingUiUtils;
 
-	constructor(private viewportService: ViewportService) {
+	constructor() {
 		effect(() => {
 			// Update selected recordings based on current recordings
 			const recordings = this.recordings();
@@ -170,7 +201,6 @@ export class RecordingListsComponent implements OnInit {
 
 	ngOnInit() {
 		this.setupFilters();
-		this.updateDisplayedColumns();
 
 		// Calculate showEmptyFilterMessage based on initial state
 		this.showEmptyFilterMessage.set(this.recordings().length === 0 && this.hasActiveFilters());
@@ -187,7 +217,7 @@ export class RecordingListsComponent implements OnInit {
 		this.currentSortOrder.set(filters.sortOrder);
 
 		// Set up name filter change detection
-		this.nameFilterControl.valueChanges.subscribe((value) => {
+		this.nameFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
 			// Emit filter change if value is empty
 			if (!value) {
 				this.emitFilterChange();
@@ -195,22 +225,9 @@ export class RecordingListsComponent implements OnInit {
 		});
 
 		// Set up status filter change detection
-		this.statusFilterControl.valueChanges.subscribe(() => {
+		this.statusFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 			this.emitFilterChange();
 		});
-	}
-
-	private updateDisplayedColumns() {
-		this.displayedColumns = [];
-
-		if (this.showSelection()) {
-			this.displayedColumns.push('select');
-		}
-		if (this.showRoomInfo()) {
-			this.displayedColumns.push('roomInfo');
-		}
-
-		this.displayedColumns.push('status', 'startDate', 'duration', 'size', 'actions');
 	}
 
 	// ===== SELECTION METHODS =====
@@ -300,8 +317,8 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	loadMoreRecordings() {
-		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = (this.statusFilterControl.value || '') as MeetRecordingStatus | '';
+		const nameFilter = this.nameFilterControl.value;
+		const statusFilter = this.statusFilterControl.value;
 		this.loadMore.emit({
 			nameFilter,
 			statusFilter,
@@ -311,8 +328,8 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	refreshRecordings() {
-		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = (this.statusFilterControl.value || '') as MeetRecordingStatus | '';
+		const nameFilter = this.nameFilterControl.value;
+		const statusFilter = this.statusFilterControl.value;
 		this.refresh.emit({
 			nameFilter,
 			statusFilter,
@@ -335,8 +352,8 @@ export class RecordingListsComponent implements OnInit {
 
 	private emitFilterChange() {
 		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value || '',
-			statusFilter: (this.statusFilterControl.value || '') as MeetRecordingStatus | '',
+			nameFilter: this.nameFilterControl.value,
+			statusFilter: this.statusFilterControl.value,
 			sortField: this.currentSortField(),
 			sortOrder: this.currentSortOrder()
 		});
