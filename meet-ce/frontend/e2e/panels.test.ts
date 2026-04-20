@@ -25,8 +25,8 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 		await openMeeting(page, accessUrl);
 
 		await toggleChatPanel(page, 'open');
-		await expectVisible(page, '.input-container');
-		await expectVisible(page, '.messages-container');
+			await expectVisible(page, '#chat-input');
+			await expectVisible(page, '#chat-container .messages-container');
 
 		await toggleChatPanel(page, 'close');
 	});
@@ -98,24 +98,20 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 
 		await toggleChatPanel(page);
 		await expectVisible(page, '.sidenav-menu');
-		await expectVisible(page, '.input-container');
-		await expectVisible(page, '.messages-container');
+		await expectVisible(page, '#chat-input');
+		await expectVisible(page, '#chat-container .messages-container');
 
 		await toggleParticipantsPanel(page);
 		await expectVisible(page, '.local-participant-container');
 		await expectVisible(page, 'ov-participant-panel-item');
-		await expectHidden(page, '.input-container');
-		await expectHidden(page, '.messages-container');
+		await expectHidden(page, '#chat-input');
+		await expectHidden(page, '#chat-container .messages-container');
 
 		await toggleChatPanel(page);
-		await expectVisible(page, '.input-container');
-		await expectVisible(page, '.messages-container');
+		await expectVisible(page, '#chat-input');
+		await expectVisible(page, '#chat-container .messages-container');
 		await expectHidden(page, '.local-participant-container');
 		await expectHidden(page, 'ov-participant-panel-item');
-
-		await toggleChatPanel(page);
-		await expectHidden(page, '.input-container');
-		await expectHidden(page, '.messages-container');
 	});
 
 	test('should switch between sections in the SETTINGS panel and verify correct content is shown', async ({

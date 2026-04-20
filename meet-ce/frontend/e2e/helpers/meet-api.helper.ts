@@ -136,9 +136,15 @@ export async function createExternalRoomMember(params: {
 }
 
 export async function deleteRooms(roomIds: Iterable<string>): Promise<void> {
+	const ids = Array.from(roomIds).filter((roomId) => roomId.trim().length > 0);
+
+	if (ids.length === 0) {
+		return;
+	}
+
 	const response = await fetch(
 		withApiPath(
-			`/rooms?roomIds=${Array.from(roomIds).map(encodeURIComponent).join(',')}&withMeeting=force&withRecordings=force`
+			`/rooms?roomIds=${ids.map(encodeURIComponent).join(',')}&withMeeting=force&withRecordings=force`
 		),
 		{
 			method: 'DELETE',
@@ -149,7 +155,7 @@ export async function deleteRooms(roomIds: Iterable<string>): Promise<void> {
 	);
 
 	const responseText = await response.text();
-	assertOk(response, responseText, `delete rooms ${Array.from(roomIds).join(',')}`);
+	assertOk(response, responseText, `delete rooms ${ids.join(',')}`);
 }
 
 export function toAbsoluteMeetUrl(accessUrl: string): string {

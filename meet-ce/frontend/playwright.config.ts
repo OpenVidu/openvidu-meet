@@ -10,7 +10,8 @@ export default defineConfig({
 	fullyParallel: false,
 	retries: 0,
 	workers: 1,
-	reporter: 'list',
+	reporter: [['list'], ['json', { outputFile: 'test-results/results.json' }]],
+	outputDir: 'test-results/output',
 	use: {
 		headless: true,
 		viewport: { width: 1366, height: 900 },

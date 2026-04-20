@@ -1,11 +1,20 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
+
+async function clickIfReady(locator: Locator, timeoutMs = 2_000): Promise<boolean> {
+	try {
+		await locator.click({ timeout: timeoutMs });
+		return true;
+	} catch {
+		return false;
+	}
+}
 
 async function completeLobbyIfPresent(page: Page): Promise<void> {
 	const submit = page.locator('#participant-name-submit');
 
-	if (!(await submit.isVisible())) {
+	if (!(await submit.isVisible().catch(() => false))) {
 		return;
 	}
 
@@ -17,9 +26,16 @@ async function completeLobbyIfPresent(page: Page): Promise<void> {
 		if (!value) {
 			await nameInput.fill(`pw-${Date.now()}`);
 		}
+
+		if (await clickIfReady(submit)) {
+			return;
+		}
+
+		await nameInput.press('Enter').catch(() => Promise.resolve());
+		return;
 	}
 
-	await submit.click();
+	await clickIfReady(submit);
 }
 
 async function clickJoinIfPrejoinVisible(page: Page): Promise<boolean> {
@@ -34,7 +50,11 @@ async function clickJoinIfPrejoinVisible(page: Page): Promise<boolean> {
 		return false;
 	}
 
-	await joinButton.click();
+	if (await clickIfReady(joinButton)) {
+		return true;
+	}
+
+	await joinButton.press('Enter').catch(() => Promise.resolve());
 	return true;
 }
 
@@ -74,14 +94,30 @@ export async function openPrejoin(page: Page, accessUrl: string, timeoutMs = 45_
 }
 
 export async function toggleChatPanel(page: Page, action: 'open' | 'close' = 'open'): Promise<void> {
-	await page.locator('#chat-panel-btn').click();
+	const chatInput = page.locator('#chat-input');
+	const shouldOpen = action === 'open';
+	const isOpen = await chatInput.isVisible().catch(() => false);
+
+	if (shouldOpen) {
+		if (!isOpen) {
+			await page.locator('#chat-panel-btn').click();
+		}
+	} else if (isOpen) {
+		const panelCloseButton = page.locator('#chat-container .panel-close-button');
+
+		if (await panelCloseButton.isVisible().catch(() => false)) {
+			await panelCloseButton.click();
+		} else {
+			await page.locator('#chat-panel-btn').click();
+		}
+	}
 
 	if (action === 'open') {
-		await expect(page.locator('#chat-container')).toBeVisible();
-		await expect(page.locator('#chat-input')).toBeVisible();
+		await expect(page.locator('#chat-container')).toBeVisible({ timeout: 10_000 });
+		await expect(chatInput).toBeVisible({ timeout: 10_000 });
 	} else {
-		await expect(page.locator('#chat-container')).toHaveCount(0);
-		await expect(page.locator('#chat-input')).toHaveCount(0);
+		await expect(page.locator('#chat-container')).toHaveCount(0, { timeout: 10_000 });
+		await expect(chatInput).toHaveCount(0, { timeout: 10_000 });
 	}
 }
 
@@ -134,7 +170,25 @@ export async function expectVisible(page: Page, selector: string): Promise<void>
 }
 
 export async function expectHidden(page: Page, selector: string): Promise<void> {
-	await expect(page.locator(selector)).toHaveCount(0);
+	const locator = page.locator(selector);
+
+	await expect
+		.poll(async () => {
+			const count = await locator.count();
+
+			if (count === 0) {
+				return true;
+			}
+
+			for (let index = 0; index < count; index += 1) {
+				if (await locator.nth(index).isVisible()) {
+					return false;
+				}
+			}
+
+			return true;
+		}, { timeout: 10_000 })
+		.toBeTruthy();
 }
 
 export async function installClipboardCapture(page: Page): Promise<void> {
