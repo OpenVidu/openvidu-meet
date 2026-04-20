@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
@@ -21,41 +21,31 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 	selector: 'ov-videoconference[toolbarCameraButton], ov-toolbar[cameraButton]',
 	standalone: false
 })
-export class ToolbarCameraButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarCameraButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarCameraButton(value: boolean) {
-		this.cameraValue = value;
-		this.update(this.cameraValue);
-	}
+	readonly toolbarCameraButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
-	@Input() set cameraButton(value: boolean) {
-		this.cameraValue = value;
-		this.update(this.cameraValue);
-	}
-
-	private cameraValue: boolean = true;
+	readonly cameraButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.cameraValue);
-	}
+	private readonly cameraButtonEffect = effect(() => {
+		this.update(this.cameraButton() ?? this.toolbarCameraButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 
 	private clear() {
-		this.cameraValue = true;
 		this.update(true);
 	}
 
@@ -83,41 +73,31 @@ export class ToolbarCameraButtonDirective implements AfterViewInit, OnDestroy {
 	selector: 'ov-videoconference[toolbarMicrophoneButton], ov-toolbar[microphoneButton]',
 	standalone: false
 })
-export class ToolbarMicrophoneButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarMicrophoneButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarMicrophoneButton(value: boolean) {
-		this.microphoneValue = value;
-		this.update(this.microphoneValue);
-	}
+	readonly toolbarMicrophoneButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
-	@Input() set microphoneButton(value: boolean) {
-		this.microphoneValue = value;
-		this.update(this.microphoneValue);
-	}
-
-	private microphoneValue: boolean = true;
+	readonly microphoneButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.microphoneValue);
-	}
+	private readonly microphoneButtonEffect = effect(() => {
+		this.update(this.microphoneButton() ?? this.toolbarMicrophoneButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 
 	private clear() {
-		this.microphoneValue = true;
 		this.update(true);
 	}
 
@@ -145,41 +125,31 @@ export class ToolbarMicrophoneButtonDirective implements AfterViewInit, OnDestro
 	selector: 'ov-videoconference[toolbarScreenshareButton], ov-toolbar[screenshareButton]',
 	standalone: false
 })
-export class ToolbarScreenshareButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarScreenshareButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarScreenshareButton(value: boolean) {
-		this.screenshareValue = value;
-		this.update(this.screenshareValue);
-	}
+	readonly toolbarScreenshareButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
-	@Input() set screenshareButton(value: boolean) {
-		this.screenshareValue = value;
-		this.update(this.screenshareValue);
-	}
-
-	private screenshareValue: boolean = true;
+	readonly screenshareButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.screenshareValue);
-	}
+	private readonly screenshareButtonEffect = effect(() => {
+		this.update(this.screenshareButton() ?? this.toolbarScreenshareButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 
 	private clear() {
-		this.screenshareValue = true;
 		this.update(true);
 	}
 
@@ -207,38 +177,29 @@ export class ToolbarScreenshareButtonDirective implements AfterViewInit, OnDestr
 	selector: 'ov-videoconference[toolbarRecordingButton], ov-toolbar[recordingButton]',
 	standalone: false
 })
-export class ToolbarRecordingButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarRecordingButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarRecordingButton(value: boolean) {
-		this.recordingValue = value;
-		this.update(this.recordingValue);
-	}
+	readonly toolbarRecordingButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set recordingButton(value: boolean) {
-		this.recordingValue = value;
-		this.update(this.recordingValue);
-	}
-	private recordingValue: boolean = true;
+	readonly recordingButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.recordingValue);
-	}
+	private readonly recordingButtonEffect = effect(() => {
+		this.update(this.recordingButton() ?? this.toolbarRecordingButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.recordingValue = true;
 		this.update(true);
 	}
 
@@ -267,38 +228,29 @@ export class ToolbarRecordingButtonDirective implements AfterViewInit, OnDestroy
 	selector: 'ov-videoconference[toolbarBroadcastingButton], ov-toolbar[broadcastingButton]',
 	standalone: false
 })
-export class ToolbarBroadcastingButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarBroadcastingButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarBroadcastingButton(value: boolean) {
-		this.broadcastingValue = value;
-		this.update(this.broadcastingValue);
-	}
+	readonly toolbarBroadcastingButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set broadcastingButton(value: boolean) {
-		this.broadcastingValue = value;
-		this.update(this.broadcastingValue);
-	}
-	private broadcastingValue: boolean = true;
+	readonly broadcastingButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.broadcastingValue);
-	}
+	private readonly broadcastingButtonEffect = effect(() => {
+		this.update(this.broadcastingButton() ?? this.toolbarBroadcastingButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.broadcastingValue = true;
 		this.update(true);
 	}
 
@@ -326,38 +278,28 @@ export class ToolbarBroadcastingButtonDirective implements AfterViewInit, OnDest
 	selector: 'ov-videoconference[toolbarFullscreenButton], ov-toolbar[fullscreenButton]',
 	standalone: false
 })
-export class ToolbarFullscreenButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarFullscreenButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarFullscreenButton(value: boolean) {
-		this.fullscreenValue = value;
-		this.update(this.fullscreenValue);
-	}
+	readonly toolbarFullscreenButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set fullscreenButton(value: boolean) {
-		this.fullscreenValue = value;
-		this.update(this.fullscreenValue);
-	}
-
-	private fullscreenValue: boolean = true;
+	readonly fullscreenButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.fullscreenValue);
-	}
+	private readonly fullscreenButtonEffect = effect(() => {
+		this.update(this.fullscreenButton() ?? this.toolbarFullscreenButton() ?? true);
+	});
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.fullscreenValue = true;
 		this.update(true);
 	}
 
@@ -385,38 +327,28 @@ export class ToolbarFullscreenButtonDirective implements AfterViewInit, OnDestro
 	selector: 'ov-videoconference[toolbarBackgroundEffectsButton], ov-toolbar[backgroundEffectsButton]',
 	standalone: false
 })
-export class ToolbarBackgroundEffectsButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarBackgroundEffectsButton(value: boolean) {
-		this.backgroundEffectsValue = value;
-		this.update(this.backgroundEffectsValue);
-	}
+	readonly toolbarBackgroundEffectsButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set backgroundEffectsButton(value: boolean) {
-		this.backgroundEffectsValue = value;
-		this.update(this.backgroundEffectsValue);
-	}
-
-	private backgroundEffectsValue: boolean = true;
+	readonly backgroundEffectsButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.backgroundEffectsValue);
-	}
+	private readonly backgroundEffectsButtonEffect = effect(() => {
+		this.update(this.backgroundEffectsButton() ?? this.toolbarBackgroundEffectsButton() ?? true);
+	});
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.backgroundEffectsValue = true;
 		this.update(true);
 	}
 
@@ -504,38 +436,28 @@ export class ToolbarBackgroundEffectsButtonDirective implements AfterViewInit, O
 	selector: 'ov-videoconference[toolbarSettingsButton], ov-toolbar[settingsButton]',
 	standalone: false
 })
-export class ToolbarSettingsButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarSettingsButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarSettingsButton(value: boolean) {
-		this.settingsValue = value;
-		this.update(this.settingsValue);
-	}
+	readonly toolbarSettingsButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set settingsButton(value: boolean) {
-		this.settingsValue = value;
-		this.update(this.settingsValue);
-	}
-
-	private settingsValue: boolean = true;
+	readonly settingsButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.settingsValue);
-	}
+	private readonly settingsButtonEffect = effect(() => {
+		this.update(this.settingsButton() ?? this.toolbarSettingsButton() ?? true);
+	});
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.settingsValue = true;
 		this.update(true);
 	}
 
@@ -563,39 +485,29 @@ export class ToolbarSettingsButtonDirective implements AfterViewInit, OnDestroy 
 	selector: 'ov-videoconference[toolbarLeaveButton], ov-toolbar[leaveButton]',
 	standalone: false
 })
-export class ToolbarLeaveButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarLeaveButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarLeaveButton(value: boolean) {
-		this.leaveValue = value;
-		this.update(this.leaveValue);
-	}
+	readonly toolbarLeaveButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set leaveButton(value: boolean) {
-		this.leaveValue = value;
-		this.update(this.leaveValue);
-	}
-
-	private leaveValue: boolean = true;
+	readonly leaveButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.leaveValue);
-	}
+	private readonly leaveButtonEffect = effect(() => {
+		this.update(this.leaveButton() ?? this.toolbarLeaveButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.leaveValue = true;
 		this.update(true);
 	}
 
@@ -623,40 +535,30 @@ export class ToolbarLeaveButtonDirective implements AfterViewInit, OnDestroy {
 	selector: 'ov-videoconference[toolbarParticipantsPanelButton], ov-toolbar[participantsPanelButton]',
 	standalone: false
 })
-export class ToolbarParticipantsPanelButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarParticipantsPanelButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarParticipantsPanelButton(value: boolean) {
-		this.participantsPanelValue = value;
-		this.update(this.participantsPanelValue);
-	}
+	readonly toolbarParticipantsPanelButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
-	@Input() set participantsPanelButton(value: boolean) {
-		this.participantsPanelValue = value;
-		this.update(this.participantsPanelValue);
-	}
-
-	private participantsPanelValue: boolean = true;
+	readonly participantsPanelButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.participantsPanelValue);
-	}
+	private readonly participantsPanelButtonEffect = effect(() => {
+		this.update(this.participantsPanelButton() ?? this.toolbarParticipantsPanelButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.participantsPanelValue = true;
 		this.update(true);
 	}
 
@@ -684,38 +586,29 @@ export class ToolbarParticipantsPanelButtonDirective implements AfterViewInit, O
 	selector: 'ov-videoconference[toolbarChatPanelButton], ov-toolbar[chatPanelButton]',
 	standalone: false
 })
-export class ToolbarChatPanelButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarChatPanelButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarChatPanelButton(value: boolean) {
-		this.toolbarChatPanelValue = value;
-		this.update(this.toolbarChatPanelValue);
-	}
+	readonly toolbarChatPanelButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set chatPanelButton(value: boolean) {
-		this.toolbarChatPanelValue = value;
-		this.update(this.toolbarChatPanelValue);
-	}
-	private toolbarChatPanelValue: boolean = true;
+	readonly chatPanelButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.toolbarChatPanelValue);
-	}
+	private readonly chatPanelButtonEffect = effect(() => {
+		this.update(this.chatPanelButton() ?? this.toolbarChatPanelButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.toolbarChatPanelValue = true;
 		this.update(true);
 	}
 
@@ -743,38 +636,29 @@ export class ToolbarChatPanelButtonDirective implements AfterViewInit, OnDestroy
 	selector: 'ov-videoconference[toolbarActivitiesPanelButton], ov-toolbar[activitiesPanelButton]',
 	standalone: false
 })
-export class ToolbarActivitiesPanelButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarActivitiesPanelButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarActivitiesPanelButton(value: boolean) {
-		this.toolbarActivitiesPanelValue = value;
-		this.update(this.toolbarActivitiesPanelValue);
-	}
+	readonly toolbarActivitiesPanelButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set activitiesPanelButton(value: boolean) {
-		this.toolbarActivitiesPanelValue = value;
-		this.update(this.toolbarActivitiesPanelValue);
-	}
-	private toolbarActivitiesPanelValue: boolean = true;
+	readonly activitiesPanelButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.toolbarActivitiesPanelValue);
-	}
+	private readonly activitiesPanelButtonEffect = effect(() => {
+		this.update(this.activitiesPanelButton() ?? this.toolbarActivitiesPanelButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.toolbarActivitiesPanelValue = true;
 		this.update(true);
 	}
 
@@ -802,39 +686,29 @@ export class ToolbarActivitiesPanelButtonDirective implements AfterViewInit, OnD
 	selector: 'ov-videoconference[toolbarDisplayRoomName], ov-toolbar[displayRoomName]',
 	standalone: false
 })
-export class ToolbarDisplayRoomNameDirective implements AfterViewInit, OnDestroy {
+export class ToolbarDisplayRoomNameDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarDisplayRoomName(value: boolean) {
-		this.displayRoomValue = value;
-		this.update(this.displayRoomValue);
-	}
+	readonly toolbarDisplayRoomName = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set displayRoomName(value: boolean) {
-		this.displayRoomValue = value;
-		this.update(this.displayRoomValue);
-	}
-
-	private displayRoomValue: boolean = true;
+	readonly displayRoomName = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.displayRoomValue);
-	}
+	private readonly displayRoomNameEffect = effect(() => {
+		this.update(this.displayRoomName() ?? this.toolbarDisplayRoomName() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.displayRoomValue = true;
 		this.update(true);
 	}
 
@@ -862,39 +736,29 @@ export class ToolbarDisplayRoomNameDirective implements AfterViewInit, OnDestroy
 	selector: 'ov-videoconference[toolbarDisplayLogo], ov-toolbar[displayLogo]',
 	standalone: false
 })
-export class ToolbarDisplayLogoDirective implements AfterViewInit, OnDestroy {
+export class ToolbarDisplayLogoDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarDisplayLogo(value: boolean) {
-		this.displayLogoValue = value;
-		this.update(this.displayLogoValue);
-	}
+	readonly toolbarDisplayLogo = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set displayLogo(value: boolean) {
-		this.displayLogoValue = value;
-		this.update(this.displayLogoValue);
-	}
-
-	private displayLogoValue: boolean = true;
+	readonly displayLogo = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.displayLogoValue);
-	}
+	private readonly displayLogoEffect = effect(() => {
+		this.update(this.displayLogo() ?? this.toolbarDisplayLogo() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.displayLogoValue = true;
 		this.update(true);
 	}
 
@@ -919,35 +783,28 @@ export class ToolbarDisplayLogoDirective implements AfterViewInit, OnDestroy {
 	selector: '[ovToolbarAdditionalButtonsPosition]',
 	standalone: false
 })
-export class ToolbarAdditionalButtonsPossitionDirective implements AfterViewInit, OnDestroy {
+export class ToolbarAdditionalButtonsPossitionDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set ovToolbarAdditionalButtonsPosition(value: ToolbarAdditionalButtonsPosition) {
-		if (!value) return;
-		if (!Object.values(ToolbarAdditionalButtonsPosition).includes(value)) return;
-
-		this.additionalButtonsPosition = value;
-		this.update(this.additionalButtonsPosition);
-	}
-
-	private additionalButtonsPosition: ToolbarAdditionalButtonsPosition = ToolbarAdditionalButtonsPosition.AFTER_MENU;
+	readonly ovToolbarAdditionalButtonsPosition = input<ToolbarAdditionalButtonsPosition | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly additionalButtonsPositionEffect = effect(() => {
+		const value = this.ovToolbarAdditionalButtonsPosition() ?? ToolbarAdditionalButtonsPosition.AFTER_MENU;
+		if (!Object.values(ToolbarAdditionalButtonsPosition).includes(value)) return;
 
-	ngAfterViewInit() {
-		this.update(this.additionalButtonsPosition);
-	}
+		this.update(value);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.additionalButtonsPosition = ToolbarAdditionalButtonsPosition.AFTER_MENU;
 		this.update(ToolbarAdditionalButtonsPosition.AFTER_MENU);
 	}
 

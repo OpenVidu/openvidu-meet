@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
 /**
@@ -20,27 +20,18 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 	selector: 'ov-videoconference[streamDisplayParticipantName], ov-stream[displayParticipantName]',
 	standalone: false
 })
-export class StreamDisplayParticipantNameDirective implements AfterViewInit, OnDestroy {
-	@Input() set streamDisplayParticipantName(value: boolean) {
-		this.displayParticipantNameValue = value;
-		this.update(this.displayParticipantNameValue);
-	}
-	@Input() set displayParticipantName(value: boolean) {
-		this.displayParticipantNameValue = value;
-		this.update(this.displayParticipantNameValue);
-	}
-
-	displayParticipantNameValue: boolean = true;
+export class StreamDisplayParticipantNameDirective implements OnDestroy {
+	readonly streamDisplayParticipantName = input<boolean | undefined>(undefined);
+	readonly displayParticipantName = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly displayParticipantNameEffect = effect(() => {
+		this.update(this.displayParticipantName() ?? this.streamDisplayParticipantName() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
-	}
-
-	ngAfterViewInit() {
-		this.update(this.displayParticipantNameValue);
 	}
 
 	update(value: boolean) {
@@ -71,24 +62,16 @@ export class StreamDisplayParticipantNameDirective implements AfterViewInit, OnD
 	selector: 'ov-videoconference[streamDisplayAudioDetection], ov-stream[displayAudioDetection]',
 	standalone: false
 })
-export class StreamDisplayAudioDetectionDirective implements AfterViewInit, OnDestroy {
-	@Input() set streamDisplayAudioDetection(value: boolean) {
-		this.displayAudioDetectionValue = value;
-		this.update(this.displayAudioDetectionValue);
-	}
-	@Input() set displayAudioDetection(value: boolean) {
-		this.displayAudioDetectionValue = value;
-		this.update(this.displayAudioDetectionValue);
-	}
-
-	displayAudioDetectionValue: boolean = true;
+export class StreamDisplayAudioDetectionDirective implements OnDestroy {
+	readonly streamDisplayAudioDetection = input<boolean | undefined>(undefined);
+	readonly displayAudioDetection = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly displayAudioDetectionEffect = effect(() => {
+		this.update(this.displayAudioDetection() ?? this.streamDisplayAudioDetection() ?? true);
+	});
 
-	ngAfterViewInit() {
-		this.update(this.displayAudioDetectionValue);
-	}
 	ngOnDestroy(): void {
 		this.clear();
 	}
@@ -120,24 +103,15 @@ export class StreamDisplayAudioDetectionDirective implements AfterViewInit, OnDe
 	selector: 'ov-videoconference[streamVideoControls], ov-stream[videoControls]',
 	standalone: false
 })
-export class StreamVideoControlsDirective implements AfterViewInit, OnDestroy {
-	@Input() set streamVideoControls(value: boolean) {
-		this.videoControlsValue = value;
-		this.update(this.videoControlsValue);
-	}
-	@Input() set videoControls(value: boolean) {
-		this.videoControlsValue = value;
-		this.update(this.videoControlsValue);
-	}
-
-	videoControlsValue: boolean = true;
+export class StreamVideoControlsDirective implements OnDestroy {
+	readonly streamVideoControls = input<boolean | undefined>(undefined);
+	readonly videoControls = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.videoControlsValue);
-	}
+	private readonly videoControlsEffect = effect(() => {
+		this.update(this.videoControls() ?? this.streamVideoControls() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
