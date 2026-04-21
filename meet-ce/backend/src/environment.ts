@@ -62,6 +62,13 @@ export const MEET_ENV = {
 	AWS_REGION: process.env.MEET_AWS_REGION ?? 'us-east-1',
 	S3_WITH_PATH_STYLE_ACCESS: process.env.MEET_S3_WITH_PATH_STYLE_ACCESS ?? 'true',
 
+	// S3 Server-Side Encryption configuration.
+	// Type must be either "SSE-S3" or "SSE-KMS". When Type is "SSE-KMS", KMS_KEY_ID is required.
+	// KMS_ENCRYPTION_CONTEXT, if set, must be a valid JSON object and is only used with "SSE-KMS".
+	S3_SSE_TYPE: process.env.MEET_S3_SSE_TYPE ?? '',
+	S3_SSE_KMS_KEY_ID: process.env.MEET_S3_SSE_KMS_KEY_ID ?? '',
+	S3_SSE_KMS_ENCRYPTION_CONTEXT: process.env.MEET_S3_SSE_KMS_ENCRYPTION_CONTEXT ?? '',
+
 	// Azure Blob storage configuration
 	AZURE_CONTAINER_NAME: process.env.MEET_AZURE_CONTAINER_NAME ?? 'openvidu-appdata',
 	AZURE_SUBCONTAINER_NAME: process.env.MEET_AZURE_SUBCONTAINER_NAME ?? 'openvidu-meet',
@@ -166,6 +173,19 @@ export const logEnvVars = () => {
 		console.log('S3 SECRET KEY:', credential('****' + MEET_ENV.S3_SECRET_KEY.slice(-3)));
 		console.log('AWS REGION:', text(MEET_ENV.AWS_REGION));
 		console.log('S3 WITH PATH STYLE ACCESS:', text(MEET_ENV.S3_WITH_PATH_STYLE_ACCESS));
+
+		if (MEET_ENV.S3_SSE_TYPE) {
+			console.log('S3 SSE TYPE:', text(MEET_ENV.S3_SSE_TYPE));
+
+			if (MEET_ENV.S3_SSE_KMS_KEY_ID) {
+				console.log('S3 SSE KMS KEY ID:', credential('****' + MEET_ENV.S3_SSE_KMS_KEY_ID.slice(-3)));
+			}
+
+			if (MEET_ENV.S3_SSE_KMS_ENCRYPTION_CONTEXT) {
+				console.log('S3 SSE KMS ENCRYPTION CONTEXT: <set>');
+			}
+		}
+
 		console.log('---------------------------------------------------------');
 	} else if (MEET_ENV.BLOB_STORAGE_MODE === 'abs') {
 		console.log('Azure Blob Storage Configuration');

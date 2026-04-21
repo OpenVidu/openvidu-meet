@@ -16,14 +16,29 @@ import { inject, injectable } from 'inversify';
 import { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
+import {
+	buildSSEParams,
+	S3SSEConfig,
+	SSEParams,
+	validateSSEConfig
+} from '../../../../helpers/s3-sse.helper.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../logger.service.js';
 
 @injectable()
 export class S3Service {
 	protected s3: S3Client;
+	protected sseConfig: S3SSEConfig;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
+		// Trim env-var values so stray whitespace from .env / compose files doesn't silently break matching.
+		this.sseConfig = {
+			type: MEET_ENV.S3_SSE_TYPE.trim(),
+			kmsKeyId: MEET_ENV.S3_SSE_KMS_KEY_ID.trim(),
+			kmsEncryptionContext: MEET_ENV.S3_SSE_KMS_ENCRYPTION_CONTEXT.trim()
+		};
+		validateSSEConfig(this.sseConfig);
+
 		const config: S3ClientConfig = {
 			region: MEET_ENV.AWS_REGION,
 			endpoint: MEET_ENV.S3_SERVICE_ENDPOINT,
@@ -41,6 +56,10 @@ export class S3Service {
 
 		this.s3 = new S3Client(config);
 		this.logger.debug('S3 Client initialized');
+	}
+
+	protected sseParams(): SSEParams {
+		return buildSSEParams(this.sseConfig);
 	}
 
 	/**
@@ -72,7 +91,8 @@ export class S3Service {
 			const command = new PutObjectCommand({
 				Bucket: bucket,
 				Key: fullKey,
-				Body: JSON.stringify(body)
+				Body: JSON.stringify(body),
+				...this.sseParams()
 			});
 			const result = await this.retryOperation<PutObjectCommandOutput>(() => this.run(command));
 			this.logger.verbose(`S3 saveObject: successfully saved object '${fullKey}' in bucket '${bucket}'`);
