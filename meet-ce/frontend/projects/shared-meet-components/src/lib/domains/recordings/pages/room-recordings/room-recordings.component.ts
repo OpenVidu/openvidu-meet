@@ -23,6 +23,16 @@ import { RecordingService } from '../../services/recording.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomRecordingsComponent implements OnInit {
+	protected readonly loggerService = inject(LoggerService);
+	protected readonly recordingService = inject(RecordingService);
+	protected readonly roomMemberContextService = inject(RoomMemberContextService);
+	protected readonly roomService = inject(RoomService);
+	protected readonly notificationService = inject(NotificationService);
+	protected readonly navigationService = inject(NavigationService);
+	protected readonly meetingContextService = inject(MeetingContextService);
+	protected readonly route = inject(ActivatedRoute);
+	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomRecordingsComponent');
+
 	recordings = signal<MeetRecordingInfo[]>([]);
 	roomId = '';
 	roomName = signal('');
@@ -43,21 +53,6 @@ export class RoomRecordingsComponent implements OnInit {
 	// Pagination
 	hasMoreRecordings = signal(false);
 	private nextPageToken?: string;
-
-	protected log: ILogger;
-
-	protected readonly loggerService = inject(LoggerService);
-	protected readonly recordingService = inject(RecordingService);
-	protected readonly roomMemberContextService = inject(RoomMemberContextService);
-	protected readonly roomService = inject(RoomService);
-	protected readonly notificationService = inject(NotificationService);
-	protected readonly navigationService = inject(NavigationService);
-	protected readonly meetingContextService = inject(MeetingContextService);
-	protected readonly route = inject(ActivatedRoute);
-
-	constructor() {
-		this.log = this.loggerService.get('OpenVidu Meet - RoomRecordingsComponent');
-	}
 
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
@@ -187,7 +182,6 @@ export class RoomRecordingsComponent implements OnInit {
 
 				// Remove from local list
 				this.recordings.set(this.recordings().filter((r) => r.recordingId !== recording.recordingId));
-
 				this.notificationService.showSnackbar('Recording deleted successfully');
 			} catch (error) {
 				this.log.e('Error deleting recording:', error);
@@ -197,8 +191,8 @@ export class RoomRecordingsComponent implements OnInit {
 
 		this.notificationService.showDialog({
 			title: 'Delete Recording',
-			icon: 'delete_outline',
-			message: `Are you sure you want to delete the recording <b>${recording.recordingId}</b>?`,
+			icon: 'delete_forever',
+			message: `Are you sure you want to permanently delete the recording <b>${recording.recordingId}</b>? This action cannot be undone.`,
 			confirmText: 'Delete',
 			cancelText: 'Cancel',
 			confirmCallback: deleteCallback
@@ -213,8 +207,9 @@ export class RoomRecordingsComponent implements OnInit {
 
 				// Remove deleted recordings from the list
 				this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
-
-				this.notificationService.showSnackbar('All recordings deleted successfully');
+				this.notificationService.showSnackbar(
+					`${deleted.length} recording${deleted.length > 1 ? 's' : ''} deleted successfully`
+				);
 			} catch (error: any) {
 				this.log.e('Error deleting recordings:', error);
 
@@ -222,7 +217,7 @@ export class RoomRecordingsComponent implements OnInit {
 				const failed = error.error?.failed as { recordingId: string; error: string }[];
 
 				// Some recordings were deleted, some not
-				if (failed) {
+				if (failed.length > 0 || deleted.length > 0) {
 					// Remove deleted recordings from the list
 					if (deleted.length > 0) {
 						this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
@@ -230,10 +225,10 @@ export class RoomRecordingsComponent implements OnInit {
 
 					let msg = '';
 					if (deleted.length > 0) {
-						msg += `${deleted.length} recording(s) deleted successfully. `;
+						msg += `${deleted.length} recording${deleted.length > 1 ? 's' : ''} deleted successfully. `;
 					}
 					if (failed.length > 0) {
-						msg += `${failed.length} recording(s) could not be deleted.`;
+						msg += `${failed.length} recording${failed.length > 1 ? 's' : ''} could not be deleted.`;
 					}
 
 					this.notificationService.showSnackbar(msg.trim());
@@ -246,9 +241,9 @@ export class RoomRecordingsComponent implements OnInit {
 		const count = recordings.length;
 		this.notificationService.showDialog({
 			title: 'Delete Recordings',
-			icon: 'delete_outline',
-			message: `Are you sure you want to delete <b>${count}</b> recordings?`,
-			confirmText: 'Delete all',
+			icon: 'delete_forever',
+			message: `Are you sure you want to permanently delete <b>${count} recording${count > 1 ? 's' : ''}</b>? This action cannot be undone.`,
+			confirmText: 'Delete',
 			cancelText: 'Cancel',
 			confirmCallback: bulkDeleteCallback
 		});
@@ -257,13 +252,5 @@ export class RoomRecordingsComponent implements OnInit {
 	private bulkDownloadRecordings(recordings: MeetRecordingInfo[]) {
 		const recordingIds = recordings.map((r) => r.recordingId);
 		this.recordingService.downloadRecordingsAsZip(recordingIds);
-	}
-
-	private sortRecordingsByDate(recordings: MeetRecordingInfo[]) {
-		return recordings.sort((a, b) => {
-			const dateA = new Date(a.startDate || -1);
-			const dateB = new Date(b.startDate || -1);
-			return dateA.getTime() - dateB.getTime();
-		});
 	}
 }
