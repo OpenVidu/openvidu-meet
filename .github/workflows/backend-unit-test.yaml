@@ -18,7 +18,7 @@ jobs:
         with:
           version: 10.18.3
       - name: Install safe-chain
-        uses: OpenVidu/actions/install-safe-chain@e585b0ac266d7afffc6cba105b380ad6a477a4c0 # v1.0.18
+        uses: OpenVidu/actions/install-safe-chain@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
       - name: Checkout OpenVidu Meet
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
@@ -43,4 +43,4 @@ jobs:
 
       - name: Clean up
         if: always()
-        uses: OpenVidu/actions/cleanup@e585b0ac266d7afffc6cba105b380ad6a477a4c0 # v1.0.18
+        uses: OpenVidu/actions/cleanup@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
