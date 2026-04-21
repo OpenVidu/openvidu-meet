@@ -61,7 +61,6 @@ export const MEET_ENV = {
 	S3_SECRET_KEY: process.env.MEET_S3_SECRET_KEY ?? 'minioadmin',
 	AWS_REGION: process.env.MEET_AWS_REGION ?? 'us-east-1',
 	S3_WITH_PATH_STYLE_ACCESS: process.env.MEET_S3_WITH_PATH_STYLE_ACCESS ?? 'true',
-	S3_HEADERS: process.env.MEET_S3_HEADERS ?? '',
 
 	// Azure Blob storage configuration
 	AZURE_CONTAINER_NAME: process.env.MEET_AZURE_CONTAINER_NAME ?? 'openvidu-appdata',
