@@ -62,6 +62,12 @@ export class SettingsPanelComponent implements OnInit {
 	private readonly platformService = inject(PlatformService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	public readonly viewportService = inject(ViewportService);
+	private readonly panelTogglingEffect = effect(() => {
+		const ev = this.panelService.panelOpened();
+		if (ev.panelType === PanelType.SETTINGS && !!ev.subOptionType) {
+			this.selectedOption = ev.subOptionType as PanelSettingsOptions;
+		}
+	});
 
 	// Computed properties for responsive behavior
 	get isCompactView(): boolean {
@@ -77,7 +83,6 @@ export class SettingsPanelComponent implements OnInit {
 	}
 	ngOnInit() {
 		this.isMobile = this.platformService.isMobile();
-		this.subscribeToPanelToggling();
 		this.subscribeToDirectives();
 	}
 
@@ -100,12 +105,4 @@ export class SettingsPanelComponent implements OnInit {
 			.subscribe((value: boolean) => (this.showThemeSelector = value));
 	}
 
-	private subscribeToPanelToggling() {
-		effect(() => {
-			const ev = this.panelService.panelOpened();
-			if (ev.panelType === PanelType.SETTINGS && !!ev.subOptionType) {
-				this.selectedOption = ev.subOptionType as PanelSettingsOptions;
-			}
-		});
-	}
 }

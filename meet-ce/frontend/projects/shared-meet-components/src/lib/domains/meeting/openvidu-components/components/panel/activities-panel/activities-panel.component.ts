@@ -89,12 +89,17 @@ export class ActivitiesPanelComponent implements OnInit {
 	private readonly panelService = inject(PanelService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly cd = inject(ChangeDetectorRef);
+	private readonly panelTogglingEffect = effect(() => {
+		const ev = this.panelService.panelOpened();
+		if (ev.panelType === PanelType.ACTIVITIES && !!ev.subOptionType) {
+			this.expandedPanel = ev.subOptionType;
+		}
+	});
 
 	/**
 	 * @internal
 	 */
 	ngOnInit(): void {
-		this.subscribeToPanelToggling();
 		this.subscribeToActivitiesPanelDirective();
 	}
 
@@ -103,15 +108,6 @@ export class ActivitiesPanelComponent implements OnInit {
 	 */
 	close() {
 		this.panelService.togglePanel(PanelType.ACTIVITIES);
-	}
-
-	private subscribeToPanelToggling() {
-		effect(() => {
-			const ev = this.panelService.panelOpened();
-			if (ev.panelType === PanelType.ACTIVITIES && !!ev.subOptionType) {
-				this.expandedPanel = ev.subOptionType;
-			}
-		});
 	}
 
 	private subscribeToActivitiesPanelDirective() {

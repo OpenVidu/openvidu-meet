@@ -175,6 +175,18 @@ export class RecordingActivityComponent implements OnInit {
 	private readonly cd = inject(ChangeDetectorRef);
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly recordingStatusEffect = effect(() => {
+		const event = this.recordingService.recordingState();
+		const { status, recordingList, error } = event;
+		this.recordingStatus = status;
+		this.recordingList = recordingList;
+		this.recordingError = error;
+		this.recordingAlive = this.recordingStatus === RecordingState.STARTED;
+		if (this.recordingStatus !== RecordingState.FAILED) {
+			this.oldRecordingStatus = this.recordingStatus;
+		}
+		this.cd.markForCheck();
+	});
 
 	constructor() {
 		this.log = this.loggerSrv.get('RecordingActivityComponent');
@@ -184,7 +196,6 @@ export class RecordingActivityComponent implements OnInit {
 	 * @internal
 	 */
 	ngOnInit(): void {
-		this.subscribeToRecordingStatus();
 		this.subscribeToTracksChanges();
 		this.subscribeToConfigChanges();
 	}
@@ -373,21 +384,6 @@ export class RecordingActivityComponent implements OnInit {
 
 		this.libService.recordingActivityShowRecordingsList$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((show: boolean) => {
 			this.showRecordingList = show;
-			this.cd.markForCheck();
-		});
-	}
-
-	private subscribeToRecordingStatus() {
-		effect(() => {
-			const event = this.recordingService.recordingState();
-			const { status, recordingList, error } = event;
-			this.recordingStatus = status;
-			this.recordingList = recordingList;
-			this.recordingError = error;
-			this.recordingAlive = this.recordingStatus === RecordingState.STARTED;
-			if (this.recordingStatus !== RecordingState.FAILED) {
-				this.oldRecordingStatus = this.recordingStatus;
-			}
 			this.cd.markForCheck();
 		});
 	}
