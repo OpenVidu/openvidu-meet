@@ -106,8 +106,8 @@ export class RoomsComponent implements OnInit {
 			case 'create':
 				await this.createRoom();
 				break;
-			case 'open':
-				this.openRoom(action.rooms[0]);
+			case 'join':
+				this.joinRoom(action.rooms[0]);
 				break;
 			case 'edit':
 				await this.editRoomConfig(action.rooms[0]);
@@ -203,7 +203,7 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private openRoom({ access }: MeetRoom) {
+	private joinRoom({ access }: MeetRoom) {
 		window.open(access.registered.url, '_blank');
 	}
 

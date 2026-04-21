@@ -36,7 +36,7 @@ export interface RoomTableAction {
 	rooms: MeetRoom[];
 	action:
 		| 'create'
-		| 'open'
+		| 'join'
 		| 'edit'
 		| 'copyModeratorLink'
 		| 'copySpeakerLink'
@@ -150,7 +150,7 @@ export class RoomsListsComponent implements OnInit {
 
 	// Table configuration
 	displayedColumns = computed(() => {
-		const columns = ['roomName', 'status', 'creationDate', 'autoDeletionDate', 'actions'];
+		const columns = ['roomName', 'owner', 'status', 'creationDate', 'autoDeletionDate', 'actions'];
 		return this.showSelection() ? ['select', ...columns] : columns;
 	});
 
@@ -269,8 +269,8 @@ export class RoomsListsComponent implements OnInit {
 		this.roomAction.emit({ rooms: [], action: 'create' });
 	}
 
-	openRoom(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'open' });
+	joinRoom(room: MeetRoom) {
+		this.roomAction.emit({ rooms: [room], action: 'join' });
 	}
 
 	onRoomClick(room: MeetRoom) {

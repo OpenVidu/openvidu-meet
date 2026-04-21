@@ -196,6 +196,19 @@
 					</td>
 				</ng-container>
 
+				<!-- Owner Column -->
+				<ng-container matColumnDef="owner">
+					<th mat-header-cell *matHeaderCellDef class="owner-header" id="owner-header">Owner</th>
+					<td mat-cell *matCellDef="let room" class="owner-cell" id="owner-cell-{{ room.roomId }}">
+						<div class="owner-info" id="owner-info-{{ room.roomId }}">
+							<div class="owner-avatar" id="owner-avatar-{{ room.roomId }}">
+								<span>{{ RoomUiUtils.getOwnerInitials(room) }}</span>
+							</div>
+							<span class="owner-name" id="owner-name-{{ room.roomId }}">{{ room.owner }}</span>
+						</div>
+					</td>
+				</ng-container>
+
 				<!-- Status Column -->
 				<ng-container matColumnDef="status">
 					<th mat-header-cell *matHeaderCellDef id="status-header">Status</th>
@@ -303,32 +316,30 @@
 					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">Actions</th>
 					<td mat-cell *matCellDef="let room" class="actions-cell" id="actions-cell-{{ room.roomId }}">
 						<div class="action-buttons" id="action-buttons-{{ room.roomId }}">
-							<!-- Open Room Button -->
-							@if (RoomUiUtils.canOpenRoom(room)) {
+							<!-- Join Room Button -->
+							<span [matTooltip]="RoomUiUtils.getJoinRoomTooltip(room)">
 								<button
 									mat-icon-button
-									matTooltip="Open Room"
-									(click)="$event.stopPropagation(); openRoom(room)"
-									[disabled]="loading()"
+									(click)="$event.stopPropagation(); joinRoom(room)"
+									[disabled]="loading() || !RoomUiUtils.canJoinRoom(room)"
 									class="primary-action"
-									id="open-room-btn-{{ room.roomId }}"
+									id="join-room-btn-{{ room.roomId }}"
 								>
 									<mat-icon>open_in_new</mat-icon>
 								</button>
-							}
+							</span>
 
-							<!-- Settings Button -->
-							@if (RoomUiUtils.canEditRoom(room)) {
+							<!-- Edit Button -->
+							<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room)">
 								<button
 									mat-icon-button
-									matTooltip="Room Settings"
 									(click)="$event.stopPropagation(); editRoom(room)"
-									[disabled]="loading()"
+									[disabled]="loading() || !RoomUiUtils.canEditRoom(room)"
 									id="edit-room-btn-{{ room.roomId }}"
 								>
-									<mat-icon class="ov-settings-icon">settings</mat-icon>
+									<mat-icon>edit</mat-icon>
 								</button>
-							}
+							</span>
 
 							<!-- More Actions Menu -->
 							<button
@@ -352,31 +363,35 @@
 									<span>View Recordings</span>
 								</button>
 
-								@if (RoomUiUtils.canOpenRoom(room)) {
+								<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
 									<button
 										mat-menu-item
 										(click)="$event.stopPropagation(); copyModeratorLink(room)"
+										[disabled]="!RoomUiUtils.canCopyAccessLink(room)"
 										id="copy-moderator-link-btn-{{ room.roomId }}"
 									>
 										<mat-icon>content_copy</mat-icon>
 										<span>Copy Moderator Link</span>
 									</button>
+								</span>
+								<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
 									<button
 										mat-menu-item
 										(click)="$event.stopPropagation(); copySpeakerLink(room)"
+										[disabled]="!RoomUiUtils.canCopyAccessLink(room)"
 										id="copy-speaker-link-btn-{{ room.roomId }}"
 									>
 										<mat-icon>content_copy</mat-icon>
 										<span>Copy Speaker Link</span>
 									</button>
-								}
+								</span>
 
 								<mat-divider id="actions-divider-{{ room.roomId }}" />
 
 								<button
 									mat-menu-item
 									(click)="$event.stopPropagation(); toggleRoomStatus(room)"
-									[ngClass]="RoomUiUtils.getRoomToggleIconClass(room)"
+									[ngClass]="RoomUiUtils.getRoomToggleClass(room)"
 									id="toggle-room-status-btn-{{ room.roomId }}"
 								>
 									<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room) }}</mat-icon>

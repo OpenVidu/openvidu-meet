@@ -67,6 +67,10 @@
 			@extend .primary-header;
 		}
 
+		&.owner-header {
+			min-width: 160px;
+		}
+
 		&.status-header {
 			min-width: 140px;
 		}
@@ -89,6 +93,10 @@
 			@extend .primary-cell;
 		}
 
+		&.owner-cell {
+			min-width: 160px;
+		}
+
 		&.status-cell {
 			min-width: 140px;
 		}
@@ -104,6 +112,31 @@
 		&.actions-cell {
 			@extend .actions-cell;
 		}
+	}
+}
+
+.owner-info {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+
+	.owner-avatar {
+		width: 32px;
+		height: 32px;
+		border-radius: var(--ov-meet-radius-circle);
+		background-color: var(--ov-meet-color-primary);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-bold);
+	}
+
+	.owner-name {
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-medium);
+		color: var(--ov-meet-text-primary);
 	}
 }
 
@@ -232,6 +265,15 @@
 			background-color: transparent;
 		}
 
+		&:disabled,
+		&.mat-mdc-button-disabled {
+			color: var(--ov-meet-text-hint) !important;
+
+			.mat-icon {
+				color: var(--ov-meet-text-hint) !important;
+			}
+		}
+
 		&.primary-action {
 			color: var(--ov-meet-color-primary);
 		}
@@ -254,7 +296,7 @@
 	}
 }
 
-.close-room-icon {
+.close-action {
 	color: var(--ov-meet-color-warning) !important;
 
 	.mat-icon {
@@ -262,7 +304,7 @@
 	}
 }
 
-.open-room-icon {
+.open-action {
 	color: var(--ov-meet-color-success) !important;
 
 	.mat-icon {

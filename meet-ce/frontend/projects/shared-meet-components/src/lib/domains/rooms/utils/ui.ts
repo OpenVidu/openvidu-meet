@@ -45,8 +45,8 @@ export class RoomUiUtils {
 	/**
 	 * Gets the CSS color variable for a room status
 	 */
-	static getStatusColor(room?: MeetRoom): string {
-		switch (room?.status) {
+	static getStatusColor(room: MeetRoom): string {
+		switch (room.status) {
 			case MeetRoomStatus.OPEN:
 				return 'var(--ov-meet-color-success)';
 			case MeetRoomStatus.ACTIVE_MEETING:
@@ -139,9 +139,7 @@ export class RoomUiUtils {
 	/**
 	 * Gets the status text for auto-deletion
 	 */
-	static getAutoDeletionStatus(room?: MeetRoom): string {
-		if (!room) return 'N/A';
-
+	static getAutoDeletionStatus(room: MeetRoom): string {
 		if (!room.autoDeletionDate) {
 			return 'DISABLED';
 		}
@@ -202,61 +200,79 @@ export class RoomUiUtils {
 		return room.status !== MeetRoomStatus.CLOSED ? 'Close Room' : 'Open Room';
 	}
 
+	static getRoomToggleTooltip(room: MeetRoom): string {
+		return room.status !== MeetRoomStatus.CLOSED ? 'Close room' : 'Open room to allow participants to join';
+	}
+
 	/**
 	 * Gets the CSS class for the room toggle action
 	 */
-	static getRoomToggleIconClass(room: MeetRoom): string {
+	static getRoomToggleClass(room: MeetRoom): string {
 		return room.status !== MeetRoomStatus.CLOSED ? 'close-action' : 'open-action';
 	}
 
 	// ===== PERMISSION/CAPABILITY UTILITIES =====
 
 	/**
-	 * Checks if a room can be opened (i.e., users can join)
+	 * Checks if a room can be joined
 	 */
-	static canOpenRoom(room: MeetRoom): boolean {
-		return room.status !== MeetRoomStatus.CLOSED;
+	static canJoinRoom(room: MeetRoom): boolean {
+		return !RoomUiUtils.isClosed(room);
+	}
+
+	/**
+	 * Gets the tooltip text for the join room action
+	 */
+	static getJoinRoomTooltip(room: MeetRoom): string {
+		if (!RoomUiUtils.canJoinRoom(room)) {
+			return 'Room is closed. Reopen the room to allow participants to join';
+		}
+
+		return 'Join room';
+	}
+
+	/**
+	 * Checks if the access link can be copied for a room
+	 */
+	static canCopyAccessLink(room: MeetRoom): boolean {
+		return !RoomUiUtils.isClosed(room);
+	}
+
+	/**
+	 * Gets the tooltip text for the copy access link action
+	 */
+	static getCopyAccessLinkTooltip(room: MeetRoom): string {
+		if (!RoomUiUtils.canCopyAccessLink(room)) {
+			return 'Room is closed. Reopen the room to allow copying the access link';
+		}
+
+		return 'Copy access link';
 	}
 
 	/**
 	 * Checks if a room can be edited
 	 */
 	static canEditRoom(room: MeetRoom): boolean {
-		return room.status !== MeetRoomStatus.ACTIVE_MEETING;
+		return !RoomUiUtils.isActive(room);
 	}
 
-	// ===== FORMATTING UTILITIES =====
-
 	/**
-	 * Formats a timestamp to a readable date string
+	 * Gets the tooltip text for the edit room action
 	 */
-	static formatDate(timestamp: number): string {
-		return new Date(timestamp).toLocaleString('en-US', {
-			month: 'short',
-			day: 'numeric',
-			year: 'numeric',
-			hour: '2-digit',
-			minute: '2-digit'
-		});
+	static getEditRoomTooltip(room: MeetRoom): string {
+		if (!RoomUiUtils.canEditRoom(room)) {
+			return 'Room is active. Editing is disabled during an active meeting';
+		}
+
+		return 'Edit room details';
 	}
 
+	// ==== OTHER UTILITIES =====
+
 	/**
-	 * Gets the owner initials from a room
+	 * Gets the owner initial from a room
 	 */
 	static getOwnerInitials(room: MeetRoom): string {
-		if (!room.owner) return '';
-		return room.owner.substring(0, 2).toUpperCase();
-	}
-
-	/**
-	 * Gets auto-deletion status display text
-	 */
-	static getAutoDeletionDisplay(room?: MeetRoom): string {
-		if (!room) return 'N/A';
-
-		if (room.autoDeletionDate) {
-			return RoomUiUtils.formatDate(room.autoDeletionDate);
-		}
-		return 'Disabled';
+		return room.owner.substring(0, 1).toUpperCase();
 	}
 }
