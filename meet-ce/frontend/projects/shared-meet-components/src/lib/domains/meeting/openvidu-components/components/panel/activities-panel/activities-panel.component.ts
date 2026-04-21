@@ -1,5 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, OnInit, output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit, output, signal } from '@angular/core';
 import { PanelType } from '../../../models/panel.model';
 import {
 	RecordingDeleteRequestedEvent,
@@ -72,27 +71,25 @@ export class ActivitiesPanelComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	expandedPanel: string = '';
+	private readonly libService = inject(OpenViduComponentsConfigService);
+
 	/**
 	 * @internal
 	 */
-	showRecordingActivity: boolean = true;
+	readonly expandedPanel = signal('');
 	/**
 	 * @internal
 	 */
-	showBroadcastingActivity: boolean = true;
-	private readonly destroyRef = inject(DestroyRef);
+	readonly showRecordingActivity = this.libService.recordingActivitySignal;
 
 	/**
 	 * @internal
 	 */
 	private readonly panelService = inject(PanelService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly cd = inject(ChangeDetectorRef);
 	private readonly panelTogglingEffect = effect(() => {
 		const ev = this.panelService.panelOpened();
 		if (ev.panelType === PanelType.ACTIVITIES && !!ev.subOptionType) {
-			this.expandedPanel = ev.subOptionType;
+			this.expandedPanel.set(ev.subOptionType);
 		}
 	});
 
@@ -100,7 +97,6 @@ export class ActivitiesPanelComponent implements OnInit {
 	 * @internal
 	 */
 	ngOnInit(): void {
-		this.subscribeToActivitiesPanelDirective();
 	}
 
 	/**
@@ -110,11 +106,4 @@ export class ActivitiesPanelComponent implements OnInit {
 		this.panelService.togglePanel(PanelType.ACTIVITIES);
 	}
 
-	private subscribeToActivitiesPanelDirective() {
-		this.libService.recordingActivity$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showRecordingActivity = value;
-			this.cd.markForCheck();
-		});
-
-	}
 }

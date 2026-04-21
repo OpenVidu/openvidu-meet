@@ -71,6 +71,25 @@ import { TranslateService } from '../../services/translate/translate.service';
 	standalone: false
 })
 export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
+	private readonly layoutService = inject(LayoutService);
+	private readonly documentService = inject(DocumentService);
+	private readonly chatService = inject(ChatService);
+	private readonly panelService = inject(PanelService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly deviceService = inject(DeviceService);
+	private readonly actionService = inject(ActionService);
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly recordingService = inject(RecordingService);
+	private readonly translateService = inject(TranslateService);
+	private readonly storageSrv = inject(StorageService);
+	private readonly cdkOverlayService = inject(CdkOverlayService);
+	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly platformService = inject(PlatformService);
+	private readonly destroyRef = inject(DestroyRef);
+
 	/**
 	 * @ignore
 	 */
@@ -253,8 +272,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	isActivitiesOpened: boolean = false;
-	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly platformService = inject(PlatformService);
 
 	/**
 	 * @ignore
@@ -376,6 +393,9 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	isRecordingReadOnlyMode: boolean = false;
+	private readonly recordingReadOnlyEffect = effect(() => {
+		this.isRecordingReadOnlyMode = this.libService.recordingActivityReadOnlySignal();
+	});
 
 	/**
 	 * @ignore
@@ -392,21 +412,13 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	recordingTime: Date | undefined;
 
+	readonly totalParticipants = this.participantService.totalParticipantsSignal;
+
 	/**
 	 * @internal
 	 * Template configuration managed by the service
 	 */
 	templateConfig: ToolbarTemplateConfiguration = {};
-
-	/**
-	 * @internal
-	 * Computed signal for total participants count (local + remote)
-	 */
-	totalParticipants = computed(() => {
-		const local = this.participantService.localParticipantSignal();
-		const remotes = this.participantService.remoteParticipantsSignal();
-		return (local ? 1 : 0) + remotes.length;
-	});
 
 	// Store directive references for template setup
 	private _externalAdditionalButtons?: ToolbarAdditionalButtonsDirective;
@@ -419,27 +431,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		w: () => {},
 		e: () => {}
 	};
-	private readonly destroyRef = inject(DestroyRef);
 	private currentWindowHeight = window.innerHeight;
 
-	/**
-	 * @ignore
-	 */
-	private readonly layoutService = inject(LayoutService);
-	private readonly documentService = inject(DocumentService);
-	private readonly chatService = inject(ChatService);
-	private readonly panelService = inject(PanelService);
-	private readonly participantService = inject(ParticipantService);
-	private readonly openviduService = inject(OpenViduService);
-	private readonly deviceService = inject(DeviceService);
-	private readonly actionService = inject(ActionService);
-	private readonly loggerSrv = inject(LoggerService);
-	private readonly cd = inject(ChangeDetectorRef);
-	private readonly recordingService = inject(RecordingService);
-	private readonly translateService = inject(TranslateService);
-	private readonly storageSrv = inject(StorageService);
-	private readonly cdkOverlayService = inject(CdkOverlayService);
-	private readonly templateManagerService = inject(TemplateManagerService);
 	private readonly roomNameEffect = effect(() => {
 		this.evalAndSetRoomName(this.libService.roomNameSignal());
 		this.cd.markForCheck();
@@ -558,7 +551,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.setupTemplates();
 
 		this.subscribeToReconnection();
-		this.subscribeToRecordingStatus();
 	}
 
 	ngAfterViewInit() {
@@ -688,8 +680,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			await this.openviduService.disconnectRoom(() => {
 				this.onParticipantLeft.emit({
 					roomName: this.openviduService.getRoomName(),
-					participantName: this.participantService.localParticipantSignal()!.name || '',
-					identity: this.participantService.localParticipantSignal()!.identity || '',
+					participantName: this.participantService.getMyName() || '',
+					identity: this.participantService.getMyIdentity() || '',
 					reason: ParticipantLeftReason.LEAVE
 				});
 				this.onRoomDisconnected.emit();
@@ -804,12 +796,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	private subscribeToRecordingStatus() {
-		this.libService.recordingActivityReadOnly$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((readOnly: boolean) => {
-				this.isRecordingReadOnlyMode = readOnly;
-				this.cd.markForCheck();
-			});
+		// handled by recordingReadOnlyEffect
 	}
 
 	private evalAndSetRoomName(value: string) {

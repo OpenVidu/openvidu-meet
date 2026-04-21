@@ -118,8 +118,7 @@ export class ChatPanelComponent implements AfterViewInit {
 		if (!this.e2eeService.isEnabled) {
 			return false;
 		}
-		const remoteParticipants = this.participantService.remoteParticipantsSignal();
-		return remoteParticipants.some(p => p.hasEncryptionError);
+		return this.participantService.hasRemoteEncryptionErrorsSignal();
 	});
 
 }

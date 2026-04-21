@@ -29,9 +29,7 @@ import { ActionService } from '../../services/action/action.service';
 import { ChatService } from '../../services/chat/chat.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
-import type {
-	OVRoom
-} from '../../services/livekit-adapter';
+import type { OVRoom } from '../../services/livekit-adapter';
 import {
 	DataPacket_Kind,
 	DisconnectReason,
@@ -209,6 +207,20 @@ export class SessionComponent implements OnInit, OnDestroy {
 			}, 0);
 		}
 	});
+
+	// Close background effects panel and remove background if the button is disabled
+	private readonly backgroundEffectsEffect = effect(() => {
+		const enabled = this.libService.backgroundEffectsButtonSignal();
+		if (enabled) return;
+
+		if (this.backgroundService.isBackgroundApplied()) {
+			void this.backgroundService.removeBackground().then(() => {
+				if (this.panelService.isBackgroundEffectsPanelOpened()) {
+					this.panelService.closePanel();
+				}
+			});
+		}
+	});
 	private readonly panelStateEffect = effect(() => {
 		const ev = this.panelService.panelOpened();
 		this.settingsPanelOpened.set(ev.isOpened && ev.panelType === PanelType.SETTINGS);
@@ -302,13 +314,16 @@ export class SessionComponent implements OnInit, OnDestroy {
 			this.onRoomCreated.emit(this.room);
 			this.cd.markForCheck();
 			this.loading = false;
-			const localParticipant = this.participantService.getLocalParticipant();
+			const localParticipant = this.participantService.localParticipantSignal();
 			if (localParticipant) {
 				this.onParticipantConnected.emit(localParticipant);
 			}
 		} catch (error: any) {
 			this.log.e('There was an error connecting to the room:', error?.code, error?.message);
-			this.actionService.openDialog(this.translateService.translate('ERRORS.SESSION'), error?.error || error?.message || error);
+			this.actionService.openDialog(
+				this.translateService.translate('ERRORS.SESSION'),
+				error?.error || error?.message || error
+			);
 		}
 	}
 
@@ -355,8 +370,8 @@ export class SessionComponent implements OnInit, OnDestroy {
 		await this.openviduService.disconnectRoom(() => {
 			this.onParticipantLeft.emit({
 				roomName: this.openviduService.getRoomName(),
-				participantName: this.participantService.getLocalParticipant()?.name || '',
-				identity: this.participantService.getLocalParticipant()?.identity || '',
+				participantName: this.participantService.getMyName() || '',
+				identity: this.participantService.getMyIdentity() || '',
 				reason
 			});
 		}, false);
@@ -418,7 +433,12 @@ export class SessionComponent implements OnInit, OnDestroy {
 					this.participantService.resetMyStreamsToNormalSize();
 					this.participantService.resetRemoteStreamsToNormalSize();
 					this.participantService.toggleRemoteVideoPinned(track.sid);
-					if (track.sid) this.participantService.setScreenTrackPublicationDate(participant.sid, track.sid, new Date().getTime());
+					if (track.sid)
+						this.participantService.setScreenTrackPublicationDate(
+							participant.sid,
+							track.sid,
+							new Date().getTime()
+						);
 				}
 				// if (this.openviduService.isSttReady() && this.captionService.areCaptionsEnabled() && isCameraType) {
 				// 	// Only subscribe to STT when is ready and stream is CAMERA type and it is a remote stream
@@ -447,7 +467,8 @@ export class SessionComponent implements OnInit, OnDestroy {
 				// TODO: Check if this is the last track of the participant before removing it
 				const isScreenTrack = track.source === Track.Source.ScreenShare;
 				if (isScreenTrack) {
-					if (track.sid) this.participantService.setScreenTrackPublicationDate(participant.sid, track.sid, -1);
+					if (track.sid)
+						this.participantService.setScreenTrackPublicationDate(participant.sid, track.sid, -1);
 					this.participantService.resetMyStreamsToNormalSize();
 					this.participantService.resetRemoteStreamsToNormalSize();
 					// Set last screen track shared to pinned size
@@ -578,13 +599,16 @@ export class SessionComponent implements OnInit, OnDestroy {
 				this.recordingService.setRecordingFailed(event.error);
 				break;
 			case DataTopic.ROOM_STATUS:
-				const { recordingList, isRecordingStarted, isBroadcastingStarted, broadcastingId } = event as RoomStatusData;
+				const { recordingList, isRecordingStarted, isBroadcastingStarted, broadcastingId } =
+					event as RoomStatusData;
 
 				if (this.libService.showRecordingActivityRecordingsList()) {
 					this.recordingService.setRecordingList(recordingList);
 				}
 				if (isRecordingStarted) {
-					const recordingActive = recordingList.find((recording) => recording.status === RecordingState.STARTED);
+					const recordingActive = recordingList.find(
+						(recording) => recording.status === RecordingState.STARTED
+					);
 					this.recordingService.setRecordingStarted(recordingActive);
 				}
 
@@ -628,8 +652,8 @@ export class SessionComponent implements OnInit, OnDestroy {
 			this.actionService.closeConnectionDialog();
 			const participantLeftEvent: ParticipantLeftEvent = {
 				roomName: this.openviduService.getRoomName(),
-				participantName: this.participantService.getLocalParticipant()?.name || '',
-				identity: this.participantService.getLocalParticipant()?.identity || '',
+				participantName: this.participantService.getMyName() || '',
+				identity: this.participantService.getMyIdentity() || '',
 				reason: ParticipantLeftReason.NETWORK_DISCONNECT
 			};
 			const messageErrorKey = 'ERRORS.DISCONNECT';
@@ -679,14 +703,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	}
 
 	private subscribeToVirtualBackground() {
-		this.libService.backgroundEffectsButton$.subscribe(async (enable) => {
-			if (!enable && this.backgroundService.isBackgroundApplied()) {
-				await this.backgroundService.removeBackground();
-				if (this.panelService.isBackgroundEffectsPanelOpened()) {
-					this.panelService.closePanel();
-				}
-			}
-		});
+		// handled by backgroundEffectsEffect
 	}
 
 	private startUpdateLayoutInterval() {

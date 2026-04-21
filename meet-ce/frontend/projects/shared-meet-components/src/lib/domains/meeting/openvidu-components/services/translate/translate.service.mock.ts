@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Injectable, signal } from '@angular/core';
 import { LangOption } from '../../models/lang.model';
 
 @Injectable({
@@ -12,25 +11,19 @@ export class TranslateServiceMock {
 		{ name: 'Español', lang: 'es' }
 	];
 
-	// Comportamiento simulado del BehaviorSubject
-	private _selectedLanguageSubject: BehaviorSubject<LangOption> = new BehaviorSubject<LangOption>(this.languageOptions[0]);
-	selectedLanguageOption$: Observable<LangOption> = this._selectedLanguageSubject.asObservable();
+	private readonly selectedLanguageOptionWritable = signal<LangOption>(this.languageOptions[0]);
 	private activeTranslations: Record<string, any> = { hello: 'Hello', goodbye: 'Goodbye' }; // Simulación de traducciones
 
-	// Métodos simulados
-	addTranslations(translations: Partial<Record<string, any>>): void {
-		// Puedes agregar lógica para simular la adición de traducciones
-	}
 
 	async setCurrentLanguage(lang: string): Promise<void> {
-		const matchingOption = this.languageOptions.find(option => option.lang === lang);
+		const matchingOption = this.languageOptions.find((option) => option.lang === lang);
 		if (matchingOption) {
-			this._selectedLanguageSubject.next(matchingOption);
+			this.selectedLanguageOptionWritable.set(matchingOption);
 		}
 	}
 
 	getSelectedLanguage(): LangOption {
-		return this._selectedLanguageSubject.getValue();
+		return this.selectedLanguageOptionWritable();
 	}
 
 	getAvailableLanguages(): LangOption[] {

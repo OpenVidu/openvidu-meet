@@ -1,5 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, inject, input, OnInit, output, Signal } from '@angular/core';
-import { Subscription } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, Signal } from '@angular/core';
 import { BackgroundEffect, EffectType } from '../../../models/background-effect.model';
 import { PanelType } from '../../../models/panel.model';
 import { PanelService } from '../../../services/panel/panel.service';
@@ -19,13 +18,6 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 	mode = input<'prejoin' | 'meeting'>('meeting');
 	onClose = output<void>();
 
-	backgroundSelectedId: string = '';
-	effectType = EffectType;
-	backgroundImages: BackgroundEffect[] = [];
-	noEffectAndBlurredBackground: BackgroundEffect[] = [];
-	private backgrounds: BackgroundEffect[] = [];
-	private backgroundSubs: Subscription = new Subscription();
-
 	/**
 	 * @internal
 	 * @param panelService
@@ -34,7 +26,12 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 	 */
 	private panelService = inject(PanelService);
 	private backgroundService = inject(VirtualBackgroundService);
-	private cd = inject(ChangeDetectorRef);
+
+	readonly backgroundSelectedId = this.backgroundService.backgroundIdSelected;
+	effectType = EffectType;
+	backgroundImages: BackgroundEffect[] = [];
+	noEffectAndBlurredBackground: BackgroundEffect[] = [];
+	private backgrounds: BackgroundEffect[] = [];
 
 	/**
 	 * Computed signal that reactively tracks if virtual background is supported.
@@ -45,20 +42,9 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 	);
 
 	ngOnInit(): void {
-		this.subscribeToBackgroundSelected();
 		this.backgrounds = this.backgroundService.getBackgrounds();
 		this.noEffectAndBlurredBackground = this.backgrounds.filter((f) => f.type === EffectType.BLUR || f.type === EffectType.NONE);
 		this.backgroundImages = this.backgrounds.filter((f) => f.type === EffectType.IMAGE);
-	}
-
-	ngOnDestroy() {
-		if (this.backgroundSubs) this.backgroundSubs.unsubscribe();
-	}
-	subscribeToBackgroundSelected() {
-		this.backgroundSubs = this.backgroundService.backgroundIdSelected$.subscribe((id) => {
-			this.backgroundSelectedId = id;
-			this.cd.markForCheck();
-		});
 	}
 
 	close() {

@@ -1,5 +1,4 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, input, OnInit, output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { ILogger } from '../../../../models/logger.model';
 import {
 	RecordingDeleteRequestedEvent,
@@ -83,15 +82,15 @@ export class RecordingActivityComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	recordingStatus: RecordingState = RecordingState.STOPPED;
+	readonly recordingStatus = signal(RecordingState.STOPPED);
 	/**
 	 * @internal
 	 */
-	oldRecordingStatus: RecordingState = RecordingState.STOPPED;
+	readonly oldRecordingStatus = signal(RecordingState.STOPPED);
 	/**
 	 * @internal
 	 */
-	isPanelOpened: boolean = false;
+	readonly isPanelOpened = signal(false);
 
 	/**
 	 * @internal
@@ -101,61 +100,57 @@ export class RecordingActivityComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	recordingAlive: boolean = false;
+	readonly recordingAlive = signal(false);
 	/**
 	 * @internal
 	 */
-	recordingList: RecordingInfo[] = [];
+	readonly recordingList = signal<RecordingInfo[]>([]);
 
 	/**
 	 * @internal
 	 */
-	recordingError: any;
+	readonly recordingError = signal<any>(undefined);
 
 	/**
 	 * @internal
 	 */
-	hasRoomTracksPublished: boolean = false;
+	readonly hasRoomTracksPublished = signal(false);
 
 	/**
 	 * @internal
 	 */
-	mouseHovering: boolean = false;
+	readonly mouseHovering = signal(false);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	/**
 	 * @internal
 	 */
-	isReadOnlyMode: boolean = false;
+	readonly isReadOnlyMode = this.libService.recordingActivityReadOnlySignal;
 
 	/**
 	 * @internal
 	 */
-	viewButtonText: string = 'PANEL.RECORDING.VIEW';
+	readonly viewButtonText = signal('PANEL.RECORDING.VIEW');
 
 	/**
 	 * @internal
 	 */
-	showStartStopRecordingButton: boolean = true;
+	readonly showStartStopRecordingButton = this.libService.recordingActivityStartStopRecordingButtonSignal;
 
 	/**
 	 * @internal
 	 */
-	showViewRecordingsButton: boolean = false;
+	readonly showViewRecordingsButton = this.libService.recordingActivityViewRecordingsButtonSignal;
 
 	/**
 	 * @internal
 	 */
-	showRecordingList: boolean = true; // Controls visibility of the recording list in the panel
+	readonly showRecordingList = this.libService.recordingActivityShowRecordingsListSignal; // Controls visibility of the recording list in the panel
 
 	/**
 	 * @internal
 	 */
-	showControls: { play?: boolean; download?: boolean; delete?: boolean; externalView?: boolean } = {
-		play: true,
-		download: true,
-		delete: true,
-		externalView: false
-	};
+	readonly showControls = this.libService.recordingActivityShowControlsSignal;
 
 	private log: ILogger = {
 		d: () => {},
@@ -163,7 +158,6 @@ export class RecordingActivityComponent implements OnInit {
 		w: () => {},
 		e: () => {}
 	};
-	private readonly destroyRef = inject(DestroyRef);
 
 	/**
 	 * @internal
@@ -174,18 +168,22 @@ export class RecordingActivityComponent implements OnInit {
 	private readonly openviduService = inject(OpenViduService);
 	private readonly cd = inject(ChangeDetectorRef);
 	private readonly loggerSrv = inject(LoggerService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly recordingStatusEffect = effect(() => {
 		const event = this.recordingService.recordingState();
 		const { status, recordingList, error } = event;
-		this.recordingStatus = status;
-		this.recordingList = recordingList;
-		this.recordingError = error;
-		this.recordingAlive = this.recordingStatus === RecordingState.STARTED;
-		if (this.recordingStatus !== RecordingState.FAILED) {
-			this.oldRecordingStatus = this.recordingStatus;
+		this.recordingStatus.set(status);
+		this.recordingList.set(recordingList);
+		this.recordingError.set(error);
+		this.recordingAlive.set(status === RecordingState.STARTED);
+		if (status !== RecordingState.FAILED) {
+			this.oldRecordingStatus.set(status);
 		}
 		this.cd.markForCheck();
+	});
+	private readonly roomTracksPublishedEffect = effect(() => {
+		this.participantService.localParticipantSignal();
+		this.participantService.remoteParticipantsSignal();
+		this.hasRoomTracksPublished.set(this.openviduService.hasRoomTracksPublished());
 	});
 
 	constructor() {
@@ -211,16 +209,16 @@ export class RecordingActivityComponent implements OnInit {
 	 * @internal
 	 */
 	setPanelOpened(value: boolean) {
-		this.isPanelOpened = value;
+		this.isPanelOpened.set(value);
 	}
 
 	/**
 	 * @internal
 	 */
 	resetStatus() {
-		if (this.oldRecordingStatus === RecordingState.STARTING) {
+		if (this.oldRecordingStatus() === RecordingState.STARTING) {
 			this.recordingService.setRecordingStopped();
-		} else if (this.oldRecordingStatus === RecordingState.STOPPING) {
+		} else if (this.oldRecordingStatus() === RecordingState.STOPPING) {
 			this.recordingService.setRecordingStarted();
 		} else {
 			this.recordingService.setRecordingStopped();
@@ -241,7 +239,7 @@ export class RecordingActivityComponent implements OnInit {
 	 * @internal
 	 */
 	stopRecording() {
-		const currentRecording = this.recordingList.find((rec) => rec.status === RecordingState.STARTED);
+		const currentRecording = this.recordingList().find((rec) => rec.status === RecordingState.STARTED);
 		const payload: RecordingStopRequestedEvent = {
 			roomName: this.openviduService.getRoomName(),
 			recordingId: currentRecording?.id
@@ -359,52 +357,7 @@ export class RecordingActivityComponent implements OnInit {
 		return `${size.toFixed(1)} ${sizes[i]}`;
 	}
 
-	private subscribeToConfigChanges() {
-		this.libService.recordingActivityReadOnly$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((readOnly: boolean) => {
-			this.isReadOnlyMode = readOnly;
-			this.cd.markForCheck();
-		});
+	private subscribeToConfigChanges() {}
 
-		this.libService.recordingActivityShowControls$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((controls: { play?: boolean; download?: boolean; delete?: boolean; externalView?: boolean }) => {
-				this.showControls = controls;
-				this.cd.markForCheck();
-			});
-
-		this.libService.recordingActivityStartStopRecordingButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((show: boolean) => {
-			this.showStartStopRecordingButton = show;
-			this.cd.markForCheck();
-		});
-
-		this.libService.recordingActivityViewRecordingsButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((show: boolean) => {
-			this.showViewRecordingsButton = show;
-			this.cd.markForCheck();
-		});
-
-		this.libService.recordingActivityShowRecordingsList$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((show: boolean) => {
-			this.showRecordingList = show;
-			this.cd.markForCheck();
-		});
-	}
-
-	private subscribeToTracksChanges() {
-		this.hasRoomTracksPublished = this.openviduService.hasRoomTracksPublished();
-
-		this.participantService.localParticipant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			const newValue = this.openviduService.hasRoomTracksPublished();
-			if (this.hasRoomTracksPublished !== newValue) {
-				this.hasRoomTracksPublished = newValue;
-				this.cd.markForCheck();
-			}
-		});
-
-		this.participantService.remoteParticipants$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			const newValue = this.openviduService.hasRoomTracksPublished();
-			if (this.hasRoomTracksPublished !== newValue) {
-				this.hasRoomTracksPublished = newValue;
-				this.cd.markForCheck();
-			}
-		});
-	}
+ private subscribeToTracksChanges() {}
 }

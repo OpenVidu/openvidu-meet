@@ -1,7 +1,4 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { Observable } from 'rxjs';
-import { distinctUntilChanged, shareReplay } from 'rxjs/operators';
 import { ParticipantModel } from '../../models/participant.model';
 import { RecordingInfo } from '../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
@@ -97,32 +94,6 @@ interface GeneralConfig {
 	providedIn: 'root'
 })
 export class OpenViduComponentsConfigService {
-	/**
-	 * Create a shared Observable bridge from a signal selector.
-	 */
-	private toStoreObservable<T>(selector: () => T, comparator?: (prev: T, curr: T) => boolean): Observable<T> {
-		const source$ = toObservable(computed(selector));
-		return comparator
-			? source$.pipe(distinctUntilChanged(comparator), shareReplay(1))
-			: source$.pipe(distinctUntilChanged(), shareReplay(1));
-	}
-
-	/**
-	 * Optimized deep equality check
-	 */
-	private deepEqual(a: any, b: any): boolean {
-		if (a === b) return true;
-		if (a == null || b == null) return a === b;
-		if (typeof a !== typeof b) return false;
-		if (typeof a !== 'object') return a === b;
-
-		const keysA = Object.keys(a);
-		const keysB = Object.keys(b);
-		if (keysA.length !== keysB.length) return false;
-
-		return keysA.every((key) => this.deepEqual(a[key], b[key]));
-	}
-
 	// Grouped configuration items by domain
 	private readonly generalConfig = signal<GeneralConfig>({
 		token: '',
@@ -193,9 +164,21 @@ export class OpenViduComponentsConfigService {
 
 	// Signals-first selectors used by migrated consumers/directives
 	readonly minimalSignal = computed(() => this.generalConfig().minimal);
+	readonly tokenSignal = computed(() => this.generalConfig().token);
+	readonly livekitUrlSignal = computed(() => this.generalConfig().livekitUrl);
+	readonly tokenErrorSignal = computed(() => this.generalConfig().tokenError);
+	readonly participantNameSignal = computed(() => this.generalConfig().participantName);
+	readonly prejoinSignal = computed(() => this.generalConfig().prejoin);
+	readonly prejoinDisplayParticipantNameSignal = computed(() => this.generalConfig().prejoinDisplayParticipantName);
+	readonly showDisconnectionDialogSignal = computed(() => this.generalConfig().showDisconnectionDialog);
+	readonly recordingStreamBaseUrlSignal = computed(() => this.generalConfig().recordingStreamBaseUrl);
+	readonly e2eeKeySignal = computed(() => this.generalConfig().e2eeKey);
+	readonly videoEnabledSignal = computed(() => this.streamConfig().videoEnabled);
+	readonly audioEnabledSignal = computed(() => this.streamConfig().audioEnabled);
 	readonly displayParticipantNameSignal = computed(() => this.streamConfig().displayParticipantName);
 	readonly displayAudioDetectionSignal = computed(() => this.streamConfig().displayAudioDetection);
 	readonly streamVideoControlsSignal = computed(() => this.streamConfig().videoControls);
+	readonly participantItemMuteButtonSignal = computed(() => this.streamConfig().participantItemMuteButton);
 	readonly cameraButtonSignal = computed(() => this.toolbarConfig().camera);
 	readonly microphoneButtonSignal = computed(() => this.toolbarConfig().microphone);
 	readonly screenshareButtonSignal = computed(() => this.toolbarConfig().screenshare);
@@ -209,94 +192,22 @@ export class OpenViduComponentsConfigService {
 	readonly roomNameSignal = computed(() => this.toolbarConfig().roomName);
 	readonly brandingLogoSignal = computed(() => this.toolbarConfig().brandingLogo);
 	readonly displayLogoSignal = computed(() => this.toolbarConfig().displayLogo);
+	readonly showThemeSelectorSignal = computed(() => this.generalConfig().showThemeSelector);
 	readonly toolbarAdditionalButtonsPositionSignal = computed(() => this.toolbarConfig().additionalButtonsPosition);
 	readonly backgroundEffectsButtonSignal = computed(() => this.toolbarConfig().backgroundEffects);
 	readonly recordingButtonSignal = computed(() => this.toolbarConfig().recording);
 	readonly toolbarViewRecordingsButtonSignal = computed(() => this.toolbarConfig().viewRecordings);
+	readonly recordingActivitySignal = computed(() => this.recordingActivityConfig().enabled);
+	readonly recordingActivityReadOnlySignal = computed(() => this.recordingActivityConfig().readOnly);
+	readonly recordingActivityShowControlsSignal = computed(() => this.recordingActivityConfig().showControls);
+	readonly recordingActivityStartStopRecordingButtonSignal = computed(() => this.recordingActivityConfig().startStopButton);
+	readonly recordingActivityViewRecordingsButtonSignal = computed(() => this.recordingActivityConfig().viewRecordingsButton);
+	readonly recordingActivityShowRecordingsListSignal = computed(() => this.recordingActivityConfig().showRecordingsList);
+	readonly adminRecordingsListSignal = computed(() => this.adminConfig().recordingsList);
+	readonly adminLoginErrorSignal = computed(() => this.adminConfig().loginError);
+	readonly adminLoginTitleSignal = computed(() => this.adminConfig().loginTitle);
+	readonly adminDashboardTitleSignal = computed(() => this.adminConfig().dashboardTitle);
 	readonly layoutRemoteParticipantsSignal = this.layoutRemoteParticipantsConfig.asReadonly();
-
-	// General observables
-	token$: Observable<string> = this.toStoreObservable(() => this.generalConfig().token);
-	livekitUrl$: Observable<string> = this.toStoreObservable(() => this.generalConfig().livekitUrl);
-	tokenError$: Observable<any> = this.toStoreObservable(() => this.generalConfig().tokenError);
-	minimal$: Observable<boolean> = this.toStoreObservable(() => this.generalConfig().minimal);
-	participantName$: Observable<string> = this.toStoreObservable(() => this.generalConfig().participantName);
-	prejoin$: Observable<boolean> = this.toStoreObservable(() => this.generalConfig().prejoin);
-	prejoinDisplayParticipantName$: Observable<boolean> = this.toStoreObservable(() => this.generalConfig().prejoinDisplayParticipantName);
-	showDisconnectionDialog$: Observable<boolean> = this.toStoreObservable(() => this.generalConfig().showDisconnectionDialog);
-	showThemeSelector$: Observable<boolean> = this.toStoreObservable(() => this.generalConfig().showThemeSelector);
-	recordingStreamBaseUrl$: Observable<string> = this.toStoreObservable(() => this.generalConfig().recordingStreamBaseUrl);
-	e2eeKey$: Observable<string | undefined> = this.toStoreObservable(() => this.generalConfig().e2eeKey);
-
-	// Stream observables
-	videoEnabled$: Observable<boolean> = this.toStoreObservable(() => this.streamConfig().videoEnabled);
-	audioEnabled$: Observable<boolean> = this.toStoreObservable(() => this.streamConfig().audioEnabled);
-	displayParticipantName$: Observable<boolean> = this.toStoreObservable(() => this.streamConfig().displayParticipantName);
-	displayAudioDetection$: Observable<boolean> = this.toStoreObservable(() => this.streamConfig().displayAudioDetection);
-	streamVideoControls$: Observable<boolean> = this.toStoreObservable(() => this.streamConfig().videoControls);
-	participantItemMuteButton$: Observable<boolean> = this.toStoreObservable(() => this.streamConfig().participantItemMuteButton);
-
-	// Toolbar observables
-	cameraButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().camera);
-	microphoneButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().microphone);
-	screenshareButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().screenshare);
-	fullscreenButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().fullscreen);
-	toolbarSettingsButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().settings);
-	leaveButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().leave);
-	participantsPanelButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().participantsPanel);
-	chatPanelButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().chatPanel);
-	activitiesPanelButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().activitiesPanel);
-	displayRoomName$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().displayRoomName);
-	roomName$: Observable<string> = this.toStoreObservable(() => this.toolbarConfig().roomName);
-	brandingLogo$: Observable<string> = this.toStoreObservable(() => this.toolbarConfig().brandingLogo);
-	displayLogo$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().displayLogo);
-	toolbarAdditionalButtonsPosition$: Observable<ToolbarAdditionalButtonsPosition> = this.toStoreObservable(
-		() => this.toolbarConfig().additionalButtonsPosition
-	);
-	backgroundEffectsButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().backgroundEffects);
-	recordingButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().recording);
-	toolbarViewRecordingsButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().viewRecordings);
-
-	// Recording activity observables
-	recordingActivity$: Observable<boolean> = this.toStoreObservable(() => this.recordingActivityConfig().enabled);
-	recordingActivityReadOnly$: Observable<boolean> = this.toStoreObservable(() => this.recordingActivityConfig().readOnly);
-	recordingActivityShowControls$: Observable<RecordingControls> = this.toStoreObservable(
-		() => this.recordingActivityConfig().showControls,
-		(prev, curr) =>
-			prev.play === curr.play &&
-			prev.download === curr.download &&
-			prev.delete === curr.delete &&
-			prev.externalView === curr.externalView
-	);
-	recordingActivityStartStopRecordingButton$: Observable<boolean> = this.toStoreObservable(
-		() => this.recordingActivityConfig().startStopButton
-	);
-	recordingActivityViewRecordingsButton$: Observable<boolean> = this.toStoreObservable(
-		() => this.recordingActivityConfig().viewRecordingsButton
-	);
-	recordingActivityShowRecordingsList$: Observable<boolean> = this.toStoreObservable(
-		() => this.recordingActivityConfig().showRecordingsList
-	);
-
-	// Admin observables
-	adminRecordingsList$: Observable<RecordingInfo[]> = this.toStoreObservable(
-		() => this.adminConfig().recordingsList,
-		(prev, curr) => prev.length === curr.length && prev.every((item, index) => this.deepEqual(item, curr[index]))
-	);
-	adminLoginError$: Observable<any> = this.toStoreObservable(() => this.adminConfig().loginError);
-	adminLoginTitle$: Observable<string> = this.toStoreObservable(() => this.adminConfig().loginTitle);
-	adminDashboardTitle$: Observable<string> = this.toStoreObservable(() => this.adminConfig().dashboardTitle);
-
-	// Individual observables that don't fit into groups
-	layoutRemoteParticipants$: Observable<ParticipantModel[] | undefined> = this.toStoreObservable(
-		() => this.layoutRemoteParticipantsConfig(),
-		(prev, curr) => {
-			if (prev === curr) return true;
-			if (!prev || !curr) return prev === curr;
-			if (prev.length !== curr.length) return false;
-			return prev.every((item, index) => this.deepEqual(item, curr[index]));
-		}
-	);
 
 	// ============================================
 	// BATCH UPDATE METHODS

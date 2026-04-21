@@ -1,6 +1,4 @@
-import { Injectable, Signal, WritableSignal, inject, signal } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { Observable } from 'rxjs';
+import { Injectable, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { ILogger } from '../../models/logger.model';
 import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
@@ -33,26 +31,14 @@ export class ParticipantService {
 	private readonly e2eeService = inject(E2eeService);
 
 	/**
-	 * Local participant Observable which pushes the local participant object in every update.
-	 * @deprecated Please prefer `localParticipantSignal` for reactive updates and `localParticipant$` when using RxJS.
-	 */
-	localParticipant$: Observable<ParticipantModel | undefined>;
-
-	/**
-	 * Remote participants Observable which pushes the remote participants array in every update.
-	 * @deprecated Please prefer `remoteParticipantsSignal` for reactive updates and `remoteParticipants$` when using RxJS.
-	 */
-	remoteParticipants$: Observable<ParticipantModel[]>;
-
-	/**
 	 * Local participant Signal for reactive programming with Angular signals.
-	 * This is a modern alternative to localParticipant$ Observable.
-	 * @since Angular 16+
 	 */
 	localParticipantSignal: Signal<ParticipantModel | undefined>;
 	private localParticipantWritableSignal: WritableSignal<ParticipantModel | undefined> = signal<
 		ParticipantModel | undefined
 	>(undefined);
+	readonly localParticipantNameSignal = computed(() => this.localParticipantWritableSignal()?.name ?? '');
+	readonly localParticipantIdentitySignal = computed(() => this.localParticipantWritableSignal()?.identity ?? '');
 
 	/**
 	 * Remote participants Signal for reactive programming with Angular signals.
@@ -61,9 +47,14 @@ export class ParticipantService {
 	 */
 	remoteParticipantsSignal: Signal<ParticipantModel[]>;
 	private remoteParticipantsWritableSignal: WritableSignal<ParticipantModel[]> = signal<ParticipantModel[]>([]);
+	readonly totalParticipantsSignal = computed(
+		() => (this.localParticipantWritableSignal() ? 1 : 0) + this.remoteParticipantsWritableSignal().length
+	);
+	readonly hasRemoteEncryptionErrorsSignal = computed(() =>
+		this.remoteParticipantsWritableSignal().some((participant) => participant.hasEncryptionError)
+	);
 
 	private localParticipant: ParticipantModel | undefined;
-	private lastLocalParticipantSnapshot: ParticipantModel | undefined;
 	private remoteParticipants: ParticipantModel[] = [];
 	private log: ILogger = {
 		d: () => {},
@@ -81,10 +72,6 @@ export class ParticipantService {
 		// Expose readonly signals
 		this.localParticipantSignal = this.localParticipantWritableSignal.asReadonly();
 		this.remoteParticipantsSignal = this.remoteParticipantsWritableSignal.asReadonly();
-
-		// Create Observables from signals for backward compatibility
-		this.localParticipant$ = toObservable(this.localParticipantWritableSignal);
-		this.remoteParticipants$ = toObservable(this.remoteParticipantsWritableSignal);
 	}
 
 	/**
@@ -92,7 +79,6 @@ export class ParticipantService {
 	 */
 	clear(): void {
 		this.localParticipant = undefined;
-		this.lastLocalParticipantSnapshot = undefined;
 		this.remoteParticipants = [];
 		this.localParticipantWritableSignal.set(undefined);
 		this.remoteParticipantsWritableSignal.set([]);
@@ -106,12 +92,11 @@ export class ParticipantService {
 	setLocalParticipant(participant: OVLocalParticipant) {
 		const room = this.openviduService.getRoom();
 		this.localParticipant = this.newParticipant({ participant, room });
+		this.updateLocalParticipant();
 	}
 
 	/**
 	 * Returns the local participant object.
-	 *
-	 * @deprecated Please prefer `localParticipantSignal()` for reactive updates and `localParticipant$` when using RxJS.
 	 */
 	getLocalParticipant(): ParticipantModel | undefined {
 		return this.localParticipant;
@@ -310,18 +295,42 @@ export class ParticipantService {
 	 * @internal
 	 */
 	setSpeaking(speakers: OVParticipant[]) {
+		let shouldUpdateLocal = false;
+		let shouldUpdateRemotes = false;
+
 		// Set all participants' isSpeaking property to false
-		this.localParticipant?.setSpeaking(false);
-		this.remoteParticipants.forEach((participant) => participant.setSpeaking(false));
-		speakers.forEach((s) => {
-			if (s.isLocal) {
-				this.localParticipant?.setSpeaking(true);
-			} else {
-				const participant = this.remoteParticipants.find((p) => p.sid === s.sid);
-				participant?.setSpeaking(true);
-				this.updateRemoteParticipants();
+		if (this.localParticipant?.isSpeaking) {
+			this.localParticipant.setSpeaking(false);
+			shouldUpdateLocal = true;
+		}
+		this.remoteParticipants.forEach((participant) => {
+			if (participant.isSpeaking) {
+				participant.setSpeaking(false);
+				shouldUpdateRemotes = true;
 			}
 		});
+
+		speakers.forEach((s) => {
+			if (s.isLocal) {
+				if (this.localParticipant && !this.localParticipant.isSpeaking) {
+					this.localParticipant.setSpeaking(true);
+					shouldUpdateLocal = true;
+				}
+			} else {
+				const participant = this.remoteParticipants.find((p) => p.sid === s.sid);
+				if (participant && !participant.isSpeaking) {
+					participant.setSpeaking(true);
+					shouldUpdateRemotes = true;
+				}
+			}
+		});
+
+		if (shouldUpdateLocal) {
+			this.updateLocalParticipant();
+		}
+		if (shouldUpdateRemotes) {
+			this.updateRemoteParticipants();
+		}
 	}
 
 	/**
@@ -333,11 +342,13 @@ export class ParticipantService {
 	 */
 	setEncryptionError(participantSid: string, hasError: boolean) {
 		if (this.localParticipant?.sid === participantSid) {
-			this.localParticipant.setEncryptionError(hasError);
-			this.updateLocalParticipant();
+			if (this.localParticipant.hasEncryptionError !== hasError) {
+				this.localParticipant.setEncryptionError(hasError);
+				this.updateLocalParticipant();
+			}
 		} else {
 			const participant = this.remoteParticipants.find((p) => p.sid === participantSid);
-			if (participant) {
+			if (participant && participant.hasEncryptionError !== hasError) {
 				participant.setEncryptionError(hasError);
 				this.updateRemoteParticipants();
 			}
@@ -348,7 +359,11 @@ export class ParticipantService {
 	 * Returns the local participant name.
 	 */
 	getMyName(): string | undefined {
-		return this.localParticipant?.name;
+		return this.localParticipantNameSignal() || undefined;
+	}
+
+	getMyIdentity(): string | undefined {
+		return this.localParticipantIdentitySignal() || undefined;
 	}
 
 	/**
@@ -415,50 +430,15 @@ export class ParticipantService {
 	}
 
 	/**
-	 * Forces to update the local participant object and fire a new `localParticipant$` Observable event.
+	 * Forces to update the local participant object and notify signal consumers.
 	 */
 	updateLocalParticipant() {
-		const localParticipantFromSignal = this.localParticipantWritableSignal();
-
-		// Backward compatibility: if the consumer mutated the last emitted snapshot and
-		// then calls updateLocalParticipant(), keep the internal source of truth in sync.
-		// Only sync when the emitted snapshot actually diverged after emission; otherwise,
-		// a stale observable/signal snapshot would overwrite newer canonical state.
-		if (
-			this.localParticipant &&
-			localParticipantFromSignal &&
-			this.lastLocalParticipantSnapshot &&
-			localParticipantFromSignal !== this.localParticipant &&
-			localParticipantFromSignal.sid === this.localParticipant.sid &&
-			this.hasParticipantSnapshotMutations(localParticipantFromSignal, this.lastLocalParticipantSnapshot)
-		) {
-			Object.assign(this.localParticipant, localParticipantFromSignal);
-		}
-
-		// Update Signal - create new reference to trigger reactivity
-		// The Observable will automatically emit via toObservable()
+		// Update signal with a new reference to trigger reactivity.
 		if (this.localParticipant) {
-			const updatedParticipant = this.cloneParticipant(this.localParticipant);
-			this.localParticipantWritableSignal.set(updatedParticipant);
-			this.lastLocalParticipantSnapshot = this.cloneParticipant(updatedParticipant);
+			this.localParticipantWritableSignal.set(this.cloneParticipant(this.localParticipant));
 		} else {
 			this.localParticipantWritableSignal.set(undefined);
-			this.lastLocalParticipantSnapshot = undefined;
 		}
-	}
-
-	private hasParticipantSnapshotMutations(current: ParticipantModel, previous: ParticipantModel): boolean {
-		const currentState = current as unknown as Record<string, unknown>;
-		const previousState = previous as unknown as Record<string, unknown>;
-		const keys = new Set([...Object.keys(currentState), ...Object.keys(previousState)]);
-
-		for (const key of keys) {
-			if (!Object.is(currentState[key], previousState[key])) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	private cloneParticipant<T extends ParticipantModel>(participant: T): T {
@@ -527,8 +507,6 @@ export class ParticipantService {
 
 	/**
 	 * Returns all remote participants in the room.
-	 *
-	 * @deprecated Please prefer `remoteParticipantsSignal()` for automatic reactive updates or `remoteParticipants$` when using Observables.
 	 */
 	getRemoteParticipants(): ParticipantModel[] {
 		return this.remoteParticipants;
@@ -543,11 +521,10 @@ export class ParticipantService {
 	}
 
 	/**
-	 * Force to update the remote participants object and fire a new `remoteParticipants$` Observable event.
+	 * Force to update the remote participants object and notify signal consumers.
 	 */
 	updateRemoteParticipants() {
-		// Update Signal - create new array reference to trigger reactivity
-		// The Observable will automatically emit via toObservable()
+		// Update signal with a new array reference to trigger reactivity.
 		this.remoteParticipantsWritableSignal.set([...this.remoteParticipants]);
 	}
 
@@ -645,7 +622,7 @@ export class ParticipantService {
 	 */
 	setRemoteMutedForcibly(sid: string, value: boolean) {
 		const p = this.getRemoteParticipantBySid(sid);
-		if (p) {
+		if (p && p.isMutedForcibly !== value) {
 			p.setMutedForcibly(value);
 			this.updateRemoteParticipants();
 		}
@@ -681,7 +658,7 @@ export class ParticipantService {
 			const decryptedName = await this.e2eeService.decryptOrMask(originalName, participant.identity);
 			participant.setDecryptedName(decryptedName);
 
-			// Update observables to reflect the decrypted name
+			// Update signals to reflect the decrypted name.
 			if (participant.isLocal) {
 				this.updateLocalParticipant();
 			} else {

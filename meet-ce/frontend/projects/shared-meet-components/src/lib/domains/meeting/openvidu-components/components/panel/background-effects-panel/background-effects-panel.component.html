@@ -28,7 +28,7 @@
 				<button
 					mat-icon-button
 					class="effect-button"
-					[class.active-effect-btn]="backgroundSelectedId === effect.id"
+					[class.active-effect-btn]="backgroundSelectedId() === effect.id"
 					(click)="applyBackground(effect)"
 					[attr.id]="effect.id + '-btn'"
 					[disabled]="!isVirtualBackgroundSupported()"
@@ -52,7 +52,7 @@
 				<div
 					class="effect-button"
 					[id]="'effect-' + effect.id"
-					[class.active-effect-btn]="backgroundSelectedId === effect.id"
+					[class.active-effect-btn]="backgroundSelectedId() === effect.id"
 					[class.disabled]="!isVirtualBackgroundSupported()"
 					(click)="isVirtualBackgroundSupported() && applyBackground(effect)"
 				>

@@ -2,14 +2,13 @@ import {
 	ChangeDetectionStrategy,
 	Component,
 	contentChild,
-	DestroyRef,
 	effect,
 	inject,
 	OnInit,
 	output,
+	signal,
 	TemplateRef
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
 import { CustomDevice } from '../../../models/device.model';
 import { LangOption } from '../../../models/lang.model';
@@ -36,6 +35,11 @@ export class SettingsPanelComponent implements OnInit {
 	onAudioDeviceChanged = output<CustomDevice>();
 	onLangChanged = output<LangOption>();
 
+	private readonly panelService = inject(PanelService);
+	private readonly platformService = inject(PlatformService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	public readonly viewportService = inject(ViewportService);
+
 	/**
 	 * @internal
 	 * ContentChild for custom elements in general section
@@ -43,12 +47,12 @@ export class SettingsPanelComponent implements OnInit {
 	readonly externalGeneralAdditionalElements = contentChild.required(SettingsPanelGeneralAdditionalElementsDirective);
 
 	settingsOptions: typeof PanelSettingsOptions = PanelSettingsOptions;
-	selectedOption: PanelSettingsOptions = PanelSettingsOptions.GENERAL;
-	showCameraButton: boolean = true;
-	showMicrophoneButton: boolean = true;
-	showThemeSelector: boolean = false;
 	isMobile: boolean = false;
-	private readonly destroyRef = inject(DestroyRef);
+
+	readonly showCameraButton = this.libService.cameraButtonSignal;
+	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
+	readonly showThemeSelector = this.libService.showThemeSelectorSignal;
+	readonly selectedOption = signal<PanelSettingsOptions>(PanelSettingsOptions.GENERAL);
 
 	/**
 	 * @internal
@@ -58,14 +62,10 @@ export class SettingsPanelComponent implements OnInit {
 		return this.externalGeneralAdditionalElements()?.template;
 	}
 
-	private readonly panelService = inject(PanelService);
-	private readonly platformService = inject(PlatformService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-	public readonly viewportService = inject(ViewportService);
 	private readonly panelTogglingEffect = effect(() => {
 		const ev = this.panelService.panelOpened();
 		if (ev.panelType === PanelType.SETTINGS && !!ev.subOptionType) {
-			this.selectedOption = ev.subOptionType as PanelSettingsOptions;
+			this.selectedOption.set(ev.subOptionType as PanelSettingsOptions);
 		}
 	});
 
@@ -83,26 +83,13 @@ export class SettingsPanelComponent implements OnInit {
 	}
 	ngOnInit() {
 		this.isMobile = this.platformService.isMobile();
-		this.subscribeToDirectives();
 	}
 
 	close() {
 		this.panelService.togglePanel(PanelType.SETTINGS);
 	}
 	onSelectionChanged(option: PanelSettingsOptions) {
-		this.selectedOption = option;
-	}
-
-	private subscribeToDirectives() {
-		this.libService.cameraButton$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: boolean) => (this.showCameraButton = value));
-		this.libService.microphoneButton$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: boolean) => (this.showMicrophoneButton = value));
-		this.libService.showThemeSelector$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: boolean) => (this.showThemeSelector = value));
+		this.selectedOption.set(option);
 	}
 
 }
