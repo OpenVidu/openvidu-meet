@@ -44,10 +44,26 @@
 		text-transform: uppercase;
 		width: fit-content;
 
-		.status-dot {
-			width: 8px;
-			height: 8px;
-			border-radius: var(--ov-meet-radius-circle);
+		.status-main {
+			display: inline-flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+		}
+
+		.status-icon {
+			@include ov-icon(sm);
+		}
+
+		.meeting-end-info-icon {
+			@include ov-icon(sm);
+
+			&.meeting-end-close {
+				color: var(--ov-meet-color-warning);
+			}
+
+			&.meeting-end-delete {
+				color: var(--ov-meet-color-error);
+			}
 		}
 	}
 
@@ -92,6 +108,14 @@
 					background-color: rgba(244, 67, 54, 0.1);
 				}
 			}
+
+			&.close-action {
+				color: var(--ov-meet-color-warning);
+			}
+
+			&.open-action {
+				color: var(--ov-meet-color-success);
+			}
 		}
 	}
 }
@@ -119,7 +143,7 @@
 				display: flex;
 				flex-direction: column;
 				gap: var(--ov-meet-spacing-xs);
-				margin: auto;
+				margin: 0 auto;
 
 				.info-label {
 					font-size: var(--ov-meet-font-size-xs);
@@ -166,6 +190,76 @@
 						font-size: var(--ov-meet-font-size-xs);
 						font-weight: var(--ov-meet-font-weight-bold);
 					}
+				}
+
+				.date-info {
+					@extend .ov-date-info;
+				}
+
+				.auto-deletion-info {
+					display: flex;
+					flex-direction: column;
+					gap: var(--ov-meet-spacing-xs);
+
+					.deletion-badge {
+						display: inline-flex;
+						align-items: center;
+						gap: var(--ov-meet-spacing-xs);
+						padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+						border-radius: var(--ov-meet-radius-sm);
+						font-size: var(--ov-meet-font-size-xs);
+						font-weight: var(--ov-meet-font-weight-medium);
+						width: fit-content;
+						text-transform: uppercase;
+
+						.deletion-icon {
+							@include ov-icon(sm);
+						}
+					}
+
+					.deletion-date-time {
+						padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+
+						.deletion-date {
+							font-size: var(--ov-meet-font-size-sm);
+							color: var(--ov-meet-text-primary);
+						}
+
+						.deletion-time {
+							font-size: var(--ov-meet-font-size-xs);
+							color: var(--ov-meet-text-secondary);
+						}
+					}
+
+					.auto-deletion-disabled {
+						color: var(--ov-meet-text-hint);
+
+						.deletion-icon {
+							color: var(--ov-meet-text-hint);
+						}
+					}
+
+					.auto-deletion-scheduled {
+						font-weight: var(--ov-meet-font-weight-semibold);
+						color: var(--ov-meet-color-warning);
+
+						.deletion-icon {
+							color: var(--ov-meet-color-warning);
+						}
+					}
+
+					.auto-deletion-expired {
+						font-weight: var(--ov-meet-font-weight-semibold);
+						color: var(--ov-meet-color-error);
+
+						.deletion-icon {
+							color: var(--ov-meet-color-error);
+						}
+					}
+				}
+
+				.no-data {
+					@extend .ov-no-data;
 				}
 			}
 		}
