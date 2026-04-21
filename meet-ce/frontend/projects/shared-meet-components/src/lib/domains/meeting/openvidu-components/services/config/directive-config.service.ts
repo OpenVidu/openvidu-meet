@@ -6,7 +6,7 @@ import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
 /**
  * Recording activity controls configuration
  */
-interface RecordingControls {
+export interface RecordingControls {
 	play: boolean;
 	download: boolean;
 	delete: boolean;
