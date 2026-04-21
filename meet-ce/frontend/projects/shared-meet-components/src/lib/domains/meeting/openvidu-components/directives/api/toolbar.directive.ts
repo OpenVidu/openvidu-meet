@@ -208,56 +208,6 @@ export class ToolbarRecordingButtonDirective implements OnDestroy {
 	}
 }
 
-/**
- * The **broadcastingButton** directive allows show/hide the start/stop broadcasting toolbar button.
- *
- * Default: `true`
- *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
- *
- * @example
- * <ov-videoconference [toolbarBroadcastingButton]="false"></ov-videoconference>
- *
- * \
- * And it also can be used in the {@link ToolbarComponent}.
- * @example
- * <ov-toolbar [broadcastingButton]="false"></ov-toolbar>
- *
- */
-@Directive({
-	selector: 'ov-videoconference[toolbarBroadcastingButton], ov-toolbar[broadcastingButton]',
-	standalone: false
-})
-export class ToolbarBroadcastingButtonDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	readonly toolbarBroadcastingButton = input<boolean | undefined>(undefined);
-	/**
-	 * @ignore
-	 */
-	readonly broadcastingButton = input<boolean | undefined>(undefined);
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly broadcastingButtonEffect = effect(() => {
-		this.update(this.broadcastingButton() ?? this.toolbarBroadcastingButton() ?? true);
-	});
-
-	ngOnDestroy(): void {
-		this.clear();
-	}
-	private clear() {
-		this.update(true);
-	}
-
-	private update(value: boolean) {
-		this.libService.setBroadcastingButton(value);
-	}
-}
 
 /**
  * The **fullscreenButton** directive allows show/hide the fullscreen toolbar button.

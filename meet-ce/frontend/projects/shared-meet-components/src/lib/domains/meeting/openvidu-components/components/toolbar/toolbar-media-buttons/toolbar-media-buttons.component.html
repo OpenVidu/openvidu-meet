@@ -155,30 +155,6 @@
 			</button>
 		}
 
-		<!-- Broadcasting button -->
-		@if (showBroadcastingButton()) {
-			<button
-				mat-menu-item
-				id="toolbar-broadcasting-btn"
-				[disabled]="
-					broadcastingStatus() === _broadcastingStatus.STARTING ||
-					recordingStatus() === _recordingStatus.STOPPING
-				"
-				(click)="onBroadcastingToggle()"
-			>
-				<mat-icon>sensors</mat-icon>
-				<span>
-					{{
-						broadcastingStatus() === _broadcastingStatus.STOPPED ||
-						broadcastingStatus() === _broadcastingStatus.STOPPING ||
-						broadcastingStatus() === _broadcastingStatus.FAILED
-							? ('PANEL.STREAMING.START' | translate)
-							: ('PANEL.STREAMING.STOP' | translate)
-					}}
-				</span>
-			</button>
-		}
-
 		<!-- Virtual background button -->
 		@if (showBackgroundEffectsButton()) {
 			<button

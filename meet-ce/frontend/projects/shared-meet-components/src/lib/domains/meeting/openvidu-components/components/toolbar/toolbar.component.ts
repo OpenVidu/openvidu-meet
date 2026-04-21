@@ -15,7 +15,7 @@ import {
 	viewChild
 } from '@angular/core';
 
-	import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
 import { ChatService } from '../../services/chat/chat.service';
 import { DocumentService } from '../../services/document/document.service';
@@ -30,10 +30,6 @@ import {
 	ToolbarAdditionalButtonsDirective,
 	ToolbarAdditionalPanelButtonsDirective
 } from '../../directives/template/openvidu-components-angular.directive';
-import {
-	BroadcastingStatus,
-	BroadcastingStopRequestedEvent
-} from '../../models/broadcasting.model';
 import { ChatMessage } from '../../models/chat.model';
 import { ILogger } from '../../models/logger.model';
 import { PanelType } from '../../models/panel.model';
@@ -45,7 +41,6 @@ import {
 	RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { ActionService } from '../../services/action/action.service';
-import { BroadcastingService } from '../../services/broadcasting/broadcasting.service';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
@@ -190,12 +185,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	readonly onRecordingStopRequested = output<RecordingStopRequestedEvent>();
 
 	/**
-	 * Provides event notifications that fire when stop broadcasting has been requested.
-	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
-	 */
-	readonly onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
-
-	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recordings button.
 	 */
@@ -222,7 +211,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @internal
 	 */
-	firstChatMessageEmission: boolean = true;
+	private lastKnownChatMessageCount: number = 0;
 	/**
 	 * @ignore
 	 */
@@ -282,7 +271,9 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly showScreenshareButton = computed(() => this.libService.screenshareButtonSignal() && !this.platformService.isMobile());
+	readonly showScreenshareButton = computed(
+		() => this.libService.screenshareButtonSignal() && !this.platformService.isMobile()
+	);
 	/**
 	 * @ignore
 	 */
@@ -311,11 +302,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly showBroadcastingButton = this.libService.broadcastingButtonSignal;
-
-	/**
-	 * @ignore
-	 */
 	readonly showSettingsButton = this.libService.toolbarSettingsButtonSignal;
 
 	/**
@@ -326,7 +312,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			this.showFullscreenButton() ||
 			this.showBackgroundEffectsButton() ||
 			this.showRecordingButton() ||
-			this.showBroadcastingButton() ||
 			this.showSettingsButton()
 	);
 
@@ -400,19 +385,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	broadcastingStatus: BroadcastingStatus = BroadcastingStatus.STOPPED;
-	/**
-	 * @ignore
-	 */
-	broadcastingId: string | undefined;
-	/**
-	 * @ignore
-	 */
 	_recordingStatus = RecordingState;
-	/**
-	 * @ignore
-	 */
-	_broadcastingStatus = BroadcastingStatus;
 
 	/**
 	 * @ignore
@@ -463,7 +436,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly cd = inject(ChangeDetectorRef);
 	private readonly recordingService = inject(RecordingService);
-	private readonly broadcastingService = inject(BroadcastingService);
 	private readonly translateService = inject(TranslateService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);
@@ -478,6 +450,43 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.toolbarLeaveButtonTemplate = this.toolbarLeaveButtonTemplateQuery();
 		this.toolbarAdditionalPanelButtonsTemplate = this.toolbarAdditionalPanelButtonsTemplateQuery();
 		this.setupTemplates();
+		this.cd.markForCheck();
+	});
+	private readonly menuTogglingEffect = effect(() => {
+		const ev = this.panelService.panelOpened();
+		this.isChatOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
+		this.isParticipantsOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
+		this.isActivitiesOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
+		if (this.isChatOpened) {
+			this.unreadMessages = 0;
+		}
+		this.cd.markForCheck();
+	});
+	private readonly chatMessagesEffect = effect(() => {
+		const messages = this.chatService.chatMessages();
+		const currentMessageCount = messages.length;
+		const newMessagesCount = Math.max(0, currentMessageCount - this.lastKnownChatMessageCount);
+
+		if (!this.panelService.isChatPanelOpened() && newMessagesCount > 0) {
+			this.unreadMessages += newMessagesCount;
+		}
+		this.lastKnownChatMessageCount = currentMessageCount;
+		this.messageList = messages;
+		this.cd.markForCheck();
+	});
+	private readonly recordingStatusEffect = effect(() => {
+		const event = this.recordingService.recordingState();
+		const { status, startedAt } = event;
+		this.recordingStatus = status;
+		if (status === RecordingState.STARTED) {
+			this.startedRecording = event.recordingList.find((rec) => rec.status === RecordingState.STARTED);
+		} else {
+			this.startedRecording = undefined;
+		}
+
+		if (startedAt) {
+			this.recordingTime = startedAt;
+		}
 		this.cd.markForCheck();
 	});
 
@@ -520,12 +529,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	get isBroadcastingStarted(): boolean {
-		return this.broadcastingStatus === this._broadcastingStatus.STARTED;
-	}
-	/**
-	 * @ignore
-	 */
 	sizeChange(_: Event) {
 		if (this.currentWindowHeight >= window.innerHeight) {
 			// The user has exit the fullscreen mode
@@ -555,10 +558,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.setupTemplates();
 
 		this.subscribeToReconnection();
-		this.subscribeToMenuToggling();
-		this.subscribeToChatMessages();
 		this.subscribeToRecordingStatus();
-		this.subscribeToBroadcastingStatus();
 	}
 
 	ngAfterViewInit() {
@@ -715,15 +715,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	openBroadcastingActivityPanel() {
-		if (this.showActivitiesPanelButton() && !this.isActivitiesOpened) {
-			this.panelService.togglePanel(PanelType.ACTIVITIES, 'broadcasting');
-		}
-	}
-
-	/**
-	 * @ignore
-	 */
 	toggleRecording() {
 		if (this.recordingStatus === RecordingState.FAILED) {
 			this.openRecordingActivityPanel();
@@ -746,39 +737,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	toggleBroadcasting() {
-		if (this.broadcastingStatus === BroadcastingStatus.STARTED) {
-			this.log.d('Stopping broadcasting');
-			const payload: BroadcastingStopRequestedEvent = {
-				roomName: this.openviduService.getRoomName(),
-				broadcastingId: this.broadcastingId as string
-			};
-			this.onBroadcastingStopRequested.emit(payload);
-			this.broadcastingService.setBroadcastingStopped();
-		} else if (this.broadcastingStatus === BroadcastingStatus.STOPPED) {
-			this.openBroadcastingActivityPanel();
-		}
-	}
-
-	/**
-	 * @ignore
-	 */
 	toggleBackgroundEffects() {
 		this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);
-	}
-
-	/**
-	 * @ignore
-	 */
-	onCaptionsToggle() {
-		// if (this.openviduService.isOpenViduPro()) {
-		// 	this.layoutService.toggleCaptions();
-		// } else {
-		// 	this.actionService.openProFeatureDialog(
-		// 		this.translateService.translate('PANEL.SETTINGS.CAPTIONS'),
-		// 		this.translateService.translate('PANEL.PRO_FEATURE')
-		// 	);
-		// }
 	}
 
 	/**
@@ -843,35 +803,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			});
 	}
 
-	private subscribeToMenuToggling() {
-		effect(() => {
-			const ev = this.panelService.panelOpened();
-			this.isChatOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
-			this.isParticipantsOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
-			this.isActivitiesOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
-			if (this.isChatOpened) {
-				this.unreadMessages = 0;
-			}
-			this.cd.markForCheck();
-		});
-	}
-
-	private subscribeToChatMessages() {
-		effect(() => {
-			const messages = this.chatService.chatMessages();
-			// Skip first emission like the old skip(1) operator
-			if (this.firstChatMessageEmission) {
-				this.firstChatMessageEmission = false;
-				return;
-			}
-			if (!this.panelService.isChatPanelOpened()) {
-				this.unreadMessages++;
-			}
-			this.messageList = messages;
-			this.cd.markForCheck();
-		});
-	}
-
 	private subscribeToRecordingStatus() {
 		this.libService.recordingActivityReadOnly$
 			.pipe(takeUntilDestroyed(this.destroyRef))
@@ -879,33 +810,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 				this.isRecordingReadOnlyMode = readOnly;
 				this.cd.markForCheck();
 			});
-
-		effect(() => {
-			const event = this.recordingService.recordingState();
-			const { status, startedAt } = event;
-			this.recordingStatus = status;
-			if (status === RecordingState.STARTED) {
-				this.startedRecording = event.recordingList.find((rec) => rec.status === RecordingState.STARTED);
-			} else {
-				this.startedRecording = undefined;
-			}
-
-			if (startedAt) {
-				this.recordingTime = startedAt;
-			}
-			this.cd.markForCheck();
-		});
-	}
-
-	private subscribeToBroadcastingStatus() {
-		effect(() => {
-			const ev = this.broadcastingService.broadcastingStatus();
-			if (!!ev) {
-				this.broadcastingStatus = ev.status;
-				this.broadcastingId = ev.broadcastingId;
-				this.cd.markForCheck();
-			}
-		});
 	}
 
 	private evalAndSetRoomName(value: string) {

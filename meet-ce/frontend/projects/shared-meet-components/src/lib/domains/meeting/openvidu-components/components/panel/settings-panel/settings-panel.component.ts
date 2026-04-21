@@ -1,13 +1,13 @@
 import {
-    ChangeDetectionStrategy,
-    Component,
-    contentChild,
-    DestroyRef,
-    effect,
-    inject,
-    OnInit,
-    output,
-    TemplateRef
+	ChangeDetectionStrategy,
+	Component,
+	contentChild,
+	DestroyRef,
+	effect,
+	inject,
+	OnInit,
+	output,
+	TemplateRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
@@ -46,7 +46,6 @@ export class SettingsPanelComponent implements OnInit {
 	selectedOption: PanelSettingsOptions = PanelSettingsOptions.GENERAL;
 	showCameraButton: boolean = true;
 	showMicrophoneButton: boolean = true;
-	showCaptions: boolean = true;
 	showThemeSelector: boolean = false;
 	isMobile: boolean = false;
 	private readonly destroyRef = inject(DestroyRef);
@@ -96,9 +95,6 @@ export class SettingsPanelComponent implements OnInit {
 		this.libService.microphoneButton$
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((value: boolean) => (this.showMicrophoneButton = value));
-		this.libService.captionsButton$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: boolean) => (this.showCaptions = value));
 		this.libService.showThemeSelector$
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((value: boolean) => (this.showThemeSelector = value));

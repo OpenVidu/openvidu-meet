@@ -20,7 +20,6 @@ export class ToolbarPanelButtonsComponent {
 	showParticipantsPanelButton = input<boolean>(true);
 	showChatPanelButton = input<boolean>(true);
 	recordingStatus = input<any>();
-	broadcastingStatus = input<any>();
 	toolbarAdditionalPanelButtonsTemplate = input<TemplateRef<any> | undefined>();
 	totalParticipants = input<number>(0);
 

@@ -8,14 +8,14 @@
 			}
 
 			<!-- Session Info -->
-			<div id="session-info-container" [class.collapsed]="isRecordingStarted || isBroadcastingStarted">
+			<div id="session-info-container" [class.collapsed]="isRecordingStarted">
 				<!-- Room Name -->
 				@if (!isMinimal() && showRoomName()) {
 					<span id="session-name">{{ roomName }}</span>
 				}
 
 				<!-- Activities (Recording / Broadcasting) -->
-				@if (isRecordingStarted || isBroadcastingStarted) {
+				@if (isRecordingStarted ) {
 					<div id="activities-tag">
 						@if (isRecordingStarted) {
 							<div id="recording-tag" class="recording-tag" (click)="openRecordingActivityPanel()">
@@ -27,13 +27,6 @@
 							</div>
 						}
 
-						@if (isBroadcastingStarted) {
-							<!-- Broadcasting tag -->
-							<div id="broadcasting-tag" class="broadcasting-tag">
-								<mat-icon class="blink">sensors</mat-icon>
-								<span class="blink">LIVE</span>
-							</div>
-						}
 					</div>
 				}
 			</div>
@@ -60,13 +53,11 @@
 			[showFullscreenButton]="showFullscreenButton()"
 			[showRecordingButton]="showRecordingButton()"
 			[showViewRecordingsButton]="showViewRecordingsButton()"
-			[showBroadcastingButton]="showBroadcastingButton()"
 			[showBackgroundEffectsButton]="showBackgroundEffectsButton()"
 			[showSettingsButton]="showSettingsButton()"
 			[isFullscreenActive]="isFullscreenActive"
 			[recordingStatus]="recordingStatus"
 			[hasRoomTracksPublished]="hasRoomTracksPublished"
-			[broadcastingStatus]="broadcastingStatus"
 			[showLeaveButton]="showLeaveButton()"
 			[toolbarAdditionalButtonsTemplate]="toolbarAdditionalButtonsTemplate ?? null"
 			[additionalButtonsPosition]="additionalButtonsPosition()"
@@ -78,9 +69,7 @@
 			(fullscreenToggled)="toggleFullscreen()"
 			(recordingToggled)="toggleRecording()"
 			(viewRecordingsClicked)="onViewRecordingsClicked.emit()"
-			(broadcastingToggled)="toggleBroadcasting()"
 			(backgroundEffectsToggled)="toggleBackgroundEffects()"
-			(captionsToggled)="onCaptionsToggle()"
 			(settingsToggled)="toggleSettings()"
 			(leaveClicked)="disconnect()"
 		>
@@ -104,7 +93,6 @@
 			[showParticipantsPanelButton]="showParticipantsPanelButton()"
 			[showChatPanelButton]="showChatPanelButton()"
 			[recordingStatus]="recordingStatus"
-			[broadcastingStatus]="broadcastingStatus"
 			[totalParticipants]="totalParticipants()"
 			[toolbarAdditionalPanelButtonsTemplate]="toolbarAdditionalPanelButtonsTemplate"
 			(toggleActivitiesPanel)="toggleActivitiesPanel($event ?? '')"

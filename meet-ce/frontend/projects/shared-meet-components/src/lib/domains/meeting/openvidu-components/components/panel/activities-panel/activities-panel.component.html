@@ -26,14 +26,6 @@
 					(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
 				/>
 			}
-			@if (showBroadcastingActivity) {
-				<ov-broadcasting-activity
-					id="broadcasting-activity"
-					[expanded]="expandedPanel === 'broadcasting'"
-					(onBroadcastingStartRequested)="onBroadcastingStartRequested.emit($event)"
-					(onBroadcastingStopRequested)="onBroadcastingStopRequested.emit($event)"
-				/>
-			}
 		</mat-accordion>
 	</div>
 </div>

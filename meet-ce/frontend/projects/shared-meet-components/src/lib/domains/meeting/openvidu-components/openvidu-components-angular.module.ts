@@ -17,7 +17,6 @@ import { RecordingService } from './services/recording/recording.service';
 import { StorageService } from './services/storage/storage.service';
 
 import { OpenViduComponentsUiModule } from './openvidu-components-angular-ui.module';
-import { BroadcastingService } from './services/broadcasting/broadcasting.service';
 import { OpenViduComponentsConfigService } from './services/config/directive-config.service';
 import { GlobalConfigService } from './services/config/global-config.service';
 import { E2eeService } from './services/e2ee/e2ee.service';
@@ -35,8 +34,6 @@ export class OpenViduComponentsModule {
 			GlobalConfigService,
 			OpenViduComponentsConfigService,
 			ActionService,
-			BroadcastingService,
-			// CaptionService,
 			CdkOverlayContainer,
 			{ provide: OverlayContainer, useExisting: CdkOverlayContainer },
 			ChatService,

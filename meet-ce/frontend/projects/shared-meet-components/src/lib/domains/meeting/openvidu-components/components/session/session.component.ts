@@ -22,12 +22,10 @@ import { DataTopic } from '../../models/data-topic.model';
 import { SidenavMode } from '../../models/layout/layout.model';
 import { ILogger } from '../../models/logger.model';
 import { PanelType } from '../../models/panel.model';
-import { RoomStatusData } from '../../models/room.model';
-import { ActionService } from '../../services/action/action.service';
-import { BroadcastingService } from '../../services/broadcasting/broadcasting.service';
-// import { CaptionService } from '../../services/caption/caption.service';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingState } from '../../models/recording.model';
+import { RoomStatusData } from '../../models/room.model';
+import { ActionService } from '../../services/action/action.service';
 import { ChatService } from '../../services/chat/chat.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
@@ -141,7 +139,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly panelService = inject(PanelService);
 	private readonly recordingService = inject(RecordingService);
-	private readonly broadcastingService = inject(BroadcastingService);
 	private readonly translateService = inject(TranslateService);
 	private readonly backgroundService = inject(VirtualBackgroundService);
 	private readonly cd = inject(ChangeDetectorRef);
@@ -580,26 +577,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 				this.log.d('RECORDING_FAILED', event);
 				this.recordingService.setRecordingFailed(event.error);
 				break;
-
-			case DataTopic.BROADCASTING_STARTING:
-				this.broadcastingService.setBroadcastingStarting();
-				break;
-			case DataTopic.BROADCASTING_STARTED:
-				this.log.d('Broadcasting has been started', event);
-				this.broadcastingService.setBroadcastingStarted(event);
-				break;
-
-			case DataTopic.BROADCASTING_STOPPING:
-				this.broadcastingService.setBroadcastingStopping();
-				break;
-			case DataTopic.BROADCASTING_STOPPED:
-				this.broadcastingService.setBroadcastingStopped();
-				break;
-
-			case DataTopic.BROADCASTING_FAILED:
-				this.broadcastingService.setBroadcastingFailed(event.error);
-				break;
-
 			case DataTopic.ROOM_STATUS:
 				const { recordingList, isRecordingStarted, isBroadcastingStarted, broadcastingId } = event as RoomStatusData;
 
@@ -610,9 +587,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 					const recordingActive = recordingList.find((recording) => recording.status === RecordingState.STARTED);
 					this.recordingService.setRecordingStarted(recordingActive);
 				}
-				if (isBroadcastingStarted) {
-					this.broadcastingService.setBroadcastingStarted(broadcastingId);
-				}
+
 				break;
 
 			default:

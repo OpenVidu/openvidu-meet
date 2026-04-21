@@ -34,7 +34,6 @@ import {
 	ToolbarAdditionalPanelButtonsDirective,
 	ToolbarDirective
 } from '../../directives/template/openvidu-components-angular.directive';
-import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../models/broadcasting.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
@@ -371,18 +370,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * It provides the {@link RecordingDownloadClickedEvent} payload as event data.
 	 */
 	readonly onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
-
-	/**
-	 * Provides event notifications that fire when start broadcasting button is clicked.
-	 * It provides the {@link BroadcastingStartRequestedEvent} payload as event data.
-	 */
-	readonly onBroadcastingStartRequested = output<BroadcastingStartRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when stop broadcasting button is clicked.
-	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
-	 */
-	readonly onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
 
 	/**
 	 * @internal

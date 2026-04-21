@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, effect, inject, OnInit, output } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../../models/broadcasting.model';
 import { PanelType } from '../../../models/panel.model';
 import {
 	RecordingDeleteRequestedEvent,
@@ -69,17 +68,6 @@ export class ActivitiesPanelComponent implements OnInit {
 	 */
 	onViewRecordingClicked = output<string>();
 
-	/**
-	 * Provides event notifications that fire when start broadcasting button is clicked.
-	 * It provides the {@link BroadcastingStartRequestedEvent} payload as event data.
-	 */
-	onBroadcastingStartRequested = output<BroadcastingStartRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when stop broadcasting button is clicked.
-	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
-	 */
-	onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
 
 	/**
 	 * @internal
@@ -132,9 +120,5 @@ export class ActivitiesPanelComponent implements OnInit {
 			this.cd.markForCheck();
 		});
 
-		this.libService.broadcastingActivity$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showBroadcastingActivity = value;
-			this.cd.markForCheck();
-		});
 	}
 }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, OnInit, effect, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input, output } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../../models/lang.model';
 import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
 import { StorageService } from '../../../services/storage/storage.service';
@@ -22,12 +22,15 @@ export class LangSelectorComponent implements OnInit {
 	readonly onLangChanged = output<LangOption>();
 	langSelected: LangOption = { name: 'English', lang: 'en' };
 	languages: LangOption[] = [];
-	private readonly destroyRef = inject(DestroyRef);
 	private readonly translateService = inject(TranslateService);
 	private readonly storageSrv = inject(StorageService);
+	private readonly langSelectedEffect = effect(() => {
+		const lang = this.translateService.selectedLanguageOption();
+		this.langSelected = lang;
+		this.onLangChanged.emit(lang);
+	});
 
 	ngOnInit(): void {
-		this.subscribeToLangSelected();
 		this.languages = this.translateService.getAvailableLanguages();
 	}
 
@@ -36,11 +39,4 @@ export class LangSelectorComponent implements OnInit {
 		this.storageSrv.setLang(lang);
 	}
 
-	subscribeToLangSelected() {
-		effect(() => {
-			const lang = this.translateService.selectedLanguageOption();
-			this.langSelected = lang;
-			this.onLangChanged.emit(lang);
-		});
-	}
 }

@@ -24,7 +24,6 @@ interface ToolbarConfig {
 	microphone: boolean;
 	screenshare: boolean;
 	fullscreen: boolean;
-	captions: boolean;
 	settings: boolean;
 	leave: boolean;
 	participantsPanel: boolean;
@@ -36,7 +35,6 @@ interface ToolbarConfig {
 	backgroundEffects: boolean;
 	recording: boolean;
 	viewRecordings: boolean;
-	broadcasting: boolean;
 	brandingLogo: string;
 	additionalButtonsPosition: ToolbarAdditionalButtonsPosition;
 }
@@ -145,7 +143,6 @@ export class OpenViduComponentsConfigService {
 		microphone: true,
 		screenshare: true,
 		fullscreen: true,
-		captions: true,
 		settings: true,
 		leave: true,
 		participantsPanel: true,
@@ -157,7 +154,6 @@ export class OpenViduComponentsConfigService {
 		backgroundEffects: true,
 		recording: true,
 		viewRecordings: false,
-		broadcasting: true,
 		brandingLogo: '',
 		additionalButtonsPosition: ToolbarAdditionalButtonsPosition.AFTER_MENU
 	});
@@ -193,7 +189,6 @@ export class OpenViduComponentsConfigService {
 	});
 
 	// Individual configs that don't fit into groups
-	private readonly broadcastingActivityConfig = signal(true);
 	private readonly layoutRemoteParticipantsConfig = signal<ParticipantModel[] | undefined>(undefined);
 
 	// Signals-first selectors used by migrated consumers/directives
@@ -205,7 +200,6 @@ export class OpenViduComponentsConfigService {
 	readonly microphoneButtonSignal = computed(() => this.toolbarConfig().microphone);
 	readonly screenshareButtonSignal = computed(() => this.toolbarConfig().screenshare);
 	readonly fullscreenButtonSignal = computed(() => this.toolbarConfig().fullscreen);
-	readonly captionsButtonSignal = computed(() => this.toolbarConfig().captions);
 	readonly toolbarSettingsButtonSignal = computed(() => this.toolbarConfig().settings);
 	readonly leaveButtonSignal = computed(() => this.toolbarConfig().leave);
 	readonly participantsPanelButtonSignal = computed(() => this.toolbarConfig().participantsPanel);
@@ -219,8 +213,6 @@ export class OpenViduComponentsConfigService {
 	readonly backgroundEffectsButtonSignal = computed(() => this.toolbarConfig().backgroundEffects);
 	readonly recordingButtonSignal = computed(() => this.toolbarConfig().recording);
 	readonly toolbarViewRecordingsButtonSignal = computed(() => this.toolbarConfig().viewRecordings);
-	readonly broadcastingButtonSignal = computed(() => this.toolbarConfig().broadcasting);
-	readonly broadcastingActivitySignal = this.broadcastingActivityConfig.asReadonly();
 	readonly layoutRemoteParticipantsSignal = this.layoutRemoteParticipantsConfig.asReadonly();
 
 	// General observables
@@ -249,7 +241,6 @@ export class OpenViduComponentsConfigService {
 	microphoneButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().microphone);
 	screenshareButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().screenshare);
 	fullscreenButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().fullscreen);
-	captionsButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().captions);
 	toolbarSettingsButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().settings);
 	leaveButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().leave);
 	participantsPanelButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().participantsPanel);
@@ -265,7 +256,6 @@ export class OpenViduComponentsConfigService {
 	backgroundEffectsButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().backgroundEffects);
 	recordingButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().recording);
 	toolbarViewRecordingsButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().viewRecordings);
-	broadcastingButton$: Observable<boolean> = this.toStoreObservable(() => this.toolbarConfig().broadcasting);
 
 	// Recording activity observables
 	recordingActivity$: Observable<boolean> = this.toStoreObservable(() => this.recordingActivityConfig().enabled);
@@ -298,7 +288,6 @@ export class OpenViduComponentsConfigService {
 	adminDashboardTitle$: Observable<string> = this.toStoreObservable(() => this.adminConfig().dashboardTitle);
 
 	// Individual observables that don't fit into groups
-	broadcastingActivity$: Observable<boolean> = this.toStoreObservable(() => this.broadcastingActivityConfig());
 	layoutRemoteParticipants$: Observable<ParticipantModel[] | undefined> = this.toStoreObservable(
 		() => this.layoutRemoteParticipantsConfig(),
 		(prev, curr) => {
@@ -414,19 +403,12 @@ export class OpenViduComponentsConfigService {
 		return this.toolbarConfig().roomName;
 	}
 
-	setBroadcastingButton(broadcastingButton: boolean) {
-		this.updateToolbarConfig({ broadcasting: broadcastingButton });
-	}
-
 	showBackgroundEffectsButton(): boolean {
 		return this.toolbarConfig().backgroundEffects;
 	}
 
 	// Activity methods (these remain individual as they don't fit cleanly into toolbar config)
 
-	setBroadcastingActivity(broadcastingActivity: boolean) {
-		this.broadcastingActivityConfig.set(broadcastingActivity);
-	}
 
 	// Internals
 	setLayoutRemoteParticipants(participants: ParticipantModel[] | undefined) {
