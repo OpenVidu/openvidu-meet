@@ -8,7 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingEncodingOptions, MeetRecordingEncodingPreset, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -134,5 +134,17 @@ export class RecordingDetailComponent implements OnInit {
 	async retryLoad() {
 		this.hasError.set(false);
 		await this.loadRecordingDetails();
+	}
+
+	protected isEncodingPreset(
+		encoding: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions
+	): encoding is MeetRecordingEncodingPreset {
+		return typeof encoding === 'string';
+	}
+
+	protected getEncodingOptions(
+		encoding: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions
+	): MeetRecordingEncodingOptions | undefined {
+		return this.isEncodingPreset(encoding) ? undefined : encoding;
 	}
 }

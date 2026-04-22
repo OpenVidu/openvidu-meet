@@ -161,14 +161,14 @@
 
 		<!-- ── Two-column body ───────────────────────────────────────── -->
 		<div class="body-columns">
-			<!-- LEFT — secondary info ─────────────────────────────── -->
+			<!-- LEFT —  video player ─────────────────────────────── -->
 			<ov-recording-video-player
 				[recordingUrl]="recordingUrl()"
 				[recordingStatus]="recording()!.status"
 				(retry)="retryLoad()"
 			/>
 
-			<!-- RIGHT — video player ────────────────────────────────── -->
+			<!-- RIGHT — secondary info ────────────────────────────────── -->
 			<mat-card class="info-card">
 				<mat-card-header>
 					<mat-card-title>
@@ -194,13 +194,13 @@
 							</span>
 						</div>
 
-						<!-- End Date -->
-						<div class="info-row">
-							<span class="info-label">Ended</span>
-							<span class="info-value">
-								{{ recording()!.endDate ? (recording()!.endDate! | date: 'MMM d, y – h:mm a') : '—' }}
-							</span>
-						</div>
+						<!-- Filename -->
+						@if (recording()!.filename) {
+							<div class="info-row">
+								<span class="info-label">Filename</span>
+								<span class="info-value">{{ recording()!.filename }}</span>
+							</div>
+						}
 
 						<!-- Layout -->
 						@if (recording()!.layout) {
@@ -210,35 +210,88 @@
 							</div>
 						}
 
-						<!-- Filename -->
-						@if (recording()!.filename) {
-							<div class="info-row">
-								<span class="info-label">Filename</span>
-								<span class="info-value monospace">{{ recording()!.filename }}</span>
+						<!-- Encoding -->
+						@if (recording()!.encoding) {
+							<div class="info-row encoding-row">
+								<span class="info-label">Encoding</span>
+
+								@if (isEncodingPreset(recording()!.encoding!)) {
+									<span class="info-value">{{ recording()!.encoding }}</span>
+								} @else if (getEncodingOptions(recording()!.encoding!); as options) {
+									<div class="encoding-details">
+										<div class="encoding-group">
+											<p class="info-label">Video</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Resolution:</span>
+												<span class="encoding-kv-value monospace"
+													>{{ options.video.width }}x{{ options.video.height }}</span
+												>
+											</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Framerate:</span>
+												<span class="encoding-kv-value">{{ options.video.framerate }} fps</span>
+											</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Codec:</span>
+												<span class="encoding-kv-value monospace">{{
+													options.video.codec
+												}}</span>
+											</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Bitrate:</span>
+												<span class="encoding-kv-value">{{ options.video.bitrate }} kbps</span>
+											</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Keyframe:</span>
+												<span class="encoding-kv-value"
+													>{{ options.video.keyFrameInterval }} s</span
+												>
+											</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Depth:</span>
+												<span class="encoding-kv-value">{{ options.video.depth }} bit</span>
+											</p>
+										</div>
+
+										<div class="encoding-group">
+											<p class="info-label">Audio</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Codec:</span>
+												<span class="encoding-kv-value monospace">{{
+													options.audio.codec
+												}}</span>
+											</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Bitrate:</span>
+												<span class="encoding-kv-value">{{ options.audio.bitrate }} kbps</span>
+											</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">Frequency:</span>
+												<span class="encoding-kv-value">{{ options.audio.frequency }} Hz</span>
+											</p>
+										</div>
+									</div>
+								}
 							</div>
 						}
 					</div>
 
-					<!-- Error / details block -->
-					@if (recording()!.error || recording()!.details) {
+					<!-- Error block -->
+					@if (recording()!.error) {
 						<mat-divider class="divider" />
 						<div class="error-block">
-							@if (recording()!.error) {
-								<div class="error-row">
-									<mat-icon class="error-icon-sm">error_outline</mat-icon>
-									<div>
-										<p class="info-label">Error</p>
-										<p class="info-value error-text">{{ recording()!.error }}</p>
-									</div>
+							<div class="error-header">
+								<mat-icon class="error-icon-sm">error_outline</mat-icon>
+								<div class="error-content">
+									<p class="info-label">Error</p>
+									<p class="info-value error-text">{{ recording()!.error }}</p>
 								</div>
-							}
+							</div>
+
 							@if (recording()!.details) {
-								<div class="error-row">
-									<mat-icon class="error-icon-sm">info_outline</mat-icon>
-									<div>
-										<p class="info-label">Details</p>
-										<p class="info-value">{{ recording()!.details }}</p>
-									</div>
+								<div class="details-content">
+									<p class="info-label">Details</p>
+									<p class="info-value">{{ recording()!.details }}</p>
 								</div>
 							}
 						</div>
