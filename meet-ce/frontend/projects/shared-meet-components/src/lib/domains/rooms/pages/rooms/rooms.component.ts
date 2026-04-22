@@ -118,9 +118,6 @@ export class RoomsComponent implements OnInit {
 			case 'copySpeakerLink':
 				this.copySpeakerLink(action.rooms[0]);
 				break;
-			case 'viewRecordings':
-				await this.viewRecordings(action.rooms[0]);
-				break;
 			case 'reopen':
 				this.reopenRoom(action.rooms[0]);
 				break;
@@ -224,16 +221,6 @@ export class RoomsComponent implements OnInit {
 	private copySpeakerLink({ access }: MeetRoom) {
 		this.clipboard.copy(access.anonymous.speaker.url);
 		this.notificationService.showSnackbar('Speaker link copied to clipboard');
-	}
-
-	private async viewRecordings(room: MeetRoom) {
-		// Navigate to recordings page for this room
-		try {
-			await this.navigationService.navigateTo('/recordings', { roomId: room.roomId });
-		} catch (error) {
-			this.notificationService.showSnackbar('Error navigating to recordings');
-			this.log.e('Error navigating to recordings:', error);
-		}
 	}
 
 	async onRoomClick(roomId: string) {

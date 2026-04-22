@@ -354,15 +354,6 @@
 							</button>
 
 							<mat-menu #actionsMenu="matMenu" id="actions-menu-{{ room.roomId }}">
-								<button
-									mat-menu-item
-									(click)="$event.stopPropagation(); viewRecordings(room)"
-									id="view-recordings-btn-{{ room.roomId }}"
-								>
-									<mat-icon class="ov-recording-icon">video_library</mat-icon>
-									<span>View recordings</span>
-								</button>
-
 								<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
 									<button
 										mat-menu-item
