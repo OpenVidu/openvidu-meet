@@ -32,7 +32,7 @@
 		"doc:api": "mkdir -p public/openapi && cd openapi && openapi-generate-html -i openvidu-meet-api.yaml --ui=stoplight --theme=light --title 'OpenVidu Meet REST API' --description 'OpenVidu Meet REST API' -o ../public/openapi/public.html",
 		"doc:internal-api": "mkdir -p public/openapi && cd openapi && openapi-generate-html -i openvidu-meet-internal-api.yaml --ui=stoplight --theme=dark --title 'OpenVidu Meet Internal REST API' --description 'OpenVidu Meet Internal REST API' -o ../public/openapi/internal.html",
 		"start": "node dist/src/server.js",
-		"start:dev": "NODE_ENV=development concurrently -k -n server,typecheck -c cyan,yellow \"pnpm tsx watch --clear-screen=false --include src ./src/server.ts\" \"pnpm run dev:typecheck\"",
+		"start:dev": "NODE_ENV=development concurrently -k -n server,typecheck -c cyan,yellow \"pnpm tsx watch --clear-screen=false --ignore public --include src ./src/server.ts\" \"pnpm run dev:typecheck\"",
 		"dev:typecheck": "node ../../scripts/dev/backend-type-checker.mjs",
 		"package:build": "pnpm run build:prod && pnpm pack",
 		"test:integration-room-management": "node --experimental-vm-modules ../../node_modules/jest/bin/jest.js --runInBand --forceExit --testPathPattern \"tests/integration/api/(rooms|room-members|meetings)\" --ci --reporters=default --reporters=jest-junit",
