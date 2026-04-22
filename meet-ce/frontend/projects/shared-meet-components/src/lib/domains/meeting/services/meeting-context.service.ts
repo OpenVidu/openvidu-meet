@@ -32,6 +32,8 @@ export class MeetingContextService {
 	private readonly _participantsVersion = signal<number>(0);
 	private readonly _localParticipant = signal<CustomParticipantModel | undefined>(undefined);
 	private readonly _remoteParticipants = signal<CustomParticipantModel[]>([]);
+	private readonly _skipLobby = signal<boolean>(false);
+	private readonly _skipPrejoin = signal<boolean>(false);
 
 	/**
 	 * Readonly signal for the current room
@@ -88,6 +90,16 @@ export class MeetingContextService {
 	 * Readonly signal for the remote participants
 	 */
 	readonly remoteParticipants = this._remoteParticipants.asReadonly();
+
+	/**
+	 * Readonly signal for whether to skip the lobby screen
+	 */
+	readonly skipLobby = this._skipLobby.asReadonly();
+
+	/**
+	 * Readonly signal for whether to skip the prejoin screen
+	 */
+	readonly skipPrejoin = this._skipPrejoin.asReadonly();
 
 	/**
 	 * Computed signal that combines local and remote participants
@@ -184,6 +196,20 @@ export class MeetingContextService {
 	}
 
 	/**
+	 * Sets whether to skip the lobby screen
+	 */
+	setSkipLobby(skip: boolean): void {
+		this._skipLobby.set(skip);
+	}
+
+	/**
+	 * Sets whether to skip the prejoin screen
+	 */
+	setSkipPrejoin(skip: boolean): void {
+		this._skipPrejoin.set(skip);
+	}
+
+	/**
 	 * Returns whether E2EE is enabled (has a key set)
 	 * @returns true if E2EE is enabled, false otherwise
 	 */
@@ -251,5 +277,7 @@ export class MeetingContextService {
 		this._participantsVersion.set(0);
 		this._localParticipant.set(undefined);
 		this._remoteParticipants.set([]);
+		this._skipLobby.set(false);
+		this._skipPrejoin.set(false);
 	}
 }

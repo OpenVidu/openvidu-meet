@@ -28,5 +28,18 @@ export enum WebComponentProperty {
     /**
      * Whether to show only recordings instead of live meetings.
      */
-    SHOW_ONLY_RECORDINGS = 'show-only-recordings'
+    SHOW_ONLY_RECORDINGS = 'show-only-recordings',
+
+    /**
+     * Whether to skip the lobby screen (participant name input).
+     * Requires `participant-name` to be provided via query params.
+     * Default: false (lobby is shown)
+     */
+    SKIP_LOBBY = 'skip-lobby',
+
+    /**
+     * Whether to skip the prejoin screen (camera/mic preview).
+     * Default: false (prejoin is shown)
+     */
+    SKIP_PREJOIN = 'skip-prejoin'
 }

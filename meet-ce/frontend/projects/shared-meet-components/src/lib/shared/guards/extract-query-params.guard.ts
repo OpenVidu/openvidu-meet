@@ -19,7 +19,9 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 		participantName,
 		leaveRedirectUrl,
 		showOnlyRecordings,
-		e2eeKey: queryE2eeKey
+		e2eeKey: queryE2eeKey,
+		skipLobby,
+		skipPrejoin
 	} = extractParams(route);
 	const secret = querySecret || sessionStorageService.getRoomSecret();
 	const e2eeKey = queryE2eeKey || sessionStorageService.getE2EEKey();
@@ -41,6 +43,14 @@ export const extractRoomQueryParamsGuard: CanActivateFn = (route: ActivatedRoute
 
 	if (participantName) {
 		roomMemberAdapter.setParticipantName(participantName);
+	}
+
+	if (skipLobby === 'true') {
+		meetingContextAdapter.setSkipLobby(true);
+	}
+
+	if (skipPrejoin === 'true') {
+		meetingContextAdapter.setSkipPrejoin(true);
 	}
 
 	if (showOnlyRecordings === 'true') {
@@ -76,7 +86,9 @@ const extractParams = ({ params, queryParams }: ActivatedRouteSnapshot) => ({
 	participantName: queryParams[WebComponentProperty.PARTICIPANT_NAME] as string,
 	leaveRedirectUrl: queryParams[WebComponentProperty.LEAVE_REDIRECT_URL] as string,
 	showOnlyRecordings: (queryParams[WebComponentProperty.SHOW_ONLY_RECORDINGS] as string) || 'false',
-	e2eeKey: queryParams[WebComponentProperty.E2EE_KEY] as string
+	e2eeKey: queryParams[WebComponentProperty.E2EE_KEY] as string,
+	skipLobby: (queryParams[WebComponentProperty.SKIP_LOBBY] as string) || 'false',
+	skipPrejoin: (queryParams[WebComponentProperty.SKIP_PREJOIN] as string) || 'false'
 });
 
 /**
