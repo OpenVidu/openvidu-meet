@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -67,6 +67,8 @@ export class RoomDetailComponent implements OnInit {
 	private readonly clipboard = inject(Clipboard);
 	private readonly loggerService = inject(LoggerService);
 	protected readonly log: ILogger = this.loggerService.get('OpenVidu Meet - RoomDetailComponent');
+
+	canViewUserProfiles = signal(true);
 
 	roomId = signal('');
 	room = signal<MeetRoom | undefined>(undefined);

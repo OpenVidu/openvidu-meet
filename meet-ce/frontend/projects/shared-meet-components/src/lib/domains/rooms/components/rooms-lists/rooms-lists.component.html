@@ -204,7 +204,19 @@
 							<div class="owner-avatar" id="owner-avatar-{{ room.roomId }}">
 								<span>{{ RoomUiUtils.getOwnerInitials(room) }}</span>
 							</div>
-							<span class="owner-name" id="owner-name-{{ room.roomId }}">{{ room.owner }}</span>
+							@if (canViewUserProfiles()) {
+								<a
+									class="owner-name-link"
+									[routerLink]="['/users', room.owner]"
+									matTooltip="View user profile"
+									id="owner-profile-link-{{ room.roomId }}"
+									(click)="$event.stopPropagation()"
+								>
+									{{ room.owner }}
+								</a>
+							} @else {
+								<span class="owner-name" id="owner-name-{{ room.roomId }}">{{ room.owner }}</span>
+							}
 						</div>
 					</td>
 				</ng-container>

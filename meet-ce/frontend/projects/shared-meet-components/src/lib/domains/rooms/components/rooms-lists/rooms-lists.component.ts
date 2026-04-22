@@ -28,6 +28,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterModule } from '@angular/router';
 import { MeetRoom, MeetRoomSortField, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
@@ -83,6 +84,7 @@ export interface RoomTableFilter {
 	imports: [
 		NgClass,
 		ReactiveFormsModule,
+		RouterModule,
 		MatTableModule,
 		MatCheckboxModule,
 		MatButtonModule,
@@ -115,6 +117,7 @@ export class RoomsListsComponent implements OnInit {
 	showSelection = input(true);
 	showLoadMore = input(false);
 	loading = input(false);
+	canViewUserProfiles = input(true);
 	initialFilters = input<RoomTableFilter>({
 		nameFilter: '',
 		statusFilter: '',

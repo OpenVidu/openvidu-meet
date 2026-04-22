@@ -133,7 +133,17 @@
 								<div class="owner-avatar">
 									<span>{{ RoomUiUtils.getOwnerInitials(room()!) }}</span>
 								</div>
-								<p class="info-value">{{ room()!.owner }}</p>
+								@if (canViewUserProfiles()) {
+									<a
+										class="owner-name-link"
+										[routerLink]="['/users', room()!.owner]"
+										matTooltip="View user profile"
+									>
+										{{ room()!.owner }}
+									</a>
+								} @else {
+									<p class="info-value">{{ room()!.owner }}</p>
+								}
 							</div>
 						</div>
 
