@@ -179,37 +179,13 @@
 				</mat-card-content>
 			</mat-card>
 
-			<!-- Tabs for Room Members and Recordings -->
+			<!-- Tabs for Recordings and Room Members -->
 			<mat-card class="tabs-card">
 				<mat-tab-group
 					[selectedIndex]="selectedTabIndex()"
 					(selectedIndexChange)="selectedTabIndex.set($event)"
 					animationDuration="0ms"
 				>
-					<!-- Room Members Tab -->
-					<mat-tab>
-						<ng-template mat-tab-label>
-							<mat-icon class="tab-icon">people</mat-icon>
-							<span>Room Members</span>
-							<span class="tab-count">{{ roomMembers().length }}</span>
-						</ng-template>
-
-						<div class="tab-content">
-							<ov-room-members-list
-								[members]="roomMembers()"
-								[loading]="loadingMembers()"
-								[showSearchBox]="true"
-								[showSelection]="true"
-								[showLoadMore]="hasMoreMembers()"
-								[initialFilters]="initialMemberFilters()"
-								(memberAction)="onMemberAction($event)"
-								(loadMore)="loadMoreRoomMembers($event)"
-								(refresh)="refreshRoomMembers($event)"
-								(filterChange)="refreshRoomMembers($event)"
-							/>
-						</div>
-					</mat-tab>
-
 					<!-- Recordings Tab -->
 					<mat-tab>
 						<ng-template mat-tab-label>
@@ -235,6 +211,30 @@
 								(loadMore)="loadMoreRecordings($event)"
 								(refresh)="refreshRecordings($event)"
 								(filterChange)="refreshRecordings($event)"
+							/>
+						</div>
+					</mat-tab>
+
+					<!-- Room Members Tab -->
+					<mat-tab>
+						<ng-template mat-tab-label>
+							<mat-icon class="tab-icon">people</mat-icon>
+							<span>Room Members</span>
+							<span class="tab-count">{{ roomMembers().length }}</span>
+						</ng-template>
+
+						<div class="tab-content">
+							<ov-room-members-list
+								[members]="roomMembers()"
+								[loading]="loadingMembers()"
+								[showSearchBox]="true"
+								[showSelection]="true"
+								[showLoadMore]="hasMoreMembers()"
+								[initialFilters]="initialMemberFilters()"
+								(memberAction)="onMemberAction($event)"
+								(loadMore)="loadMoreRoomMembers($event)"
+								(refresh)="refreshRoomMembers($event)"
+								(filterChange)="refreshRoomMembers($event)"
 							/>
 						</div>
 					</mat-tab>
