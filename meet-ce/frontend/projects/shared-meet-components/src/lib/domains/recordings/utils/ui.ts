@@ -6,12 +6,40 @@ import { formatBytes, formatDurationToHMS } from '../../../shared/utils/format.u
  * These are pure functions that can be used across components and pages.
  */
 export class RecordingUiUtils {
+	// Recording status sets for different states and action capabilities
+	private static readonly STATUS_GROUPS = {
+		IN_PROGRESS: [
+			MeetRecordingStatus.STARTING,
+			MeetRecordingStatus.ACTIVE,
+			MeetRecordingStatus.ENDING
+		] as readonly MeetRecordingStatus[],
+		PLAYABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[],
+		ERROR: [
+			MeetRecordingStatus.FAILED,
+			MeetRecordingStatus.ABORTED,
+			MeetRecordingStatus.LIMIT_REACHED
+		] as readonly MeetRecordingStatus[],
+		DELETABLE: [
+			MeetRecordingStatus.COMPLETE,
+			MeetRecordingStatus.FAILED,
+			MeetRecordingStatus.ABORTED,
+			MeetRecordingStatus.LIMIT_REACHED
+		] as readonly MeetRecordingStatus[]
+	} as const;
+
+	/**
+	 * Checks whether a recording status belongs to a specific status group.
+	 */
+	private static isStatusInGroup(status: MeetRecordingStatus, group: readonly MeetRecordingStatus[]): boolean {
+		return group.includes(status);
+	}
+
 	// ===== STATUS UTILITIES =====
 
 	/**
 	 * Gets the human-readable label for a recording status
 	 */
-	static getStatusLabel(status?: MeetRecordingStatus): string {
+	static getStatusLabel(status: MeetRecordingStatus): string {
 		switch (status) {
 			case MeetRecordingStatus.COMPLETE:
 				return 'Complete';
@@ -35,7 +63,7 @@ export class RecordingUiUtils {
 	/**
 	 * Gets the Material icon name for a recording status
 	 */
-	static getStatusIcon(status?: MeetRecordingStatus): string {
+	static getStatusIcon(status: MeetRecordingStatus): string {
 		switch (status) {
 			case MeetRecordingStatus.COMPLETE:
 				return 'check_circle';
@@ -60,7 +88,7 @@ export class RecordingUiUtils {
 	 * Gets the Material icon name for a recording status in a player context
 	 * (simplified variant used in the video player overlay)
 	 */
-	static getPlayerStatusIcon(status?: MeetRecordingStatus): string {
+	static getPlayerStatusIcon(status: MeetRecordingStatus): string {
 		switch (status) {
 			case MeetRecordingStatus.STARTING:
 			case MeetRecordingStatus.ACTIVE:
@@ -76,7 +104,7 @@ export class RecordingUiUtils {
 	/**
 	 * Gets the CSS color variable for a recording status
 	 */
-	static getStatusColor(status?: MeetRecordingStatus): string {
+	static getStatusColor(status: MeetRecordingStatus): string {
 		switch (status) {
 			case MeetRecordingStatus.COMPLETE:
 				return 'var(--ov-meet-color-success)';
@@ -97,7 +125,7 @@ export class RecordingUiUtils {
 	/**
 	 * Gets the tooltip text for a recording status
 	 */
-	static getStatusTooltip(status?: MeetRecordingStatus): string {
+	static getStatusTooltip(status: MeetRecordingStatus): string {
 		switch (status) {
 			case MeetRecordingStatus.COMPLETE:
 				return 'Recording completed successfully and is ready to play';
@@ -121,7 +149,7 @@ export class RecordingUiUtils {
 	/**
 	 * Gets the player status message for a recording
 	 */
-	static getPlayerStatusMessage(status?: MeetRecordingStatus): string {
+	static getPlayerStatusMessage(status: MeetRecordingStatus): string {
 		switch (status) {
 			case MeetRecordingStatus.STARTING:
 				return 'Recording is starting...';
@@ -137,32 +165,101 @@ export class RecordingUiUtils {
 	}
 
 	/**
-	 * Checks if a recording is in a terminal error state
-	 */
-	static isErrorState(status?: MeetRecordingStatus): boolean {
-		return (
-			status === MeetRecordingStatus.FAILED ||
-			status === MeetRecordingStatus.ABORTED ||
-			status === MeetRecordingStatus.LIMIT_REACHED
-		);
-	}
-
-	/**
-	 * Checks if a recording is playable / downloadable
-	 */
-	static isComplete(status?: MeetRecordingStatus): boolean {
-		return status === MeetRecordingStatus.COMPLETE;
-	}
-
-	/**
 	 * Checks if a recording is currently being recorded
 	 */
-	static isInProgress(status?: MeetRecordingStatus): boolean {
+	static isInProgress(status: MeetRecordingStatus): boolean {
+		return this.isStatusInGroup(status, this.STATUS_GROUPS.IN_PROGRESS);
+	}
+
+	/**
+	 * Checks whether a recording can be played.
+	 */
+	static isPlayable(status: MeetRecordingStatus): boolean {
+		return this.isStatusInGroup(status, this.STATUS_GROUPS.PLAYABLE);
+	}
+
+	/**
+	 * Checks whether a recording can be downloaded.
+	 */
+	static isDownloadable(status: MeetRecordingStatus): boolean {
+		return this.isPlayable(status);
+	}
+
+	/**
+	 * Checks whether a share link can be generated for a recording.
+	 */
+	static isShareable(status: MeetRecordingStatus): boolean {
 		return (
-			status === MeetRecordingStatus.ACTIVE ||
-			status === MeetRecordingStatus.STARTING ||
-			status === MeetRecordingStatus.ENDING
+			this.isStatusInGroup(status, this.STATUS_GROUPS.IN_PROGRESS) ||
+			this.isStatusInGroup(status, this.STATUS_GROUPS.PLAYABLE)
 		);
+	}
+
+	/**
+	 * Checks whether a recording can be deleted.
+	 */
+	static isDeletable(status: MeetRecordingStatus): boolean {
+		return this.isStatusInGroup(status, this.STATUS_GROUPS.DELETABLE);
+	}
+
+	/**
+	 * Checks whether a recording can be selected for bulk actions.
+	 */
+	static isSelectable(status: MeetRecordingStatus): boolean {
+		return this.isStatusInGroup(status, this.STATUS_GROUPS.DELETABLE);
+	}
+
+	/**
+	 * Checks if a recording is in a terminal error state
+	 */
+	static isErrorState(status: MeetRecordingStatus): boolean {
+		return this.isStatusInGroup(status, this.STATUS_GROUPS.ERROR);
+	}
+
+	// ===== TOOLTIP UTILITIES =====
+
+	/**
+	 * Gets the tooltip text for the play action based on recording status.
+	 */
+	static getPlayRecordingTooltip(status: MeetRecordingStatus): string {
+		if (this.isPlayable(status)) {
+			return 'Play recording';
+		}
+
+		return 'Only completed recordings can be played';
+	}
+
+	/**
+	 * Gets the tooltip text for the download action based on recording status.
+	 */
+	static getDownloadRecordingTooltip(status: MeetRecordingStatus): string {
+		if (this.isDownloadable(status)) {
+			return 'Download recording';
+		}
+
+		return 'Only completed recordings can be downloaded';
+	}
+
+	/**
+	 * Gets the tooltip text for the share action based on recording status.
+	 */
+	static getShareRecordingTooltip(status: MeetRecordingStatus): string {
+		if (this.isShareable(status)) {
+			return 'Share link';
+		}
+
+		return 'Only in-progress or completed recordings can be shared';
+	}
+
+	/**
+	 * Gets the tooltip text for the delete action based on recording status.
+	 */
+	static getDeleteRecordingTooltip(status: MeetRecordingStatus): string {
+		if (this.isDeletable(status)) {
+			return 'Delete recording';
+		}
+
+		return 'Only completed or failed recordings can be deleted';
 	}
 
 	// ===== FORMATTING UTILITIES =====

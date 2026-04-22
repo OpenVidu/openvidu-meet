@@ -240,76 +240,91 @@
 
 						<!-- Card Actions -->
 						<div class="card-actions">
-							@if (canPlayRecording(recording)) {
+							<span [matTooltip]="RecordingUiUtils.getPlayRecordingTooltip(recording.status)">
 								<button
 									mat-icon-button
 									(click)="playRecording(recording)"
-									[disabled]="loading()"
+									[disabled]="loading() || !RecordingUiUtils.isPlayable(recording.status)"
 									class="action-button play-button"
-									matTooltip="Play Recording"
 									id="play-recording-btn-{{ recording.recordingId }}"
 								>
 									<mat-icon>play_arrow</mat-icon>
 								</button>
-							}
+							</span>
 
-							@if (canDownloadRecording(recording)) {
+							<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording.status)">
 								<button
 									mat-icon-button
 									(click)="downloadRecording(recording)"
-									[disabled]="loading()"
+									[disabled]="loading() || !RecordingUiUtils.isDownloadable(recording.status)"
 									class="action-button download-button"
-									matTooltip="Download Recording"
 									id="download-recording-btn-{{ recording.recordingId }}"
 								>
 									<mat-icon>download</mat-icon>
 								</button>
-							}
+							</span>
 
-							@if (isRecordingFailed(recording)) {
-								<button
-									mat-icon-button
-									(click)="deleteRecording(recording)"
-									[disabled]="loading()"
-									class="action-button delete-button"
-									matTooltip="Delete Recording"
-									id="delete-recording-btn-{{ recording.recordingId }}"
-								>
-									<mat-icon>delete</mat-icon>
-								</button>
+							@if (!canDeleteRecordings()) {
+								<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording.status)">
+									<button
+										mat-icon-button
+										(click)="shareRecordingLink(recording)"
+										[disabled]="loading() || !RecordingUiUtils.isShareable(recording.status)"
+										class="action-button share-button"
+										id="share-recording-link-{{ recording.recordingId }}"
+									>
+										<mat-icon>share</mat-icon>
+									</button>
+								</span>
+							} @else if (RecordingUiUtils.isErrorState(recording.status)) {
+								<span [matTooltip]="RecordingUiUtils.getDeleteRecordingTooltip(recording.status)">
+									<button
+										mat-icon-button
+										(click)="deleteRecording(recording)"
+										[disabled]="loading() || !RecordingUiUtils.isDeletable(recording.status)"
+										class="action-button delete-button"
+										id="delete-recording-btn-{{ recording.recordingId }}"
+									>
+										<mat-icon>delete</mat-icon>
+									</button>
+								</span>
 							} @else {
 								<button
 									mat-icon-button
 									[matMenuTriggerFor]="cardActionsMenu"
 									[disabled]="loading()"
 									class="action-button more-button"
-									matTooltip="More Actions"
+									matTooltip="More actions"
 									id="more-actions-btn-{{ recording.recordingId }}"
 								>
 									<mat-icon>more_vert</mat-icon>
 								</button>
 
 								<mat-menu #cardActionsMenu="matMenu">
-									<button
-										mat-menu-item
-										(click)="shareRecordingLink(recording)"
-										id="share-recording-link-{{ recording.recordingId }}"
-									>
-										<mat-icon>share</mat-icon>
-										<span>Share link</span>
-									</button>
-									@if (canDeleteRecording(recording)) {
-										<mat-divider />
+									<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording.status)">
+										<button
+											mat-menu-item
+											(click)="shareRecordingLink(recording)"
+											[disabled]="!RecordingUiUtils.isShareable(recording.status)"
+											id="share-recording-link-{{ recording.recordingId }}"
+										>
+											<mat-icon>share</mat-icon>
+											<span>Share link</span>
+										</button>
+									</span>
+									<mat-divider />
+									<span [matTooltip]="RecordingUiUtils.getDeleteRecordingTooltip(recording.status)">
 										<button
 											mat-menu-item
 											(click)="deleteRecording(recording)"
+											[disabled]="!RecordingUiUtils.isDeletable(recording.status)"
 											class="delete-action"
 											id="delete-recording-btn-{{ recording.recordingId }}"
 										>
 											<mat-icon>delete</mat-icon>
 											<span>Delete recording</span>
 										</button>
-									}
+									</span>
 								</mat-menu>
 							}
 						</div>
@@ -426,44 +441,55 @@
 						<td mat-cell *matCellDef="let recording" class="actions-cell">
 							<div class="action-buttons">
 								<!-- Play Button -->
-								@if (canPlayRecording(recording)) {
+								<span [matTooltip]="RecordingUiUtils.getPlayRecordingTooltip(recording.status)">
 									<button
 										mat-icon-button
-										matTooltip="Play Recording"
 										class="action-button play-button"
 										(click)="$event.stopPropagation(); playRecording(recording)"
-										[disabled]="loading()"
+										[disabled]="loading() || !RecordingUiUtils.isPlayable(recording.status)"
 										id="play-recording-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>play_arrow</mat-icon>
 									</button>
-								}
+								</span>
 
 								<!-- Download Button -->
-								@if (canDownloadRecording(recording)) {
+								<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording.status)">
 									<button
 										mat-icon-button
-										matTooltip="Download Recording"
 										class="action-button download-button"
 										(click)="$event.stopPropagation(); downloadRecording(recording)"
-										[disabled]="loading()"
+										[disabled]="loading() || !RecordingUiUtils.isDownloadable(recording.status)"
 										id="download-recording-btn-{{ recording.recordingId }}"
 									>
 										<mat-icon>download</mat-icon>
 									</button>
-								}
+								</span>
 
-								@if (isRecordingFailed(recording)) {
-									<button
-										mat-icon-button
-										matTooltip="Delete Recording"
-										class="action-button delete-button"
-										(click)="$event.stopPropagation(); deleteRecording(recording)"
-										[disabled]="loading()"
-										id="delete-recording-btn-{{ recording.recordingId }}"
-									>
-										<mat-icon>delete</mat-icon>
-									</button>
+								@if (!canDeleteRecordings()) {
+									<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording.status)">
+										<button
+											mat-icon-button
+											class="action-button share-button"
+											(click)="$event.stopPropagation(); shareRecordingLink(recording)"
+											[disabled]="loading() || !RecordingUiUtils.isShareable(recording.status)"
+											id="share-recording-link-{{ recording.recordingId }}"
+										>
+											<mat-icon>share</mat-icon>
+										</button>
+									</span>
+								} @else if (RecordingUiUtils.isErrorState(recording.status)) {
+									<span [matTooltip]="RecordingUiUtils.getDeleteRecordingTooltip(recording.status)">
+										<button
+											mat-icon-button
+											class="action-button delete-button"
+											(click)="$event.stopPropagation(); deleteRecording(recording)"
+											[disabled]="loading() || !RecordingUiUtils.isDeletable(recording.status)"
+											id="delete-recording-btn-{{ recording.recordingId }}"
+										>
+											<mat-icon>delete</mat-icon>
+										</button>
+									</span>
 								} @else {
 									<!-- More Actions Menu -->
 									<button
@@ -471,7 +497,7 @@
 										class="action-button more-button"
 										[matMenuTriggerFor]="actionsMenu"
 										(click)="$event.stopPropagation()"
-										matTooltip="More Actions"
+										matTooltip="More actions"
 										[disabled]="loading()"
 										id="more-actions-btn-{{ recording.recordingId }}"
 									>
@@ -479,27 +505,35 @@
 									</button>
 
 									<mat-menu #actionsMenu="matMenu">
-										<button
-											mat-menu-item
-											(click)="$event.stopPropagation(); shareRecordingLink(recording)"
-											id="share-recording-link-{{ recording.recordingId }}"
+										<span
+											[matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording.status)"
 										>
-											<mat-icon>share</mat-icon>
-											<span>Share link</span>
-										</button>
+											<button
+												mat-menu-item
+												(click)="$event.stopPropagation(); shareRecordingLink(recording)"
+												[disabled]="!RecordingUiUtils.isShareable(recording.status)"
+												id="share-recording-link-{{ recording.recordingId }}"
+											>
+												<mat-icon>share</mat-icon>
+												<span>Share link</span>
+											</button>
+										</span>
 
-										@if (canDeleteRecording(recording)) {
-											<mat-divider />
+										<mat-divider />
+										<span
+											[matTooltip]="RecordingUiUtils.getDeleteRecordingTooltip(recording.status)"
+										>
 											<button
 												mat-menu-item
 												(click)="$event.stopPropagation(); deleteRecording(recording)"
+												[disabled]="!RecordingUiUtils.isDeletable(recording.status)"
 												class="delete-action"
 												id="delete-recording-btn-{{ recording.recordingId }}"
 											>
 												<mat-icon>delete</mat-icon>
 												<span>Delete recording</span>
 											</button>
-										}
+										</span>
 									</mat-menu>
 								}
 							</div>

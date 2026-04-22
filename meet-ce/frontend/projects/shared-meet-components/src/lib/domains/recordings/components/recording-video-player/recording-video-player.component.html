@@ -41,9 +41,11 @@
 	@else {
 		<div class="video-unavailable-container">
 			<div class="unavailable-content">
-				<mat-icon class="status-icon">{{ getStatusIcon() }}</mat-icon>
-				<h3>{{ getStatusMessage() }}</h3>
-				@if (isRecordingInProgress()) {
+				<mat-icon class="status-icon">{{
+					RecordingUiUtils.getPlayerStatusIcon(this.recordingStatus())
+				}}</mat-icon>
+				<h3>{{ RecordingUiUtils.getPlayerStatusMessage(this.recordingStatus()) }}</h3>
+				@if (RecordingUiUtils.isInProgress(this.recordingStatus())) {
 					<p>The recording is still being processed. Please check back in a few minutes.</p>
 					<button mat-raised-button color="primary" (click)="onRetryClick()">
 						<mat-icon>refresh</mat-icon>

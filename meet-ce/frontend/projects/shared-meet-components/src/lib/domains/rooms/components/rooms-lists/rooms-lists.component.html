@@ -345,7 +345,7 @@
 							<button
 								mat-icon-button
 								[matMenuTriggerFor]="actionsMenu"
-								matTooltip="More Actions"
+								matTooltip="More actions"
 								(click)="$event.stopPropagation()"
 								[disabled]="loading()"
 								id="more-actions-btn-{{ room.roomId }}"
@@ -360,7 +360,7 @@
 									id="view-recordings-btn-{{ room.roomId }}"
 								>
 									<mat-icon class="ov-recording-icon">video_library</mat-icon>
-									<span>View Recordings</span>
+									<span>View recordings</span>
 								</button>
 
 								<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
@@ -371,7 +371,7 @@
 										id="copy-moderator-link-btn-{{ room.roomId }}"
 									>
 										<mat-icon>content_copy</mat-icon>
-										<span>Copy Moderator Link</span>
+										<span>Copy moderator link</span>
 									</button>
 								</span>
 								<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
@@ -382,7 +382,7 @@
 										id="copy-speaker-link-btn-{{ room.roomId }}"
 									>
 										<mat-icon>content_copy</mat-icon>
-										<span>Copy Speaker Link</span>
+										<span>Copy speaker link</span>
 									</button>
 								</span>
 

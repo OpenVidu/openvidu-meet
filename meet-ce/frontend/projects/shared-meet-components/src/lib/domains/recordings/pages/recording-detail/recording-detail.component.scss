@@ -191,6 +191,15 @@
 				&:hover {
 					background-color: rgba(244, 67, 54, 0.1);
 				}
+
+				&:disabled,
+				&.mat-mdc-button-disabled {
+					color: var(--ov-meet-text-secondary) !important;
+
+					mat-icon {
+						color: var(--ov-meet-text-secondary) !important;
+					}
+				}
 			}
 		}
 	}

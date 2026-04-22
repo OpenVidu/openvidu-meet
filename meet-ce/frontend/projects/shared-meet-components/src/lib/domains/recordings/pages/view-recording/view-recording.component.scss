@@ -101,6 +101,15 @@
 			mat-icon {
 				@include design-tokens.ov-icon(md);
 			}
+
+			&:disabled,
+			&.mat-mdc-button-disabled {
+				color: var(--ov-meet-text-secondary) !important;
+
+				mat-icon {
+					color: var(--ov-meet-text-secondary) !important;
+				}
+			}
 		}
 	}
 }
@@ -302,9 +311,6 @@
 	}
 }
 
-// === VIDEO SECTION ===
-// Video player styles are now in recording-video-player.component.scss
-
 // === ACTIONS SECTION ===
 
 .actions-section {
@@ -332,6 +338,15 @@
 			&.delete-btn {
 				background-color: var(--ov-meet-color-error);
 				color: var(--ov-meet-text-on-primary);
+			}
+
+			&:disabled,
+			&.mat-mdc-button-disabled {
+				color: var(--ov-meet-text-secondary) !important;
+
+				mat-icon {
+					color: var(--ov-meet-text-secondary) !important;
+				}
 			}
 		}
 	}

@@ -53,55 +53,61 @@
 							@if (recording()!.duration) {
 								<span class="recording-duration">
 									<mat-icon>timer</mat-icon>
-									{{ formatDuration(recording()!.duration!) }}
+									{{ RecordingUiUtils.formatDuration(recording()!.duration!) }}
 								</span>
 							}
 						</div>
 					</div>
 
 					<!-- Right: Actions -->
-					@if (recordingUrl() || canDeleteRecording()) {
-						<div class="header-actions">
-							@if (recordingUrl()) {
-								<button
-									mat-icon-button
-									(click)="downloadRecording()"
-									matTooltip="Download"
-									class="action-button download-button"
-								>
-									<mat-icon>download</mat-icon>
-								</button>
+					<div class="header-actions">
+						<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording()!.status)">
+							<button
+								mat-icon-button
+								(click)="downloadRecording()"
+								[disabled]="isLoading() || !RecordingUiUtils.isDownloadable(recording()!.status)"
+								class="action-button download-button"
+							>
+								<mat-icon>download</mat-icon>
+							</button>
+						</span>
 
-								<button
-									mat-icon-button
-									color="accent"
-									(click)="openShareDialog()"
-									matTooltip="Share"
-									class="action-button share-button"
-								>
-									<mat-icon>share</mat-icon>
-								</button>
-							}
+						<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording()!.status)">
+							<button
+								mat-icon-button
+								color="accent"
+								(click)="openShareDialog()"
+								[disabled]="isLoading() || !RecordingUiUtils.isShareable(recording()!.status)"
+								class="action-button share-button"
+							>
+								<mat-icon>share</mat-icon>
+							</button>
+						</span>
 
-							@if (canDeleteRecording()) {
+						@if (canDeleteRecordings()) {
+							<span [matTooltip]="RecordingUiUtils.getDeleteRecordingTooltip(recording()!.status)">
 								<button
 									mat-icon-button
 									(click)="deleteRecording()"
-									matTooltip="Delete"
+									[disabled]="isLoading() || !RecordingUiUtils.isDeletable(recording()!.status)"
 									class="action-button delete-button"
 								>
 									<mat-icon>delete</mat-icon>
 								</button>
-							}
-						</div>
-					}
+							</span>
+						}
+					</div>
 				</div>
 
 				<!-- Status indicator for non-complete recordings -->
 				@if (recording()!.status !== 'complete') {
 					<div class="status-bar">
-						<mat-icon class="status-icon">{{ getStatusIcon() }}</mat-icon>
-						<span class="status-text">{{ getStatusMessage() }}</span>
+						<mat-icon class="status-icon">{{
+							RecordingUiUtils.getPlayerStatusIcon(this.recording()!.status)
+						}}</mat-icon>
+						<span class="status-text">{{
+							RecordingUiUtils.getPlayerStatusMessage(this.recording()!.status)
+						}}</span>
 					</div>
 				}
 			</div>
@@ -110,9 +116,6 @@
 			<ov-recording-video-player
 				[recordingUrl]="recordingUrl()"
 				[recordingStatus]="recording()!.status"
-				[showDownload]="false"
-				[showShare]="false"
-				(videoError)="onVideoError()"
 				(retry)="retryLoad()"
 			/>
 		</div>
@@ -140,58 +143,74 @@
 									@if (recording()!.duration) {
 										<span class="recording-duration">
 											<mat-icon class="ov-action-icon">timer</mat-icon>
-											{{ formatDuration(recording()!.duration!) }}
+											{{ RecordingUiUtils.formatDuration(recording()!.duration!) }}
 										</span>
 									}
 								</div>
 								<div class="recording-status">
 									<mat-icon [class]="'status-icon ' + recording()!.status">{{
-										getStatusIcon()
+										RecordingUiUtils.getPlayerStatusIcon(recording()!.status)
 									}}</mat-icon>
-									<span class="status-text">{{ getStatusMessage() }}</span>
+									<span class="status-text">{{
+										RecordingUiUtils.getPlayerStatusMessage(recording()!.status)
+									}}</span>
 								</div>
 							</div>
 							<!-- Actions Section -->
-							@if (recordingUrl() || canDeleteRecording()) {
-								<div class="actions-section">
-									<div class="primary-actions">
-										@if (recordingUrl()) {
-											<button
-												mat-button
-												(click)="downloadRecording()"
-												matTooltip="Download recording"
-												class="action-btn primary-button"
-											>
-												<mat-icon>download</mat-icon>
-												<span>Download</span>
-											</button>
+							<div class="actions-section">
+								<div class="primary-actions">
+									<span
+										[matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording()!.status)"
+									>
+										<button
+											mat-button
+											(click)="downloadRecording()"
+											[disabled]="
+												isLoading() || !RecordingUiUtils.isDownloadable(recording()!.status)
+											"
+											class="action-btn primary-button"
+										>
+											<mat-icon>download</mat-icon>
+											<span>Download</span>
+										</button>
+									</span>
 
-											<button
-												mat-raised-button
-												color="accent"
-												(click)="openShareDialog()"
-												matTooltip="Share recording"
-												class="action-btn"
-											>
-												<mat-icon>share</mat-icon>
-												<span>Share</span>
-											</button>
-										}
+									<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording()!.status)">
+										<button
+											mat-raised-button
+											color="accent"
+											(click)="openShareDialog()"
+											[disabled]="
+												isLoading() || !RecordingUiUtils.isShareable(recording()!.status)
+											"
+											class="action-btn"
+										>
+											<mat-icon>share</mat-icon>
+											<span>Share</span>
+										</button>
+									</span>
 
-										@if (canDeleteRecording()) {
+									@if (canDeleteRecordings()) {
+										<span
+											[matTooltip]="
+												RecordingUiUtils.getDeleteRecordingTooltip(recording()!.status)
+											"
+										>
 											<button
 												mat-raised-button
 												(click)="deleteRecording()"
-												matTooltip="Delete recording"
+												[disabled]="
+													isLoading() || !RecordingUiUtils.isDeletable(recording()!.status)
+												"
 												class="action-btn delete-btn"
 											>
 												<mat-icon>delete</mat-icon>
 												<span>Delete</span>
 											</button>
-										}
-									</div>
+										</span>
+									}
 								</div>
-							}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -200,9 +219,6 @@
 				<ov-recording-video-player
 					[recordingUrl]="recordingUrl()"
 					[recordingStatus]="recording()!.status"
-					[showDownload]="false"
-					[showShare]="false"
-					(videoError)="onVideoError()"
 					(retry)="retryLoad()"
 				/>
 			</div>

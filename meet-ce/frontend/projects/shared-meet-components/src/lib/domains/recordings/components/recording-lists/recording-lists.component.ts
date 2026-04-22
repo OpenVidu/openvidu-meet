@@ -153,26 +153,6 @@ export class RecordingListsComponent implements OnInit {
 		{ value: MeetRecordingStatus.LIMIT_REACHED, label: 'Limit Reached' }
 	];
 
-	// Recording status sets for different states using enum constants
-	private readonly STATUS_GROUPS = {
-		ACTIVE: [MeetRecordingStatus.ACTIVE] as readonly MeetRecordingStatus[],
-		COMPLETED: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[],
-		ERROR: [
-			MeetRecordingStatus.FAILED,
-			MeetRecordingStatus.ABORTED,
-			MeetRecordingStatus.LIMIT_REACHED
-		] as readonly MeetRecordingStatus[],
-		IN_PROGRESS: [MeetRecordingStatus.STARTING, MeetRecordingStatus.ENDING] as readonly MeetRecordingStatus[],
-		SELECTABLE: [
-			MeetRecordingStatus.COMPLETE,
-			MeetRecordingStatus.FAILED,
-			MeetRecordingStatus.ABORTED,
-			MeetRecordingStatus.LIMIT_REACHED
-		] as readonly MeetRecordingStatus[],
-		PLAYABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[],
-		DOWNLOADABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[]
-	} as const;
-
 	protected isMobileView = this.viewportService.isMobileView;
 
 	// Make RecordingUiUtils available in template
@@ -272,7 +252,7 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	canSelectRecording(recording: MeetRecordingInfo): boolean {
-		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
+		return RecordingUiUtils.isSelectable(recording.status);
 	}
 
 	getSelectedRecordings(): MeetRecordingInfo[] {
@@ -366,29 +346,5 @@ export class RecordingListsComponent implements OnInit {
 	clearFilters() {
 		this.nameFilterControl.setValue('');
 		this.statusFilterControl.setValue('');
-	}
-
-	// ===== STATUS UTILITY METHODS =====
-
-	private isStatusInGroup(status: MeetRecordingStatus, group: readonly MeetRecordingStatus[]): boolean {
-		return group.includes(status);
-	}
-
-	// ===== PERMISSION AND CAPABILITY METHODS =====
-
-	canPlayRecording(recording: MeetRecordingInfo): boolean {
-		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.PLAYABLE);
-	}
-
-	canDownloadRecording(recording: MeetRecordingInfo): boolean {
-		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.DOWNLOADABLE);
-	}
-
-	canDeleteRecording(recording: MeetRecordingInfo): boolean {
-		return this.canDeleteRecordings() && this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
-	}
-
-	isRecordingFailed(recording: MeetRecordingInfo): boolean {
-		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.ERROR);
 	}
 }

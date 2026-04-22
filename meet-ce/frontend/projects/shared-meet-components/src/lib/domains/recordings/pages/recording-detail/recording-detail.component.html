@@ -48,53 +48,57 @@
 				<div class="title-section">
 					<div class="title">
 						<mat-icon class="ov-recording-icon">video_library</mat-icon>
-						<h1>{{ RecordingUiUtils.getDisplayName(recording()!) }}</h1>
+						<h1>{{ recording()!.roomName }}</h1>
 					</div>
 					<div
 						class="status-badge"
-						[style.color]="RecordingUiUtils.getStatusColor(recording()?.status)"
-						[matTooltip]="RecordingUiUtils.getStatusTooltip(recording()?.status)"
+						[style.color]="RecordingUiUtils.getStatusColor(recording()!.status)"
+						[matTooltip]="RecordingUiUtils.getStatusTooltip(recording()!.status)"
 					>
 						<mat-icon class="status-icon">
-							{{ RecordingUiUtils.getStatusIcon(recording()?.status) }}
+							{{ RecordingUiUtils.getStatusIcon(recording()!.status) }}
 						</mat-icon>
-						<span class="status-text">{{ RecordingUiUtils.getStatusLabel(recording()?.status) }}</span>
+						<span class="status-text">{{ RecordingUiUtils.getStatusLabel(recording()!.status) }}</span>
 					</div>
 				</div>
 
 				<!-- Action Buttons -->
 				<div class="actions">
-					@if (isComplete) {
+					<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording()!.status)">
 						<button
 							mat-flat-button
 							color="primary"
 							class="action-btn"
 							(click)="downloadRecording()"
-							matTooltip="Download recording"
+							[disabled]="isLoading() || !RecordingUiUtils.isDownloadable(recording()!.status)"
 						>
 							<mat-icon>download</mat-icon>
 							<span>Download</span>
 						</button>
+					</span>
 
+					<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording()!.status)">
 						<button
 							mat-stroked-button
 							class="action-btn"
 							(click)="shareRecording()"
-							matTooltip="Share recording link"
+							[disabled]="isLoading() || !RecordingUiUtils.isShareable(recording()!.status)"
 						>
 							<mat-icon>share</mat-icon>
 							<span>Share</span>
 						</button>
-					}
+					</span>
 
-					<button
-						mat-icon-button
-						class="icon-action-btn delete-btn"
-						(click)="deleteRecording()"
-						matTooltip="Delete recording"
-					>
-						<mat-icon>delete</mat-icon>
-					</button>
+					<span [matTooltip]="RecordingUiUtils.getDeleteRecordingTooltip(recording()!.status)">
+						<button
+							mat-icon-button
+							class="icon-action-btn delete-btn"
+							(click)="deleteRecording()"
+							[disabled]="isLoading() || !RecordingUiUtils.isDeletable(recording()!.status)"
+						>
+							<mat-icon>delete</mat-icon>
+						</button>
+					</span>
 				</div>
 			</div>
 		</div>
@@ -110,10 +114,12 @@
 							<p class="stat-label">Room</p>
 							<a
 								class="stat-value room-link"
-								[routerLink]="['/rooms', recording()?.roomId]"
+								[routerLink]="['/rooms', recording()!.roomId]"
+								target="_blank"
+								rel="noopener noreferrer"
 								matTooltip="Go to room details"
 							>
-								{{ recording()?.roomName }}
+								{{ recording()!.roomId }}
 								<mat-icon class="nav-icon">open_in_new</mat-icon>
 							</a>
 						</div>
@@ -126,7 +132,7 @@
 							<p class="stat-label">Started</p>
 							<p class="stat-value">
 								{{
-									recording()?.startDate ? (recording()!.startDate! | date: 'MMM d, y – h:mm a') : '—'
+									recording()!.startDate ? (recording()!.startDate! | date: 'MMM d, y – h:mm a') : '—'
 								}}
 							</p>
 						</div>
@@ -137,7 +143,7 @@
 						<mat-icon class="stat-icon">timer</mat-icon>
 						<div class="stat-body">
 							<p class="stat-label">Duration</p>
-							<p class="stat-value">{{ RecordingUiUtils.formatDuration(recording()?.duration) }}</p>
+							<p class="stat-value">{{ RecordingUiUtils.formatDuration(recording()!.duration) }}</p>
 						</div>
 					</div>
 
@@ -159,14 +165,10 @@
 			<ov-recording-video-player
 				[recordingUrl]="recordingUrl()"
 				[recordingStatus]="recording()!.status"
-				[showDownload]="RecordingUiUtils.isComplete(this.recording()?.status)"
-				[showShare]="RecordingUiUtils.isComplete(this.recording()?.status)"
-				(videoError)="onVideoError()"
-				(download)="downloadRecording()"
-				(share)="shareRecording()"
+				(retry)="retryLoad()"
 			/>
-			<!-- RIGHT — video player ────────────────────────────────── -->
 
+			<!-- RIGHT — video player ────────────────────────────────── -->
 			<mat-card class="info-card">
 				<mat-card-header>
 					<mat-card-title>
@@ -180,7 +182,7 @@
 						<div class="info-row">
 							<span class="info-label">Recording ID</span>
 							<span class="info-value-wrap">
-								<span class="info-value monospace">{{ recording()?.recordingId }}</span>
+								<span class="info-value monospace">{{ recording()!.recordingId }}</span>
 								<button
 									mat-icon-button
 									class="copy-btn"
@@ -196,46 +198,46 @@
 						<div class="info-row">
 							<span class="info-label">Ended</span>
 							<span class="info-value">
-								{{ recording()?.endDate ? (recording()!.endDate! | date: 'MMM d, y – h:mm a') : '—' }}
+								{{ recording()!.endDate ? (recording()!.endDate! | date: 'MMM d, y – h:mm a') : '—' }}
 							</span>
 						</div>
 
 						<!-- Layout -->
-						@if (recording()?.layout) {
+						@if (recording()!.layout) {
 							<div class="info-row">
 								<span class="info-label">Layout</span>
-								<span class="info-value">{{ recording()?.layout }}</span>
+								<span class="info-value">{{ recording()!.layout }}</span>
 							</div>
 						}
 
 						<!-- Filename -->
-						@if (recording()?.filename) {
+						@if (recording()!.filename) {
 							<div class="info-row">
 								<span class="info-label">Filename</span>
-								<span class="info-value monospace">{{ recording()?.filename }}</span>
+								<span class="info-value monospace">{{ recording()!.filename }}</span>
 							</div>
 						}
 					</div>
 
 					<!-- Error / details block -->
-					@if (recording()?.error || recording()?.details) {
+					@if (recording()!.error || recording()!.details) {
 						<mat-divider class="divider" />
 						<div class="error-block">
-							@if (recording()?.error) {
+							@if (recording()!.error) {
 								<div class="error-row">
 									<mat-icon class="error-icon-sm">error_outline</mat-icon>
 									<div>
 										<p class="info-label">Error</p>
-										<p class="info-value error-text">{{ recording()?.error }}</p>
+										<p class="info-value error-text">{{ recording()!.error }}</p>
 									</div>
 								</div>
 							}
-							@if (recording()?.details) {
+							@if (recording()!.details) {
 								<div class="error-row">
 									<mat-icon class="error-icon-sm">info_outline</mat-icon>
 									<div>
 										<p class="info-label">Details</p>
-										<p class="info-value">{{ recording()?.details }}</p>
+										<p class="info-value">{{ recording()!.details }}</p>
 									</div>
 								</div>
 							}

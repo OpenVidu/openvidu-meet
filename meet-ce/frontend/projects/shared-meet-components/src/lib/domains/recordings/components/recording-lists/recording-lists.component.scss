@@ -127,6 +127,13 @@
 }
 
 .action-button {
+	&:disabled,
+	&.mat-mdc-button-disabled {
+		mat-icon {
+			color: var(--ov-meet-text-hint) !important;
+		}
+	}
+
 	&.play-button mat-icon {
 		color: var(--ov-meet-color-success);
 	}

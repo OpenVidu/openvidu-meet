@@ -25,6 +25,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingVideoPlayerComponent implements OnDestroy {
+	viewportService = inject(ViewportService);
+
 	/**
 	 * URL of the recording video to play
 	 */
@@ -36,36 +38,6 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 	recordingStatus = input<MeetRecordingStatus>(MeetRecordingStatus.COMPLETE);
 
 	/**
-	 * Whether to show download button
-	 */
-	showDownload = input(true);
-
-	/**
-	 * Whether to show share button
-	 */
-	showShare = input(true);
-
-	/**
-	 * Emitted when video successfully loads
-	 */
-	videoLoaded = output<void>();
-
-	/**
-	 * Emitted when video fails to load
-	 */
-	videoError = output<void>();
-
-	/**
-	 * Emitted when download button is clicked
-	 */
-	download = output<void>();
-
-	/**
-	 * Emitted when share button is clicked
-	 */
-	share = output<void>();
-
-	/**
 	 * Emitted when retry button is clicked
 	 */
 	retry = output<void>();
@@ -74,24 +46,22 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 	hasVideoError = signal(false);
 	isVideoLoaded = signal(false);
 	showMobileControls = signal(true);
+	private controlsTimeout?: number;
 
 	videoPlayer = viewChild<ElementRef<HTMLVideoElement>>('videoPlayer');
 
-	private controlsTimeout?: number;
-
-	viewportService = inject(ViewportService);
+	RecordingUiUtils = RecordingUiUtils;
 
 	async onVideoLoaded() {
 		this.isVideoLoaded.set(true);
 		this.hasVideoError.set(false);
-		this.videoLoaded.emit();
 
 		// Start controls timeout for mobile
 		if (this.viewportService.isMobileView()) {
 			this.resetControlsTimeout();
 		}
 
-		// try play unmuted and if it fails, mute and play again
+		// Try play unmuted and if it fails, mute and play again
 		const videoElement = this.videoPlayer()?.nativeElement;
 		if (videoElement) {
 			try {
@@ -111,35 +81,12 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 		console.error('Error loading video');
 		this.hasVideoError.set(true);
 		this.isVideoLoaded.set(false);
-		this.videoError.emit();
-	}
-
-	onDownloadClick() {
-		this.download.emit();
-	}
-
-	onShareClick() {
-		this.share.emit();
 	}
 
 	onRetryClick() {
 		this.hasVideoError.set(false);
 		this.isVideoLoaded.set(false);
 		this.retry.emit();
-	}
-
-	getStatusIcon(): string {
-		return RecordingUiUtils.getPlayerStatusIcon(this.recordingStatus());
-	}
-
-	getStatusMessage(): string {
-		return RecordingUiUtils.getPlayerStatusMessage(this.recordingStatus());
-	}
-
-	isRecordingInProgress(): boolean {
-		return [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING].includes(
-			this.recordingStatus()
-		);
 	}
 
 	private resetControlsTimeout(): void {

@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -7,7 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -35,9 +35,19 @@ import { RecordingUiUtils } from '../../utils/ui';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ViewRecordingComponent implements OnInit {
+	protected readonly recordingService = inject(RecordingService);
+	protected readonly notificationService = inject(NotificationService);
+	protected readonly navigationService = inject(NavigationService);
+	protected readonly appCtxService = inject(AppContextService);
+	protected readonly wcManagerService = inject(MeetingWebComponentManagerService);
+	protected readonly roomMemberContextService = inject(RoomMemberContextService);
+	protected readonly route = inject(ActivatedRoute);
+	public readonly viewportService = inject(ViewportService);
+
+	recordingId = '';
+	recordingSecret?: string;
 	recording = signal<MeetRecordingInfo | undefined>(undefined);
 	recordingUrl = signal<string | undefined>(undefined);
-	recordingSecret?: string;
 
 	canRetrieveRecordings = computed(() => this.roomMemberContextService.permissions()?.canRetrieveRecordings ?? false);
 	canDeleteRecordings = computed(() => this.roomMemberContextService.permissions()?.canDeleteRecordings ?? false);
@@ -45,37 +55,26 @@ export class ViewRecordingComponent implements OnInit {
 	isLoading = signal(true);
 	hasError = signal(false);
 
-	constructor(
-		protected recordingService: RecordingService,
-		protected notificationService: NotificationService,
-		protected navigationService: NavigationService,
-		protected appCtxService: AppContextService,
-		protected wcManagerService: MeetingWebComponentManagerService,
-		protected roomMemberContextService: RoomMemberContextService,
-		protected route: ActivatedRoute,
-		public viewportService: ViewportService
-	) {}
+	RecordingUiUtils = RecordingUiUtils;
 
 	async ngOnInit() {
+		this.recordingId = this.route.snapshot.params['recording-id'];
+		this.recordingSecret = this.route.snapshot.queryParams['recordingSecret'];
+
 		await this.loadRecording();
 	}
 
 	private async loadRecording() {
-		const recordingId = this.route.snapshot.params['recording-id'];
-		this.recordingSecret = this.route.snapshot.queryParams['recordingSecret'];
-
-		if (!recordingId) {
-			this.hasError.set(true);
-			this.isLoading.set(false);
-			return;
-		}
+		this.isLoading.set(true);
 
 		try {
-			const recording = await this.recordingService.getRecording(recordingId, this.recordingSecret);
+			const recording = await this.recordingService.getRecording(this.recordingId, this.recordingSecret);
 			this.recording.set(recording);
 
-			if (recording.status === MeetRecordingStatus.COMPLETE) {
-				this.recordingUrl.set(this.recordingService.getRecordingMediaUrl(recordingId, this.recordingSecret));
+			if (RecordingUiUtils.isPlayable(recording.status)) {
+				this.recordingUrl.set(
+					this.recordingService.getRecordingMediaUrl(this.recordingId, this.recordingSecret)
+				);
 			}
 		} catch (error) {
 			console.error('Error fetching recording:', error);
@@ -85,50 +84,25 @@ export class ViewRecordingComponent implements OnInit {
 		}
 	}
 
-	onVideoError() {
-		console.error('Error loading video');
-		this.notificationService.showSnackbar('Error loading video. Please try again.');
-	}
-
 	downloadRecording() {
-		const recording = this.recording();
-		if (recording) {
-			this.recordingService.downloadRecording(recording, this.recordingSecret);
-		}
+		const recording = this.recording()!;
+		this.recordingService.downloadRecording(recording, this.recordingSecret);
 	}
 
 	openShareDialog() {
-		const recording = this.recording();
-		if (recording) {
-			this.recordingService.openShareRecordingDialog(recording.recordingId);
-		}
-	}
-
-	canDeleteRecording(): boolean {
-		const recording = this.recording();
-		if (!recording) return false;
-
-		const deletableStatuses = [
-			MeetRecordingStatus.COMPLETE,
-			MeetRecordingStatus.FAILED,
-			MeetRecordingStatus.ABORTED,
-			MeetRecordingStatus.LIMIT_REACHED
-		];
-
-		return this.canDeleteRecordings() && deletableStatuses.includes(recording.status);
+		this.recordingService.openShareRecordingDialog(this.recordingId);
 	}
 
 	deleteRecording() {
-		const recording = this.recording();
-		if (!recording || !this.canDeleteRecording()) return;
+		const recording = this.recording()!;
 
 		const deleteCallback = async () => {
 			try {
-				await this.recordingService.deleteRecording(recording.recordingId);
+				await this.recordingService.deleteRecording(this.recordingId);
 				this.notificationService.showSnackbar('Recording deleted successfully');
 
 				// After deletion, navigate back to the room recordings page
-				this.navigationService.navigateTo(`/room/${recording.roomId}/recordings`);
+				await this.navigationService.navigateTo(`/room/${recording.roomId}/recordings`);
 			} catch (error) {
 				console.error('Error deleting recording:', error);
 				this.notificationService.showSnackbar('Failed to delete recording');
@@ -137,8 +111,8 @@ export class ViewRecordingComponent implements OnInit {
 
 		this.notificationService.showDialog({
 			title: 'Delete Recording',
-			icon: 'delete_outline',
-			message: `Are you sure you want to delete the recording <b>${recording.recordingId}</b>?`,
+			icon: 'delete_forever',
+			message: `Are you sure you want to permanently delete the recording <b>${recording.recordingId}</b>? This action cannot be undone.`,
 			confirmText: 'Delete',
 			cancelText: 'Cancel',
 			confirmCallback: deleteCallback
@@ -146,23 +120,8 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	async retryLoad() {
-		this.isLoading.set(true);
 		this.hasError.set(false);
 		await this.loadRecording();
-	}
-
-	getStatusIcon(): string {
-		return RecordingUiUtils.getPlayerStatusIcon(this.recording()?.status);
-	}
-
-	getStatusMessage(): string {
-		const recording = this.recording();
-		if (!recording) return 'Recording not found';
-		return RecordingUiUtils.getPlayerStatusMessage(recording.status);
-	}
-
-	formatDuration(duration: number): string {
-		return RecordingUiUtils.formatDuration(duration);
 	}
 
 	/**

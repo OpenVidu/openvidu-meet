@@ -1,6 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, Inject, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -41,6 +40,16 @@ import { RecordingService } from '../../services/recording.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingShareDialogComponent implements OnInit {
+	readonly data = inject<{
+		recordingId: string;
+		hasRecordingAccess?: boolean;
+	}>(MAT_DIALOG_DATA);
+
+	private readonly clipboard = inject(Clipboard);
+	private readonly recordingService = inject(RecordingService);
+	private readonly roomService = inject(RoomService);
+	private readonly roomMemberContextService = inject(RoomMemberContextService);
+
 	accessType = signal<'private' | 'public'>('public');
 	canGenerateUrls = signal(false);
 	canGeneratePublicUrls = signal(false);
@@ -50,21 +59,11 @@ export class RecordingShareDialogComponent implements OnInit {
 	erroMessage = signal<string | undefined>(undefined);
 	copied = signal(false);
 
-	constructor(
-		@Inject(MAT_DIALOG_DATA)
-		public data: {
-			recordingId: string;
-			hasRecordingAccess?: boolean;
-		},
-		private clipboard: Clipboard,
-		private recordingService: RecordingService,
-		private roomService: RoomService,
-		private roomMemberContextService: RoomMemberContextService
-	) {}
-
 	async ngOnInit() {
 		const hasRecordingAccess = this.data.hasRecordingAccess ?? true;
-		this.canGenerateUrls.set(this.roomMemberContextService.hasPermission('canRetrieveRecordings') || hasRecordingAccess);
+		this.canGenerateUrls.set(
+			this.roomMemberContextService.hasPermission('canRetrieveRecordings') || hasRecordingAccess
+		);
 
 		// If the user cannot generate URLs, we can still show the current page URL for sharing,
 		// but we won't attempt to generate a recording-specific URL

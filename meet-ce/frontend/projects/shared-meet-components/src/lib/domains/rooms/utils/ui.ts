@@ -197,7 +197,7 @@ export class RoomUiUtils {
 	 * Gets the label for toggling room status (open/close)
 	 */
 	static getRoomToggleLabel(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'Close Room' : 'Open Room';
+		return room.status !== MeetRoomStatus.CLOSED ? 'Close room' : 'Open room';
 	}
 
 	static getRoomToggleTooltip(room: MeetRoom): string {
