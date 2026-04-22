@@ -89,7 +89,7 @@ export class ProfileComponent implements OnInit {
 
 		// Redirect to profile page if user tries to access their own profile through /users/:userId route
 		if (userId && userId === authenticatedUserId) {
-			await this.navigationService.navigateTo('/profile');
+			await this.navigationService.navigateTo('/profile', {}, true);
 			return;
 		}
 
