@@ -120,7 +120,7 @@ import { Directive, TemplateRef, ViewContainerRef, inject } from '@angular/core'
  */
 @Directive({
 	selector: '[ovToolbar]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarDirective {
 	/**
@@ -258,7 +258,7 @@ export class ToolbarDirective {
 
 @Directive({
 	selector: '[ovToolbarAdditionalButtons]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarAdditionalButtonsDirective {
 	/**
@@ -379,7 +379,7 @@ export class ToolbarAdditionalButtonsDirective {
  */
 @Directive({
 	selector: '[ovToolbarAdditionalPanelButtons]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarAdditionalPanelButtonsDirective {
 	/**
@@ -527,7 +527,7 @@ export class ToolbarAdditionalPanelButtonsDirective {
  */
 @Directive({
 	selector: '[ovPanel]',
-	standalone: false
+	standalone: true
 })
 export class PanelDirective {
 	/**
@@ -712,7 +712,7 @@ export class PanelDirective {
  */
 @Directive({
 	selector: '[ovAdditionalPanels]',
-	standalone: false
+	standalone: true
 })
 export class AdditionalPanelsDirective {
 	/**
@@ -888,7 +888,7 @@ export class AdditionalPanelsDirective {
  */
 @Directive({
 	selector: '[ovChatPanel]',
-	standalone: false
+	standalone: true
 })
 export class ChatPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -901,7 +901,7 @@ export class ChatPanelDirective {
  */
 @Directive({
 	selector: '[ovBackgroundEffectsPanel]',
-	standalone: false
+	standalone: true
 })
 export class BackgroundEffectsPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1012,7 +1012,7 @@ export class BackgroundEffectsPanelDirective {
  */
 @Directive({
 	selector: '[ovActivitiesPanel]',
-	standalone: false
+	standalone: true
 })
 export class ActivitiesPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1181,7 +1181,7 @@ export class ActivitiesPanelDirective {
 
 @Directive({
 	selector: '[ovParticipantsPanel]',
-	standalone: false
+	standalone: true
 })
 export class ParticipantsPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1317,7 +1317,7 @@ export class ParticipantsPanelDirective {
 
 @Directive({
 	selector: '[ovParticipantPanelItem]',
-	standalone: false
+	standalone: true
 })
 export class ParticipantPanelItemDirective {
 	public template = inject(TemplateRef<any>);
@@ -1458,7 +1458,7 @@ export class ParticipantPanelItemDirective {
 
 @Directive({
 	selector: '[ovParticipantPanelItemElements]',
-	standalone: false
+	standalone: true
 })
 export class ParticipantPanelItemElementsDirective {
 	public template = inject(TemplateRef<any>);
@@ -1652,7 +1652,7 @@ export class ParticipantPanelItemElementsDirective {
  */
 @Directive({
 	selector: '[ovLayout]',
-	standalone: false
+	standalone: true
 })
 export class LayoutDirective {
 	public template = inject(TemplateRef<any>);
@@ -1782,10 +1782,9 @@ export class LayoutDirective {
 
 @Directive({
 	selector: '[ovStream]',
-	standalone: false
+	standalone: true
 })
 export class StreamDirective {
 	public template = inject(TemplateRef<any>);
 	public container = inject(ViewContainerRef);
 }
-

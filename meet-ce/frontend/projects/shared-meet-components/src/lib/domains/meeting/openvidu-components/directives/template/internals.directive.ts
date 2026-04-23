@@ -185,7 +185,7 @@ import { Directive, Input, TemplateRef, ViewContainerRef, inject } from '@angula
 
 @Directive({
 	selector: '[ovPreJoin]',
-	standalone: false
+	standalone: true
 })
 export class PreJoinDirective {
 	public template = inject(TemplateRef<any>);
@@ -211,7 +211,7 @@ export class PreJoinDirective {
  */
 @Directive({
 	selector: '[ovParticipantPanelAfterLocalParticipant]',
-	standalone: false
+	standalone: true
 })
 export class ParticipantPanelAfterLocalParticipantDirective {
 	public template = inject(TemplateRef<any>);
@@ -235,7 +235,7 @@ export class ParticipantPanelAfterLocalParticipantDirective {
  */
 @Directive({
 	selector: '[ovToolbarLeaveButton]',
-	standalone: false
+	standalone: true
 })
 export class LeaveButtonDirective {
 	public template = inject(TemplateRef<any>);
@@ -274,7 +274,7 @@ export class LeaveButtonDirective {
  */
 @Directive({
 	selector: '[ovLayoutAdditionalElements]',
-	standalone: false
+	standalone: true
 })
 export class LayoutAdditionalElementsDirective {
 	/**
@@ -322,7 +322,7 @@ export class LayoutAdditionalElementsDirective {
  */
 @Directive({
 	selector: '[ovParticipantPanelParticipantBadge]',
-	standalone: false
+	standalone: true
 })
 export class ParticipantPanelParticipantBadgeDirective {
 	public template = inject(TemplateRef<any>);
@@ -355,7 +355,7 @@ export class ParticipantPanelParticipantBadgeDirective {
  */
 @Directive({
 	selector: '[ovSettingsPanelGeneralAdditionalElements]',
-	standalone: false
+	standalone: true
 })
 export class SettingsPanelGeneralAdditionalElementsDirective {
 	public template = inject(TemplateRef<any>);
@@ -388,7 +388,7 @@ export class SettingsPanelGeneralAdditionalElementsDirective {
  */
 @Directive({
 	selector: '[ovToolbarMoreOptionsAdditionalMenuItems]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarMoreOptionsAdditionalMenuItemsDirective {
 	public template = inject(TemplateRef<any>);

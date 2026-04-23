@@ -100,7 +100,7 @@ const directives = [
 ];
 
 @NgModule({
-	declarations: [...directives],
+	imports: [...directives],
 	exports: [...directives]
 })
 export class ApiDirectiveModule {}

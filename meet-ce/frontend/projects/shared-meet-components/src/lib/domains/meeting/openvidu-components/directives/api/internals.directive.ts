@@ -10,7 +10,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  */
 @Directive({
 	selector: 'img[ovLogo]',
-	standalone: false
+	standalone: true
 })
 export class FallbackLogoDirective implements OnInit {
 	defaultLogo =
@@ -55,7 +55,7 @@ export class FallbackLogoDirective implements OnInit {
  */
 @Directive({
 	selector: 'ov-layout[ovRemoteParticipants]',
-	standalone: false
+	standalone: true
 })
 export class LayoutRemoteParticipantsDirective {
 	private _ovRemoteParticipants: ParticipantModel[] | undefined;
@@ -89,7 +89,7 @@ export class LayoutRemoteParticipantsDirective {
  */
 @Directive({
 	selector: 'ov-videoconference[brandingLogo], ov-toolbar[brandingLogo]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarBrandingLogoDirective implements AfterViewInit, OnDestroy {
 	/**
@@ -130,7 +130,7 @@ export class ToolbarBrandingLogoDirective implements AfterViewInit, OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[prejoinDisplayParticipantName]',
-	standalone: false
+	standalone: true
 })
 export class PrejoinDisplayParticipantName implements OnDestroy {
 	/**
@@ -174,7 +174,7 @@ export class PrejoinDisplayParticipantName implements OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[recordingActivityReadOnly]',
-	standalone: false
+	standalone: true
 })
 export class RecordingActivityReadOnlyDirective implements OnDestroy {
 	/**
@@ -228,7 +228,7 @@ export class RecordingActivityReadOnlyDirective implements OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[recordingActivityShowControls]',
-	standalone: false
+	standalone: true
 })
 export class RecordingActivityShowControlsDirective implements OnDestroy {
 	/**
@@ -291,7 +291,7 @@ export class RecordingActivityShowControlsDirective implements OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[toolbarViewRecordingsButton], ov-toolbar[viewRecordingsButton]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarViewRecordingsButtonDirective implements AfterViewInit, OnDestroy {
 	/**
@@ -348,7 +348,7 @@ export class ToolbarViewRecordingsButtonDirective implements AfterViewInit, OnDe
  */
 @Directive({
 	selector: 'ov-videoconference[recordingActivityStartStopRecordingButton]',
-	standalone: false
+	standalone: true
 })
 export class StartStopRecordingButtonsDirective implements OnDestroy {
 	/**
@@ -390,7 +390,7 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[recordingActivityViewRecordingsButton]',
-	standalone: false
+	standalone: true
 })
 export class RecordingActivityViewRecordingsButtonDirective implements AfterViewInit, OnDestroy {
 	@Input() set recordingActivityViewRecordingsButton(value: boolean) {
@@ -434,7 +434,7 @@ export class RecordingActivityViewRecordingsButtonDirective implements AfterView
  */
 @Directive({
 	selector: 'ov-videoconference[recordingActivityShowRecordingsList]',
-	standalone: false
+	standalone: true
 })
 export class RecordingActivityShowRecordingsListDirective implements AfterViewInit, OnDestroy {
 	@Input() set recordingActivityShowRecordingsList(value: boolean) {
@@ -477,7 +477,7 @@ export class RecordingActivityShowRecordingsListDirective implements AfterViewIn
  */
 @Directive({
 	selector: 'ov-videoconference[toolbarRoomName], ov-toolbar[roomName]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarRoomNameDirective implements AfterViewInit, OnDestroy {
 	@Input() set toolbarRoomName(value: string | undefined) {
@@ -526,7 +526,7 @@ export class ToolbarRoomNameDirective implements AfterViewInit, OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[showThemeSelector]',
-	standalone: false
+	standalone: true
 })
 export class ShowThemeSelectorDirective implements AfterViewInit, OnDestroy {
 	@Input() set showThemeSelector(value: boolean) {
@@ -570,7 +570,7 @@ export class ShowThemeSelectorDirective implements AfterViewInit, OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[e2eeKey]',
-	standalone: false
+	standalone: true
 })
 export class E2EEKeyDirective implements AfterViewInit, OnDestroy {
 	@Input() set e2eeKey(value: string | undefined) {
