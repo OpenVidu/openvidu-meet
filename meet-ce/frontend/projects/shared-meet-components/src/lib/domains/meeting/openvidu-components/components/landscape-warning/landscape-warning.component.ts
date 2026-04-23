@@ -11,6 +11,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 	imports: [AppMaterialModule, TranslatePipe],
 	templateUrl: './landscape-warning.component.html',
 	styleUrl: './landscape-warning.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	standalone: true
 })
 export class LandscapeWarningComponent {}

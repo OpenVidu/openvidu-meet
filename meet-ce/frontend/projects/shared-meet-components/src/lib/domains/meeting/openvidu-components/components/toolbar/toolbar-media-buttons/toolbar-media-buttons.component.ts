@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
@@ -8,6 +9,8 @@ import {
 	input,
 	output
 } from '@angular/core';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
 import { RecordingState } from '../../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../../models/toolbar.model';
@@ -18,10 +21,11 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
  */
 @Component({
 	selector: 'ov-toolbar-media-buttons',
+	imports: [CommonModule, AppMaterialModule, TranslatePipe],
 	templateUrl: './toolbar-media-buttons.component.html',
 	styleUrl: './toolbar-media-buttons.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class ToolbarMediaButtonsComponent {
 	// Camera related inputs

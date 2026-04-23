@@ -1,3 +1,4 @@
+import { CommonModule, DatePipe } from '@angular/common';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
@@ -22,6 +23,7 @@ import { DocumentService } from '../../services/document/document.service';
 import { PanelService } from '../../services/panel/panel.service';
 
 import { MatMenuTrigger } from '@angular/material/menu';
+import { FallbackLogoDirective } from '../../directives/api/internals.directive';
 import {
 	LeaveButtonDirective,
 	ToolbarMoreOptionsAdditionalMenuItemsDirective
@@ -54,6 +56,9 @@ import { RecordingService } from '../../services/recording/recording.service';
 import { StorageService } from '../../services/storage/storage.service';
 import { TemplateManagerService, ToolbarTemplateConfiguration } from '../../services/template/template-manager.service';
 import { TranslateService } from '../../services/translate/translate.service';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-media-buttons.component';
+import { ToolbarPanelButtonsComponent } from './toolbar-panel-buttons/toolbar-panel-buttons.component';
 
 /**
  * The **ToolbarComponent** is hosted inside of the {@link VideoconferenceComponent}.
@@ -61,6 +66,15 @@ import { TranslateService } from '../../services/translate/translate.service';
  */
 @Component({
 	selector: 'ov-toolbar',
+	imports: [
+		CommonModule,
+		DatePipe,
+		AppMaterialModule,
+		FallbackLogoDirective,
+		ToolbarMoreOptionsAdditionalMenuItemsDirective,
+		ToolbarMediaButtonsComponent,
+		ToolbarPanelButtonsComponent
+	],
 	templateUrl: './toolbar.component.html',
 	styleUrl: './toolbar.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,7 +82,7 @@ import { TranslateService } from '../../services/translate/translate.service';
 		'(window:resize)': 'sizeChange($event)',
 		'(document:keydown)': 'keyDown($event)'
 	},
-	standalone: false
+	standalone: true
 })
 export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly layoutService = inject(LayoutService);

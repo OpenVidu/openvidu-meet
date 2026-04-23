@@ -43,27 +43,17 @@ const publicComponents = [
 	VideoconferenceComponent,
 	ToolbarComponent,
 	PanelComponent,
-	ActivitiesPanelComponent,
-	RecordingActivityComponent,
 	ParticipantsPanelComponent,
-	ParticipantPanelItemComponent,
 	ChatPanelComponent,
 	StreamComponent,
 	LayoutComponent
 ];
-const privateComponents = [
-	PreJoinComponent,
-	SessionComponent,
-	BackgroundEffectsPanelComponent,
-	SettingsPanelComponent,
-	MediaElementComponent,
-	ToolbarMediaButtonsComponent,
-	ToolbarPanelButtonsComponent
-];
+const declaredPublicComponents: any[] = [];
+const privateComponents: any[] = [];
 
 @NgModule({
 	declarations: [
-		...publicComponents,
+		...declaredPublicComponents,
 		...privateComponents,
 	],
 	imports: [
@@ -83,6 +73,23 @@ const privateComponents = [
 		ThemeSelectorComponent,
 		VideoDevicesComponent,
 		VideoPosterComponent,
+		MediaElementComponent,
+		ToolbarMediaButtonsComponent,
+		ToolbarPanelButtonsComponent,
+		StreamComponent,
+		PreJoinComponent,
+		LayoutComponent,
+		PanelComponent,
+		ToolbarComponent,
+		ActivitiesPanelComponent,
+		ParticipantPanelItemComponent,
+		ParticipantsPanelComponent,
+		ChatPanelComponent,
+		BackgroundEffectsPanelComponent,
+		SettingsPanelComponent,
+		RecordingActivityComponent,
+		SessionComponent,
+		VideoconferenceComponent,
 		TranslatePipe,
 		OpenViduComponentsDirectiveModule,
 		ApiDirectiveModule,
@@ -90,6 +97,7 @@ const privateComponents = [
 	],
 	exports: [
 		...publicComponents,
+		ParticipantPanelItemComponent,
 		RemoteParticipantTracksPipe,
 		DurationFromSecondsPipe,
 		TrackPublishedTypesPipe,

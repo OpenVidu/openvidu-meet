@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, viewChild } from '@angular/core';
+import { VideoPosterComponent } from '../video-poster/video-poster.component';
 import { Track } from '../../services/livekit-adapter';
 
 /**
@@ -6,6 +7,7 @@ import { Track } from '../../services/livekit-adapter';
  */
 @Component({
 	selector: 'ov-media-element',
+	imports: [VideoPosterComponent],
 	template: `
 		<ov-video-poster
 			[animate.enter]="'ov-poster-enter'"
@@ -24,7 +26,7 @@ import { Track } from '../../services/livekit-adapter';
 	`,
 	styleUrl: './media-element.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class MediaElementComponent implements OnDestroy {
 	readonly track = input<Track | undefined>(undefined);

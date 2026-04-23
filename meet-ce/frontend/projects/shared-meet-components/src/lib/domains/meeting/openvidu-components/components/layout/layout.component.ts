@@ -1,5 +1,6 @@
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 
+import { CommonModule } from '@angular/common';
 import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
 import {
 	AfterViewInit,
@@ -20,6 +21,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { StreamDirective } from '../../directives/template/openvidu-components-angular.directive';
 import { ParticipantTrackPublication } from '../../models/participant.model';
+import { RemoteParticipantTracksPipe } from '../../pipes/participant.pipe';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { GlobalConfigService } from '../../services/config/global-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
@@ -34,10 +36,11 @@ import { LayoutTemplateConfiguration, TemplateManagerService } from '../../servi
  */
 @Component({
 	selector: 'ov-layout',
+	imports: [CommonModule, CdkDrag, RemoteParticipantTracksPipe],
 	templateUrl: './layout.component.html',
 	styleUrls: ['./layout.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class LayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly layoutService = inject(LayoutService);

@@ -1,3 +1,5 @@
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, output, signal } from '@angular/core';
 import { PanelType } from '../../../models/panel.model';
 import {
@@ -9,6 +11,7 @@ import {
 } from '../../../models/recording.model';
 import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
+import { RecordingActivityComponent } from './recording-activity/recording-activity.component';
 
 /**
  * The **ActivitiesPanelComponent** is the component that allows showing the activities panel.
@@ -16,10 +19,11 @@ import { PanelService } from '../../../services/panel/panel.service';
  */
 @Component({
 	selector: 'ov-activities-panel',
+	imports: [AppMaterialModule, TranslatePipe, RecordingActivityComponent],
 	templateUrl: './activities-panel.component.html',
 	styleUrls: ['../panel.component.scss', './activities-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class ActivitiesPanelComponent implements OnInit {
 	/**

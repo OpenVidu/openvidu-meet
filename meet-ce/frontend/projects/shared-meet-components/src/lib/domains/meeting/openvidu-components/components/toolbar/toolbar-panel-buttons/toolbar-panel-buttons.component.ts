@@ -1,12 +1,16 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, TemplateRef, computed, inject, input, output } from '@angular/core';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ViewportService } from '../../../services/viewport/viewport.service';
 
 @Component({
 	selector: 'ov-toolbar-panel-buttons',
+	imports: [CommonModule, AppMaterialModule, TranslatePipe],
 	templateUrl: './toolbar-panel-buttons.component.html',
 	styleUrl: './toolbar-panel-buttons.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class ToolbarPanelButtonsComponent {
 	// Signal inputs from toolbar

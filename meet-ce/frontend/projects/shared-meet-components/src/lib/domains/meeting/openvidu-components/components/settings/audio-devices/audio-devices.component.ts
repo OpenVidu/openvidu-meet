@@ -16,7 +16,8 @@ import { StorageService } from '../../../services/storage/storage.service';
 	imports: [AppMaterialModule, TranslatePipe],
 	templateUrl: './audio-devices.component.html',
 	styleUrl: './audio-devices.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	standalone: true
 })
 export class AudioDevicesComponent implements OnInit {
 	readonly compact = input(false);

@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, Signal } from '@angular/core';
 import { BackgroundEffect, EffectType } from '../../../models/background-effect.model';
 import { PanelType } from '../../../models/panel.model';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
 import { PanelService } from '../../../services/panel/panel.service';
 import { VirtualBackgroundService } from '../../../services/virtual-background/virtual-background.service';
 
@@ -9,10 +11,11 @@ import { VirtualBackgroundService } from '../../../services/virtual-background/v
  */
 @Component({
 	selector: 'ov-background-effects-panel',
+	imports: [AppMaterialModule, TranslatePipe],
 	templateUrl: './background-effects-panel.component.html',
 	styleUrls: ['../panel.component.scss', './background-effects-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class BackgroundEffectsPanelComponent implements OnInit {
 	mode = input<'prejoin' | 'meeting'>('meeting');

@@ -1,4 +1,6 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject, input, OnInit, output, signal } from '@angular/core';
+import { DatePipe, UpperCasePipe } from '@angular/common';
+import { AppMaterialModule } from '../../../../openvidu-components-angular.material.module';
 import { ILogger } from '../../../../models/logger.model';
 import {
 	RecordingDeleteRequestedEvent,
@@ -15,16 +17,18 @@ import { LoggerService } from '../../../../services/logger/logger.service';
 import { OpenViduService } from '../../../../services/openvidu/openvidu.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { RecordingService } from '../../../../services/recording/recording.service';
+import { TranslatePipe } from '../../../../pipes/translate.pipe';
 
 /**
  * The **RecordingActivityComponent** is the component that allows showing the recording activity.
  */
 @Component({
 	selector: 'ov-recording-activity',
+	imports: [AppMaterialModule, TranslatePipe, UpperCasePipe, DatePipe],
 	templateUrl: './recording-activity.component.html',
 	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 
 // TODO: Allow to add more than one recording type

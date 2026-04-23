@@ -1,4 +1,8 @@
+import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, OnDestroy, OnInit, TemplateRef, inject, input } from '@angular/core';
+import { TrackPublishedTypesPipe } from '../../../../pipes/participant.pipe';
+import { TranslatePipe } from '../../../../pipes/translate.pipe';
+import { AppMaterialModule } from '../../../../openvidu-components-angular.material.module';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
@@ -13,10 +17,11 @@ import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } fro
  */
 @Component({
 	selector: 'ov-participant-panel-item',
+	imports: [CommonModule, AppMaterialModule, TranslatePipe, TrackPublishedTypesPipe],
 	templateUrl: './participant-panel-item.component.html',
 	styleUrls: ['./participant-panel-item.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });

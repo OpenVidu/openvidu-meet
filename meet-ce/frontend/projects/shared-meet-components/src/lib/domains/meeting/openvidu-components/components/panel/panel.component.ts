@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	ChangeDetectorRef,
@@ -35,10 +36,11 @@ import { PanelTemplateConfiguration, TemplateManagerService } from '../../servic
 
 @Component({
 	selector: 'ov-panel',
+	imports: [CommonModule],
 	templateUrl: './panel.component.html',
 	styleUrls: ['./panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class PanelComponent implements OnInit {
 	/**

@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
@@ -9,6 +10,13 @@ import {
 	signal,
 	TemplateRef
 } from '@angular/core';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
+import { AudioDevicesComponent } from '../../settings/audio-devices/audio-devices.component';
+import { LangSelectorComponent } from '../../settings/lang-selector/lang-selector.component';
+import { ParticipantNameInputComponent } from '../../settings/participant-name-input/participant-name-input.component';
+import { ThemeSelectorComponent } from '../../settings/theme-selector/theme-selector.component';
+import { VideoDevicesComponent } from '../../settings/video-devices/video-devices.component';
 import { SettingsPanelGeneralAdditionalElementsDirective } from '../../../directives/template/internals.directive';
 import { CustomDevice } from '../../../models/device.model';
 import { LangOption } from '../../../models/lang.model';
@@ -23,10 +31,20 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
  */
 @Component({
 	selector: 'ov-settings-panel',
+	imports: [
+		CommonModule,
+		AppMaterialModule,
+		TranslatePipe,
+		ParticipantNameInputComponent,
+		LangSelectorComponent,
+		ThemeSelectorComponent,
+		VideoDevicesComponent,
+		AudioDevicesComponent
+	],
 	templateUrl: './settings-panel.component.html',
 	styleUrls: ['../panel.component.scss', './settings-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class SettingsPanelComponent implements OnInit {
 	onVideoEnabledChanged = output<boolean>();

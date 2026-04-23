@@ -9,6 +9,15 @@ import {
 	output,
 	signal
 } from '@angular/core';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { AudioDevicesComponent } from '../settings/audio-devices/audio-devices.component';
+import { LangSelectorComponent } from '../settings/lang-selector/lang-selector.component';
+import { ParticipantNameInputComponent } from '../settings/participant-name-input/participant-name-input.component';
+import { VideoDevicesComponent } from '../settings/video-devices/video-devices.component';
+import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
+import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
+import { MediaElementComponent } from '../media-element/media-element.component';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
@@ -25,13 +34,24 @@ import { ViewportService } from '../../services/viewport/viewport.service';
  */
 @Component({
 	selector: 'ov-pre-join',
+	imports: [
+		AppMaterialModule,
+		TranslatePipe,
+		LandscapeWarningComponent,
+		LangSelectorComponent,
+		MediaElementComponent,
+		VideoDevicesComponent,
+		AudioDevicesComponent,
+		BackgroundEffectsPanelComponent,
+		ParticipantNameInputComponent
+	],
 	templateUrl: './pre-join.component.html',
 	styleUrl: './pre-join.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'(window:resize)': 'sizeChange()'
 	},
-	standalone: false
+	standalone: true
 })
 export class PreJoinComponent implements OnInit, OnDestroy {
 	readonly error = input<{ name: string; message: string } | undefined>(undefined);

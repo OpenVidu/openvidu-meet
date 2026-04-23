@@ -12,7 +12,8 @@ import { TranslateService } from '../../../services/translate/translate.service'
 	imports: [AppMaterialModule],
 	templateUrl: './lang-selector.component.html',
 	styleUrl: './lang-selector.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	standalone: true
 })
 export class LangSelectorComponent implements OnInit {
 	/**

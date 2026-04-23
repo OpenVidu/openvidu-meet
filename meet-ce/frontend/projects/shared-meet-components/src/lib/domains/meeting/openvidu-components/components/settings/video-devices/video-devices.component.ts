@@ -16,7 +16,8 @@ import { StorageService } from '../../../services/storage/storage.service';
 	imports: [AppMaterialModule, TranslatePipe],
 	templateUrl: './video-devices.component.html',
 	styleUrl: './video-devices.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	standalone: true
 })
 export class VideoDevicesComponent implements OnInit {
 	readonly compact = input(false);

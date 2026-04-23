@@ -1,5 +1,10 @@
+import { CommonModule } from '@angular/common';
 import { Component, effect, ElementRef, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
+import { MediaElementComponent } from '../media-element/media-element.component';
 import { ParticipantTrackPublication } from '../../models/participant.model';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
@@ -13,9 +18,10 @@ import { ParticipantService } from '../../services/participant/participant.servi
  */
 @Component({
 	selector: 'ov-stream',
+	imports: [CommonModule, AppMaterialModule, TranslatePipe, AudioWaveComponent, MediaElementComponent],
 	templateUrl: './stream.component.html',
 	styleUrls: ['./stream.component.scss'],
-	standalone: false
+	standalone: true
 })
 export class StreamComponent implements OnDestroy {
 	readonly trackInput = input<ParticipantTrackPublication | undefined>(undefined, { alias: 'track' });

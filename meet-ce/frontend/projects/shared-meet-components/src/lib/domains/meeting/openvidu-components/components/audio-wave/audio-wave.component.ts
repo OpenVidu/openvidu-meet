@@ -13,6 +13,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 		</div>
 	`,
 	styleUrl: './audio-wave.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	standalone: true
 })
 export class AudioWaveComponent {}

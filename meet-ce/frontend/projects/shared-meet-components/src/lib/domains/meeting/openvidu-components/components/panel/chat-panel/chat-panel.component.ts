@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
@@ -9,6 +10,10 @@ import {
 	inject,
 	viewChild
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { LinkifyPipe } from '../../../pipes/linkify.pipe';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ChatMessage } from '../../../models/chat.model';
 import { PanelType } from '../../../models/panel.model';
 import { ChatService } from '../../../services/chat/chat.service';
@@ -22,10 +27,11 @@ import { ParticipantService } from '../../../services/participant/participant.se
  */
 @Component({
 	selector: 'ov-chat-panel',
+	imports: [CommonModule, FormsModule, AppMaterialModule, TranslatePipe, LinkifyPipe],
 	templateUrl: './chat-panel.component.html',
 	styleUrls: ['../panel.component.scss', './chat-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class ChatPanelComponent implements AfterViewInit {
 	/**

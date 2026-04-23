@@ -11,6 +11,21 @@ import {
 	TemplateRef,
 	viewChild
 } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
+import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
+import { ChatPanelComponent } from '../panel/chat-panel/chat-panel.component';
+import { PanelComponent } from '../panel/panel.component';
+import { ParticipantPanelItemComponent } from '../panel/participants-panel/participant-panel-item/participant-panel-item.component';
+import { ParticipantsPanelComponent } from '../panel/participants-panel/participants-panel/participants-panel.component';
+import { SettingsPanelComponent } from '../panel/settings-panel/settings-panel.component';
+import { PreJoinComponent } from '../pre-join/pre-join.component';
+import { SessionComponent } from '../session/session.component';
+import { StreamComponent } from '../stream/stream.component';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { LayoutComponent } from '../layout/layout.component';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import {
 	LayoutAdditionalElementsDirective,
 	LeaveButtonDirective,
@@ -73,9 +88,28 @@ import { OpenViduThemeService } from '../../services/theme/theme.service';
  */
 @Component({
 	selector: 'ov-videoconference',
+	imports: [
+		CommonModule,
+		AppMaterialModule,
+		TranslatePipe,
+		PreJoinComponent,
+		SessionComponent,
+		ToolbarComponent,
+		PanelComponent,
+		BackgroundEffectsPanelComponent,
+		SettingsPanelComponent,
+		ChatPanelComponent,
+		ActivitiesPanelComponent,
+		ParticipantsPanelComponent,
+		ParticipantPanelItemComponent,
+		LayoutComponent,
+		StreamComponent,
+		ToolbarMoreOptionsAdditionalMenuItemsDirective,
+		SettingsPanelGeneralAdditionalElementsDirective
+	],
 	templateUrl: './videoconference.component.html',
 	styleUrls: ['./videoconference.component.scss'],
-	standalone: false
+	standalone: true
 })
 export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);

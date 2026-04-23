@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
@@ -12,10 +13,13 @@ import {
 	viewChild
 } from '@angular/core';
 import { ParticipantPanelItemDirective } from '../../../../directives/template/openvidu-components-angular.directive';
+import { ParticipantPanelItemComponent } from '../participant-panel-item/participant-panel-item.component';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { PanelService } from '../../../../services/panel/panel.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { ParticipantsPanelTemplateConfiguration, TemplateManagerService } from '../../../../services/template/template-manager.service';
+import { AppMaterialModule } from '../../../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../../../pipes/translate.pipe';
 
 /**
  * The **ParticipantsPanelComponent** is hosted inside of the {@link PanelComponent}.
@@ -24,10 +28,11 @@ import { ParticipantsPanelTemplateConfiguration, TemplateManagerService } from '
  */
 @Component({
 	selector: 'ov-participants-panel',
+	imports: [CommonModule, AppMaterialModule, TranslatePipe, ParticipantPanelItemComponent],
 	templateUrl: './participants-panel.component.html',
 	styleUrls: ['../../panel.component.scss', './participants-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**

@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	ChangeDetectorRef,
@@ -18,6 +19,9 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { MatDrawerContainer, MatSidenav } from '@angular/material/sidenav';
+import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
+import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { DataTopic } from '../../models/data-topic.model';
 import { SidenavMode } from '../../models/layout/layout.model';
 import { ILogger } from '../../models/logger.model';
@@ -60,10 +64,11 @@ import { safeJsonParse } from '../../utils/utils';
 
 @Component({
 	selector: 'ov-session',
+	imports: [CommonModule, AppMaterialModule, TranslatePipe, LandscapeWarningComponent],
 	templateUrl: './session.component.html',
 	styleUrls: ['./session.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class SessionComponent implements OnInit, OnDestroy {
 	readonly toolbarTemplateQuery = contentChild('toolbar', { read: TemplateRef });
