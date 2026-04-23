@@ -22,6 +22,8 @@ import { ChatService } from '../../services/chat/chat.service';
 import { DocumentService } from '../../services/document/document.service';
 import { PanelService } from '../../services/panel/panel.service';
 
+import { MatIconModule } from '@angular/material/icon';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatMenuTrigger } from '@angular/material/menu';
 import { FallbackLogoDirective } from '../../directives/api/internals.directive';
 import {
@@ -56,7 +58,6 @@ import { RecordingService } from '../../services/recording/recording.service';
 import { StorageService } from '../../services/storage/storage.service';
 import { TemplateManagerService, ToolbarTemplateConfiguration } from '../../services/template/template-manager.service';
 import { TranslateService } from '../../services/translate/translate.service';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
 import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-media-buttons.component';
 import { ToolbarPanelButtonsComponent } from './toolbar-panel-buttons/toolbar-panel-buttons.component';
 
@@ -69,7 +70,8 @@ import { ToolbarPanelButtonsComponent } from './toolbar-panel-buttons/toolbar-pa
 	imports: [
 		CommonModule,
 		DatePipe,
-		AppMaterialModule,
+		MatIconModule,
+		MatToolbarModule,
 		FallbackLogoDirective,
 		ToolbarMoreOptionsAdditionalMenuItemsDirective,
 		ToolbarMediaButtonsComponent,

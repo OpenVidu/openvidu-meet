@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, Signal, WritableSignal, effect, inject, input, output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomDevice } from '../../../models/device.model';
 import { ILogger } from '../../../models/logger.model';
-import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { DeviceService } from '../../../services/device/device.service';
 import { LoggerService } from '../../../services/logger/logger.service';
@@ -13,7 +16,7 @@ import { StorageService } from '../../../services/storage/storage.service';
  */
 @Component({
 	selector: 'ov-video-devices-select',
-	imports: [AppMaterialModule, TranslatePipe],
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './video-devices.component.html',
 	styleUrl: './video-devices.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,

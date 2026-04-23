@@ -18,7 +18,10 @@ import { OpenViduComponentsConfigService } from '../../../../services/config/dir
 import { PanelService } from '../../../../services/panel/panel.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { ParticipantsPanelTemplateConfiguration, TemplateManagerService } from '../../../../services/template/template-manager.service';
-import { AppMaterialModule } from '../../../../openvidu-components-angular.material.module';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 
 /**
@@ -28,7 +31,7 @@ import { TranslatePipe } from '../../../../pipes/translate.pipe';
  */
 @Component({
 	selector: 'ov-participants-panel',
-	imports: [CommonModule, AppMaterialModule, TranslatePipe, ParticipantPanelItemComponent],
+	imports: [CommonModule, MatButtonModule, MatDividerModule, MatIconModule, MatTooltipModule, TranslatePipe, ParticipantPanelItemComponent],
 	templateUrl: './participants-panel.component.html',
 	styleUrls: ['../../panel.component.scss', './participants-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

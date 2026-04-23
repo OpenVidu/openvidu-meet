@@ -1,4 +1,7 @@
-import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, output, signal } from '@angular/core';
 import { PanelType } from '../../../models/panel.model';
@@ -19,7 +22,7 @@ import { RecordingActivityComponent } from './recording-activity/recording-activ
  */
 @Component({
 	selector: 'ov-activities-panel',
-	imports: [AppMaterialModule, TranslatePipe, RecordingActivityComponent],
+	imports: [MatButtonModule, MatExpansionModule, MatIconModule, MatTooltipModule, TranslatePipe, RecordingActivityComponent],
 	templateUrl: './activities-panel.component.html',
 	styleUrls: ['../panel.component.scss', './activities-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

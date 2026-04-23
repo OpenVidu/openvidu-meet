@@ -11,7 +11,9 @@ import {
 	viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { LinkifyPipe } from '../../../pipes/linkify.pipe';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ChatMessage } from '../../../models/chat.model';
@@ -27,7 +29,7 @@ import { ParticipantService } from '../../../services/participant/participant.se
  */
 @Component({
 	selector: 'ov-chat-panel',
-	imports: [CommonModule, FormsModule, AppMaterialModule, TranslatePipe, LinkifyPipe],
+	imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe, LinkifyPipe],
 	templateUrl: './chat-panel.component.html',
 	styleUrls: ['../panel.component.scss', './chat-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

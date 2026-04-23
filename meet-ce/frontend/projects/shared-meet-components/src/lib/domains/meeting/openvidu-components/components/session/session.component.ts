@@ -18,9 +18,10 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDrawerContainer, MatSidenav } from '@angular/material/sidenav';
+import { MatSidenavModule } from '@angular/material/sidenav';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { DataTopic } from '../../models/data-topic.model';
 import { SidenavMode } from '../../models/layout/layout.model';
@@ -64,7 +65,7 @@ import { safeJsonParse } from '../../utils/utils';
 
 @Component({
 	selector: 'ov-session',
-	imports: [CommonModule, AppMaterialModule, TranslatePipe, LandscapeWarningComponent],
+	imports: [CommonModule, MatProgressSpinnerModule, MatSidenavModule, TranslatePipe, LandscapeWarningComponent],
 	templateUrl: './session.component.html',
 	styleUrls: ['./session.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

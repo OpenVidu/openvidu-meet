@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
@@ -8,7 +8,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
  */
 @Component({
 	selector: 'ov-landscape-warning',
-	imports: [AppMaterialModule, TranslatePipe],
+	imports: [MatIconModule, TranslatePipe],
 	templateUrl: './landscape-warning.component.html',
 	styleUrl: './landscape-warning.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,

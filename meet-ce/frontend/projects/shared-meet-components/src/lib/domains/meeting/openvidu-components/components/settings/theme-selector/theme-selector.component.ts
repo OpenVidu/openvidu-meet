@@ -1,11 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { OpenViduThemeMode } from '../../../models/theme.model';
-import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
 import { OpenViduThemeService } from '../../../services/theme/theme.service';
 
 @Component({
 	selector: 'ov-theme-selector',
-	imports: [AppMaterialModule],
+	imports: [MatButtonModule, MatIconModule, MatMenuModule],
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	template: `
 		<div class="theme-selector-container">

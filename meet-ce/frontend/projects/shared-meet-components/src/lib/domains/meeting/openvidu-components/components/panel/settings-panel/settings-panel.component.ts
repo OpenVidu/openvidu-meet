@@ -10,7 +10,10 @@ import {
 	signal,
 	TemplateRef
 } from '@angular/core';
-import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { AudioDevicesComponent } from '../../settings/audio-devices/audio-devices.component';
 import { LangSelectorComponent } from '../../settings/lang-selector/lang-selector.component';
@@ -33,7 +36,10 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 	selector: 'ov-settings-panel',
 	imports: [
 		CommonModule,
-		AppMaterialModule,
+		MatFormFieldModule,
+		MatIconModule,
+		MatListModule,
+		MatTooltipModule,
 		TranslatePipe,
 		ParticipantNameInputComponent,
 		LangSelectorComponent,

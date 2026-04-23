@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input, output } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { AvailableLangs, LangOption } from '../../../models/lang.model';
-import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
 import { StorageService } from '../../../services/storage/storage.service';
 import { TranslateService } from '../../../services/translate/translate.service';
 
@@ -9,7 +12,7 @@ import { TranslateService } from '../../../services/translate/translate.service'
  */
 @Component({
 	selector: 'ov-lang-selector',
-	imports: [AppMaterialModule],
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
 	templateUrl: './lang-selector.component.html',
 	styleUrl: './lang-selector.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,

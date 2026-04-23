@@ -12,6 +12,8 @@ import {
 	viewChild
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
 import { ChatPanelComponent } from '../panel/chat-panel/chat-panel.component';
@@ -24,7 +26,6 @@ import { SessionComponent } from '../session/session.component';
 import { StreamComponent } from '../stream/stream.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 import { LayoutComponent } from '../layout/layout.component';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import {
 	LayoutAdditionalElementsDirective,
@@ -90,7 +91,8 @@ import { OpenViduThemeService } from '../../services/theme/theme.service';
 	selector: 'ov-videoconference',
 	imports: [
 		CommonModule,
-		AppMaterialModule,
+		MatIconModule,
+		MatProgressSpinnerModule,
 		TranslatePipe,
 		PreJoinComponent,
 		SessionComponent,

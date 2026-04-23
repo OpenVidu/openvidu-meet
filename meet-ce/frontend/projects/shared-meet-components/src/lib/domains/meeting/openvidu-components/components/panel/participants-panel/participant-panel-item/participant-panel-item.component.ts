@@ -1,8 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, OnDestroy, OnInit, TemplateRef, inject, input } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TrackPublishedTypesPipe } from '../../../../pipes/participant.pipe';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
-import { AppMaterialModule } from '../../../../openvidu-components-angular.material.module';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
@@ -17,7 +20,7 @@ import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } fro
  */
 @Component({
 	selector: 'ov-participant-panel-item',
-	imports: [CommonModule, AppMaterialModule, TranslatePipe, TrackPublishedTypesPipe],
+	imports: [CommonModule, MatButtonModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, TrackPublishedTypesPipe],
 	templateUrl: './participant-panel-item.component.html',
 	styleUrls: ['./participant-panel-item.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

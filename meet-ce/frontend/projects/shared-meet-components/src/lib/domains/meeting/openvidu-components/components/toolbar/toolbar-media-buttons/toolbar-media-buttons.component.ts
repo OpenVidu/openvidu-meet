@@ -9,7 +9,11 @@ import {
 	input,
 	output
 } from '@angular/core';
-import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
 import { RecordingState } from '../../../models/recording.model';
@@ -21,7 +25,7 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
  */
 @Component({
 	selector: 'ov-toolbar-media-buttons',
-	imports: [CommonModule, AppMaterialModule, TranslatePipe],
+	imports: [CommonModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './toolbar-media-buttons.component.html',
 	styleUrl: './toolbar-media-buttons.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,

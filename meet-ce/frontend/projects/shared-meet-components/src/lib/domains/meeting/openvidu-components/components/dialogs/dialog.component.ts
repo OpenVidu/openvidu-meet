@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { DialogData } from '../../models/dialog.model';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
@@ -10,7 +10,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 
 @Component({
     selector: 'ov-dialog-template',
-	imports: [AppMaterialModule, TranslatePipe],
+	imports: [MatButtonModule, MatDialogModule, TranslatePipe],
     template: `
 		<h1 mat-dialog-title>{{ title() }}</h1>
 		<div mat-dialog-content id="openvidu-dialog">{{ description() }}</div>

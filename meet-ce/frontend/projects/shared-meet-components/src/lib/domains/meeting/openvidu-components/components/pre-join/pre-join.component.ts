@@ -9,7 +9,10 @@ import {
 	output,
 	signal
 } from '@angular/core';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { AudioDevicesComponent } from '../settings/audio-devices/audio-devices.component';
 import { LangSelectorComponent } from '../settings/lang-selector/lang-selector.component';
@@ -35,7 +38,10 @@ import { ViewportService } from '../../services/viewport/viewport.service';
 @Component({
 	selector: 'ov-pre-join',
 	imports: [
-		AppMaterialModule,
+		MatButtonModule,
+		MatIconModule,
+		MatProgressSpinnerModule,
+		MatTooltipModule,
 		TranslatePipe,
 		LandscapeWarningComponent,
 		LangSelectorComponent,

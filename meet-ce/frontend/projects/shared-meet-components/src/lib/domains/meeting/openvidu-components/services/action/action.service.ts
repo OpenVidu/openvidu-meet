@@ -3,7 +3,6 @@ import { MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dial
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DeleteDialogComponent } from '../../components/dialogs/delete-recording.component';
 import { DialogTemplateComponent } from '../../components/dialogs/dialog.component';
-import { ProFeatureDialogTemplateComponent } from '../../components/dialogs/pro-feature-dialog.component';
 import { RecordingDialogComponent } from '../../components/dialogs/recording-dialog.component';
 import { INotificationOptions } from '../../models/notification-options.model';
 import { TranslateService } from '../translate/translate.service';
@@ -20,12 +19,7 @@ export class ActionService {
 	private readonly translateService = inject(TranslateService);
 
 	private dialogRef:
-		| MatDialogRef<
-				| DialogTemplateComponent
-				| RecordingDialogComponent
-				| DeleteDialogComponent
-				| ProFeatureDialogTemplateComponent
-		  >
+		| MatDialogRef<DialogTemplateComponent | RecordingDialogComponent | DeleteDialogComponent>
 		| undefined;
 	private connectionDialogRef: MatDialogRef<DialogTemplateComponent> | undefined;
 	private isConnectionDialogOpen = false;

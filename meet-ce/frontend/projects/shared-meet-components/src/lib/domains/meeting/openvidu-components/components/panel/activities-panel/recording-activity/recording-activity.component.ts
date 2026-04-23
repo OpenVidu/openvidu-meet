@@ -1,6 +1,11 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, effect, inject, input, OnInit, output, signal } from '@angular/core';
 import { DatePipe, UpperCasePipe } from '@angular/common';
-import { AppMaterialModule } from '../../../../openvidu-components-angular.material.module';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatListModule } from '@angular/material/list';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ILogger } from '../../../../models/logger.model';
 import {
 	RecordingDeleteRequestedEvent,
@@ -24,7 +29,7 @@ import { TranslatePipe } from '../../../../pipes/translate.pipe';
  */
 @Component({
 	selector: 'ov-recording-activity',
-	imports: [AppMaterialModule, TranslatePipe, UpperCasePipe, DatePipe],
+	imports: [MatButtonModule, MatDividerModule, MatExpansionModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, UpperCasePipe, DatePipe],
 	templateUrl: './recording-activity.component.html',
 	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

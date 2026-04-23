@@ -1,7 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, effect, ElementRef, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
 import { MediaElementComponent } from '../media-element/media-element.component';
@@ -18,7 +20,7 @@ import { ParticipantService } from '../../services/participant/participant.servi
  */
 @Component({
 	selector: 'ov-stream',
-	imports: [CommonModule, AppMaterialModule, TranslatePipe, AudioWaveComponent, MediaElementComponent],
+	imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe, AudioWaveComponent, MediaElementComponent],
 	templateUrl: './stream.component.html',
 	styleUrls: ['./stream.component.scss'],
 	standalone: true

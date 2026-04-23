@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { AppMaterialModule } from '../../../openvidu-components-angular.material.module';
+import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { StorageService } from '../../../services/storage/storage.service';
@@ -10,7 +10,7 @@ import { StorageService } from '../../../services/storage/storage.service';
  */
 @Component({
 	selector: 'ov-participant-name-input',
-	imports: [FormsModule, AppMaterialModule, TranslatePipe],
+	imports: [FormsModule, MatIconModule, TranslatePipe],
 	templateUrl: './participant-name-input.component.html',
 	styleUrl: './participant-name-input.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
