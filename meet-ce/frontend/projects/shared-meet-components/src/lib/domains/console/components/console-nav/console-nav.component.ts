@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Signal, inject, input, output, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -35,14 +35,10 @@ export class ConsoleNavComponent {
 	isSideMenuCollapsed = signal(false);
 	readonly version = `v${this.appCtxService.version()} (${this.appCtxService.edition()})`;
 
-	readonly isDarkMode: Signal<boolean>;
+	readonly isDarkMode = this.themeService.isDark;
 
 	navLinks = input<ConsoleNavLink[]>([]);
 	onLogoutClicked = output<void>();
-
-	constructor() {
-		this.isDarkMode = this.themeService.isDark;
-	}
 
 	async toggleSideMenu() {
 		if (this.isMobile()) {

@@ -1,12 +1,12 @@
-import { ChangeDetectionStrategy, Component, Inject, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
-    MAT_DIALOG_DATA,
-    MatDialogActions,
-    MatDialogContent,
-    MatDialogRef,
-    MatDialogTitle
+	MAT_DIALOG_DATA,
+	MatDialogActions,
+	MatDialogContent,
+	MatDialogRef,
+	MatDialogTitle
 } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
@@ -30,6 +30,7 @@ import type { DeleteRoomDialogOptions } from '../../../../shared/models';
 })
 export class DeleteRoomDialogComponent {
 	readonly dialogRef = inject(MatDialogRef<DeleteRoomDialogComponent>);
+	readonly data: DeleteRoomDialogOptions = inject(MAT_DIALOG_DATA);
 
 	meetingPolicyOptions = [
 		{
@@ -69,8 +70,6 @@ export class DeleteRoomDialogComponent {
 
 	selectedMeetingPolicy = signal(MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS);
 	selectedRecordingPolicy = signal(MeetRoomDeletionPolicyWithRecordings.CLOSE);
-
-	constructor(@Inject(MAT_DIALOG_DATA) public data: DeleteRoomDialogOptions) {}
 
 	close(type: 'confirm' | 'cancel'): void {
 		this.dialogRef.close();

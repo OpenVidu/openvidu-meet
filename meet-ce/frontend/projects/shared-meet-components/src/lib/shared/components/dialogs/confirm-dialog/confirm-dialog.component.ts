@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Inject, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -13,25 +13,25 @@ import { MatIconModule } from '@angular/material/icon';
 import type { DialogOptions } from '../../../models/notification.model';
 
 @Component({
-    selector: 'ov-dialog',
-    imports: [
-        FormsModule,
-        MatButtonModule,
-        MatIconModule,
-        MatCheckboxModule,
-        MatDialogActions,
-        MatDialogContent,
-        MatDialogTitle
-    ],
-    templateUrl: './confirm-dialog.component.html',
-    styleUrl: './confirm-dialog.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+	selector: 'ov-dialog',
+	imports: [
+		FormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatCheckboxModule,
+		MatDialogActions,
+		MatDialogContent,
+		MatDialogTitle
+	],
+	templateUrl: './confirm-dialog.component.html',
+	styleUrl: './confirm-dialog.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DialogComponent {
 	readonly dialogRef = inject(MatDialogRef<DialogComponent>);
-	force = signal(false);
+	readonly data: DialogOptions = inject(MAT_DIALOG_DATA);
 
-	constructor(@Inject(MAT_DIALOG_DATA) public data: DialogOptions) {}
+	force = signal(false);
 
 	close(type: 'confirm' | 'cancel'): void {
 		this.dialogRef.close();

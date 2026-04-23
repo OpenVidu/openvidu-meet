@@ -36,8 +36,6 @@ export class HiddenParticipantsIndicatorComponent {
 
 	protected isTopBarMode = computed(() => this.mode() === 'topbar');
 
-	constructor() {}
-
 	/**
 	 * Get the display text for the hidden participants count
 	 */

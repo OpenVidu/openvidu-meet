@@ -45,8 +45,6 @@ export class StepIndicatorComponent {
 		this.layoutType() === 'horizontal-compact' ? 'horizontal' : 'vertical'
 	);
 
-	constructor() {}
-
 	onStepClick(event: StepperSelectionEvent) {
 		if (this.allowNavigation()) {
 			const index = event.selectedIndex;
