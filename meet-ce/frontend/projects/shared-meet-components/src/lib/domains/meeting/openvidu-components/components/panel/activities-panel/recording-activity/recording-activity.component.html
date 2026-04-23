@@ -2,7 +2,7 @@
 	(opened)="setPanelOpened(true)"
 	(closed)="setPanelOpened(false)"
 	[expanded]="expanded()"
-	[ngClass]="{ 'no-body': !isPanelOpened() }"
+	[class.no-body]="!isPanelOpened()"
 >
 	<mat-expansion-panel-header>
 		<mat-list>
@@ -10,13 +10,10 @@
 				<div
 					matListItemIcon
 					class="activity-icon"
-					[ngClass]="{
-						started: recordingStatus() === recStatusEnum.STARTED,
-						stopped: recordingStatus() === recStatusEnum.STOPPED,
-						failed: recordingStatus() === recStatusEnum.FAILED,
-						starting:
-							recordingStatus() === recStatusEnum.STARTING || recordingStatus() === recStatusEnum.STOPPING
-					}"
+					[class.started]="recordingStatus() === recStatusEnum.STARTED"
+					[class.stopped]="recordingStatus() === recStatusEnum.STOPPED"
+					[class.failed]="recordingStatus() === recStatusEnum.FAILED"
+					[class.starting]="recordingStatus() === recStatusEnum.STARTING || recordingStatus() === recStatusEnum.STOPPING"
 				>
 					@if (recordingStatus() !== recStatusEnum.FAILED && recordingStatus() !== recStatusEnum.STARTED) {
 						<mat-icon id="recording-icon"> video_camera_front </mat-icon>
@@ -38,17 +35,14 @@
 					}}
 				</p>
 				<div class="activity-action-buttons" matListItemMeta>
-					<div
-						id="recording-status"
-						class="activity-status"
-						[ngClass]="{
-							started: recordingStatus() === recStatusEnum.STARTED,
-							stopped: recordingStatus() === recStatusEnum.STOPPED,
-							failed: recordingStatus() === recStatusEnum.FAILED,
-							starting:
-								recordingStatus() === recStatusEnum.STARTING || recordingStatus() === recStatusEnum.STOPPING
-						}"
-					>
+				<div
+					id="recording-status"
+					class="activity-status"
+					[class.started]="recordingStatus() === recStatusEnum.STARTED"
+					[class.stopped]="recordingStatus() === recStatusEnum.STOPPED"
+					[class.failed]="recordingStatus() === recStatusEnum.FAILED"
+					[class.starting]="recordingStatus() === recStatusEnum.STARTING || recordingStatus() === recStatusEnum.STOPPING"
+				>
 						<span>{{ recordingStatus() | uppercase }}</span>
 					</div>
 				</div>
