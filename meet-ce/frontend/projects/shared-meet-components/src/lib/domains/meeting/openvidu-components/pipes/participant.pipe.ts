@@ -8,7 +8,7 @@ import { TranslateService } from '../services/translate/translate.service';
  * This is used to display the tracks in the videoconference layout.
  * @returns {ParticipantTrackPublication[]} Array of tracks
  */
-@Pipe({ name: 'tracks', standalone: false })
+@Pipe({ name: 'tracks', standalone: true })
 export class RemoteParticipantTracksPipe implements PipeTransform {
 	transform(participants: ParticipantModel[]): ParticipantTrackPublication[] {
 		return participants.map((p) => p.tracks).flat();
@@ -18,7 +18,7 @@ export class RemoteParticipantTracksPipe implements PipeTransform {
 /**
  * @internal
  */
-@Pipe({ name: 'tracksPublishedTypes', standalone: false })
+@Pipe({ name: 'tracksPublishedTypes', standalone: true })
 export class TrackPublishedTypesPipe implements PipeTransform {
 	private readonly translateService = inject(TranslateService);
 
