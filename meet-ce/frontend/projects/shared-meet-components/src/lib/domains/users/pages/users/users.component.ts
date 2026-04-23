@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -29,6 +30,7 @@ export class UsersComponent implements OnInit {
 	private userService = inject(UserService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
+	private dialogPresetsService = inject(DialogPresetsService);
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
 	private loggerService = inject(LoggerService);
@@ -179,11 +181,7 @@ export class UsersComponent implements OnInit {
 
 	private onDeleteUser(user: MeetUserDTO) {
 		this.notificationService.showDialog({
-			title: 'Delete User',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete user <b>${user.name}</b> (${user.userId})? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getDeleteUserDialogPreset(user.name, user.userId),
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);
@@ -239,11 +237,7 @@ export class UsersComponent implements OnInit {
 
 		const count = usersToDelete.length;
 		this.notificationService.showDialog({
-			title: 'Delete Users',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete <b>${count} user${count > 1 ? 's' : ''}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getBulkDeleteUsersDialogPreset(count),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

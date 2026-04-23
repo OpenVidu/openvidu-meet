@@ -5,6 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo, SortOrder } from '@openvidu-meet/typings';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
@@ -28,6 +29,7 @@ export class RoomRecordingsComponent implements OnInit {
 	protected readonly roomMemberContextService = inject(RoomMemberContextService);
 	protected readonly roomService = inject(RoomService);
 	protected readonly notificationService = inject(NotificationService);
+	protected readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly meetingContextService = inject(MeetingContextService);
 	protected readonly route = inject(ActivatedRoute);
@@ -190,11 +192,7 @@ export class RoomRecordingsComponent implements OnInit {
 		};
 
 		this.notificationService.showDialog({
-			title: 'Delete Recording',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete the recording <b>${recording.recordingId}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
 			confirmCallback: deleteCallback
 		});
 	}
@@ -240,11 +238,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 		const count = recordings.length;
 		this.notificationService.showDialog({
-			title: 'Delete Recordings',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete <b>${count} recording${count > 1 ? 's' : ''}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getBulkDeleteRecordingsDialogPreset(count),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

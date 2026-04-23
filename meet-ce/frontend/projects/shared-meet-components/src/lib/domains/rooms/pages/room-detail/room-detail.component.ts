@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -20,6 +20,7 @@ import {
 	SortOrder
 } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
@@ -63,6 +64,7 @@ export class RoomDetailComponent implements OnInit {
 	private readonly roomMemberService = inject(RoomMemberService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly notificationService = inject(NotificationService);
+	private readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
 	private readonly loggerService = inject(LoggerService);
@@ -320,11 +322,7 @@ export class RoomDetailComponent implements OnInit {
 
 	private deleteMember(member: MeetRoomMember) {
 		this.notificationService.showDialog({
-			title: 'Remove Member',
-			icon: 'person_remove',
-			message: `Are you sure you want to remove <b>${member.name}</b> from this room?`,
-			confirmText: 'Remove',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getRemoveMemberDialogPreset(member.name, this.shouldShowMeetingKickWarning()),
 			confirmCallback: async () => {
 				try {
 					await this.roomMemberService.deleteRoomMember(this.roomId(), member.memberId);
@@ -379,13 +377,13 @@ export class RoomDetailComponent implements OnInit {
 
 		const count = members.length;
 		this.notificationService.showDialog({
-			title: 'Remove Members',
-			icon: 'group_remove',
-			message: `Are you sure you want to remove <b>${count} member${count > 1 ? 's' : ''}</b> from this room?`,
-			confirmText: 'Remove',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getBulkRemoveMembersDialogPreset(count, this.shouldShowMeetingKickWarning()),
 			confirmCallback: bulkDeleteCallback
 		});
+	}
+
+	private shouldShowMeetingKickWarning(): boolean {
+		return this.room()?.status === MeetRoomStatus.ACTIVE_MEETING;
 	}
 
 	// --- Recordings management ---
@@ -500,11 +498,7 @@ export class RoomDetailComponent implements OnInit {
 		};
 
 		this.notificationService.showDialog({
-			title: 'Delete Recording',
-			icon: 'delete_outline',
-			message: `Are you sure you want to permanently delete the recording <b>${recording.recordingId}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
 			confirmCallback: deleteCallback
 		});
 	}
@@ -550,11 +544,7 @@ export class RoomDetailComponent implements OnInit {
 
 		const count = recordings.length;
 		this.notificationService.showDialog({
-			title: 'Delete Recordings',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete <b>${count} recording${count > 1 ? 's' : ''}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getBulkDeleteRecordingsDialogPreset(count),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

@@ -10,6 +10,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
 import { MeetRecordingEncodingOptions, MeetRecordingEncodingPreset, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
@@ -39,6 +40,7 @@ export class RecordingDetailComponent implements OnInit {
 	private readonly route = inject(ActivatedRoute);
 	private readonly recordingService = inject(RecordingService);
 	private readonly notificationService = inject(NotificationService);
+	private readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
 	protected readonly loggerService = inject(LoggerService);
@@ -122,11 +124,7 @@ export class RecordingDetailComponent implements OnInit {
 		};
 
 		this.notificationService.showDialog({
-			title: 'Delete Recording',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete the recording <b>${this.recordingId()}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getDeleteRecordingDialogPreset(this.recordingId()),
 			confirmCallback: deleteCallback
 		});
 	}

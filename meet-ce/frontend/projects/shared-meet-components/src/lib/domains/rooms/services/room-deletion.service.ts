@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import {
 	MeetRoom,
@@ -8,6 +8,7 @@ import {
 	MeetRoomDeletionSuccessCode
 } from '@openvidu-meet/typings';
 import { DeleteRoomDialogOptions } from '../../../shared/models/notification.model';
+import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { ILogger } from '../../meeting/openvidu-components';
 import { DeleteRoomDialogComponent } from '../components/delete-room-dialog/delete-room-dialog.component';
@@ -30,11 +31,10 @@ interface RoomDeletionOptions {
 	providedIn: 'root'
 })
 export class RoomDeletionService {
-	constructor(
-		private roomService: RoomService,
-		private notificationService: NotificationService,
-		private dialog: MatDialog
-	) {}
+	private roomService = inject(RoomService);
+	private notificationService = inject(NotificationService);
+	private dialogPresetsService = inject(DialogPresetsService);
+	private dialog = inject(MatDialog);
 
 	deleteRoomWithConfirmation({ roomId, log, onSuccess }: RoomDeletionOptions): void {
 		const deleteCallback = async () => {
@@ -42,11 +42,7 @@ export class RoomDeletionService {
 		};
 
 		this.notificationService.showDialog({
-			title: 'Delete Room',
-			icon: 'delete_outline',
-			message: `Are you sure you want to delete the room <b>${roomId}</b>?`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getDeleteRoomDialogPreset(roomId),
 			confirmCallback: deleteCallback
 		});
 	}

@@ -24,6 +24,7 @@ import {
 	MeetRoomStatus,
 	SortOrder
 } from '@openvidu-meet/typings';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
@@ -64,6 +65,7 @@ import { RoomService } from '../../services/room.service';
 export class RoomsComponent implements OnInit {
 	private roomService = inject(RoomService);
 	private notificationService = inject(NotificationService);
+	private dialogPresetsService = inject(DialogPresetsService);
 	protected navigationService = inject(NavigationService);
 	protected roomDeletionService = inject(RoomDeletionService);
 	private clipboard = inject(Clipboard);
@@ -330,11 +332,7 @@ export class RoomsComponent implements OnInit {
 		};
 
 		this.notificationService.showDialog({
-			title: 'Delete Rooms',
-			icon: 'delete_outline',
-			message: `Are you sure you want to delete <b>${rooms.length}</b> rooms?`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getBulkDeleteRoomsDialogPreset(rooms.length),
 			confirmCallback: bulkDeleteCallback
 		});
 	}

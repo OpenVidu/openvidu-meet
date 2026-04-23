@@ -8,6 +8,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { DialogPresetsService } from 'projects/shared-meet-components/src/lib/shared/services/dialog-presets.service';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -37,6 +38,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 export class ViewRecordingComponent implements OnInit {
 	protected readonly recordingService = inject(RecordingService);
 	protected readonly notificationService = inject(NotificationService);
+	protected readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly appCtxService = inject(AppContextService);
 	protected readonly wcManagerService = inject(MeetingWebComponentManagerService);
@@ -110,11 +112,7 @@ export class ViewRecordingComponent implements OnInit {
 		};
 
 		this.notificationService.showDialog({
-			title: 'Delete Recording',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete the recording <b>${recording.recordingId}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
 			confirmCallback: deleteCallback
 		});
 	}

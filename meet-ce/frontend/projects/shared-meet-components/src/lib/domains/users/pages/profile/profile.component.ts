@@ -21,6 +21,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { MeetUserDTO } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -51,6 +52,7 @@ export class ProfileComponent implements OnInit {
 	private authService = inject(AuthService);
 	private userService = inject(UserService);
 	private notificationService = inject(NotificationService);
+	private dialogPresetsService = inject(DialogPresetsService);
 	private route = inject(ActivatedRoute);
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
@@ -235,11 +237,7 @@ export class ProfileComponent implements OnInit {
 		if (!user) return;
 
 		this.notificationService.showDialog({
-			title: 'Delete User',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete user <strong>${user.name}</strong> (${user.userId})? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getDeleteUserDialogPreset(user.name, user.userId),
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);

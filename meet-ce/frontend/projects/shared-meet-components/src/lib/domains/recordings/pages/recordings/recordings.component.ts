@@ -4,6 +4,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo, SortOrder } from '@openvidu-meet/typings';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
@@ -21,6 +22,7 @@ export class RecordingsComponent implements OnInit {
 	protected loggerService: LoggerService = inject(LoggerService);
 	private recordingService: RecordingService = inject(RecordingService);
 	private notificationService: NotificationService = inject(NotificationService);
+	private dialogPresetsService = inject(DialogPresetsService);
 	protected route: ActivatedRoute = inject(ActivatedRoute);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
@@ -182,11 +184,7 @@ export class RecordingsComponent implements OnInit {
 		};
 
 		this.notificationService.showDialog({
-			title: 'Delete Recording',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete recording <b>${recording.recordingId}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
 			confirmCallback: deleteCallback
 		});
 	}
@@ -232,11 +230,7 @@ export class RecordingsComponent implements OnInit {
 
 		const count = recordings.length;
 		this.notificationService.showDialog({
-			title: 'Delete Recordings',
-			icon: 'delete_forever',
-			message: `Are you sure you want to permanently delete <b>${count} recording${count > 1 ? 's' : ''}</b>? This action cannot be undone.`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getBulkDeleteRecordingsDialogPreset(count),
 			confirmCallback: bulkDeleteCallback
 		});
 	}
