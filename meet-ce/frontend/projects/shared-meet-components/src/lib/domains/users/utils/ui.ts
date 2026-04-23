@@ -29,11 +29,11 @@ export class UsersUiUtils {
 	static getRoleLabel(role: MeetUserRole): string {
 		switch (role) {
 			case MeetUserRole.ADMIN:
-				return 'Admin';
+				return 'ADMIN';
 			case MeetUserRole.USER:
-				return 'User';
+				return 'USER';
 			case MeetUserRole.ROOM_MEMBER:
-				return 'Room Member';
+				return 'ROOM MEMBER';
 			default:
 				return role;
 		}
