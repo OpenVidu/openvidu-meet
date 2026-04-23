@@ -9,14 +9,28 @@
 	}
 	<mat-dialog-content>
 		<div class="dialog-message" [innerHTML]="data.message"></div>
-		@if (data.showForceCheckbox) {
+		@if (data.showWarningBox && data.warningMessage) {
+			<div class="warning-box" role="alert">
+				<div class="warning-box-header">
+					<mat-icon class="warning-box-icon">{{ data.warningIcon ?? 'warning' }}</mat-icon>
+					<span class="warning-box-title">{{ data.warningTitle ?? 'Warning' }}</span>
+				</div>
+				<p class="warning-box-message">{{ data.warningMessage }}</p>
+			</div>
+		}
+		@if (data.showForceCheckbox && data.showForceCheckbox && data.forceMessage) {
 			<div class="force-checkbox-container">
-				<mat-checkbox [ngModel]="force()" (ngModelChange)="force.set($event)" class="force-checkbox" color="warn">
-					<span class="checkbox-text">{{ data.forceCheckboxText }}</span>
+				<mat-checkbox
+					[ngModel]="force()"
+					(ngModelChange)="force.set($event)"
+					class="force-checkbox"
+					color="warn"
+				>
+					<span class="checkbox-text">{{ data.forceCheckboxLabel }}</span>
 				</mat-checkbox>
 				<div class="checkbox-warning">
 					<mat-icon class="warning-icon">warning</mat-icon>
-					<span class="warning-text">{{ data.forceCheckboxDescription }}</span>
+					<span class="warning-text">{{ data.forceMessage }}</span>
 				</div>
 			</div>
 		}

@@ -3,7 +3,7 @@ import { ComponentPortal } from '@angular/cdk/portal';
 import { Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { DialogComponent } from '../components/dialogs/confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogComponent } from '../components/dialogs/confirm-dialog/confirm-dialog.component';
 import { SpinnerComponent } from '../components/spinner/spinner.component';
 import { DialogOptions } from '../models/notification.model';
 
@@ -47,7 +47,7 @@ export class NotificationService {
 	}
 
 	showDialog(options: DialogOptions): void {
-		this.dialog.open(DialogComponent, {
+		this.dialog.open(ConfirmDialogComponent, {
 			data: options,
 			width: '450px',
 			disableClose: true
@@ -55,7 +55,7 @@ export class NotificationService {
 	}
 
 	showAlert(message: string): void {
-		this.dialog.open(DialogComponent, {
+		this.dialog.open(ConfirmDialogComponent, {
 			data: {
 				message,
 				confirmText: 'OK'

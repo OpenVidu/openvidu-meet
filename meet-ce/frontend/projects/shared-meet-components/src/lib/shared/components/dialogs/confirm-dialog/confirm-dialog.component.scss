@@ -66,6 +66,43 @@
 		margin-bottom: var(--ov-meet-spacing-md);
 	}
 
+	.warning-box {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+		margin-top: var(--ov-meet-spacing-sm);
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+		border: 1px solid var(--ov-meet-color-warning);
+		border-radius: var(--ov-meet-radius-md);
+		background: color-mix(in srgb, var(--ov-meet-color-warning) 12%, transparent);
+		text-align: left;
+
+		.warning-box-header {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+		}
+
+		.warning-box-icon {
+			@include design-tokens.ov-icon(sm);
+			color: var(--ov-meet-color-warning);
+			flex-shrink: 0;
+		}
+
+		.warning-box-title {
+			color: var(--ov-meet-text-primary);
+			font-size: var(--ov-meet-font-size-sm);
+			font-weight: var(--ov-meet-font-weight-semibold);
+		}
+
+		.warning-box-message {
+			margin: 0;
+			color: var(--ov-meet-text-secondary);
+			font-size: var(--ov-meet-font-size-xs);
+			line-height: var(--ov-meet-line-height-relaxed);
+		}
+	}
+
 	.force-checkbox-container {
 		@include design-tokens.ov-theme-transition;
 		margin-top: var(--ov-meet-spacing-lg);
@@ -191,6 +228,10 @@
 	::ng-deep mat-dialog-content {
 		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
 		font-size: var(--ov-meet-font-size-sm);
+
+		.warning-box {
+			padding: var(--ov-meet-spacing-sm);
+		}
 
 		.force-checkbox-container {
 			margin-top: var(--ov-meet-spacing-md);

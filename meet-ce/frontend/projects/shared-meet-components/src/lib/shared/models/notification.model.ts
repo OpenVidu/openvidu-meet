@@ -1,22 +1,27 @@
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 
 export interface DialogOptions {
-	title?: string;
 	icon?: string;
+	title?: string;
 	message: string;
 	confirmText?: string;
 	cancelText?: string;
 	confirmCallback?: () => void;
 	cancelCallback?: () => void;
-	// Force options
-	showForceCheckbox?: boolean;
-	forceCheckboxText?: string;
-	forceCheckboxDescription?: string;
-	forceConfirmCallback?: () => void;
 	// Action buttons visibility
+	showActions?: boolean;
 	showConfirmButton?: boolean;
 	showCancelButton?: boolean;
-	showActions?: boolean;
+	// Warning box options
+	showWarningBox?: boolean;
+	warningIcon?: string;
+	warningTitle?: string;
+	warningMessage?: string;
+	// Force options
+	showForceCheckbox?: boolean;
+	forceCheckboxLabel?: string;
+	forceMessage?: string;
+	forceConfirmCallback?: () => void;
 }
 
 export interface DeleteRoomDialogOptions {

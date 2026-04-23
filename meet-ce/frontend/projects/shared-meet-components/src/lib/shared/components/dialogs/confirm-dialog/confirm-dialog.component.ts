@@ -27,8 +27,8 @@ import type { DialogOptions } from '../../../models/notification.model';
 	styleUrl: './confirm-dialog.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DialogComponent {
-	readonly dialogRef = inject(MatDialogRef<DialogComponent>);
+export class ConfirmDialogComponent {
+	readonly dialogRef = inject(MatDialogRef<ConfirmDialogComponent>);
 	readonly data: DialogOptions = inject(MAT_DIALOG_DATA);
 
 	force = signal(false);
