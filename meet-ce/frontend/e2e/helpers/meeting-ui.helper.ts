@@ -41,9 +41,15 @@ async function completeLobbyIfPresent(page: Page): Promise<void> {
 async function clickJoinIfPrejoinVisible(page: Page): Promise<boolean> {
 	const prejoinContainer = page.locator('#prejoin-container');
 	const joinButton = page.locator('#join-button');
+	const joiningSpinner = page.locator('#spinner');
 
 	if (!(await prejoinContainer.isVisible().catch(() => false))) {
 		return false;
+	}
+
+	// Join was already requested and the transition spinner is visible.
+	if (await joiningSpinner.isVisible().catch(() => false)) {
+		return true;
 	}
 
 	if (!(await joinButton.isVisible().catch(() => false))) {
@@ -54,40 +60,43 @@ async function clickJoinIfPrejoinVisible(page: Page): Promise<boolean> {
 		return true;
 	}
 
-	await joinButton.press('Enter').catch(() => Promise.resolve());
-	return true;
+	return false;
 }
 
 export async function openMeeting(page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> {
-	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+	for (let attempt = 0; attempt < 2; attempt += 1) {
+		await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
 
-	const joinDeadline = Date.now() + timeoutMs;
+		const joinDeadline = Date.now() + timeoutMs;
 
-	while (Date.now() < joinDeadline) {
-		if (await page.locator('#layout-container').isVisible()) {
-			return;
+		while (Date.now() < joinDeadline) {
+			if (await page.locator('#layout-container').isVisible()) {
+				return;
+			}
+
+			await completeLobbyIfPresent(page);
+			await clickJoinIfPrejoinVisible(page);
+			await page.waitForTimeout(100); // Use expect.poll in next assertion
 		}
-
-		await completeLobbyIfPresent(page);
-		await clickJoinIfPrejoinVisible(page);
-		await page.waitForTimeout(100); // Use expect.poll in next assertion
 	}
 
 	await expect(page.locator('#layout-container')).toBeVisible({ timeout: timeoutMs });
 }
 
 export async function openPrejoin(page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> {
-	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+	for (let attempt = 0; attempt < 2; attempt += 1) {
+		await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
 
-	const prejoinDeadline = Date.now() + timeoutMs;
+		const prejoinDeadline = Date.now() + timeoutMs;
 
-	while (Date.now() < prejoinDeadline) {
-		if (await page.locator('#prejoin-container').isVisible()) {
-			return;
+		while (Date.now() < prejoinDeadline) {
+			if (await page.locator('#prejoin-container').isVisible()) {
+				return;
+			}
+
+			await completeLobbyIfPresent(page);
+			await page.waitForTimeout(100); // Use expect.poll in next assertion
 		}
-
-		await completeLobbyIfPresent(page);
-		await page.waitForTimeout(100); // Use expect.poll in next assertion
 	}
 
 	await expect(page.locator('#prejoin-container')).toBeVisible({ timeout: timeoutMs });
@@ -173,21 +182,24 @@ export async function expectHidden(page: Page, selector: string): Promise<void> 
 	const locator = page.locator(selector);
 
 	await expect
-		.poll(async () => {
-			const count = await locator.count();
+		.poll(
+			async () => {
+				const count = await locator.count();
 
-			if (count === 0) {
-				return true;
-			}
-
-			for (let index = 0; index < count; index += 1) {
-				if (await locator.nth(index).isVisible()) {
-					return false;
+				if (count === 0) {
+					return true;
 				}
-			}
 
-			return true;
-		}, { timeout: 10_000 })
+				for (let index = 0; index < count; index += 1) {
+					if (await locator.nth(index).isVisible()) {
+						return false;
+					}
+				}
+
+				return true;
+			},
+			{ timeout: 10_000 }
+		)
 		.toBeTruthy();
 }
 
@@ -227,6 +239,7 @@ export async function getCopiedText(page: Page): Promise<string> {
 		};
 
 		const capturedText = w.__ovCopiedText?.trim() ?? '';
+
 		if (capturedText) {
 			return capturedText;
 		}
@@ -278,7 +291,26 @@ export async function applyBackgroundEffect(page: Page, effectId: string, timeou
 }
 
 export async function captureVideoElementScreenshot(page: Page): Promise<Buffer> {
-	return await page.locator('.OV_video-element').first().screenshot();
+	const videoLocator = page.locator('.OV_video-element').first();
+
+	for (let attempt = 0; attempt < 3; attempt += 1) {
+		await expect(videoLocator).toBeVisible({ timeout: 5_000 });
+
+		try {
+			return await videoLocator.screenshot();
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error);
+			const isDetached = message.includes('Element is not attached to the DOM');
+
+			if (!isDetached || attempt === 2) {
+				throw error;
+			}
+
+			await page.waitForTimeout(150);
+		}
+	}
+
+	throw new Error('Unable to capture video screenshot after retries');
 }
 
 export function expectSignificantImageDifference(

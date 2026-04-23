@@ -1,22 +1,12 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
-import { distinctUntilChanged, shareReplay, map } from 'rxjs/operators';
+import { Injectable, computed, signal } from '@angular/core';
+import { ParticipantModel } from '../../models/participant.model';
 import { RecordingInfo } from '../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
-import { ParticipantModel } from '../../models/participant.model';
-
-/**
- * Configuration item for the service
- */
-interface ConfigItem<T> {
-	subject: BehaviorSubject<T>;
-	observable$: Observable<T>;
-}
 
 /**
  * Recording activity controls configuration
  */
-interface RecordingControls {
+export interface RecordingControls {
 	play: boolean;
 	download: boolean;
 	delete: boolean;
@@ -31,7 +21,6 @@ interface ToolbarConfig {
 	microphone: boolean;
 	screenshare: boolean;
 	fullscreen: boolean;
-	captions: boolean;
 	settings: boolean;
 	leave: boolean;
 	participantsPanel: boolean;
@@ -43,7 +32,6 @@ interface ToolbarConfig {
 	backgroundEffects: boolean;
 	recording: boolean;
 	viewRecordings: boolean;
-	broadcasting: boolean;
 	brandingLogo: string;
 	additionalButtonsPosition: ToolbarAdditionalButtonsPosition;
 }
@@ -106,194 +94,8 @@ interface GeneralConfig {
 	providedIn: 'root'
 })
 export class OpenViduComponentsConfigService {
-	/**
-	 * Helper method to create a configuration item with BehaviorSubject and Observable
-	 */
-	private createConfigItem<T>(initialValue: T): ConfigItem<T> {
-		const subject = new BehaviorSubject<T>(initialValue);
-		const observable$ = subject.asObservable().pipe(distinctUntilChanged(), shareReplay(1));
-		return { subject, observable$ };
-	}
-
-	/**
-	 * Helper method for array configurations with optimized comparison
-	 */
-	private createArrayConfigItem<T>(initialValue: T[]): ConfigItem<T[]> {
-		const subject = new BehaviorSubject<T[]>(initialValue);
-		const observable$ = subject.asObservable().pipe(
-			distinctUntilChanged((prev, curr) => {
-				if (prev.length !== curr.length) return false;
-				return prev.every((item, index) => this.deepEqual(item, curr[index]));
-			}),
-			shareReplay(1)
-		);
-		return { subject, observable$ };
-	}
-
-	/**
-	 * Helper method for RecordingControls with specific comparison
-	 */
-	private createRecordingControlsConfigItem(initialValue: RecordingControls): ConfigItem<RecordingControls> {
-		const subject = new BehaviorSubject<RecordingControls>(initialValue);
-		const observable$ = subject.asObservable().pipe(
-			distinctUntilChanged(
-				(prev, curr) =>
-					prev.play === curr.play &&
-					prev.download === curr.download &&
-					prev.delete === curr.delete &&
-					prev.externalView === curr.externalView
-			),
-			shareReplay(1)
-		);
-		return { subject, observable$ };
-	}
-
-	/**
-	 * Helper method for ToolbarConfig with specific comparison
-	 */
-	private createToolbarConfigItem(initialValue: ToolbarConfig): ConfigItem<ToolbarConfig> {
-		const subject = new BehaviorSubject<ToolbarConfig>(initialValue);
-		const observable$ = subject.asObservable().pipe(
-			distinctUntilChanged((prev, curr) => this.compareToolbarConfig(prev, curr)),
-			shareReplay(1)
-		);
-		return { subject, observable$ };
-	}
-
-	/**
-	 * Helper method for StreamConfig with specific comparison
-	 */
-	private createStreamConfigItem(initialValue: StreamConfig): ConfigItem<StreamConfig> {
-		const subject = new BehaviorSubject<StreamConfig>(initialValue);
-		const observable$ = subject.asObservable().pipe(
-			distinctUntilChanged((prev, curr) => this.compareStreamConfig(prev, curr)),
-			shareReplay(1)
-		);
-		return { subject, observable$ };
-	}
-
-	/**
-	 * Helper method for RecordingActivityConfig with specific comparison
-	 */
-	private createRecordingActivityConfigItem(initialValue: RecordingActivityConfig): ConfigItem<RecordingActivityConfig> {
-		const subject = new BehaviorSubject<RecordingActivityConfig>(initialValue);
-		const observable$ = subject.asObservable().pipe(
-			distinctUntilChanged((prev, curr) => this.compareRecordingActivityConfig(prev, curr)),
-			shareReplay(1)
-		);
-		return { subject, observable$ };
-	}
-
-	/**
-	 * Helper method for AdminConfig with specific comparison
-	 */
-	private createAdminConfigItem(initialValue: AdminConfig): ConfigItem<AdminConfig> {
-		const subject = new BehaviorSubject<AdminConfig>(initialValue);
-		const observable$ = subject.asObservable().pipe(
-			distinctUntilChanged((prev, curr) => this.compareAdminConfig(prev, curr)),
-			shareReplay(1)
-		);
-		return { subject, observable$ };
-	}
-
-	/**
-	 * Helper method for GeneralConfig with specific comparison
-	 */
-	private createGeneralConfigItem(initialValue: GeneralConfig): ConfigItem<GeneralConfig> {
-		const subject = new BehaviorSubject<GeneralConfig>(initialValue);
-		const observable$ = subject.asObservable();
-		return { subject, observable$ };
-	}
-
-	/**
-	 * Optimized deep equality check
-	 */
-	private deepEqual(a: any, b: any): boolean {
-		if (a === b) return true;
-		if (a == null || b == null) return a === b;
-		if (typeof a !== typeof b) return false;
-		if (typeof a !== 'object') return a === b;
-
-		const keysA = Object.keys(a);
-		const keysB = Object.keys(b);
-		if (keysA.length !== keysB.length) return false;
-
-		return keysA.every((key) => this.deepEqual(a[key], b[key]));
-	}
-
-	/**
-	 * Compare ToolbarConfig efficiently
-	 */
-	private compareToolbarConfig(prev: ToolbarConfig, curr: ToolbarConfig): boolean {
-		return (
-			prev.camera === curr.camera &&
-			prev.microphone === curr.microphone &&
-			prev.screenshare === curr.screenshare &&
-			prev.fullscreen === curr.fullscreen &&
-			prev.captions === curr.captions &&
-			prev.settings === curr.settings &&
-			prev.leave === curr.leave &&
-			prev.participantsPanel === curr.participantsPanel &&
-			prev.chatPanel === curr.chatPanel &&
-			prev.activitiesPanel === curr.activitiesPanel &&
-			prev.displayRoomName === curr.displayRoomName &&
-			prev.roomName === curr.roomName &&
-			prev.displayLogo === curr.displayLogo &&
-			prev.backgroundEffects === curr.backgroundEffects &&
-			prev.recording === curr.recording &&
-			prev.viewRecordings === curr.viewRecordings &&
-			prev.broadcasting === curr.broadcasting &&
-			prev.brandingLogo === curr.brandingLogo &&
-			prev.additionalButtonsPosition === curr.additionalButtonsPosition
-		);
-	}
-
-	/**
-	 * Compare StreamConfig efficiently
-	 */
-	private compareStreamConfig(prev: StreamConfig, curr: StreamConfig): boolean {
-		return (
-			prev.videoEnabled === curr.videoEnabled &&
-			prev.audioEnabled === curr.audioEnabled &&
-			prev.displayParticipantName === curr.displayParticipantName &&
-			prev.displayAudioDetection === curr.displayAudioDetection &&
-			prev.videoControls === curr.videoControls &&
-			prev.participantItemMuteButton === curr.participantItemMuteButton
-		);
-	}
-
-	/**
-	 * Compare RecordingActivityConfig efficiently
-	 */
-	private compareRecordingActivityConfig(prev: RecordingActivityConfig, curr: RecordingActivityConfig): boolean {
-		return (
-			prev.enabled === curr.enabled &&
-			prev.readOnly === curr.readOnly &&
-			prev.startStopButton === curr.startStopButton &&
-			prev.viewRecordingsButton === curr.viewRecordingsButton &&
-			prev.showRecordingsList === curr.showRecordingsList &&
-			prev.showControls.play === curr.showControls.play &&
-			prev.showControls.download === curr.showControls.download &&
-			prev.showControls.delete === curr.showControls.delete &&
-			prev.showControls.externalView === curr.showControls.externalView
-		);
-	}
-
-	/**
-	 * Compare AdminConfig efficiently
-	 */
-	private compareAdminConfig(prev: AdminConfig, curr: AdminConfig): boolean {
-		return (
-			prev.loginError === curr.loginError &&
-			prev.loginTitle === curr.loginTitle &&
-			prev.dashboardTitle === curr.dashboardTitle &&
-			prev.recordingsList.length === curr.recordingsList.length &&
-			prev.recordingsList.every((item, index) => this.deepEqual(item, curr.recordingsList[index]))
-		);
-	}
-
 	// Grouped configuration items by domain
-	private generalConfig = this.createGeneralConfigItem({
+	private readonly generalConfig = signal<GeneralConfig>({
 		token: '',
 		livekitUrl: '',
 		tokenError: null,
@@ -307,12 +109,11 @@ export class OpenViduComponentsConfigService {
 		e2eeKey: undefined
 	});
 
-	private toolbarConfig = this.createToolbarConfigItem({
+	private readonly toolbarConfig = signal<ToolbarConfig>({
 		camera: true,
 		microphone: true,
 		screenshare: true,
 		fullscreen: true,
-		captions: true,
 		settings: true,
 		leave: true,
 		participantsPanel: true,
@@ -324,12 +125,11 @@ export class OpenViduComponentsConfigService {
 		backgroundEffects: true,
 		recording: true,
 		viewRecordings: false,
-		broadcasting: true,
 		brandingLogo: '',
 		additionalButtonsPosition: ToolbarAdditionalButtonsPosition.AFTER_MENU
 	});
 
-	private streamConfig = this.createStreamConfigItem({
+	private readonly streamConfig = signal<StreamConfig>({
 		videoEnabled: true,
 		audioEnabled: true,
 		displayParticipantName: true,
@@ -338,7 +138,7 @@ export class OpenViduComponentsConfigService {
 		participantItemMuteButton: true
 	});
 
-	private recordingActivityConfig = this.createRecordingActivityConfigItem({
+	private readonly recordingActivityConfig = signal<RecordingActivityConfig>({
 		enabled: true,
 		readOnly: false,
 		showControls: {
@@ -352,7 +152,7 @@ export class OpenViduComponentsConfigService {
 		showRecordingsList: true
 	});
 
-	private adminConfig = this.createAdminConfigItem({
+	private readonly adminConfig = signal<AdminConfig>({
 		recordingsList: [],
 		loginError: null,
 		loginTitle: '',
@@ -360,127 +160,54 @@ export class OpenViduComponentsConfigService {
 	});
 
 	// Individual configs that don't fit into groups
-	private broadcastingActivityConfig = this.createConfigItem(true);
-	private layoutRemoteParticipantsConfig = this.createConfigItem<ParticipantModel[] | undefined>(undefined);
+	private readonly layoutRemoteParticipantsConfig = signal<ParticipantModel[] | undefined>(undefined);
 
-	// General observables
-	token$: Observable<string> = this.generalConfig.observable$.pipe(
-		map((config) => config.token),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	livekitUrl$: Observable<string> = this.generalConfig.observable$.pipe(
-		map((config) => config.livekitUrl),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	tokenError$: Observable<any> = this.generalConfig.observable$.pipe(
-		map((config) => config.tokenError),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	minimal$: Observable<boolean> = this.generalConfig.observable$.pipe(
-		map((config) => config.minimal),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	participantName$: Observable<string> = this.generalConfig.observable$.pipe(
-		map((config) => config.participantName),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	prejoin$: Observable<boolean> = this.generalConfig.observable$.pipe(
-		map((config) => config.prejoin),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	prejoinDisplayParticipantName$: Observable<boolean> = this.generalConfig.observable$.pipe(
-		map((config) => config.prejoinDisplayParticipantName),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	showDisconnectionDialog$: Observable<boolean> = this.generalConfig.observable$.pipe(
-		map((config) => config.showDisconnectionDialog),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-
-	showThemeSelector$: Observable<boolean> = this.generalConfig.observable$.pipe(
-		map((config) => config.showThemeSelector),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	recordingStreamBaseUrl$: Observable<string> = this.generalConfig.observable$.pipe(
-		map((config) => config.recordingStreamBaseUrl),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-	e2eeKey$: Observable<string | undefined> = this.generalConfig.observable$.pipe(
-		map((config) => config.e2eeKey),
-		distinctUntilChanged(),
-		shareReplay(1)
-	);
-
-	// Stream observables
-	videoEnabled$: Observable<boolean> = this.streamConfig.observable$.pipe(map((config) => config.videoEnabled));
-	audioEnabled$: Observable<boolean> = this.streamConfig.observable$.pipe(map((config) => config.audioEnabled));
-	displayParticipantName$: Observable<boolean> = this.streamConfig.observable$.pipe(map((config) => config.displayParticipantName));
-	displayAudioDetection$: Observable<boolean> = this.streamConfig.observable$.pipe(map((config) => config.displayAudioDetection));
-	streamVideoControls$: Observable<boolean> = this.streamConfig.observable$.pipe(map((config) => config.videoControls));
-	participantItemMuteButton$: Observable<boolean> = this.streamConfig.observable$.pipe(map((config) => config.participantItemMuteButton));
-
-	// Toolbar observables
-	cameraButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.camera));
-	microphoneButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.microphone));
-	screenshareButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.screenshare));
-	fullscreenButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.fullscreen));
-	captionsButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.captions));
-	toolbarSettingsButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.settings));
-	leaveButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.leave));
-	participantsPanelButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.participantsPanel));
-	chatPanelButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.chatPanel));
-	activitiesPanelButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.activitiesPanel));
-	displayRoomName$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.displayRoomName));
-	roomName$: Observable<string> = this.toolbarConfig.observable$.pipe(map((config) => config.roomName));
-	brandingLogo$: Observable<string> = this.toolbarConfig.observable$.pipe(map((config) => config.brandingLogo));
-	displayLogo$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.displayLogo));
-	toolbarAdditionalButtonsPosition$: Observable<ToolbarAdditionalButtonsPosition> = this.toolbarConfig.observable$.pipe(
-		map((config) => config.additionalButtonsPosition)
-	);
-	backgroundEffectsButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.backgroundEffects));
-	recordingButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.recording));
-	toolbarViewRecordingsButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.viewRecordings));
-	broadcastingButton$: Observable<boolean> = this.toolbarConfig.observable$.pipe(map((config) => config.broadcasting));
-
-	// Recording activity observables
-	recordingActivity$: Observable<boolean> = this.recordingActivityConfig.observable$.pipe(map((config) => config.enabled));
-	recordingActivityReadOnly$: Observable<boolean> = this.recordingActivityConfig.observable$.pipe(map((config) => config.readOnly));
-	recordingActivityShowControls$: Observable<RecordingControls> = this.recordingActivityConfig.observable$.pipe(
-		map((config) => config.showControls)
-	);
-	recordingActivityStartStopRecordingButton$: Observable<boolean> = this.recordingActivityConfig.observable$.pipe(
-		map((config) => config.startStopButton)
-	);
-	recordingActivityViewRecordingsButton$: Observable<boolean> = this.recordingActivityConfig.observable$.pipe(
-		map((config) => config.viewRecordingsButton)
-	);
-	recordingActivityShowRecordingsList$: Observable<boolean> = this.recordingActivityConfig.observable$.pipe(
-		map((config) => config.showRecordingsList)
-	);
-
-	// Admin observables
-	adminRecordingsList$: Observable<RecordingInfo[]> = this.adminConfig.observable$.pipe(map((config) => config.recordingsList));
-	adminLoginError$: Observable<any> = this.adminConfig.observable$.pipe(map((config) => config.loginError));
-	adminLoginTitle$: Observable<string> = this.adminConfig.observable$.pipe(map((config) => config.loginTitle));
-	adminDashboardTitle$: Observable<string> = this.adminConfig.observable$.pipe(map((config) => config.dashboardTitle));
-
-	// Individual observables that don't fit into groups
-	broadcastingActivity$: Observable<boolean> = this.broadcastingActivityConfig.observable$;
-	layoutRemoteParticipants$: Observable<ParticipantModel[] | undefined> = this.layoutRemoteParticipantsConfig.observable$;
-
-	constructor() {
-		// Constructor no longer needed - all observables are initialized directly
-	}
+	// Signals-first selectors used by migrated consumers/directives
+	readonly minimalSignal = computed(() => this.generalConfig().minimal);
+	readonly tokenSignal = computed(() => this.generalConfig().token);
+	readonly livekitUrlSignal = computed(() => this.generalConfig().livekitUrl);
+	readonly tokenErrorSignal = computed(() => this.generalConfig().tokenError);
+	readonly participantNameSignal = computed(() => this.generalConfig().participantName);
+	readonly prejoinSignal = computed(() => this.generalConfig().prejoin);
+	readonly prejoinDisplayParticipantNameSignal = computed(() => this.generalConfig().prejoinDisplayParticipantName);
+	readonly showDisconnectionDialogSignal = computed(() => this.generalConfig().showDisconnectionDialog);
+	readonly recordingStreamBaseUrlSignal = computed(() => this.generalConfig().recordingStreamBaseUrl);
+	readonly e2eeKeySignal = computed(() => this.generalConfig().e2eeKey);
+	readonly videoEnabledSignal = computed(() => this.streamConfig().videoEnabled);
+	readonly audioEnabledSignal = computed(() => this.streamConfig().audioEnabled);
+	readonly displayParticipantNameSignal = computed(() => this.streamConfig().displayParticipantName);
+	readonly displayAudioDetectionSignal = computed(() => this.streamConfig().displayAudioDetection);
+	readonly streamVideoControlsSignal = computed(() => this.streamConfig().videoControls);
+	readonly participantItemMuteButtonSignal = computed(() => this.streamConfig().participantItemMuteButton);
+	readonly cameraButtonSignal = computed(() => this.toolbarConfig().camera);
+	readonly microphoneButtonSignal = computed(() => this.toolbarConfig().microphone);
+	readonly screenshareButtonSignal = computed(() => this.toolbarConfig().screenshare);
+	readonly fullscreenButtonSignal = computed(() => this.toolbarConfig().fullscreen);
+	readonly toolbarSettingsButtonSignal = computed(() => this.toolbarConfig().settings);
+	readonly leaveButtonSignal = computed(() => this.toolbarConfig().leave);
+	readonly participantsPanelButtonSignal = computed(() => this.toolbarConfig().participantsPanel);
+	readonly chatPanelButtonSignal = computed(() => this.toolbarConfig().chatPanel);
+	readonly activitiesPanelButtonSignal = computed(() => this.toolbarConfig().activitiesPanel);
+	readonly displayRoomNameSignal = computed(() => this.toolbarConfig().displayRoomName);
+	readonly roomNameSignal = computed(() => this.toolbarConfig().roomName);
+	readonly brandingLogoSignal = computed(() => this.toolbarConfig().brandingLogo);
+	readonly displayLogoSignal = computed(() => this.toolbarConfig().displayLogo);
+	readonly showThemeSelectorSignal = computed(() => this.generalConfig().showThemeSelector);
+	readonly toolbarAdditionalButtonsPositionSignal = computed(() => this.toolbarConfig().additionalButtonsPosition);
+	readonly backgroundEffectsButtonSignal = computed(() => this.toolbarConfig().backgroundEffects);
+	readonly recordingButtonSignal = computed(() => this.toolbarConfig().recording);
+	readonly toolbarViewRecordingsButtonSignal = computed(() => this.toolbarConfig().viewRecordings);
+	readonly recordingActivitySignal = computed(() => this.recordingActivityConfig().enabled);
+	readonly recordingActivityReadOnlySignal = computed(() => this.recordingActivityConfig().readOnly);
+	readonly recordingActivityShowControlsSignal = computed(() => this.recordingActivityConfig().showControls);
+	readonly recordingActivityStartStopRecordingButtonSignal = computed(() => this.recordingActivityConfig().startStopButton);
+	readonly recordingActivityViewRecordingsButtonSignal = computed(() => this.recordingActivityConfig().viewRecordingsButton);
+	readonly recordingActivityShowRecordingsListSignal = computed(() => this.recordingActivityConfig().showRecordingsList);
+	readonly adminRecordingsListSignal = computed(() => this.adminConfig().recordingsList);
+	readonly adminLoginErrorSignal = computed(() => this.adminConfig().loginError);
+	readonly adminLoginTitleSignal = computed(() => this.adminConfig().loginTitle);
+	readonly adminDashboardTitleSignal = computed(() => this.adminConfig().dashboardTitle);
+	readonly layoutRemoteParticipantsSignal = this.layoutRemoteParticipantsConfig.asReadonly();
 
 	// ============================================
 	// BATCH UPDATE METHODS
@@ -490,47 +217,42 @@ export class OpenViduComponentsConfigService {
 	 * Update multiple general configuration properties at once
 	 */
 	updateGeneralConfig(partialConfig: Partial<GeneralConfig>): void {
-		const current = this.generalConfig.subject.getValue();
-		this.generalConfig.subject.next({ ...current, ...partialConfig });
+		this.generalConfig.update((current) => ({ ...current, ...partialConfig }));
 	}
 
 	/**
 	 * Update multiple toolbar configuration properties at once
 	 */
 	updateToolbarConfig(partialConfig: Partial<ToolbarConfig>): void {
-		const current = this.toolbarConfig.subject.getValue();
-		this.toolbarConfig.subject.next({ ...current, ...partialConfig });
+		this.toolbarConfig.update((current) => ({ ...current, ...partialConfig }));
 	}
 
 	/**
 	 * Update multiple stream configuration properties at once
 	 */
 	updateStreamConfig(partialConfig: Partial<StreamConfig>): void {
-		const current = this.streamConfig.subject.getValue();
-		this.streamConfig.subject.next({ ...current, ...partialConfig });
+		this.streamConfig.update((current) => ({ ...current, ...partialConfig }));
 	}
 
 	/**
 	 * Update multiple recording activity configuration properties at once
 	 */
 	updateRecordingActivityConfig(partialConfig: Partial<RecordingActivityConfig>): void {
-		const current = this.recordingActivityConfig.subject.getValue();
-		this.recordingActivityConfig.subject.next({ ...current, ...partialConfig });
+		this.recordingActivityConfig.update((current) => ({ ...current, ...partialConfig }));
 	}
 
 	/**
 	 * Update multiple admin configuration properties at once
 	 */
 	updateAdminConfig(partialConfig: Partial<AdminConfig>): void {
-		const current = this.adminConfig.subject.getValue();
-		this.adminConfig.subject.next({ ...current, ...partialConfig });
+		this.adminConfig.update((current) => ({ ...current, ...partialConfig }));
 	}
 
 	/**
 	 * Update recording controls specifically with batch support
 	 */
 	updateRecordingControls(partialControls: Partial<RecordingControls>): void {
-		const current = this.recordingActivityConfig.subject.getValue();
+		const current = this.recordingActivityConfig();
 		const updatedControls = { ...current.showControls, ...partialControls };
 		this.updateRecordingActivityConfig({ showControls: updatedControls });
 	}
@@ -544,7 +266,7 @@ export class OpenViduComponentsConfigService {
 	 * Get current participant name directly
 	 */
 	getCurrentParticipantName(): string {
-		return this.generalConfig.subject.getValue().participantName;
+		return this.generalConfig().participantName;
 	}
 
 	// ============================================
@@ -554,66 +276,59 @@ export class OpenViduComponentsConfigService {
 	// General configuration methods
 
 	getLivekitUrl(): string {
-		return this.generalConfig.subject.getValue().livekitUrl;
+		return this.generalConfig().livekitUrl;
 	}
 
 	showPrejoin(): boolean {
-		return this.generalConfig.subject.getValue().prejoin;
+		return this.generalConfig().prejoin;
 	}
 
 	getShowDisconnectionDialog(): boolean {
-		return this.generalConfig.subject.getValue().showDisconnectionDialog;
+		return this.generalConfig().showDisconnectionDialog;
 	}
 
 	getRecordingStreamBaseUrl(): string {
-		let baseUrl = this.generalConfig.subject.getValue().recordingStreamBaseUrl;
+		let baseUrl = this.generalConfig().recordingStreamBaseUrl;
 		// Add trailing slash if not present
 		baseUrl += baseUrl.endsWith('/') ? '' : '/';
 		return baseUrl;
 	}
 
 	getE2EEKey(): string | undefined {
-		return this.generalConfig.subject.getValue().e2eeKey;
+		return this.generalConfig().e2eeKey;
 	}
 
 	// Stream configuration methods
 
 	isVideoEnabled(): boolean {
-		return this.streamConfig.subject.getValue().videoEnabled;
+		return this.streamConfig().videoEnabled;
 	}
 
 	isAudioEnabled(): boolean {
-		return this.streamConfig.subject.getValue().audioEnabled;
+		return this.streamConfig().audioEnabled;
 	}
 
 	// Toolbar configuration methods
 
 	getRoomName(): string {
-		return this.toolbarConfig.subject.getValue().roomName;
-	}
-
-	setBroadcastingButton(broadcastingButton: boolean) {
-		this.updateToolbarConfig({ broadcasting: broadcastingButton });
+		return this.toolbarConfig().roomName;
 	}
 
 	showBackgroundEffectsButton(): boolean {
-		return this.toolbarConfig.subject.getValue().backgroundEffects;
+		return this.toolbarConfig().backgroundEffects;
 	}
 
 	// Activity methods (these remain individual as they don't fit cleanly into toolbar config)
 
-	setBroadcastingActivity(broadcastingActivity: boolean) {
-		this.broadcastingActivityConfig.subject.next(broadcastingActivity);
-	}
 
 	// Internals
 	setLayoutRemoteParticipants(participants: ParticipantModel[] | undefined) {
-		this.layoutRemoteParticipantsConfig.subject.next(participants);
+		this.layoutRemoteParticipantsConfig.set(participants);
 	}
 
 	// Recording Activity Configuration methods
 
 	showRecordingActivityRecordingsList(): boolean {
-		return this.recordingActivityConfig.subject.getValue().showRecordingsList;
+		return this.recordingActivityConfig().showRecordingsList;
 	}
 }

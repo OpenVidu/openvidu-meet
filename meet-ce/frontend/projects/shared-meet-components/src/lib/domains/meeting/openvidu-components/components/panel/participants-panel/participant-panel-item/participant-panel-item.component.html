@@ -46,7 +46,7 @@
 				@if (!_participant.hasEncryptionError) {
 					<div class="participant-action-buttons">
 						<!-- Mute/Unmute button for remote participants -->
-						@if (!isLocalParticipant && showMuteButton) {
+						@if (!isLocalParticipant && showMuteButton()) {
 							<button
 								mat-icon-button
 								id="mute-btn"

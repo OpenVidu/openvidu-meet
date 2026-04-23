@@ -13,10 +13,10 @@
 
 	<div class="activities-body-container">
 		<mat-accordion [multi]="false">
-			@if (showRecordingActivity) {
+			@if (showRecordingActivity()) {
 				<ov-recording-activity
 					id="recording-activity"
-					[expanded]="expandedPanel === 'recording'"
+					[expanded]="expandedPanel() === 'recording'"
 					(onRecordingStartRequested)="onRecordingStartRequested.emit($event)"
 					(onRecordingStopRequested)="onRecordingStopRequested.emit($event)"
 					(onRecordingDeleteRequested)="onRecordingDeleteRequested.emit($event)"
@@ -24,14 +24,6 @@
 					(onRecordingPlayClicked)="onRecordingPlayClicked.emit($event)"
 					(onViewRecordingClicked)="onViewRecordingClicked.emit($event)"
 					(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
-				/>
-			}
-			@if (showBroadcastingActivity) {
-				<ov-broadcasting-activity
-					id="broadcasting-activity"
-					[expanded]="expandedPanel === 'broadcasting'"
-					(onBroadcastingStartRequested)="onBroadcastingStartRequested.emit($event)"
-					(onBroadcastingStopRequested)="onBroadcastingStopRequested.emit($event)"
 				/>
 			}
 		</mat-accordion>

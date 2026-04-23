@@ -2,16 +2,15 @@ import {
 	AfterViewInit,
 	ChangeDetectorRef,
 	Component,
-	DestroyRef,
-	OnDestroy,
-	TemplateRef,
 	contentChild,
+	DestroyRef,
+	effect,
 	inject,
+	OnDestroy,
 	output,
+	TemplateRef,
 	viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, skip, take } from 'rxjs';
 import {
 	LayoutAdditionalElementsDirective,
 	LeaveButtonDirective,
@@ -34,7 +33,6 @@ import {
 	ToolbarAdditionalPanelButtonsDirective,
 	ToolbarDirective
 } from '../../directives/template/openvidu-components-angular.directive';
-import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../models/broadcasting.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
@@ -373,18 +371,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	readonly onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
 
 	/**
-	 * Provides event notifications that fire when start broadcasting button is clicked.
-	 * It provides the {@link BroadcastingStartRequestedEvent} payload as event data.
-	 */
-	readonly onBroadcastingStartRequested = output<BroadcastingStartRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when stop broadcasting button is clicked.
-	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
-	 */
-	readonly onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
-
-	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recordings button.
 	 */
@@ -432,6 +418,97 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly destroyRef = inject(DestroyRef);
 	private log: ILogger;
 	private latestParticipantName: string | undefined;
+	private latestProcessedToken: string | undefined;
+	private readonly tokenConfigEffect = effect(() => {
+		const token = this.libService.tokenSignal();
+		if (!token || token === this.latestProcessedToken) {
+			return;
+		}
+		this.latestProcessedToken = token;
+
+		try {
+			const livekitUrl = this.libService.getLivekitUrl();
+			this.openviduService.initializeAndSetToken(token, livekitUrl);
+			this.log.d('Token has been successfully set. Room is ready to join');
+
+			if (this.hasUserInitiatedJoin()) {
+				this.log.d('User has initiated join, hiding prejoin and proceeding');
+				this.updateComponentState({
+					state: VideoconferenceState.READY_TO_CONNECT,
+					isRoomReady: true,
+					showPrejoin: false
+				});
+			} else {
+				this.updateComponentState({
+					state: VideoconferenceState.PREJOIN_SHOWN,
+					isRoomReady: true,
+					showPrejoin: this.libService.showPrejoin()
+				});
+			}
+		} catch (error) {
+			this.log.e('Error trying to set token', error);
+			this.updateComponentState({
+				state: VideoconferenceState.ERROR,
+				error: {
+					hasError: true,
+					message: 'Error setting token',
+					tokenError: error
+				}
+			});
+		}
+	});
+	private readonly tokenErrorConfigEffect = effect(() => {
+		const error = this.libService.tokenErrorSignal();
+		if (!error) {
+			return;
+		}
+
+		this.log.e('Token error received', error);
+		this.updateComponentState({
+			state: VideoconferenceState.ERROR,
+			error: {
+				hasError: true,
+				message: 'Token error',
+				tokenError: error
+			}
+		});
+
+		if (!this.componentState.showPrejoin) {
+			this.actionService.openDialog(error.name, error.message, false);
+		}
+	});
+	private readonly prejoinConfigEffect = effect(() => {
+		const value = this.libService.prejoinSignal();
+		this.updateComponentState({
+			showPrejoin: value
+		});
+
+		if (!value) {
+			this.log.d('Prejoin page is hidden, checking participant name');
+			if (this.latestParticipantName) {
+				this._onReadyToJoin();
+			} else {
+				setTimeout(() => {
+					if (!this.latestParticipantName) {
+						this.log.w('No participant name received after timeout, proceeding anyway');
+						const storedName = this.storageSrv.getParticipantName();
+						if (storedName) {
+							this.latestParticipantName = storedName;
+							this.libService.updateGeneralConfig({ participantName: storedName });
+						}
+						this._onReadyToJoin();
+					}
+				}, VideoconferenceComponent.PARTICIPANT_NAME_TIMEOUT_MS);
+			}
+		}
+	});
+	private readonly participantNameConfigEffect = effect(() => {
+		const name = this.libService.participantNameSignal();
+		if (!name) {
+			return;
+		}
+		void this.handleParticipantName(name);
+	});
 
 	// Expose constants to template
 	get spinnerDiameter(): number {
@@ -482,7 +559,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		});
 
 		this.themeService.initializeTheme();
-		this.subscribeToVideconferenceDirectives();
 	}
 
 	ngOnDestroy() {
@@ -729,126 +805,20 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		});
 	}
 
-	private subscribeToVideconferenceDirectives() {
-		this.libService.token$.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((token: string) => {
-			try {
-				if (!token) {
-					this.log.e('Token is empty');
-					return;
-				}
+	private async handleParticipantName(name: string) {
+		this.latestParticipantName = await this.e2eeService.decrypt(name);
+		this.storageSrv.setParticipantName(name);
 
-				const livekitUrl = this.libService.getLivekitUrl();
-				this.openviduService.initializeAndSetToken(token, livekitUrl);
-				this.log.d('Token has been successfully set. Room is ready to join');
-
-				if (this.hasUserInitiatedJoin()) {
-					// User has initiated join, proceed to hide prejoin and continue
-					this.log.d('User has initiated join, hiding prejoin and proceeding');
-					this.updateComponentState({
-						state: VideoconferenceState.READY_TO_CONNECT,
-						isRoomReady: true,
-						showPrejoin: false
-					});
-				} else {
-					// Only update showPrejoin if user hasn't initiated join process yet
-					// This prevents prejoin from showing again after user clicked join
-					this.updateComponentState({
-						state: VideoconferenceState.PREJOIN_SHOWN,
-						isRoomReady: true,
-						showPrejoin: this.libService.showPrejoin()
-					});
-				}
-			} catch (error) {
-				this.log.e('Error trying to set token', error);
-				this.updateComponentState({
-					state: VideoconferenceState.ERROR,
-					error: {
-						hasError: true,
-						message: 'Error setting token',
-						tokenError: error
-					}
-				});
-			}
-		});
-
-		this.libService.tokenError$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((error: any) => {
-			if (!error) return;
-
-			this.log.e('Token error received', error);
+		if (
+			this.componentState.state === VideoconferenceState.JOINING &&
+			this.componentState.isRoomReady &&
+			!this.componentState.showPrejoin
+		) {
+			this.log.d('Participant name received, proceeding to join');
 			this.updateComponentState({
-				state: VideoconferenceState.ERROR,
-				error: {
-					hasError: true,
-					message: 'Token error',
-					tokenError: error
-				}
+				state: VideoconferenceState.READY_TO_CONNECT,
+				showPrejoin: false
 			});
-
-			if (!this.componentState.showPrejoin) {
-				this.actionService.openDialog(error.name, error.message, false);
-			}
-		});
-
-		this.libService.prejoin$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.updateComponentState({
-				showPrejoin: value
-			});
-
-			if (!value) {
-				// Emit token ready if the prejoin page won't be shown
-
-				// Ensure we have a participant name before proceeding with the join
-				this.log.d('Prejoin page is hidden, checking participant name');
-				// Check if we have a participant name already
-				if (this.latestParticipantName) {
-					// We have a name, proceed immediately
-					this._onReadyToJoin();
-				} else {
-					// No name yet - set up a one-time subscription to wait for it
-					this.libService.participantName$
-						.pipe(
-							filter((name) => !!name),
-							take(1),
-							takeUntilDestroyed(this.destroyRef)
-						)
-						.subscribe(() => {
-							// Now we have the name in latestParticipantName
-							this._onReadyToJoin();
-						});
-					// Add safety timeout in case name never arrives
-					setTimeout(() => {
-						if (!this.latestParticipantName) {
-							this.log.w('No participant name received after timeout, proceeding anyway');
-							const storedName = this.storageSrv.getParticipantName();
-							if (storedName) {
-								this.latestParticipantName = storedName;
-								this.libService.updateGeneralConfig({ participantName: storedName });
-							}
-							this._onReadyToJoin();
-						}
-					}, VideoconferenceComponent.PARTICIPANT_NAME_TIMEOUT_MS);
-				}
-			}
-		});
-
-		this.libService.participantName$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (name: string) => {
-			if (name) {
-				this.latestParticipantName = await this.e2eeService.decrypt(name);
-				this.storageSrv.setParticipantName(name);
-
-				// If we're waiting for a participant name to proceed with joining, do it now
-				if (
-					this.componentState.state === VideoconferenceState.JOINING &&
-					this.componentState.isRoomReady &&
-					!this.componentState.showPrejoin
-				) {
-					this.log.d('Participant name received, proceeding to join');
-					this.updateComponentState({
-						state: VideoconferenceState.READY_TO_CONNECT,
-						showPrejoin: false
-					});
-				}
-			}
-		});
+		}
 	}
 }

@@ -93,8 +93,18 @@ export class MeetingAccessLinkService {
 	/**
 	 * Copies the speaker link to the clipboard when available.
 	 */
-	copyMeetingSpeakerLink(): void {
-		const speakerLink = this._speakerCopyLink();
+	async copyMeetingSpeakerLink(): Promise<void> {
+		let speakerLink = this._speakerCopyLink();
+
+		if (!speakerLink) {
+			const roomId = this.roomMemberContextService.roomId();
+
+			if (roomId) {
+				await this.refreshSpeakerLinksFromRoom(roomId);
+				speakerLink = this._speakerCopyLink();
+			}
+		}
+
 		if (!speakerLink) {
 			this.log.w('Cannot copy speaker link: link is not available for current permissions');
 			return;

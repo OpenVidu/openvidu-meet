@@ -1,5 +1,14 @@
-import { AfterViewInit, ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, DestroyRef, ElementRef, inject, OnInit, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+	AfterViewInit,
+	ChangeDetectionStrategy,
+	ChangeDetectorRef,
+	Component,
+	computed,
+	effect,
+	ElementRef,
+	inject,
+	viewChild
+} from '@angular/core';
 import { ChatMessage } from '../../../models/chat.model';
 import { PanelType } from '../../../models/panel.model';
 import { ChatService } from '../../../services/chat/chat.service';
@@ -18,7 +27,7 @@ import { ParticipantService } from '../../../services/participant/participant.se
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: false
 })
-export class ChatPanelComponent implements OnInit, AfterViewInit {
+export class ChatPanelComponent implements AfterViewInit {
 	/**
 	 * @ignore
 	 */
@@ -41,14 +50,14 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 	private readonly cd = inject(ChangeDetectorRef);
 	private readonly e2eeService = inject(E2eeService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly destroyRef = inject(DestroyRef);
-
-	/**
-	 * @ignore
-	 */
-	ngOnInit() {
-		this.subscribeToMessages();
-	}
+	private readonly messagesEffect = effect(() => {
+		const messages = this.chatService.chatMessages();
+		this.messageList = messages;
+		if (this.panelService.isChatPanelOpened()) {
+			this.scrollToBottom();
+			this.cd.markForCheck();
+		}
+	});
 
 	/**
 	 * @ignore
@@ -109,17 +118,7 @@ export class ChatPanelComponent implements OnInit, AfterViewInit {
 		if (!this.e2eeService.isEnabled) {
 			return false;
 		}
-		const remoteParticipants = this.participantService.remoteParticipantsSignal();
-		return remoteParticipants.some(p => p.hasEncryptionError);
+		return this.participantService.hasRemoteEncryptionErrorsSignal();
 	});
 
-	private subscribeToMessages() {
-		this.chatService.chatMessages$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((messages: ChatMessage[]) => {
-			this.messageList = messages;
-			if (this.panelService.isChatPanelOpened()) {
-				this.scrollToBottom();
-				this.cd.markForCheck();
-			}
-		});
-	}
 }

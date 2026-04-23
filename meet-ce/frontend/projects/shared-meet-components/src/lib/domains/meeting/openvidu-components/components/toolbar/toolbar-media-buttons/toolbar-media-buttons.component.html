@@ -155,30 +155,6 @@
 			</button>
 		}
 
-		<!-- Broadcasting button -->
-		@if (showBroadcastingButton()) {
-			<button
-				mat-menu-item
-				id="toolbar-broadcasting-btn"
-				[disabled]="
-					broadcastingStatus() === _broadcastingStatus.STARTING ||
-					recordingStatus() === _recordingStatus.STOPPING
-				"
-				(click)="onBroadcastingToggle()"
-			>
-				<mat-icon>sensors</mat-icon>
-				<span>
-					{{
-						broadcastingStatus() === _broadcastingStatus.STOPPED ||
-						broadcastingStatus() === _broadcastingStatus.STOPPING ||
-						broadcastingStatus() === _broadcastingStatus.FAILED
-							? ('PANEL.STREAMING.START' | translate)
-							: ('PANEL.STREAMING.STOP' | translate)
-					}}
-				</span>
-			</button>
-		}
-
 		<!-- Virtual background button -->
 		@if (showBackgroundEffectsButton()) {
 			<button
@@ -191,19 +167,6 @@
 				<span>{{ 'TOOLBAR.BACKGROUND' | translate }}</span>
 			</button>
 		}
-
-		<!-- Captions button -->
-		<!-- <button
-			*ngIf="!isMinimal && showCaptionsButton"
-			[disabled]="isConnectionLost"
-			mat-menu-item
-			id="captions-btn"
-			(click)="onCaptionsToggle()"
-		>
-			<mat-icon>closed_caption</mat-icon>
-			<span *ngIf="captionsEnabled">{{ 'TOOLBAR.DISABLE_CAPTIONS' | translate }}</span>
-			<span *ngIf="!captionsEnabled">{{ 'TOOLBAR.ENABLE_CAPTIONS' | translate }}</span>
-		</button> -->
 
 		<!-- Additional buttons injection inside menu (mobile only) -->
 		@if (showAdditionalButtonsInsideMenu() && additionalButtonsPosition() === 'afterMenu') {

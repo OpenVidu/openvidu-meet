@@ -1,13 +1,14 @@
+import { effect } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { ChatService } from './chat.service';
-import { LoggerService } from '../logger/logger.service';
-import { ParticipantService } from '../participant/participant.service';
-import { PanelService } from '../panel/panel.service';
-import { ActionService } from '../action/action.service';
-import { TranslateService } from '../translate/translate.service';
-import { E2eeService } from '../e2ee/e2ee.service';
-import { DataTopic } from '../../models/data-topic.model';
 import { ChatMessage } from '../../models/chat.model';
+import { DataTopic } from '../../models/data-topic.model';
+import { ActionService } from '../action/action.service';
+import { E2eeService } from '../e2ee/e2ee.service';
+import { LoggerService } from '../logger/logger.service';
+import { PanelService } from '../panel/panel.service';
+import { ParticipantService } from '../participant/participant.service';
+import { TranslateService } from '../translate/translate.service';
+import { ChatService } from './chat.service';
 
 class AudioDouble {
 	play = jasmine.createSpy('play').and.returnValue(Promise.resolve());
@@ -86,21 +87,19 @@ describe('ChatService', () => {
 
 	it('adds remote message without notification when chat panel is open', async () => {
 		const emissions: ChatMessage[][] = [];
-		const sub = service.chatMessages$.subscribe((messages) => emissions.push(messages));
+		const eff = effect(() => emissions.push(service.chatMessages()));
 
 		await service.addRemoteMessage('Hello world', 'Bob');
 
 		expect(emissions.at(-1)).toEqual([{ isLocal: false, participantName: 'Bob', message: 'Hello world' }]);
 		expect(actionServiceMock.launchNotification).not.toHaveBeenCalled();
 		expect(audioInstance.play).not.toHaveBeenCalled();
-
-		sub.unsubscribe();
 	});
 
 	it('adds remote message and triggers notification with sound when chat panel is closed', async () => {
 		panelServiceMock.isChatPanelOpened.and.returnValue(false);
 		const emissions: ChatMessage[][] = [];
-		const sub = service.chatMessages$.subscribe((messages) => emissions.push(messages));
+		const eff = effect(() => emissions.push(service.chatMessages()));
 
 		await service.addRemoteMessage('Hi there', 'Bob');
 
@@ -110,8 +109,6 @@ describe('ChatService', () => {
 		expect(notificationArgs.buttonActionText).toBe('PANEL.CHAT.OPEN_CHAT_translated');
 		expect(audioInstance.play).toHaveBeenCalled();
 		expect(emissions.at(-1)?.length).toBe(1);
-
-		sub.unsubscribe();
 	});
 
 	it('does not send empty messages', async () => {
@@ -123,7 +120,7 @@ describe('ChatService', () => {
 
 	it('encrypts, publishes and stores local messages', async () => {
 		const emissions: ChatMessage[][] = [];
-		const sub = service.chatMessages$.subscribe((messages) => emissions.push(messages));
+		const eff = effect(() => emissions.push(service.chatMessages()));
 
 		await service.sendMessage('Hello world');
 

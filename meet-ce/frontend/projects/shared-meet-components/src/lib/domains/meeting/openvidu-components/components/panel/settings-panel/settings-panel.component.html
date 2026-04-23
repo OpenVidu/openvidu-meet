@@ -28,7 +28,7 @@
 				<mat-list-option
 					class="option"
 					id="general-opt"
-					[selected]="selectedOption === settingsOptions.GENERAL"
+					[selected]="selectedOption() === settingsOptions.GENERAL"
 					[value]="settingsOptions.GENERAL"
 					matTooltip="{{ shouldHideMenuText ? ('PANEL.SETTINGS.GENERAL' | translate) : '' }}"
 					[matTooltipDisabled]="!shouldHideMenuText"
@@ -38,11 +38,11 @@
 						<div class="option-text">{{ 'PANEL.SETTINGS.GENERAL' | translate }}</div>
 					}
 				</mat-list-option>
-				@if (showCameraButton) {
+				@if (showCameraButton()) {
 					<mat-list-option
 						class="option"
 						id="video-opt"
-						[selected]="selectedOption === settingsOptions.VIDEO"
+						[selected]="selectedOption() === settingsOptions.VIDEO"
 						[value]="settingsOptions.VIDEO"
 						matTooltip="{{ shouldHideMenuText ? ('PANEL.SETTINGS.VIDEO' | translate) : '' }}"
 						[matTooltipDisabled]="!shouldHideMenuText"
@@ -53,11 +53,11 @@
 						}
 					</mat-list-option>
 				}
-				@if (showMicrophoneButton) {
+				@if (showMicrophoneButton()) {
 					<mat-list-option
 						class="option"
 						id="audio-opt"
-						[selected]="selectedOption === settingsOptions.AUDIO"
+						[selected]="selectedOption() === settingsOptions.AUDIO"
 						[value]="settingsOptions.AUDIO"
 						matTooltip="{{ shouldHideMenuText ? ('PANEL.SETTINGS.AUDIO' | translate) : '' }}"
 						[matTooltipDisabled]="!shouldHideMenuText"
@@ -68,23 +68,11 @@
 						}
 					</mat-list-option>
 				}
-				<!-- <mat-list-option
-					*ngIf="showCaptions"
-					class="option"
-					[selected]="selectedOption === settingsOptions.CAPTIONS"
-					[value]="settingsOptions.CAPTIONS"
-					id="captions-opt"
-					matTooltip="{{ shouldHideMenuText ? ('PANEL.SETTINGS.CAPTIONS' | translate) : '' }}"
-					[matTooltipDisabled]="!shouldHideMenuText"
-				>
-					<mat-icon matListItemIcon>closed_caption</mat-icon>
-					<div mat-line *ngIf="!shouldHideMenuText">{{ 'PANEL.SETTINGS.CAPTIONS' | translate }}</div>
-				</mat-list-option> -->
 			</mat-selection-list>
 		</div>
 
 		<div class="item-content" [class.full-width]="isVerticalLayout">
-			@if (selectedOption === settingsOptions.GENERAL) {
+			@if (selectedOption() === settingsOptions.GENERAL) {
 				<div class="general-settings">
 					<div class="nickname-section">
 						<mat-label class="input-label">{{ 'PREJOIN.NICKNAME' | translate }}</mat-label>
@@ -101,7 +89,7 @@
 							</mat-list-item>
 						</mat-list>
 					</div>
-					@if (showThemeSelector) {
+					@if (showThemeSelector()) {
 						<div class="theme-section">
 							<mat-list>
 								<mat-list-item class="theme-selector">
@@ -120,7 +108,7 @@
 					}
 				</div>
 			}
-			@if (showCameraButton && selectedOption === settingsOptions.VIDEO) {
+			@if (showCameraButton() && selectedOption() === settingsOptions.VIDEO) {
 				<div class="video-settings">
 					<ov-video-devices-select
 						(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
@@ -128,7 +116,7 @@
 					/>
 				</div>
 			}
-			@if (showMicrophoneButton && selectedOption === settingsOptions.AUDIO) {
+			@if (showMicrophoneButton() && selectedOption() === settingsOptions.AUDIO) {
 				<div class="audio-settings">
 					<ov-audio-devices-select
 						(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"

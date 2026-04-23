@@ -26,7 +26,6 @@ import { VideoconferenceComponent } from './components/videoconference/videoconf
 
 // import { CaptionsComponent } from './components/captions/captions.component';
 import { ActivitiesPanelComponent } from './components/panel/activities-panel/activities-panel.component';
-import { BroadcastingActivityComponent } from './components/panel/activities-panel/broadcasting-activity/broadcasting-activity.component';
 import { RecordingActivityComponent } from './components/panel/activities-panel/recording-activity/recording-activity.component';
 import { BackgroundEffectsPanelComponent } from './components/panel/background-effects-panel/background-effects-panel.component';
 import { SettingsPanelComponent } from './components/panel/settings-panel/settings-panel.component';
@@ -48,7 +47,6 @@ const publicComponents = [
 	PanelComponent,
 	ActivitiesPanelComponent,
 	RecordingActivityComponent,
-	BroadcastingActivityComponent,
 	ParticipantsPanelComponent,
 	ParticipantPanelItemComponent,
 	ChatPanelComponent,

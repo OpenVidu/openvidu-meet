@@ -1,6 +1,5 @@
-import { computed, inject, Injectable, Signal } from '@angular/core';
+import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
-import { BehaviorSubject, Observable } from 'rxjs';
 import { BackgroundEffect, EffectType } from '../../models/background-effect.model';
 import { ILogger } from '../../models/logger.model';
 import { LoggerService } from '../logger/logger.service';
@@ -18,8 +17,8 @@ export class VirtualBackgroundService {
 	private readonly storageService = inject(StorageService);
 	private readonly loggerSrv = inject(LoggerService);
 
-	backgroundIdSelected = <BehaviorSubject<string>>new BehaviorSubject('');
-	backgroundIdSelected$: Observable<string>;
+	private readonly backgroundIdSelectedWritable = signal<string>('');
+	readonly backgroundIdSelected = this.backgroundIdSelectedWritable.asReadonly();
 	backgrounds: BackgroundEffect[] = [
 		{ id: 'no_effect', type: EffectType.NONE, thumbnail: 'block' },
 		{ id: 'soft_blur', type: EffectType.BLUR, thumbnail: 'blur_on' },
@@ -57,7 +56,6 @@ export class VirtualBackgroundService {
 
 	constructor() {
 		this.log = this.loggerSrv.get('VirtualBackgroundService');
-		this.backgroundIdSelected$ = this.backgroundIdSelected.asObservable();
 	}
 
 	getBackgrounds(): BackgroundEffect[] {
@@ -73,7 +71,7 @@ export class VirtualBackgroundService {
 	);
 
 	isBackgroundApplied(): boolean {
-		const bgSelected = this.backgroundIdSelected.getValue();
+		const bgSelected = this.backgroundIdSelected();
 		return !!bgSelected && bgSelected !== 'no_effect';
 	}
 
@@ -107,7 +105,7 @@ export class VirtualBackgroundService {
 			await this.openviduService.switchBackgroundMode(options);
 
 			this.storageService.setBackground(bg.id);
-			this.backgroundIdSelected.next(bg.id);
+			this.backgroundIdSelectedWritable.set(bg.id);
 			this.log.d('Background applied:', options);
 		} catch (error) {
 			this.log.e('Error applying background effect:', error);
@@ -116,7 +114,7 @@ export class VirtualBackgroundService {
 
 	async removeBackground() {
 		if (this.isBackgroundApplied()) {
-			this.backgroundIdSelected.next('no_effect');
+			this.backgroundIdSelectedWritable.set('no_effect');
 			try {
 				await this.openviduService.switchBackgroundMode({ mode: 'disabled' });
 			} catch (e) {
@@ -141,6 +139,6 @@ export class VirtualBackgroundService {
 	}
 
 	private backgroundIsAlreadyApplied(backgroundId: string): boolean {
-		return backgroundId === this.backgroundIdSelected.getValue();
+		return backgroundId === this.backgroundIdSelected();
 	}
 }

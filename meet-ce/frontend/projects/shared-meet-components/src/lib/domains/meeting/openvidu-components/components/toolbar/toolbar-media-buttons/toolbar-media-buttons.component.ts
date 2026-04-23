@@ -3,14 +3,13 @@ import {
 	Component,
 	TemplateRef,
 	computed,
+	contentChild,
 	inject,
 	input,
-	output,
-	contentChild
+	output
 } from '@angular/core';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
-import { BroadcastingStatus } from '../../../models/broadcasting.model';
-import { RecordingStatus } from '../../../models/recording.model';
+import { RecordingState } from '../../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../../models/toolbar.model';
 import { ViewportService } from '../../../services/viewport/viewport.service';
 
@@ -55,23 +54,16 @@ export class ToolbarMediaButtonsComponent {
 	showFullscreenButton = input<boolean>(true);
 	showRecordingButton = input<boolean>(true);
 	showViewRecordingsButton = input<boolean>(false);
-	showBroadcastingButton = input<boolean>(true);
 	showBackgroundEffectsButton = input<boolean>(true);
-	showCaptionsButton = input<boolean>(true);
 	showSettingsButton = input<boolean>(true);
 
 	// Fullscreen state
 	isFullscreenActive = input<boolean>(false);
 
 	// Recording related inputs
-	recordingStatus = input<RecordingStatus>(RecordingStatus.STOPPED);
+	recordingStatus = input<RecordingState>(RecordingState.STOPPED);
 	hasRoomTracksPublished = input<boolean>(false);
 
-	// Broadcasting related inputs
-	broadcastingStatus = input<BroadcastingStatus>(BroadcastingStatus.STOPPED);
-
-	// Captions
-	captionsEnabled = input<boolean>(false);
 
 	// Leave button
 	showLeaveButton = input<boolean>(true);
@@ -100,8 +92,7 @@ export class ToolbarMediaButtonsComponent {
 	}
 
 	// Status enums for template usage
-	_recordingStatus = RecordingStatus;
-	_broadcastingStatus = BroadcastingStatus;
+	_recordingStatus = RecordingState;
 
 	// Viewport service for responsive behavior
 	private viewportService = inject(ViewportService);
@@ -128,8 +119,7 @@ export class ToolbarMediaButtonsComponent {
 	readonly hasActiveFeatures = computed(
 		() =>
 			this.isScreenShareEnabled() ||
-			this.recordingStatus() === this._recordingStatus.STARTED ||
-			this.broadcastingStatus() === this._broadcastingStatus.STARTED
+			this.recordingStatus() === this._recordingStatus.STARTED
 	);
 
 	// Check if additional buttons should be shown outside (desktop/tablet) or inside More Options (mobile)
@@ -154,7 +144,6 @@ export class ToolbarMediaButtonsComponent {
 	readonly viewRecordingsClicked = output<void>();
 	readonly broadcastingToggled = output<void>();
 	readonly backgroundEffectsToggled = output<void>();
-	readonly captionsToggled = output<void>();
 	readonly settingsToggled = output<void>();
 
 	// Leave button output
@@ -195,10 +184,6 @@ export class ToolbarMediaButtonsComponent {
 
 	onBackgroundEffectsToggle(): void {
 		this.backgroundEffectsToggled.emit();
-	}
-
-	onCaptionsToggle(): void {
-		this.captionsToggled.emit();
 	}
 
 	onSettingsToggle(): void {

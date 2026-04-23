@@ -1,13 +1,11 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, inject, OnInit, output } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { BroadcastingStartRequestedEvent, BroadcastingStopRequestedEvent } from '../../../models/broadcasting.model';
-import { PanelStatusInfo, PanelType } from '../../../models/panel.model';
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit, output, signal } from '@angular/core';
+import { PanelType } from '../../../models/panel.model';
 import {
-    RecordingDeleteRequestedEvent,
-    RecordingDownloadClickedEvent,
-    RecordingPlayClickedEvent,
-    RecordingStartRequestedEvent,
-    RecordingStopRequestedEvent
+	RecordingDeleteRequestedEvent,
+	RecordingDownloadClickedEvent,
+	RecordingPlayClickedEvent,
+	RecordingStartRequestedEvent,
+	RecordingStopRequestedEvent
 } from '../../../models/recording.model';
 import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
@@ -69,45 +67,36 @@ export class ActivitiesPanelComponent implements OnInit {
 	 */
 	onViewRecordingClicked = output<string>();
 
-	/**
-	 * Provides event notifications that fire when start broadcasting button is clicked.
-	 * It provides the {@link BroadcastingStartRequestedEvent} payload as event data.
-	 */
-	onBroadcastingStartRequested = output<BroadcastingStartRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when stop broadcasting button is clicked.
-	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
-	 */
-	onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
 
 	/**
 	 * @internal
 	 */
-	expandedPanel: string = '';
+	private readonly libService = inject(OpenViduComponentsConfigService);
+
 	/**
 	 * @internal
 	 */
-	showRecordingActivity: boolean = true;
+	readonly expandedPanel = signal('');
 	/**
 	 * @internal
 	 */
-	showBroadcastingActivity: boolean = true;
-	private readonly destroyRef = inject(DestroyRef);
+	readonly showRecordingActivity = this.libService.recordingActivitySignal;
 
 	/**
 	 * @internal
 	 */
 	private readonly panelService = inject(PanelService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly cd = inject(ChangeDetectorRef);
+	private readonly panelTogglingEffect = effect(() => {
+		const ev = this.panelService.panelOpened();
+		if (ev.panelType === PanelType.ACTIVITIES && !!ev.subOptionType) {
+			this.expandedPanel.set(ev.subOptionType);
+		}
+	});
 
 	/**
 	 * @internal
 	 */
 	ngOnInit(): void {
-		this.subscribeToPanelToggling();
-		this.subscribeToActivitiesPanelDirective();
 	}
 
 	/**
@@ -117,23 +106,4 @@ export class ActivitiesPanelComponent implements OnInit {
 		this.panelService.togglePanel(PanelType.ACTIVITIES);
 	}
 
-	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
-			if (ev.panelType === PanelType.ACTIVITIES && !!ev.subOptionType) {
-				this.expandedPanel = ev.subOptionType;
-			}
-		});
-	}
-
-	private subscribeToActivitiesPanelDirective() {
-		this.libService.recordingActivity$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showRecordingActivity = value;
-			this.cd.markForCheck();
-		});
-
-		this.libService.broadcastingActivity$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showBroadcastingActivity = value;
-			this.cd.markForCheck();
-		});
-	}
 }

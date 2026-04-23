@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { createRoom, createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
     expectChatLinkCount,
@@ -13,7 +13,6 @@ import {
 } from './helpers/meeting-ui.helper';
 
 test.describe('Chat features', () => {
-    // test.describe.configure({ timeout: 90_000 });
     const createdRoomIds = new Set<string>();
 
     test.afterAll(async () => {
@@ -34,6 +33,19 @@ test.describe('Chat features', () => {
         await sendChatMessage(page, 'Test message 2');
         await expectChatMessageCount(page, 2);
         await expectChatMessageTextAt(page, 1, 'Test message 2');
+    });
+
+    test('should keep unread chat badge hidden at startup when there are no messages', async ({ page }) => {
+        const participantName = `participant-${Date.now()}`;
+        const { accessUrl } = await createRoomAndGetAccessUrl(participantName, undefined, undefined, createdRoomIds);
+
+        await openMeeting(page, accessUrl);
+
+        const unreadBadge = page.locator('#chat-panel-btn .mat-badge-content:visible');
+        await expect(unreadBadge).toHaveCount(0);
+
+        await toggleChatPanel(page);
+        await expectChatMessageCount(page, 0);
     });
 
     test('should receive a message', async ({ browser }) => {

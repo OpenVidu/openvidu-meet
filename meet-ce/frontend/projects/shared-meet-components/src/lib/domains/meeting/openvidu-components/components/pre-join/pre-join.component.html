@@ -5,10 +5,10 @@
 		class="prejoin-container"
 		id="prejoin-container"
 		[class.mobile]="viewportService.isMobile()"
-		[class.name-error]="!!_error"
+		[class.name-error]="!!errorMessage()"
 	>
 		<!-- Top Language Toolbar -->
-		@if (!isMinimal) {
+		@if (!isMinimal()) {
 			<div class="top-toolbar">
 				<ov-lang-selector
 					[compact]="false"
@@ -19,7 +19,7 @@
 		}
 
 		<!-- Loading State -->
-		@if (isLoading) {
+		@if (isLoading()) {
 			<div class="loading-overlay">
 				<div class="loading-content">
 					<mat-spinner [diameter]="40" />
@@ -33,12 +33,12 @@
 				<div class="prejoin-main">
 					<!-- Video Preview Section -->
 					<div class="video-preview-section">
-						<div class="video-preview-container" [class.compact]="showBackgroundPanel">
+						<div class="video-preview-container" [class.compact]="showBackgroundPanel()">
 							<div class="video-frame">
 								<ov-media-element
 									[track]="videoTrack!"
-									[showAvatar]="!isVideoEnabled"
-									[avatarName]="participantName ?? ''"
+									[showAvatar]="!isVideoEnabled()"
+									[avatarName]="participantName()"
 									[avatarColor]="'hsl(48, 100%, 50%)'"
 									[isLocal]="true"
 									class="video-element"
@@ -48,7 +48,7 @@
 								<!-- Video Controls Overlay -->
 								<div class="video-overlay">
 									<div class="device-controls">
-										@if (showCameraButton) {
+										@if (showCameraButton()) {
 											<div class="control-group">
 												<ov-video-devices-select
 													[compact]="true"
@@ -60,7 +60,7 @@
 											</div>
 										}
 
-										@if (showMicrophoneButton) {
+										@if (showMicrophoneButton()) {
 											<div class="control-group">
 												<ov-audio-devices-select
 													[compact]="true"
@@ -74,14 +74,14 @@
 									</div>
 
 									<!-- Virtual Background Button -->
-									@if (backgroundEffectEnabled && hasVideoDevices) {
+									@if (backgroundEffectEnabled && hasVideoDevices()) {
 										<div class="background-control">
 											<button
 												mat-flat-button
 												class="background-button"
 												(click)="toggleBackgroundPanel()"
 												[matTooltip]="'Virtual Backgrounds'"
-												[disabled]="!isVideoEnabled"
+												[disabled]="!isVideoEnabled()"
 												id="backgrounds-button"
 											>
 												<mat-icon class="material-symbols-outlined"
@@ -95,7 +95,7 @@
 						</div>
 					</div>
 
-					@if (showBackgroundPanel) {
+					@if (showBackgroundPanel()) {
 						<div class="vb-container">
 							<ov-background-effects-panel [mode]="'prejoin'" (onClose)="closeBackgroundPanel()" />
 						</div>
@@ -103,11 +103,11 @@
 						<!-- Configuration Section -->
 						<div class="configuration-section">
 							<!-- Participant Name Input -->
-							@if (showParticipantName) {
+							@if (showParticipantName()) {
 								<div class="participant-name-container input-section">
 									<ov-participant-name-input
 										[isPrejoinPage]="true"
-										[error]="!!_error"
+										[error]="!!errorMessage()"
 										(onNameUpdated)="onParticipantNameChanged($event)"
 										(onEnterPressed)="onEnterPressed()"
 										class="name-input"
@@ -116,10 +116,10 @@
 							}
 
 							<!-- Error Message -->
-							@if (!!_error) {
+							@if (!!errorMessage()) {
 								<div class="error-message" id="token-error">
 									<mat-icon class="error-icon">error_outline</mat-icon>
-									<span class="error-text">{{ _error }}</span>
+									<span class="error-text">{{ errorMessage() }}</span>
 								</div>
 							}
 
@@ -130,7 +130,7 @@
 									(click)="join()"
 									class="join-button"
 									id="join-button"
-									[disabled]="showParticipantName && !participantName"
+									[disabled]="showParticipantName() && !participantName()"
 								>
 									{{ 'PREJOIN.JOIN' | translate }}
 								</button>

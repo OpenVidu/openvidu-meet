@@ -48,7 +48,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	isMobile = this.meetingContextService.isMobile;
 
 	onCopyLinkClick(): void {
-		this.meetingAccessLinkService.copyMeetingSpeakerLink();
+		void this.meetingAccessLinkService.copyMeetingSpeakerLink();
 	}
 
 	async onCaptionsClick(): Promise<void> {

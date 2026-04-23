@@ -12,19 +12,19 @@
 	</div>
 
 	<div class="scrollable">
-		@if (localParticipant) {
+		@if (localParticipant()) {
 			<div class="local-participant-container">
 				<ng-container
-					*ngTemplateOutlet="participantPanelItemTemplate; context: { $implicit: localParticipant }"
+					*ngTemplateOutlet="participantPanelItemTemplate; context: { $implicit: localParticipant() }"
 				/>
 				<mat-divider />
 			</div>
 		}
 		<ng-container *ngTemplateOutlet="participantPanelAfterLocalParticipantTemplate" />
 
-		@if (remoteParticipants.length > 0) {
+		@if (remoteParticipants().length > 0) {
 			<div class="remote-participants-container" id="remote-participants-container">
-				@for (participant of remoteParticipants; track participant.sid) {
+				@for (participant of remoteParticipants(); track participant.sid) {
 					<div id="remote-participant-item">
 						<ng-container
 							*ngTemplateOutlet="participantPanelItemTemplate; context: { $implicit: participant }"

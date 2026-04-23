@@ -4,7 +4,6 @@ import {
 	ChangeDetectorRef,
 	Component,
 	contentChild,
-	DestroyRef,
 	effect,
 	inject,
 	OnDestroy,
@@ -12,9 +11,7 @@ import {
 	TemplateRef,
 	viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ParticipantPanelItemDirective } from '../../../../directives/template/openvidu-components-angular.directive';
-import { ParticipantModel } from '../../../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { PanelService } from '../../../../services/panel/panel.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
@@ -33,15 +30,6 @@ import { ParticipantsPanelTemplateConfiguration, TemplateManagerService } from '
 	standalone: false
 })
 export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewInit {
-	/**
-	 * @ignore
-	 */
-	localParticipant: ParticipantModel | undefined;
-	/**
-	 * @ignore
-	 */
-	remoteParticipants: ParticipantModel[] = [];
-
 	/**
 	 * @ignore
 	 */
@@ -71,16 +59,6 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	 */
 	templateConfig: ParticipantsPanelTemplateConfiguration = {};
 
-	private readonly destroyRef = inject(DestroyRef);
-	private readonly querySyncEffect = effect(() => {
-		this.defaultParticipantPanelItemTemplate = this.defaultParticipantPanelItemTemplateQuery() ?? this.defaultParticipantPanelItemTemplate;
-		this.participantPanelItemTemplate = this.participantPanelItemTemplateQuery() ?? this.participantPanelItemTemplate;
-		this.participantPanelAfterLocalParticipantTemplate =
-			this.participantPanelAfterLocalParticipantTemplateQuery() ?? this.participantPanelAfterLocalParticipantTemplate;
-		this.setupTemplates();
-		this.cd.markForCheck();
-	});
-
 	/**
 	 * @ignore
 	 */
@@ -93,8 +71,25 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 	/**
 	 * @ignore
 	 */
+	readonly localParticipant = this.participantService.localParticipantSignal;
+	/**
+	 * @ignore
+	 */
+	readonly remoteParticipants = this.participantService.remoteParticipantsSignal;
+
+	private readonly querySyncEffect = effect(() => {
+		this.defaultParticipantPanelItemTemplate = this.defaultParticipantPanelItemTemplateQuery() ?? this.defaultParticipantPanelItemTemplate;
+		this.participantPanelItemTemplate = this.participantPanelItemTemplateQuery() ?? this.participantPanelItemTemplate;
+		this.participantPanelAfterLocalParticipantTemplate =
+			this.participantPanelAfterLocalParticipantTemplateQuery() ?? this.participantPanelAfterLocalParticipantTemplate;
+		this.setupTemplates();
+		this.cd.markForCheck();
+	});
+
+	/**
+	 * @ignore
+	 */
 	ngOnInit(): void {
-		this.subscribeToParticipantsChanges();
 	}
 
 	/**
@@ -114,21 +109,6 @@ export class ParticipantsPanelComponent implements OnInit, OnDestroy, AfterViewI
 			this.cd.detectChanges();
 		}
 	}
-
-	private subscribeToParticipantsChanges() {
-		this.participantService.localParticipant$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p: ParticipantModel | undefined) => {
-			if (p) {
-				this.localParticipant = p;
-				this.cd.markForCheck();
-			}
-		});
-
-		this.participantService.remoteParticipants$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((p: ParticipantModel[]) => {
-			this.remoteParticipants = p;
-			this.cd.markForCheck();
-		});
-	}
-
 
 	/**
 	 * @internal

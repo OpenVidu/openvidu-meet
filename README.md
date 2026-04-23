@@ -79,9 +79,15 @@ The recommended way to develop is using the integrated development mode that wat
 This command starts concurrent watchers for:
 
 - **Typings**: Shared type definitions with automatic sync
-- **Backend**: Node.js server with nodemon auto-restart
+- **Shared Meet Components**: Angular library with hot reload
+- **Backend**: Node.js server with auto-restart (ignores public folder)
 - **Frontend**: Angular application with live reload
 - **REST API Docs**: OpenAPI documentation generation
+- **Browser Sync**: Live reload server
+
+Optional flags:
+- `--testapp`: Include testapp watcher
+- `--webcomponent`: Include webcomponent watcher
 
 > [!NOTE]
 > The backend uses `backend/.env.development` for environment variables during development. Configure your LiveKit credentials there:
@@ -332,7 +338,9 @@ The `meet.sh` script is the main entry point for all development and build tasks
 ./meet.sh build-testapp              # Build test application
 
 # Development
-./meet.sh dev                        # Start development mode with watchers
+./meet.sh dev                        # Start development mode with watchers (default)
+./meet.sh dev --testapp              # Include testapp watcher
+./meet.sh dev --webcomponent       # Include webcomponent watcher
 
 # Testing
 ./meet.sh test-unit-backend          # Run backend unit tests

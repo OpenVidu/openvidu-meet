@@ -1,5 +1,4 @@
-import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { inject, Injectable, signal } from '@angular/core';
 import * as cn from '../../lang/cn.json';
 import * as de from '../../lang/de.json';
 import * as en from '../../lang/en.json';
@@ -48,17 +47,10 @@ export class TranslateService {
 	// The currently active translations for the selected language
 	private activeTranslations: any = {};
 
-	// The currently selected language option
-	private selectedLanguageOption: LangOption = { name: 'English', lang: 'en' };
-
-	// BehaviorSubject to manage the currently selected language option
-	private _selectedLanguageSubject: BehaviorSubject<LangOption> = new BehaviorSubject<LangOption>({ name: 'English', lang: 'en' });
-
-	// Observable that emits changes to the selected language option
-	selectedLanguageOption$: Observable<LangOption>;
+	// Signal to manage the currently selected language option
+	readonly selectedLanguageOption = signal<LangOption>({ name: 'English', lang: 'en' });
 
 	constructor() {
-		this.selectedLanguageOption$ = this._selectedLanguageSubject.asObservable();
 		this.refreshSelectedLanguage();
 	}
 
@@ -84,10 +76,7 @@ export class TranslateService {
 		if (selectedLanguageOption) {
 			// Fetch the language data and update the current language
 			this.activeTranslations = await this.fetchLanguageData(lang);
-			this.selectedLanguageOption = selectedLanguageOption;
-			this._selectedLanguageSubject.next(this.selectedLanguageOption);
-			// Notify subscribers of the language change
-			this._selectedLanguageSubject.next(this.selectedLanguageOption);
+			this.selectedLanguageOption.set(selectedLanguageOption);
 		}
 	}
 
@@ -111,7 +100,7 @@ export class TranslateService {
 	 * @internal
 	 */
 	getSelectedLanguage(): LangOption {
-		return this.selectedLanguageOption;
+		return this.selectedLanguageOption();
 	}
 
 	/**
@@ -137,7 +126,7 @@ export class TranslateService {
 
 		if (!translation) {
 			// If not found, look for the translation in the additional translations
-			const additionalLangTranslations = this.additionalTranslations[this.selectedLanguageOption.lang] ?? {};
+			const additionalLangTranslations = this.additionalTranslations[this.selectedLanguageOption().lang] ?? {};
 			translation = this.findTranslation(additionalLangTranslations, key);
 		}
 
@@ -174,13 +163,12 @@ export class TranslateService {
 		const matchingOption = this.languageOptions.find((option) => option.lang === storedLang);
 
 		if (storedLang && matchingOption) {
-			this.selectedLanguageOption = matchingOption;
+			this.selectedLanguageOption.set(matchingOption);
 		} else {
 			// Default to the first language option if no language is found in storage
-			this.selectedLanguageOption = this.languageOptions[0];
+			this.selectedLanguageOption.set(this.languageOptions[0]);
 		}
-		this.activeTranslations = await this.fetchLanguageData(this.selectedLanguageOption.lang);
-		this._selectedLanguageSubject.next(this.selectedLanguageOption);
+		this.activeTranslations = await this.fetchLanguageData(this.selectedLanguageOption().lang);
 	}
 
 	/**

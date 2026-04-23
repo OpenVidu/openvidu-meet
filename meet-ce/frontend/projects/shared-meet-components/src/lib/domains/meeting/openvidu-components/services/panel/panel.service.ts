@@ -1,5 +1,4 @@
-import { inject, Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { inject, Injectable, signal } from '@angular/core';
 import { ILogger } from '../../models/logger.model';
 import { PanelSettingsOptions, PanelStatusInfo, PanelType } from '../../models/panel.model';
 import { LoggerService } from '../logger/logger.service';
@@ -11,9 +10,9 @@ export class PanelService {
 	private readonly loggerSrv = inject(LoggerService);
 
 	/**
-	 * Panel Observable which pushes the panel status in every update.
+	 * Panel signal which emits the panel status in every update.
 	 */
-	panelStatusObs: Observable<PanelStatusInfo>;
+	readonly panelOpened = signal<PanelStatusInfo>({ isOpened: false });
 	private log: ILogger = {
 		d: () => {},
 		v: () => {},
@@ -22,7 +21,6 @@ export class PanelService {
 	};
 	private isExternalOpened: boolean = false;
 	private externalType: string = '';
-	private _panelOpened = <BehaviorSubject<PanelStatusInfo>>new BehaviorSubject({ isOpened: false });
 	private panelTypes: string[] = Object.values(PanelType);
 
 	/**
@@ -30,14 +28,13 @@ export class PanelService {
 	 */
 	constructor() {
 		this.log = this.loggerSrv.get('PanelService');
-		this.panelStatusObs = this._panelOpened.asObservable();
 	}
 
 	/**
 	 * @internal
 	 */
 	clear() {
-		this._panelOpened.next({ isOpened: false });
+		this.panelOpened.set({ isOpened: false });
 	}
 
 	/**
@@ -45,7 +42,7 @@ export class PanelService {
 	 * If the type is differente, it will switch to the properly panel.
 	 */
 	togglePanel(panelType: PanelType | string, subOptionType?: PanelSettingsOptions | string) {
-		const previousState = this._panelOpened.getValue();
+		const previousState = this.panelOpened();
 		const isDefaultPanel = this.panelTypes.includes(panelType);
 
 		this.log.d(`Toggling ${isDefaultPanel ? panelType : 'external'} menu`);
@@ -71,7 +68,7 @@ export class PanelService {
 		}
 
 		// Update the panel state
-		this._panelOpened.next({
+		this.panelOpened.set({
 			isOpened: nextOpenedValue,
 			panelType,
 			subOptionType,
@@ -83,21 +80,21 @@ export class PanelService {
 	 * @internal
 	 */
 	isPanelOpened(): boolean {
-		return this._panelOpened.getValue().isOpened;
+		return this.panelOpened().isOpened;
 	}
 
 	/**
 	 * Closes the panel if it is opened.
 	 */
 	closePanel(): void {
-		this._panelOpened.next({ isOpened: false, panelType: undefined, subOptionType: undefined, previousPanelType: undefined });
+		this.panelOpened.set({ isOpened: false, panelType: undefined, subOptionType: undefined, previousPanelType: undefined });
 	}
 
 	/**
 	 * Whether the chat panel is opened or not.
 	 */
 	isChatPanelOpened(): boolean {
-		const panelState = this._panelOpened.getValue();
+		const panelState = this.panelOpened();
 		return panelState.isOpened && panelState.panelType === PanelType.CHAT;
 	}
 
@@ -105,7 +102,7 @@ export class PanelService {
 	 * Whether the participants panel is opened or not.
 	 */
 	isParticipantsPanelOpened(): boolean {
-		const panelState = this._panelOpened.getValue();
+		const panelState = this.panelOpened();
 		return panelState.isOpened && panelState.panelType === PanelType.PARTICIPANTS;
 	}
 
@@ -113,7 +110,7 @@ export class PanelService {
 	 * Whether the activities panel is opened or not.
 	 */
 	isActivitiesPanelOpened(): boolean {
-		const panelState = this._panelOpened.getValue();
+		const panelState = this.panelOpened();
 		return panelState.isOpened && panelState.panelType === PanelType.ACTIVITIES;
 	}
 
@@ -121,7 +118,7 @@ export class PanelService {
 	 * Whether the settings panel is opened or not.
 	 */
 	isSettingsPanelOpened(): boolean {
-		const panelState = this._panelOpened.getValue();
+		const panelState = this.panelOpened();
 		return panelState.isOpened && panelState.panelType === PanelType.SETTINGS;
 	}
 
@@ -129,7 +126,7 @@ export class PanelService {
 	 * Whether the background effects panel is opened or not.
 	 */
 	isBackgroundEffectsPanelOpened(): boolean {
-		const panelState = this._panelOpened.getValue();
+		const panelState = this.panelOpened();
 		return panelState.isOpened && panelState.panelType === PanelType.BACKGROUND_EFFECTS;
 	}
 

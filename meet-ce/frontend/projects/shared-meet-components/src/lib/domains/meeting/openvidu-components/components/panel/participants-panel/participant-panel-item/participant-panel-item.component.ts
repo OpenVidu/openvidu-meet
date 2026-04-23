@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, OnDestroy, OnInit, TemplateRef, inject, input } from '@angular/core';
-import { Subscription } from 'rxjs';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
@@ -22,8 +21,8 @@ import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } fro
 export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });
 	readonly muteButtonInput = input(true, { alias: 'muteButton' });
-
 	private readonly libService = inject(OpenViduComponentsConfigService);
+
 	private readonly participantService = inject(ParticipantService);
 	private readonly cd = inject(ChangeDetectorRef);
 	private readonly templateManagerService = inject(TemplateManagerService);
@@ -36,8 +35,7 @@ export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	showMuteButton: boolean = true;
-	private muteButtonSub: Subscription = new Subscription();
+	readonly showMuteButton = this.libService.participantItemMuteButtonSignal;
 
 	/**
 	 * @ignore
@@ -85,15 +83,12 @@ export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	 */
 	ngOnInit(): void {
 		this.setupTemplates();
-		this.subscribeToParticipantPanelItemDirectives();
 	}
 
 	/**
 	 * @ignore
 	 */
-	ngOnDestroy(): void {
-		if (this.muteButtonSub) this.muteButtonSub.unsubscribe();
-	}
+	ngOnDestroy(): void {}
 
 	/**
 	 * Toggles the mute state of a remote participant
@@ -162,10 +157,4 @@ export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 		this.cd.markForCheck();
 	}
 
-	private subscribeToParticipantPanelItemDirectives() {
-		this.muteButtonSub = this.libService.participantItemMuteButton$.subscribe((value: boolean) => {
-			this.showMuteButton = value;
-			this.cd.markForCheck();
-		});
-	}
 }

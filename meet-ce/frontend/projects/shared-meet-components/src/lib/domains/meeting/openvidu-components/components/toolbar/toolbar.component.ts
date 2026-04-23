@@ -1,46 +1,46 @@
 import {
-    AfterViewInit,
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    computed,
-    contentChild,
-    DestroyRef,
-    effect,
-    inject,
-    OnDestroy,
-    OnInit,
-    output,
-    TemplateRef,
-    viewChild
+	AfterViewInit,
+	ChangeDetectionStrategy,
+	ChangeDetectorRef,
+	Component,
+	computed,
+	contentChild,
+	DestroyRef,
+	effect,
+	inject,
+	OnDestroy,
+	OnInit,
+	output,
+	TemplateRef,
+	viewChild
 } from '@angular/core';
+
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { fromEvent, skip } from 'rxjs';
+import { fromEvent } from 'rxjs';
 import { ChatService } from '../../services/chat/chat.service';
 import { DocumentService } from '../../services/document/document.service';
 import { PanelService } from '../../services/panel/panel.service';
 
 import { MatMenuTrigger } from '@angular/material/menu';
-import { LeaveButtonDirective, ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import {
-    ToolbarAdditionalButtonsDirective,
-    ToolbarAdditionalPanelButtonsDirective
+	LeaveButtonDirective,
+	ToolbarMoreOptionsAdditionalMenuItemsDirective
+} from '../../directives/template/internals.directive';
+import {
+	ToolbarAdditionalButtonsDirective,
+	ToolbarAdditionalPanelButtonsDirective
 } from '../../directives/template/openvidu-components-angular.directive';
-import { BroadcastingStatus, BroadcastingStatusInfo, BroadcastingStopRequestedEvent } from '../../models/broadcasting.model';
 import { ChatMessage } from '../../models/chat.model';
 import { ILogger } from '../../models/logger.model';
-import { PanelStatusInfo, PanelType } from '../../models/panel.model';
+import { PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
-    RecordingInfo,
-    RecordingStartRequestedEvent,
-    RecordingStatus,
-    RecordingStatusInfo,
-    RecordingStopRequestedEvent
+	RecordingInfo,
+	RecordingStartRequestedEvent,
+	RecordingState,
+	RecordingStopRequestedEvent
 } from '../../models/recording.model';
-import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
 import { ActionService } from '../../services/action/action.service';
-import { BroadcastingService } from '../../services/broadcasting/broadcasting.service';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
@@ -71,6 +71,25 @@ import { TranslateService } from '../../services/translate/translate.service';
 	standalone: false
 })
 export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
+	private readonly layoutService = inject(LayoutService);
+	private readonly documentService = inject(DocumentService);
+	private readonly chatService = inject(ChatService);
+	private readonly panelService = inject(PanelService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly deviceService = inject(DeviceService);
+	private readonly actionService = inject(ActionService);
+	private readonly loggerSrv = inject(LoggerService);
+	private readonly cd = inject(ChangeDetectorRef);
+	private readonly recordingService = inject(RecordingService);
+	private readonly translateService = inject(TranslateService);
+	private readonly storageSrv = inject(StorageService);
+	private readonly cdkOverlayService = inject(CdkOverlayService);
+	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly platformService = inject(PlatformService);
+	private readonly destroyRef = inject(DestroyRef);
+
 	/**
 	 * @ignore
 	 */
@@ -85,7 +104,9 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly toolbarAdditionalPanelButtonsTemplateQuery = contentChild('toolbarAdditionalPanelButtons', { read: TemplateRef });
+	readonly toolbarAdditionalPanelButtonsTemplateQuery = contentChild('toolbarAdditionalPanelButtons', {
+		read: TemplateRef
+	});
 	toolbarAdditionalPanelButtonsTemplate: TemplateRef<any> | undefined;
 
 	/**
@@ -95,7 +116,9 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	moreOptionsAdditionalMenuItemsTemplate: TemplateRef<any> | undefined;
 
 	private _externalMoreOptionsAdditionalMenuItems?: ToolbarMoreOptionsAdditionalMenuItemsDirective;
-	private readonly externalMoreOptionsAdditionalMenuItemsQuery = contentChild(ToolbarMoreOptionsAdditionalMenuItemsDirective);
+	private readonly externalMoreOptionsAdditionalMenuItemsQuery = contentChild(
+		ToolbarMoreOptionsAdditionalMenuItemsDirective
+	);
 	/**
 	 * @internal
 	 */
@@ -181,12 +204,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	readonly onRecordingStopRequested = output<RecordingStopRequestedEvent>();
 
 	/**
-	 * Provides event notifications that fire when stop broadcasting has been requested.
-	 * It provides the {@link BroadcastingStopRequestedEvent} payload as event data.
-	 */
-	readonly onBroadcastingStopRequested = output<BroadcastingStopRequestedEvent>();
-
-	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recordings button.
 	 */
@@ -210,6 +227,10 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	messageList: ChatMessage[] = [];
+	/**
+	 * @internal
+	 */
+	private lastKnownChatMessageCount: number = 0;
 	/**
 	 * @ignore
 	 */
@@ -255,95 +276,93 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	isMinimal: boolean = false;
+	readonly isMinimal = this.libService.minimalSignal;
 	/**
 	 * @ignore
 	 */
-	showCameraButton: boolean = true;
+	readonly showCameraButton = this.libService.cameraButtonSignal;
 	/**
 	 * @ignore
 	 */
-	showMicrophoneButton: boolean = true;
+	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
 	/**
 	 * @ignore
 	 */
-	showScreenshareButton = true;
+	readonly showScreenshareButton = computed(
+		() => this.libService.screenshareButtonSignal() && !this.platformService.isMobile()
+	);
 	/**
 	 * @ignore
 	 */
-	showFullscreenButton: boolean = true;
+	readonly showFullscreenButton = this.libService.fullscreenButtonSignal;
 
 	/**
 	 * @ignore
 	 */
-	showBackgroundEffectsButton: boolean = true;
+	readonly showBackgroundEffectsButton = this.libService.backgroundEffectsButtonSignal;
 
 	/**
 	 * @ignore
 	 */
-	showLeaveButton: boolean = true;
+	readonly showLeaveButton = this.libService.leaveButtonSignal;
 
 	/**
 	 * @ignore
 	 */
-	showRecordingButton: boolean = true;
+	readonly showRecordingButton = this.libService.recordingButtonSignal;
 
 	/**
 	 * @ignore
 	 */
-	showViewRecordingsButton: boolean = false;
+	readonly showViewRecordingsButton = this.libService.toolbarViewRecordingsButtonSignal;
 
 	/**
 	 * @ignore
 	 */
-	showBroadcastingButton: boolean = true;
+	readonly showSettingsButton = this.libService.toolbarSettingsButtonSignal;
 
 	/**
 	 * @ignore
 	 */
-	showSettingsButton: boolean = true;
+	readonly showMoreOptionsButton = computed(
+		() =>
+			this.showFullscreenButton() ||
+			this.showBackgroundEffectsButton() ||
+			this.showRecordingButton() ||
+			this.showSettingsButton()
+	);
 
 	/**
 	 * @ignore
 	 */
-	showMoreOptionsButton: boolean = true;
+	readonly showParticipantsPanelButton = this.libService.participantsPanelButtonSignal;
 
 	/**
 	 * @ignore
 	 */
-	showParticipantsPanelButton: boolean = true;
+	readonly showActivitiesPanelButton = this.libService.activitiesPanelButtonSignal;
+	/**
+	 * @ignore
+	 */
+	readonly showChatPanelButton = this.libService.chatPanelButtonSignal;
+	/**
+	 * @ignore
+	 */
+	readonly showLogo = this.libService.displayLogoSignal;
 
 	/**
 	 * @ignore
 	 */
-	showActivitiesPanelButton: boolean = true;
+	readonly brandingLogo = this.libService.brandingLogoSignal;
 	/**
 	 * @ignore
 	 */
-	showChatPanelButton: boolean = true;
-	/**
-	 * @ignore
-	 */
-	showLogo: boolean = true;
-
-	/**
-	 * @ignore
-	 */
-	brandingLogo: string = '';
-	/**
-	 * @ignore
-	 */
-	showRoomName: boolean = true;
+	readonly showRoomName = this.libService.displayRoomNameSignal;
 
 	/**
 	 * @ignore
 	 */
 	roomName: string = '';
-
-	/**
-	 * @ignore
-	 */
-	showCaptionsButton: boolean = true;
 
 	/**
 	 * @internal
@@ -353,12 +372,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	additionalButtonsPosition: ToolbarAdditionalButtonsPosition = ToolbarAdditionalButtonsPosition.BEFORE_MENU;
-
-	/**
-	 * @ignore
-	 */
-	captionsEnabled: boolean = false;
+	readonly additionalButtonsPosition = this.libService.toolbarAdditionalButtonsPositionSignal;
 
 	/**
 	 * @ignore
@@ -373,12 +387,15 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	recordingStatus: RecordingStatus = RecordingStatus.STOPPED;
+	recordingStatus: RecordingState = RecordingState.STOPPED;
 
 	/**
 	 * @ignore
 	 */
 	isRecordingReadOnlyMode: boolean = false;
+	private readonly recordingReadOnlyEffect = effect(() => {
+		this.isRecordingReadOnlyMode = this.libService.recordingActivityReadOnlySignal();
+	});
 
 	/**
 	 * @ignore
@@ -388,40 +405,20 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	broadcastingStatus: BroadcastingStatus = BroadcastingStatus.STOPPED;
-	/**
-	 * @ignore
-	 */
-	broadcastingId: string | undefined;
-	/**
-	 * @ignore
-	 */
-	_recordingStatus = RecordingStatus;
-	/**
-	 * @ignore
-	 */
-	_broadcastingStatus = BroadcastingStatus;
+	_recordingStatus = RecordingState;
 
 	/**
 	 * @ignore
 	 */
 	recordingTime: Date | undefined;
 
+	readonly totalParticipants = this.participantService.totalParticipantsSignal;
+
 	/**
 	 * @internal
 	 * Template configuration managed by the service
 	 */
 	templateConfig: ToolbarTemplateConfiguration = {};
-
-	/**
-	 * @internal
-	 * Computed signal for total participants count (local + remote)
-	 */
-	totalParticipants = computed(() => {
-		const local = this.participantService.localParticipantSignal();
-		const remotes = this.participantService.remoteParticipantsSignal();
-		return (local ? 1 : 0) + remotes.length;
-	});
 
 	// Store directive references for template setup
 	private _externalAdditionalButtons?: ToolbarAdditionalButtonsDirective;
@@ -434,36 +431,55 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		w: () => {},
 		e: () => {}
 	};
-	private readonly destroyRef = inject(DestroyRef);
 	private currentWindowHeight = window.innerHeight;
 
-	/**
-	 * @ignore
-	 */
-	private readonly layoutService = inject(LayoutService);
-	private readonly documentService = inject(DocumentService);
-	private readonly chatService = inject(ChatService);
-	private readonly panelService = inject(PanelService);
-	private readonly participantService = inject(ParticipantService);
-	private readonly openviduService = inject(OpenViduService);
-	private readonly deviceService = inject(DeviceService);
-	private readonly actionService = inject(ActionService);
-	private readonly loggerSrv = inject(LoggerService);
-	private readonly cd = inject(ChangeDetectorRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly platformService = inject(PlatformService);
-	private readonly recordingService = inject(RecordingService);
-	private readonly broadcastingService = inject(BroadcastingService);
-	private readonly translateService = inject(TranslateService);
-	private readonly storageSrv = inject(StorageService);
-	private readonly cdkOverlayService = inject(CdkOverlayService);
-	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly roomNameEffect = effect(() => {
+		this.evalAndSetRoomName(this.libService.roomNameSignal());
+		this.cd.markForCheck();
+	});
 	private readonly querySyncEffect = effect(() => {
 		this.menuTrigger = this.menuTriggerQuery();
 		this.toolbarAdditionalButtonsTemplate = this.toolbarAdditionalButtonsTemplateQuery();
 		this.toolbarLeaveButtonTemplate = this.toolbarLeaveButtonTemplateQuery();
 		this.toolbarAdditionalPanelButtonsTemplate = this.toolbarAdditionalPanelButtonsTemplateQuery();
 		this.setupTemplates();
+		this.cd.markForCheck();
+	});
+	private readonly menuTogglingEffect = effect(() => {
+		const ev = this.panelService.panelOpened();
+		this.isChatOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
+		this.isParticipantsOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
+		this.isActivitiesOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
+		if (this.isChatOpened) {
+			this.unreadMessages = 0;
+		}
+		this.cd.markForCheck();
+	});
+	private readonly chatMessagesEffect = effect(() => {
+		const messages = this.chatService.chatMessages();
+		const currentMessageCount = messages.length;
+		const newMessagesCount = Math.max(0, currentMessageCount - this.lastKnownChatMessageCount);
+
+		if (!this.panelService.isChatPanelOpened() && newMessagesCount > 0) {
+			this.unreadMessages += newMessagesCount;
+		}
+		this.lastKnownChatMessageCount = currentMessageCount;
+		this.messageList = messages;
+		this.cd.markForCheck();
+	});
+	private readonly recordingStatusEffect = effect(() => {
+		const event = this.recordingService.recordingState();
+		const { status, startedAt } = event;
+		this.recordingStatus = status;
+		if (status === RecordingState.STARTED) {
+			this.startedRecording = event.recordingList.find((rec) => rec.status === RecordingState.STARTED);
+		} else {
+			this.startedRecording = undefined;
+		}
+
+		if (startedAt) {
+			this.recordingTime = startedAt;
+		}
 		this.cd.markForCheck();
 	});
 
@@ -506,12 +522,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	get isBroadcastingStarted(): boolean {
-		return this.broadcastingStatus === this._broadcastingStatus.STARTED;
-	}
-	/**
-	 * @ignore
-	 */
 	sizeChange(_: Event) {
 		if (this.currentWindowHeight >= window.innerHeight) {
 			// The user has exit the fullscreen mode
@@ -534,20 +544,13 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	async ngOnInit() {
 		this.room = this.openviduService.getRoom();
-		this.evalAndSetRoomName(this.libService.getRoomName());
 
 		this.hasVideoDevices = this.deviceService.hasVideoDeviceAvailable();
 		this.hasAudioDevices = this.deviceService.hasAudioDeviceAvailable();
 
 		this.setupTemplates();
-		this.subscribeToToolbarDirectives();
 
 		this.subscribeToReconnection();
-		this.subscribeToMenuToggling();
-		this.subscribeToChatMessages();
-		this.subscribeToRecordingStatus();
-		this.subscribeToBroadcastingStatus();
-		this.subscribeToCaptionsToggling();
 	}
 
 	ngAfterViewInit() {
@@ -591,7 +594,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			this.toolbarLeaveButtonTemplate = this.templateConfig.toolbarLeaveButtonTemplate;
 		}
 		if (this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate) {
-			this.moreOptionsAdditionalMenuItemsTemplate = this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate;
+			this.moreOptionsAdditionalMenuItemsTemplate =
+				this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate;
 		}
 	}
 
@@ -676,8 +680,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			await this.openviduService.disconnectRoom(() => {
 				this.onParticipantLeft.emit({
 					roomName: this.openviduService.getRoomName(),
-					participantName: this.participantService.localParticipantSignal()!.name || '',
-					identity: this.participantService.localParticipantSignal()!.identity || '',
+					participantName: this.participantService.getMyName() || '',
+					identity: this.participantService.getMyIdentity() || '',
 					reason: ParticipantLeftReason.LEAVE
 				});
 				this.onRoomDisconnected.emit();
@@ -695,7 +699,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	openRecordingActivityPanel() {
-		if (this.showActivitiesPanelButton && !this.isActivitiesOpened) {
+		if (this.showActivitiesPanelButton() && !this.isActivitiesOpened) {
 			this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
 		}
 	}
@@ -703,17 +707,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	openBroadcastingActivityPanel() {
-		if (this.showActivitiesPanelButton && !this.isActivitiesOpened) {
-			this.panelService.togglePanel(PanelType.ACTIVITIES, 'broadcasting');
-		}
-	}
-
-	/**
-	 * @ignore
-	 */
 	toggleRecording() {
-		if (this.recordingStatus === RecordingStatus.FAILED) {
+		if (this.recordingStatus === RecordingState.FAILED) {
 			this.openRecordingActivityPanel();
 			return;
 		}
@@ -721,11 +716,11 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		const payload: RecordingStartRequestedEvent = {
 			roomName: this.openviduService.getRoomName()
 		};
-		if (this.recordingStatus === RecordingStatus.STARTED) {
+		if (this.recordingStatus === RecordingState.STARTED) {
 			this.log.d('Stopping recording');
 			payload.recordingId = this.startedRecording?.id;
 			this.onRecordingStopRequested.emit(payload);
-		} else if (this.recordingStatus === RecordingStatus.STOPPED) {
+		} else if (this.recordingStatus === RecordingState.STOPPED) {
 			this.onRecordingStartRequested.emit(payload);
 			this.openRecordingActivityPanel();
 		}
@@ -734,39 +729,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	toggleBroadcasting() {
-		if (this.broadcastingStatus === BroadcastingStatus.STARTED) {
-			this.log.d('Stopping broadcasting');
-			const payload: BroadcastingStopRequestedEvent = {
-				roomName: this.openviduService.getRoomName(),
-				broadcastingId: this.broadcastingId as string
-			};
-			this.onBroadcastingStopRequested.emit(payload);
-			this.broadcastingService.setBroadcastingStopped();
-		} else if (this.broadcastingStatus === BroadcastingStatus.STOPPED) {
-			this.openBroadcastingActivityPanel();
-		}
-	}
-
-	/**
-	 * @ignore
-	 */
 	toggleBackgroundEffects() {
 		this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);
-	}
-
-	/**
-	 * @ignore
-	 */
-	onCaptionsToggle() {
-		// if (this.openviduService.isOpenViduPro()) {
-		// 	this.layoutService.toggleCaptions();
-		// } else {
-		// 	this.actionService.openProFeatureDialog(
-		// 		this.translateService.translate('PANEL.SETTINGS.CAPTIONS'),
-		// 		this.translateService.translate('PANEL.PRO_FEATURE')
-		// 	);
-		// }
 	}
 
 	/**
@@ -831,178 +795,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			});
 	}
 
-	private subscribeToMenuToggling() {
-		this.panelService.panelStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ev: PanelStatusInfo) => {
-			this.isChatOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
-			this.isParticipantsOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
-			this.isActivitiesOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
-			if (this.isChatOpened) {
-				this.unreadMessages = 0;
-			}
-			this.cd.markForCheck();
-		});
-	}
-
-	private subscribeToChatMessages() {
-		this.chatService.chatMessages$.pipe(skip(1), takeUntilDestroyed(this.destroyRef)).subscribe((messages) => {
-			if (!this.panelService.isChatPanelOpened()) {
-				this.unreadMessages++;
-			}
-			this.messageList = messages;
-			this.cd.markForCheck();
-		});
-	}
-
 	private subscribeToRecordingStatus() {
-		this.libService.recordingActivityReadOnly$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((readOnly: boolean) => {
-			this.isRecordingReadOnlyMode = readOnly;
-			this.cd.markForCheck();
-		});
-
-		this.recordingService.recordingStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((event: RecordingStatusInfo) => {
-			const { status, startedAt } = event;
-			this.recordingStatus = status;
-			if (status === RecordingStatus.STARTED) {
-				this.startedRecording = event.recordingList.find((rec) => rec.status === RecordingStatus.STARTED);
-			} else {
-				this.startedRecording = undefined;
-			}
-
-			if (startedAt) {
-				this.recordingTime = startedAt;
-			}
-			this.cd.markForCheck();
-		});
-	}
-
-	private subscribeToBroadcastingStatus() {
-		this.broadcastingService.broadcastingStatusObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((ev: BroadcastingStatusInfo) => {
-			if (!!ev) {
-				this.broadcastingStatus = ev.status;
-				this.broadcastingId = ev.broadcastingId;
-				this.cd.markForCheck();
-			}
-		});
-	}
-
-	private subscribeToToolbarDirectives() {
-		this.libService.minimal$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.isMinimal = value;
-			this.cd.markForCheck();
-		});
-		this.libService.brandingLogo$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: string) => {
-			this.brandingLogo = value;
-			this.cd.markForCheck();
-		});
-		this.libService.toolbarViewRecordingsButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showViewRecordingsButton = value;
-			this.checkDisplayMoreOptions();
-			this.cd.markForCheck();
-		});
-		this.libService.cameraButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showCameraButton = value;
-			this.cd.markForCheck();
-		});
-		this.libService.microphoneButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showMicrophoneButton = value;
-			this.cd.markForCheck();
-		});
-		this.libService.screenshareButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showScreenshareButton = value && !this.platformService.isMobile();
-			this.cd.markForCheck();
-		});
-		this.libService.fullscreenButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showFullscreenButton = value;
-			this.checkDisplayMoreOptions();
-			this.cd.markForCheck();
-		});
-		this.libService.leaveButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showLeaveButton = value;
-			this.cd.markForCheck();
-		});
-
-		this.libService.recordingButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showRecordingButton = value;
-			this.checkDisplayMoreOptions();
-			this.cd.markForCheck();
-		});
-
-		this.libService.broadcastingButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showBroadcastingButton = value;
-			this.checkDisplayMoreOptions();
-			this.cd.markForCheck();
-		});
-
-		this.libService.toolbarSettingsButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showSettingsButton = value;
-			this.checkDisplayMoreOptions();
-			this.cd.markForCheck();
-		});
-		this.libService.chatPanelButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showChatPanelButton = value;
-			this.cd.markForCheck();
-		});
-		this.libService.participantsPanelButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showParticipantsPanelButton = value;
-			this.cd.markForCheck();
-		});
-		this.libService.activitiesPanelButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showActivitiesPanelButton = value;
-			this.cd.markForCheck();
-		});
-		this.libService.backgroundEffectsButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showBackgroundEffectsButton = value;
-			this.checkDisplayMoreOptions();
-			this.cd.markForCheck();
-		});
-		this.libService.displayLogo$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showLogo = value;
-			this.cd.markForCheck();
-		});
-
-		this.libService.displayRoomName$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showRoomName = value;
-			this.cd.markForCheck();
-		});
-
-		this.libService.roomName$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: string) => {
-			this.evalAndSetRoomName(value);
-			this.cd.markForCheck();
-		});
-		// this.libService.captionsButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-		// 	this.showCaptionsButton = value;
-		// 	this.cd.markForCheck();
-		// });
-
-		this.libService.toolbarAdditionalButtonsPosition$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: ToolbarAdditionalButtonsPosition) => {
-				// Using Promise.resolve() to defer change detection until the next microtask.
-				// This ensures that Angular's change detection has the latest value before updating the view.
-				// Without this, Angular's OnPush strategy might not immediately reflect the change,
-				// due to asynchronous operations affecting the timing of the detection cycle.
-
-				Promise.resolve().then(() => {
-					this.additionalButtonsPosition = value;
-					this.cd.markForCheck();
-				});
-			});
-	}
-
-	private subscribeToCaptionsToggling() {
-		this.layoutService.captionsTogglingObs.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.captionsEnabled = value;
-			this.cd.markForCheck();
-		});
-	}
-
-	private checkDisplayMoreOptions() {
-		this.showMoreOptionsButton =
-			this.showFullscreenButton ||
-			this.showBackgroundEffectsButton ||
-			this.showRecordingButton ||
-			this.showBroadcastingButton ||
-			this.showSettingsButton;
+		// handled by recordingReadOnlyEffect
 	}
 
 	private evalAndSetRoomName(value: string) {

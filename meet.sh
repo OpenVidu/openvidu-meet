@@ -124,6 +124,8 @@ show_help() {
   echo
   echo -e "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
+  echo -e "    ${YELLOW}Options:${NC} --testapp        Include testapp watcher"
+  echo -e "             ${NC} --webcomponent   Include webcomponent watcher"
   echo
   echo -e "  ${BLUE}start${NC}"
   echo "    Start OpenVidu Meet in production or CI mode"
@@ -413,16 +415,25 @@ add_common_dev_commands() {
   CMD_COLORS+=("bgYellow.dark")
   CMD_COMMANDS+=("pnpm --filter @openvidu-meet/frontend run lib:serve")
 
+}
+
+add_optional_commands() {
+  local include_testapp="$1"
+  local include_webcomponent="$2"
+
   # Testapp
-  CMD_NAMES+=("testapp")
-  CMD_COLORS+=("blue")
-  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:testapp'")
+  if [ "$include_testapp" = true ]; then
+    CMD_NAMES+=("testapp")
+    CMD_COLORS+=("blue")
+    CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:testapp'")
+  fi
 
   # Webcomponent bundle watcher
-  CMD_NAMES+=("webcomponent")
-  CMD_COLORS+=("bgMagenta.black")
-  CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:webcomponent'")
-
+  if [ "$include_webcomponent" = true ]; then
+    CMD_NAMES+=("webcomponent")
+    CMD_COLORS+=("bgMagenta.black")
+    CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:webcomponent'")
+  fi
 }
 
 # Helper: Add CE-specific commands (backend, frontend)
@@ -536,6 +547,20 @@ launch_dev_watchers() {
 
 # Start development mode with watchers
 dev() {
+  local include_testapp=false
+  local include_webcomponent=false
+
+  for arg in "$@"; do
+    case "$arg" in
+      --testapp)
+        include_testapp=true
+        ;;
+      --webcomponent)
+        include_webcomponent=true
+        ;;
+    esac
+  done
+
   echo -e "${BLUE}=============================================${NC}"
   echo -e "${BLUE}  🚀 Starting OpenVidu Meet in dev mode...${NC}"
   echo -e "${BLUE}=============================================${NC}"
@@ -559,6 +584,9 @@ dev() {
 
   # Add common commands (typings, shared-meet-components)
   add_common_dev_commands
+
+  # Add optional commands (testapp, webcomponent)
+  add_optional_commands "$include_testapp" "$include_webcomponent"
 
   # Add edition-specific commands and set paths
   if [ "$edition" = "pro" ]; then

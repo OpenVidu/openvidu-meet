@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { ActivitiesPanelBroadcastingActivityDirective, ActivitiesPanelRecordingActivityDirective } from './activities-panel.directive';
+import { ActivitiesPanelRecordingActivityDirective } from './activities-panel.directive';
 import {
 	E2EEKeyDirective,
 	FallbackLogoDirective,
@@ -25,9 +25,7 @@ import {
 	ToolbarActivitiesPanelButtonDirective,
 	ToolbarAdditionalButtonsPossitionDirective,
 	ToolbarBackgroundEffectsButtonDirective,
-	ToolbarBroadcastingButtonDirective,
 	ToolbarCameraButtonDirective,
-	// ToolbarCaptionsButtonDirective,
 	ToolbarChatPanelButtonDirective,
 	ToolbarDisplayLogoDirective,
 	ToolbarDisplayRoomNameDirective,
@@ -41,8 +39,6 @@ import {
 } from './toolbar.directive';
 import {
 	AudioEnabledDirective,
-	// CaptionsLangDirective,
-	// CaptionsLangOptionsDirective,
 	LangDirective,
 	LangOptionsDirective,
 	LivekitUrlDirective,
@@ -63,8 +59,6 @@ const directives = [
 	MinimalDirective,
 	LangDirective,
 	LangOptionsDirective,
-	// CaptionsLangOptionsDirective,
-	// CaptionsLangDirective,
 	PrejoinDirective,
 	PrejoinDisplayParticipantName,
 	VideoEnabledDirective,
@@ -78,10 +72,8 @@ const directives = [
 	ToolbarScreenshareButtonDirective,
 	ToolbarFullscreenButtonDirective,
 	ToolbarBackgroundEffectsButtonDirective,
-	// ToolbarCaptionsButtonDirective,
 	ToolbarLeaveButtonDirective,
 	ToolbarRecordingButtonDirective,
-	ToolbarBroadcastingButtonDirective,
 	ToolbarParticipantsPanelButtonDirective,
 	ToolbarChatPanelButtonDirective,
 	ToolbarActivitiesPanelButtonDirective,
@@ -98,7 +90,6 @@ const directives = [
 	ParticipantPanelItemMuteButtonDirective,
 	ParticipantNameDirective,
 	ActivitiesPanelRecordingActivityDirective,
-	ActivitiesPanelBroadcastingActivityDirective,
 	LayoutRemoteParticipantsDirective,
 	StartStopRecordingButtonsDirective,
 	RecordingActivityViewRecordingsButtonDirective,

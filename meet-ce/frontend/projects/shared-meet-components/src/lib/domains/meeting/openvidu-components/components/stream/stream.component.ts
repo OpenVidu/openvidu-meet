@@ -1,5 +1,4 @@
-import { Component, DestroyRef, effect, ElementRef, inject, input, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, effect, ElementRef, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
 import { ParticipantTrackPublication } from '../../models/participant.model';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
@@ -18,7 +17,7 @@ import { ParticipantService } from '../../services/participant/participant.servi
 	styleUrls: ['./stream.component.scss'],
 	standalone: false
 })
-export class StreamComponent implements OnInit, OnDestroy {
+export class StreamComponent implements OnDestroy {
 	readonly trackInput = input<ParticipantTrackPublication | undefined>(undefined, { alias: 'track' });
 
 	/**
@@ -87,7 +86,6 @@ export class StreamComponent implements OnInit, OnDestroy {
 	readonly streamContainerQuery = viewChild('streamContainer', { read: ElementRef });
 
 	private _streamContainer: ElementRef | undefined;
-	private readonly destroyRef = inject(DestroyRef);
 	private readonly HOVER_TIMEOUT = 2000;
 	private readonly NO_SIZE_TIMEOUT = 100;
 	private readonly querySyncEffect = effect(() => {
@@ -109,10 +107,12 @@ export class StreamComponent implements OnInit, OnDestroy {
 	private readonly participantService = inject(ParticipantService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngOnInit() {
-		this.subscribeToStreamDirectives();
-	}
+	private readonly streamConfigSyncEffect = effect(() => {
+		this.isMinimal = this.libService.minimalSignal();
+		this.showParticipantName = this.libService.displayParticipantNameSignal();
+		this.showAudioDetection = this.libService.displayAudioDetectionSignal();
+		this.showVideoControls = this.libService.streamVideoControlsSignal();
+	});
 
 	ngOnDestroy() {
 		if (this.showVideoTimeout) {
@@ -191,29 +191,4 @@ export class StreamComponent implements OnInit, OnDestroy {
 		}, this.HOVER_TIMEOUT);
 	}
 
-	private subscribeToStreamDirectives() {
-		this.libService.minimal$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: boolean) => {
-				this.isMinimal = value;
-			});
-
-		this.libService.displayParticipantName$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: boolean) => {
-				this.showParticipantName = value;
-			});
-
-		this.libService.displayAudioDetection$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: boolean) => {
-				this.showAudioDetection = value;
-			});
-
-		this.libService.streamVideoControls$
-			.pipe(takeUntilDestroyed(this.destroyRef))
-			.subscribe((value: boolean) => {
-				this.showVideoControls = value;
-			});
-	}
 }

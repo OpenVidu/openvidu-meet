@@ -3,14 +3,12 @@ import {
 	ChangeDetectorRef,
 	Component,
 	contentChild,
-	DestroyRef,
+	effect,
 	inject,
 	OnInit,
 	output,
 	TemplateRef
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { skip } from 'rxjs';
 import {
 	ActivitiesPanelDirective,
 	AdditionalPanelsDirective,
@@ -161,8 +159,6 @@ export class PanelComponent implements OnInit {
 	private _externalActivitiesPanel?: ActivitiesPanelDirective;
 	private _externalAdditionalPanels?: AdditionalPanelsDirective;
 
-	private readonly destroyRef = inject(DestroyRef);
-
 	private panelEmitersHandler: Map<
 		PanelType,
 		{
@@ -182,13 +178,30 @@ export class PanelComponent implements OnInit {
 	private readonly panelService = inject(PanelService);
 	private readonly cd = inject(ChangeDetectorRef);
 	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly panelTogglingEffect = effect(() => {
+		const ev = this.panelService.panelOpened();
+		this.isChatPanelOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
+		this.isParticipantsPanelOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
+		this.isBackgroundEffectsPanelOpened = ev.isOpened && ev.panelType === PanelType.BACKGROUND_EFFECTS;
+		this.isSettingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
+		this.isActivitiesPanelOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
+		this.isExternalPanelOpened =
+			ev.isOpened &&
+			!this.isSettingsPanelOpened &&
+			!this.isBackgroundEffectsPanelOpened &&
+			!this.isChatPanelOpened &&
+			!this.isParticipantsPanelOpened &&
+			!this.isActivitiesPanelOpened;
+		this.cd.markForCheck();
+
+		this.sendPanelStatusChangedEvent(ev);
+	});
 
 	/**
 	 * @ignore
 	 */
 	ngOnInit(): void {
 		this.setupTemplates();
-		this.subscribeToPanelToggling();
 		this.panelEmitersHandler.set(PanelType.CHAT, this.onChatPanelStatusChanged);
 		this.panelEmitersHandler.set(PanelType.PARTICIPANTS, this.onParticipantsPanelStatusChanged);
 		this.panelEmitersHandler.set(PanelType.SETTINGS, this.onSettingsPanelStatusChanged);
@@ -234,28 +247,6 @@ export class PanelComponent implements OnInit {
 	ngOnDestroy() {
 		this.isChatPanelOpened = false;
 		this.isParticipantsPanelOpened = false;
-	}
-
-	private subscribeToPanelToggling() {
-		this.panelService.panelStatusObs
-			.pipe(skip(1), takeUntilDestroyed(this.destroyRef))
-			.subscribe((ev: PanelStatusInfo) => {
-				this.isChatPanelOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
-				this.isParticipantsPanelOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
-				this.isBackgroundEffectsPanelOpened = ev.isOpened && ev.panelType === PanelType.BACKGROUND_EFFECTS;
-				this.isSettingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
-				this.isActivitiesPanelOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
-				this.isExternalPanelOpened =
-					ev.isOpened &&
-					!this.isSettingsPanelOpened &&
-					!this.isBackgroundEffectsPanelOpened &&
-					!this.isChatPanelOpened &&
-					!this.isParticipantsPanelOpened &&
-					!this.isActivitiesPanelOpened;
-				this.cd.markForCheck();
-
-				this.sendPanelStatusChangedEvent(ev);
-			});
 	}
 
 	private sendPanelStatusChangedEvent(event: PanelStatusInfo) {

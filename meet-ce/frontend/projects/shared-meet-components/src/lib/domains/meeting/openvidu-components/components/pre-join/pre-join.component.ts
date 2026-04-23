@@ -1,17 +1,14 @@
 import {
-    ChangeDetectionStrategy,
-    ChangeDetectorRef,
-    Component,
-    DestroyRef,
-    effect,
-    inject,
-    input,
-    OnDestroy,
-    OnInit,
-    output
+	ChangeDetectionStrategy,
+	Component,
+	effect,
+	inject,
+	input,
+	OnDestroy,
+	OnInit,
+	output,
+	signal
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { filter, take } from 'rxjs';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
@@ -44,37 +41,35 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	readonly onAudioEnabledChanged = output<boolean>();
 	readonly onLangChanged = output<LangOption>();
 	readonly onReadyToJoin = output<void>();
+	private readonly libService = inject(OpenViduComponentsConfigService);
 
-	_error: string | undefined;
+	readonly errorMessage = signal<string | undefined>(undefined);
 	windowSize!: number;
-	isLoading = true;
-	participantName: string | undefined = '';
+	readonly isLoading = signal(true);
+	readonly participantName = signal<string>('');
 
 	/**
 	 * @ignore
 	 */
-	isMinimal: boolean = false;
-	showCameraButton: boolean = true;
-	showMicrophoneButton: boolean = true;
-	showLogo: boolean = true;
-	showParticipantName: boolean = true;
+	readonly isMinimal = this.libService.minimalSignal;
+	readonly showCameraButton = this.libService.cameraButtonSignal;
+	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
+	readonly showLogo = this.libService.displayLogoSignal;
+	readonly showParticipantName = this.libService.prejoinDisplayParticipantNameSignal;
 
 	// Future feature preparation
 	backgroundEffectEnabled: boolean = true; // Enable virtual backgrounds by default
-	showBackgroundPanel: boolean = false;
+	readonly showBackgroundPanel = signal(false);
 
 	videoTrack: LocalTrack | undefined;
 	audioTrack: LocalTrack | undefined;
-	isVideoEnabled: boolean = false;
-	hasVideoDevices: boolean = true;
+	readonly isVideoEnabled = signal(false);
+	readonly hasVideoDevices = signal(true);
 	private tracks: LocalTrack[] = [];
-	private readonly destroyRef = inject(DestroyRef);
 	private readonly loggerSrv = inject(LoggerService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly translateService = inject(TranslateService);
-	private readonly changeDetector = inject(ChangeDetectorRef);
 	protected readonly viewportService = inject(ViewportService);
 	private log: ILogger = {
 		d: () => {},
@@ -93,18 +88,22 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 		effect(() => {
 			const currentError = this.error();
 			if (currentError) {
-				this._error = currentError.message ?? currentError.name;
-				this.changeDetector.markForCheck();
+				this.errorMessage.set(currentError.message ?? currentError.name);
+			}
+		});
+
+		effect(() => {
+			const configuredName = this.libService.participantNameSignal();
+			if (configuredName) {
+				this.participantName.set(configuredName);
 			}
 		});
 	}
 
 	async ngOnInit() {
-		this.subscribeToPrejoinDirectives();
 		await this.initializeDevicesWithRetry();
 		this.windowSize = window.innerWidth;
-		this.isLoading = false;
-		this.changeDetector.markForCheck();
+		this.isLoading.set(false);
 	}
 
 	// ngAfterContentChecked(): void {
@@ -129,28 +128,23 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	}
 
 	join() {
-		if (this.showParticipantName && !this.participantName?.trim()) {
-			this._error = this.translateService.translate('PREJOIN.NICKNAME_REQUIRED');
+		const participantName = this.participantName().trim();
+
+		if (this.showParticipantName() && !participantName) {
+			this.errorMessage.set(this.translateService.translate('PREJOIN.NICKNAME_REQUIRED'));
 			return;
 		}
 
 		// Clear any previous errors
-		this._error = undefined;
+		this.errorMessage.set(undefined);
 
 		// Mark tracks as permanent for avoiding to be removed in ngOnDestroy
 		this.shouldRemoveTracksWhenComponentIsDestroyed = false;
 
 		// Assign participant name to the observable if it is defined
-		if (this.participantName?.trim()) {
-			this.libService.updateGeneralConfig({ participantName: this.participantName.trim() });
-
-			this.libService.participantName$
-				.pipe(
-					filter((name) => name === this.participantName?.trim()),
-					take(1),
-					takeUntilDestroyed(this.destroyRef)
-				)
-				.subscribe(() => this.onReadyToJoin.emit());
+		if (participantName) {
+			this.libService.updateGeneralConfig({ participantName });
+			this.onReadyToJoin.emit();
 		} else {
 			// No participant name to set, emit immediately
 			this.onReadyToJoin.emit();
@@ -158,10 +152,11 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	}
 
 	onParticipantNameChanged(name: string) {
-		this.participantName = name?.trim() || '';
+		const trimmedName = name?.trim() || '';
+		this.participantName.set(trimmedName);
 		// Clear error when user starts typing
-		if (this._error && this.participantName) {
-			this._error = undefined;
+		if (this.errorMessage() && trimmedName) {
+			this.errorMessage.set(undefined);
 		}
 	}
 
@@ -169,43 +164,8 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 		this.join();
 	}
 
-	private subscribeToPrejoinDirectives() {
-		this.libService.minimal$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.isMinimal = value;
-			this.changeDetector.markForCheck();
-		});
-
-		this.libService.cameraButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showCameraButton = value;
-			this.changeDetector.markForCheck();
-		});
-
-		this.libService.microphoneButton$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showMicrophoneButton = value;
-			this.changeDetector.markForCheck();
-		});
-
-		this.libService.displayLogo$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showLogo = value;
-			this.changeDetector.markForCheck();
-		});
-
-		this.libService.participantName$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: string) => {
-			if (value) {
-				this.participantName = value;
-				this.changeDetector.markForCheck();
-			}
-		});
-
-		this.libService.prejoinDisplayParticipantName$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value: boolean) => {
-			this.showParticipantName = value;
-			this.changeDetector.markForCheck();
-		});
-
-	}
-
 	async videoEnabledChanged(enabled: boolean) {
-		this.isVideoEnabled = enabled;
+		this.isVideoEnabled.set(enabled);
 		if (!enabled) {
 			this.closeBackgroundPanel();
 		} else if (!this.videoTrack) {
@@ -240,7 +200,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	}
 
 	onVideoDevicesLoaded(devices: CustomDevice[]) {
-		this.hasVideoDevices = devices.length > 0;
+		this.hasVideoDevices.set(devices.length > 0);
 	}
 
 	audioDeviceChanged(device: CustomDevice) {
@@ -278,15 +238,13 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	 */
 	toggleBackgroundPanel() {
 		// Add a small delay to ensure smooth transition
-		if (!this.showBackgroundPanel) {
+		if (!this.showBackgroundPanel()) {
 			// Opening panel
-			this.showBackgroundPanel = true;
-			this.changeDetector.markForCheck();
+			this.showBackgroundPanel.set(true);
 		} else {
 			// Closing panel - add slight delay for smooth animation
 			setTimeout(() => {
-				this.showBackgroundPanel = false;
-				this.changeDetector.markForCheck();
+				this.showBackgroundPanel.set(false);
 			}, 50);
 		}
 	}
@@ -297,8 +255,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	closeBackgroundPanel() {
 		// Add animation delay for smooth closing
 		setTimeout(() => {
-			this.showBackgroundPanel = false;
-			this.changeDetector.markForCheck();
+			this.showBackgroundPanel.set(false);
 		}, 100);
 	}
 
@@ -307,8 +264,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	 */
 	private handleError(error: any) {
 		this.log.e('PreJoin component error:', error);
-		this._error = error.message || 'An unexpected error occurred';
-		this.changeDetector.markForCheck();
+		this.errorMessage.set(error.message || 'An unexpected error occurred');
 	}
 
 	/**
@@ -321,7 +277,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 				this.openviduService.setLocalTracks(this.tracks);
 				this.videoTrack = this.tracks.find((track) => track.kind === Track.Kind.Video);
 				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
-				this.isVideoEnabled = this.openviduService.isVideoTrackEnabled();
+				this.isVideoEnabled.set(this.openviduService.isVideoTrackEnabled());
 
 				return; // Success, exit retry loop
 			} catch (error) {
