@@ -86,14 +86,24 @@
 		width: 36px;
 		height: 36px;
 		border-radius: 50%;
-		background-color: var(--ov-meet-color-primary);
-		color: var(--ov-meet-color-on-primary, white);
+		background-color: var(--ov-meet-surface-variant);
+		color: var(--ov-meet-text-secondary);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-size: var(--ov-meet-font-size-sm);
 		font-weight: var(--ov-meet-font-weight-semibold);
 		flex-shrink: 0;
+
+		&.moderator {
+			background-color: var(--ov-meet-color-primary);
+			color: var(--ov-meet-color-on-primary, white);
+		}
+
+		&.speaker {
+			background-color: var(--ov-meet-color-success);
+			color: var(--ov-meet-color-on-primary, white);
+		}
 	}
 
 	.member-details {
@@ -108,6 +118,27 @@
 
 	.member-id {
 		@extend .secondary-text, .monospace-text;
+	}
+
+	.member-id-link {
+		@extend .secondary-text, .monospace-text;
+		color: var(--ov-meet-color-primary);
+		text-decoration: none;
+		cursor: pointer;
+		@include design-tokens.ov-theme-transition;
+
+		&:hover {
+			text-decoration: underline;
+		}
+
+		&:active {
+			opacity: 0.8;
+		}
+
+		&:focus-visible {
+			outline: 2px solid var(--ov-meet-color-primary);
+			outline-offset: 2px;
+		}
 	}
 }
 

@@ -26,6 +26,7 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterModule } from '@angular/router';
 import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberSortField, SortOrder } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 
@@ -80,6 +81,7 @@ export interface MemberTableFilter {
 		MatBadgeModule,
 		MatDividerModule,
 		MatSortModule,
+		RouterModule,
 		DatePipe
 	],
 	templateUrl: './room-members-list.component.html',
@@ -98,6 +100,7 @@ export class RoomMembersListsComponent implements OnInit {
 	showSelection = input(true);
 	showLoadMore = input(false);
 	loading = input(false);
+	canViewUserProfiles = input(true);
 	initialFilters = input<MemberTableFilter>({
 		nameFilter: '',
 		sortField: 'membershipDate',
@@ -300,11 +303,15 @@ export class RoomMembersListsComponent implements OnInit {
 	// ===== UTILS =====
 
 	getMemberTypeLabel(member: MeetRoomMember): string {
-		return member.memberId.startsWith('ext-') ? 'External' : 'Registered';
+		return this.isRegisteredMember(member) ? 'Registered' : 'External';
 	}
 
 	getMemberTypeIcon(member: MeetRoomMember): string {
-		return member.memberId.startsWith('ext-') ? 'person_outline' : 'verified_user';
+		return this.isRegisteredMember(member) ? 'verified_user' : 'person_outline';
+	}
+
+	isRegisteredMember(member: MeetRoomMember): boolean {
+		return !member.memberId.startsWith('ext-');
 	}
 
 	getMemberInitials(member: MeetRoomMember): string {

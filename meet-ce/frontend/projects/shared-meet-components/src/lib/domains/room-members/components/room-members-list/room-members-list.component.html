@@ -177,16 +177,33 @@
 						id="member-name-cell-{{ member.memberId }}"
 					>
 						<div class="member-info" id="member-info-{{ member.memberId }}">
-							<div class="member-avatar" id="member-avatar-{{ member.memberId }}">
+							<div
+								class="member-avatar"
+								[class.moderator]="member.baseRole === MeetRoomMemberRole.MODERATOR"
+								[class.speaker]="member.baseRole === MeetRoomMemberRole.SPEAKER"
+								id="member-avatar-{{ member.memberId }}"
+							>
 								<span>{{ getMemberInitials(member) }}</span>
 							</div>
 							<div class="member-details">
 								<span class="member-name" id="member-name-{{ member.memberId }}">{{
 									member.name
 								}}</span>
-								<span class="member-id" id="member-id-{{ member.memberId }}">{{
-									member.memberId
-								}}</span>
+								@if (canViewUserProfiles() && isRegisteredMember(member)) {
+									<a
+										class="member-id-link"
+										[routerLink]="['/users', member.memberId]"
+										matTooltip="View user profile"
+										(click)="$event.stopPropagation()"
+										id="member-id-link-{{ member.memberId }}"
+									>
+										{{ member.memberId }}
+									</a>
+								} @else {
+									<span class="member-id" id="member-id-{{ member.memberId }}">{{
+										member.memberId
+									}}</span>
+								}
 							</div>
 						</div>
 					</td>
