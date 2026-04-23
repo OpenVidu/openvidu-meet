@@ -5,8 +5,26 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActionService } from './action.service';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatDialogMock } from '../../../test-helpers/action.service.mock';
-import { TranslateServiceMock } from '../../../test-helpers/translate.service.mock';
+import { TranslateService } from '../translate/translate.service';
+import { TranslateServiceMock } from '../translate/translate.service.mock';
+import { OPENVIDU_COMPONENTS_CONFIG } from '../../config/openvidu-components-angular.config';
+
+class MatDialogMock {
+	lastRef:
+		| {
+			close: () => void;
+			afterClosed: () => { subscribe: (fn: (value: unknown) => void) => void };
+		}
+		| undefined;
+
+	open() {
+		this.lastRef = {
+			close: () => {},
+			afterClosed: () => ({ subscribe: (fn: (value: unknown) => void) => fn(true) })
+		};
+		return this.lastRef;
+	}
+}
 
 describe('ActionService (characterization)', () => {
 	let service: ActionService;
@@ -17,8 +35,8 @@ describe('ActionService (characterization)', () => {
 			imports: [MatSnackBarModule],
 			providers: [
 				{ provide: MatDialog, useClass: MatDialogMock },
-				{ provide: 'TranslateService', useClass: TranslateServiceMock },
-				{ provide: 'OPENVIDU_COMPONENTS_CONFIG', useValue: { production: false } }
+				{ provide: TranslateService, useClass: TranslateServiceMock },
+				{ provide: OPENVIDU_COMPONENTS_CONFIG, useValue: { production: false } }
 			]
 		});
 

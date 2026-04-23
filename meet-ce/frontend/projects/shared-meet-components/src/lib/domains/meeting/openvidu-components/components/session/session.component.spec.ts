@@ -2,7 +2,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
-import { ActionServiceMock } from '../../../test-helpers/action.service.mock';
 import { ActionService } from '../../services/action/action.service';
 
 import { ChatService } from '../../services/chat/chat.service';
@@ -16,15 +15,21 @@ import { PlatformService } from '../../services/platform/platform.service';
 import { PlatformServiceMock } from '../../services/platform/platform.service.mock';
 
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { OPENVIDU_COMPONENTS_CONFIG } from '../../config/openvidu-components-angular.config';
 import { Room, RoomEvent } from '../../services/livekit-adapter';
 import { TranslateService } from '../../services/translate/translate.service';
 import { TranslateServiceMock } from '../../services/translate/translate.service.mock';
 import { SessionComponent } from './session.component';
 
+class ActionServiceMock {
+	openConnectionDialog() {}
+	closeConnectionDialog() {}
+}
+
 describe('SessionComponent', () => {
 	let component: SessionComponent;
 	let fixture: ComponentFixture<SessionComponent>;
-	let actionService: ActionServiceMock;
+	let actionService: ActionService;
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
@@ -37,7 +42,7 @@ describe('SessionComponent', () => {
 				{ provide: ChatService, useClass: ChatServiceMock },
 				{ provide: PlatformService, useClass: PlatformServiceMock },
 				{ provide: TranslateService, useClass: TranslateServiceMock },
-				{ provide: 'OPENVIDU_COMPONENTS_CONFIG', useValue: { production: false } }
+				{ provide: OPENVIDU_COMPONENTS_CONFIG, useValue: { production: false } }
 			]
 		}).compileComponents();
 	});
@@ -54,16 +59,23 @@ describe('SessionComponent', () => {
 		component.room = {
 			on: jasmine.createSpy('on').and.callFake((event: RoomEvent, callback: () => void) => {
 				// Guarda los callbacks para invocarlos manualmente
+				const room = component.room as Room & {
+					reconnectingCallback?: () => void;
+					reconnectedCallback?: () => void;
+				};
 				if (event === RoomEvent.Reconnecting) {
-					component.room['reconnectingCallback'] = callback;
+					room.reconnectingCallback = callback;
 				}
 				if (event === RoomEvent.Reconnected) {
-					component.room['reconnectedCallback'] = callback;
+					room.reconnectedCallback = callback;
 				}
 				return component.room;
 			}),
 			removeAllListeners: jasmine.createSpy('removeAllListeners')
-		} as unknown as Room;
+		} as unknown as Room & {
+			reconnectingCallback?: () => void;
+			reconnectedCallback?: () => void;
+		};
 
 		component['subscribeToReconnection']();
 
@@ -71,11 +83,11 @@ describe('SessionComponent', () => {
 	});
 
 	function emitReconnectingEvent() {
-		component.room['reconnectingCallback']();
+		(component.room as Room & { reconnectingCallback?: () => void }).reconnectingCallback?.();
 	}
 
 	function emitReconnectedEvent() {
-		component.room['reconnectedCallback']();
+		(component.room as Room & { reconnectedCallback?: () => void }).reconnectedCallback?.();
 	}
 
 	it('should create', () => {
