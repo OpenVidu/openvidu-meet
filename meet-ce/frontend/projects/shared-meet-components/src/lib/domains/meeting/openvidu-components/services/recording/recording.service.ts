@@ -1,5 +1,4 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { ILogger } from '../../models/logger.model';
 import { RecordingInfo, RecordingState, RecordingStateInfo } from '../../models/recording.model';
 import { ActionService } from '../action/action.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
@@ -11,7 +10,7 @@ import { LoggerService } from '../logger/logger.service';
 export class RecordingService {
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly loggerService = inject(LoggerService);
+	private readonly log = inject(LoggerService).get('RecordingService');
 
 	private recordingTimeInterval: ReturnType<typeof setInterval> | undefined = undefined;
 	private recordingStartTimestamp: number | null = null;
@@ -24,20 +23,6 @@ export class RecordingService {
 		recordingList: [] as RecordingInfo[],
 		startedAt: new Date(0, 0, 0, 0, 0, 0)
 	});
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
-
-	/**
-	 * @internal
-	 */
-	constructor() {
-		this.log = this.loggerService.get('RecordingService');
-	}
-
 	/**
 	 * Initializes the recording status with the given parameters and the timer to calculate the elapsed time.
 	 * @internal

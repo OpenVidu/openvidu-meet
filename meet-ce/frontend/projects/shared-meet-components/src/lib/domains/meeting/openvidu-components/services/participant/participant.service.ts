@@ -27,8 +27,8 @@ export class ParticipantService {
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly storageSrv = inject(StorageService);
-	private readonly loggerSrv = inject(LoggerService);
 	private readonly e2eeService = inject(E2eeService);
+	private readonly log = inject(LoggerService).get('ParticipantService');
 
 	/**
 	 * Local participant Signal for reactive programming with Angular signals.
@@ -56,19 +56,10 @@ export class ParticipantService {
 
 	private localParticipant: ParticipantModel | undefined;
 	private remoteParticipants: ParticipantModel[] = [];
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
-
 	/**
 	 * @internal
 	 */
 	constructor() {
-		this.log = this.loggerSrv.get('ParticipantService');
-
 		// Expose readonly signals
 		this.localParticipantSignal = this.localParticipantWritableSignal.asReadonly();
 		this.remoteParticipantsSignal = this.remoteParticipantsWritableSignal.asReadonly();

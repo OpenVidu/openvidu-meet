@@ -15,7 +15,7 @@ import { StorageService } from '../storage/storage.service';
 export class VirtualBackgroundService {
 	private readonly openviduService = inject(OpenViduService);
 	private readonly storageService = inject(StorageService);
-	private readonly loggerSrv = inject(LoggerService);
+	private readonly log = inject(LoggerService).get('VirtualBackgroundService');
 
 	private readonly backgroundIdSelectedWritable = signal<string>('');
 	readonly backgroundIdSelected = this.backgroundIdSelectedWritable.asReadonly();
@@ -46,17 +46,6 @@ export class VirtualBackgroundService {
 
 	private SOFT_BLUR_INTENSITY = 20;
 	private HARD_BLUR_INTENSITY = 60;
-
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
-
-	constructor() {
-		this.log = this.loggerSrv.get('VirtualBackgroundService');
-	}
 
 	getBackgrounds(): BackgroundEffect[] {
 		return this.backgrounds;

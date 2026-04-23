@@ -7,28 +7,15 @@ import { LoggerService } from '../logger/logger.service';
 	providedIn: 'root'
 })
 export class PanelService {
-	private readonly loggerSrv = inject(LoggerService);
+	private readonly log = inject(LoggerService).get('PanelService');
 
 	/**
 	 * Panel signal which emits the panel status in every update.
 	 */
 	readonly panelOpened = signal<PanelStatusInfo>({ isOpened: false });
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
 	private isExternalOpened: boolean = false;
 	private externalType: string = '';
 	private panelTypes: string[] = Object.values(PanelType);
-
-	/**
-	 * @internal
-	 */
-	constructor() {
-		this.log = this.loggerSrv.get('PanelService');
-	}
 
 	/**
 	 * @internal
