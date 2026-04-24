@@ -19,19 +19,19 @@
 					fixedTopGap="0"
 					fixedBottomGap="0"
 				>
-				<ng-container *ngTemplateOutlet="panelTemplate" />
+				<ng-container *ngTemplateOutlet="panelTemplate()" />
 			</mat-sidenav>
 
 			<mat-sidenav-content class="sidenav-main">
 				<div id="layout-container" #layoutContainer>
-					<ng-container *ngTemplateOutlet="layoutTemplate" />
+					<ng-container *ngTemplateOutlet="layoutTemplate()" />
 				</div>
 			</mat-sidenav-content>
 		</mat-sidenav-container>
 
-		@if (toolbarTemplate) {
+		@if (toolbarTemplate()) {
 			<div id="footer-container">
-				<ng-container *ngTemplateOutlet="toolbarTemplate" />
+				<ng-container *ngTemplateOutlet="toolbarTemplate()" />
 			</div>
 		}
 	</div>

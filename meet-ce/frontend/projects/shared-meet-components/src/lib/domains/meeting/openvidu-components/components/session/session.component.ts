@@ -70,11 +70,11 @@ import { LandscapeWarningComponent } from '../landscape-warning/landscape-warnin
 })
 export class SessionComponent implements OnInit, OnDestroy {
 	readonly toolbarTemplateQuery = contentChild('toolbar', { read: TemplateRef });
-	toolbarTemplate: TemplateRef<any> | undefined;
+	readonly toolbarTemplate = signal<TemplateRef<any> | undefined>(undefined);
 	readonly panelTemplateQuery = contentChild('panel', { read: TemplateRef });
-	panelTemplate: TemplateRef<any> | undefined;
+	readonly panelTemplate = signal<TemplateRef<any> | undefined>(undefined);
 	readonly layoutTemplateQuery = contentChild('layout', { read: TemplateRef });
-	layoutTemplate: TemplateRef<any> | undefined;
+	readonly layoutTemplate = signal<TemplateRef<any> | undefined>(undefined);
 	/**
 	 * Provides event notifications that fire when Room is created for the local participant.
 	 */
@@ -148,11 +148,10 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly LAYOUT_UPDATE_DEBOUNCE_MS = 100;
 
 	private readonly querySyncEffect = effect(() => {
-		this.toolbarTemplate = this.toolbarTemplateQuery();
-		this.panelTemplate = this.panelTemplateQuery();
-		this.layoutTemplate = this.layoutTemplateQuery();
+		this.toolbarTemplate.set(this.toolbarTemplateQuery());
+		this.panelTemplate.set(this.panelTemplateQuery());
+		this.layoutTemplate.set(this.layoutTemplateQuery());
 		this.setupTemplates();
-		this.cd.markForCheck();
 	});
 
 	private readonly sidenavMenuEffect = effect(() => {
@@ -165,10 +164,10 @@ export class SessionComponent implements OnInit, OnDestroy {
 
 	private readonly videoContainerEffect = effect(() => {
 		const container = this.videoContainerQuery();
-		if (container && !this.toolbarTemplate) {
+		if (container && !this.toolbarTemplateQuery()) {
 			// Use microtask to ensure DOM is ready
 			Promise.resolve().then(() => {
-				if (container && !this.toolbarTemplate) {
+				if (container && !this.toolbarTemplateQuery()) {
 					container.nativeElement.style.height = '100%';
 					container.nativeElement.style.minHeight = '100%';
 					this.debouncedLayoutUpdate();
@@ -338,9 +337,9 @@ export class SessionComponent implements OnInit, OnDestroy {
 
 	private setupTemplates(): void {
 		this.templateConfig = this.templateManagerService.setupSessionTemplates(
-			this.toolbarTemplate,
-			this.panelTemplate,
-			this.layoutTemplate
+			this.toolbarTemplate(),
+			this.panelTemplate(),
+			this.layoutTemplate()
 		);
 	}
 
