@@ -10,6 +10,7 @@ import {
 	signal,
 	TemplateRef
 } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -36,6 +37,7 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 	selector: 'ov-settings-panel',
 	imports: [
 		CommonModule,
+		MatButtonModule,
 		MatFormFieldModule,
 		MatIconModule,
 		MatListModule,
