@@ -1,7 +1,7 @@
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 
-import { CommonModule } from '@angular/common';
 import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
+import { CommonModule } from '@angular/common';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
@@ -16,6 +16,7 @@ import {
 	OnDestroy,
 	TemplateRef,
 	viewChild,
+	viewChildren,
 	ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -72,14 +73,12 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly cdkDragQuery = viewChild(CdkDrag);
-	cdkDrag: CdkDrag | undefined = undefined;
+	readonly cdkDragQueries = viewChildren(CdkDrag);
 
 	/**
 	 * @ignore
 	 */
-	readonly localLayoutElementQuery = viewChild('localLayoutElement', { read: ElementRef });
-	localLayoutElement: ElementRef | undefined = undefined;
+	readonly localLayoutElementQueries = viewChildren('localLayoutElement', { read: ElementRef });
 	/**
 	 * @ignore
 	 */
@@ -108,14 +107,25 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	private mutationObserver: MutationObserver | undefined = undefined;
 	private mutationTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 	private videoIsAtRight: boolean = false;
+	private wasLocalMinimized: boolean = false;
 	private lastLayoutWidth: number = 0;
 	private lastLayoutHeight: number = 0;
 
 	private readonly reactiveStateEffect = effect(() => {
 		const localParticipant = this.localParticipant();
-		if (localParticipant && !localParticipant.isMinimized) {
+		const isLocalMinimized = !!localParticipant?.isMinimized;
+
+		if (this.wasLocalMinimized && !isLocalMinimized) {
+			// On minimize -> restore transition, drop any drag offset and let layout place the stream again.
 			this.videoIsAtRight = false;
+			queueMicrotask(() => {
+				this.resetDragPosition();
+				this.layoutService.update();
+				this.cd.markForCheck();
+			});
 		}
+
+		this.wasLocalMinimized = isLocalMinimized;
 		this.remoteParticipants();
 		this.layoutService.update();
 		this.cd.markForCheck();
@@ -125,8 +135,6 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		this.layoutAdditionalElementsTemplate =
 			this.layoutAdditionalElementsTemplateQuery() ?? this.layoutAdditionalElementsTemplate;
 		this.layoutContainer = this.layoutContainerQuery() ?? this.layoutContainer;
-		this.cdkDrag = this.cdkDragQuery() ?? this.cdkDrag;
-		this.localLayoutElement = this.localLayoutElementQuery() ?? this.localLayoutElement;
 		this.setupTemplates();
 		this.cd.markForCheck();
 	});
@@ -207,8 +215,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 
 	private listenToResizeLayout() {
 		const layoutContainer = this.layoutContainer?.element?.nativeElement;
-		const cdkDrag = this.cdkDrag;
-		if (!layoutContainer || !cdkDrag) return;
+		if (!layoutContainer) return;
 
 		this.resizeObserver = new ResizeObserver((entries) => {
 			const { width: parentWidth, height: parentHeight } = entries[0].contentRect;
@@ -226,6 +233,13 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 				}
 				// Handle minimized participant positioning
 				if (this.localParticipant()?.isMinimized) {
+					const cdkDrag = this.getActiveLocalDrag();
+					if (!cdkDrag) {
+						this.lastLayoutWidth = parentWidth;
+						this.lastLayoutHeight = parentHeight;
+						return;
+					}
+
 					if (this.panelService.isPanelOpened()) {
 						if (this.lastLayoutWidth < parentWidth) {
 							// Layout is bigger than before. Maybe the settings panel(wider) has been transitioned to another panel.
@@ -253,8 +267,44 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 
 		this.resizeObserver.observe(layoutContainer);
 	}
+
+	private getActiveLocalDrag(): CdkDrag | undefined {
+		const drags = this.cdkDragQueries();
+
+		const minimizedLocalDrag = drags.find((drag) => {
+			const element = drag.element.nativeElement as HTMLElement;
+			return element.classList.contains('local_participant') && element.classList.contains('OV_minimized');
+		});
+
+		if (minimizedLocalDrag) {
+			return minimizedLocalDrag;
+		}
+
+		return drags.find((drag) => {
+			const element = drag.element.nativeElement as HTMLElement;
+			return element.classList.contains('local_participant') && !element.classList.contains('OV_ignored');
+		});
+	}
+
+	private getActiveLocalLayoutElement(): HTMLElement | undefined {
+		const elements = this.localLayoutElementQueries().map((el) => el.nativeElement as HTMLElement);
+
+		const minimizedLocalElement = elements.find(
+			(element) =>
+				element.classList.contains('local_participant') && element.classList.contains('OV_minimized')
+		);
+
+		if (minimizedLocalElement) {
+			return minimizedLocalElement;
+		}
+
+		return elements.find(
+			(element) => element.classList.contains('local_participant') && !element.classList.contains('OV_ignored')
+		);
+	}
+
 	private moveStreamToRight(parentWidth: number) {
-		const cdkDrag = this.cdkDrag;
+		const cdkDrag = this.getActiveLocalDrag();
 		if (!cdkDrag) return;
 
 		const { y, width: elementWidth } = cdkDrag.element.nativeElement.getBoundingClientRect();
@@ -263,15 +313,23 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		cdkDrag.setFreeDragPosition({ x: newX, y });
 	}
 
-	private listenToCdkDrag() {
-		const cdkDrag = this.cdkDrag;
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
-		const localLayoutElement = this.localLayoutElement?.nativeElement;
-		if (!cdkDrag || !layoutContainer || !localLayoutElement) return;
+	private resetDragPosition() {
+		this.cdkDragQueries().forEach((drag) => {
+			const element = drag.element.nativeElement as HTMLElement;
+			if (element.classList.contains('local_participant')) {
+				drag.reset();
+				drag.setFreeDragPosition({ x: 0, y: 0 });
+			}
+		});
+	}
 
-		const handler = (_event: CdkDragRelease<any>) => {
+	private listenToCdkDrag() {
+		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		if (!layoutContainer) return;
+
+		const handler = (event: CdkDragRelease<any>) => {
 			if (!this.panelService.isPanelOpened()) return;
-			const { x, width } = localLayoutElement.getBoundingClientRect();
+			const { x, width } = (event.source.element.nativeElement as HTMLElement).getBoundingClientRect();
 			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
 			if (x === 0) {
 				// Video is at the left
@@ -285,14 +343,32 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			}
 		};
 
-		cdkDrag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(handler);
+		this.cdkDragQueries()
+			.filter((drag) => (drag.element.nativeElement as HTMLElement).classList.contains('local_participant'))
+			.forEach((drag) => {
+				drag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(handler);
+			});
 
 		if (this.globalService.isProduction()) return;
 		// Just for allow E2E testing with drag and drop
-		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', handler as unknown as EventListener);
+		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', () => {
+			if (!this.panelService.isPanelOpened()) return;
+			const localLayoutElement = this.getActiveLocalLayoutElement();
+			if (!localLayoutElement) return;
+			const { x, width } = localLayoutElement.getBoundingClientRect();
+			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
+			if (x === 0) {
+				this.videoIsAtRight = false;
+			} else if (x + width >= parentWidth) {
+				this.videoIsAtRight = true;
+			} else {
+				this.videoIsAtRight = false;
+			}
+		});
 		document.addEventListener('webcomponentTestingEndedDragAndDropRightEvent', (event: any) => {
 			const { x, y } = event.detail;
-			cdkDrag.setFreeDragPosition({ x, y });
+			const cdkDrag = this.getActiveLocalDrag();
+			cdkDrag?.setFreeDragPosition({ x, y });
 		});
 	}
 }

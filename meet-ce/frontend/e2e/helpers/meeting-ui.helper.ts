@@ -451,7 +451,7 @@ export async function getScreenTypeTracks(
  * Expects a specific number of stream containers to be present
  */
 export async function expectStreamCount(page: Page, count: number): Promise<void> {
-	await expect(page.locator('.OV_publisher .OV_stream ')).toHaveCount(count);
+	await expect(page.locator('.OV_publisher .OV_stream')).toHaveCount(count);
 }
 
 /**
@@ -557,6 +557,83 @@ export async function expectNoStreamsPlaying(page: Page): Promise<void> {
  */
 export async function togglePrejoinMicrophone(page: Page, timeoutMs = 10_000): Promise<void> {
 	await page.locator('#microphone-button').click();
+}
+
+/**
+ * Hovers over a stream element to reveal controls
+ */
+export async function hoverStream(page: Page, selector = '.OV_stream_video.local'): Promise<void> {
+	const locator = page.locator(selector).first();
+	await locator.hover();
+}
+
+/**
+ * Gets the bounding box of an element
+ */
+export async function getElementBoundingBox(
+	page: Page,
+	selector: string
+): Promise<{ x: number; y: number; width: number; height: number } | null> {
+	const locator = page.locator(selector).first();
+
+	if ((await locator.count()) === 0) {
+		return null;
+	}
+
+	await locator.waitFor({ state: 'visible', timeout: 5_000 });
+	const box = await locator.boundingBox();
+
+	if (!box) {
+		return null;
+	}
+
+	return {
+		x: box.x,
+		y: box.y,
+		width: box.width,
+		height: box.height
+	};
+}
+
+/**
+ * Minimizes the local video stream
+ */
+export async function minimizeStream(page: Page): Promise<void> {
+	await hoverStream(page, '.OV_publisher .OV_stream_video.local');
+	await expect(page.locator('#minimize-btn')).toBeVisible();
+	await page.locator('#minimize-btn').click();
+}
+
+/**
+ * Maximizes (restores) the local video stream
+ */
+export async function maximizeStream(page: Page): Promise<void> {
+	await hoverStream(page, '.local_participant .OV_stream_video.local');
+	// Current UI toggles minimize/maximize with the same control id.
+	await expect(page.locator('#minimize-btn')).toBeVisible();
+	await page.locator('#minimize-btn').click();
+}
+
+/**
+ * Drags a stream element to a new position
+ */
+export async function dragStream(page: Page, selector: string, targetX: number, targetY: number): Promise<void> {
+	const element =
+		selector === '.local_participant'
+			? page.locator('.local_participant:has(.OV_stream_video.local)').first()
+			: page.locator(selector).first();
+
+	await element.waitFor({ state: 'visible', timeout: 5_000 });
+	const box = await element.boundingBox();
+
+	if (!box) {
+		throw new Error('Element not found for dragging');
+	}
+
+	await element.hover();
+	await page.mouse.down();
+	await page.mouse.move(targetX, targetY, { steps: 10 });
+	await page.mouse.up();
 }
 
 /**
