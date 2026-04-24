@@ -7,68 +7,93 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	background: #000000;
-	backdrop-filter: blur(10px);
+	background: linear-gradient(135deg, rgba(15, 15, 20, 0.95) 0%, rgba(25, 25, 35, 0.9) 100%);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
 	border-radius: var(--ov-video-radius);
 	z-index: 10;
 }
 
 .encryption-error-content {
 	text-align: center;
-	padding: 2rem;
-	max-width: 300px;
-	color: var(--ov-text-primary-color);
+	padding: 1.5rem;
+	max-width: 280px;
+	color: var(--ov-meet-text-primary, #ffffff);
 
 	svg {
-		color: #dc3545;
-		margin-bottom: 1rem;
-		filter: drop-shadow(0 2px 4px rgba(220, 53, 69, 0.3));
+		color: var(--ov-meet-color-error, #ef4444);
+		margin-bottom: 0.75rem;
+		filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.25));
+		opacity: 0.9;
 	}
 
 	h3 {
-		font-size: 1.1rem;
+		font-size: 0.95rem;
 		font-weight: 600;
-		margin: 0 0 0.5rem 0;
-		color: var(--ov-text-primary-color);
+		margin: 0 0 0.4rem 0;
+		color: var(--ov-meet-text-primary, #ffffff);
+		letter-spacing: 0.02em;
 	}
 
 	p {
-		font-size: 0.875rem;
+		font-size: 0.8rem;
 		margin: 0;
-		opacity: 0.8;
-		line-height: 1.4;
-		color: var(--ov-text-secondary-color);
+		opacity: 0.7;
+		line-height: 1.5;
+		color: var(--ov-meet-text-secondary, #a1a1aa);
 	}
 }
 
 .poster {
 	height: 100%;
 	width: 100%;
-	background-color: var(--ov-video-background, var(--ov-primary-action-color));
+	background: linear-gradient(145deg, #1a1a1f 0%, #0f0f12 100%);
 	position: absolute;
 	z-index: 888;
 	border-radius: var(--ov-video-radius);
+	overflow: hidden;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
+		pointer-events: none;
+	}
 }
 
 .initial {
 	position: absolute;
-	display: inline-grid;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	z-index: 1;
 	margin: auto;
 	bottom: 0;
 	right: 0;
 	left: 0;
 	top: 0;
-	height: 70px;
-	width: 70px;
+	height: 80px;
+	width: 80px;
 	border-radius: var(--ov-video-radius);
-	border: 2px solid var(--ov-text-primary-color);
-	color: var(--ov-video-background, var(--ov-text-primary-color));
+	background: linear-gradient(135deg, var(--ov-meet-color-primary) 0%, var(--ov-meet-color-accent) 100%);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+	color: var(--ov-meet-text-on-primary);
+
+	&:hover {
+		transform: scale(1.05);
+		box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.08);
+	}
 }
 
 #poster-text {
-	padding: 0px !important;
-	font-weight: bold;
-	font-size: 40px;
-	margin: auto;
+	font-weight: 500;
+	font-size: 2rem;
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	opacity: 0.95;
 }
