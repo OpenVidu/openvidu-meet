@@ -60,7 +60,6 @@
     "@types/pixelmatch": "5.2.6",
     "@types/pngjs": "6.0.5",
     "@playwright/test": "1.59.1",
-    "@types/selenium-webdriver": "4.35.4",
     "@typescript-eslint/eslint-plugin": "8.46.4",
     "@typescript-eslint/parser": "8.46.4",
     "chai": "4.5.0",
@@ -80,7 +79,6 @@
     "mocha": "10.7.3",
     "ng-packagr": "21.2.0",
     "prettier": "3.3.3",
-    "selenium-webdriver": "4.39.0",
     "ts-node": "10.9.2",
     "tslib": "2.6.3",
     "typescript": "5.9.2"
