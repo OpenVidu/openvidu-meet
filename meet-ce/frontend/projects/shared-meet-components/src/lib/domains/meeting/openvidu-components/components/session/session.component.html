@@ -8,7 +8,7 @@
 		<ov-landscape-warning />
 	}
 	<div id="session-container" [animate.enter]="'ov-fade-in-200'" [animate.leave]="'ov-fade-out-200'">
-		<mat-sidenav-container #container #videoContainer class="sidenav-container">
+		<mat-sidenav-container #container #videoContainer class="sidenav-container" [hasBackdrop]="sidenavMode() === SidenavMode.OVER">
 				<mat-sidenav
 					#sidenav
 					[mode]="sidenavMode()"

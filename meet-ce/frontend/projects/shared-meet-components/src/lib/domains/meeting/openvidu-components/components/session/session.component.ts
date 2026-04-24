@@ -17,19 +17,15 @@ import {
 	viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatDrawerContainer, MatSidenav } from '@angular/material/sidenav';
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
-import { TranslatePipe } from '../../pipes/translate.pipe';
+import { MatDrawerContainer, MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { DataTopic } from '../../models/data-topic.model';
 import { SidenavMode } from '../../models/layout/layout.model';
-import { ILogger } from '../../models/logger.model';
 import { PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingState } from '../../models/recording.model';
 import { RoomStatusData } from '../../models/room.model';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { ChatService } from '../../services/chat/chat.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
@@ -58,6 +54,7 @@ import { TranslateService } from '../../services/translate/translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { safeJsonParse } from '../../utils/utils';
+import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 
 /**
  * @internal
@@ -112,6 +109,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	room!: Room;
 	sideMenu: MatSidenav | undefined = undefined;
 	readonly sidenavMode = signal<SidenavMode>(SidenavMode.SIDE);
+	readonly SidenavMode = SidenavMode;
 	readonly settingsPanelOpened = signal(false);
 	drawer: MatDrawerContainer | undefined = undefined;
 	loading: boolean = true;
@@ -126,19 +124,10 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private shouldDisconnectRoomWhenComponentIsDestroyed: boolean = true;
 	private readonly SIDENAV_WIDTH_LIMIT_MODE = 790;
 	private readonly destroyRef = inject(DestroyRef);
-	private updateLayoutInterval: ReturnType<typeof setInterval> | undefined = undefined;
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
-
 	private readonly layoutService = inject(LayoutService);
 	private readonly actionService = inject(ActionService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly loggerSrv = inject(LoggerService);
 	private readonly chatService = inject(ChatService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly panelService = inject(PanelService);
@@ -152,6 +141,12 @@ export class SessionComponent implements OnInit, OnDestroy {
 	readonly videoContainerQuery = viewChild<ElementRef>('videoContainer');
 	readonly containerQuery = viewChild<MatDrawerContainer>('container');
 	readonly layoutContainerQuery = viewChild<ElementRef>('layoutContainer');
+	private layoutUpdateTimeoutId: any = null;
+	private contentMarginUpdateTimeoutId: ReturnType<typeof setTimeout> | null = null;
+	private updateLayoutInterval: ReturnType<typeof setInterval> | undefined = undefined;
+	private log = inject(LoggerService).get('SessionComponent');
+	private readonly LAYOUT_UPDATE_DEBOUNCE_MS = 100;
+
 	private readonly querySyncEffect = effect(() => {
 		this.toolbarTemplate = this.toolbarTemplateQuery();
 		this.panelTemplate = this.panelTemplateQuery();
@@ -159,58 +154,53 @@ export class SessionComponent implements OnInit, OnDestroy {
 		this.setupTemplates();
 		this.cd.markForCheck();
 	});
+
 	private readonly sidenavMenuEffect = effect(() => {
 		const menu = this.sidenavMenuQuery();
 		if (menu && this.sideMenu !== menu) {
-			setTimeout(() => {
-				if (menu) {
-					this.sideMenu = menu;
-					this.initializeSidenavBindings();
-				}
-			}, 0);
+			this.sideMenu = menu;
+			this.initializeSidenavBindings();
 		}
 	});
+
 	private readonly videoContainerEffect = effect(() => {
 		const container = this.videoContainerQuery();
 		if (container && !this.toolbarTemplate) {
-			setTimeout(() => {
+			// Use microtask to ensure DOM is ready
+			Promise.resolve().then(() => {
 				if (container && !this.toolbarTemplate) {
 					container.nativeElement.style.height = '100%';
 					container.nativeElement.style.minHeight = '100%';
-					this.layoutService.update();
+					this.debouncedLayoutUpdate();
 				}
-			}, 0);
+			});
 		}
 	});
+
 	private readonly containerEffect = effect(() => {
 		const container = this.containerQuery();
 		if (container && this.drawer !== container) {
-			setTimeout(() => {
+			Promise.resolve().then(() => {
 				if (container && this.drawer !== container) {
 					this.drawer = container;
 					this.drawer._contentMarginChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-						setTimeout(() => {
-							this.stopUpdateLayoutInterval();
-							this.layoutService.update();
-							if (this.drawer) {
-								this.drawer.autosize = false;
-							}
-						}, 250);
+						this.scheduleContentMarginUpdate();
 					});
 					this.initializeSidenavBindings();
 				}
-			}, 0);
+			});
 		}
 	});
 	private readonly layoutContainerEffect = effect(() => {
 		const container = this.layoutContainerQuery();
 		if (container) {
-			setTimeout(async () => {
+			// Use microtask instead of setTimeout for better performance
+			Promise.resolve().then(async () => {
 				if (container && this.libService.showBackgroundEffectsButton()) {
 					// Apply background from storage when layout container is in DOM only when background effects button is enabled
 					await this.backgroundService.applyBackgroundFromStorage();
 				}
-			}, 0);
+			});
 		}
 	});
 
@@ -227,6 +217,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 			});
 		}
 	});
+
 	private readonly panelStateEffect = effect(() => {
 		const ev = this.panelService.panelOpened();
 		this.settingsPanelOpened.set(ev.isOpened && ev.panelType === PanelType.SETTINGS);
@@ -237,24 +228,21 @@ export class SessionComponent implements OnInit, OnDestroy {
 					// Switch from SETTINGS to another panel and vice versa.
 					// As the SETTINGS panel will be bigger than others, the sidenav container must be updated.
 					// Setting autosize to 'true' allows update it.
-					if (this.drawer) {
+					if (this.drawer && !this.drawer.autosize) {
 						this.drawer.autosize = true;
 					}
 					this.startUpdateLayoutInterval();
 				}
 			}
-			ev.isOpened ? this.sideMenu.open() : this.sideMenu.close();
+			if (ev.isOpened !== this.sideMenu.opened) {
+				ev.isOpened ? this.sideMenu.open() : this.sideMenu.close();
+			}
 		}
 	});
 	private readonly layoutWidthEffect = effect(() => {
 		const width = this.layoutService.layoutWidth();
 		this.sidenavMode.set(width <= this.SIDENAV_WIDTH_LIMIT_MODE ? SidenavMode.OVER : SidenavMode.SIDE);
 	});
-
-	constructor() {
-		this.log = this.loggerSrv.get('SessionComponent');
-		this.setupTemplates();
-	}
 
 	@HostListener('window:beforeunload')
 	beforeunloadHandler() {
@@ -305,7 +293,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 		// this.subscribeToParticipantNameChanged();
 		this.subscribeToDataMessage();
 		this.subscribeToReconnection();
-		this.subscribeToVirtualBackground();
 
 		// if (this.libService.isRecordingEnabled()) {
 		// this.subscribeToRecordingEvents();
@@ -349,10 +336,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 		});
 	}
 
-	/**
-	 * @internal
-	 * Sets up all templates using the template manager service
-	 */
 	private setupTemplates(): void {
 		this.templateConfig = this.templateManagerService.setupSessionTemplates(
 			this.toolbarTemplate,
@@ -361,13 +344,52 @@ export class SessionComponent implements OnInit, OnDestroy {
 		);
 	}
 
+	/**
+	 * Debounced layout update to prevent excessive recalculations
+	 * @param delay Optional custom delay in ms (default: 100ms)
+	 */
+	private debouncedLayoutUpdate(delay?: number): void {
+		if (this.layoutUpdateTimeoutId !== null) {
+			clearTimeout(this.layoutUpdateTimeoutId);
+		}
+		this.layoutUpdateTimeoutId = setTimeout(() => {
+			this.layoutService.update();
+			this.layoutUpdateTimeoutId = null;
+		}, delay || this.LAYOUT_UPDATE_DEBOUNCE_MS);
+	}
+
 	async ngOnDestroy() {
+		// Clean up the debounce timeout to prevent memory leaks
+		if (this.layoutUpdateTimeoutId !== null) {
+			clearTimeout(this.layoutUpdateTimeoutId);
+			this.layoutUpdateTimeoutId = null;
+		}
+		if (this.contentMarginUpdateTimeoutId !== null) {
+			clearTimeout(this.contentMarginUpdateTimeoutId);
+			this.contentMarginUpdateTimeoutId = null;
+		}
+		this.stopUpdateLayoutInterval();
+
 		if (this.shouldDisconnectRoomWhenComponentIsDestroyed) {
 			await this.disconnectRoom(ParticipantLeftReason.LEAVE);
 		}
 		if (this.room) this.room.removeAllListeners();
 		this.participantService.clear();
 		// 	if (this.captionLanguageSubscription) this.captionLanguageSubscription.unsubscribe();
+	}
+
+	private scheduleContentMarginUpdate(): void {
+		if (this.contentMarginUpdateTimeoutId !== null) {
+			clearTimeout(this.contentMarginUpdateTimeoutId);
+		}
+		this.contentMarginUpdateTimeoutId = setTimeout(() => {
+			this.stopUpdateLayoutInterval();
+			this.layoutService.update();
+			if (this.drawer && this.drawer.autosize) {
+				this.drawer.autosize = false;
+			}
+			this.contentMarginUpdateTimeoutId = null;
+		}, 250);
 	}
 
 	async disconnectRoom(reason: ParticipantLeftReason) {
@@ -384,22 +406,35 @@ export class SessionComponent implements OnInit, OnDestroy {
 	}
 
 	private subscribeToTogglingMenu() {
-		const sideMenu = this.sideMenu;
-		const drawer = this.drawer;
+		const { sideMenu, drawer } = this;
 		if (!sideMenu || !drawer) return;
 
-		sideMenu.openedChange.subscribe(() => {
+		sideMenu.openedChange.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 			this.stopUpdateLayoutInterval();
 			this.layoutService.update();
 		});
 
-		sideMenu.openedStart.subscribe(() => {
+		sideMenu.openedStart.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 			this.startUpdateLayoutInterval();
 		});
 
-		sideMenu.closedStart.subscribe(() => {
+		sideMenu.closedStart.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 			this.startUpdateLayoutInterval();
 		});
+	}
+
+	private startUpdateLayoutInterval() {
+		this.stopUpdateLayoutInterval();
+		this.updateLayoutInterval = setInterval(() => {
+			this.layoutService.update();
+		}, 50);
+	}
+
+	private stopUpdateLayoutInterval() {
+		if (this.updateLayoutInterval) {
+			clearInterval(this.updateLayoutInterval);
+			this.updateLayoutInterval = undefined;
+		}
 	}
 
 	private initializeSidenavBindings(): void {
@@ -706,21 +741,5 @@ export class SessionComponent implements OnInit, OnDestroy {
 				);
 			}
 		});
-	}
-
-	private subscribeToVirtualBackground() {
-		// handled by backgroundEffectsEffect
-	}
-
-	private startUpdateLayoutInterval() {
-		this.updateLayoutInterval = setInterval(() => {
-			this.layoutService.update();
-		}, 50);
-	}
-
-	private stopUpdateLayoutInterval() {
-		if (this.updateLayoutInterval) {
-			clearInterval(this.updateLayoutInterval);
-		}
 	}
 }
