@@ -1,4 +1,4 @@
 export * from './components';
 export * from './interceptor-handlers';
+export * from './models';
 export * from './services';
-

@@ -1,12 +1,4 @@
-import { ChangeDetectionStrategy, Component, DestroyRef, inject } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatIconModule } from '@angular/material/icon';
-import { MatSlideToggleModule } from '@angular/material/slide-toggle';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { RoomWizardStateService } from '../../../../services';
 
 export interface PermissionItem {
 	key: keyof MeetRoomMemberPermissions;
@@ -122,61 +114,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				description: 'Allow reading chat messages',
 				icon: 'visibility'
 			},
-			{ key: 'canWriteChat', label: 'Can write chat', description: 'Allow sending chat messages', icon: 'edit' }
+			{
+				key: 'canWriteChat',
+				label: 'Can write chat',
+				description: 'Allow sending chat messages',
+				icon: 'edit'
+			}
 		]
 	}
 ];
-
-@Component({
-	selector: 'ov-role-permissions',
-	imports: [ReactiveFormsModule, MatCardModule, MatIconModule, MatSlideToggleModule, MatTabsModule],
-	templateUrl: './role-permissions.component.html',
-	styleUrl: './role-permissions.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
-})
-export class RolePermissionsComponent {
-	rolePermissionsForm: FormGroup;
-	permissionGroups = PERMISSION_GROUPS;
-
-	private destroyRef = inject(DestroyRef);
-	private wizardService = inject(RoomWizardStateService);
-
-	constructor() {
-		const currentStep = this.wizardService.currentStep();
-		this.rolePermissionsForm = currentStep!.formGroup;
-
-		this.rolePermissionsForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-			this.saveFormData(value);
-		});
-	}
-
-	get moderatorForm(): FormGroup {
-		return this.rolePermissionsForm.get('moderator') as FormGroup;
-	}
-
-	get speakerForm(): FormGroup {
-		return this.rolePermissionsForm.get('speaker') as FormGroup;
-	}
-
-	private saveFormData(formValue: any): void {
-		const buildPermissions = (roleValue: any): Partial<MeetRoomMemberPermissions> => {
-			const { anonymousEnabled, ...perms } = roleValue;
-			return perms as Partial<MeetRoomMemberPermissions>;
-		};
-
-		const stepData = {
-			roles: {
-				moderator: { permissions: buildPermissions(formValue.moderator) },
-				speaker: { permissions: buildPermissions(formValue.speaker) }
-			},
-			access: {
-				anonymous: {
-					moderator: { enabled: formValue.moderator.anonymousEnabled ?? false },
-					speaker: { enabled: formValue.speaker.anonymousEnabled ?? false }
-				}
-			}
-		};
-
-		this.wizardService.updateStepData('rolePermissions', stepData);
-	}
-}

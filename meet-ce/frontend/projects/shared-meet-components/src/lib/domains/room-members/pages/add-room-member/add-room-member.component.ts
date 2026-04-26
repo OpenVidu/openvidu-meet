@@ -12,12 +12,17 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRoomMemberOptions, MeetRoomMemberPermissions, MeetRoomMemberRole, MeetUserDTO } from '@openvidu-meet/typings';
-import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
+import {
+	MeetRoomMemberOptions,
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetUserDTO
+} from '@openvidu-meet/typings';
+import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { UserService } from '../../../users/services/user.service';
-import { PERMISSION_GROUPS } from '../../../rooms/pages/room-wizard/steps/role-permissions/role-permissions.component';
+import { PERMISSION_GROUPS } from '../../models/permissions.model';
 import { RoomMemberService } from '../../services/room-member.service';
 
 @Component({
@@ -80,8 +85,9 @@ export class AddRoomMemberComponent implements OnInit, OnDestroy {
 		this.roomId.set(roomId);
 
 		// Set up autocomplete search reactive to userId input changes
-		this.form.get('userId')!.valueChanges
-			.pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
+		this.form
+			.get('userId')!
+			.valueChanges.pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
 			.subscribe((value) => {
 				if (value && value.length >= 1) {
 					this.searchUsers(value);
