@@ -4,6 +4,27 @@ import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 import { TextMatchMode } from './text-match.js';
 
 /**
+ * List of all valid fields of MeetRoomMemberPermissions.
+ * IMPORTANT: Update this list if new properties are added to the MeetRoomMemberPermissions interface.
+ */
+export const MEET_ROOM_MEMBER_PERMISSIONS_FIELDS = [
+	'canRecord',
+	'canRetrieveRecordings',
+	'canDeleteRecordings',
+	'canJoinMeeting',
+	'canShareAccessLinks',
+	'canMakeModerator',
+	'canKickParticipants',
+	'canEndMeeting',
+	'canPublishVideo',
+	'canPublishAudio',
+	'canShareScreen',
+	'canReadChat',
+	'canWriteChat',
+	'canChangeVirtualBackground'
+] as const satisfies readonly (keyof MeetRoomMemberPermissions)[];
+
+/**
  * List of all valid fields that can be selected from a MeetRoomMember.
  * IMPORTANT: Update this list if new properties are added to the MeetRoomMember interface.
  */
