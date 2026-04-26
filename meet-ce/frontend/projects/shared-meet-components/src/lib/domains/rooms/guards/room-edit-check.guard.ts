@@ -12,7 +12,7 @@ export const checkEditableRoomGuard: CanActivateFn = async (route) => {
 	const roomService = inject(RoomService);
 	const navigationService = inject(NavigationService);
 
-	const roomId = route.paramMap.get('roomId');
+	const roomId = route.paramMap.get('room-id');
 
 	if (!roomId) {
 		console.warn('No roomId provided in route params');
