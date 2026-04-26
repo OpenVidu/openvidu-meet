@@ -1,9 +1,11 @@
 <div class="wizard-container ov-theme-transition">
-	@if (steps().length !== 0) {
+	@if (initialized()) {
 		<header class="wizard-header">
 			<p class="subtitle">
 				{{
-					editMode ? 'Edit your room settings' : 'Create and configure your video room in a few simple steps'
+					editMode()
+						? 'Edit your room settings'
+						: 'Create and configure your video room in a few simple steps'
 				}}
 			</p>
 		</header>
@@ -15,7 +17,7 @@
 						[steps]="steps()"
 						[currentStepIndex]="currentStepIndex()"
 						[allowNavigation]="true"
-						[editMode]="editMode"
+						[editMode]="editMode()"
 						(stepClick)="onStepClick($event)"
 					/>
 				</aside>
@@ -30,11 +32,11 @@
 								<div class="loading-header">
 									<div class="loading-title">
 										<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
-										<h2>{{ editMode ? 'Updating Room' : 'Creating Room' }}</h2>
+										<h2>{{ editMode() ? 'Updating Room' : 'Creating Room' }}</h2>
 									</div>
 									<p class="loading-subtitle">
 										{{
-											editMode
+											editMode()
 												? 'Please wait while we update your room settings...'
 												: 'Please wait while we set up your video room...'
 										}}
@@ -55,23 +57,23 @@
 						} @else {
 							<!-- Room Wizard Steps -->
 							@switch (currentStep()?.id) {
-								@case ('roomDetails') {
+								@case (WizardStepId.ROOM_DETAILS) {
 									<ov-room-details />
 								}
-								@case ('roomAccess') {
+								@case (WizardStepId.ROOM_CONFIG) {
+									<ov-room-config />
+								}
+								@case (WizardStepId.ROOM_ACCESS) {
 									<ov-room-access />
 								}
-								@case ('recording') {
+								@case (WizardStepId.RECORDING) {
 									<ov-recording-config />
 								}
-								@case ('recordingTrigger') {
+								@case (WizardStepId.RECORDING_TRIGGER) {
 									<ov-recording-trigger />
 								}
-								@case ('recordingLayout') {
+								@case (WizardStepId.RECORDING_LAYOUT) {
 									<ov-recording-layout />
-								}
-								@case ('config') {
-									<ov-room-config />
 								}
 							}
 						}

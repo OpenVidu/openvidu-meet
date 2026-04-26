@@ -1,16 +1,17 @@
-import { Component, OnDestroy } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
-import { Subject, takeUntil } from 'rxjs';
 import {
 	SelectableCardComponent,
 	SelectableCardOption,
 	SelectionCardEvent
 } from '../../../../../../shared//components/selectable-card/selectable-card.component';
+import { RecordingTriggerFormGroup, RecordingTriggerType } from '../../../../models/wizard-forms.model';
+import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 
 @Component({
@@ -27,8 +28,10 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 	styleUrl: './recording-trigger.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RecordingTriggerComponent implements OnDestroy {
-	triggerForm: FormGroup;
+export class RecordingTriggerComponent {
+	private wizardService = inject(RoomWizardStateService);
+
+	triggerForm: RecordingTriggerFormGroup;
 	triggerOptions: SelectableCardOption[] = [
 		{
 			id: 'manual',
@@ -55,20 +58,16 @@ export class RecordingTriggerComponent implements OnDestroy {
 		}
 	];
 
-	private destroy$ = new Subject<void>();
+	constructor() {
+		const recordingTriggerStep = this.wizardService.getStepById(WizardStepId.RECORDING_TRIGGER);
+		if (!recordingTriggerStep) {
+			throw new Error('recordingTrigger step not found in wizard state');
+		}
+		this.triggerForm = recordingTriggerStep.formGroup;
 
-	constructor(private wizardService: RoomWizardStateService) {
-		const currentStep = this.wizardService.currentStep();
-		this.triggerForm = currentStep!.formGroup;
-
-		this.triggerForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+		this.triggerForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
 			this.saveFormData(value);
 		});
-	}
-
-	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
 	}
 
 	private saveFormData(formValue: any) {
@@ -81,7 +80,7 @@ export class RecordingTriggerComponent implements OnDestroy {
 	 */
 	onOptionChange(event: SelectionCardEvent): void {
 		this.triggerForm.patchValue({
-			triggerType: event.optionId
+			triggerType: event.optionId as RecordingTriggerType
 		});
 	}
 
@@ -89,6 +88,6 @@ export class RecordingTriggerComponent implements OnDestroy {
 	 * Get the currently selected option ID for the SelectableCardComponent
 	 */
 	get selectedOption(): string {
-		return this.triggerForm.value.triggerType || 'manual';
+		return this.triggerForm.value.triggerType ?? 'manual';
 	}
 }

@@ -50,7 +50,7 @@
 						<mat-icon class="access-icon">people</mat-icon>
 						<div class="access-text">
 							<span class="access-label">Registered Users</span>
-							<span class="access-description"> Allow all non-members to access the room </span>
+							<span class="access-description"> Allow any registered user to access the room </span>
 						</div>
 					</div>
 					<mat-slide-toggle formControlName="registeredEnabled" color="primary" class="access-toggle" />
@@ -237,7 +237,7 @@
 							<div class="member-info">
 								<mat-icon class="member-icon">{{ getRoleIcon(member.baseRole) }}</mat-icon>
 								<div class="member-text">
-									<span class="member-user-id">{{ member.userId }}</span>
+									<span class="member-user-id">{{ member.userId || member.name }}</span>
 									<span class="member-role">{{ getRoleLabel(member.baseRole) }}</span>
 								</div>
 							</div>

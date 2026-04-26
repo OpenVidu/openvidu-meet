@@ -1,18 +1,19 @@
-import { Component, computed, inject, Signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, Signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
-import { MeetRecordingLayout } from '@openvidu-meet/typings';
+import { MeetRecordingLayout, MeetRoomOptions } from '@openvidu-meet/typings';
 import {
 	SelectableCardComponent,
 	SelectableCardOption,
 	SelectionCardEvent
 } from '../../../../../../shared/components/selectable-card/selectable-card.component';
 import { ThemeService } from '../../../../../../shared/services/theme.service';
+import { RecordingLayoutFormGroup, RecordingLayoutFormValue } from '../../../../models/wizard-forms.model';
+import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
 
 @Component({
@@ -32,8 +33,9 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 export class RecordingLayoutComponent {
 	private themeService = inject(ThemeService);
 	private wizardService = inject(RoomWizardStateService);
+
 	protected theme = this.themeService.currentTheme;
-	layoutForm: FormGroup;
+
 	layoutOptions: Signal<SelectableCardOption[]> = computed(() => {
 		return [
 			{
@@ -61,23 +63,27 @@ export class RecordingLayoutComponent {
 			}
 		];
 	});
-
-	private formValues: Signal<any>;
 	selectedOption: Signal<MeetRecordingLayout>;
 
+	layoutForm: RecordingLayoutFormGroup;
+	private formValues: Signal<Partial<RecordingLayoutFormValue>>;
+
 	constructor() {
-		const currentStep = this.wizardService.currentStep();
-		this.layoutForm = currentStep!.formGroup;
+		const recordingLayoutStep = this.wizardService.getStepById(WizardStepId.RECORDING_LAYOUT);
+		if (!recordingLayoutStep) {
+			throw new Error('recordingLayout step not found in wizard state');
+		}
+		this.layoutForm = recordingLayoutStep.formGroup;
 
 		// Initialize formValues signal after layoutForm is created
 		this.formValues = toSignal(this.layoutForm.valueChanges, {
-			initialValue: this.layoutForm.value
+			initialValue: this.layoutForm.getRawValue()
 		});
 
 		// Initialize selectedOption computed signal
 		this.selectedOption = computed(() => {
 			const formValue = this.formValues();
-			return formValue?.layout || MeetRecordingLayout.GRID;
+			return formValue.layout || MeetRecordingLayout.GRID;
 		});
 
 		// Subscribe to form changes to save data (using takeUntilDestroyed for automatic cleanup)
@@ -86,17 +92,23 @@ export class RecordingLayoutComponent {
 		});
 	}
 
-	private saveFormData(formValue: any) {
+	private saveFormData(formValue: Partial<RecordingLayoutFormValue>): void {
 		const roomOptions = this.wizardService.roomOptions();
-		if (roomOptions.config?.recording) {
-			roomOptions.config.recording.layout = formValue.layout;
-			this.wizardService.updateStepData('recordingLayout', formValue);
-		}
+		const stepData: Partial<MeetRoomOptions> = {
+			config: {
+				recording: {
+					enabled: roomOptions.config?.recording?.enabled ?? false,
+					layout: formValue.layout ?? MeetRecordingLayout.GRID
+				}
+			}
+		};
+
+		this.wizardService.updateStepData(WizardStepId.RECORDING_LAYOUT, stepData);
 	}
 
 	onOptionSelect(event: SelectionCardEvent): void {
 		this.layoutForm.patchValue({
-			layout: event.optionId
+			layout: event.optionId as MeetRecordingLayout
 		});
 	}
 }

@@ -1,15 +1,27 @@
 import { FormGroup } from '@angular/forms';
 
 /**
+ * Enumeration of wizard step identifiers
+ */
+export enum WizardStepId {
+	ROOM_DETAILS = 'roomDetails',
+	ROOM_CONFIG = 'roomConfig',
+	ROOM_ACCESS = 'roomAccess',
+	RECORDING = 'recording',
+	RECORDING_TRIGGER = 'recordingTrigger',
+	RECORDING_LAYOUT = 'recordingLayout'
+}
+
+/**
  * Configuration interface for individual wizard steps
  */
-export interface WizardStep {
-	id: string;
+export interface WizardStep<TStepId extends WizardStepId = WizardStepId, TFormGroup extends FormGroup = FormGroup> {
+	id: TStepId;
 	label: string;
 	isCompleted: boolean;
 	isActive: boolean;
 	isVisible: boolean;
-	formGroup: FormGroup;
+	formGroup: TFormGroup;
 }
 
 /**
@@ -17,11 +29,9 @@ export interface WizardStep {
  */
 export interface WizardNavigationConfig {
 	// Button visibility flags
-	showPrevious: boolean;
 	showNext: boolean;
-	// Cancel button visibility
+	showPrevious: boolean;
 	showCancel: boolean;
-	// Used for going back to the previous page
 	showBack: boolean;
 	showFinish: boolean;
 	showSkipAndFinish: boolean; // Used for quick create actions

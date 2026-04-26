@@ -1,12 +1,14 @@
-import { ChangeDetectionStrategy, Component, effect, OnDestroy, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRoomOptions } from '@openvidu-meet/typings';
-import { Subject, takeUntil } from 'rxjs';
+import { RoomDetailsFormGroup, RoomDetailsFormValue } from '../../models/wizard-forms.model';
+import { WizardStepId } from '../../models/wizard.model';
 import { RoomWizardStateService } from '../../services';
 
 @Component({
@@ -23,39 +25,31 @@ import { RoomWizardStateService } from '../../services';
 	styleUrl: './room-basic-creation.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RoomBasicCreationComponent implements OnDestroy {
+export class RoomBasicCreationComponent {
+	private readonly wizardService = inject(RoomWizardStateService);
+
 	readonly createRoom = output<string | undefined>();
 	readonly openAdvancedMode = output<void>();
 
-	roomDetailsForm = new FormGroup({
-		roomName: new FormControl('Room', [Validators.maxLength(50)])
-	});
+	roomDetailsForm: RoomDetailsFormGroup;
 
-	private destroy$ = new Subject<void>();
+	constructor() {
+		const currentStep = this.wizardService.getStepById(WizardStepId.ROOM_DETAILS);
+		if (!currentStep) {
+			throw new Error('roomDetails step not found in wizard state');
+		}
+		this.roomDetailsForm = currentStep.formGroup;
 
-	constructor(private wizardService: RoomWizardStateService) {
-		effect(() => {
-			const steps = this.wizardService.steps();
-			if (steps.length !== 0) {
-				this.roomDetailsForm = steps[0].formGroup;
-
-				this.roomDetailsForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
-					this.saveFormData(value);
-				});
-			}
+		this.roomDetailsForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
+			this.saveFormData(value);
 		});
 	}
 
-	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
-	}
-
-	private saveFormData(formValue: any) {
+	private saveFormData(formValue: Partial<RoomDetailsFormValue>) {
 		const stepData: Partial<MeetRoomOptions> = {
 			roomName: formValue.roomName
 		};
-		this.wizardService.updateStepData('roomDetails', stepData);
+		this.wizardService.updateStepData(WizardStepId.ROOM_DETAILS, stepData);
 	}
 
 	onCreateRoom() {

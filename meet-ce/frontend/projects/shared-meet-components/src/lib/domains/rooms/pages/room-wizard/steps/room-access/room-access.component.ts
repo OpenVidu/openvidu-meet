@@ -1,4 +1,5 @@
-import { Component, inject, OnDestroy, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,11 +12,17 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRoomMemberOptions, MeetRoomMemberPermissions, MeetRoomMemberRole, MeetUserDTO } from '@openvidu-meet/typings';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
+import { MeetRoomMemberOptions, MeetRoomMemberRole, MeetUserDTO } from '@openvidu-meet/typings';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { PERMISSION_GROUPS } from '../../../../../room-members/models/permissions.model';
 import { UserService } from '../../../../../users/services/user.service';
+import {
+	RoomAccessFormGroup,
+	RoomAccessFormValue,
+	RoomAccessRolePermissionsFormGroup
+} from '../../../../models/wizard-forms.model';
+import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
-import { PERMISSION_GROUPS } from '../role-permissions/role-permissions.component';
 
 @Component({
 	selector: 'ov-room-access',
@@ -36,11 +43,11 @@ import { PERMISSION_GROUPS } from '../role-permissions/role-permissions.componen
 	templateUrl: './room-access.component.html',
 	styleUrl: './room-access.component.scss'
 })
-export class RoomAccessComponent implements OnDestroy {
+export class RoomAccessComponent {
 	private wizardService = inject(RoomWizardStateService);
 	private userService = inject(UserService);
 
-	roomAccessForm: FormGroup;
+	roomAccessForm: RoomAccessFormGroup;
 	permissionGroups = PERMISSION_GROUPS;
 	readonly availableRoles: MeetRoomMemberRole[] = [MeetRoomMemberRole.MODERATOR, MeetRoomMemberRole.SPEAKER];
 
@@ -54,19 +61,21 @@ export class RoomAccessComponent implements OnDestroy {
 	isLoadingUsers = signal(false);
 	filteredUsers = signal<MeetUserDTO[]>([]);
 
-	private destroy$ = new Subject<void>();
-
 	constructor() {
-		const currentStep = this.wizardService.currentStep();
-		this.roomAccessForm = currentStep!.formGroup;
+		const roomAccessStep = this.wizardService.getStepById(WizardStepId.ROOM_ACCESS);
+		if (!roomAccessStep) {
+			throw new Error('roomAccess step not found in wizard state');
+		}
+		this.roomAccessForm = roomAccessStep.formGroup;
 
-		this.roomAccessForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+		this.roomAccessForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
 			this.saveFormData(value);
 		});
 
 		// User search autocomplete
-		this.addMemberForm.get('userId')!.valueChanges
-			.pipe(debounceTime(300), distinctUntilChanged(), takeUntil(this.destroy$))
+		this.addMemberForm
+			.get('userId')!
+			.valueChanges.pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
 			.subscribe((value) => {
 				if (value && value.length >= 1) {
 					this.searchUsers(value);
@@ -76,17 +85,30 @@ export class RoomAccessComponent implements OnDestroy {
 			});
 	}
 
-	ngOnDestroy(): void {
-		this.destroy$.next();
-		this.destroy$.complete();
+	private saveFormData(formValue: Partial<RoomAccessFormValue>): void {
+		const stepData = {
+			access: {
+				anonymous: {
+					moderator: { enabled: formValue.anonymousModeratorEnabled ?? false },
+					speaker: { enabled: formValue.anonymousSpeakerEnabled ?? false }
+				},
+				registered: { enabled: formValue.registeredEnabled ?? false }
+			},
+			roles: {
+				moderator: { permissions: formValue.moderator ?? {} },
+				speaker: { permissions: formValue.speaker ?? {} }
+			}
+		};
+
+		this.wizardService.updateStepData(WizardStepId.ROOM_ACCESS, stepData);
 	}
 
-	get moderatorForm(): FormGroup {
-		return this.roomAccessForm.get('moderator') as FormGroup;
+	get moderatorForm(): RoomAccessRolePermissionsFormGroup {
+		return this.roomAccessForm.controls.moderator;
 	}
 
-	get speakerForm(): FormGroup {
-		return this.roomAccessForm.get('speaker') as FormGroup;
+	get speakerForm(): RoomAccessRolePermissionsFormGroup {
+		return this.roomAccessForm.controls.speaker;
 	}
 
 	private async searchUsers(query: string): Promise<void> {
@@ -160,27 +182,5 @@ export class RoomAccessComponent implements OnDestroy {
 			default:
 				return 'person';
 		}
-	}
-
-	private saveFormData(formValue: any): void {
-		const buildPermissions = (roleValue: any): Partial<MeetRoomMemberPermissions> => {
-			return roleValue as Partial<MeetRoomMemberPermissions>;
-		};
-
-		const stepData = {
-			access: {
-				anonymous: {
-					moderator: { enabled: formValue.anonymousModeratorEnabled ?? false },
-					speaker: { enabled: formValue.anonymousSpeakerEnabled ?? false }
-				},
-				registered: { enabled: formValue.registeredEnabled ?? true }
-			},
-			roles: {
-				moderator: { permissions: buildPermissions(formValue.moderator) },
-				speaker: { permissions: buildPermissions(formValue.speaker) }
-			}
-		};
-
-		this.wizardService.updateStepData('roomAccess', stepData);
 	}
 }

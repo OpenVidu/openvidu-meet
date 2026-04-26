@@ -1,6 +1,6 @@
-import { Component, OnDestroy } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -15,28 +15,31 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
-import { Subject, takeUntil } from 'rxjs';
+import { RoomDetailsFormGroup, RoomDetailsFormValue } from '../../../../models/wizard-forms.model';
+import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services';
 
 @Component({
-    selector: 'ov-room-details',
-    imports: [
-        ReactiveFormsModule,
-        MatButtonModule,
-        MatIconModule,
-        MatInputModule,
-        MatFormFieldModule,
-        MatDatepickerModule,
-        MatNativeDateModule,
-        MatSelectModule,
-        MatTooltipModule
-    ],
-    templateUrl: './room-details.component.html',
-    styleUrl: './room-details.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+	selector: 'ov-room-details',
+	imports: [
+		ReactiveFormsModule,
+		MatButtonModule,
+		MatIconModule,
+		MatInputModule,
+		MatFormFieldModule,
+		MatDatepickerModule,
+		MatNativeDateModule,
+		MatSelectModule,
+		MatTooltipModule
+	],
+	templateUrl: './room-details.component.html',
+	styleUrl: './room-details.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RoomWizardRoomDetailsComponent implements OnDestroy {
-	roomDetailsForm: FormGroup;
+export class RoomWizardRoomDetailsComponent {
+	private wizardService = inject(RoomWizardStateService);
+
+	roomDetailsForm: RoomDetailsFormGroup;
 
 	// Arrays for time selection
 	hours = Array.from({ length: 24 }, (_, i) => ({ value: i, display: i.toString().padStart(2, '0') }));
@@ -68,23 +71,19 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 		}
 	];
 
-	private destroy$ = new Subject<void>();
+	constructor() {
+		const roomDetailsStep = this.wizardService.getStepById(WizardStepId.ROOM_DETAILS);
+		if (!roomDetailsStep) {
+			throw new Error('roomDetails step not found in wizard state');
+		}
+		this.roomDetailsForm = roomDetailsStep.formGroup;
 
-	constructor(private wizardService: RoomWizardStateService) {
-		const currentStep = this.wizardService.currentStep();
-		this.roomDetailsForm = currentStep!.formGroup;
-
-		this.roomDetailsForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+		this.roomDetailsForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
 			this.saveFormData(value);
 		});
 	}
 
-	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
-	}
-
-	private saveFormData(formValue: any) {
+	private saveFormData(formValue: Partial<RoomDetailsFormValue>): void {
 		let autoDeletionDateTime: number | undefined = undefined;
 		let autoDeletionPolicy: MeetRoomAutoDeletionPolicy | undefined = undefined;
 
@@ -100,8 +99,9 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 
 			// Set auto deletion policy
 			autoDeletionPolicy = {
-				withMeeting: formValue.autoDeletionPolicyWithMeeting,
-				withRecordings: formValue.autoDeletionPolicyWithRecordings
+				withMeeting:
+					formValue.autoDeletionPolicyWithMeeting ?? MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+				withRecordings: formValue.autoDeletionPolicyWithRecordings ?? MeetRoomDeletionPolicyWithRecordings.CLOSE
 			};
 		}
 
@@ -112,7 +112,7 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 		};
 
 		// Always save to wizard state (including when values are cleared)
-		this.wizardService.updateStepData('roomDetails', stepData);
+		this.wizardService.updateStepData(WizardStepId.ROOM_DETAILS, stepData);
 	}
 
 	get minDate(): Date {
@@ -122,18 +122,18 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 	}
 
 	get hasDateSelected(): boolean {
-		return !!this.roomDetailsForm.get('autoDeletionDate')?.value;
+		return !!this.roomDetailsForm.controls.autoDeletionDate.value;
 	}
 
 	getFormattedDateTime(): string {
-		const formValue = this.roomDetailsForm.value;
+		const formValue = this.roomDetailsForm.getRawValue();
 		if (!formValue.autoDeletionDate) {
 			return '';
 		}
 
-		const date = new Date(formValue.autoDeletionDate);
-		const hour = formValue.autoDeletionHour ?? 23;
-		const minute = formValue.autoDeletionMinute ?? 59;
+		const date = formValue.autoDeletionDate;
+		const hour = formValue.autoDeletionHour;
+		const minute = formValue.autoDeletionMinute;
 
 		date.setHours(hour);
 		date.setMinutes(minute);
@@ -151,20 +151,20 @@ export class RoomWizardRoomDetailsComponent implements OnDestroy {
 
 	clearDeletionDate() {
 		this.roomDetailsForm.patchValue({
-			autoDeletionDate: null,
+			autoDeletionDate: undefined,
 			autoDeletionHour: 23,
 			autoDeletionMinute: 59
 		});
 	}
 
 	getMeetingPolicyDescription(): string {
-		const selectedValue = this.roomDetailsForm.get('autoDeletionPolicyWithMeeting')?.value;
+		const selectedValue = this.roomDetailsForm.controls.autoDeletionPolicyWithMeeting.value;
 		const option = this.meetingPolicyOptions.find((opt) => opt.value === selectedValue);
 		return option?.description || '';
 	}
 
 	getRecordingPolicyDescription(): string {
-		const selectedValue = this.roomDetailsForm.get('autoDeletionPolicyWithRecordings')?.value;
+		const selectedValue = this.roomDetailsForm.controls.autoDeletionPolicyWithRecordings.value;
 		const option = this.recordingPolicyOptions.find((opt) => opt.value === selectedValue);
 		return option?.description || '';
 	}
