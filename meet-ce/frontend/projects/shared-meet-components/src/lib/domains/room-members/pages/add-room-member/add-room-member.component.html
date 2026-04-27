@@ -5,7 +5,9 @@
 			<mat-icon>person_add</mat-icon>
 			<h1>Add Room Member</h1>
 		</div>
-		<p class="subtitle">Assign a registered user to this room and configure their role and permissions.</p>
+		<p class="subtitle">
+			Assign a registered user or an external member to this room and configure their role and permissions.
+		</p>
 	</div>
 
 	<!-- Form Card Wrapper -->
@@ -21,62 +23,111 @@
 
 			<mat-card-content>
 				<form [formGroup]="form" class="create-form">
-					<!-- User ID (Autocomplete) -->
-					<mat-form-field subscriptSizing="dynamic" appearance="outline">
-						<mat-label>User ID</mat-label>
-						<mat-icon matPrefix class="field-prefix-icon">badge</mat-icon>
-						<input
-							matInput
-							formControlName="userId"
-							placeholder="Search for a user by ID..."
-							[matAutocomplete]="userAutocomplete"
-							autofocus
-						/>
-						@if (isLoadingUsers()) {
-							<mat-spinner matSuffix diameter="18" class="search-spinner" />
-						} @else {
-							<mat-icon matSuffix class="field-suffix-icon">search</mat-icon>
-						}
-						<mat-autocomplete
-							#userAutocomplete="matAutocomplete"
-							[displayWith]="displayUserFn"
-							(optionSelected)="onUserSelected($event.option.value)"
-						>
-							@for (user of filteredUsers(); track user.userId) {
-								<mat-option [value]="user.userId">
-									<div class="user-option">
-										<mat-icon class="user-option-icon">person</mat-icon>
-										<div class="user-option-info">
-											<span class="user-option-id">{{ user.userId }}</span>
-											@if (user.name) {
-												<span class="user-option-name">{{ user.name }}</span>
-											}
+					<!-- Member Type Selection -->
+					<div class="member-type-group">
+						<mat-radio-group formControlName="memberType" class="member-type-radio-group">
+							<mat-radio-button value="registered" class="member-type-radio">
+								<div class="radio-label">
+									<mat-icon>verified_user</mat-icon>
+									<span>Registered User</span>
+								</div>
+							</mat-radio-button>
+							<mat-radio-button value="external" class="member-type-radio">
+								<div class="radio-label">
+									<mat-icon>person_outline</mat-icon>
+									<span>External Member</span>
+								</div>
+							</mat-radio-button>
+						</mat-radio-group>
+					</div>
+
+					<!-- Registered: User ID (Autocomplete) -->
+					@if (isRegisteredMode()) {
+						<mat-form-field subscriptSizing="dynamic" appearance="outline">
+							<mat-label>User ID</mat-label>
+							<mat-icon matPrefix class="field-prefix-icon">badge</mat-icon>
+							<input
+								matInput
+								formControlName="userId"
+								placeholder="Search for a user by ID..."
+								[matAutocomplete]="userAutocomplete"
+								autofocus
+							/>
+							@if (isLoadingUsers()) {
+								<mat-spinner matSuffix diameter="18" class="search-spinner" />
+							} @else {
+								<mat-icon matSuffix class="field-suffix-icon">search</mat-icon>
+							}
+							<mat-autocomplete
+								#userAutocomplete="matAutocomplete"
+								[displayWith]="displayUserFn"
+								(optionSelected)="onUserSelected($event.option.value)"
+							>
+								@for (user of filteredUsers(); track user.userId) {
+									<mat-option [value]="user.userId">
+										<div class="user-option">
+											<mat-icon class="user-option-icon">person</mat-icon>
+											<div class="user-option-info">
+												<span class="user-option-id">{{ user.userId }}</span>
+												@if (user.name) {
+													<span class="user-option-name">{{ user.name }}</span>
+												}
+											</div>
 										</div>
-									</div>
-								</mat-option>
+									</mat-option>
+								}
+								@if (!isLoadingUsers() && filteredUsers().length === 0 && form.get('userId')?.value) {
+									<mat-option disabled>
+										<span class="no-results">No users found</span>
+									</mat-option>
+								}
+							</mat-autocomplete>
+							<mat-hint>Start typing to search registered users</mat-hint>
+							@if (getFieldError('userId')) {
+								<mat-error>{{ getFieldError('userId') }}</mat-error>
 							}
-							@if (!isLoadingUsers() && filteredUsers().length === 0 && form.get('userId')?.value) {
-								<mat-option disabled>
-									<span class="no-results">No users found</span>
-								</mat-option>
+						</mat-form-field>
+					} @else {
+						<!-- External: info box + name input -->
+						<div class="external-info-box">
+							<mat-icon class="external-info-icon">link</mat-icon>
+							<p class="external-info-text">
+								External members are not registered users. After being added, they will be assigned a
+								<strong>unique access URL</strong> to join this room. You can copy this URL from the
+								member list.
+							</p>
+						</div>
+						<mat-form-field subscriptSizing="dynamic" appearance="outline">
+							<mat-label>Member Name</mat-label>
+							<mat-icon matPrefix class="field-prefix-icon">person</mat-icon>
+							<input
+								matInput
+								formControlName="memberName"
+								placeholder="Enter a display name..."
+								autofocus
+							/>
+							<mat-hint>A display name for the external member</mat-hint>
+							@if (getFieldError('memberName')) {
+								<mat-error>{{ getFieldError('memberName') }}</mat-error>
 							}
-						</mat-autocomplete>
-						<mat-hint>Start typing to search registered users</mat-hint>
-						@if (getFieldError('userId')) {
-							<mat-error>{{ getFieldError('userId') }}</mat-error>
-						}
-					</mat-form-field>
+						</mat-form-field>
+					}
 
 					<!-- Role -->
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
 						<mat-label>Role</mat-label>
 						<mat-icon matPrefix class="field-prefix-icon">manage_accounts</mat-icon>
 						<mat-select formControlName="role">
-							@for (role of availableRoles; track role) {
+							<mat-select-trigger>
+								{{ RoomMemberUiUtils.getRoleLabel(form.get('role')!.value!) }}
+							</mat-select-trigger>
+							@for (role of RoomMemberUiUtils.AVAILABLE_ROLES; track role) {
 								<mat-option [value]="role">
 									<div class="role-option">
-										<mat-icon class="role-option-icon">{{ getRoleIcon(role) }}</mat-icon>
-										<span>{{ getRoleLabel(role) }}</span>
+										<mat-icon class="role-option-icon">{{
+											RoomMemberUiUtils.getRoleIcon(role)
+										}}</mat-icon>
+										<span>{{ RoomMemberUiUtils.getRoleLabel(role) }}</span>
 									</div>
 								</mat-option>
 							}

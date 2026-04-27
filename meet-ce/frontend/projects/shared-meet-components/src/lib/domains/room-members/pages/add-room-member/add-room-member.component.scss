@@ -16,6 +16,85 @@
 	@include design-tokens.ov-section-card;
 }
 
+// ─── Member Type Selection ────────────────────────────────────────────────────
+
+.member-type-group {
+	padding: var(--ov-meet-spacing-xs) 0;
+}
+
+.member-type-radio-group {
+	display: flex;
+	gap: var(--ov-meet-spacing-md);
+}
+
+.member-type-radio {
+	flex: 1;
+	border: 1px solid var(--ov-border-color-light);
+	border-radius: var(--ov-meet-radius-md);
+	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+	transition:
+		border-color var(--ov-meet-transition-fast),
+		background-color var(--ov-meet-transition-fast);
+
+	&:hover {
+		background: var(--ov-meet-surface-hover);
+	}
+
+	&.mat-mdc-radio-checked {
+		border-color: var(--ov-meet-color-primary);
+		background: color-mix(in srgb, var(--ov-meet-color-primary) 6%, transparent);
+	}
+
+	::ng-deep .mdc-form-field {
+		width: 100%;
+	}
+
+	::ng-deep .mdc-label {
+		flex: 1;
+		cursor: pointer;
+	}
+}
+
+.radio-label {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	font-size: var(--ov-meet-font-size-md);
+	font-weight: var(--ov-meet-font-weight-medium);
+	color: var(--ov-meet-text-primary);
+
+	mat-icon {
+		@include design-tokens.ov-icon(md);
+		color: var(--ov-meet-icon-primary);
+	}
+}
+
+// ─── External Member Info Box ─────────────────────────────────────────────────
+
+.external-info-box {
+	display: flex;
+	align-items: flex-start;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+	background: color-mix(in srgb, var(--ov-meet-color-primary) 8%, transparent);
+	border-left: 3px solid var(--ov-meet-color-primary);
+	border-radius: var(--ov-meet-radius-sm);
+
+	.external-info-icon {
+		@include design-tokens.ov-icon(md);
+		color: var(--ov-meet-color-primary);
+		flex-shrink: 0;
+		margin-top: 1px;
+	}
+
+	.external-info-text {
+		margin: 0;
+		font-size: var(--ov-meet-font-size-sm);
+		color: var(--ov-meet-text-secondary);
+		line-height: var(--ov-meet-line-height-normal);
+	}
+}
+
 // ─── Form ─────────────────────────────────────────────────────────────────────
 
 .create-form {
@@ -101,140 +180,151 @@
 }
 
 .permissions-accordion {
-	border: 1px solid var(--ov-border-color-light);
-	border-radius: var(--ov-meet-radius-md) !important;
-	overflow: hidden;
-}
+	.mat-expansion-panel:first-of-type {
+		border-top-right-radius: var(--ov-meet-radius-sm);
+		border-top-left-radius: var(--ov-meet-radius-sm);
+	}
+	.mat-expansion-panel:last-of-type {
+		border-bottom-right-radius: var(--ov-meet-radius-sm);
+		border-bottom-left-radius: var(--ov-meet-radius-sm);
+	}
 
-.permissions-panel {
-	box-shadow: none !important;
+	.permissions-panel {
+		background: var(--ov-meet-card-background);
 
-	::ng-deep .mat-expansion-panel-header {
-		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
-		background: var(--ov-meet-surface-secondary);
+		::ng-deep .mat-expansion-panel-header {
+			padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+		}
 
-		&:hover {
-			background: var(--ov-meet-surface-hover) !important;
+		&.mat-expanded {
+			border-radius: var(--ov-meet-radius-sm);
+		}
+
+		.permissions-panel-title {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-sm);
+			font-size: var(--ov-meet-font-size-md);
+			font-weight: var(--ov-meet-font-weight-medium);
+			color: var(--ov-meet-text-primary);
+
+			.permissions-panel-icon {
+				@include design-tokens.ov-icon(md);
+				color: var(--ov-meet-icon-settings);
+			}
+		}
+
+		.permissions-panel-description {
+			font-size: var(--ov-meet-font-size-sm);
+			color: var(--ov-meet-text-secondary);
 		}
 	}
-
-	::ng-deep .mat-expansion-panel-body {
-		padding: 0;
-	}
-}
-
-.permissions-panel-title {
-	display: flex;
-	align-items: center;
-	gap: var(--ov-meet-spacing-sm);
-	font-weight: var(--ov-meet-font-weight-medium);
-	color: var(--ov-meet-text-primary);
-
-	.permissions-panel-icon {
-		@include design-tokens.ov-icon(md);
-		color: var(--ov-meet-icon-settings);
-	}
-}
-
-.permissions-panel-description {
-	font-size: var(--ov-meet-font-size-sm);
-	color: var(--ov-meet-text-secondary);
 }
 
 .permissions-content {
-	padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg) var(--ov-meet-spacing-lg);
 	display: flex;
 	flex-direction: column;
-	gap: var(--ov-meet-spacing-lg);
-}
+	gap: var(--ov-meet-spacing-xs);
+	padding: var(--ov-meet-spacing-sm) 0;
+	// padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg) var(--ov-meet-spacing-lg);
 
-.permissions-hint {
-	margin: 0 0 var(--ov-meet-spacing-sm) 0;
-	font-size: var(--ov-meet-font-size-sm);
-	color: var(--ov-meet-text-secondary);
-	line-height: var(--ov-meet-line-height-normal);
-	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
-	background: var(--ov-meet-surface-secondary);
-	border-radius: var(--ov-meet-radius-sm);
-	border-left: 3px solid var(--ov-meet-color-primary);
-}
-
-.permission-group {
-	display: flex;
-	flex-direction: column;
-	gap: 0;
-}
-
-.permission-group-header {
-	display: flex;
-	align-items: center;
-	gap: var(--ov-meet-spacing-sm);
-	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
-	margin-bottom: var(--ov-meet-spacing-xs);
-
-	.permission-group-icon {
-		@include design-tokens.ov-icon(sm);
-		color: var(--ov-meet-icon-primary);
-	}
-
-	.permission-group-label {
-		font-size: var(--ov-meet-font-size-xs);
-		font-weight: var(--ov-meet-font-weight-semibold);
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
+	.permissions-hint {
+		margin: 0 0 var(--ov-meet-spacing-xs) 0;
+		font-size: var(--ov-meet-font-size-sm);
 		color: var(--ov-meet-text-secondary);
-	}
-}
-
-.permission-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: var(--ov-meet-spacing-sm);
-	padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
-	border-radius: var(--ov-meet-radius-sm);
-	transition: background-color var(--ov-meet-transition-fast);
-
-	&:hover {
-		background: var(--ov-meet-surface-hover);
+		line-height: var(--ov-meet-line-height-normal);
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+		background: var(--ov-meet-surface-secondary);
+		border-radius: var(--ov-meet-radius-sm);
+		border-left: 3px solid var(--ov-meet-color-primary);
 	}
 
-	.permission-info {
+	.permission-group {
 		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-sm);
-		flex: 1;
-		min-width: 0;
+		flex-direction: column;
+		gap: 2px;
+		margin-bottom: var(--ov-meet-spacing-xs);
 
-		.permission-icon {
-			@include design-tokens.ov-icon(md);
-			color: var(--ov-meet-icon-primary);
-			flex-shrink: 0;
+		&:last-child {
+			margin-bottom: 0;
 		}
 
-		.permission-text {
+		.permission-group-header {
 			display: flex;
-			flex-direction: column;
-			gap: 2px;
-			min-width: 0;
+			align-items: center;
+			gap: var(--ov-meet-spacing-xs);
+			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+			margin-bottom: 4px;
 
-			.permission-label {
-				font-size: var(--ov-meet-font-size-md);
-				font-weight: var(--ov-meet-font-weight-medium);
-				color: var(--ov-meet-text-primary);
-				line-height: var(--ov-meet-line-height-tight);
+			.permission-group-icon {
+				@include design-tokens.ov-icon(sm);
+				color: var(--ov-meet-icon-secondary);
 			}
 
-			.permission-description {
-				font-size: var(--ov-meet-font-size-sm);
-				color: var(--ov-meet-text-secondary);
-				line-height: var(--ov-meet-line-height-normal);
+			.permission-group-label {
+				font-size: var(--ov-meet-font-size-xs);
+				font-weight: var(--ov-meet-font-weight-semibold);
+				color: var(--ov-meet-text-hint);
+				letter-spacing: 0.06em;
+				text-transform: uppercase;
 			}
 		}
-	}
 
-	.permission-toggle {
-		flex-shrink: 0;
+		.permission-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: var(--ov-meet-spacing-sm);
+			padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+			border-radius: var(--ov-meet-radius-sm);
+			transition: background-color var(--ov-meet-transition-fast);
+
+			&:hover {
+				background: var(--ov-meet-surface-hover);
+			}
+
+			.permission-info {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-sm);
+				flex: 1;
+				min-width: 0;
+
+				.permission-icon {
+					@include design-tokens.ov-icon(sm);
+					color: var(--ov-meet-icon-primary);
+					flex-shrink: 0;
+				}
+
+				.permission-text {
+					display: flex;
+					flex-direction: column;
+					gap: 2px;
+					min-width: 0;
+
+					.permission-label {
+						font-size: var(--ov-meet-font-size-sm);
+						font-weight: var(--ov-meet-font-weight-medium);
+						color: var(--ov-meet-text-primary);
+						line-height: var(--ov-meet-line-height-tight);
+					}
+
+					.permission-description {
+						font-size: var(--ov-meet-font-size-xs);
+						color: var(--ov-meet-text-secondary);
+						line-height: var(--ov-meet-line-height-normal);
+					}
+				}
+			}
+
+			.permission-toggle {
+				flex-shrink: 0;
+
+				::ng-deep button {
+					padding: unset;
+				}
+			}
+		}
 	}
 }
 
