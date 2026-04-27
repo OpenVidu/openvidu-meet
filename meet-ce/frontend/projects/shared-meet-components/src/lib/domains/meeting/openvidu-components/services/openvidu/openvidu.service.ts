@@ -33,7 +33,6 @@ import { StorageService } from '../storage/storage.service';
 	providedIn: 'root'
 })
 export class OpenViduService {
-	private readonly loggerSrv = inject(LoggerService);
 	private readonly deviceService = inject(DeviceService);
 	private readonly storageService = inject(StorageService);
 	private readonly configService = inject(OpenViduComponentsConfigService);
@@ -56,12 +55,7 @@ export class OpenViduService {
 	private localTracks: OVLocalTrack[] = [];
 	private livekitToken = '';
 	private livekitUrl = '';
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
+	private log: ILogger = inject(LoggerService).get('OpenViduService');
 
 	/**
 	 * Background processor for video tracks. Initialized in disabled mode.
@@ -90,7 +84,6 @@ export class OpenViduService {
 	 * @internal
 	 */
 	constructor() {
-		this.log = this.loggerSrv.get('OpenViduService');
 		// Check if browser supports background processors
 		if (!supportsBackgroundProcessors()) {
 			this.log.w('Background processors not supported in this browser (GPU may be disabled)');
@@ -794,5 +787,4 @@ export class OpenViduService {
 			throw new Error('Error decoding and parsing token: ' + error);
 		}
 	}
-
 }

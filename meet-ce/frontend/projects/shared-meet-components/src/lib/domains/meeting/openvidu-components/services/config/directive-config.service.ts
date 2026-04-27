@@ -1,6 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { ParticipantModel } from '../../models/participant.model';
-import { RecordingInfo } from '../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
 
 /**
@@ -58,16 +57,6 @@ interface RecordingActivityConfig {
 	startStopButton: boolean;
 	viewRecordingsButton: boolean;
 	showRecordingsList: boolean;
-}
-
-/**
- * Admin dashboard configuration
- */
-interface AdminConfig {
-	recordingsList: RecordingInfo[];
-	loginError: any;
-	loginTitle: string;
-	dashboardTitle: string;
 }
 
 /**
@@ -152,13 +141,6 @@ export class OpenViduComponentsConfigService {
 		showRecordingsList: true
 	});
 
-	private readonly adminConfig = signal<AdminConfig>({
-		recordingsList: [],
-		loginError: null,
-		loginTitle: '',
-		dashboardTitle: ''
-	});
-
 	// Individual configs that don't fit into groups
 	private readonly layoutRemoteParticipantsConfig = signal<ParticipantModel[] | undefined>(undefined);
 
@@ -203,10 +185,6 @@ export class OpenViduComponentsConfigService {
 	readonly recordingActivityStartStopRecordingButtonSignal = computed(() => this.recordingActivityConfig().startStopButton);
 	readonly recordingActivityViewRecordingsButtonSignal = computed(() => this.recordingActivityConfig().viewRecordingsButton);
 	readonly recordingActivityShowRecordingsListSignal = computed(() => this.recordingActivityConfig().showRecordingsList);
-	readonly adminRecordingsListSignal = computed(() => this.adminConfig().recordingsList);
-	readonly adminLoginErrorSignal = computed(() => this.adminConfig().loginError);
-	readonly adminLoginTitleSignal = computed(() => this.adminConfig().loginTitle);
-	readonly adminDashboardTitleSignal = computed(() => this.adminConfig().dashboardTitle);
 	readonly layoutRemoteParticipantsSignal = this.layoutRemoteParticipantsConfig.asReadonly();
 
 	// ============================================
@@ -239,13 +217,6 @@ export class OpenViduComponentsConfigService {
 	 */
 	updateRecordingActivityConfig(partialConfig: Partial<RecordingActivityConfig>): void {
 		this.recordingActivityConfig.update((current) => ({ ...current, ...partialConfig }));
-	}
-
-	/**
-	 * Update multiple admin configuration properties at once
-	 */
-	updateAdminConfig(partialConfig: Partial<AdminConfig>): void {
-		this.adminConfig.update((current) => ({ ...current, ...partialConfig }));
 	}
 
 	/**

@@ -34,33 +34,21 @@ export class ViewportService {
 		this.initializeResizeListener();
 	}
 
-	// ==== PUBLIC REACTIVE SIGNALS ====
-
-	/**
-	 * Current viewport width
-	 */
-	readonly width = this._width.asReadonly();
-
-	/**
-	 * Current viewport height
-	 */
-	readonly height = this._height.asReadonly();
-
 	/**
 	 * Whether device supports touch interactions
 	 */
-	readonly isTouchDevice = computed(() => this.platform.isTouchDevice());
+	readonly isTouchDevice = this.platform.isTouchDevice;
 
 	/**
 	 * Whether device is physically a mobile device (orientation-independent)
 	 * This uses hardware detection, not just screen size
 	 */
-	readonly isPhysicalMobile = computed(() => this.platform.isPhysicalMobileDevice());
+	readonly isPhysicalMobile = this.platform.isPhysicalMobileDevice;
 
 	/**
 	 * Whether device is physically a tablet (orientation-independent)
 	 */
-	readonly isPhysicalTablet = computed(() => this.platform.isPhysicalTablet());
+	readonly isPhysicalTablet = this.platform.isPhysicalTablet;
 
 	/**
 	 * Current viewport size category
@@ -119,15 +107,6 @@ export class ViewportService {
 	 */
 	readonly isTabletDown = computed(() => this._width() < this.BREAKPOINTS.desktop);
 
-	/**
-	 * Whether current viewport is tablet or larger
-	 */
-	readonly isTabletUp = computed(() => this._width() >= this.BREAKPOINTS.tablet);
-
-	/**
-	 * Whether current viewport is desktop or larger
-	 */
-	readonly isDesktopUp = computed(() => this._width() >= this.BREAKPOINTS.desktop);
 
 	/**
 	 * Complete viewport information
@@ -147,81 +126,11 @@ export class ViewportService {
 		shouldShowLandscapeWarning: this.shouldShowLandscapeWarning()
 	}));
 
-	// ==== PUBLIC UTILITY METHODS ====
-
-	/**
-	 * Check if viewport matches specific size
-	 */
-	matchesSize(size: ViewportSize): boolean {
-		return this.viewportSize() === size;
-	}
-
-	/**
-	 * Check if viewport is smaller than specified size
-	 */
-	isSmallerThan(size: ViewportSize): boolean {
-		const currentWidth = this._width();
-		return currentWidth < this.BREAKPOINTS[size];
-	}
-
-	/**
-	 * Check if viewport is larger than specified size
-	 */
-	isLargerThan(size: ViewportSize): boolean {
-		const currentWidth = this._width();
-		return currentWidth >= this.BREAKPOINTS[size];
-	}
-
-	/**
-	 * Get responsive grid columns based on viewport and content count
-	 */
-	getGridColumns(itemCount = 0): string {
-		if (this.isMobileView()) {
-			return 'single-column';
-		}
-		if (this.isTablet()) {
-			return itemCount > 6 ? 'two-columns' : 'single-column';
-		}
-		return itemCount > 10 ? 'three-columns' : 'two-columns';
-	}
-
-	/**
-	 * Get appropriate icon size for current viewport
-	 */
-	getIconSize(): 'small' | 'medium' | 'large' {
-		if (this.isMobileView()) return 'medium';
-		if (this.isTablet()) return 'small';
-		return 'small';
-	}
-
-	/**
-	 * Get appropriate spacing size for current viewport
-	 */
-	getSpacing(): 'compact' | 'comfortable' | 'spacious' {
-		if (this.isMobileView()) return 'compact';
-		if (this.isTablet()) return 'comfortable';
-		return 'spacious';
-	}
-
-	/**
-	 * Check if device is in landscape mode (mobile context)
-	 */
-	isLandscape(): boolean {
-		return this.orientation() === 'landscape';
-	}
-
 	/**
 	 * Check if device is in portrait mode
 	 */
 	isPortrait(): boolean {
 		return this.orientation() === 'portrait';
-	}
-
-	/**
-	 * Get breakpoint value for specified size
-	 */
-	getBreakpoint(size: keyof typeof this.BREAKPOINTS): number {
-		return this.BREAKPOINTS[size];
 	}
 
 	// ==== PRIVATE METHODS ====
@@ -232,11 +141,6 @@ export class ViewportService {
 
 	private getCurrentHeight(): number {
 		return typeof window !== 'undefined' ? window.innerHeight : 768;
-	}
-
-	private detectTouchDevice(): boolean {
-		if (typeof window === 'undefined') return false;
-		return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 	}
 
 	private initializeResizeListener(): void {

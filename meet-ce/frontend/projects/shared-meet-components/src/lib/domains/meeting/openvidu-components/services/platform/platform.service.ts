@@ -10,8 +10,6 @@ import { Injectable } from '@angular/core';
 export class PlatformService {
 	private readonly userAgent: string = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 
-	constructor() {}
-
 	// ===== Device Type =====
 
 	/**

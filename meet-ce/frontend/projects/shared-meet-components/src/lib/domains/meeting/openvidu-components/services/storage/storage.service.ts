@@ -30,6 +30,8 @@ export class StorageService implements OnDestroy {
 	private broadcastChannel: BroadcastChannel | null = null;
 	private isStorageAvailable = false;
 	private lastHeartbeat = 0;
+	private boundBeforeUnloadHandler: () => void;
+	private boundVisibilityChangeHandler: () => void;
 
 	// Cache for parsed values to avoid repeated JSON operations
 	private cache = new Map<string, any>();
@@ -44,6 +46,14 @@ export class StorageService implements OnDestroy {
 
 		// Check storage availability
 		this.isStorageAvailable = this.checkStorageAvailability();
+
+		// Create bound handlers for proper cleanup
+		this.boundBeforeUnloadHandler = () => this.unregisterActiveTab();
+		this.boundVisibilityChangeHandler = () => {
+			if (!document.hidden) {
+				this.updateHeartbeat();
+			}
+		};
 
 		if (this.isStorageAvailable) {
 			this.initializeTabManagement();
@@ -98,17 +108,11 @@ export class StorageService implements OnDestroy {
 		// Set up optimized cleanup mechanism
 		this.setupTabCleanup();
 
-		// Listen for page unload to clean up this tab
-		window.addEventListener('beforeunload', () => {
-			this.unregisterActiveTab();
-		});
+		// Listen for page unload to clean up this tab (store reference for cleanup)
+		window.addEventListener('beforeunload', this.boundBeforeUnloadHandler);
 
 		// Listen for page visibility changes to optimize heartbeat
-		document.addEventListener('visibilitychange', () => {
-			if (!document.hidden) {
-				this.updateHeartbeat();
-			}
-		});
+		document.addEventListener('visibilitychange', this.boundVisibilityChangeHandler);
 
 		this.log.d(`Tab initialized with ID: ${this.tabId}`);
 	}
@@ -646,6 +650,10 @@ export class StorageService implements OnDestroy {
 	 * Cleanup method to be called when service is destroyed
 	 */
 	public destroy(): void {
+		// Remove event listeners
+		window.removeEventListener('beforeunload', this.boundBeforeUnloadHandler);
+		document.removeEventListener('visibilitychange', this.boundVisibilityChangeHandler);
+
 		// Clear interval
 		if (this.cleanupInterval) {
 			clearInterval(this.cleanupInterval);
