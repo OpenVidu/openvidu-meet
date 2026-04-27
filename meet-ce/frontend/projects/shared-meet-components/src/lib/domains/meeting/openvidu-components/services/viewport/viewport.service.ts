@@ -35,22 +35,6 @@ export class ViewportService {
 	}
 
 	/**
-	 * Whether device supports touch interactions
-	 */
-	readonly isTouchDevice = this.platform.isTouchDevice;
-
-	/**
-	 * Whether device is physically a mobile device (orientation-independent)
-	 * This uses hardware detection, not just screen size
-	 */
-	readonly isPhysicalMobile = this.platform.isPhysicalMobileDevice;
-
-	/**
-	 * Whether device is physically a tablet (orientation-independent)
-	 */
-	readonly isPhysicalTablet = this.platform.isPhysicalTablet;
-
-	/**
 	 * Current viewport size category
 	 */
 	readonly viewportSize = computed<ViewportSize>(() => {
@@ -84,7 +68,7 @@ export class ViewportService {
 	 * This is orientation-independent and hardware-based detection
 	 */
 	readonly shouldShowLandscapeWarning = computed(() =>
-		this.isPhysicalMobile() && this.orientation() === 'landscape'
+		this.platform.isPhysicalMobileDevice() && this.orientation() === 'landscape'
 	);
 
 	/**
@@ -120,9 +104,9 @@ export class ViewportService {
 		isTablet: this.isTablet(),
 		isDesktop: this.isDesktop(),
 		isWide: this.isWide(),
-		isTouchDevice: this.isTouchDevice(),
-		isPhysicalMobile: this.isPhysicalMobile(),
-		isPhysicalTablet: this.isPhysicalTablet(),
+		isTouchDevice: this.platform.isTouchDevice(),
+		isPhysicalMobile: this.platform.isPhysicalMobileDevice(),
+		isPhysicalTablet: this.platform.isPhysicalTablet(),
 		shouldShowLandscapeWarning: this.shouldShowLandscapeWarning()
 	}));
 
