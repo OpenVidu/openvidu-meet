@@ -127,40 +127,6 @@ export class ToolbarBrandingLogoDirective implements AfterViewInit, OnDestroy {
 
 /**
  * @internal
- */
-@Directive({
-	selector: 'ov-videoconference[prejoinDisplayParticipantName]',
-	standalone: true
-})
-export class PrejoinDisplayParticipantName implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	@Input() set prejoinDisplayParticipantName(value: boolean) {
-		this.update(value);
-	}
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	private clear() {
-		this.update(true);
-	}
-
-	private update(value: boolean) {
-		this.libService.updateGeneralConfig({ prejoinDisplayParticipantName: value });
-	}
-}
-
-/**
- * @internal
  *
  * The **recordingActivityReadOnly** directive sets the recording activity panel to read-only mode.
  * In this mode, users can only view recordings without the ability to start, stop, or delete them.

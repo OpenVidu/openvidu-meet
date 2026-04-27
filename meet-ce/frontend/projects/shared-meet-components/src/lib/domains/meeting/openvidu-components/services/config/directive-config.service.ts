@@ -69,7 +69,6 @@ interface GeneralConfig {
 	minimal: boolean;
 	participantName: string;
 	prejoin: boolean;
-	prejoinDisplayParticipantName: boolean;
 	showDisconnectionDialog: boolean;
 	showThemeSelector: boolean;
 	recordingStreamBaseUrl: string;
@@ -91,7 +90,6 @@ export class OpenViduComponentsConfigService {
 		minimal: false,
 		participantName: '',
 		prejoin: true,
-		prejoinDisplayParticipantName: true,
 		showDisconnectionDialog: true,
 		showThemeSelector: false,
 		recordingStreamBaseUrl: 'call/api/recordings',
@@ -151,7 +149,6 @@ export class OpenViduComponentsConfigService {
 	readonly tokenErrorSignal = computed(() => this.generalConfig().tokenError);
 	readonly participantNameSignal = computed(() => this.generalConfig().participantName);
 	readonly prejoinSignal = computed(() => this.generalConfig().prejoin);
-	readonly prejoinDisplayParticipantNameSignal = computed(() => this.generalConfig().prejoinDisplayParticipantName);
 	readonly showDisconnectionDialogSignal = computed(() => this.generalConfig().showDisconnectionDialog);
 	readonly recordingStreamBaseUrlSignal = computed(() => this.generalConfig().recordingStreamBaseUrl);
 	readonly e2eeKeySignal = computed(() => this.generalConfig().e2eeKey);

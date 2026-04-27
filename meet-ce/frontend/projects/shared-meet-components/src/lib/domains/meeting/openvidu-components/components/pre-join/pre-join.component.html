@@ -102,19 +102,6 @@
 					} @else {
 						<!-- Configuration Section -->
 						<div class="configuration-section">
-							<!-- Participant Name Input -->
-							@if (showParticipantName()) {
-								<div class="participant-name-container input-section">
-									<ov-participant-name-input
-										[isPrejoinPage]="true"
-										[error]="!!errorMessage()"
-										(onNameUpdated)="onParticipantNameChanged($event)"
-										(onEnterPressed)="onEnterPressed()"
-										class="name-input"
-									/>
-								</div>
-							}
-
 							<!-- Error Message -->
 							@if (!!errorMessage()) {
 								<div class="error-message" id="token-error">
@@ -125,13 +112,7 @@
 
 							<!-- Join Button -->
 							<div class="join-section">
-								<button
-									mat-flat-button
-									(click)="join()"
-									class="join-button"
-									id="join-button"
-									[disabled]="showParticipantName() && !participantName()"
-								>
+								<button mat-flat-button (click)="join()" class="join-button" id="join-button">
 									{{ 'PREJOIN.JOIN' | translate }}
 								</button>
 							</div>
