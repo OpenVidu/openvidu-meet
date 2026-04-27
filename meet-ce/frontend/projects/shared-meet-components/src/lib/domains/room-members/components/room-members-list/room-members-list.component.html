@@ -181,17 +181,16 @@
 						<div class="member-info" id="member-info-{{ member.memberId }}">
 							<div
 								class="member-avatar"
-								[class.moderator]="member.baseRole === MeetRoomMemberRole.MODERATOR"
-								[class.speaker]="member.baseRole === MeetRoomMemberRole.SPEAKER"
+								[class]="RoomMemberUiUtils.getRoleClass(member.baseRole)"
 								id="member-avatar-{{ member.memberId }}"
 							>
-								<span>{{ getMemberInitials(member) }}</span>
+								<span>{{ RoomMemberUiUtils.getMemberInitials(member) }}</span>
 							</div>
 							<div class="member-details">
 								<span class="member-name" id="member-name-{{ member.memberId }}">{{
 									member.name
 								}}</span>
-								@if (canViewUserProfiles() && isRegisteredMember(member)) {
+								@if (canViewUserProfiles() && RoomMemberUiUtils.isRegisteredMember(member)) {
 									<a
 										class="member-id-link"
 										[routerLink]="['/users', member.memberId]"
@@ -217,11 +216,10 @@
 					<td mat-cell *matCellDef="let member" id="members-role-cell-{{ member.memberId }}">
 						<span
 							class="role-badge"
-							[class.moderator]="member.baseRole === MeetRoomMemberRole.MODERATOR"
-							[class.speaker]="member.baseRole === MeetRoomMemberRole.SPEAKER"
+							[class]="RoomMemberUiUtils.getRoleClass(member.baseRole)"
 							id="role-badge-{{ member.memberId }}"
 						>
-							{{ member.baseRole }}
+							{{ RoomMemberUiUtils.getRoleLabel(member.baseRole) }}
 						</span>
 					</td>
 				</ng-container>
@@ -231,8 +229,8 @@
 					<th mat-header-cell *matHeaderCellDef id="members-type-header">Type</th>
 					<td mat-cell *matCellDef="let member" id="members-type-cell-{{ member.memberId }}">
 						<div class="member-type" id="member-type-{{ member.memberId }}">
-							<mat-icon class="type-icon">{{ getMemberTypeIcon(member) }}</mat-icon>
-							<span>{{ getMemberTypeLabel(member) }}</span>
+							<mat-icon class="type-icon">{{ RoomMemberUiUtils.getMemberTypeIcon(member) }}</mat-icon>
+							<span>{{ RoomMemberUiUtils.getMemberTypeLabel(member) }}</span>
 						</div>
 					</td>
 				</ng-container>

@@ -27,8 +27,9 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberSortField, SortOrder } from '@openvidu-meet/typings';
+import { MeetRoomMember, MeetRoomMemberSortField, SortOrder } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
+import { RoomMemberUiUtils } from '../../utils/ui';
 
 export interface MemberTableAction {
 	members: MeetRoomMember[];
@@ -137,8 +138,7 @@ export class RoomMembersListsComponent implements OnInit {
 		return this.showSelection() ? ['select', ...columns] : columns;
 	});
 
-	// Expose enum to template
-	protected readonly MeetRoomMemberRole = MeetRoomMemberRole;
+	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
 
 	constructor() {
 		effect(() => {
@@ -298,28 +298,5 @@ export class RoomMembersListsComponent implements OnInit {
 
 	clearFilters() {
 		this.nameFilterControl.setValue('');
-	}
-
-	// ===== UTILS =====
-
-	getMemberTypeLabel(member: MeetRoomMember): string {
-		return this.isRegisteredMember(member) ? 'Registered' : 'External';
-	}
-
-	getMemberTypeIcon(member: MeetRoomMember): string {
-		return this.isRegisteredMember(member) ? 'verified_user' : 'person_outline';
-	}
-
-	isRegisteredMember(member: MeetRoomMember): boolean {
-		return !member.memberId.startsWith('ext-');
-	}
-
-	getMemberInitials(member: MeetRoomMember): string {
-		return member.name
-			.split(' ')
-			.filter(Boolean)
-			.slice(0, 2)
-			.map((word) => word[0].toUpperCase())
-			.join('');
 	}
 }

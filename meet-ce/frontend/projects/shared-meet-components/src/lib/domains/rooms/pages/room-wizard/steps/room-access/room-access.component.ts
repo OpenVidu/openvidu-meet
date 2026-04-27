@@ -15,6 +15,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRoomMemberOptions, MeetRoomMemberRole, MeetRoomOptions, MeetUserDTO } from '@openvidu-meet/typings';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { PERMISSION_GROUPS } from '../../../../../room-members/models/permissions.model';
+import { RoomMemberUiUtils } from '../../../../../room-members/utils/ui';
 import { UserService } from '../../../../../users/services/user.service';
 import {
 	RoomAccessFormGroup,
@@ -49,7 +50,7 @@ export class RoomAccessComponent {
 
 	roomAccessForm: RoomAccessFormGroup;
 	permissionGroups = PERMISSION_GROUPS;
-	readonly availableRoles: MeetRoomMemberRole[] = [MeetRoomMemberRole.MODERATOR, MeetRoomMemberRole.SPEAKER];
+	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
 
 	// Member addition form
 	addMemberForm = new FormGroup({
@@ -160,27 +161,5 @@ export class RoomAccessComponent {
 
 	onRemoveMember(index: number): void {
 		this.wizardService.removePendingMember(index);
-	}
-
-	getRoleLabel(role: MeetRoomMemberRole): string {
-		switch (role) {
-			case MeetRoomMemberRole.MODERATOR:
-				return 'Moderator';
-			case MeetRoomMemberRole.SPEAKER:
-				return 'Speaker';
-			default:
-				return role;
-		}
-	}
-
-	getRoleIcon(role: MeetRoomMemberRole): string {
-		switch (role) {
-			case MeetRoomMemberRole.MODERATOR:
-				return 'manage_accounts';
-			case MeetRoomMemberRole.SPEAKER:
-				return 'record_voice_over';
-			default:
-				return 'person';
-		}
 	}
 }

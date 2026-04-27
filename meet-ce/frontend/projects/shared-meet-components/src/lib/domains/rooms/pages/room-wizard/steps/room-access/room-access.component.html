@@ -205,10 +205,10 @@
 				<mat-form-field subscriptSizing="dynamic" appearance="outline" class="role-field">
 					<mat-label>Role</mat-label>
 					<mat-select formControlName="role">
-						@for (role of availableRoles; track role) {
+						@for (role of RoomMemberUiUtils.AVAILABLE_ROLES; track role) {
 							<mat-option [value]="role">
 								<div class="role-option">
-									<span>{{ getRoleLabel(role) }}</span>
+									<span>{{ RoomMemberUiUtils.getRoleLabel(role) }}</span>
 								</div>
 							</mat-option>
 						}
@@ -235,10 +235,14 @@
 					@for (member of pendingMembers(); track member.userId; let i = $index) {
 						<div class="pending-member-row">
 							<div class="member-info">
-								<mat-icon class="member-icon">{{ getRoleIcon(member.baseRole) }}</mat-icon>
+								<mat-icon class="member-icon">{{
+									RoomMemberUiUtils.getRoleIcon(member.baseRole)
+								}}</mat-icon>
 								<div class="member-text">
 									<span class="member-user-id">{{ member.userId || member.name }}</span>
-									<span class="member-role">{{ getRoleLabel(member.baseRole) }}</span>
+									<span class="member-role">{{
+										RoomMemberUiUtils.getRoleLabel(member.baseRole)
+									}}</span>
 								</div>
 							</div>
 							<button
