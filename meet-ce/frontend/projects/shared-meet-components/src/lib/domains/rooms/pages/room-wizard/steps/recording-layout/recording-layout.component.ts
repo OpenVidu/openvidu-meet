@@ -103,7 +103,7 @@ export class RecordingLayoutComponent {
 			}
 		};
 
-		this.wizardService.updateStepData(WizardStepId.RECORDING_LAYOUT, stepData);
+		this.wizardService.updateStepData(stepData);
 	}
 
 	onOptionSelect(event: SelectionCardEvent): void {

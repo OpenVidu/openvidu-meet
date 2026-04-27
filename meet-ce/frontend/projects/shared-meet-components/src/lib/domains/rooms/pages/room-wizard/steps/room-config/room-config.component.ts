@@ -4,11 +4,7 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MeetRoomOptions } from '@openvidu-meet/typings';
-import {
-	RecordingEnabledOption,
-	RoomConfigFormGroup,
-	RoomConfigFormValue
-} from '../../../../models/wizard-forms.model';
+import { RoomConfigFormGroup, RoomConfigFormValue } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services';
 
@@ -23,9 +19,6 @@ export class RoomConfigComponent {
 	private wizardService = inject(RoomWizardStateService);
 
 	roomConfigForm: RoomConfigFormGroup;
-
-	// Store the previous recording state before E2EE disables it
-	private recordingStateBeforeE2EE?: RecordingEnabledOption;
 
 	constructor() {
 		const roomConfigStep = this.wizardService.getStepById(WizardStepId.ROOM_CONFIG);
@@ -57,7 +50,7 @@ export class RoomConfigComponent {
 			}
 		};
 
-		this.wizardService.updateStepData(WizardStepId.ROOM_CONFIG, stepData);
+		this.wizardService.updateStepData(stepData);
 	}
 
 	onE2EEToggleChange(event: MatSlideToggleChange): void {
@@ -77,7 +70,7 @@ export class RoomConfigComponent {
 
 			// Only save if it's not already 'disabled' (to preserve user's original choice)
 			if (currentRecordingValue !== 'disabled') {
-				this.recordingStateBeforeE2EE = currentRecordingValue;
+				this.wizardService.setRecordingStateBeforeE2EE(currentRecordingValue);
 			}
 
 			// Disable recording automatically
@@ -87,18 +80,35 @@ export class RoomConfigComponent {
 				},
 				{ emitEvent: true }
 			);
+
+			this.wizardService.updateStepData({
+				config: {
+					recording: {
+						enabled: false
+					}
+				}
+			});
 		} else {
 			// Restore the previous recording state when E2EE is disabled
-			if (this.recordingStateBeforeE2EE !== undefined) {
+			const previousRecordingState = this.wizardService.getRecordingStateBeforeE2EE();
+			if (previousRecordingState !== undefined) {
 				recordingForm.patchValue(
 					{
-						recordingEnabled: this.recordingStateBeforeE2EE
+						recordingEnabled: previousRecordingState
 					},
 					{ emitEvent: true }
 				);
 
+				this.wizardService.updateStepData({
+					config: {
+						recording: {
+							enabled: previousRecordingState === 'enabled'
+						}
+					}
+				});
+
 				// Clear the saved state
-				this.recordingStateBeforeE2EE = undefined;
+				this.wizardService.clearRecordingStateBeforeE2EE();
 			}
 		}
 	}

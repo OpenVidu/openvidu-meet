@@ -37,7 +37,6 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-
 import type { MeetRoomDeletionOptions } from '../models/request-context.model.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';

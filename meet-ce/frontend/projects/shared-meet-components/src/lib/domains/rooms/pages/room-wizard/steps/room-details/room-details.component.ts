@@ -112,7 +112,7 @@ export class RoomWizardRoomDetailsComponent {
 		};
 
 		// Always save to wizard state (including when values are cleared)
-		this.wizardService.updateStepData(WizardStepId.ROOM_DETAILS, stepData);
+		this.wizardService.updateStepData(stepData);
 	}
 
 	get minDate(): Date {

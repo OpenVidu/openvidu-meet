@@ -49,7 +49,7 @@ export class RoomBasicCreationComponent {
 		const stepData: Partial<MeetRoomOptions> = {
 			roomName: formValue.roomName
 		};
-		this.wizardService.updateStepData(WizardStepId.ROOM_DETAILS, stepData);
+		this.wizardService.updateStepData(stepData);
 	}
 
 	onCreateRoom() {

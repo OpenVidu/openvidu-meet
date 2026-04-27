@@ -40,9 +40,6 @@ export class RecordingConfigComponent {
 
 	recordingForm: RecordingFormGroup;
 
-	// Store the previous E2EE state before recording disables it
-	private e2eeStateBeforeRecording?: boolean;
-
 	recordingOptions: SelectableCardOption[] = [
 		{
 			id: 'enabled',
@@ -88,7 +85,7 @@ export class RecordingConfigComponent {
 			}
 		};
 
-		this.wizardService.updateStepData(WizardStepId.RECORDING, stepData);
+		this.wizardService.updateStepData(stepData);
 	}
 
 	onOptionSelect(event: SelectionCardEvent): void {
@@ -109,7 +106,7 @@ export class RecordingConfigComponent {
 
 				if (e2eeEnabled) {
 					// Save the E2EE state before disabling it
-					this.e2eeStateBeforeRecording = true;
+					this.wizardService.setE2EEStateBeforeRecording(true);
 
 					// Disable E2EE when enabling recording
 					configStep.formGroup.patchValue(
@@ -118,19 +115,36 @@ export class RecordingConfigComponent {
 						},
 						{ emitEvent: true }
 					);
+
+					this.wizardService.updateStepData({
+						config: {
+							e2ee: {
+								enabled: false
+							}
+						}
+					});
 				}
 			} else if (previouslyEnabled && !willBeEnabled) {
 				// Disabling recording: restore E2EE state if it was saved
-				if (this.e2eeStateBeforeRecording !== undefined) {
+				const previousE2EEState = this.wizardService.getE2EEStateBeforeRecording();
+				if (previousE2EEState !== undefined) {
 					configStep.formGroup.patchValue(
 						{
-							e2eeEnabled: this.e2eeStateBeforeRecording
+							e2eeEnabled: previousE2EEState
 						},
 						{ emitEvent: true }
 					);
 
+					this.wizardService.updateStepData({
+						config: {
+							e2ee: {
+								enabled: previousE2EEState
+							}
+						}
+					});
+
 					// Clear the saved state
-					this.e2eeStateBeforeRecording = undefined;
+					this.wizardService.clearE2EEStateBeforeRecording();
 				}
 			}
 		}

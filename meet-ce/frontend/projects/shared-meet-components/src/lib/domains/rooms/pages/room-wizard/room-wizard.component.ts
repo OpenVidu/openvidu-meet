@@ -94,11 +94,25 @@ export class RoomWizardComponent implements OnInit {
 		if (!this.roomId) return;
 
 		try {
-			const { roomName, autoDeletionDate, config, access, roles } = await this.roomService.getRoom(this.roomId, {
-				fields: ['roomName', 'autoDeletionDate', 'config', 'access', 'roles'],
-				extraFields: ['config']
-			});
-			this.existingRoomData = { roomName, autoDeletionDate, config, access, roles };
+			const { roomName, autoDeletionDate, autoDeletionPolicy, config, access, roles } =
+				await this.roomService.getRoom(this.roomId, {
+					fields: ['roomName', 'autoDeletionDate', 'autoDeletionPolicy', 'config', 'access', 'roles'],
+					extraFields: ['config']
+				});
+
+			// Populate existing room options based on fetched data
+			this.existingRoomData = { roomName, autoDeletionDate, autoDeletionPolicy, config, roles };
+			this.existingRoomData.access = {
+				anonymous: {
+					moderator: { enabled: access.anonymous.moderator.enabled },
+					speaker: { enabled: access.anonymous.speaker.enabled },
+					recording: { enabled: access.anonymous.recording.enabled }
+				},
+				registered: {
+					enabled: access.registered.enabled
+				}
+			};
+
 			if (this.existingRoomData) {
 				this.isBasicCreation.set(false);
 			}
@@ -131,9 +145,9 @@ export class RoomWizardComponent implements OnInit {
 	}
 
 	async onCancel() {
-		this.wizardService.resetWizard();
 		const destination = this.editMode() && this.roomId ? `/rooms/${this.roomId}` : '/rooms';
 		await this.navigationService.navigateTo(destination, undefined, true);
+		this.wizardService.resetWizard();
 	}
 
 	async createRoomBasic(roomName?: string) {

@@ -12,7 +12,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRoomMemberOptions, MeetRoomMemberRole, MeetUserDTO } from '@openvidu-meet/typings';
+import { MeetRoomMemberOptions, MeetRoomMemberRole, MeetRoomOptions, MeetUserDTO } from '@openvidu-meet/typings';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { PERMISSION_GROUPS } from '../../../../../room-members/models/permissions.model';
 import { UserService } from '../../../../../users/services/user.service';
@@ -86,7 +86,7 @@ export class RoomAccessComponent {
 	}
 
 	private saveFormData(formValue: Partial<RoomAccessFormValue>): void {
-		const stepData = {
+		const stepData: Partial<MeetRoomOptions> = {
 			access: {
 				anonymous: {
 					moderator: { enabled: formValue.anonymousModeratorEnabled ?? false },
@@ -100,7 +100,7 @@ export class RoomAccessComponent {
 			}
 		};
 
-		this.wizardService.updateStepData(WizardStepId.ROOM_ACCESS, stepData);
+		this.wizardService.updateStepData(stepData);
 	}
 
 	get moderatorForm(): RoomAccessRolePermissionsFormGroup {
