@@ -59,6 +59,9 @@ export async function startRecordingFromSettingsMenu(page: Page): Promise<void> 
 	await expect(recordingButton).toBeVisible();
 	await expect(recordingButton).toBeEnabled();
 	await recordingButton.click();
+
+	// Ensure the activities panel is open so the recording status is visible
+	await ensureActivitiesPanelOpen(page);
 }
 
 export async function getRecordingStatusText(page: Page): Promise<string> {
