@@ -1,13 +1,7 @@
-import type { MeetRecordingInfo} from '@openvidu-meet/typings';
+import type { MeetingRecordingSignalPayload, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { SendDataOptions } from 'livekit-server-sdk';
-import type {
-	RecordingSignalPayload,
-	RoomStatusSignalPayload
-} from '../models/ov-components-signal.model.js';
-import {
-	OpenViduComponentsDataTopic
-} from '../models/ov-components-signal.model.js';
+import { OpenViduComponentsDataTopic } from '../models/ov-components-signal.model.js';
 
 export class OpenViduComponentsAdapterHelper {
 	private constructor() {
@@ -19,19 +13,18 @@ export class OpenViduComponentsAdapterHelper {
 			destinationSids: [],
 			topic: OpenViduComponentsAdapterHelper.generateDataTopic(recordingInfo)
 		};
-		const payload = OpenViduComponentsAdapterHelper.parseRecordingInfoToOpenViduComponents(recordingInfo);
+		const payload: MeetingRecordingSignalPayload =
+			OpenViduComponentsAdapterHelper.parseRecordingInfoToOpenViduComponents(recordingInfo);
 
 		return { payload, options };
 	}
 
-	static generateRoomStatusSignal(recordingInfo: MeetRecordingInfo[], participantSid?: string) {
-		const isRecordingActive = recordingInfo.some((rec) => rec.status === MeetRecordingStatus.ACTIVE);
-		const payload: RoomStatusSignalPayload = {
-			isRecordingStarted: isRecordingActive,
-			recordingList: recordingInfo.map((rec) =>
-				OpenViduComponentsAdapterHelper.parseRecordingInfoToOpenViduComponents(rec)
-			)
-		};
+	static generateMeetingStatusSignal(recordingInfo: MeetRecordingInfo[], participantSid?: string) {
+		const recordingActive = recordingInfo.find((rec) => rec.status === MeetRecordingStatus.ACTIVE);
+
+		if (!recordingActive) return null;
+
+		const payload = OpenViduComponentsAdapterHelper.parseRecordingInfoToOpenViduComponents(recordingActive);
 
 		const options = {
 			topic: OpenViduComponentsDataTopic.ROOM_STATUS,
@@ -43,19 +36,10 @@ export class OpenViduComponentsAdapterHelper {
 		};
 	}
 
-	private static parseRecordingInfoToOpenViduComponents(info: MeetRecordingInfo): RecordingSignalPayload {
+	private static parseRecordingInfoToOpenViduComponents(info: MeetRecordingInfo): MeetingRecordingSignalPayload {
 		return {
 			id: info.recordingId,
-			roomName: info.roomId,
-			roomId: info.roomId,
-			// outputMode: info.outputMode,
-			status: this.mapRecordingStatus(info.status),
-			filename: info.filename,
-			startedAt: info.startDate,
-			endedAt: info.endDate,
-			duration: info.duration,
-			size: info.size,
-			location: undefined,
+			startDate: info.startDate,
 			error: info.error
 		};
 	}
@@ -77,26 +61,6 @@ export class OpenViduComponentsAdapterHelper {
 				return OpenViduComponentsDataTopic.RECORDING_STOPPED;
 			default:
 				return OpenViduComponentsDataTopic.RECORDING_FAILED;
-		}
-	}
-
-	private static mapRecordingStatus(status: MeetRecordingStatus) {
-		switch (status) {
-			case MeetRecordingStatus.STARTING:
-				return 'STARTING';
-			case MeetRecordingStatus.ACTIVE:
-				return 'STARTED';
-			case MeetRecordingStatus.ENDING:
-				return 'STOPPING';
-			case MeetRecordingStatus.COMPLETE:
-				return 'READY';
-			case MeetRecordingStatus.FAILED:
-			case MeetRecordingStatus.ABORTED:
-				return 'FAILED';
-			case MeetRecordingStatus.LIMIT_REACHED:
-				return 'READY';
-			default:
-				return 'FAILED';
 		}
 	}
 }

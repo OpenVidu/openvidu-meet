@@ -55,6 +55,31 @@ export interface MeetParticipantPermissionsUpdatedPayload {
 }
 
 /**
+ * Payload for meeting status signals.
+ */
+export interface MeetingStatusSignalPayload {
+	recording: MeetingRecordingSignalPayload;
+}
+
+/**
+ * Payload for recording status signals.
+ */
+export interface MeetingRecordingSignalPayload {
+	id: string;
+	startDate?: number;
+	error?: string;
+}
+
+export interface MeetingChatSignalPayload {
+	message: string;
+}
+
+export type OVComponentSignalPayload =
+	| MeetingRecordingSignalPayload
+	| MeetingStatusSignalPayload
+	| MeetingChatSignalPayload;
+
+/**
  * Union type representing the payload of a MeetSignal.
  * It can be either a {@link MeetRoomConfigUpdatedPayload}, {@link MeetParticipantRoleUpdatedPayload}
  * or {@link MeetParticipantPermissionsUpdatedPayload}, depending on the signal type.

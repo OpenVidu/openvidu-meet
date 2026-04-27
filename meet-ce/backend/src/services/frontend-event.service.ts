@@ -5,10 +5,9 @@ import type {
 	MeetRoom,
 	MeetRoomConfigUpdatedPayload,
 	MeetRoomMemberUIBadge,
-	MeetSignalPayload} from '@openvidu-meet/typings';
-import {
-	MeetSignalType
+	MeetSignalPayload
 } from '@openvidu-meet/typings';
+import { MeetSignalType } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { SendDataOptions } from 'livekit-server-sdk';
 import { OpenViduComponentsAdapterHelper } from '../helpers/ov-components-adapter.helper.js';
@@ -46,13 +45,13 @@ export class FrontendEventService {
 	}
 
 	/**
-	 * Sends a room status signal to OpenVidu Components.
+	 * Sends a meeting status signal to OpenVidu Components.
 	 *
 	 * This method checks if recording is started in the room and sends a signal
 	 * with the room status to OpenVidu Components. If recording is not started,
 	 * it skips sending the signal.
 	 */
-	async sendRoomStatusSignalToOpenViduComponents(
+	async sendMeetingStatusSignalToOpenViduComponents(
 		roomId: string,
 		participantSid: string,
 		recordingInfo: MeetRecordingInfo[]
@@ -61,12 +60,11 @@ export class FrontendEventService {
 
 		try {
 			// Construct the payload and signal options
-			const { payload, options } = OpenViduComponentsAdapterHelper.generateRoomStatusSignal(
-				recordingInfo,
-				participantSid
-			);
+			const status = OpenViduComponentsAdapterHelper.generateMeetingStatusSignal(recordingInfo, participantSid);
 
-			await this.sendSignal(roomId, payload, options);
+			if (!status) return;
+
+			await this.sendSignal(roomId, status.payload, status.options);
 		} catch (error) {
 			this.logger.debug(`Error sending room status signal for room ${roomId}:`, error);
 		}

@@ -19,8 +19,8 @@ export enum RecordingOutputMode {
  * Interface representing information related to the recording status
  */
 export interface RecordingStateInfo {
+	id?: string;
 	status: RecordingState;
-	recordingList: RecordingInfo[];
 	startedAt?: Date;
 	error?: string;
 }

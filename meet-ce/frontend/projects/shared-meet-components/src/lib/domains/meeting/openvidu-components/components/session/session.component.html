@@ -1,8 +1,8 @@
 @if (loading) {
-	<div id="spinner" [animate.enter]="'ov-fade-in-200'" [animate.leave]="'ov-fade-out-200'">
+	<!-- <div id="spinner" [animate.enter]="'ov-fade-in-200'" [animate.leave]="'ov-fade-out-200'">
 		<mat-spinner [diameter]="50" />
 		<span>{{ 'ROOM.JOINING' | translate }}</span>
-	</div>
+	</div> -->
 } @else {
 	@if (viewportService.shouldShowLandscapeWarning()) {
 		<ov-landscape-warning />

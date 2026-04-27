@@ -29,7 +29,6 @@ import { MediaElementComponent } from '../media-element/media-element.component'
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
 import { AudioDevicesComponent } from '../settings/audio-devices/audio-devices.component';
 import { LangSelectorComponent } from '../settings/lang-selector/lang-selector.component';
-import { ParticipantNameInputComponent } from '../settings/participant-name-input/participant-name-input.component';
 import { VideoDevicesComponent } from '../settings/video-devices/video-devices.component';
 
 /**
@@ -48,8 +47,7 @@ import { VideoDevicesComponent } from '../settings/video-devices/video-devices.c
 		MediaElementComponent,
 		VideoDevicesComponent,
 		AudioDevicesComponent,
-		BackgroundEffectsPanelComponent,
-		ParticipantNameInputComponent
+		BackgroundEffectsPanelComponent
 	],
 	templateUrl: './pre-join.component.html',
 	styleUrl: './pre-join.component.scss',

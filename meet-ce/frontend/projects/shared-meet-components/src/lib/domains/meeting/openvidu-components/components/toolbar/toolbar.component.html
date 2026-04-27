@@ -8,25 +8,24 @@
 			}
 
 			<!-- Session Info -->
-			<div id="session-info-container" [class.collapsed]="isRecordingStarted">
+			<div id="session-info-container" [class.collapsed]="isRecordingStarted()">
 				<!-- Room Name -->
 				@if (!isMinimal() && showRoomName()) {
-					<span id="session-name">{{ roomName }}</span>
+					<span id="session-name">{{ roomName() }}</span>
 				}
 
 				<!-- Activities (Recording / Broadcasting) -->
-				@if (isRecordingStarted ) {
+				@if (isRecordingStarted()) {
 					<div id="activities-tag">
-						@if (isRecordingStarted) {
+						@if (isRecordingStarted()) {
 							<div id="recording-tag" class="recording-tag" (click)="openRecordingActivityPanel()">
 								<mat-icon class="blink">radio_button_checked</mat-icon>
 								<span class="blink">REC</span>
-								@if (recordingTime) {
-									<span> | {{ recordingTime | date: 'H:mm:ss' }}</span>
+								@if (recordingTime()) {
+									<span> | {{ recordingTime() | date: 'H:mm:ss' }}</span>
 								}
 							</div>
 						}
-
 					</div>
 				}
 			</div>
@@ -37,17 +36,17 @@
 	<div class="media-buttons-container" id="media-buttons-container">
 		<ov-toolbar-media-buttons
 			[showCameraButton]="showCameraButton()"
-			[isCameraEnabled]="isCameraEnabled"
-			[cameraMuteChanging]="cameraMuteChanging"
+			[isCameraEnabled]="isCameraEnabled()"
+			[cameraMuteChanging]="cameraMuteChanging()"
 			[showMicrophoneButton]="showMicrophoneButton()"
-			[isMicrophoneEnabled]="isMicrophoneEnabled"
-			[microphoneMuteChanging]="microphoneMuteChanging"
+			[isMicrophoneEnabled]="isMicrophoneEnabled()"
+			[microphoneMuteChanging]="microphoneMuteChanging()"
 			[showScreenshareButton]="showScreenshareButton()"
-			[isScreenShareEnabled]="isScreenShareEnabled"
-			[isFirefoxBrowser]="isFirefoxBrowser"
-			[hasVideoDevices]="hasVideoDevices"
-			[hasAudioDevices]="hasAudioDevices"
-			[isConnectionLost]="isConnectionLost"
+			[isScreenShareEnabled]="isScreenShareEnabled()"
+			[isFirefoxBrowser]="isFirefoxBrowser()"
+			[hasVideoDevices]="hasVideoDevices()"
+			[hasAudioDevices]="hasAudioDevices()"
+			[isConnectionLost]="isConnectionLost()"
 			[isMinimal]="isMinimal()"
 			[showMoreOptionsButton]="showMoreOptionsButton()"
 			[showFullscreenButton]="showFullscreenButton()"
@@ -55,8 +54,8 @@
 			[showViewRecordingsButton]="showViewRecordingsButton()"
 			[showBackgroundEffectsButton]="showBackgroundEffectsButton()"
 			[showSettingsButton]="showSettingsButton()"
-			[isFullscreenActive]="isFullscreenActive"
-			[recordingStatus]="recordingStatus"
+			[isFullscreenActive]="isFullscreenActive()"
+			[recordingStatus]="recordingStatus().status"
 			[hasRoomTracksPublished]="hasRoomTracksPublished"
 			[showLeaveButton]="showLeaveButton()"
 			[toolbarAdditionalButtonsTemplate]="toolbarAdditionalButtonsTemplate ?? null"
@@ -84,15 +83,15 @@
 	<div class="menu-buttons-container" id="menu-buttons-container">
 		<ov-toolbar-panel-buttons
 			[isMinimal]="isMinimal()"
-			[isConnectionLost]="isConnectionLost"
-			[isActivitiesOpened]="isActivitiesOpened"
-			[isParticipantsOpened]="isParticipantsOpened"
-			[isChatOpened]="isChatOpened"
-			[unreadMessages]="unreadMessages"
+			[isConnectionLost]="isConnectionLost()"
+			[isActivitiesOpened]="isActivitiesOpened()"
+			[isParticipantsOpened]="isParticipantsOpened()"
+			[isChatOpened]="isChatOpened()"
+			[unreadMessages]="unreadMessages()"
 			[showActivitiesPanelButton]="showActivitiesPanelButton()"
 			[showParticipantsPanelButton]="showParticipantsPanelButton()"
 			[showChatPanelButton]="showChatPanelButton()"
-			[recordingStatus]="recordingStatus"
+			[recordingStatus]="recordingStatus()"
 			[totalParticipants]="totalParticipants()"
 			[toolbarAdditionalPanelButtonsTemplate]="toolbarAdditionalPanelButtonsTemplate"
 			(toggleActivitiesPanel)="toggleActivitiesPanel($event ?? '')"

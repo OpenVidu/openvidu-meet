@@ -174,7 +174,7 @@ export class LivekitWebhookService {
 			}
 
 			const { recordings } = await this.recordingService.getAllRecordings({ roomId: room.name });
-			await this.frontendEventService.sendRoomStatusSignalToOpenViduComponents(
+			await this.frontendEventService.sendMeetingStatusSignalToOpenViduComponents(
 				room.name,
 				participant.sid,
 				recordings
