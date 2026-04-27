@@ -17,7 +17,7 @@
 				<mat-label>Role</mat-label>
 				<mat-select [ngModel]="selectedRole()" (ngModelChange)="selectedRole.set($event)">
 					@for (role of availableRoles; track role) {
-						<mat-option [value]="role">{{ UsersUiUtils.getRoleLabel(role) }}</mat-option>
+						<mat-option [value]="role">{{ UsersUiUtils.getRoleLabel(role, false) }}</mat-option>
 					}
 				</mat-select>
 			</mat-form-field>
