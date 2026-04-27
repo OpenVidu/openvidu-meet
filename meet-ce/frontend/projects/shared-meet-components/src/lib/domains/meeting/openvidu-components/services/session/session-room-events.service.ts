@@ -49,7 +49,9 @@ export class SessionRoomEventsService {
 		this.subscribeToEncryptionErrors(room);
 		this.subscribeToActiveSpeakersChanged(room);
 		this.subscribeToParticipantConnected(room);
+		this.subscribeToTrackPublished(room);
 		this.subscribeToTrackSubscribed(room);
+		this.subscribeToTrackUnpublished(room);
 		this.subscribeToTrackUnsubscribed(room);
 		this.subscribeToTrackMuteStateChanged(room);
 		this.subscribeToParticipantDisconnected(room);
@@ -76,6 +78,12 @@ export class SessionRoomEventsService {
 
 	private subscribeToParticipantConnected(room: Room) {
 		room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+			this.participantService.addRemoteParticipant(participant);
+		});
+	}
+
+	private subscribeToTrackPublished(room: Room) {
+		room.on(RoomEvent.TrackPublished, (_publication: RemoteTrackPublication, participant: RemoteParticipant) => {
 			this.participantService.addRemoteParticipant(participant);
 		});
 	}
@@ -124,6 +132,12 @@ export class SessionRoomEventsService {
 		);
 	}
 
+	private subscribeToTrackUnpublished(room: Room) {
+		room.on(RoomEvent.TrackUnpublished, (_publication: RemoteTrackPublication, participant: RemoteParticipant) => {
+			this.participantService.addRemoteParticipant(participant);
+		});
+	}
+
 	private subscribeToTrackMuteStateChanged(room: Room) {
 		const refreshParticipantState = (participant: Participant | RemoteParticipant | LocalParticipant) => {
 			if (!participant) return;
@@ -133,7 +147,7 @@ export class SessionRoomEventsService {
 				return;
 			}
 
-			this.participantService.updateRemoteParticipants();
+			this.participantService.addRemoteParticipant(participant as RemoteParticipant);
 		};
 
 		room.on(RoomEvent.TrackMuted, (_publication: TrackPublication, participant: Participant) => {
