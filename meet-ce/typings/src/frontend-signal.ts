@@ -1,3 +1,4 @@
+import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetRoomConfig } from './database/room-config.js';
 import { MeetRoomMemberUIBadge } from './response/room-member-response.js';
 
@@ -5,12 +6,27 @@ import { MeetRoomMemberUIBadge } from './response/room-member-response.js';
  * Interface representing a signal emitted by OpenVidu Meet to notify clients about real-time updates in the meeting.
  */
 export enum MeetSignalType {
+	/** Emitted when the recording state of a meeting room is updated */
+	MEET_RECORDING_UPDATED = 'meet_recording_updated',
 	/** Emitted when the configuration of a meeting room is updated */
 	MEET_ROOM_CONFIG_UPDATED = 'meet_room_config_updated',
 	/** Emitted when a participant's role in a meeting room is updated */
 	MEET_PARTICIPANT_ROLE_UPDATED = 'meet_participant_role_updated',
 	/** Emitted when a participant must regenerate their room member token to sync updated permissions */
 	MEET_PARTICIPANT_PERMISSIONS_UPDATED = 'meet_participant_permissions_updated'
+}
+
+/**
+ * Payload for MEET_RECORDING_UPDATED signal,
+ * containing the latest recording state for a room.
+ */
+export interface MeetRecordingUpdatedPayload {
+	/** ID of the room whose recording state has changed */
+	roomId: string;
+	/** Latest recording state for the room */
+	recording: MeetRecordingInfo;
+	/** Timestamp in milliseconds when the update occurred */
+	timestamp: number;
 }
 
 /**
@@ -54,37 +70,18 @@ export interface MeetParticipantPermissionsUpdatedPayload {
 	timestamp: number;
 }
 
-/**
- * Payload for meeting status signals.
- */
-export interface MeetingStatusSignalPayload {
-	recording: MeetingRecordingSignalPayload;
-}
-
-/**
- * Payload for recording status signals.
- */
-export interface MeetingRecordingSignalPayload {
-	id: string;
-	startDate?: number;
-	error?: string;
-}
-
 export interface MeetingChatSignalPayload {
 	message: string;
 }
 
-export type OVComponentSignalPayload =
-	| MeetingRecordingSignalPayload
-	| MeetingStatusSignalPayload
-	| MeetingChatSignalPayload;
-
 /**
  * Union type representing the payload of a MeetSignal.
- * It can be either a {@link MeetRoomConfigUpdatedPayload}, {@link MeetParticipantRoleUpdatedPayload}
- * or {@link MeetParticipantPermissionsUpdatedPayload}, depending on the signal type.
+ * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetRoomConfigUpdatedPayload},
+ * {@link MeetParticipantRoleUpdatedPayload} or {@link MeetParticipantPermissionsUpdatedPayload},
+ * depending on the signal type.
  */
 export type MeetSignalPayload =
+	| MeetRecordingUpdatedPayload
 	| MeetRoomConfigUpdatedPayload
 	| MeetParticipantRoleUpdatedPayload
 	| MeetParticipantPermissionsUpdatedPayload;

@@ -158,7 +158,7 @@ export class LivekitWebhookService {
 
 	/**
 	 * Handles the 'participant_joined' event by gathering relevant room and participant information,
-	 * and sending a room status signal to OpenVidu components.
+	 * and syncing the active recording state to the new participant when needed.
 	 * @param room - Information about the room where the participant joined.
 	 * @param participant - Information about the newly joined participant.
 	 */
@@ -173,14 +173,16 @@ export class LivekitWebhookService {
 				await this.meetingPresenceService.upsertUserInRoom(userId, room.name, participant.identity);
 			}
 
-			const { recordings } = await this.recordingService.getAllRecordings({ roomId: room.name });
-			await this.frontendEventService.sendMeetingStatusSignalToOpenViduComponents(
-				room.name,
-				participant.sid,
-				recordings
-			);
+			const { recordings } = await this.recordingService.getAllRecordings({
+				roomId: room.name,
+				status: MeetRecordingStatus.ACTIVE
+			});
+
+			if (recordings.length > 0) {
+				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recordings[0], participant.sid);
+			}
 		} catch (error) {
-			this.logger.error('Error sending room status signal on participant join:', error);
+			this.logger.error('Error sending recording state on participant join:', error);
 		}
 	}
 
@@ -355,15 +357,13 @@ export class LivekitWebhookService {
 						);
 					}
 
-					specificTasks.push(
-						this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
-					);
+					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
 
 					break;
 				case 'ended':
 					specificTasks.push(
 						this.recordingService.releaseRecordingLockIfNoEgress(roomId),
-						this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
+						this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo)
 					);
 					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo);
 					break;

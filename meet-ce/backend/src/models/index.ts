@@ -3,7 +3,6 @@ export * from './database.model.js';
 export * from './distributed-event.model.js';
 export * from './error.model.js';
 export * from './migration.model.js';
-export * from './ov-components-signal.model.js';
 export * from './redis.model.js';
 export * from './request-context.model.js';
 export * from './task-scheduler.model.js';
@@ -26,3 +25,4 @@ export * from './zod-schemas/recording.schema.js';
 export * from './zod-schemas/room-member.schema.js';
 export * from './zod-schemas/room.schema.js';
 export * from './zod-schemas/user.schema.js';
+

@@ -100,9 +100,8 @@ export class RecordingService {
 
 			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
 
-			// Manually send the recording signal to OpenVidu Components for avoiding missing event if timeout occurs
-			// and the egress_started webhook is not received.
-			await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, {
+			// Manually send the recording update to avoid missing the state transition if the webhook is delayed.
+			await this.frontendEventService.sendRecordingUpdatedSignal(roomId, {
 				recordingId: '',
 				roomId,
 				roomName: roomId,
@@ -172,8 +171,8 @@ export class RecordingService {
 					if (isOperationCompleted) {
 						this.logger.warn(`startRoomComposite failed after timeout: ${error}`);
 
-						// Manually send the recording FAILED signal to OpenVidu Components for avoiding missing event
-						await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, {
+						// Manually send the recording FAILED update to avoid missing the state transition.
+						await this.frontendEventService.sendRecordingUpdatedSignal(roomId, {
 							recordingId,
 							roomId,
 							roomName: roomId,
@@ -826,9 +825,8 @@ export class RecordingService {
 					error: `No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, composite recording uses 2 CPUs for each room.`
 				};
 
-				// Manually send the recording FAILED signal to OpenVidu Components for avoiding missing event
-				// because of the egress_ended or egress_failed webhook is not received.
-				await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo);
+				// Manually send the recording FAILED update because the webhook may never arrive.
+				await this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo);
 			} else {
 				await this.updateRecordingStatus(recordingId, MeetRecordingStatus.FAILED);
 				await this.stopRecording(recordingId);

@@ -1,9 +1,9 @@
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
 	MeetingChatSignalPayload,
-	MeetingRecordingSignalPayload,
-	MeetingStatusSignalPayload,
-	OVComponentSignalPayload
+	MeetRecordingStatus,
+	MeetRecordingUpdatedPayload,
+	MeetSignalType
 } from '@openvidu-meet/typings';
 import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
@@ -217,7 +217,7 @@ export class SessionRoomEventsService {
 		);
 	}
 
-	private handleDataEvent(topic: string | undefined, event: OVComponentSignalPayload, participantName: string) {
+	private handleDataEvent(topic: string | undefined, event: unknown, participantName: string) {
 		if (!topic) return;
 
 		switch (topic) {
@@ -226,39 +226,36 @@ export class SessionRoomEventsService {
 				this.chatService.addRemoteMessage(message, participantName);
 				break;
 			}
-			case DataTopic.RECORDING_STARTING: {
-				const { id } = event as MeetingRecordingSignalPayload;
-				this.recordingService.setRecordingStarting(id);
+			case MeetSignalType.MEET_RECORDING_UPDATED: {
+				this.handleRecordingUpdated(event as MeetRecordingUpdatedPayload);
 				break;
 			}
-			case DataTopic.RECORDING_STARTED: {
-				const { id, startDate } = event as MeetingRecordingSignalPayload;
-				this.recordingService.setRecordingStarted(id, startDate!);
+			default:
 				break;
-			}
-			case DataTopic.RECORDING_STOPPING: {
+		}
+	}
+
+	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {
+		const { recording } = event;
+
+		switch (recording.status) {
+			case MeetRecordingStatus.STARTING:
+				this.recordingService.setRecordingStarting(recording.recordingId);
+				break;
+			case MeetRecordingStatus.ACTIVE:
+				this.recordingService.setRecordingStarted(recording.recordingId, recording.startDate ?? Date.now());
+				break;
+			case MeetRecordingStatus.ENDING:
 				this.recordingService.setRecordingStopping();
 				break;
-			}
-			case DataTopic.RECORDING_STOPPED: {
+			case MeetRecordingStatus.COMPLETE:
 				this.recordingService.setRecordingStopped();
 				break;
-			}
-			case DataTopic.RECORDING_FAILED: {
-				const { error } = event as MeetingRecordingSignalPayload;
-				if (error) {
-					this.recordingService.setRecordingFailed(error);
-				}
+			case MeetRecordingStatus.FAILED:
+			case MeetRecordingStatus.ABORTED:
+			case MeetRecordingStatus.LIMIT_REACHED:
+				this.recordingService.setRecordingFailed(recording.error ?? recording.details ?? 'Recording failed');
 				break;
-			}
-			case DataTopic.ROOM_STATUS: {
-				const { recording } = event as MeetingStatusSignalPayload;
-
-				if (recording?.id) {
-					this.recordingService.setRecordingStarted(recording.id, recording.startDate!);
-				}
-				break;
-			}
 			default:
 				break;
 		}
