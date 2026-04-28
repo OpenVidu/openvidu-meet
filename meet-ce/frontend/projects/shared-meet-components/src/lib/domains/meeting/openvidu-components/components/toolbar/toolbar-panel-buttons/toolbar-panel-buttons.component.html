@@ -18,7 +18,7 @@
 
 			<!-- Vertical panels menu -->
 			<mat-menu #panelsMenu="matMenu" class="panels-menu">
-				@if (!isMinimal() && showActivitiesPanelButton()) {
+				@if (showActivitiesPanelButton()) {
 					<button
 						mat-menu-item
 						class="panel-menu-item"
@@ -30,7 +30,7 @@
 					</button>
 				}
 
-				@if (!isMinimal() && showParticipantsPanelButton()) {
+				@if (showParticipantsPanelButton()) {
 					<button
 						mat-menu-item
 						[matBadge]="totalParticipants()"
@@ -45,7 +45,7 @@
 					</button>
 				}
 
-				@if (!isMinimal() && showChatPanelButton()) {
+				@if (showChatPanelButton()) {
 					<button
 						mat-menu-item
 						class="panel-menu-item"
@@ -72,7 +72,7 @@
 		</div>
 	}
 } @else {
-	@if (!isMinimal() && showActivitiesPanelButton()) {
+	@if (showActivitiesPanelButton()) {
 		<button
 			mat-icon-button
 			id="activities-panel-btn"
@@ -86,7 +86,7 @@
 		</button>
 	}
 
-	@if (!isMinimal() && showParticipantsPanelButton()) {
+	@if (showParticipantsPanelButton()) {
 		<button
 			mat-icon-button
 			class="panel-button"
@@ -107,7 +107,7 @@
 		</button>
 	}
 
-	@if (!isMinimal() && showChatPanelButton()) {
+	@if (showChatPanelButton()) {
 		<button
 			mat-icon-button
 			class="panel-button"

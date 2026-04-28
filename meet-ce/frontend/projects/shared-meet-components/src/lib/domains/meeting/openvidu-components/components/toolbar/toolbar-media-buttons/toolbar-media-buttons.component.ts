@@ -14,10 +14,10 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
 import { RecordingState } from '../../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../../models/toolbar.model';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ViewportService } from '../../../services/viewport/viewport.service';
 
 /**
@@ -53,9 +53,6 @@ export class ToolbarMediaButtonsComponent {
 
 	// Connection state inputs
 	isConnectionLost = input<boolean>(false);
-
-	// UI state inputs
-	isMinimal = input<boolean>(false);
 
 	// More options menu inputs
 	showMoreOptionsButton = input<boolean>(true);
@@ -111,17 +108,17 @@ export class ToolbarMediaButtonsComponent {
 	readonly isDesktopView = computed(() => this.viewportService.isDesktop());
 
 	// Essential buttons that always stay visible
-	readonly showCameraButtonDirect = computed(() => this.showCameraButton() && !this.isMinimal());
+	readonly showCameraButtonDirect = computed(() => this.showCameraButton());
 
-	readonly showMicrophoneButtonDirect = computed(() => this.showMicrophoneButton() && !this.isMinimal());
+	readonly showMicrophoneButtonDirect = computed(() => this.showMicrophoneButton());
 
 	// Screenshare button - visible on tablet+ or when already active
 	readonly showScreenshareButtonDirect = computed(
-		() => this.showScreenshareButton() && !this.isMinimal() && (!this.isMobileView() || this.isScreenShareEnabled())
+		() => this.showScreenshareButton() && (!this.isMobileView() || this.isScreenShareEnabled())
 	);
 
-	// More options button - always visible when not minimal
-	readonly showMoreOptionsButtonDirect = computed(() => this.showMoreOptionsButton() && !this.isMinimal());
+	// More options button - always visible
+	readonly showMoreOptionsButtonDirect = computed(() => this.showMoreOptionsButton());
 
 	// Check if there are active features that should show a badge on More Options
 	readonly hasActiveFeatures = computed(

@@ -1,58 +1,56 @@
 import { NgModule } from '@angular/core';
 import { ActivitiesPanelRecordingActivityDirective } from './activities-panel.directive';
 import {
-	E2EEKeyDirective,
-	FallbackLogoDirective,
-	LayoutRemoteParticipantsDirective,
-	RecordingActivityViewRecordingsButtonDirective,
-	ShowThemeSelectorDirective,
-	StartStopRecordingButtonsDirective,
-	ToolbarBrandingLogoDirective,
-	ToolbarRoomNameDirective,
-	ToolbarViewRecordingsButtonDirective
+    E2EEKeyDirective,
+    FallbackLogoDirective,
+    LayoutRemoteParticipantsDirective,
+    RecordingActivityViewRecordingsButtonDirective,
+    ShowThemeSelectorDirective,
+    StartStopRecordingButtonsDirective,
+    ToolbarBrandingLogoDirective,
+    ToolbarRoomNameDirective,
+    ToolbarViewRecordingsButtonDirective
 } from './internals.directive';
 import { ParticipantPanelItemMuteButtonDirective } from './participant-panel-item.directive';
 import {
-	StreamDisplayAudioDetectionDirective,
-	StreamDisplayParticipantNameDirective,
-	StreamVideoControlsDirective
+    StreamDisplayAudioDetectionDirective,
+    StreamDisplayParticipantNameDirective,
+    StreamVideoControlsDirective
 } from './stream.directive';
 import {
-	ToolbarActivitiesPanelButtonDirective,
-	ToolbarAdditionalButtonsPossitionDirective,
-	ToolbarBackgroundEffectsButtonDirective,
-	ToolbarCameraButtonDirective,
-	ToolbarChatPanelButtonDirective,
-	ToolbarDisplayLogoDirective,
-	ToolbarDisplayRoomNameDirective,
-	ToolbarFullscreenButtonDirective,
-	ToolbarLeaveButtonDirective,
-	ToolbarMicrophoneButtonDirective,
-	ToolbarParticipantsPanelButtonDirective,
-	ToolbarRecordingButtonDirective,
-	ToolbarScreenshareButtonDirective,
-	ToolbarSettingsButtonDirective
+    ToolbarActivitiesPanelButtonDirective,
+    ToolbarAdditionalButtonsPossitionDirective,
+    ToolbarBackgroundEffectsButtonDirective,
+    ToolbarCameraButtonDirective,
+    ToolbarChatPanelButtonDirective,
+    ToolbarDisplayLogoDirective,
+    ToolbarDisplayRoomNameDirective,
+    ToolbarFullscreenButtonDirective,
+    ToolbarLeaveButtonDirective,
+    ToolbarMicrophoneButtonDirective,
+    ToolbarParticipantsPanelButtonDirective,
+    ToolbarRecordingButtonDirective,
+    ToolbarScreenshareButtonDirective,
+    ToolbarSettingsButtonDirective
 } from './toolbar.directive';
 import {
-	AudioEnabledDirective,
-	LangDirective,
-	LangOptionsDirective,
-	LivekitUrlDirective,
-	MinimalDirective,
-	ParticipantNameDirective,
-	PrejoinDirective,
-	RecordingStreamBaseUrlDirective,
-	ShowDisconnectionDialogDirective,
-	TokenDirective,
-	TokenErrorDirective,
-	VideoEnabledDirective
+    AudioEnabledDirective,
+    LangDirective,
+    LangOptionsDirective,
+    LivekitUrlDirective,
+    ParticipantNameDirective,
+    PrejoinDirective,
+    RecordingStreamBaseUrlDirective,
+    ShowDisconnectionDialogDirective,
+    TokenDirective,
+    TokenErrorDirective,
+    VideoEnabledDirective
 } from './videoconference.directive';
 
 const directives = [
 	LivekitUrlDirective,
 	TokenDirective,
 	TokenErrorDirective,
-	MinimalDirective,
 	LangDirective,
 	LangOptionsDirective,
 	PrejoinDirective,

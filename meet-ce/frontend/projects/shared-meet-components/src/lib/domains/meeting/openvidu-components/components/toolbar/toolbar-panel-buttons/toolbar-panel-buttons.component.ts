@@ -18,7 +18,6 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 })
 export class ToolbarPanelButtonsComponent {
 	// Signal inputs from toolbar
-	isMinimal = input<boolean>(false);
 	isConnectionLost = input<boolean>(false);
 	isActivitiesOpened = input<boolean>(false);
 	isParticipantsOpened = input<boolean>(false);
@@ -39,9 +38,9 @@ export class ToolbarPanelButtonsComponent {
 	// Computed signals
 	visibleButtonsCount = computed(() => {
 		let count = 0;
-		if (!this.isMinimal() && this.showActivitiesPanelButton()) count++;
-		if (!this.isMinimal() && this.showParticipantsPanelButton()) count++;
-		if (!this.isMinimal() && this.showChatPanelButton()) count++;
+		if (this.showActivitiesPanelButton()) count++;
+		if (this.showParticipantsPanelButton()) count++;
+		if (this.showChatPanelButton()) count++;
 		return count;
 	});
 

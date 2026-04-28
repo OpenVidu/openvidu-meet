@@ -268,10 +268,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly isMinimal = this.libService.minimalSignal;
-	/**
-	 * @ignore
-	 */
 	readonly showCameraButton = this.libService.cameraButtonSignal;
 	/**
 	 * @ignore

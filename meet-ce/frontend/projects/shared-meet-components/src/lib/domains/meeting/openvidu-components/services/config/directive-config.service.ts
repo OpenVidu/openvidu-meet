@@ -53,7 +53,6 @@ interface GeneralConfig {
 	token: string;
 	livekitUrl: string;
 	tokenError: any;
-	minimal: boolean;
 	participantName: string;
 	prejoin: boolean;
 	showDisconnectionDialog: boolean;
@@ -74,7 +73,6 @@ export class OpenViduComponentsConfigService {
 		token: '',
 		livekitUrl: '',
 		tokenError: null,
-		minimal: false,
 		participantName: '',
 		prejoin: true,
 		showDisconnectionDialog: true,
@@ -122,7 +120,6 @@ export class OpenViduComponentsConfigService {
 	private readonly layoutRemoteParticipantsConfig = signal<ParticipantModel[] | undefined>(undefined);
 
 	// Signals-first selectors used by migrated consumers/directives
-	readonly minimalSignal = computed(() => this.generalConfig().minimal);
 	readonly tokenSignal = computed(() => this.generalConfig().token);
 	readonly livekitUrlSignal = computed(() => this.generalConfig().livekitUrl);
 	readonly tokenErrorSignal = computed(() => this.generalConfig().tokenError);

@@ -6,14 +6,13 @@
 		[class.no-size]="!showVideo()"
 		[class.local]="track.participant.isLocal"
 		[class.remote]="!track.participant.isLocal"
-		[class.speaking]="!isMinimal && showAudioDetection && track.participant.isSpeaking && track.isCameraTrack"
+		[class.speaking]="showAudioDetection() && track.participant.isSpeaking && track.isCameraTrack"
 		[id]="'stream-' + track.source + '-' + track.trackSid"
 		(mousemove)="mouseHover($event)"
 		#streamContainer
 	>
 		@if (
-			!isMinimal &&
-			showParticipantName &&
+			showParticipantName() &&
 			(!track.isAudioTrack || (track.isAudioTrack && track.participant.onlyHasAudioTracks))
 		) {
 			<div id="participant-name-container" class="participant-name" [class.fullscreen]="isFullscreen">
@@ -26,7 +25,7 @@
 			</div>
 		}
 
-		@if (!isMinimal && showAudioDetection && track.participant.isSpeaking && track.isCameraTrack) {
+		@if (showAudioDetection() && track.participant.isSpeaking && track.isCameraTrack) {
 			<div id="audio-wave-container">
 				<ov-audio-wave />
 			</div>
@@ -61,7 +60,7 @@
 			</div>
 		}
 
-		@if (!isMinimal && showVideoControls && mouseHovering && !track.participant.hasEncryptionError) {
+		@if (showVideoControls() && mouseHovering && !track.participant.hasEncryptionError) {
 			<div class="stream-video-controls">
 				<div class="flex-container">
 					<button

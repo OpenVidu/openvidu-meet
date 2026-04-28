@@ -75,7 +75,6 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	readonly isMinimal = this.libService.minimalSignal;
 	readonly showCameraButton = this.libService.cameraButtonSignal;
 	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
 	readonly showLogo = this.libService.displayLogoSignal;
@@ -89,38 +88,29 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	readonly isVideoEnabled = signal(false);
 	readonly hasVideoDevices = signal(true);
 	private tracks: LocalTrack[] = [];
-	private readonly loggerSrv = inject(LoggerService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly translateService = inject(TranslateService);
 	protected readonly viewportService = inject(ViewportService);
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
+	private log: ILogger = inject(LoggerService).get('PreJoinComponent');
 	private shouldRemoveTracksWhenComponentIsDestroyed: boolean = true;
+
+	private readonly errorEffect = effect(() => {
+		const currentError = this.error();
+		if (currentError) {
+			this.errorMessage.set(currentError.message ?? currentError.name);
+		}
+	});
+
+	private readonly participantNameEffect = effect(() => {
+		const configuredName = this.libService.participantNameSignal();
+		if (configuredName) {
+			this.participantName.set(configuredName);
+		}
+	});
 
 	sizeChange() {
 		this.windowSize = window.innerWidth;
-	}
-
-	constructor() {
-		this.log = this.loggerSrv.get('PreJoinComponent');
-		effect(() => {
-			const currentError = this.error();
-			if (currentError) {
-				this.errorMessage.set(currentError.message ?? currentError.name);
-			}
-		});
-
-		effect(() => {
-			const configuredName = this.libService.participantNameSignal();
-			if (configuredName) {
-				this.participantName.set(configuredName);
-			}
-		});
 	}
 
 	async ngOnInit() {
@@ -128,11 +118,6 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 		this.windowSize = window.innerWidth;
 		this.isLoading.set(false);
 	}
-
-	// ngAfterContentChecked(): void {
-	// 	// this.changeDetector.detectChanges();
-	// 	this.isLoading = false;
-	// }
 
 	async ngOnDestroy() {
 		this.cdkSrv.setSelector('body');

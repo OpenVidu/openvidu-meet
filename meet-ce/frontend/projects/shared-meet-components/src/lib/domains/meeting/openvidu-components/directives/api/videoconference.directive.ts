@@ -161,57 +161,6 @@ export class TokenErrorDirective implements OnDestroy {
 }
 
 /**
- * The **minimal** directive applies a minimal UI hiding all controls except for cam and mic.
- *
- * It is only available for {@link VideoconferenceComponent}.
- *
- * Default: `false`
- *
- * @example
- * <ov-videoconference [minimal]="true"></ov-videoconference>
- */
-@Directive({
-	selector: 'ov-videoconference[minimal]',
-	standalone: true
-})
-export class MinimalDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	readonly minimal = input<boolean>(false);
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly minimalEffect = effect(() => {
-		this.update(this.minimal());
-	});
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	/**
-	 * @ignore
-	 */
-	clear() {
-		this.update(false);
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(value: boolean) {
-		this.libService.updateGeneralConfig({ minimal: value });
-	}
-}
-
-/**
  * The **lang** directive allows set the UI language to a default language.
  *
  * It is only available for {@link VideoconferenceComponent}.

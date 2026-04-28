@@ -4,15 +4,15 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { TranslatePipe } from '../../pipes/translate.pipe';
-import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
-import { MediaElementComponent } from '../media-element/media-element.component';
 import { ParticipantTrackPublication } from '../../models/participant.model';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
 import { Track } from '../../services/livekit-adapter';
 import { ParticipantService } from '../../services/participant/participant.service';
+import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
+import { MediaElementComponent } from '../media-element/media-element.component';
 
 /**
  * The **StreamComponent** is hosted inside of the {@link LayoutComponent}.
@@ -20,12 +20,24 @@ import { ParticipantService } from '../../services/participant/participant.servi
  */
 @Component({
 	selector: 'ov-stream',
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe, AudioWaveComponent, MediaElementComponent],
+	imports: [
+		CommonModule,
+		MatButtonModule,
+		MatIconModule,
+		MatTooltipModule,
+		TranslatePipe,
+		AudioWaveComponent,
+		MediaElementComponent
+	],
 	templateUrl: './stream.component.html',
 	styleUrls: ['./stream.component.scss'],
 	standalone: true
 })
 export class StreamComponent implements OnDestroy {
+	private readonly layoutService = inject(LayoutService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly cdkSrv = inject(CdkOverlayService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
 	readonly trackInput = input<ParticipantTrackPublication | undefined>(undefined, { alias: 'track' });
 
 	/**
@@ -52,29 +64,11 @@ export class StreamComponent implements OnDestroy {
 		return this.trackInput();
 	}
 
-	/**
-	 * @ignore
-	 */
-	isMinimal: boolean = false;
-	/**
-	 * @ignore
-	 */
-	showParticipantName: boolean = true;
-	/**
-	 * @ignore
-	 */
-	showAudioDetection: boolean = true;
-	/**
-	 * @ignore
-	 */
-	showVideoControls: boolean = true;
-	/**
-	 * @ignore
-	 */
+	readonly showParticipantName = this.libService.displayParticipantNameSignal;
+	readonly showAudioDetection = this.libService.displayAudioDetectionSignal;
+	readonly showVideoControls = this.libService.streamVideoControlsSignal;
 	readonly showVideo = signal(false);
-	/**
-	 * @ignore
-	 */
+
 	isFullscreen: boolean = false;
 
 	/**
@@ -109,17 +103,6 @@ export class StreamComponent implements OnDestroy {
 				this.showVideo.set(true);
 			}, this.NO_SIZE_TIMEOUT);
 		}
-	});
-
-	private readonly layoutService = inject(LayoutService);
-	private readonly participantService = inject(ParticipantService);
-	private readonly cdkSrv = inject(CdkOverlayService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly streamConfigSyncEffect = effect(() => {
-		this.isMinimal = this.libService.minimalSignal();
-		this.showParticipantName = this.libService.displayParticipantNameSignal();
-		this.showAudioDetection = this.libService.displayAudioDetectionSignal();
-		this.showVideoControls = this.libService.streamVideoControlsSignal();
 	});
 
 	ngOnDestroy() {
@@ -198,5 +181,4 @@ export class StreamComponent implements OnDestroy {
 			this.mouseHovering = false;
 		}, this.HOVER_TIMEOUT);
 	}
-
 }
