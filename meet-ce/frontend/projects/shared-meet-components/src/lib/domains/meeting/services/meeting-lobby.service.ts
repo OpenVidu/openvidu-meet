@@ -50,6 +50,8 @@ export class MeetingLobbyService {
 
 	/** Readonly signal for room name */
 	readonly roomName = computed(() => this._room()?.roomName);
+	/** Computed signal for whether the current user has permission to join the meeting */
+	readonly canJoinMeeting = computed(() => this.meetingContextService.meetingUI().showJoinMeeting);
 	/** Readonly signal for whether the room is closed */
 	readonly roomClosed = computed(() => this._room()?.status === MeetRoomStatus.CLOSED);
 	/** Readonly signal for whether E2EE is enabled in the room */

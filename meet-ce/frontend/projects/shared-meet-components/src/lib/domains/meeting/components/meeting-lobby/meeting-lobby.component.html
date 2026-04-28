@@ -17,21 +17,30 @@
 		<!-- Action Cards Grid -->
 		<div class="action-cards-grid">
 			<!-- Join Room Card -->
-			<mat-card class="action-card primary-card fade-in" [ngClass]="{ 'room-closed-card': roomClosed() }">
+			<mat-card
+				class="action-card primary-card fade-in"
+				[ngClass]="{ 'room-closed-card': roomClosed() || !canJoinMeeting() }"
+			>
 				<mat-card-header class="card-header">
-					<mat-icon class="ov-room-icon card-icon">{{ roomClosed() ? 'lock' : 'meeting_room' }}</mat-icon>
+					<mat-icon class="ov-room-icon card-icon">{{
+						roomClosed() ? 'lock' : !canJoinMeeting() ? 'block' : 'meeting_room'
+					}}</mat-icon>
 					<div class="card-title-group">
-						<mat-card-title>{{ roomClosed() ? 'Room Closed' : 'Join Meeting' }}</mat-card-title>
+						<mat-card-title>{{
+							roomClosed() ? 'Room Closed' : !canJoinMeeting() ? 'Access Restricted' : 'Join Meeting'
+						}}</mat-card-title>
 						<mat-card-subtitle>{{
 							roomClosed()
 								? 'This room is not available for meetings'
-								: 'Enter the room and start connecting'
+								: !canJoinMeeting()
+									? 'You do not have permission to join this meeting'
+									: 'Enter the room and start connecting'
 						}}</mat-card-subtitle>
 					</div>
 				</mat-card-header>
 
 				<mat-card-content class="card-content">
-					@if (!roomClosed()) {
+					@if (!roomClosed() && canJoinMeeting()) {
 						<form [formGroup]="participantForm()" (ngSubmit)="onFormSubmit()" class="join-form">
 							<!-- Participant Name Input -->
 							<mat-form-field appearance="outline" class="name-field">
@@ -80,12 +89,20 @@
 								<span>Join Meeting</span>
 							</button>
 						</form>
-					} @else {
+					} @else if (roomClosed()) {
 						<div class="room-closed-message">
 							<mat-icon class="warning-icon">warning</mat-icon>
 							<p>
 								Sorry, this room is closed. You cannot join at this time. Please contact the meeting
 								organizer for more information.
+							</p>
+						</div>
+					} @else {
+						<div class="room-closed-message">
+							<mat-icon class="warning-icon">block</mat-icon>
+							<p>
+								Sorry, you have access to this room but do not have permission to join meetings.
+								Please contact the meeting organizer for more information.
 							</p>
 						</div>
 					}
@@ -126,7 +143,7 @@
 		</div>
 
 		<!-- Room URL Badge -->
-		@if (!roomClosed() && showShareLink()) {
+		@if (!roomClosed() && canJoinMeeting() && showShareLink()) {
 			<ov-share-meeting-link [meetingUrl]="meetingUrl()" (copyClicked)="onCopyLinkClick()" />
 		}
 

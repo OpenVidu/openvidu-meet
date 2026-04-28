@@ -1,6 +1,5 @@
 import { NgClass } from '@angular/common';
-import { Component, inject } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -36,6 +35,7 @@ export class MeetingLobbyComponent {
 
 	protected roomName = this.lobbyService.roomName;
 	protected roomClosed = this.lobbyService.roomClosed;
+	protected canJoinMeeting = this.lobbyService.canJoinMeeting;
 	protected isE2EEEnabled = this.lobbyService.hasRoomE2EEEnabled;
 
 	protected participantForm = this.lobbyService.participantForm;
