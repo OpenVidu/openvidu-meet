@@ -77,11 +77,16 @@ export class AuthService {
 			headers[HTTP_HEADERS.REFRESH_TOKEN] = `Bearer ${refreshToken}`;
 		}
 
-		const response = await this.httpService.postRequest<any>(path, {}, headers);
+		const response = await this.httpService.postRequest<{
+			message: string;
+			accessToken: string;
+			refreshToken?: string;
+		}>(path, {}, headers);
 
-		// Update access token in localStorage if returned in response
-		if (response.accessToken) {
-			this.tokenStorageService.setAccessToken(response.accessToken);
+		// Update tokens in localStorage
+		this.tokenStorageService.setAccessToken(response.accessToken);
+		if (response.refreshToken) {
+			this.tokenStorageService.setRefreshToken(response.refreshToken);
 		}
 
 		return response;
