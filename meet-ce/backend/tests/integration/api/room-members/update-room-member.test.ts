@@ -151,6 +151,12 @@ describe('Room Members API Tests', () => {
 
 			expect(response.body.customPermissions).toHaveProperty('canKickParticipants', true);
 			expect(response.body.customPermissions).toHaveProperty('canEndMeeting', true);
+			expect(response.body.customPermissions).not.toHaveProperty('canRecord');
+			expect(response.body.customPermissions).not.toHaveProperty('canDeleteRecordings');
+			expect(response.body.effectivePermissions).toHaveProperty('canKickParticipants', true);
+			expect(response.body.effectivePermissions).toHaveProperty('canEndMeeting', true);
+			expect(response.body.effectivePermissions).toHaveProperty('canRecord', false); // From base role
+			expect(response.body.effectivePermissions).toHaveProperty('canDeleteRecordings', false); // From base role
 		});
 
 		it('should verify member update is persisted', async () => {

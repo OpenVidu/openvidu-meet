@@ -43,6 +43,12 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		return MEET_ROOM_MEMBER_DOCUMENT_ONLY_FIELDS;
 	}
 
+	protected override getAtomicUpdatePaths(): readonly string[] {
+		// Custom permissions must be treated as an atomic update path because
+		// we want to ensure it is fully replaced rather than partially updated.
+		return ['customPermissions'];
+	}
+
 	/**
 	 * Adds a member to a room.
 	 *
