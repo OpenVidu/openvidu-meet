@@ -31,9 +31,6 @@ jobs:
       - name: Install safe-chain
         uses: OpenVidu/actions/install-safe-chain@a5d6165c017b522939a9bf180e2f73c76c44f000 # v1.0.17
 
-      - name: Install LK CLI
-        run: curl -sSL https://get.livekit.io/cli | bash
-
       - name: Setup OpenVidu Local Deployment
         uses: OpenVidu/actions/start-openvidu-local-deployment@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
         with:
