@@ -56,6 +56,9 @@ export class RoomRecordingsComponent implements OnInit {
 	hasMoreRecordings = signal(false);
 	private nextPageToken?: string;
 
+	// Track current active filters so deletions can trigger auto-load
+	private currentFilters: RecordingTableFilter = this.initialFilters();
+
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
 		this.canDeleteRecordings = this.roomMemberContextService.hasPermission('canDeleteRecordings');
@@ -112,7 +115,14 @@ export class RoomRecordingsComponent implements OnInit {
 		}
 	}
 
+	private async autoLoadIfEmpty() {
+		if (this.recordings().length === 0 && this.hasMoreRecordings()) {
+			await this.loadRecordings(this.currentFilters);
+		}
+	}
+
 	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
+		this.currentFilters = filters;
 		const delayLoader = setTimeout(() => {
 			this.isLoading.set(true);
 		}, 200);
@@ -185,6 +195,7 @@ export class RoomRecordingsComponent implements OnInit {
 				// Remove from local list
 				this.recordings.set(this.recordings().filter((r) => r.recordingId !== recording.recordingId));
 				this.notificationService.showSnackbar('Recording deleted successfully');
+				await this.autoLoadIfEmpty();
 			} catch (error) {
 				this.log.e('Error deleting recording:', error);
 				this.notificationService.showSnackbar('Failed to delete recording');
@@ -208,6 +219,7 @@ export class RoomRecordingsComponent implements OnInit {
 				this.notificationService.showSnackbar(
 					`${deleted.length} recording${deleted.length > 1 ? 's' : ''} deleted successfully`
 				);
+				await this.autoLoadIfEmpty();
 			} catch (error: any) {
 				this.log.e('Error deleting recordings:', error);
 
@@ -230,6 +242,7 @@ export class RoomRecordingsComponent implements OnInit {
 					}
 
 					this.notificationService.showSnackbar(msg.trim());
+					await this.autoLoadIfEmpty();
 				} else {
 					this.notificationService.showSnackbar('Failed to delete recordings');
 				}

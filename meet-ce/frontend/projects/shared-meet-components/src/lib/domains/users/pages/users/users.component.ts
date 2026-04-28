@@ -55,6 +55,9 @@ export class UsersComponent implements OnInit {
 	hasMoreUsers = signal(false);
 	private nextPageToken?: string;
 
+	// Track current active filters so deletions can trigger auto-load
+	private currentFilters: UserTableFilter = this.initialFilters();
+
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader.set(true);
@@ -68,7 +71,14 @@ export class UsersComponent implements OnInit {
 		this.isInitializing.set(false);
 	}
 
+	private async autoLoadIfEmpty() {
+		if (this.users().length === 0 && this.hasMoreUsers()) {
+			await this.loadUsers(this.currentFilters);
+		}
+	}
+
 	private async loadUsers(filters: UserTableFilter, refresh = false) {
+		this.currentFilters = filters;
 		const delayLoader = setTimeout(() => {
 			this.isLoading.set(true);
 		}, 200);
@@ -189,6 +199,7 @@ export class UsersComponent implements OnInit {
 					// Remove deleted user from the list
 					this.users.set(this.users().filter((u) => u.userId !== user.userId));
 					this.notificationService.showSnackbar(`User "${user.name}" deleted successfully`);
+					await this.autoLoadIfEmpty();
 				} catch (error) {
 					this.log.e('Error deleting user:', error);
 					this.notificationService.showSnackbar('Failed to delete user');
@@ -208,6 +219,7 @@ export class UsersComponent implements OnInit {
 				this.notificationService.showSnackbar(
 					`${deleted.length} user${deleted.length > 1 ? 's' : ''} deleted successfully`
 				);
+				await this.autoLoadIfEmpty();
 			} catch (error: any) {
 				this.log.e('Error deleting users:', error);
 
@@ -229,6 +241,7 @@ export class UsersComponent implements OnInit {
 					}
 
 					this.notificationService.showSnackbar(message.trim());
+					await this.autoLoadIfEmpty();
 				} else {
 					this.notificationService.showSnackbar('Failed to delete users');
 				}

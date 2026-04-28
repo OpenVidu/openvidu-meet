@@ -91,6 +91,9 @@ export class RoomsComponent implements OnInit {
 	hasMoreRooms = signal(false);
 	private nextPageToken?: string;
 
+	// Track current active filters so deletions can trigger auto-load
+	private currentFilters: RoomTableFilter = this.initialFilters();
+
 	async ngOnInit() {
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader.set(true);
@@ -135,7 +138,14 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
+	private async autoLoadIfEmpty() {
+		if (this.rooms().length === 0 && this.hasMoreRooms()) {
+			await this.loadRooms(this.currentFilters);
+		}
+	}
+
 	private async loadRooms(filters: RoomTableFilter, refresh = false) {
+		this.currentFilters = filters;
 		const delayLoader = setTimeout(() => {
 			this.isLoading.set(true);
 		}, 200);
@@ -267,13 +277,13 @@ export class RoomsComponent implements OnInit {
 		this.roomDeletionService.deleteRoomWithConfirmation({
 			roomId,
 			log: this.log,
-			onSuccess: ({ room: updatedRoom, successCode, message }) => {
-				this.handleSuccessfulDeletion(roomId, successCode, message, updatedRoom);
+			onSuccess: async ({ room: updatedRoom, successCode, message }) => {
+				await this.handleSuccessfulDeletion(roomId, successCode, message, updatedRoom);
 			}
 		});
 	}
 
-	private handleSuccessfulDeletion(
+	private async handleSuccessfulDeletion(
 		roomId: string,
 		successCode: MeetRoomDeletionSuccessCode,
 		message: string,
@@ -289,6 +299,7 @@ export class RoomsComponent implements OnInit {
 		} else {
 			// Room was deleted, remove from list
 			this.rooms.set(this.rooms().filter((r) => r.roomId !== roomId));
+			await this.autoLoadIfEmpty();
 		}
 
 		this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));
@@ -306,6 +317,7 @@ export class RoomsComponent implements OnInit {
 
 				this.handleSuccessfulBulkDeletion(successful);
 				this.notificationService.showSnackbar(message);
+				await this.autoLoadIfEmpty();
 			} catch (error: any) {
 				// Check if it's a structured error with failed rooms
 				const failed = error.error?.failed as { roomId: string; error: string; message: string }[];
@@ -314,6 +326,7 @@ export class RoomsComponent implements OnInit {
 
 				if (failed) {
 					this.handleSuccessfulBulkDeletion(successful);
+					await this.autoLoadIfEmpty();
 
 					const hasRoomDeletionError = failed.some((result) =>
 						this.roomDeletionService.isValidDeletionErrorCode(result.error)
@@ -397,6 +410,7 @@ export class RoomsComponent implements OnInit {
 
 				this.handleSuccessfulBulkDeletion(successful);
 				this.notificationService.showSnackbar(message);
+				await this.autoLoadIfEmpty();
 			} catch (error: any) {
 				this.log.e('Error in second bulk deletion attempt:', error);
 
@@ -408,6 +422,7 @@ export class RoomsComponent implements OnInit {
 				if (failed && successful) {
 					this.handleSuccessfulBulkDeletion(successful);
 					this.notificationService.showSnackbar(message);
+					await this.autoLoadIfEmpty();
 				} else {
 					this.notificationService.showSnackbar('Failed to delete rooms');
 				}

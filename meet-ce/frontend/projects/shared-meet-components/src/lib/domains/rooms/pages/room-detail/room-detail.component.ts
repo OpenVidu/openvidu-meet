@@ -88,6 +88,9 @@ export class RoomDetailComponent implements OnInit {
 	});
 	private nextMembersPageToken?: string;
 
+	// Track current active filters so deletions can trigger auto-load
+	private currentMemberFilters: MemberTableFilter = this.initialMemberFilters();
+
 	// Recordings tab
 	recordings = signal<MeetRecordingInfo[]>([]);
 	loadingRecordings = signal(false);
@@ -99,6 +102,9 @@ export class RoomDetailComponent implements OnInit {
 		sortOrder: SortOrder.DESC
 	});
 	private nextRecordingsPageToken?: string;
+
+	// Track current active filters so deletions can trigger auto-load
+	private currentRecordingFilters: RecordingTableFilter = this.initialRecordingFilters();
 
 	// Tab management
 	selectedTabIndex = signal(0);
@@ -237,7 +243,14 @@ export class RoomDetailComponent implements OnInit {
 
 	// --- Room Members management ---
 
+	private async autoLoadMembersIfEmpty() {
+		if (this.roomMembers().length === 0 && this.hasMoreMembers()) {
+			await this.loadRoomMembers(this.currentMemberFilters);
+		}
+	}
+
 	private async loadRoomMembers(filters: MemberTableFilter, refresh = false) {
+		this.currentMemberFilters = filters;
 		const delayLoader = setTimeout(() => {
 			this.loadingMembers.set(true);
 		}, 200);
@@ -330,6 +343,7 @@ export class RoomDetailComponent implements OnInit {
 					// Remove deleted member from the list
 					this.roomMembers.set(this.roomMembers().filter((m) => m.memberId !== member.memberId));
 					this.notificationService.showSnackbar(`Member "${member.name}" removed successfully`);
+					await this.autoLoadMembersIfEmpty();
 				} catch (error) {
 					this.log.e('Error removing member:', error);
 					this.notificationService.showSnackbar('Failed to remove member');
@@ -349,6 +363,7 @@ export class RoomDetailComponent implements OnInit {
 				this.notificationService.showSnackbar(
 					`${deleted.length} member${deleted.length > 1 ? 's' : ''} removed successfully`
 				);
+				await this.autoLoadMembersIfEmpty();
 			} catch (error: any) {
 				this.log.e('Error removing members:', error);
 
@@ -369,6 +384,7 @@ export class RoomDetailComponent implements OnInit {
 					}
 
 					this.notificationService.showSnackbar(msg.trim());
+					await this.autoLoadMembersIfEmpty();
 				} else {
 					this.notificationService.showSnackbar('Failed to remove members');
 				}
@@ -388,7 +404,14 @@ export class RoomDetailComponent implements OnInit {
 
 	// --- Recordings management ---
 
+	private async autoLoadRecordingsIfEmpty() {
+		if (this.recordings().length === 0 && this.hasMoreRecordings()) {
+			await this.loadRecordings(this.currentRecordingFilters);
+		}
+	}
+
 	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
+		this.currentRecordingFilters = filters;
 		const delayLoader = setTimeout(() => {
 			this.loadingRecordings.set(true);
 		}, 200);
@@ -491,6 +514,7 @@ export class RoomDetailComponent implements OnInit {
 				// Remove from local list
 				this.recordings.set(this.recordings().filter((r) => r.recordingId !== recording.recordingId));
 				this.notificationService.showSnackbar('Recording deleted successfully');
+				await this.autoLoadRecordingsIfEmpty();
 			} catch (error) {
 				this.log.e('Error deleting recording:', error);
 				this.notificationService.showSnackbar('Failed to delete recording');
@@ -514,6 +538,7 @@ export class RoomDetailComponent implements OnInit {
 				this.notificationService.showSnackbar(
 					`${deleted.length} recording${deleted.length > 1 ? 's' : ''} deleted successfully`
 				);
+				await this.autoLoadRecordingsIfEmpty();
 			} catch (error: any) {
 				this.log.e('Error deleting recordings:', error);
 
@@ -536,6 +561,7 @@ export class RoomDetailComponent implements OnInit {
 					}
 
 					this.notificationService.showSnackbar(msg.trim());
+					await this.autoLoadRecordingsIfEmpty();
 				} else {
 					this.notificationService.showSnackbar('Failed to delete recordings');
 				}
