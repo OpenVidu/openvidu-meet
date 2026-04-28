@@ -1,8 +1,10 @@
 @use '../../../../../../../../src/assets/styles/design-tokens' as *;
 
 .ov-page-container {
-	overflow: hidden;
+	overflow-y: auto;
+	overflow-x: hidden;
 }
+
 .page-header {
 	@include ov-page-header;
 
@@ -336,10 +338,6 @@
 		.tab-content {
 			padding: var(--ov-meet-spacing-lg);
 			min-height: 400px;
-
-			&.recordings-tab {
-				padding: 0;
-			}
 
 			.loading-state {
 				display: flex;
