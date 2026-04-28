@@ -5,13 +5,13 @@
 			<div
 				class="participant-container"
 				[attr.data-participant-id]="_participant.sid"
-				[attr.data-participant-name]="participantDisplayName"
+				[attr.data-participant-name]="participantDisplayName()"
 			>
 				<!-- Avatar section with dynamic color -->
 				<div
 					class="participant-avatar"
 					[style.background-color]="_participant.colorProfile"
-					[attr.aria-label]="'Avatar for ' + participantDisplayName"
+					[attr.aria-label]="'Avatar for ' + participantDisplayName()"
 				>
 					<mat-icon>{{ _participant.hasEncryptionError ? 'lock_person' : 'person' }}</mat-icon>
 				</div>
@@ -21,15 +21,15 @@
 					<!-- Name row with better space management -->
 					<div class="participant-name-row">
 						<div class="participant-name">
-							<span class="participant-name-text">{{ participantDisplayName }}</span>
-							@if (isLocalParticipant) {
+							<span class="participant-name-text">{{ participantDisplayName() }}</span>
+							@if (isLocalParticipant()) {
 								<span class="local-indicator">{{ 'PANEL.PARTICIPANTS.YOU' | translate }}</span>
 							}
 						</div>
 
 						<!-- Participant badges in separate container -->
 						<div class="participant-badges">
-							<ng-container *ngTemplateOutlet="participantBadgeTemplate" />
+							<ng-container *ngTemplateOutlet="participantBadgeTemplate()" />
 						</div>
 					</div>
 
@@ -46,7 +46,7 @@
 				@if (!_participant.hasEncryptionError) {
 					<div class="participant-action-buttons">
 						<!-- Mute/Unmute button for remote participants -->
-						@if (!isLocalParticipant && showMuteButton()) {
+						@if (!isLocalParticipant() && showMuteButton()) {
 							<button
 								mat-icon-button
 								id="mute-btn"
@@ -56,8 +56,8 @@
 								[disableRipple]="true"
 								[attr.aria-label]="
 									_participant.isMutedForcibly
-										? ('PANEL.PARTICIPANTS.UNMUTE' | translate) + ' ' + participantDisplayName
-										: ('PANEL.PARTICIPANTS.MUTE' | translate) + ' ' + participantDisplayName
+										? ('PANEL.PARTICIPANTS.UNMUTE' | translate) + ' ' + participantDisplayName()
+										: ('PANEL.PARTICIPANTS.MUTE' | translate) + ' ' + participantDisplayName()
 								"
 								[matTooltip]="
 									_participant.isMutedForcibly
@@ -74,9 +74,9 @@
 						}
 
 						<!-- External item elements with improved structure -->
-						@if (hasExternalElements) {
+						@if (hasExternalElements()) {
 							<div class="external-elements">
-								<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate" />
+								<ng-container *ngTemplateOutlet="participantPanelItemElementsTemplate()" />
 							</div>
 						}
 					</div>

@@ -1,18 +1,18 @@
 <div id="call-container">
-	<!-- Loading spinner -->
-	@if (componentState.isLoading) {
+	<!-- Loading spinner (devices initializing) -->
+	@if (phase() === 'loading') {
 		<div id="spinner">
 			<mat-spinner [diameter]="spinnerDiameter" />
 			<span>{{ 'PREJOIN.PREPARING' | translate }}</span>
 		</div>
-	} @else if (componentState.showPrejoin) {
+	} @else if (phase() === 'prejoin') {
 		<!-- Prejoin -->
 		<div [animate.enter]="enterAnimationClass" id="pre-join-container">
 			@if (openviduAngularPreJoinTemplate) {
 				<ng-container *ngTemplateOutlet="openviduAngularPreJoinTemplate" />
 			} @else {
 				<ov-pre-join
-					[error]="componentState.error?.tokenError"
+					[error]="tokenError()"
 					(onReadyToJoin)="_onReadyToJoin()"
 					(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
 					(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
@@ -22,32 +22,27 @@
 				/>
 			}
 		</div>
-	} @else if (componentState.error?.hasError) {
+	} @else if (phase() === 'error') {
 		<!-- Error -->
-
 		<div id="spinner">
 			<mat-icon class="error-icon">error</mat-icon>
-			<span>{{ componentState.error?.message }}</span>
+			<span>{{ tokenError()?.message || ('ERROR.GENERIC' | translate) }}</span>
 		</div>
-	} @else if (componentState.state === 'DISCONNECTED') {
+	} @else if (phase() === 'disconnected') {
 		<!-- Disconnected state -->
-
 		<div id="spinner">
 			<mat-icon class="info-icon">check_circle</mat-icon>
 			<span>{{ 'ROOM.DISCONNECTED' | translate }}</span>
 			<p class="subtitle">{{ 'ROOM.DISCONNECTED_SUBTITLE' | translate }}</p>
 		</div>
-	} @else if (componentState.isRoomReady) {
+	} @else if (phase() === 'ready') {
 		<!-- VideoConference -->
-
 		<div [animate.enter]="enterAnimationClass" id="vc-container">
 			<ov-session
 				(onRoomCreated)="onRoomCreated.emit($event)"
-				(onRoomReconnecting)="onRoomDisconnected.emit()"
-				(onRoomDisconnected)="onRoomDisconnected.emit()"
+				(onRoomReconnecting)="onRoomReconnecting.emit()"
 				(onRoomReconnected)="onRoomReconnected.emit()"
-				(onParticipantConnected)="onParticipantCreated.emit($event)"
-				(onParticipantConnected)="onParticipantConnected.emit($event)"
+				(onParticipantConnected)="onParticipantCreated.emit($event); onParticipantConnected.emit($event)"
 				(onParticipantLeft)="_onParticipantLeft($event)"
 			>
 				<ng-template #toolbar>
@@ -69,12 +64,6 @@
 				</ng-template>
 			</ov-session>
 		</div>
-	} @else {
-		<!-- Fallback / unknown state -->
-		<div id="unknown-state">
-			<mat-icon class="warning-icon">help_outline</mat-icon>
-			<span>An error occurred in the video conference</span>
-		</div>
 	}
 </div>
 
@@ -82,7 +71,6 @@
 	<ov-toolbar
 		id="default-toolbar"
 		(onParticipantLeft)="_onParticipantLeft($event)"
-		(onRoomDisconnected)="onRoomDisconnected.emit()"
 		(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
 		(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
 		(onScreenShareEnabledChanged)="onScreenShareEnabledChanged.emit($event)"

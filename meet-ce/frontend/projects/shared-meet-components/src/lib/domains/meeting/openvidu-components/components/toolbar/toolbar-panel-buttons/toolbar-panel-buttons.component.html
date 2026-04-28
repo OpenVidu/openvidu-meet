@@ -1,5 +1,5 @@
 <!-- Responsive container: show individual buttons on larger screens, collapsed menu on smaller screens -->
-@if (shouldShowCollapsed) {
+@if (shouldShowCollapsed()) {
 	@if (visibleButtonsCount() > 0) {
 		<div class="collapsed-menu-container">
 			<button

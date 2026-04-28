@@ -15,7 +15,7 @@
 			showParticipantName() &&
 			(!track.isAudioTrack || (track.isAudioTrack && track.participant.onlyHasAudioTracks))
 		) {
-			<div id="participant-name-container" class="participant-name" [class.fullscreen]="isFullscreen">
+			<div id="participant-name-container" class="participant-name" [class.fullscreen]="isFullscreen()">
 				<div class="participant-name-container">
 					<span id="participant-name">{{ track.participant.name }}</span>
 					@if (track.isScreenTrack) {
@@ -60,7 +60,7 @@
 			</div>
 		}
 
-		@if (showVideoControls() && mouseHovering && !track.participant.hasEncryptionError) {
+		@if (showVideoControls() && mouseHovering() && !track.participant.hasEncryptionError) {
 			<div class="stream-video-controls">
 				<div class="flex-container">
 					<button

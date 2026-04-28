@@ -1,8 +1,8 @@
 <div class="container" [class.withMargin]="localParticipant()?.isMinimized">
 	<div id="layout" class="layout" #layout>
 		<!-- Top slot: Render elements that should appear at the top -->
-		@if (layoutAdditionalElementsTemplate && templateConfig.layoutAdditionalElementsSlot === 'top') {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate" />
+		@if (layoutAdditionalElementsTemplate() && templateConfig().layoutAdditionalElementsSlot === 'top') {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate()" />
 		}
 
 		@if (localParticipant(); as participant) {
@@ -22,17 +22,17 @@
 					[cdkDragDisabled]="!track.isMinimized"
 					[cdkDragFreeDragPosition]="{ x: 0, y: 0 }"
 				>
-					<ng-container *ngTemplateOutlet="streamTemplate; context: { $implicit: track }" />
+					<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: track }" />
 				</div>
 			}
 		}
 
 		<!-- Default slot: Render additional layout elements (backward compatibility and default position) -->
 		@if (
-			layoutAdditionalElementsTemplate &&
-			(templateConfig.layoutAdditionalElementsSlot === 'default' || !templateConfig.layoutAdditionalElementsSlot)
+			layoutAdditionalElementsTemplate() &&
+			(templateConfig().layoutAdditionalElementsSlot === 'default' || !templateConfig().layoutAdditionalElementsSlot)
 		) {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate" />
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate()" />
 		}
 
 		@for (track of remoteParticipants() | tracks; track trackParticipantElement($index, track)) {
@@ -45,13 +45,13 @@
 				[class.OV_ignored]="track.isAudioTrack && !track.participant.onlyHasAudioTracks"
 				[class.OV_screen]="track.isScreenTrack"
 			>
-				<ng-container *ngTemplateOutlet="streamTemplate; context: { $implicit: track }" />
+				<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: track }" />
 			</div>
 		}
 
 		<!-- Bottom slot: Render elements that should appear at the bottom -->
-		@if (layoutAdditionalElementsTemplate && templateConfig.layoutAdditionalElementsSlot === 'bottom') {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate" />
+		@if (layoutAdditionalElementsTemplate() && templateConfig().layoutAdditionalElementsSlot === 'bottom') {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate()" />
 		}
 	</div>
 

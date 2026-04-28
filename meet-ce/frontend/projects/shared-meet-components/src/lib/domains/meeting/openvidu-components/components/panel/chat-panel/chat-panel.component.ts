@@ -2,22 +2,21 @@ import { CommonModule } from '@angular/common';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
-	ChangeDetectorRef,
 	Component,
 	computed,
 	effect,
 	ElementRef,
 	inject,
+	signal,
 	viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { PanelType } from '../../../models/panel.model';
 import { LinkifyPipe } from '../../../pipes/linkify.pipe';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
-import { ChatMessage } from '../../../models/chat.model';
-import { PanelType } from '../../../models/panel.model';
 import { ChatService } from '../../../services/chat/chat.service';
 import { E2eeService } from '../../../services/e2ee/e2ee.service';
 import { PanelService } from '../../../services/panel/panel.service';
@@ -47,23 +46,20 @@ export class ChatPanelComponent implements AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	message: string = '';
+	readonly message = signal<string>('');
 	/**
 	 * @ignore
 	 */
-	messageList: ChatMessage[] = [];
+	readonly messageList = computed(() => this.chatService.chatMessages());
 
 	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);
-	private readonly cd = inject(ChangeDetectorRef);
 	private readonly e2eeService = inject(E2eeService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly messagesEffect = effect(() => {
-		const messages = this.chatService.chatMessages();
-		this.messageList = messages;
+
+	private readonly scrollEffect = effect(() => {
 		if (this.panelService.isChatPanelOpened()) {
 			this.scrollToBottom();
-			this.cd.markForCheck();
 		}
 	});
 
@@ -92,9 +88,9 @@ export class ChatPanelComponent implements AfterViewInit {
 	 * @ignore
 	 */
 	async sendMessage(): Promise<void> {
-		if (!!this.message) {
-			await this.chatService.sendMessage(this.message);
-			this.message = '';
+		if (!!this.message()) {
+			await this.chatService.sendMessage(this.message());
+			this.message.set('');
 		}
 	}
 

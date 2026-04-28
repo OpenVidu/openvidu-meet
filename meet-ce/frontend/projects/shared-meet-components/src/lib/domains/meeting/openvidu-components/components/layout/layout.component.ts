@@ -5,7 +5,6 @@ import { CommonModule } from '@angular/common';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
-	ChangeDetectorRef,
 	Component,
 	computed,
 	contentChild,
@@ -49,26 +48,22 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly participantService = inject(ParticipantService);
 	private readonly globalService = inject(GlobalConfigService);
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
-	private readonly cd = inject(ChangeDetectorRef);
 	private readonly templateManagerService = inject(TemplateManagerService);
 
 	/**
 	 * @ignore
 	 */
 	readonly streamTemplateQuery = contentChild('stream', { read: TemplateRef });
-	streamTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
 	readonly layoutAdditionalElementsTemplateQuery = contentChild('layoutAdditionalElements', { read: TemplateRef });
-	layoutAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	readonly layoutContainerQuery = viewChild('layout', { read: ViewContainerRef });
-	layoutContainer: ViewContainerRef | undefined = undefined;
+	readonly layoutContainer = viewChild('layout', { read: ViewContainerRef });
 
 	/**
 	 * @ignore
@@ -92,7 +87,20 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	templateConfig: LayoutTemplateConfiguration = {};
+	readonly templateConfig = computed<LayoutTemplateConfiguration>(() => {
+		return this.templateManagerService.setupLayoutTemplates(
+			this.externalStream(),
+			this.externalLayoutAdditionalElements()
+		);
+	});
+	readonly streamTemplate = computed(
+		() => this.templateConfig().layoutStreamTemplate ?? this.streamTemplateQuery()
+	);
+	readonly layoutAdditionalElementsTemplate = computed(
+		() =>
+			this.templateConfig().layoutAdditionalElementsTemplate ??
+			this.layoutAdditionalElementsTemplateQuery()
+	);
 	readonly localParticipant = this.participantService.localParticipantSignal;
 	readonly remoteParticipants = computed(() => {
 		const directiveParticipants = this.directiveService.layoutRemoteParticipantsSignal();
@@ -121,26 +129,16 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			queueMicrotask(() => {
 				this.resetDragPosition();
 				this.layoutService.update();
-				this.cd.markForCheck();
 			});
 		}
 
 		this.wasLocalMinimized = isLocalMinimized;
 		this.remoteParticipants();
 		this.layoutService.update();
-		this.cd.markForCheck();
-	});
-	private readonly querySyncEffect = effect(() => {
-		this.streamTemplate = this.streamTemplateQuery() ?? this.streamTemplate;
-		this.layoutAdditionalElementsTemplate =
-			this.layoutAdditionalElementsTemplateQuery() ?? this.layoutAdditionalElementsTemplate;
-		this.layoutContainer = this.layoutContainerQuery() ?? this.layoutContainer;
-		this.setupTemplates();
-		this.cd.markForCheck();
 	});
 
 	ngAfterViewInit() {
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
 		if (!layoutContainer) return;
 
 		this.layoutService.initialize(layoutContainer);
@@ -170,26 +168,11 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	}
 
 	private setupTemplates() {
-		this.templateConfig = this.templateManagerService.setupLayoutTemplates(
-			this.externalStream(),
-			this.externalLayoutAdditionalElements()
-		);
-
-		// Apply templates to component properties for backward compatibility
-		this.applyTemplateConfiguration();
-	}
-
-	private applyTemplateConfiguration() {
-		if (this.templateConfig.layoutStreamTemplate) {
-			this.streamTemplate = this.templateConfig.layoutStreamTemplate;
-		}
-		if (this.templateConfig.layoutAdditionalElementsTemplate) {
-			this.layoutAdditionalElementsTemplate = this.templateConfig.layoutAdditionalElementsTemplate;
-		}
+		// Template refs are exposed as computed signals.
 	}
 
 	private listenToLayoutDomChanges() {
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
 		if (!layoutContainer) return;
 
 		this.mutationObserver = new MutationObserver((mutations) => {
@@ -203,7 +186,6 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			clearTimeout(this.mutationTimeout);
 			this.mutationTimeout = setTimeout(() => {
 				this.layoutService.update();
-				this.cd.markForCheck();
 			}, 0);
 		});
 
@@ -214,7 +196,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	}
 
 	private listenToResizeLayout() {
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
 		if (!layoutContainer) return;
 
 		this.resizeObserver = new ResizeObserver((entries) => {
@@ -229,7 +211,6 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 				const heightDiff = Math.abs(this.lastLayoutHeight - parentHeight);
 				if (widthDiff > 1 || heightDiff > 1) {
 					this.layoutService.update();
-					this.cd.markForCheck();
 				}
 				// Handle minimized participant positioning
 				if (this.localParticipant()?.isMinimized) {
@@ -324,7 +305,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	}
 
 	private listenToCdkDrag() {
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
 		if (!layoutContainer) return;
 
 		const handler = (event: CdkDragRelease<any>) => {

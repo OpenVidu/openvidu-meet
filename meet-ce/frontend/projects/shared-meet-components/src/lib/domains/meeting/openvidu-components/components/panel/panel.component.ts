@@ -1,8 +1,8 @@
 import { CommonModule } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
-	ChangeDetectorRef,
 	Component,
+	computed,
 	contentChild,
 	effect,
 	inject,
@@ -25,7 +25,6 @@ import {
 	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { PanelService } from '../../services/panel/panel.service';
-import { PanelTemplateConfiguration, TemplateManagerService } from '../../services/template/template-manager.service';
 
 /**
  *
@@ -123,44 +122,6 @@ export class PanelComponent implements OnInit {
 	 */
 	// @Output() onBackgroundEffectsPanelStatusChanged: EventEmitter<BackgroundEffectsPanelStatusEvent> = new EventEmitter<BackgroundEffectsPanelStatusEvent>();
 
-	/**
-	 * @ignore
-	 */
-	isParticipantsPanelOpened: boolean = false;
-	/**
-	 * @ignore
-	 */
-	isChatPanelOpened: boolean = false;
-	/**
-	 * @ignore
-	 */
-	isBackgroundEffectsPanelOpened: boolean = false;
-	/**
-	 * @ignore
-	 */
-	isSettingsPanelOpened: boolean = false;
-	/**
-	 * @ignore
-	 */
-	isActivitiesPanelOpened: boolean = false;
-
-	/**
-	 * @internal
-	 */
-	isExternalPanelOpened: boolean = false;
-
-	/**
-	 * @internal
-	 * Template configuration managed by the service
-	 */
-	templateConfig: PanelTemplateConfiguration = {};
-
-	// Store directive references for template setup
-	private _externalParticipantPanel?: ParticipantsPanelDirective;
-	private _externalChatPanel?: ChatPanelDirective;
-	private _externalActivitiesPanel?: ActivitiesPanelDirective;
-	private _externalAdditionalPanels?: AdditionalPanelsDirective;
-
 	private panelEmitersHandler: Map<
 		PanelType,
 		{
@@ -178,32 +139,37 @@ export class PanelComponent implements OnInit {
 	 * @ignore
 	 */
 	private readonly panelService = inject(PanelService);
-	private readonly cd = inject(ChangeDetectorRef);
-	private readonly templateManagerService = inject(TemplateManagerService);
+	readonly panelOpened = this.panelService.panelOpened;
+	readonly isChatPanelOpened = computed(() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.CHAT);
+	readonly isParticipantsPanelOpened = computed(
+		() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.PARTICIPANTS
+	);
+	readonly isBackgroundEffectsPanelOpened = computed(
+		() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.BACKGROUND_EFFECTS
+	);
+	readonly isSettingsPanelOpened = computed(
+		() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.SETTINGS
+	);
+	readonly isActivitiesPanelOpened = computed(
+		() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.ACTIVITIES
+	);
+	readonly isExternalPanelOpened = computed(
+		() =>
+			this.panelOpened().isOpened &&
+			!this.isSettingsPanelOpened() &&
+			!this.isBackgroundEffectsPanelOpened() &&
+			!this.isChatPanelOpened() &&
+			!this.isParticipantsPanelOpened() &&
+			!this.isActivitiesPanelOpened()
+	);
 	private readonly panelTogglingEffect = effect(() => {
-		const ev = this.panelService.panelOpened();
-		this.isChatPanelOpened = ev.isOpened && ev.panelType === PanelType.CHAT;
-		this.isParticipantsPanelOpened = ev.isOpened && ev.panelType === PanelType.PARTICIPANTS;
-		this.isBackgroundEffectsPanelOpened = ev.isOpened && ev.panelType === PanelType.BACKGROUND_EFFECTS;
-		this.isSettingsPanelOpened = ev.isOpened && ev.panelType === PanelType.SETTINGS;
-		this.isActivitiesPanelOpened = ev.isOpened && ev.panelType === PanelType.ACTIVITIES;
-		this.isExternalPanelOpened =
-			ev.isOpened &&
-			!this.isSettingsPanelOpened &&
-			!this.isBackgroundEffectsPanelOpened &&
-			!this.isChatPanelOpened &&
-			!this.isParticipantsPanelOpened &&
-			!this.isActivitiesPanelOpened;
-		this.cd.markForCheck();
-
-		this.sendPanelStatusChangedEvent(ev);
+		this.sendPanelStatusChangedEvent(this.panelOpened());
 	});
 
 	/**
 	 * @ignore
 	 */
 	ngOnInit(): void {
-		this.setupTemplates();
 		this.panelEmitersHandler.set(PanelType.CHAT, this.onChatPanelStatusChanged);
 		this.panelEmitersHandler.set(PanelType.PARTICIPANTS, this.onParticipantsPanelStatusChanged);
 		this.panelEmitersHandler.set(PanelType.SETTINGS, this.onSettingsPanelStatusChanged);
@@ -211,44 +177,9 @@ export class PanelComponent implements OnInit {
 	}
 
 	/**
-	 * @internal
-	 * Sets up all templates using the template manager service
-	 */
-	private setupTemplates(): void {
-		this.templateConfig = this.templateManagerService.setupPanelTemplates(
-			this.externalParticipantPanel(),
-			this.externalChatPanel(),
-			this.externalActivitiesPanel(),
-			this.externalAdditionalPanels()
-		);
-
-		// Apply templates to component properties for backward compatibility
-		this.applyTemplateConfiguration();
-	}
-
-	/**
-	 * @internal
-	 * Applies the template configuration to component properties
-	 */
-	private applyTemplateConfiguration(): void {
-		// Template refs are now read directly from signals in the template.
-	}
-
-	/**
-	 * @internal
-	 * Updates templates and triggers change detection
-	 */
-	private updateTemplatesAndMarkForCheck(): void {
-		this.setupTemplates();
-		this.cd.markForCheck();
-	}
-
-	/**
 	 * @ignore
 	 */
 	ngOnDestroy() {
-		this.isChatPanelOpened = false;
-		this.isParticipantsPanelOpened = false;
 	}
 
 	private sendPanelStatusChangedEvent(event: PanelStatusInfo) {

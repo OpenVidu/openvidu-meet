@@ -18,7 +18,7 @@
 	</div>
 
 	<div class="messages-container" #chatScroll>
-		@for (data of messageList; track data) {
+		@for (data of messageList(); track data) {
 		<div class="message" [class.right]="data.isLocal" [class.left]="!data.isLocal">
 			<div class="msg-detail">
 				<div class="participant-name-container">
@@ -44,9 +44,10 @@
 			placeholder="{{ 'PANEL.CHAT.PLACEHOLDER' | translate }}"
 			autocomplete="off"
 				(keypress)="eventKeyPress($event)"
-				[(ngModel)]="message"
+				[ngModel]="message()"
+				(ngModelChange)="message.set($event)"
 				id="chat-input"
-				[class.vertical-align]="!message"
+				[class.vertical-align]="!message()"
 			></textarea>
 		<button mat-icon-button id="send-btn" (click)="sendMessage()" matTooltip="{{ 'PANEL.CHAT.SEND' | translate }}">
 			<mat-icon>send</mat-icon>

@@ -50,10 +50,10 @@ export class ToolbarPanelButtonsComponent {
 
 	readonly viewportService = inject(ViewportService);
 
-	// Computed property to determine if we should show collapsed menu
-	get shouldShowCollapsed(): boolean {
+	// Computed signal to determine if we should show collapsed menu
+	readonly shouldShowCollapsed = computed(() => {
 		return this.viewportService.isMobileView();
-	}
+	});
 
 	// Local methods that emit events
 	onToggleActivities(expand?: string) {

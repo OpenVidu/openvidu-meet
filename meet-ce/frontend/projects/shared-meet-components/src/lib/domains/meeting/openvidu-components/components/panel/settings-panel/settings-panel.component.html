@@ -1,8 +1,8 @@
 <div
 	class="panel-container"
 	id="settings-container"
-	[class.vertical-layout]="isVerticalLayout"
-	[class.compact-view]="isCompactView"
+	[class.vertical-layout]="isVerticalLayout()"
+	[class.compact-view]="isCompactView()"
 >
 	<div class="panel-header-container">
 		<h3 class="panel-title">{{ 'PANEL.SETTINGS.TITLE' | translate }}</h3>
@@ -16,8 +16,8 @@
 		</button>
 	</div>
 
-	<div class="settings-container" [class.vertical-layout]="isVerticalLayout">
-		<div class="item-menu" [class.compact]="isCompactView" [class.icons-only]="shouldHideMenuText">
+	<div class="settings-container" [class.vertical-layout]="isVerticalLayout()">
+		<div class="item-menu" [class.compact]="isCompactView()" [class.icons-only]="shouldHideMenuText()">
 			<mat-selection-list
 				#optionList
 				(selectionChange)="onSelectionChanged(optionList.selectedOptions.selected[0]?.value)"
@@ -30,11 +30,11 @@
 					id="general-opt"
 					[selected]="selectedOption() === settingsOptions.GENERAL"
 					[value]="settingsOptions.GENERAL"
-					matTooltip="{{ shouldHideMenuText ? ('PANEL.SETTINGS.GENERAL' | translate) : '' }}"
-					[matTooltipDisabled]="!shouldHideMenuText"
+					matTooltip="{{ shouldHideMenuText() ? ('PANEL.SETTINGS.GENERAL' | translate) : '' }}"
+					[matTooltipDisabled]="!shouldHideMenuText()"
 				>
 					<mat-icon matListItemIcon>manage_accounts</mat-icon>
-					@if (!shouldHideMenuText) {
+					@if (!shouldHideMenuText()) {
 						<div class="option-text">{{ 'PANEL.SETTINGS.GENERAL' | translate }}</div>
 					}
 				</mat-list-option>
@@ -44,11 +44,11 @@
 						id="video-opt"
 						[selected]="selectedOption() === settingsOptions.VIDEO"
 						[value]="settingsOptions.VIDEO"
-						matTooltip="{{ shouldHideMenuText ? ('PANEL.SETTINGS.VIDEO' | translate) : '' }}"
-						[matTooltipDisabled]="!shouldHideMenuText"
+						matTooltip="{{ shouldHideMenuText() ? ('PANEL.SETTINGS.VIDEO' | translate) : '' }}"
+						[matTooltipDisabled]="!shouldHideMenuText()"
 					>
 						<mat-icon matListItemIcon>videocam</mat-icon>
-						@if (!shouldHideMenuText) {
+						@if (!shouldHideMenuText()) {
 							<div class="option-text">{{ 'PANEL.SETTINGS.VIDEO' | translate }}</div>
 						}
 					</mat-list-option>
@@ -59,11 +59,11 @@
 						id="audio-opt"
 						[selected]="selectedOption() === settingsOptions.AUDIO"
 						[value]="settingsOptions.AUDIO"
-						matTooltip="{{ shouldHideMenuText ? ('PANEL.SETTINGS.AUDIO' | translate) : '' }}"
-						[matTooltipDisabled]="!shouldHideMenuText"
+						matTooltip="{{ shouldHideMenuText() ? ('PANEL.SETTINGS.AUDIO' | translate) : '' }}"
+						[matTooltipDisabled]="!shouldHideMenuText()"
 					>
 						<mat-icon matListItemIcon>mic</mat-icon>
-						@if (!shouldHideMenuText) {
+						@if (!shouldHideMenuText()) {
 							<div class="option-text">{{ 'PANEL.SETTINGS.AUDIO' | translate }}</div>
 						}
 					</mat-list-option>
@@ -71,7 +71,7 @@
 			</mat-selection-list>
 		</div>
 
-		<div class="item-content" [class.full-width]="isVerticalLayout">
+		<div class="item-content" [class.full-width]="isVerticalLayout()">
 			@if (selectedOption() === settingsOptions.GENERAL) {
 				<div class="general-settings">
 					<div class="nickname-section">

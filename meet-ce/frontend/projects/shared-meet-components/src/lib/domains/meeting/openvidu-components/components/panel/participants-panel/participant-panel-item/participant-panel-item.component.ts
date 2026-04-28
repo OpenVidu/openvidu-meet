@@ -1,14 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, ContentChild, OnDestroy, OnInit, TemplateRef, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, contentChild, inject, input, TemplateRef } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { TrackPublishedTypesPipe } from '../../../../pipes/participant.pipe';
-import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
+import { TrackPublishedTypesPipe } from '../../../../pipes/participant.pipe';
+import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } from '../../../../services/template/template-manager.service';
@@ -26,19 +26,18 @@ import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } fro
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
-export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
+export class ParticipantPanelItemComponent {
 	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });
 	readonly muteButtonInput = input(true, { alias: 'muteButton' });
 	private readonly libService = inject(OpenViduComponentsConfigService);
 
 	private readonly participantService = inject(ParticipantService);
-	private readonly cd = inject(ChangeDetectorRef);
 	private readonly templateManagerService = inject(TemplateManagerService);
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild('participantPanelItemElements', { read: TemplateRef }) participantPanelItemElementsTemplate: TemplateRef<any> | undefined = undefined;
+	readonly participantPanelItemElementsTemplateQuery = contentChild('participantPanelItemElements', { read: TemplateRef });
 
 	/**
 	 * @ignore
@@ -48,121 +47,34 @@ export class ParticipantPanelItemComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@ContentChild(ParticipantPanelItemElementsDirective)
-	set externalItemElements(externalItemElements: ParticipantPanelItemElementsDirective) {
-		this._externalItemElements = externalItemElements;
-		if (externalItemElements) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
+	readonly externalItemElements = contentChild(ParticipantPanelItemElementsDirective);
 
 	/**
 	 * @ignore
 	 */
-	@ContentChild(ParticipantPanelParticipantBadgeDirective)
-	set externalParticipantBadge(participantBadge: ParticipantPanelParticipantBadgeDirective) {
-		this._externalParticipantBadge = participantBadge;
-		if (participantBadge) {
-			this.updateTemplatesAndMarkForCheck();
-		}
-	}
-
-	/**
-	 * @internal
-	 * Template configuration managed by the service
-	 */
-	templateConfig: ParticipantPanelItemTemplateConfiguration = {};
-
-	// Store directive references for template setup
-	private _externalItemElements?: ParticipantPanelItemElementsDirective;
-	private _externalParticipantBadge?: ParticipantPanelParticipantBadgeDirective;
+	readonly externalParticipantBadge = contentChild(ParticipantPanelParticipantBadgeDirective);
+	readonly templateConfig = computed<ParticipantPanelItemTemplateConfiguration>(() => {
+		return this.templateManagerService.setupParticipantPanelItemTemplates(this.externalItemElements());
+	});
+	readonly participantPanelItemElementsTemplate = computed(
+		() => this.templateConfig().participantPanelItemElementsTemplate ?? this.participantPanelItemElementsTemplateQuery()
+	);
+	readonly participantBadgeTemplate = computed(() => this.externalParticipantBadge()?.template);
+	readonly isLocalParticipant = computed(() => this.participantInput()?.isLocal || false);
+	readonly participantDisplayName = computed(() => this.participantInput()?.name || '');
+	readonly hasExternalElements = computed(() => !!this.participantPanelItemElementsTemplate());
 
 	get _participant(): ParticipantModel | undefined {
 		return this.participantInput();
 	}
 
 	/**
-	 * @ignore
-	 */
-	constructor() {}
-
-	/**
-	 * @ignore
-	 */
-	ngOnInit(): void {
-		this.setupTemplates();
-	}
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {}
-
-	/**
 	 * Toggles the mute state of a remote participant
 	 */
 	toggleMuteForcibly() {
-		if (this._participant && !this._participant.isLocal) {
-			this.participantService.setRemoteMutedForcibly(this._participant.sid, !this._participant.isMutedForcibly);
+		const participant = this._participant;
+		if (participant && !participant.isLocal) {
+			this.participantService.setRemoteMutedForcibly(participant.sid, !participant.isMutedForcibly);
 		}
 	}
-
-	/**
-	 * Gets the template for local participant badge
-	 */
-	get participantBadgeTemplate(): TemplateRef<any> | undefined {
-		return this._externalParticipantBadge?.template;
-	}
-
-	/**
-	 * Checks if the current participant is the local participant
-	 */
-	get isLocalParticipant(): boolean {
-		return this._participant?.isLocal || false;
-	}
-
-	/**
-	 * Gets the participant's display name
-	 */
-	get participantDisplayName(): string {
-		return this._participant?.name || '';
-	}
-
-	/**
-	 * Checks if external elements are available
-	 */
-	get hasExternalElements(): boolean {
-		return !!this.participantPanelItemElementsTemplate;
-	}
-
-	/**
-	 * @internal
-	 * Sets up all templates using the template manager service
-	 */
-	private setupTemplates(): void {
-		this.templateConfig = this.templateManagerService.setupParticipantPanelItemTemplates(this._externalItemElements);
-
-		// Apply templates to component properties for backward compatibility
-		this.applyTemplateConfiguration();
-	}
-
-	/**
-	 * @internal
-	 * Applies the template configuration to component properties
-	 */
-	private applyTemplateConfiguration(): void {
-		if (this.templateConfig.participantPanelItemElementsTemplate) {
-			this.participantPanelItemElementsTemplate = this.templateConfig.participantPanelItemElementsTemplate;
-		}
-	}
-
-	/**
-	 * @internal
-	 * Updates templates and triggers change detection
-	 */
-	private updateTemplatesAndMarkForCheck(): void {
-		this.setupTemplates();
-		this.cd.markForCheck();
-	}
-
 }

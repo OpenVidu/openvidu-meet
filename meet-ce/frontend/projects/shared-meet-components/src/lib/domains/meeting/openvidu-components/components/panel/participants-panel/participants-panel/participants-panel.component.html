@@ -15,19 +15,19 @@
 		@if (localParticipant()) {
 			<div class="local-participant-container">
 				<ng-container
-					*ngTemplateOutlet="participantPanelItemTemplate; context: { $implicit: localParticipant() }"
+					*ngTemplateOutlet="participantPanelItemTemplate(); context: { $implicit: localParticipant() }"
 				/>
 				<mat-divider />
 			</div>
 		}
-		<ng-container *ngTemplateOutlet="participantPanelAfterLocalParticipantTemplate" />
+		<ng-container *ngTemplateOutlet="participantPanelAfterLocalParticipantTemplate()" />
 
 		@if (remoteParticipants().length > 0) {
 			<div class="remote-participants-container" id="remote-participants-container">
 				@for (participant of remoteParticipants(); track participant.sid) {
 					<div id="remote-participant-item">
 						<ng-container
-							*ngTemplateOutlet="participantPanelItemTemplate; context: { $implicit: participant }"
+							*ngTemplateOutlet="participantPanelItemTemplate(); context: { $implicit: participant }"
 						/>
 					</div>
 				}

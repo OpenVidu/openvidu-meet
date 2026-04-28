@@ -68,13 +68,8 @@ export class StreamComponent implements OnDestroy {
 	readonly showAudioDetection = this.libService.displayAudioDetectionSignal;
 	readonly showVideoControls = this.libService.streamVideoControlsSignal;
 	readonly showVideo = signal(false);
-
-	isFullscreen: boolean = false;
-
-	/**
-	 * @ignore
-	 */
-	mouseHovering: boolean = false;
+	readonly isFullscreen = signal(false);
+	readonly mouseHovering = signal(false);
 
 	/**
 	 * @ignore
@@ -176,9 +171,9 @@ export class StreamComponent implements OnDestroy {
 	mouseHover(event: MouseEvent) {
 		event.preventDefault();
 		clearTimeout(this.hoveringTimeout);
-		this.mouseHovering = true;
+		this.mouseHovering.set(true);
 		this.hoveringTimeout = setTimeout(() => {
-			this.mouseHovering = false;
+			this.mouseHovering.set(false);
 		}, this.HOVER_TIMEOUT);
 	}
 }
