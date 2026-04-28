@@ -2,11 +2,15 @@
 	<!-- Page Header -->
 	<div class="page-header">
 		<div class="title">
-			<mat-icon>person_add</mat-icon>
-			<h1>Add Room Member</h1>
+			<mat-icon>{{ isEditMode() ? 'edit' : 'person_add' }}</mat-icon>
+			<h1>{{ isEditMode() ? 'Edit Room Member' : 'Add Room Member' }}</h1>
 		</div>
 		<p class="subtitle">
-			Assign a registered user or an external member to this room and configure their role and permissions.
+			@if (isEditMode()) {
+				Update permissions for this room member.
+			} @else {
+				Assign a registered user or an external member to this room.
+			}
 		</p>
 	</div>
 
@@ -19,10 +23,18 @@
 				</div>
 				<mat-card-title>Member Configuration</mat-card-title>
 				<mat-card-subtitle>
-					@if (isRegisteredMode()) {
-						Select a registered user and configure their access role
+					@if (isEditMode()) {
+						@if (isRegisteredMode()) {
+							Update registered user's permissions in this room
+						} @else {
+							Update external member's permissions in this room
+						}
 					} @else {
-						Add an external member and configure their access role
+						@if (isRegisteredMode()) {
+							Select a registered user and configure their permissions
+						} @else {
+							Add an external member and configure their permissions
+						}
 					}
 				</mat-card-subtitle>
 			</mat-card-header>
@@ -97,14 +109,17 @@
 						</mat-form-field>
 					} @else {
 						<!-- External: info box + name input -->
-						<div class="external-info-box">
-							<mat-icon class="external-info-icon">link</mat-icon>
-							<p class="external-info-text">
-								External members are not registered users. After being added, they will be assigned a
-								<strong>unique access URL</strong> to join this room. You can copy this URL from the
-								member list.
-							</p>
-						</div>
+						@if (!isEditMode()) {
+							<div class="external-info-box">
+								<mat-icon class="external-info-icon">link</mat-icon>
+								<p class="external-info-text">
+									External members are not registered users. After being added, they will be assigned
+									a
+									<strong>unique access URL</strong> to join this room. You can copy this URL from the
+									member list.
+								</p>
+							</div>
+						}
 						<mat-form-field subscriptSizing="dynamic" appearance="outline">
 							<mat-label>Member Name</mat-label>
 							<mat-icon matPrefix class="field-prefix-icon">person</mat-icon>
@@ -121,9 +136,9 @@
 						</mat-form-field>
 					}
 
-					<!-- Role -->
+					<!-- Base Role -->
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
-						<mat-label>Role</mat-label>
+						<mat-label>Base Role</mat-label>
 						<mat-icon matPrefix class="field-prefix-icon">manage_accounts</mat-icon>
 						<mat-select formControlName="role">
 							<mat-select-trigger>
@@ -219,9 +234,9 @@
 					@if (isSaving()) {
 						<mat-spinner diameter="18" />
 					} @else {
-						<mat-icon>person_add</mat-icon>
+						<mat-icon>{{ isEditMode() ? 'save' : 'person_add' }}</mat-icon>
 					}
-					Add Member
+					{{ isEditMode() ? 'Save Changes' : 'Add Member' }}
 				</button>
 			</mat-card-actions>
 		</mat-card>

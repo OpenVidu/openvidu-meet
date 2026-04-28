@@ -16,6 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import {
 	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
+	MeetRoomMember,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
@@ -70,6 +71,7 @@ export class AddRoomMemberComponent implements OnInit {
 	isLoadingUsers = signal(false);
 	filteredUsers = signal<MeetUserDTO[]>([]);
 	isRegisteredMode = signal(true);
+	isEditMode = signal(false);
 
 	readonly permissionGroups = PERMISSION_GROUPS;
 	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
@@ -77,6 +79,7 @@ export class AddRoomMemberComponent implements OnInit {
 	/** Role permissions as defined in the room, used to compute the diff on submit */
 	private roomRoles: MeetRoomRoles | null = null;
 	private roomOwner = '';
+	private memberId = '';
 
 	form = new FormGroup({
 		memberType: new FormControl<MemberType>('registered', { nonNullable: true }),
@@ -145,16 +148,61 @@ export class AddRoomMemberComponent implements OnInit {
 		}
 		this.roomId.set(roomId);
 
+		const memberId = this.route.snapshot.paramMap.get('member-id');
+		if (memberId) {
+			this.isEditMode.set(true);
+			this.memberId = memberId;
+		}
+
 		try {
-			const { roles, owner } = await this.roomService.getRoom(roomId, { fields: ['roles', 'owner'] });
+			const [{ roles, owner }, member] = await Promise.all([
+				this.roomService.getRoom(roomId, { fields: ['roles', 'owner'] }),
+				memberId ? this.roomMemberService.getRoomMember(roomId, memberId) : Promise.resolve(null)
+			]);
 			this.roomRoles = roles;
 			this.roomOwner = owner;
 
-			// Set initial permissions defaults for the initial role (SPEAKER)
-			const initialRole = this.form.get('role')!.value!;
+			const initialRole = member ? member.baseRole : this.form.get('role')!.value!;
 			this.resetPermissionsToRoleDefaults(initialRole);
-		} catch {
+
+			if (member) {
+				this.populateMemberForm(member);
+			}
+		} catch (error) {
+			console.error(error);
 			this.notificationService.showSnackbar('Failed to load room data');
+		}
+	}
+
+	private populateMemberForm(member: MeetRoomMember): void {
+		const isRegistered = RoomMemberUiUtils.isRegisteredMember(member);
+
+		// Set role without emitting (resetPermissionsToRoleDefaults was already called)
+		this.form.get('role')!.setValue(member.baseRole, { emitEvent: false });
+
+		// Set member type — triggers the subscription that enables/disables userId/memberName
+		this.form.get('memberType')!.setValue(isRegistered ? 'registered' : 'external');
+		this.form.get('memberType')!.disable();
+
+		if (isRegistered) {
+			this.form.get('userId')!.setValue(member.memberId);
+			this.form.get('userId')!.disable();
+		} else {
+			this.form.get('memberName')!.setValue(member.name);
+			this.form.get('memberName')!.disable();
+		}
+
+		// Populate permissions from effectivePermissions
+		const permissionsForm = this.permissionsForm;
+		for (const key of MEET_ROOM_MEMBER_PERMISSIONS_FIELDS) {
+			permissionsForm.get(key)?.setValue(member.effectivePermissions[key], { emitEvent: false });
+		}
+
+		// Mark dirty only if there are active custom permissions, so the diff is sent on submit
+		if (member.customPermissions && Object.keys(member.customPermissions).length > 0) {
+			permissionsForm.markAsDirty();
+		} else {
+			permissionsForm.markAsPristine();
 		}
 	}
 
@@ -265,21 +313,33 @@ export class AddRoomMemberComponent implements OnInit {
 			}
 		}
 
-		const options: MeetRoomMemberOptions = {
-			...(memberType === 'registered' ? { userId: userId! } : { name: memberName! }),
-			baseRole: role!,
-			customPermissions
-		};
-
 		const delayLoader = setTimeout(() => this.isSaving.set(true), 200);
 
 		try {
-			await this.roomMemberService.createRoomMember(this.roomId(), options);
-			this.notificationService.showSnackbar('Member added successfully');
+			if (this.isEditMode()) {
+				// Edit mode: update member
+				const updateOptions = {
+					baseRole: role!,
+					customPermissions: customPermissions ?? {} // Send empty object to clear custom permissions if they were removed in the UI
+				};
+				await this.roomMemberService.updateRoomMember(this.roomId(), this.memberId, updateOptions);
+				this.notificationService.showSnackbar('Member updated successfully');
+			} else {
+				// Add mode: create member
+				const addOptions: MeetRoomMemberOptions = {
+					...(memberType === 'registered' ? { userId: userId! } : { name: memberName! }),
+					baseRole: role!,
+					customPermissions
+				};
+				await this.roomMemberService.createRoomMember(this.roomId(), addOptions);
+				this.notificationService.showSnackbar('Member added successfully');
+			}
+
 			await this.navigationService.navigateTo(`/rooms/${this.roomId()}`);
-		} catch (error: any) {
-			const msg = error?.error?.message ?? 'Failed to add member';
+		} catch (error) {
+			const msg = this.isEditMode() ? 'Failed to update member' : 'Failed to add member';
 			this.notificationService.showSnackbar(msg);
+			console.error(error);
 		} finally {
 			clearTimeout(delayLoader);
 			this.isSaving.set(false);
