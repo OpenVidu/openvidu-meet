@@ -73,12 +73,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 	onRoomReconnected = output<void>();
 
 	/**
-	 * Provides event notifications that fire when participant is disconnected from Room.
-	 * @deprecated Use {@link SessionComponent.onParticipantLeft} instead.
-	 */
-	onRoomDisconnected = output<void>();
-
-	/**
 	 * Provides event notifications that fire when local participant is connected to the Room.
 	 */
 	onParticipantConnected = output<ParticipantModel>();
@@ -262,11 +256,9 @@ export class SessionComponent implements OnInit, OnDestroy {
 		this.sessionRoomEventsService.bindRoom(this.room, {
 			onRoomReconnecting: () => this.onRoomReconnecting.emit(),
 			onRoomReconnected: () => this.onRoomReconnected.emit(),
-			onRoomDisconnected: () => this.onRoomDisconnected.emit(),
 			onParticipantLeft: (event) => this.onParticipantLeft.emit(event)
 		});
-		// this.subscribeToBroadcastingEvents();
-		// }
+
 		try {
 			await this.participantService.connect();
 			// Send room created after participant connect for avoiding to send incomplete room payload
@@ -325,7 +317,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 		}
 		if (this.room) this.room.removeAllListeners();
 		this.participantService.clear();
-		// 	if (this.captionLanguageSubscription) this.captionLanguageSubscription.unsubscribe();
 	}
 
 	private scheduleContentMarginUpdate(): void {

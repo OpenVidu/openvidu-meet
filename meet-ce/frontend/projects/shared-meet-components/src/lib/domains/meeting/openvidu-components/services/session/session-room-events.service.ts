@@ -33,7 +33,6 @@ import { TranslateService } from '../translate/translate.service';
 export interface SessionRoomEventCallbacks {
 	onRoomReconnecting: () => void;
 	onRoomReconnected: () => void;
-	onRoomDisconnected: () => void;
 	onParticipantLeft: (event: ParticipantLeftEvent) => void;
 }
 
@@ -320,7 +319,6 @@ export class SessionRoomEventsService {
 
 			this.log.d('Participant disconnected', participantLeftEvent);
 			callbacks.onParticipantLeft(participantLeftEvent);
-			callbacks.onRoomDisconnected();
 			if (this.libService.getShowDisconnectionDialog() && descriptionErrorKey) {
 				this.actionService.openDialog(
 					this.translateService.translate(messageErrorKey),
