@@ -57,7 +57,7 @@ export class GlobalConfigService {
 			const updatedConfig = await this.globalConfigRepository.updatePartial({
 				webhooksConfig: {
 					enabled: webhookConfig.enabled,
-					url: webhookConfig.url === undefined ? webhookConfigDB.url : webhookConfig.url
+					url: webhookConfig.url ?? webhookConfigDB.url
 				}
 			});
 			this.logger.info('Webhook config updated successfully');
