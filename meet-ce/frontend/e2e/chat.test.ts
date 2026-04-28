@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { createRoom, createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import {
+    createExternalRoomMember,
+    createRoom,
+    createRoomAndGetAccessUrl,
+    deleteRooms,
+    toAbsoluteMeetUrl
+} from './helpers/meet-api.helper';
 import {
     expectChatLinkCount,
     expectChatLinkHrefContains,
@@ -54,8 +60,10 @@ test.describe('Chat features', () => {
         const senderName = `sender-${Date.now()}`;
         const receiverName = `receiver-${Date.now()}`;
 
-        const { accessUrl: receiverAccessUrl } = await createRoomAndGetAccessUrl(receiverName, room, undefined, createdRoomIds);
-        const { accessUrl: senderAccessUrl } = await createRoomAndGetAccessUrl(senderName, room, undefined, createdRoomIds);
+        const receiverMember = await createExternalRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' });
+        const senderMember = await createExternalRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' });
+        const receiverAccessUrl = toAbsoluteMeetUrl(receiverMember.accessUrl);
+        const senderAccessUrl = toAbsoluteMeetUrl(senderMember.accessUrl);
 
         const receiverPage = await browser.newPage();
         await openMeeting(receiverPage, receiverAccessUrl);
@@ -92,8 +100,10 @@ test.describe('Chat features', () => {
         const senderName = `sender-${Date.now()}`;
         const receiverName = `receiver-${Date.now()}`;
 
-        const { accessUrl: receiverAccessUrl } = await createRoomAndGetAccessUrl(receiverName, room, undefined, createdRoomIds);
-        const { accessUrl: senderAccessUrl } = await createRoomAndGetAccessUrl(senderName, room, undefined, createdRoomIds);
+        const receiverMember = await createExternalRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' });
+        const senderMember = await createExternalRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' });
+        const receiverAccessUrl = toAbsoluteMeetUrl(receiverMember.accessUrl);
+        const senderAccessUrl = toAbsoluteMeetUrl(senderMember.accessUrl);
 
         const receiverPage = await browser.newPage();
         await openMeeting(receiverPage, receiverAccessUrl);

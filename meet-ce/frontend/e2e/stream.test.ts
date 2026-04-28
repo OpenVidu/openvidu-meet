@@ -1,5 +1,12 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
-import { createRoom, createRoomAndGetAccessUrl, deleteRooms, type E2ERoom } from './helpers/meet-api.helper';
+import {
+	createExternalRoomMember,
+	createRoom,
+	createRoomAndGetAccessUrl,
+	deleteRooms,
+	toAbsoluteMeetUrl,
+	type E2ERoom
+} from './helpers/meet-api.helper';
 import {
 	dragStream,
 	expectLocalStreamMediaCount,
@@ -32,8 +39,18 @@ function createRoomTracker() {
 		},
 
 		async createAccessUrl(participantName: string, room?: E2ERoom): Promise<string> {
-			const { accessUrl } = await createRoomAndGetAccessUrl(participantName, room, undefined, createdRoomIds);
-			return accessUrl;
+			if (!room) {
+				const { accessUrl } = await createRoomAndGetAccessUrl(participantName, undefined, undefined, createdRoomIds);
+				return accessUrl;
+			}
+
+			const member = await createExternalRoomMember({
+				roomId: room.roomId,
+				name: participantName,
+				baseRole: 'moderator'
+			});
+
+			return toAbsoluteMeetUrl(member.accessUrl);
 		},
 
 		async cleanup(): Promise<void> {

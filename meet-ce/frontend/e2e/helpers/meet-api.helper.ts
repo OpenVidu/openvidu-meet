@@ -143,9 +143,7 @@ export async function deleteRooms(roomIds: Iterable<string>): Promise<void> {
 	}
 
 	const response = await fetch(
-		withApiPath(
-			`/rooms?roomIds=${ids.map(encodeURIComponent).join(',')}&withMeeting=force&withRecordings=force`
-		),
+		withApiPath(`/rooms?roomIds=${ids.map(encodeURIComponent).join(',')}&withMeeting=force&withRecordings=force`),
 		{
 			method: 'DELETE',
 			headers: {
@@ -173,15 +171,15 @@ export function toAbsoluteMeetUrl(accessUrl: string): string {
 }
 
 export async function createRoomAndGetAccessUrl(
-	participantName: string,
-	room?: E2ERoom,
+	roomName: string,
+	participantName?: string,
 	queryParams?: Record<string, string>,
 	createdRoomIds?: Set<string>
 ): Promise<{ room: E2ERoom; accessUrl: string }> {
-	const createdRoom = room || (await createRoom({ roomName: `chat-pw-${Date.now()}` }));
+	const createdRoom = await createRoom({ roomName });
 	const member = await createExternalRoomMember({
 		roomId: createdRoom.roomId,
-		name: participantName,
+		name: participantName ?? `member-${Date.now()}`,
 		baseRole: 'moderator'
 	});
 

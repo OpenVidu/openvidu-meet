@@ -8,7 +8,7 @@ import { deleteRooms, getCaptionsGlobalConfig, type CaptionsGlobalConfig } from 
 import { openMeeting } from './helpers/meeting-ui.helper';
 
 test.describe('Captions controls', () => {
-    test.describe.configure({ timeout: 120_000 });
+    test.describe.configure({ timeout: 30_000 });
     const createdRoomIds = new Set<string>();
 
     test.afterAll(async () => {

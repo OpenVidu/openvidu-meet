@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { createRoom, createRoomAndGetAccessUrl } from './meet-api.helper';
+import { createExternalRoomMember, createRoom, toAbsoluteMeetUrl } from './meet-api.helper';
 
 export async function createCaptionsAccessUrlWithRoomConfig(params: {
 	participantName: string;
@@ -15,15 +15,21 @@ export async function createCaptionsAccessUrlWithRoomConfig(params: {
 			}
 		}
 	});
+	params.createdRoomIds.add(room.roomId);
 
-	const { accessUrl } = await createRoomAndGetAccessUrl(
-		params.participantName,
-		room,
-		params.queryParams ?? { prejoin: 'false' },
-		params.createdRoomIds
-	);
+	const member = await createExternalRoomMember({
+		roomId: room.roomId,
+		name: params.participantName,
+		baseRole: 'moderator'
+	});
 
-	return accessUrl;
+	const accessUrl = new URL(toAbsoluteMeetUrl(member.accessUrl));
+
+	for (const [key, value] of Object.entries(params.queryParams ?? { prejoin: 'false' })) {
+		accessUrl.searchParams.set(key, value);
+	}
+
+	return accessUrl.toString();
 }
 
 export function getCaptionsButton(page: Page): Locator {
