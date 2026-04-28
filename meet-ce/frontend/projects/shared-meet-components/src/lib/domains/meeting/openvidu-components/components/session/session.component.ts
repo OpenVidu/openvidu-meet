@@ -1,7 +1,6 @@
 import { CommonModule } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
-	ChangeDetectorRef,
 	Component,
 	contentChild,
 	DestroyRef,
@@ -22,6 +21,7 @@ import { MatDrawerContainer, MatSidenav, MatSidenavModule } from '@angular/mater
 import { SidenavMode } from '../../models/layout/layout.model';
 import { PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
@@ -44,7 +44,7 @@ import { LandscapeWarningComponent } from '../landscape-warning/landscape-warnin
 
 @Component({
 	selector: 'ov-session',
-	imports: [CommonModule, MatProgressSpinnerModule, MatSidenavModule, LandscapeWarningComponent],
+	imports: [CommonModule, MatProgressSpinnerModule, MatSidenavModule, TranslatePipe, LandscapeWarningComponent],
 	templateUrl: './session.component.html',
 	styleUrls: ['./session.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -94,7 +94,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	readonly SidenavMode = SidenavMode;
 	readonly settingsPanelOpened = signal(false);
 	drawer: MatDrawerContainer | undefined = undefined;
-	loading: boolean = true;
+	readonly loading = signal(true);
 	private sidenavSubscriptionsInitialized: boolean = false;
 
 	/**
@@ -114,7 +114,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly panelService = inject(PanelService);
 	private readonly translateService = inject(TranslateService);
 	private readonly backgroundService = inject(VirtualBackgroundService);
-	private readonly cd = inject(ChangeDetectorRef);
+
 	private readonly templateManagerService = inject(TemplateManagerService);
 	private readonly sessionRoomEventsService = inject(SessionRoomEventsService);
 	protected readonly viewportService = inject(ViewportService);
@@ -271,8 +271,8 @@ export class SessionComponent implements OnInit, OnDestroy {
 			await this.participantService.connect();
 			// Send room created after participant connect for avoiding to send incomplete room payload
 			this.onRoomCreated.emit(this.room);
-			this.cd.markForCheck();
-			this.loading = false;
+
+			this.loading.set(false);
 			const localParticipant = this.participantService.localParticipantSignal();
 			if (localParticipant) {
 				this.onParticipantConnected.emit(localParticipant);
