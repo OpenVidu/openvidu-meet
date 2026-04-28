@@ -18,7 +18,13 @@
 					<mat-icon class="section-icon">group_add</mat-icon>
 				</div>
 				<mat-card-title>Member Configuration</mat-card-title>
-				<mat-card-subtitle>Select a user and configure their access role</mat-card-subtitle>
+				<mat-card-subtitle>
+					@if (isRegisteredMode()) {
+						Select a registered user and configure their access role
+					} @else {
+						Add an external member and configure their access role
+					}
+				</mat-card-subtitle>
 			</mat-card-header>
 
 			<mat-card-content>
@@ -49,9 +55,9 @@
 							<input
 								matInput
 								formControlName="userId"
-								placeholder="Search for a user by ID..."
+								placeholder="Search for a user by name or ID..."
 								[matAutocomplete]="userAutocomplete"
-								autofocus
+								(focus)="onUserInputFocus()"
 							/>
 							@if (isLoadingUsers()) {
 								<mat-spinner matSuffix diameter="18" class="search-spinner" />
@@ -64,19 +70,21 @@
 								(optionSelected)="onUserSelected($event.option.value)"
 							>
 								@for (user of filteredUsers(); track user.userId) {
-									<mat-option [value]="user.userId">
-										<div class="user-option">
+									<mat-option [value]="user.userId" [disabled]="isUserDisabled(user)">
+										<div
+											class="user-option"
+											[matTooltip]="getDisabledReason(user)"
+											style="pointer-events: all"
+										>
 											<mat-icon class="user-option-icon">person</mat-icon>
 											<div class="user-option-info">
 												<span class="user-option-id">{{ user.userId }}</span>
-												@if (user.name) {
-													<span class="user-option-name">{{ user.name }}</span>
-												}
+												<span class="user-option-name">{{ user.name }}</span>
 											</div>
 										</div>
 									</mat-option>
 								}
-								@if (!isLoadingUsers() && filteredUsers().length === 0 && form.get('userId')?.value) {
+								@if (!isLoadingUsers() && filteredUsers().length === 0) {
 									<mat-option disabled>
 										<span class="no-results">No users found</span>
 									</mat-option>

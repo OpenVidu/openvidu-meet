@@ -16,12 +16,15 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import {
 	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
-	MeetRoom,
 	MeetRoomMemberOptions,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomRoles,
-	MeetUserDTO
+	MeetUserDTO,
+	MeetUserFilters,
+	MeetUserRole,
+	SortOrder,
+	TextMatchMode
 } from '@openvidu-meet/typings';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -73,6 +76,7 @@ export class AddRoomMemberComponent implements OnInit {
 
 	/** Role permissions as defined in the room, used to compute the diff on submit */
 	private roomRoles: MeetRoomRoles | null = null;
+	private roomOwner = '';
 
 	form = new FormGroup({
 		memberType: new FormControl<MemberType>('registered', { nonNullable: true }),
@@ -118,12 +122,12 @@ export class AddRoomMemberComponent implements OnInit {
 		// Autocomplete search for registered users
 		this.form
 			.get('userId')!
-			.valueChanges.pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
+			.valueChanges.pipe(debounceTime(500), distinctUntilChanged(), takeUntilDestroyed())
 			.subscribe((value) => {
 				if (value && value.length >= 1) {
 					this.searchUsers(value);
 				} else {
-					this.filteredUsers.set([]);
+					this.searchUsers('');
 				}
 			});
 	}
@@ -142,8 +146,10 @@ export class AddRoomMemberComponent implements OnInit {
 		this.roomId.set(roomId);
 
 		try {
-			const room: MeetRoom = await this.roomService.getRoom(roomId);
-			this.roomRoles = room.roles;
+			const { roles, owner } = await this.roomService.getRoom(roomId, { fields: ['roles', 'owner'] });
+			this.roomRoles = roles;
+			this.roomOwner = owner;
+
 			// Set initial permissions defaults for the initial role (SPEAKER)
 			const initialRole = this.form.get('role')!.value!;
 			this.resetPermissionsToRoleDefaults(initialRole);
@@ -175,14 +181,49 @@ export class AddRoomMemberComponent implements OnInit {
 		permissionsForm.markAsPristine();
 	}
 
+	onUserInputFocus(): void {
+		const currentValue = this.form.get('userId')!.value || '';
+		if (!currentValue) {
+			this.searchUsers('');
+		}
+	}
+
+	isUserDisabled(user: MeetUserDTO): boolean {
+		return user.role === MeetUserRole.ADMIN || user.userId === this.roomOwner;
+	}
+
+	getDisabledReason(user: MeetUserDTO): string | null {
+		if (user.role === MeetUserRole.ADMIN) {
+			return 'Admin users cannot be added as room members';
+		}
+		if (user.userId === this.roomOwner) {
+			return 'The room owner cannot be added as a member';
+		}
+		return null;
+	}
+
 	private async searchUsers(query: string): Promise<void> {
-		this.isLoadingUsers.set(true);
+		const delayLoader = setTimeout(() => this.isLoadingUsers.set(true), 200);
+
 		try {
-			const response = await this.userService.listUsers({ userId: query, maxItems: 20 });
+			const filters: MeetUserFilters = {
+				maxItems: 20,
+				sortField: 'name',
+				sortOrder: SortOrder.ASC
+			};
+			if (query) {
+				filters.name = query;
+				filters.userId = query;
+				filters.nameMatchMode = TextMatchMode.PREFIX;
+				filters.nameCaseInsensitive = true;
+			}
+
+			const response = await this.userService.listUsers(filters);
 			this.filteredUsers.set(response.users);
 		} catch {
 			this.filteredUsers.set([]);
 		} finally {
+			clearTimeout(delayLoader);
 			this.isLoadingUsers.set(false);
 		}
 	}
@@ -223,7 +264,6 @@ export class AddRoomMemberComponent implements OnInit {
 				customPermissions = diff;
 			}
 		}
-		console.log('Custom permissions to submit:', customPermissions);
 
 		const options: MeetRoomMemberOptions = {
 			...(memberType === 'registered' ? { userId: userId! } : { name: memberName! }),
@@ -231,7 +271,8 @@ export class AddRoomMemberComponent implements OnInit {
 			customPermissions
 		};
 
-		this.isSaving.set(true);
+		const delayLoader = setTimeout(() => this.isSaving.set(true), 200);
+
 		try {
 			await this.roomMemberService.createRoomMember(this.roomId(), options);
 			this.notificationService.showSnackbar('Member added successfully');
@@ -240,6 +281,7 @@ export class AddRoomMemberComponent implements OnInit {
 			const msg = error?.error?.message ?? 'Failed to add member';
 			this.notificationService.showSnackbar(msg);
 		} finally {
+			clearTimeout(delayLoader);
 			this.isSaving.set(false);
 		}
 	}
