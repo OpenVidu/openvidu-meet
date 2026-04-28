@@ -4,7 +4,7 @@ import { leaveMeeting, openMeeting } from './helpers/meeting-ui.helper';
 import {
 	expectRecordingTagTimerBadge,
 	startRecordingFromActivitiesPanel,
-	startRecordingFromSettingsMenu,
+	startRecordingFromToolbar,
 	stopRecordingIfActive,
 	waitForRecordingStarted
 } from './helpers/recordings.helper';
@@ -36,11 +36,11 @@ test.describe('Recordings: E2E UI flows', () => {
 		await expectRecordingTagTimerBadge(page);
 	});
 
-	test('should start a recording from settings panel', async ({ page }) => {
+	test('should start a recording from toolbar and open recording panel', async ({ page }) => {
 		const accessUrl = await createTrackedAccessUrl(`recording-settings-${Date.now()}`);
 		await openMeeting(page, accessUrl);
 
-		await startRecordingFromSettingsMenu(page);
+		await startRecordingFromToolbar(page);
 		await waitForRecordingStarted(page);
 	});
 });

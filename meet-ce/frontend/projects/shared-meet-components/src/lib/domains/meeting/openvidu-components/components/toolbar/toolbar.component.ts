@@ -678,7 +678,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	openRecordingActivityPanel() {
-		if (this.showActivitiesPanelButton() && !this.isActivitiesOpened) {
+		if (this.showActivitiesPanelButton() && !this.isActivitiesOpened()) {
 			this.panelService.togglePanel(PanelType.ACTIVITIES, 'recording');
 		}
 	}

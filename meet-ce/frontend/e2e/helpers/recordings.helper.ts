@@ -1,5 +1,4 @@
 import { expect, type Page } from '@playwright/test';
-import { toggleActivitiesPanel } from './meeting-ui.helper';
 
 const ACTIVITIES_CONTAINER = '#activities-container';
 const RECORDING_ACTIVITY = '#recording-activity';
@@ -10,16 +9,7 @@ const MORE_OPTIONS_BUTTON = '#more-options-btn';
 const SETTINGS_RECORDING_BUTTON = '#recording-btn';
 const RECORDING_TAG = '#recording-tag';
 
-async function isVisible(page: Page, selector: string): Promise<boolean> {
-	const locator = page.locator(selector);
-	return (await locator.count()) > 0 && (await locator.first().isVisible().catch(() => false));
-}
-
 export async function ensureActivitiesPanelOpen(page: Page): Promise<void> {
-	if (!(await isVisible(page, ACTIVITIES_CONTAINER))) {
-		await toggleActivitiesPanel(page);
-	}
-
 	await expect(page.locator(ACTIVITIES_CONTAINER)).toBeVisible();
 	await expect(page.locator(RECORDING_ACTIVITY)).toBeVisible();
 }
@@ -52,7 +42,7 @@ export async function startRecordingFromActivitiesPanel(page: Page): Promise<voi
 	await startButton.click();
 }
 
-export async function startRecordingFromSettingsMenu(page: Page): Promise<void> {
+export async function startRecordingFromToolbar(page: Page): Promise<void> {
 	await openMoreOptionsMenu(page);
 
 	const recordingButton = page.locator(`${SETTINGS_RECORDING_BUTTON}:visible`).first();
