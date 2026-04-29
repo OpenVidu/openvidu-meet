@@ -11,7 +11,7 @@ test.describe('Share links overlay', () => {
 	});
 
 	test('should show share-link-overlay with main-share-meeting-link and copy-url-btn when joining', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl(`share-overlay-${Date.now()}`, undefined, undefined, createdRoomIds);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `share-overlay-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 		await installClipboardCapture(page);
 

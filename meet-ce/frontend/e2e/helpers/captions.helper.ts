@@ -1,5 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
-import { createExternalRoomMember, createRoom, toAbsoluteMeetUrl } from './meet-api.helper';
+import { createRoom, createRoomMember, toAbsoluteMeetUrl } from './meet-api.helper';
 
 export async function createCaptionsAccessUrlWithRoomConfig(params: {
 	participantName: string;
@@ -17,7 +17,7 @@ export async function createCaptionsAccessUrlWithRoomConfig(params: {
 	});
 	params.createdRoomIds.add(room.roomId);
 
-	const member = await createExternalRoomMember({
+	const member = await createRoomMember({
 		roomId: room.roomId,
 		name: params.participantName,
 		baseRole: 'moderator'

@@ -10,8 +10,8 @@ test.describe('Toolbar button functionality for local media control', () => {
         await deleteRooms(createdRoomIds);
     });
 
-    async function createTrackedAccessUrl(participantName: string): Promise<string> {
-        const { accessUrl } = await createRoomAndGetAccessUrl(participantName, undefined, undefined, createdRoomIds);
+async function createTrackedAccessUrl(roomName: string): Promise<string> {
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName, createdRoomIds });
         return accessUrl;
     }
 

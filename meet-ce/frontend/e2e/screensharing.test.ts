@@ -1,25 +1,25 @@
 import { expect, test } from '@playwright/test';
 import {
-	createExternalRoomMember,
-	createRoom,
-	createRoomAndGetAccessUrl,
-	deleteRooms,
-	toAbsoluteMeetUrl,
-	type E2ERoom
+    createRoom,
+    createRoomAndGetAccessUrl,
+    createRoomMember,
+    deleteRooms,
+    toAbsoluteMeetUrl,
+    type E2ERoom
 } from './helpers/meet-api.helper';
 import {
-	expectPinnedStreamCount,
-	expectScreenTypeCount,
-	expectVideoCount,
-	getPinnedStreamCount,
-	getScreenTypeTracks,
-	openMeeting,
-	startScreensharing,
-	stopScreensharing,
-	toggleCamera,
-	toggleMicrophone,
-	toggleStreamPin,
-	unpinCurrentPinnedStream
+    expectPinnedStreamCount,
+    expectScreenTypeCount,
+    expectVideoCount,
+    getPinnedStreamCount,
+    getScreenTypeTracks,
+    openMeeting,
+    startScreensharing,
+    stopScreensharing,
+    toggleCamera,
+    toggleMicrophone,
+    toggleStreamPin,
+    unpinCurrentPinnedStream
 } from './helpers/meeting-ui.helper';
 
 test.describe('E2E: Screensharing features', () => {
@@ -27,7 +27,7 @@ test.describe('E2E: Screensharing features', () => {
 	const createdRoomIds = new Set<string>();
 
 	async function createAccessUrlForExistingRoom(room: E2ERoom, participantName: string): Promise<{ accessUrl: string }> {
-		const member = await createExternalRoomMember({
+		const member = await createRoomMember({
 			roomId: room.roomId,
 			name: participantName,
 			baseRole: 'moderator'
@@ -41,7 +41,7 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should toggle screensharing on and off twice, updating video count', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`, undefined, undefined, createdRoomIds);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `screen-owner-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		await startScreensharing(page);
@@ -64,7 +64,7 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should show screenshare and muted camera (camera off, screenshare on)', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`, undefined, undefined, createdRoomIds);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `screen-owner-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		await toggleCamera(page);
@@ -79,7 +79,7 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should display screensharing with a single pinned video', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`, undefined, undefined, createdRoomIds);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `screen-owner-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		await startScreensharing(page);
@@ -146,7 +146,7 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should correctly share screen with microphone muted and maintain proper track state', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl(`screen-owner-${Date.now()}`, undefined, undefined, createdRoomIds);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `screen-owner-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		await toggleMicrophone(page);

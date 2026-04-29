@@ -1,29 +1,29 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
-	createExternalRoomMember,
-	createRoom,
-	createRoomAndGetAccessUrl,
-	deleteRooms,
-	toAbsoluteMeetUrl,
-	type E2ERoom
+    createRoom,
+    createRoomAndGetAccessUrl,
+    createRoomMember,
+    deleteRooms,
+    toAbsoluteMeetUrl,
+    type E2ERoom
 } from './helpers/meet-api.helper';
 import {
-	dragStream,
-	expectLocalStreamMediaCount,
-	expectScreenShareCount,
-	expectStreamCount,
-	getElementBoundingBox,
-	hoverStream,
-	joinFromPrejoinWithMediaState,
-	leaveMeeting,
-	maximizeStream,
-	minimizeStream,
-	openMeeting,
-	startScreensharing,
-	stopScreensharing,
-	toggleCamera,
-	toggleMicrophone,
-	waitForRemoteStream
+    dragStream,
+    expectLocalStreamMediaCount,
+    expectScreenShareCount,
+    expectStreamCount,
+    getElementBoundingBox,
+    hoverStream,
+    joinFromPrejoinWithMediaState,
+    leaveMeeting,
+    maximizeStream,
+    minimizeStream,
+    openMeeting,
+    startScreensharing,
+    stopScreensharing,
+    toggleCamera,
+    toggleMicrophone,
+    waitForRemoteStream
 } from './helpers/meeting-ui.helper';
 
 /** Helper to track created rooms for cleanup */
@@ -40,11 +40,11 @@ function createRoomTracker() {
 
 		async createAccessUrl(participantName: string, room?: E2ERoom): Promise<string> {
 			if (!room) {
-				const { accessUrl } = await createRoomAndGetAccessUrl(participantName, undefined, undefined, createdRoomIds);
+				const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: participantName, createdRoomIds });
 				return accessUrl;
 			}
 
-			const member = await createExternalRoomMember({
+			const member = await createRoomMember({
 				roomId: room.roomId,
 				name: participantName,
 				baseRole: 'moderator'

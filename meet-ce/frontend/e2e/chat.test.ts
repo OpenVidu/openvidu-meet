@@ -1,8 +1,8 @@
 import { expect, test } from '@playwright/test';
 import {
-    createExternalRoomMember,
     createRoom,
     createRoomAndGetAccessUrl,
+    createRoomMember,
     deleteRooms,
     toAbsoluteMeetUrl
 } from './helpers/meet-api.helper';
@@ -27,7 +27,7 @@ test.describe('Chat features', () => {
 
     test('should send messages', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-send-${Date.now()}`, participantName: senderName, createdRoomIds });
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);
@@ -43,7 +43,7 @@ test.describe('Chat features', () => {
 
     test('should keep unread chat badge hidden at startup when there are no messages', async ({ page }) => {
         const participantName = `participant-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(participantName, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-badge-${Date.now()}`, participantName, createdRoomIds });
 
         await openMeeting(page, accessUrl);
 
@@ -60,8 +60,8 @@ test.describe('Chat features', () => {
         const senderName = `sender-${Date.now()}`;
         const receiverName = `receiver-${Date.now()}`;
 
-        const receiverMember = await createExternalRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' });
-        const senderMember = await createExternalRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' });
+        const receiverMember = await createRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' });
+        const senderMember = await createRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' });
         const receiverAccessUrl = toAbsoluteMeetUrl(receiverMember.accessUrl);
         const senderAccessUrl = toAbsoluteMeetUrl(senderMember.accessUrl);
 
@@ -85,7 +85,7 @@ test.describe('Chat features', () => {
 
     test('should send an URL message and render it as link', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-url-${Date.now()}`, participantName: senderName, createdRoomIds });
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);
@@ -100,8 +100,8 @@ test.describe('Chat features', () => {
         const senderName = `sender-${Date.now()}`;
         const receiverName = `receiver-${Date.now()}`;
 
-        const receiverMember = await createExternalRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' });
-        const senderMember = await createExternalRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' });
+        const receiverMember = await createRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' });
+        const senderMember = await createRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' });
         const receiverAccessUrl = toAbsoluteMeetUrl(receiverMember.accessUrl);
         const senderAccessUrl = toAbsoluteMeetUrl(senderMember.accessUrl);
 
@@ -126,7 +126,7 @@ test.describe('Chat features', () => {
 
     test('should preserve message order when sending multiple messages quickly', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-order-${Date.now()}`, participantName: senderName, createdRoomIds });
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);

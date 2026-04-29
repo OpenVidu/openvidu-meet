@@ -25,7 +25,7 @@ test.describe('Virtual Backgrounds', () => {
 
 
     test('should close BACKGROUNDS on prejoin page when VIDEO is disabled', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`vb-prejoin-${Date.now()}`, undefined, { prejoin: 'true' }, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-prejoin-${Date.now()}`, queryParams: { prejoin: 'true' }, createdRoomIds });
         await openPrejoin(page, accessUrl);
 
         const backgroundsButton = page.locator('#backgrounds-button');
@@ -42,9 +42,7 @@ test.describe('Virtual Backgrounds', () => {
     });
 
     test('should open and close BACKGROUNDS panel on prejoin page', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`vb-prejoin-toggle-${Date.now()}`, undefined, {
-            prejoin: 'true'
-        }, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-prejoin-toggle-${Date.now()}`, queryParams: { prejoin: 'true' }, createdRoomIds });
         await openPrejoin(page, accessUrl);
 
         await expect(page.locator('#backgrounds-button')).toBeEnabled();
@@ -53,9 +51,7 @@ test.describe('Virtual Backgrounds', () => {
     });
 
     test('should apply a background effect on prejoin page', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`vb-prejoin-apply-${Date.now()}`, undefined, {
-            prejoin: 'true'
-        }, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-prejoin-apply-${Date.now()}`, queryParams: { prejoin: 'true' }, createdRoomIds });
         await openPrejoin(page, accessUrl);
 
         const before = await captureVideoElementScreenshot(page);
@@ -68,7 +64,7 @@ test.describe('Virtual Backgrounds', () => {
     });
 
     test('should open and close BACKGROUNDS panel in the room', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`vb-room-toggle-${Date.now()}`, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-room-toggle-${Date.now()}`, createdRoomIds });
         await openMeeting(page, accessUrl);
 
         await openRoomBackgroundsPanel(page);
@@ -76,7 +72,7 @@ test.describe('Virtual Backgrounds', () => {
     });
 
     test('should apply a background effect in the room', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl(`vb-room-apply-${Date.now()}`, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-room-apply-${Date.now()}`, createdRoomIds });
         await openMeeting(page, accessUrl);
 
         const before = await captureVideoElementScreenshot(page);
