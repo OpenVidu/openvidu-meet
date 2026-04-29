@@ -1,4 +1,3 @@
-import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 
 import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
@@ -8,6 +7,7 @@ import {
 	Component,
 	computed,
 	contentChild,
+	contentChildren,
 	DestroyRef,
 	effect,
 	ElementRef,
@@ -19,7 +19,7 @@ import {
 	ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { StreamDirective } from '../../directives/template/openvidu-components-angular.directive';
+import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 import { ParticipantTrackPublication } from '../../models/participant.model';
 import { RemoteParticipantTracksPipe } from '../../pipes/participant.pipe';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
@@ -27,7 +27,7 @@ import { GlobalConfigService } from '../../services/config/global-config.service
 import { LayoutService } from '../../services/layout/layout.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
-import { LayoutTemplateConfiguration, TemplateManagerService } from '../../services/template/template-manager.service';
+import { TemplateRegistryService } from '../../services/template/template-registry.service';
 
 /**
  *
@@ -48,7 +48,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly participantService = inject(ParticipantService);
 	private readonly globalService = inject(GlobalConfigService);
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
-	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly templateRegistry = inject(TemplateRegistryService);
 
 	/**
 	 * @ignore
@@ -58,7 +58,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly layoutAdditionalElementsTemplateQuery = contentChild('layoutAdditionalElements', { read: TemplateRef });
+	readonly layoutAdditionalElementsDirectives = contentChildren(LayoutAdditionalElementsDirective);
 
 	/**
 	 * @ignore
@@ -74,32 +74,22 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	readonly localLayoutElementQueries = viewChildren('localLayoutElement', { read: ElementRef });
-	/**
-	 * @ignore
-	 */
-	readonly externalStream = contentChild(StreamDirective);
 
-	/**
-	 * @ignore
-	 */
-	readonly externalLayoutAdditionalElements = contentChild(LayoutAdditionalElementsDirective);
-
-	/**
-	 * @ignore
-	 */
-	readonly templateConfig = computed<LayoutTemplateConfiguration>(() => {
-		return this.templateManagerService.setupLayoutTemplates(
-			this.externalStream(),
-			this.externalLayoutAdditionalElements()
-		);
-	});
 	readonly streamTemplate = computed(
-		() => this.templateConfig().layoutStreamTemplate ?? this.streamTemplateQuery()
+		() => this.templateRegistry.stream() ?? this.streamTemplateQuery()
 	);
-	readonly layoutAdditionalElementsTemplate = computed(
+
+	/** Finds a direct content-child directive by slot, or falls back to the registry template for the default slot */
+	readonly layoutAdditionalElementsTopTemplate = computed(
+		() => this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'top')?.template
+	);
+	readonly layoutAdditionalElementsDefaultTemplate = computed(
 		() =>
-			this.templateConfig().layoutAdditionalElementsTemplate ??
-			this.layoutAdditionalElementsTemplateQuery()
+			this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'default')?.template ??
+			this.templateRegistry.layoutAdditionalElements()
+	);
+	readonly layoutAdditionalElementsBottomTemplate = computed(
+		() => this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'bottom')?.template
 	);
 	readonly localParticipant = this.participantService.localParticipantSignal;
 	readonly remoteParticipants = computed(() => {

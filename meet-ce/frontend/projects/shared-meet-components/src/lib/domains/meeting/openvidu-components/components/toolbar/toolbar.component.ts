@@ -4,7 +4,6 @@ import {
 	ChangeDetectionStrategy,
 	Component,
 	computed,
-	contentChild,
 	DestroyRef,
 	effect,
 	inject,
@@ -12,7 +11,6 @@ import {
 	OnInit,
 	output,
 	signal,
-	TemplateRef,
 	viewChild,
 	WritableSignal
 } from '@angular/core';
@@ -23,14 +21,7 @@ import { MatMenuTrigger } from '@angular/material/menu';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { fromEvent } from 'rxjs';
 import { FallbackLogoDirective } from '../../directives/api/internals.directive';
-import {
-	LeaveButtonDirective,
-	ToolbarMoreOptionsAdditionalMenuItemsDirective
-} from '../../directives/template/internals.directive';
-import {
-	ToolbarAdditionalButtonsDirective,
-	ToolbarAdditionalPanelButtonsDirective
-} from '../../directives/template/openvidu-components-angular.directive';
+import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import { ChatMessage } from '../../models/chat.model';
 import { ILogger } from '../../models/logger.model';
 import { PanelType } from '../../models/panel.model';
@@ -54,7 +45,7 @@ import { ParticipantService } from '../../services/participant/participant.servi
 import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
 import { StorageService } from '../../services/storage/storage.service';
-import { TemplateManagerService, ToolbarTemplateConfiguration } from '../../services/template/template-manager.service';
+import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { TranslateService } from '../../services/translate/translate.service';
 import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-media-buttons.component';
 import { ToolbarPanelButtonsComponent } from './toolbar-panel-buttons/toolbar-panel-buttons.component';
@@ -97,61 +88,10 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly translateService = inject(TranslateService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);
-	private readonly templateManagerService = inject(TemplateManagerService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly platformService = inject(PlatformService);
 	private readonly destroyRef = inject(DestroyRef);
-
-	/**
-	 * @ignore
-	 */
-	readonly toolbarAdditionalButtonsTemplateQuery = contentChild('toolbarAdditionalButtons', { read: TemplateRef });
-	toolbarAdditionalButtonsTemplate: TemplateRef<any> | undefined;
-
-	/**
-	 * @ignore
-	 */
-	readonly toolbarLeaveButtonTemplateQuery = contentChild('toolbarLeaveButton', { read: TemplateRef });
-	toolbarLeaveButtonTemplate: TemplateRef<any> | undefined;
-	/**
-	 * @ignore
-	 */
-	readonly toolbarAdditionalPanelButtonsTemplateQuery = contentChild('toolbarAdditionalPanelButtons', {
-		read: TemplateRef
-	});
-	toolbarAdditionalPanelButtonsTemplate: TemplateRef<any> | undefined;
-
-	/**
-	 * @internal
-	 * Template for additional menu items in the more options menu
-	 */
-	moreOptionsAdditionalMenuItemsTemplate: TemplateRef<any> | undefined;
-
-	private _externalMoreOptionsAdditionalMenuItems?: ToolbarMoreOptionsAdditionalMenuItemsDirective;
-	private readonly externalMoreOptionsAdditionalMenuItemsQuery = contentChild(
-		ToolbarMoreOptionsAdditionalMenuItemsDirective
-	);
-	/**
-	 * @internal
-	 */
-	get externalMoreOptionsAdditionalMenuItems(): ToolbarMoreOptionsAdditionalMenuItemsDirective | undefined {
-		return this._externalMoreOptionsAdditionalMenuItems;
-	}
-
-	/**
-	 * @ignore
-	 */
-	private readonly externalAdditionalButtonsQuery = contentChild(ToolbarAdditionalButtonsDirective);
-
-	/**
-	 * @ignore
-	 */
-	private readonly externalLeaveButtonQuery = contentChild(LeaveButtonDirective);
-
-	/**
-	 * @ignore
-	 */
-	private readonly externalAdditionalPanelButtonsQuery = contentChild(ToolbarAdditionalPanelButtonsDirective);
+	readonly templateRegistry = inject(TemplateRegistryService);
 
 	/**
 	 * This event is emitted when the room has been disconnected.
@@ -380,17 +320,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	readonly totalParticipants = this.participantService.totalParticipantsSignal;
 
-	/**
-	 * @internal
-	 * Template configuration managed by the service
-	 */
-	readonly templateConfig: WritableSignal<ToolbarTemplateConfiguration> = signal({});
-
-	// Store directive references for template setup
-	private _externalAdditionalButtons?: ToolbarAdditionalButtonsDirective;
-	private _externalLeaveButton?: LeaveButtonDirective;
-	private _externalAdditionalPanelButtons?: ToolbarAdditionalPanelButtonsDirective;
-
 	private log: ILogger = inject(LoggerService).get('ToolbarComponent');
 	private readonly currentWindowHeight = signal(window.innerHeight);
 
@@ -398,20 +327,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.evalAndSetRoomName(this.libService.roomNameSignal());
 	});
 	private readonly querySyncEffect = effect(() => {
-		// Track all content queries in one effect to avoid cascading setupTemplates calls
 		this.menuTrigger = this.menuTriggerQuery();
-		this.toolbarAdditionalButtonsTemplate = this.toolbarAdditionalButtonsTemplateQuery();
-		this.toolbarLeaveButtonTemplate = this.toolbarLeaveButtonTemplateQuery();
-		this.toolbarAdditionalPanelButtonsTemplate = this.toolbarAdditionalPanelButtonsTemplateQuery();
-
-		// Update all external directives
-		this._externalMoreOptionsAdditionalMenuItems = this.externalMoreOptionsAdditionalMenuItemsQuery();
-		this._externalAdditionalButtons = this.externalAdditionalButtonsQuery();
-		this._externalLeaveButton = this.externalLeaveButtonQuery();
-		this._externalAdditionalPanelButtons = this.externalAdditionalPanelButtonsQuery();
-
-		// Call setupTemplates only ONCE after all queries have been synced
-		this.setupTemplates();
 	});
 	private readonly menuTogglingEffect = effect(() => {
 		const ev = this.panelService.panelOpened();
@@ -522,8 +438,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.hasVideoDevices.set(this.deviceService.hasVideoDeviceAvailable());
 		this.hasAudioDevices.set(this.deviceService.hasAudioDeviceAvailable());
 
-		this.setupTemplates();
-
 		this.subscribeToReconnection();
 	}
 
@@ -535,52 +449,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		this.panelService.clear();
 		this.isFullscreenActive.set(false);
 		this.cdkOverlayService.setSelector('body');
-	}
-
-	/**
-	 * @internal
-	 * Sets up all templates using the template manager service
-	 */
-	private setupTemplates(): void {
-		const config = this.templateManagerService.setupToolbarTemplates(
-			this._externalAdditionalButtons,
-			this._externalAdditionalPanelButtons,
-			this._externalLeaveButton,
-			this._externalMoreOptionsAdditionalMenuItems
-		);
-		this.templateConfig.set(config);
-
-		// Apply templates to component properties for backward compatibility
-		this.applyTemplateConfiguration();
-	}
-
-	/**
-	 * @internal
-	 * Applies the template configuration to component properties
-	 */
-	private applyTemplateConfiguration(): void {
-		const config = this.templateConfig();
-		if (config.toolbarAdditionalButtonsTemplate) {
-			this.toolbarAdditionalButtonsTemplate = config.toolbarAdditionalButtonsTemplate;
-		}
-		if (config.toolbarAdditionalPanelButtonsTemplate) {
-			this.toolbarAdditionalPanelButtonsTemplate = config.toolbarAdditionalPanelButtonsTemplate;
-		}
-		if (config.toolbarLeaveButtonTemplate) {
-			this.toolbarLeaveButtonTemplate = config.toolbarLeaveButtonTemplate;
-		}
-		if (config.toolbarMoreOptionsAdditionalMenuItemsTemplate) {
-			this.moreOptionsAdditionalMenuItemsTemplate =
-				config.toolbarMoreOptionsAdditionalMenuItemsTemplate;
-		}
-	}
-
-	/**
-	 * @internal
-	 * Updates templates and triggers change detection
-	 */
-	private updateTemplatesAndMarkForCheck(): void {
-		this.setupTemplates();
 	}
 
 	/**

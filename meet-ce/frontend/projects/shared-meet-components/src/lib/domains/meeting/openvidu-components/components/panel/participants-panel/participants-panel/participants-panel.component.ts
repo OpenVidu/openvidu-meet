@@ -3,7 +3,6 @@ import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    contentChild,
     inject,
     TemplateRef,
     viewChild
@@ -12,12 +11,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ParticipantPanelItemDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { PanelType } from '../../../../models/panel.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { PanelService } from '../../../../services/panel/panel.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
-import { ParticipantsPanelTemplateConfiguration, TemplateManagerService } from '../../../../services/template/template-manager.service';
+import { TemplateRegistryService } from '../../../../services/template/template-registry.service';
 import { ParticipantPanelItemComponent } from '../participant-panel-item/participant-panel-item.component';
 
 /**
@@ -39,27 +37,9 @@ export class ParticipantsPanelComponent {
 	 */
 	readonly defaultParticipantPanelItemTemplateQuery = viewChild('defaultParticipantPanelItem', { read: TemplateRef });
 
-	/**
-	 * @ignore
-	 */
-	readonly participantPanelItemTemplateQuery = contentChild('participantPanelItem', { read: TemplateRef });
-
-	/**
-	 * @ignore
-	 */
-	readonly participantPanelAfterLocalParticipantTemplateQuery = contentChild('participantPanelAfterLocalParticipant', { read: TemplateRef });
-
-	/**
-	 * @ignore
-	 */
-	readonly externalParticipantPanelItem = contentChild(ParticipantPanelItemDirective);
-
-	/**
-	 * @ignore
-	 */
 	private readonly participantService = inject(ParticipantService);
 	private readonly panelService = inject(PanelService);
-	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly templateRegistry = inject(TemplateRegistryService);
 
 	/**
 	 * @ignore
@@ -69,26 +49,11 @@ export class ParticipantsPanelComponent {
 	 * @ignore
 	 */
 	readonly remoteParticipants = this.participantService.remoteParticipantsSignal;
-	readonly templateConfig = computed<ParticipantsPanelTemplateConfiguration>(() => {
-		const participantPanelItemTemplate =
-			this.participantPanelItemTemplateQuery() ?? this.defaultParticipantPanelItemTemplateQuery();
-
-		return this.templateManagerService.setupParticipantsPanelTemplates(
-			this.externalParticipantPanelItem(),
-			participantPanelItemTemplate,
-			this.participantPanelAfterLocalParticipantTemplateQuery()
-		);
-	});
 	readonly participantPanelItemTemplate = computed(
-		() =>
-			this.templateConfig().participantPanelItemTemplate ??
-			this.participantPanelItemTemplateQuery() ??
-			this.defaultParticipantPanelItemTemplateQuery()
+		() => this.templateRegistry.participantPanelItem() ?? this.defaultParticipantPanelItemTemplateQuery()
 	);
 	readonly participantPanelAfterLocalParticipantTemplate = computed(
-		() =>
-			this.templateConfig().participantPanelAfterLocalParticipantTemplate ??
-			this.participantPanelAfterLocalParticipantTemplateQuery()
+		() => this.templateRegistry.participantPanelAfterLocalParticipant()
 	);
 
 	close() {

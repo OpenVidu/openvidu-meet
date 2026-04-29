@@ -57,9 +57,9 @@
 			[recordingStatus]="recordingStatus().status"
 			[hasRoomTracksPublished]="hasRoomTracksPublished"
 			[showLeaveButton]="showLeaveButton()"
-			[toolbarAdditionalButtonsTemplate]="toolbarAdditionalButtonsTemplate ?? null"
+			[toolbarAdditionalButtonsTemplate]="templateRegistry.toolbarAdditionalButtons() ?? null"
 			[additionalButtonsPosition]="additionalButtonsPosition()"
-			[toolbarLeaveButtonTemplate]="toolbarLeaveButtonTemplate ?? null"
+			[toolbarLeaveButtonTemplate]="templateRegistry.toolbarLeaveButton() ?? null"
 			(cameraToggled)="toggleCamera()"
 			(microphoneToggled)="toggleMicrophone()"
 			(screenShareToggled)="toggleScreenShare()"
@@ -73,7 +73,7 @@
 		>
 			<!-- Inject additional menu items via content projection -->
 			<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
-				<ng-container *ngTemplateOutlet="externalMoreOptionsAdditionalMenuItems?.template" />
+				<ng-container *ngTemplateOutlet="templateRegistry.toolbarMoreOptionsAdditionalMenuItems() ?? null" />
 			</ng-container>
 		</ov-toolbar-media-buttons>
 	</div>
@@ -91,7 +91,7 @@
 			[showChatPanelButton]="showChatPanelButton()"
 			[recordingStatus]="recordingStatus()"
 			[totalParticipants]="totalParticipants()"
-			[toolbarAdditionalPanelButtonsTemplate]="toolbarAdditionalPanelButtonsTemplate"
+			[toolbarAdditionalPanelButtonsTemplate]="templateRegistry.toolbarAdditionalPanelButtons() ?? undefined"
 			(toggleActivitiesPanel)="toggleActivitiesPanel($event ?? '')"
 			(toggleParticipantsPanel)="toggleParticipantsPanel()"
 			(toggleChatPanel)="toggleChatPanel()"

@@ -2,7 +2,6 @@ import { CommonModule } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
-	contentChild,
 	DestroyRef,
 	effect,
 	ElementRef,
@@ -12,7 +11,6 @@ import {
 	OnInit,
 	output,
 	signal,
-	TemplateRef,
 	viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -32,7 +30,7 @@ import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { SessionRoomEventsService } from '../../services/session/session-room-events.service';
-import { SessionTemplateConfiguration, TemplateManagerService } from '../../services/template/template-manager.service';
+import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { TranslateService } from '../../services/translate/translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
@@ -51,12 +49,6 @@ import { LandscapeWarningComponent } from '../landscape-warning/landscape-warnin
 	standalone: true
 })
 export class SessionComponent implements OnInit, OnDestroy {
-	readonly toolbarTemplateQuery = contentChild('toolbar', { read: TemplateRef });
-	readonly toolbarTemplate = signal<TemplateRef<any> | undefined>(undefined);
-	readonly panelTemplateQuery = contentChild('panel', { read: TemplateRef });
-	readonly panelTemplate = signal<TemplateRef<any> | undefined>(undefined);
-	readonly layoutTemplateQuery = contentChild('layout', { read: TemplateRef });
-	readonly layoutTemplate = signal<TemplateRef<any> | undefined>(undefined);
 	/**
 	 * Provides event notifications that fire when Room is created for the local participant.
 	 */
@@ -93,10 +85,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 
 	/**
 	 * @internal
-	 * Template configuration managed by the service
 	 */
-	templateConfig: SessionTemplateConfiguration = {};
-
 	private shouldDisconnectRoomWhenComponentIsDestroyed: boolean = true;
 	private readonly SIDENAV_WIDTH_LIMIT_MODE = 790;
 	private readonly destroyRef = inject(DestroyRef);
@@ -109,9 +98,9 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly translateService = inject(TranslateService);
 	private readonly backgroundService = inject(VirtualBackgroundService);
 
-	private readonly templateManagerService = inject(TemplateManagerService);
 	private readonly sessionRoomEventsService = inject(SessionRoomEventsService);
 	protected readonly viewportService = inject(ViewportService);
+	readonly templateRegistry = inject(TemplateRegistryService);
 	readonly sidenavMenuQuery = viewChild<MatSidenav>('sidenav');
 	readonly videoContainerQuery = viewChild<ElementRef>('videoContainer');
 	readonly containerQuery = viewChild<MatDrawerContainer>('container');
@@ -121,13 +110,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private updateLayoutInterval: ReturnType<typeof setInterval> | undefined = undefined;
 	private log = inject(LoggerService).get('SessionComponent');
 	private readonly LAYOUT_UPDATE_DEBOUNCE_MS = 100;
-
-	private readonly querySyncEffect = effect(() => {
-		this.toolbarTemplate.set(this.toolbarTemplateQuery());
-		this.panelTemplate.set(this.panelTemplateQuery());
-		this.layoutTemplate.set(this.layoutTemplateQuery());
-		this.setupTemplates();
-	});
 
 	private readonly sidenavMenuEffect = effect(() => {
 		const menu = this.sidenavMenuQuery();
@@ -139,10 +121,10 @@ export class SessionComponent implements OnInit, OnDestroy {
 
 	private readonly videoContainerEffect = effect(() => {
 		const container = this.videoContainerQuery();
-		if (container && !this.toolbarTemplateQuery()) {
+		if (container && !this.templateRegistry.toolbar()) {
 			// Use microtask to ensure DOM is ready
 			Promise.resolve().then(() => {
-				if (container && !this.toolbarTemplateQuery()) {
+				if (container && !this.templateRegistry.toolbar()) {
 					container.nativeElement.style.height = '100%';
 					container.nativeElement.style.minHeight = '100%';
 					this.debouncedLayoutUpdate();
@@ -276,14 +258,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 				error?.error || error?.message || error
 			);
 		}
-	}
-
-	private setupTemplates(): void {
-		this.templateConfig = this.templateManagerService.setupSessionTemplates(
-			this.toolbarTemplate(),
-			this.panelTemplate(),
-			this.layoutTemplate()
-		);
 	}
 
 	/**

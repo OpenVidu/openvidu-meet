@@ -1,17 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, contentChild, inject, input, TemplateRef } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, contentChild, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
-import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
 import { TrackPublishedTypesPipe } from '../../../../pipes/participant.pipe';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
-import { ParticipantPanelItemTemplateConfiguration, TemplateManagerService } from '../../../../services/template/template-manager.service';
+import { TemplateRegistryService } from '../../../../services/template/template-registry.service';
 
 /**
  * The **ParticipantPanelItemComponent** is hosted inside of the {@link ParticipantsPanelComponent}.
@@ -30,14 +29,8 @@ export class ParticipantPanelItemComponent {
 	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });
 	readonly muteButtonInput = input(true, { alias: 'muteButton' });
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
 	private readonly participantService = inject(ParticipantService);
-	private readonly templateManagerService = inject(TemplateManagerService);
-
-	/**
-	 * @ignore
-	 */
-	readonly participantPanelItemElementsTemplateQuery = contentChild('participantPanelItemElements', { read: TemplateRef });
+	private readonly templateRegistry = inject(TemplateRegistryService);
 
 	/**
 	 * @ignore
@@ -47,17 +40,9 @@ export class ParticipantPanelItemComponent {
 	/**
 	 * @ignore
 	 */
-	readonly externalItemElements = contentChild(ParticipantPanelItemElementsDirective);
-
-	/**
-	 * @ignore
-	 */
 	readonly externalParticipantBadge = contentChild(ParticipantPanelParticipantBadgeDirective);
-	readonly templateConfig = computed<ParticipantPanelItemTemplateConfiguration>(() => {
-		return this.templateManagerService.setupParticipantPanelItemTemplates(this.externalItemElements());
-	});
 	readonly participantPanelItemElementsTemplate = computed(
-		() => this.templateConfig().participantPanelItemElementsTemplate ?? this.participantPanelItemElementsTemplateQuery()
+		() => this.templateRegistry.participantPanelItemElements()
 	);
 	readonly participantBadgeTemplate = computed(() => this.externalParticipantBadge()?.template);
 	readonly isLocalParticipant = computed(() => this.participantInput()?.isLocal || false);

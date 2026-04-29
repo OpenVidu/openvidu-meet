@@ -1,30 +1,23 @@
 import { CommonModule } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
-	Component,
-	computed,
-	contentChild,
-	effect,
-	inject,
-	OnInit,
-	output,
-	TemplateRef
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    OnInit,
+    output
 } from '@angular/core';
 import {
-	ActivitiesPanelDirective,
-	AdditionalPanelsDirective,
-	ChatPanelDirective,
-	ParticipantsPanelDirective
-} from '../../directives/template/openvidu-components-angular.directive';
-import {
-	ActivitiesPanelStatusEvent,
-	ChatPanelStatusEvent,
-	PanelStatusInfo,
-	PanelType,
-	ParticipantsPanelStatusEvent,
-	SettingsPanelStatusEvent
+    ActivitiesPanelStatusEvent,
+    ChatPanelStatusEvent,
+    PanelStatusInfo,
+    PanelType,
+    ParticipantsPanelStatusEvent,
+    SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { PanelService } from '../../services/panel/panel.service';
+import { TemplateRegistryService } from '../../services/template/template-registry.service';
 
 /**
  *
@@ -42,54 +35,8 @@ import { PanelService } from '../../services/panel/panel.service';
 	standalone: true
 })
 export class PanelComponent implements OnInit {
-	/**
-	 * @ignore
-	 */
-	readonly participantsPanelTemplate = contentChild('participantsPanel', { read: TemplateRef });
-
-	/**
-	 * @ignore
-	 */
-	readonly backgroundEffectsPanelTemplate = contentChild('backgroundEffectsPanel', { read: TemplateRef });
-
-	/**
-	 * @ignore
-	 */
-	readonly settingsPanelTemplate = contentChild('settingsPanel', { read: TemplateRef });
-
-	/**
-	 * @ignore
-	 */
-	readonly activitiesPanelTemplate = contentChild('activitiesPanel', { read: TemplateRef });
-	/**
-	 * @ignore
-	 */
-	readonly chatPanelTemplate = contentChild('chatPanel', { read: TemplateRef });
-
-	/**
-	 * @ignore
-	 */
-	readonly additionalPanelsTemplate = contentChild('additionalPanels', { read: TemplateRef });
-
-	/**
-	 * @ignore
-	 */
-	readonly externalParticipantPanel = contentChild(ParticipantsPanelDirective);
-
-	/**
-	 * @ignore
-	 */
-	readonly externalActivitiesPanel = contentChild(ActivitiesPanelDirective);
-
-	/**
-	 * @ignore
-	 */
-	readonly externalChatPanel = contentChild(ChatPanelDirective);
-
-	/**
-	 * @ignore
-	 */
-	readonly externalAdditionalPanels = contentChild(AdditionalPanelsDirective);
+	private readonly panelService = inject(PanelService);
+	readonly templateRegistry = inject(TemplateRegistryService);
 
 	/**
 	 * This event is fired when the chat panel status has been changed.
@@ -135,10 +82,6 @@ export class PanelComponent implements OnInit {
 		}
 	> = new Map();
 
-	/**
-	 * @ignore
-	 */
-	private readonly panelService = inject(PanelService);
 	readonly panelOpened = this.panelService.panelOpened;
 	readonly isChatPanelOpened = computed(() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.CHAT);
 	readonly isParticipantsPanelOpened = computed(

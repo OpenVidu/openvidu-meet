@@ -1,8 +1,8 @@
 <div class="container" [class.withMargin]="localParticipant()?.isMinimized">
 	<div id="layout" class="layout" #layout>
 		<!-- Top slot: Render elements that should appear at the top -->
-		@if (layoutAdditionalElementsTemplate() && templateConfig().layoutAdditionalElementsSlot === 'top') {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate()" />
+		@if (layoutAdditionalElementsTopTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTopTemplate()" />
 		}
 
 		@if (localParticipant(); as participant) {
@@ -28,11 +28,8 @@
 		}
 
 		<!-- Default slot: Render additional layout elements (backward compatibility and default position) -->
-		@if (
-			layoutAdditionalElementsTemplate() &&
-			(templateConfig().layoutAdditionalElementsSlot === 'default' || !templateConfig().layoutAdditionalElementsSlot)
-		) {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate()" />
+		@if (layoutAdditionalElementsDefaultTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsDefaultTemplate()" />
 		}
 
 		@for (track of remoteParticipants() | tracks; track trackParticipantElement($index, track)) {
@@ -50,8 +47,8 @@
 		}
 
 		<!-- Bottom slot: Render elements that should appear at the bottom -->
-		@if (layoutAdditionalElementsTemplate() && templateConfig().layoutAdditionalElementsSlot === 'bottom') {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate()" />
+		@if (layoutAdditionalElementsBottomTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsBottomTemplate()" />
 		}
 	</div>
 

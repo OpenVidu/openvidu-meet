@@ -60,12 +60,7 @@ import type { OVRoom } from '../../services/livekit-adapter';
 import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { StorageService } from '../../services/storage/storage.service';
-import {
-	DefaultTemplates,
-	ExternalDirectives,
-	TemplateConfiguration,
-	TemplateManagerService
-} from '../../services/template/template-manager.service';
+import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { OpenViduThemeService } from '../../services/theme/theme.service';
 import { LayoutComponent } from '../layout/layout.component';
 import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
@@ -103,7 +98,6 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		ParticipantPanelItemComponent,
 		LayoutComponent,
 		StreamComponent,
-		ToolbarMoreOptionsAdditionalMenuItemsDirective,
 		SettingsPanelGeneralAdditionalElementsDirective
 	],
 	templateUrl: './videoconference.component.html',
@@ -118,8 +112,8 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly openviduService = inject(OpenViduService);
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly templateManagerService = inject(TemplateManagerService);
 	private readonly themeService = inject(OpenViduThemeService);
+	readonly templateRegistry = inject(TemplateRegistryService);
 
 	// Constants
 	private static readonly MATERIAL_ICONS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined';
@@ -196,88 +190,16 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * @internal
 	 */
 	readonly defaultStreamTemplate = viewChild('defaultStream', { read: TemplateRef });
+	/**
+	 * @internal
+	 */
+	readonly defaultBackgroundEffectsPanelTemplate = viewChild('defaultBackgroundEffectsPanel', { read: TemplateRef });
+	/**
+	 * @internal
+	 */
+	readonly defaultSettingsPanelTemplate = viewChild('defaultSettingsPanel', { read: TemplateRef });
 
-	/**
-	 * @internal
-	 */
-	openviduAngularToolbarTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularToolbarAdditionalButtonsTemplate: TemplateRef<any> | undefined = undefined;
 
-	/**
-	 * @internal
-	 */
-	openviduAngularToolbarLeaveButtonTemplate: TemplateRef<any> | undefined;
-
-	/**
-	 * @internal
-	 */
-	openviduAngularActivitiesPanelTemplate: TemplateRef<any> | undefined = undefined;
-
-	/**
-	 * @internal
-	 */
-	openviduAngularToolbarAdditionalPanelButtonsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularPanelTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularChatPanelTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularParticipantsPanelTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularAdditionalPanelsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularParticipantPanelAfterLocalParticipantTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularParticipantPanelItemElementsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularLayoutTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularStreamTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularPreJoinTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	ovLayoutAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	ovSettingsPanelGeneralAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	ovToolbarMoreOptionsAdditionalMenuItemsTemplate: TemplateRef<any> | undefined = undefined;
-
-	/**
-	 * @internal
-	 * Template configuration managed by TemplateManagerService
-	 */
-	private templateConfig: TemplateConfiguration = {} as TemplateConfiguration;
 
 	// ── State machine ────────────────────────────────────────────────────────
 	// Single phase signal drives all UI branching. Effects only write to it
@@ -546,115 +468,40 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * @internal
 	 */
 	private setupTemplates(): void {
-		const externalDirectives: ExternalDirectives = {
-			toolbar: this.externalToolbar(),
-			toolbarAdditionalButtons: this.externalToolbarAdditionalButtons(),
-			toolbarAdditionalPanelButtons: this.externalToolbarAdditionalPanelButtons(),
-			toolbarLeaveButton: this.externalToolbarLeaveButton(),
-			additionalPanels: this.externalAdditionalPanels(),
-			panel: this.externalPanel(),
-			chatPanel: this.externalChatPanel(),
-			activitiesPanel: this.externalActivitiesPanel(),
-			participantsPanel: this.externalParticipantsPanel(),
-			participantPanelAfterLocalParticipant: this.externalParticipantPanelAfterLocalParticipant(),
-			participantPanelItem: this.externalParticipantPanelItem(),
-			participantPanelItemElements: this.externalParticipantPanelItemElements(),
-			layout: this.externalLayout(),
-			stream: this.externalStream(),
-			preJoin: this.externalPreJoin(),
-			layoutAdditionalElements: this.externalLayoutAdditionalElements(),
-			settingsPanelGeneralAdditionalElements: this.externalSettingsPanelGeneralAdditionalElements(),
-			toolbarMoreOptionsAdditionalMenuItems: this.externalToolbarMoreOptionsAdditionalMenuItems()
-		};
+		const r = this.templateRegistry;
 
-		const defaultTemplates: DefaultTemplates = {
-			toolbar: this.defaultToolbarTemplate()!,
-			panel: this.defaultPanelTemplate()!,
-			chatPanel: this.defaultChatPanelTemplate()!,
-			participantsPanel: this.defaultParticipantsPanelTemplate()!,
-			activitiesPanel: this.defaultActivitiesPanelTemplate()!,
-			participantPanelItem: this.defaultParticipantPanelItemTemplate()!,
-			layout: this.defaultLayoutTemplate()!,
-			stream: this.defaultStreamTemplate()!
-		};
+		// Core layout — external directive template takes priority over default
+		r.toolbar.set(this.externalToolbar()?.template ?? this.defaultToolbarTemplate()!);
+		r.panel.set(this.externalPanel()?.template ?? this.defaultPanelTemplate()!);
+		r.layout.set(this.externalLayout()?.template ?? this.defaultLayoutTemplate()!);
+		r.stream.set(this.externalStream()?.template ?? this.defaultStreamTemplate()!);
+		r.preJoin.set(this.externalPreJoin()?.template);
 
-		this.templateConfig = this.templateManagerService.setupTemplates(externalDirectives, defaultTemplates);
-		this.applyTemplateConfiguration();
-	}
+		// Panel slots
+		r.chatPanel.set(this.externalChatPanel()?.template ?? this.defaultChatPanelTemplate()!);
+		r.participantsPanel.set(this.externalParticipantsPanel()?.template ?? this.defaultParticipantsPanelTemplate()!);
+		r.activitiesPanel.set(this.externalActivitiesPanel()?.template ?? this.defaultActivitiesPanelTemplate()!);
+		r.additionalPanels.set(this.externalAdditionalPanels()?.template);
+		r.backgroundEffectsPanel.set(this.defaultBackgroundEffectsPanelTemplate());
+		r.settingsPanel.set(this.defaultSettingsPanelTemplate());
 
-	/**
-	 * @internal
-	 * Applies the template configuration to component properties
-	 */
-	private applyTemplateConfiguration(): void {
-		const assignIfChanged = <K extends keyof this>(prop: K, value: this[K]) => {
-			if (this[prop] !== value) {
-				this[prop] = value;
-			}
-		};
+		// Participant slots
+		r.participantPanelItem.set(this.externalParticipantPanelItem()?.template ?? this.defaultParticipantPanelItemTemplate()!);
+		r.participantPanelItemElements.set(this.externalParticipantPanelItemElements()?.template);
+		r.participantPanelAfterLocalParticipant.set(this.externalParticipantPanelAfterLocalParticipant()?.template);
 
-		assignIfChanged('openviduAngularToolbarTemplate', this.templateConfig.toolbarTemplate);
-		assignIfChanged('openviduAngularPanelTemplate', this.templateConfig.panelTemplate);
-		assignIfChanged('openviduAngularChatPanelTemplate', this.templateConfig.chatPanelTemplate);
-		assignIfChanged('openviduAngularParticipantsPanelTemplate', this.templateConfig.participantsPanelTemplate);
-		assignIfChanged('openviduAngularActivitiesPanelTemplate', this.templateConfig.activitiesPanelTemplate);
-		assignIfChanged(
-			'openviduAngularParticipantPanelItemTemplate',
-			this.templateConfig.participantPanelItemTemplate
-		);
-		assignIfChanged('openviduAngularLayoutTemplate', this.templateConfig.layoutTemplate);
-		assignIfChanged('openviduAngularStreamTemplate', this.templateConfig.streamTemplate);
+		// Toolbar extensions
+		r.toolbarAdditionalButtons.set(this.externalToolbarAdditionalButtons()?.template);
+		r.toolbarLeaveButton.set(this.externalToolbarLeaveButton()?.template);
+		r.toolbarAdditionalPanelButtons.set(this.externalToolbarAdditionalPanelButtons()?.template);
+		r.toolbarMoreOptionsAdditionalMenuItems.set(this.externalToolbarMoreOptionsAdditionalMenuItems()?.template);
 
-		if (this.templateConfig.toolbarAdditionalButtonsTemplate) {
-			assignIfChanged(
-				'openviduAngularToolbarAdditionalButtonsTemplate',
-				this.templateConfig.toolbarAdditionalButtonsTemplate
-			);
-		}
-		if (this.templateConfig.toolbarLeaveButtonTemplate) {
-			assignIfChanged(
-				'openviduAngularToolbarLeaveButtonTemplate',
-				this.templateConfig.toolbarLeaveButtonTemplate
-			);
-		}
-		if (this.templateConfig.toolbarAdditionalPanelButtonsTemplate) {
-			assignIfChanged(
-				'openviduAngularToolbarAdditionalPanelButtonsTemplate',
-				this.templateConfig.toolbarAdditionalPanelButtonsTemplate
-			);
-		}
-		if (this.templateConfig.additionalPanelsTemplate) {
-			assignIfChanged('openviduAngularAdditionalPanelsTemplate', this.templateConfig.additionalPanelsTemplate);
-		}
-		if (this.templateConfig.participantPanelAfterLocalParticipantTemplate) {
-			assignIfChanged(
-				'openviduAngularParticipantPanelAfterLocalParticipantTemplate',
-				this.templateConfig.participantPanelAfterLocalParticipantTemplate
-			);
-		}
-		if (this.templateConfig.participantPanelItemElementsTemplate) {
-			assignIfChanged(
-				'openviduAngularParticipantPanelItemElementsTemplate',
-				this.templateConfig.participantPanelItemElementsTemplate
-			);
-		}
-		if (this.templateConfig.preJoinTemplate) {
-			assignIfChanged('openviduAngularPreJoinTemplate', this.templateConfig.preJoinTemplate);
-		}
-		if (this.templateConfig.layoutAdditionalElementsTemplate) {
-			assignIfChanged('ovLayoutAdditionalElementsTemplate', this.templateConfig.layoutAdditionalElementsTemplate);
-		}
-		if (this.templateConfig.settingsPanelGeneralAdditionalElementsTemplate) {
-			assignIfChanged(
-				'ovSettingsPanelGeneralAdditionalElementsTemplate',
-				this.templateConfig.settingsPanelGeneralAdditionalElementsTemplate
-			);
-		}
-		if (this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate) {
-			assignIfChanged(
-				'ovToolbarMoreOptionsAdditionalMenuItemsTemplate',
-				this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate
-			);
-		}
+		// Additional layout elements
+		const layoutAdditional = this.externalLayoutAdditionalElements();
+		r.layoutAdditionalElements.set(layoutAdditional?.template);
+		r.layoutAdditionalElementsSlot.set(layoutAdditional?.slot ?? 'default');
+
+		// Settings panel extensions
+		r.settingsPanelGeneralAdditionalElements.set(this.externalSettingsPanelGeneralAdditionalElements()?.template);
 	}
 }

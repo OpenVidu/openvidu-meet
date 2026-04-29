@@ -8,8 +8,8 @@
 	} @else if (phase() === 'prejoin') {
 		<!-- Prejoin -->
 		<div [animate.enter]="enterAnimationClass" id="pre-join-container">
-			@if (openviduAngularPreJoinTemplate) {
-				<ng-container *ngTemplateOutlet="openviduAngularPreJoinTemplate" />
+		@if (templateRegistry.preJoin()) {
+			<ng-container *ngTemplateOutlet="templateRegistry.preJoin()!" />
 			} @else {
 				<ov-pre-join
 					[error]="tokenError()"
@@ -44,25 +44,7 @@
 				(onRoomReconnected)="onRoomReconnected.emit()"
 				(onParticipantConnected)="onParticipantConnected.emit($event)"
 				(onParticipantLeft)="_onParticipantLeft($event)"
-			>
-				<ng-template #toolbar>
-					@if (openviduAngularToolbarTemplate) {
-						<ng-container *ngTemplateOutlet="openviduAngularToolbarTemplate" />
-					}
-				</ng-template>
-
-				<ng-template #panel>
-					@if (openviduAngularPanelTemplate) {
-						<ng-container *ngTemplateOutlet="openviduAngularPanelTemplate" />
-					}
-				</ng-template>
-
-				<ng-template #layout>
-					@if (openviduAngularLayoutTemplate) {
-						<ng-container *ngTemplateOutlet="openviduAngularLayoutTemplate" />
-					}
-				</ng-template>
-			</ov-session>
+			/>
 		</div>
 	}
 </div>
@@ -78,24 +60,7 @@
 		(onRecordingStartRequested)="onRecordingStartRequested.emit($event)"
 		(onRecordingStopRequested)="onRecordingStopRequested.emit($event)"
 		(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
-	>
-		<ng-template #toolbarAdditionalButtons>
-			<ng-container *ngTemplateOutlet="openviduAngularToolbarAdditionalButtonsTemplate" />
-		</ng-template>
-
-		<ng-template #toolbarAdditionalPanelButtons>
-			<ng-container *ngTemplateOutlet="openviduAngularToolbarAdditionalPanelButtonsTemplate" />
-		</ng-template>
-
-		<ng-template #toolbarLeaveButton>
-			<ng-container *ngTemplateOutlet="openviduAngularToolbarLeaveButtonTemplate" />
-		</ng-template>
-
-		<!-- Inject additional menu items in toolbar more options -->
-		<ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
-			<ng-container *ngTemplateOutlet="ovToolbarMoreOptionsAdditionalMenuItemsTemplate" />
-		</ng-container>
-	</ov-toolbar>
+	/>
 </ng-template>
 
 <ng-template #defaultPanel>
@@ -105,42 +70,7 @@
 		(onParticipantsPanelStatusChanged)="onParticipantsPanelStatusChanged.emit($event)"
 		(onSettingsPanelStatusChanged)="onSettingsPanelStatusChanged.emit($event)"
 		(onActivitiesPanelStatusChanged)="onActivitiesPanelStatusChanged.emit($event)"
-	>
-		<ng-template #chatPanel>
-			<ng-container *ngTemplateOutlet="openviduAngularChatPanelTemplate" />
-		</ng-template>
-
-		<ng-template #participantsPanel>
-			<ng-container *ngTemplateOutlet="openviduAngularParticipantsPanelTemplate" />
-		</ng-template>
-
-		<ng-template #backgroundEffectsPanel>
-			<ov-background-effects-panel id="default-background-effects-panel" />
-		</ng-template>
-
-		<ng-template #settingsPanel>
-			<ov-settings-panel
-				id="default-settings-panel"
-				(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
-				(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
-				(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
-				(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
-				(onLangChanged)="onLangChanged.emit($event)"
-			>
-				<ng-container *ovSettingsPanelGeneralAdditionalElements>
-					<ng-container *ngTemplateOutlet="ovSettingsPanelGeneralAdditionalElementsTemplate" />
-				</ng-container>
-			</ov-settings-panel>
-		</ng-template>
-
-		<ng-template #activitiesPanel>
-			<ng-container *ngTemplateOutlet="openviduAngularActivitiesPanelTemplate" />
-		</ng-template>
-
-		<ng-template #additionalPanels>
-			<ng-container *ngTemplateOutlet="openviduAngularAdditionalPanelsTemplate" />
-		</ng-template>
-	</ov-panel>
+	/>
 </ng-template>
 
 <ng-template #defaultChatPanel>
@@ -158,43 +88,36 @@
 </ng-template>
 
 <ng-template #defaultParticipantsPanel>
-	<ov-participants-panel id="default-participants-panel">
-		<ng-template #participantPanelItem let-participant>
-			<ng-container
-				*ngTemplateOutlet="openviduAngularParticipantPanelItemTemplate; context: { $implicit: participant }"
-			/>
-		</ng-template>
-		<ng-template #participantPanelAfterLocalParticipant>
-			<ng-container *ngTemplateOutlet="openviduAngularParticipantPanelAfterLocalParticipantTemplate" />
-		</ng-template>
-	</ov-participants-panel>
+	<ov-participants-panel id="default-participants-panel" />
 </ng-template>
 
 <ng-template #defaultParticipantPanelItem let-participant>
-	<ov-participant-panel-item [participant]="participant" id="default-participant-panel-item">
-		<ng-template #participantPanelItemElements>
-			<ng-container
-				*ngTemplateOutlet="
-					openviduAngularParticipantPanelItemElementsTemplate;
-					context: { $implicit: participant }
-				"
-			/>
-		</ng-template>
-	</ov-participant-panel-item>
+	<ov-participant-panel-item [participant]="participant" id="default-participant-panel-item" />
 </ng-template>
 
 <ng-template #defaultLayout>
-	<ov-layout id="default-layout">
-		<ng-template #stream let-track>
-			<ng-container *ngTemplateOutlet="openviduAngularStreamTemplate; context: { $implicit: track }" />
-		</ng-template>
-
-		<ng-template #layoutAdditionalElements>
-			<ng-container *ngTemplateOutlet="ovLayoutAdditionalElementsTemplate" />
-		</ng-template>
-	</ov-layout>
+	<ov-layout id="default-layout" />
 </ng-template>
 
 <ng-template #defaultStream let-track>
 	<ov-stream [track]="track" id="default-stream" />
+</ng-template>
+
+<ng-template #defaultBackgroundEffectsPanel>
+	<ov-background-effects-panel id="default-background-effects-panel" />
+</ng-template>
+
+<ng-template #defaultSettingsPanel>
+	<ov-settings-panel
+		id="default-settings-panel"
+		(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
+		(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
+		(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
+		(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
+		(onLangChanged)="onLangChanged.emit($event)"
+	>
+		<ng-container *ovSettingsPanelGeneralAdditionalElements>
+			<ng-container *ngTemplateOutlet="templateRegistry.settingsPanelGeneralAdditionalElements() ?? null" />
+		</ng-container>
+	</ov-settings-panel>
 </ng-template>
