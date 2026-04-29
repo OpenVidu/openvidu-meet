@@ -1,99 +1,61 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import {
-    createRoom,
-    createRoomAndGetAccessUrl,
-    createRoomMember,
-    deleteRooms,
-    toAbsoluteMeetUrl,
-    type E2ERoom
+	createRoom,
+	createRoomAndGetAccessUrl,
+	createRoomMember,
+	deleteRooms,
+	toAbsoluteMeetUrl
 } from './helpers/meet-api.helper';
 import {
-    dragStream,
-    expectLocalStreamMediaCount,
-    expectScreenShareCount,
-    expectStreamCount,
-    getElementBoundingBox,
-    hoverStream,
-    joinFromPrejoinWithMediaState,
-    leaveMeeting,
-    maximizeStream,
-    minimizeStream,
-    openMeeting,
-    startScreensharing,
-    stopScreensharing,
-    toggleCamera,
-    toggleMicrophone,
-    waitForRemoteStream
+	dragStream,
+	expectLocalStreamMediaCount,
+	expectScreenShareCount,
+	expectStreamCount,
+	getElementBoundingBox,
+	hoverStream,
+	joinFromPrejoinWithMediaState,
+	leaveMeeting,
+	maximizeStream,
+	minimizeStream,
+	openMeeting,
+	startScreensharing,
+	stopScreensharing,
+	toggleCamera,
+	toggleMicrophone,
+	waitForRemoteStream
 } from './helpers/meeting-ui.helper';
-
-/** Helper to track created rooms for cleanup */
-function createRoomTracker() {
-	const createdRoomIds = new Set<string>();
-
-	return {
-		createdRoomIds,
-		async createRoom(roomName: string): Promise<E2ERoom> {
-			const room = await createRoom({ roomName });
-			createdRoomIds.add(room.roomId);
-			return room;
-		},
-
-		async createAccessUrl(participantName: string, room?: E2ERoom): Promise<string> {
-			if (!room) {
-				const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: participantName, createdRoomIds });
-				return accessUrl;
-			}
-
-			const member = await createRoomMember({
-				roomId: room.roomId,
-				name: participantName,
-				baseRole: 'moderator'
-			});
-
-			return toAbsoluteMeetUrl(member.accessUrl);
-		},
-
-		async cleanup(): Promise<void> {
-			await deleteRooms(createdRoomIds);
-		}
-	};
-}
 
 test.describe('Stream rendering - Single participant scenarios', () => {
 	test.describe.configure({ timeout: 120_000 });
-	let tracker: ReturnType<typeof createRoomTracker>;
-
-	test.beforeAll(() => {
-		tracker = createRoomTracker();
-	});
+	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
-		await tracker.cleanup();
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should render video element when joining with video enabled', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`stream-ve-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-ve-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 		await expectStreamCount(page, 1);
 		await expectLocalStreamMediaCount(page, { video: 1, audio: 1 });
 	});
 
 	test('should keep local media elements rendered when joining with video disabled', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`stream-vd-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-vd-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false });
 		await expectStreamCount(page, 1);
 		await expectLocalStreamMediaCount(page, { video: 1, audio: 1 });
 	});
 
 	test('should keep local media elements rendered when joining with audio disabled', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`stream-ad-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-ad-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, `${accessUrl}&audioEnabled=false`);
 		await expectStreamCount(page, 1);
 		await expectLocalStreamMediaCount(page, { video: 1, audio: 1 });
 	});
 
 	test('should toggle microphone off and on', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`stream-toggle-mic-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-toggle-mic-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 		await expectLocalStreamMediaCount(page, { audio: 1 });
 
@@ -108,7 +70,7 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 	});
 
 	test('should add screen share when sharing with all media enabled', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`stream-share-full-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-share-full-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 		await expectStreamCount(page, 1);
 
@@ -123,7 +85,7 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 	});
 
 	test('should add screen share even when video is disabled', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`stream-share-novideo-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-share-novideo-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: true });
 		await expectStreamCount(page, 1);
 
@@ -138,7 +100,7 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 	});
 
 	test('should add screen share even when audio is disabled', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`stream-share-noaudio-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-share-noaudio-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: false });
 		await expectStreamCount(page, 1);
 
@@ -153,7 +115,7 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 	});
 
 	test('should add screen share even when all media is disabled', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`stream-share-nomedia-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-share-nomedia-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: false });
 		await expectStreamCount(page, 1);
 
@@ -170,20 +132,19 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 
 test.describe('Stream rendering - Multi participant scenarios', () => {
 	test.describe.configure({ timeout: 30_000 });
-	let tracker: ReturnType<typeof createRoomTracker>;
-
-	test.beforeAll(() => {
-		tracker = createRoomTracker();
-	});
+	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
-		await tracker.cleanup();
+		await deleteRooms(createdRoomIds);
 	});
 
 	async function openTwoParticipants(browser: Browser): Promise<{ pageA: Page; pageB: Page }> {
-		const room = await tracker.createRoom(`streams-${Date.now()}`);
-		const accessUrlA = await tracker.createAccessUrl(`stream-a-${Date.now()}`, room);
-		const accessUrlB = await tracker.createAccessUrl(`stream-b-${Date.now()}`, room);
+		const room = await createRoom({ roomName: `streams-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `stream-a-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `stream-b-${Date.now()}`, baseRole: 'moderator' });
+		const accessUrlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const accessUrlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
 		const pageA = await browser.newPage();
 		await openMeeting(pageA, accessUrlA);
@@ -281,21 +242,21 @@ test.describe('Stream rendering - Multi participant scenarios', () => {
 
 test.describe('Stream rendering - Three or more participants', () => {
 	test.describe.configure({ timeout: 30_000 });
-	let tracker: ReturnType<typeof createRoomTracker>;
-
-	test.beforeAll(() => {
-		tracker = createRoomTracker();
-	});
+	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
-		await tracker.cleanup();
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should render three participant streams when three join', async ({ browser }) => {
-		const room = await tracker.createRoom(`three-participants-${Date.now()}`);
-		const urlA = await tracker.createAccessUrl(`three-a-${Date.now()}`, room);
-		const urlB = await tracker.createAccessUrl(`three-b-${Date.now()}`, room);
-		const urlC = await tracker.createAccessUrl(`three-c-${Date.now()}`, room);
+		const room = await createRoom({ roomName: `three-participants-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `three-a-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `three-b-${Date.now()}`, baseRole: 'moderator' });
+		const memberC = await createRoomMember({ roomId: room.roomId, name: `three-c-${Date.now()}`, baseRole: 'moderator' });
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
+		const urlC = toAbsoluteMeetUrl(memberC.accessUrl);
 
 		const pageA = await browser.newPage();
 		await openMeeting(pageA, urlA);
@@ -326,10 +287,14 @@ test.describe('Stream rendering - Three or more participants', () => {
 	});
 
 	test('should handle participant leaving and streams being removed', async ({ browser }) => {
-		const room = await tracker.createRoom(`participant-leave-${Date.now()}`);
-		const urlA = await tracker.createAccessUrl(`leave-a-${Date.now()}`, room);
-		const urlB = await tracker.createAccessUrl(`leave-b-${Date.now()}`, room);
-		const urlC = await tracker.createAccessUrl(`leave-c-${Date.now()}`, room);
+		const room = await createRoom({ roomName: `participant-leave-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `leave-a-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `leave-b-${Date.now()}`, baseRole: 'moderator' });
+		const memberC = await createRoomMember({ roomId: room.roomId, name: `leave-c-${Date.now()}`, baseRole: 'moderator' });
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
+		const urlC = toAbsoluteMeetUrl(memberC.accessUrl);
 
 		const pageA = await browser.newPage();
 		await openMeeting(pageA, urlA);
@@ -365,10 +330,14 @@ test.describe('Stream rendering - Three or more participants', () => {
 	});
 
 	test('should maintain stream order after rapid joins/leaves', async ({ browser }) => {
-		const room = await tracker.createRoom(`rapid-change-${Date.now()}`);
-		const urlA = await tracker.createAccessUrl(`rapid-a-${Date.now()}`, room);
-		const urlB = await tracker.createAccessUrl(`rapid-b-${Date.now()}`, room);
-		const urlC = await tracker.createAccessUrl(`rapid-c-${Date.now()}`, room);
+		const room = await createRoom({ roomName: `rapid-change-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `rapid-a-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `rapid-b-${Date.now()}`, baseRole: 'moderator' });
+		const memberC = await createRoomMember({ roomId: room.roomId, name: `rapid-c-${Date.now()}`, baseRole: 'moderator' });
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
+		const urlC = toAbsoluteMeetUrl(memberC.accessUrl);
 
 		const pageA = await browser.newPage();
 		await openMeeting(pageA, urlA);
@@ -404,7 +373,8 @@ test.describe('Stream rendering - Three or more participants', () => {
 		await expect(pageA.locator('.OV_stream.remote')).toHaveCount(1);
 		await expect(pageA.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1);
 
-		const urlBNew = await tracker.createAccessUrl(`rapid-b-new-${Date.now()}`, room);
+		const memberBNew = await createRoomMember({ roomId: room.roomId, name: `rapid-b-new-${Date.now()}`, baseRole: 'moderator' });
+		const urlBNew = toAbsoluteMeetUrl(memberBNew.accessUrl);
 		await openMeeting(pageB, urlBNew);
 
 		await waitForRemoteStream(pageA);
@@ -417,9 +387,12 @@ test.describe('Stream rendering - Three or more participants', () => {
 	});
 
 	test('should handle rapid video/audio toggles from multiple participants', async ({ browser }) => {
-		const room = await tracker.createRoom(`rapid-media-toggle-${Date.now()}`);
-		const urlA = await tracker.createAccessUrl(`toggle-a-${Date.now()}`, room);
-		const urlB = await tracker.createAccessUrl(`toggle-b-${Date.now()}`, room);
+		const room = await createRoom({ roomName: `rapid-media-toggle-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `toggle-a-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `toggle-b-${Date.now()}`, baseRole: 'moderator' });
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
 		const pageA = await browser.newPage();
 		await openMeeting(pageA, urlA);
@@ -457,18 +430,19 @@ test.describe('Stream rendering - Three or more participants', () => {
 
 test.describe('Stream UI controls - Minimize and maximize', () => {
 	test.describe.configure({ timeout: 30_000 });
-	let tracker: ReturnType<typeof createRoomTracker>;
-
-	test.beforeAll(() => {
-		tracker = createRoomTracker();
-	});
+	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
-		await tracker.cleanup();
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should show the MINIMIZE button ONLY over the LOCAL video', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`minimize-btn-${Date.now()}`);
+		const room = await createRoom({ roomName: `minimize-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `min-local-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `min-remote-${Date.now()}`, baseRole: 'moderator' });
+		const accessUrl = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 		await openMeeting(page, accessUrl);
 		await expectStreamCount(page, 1);
 
@@ -477,15 +451,9 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 		await expect(page.locator('#minimize-btn')).toBeVisible();
 
 		// Create second participant to verify minimize button doesn't appear on remote
-		const room = await tracker.createRoom(`minimize-remote-${Date.now()}`);
-		const urlA = await tracker.createAccessUrl(`min-a-${Date.now()}`, room);
-		const urlB = await tracker.createAccessUrl(`min-b-${Date.now()}`, room);
 
 		const pageB = await page.context().newPage();
-		await openMeeting(pageB, urlA);
-
-		const pageC = await page.context().newPage();
-		await openMeeting(pageC, urlB);
+		await openMeeting(pageB, urlB);
 
 		await waitForRemoteStream(pageB);
 
@@ -497,13 +465,11 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 		await hoverStream(pageB, '.OV_stream_video.local');
 		await expect(pageB.locator('#minimize-btn')).toBeVisible();
 
-		await pageC.close();
 		await pageB.close();
-		await page.close();
 	});
 
 	test('should minimize the LOCAL video', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`minimize-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `minimize-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		// Get initial stream dimensions
@@ -529,7 +495,7 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should MAXIMIZE the local video (restore to layout)', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`maximize-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `maximize-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
@@ -567,7 +533,7 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should be able to drag the minimized LOCAL video', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`drag-minimized-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `drag-minimized-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		// Minimize stream
@@ -592,7 +558,7 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should be the MINIMIZED video ALWAYS VISIBLE when toggling panels', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`panel-toggle-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-toggle-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		// Minimize stream
@@ -632,7 +598,7 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should be the MINIMIZED video go to the right when panel closes', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`panel-close-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-close-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		// Open chat panel first
@@ -668,7 +634,7 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should be the MINIMIZED video ALWAYS VISIBLE when toggling from small to bigger panel', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`panel-change-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-change-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		// Minimize stream
@@ -712,7 +678,7 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should MAXIMIZE the local video after drag (reset position to layout)', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`max-after-drag-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `max-after-drag-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		await page.waitForTimeout(1000);
@@ -753,19 +719,15 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 });
 
 test.describe('Stream UI controls - PIN and silence buttons', () => {
-	test.describe.configure({ timeout: 120_000 });
-	let tracker: ReturnType<typeof createRoomTracker>;
-
-	test.beforeAll(() => {
-		tracker = createRoomTracker();
-	});
+	test.describe.configure({ timeout: 30_000 });
+	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
-		await tracker.cleanup();
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should show the PIN button over the LOCAL video', async ({ page }) => {
-		const accessUrl = await tracker.createAccessUrl(`pin-local-${Date.now()}`);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `pin-local-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 
 		await hoverStream(page, '.OV_publisher .OV_stream_video.local');
@@ -775,9 +737,12 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 	});
 
 	test('should show the PIN button over the REMOTE video', async ({ browser }) => {
-		const room = await tracker.createRoom(`pin-remote-${Date.now()}`);
-		const urlA = await tracker.createAccessUrl(`pin-ra-${Date.now()}`, room);
-		const urlB = await tracker.createAccessUrl(`pin-rb-${Date.now()}`, room);
+		const room = await createRoom({ roomName: `pin-remote-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `pin-a-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `pin-b-${Date.now()}`, baseRole: 'moderator' });
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
 		const pageA = await browser.newPage();
 		await openMeeting(pageA, urlA);
@@ -796,9 +761,12 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 	});
 
 	test('should show the SILENCE button ONLY over the REMOTE video', async ({ browser }) => {
-		const room = await tracker.createRoom(`silence-${Date.now()}`);
-		const urlA = await tracker.createAccessUrl(`silence-a-${Date.now()}`, room);
-		const urlB = await tracker.createAccessUrl(`silence-b-${Date.now()}`, room);
+		const room = await createRoom({ roomName: `silence-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `silence-a-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `silence-b-${Date.now()}`, baseRole: 'moderator' });
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
 		const pageA = await browser.newPage();
 		await openMeeting(pageA, urlA);
@@ -823,21 +791,20 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 });
 
 test.describe('Audio detection - Speaking indicator', () => {
-	test.describe.configure({ timeout: 120_000 });
-	let tracker: ReturnType<typeof createRoomTracker>;
-
-	test.beforeAll(() => {
-		tracker = createRoomTracker();
-	});
+	test.describe.configure({ timeout: 30_000 });
+	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
-		await tracker.cleanup();
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should show the audio detection elements when participant is speaking', async ({ browser }) => {
-		const room = await tracker.createRoom(`speaking-${Date.now()}`);
-		const urlA = await tracker.createAccessUrl(`speak-a-${Date.now()}`, room);
-		const urlB = await tracker.createAccessUrl(`speak-b-${Date.now()}`, room);
+		const room = await createRoom({ roomName: `speaking-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const memberA = await createRoomMember({ roomId: room.roomId, name: `speak-a-${Date.now()}`, baseRole: 'moderator' });
+		const memberB = await createRoomMember({ roomId: room.roomId, name: `speak-b-${Date.now()}`, baseRole: 'moderator' });
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
 		const pageA = await browser.newPage();
 		await openMeeting(pageA, `${urlA}&audioEnabled=false`);

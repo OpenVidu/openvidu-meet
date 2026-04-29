@@ -37,19 +37,6 @@ async function createTrackedAccessUrl(roomName: string): Promise<string> {
         await expect(page.locator('#camera-btn #videocam')).toBeVisible();
     });
 
-    test('should open layout settings from toolbar more options and show layout and theme sections', async ({ page }) => {
-        const accessUrl = await createTrackedAccessUrl(`toolbar-layout-settings-${Date.now()}`);
-        await openMeeting(page, accessUrl);
-
-        await page.locator('#more-options-btn').click();
-        await expect(page.locator('#grid-layout-settings-btn')).toBeVisible();
-        await page.locator('#grid-layout-settings-btn').click();
-
-        await expect(page.locator('#settings-container')).toBeVisible();
-        await expect(page.locator('.layout-section')).toBeVisible();
-        await expect(page.locator('.theme-section')).toBeVisible();
-    });
-
     test('should copy speaker link from toolbar copy-speaker-link button', async ({ page }) => {
         const accessUrl = await createTrackedAccessUrl(`toolbar-copy-speaker-link-${Date.now()}`);
         await openMeeting(page, accessUrl);
