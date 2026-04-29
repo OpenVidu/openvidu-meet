@@ -1,3 +1,4 @@
+import { MeetUserRole } from '@openvidu-meet/typings';
 import { removeQueryParamsGuard } from '../../../shared/guards/remove-query-params.guard';
 import { runGuardsSerially } from '../../../shared/guards/run-serially.guard';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
@@ -5,6 +6,7 @@ import {
 	extractRecordingParamsGuard,
 	extractRoomRecordingsParamsGuard
 } from '../guards/extract-recordings-params.guard';
+import { checkRecordingAccessGuard } from '../guards/recording-access.guard';
 import {
 	validateRecordingAccessGuard,
 	validateRoomRecordingsAccessGuard
@@ -60,14 +62,16 @@ export const recordingsConsoleRoutes: DomainRouteConfig[] = [
 			route: 'recordings',
 			icon: 'video_library',
 			iconClass: 'ov-recording-icon',
-			order: 3
+			order: 3,
+			allowedRoles: [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER]
 		}
 	},
 	{
 		route: {
 			path: 'recordings/:recording-id',
 			loadComponent: () =>
-				import('../pages/recording-detail/recording-detail.component').then((m) => m.RecordingDetailComponent)
+				import('../pages/recording-detail/recording-detail.component').then((m) => m.RecordingDetailComponent),
+			canActivate: [checkRecordingAccessGuard]
 		}
 	}
 ];

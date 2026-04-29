@@ -22,7 +22,7 @@ export const baseRoutes: Routes = [
 	// Users domain public routes
 	...usersDomainRoutes.map((config) => config.route),
 
-	// Console domain routes (includes console shell, child routes, and guards)
+	// Console domain routes (includes console child routes)
 	...consoleDomainRoutes,
 
 	// Redirect all other routes to the console

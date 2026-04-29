@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ConsoleNavComponent } from '../../components/console-nav/console-nav.component';
@@ -11,14 +11,19 @@ import { consoleChildRoutes } from '../../routes/console.routes';
 	styleUrl: './console.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ConsoleComponent {
-	navLinks: ConsoleNavLink[];
+export class ConsoleComponent implements OnInit {
 	private authService = inject(AuthService);
 
-	constructor() {
-		// Build navigation links from console child route configurations
-		this.navLinks = consoleChildRoutes
-			.filter((config) => config.navMetadata) // Only include routes with navigation metadata
+	navLinks = signal<ConsoleNavLink[]>([]);
+
+	async ngOnInit() {
+		const role = await this.authService.getUserRole();
+
+		const filteredLinks = consoleChildRoutes
+			.filter((config) => {
+				if (!config.navMetadata) return false;
+				return role !== undefined && config.navMetadata.allowedRoles.includes(role);
+			})
 			.map((config) => ({
 				label: config.navMetadata!.label,
 				route: config.navMetadata!.route,
@@ -26,11 +31,15 @@ export class ConsoleComponent {
 				iconClass: config.navMetadata?.iconClass
 			}))
 			.sort((a, b) => {
-				// Sort by order if available
-				const orderA = consoleChildRoutes.find((r) => r.navMetadata?.route === a.route)?.navMetadata?.order ?? 999;
-				const orderB = consoleChildRoutes.find((r) => r.navMetadata?.route === b.route)?.navMetadata?.order ?? 999;
+				// Sort by order
+				const orderA =
+					consoleChildRoutes.find((r) => r.navMetadata?.route === a.route)?.navMetadata?.order ?? 999;
+				const orderB =
+					consoleChildRoutes.find((r) => r.navMetadata?.route === b.route)?.navMetadata?.order ?? 999;
 				return orderA - orderB;
 			});
+
+		this.navLinks.set(filteredLinks);
 	}
 
 	async logout() {

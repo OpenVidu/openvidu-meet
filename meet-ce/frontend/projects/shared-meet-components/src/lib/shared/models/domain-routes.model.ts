@@ -1,4 +1,5 @@
 import { Route } from '@angular/router';
+import { MeetUserRole } from '@openvidu-meet/typings';
 
 /**
  * Navigation metadata for a domain route that should appear in the console navigation
@@ -12,8 +13,10 @@ export interface DomainNavMetadata {
 	icon: string;
 	/** Optional CSS class for the icon */
 	iconClass?: string;
-	/** Optional order for sorting navigation items */
-	order?: number;
+	/** Order for sorting navigation items */
+	order: number;
+	/** Roles allowed to see this nav item */
+	allowedRoles: MeetUserRole[];
 }
 
 /**
@@ -25,15 +28,4 @@ export interface DomainRouteConfig {
 	route: Route;
 	/** Optional navigation metadata (if this route should appear in console nav) */
 	navMetadata?: DomainNavMetadata;
-}
-
-/**
- * Domain routes registry
- * Maps domain identifiers to their route configurations
- */
-export interface DomainRoutesRegistry {
-	/** Console child routes (appear in the authenticated console area) */
-	consoleRoutes: DomainRouteConfig[];
-	/** Public routes (standalone routes outside console) */
-	publicRoutes: DomainRouteConfig[];
 }
