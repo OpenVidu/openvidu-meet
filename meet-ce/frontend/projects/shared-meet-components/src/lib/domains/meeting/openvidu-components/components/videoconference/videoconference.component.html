@@ -42,7 +42,7 @@
 				(onRoomCreated)="onRoomCreated.emit($event)"
 				(onRoomReconnecting)="onRoomReconnecting.emit()"
 				(onRoomReconnected)="onRoomReconnected.emit()"
-				(onParticipantConnected)="onParticipantCreated.emit($event); onParticipantConnected.emit($event)"
+				(onParticipantConnected)="onParticipantConnected.emit($event)"
 				(onParticipantLeft)="_onParticipantLeft($event)"
 			>
 				<ng-template #toolbar>
@@ -152,9 +152,6 @@
 		id="default-activities-panel"
 		(onRecordingStartRequested)="onRecordingStartRequested.emit($event)"
 		(onRecordingStopRequested)="onRecordingStopRequested.emit($event)"
-		(onRecordingDeleteRequested)="onRecordingDeleteRequested.emit($event)"
-		(onRecordingDownloadClicked)="onRecordingDownloadClicked.emit($event)"
-		(onRecordingPlayClicked)="onRecordingPlayClicked.emit($event)"
 		(onViewRecordingClicked)="onViewRecordingClicked.emit($event)"
 		(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
 	/>

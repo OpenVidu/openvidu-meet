@@ -7,10 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-	RecordingDeleteRequestedEvent,
-	RecordingDownloadClickedEvent,
 	RecordingInfo,
-	RecordingPlayClickedEvent,
 	RecordingStartRequestedEvent,
 	RecordingState,
 	RecordingStopRequestedEvent
@@ -63,24 +60,6 @@ export class RecordingActivityComponent {
 	 * It provides the {@link RecordingStopRequestedEvent} payload as event data.
 	 */
 	onRecordingStopRequested = output<RecordingStopRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when delete recording button has been clicked.
-	 * It provides the {@link RecordingDeleteRequestedEvent} payload as event data.
-	 */
-	onRecordingDeleteRequested = output<RecordingDeleteRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when download recording button has been clicked.
-	 * It provides the {@link RecordingDownloadClickedEvent} payload as event data.
-	 */
-	onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
-
-	/**
-	 * Provides event notifications that fire when play recording button has been clicked.
-	 * It provides the {@link RecordingPlayClickedEvent} payload as event data.
-	 */
-	onRecordingPlayClicked = output<RecordingPlayClickedEvent>();
 
 	/**
 	 * @internal

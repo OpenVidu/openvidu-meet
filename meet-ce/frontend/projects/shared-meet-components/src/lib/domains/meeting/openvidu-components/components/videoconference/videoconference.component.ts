@@ -48,9 +48,6 @@ import {
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantModel } from '../../models/participant.model';
 import {
-	RecordingDeleteRequestedEvent,
-	RecordingDownloadClickedEvent,
-	RecordingPlayClickedEvent,
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent
 } from '../../models/recording.model';
@@ -388,29 +385,11 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	readonly onRecordingStartRequested = output<RecordingStartRequestedEvent>();
 
 	/**
-	 * Provides event notifications that fire when delete recording button has been clicked.
-	 * It provides the {@link RecordingDeleteRequestedEvent} payload as event data.
-	 */
-	readonly onRecordingDeleteRequested = output<RecordingDeleteRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when play recording button is clicked from {@link ActivitiesPanelComponent}.
-	 * It provides the {@link RecordingPlayClickedEvent} payload as event data.
-	 */
-	readonly onRecordingPlayClicked = output<RecordingPlayClickedEvent>();
-
-	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recording button.
 	 * It provides the recording ID as event data.
 	 */
 	readonly onViewRecordingClicked = output<string>();
-
-	/**
-	 * Provides event notifications that fire when download recording button is clicked from {@link ActivitiesPanelComponent}.
-	 * It provides the {@link RecordingDownloadClickedEvent} payload as event data.
-	 */
-	readonly onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
 
 	/**
 	 * @internal
@@ -423,12 +402,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * It provides the {@link https://openvidu.io/latest/docs/getting-started/#room Room} payload as event data.
 	 */
 	readonly onRoomCreated = output<OVRoom>();
-
-	/**
-	 * Provides event notifications that fire when local participant is created and connected to the Room.
-	 * @deprecated Use `onParticipantConnected` instead
-	 */
-	readonly onParticipantCreated = output<ParticipantModel>();
 
 	/**
 	 * Provides event notifications that fire when local participant is connected to the Room.

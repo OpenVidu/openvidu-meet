@@ -54,7 +54,3 @@ interface RecordingEvent {
 
 export interface RecordingStartRequestedEvent extends RecordingEvent {}
 export interface RecordingStopRequestedEvent extends RecordingEvent {}
-export interface RecordingDeleteRequestedEvent extends RecordingEvent {}
-export interface RecordingDownloadClickedEvent extends RecordingEvent {}
-
-export interface RecordingPlayClickedEvent extends RecordingEvent {}
