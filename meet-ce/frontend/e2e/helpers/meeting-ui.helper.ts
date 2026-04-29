@@ -81,6 +81,7 @@ export async function openMeeting(page: Page, accessUrl: string, timeoutMs = 45_
 	}
 
 	await expect(page.locator('#layout-container')).toBeVisible({ timeout: timeoutMs });
+	await expect(page.locator('#media-buttons-container')).toBeVisible({ timeout: timeoutMs });
 }
 
 export async function openPrejoin(page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> {
