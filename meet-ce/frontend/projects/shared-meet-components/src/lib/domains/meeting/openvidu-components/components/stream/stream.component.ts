@@ -1,15 +1,12 @@
-import { CommonModule } from '@angular/common';
-import { Component, effect, ElementRef, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatMenuPanel, MatMenuTrigger } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ParticipantTrackPublication } from '../../models/participant.model';
+import { ParticipantStream } from '../../models/participant.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
-import { Track } from '../../services/livekit-adapter';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
 import { MediaElementComponent } from '../media-element/media-element.component';
@@ -21,7 +18,6 @@ import { MediaElementComponent } from '../media-element/media-element.component'
 @Component({
 	selector: 'ov-stream',
 	imports: [
-		CommonModule,
 		MatButtonModule,
 		MatIconModule,
 		MatTooltipModule,
@@ -31,6 +27,7 @@ import { MediaElementComponent } from '../media-element/media-element.component'
 	],
 	templateUrl: './stream.component.html',
 	styleUrls: ['./stream.component.scss'],
+	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class StreamComponent implements OnDestroy {
@@ -38,31 +35,7 @@ export class StreamComponent implements OnDestroy {
 	private readonly participantService = inject(ParticipantService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-	readonly trackInput = input<ParticipantTrackPublication | undefined>(undefined, { alias: 'track' });
-
-	/**
-	 * @ignore
-	 */
-	readonly menuTriggerQuery = viewChild(MatMenuTrigger);
-	public menuTrigger: MatMenuTrigger | undefined = undefined;
-
-	/**
-	 * @ignore
-	 */
-	readonly menuQuery = viewChild<MatMenuPanel>('menu');
-	menu: MatMenuPanel | undefined = undefined;
-
-	/**
-	 * @ignore
-	 */
-	videoTypeEnum = Track.Source;
-
-	/**
-	 * @ignore
-	 */
-	get _track(): ParticipantTrackPublication | undefined {
-		return this.trackInput();
-	}
+	readonly stream = input<ParticipantStream | undefined>(undefined);
 
 	readonly showParticipantName = this.libService.displayParticipantNameSignal;
 	readonly showAudioDetection = this.libService.displayAudioDetectionSignal;
@@ -82,15 +55,10 @@ export class StreamComponent implements OnDestroy {
 	 */
 	readonly streamContainerQuery = viewChild('streamContainer', { read: ElementRef });
 
-	private _streamContainer: ElementRef | undefined;
 	private readonly HOVER_TIMEOUT = 2000;
 	private readonly NO_SIZE_TIMEOUT = 100;
 	private readonly querySyncEffect = effect(() => {
-		this.menuTrigger = this.menuTriggerQuery();
-		this.menu = this.menuQuery();
-		const streamContainer = this.streamContainerQuery();
-		if (streamContainer) {
-			this._streamContainer = streamContainer;
+		if (this.streamContainerQuery()) {
 			if (this.showVideoTimeout) {
 				clearTimeout(this.showVideoTimeout);
 			}
@@ -114,12 +82,12 @@ export class StreamComponent implements OnDestroy {
 	 * @ignore
 	 */
 	toggleVideoPinned() {
-		const activeTrack = this._track;
-		const sid = activeTrack?.trackSid;
-		if (activeTrack?.participant) {
-			if (activeTrack.participant.isLocal) {
-				if (activeTrack.participant.isMinimized) {
-					this.participantService.toggleMyVideoMinimized(sid);
+		const stream = this.stream();
+		const sid = stream?.videoTrack?.trackSid;
+		if (stream?.participant) {
+			if (stream.participant.isLocal) {
+				if (stream.participant.isMinimized) {
+					this.participantService.toggleLocalVideoMinimized(sid);
 				}
 				this.participantService.toggleMyVideoPinned(sid);
 			} else {
@@ -133,35 +101,18 @@ export class StreamComponent implements OnDestroy {
 	 * @ignore
 	 */
 	toggleMinimize() {
-		const activeTrack = this._track;
-		const sid = activeTrack?.trackSid;
-		if (activeTrack?.participant && activeTrack.participant.isLocal) {
-			this.participantService.toggleMyVideoMinimized(sid);
+		const stream = this.stream();
+		const sid = stream?.videoTrack?.trackSid;
+		if (stream?.participant && stream.participant.isLocal) {
+			this.participantService.toggleLocalVideoMinimized(sid);
 			this.layoutService.update();
 		}
 	}
 
-	/**
-	 * @ignore
-	 */
-	toggleVideoMenu(event: MouseEvent) {
-		const trigger = this.menuTrigger;
-		if (!trigger) return;
-		if (trigger.menuOpen) {
-			trigger.closeMenu();
-			return;
-		}
-		this.cdkSrv.setSelector('#container-' + this._track?.trackSid);
-		trigger.openMenu();
-	}
-
-	/**
-	 * @ignore
-	 */
 	toggleMuteForcibly() {
-		const activeTrack = this._track;
-		if (activeTrack?.participant) {
-			this.participantService.setRemoteMutedForcibly(activeTrack.participant.sid, !activeTrack.isMutedForcibly);
+		const stream = this.stream();
+		if (stream?.participant) {
+			this.participantService.setRemoteMutedForcibly(stream.participant.sid, !stream.isMutedForcibly);
 		}
 	}
 

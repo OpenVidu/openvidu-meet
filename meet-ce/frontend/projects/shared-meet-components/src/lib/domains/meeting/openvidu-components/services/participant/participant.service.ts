@@ -243,7 +243,7 @@ export class ParticipantService {
 		if (enabled && track) {
 			// Set all videos to normal size when a local screen is shared
 			this.resetRemoteStreamsToNormalSize();
-			this.resetMyStreamsToNormalSize();
+			this.resetLocalStreamsToNormalSize();
 			this.localParticipantWritableSignal()?.toggleVideoPinned(track.trackSid);
 			this.localParticipantWritableSignal()?.setScreenTrackPublicationDate(track.trackSid, new Date().getTime());
 
@@ -255,7 +255,7 @@ export class ParticipantService {
 			// Enlarge the last screen shared when a local screen is stopped
 			this.localParticipantWritableSignal()?.setScreenTrackPublicationDate(track.trackSid, -1);
 			this.resetRemoteStreamsToNormalSize();
-			this.resetMyStreamsToNormalSize();
+			this.resetLocalStreamsToNormalSize();
 			this.setLastScreenPinned();
 		}
 		this.updateLocalParticipant();
@@ -365,7 +365,7 @@ export class ParticipantService {
 	/**
 	 * @internal
 	 */
-	toggleMyVideoMinimized(sid: string | undefined) {
+	toggleLocalVideoMinimized(sid: string | undefined) {
 		const local = this.localParticipantWritableSignal();
 		if (sid && local) local.toggleVideoMinimized(sid);
 		this.updateLocalParticipant();
@@ -374,7 +374,7 @@ export class ParticipantService {
 	/**
 	 * @internal
 	 */
-	resetMyStreamsToNormalSize() {
+	resetLocalStreamsToNormalSize() {
 		this.localParticipantWritableSignal()?.setAllVideoPinned(false);
 	}
 

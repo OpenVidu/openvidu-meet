@@ -20,7 +20,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
-import { ParticipantTrackPublication } from '../../models/participant.model';
+import { ParticipantStream } from '../../models/participant.model';
 import { RemoteParticipantTracksPipe } from '../../pipes/participant.pipe';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { GlobalConfigService } from '../../services/config/global-config.service';
@@ -151,14 +151,10 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	trackParticipantElement(_: number, track: ParticipantTrackPublication) {
+	trackParticipantElement(_: number, stream: ParticipantStream) {
 		// This method is used for trackBy in ngFor with the aim of improving performance
 		// https://angular.io/api/core/TrackByFunction
-		return track;
-	}
-
-	private setupTemplates() {
-		// Template refs are exposed as computed signals.
+		return stream.streamId;
 	}
 
 	private listenToLayoutDomChanges() {
@@ -253,7 +249,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 
 		return drags.find((drag) => {
 			const element = drag.element.nativeElement as HTMLElement;
-			return element.classList.contains('local_participant') && !element.classList.contains('OV_ignored');
+			return element.classList.contains('local_participant') && !element.classList.contains('OV_screen');
 		});
 	}
 
@@ -270,7 +266,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		}
 
 		return elements.find(
-			(element) => element.classList.contains('local_participant') && !element.classList.contains('OV_ignored')
+			(element) => element.classList.contains('local_participant') && !element.classList.contains('OV_screen')
 		);
 	}
 

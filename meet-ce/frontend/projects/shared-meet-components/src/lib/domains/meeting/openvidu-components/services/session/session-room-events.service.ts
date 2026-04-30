@@ -98,7 +98,7 @@ export class SessionRoomEventsService {
 				const isScreenTrack = track.source === Track.Source.ScreenShare;
 				this.participantService.addRemoteParticipant(participant);
 				if (isScreenTrack) {
-					this.participantService.resetMyStreamsToNormalSize();
+					this.participantService.resetLocalStreamsToNormalSize();
 					this.participantService.resetRemoteStreamsToNormalSize();
 					this.participantService.toggleRemoteVideoPinned(track.sid);
 					if (track.sid) {
@@ -123,7 +123,7 @@ export class SessionRoomEventsService {
 					if (track.sid) {
 						this.participantService.setScreenTrackPublicationDate(participant.sid, track.sid, -1);
 					}
-					this.participantService.resetMyStreamsToNormalSize();
+					this.participantService.resetLocalStreamsToNormalSize();
 					this.participantService.resetRemoteStreamsToNormalSize();
 					this.participantService.setLastScreenPinned();
 				}
