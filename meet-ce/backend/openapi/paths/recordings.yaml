@@ -281,7 +281,7 @@
             '404':
                 $ref: '../components/responses/error-recording-not-found.yaml'
             '409':
-                $ref: '../components/responses/error-recording-in-progress.yaml'
+                $ref: '../components/responses/error-recording-not-streamable.yaml'
             '416':
                 description: Requested range not satisfiable
                 content:

@@ -159,6 +159,10 @@ export const errorRecordingStartTimeout = (roomId: string): OpenViduMeetError =>
 	return new OpenViduMeetError('Recording Error', `Recording in room '${roomId}' timed out while starting`, 503);
 };
 
+export const errorRecordingNotStreamable = (recordingId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is not streamable`, 409);
+};
+
 export const errorRecordingRangeNotSatisfiable = (recordingId: string, fileSize: number): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Recording Error',

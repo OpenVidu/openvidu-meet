@@ -176,7 +176,7 @@ describe('Recording API Tests', () => {
 			expect(response.status).toBe(409);
 			expect(response.body).toHaveProperty('error', 'Recording Error');
 			expect(response.body).toHaveProperty('message');
-			expect(response.body.message).toContain(`Recording '${activeRecordingId}' is not stopped yet`);
+			expect(response.body.message).toContain(`Recording '${activeRecordingId}' is not streamable`);
 
 			await stopRecording(activeRecordingId);
 		});

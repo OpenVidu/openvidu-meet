@@ -31,6 +31,7 @@ import {
 	errorRecordingCannotBeStoppedWhileStarting,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
+	errorRecordingNotStreamable,
 	errorRecordingStartTimeout,
 	errorRoomHasNoParticipants,
 	isErrorRecordingAlreadyStopped,
@@ -671,7 +672,7 @@ export class RecordingService {
 		const { status } = await this.getRecording(recordingId, ['status']);
 
 		if (status !== MeetRecordingStatus.COMPLETE) {
-			throw errorRecordingNotStopped(recordingId);
+			throw errorRecordingNotStreamable(recordingId);
 		}
 
 		let validatedRange = undefined;
