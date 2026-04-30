@@ -38,7 +38,7 @@ export class RoomRecordingsComponent implements OnInit {
 	recordings = signal<MeetRecordingInfo[]>([]);
 	roomId = '';
 	roomName = signal('');
-	canDeleteRecordings = false;
+	canDeleteRecordings = signal(false);
 
 	// Loading state
 	isInitializing = signal(true);
@@ -61,7 +61,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
-		this.canDeleteRecordings = this.roomMemberContextService.hasPermission('canDeleteRecordings');
+		this.canDeleteRecordings.set(this.roomMemberContextService.hasPermission('canDeleteRecordings'));
 
 		// Load recordings
 		const delayLoader = setTimeout(() => {

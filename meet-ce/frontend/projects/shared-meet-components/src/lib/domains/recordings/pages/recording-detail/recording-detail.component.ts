@@ -8,12 +8,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
-import { MeetRecordingEncodingOptions, MeetRecordingEncodingPreset, MeetRecordingInfo } from '@openvidu-meet/typings';
+import {
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
+	MeetRecordingInfo,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { decodeToken } from '../../../../shared/utils/token.utils';
+import { AuthService } from '../../../auth/services/auth.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
+import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
 import { RecordingService } from '../../services/recording.service';
 import { RecordingUiUtils } from '../../utils/ui';
@@ -38,7 +46,9 @@ import { RecordingUiUtils } from '../../utils/ui';
 })
 export class RecordingDetailComponent implements OnInit {
 	private readonly route = inject(ActivatedRoute);
+	private readonly authService = inject(AuthService);
 	private readonly recordingService = inject(RecordingService);
+	private readonly roomMemberService = inject(RoomMemberService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
@@ -49,8 +59,13 @@ export class RecordingDetailComponent implements OnInit {
 	recordingId = signal<string>('');
 	recording = signal<MeetRecordingInfo | undefined>(undefined);
 	recordingUrl = signal<string | undefined>(undefined);
-	isLoading = signal(true);
-	hasError = signal(false);
+
+	currentUserRole = signal<MeetUserRole | undefined>(undefined);
+	canDeleteRecording = signal(false);
+
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+
 	breadcrumbItems = signal<BreadcrumbItem[]>([]);
 
 	protected readonly RecordingUiUtils = RecordingUiUtils;
@@ -58,30 +73,56 @@ export class RecordingDetailComponent implements OnInit {
 	async ngOnInit() {
 		const recordingId = this.route.snapshot.paramMap.get('recording-id');
 		if (!recordingId) {
-			this.hasError.set(true);
-			this.isLoading.set(false);
+			await this.navigationService.navigateTo('/recordings');
 			return;
 		}
 
 		this.recordingId.set(recordingId);
+
+		// Update breadcrumb items
+		this.breadcrumbItems.set([
+			{
+				label: 'Recordings',
+				action: () => this.navigationService.navigateTo('/recordings')
+			},
+			{
+				label: this.recordingId()
+			}
+		]);
+
+		const role = await this.authService.getUserRole();
+		this.currentUserRole.set(role);
+
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader.set(true);
+		}, 200);
+
 		await this.loadRecordingDetails();
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	private async loadRecordingDetails() {
 		try {
-			this.isLoading.set(true);
 			const recording = await this.recordingService.getRecording(this.recordingId());
 			this.recording.set(recording);
 
-			this.breadcrumbItems.set([
-				{
-					label: 'Recordings',
-					action: () => this.navigationService.navigateTo('/recordings')
-				},
-				{
-					label: this.recordingId()
+			// Determine delete permission: ADMIN can always delete; others need token-based check
+			if (this.currentUserRole() === MeetUserRole.ADMIN) {
+				this.canDeleteRecording.set(true);
+			} else {
+				try {
+					const { token } = await this.roomMemberService.generateRoomMemberToken(recording.roomId, {
+						joinMeeting: false
+					});
+					const decoded = decodeToken(token);
+					this.canDeleteRecording.set(decoded.metadata.permissions.canDeleteRecordings);
+				} catch {
+					this.canDeleteRecording.set(false);
 				}
-			]);
+			}
 
 			if (RecordingUiUtils.isPlayable(recording.status)) {
 				this.recordingUrl.set(this.recordingService.getRecordingMediaUrl(this.recordingId()));
@@ -89,9 +130,7 @@ export class RecordingDetailComponent implements OnInit {
 		} catch (error) {
 			this.log.e('Error loading recording details:', error);
 			this.notificationService.showSnackbar('Failed to load recording details');
-			this.hasError.set(true);
-		} finally {
-			this.isLoading.set(false);
+			await this.navigationService.navigateTo('/recordings');
 		}
 	}
 
@@ -130,8 +169,16 @@ export class RecordingDetailComponent implements OnInit {
 	}
 
 	async retryLoad() {
-		this.hasError.set(false);
+		this.isInitializing.set(true);
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader.set(true);
+		}, 200);
+
 		await this.loadRecordingDetails();
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	protected isEncodingPreset(

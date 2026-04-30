@@ -50,51 +50,6 @@
 }
 
 // =====================
-// Error State
-// =====================
-
-.error-container {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 60vh;
-	padding: var(--ov-meet-spacing-xl);
-
-	.error-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		gap: var(--ov-meet-spacing-md);
-		text-align: center;
-		max-width: 480px;
-
-		.error-icon {
-			@include ov-icon(xl);
-			color: var(--ov-meet-color-error);
-			opacity: 0.7;
-		}
-
-		.error-title {
-			margin: 0;
-			font-size: var(--ov-meet-font-size-xl);
-			font-weight: var(--ov-meet-font-weight-medium);
-			color: var(--ov-meet-text-primary);
-		}
-
-		.error-message {
-			margin: 0;
-			color: var(--ov-meet-text-secondary);
-			font-size: var(--ov-meet-font-size-sm);
-		}
-
-		.error-actions {
-			display: flex;
-			gap: var(--ov-meet-spacing-sm);
-		}
-	}
-}
-
-// =====================
 // Page Header
 // =====================
 
