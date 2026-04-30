@@ -25,9 +25,13 @@
 				<mat-icon class="ov-room-icon" id="rooms-icon">video_chat</mat-icon>
 				<h1 id="rooms-heading">Rooms</h1>
 			</div>
-			<p class="subtitle" id="rooms-subtitle">
-				Manage your rooms, create new ones, and configure settings for your meetings.
-			</p>
+			@if (currentUserRole() === MeetUserRole.ROOM_MEMBER) {
+				<p class="subtitle" id="rooms-subtitle">Browse and join the rooms available to you.</p>
+			} @else {
+				<p class="subtitle" id="rooms-subtitle">
+					Manage your rooms, create new ones, or join the rooms available to you.
+				</p>
+			}
 		</div>
 
 		<!-- Content -->
@@ -41,6 +45,8 @@
 				[showSelection]="true"
 				[showLoadMore]="hasMoreRooms()"
 				[initialFilters]="initialFilters()"
+				[currentUserId]="currentUserId()"
+				[currentUserRole]="currentUserRole()"
 				(roomAction)="onRoomAction($event)"
 				(roomClicked)="onRoomClick($event)"
 				(loadMore)="loadMoreRooms($event)"

@@ -1,4 +1,4 @@
-import { MeetingEndAction, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetRoom, MeetRoomStatus, MeetUserRole } from '@openvidu-meet/typings';
 
 /**
  * Utility functions for Room-related UI operations.
@@ -239,6 +239,13 @@ export class RoomUiUtils {
 	}
 
 	/**
+	 * Checks if the access link can be shared for a room by checking if the anonymous moderator URL is available
+	 */
+	static canShareLink(room: MeetRoom): boolean {
+		return !!room.access.anonymous.moderator.url;
+	}
+
+	/**
 	 * Gets the tooltip text for the copy access link action
 	 */
 	static getCopyAccessLinkTooltip(room: MeetRoom): string {
@@ -247,6 +254,13 @@ export class RoomUiUtils {
 		}
 
 		return 'Copy access link';
+	}
+
+	/**
+	 * Checks if a room can be managed (edited/deleted) by the current user
+	 */
+	static canManageRoom(room: MeetRoom, currentUserId: string, currentUserRole?: MeetUserRole): boolean {
+		return currentUserRole === MeetUserRole.ADMIN || room.owner === currentUserId;
 	}
 
 	/**

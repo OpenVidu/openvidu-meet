@@ -2,15 +2,21 @@
 	<!-- Empty State -->
 	<div class="no-rooms-state">
 		<div class="empty-content">
-			<h3>No rooms created yet</h3>
-			<p>No rooms found. Create your first room to start hosting meetings and manage your video conferences.</p>
-
-			<div class="getting-started-actions">
-				<button mat-button (click)="createRoom()" class="create-room-btn primary-button">
-					<mat-icon>add</mat-icon>
-					Create Your First Room
-				</button>
-			</div>
+			@if (currentUserRole() === MeetUserRole.ROOM_MEMBER) {
+				<h3>No rooms available</h3>
+				<p>No rooms have been assigned to you yet. Contact an administrator to gain access to a room.</p>
+			} @else {
+				<h3>No rooms created yet</h3>
+				<p>
+					No rooms found. Create your first room to start hosting meetings and manage your video conferences.
+				</p>
+				<div class="getting-started-actions">
+					<button mat-button (click)="createRoom()" class="create-room-btn primary-button">
+						<mat-icon>add</mat-icon>
+						Create Your First Room
+					</button>
+				</div>
+			}
 		</div>
 	</div>
 } @else {
@@ -87,10 +93,12 @@
 				<mat-icon>refresh</mat-icon>
 			</button>
 
-			<button mat-button (click)="createRoom()" class="create-room-btn primary-button" id="create-room-btn">
-				<mat-icon>add</mat-icon>
-				Create Room
-			</button>
+			@if (currentUserRole() !== MeetUserRole.ROOM_MEMBER) {
+				<button mat-button (click)="createRoom()" class="create-room-btn primary-button" id="create-room-btn">
+					<mat-icon>add</mat-icon>
+					Create Room
+				</button>
+			}
 
 			@if (showFilters()) {
 				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter rooms" id="filters-btn">
@@ -154,14 +162,16 @@
 				@if (showSelection()) {
 					<ng-container matColumnDef="select">
 						<th mat-header-cell *matHeaderCellDef id="select-header">
-							<mat-checkbox
-								[checked]="allSelected()"
-								[indeterminate]="someSelected()"
-								(change)="toggleAllSelection()"
-								(click)="$event.stopPropagation()"
-								[disabled]="loading()"
-								id="select-all-checkbox"
-							/>
+							@if (canSelectRooms()) {
+								<mat-checkbox
+									[checked]="allSelected()"
+									[indeterminate]="someSelected()"
+									(change)="toggleAllSelection()"
+									(click)="$event.stopPropagation()"
+									[disabled]="loading()"
+									id="select-all-checkbox"
+								/>
+							}
 						</th>
 						<td mat-cell *matCellDef="let room" id="select-cell-{{ room.roomId }}">
 							@if (canSelectRoom(room)) {
@@ -204,7 +214,7 @@
 							<div class="owner-avatar" id="owner-avatar-{{ room.roomId }}">
 								<span>{{ RoomUiUtils.getOwnerInitials(room) }}</span>
 							</div>
-							@if (canViewUserProfiles()) {
+							@if (canViewUserProfiles() && room.owner !== currentUserId()) {
 								<a
 									class="owner-name-link"
 									[routerLink]="['/users', room.owner]"
@@ -216,6 +226,9 @@
 								</a>
 							} @else {
 								<span class="owner-name" id="owner-name-{{ room.roomId }}">{{ room.owner }}</span>
+							}
+							@if (room.owner === currentUserId()) {
+								<span class="you-badge" id="you-badge-{{ room.roomId }}">You</span>
 							}
 						</div>
 					</td>
@@ -328,7 +341,7 @@
 					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">Actions</th>
 					<td mat-cell *matCellDef="let room" class="actions-cell" id="actions-cell-{{ room.roomId }}">
 						<div class="action-buttons" id="action-buttons-{{ room.roomId }}">
-							<!-- Join Room Button -->
+							<!-- Join Room Button (always visible) -->
 							<span [matTooltip]="RoomUiUtils.getJoinRoomTooltip(room)">
 								<button
 									mat-icon-button
@@ -341,75 +354,80 @@
 								</button>
 							</span>
 
-							<!-- Edit Button -->
-							<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room)">
+							@if (RoomUiUtils.canManageRoom(room, currentUserId(), currentUserRole())) {
+								<!-- Edit Button -->
+								<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room)">
+									<button
+										mat-icon-button
+										(click)="$event.stopPropagation(); editRoom(room)"
+										[disabled]="loading() || !RoomUiUtils.canEditRoom(room)"
+										id="edit-room-btn-{{ room.roomId }}"
+									>
+										<mat-icon>edit</mat-icon>
+									</button>
+								</span>
+
+								<!-- More Actions Menu (managers only) -->
 								<button
 									mat-icon-button
-									(click)="$event.stopPropagation(); editRoom(room)"
-									[disabled]="loading() || !RoomUiUtils.canEditRoom(room)"
-									id="edit-room-btn-{{ room.roomId }}"
+									[matMenuTriggerFor]="actionsMenu"
+									matTooltip="More actions"
+									(click)="$event.stopPropagation()"
+									[disabled]="loading()"
+									id="more-actions-btn-{{ room.roomId }}"
 								>
-									<mat-icon>edit</mat-icon>
+									<mat-icon>more_vert</mat-icon>
 								</button>
-							</span>
 
-							<!-- More Actions Menu -->
-							<button
-								mat-icon-button
-								[matMenuTriggerFor]="actionsMenu"
-								matTooltip="More actions"
-								(click)="$event.stopPropagation()"
-								[disabled]="loading()"
-								id="more-actions-btn-{{ room.roomId }}"
-							>
-								<mat-icon>more_vert</mat-icon>
-							</button>
+								<mat-menu #actionsMenu="matMenu" id="actions-menu-{{ room.roomId }}">
+									<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
+										<button
+											mat-menu-item
+											(click)="$event.stopPropagation(); shareLink(room)"
+											[disabled]="!RoomUiUtils.canCopyAccessLink(room)"
+											id="share-link-btn-{{ room.roomId }}"
+										>
+											<mat-icon>share</mat-icon>
+											<span>Share link</span>
+										</button>
+									</span>
 
-							<mat-menu #actionsMenu="matMenu" id="actions-menu-{{ room.roomId }}">
-								<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
+									<mat-divider id="actions-divider-{{ room.roomId }}" />
+
 									<button
 										mat-menu-item
-										(click)="$event.stopPropagation(); copyModeratorLink(room)"
-										[disabled]="!RoomUiUtils.canCopyAccessLink(room)"
-										id="copy-moderator-link-btn-{{ room.roomId }}"
+										(click)="$event.stopPropagation(); toggleRoomStatus(room)"
+										[ngClass]="RoomUiUtils.getRoomToggleClass(room)"
+										id="toggle-room-status-btn-{{ room.roomId }}"
 									>
-										<mat-icon>content_copy</mat-icon>
-										<span>Copy moderator link</span>
+										<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room) }}</mat-icon>
+										<span>{{ RoomUiUtils.getRoomToggleLabel(room) }}</span>
 									</button>
-								</span>
-								<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
 									<button
 										mat-menu-item
-										(click)="$event.stopPropagation(); copySpeakerLink(room)"
-										[disabled]="!RoomUiUtils.canCopyAccessLink(room)"
-										id="copy-speaker-link-btn-{{ room.roomId }}"
+										(click)="$event.stopPropagation(); deleteRoom(room)"
+										class="delete-action"
+										id="delete-room-btn-{{ room.roomId }}"
 									>
-										<mat-icon>content_copy</mat-icon>
-										<span>Copy speaker link</span>
+										<mat-icon>delete</mat-icon>
+										<span>Delete room</span>
 									</button>
-								</span>
-
-								<mat-divider id="actions-divider-{{ room.roomId }}" />
-
-								<button
-									mat-menu-item
-									(click)="$event.stopPropagation(); toggleRoomStatus(room)"
-									[ngClass]="RoomUiUtils.getRoomToggleClass(room)"
-									id="toggle-room-status-btn-{{ room.roomId }}"
-								>
-									<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room) }}</mat-icon>
-									<span>{{ RoomUiUtils.getRoomToggleLabel(room) }}</span>
-								</button>
-								<button
-									mat-menu-item
-									(click)="$event.stopPropagation(); deleteRoom(room)"
-									class="delete-action"
-									id="delete-room-btn-{{ room.roomId }}"
-								>
-									<mat-icon>delete</mat-icon>
-									<span>Delete room</span>
-								</button>
-							</mat-menu>
+								</mat-menu>
+							} @else {
+								<!-- Share Link Button (non-managers, only if link is available) -->
+								@if (RoomUiUtils.canShareLink(room)) {
+									<span matTooltip="Share room link">
+										<button
+											mat-icon-button
+											(click)="$event.stopPropagation(); shareLink(room)"
+											[disabled]="!RoomUiUtils.canCopyAccessLink(room)"
+											id="share-link-btn-{{ room.roomId }}"
+										>
+											<mat-icon>share</mat-icon>
+										</button>
+									</span>
+								}
+							}
 						</div>
 					</td>
 				</ng-container>

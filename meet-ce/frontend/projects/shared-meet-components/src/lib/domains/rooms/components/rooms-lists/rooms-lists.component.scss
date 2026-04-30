@@ -161,6 +161,16 @@
 			outline-offset: 2px;
 		}
 	}
+
+	.you-badge {
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-semibold);
+		color: var(--ov-meet-color-primary);
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 12%, transparent);
+		padding: 2px var(--ov-meet-spacing-xs);
+		border-radius: var(--ov-meet-radius-sm);
+		white-space: nowrap;
+	}
 }
 
 .room-info {

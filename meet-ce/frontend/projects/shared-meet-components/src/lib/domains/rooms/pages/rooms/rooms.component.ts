@@ -22,11 +22,13 @@ import {
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
 	MeetRoomStatus,
+	MeetUserRole,
 	SortOrder
 } from '@openvidu-meet/typings';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { AuthService } from '../../../auth/services/auth.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
@@ -64,6 +66,7 @@ import { RoomService } from '../../services/room.service';
 })
 export class RoomsComponent implements OnInit {
 	private roomService = inject(RoomService);
+	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	private dialogPresetsService = inject(DialogPresetsService);
 	protected navigationService = inject(NavigationService);
@@ -74,6 +77,9 @@ export class RoomsComponent implements OnInit {
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomsComponent');
 
 	rooms = signal<MeetRoom[]>([]);
+	currentUserId = signal<string>('');
+	currentUserRole = signal<MeetUserRole | undefined>(undefined);
+	protected readonly MeetUserRole = MeetUserRole;
 
 	// Loading state
 	isInitializing = signal(true);
@@ -95,6 +101,10 @@ export class RoomsComponent implements OnInit {
 	private currentFilters: RoomTableFilter = this.initialFilters();
 
 	async ngOnInit() {
+		const [userId, role] = await Promise.all([this.authService.getUserId(), this.authService.getUserRole()]);
+		this.currentUserId.set(userId ?? '');
+		this.currentUserRole.set(role);
+
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader.set(true);
 		}, 200);
@@ -117,11 +127,8 @@ export class RoomsComponent implements OnInit {
 			case 'edit':
 				await this.editRoomConfig(action.rooms[0]);
 				break;
-			case 'copyModeratorLink':
-				this.copyModeratorLink(action.rooms[0]);
-				break;
-			case 'copySpeakerLink':
-				this.copySpeakerLink(action.rooms[0]);
+			case 'shareLink':
+				this.shareLink(action.rooms[0]);
 				break;
 			case 'reopen':
 				this.reopenRoom(action.rooms[0]);
@@ -225,14 +232,9 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private copyModeratorLink({ access }: MeetRoom) {
-		this.clipboard.copy(access.anonymous.moderator.url);
-		this.notificationService.showSnackbar('Moderator link copied to clipboard');
-	}
-
-	private copySpeakerLink({ access }: MeetRoom) {
+	private shareLink({ access }: MeetRoom) {
 		this.clipboard.copy(access.anonymous.speaker.url);
-		this.notificationService.showSnackbar('Speaker link copied to clipboard');
+		this.notificationService.showSnackbar('Room link copied to clipboard');
 	}
 
 	async onRoomClick(roomId: string) {

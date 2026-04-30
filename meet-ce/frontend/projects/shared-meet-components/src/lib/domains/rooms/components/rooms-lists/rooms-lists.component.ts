@@ -29,22 +29,13 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { MeetRoom, MeetRoomSortField, MeetRoomStatus, SortOrder } from '@openvidu-meet/typings';
+import { MeetRoom, MeetRoomSortField, MeetRoomStatus, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];
-	action:
-		| 'create'
-		| 'join'
-		| 'edit'
-		| 'copyModeratorLink'
-		| 'copySpeakerLink'
-		| 'reopen'
-		| 'close'
-		| 'delete'
-		| 'bulkDelete';
+	action: 'create' | 'join' | 'edit' | 'shareLink' | 'reopen' | 'close' | 'delete' | 'bulkDelete';
 }
 
 export interface RoomTableFilter {
@@ -115,9 +106,14 @@ export class RoomsListsComponent implements OnInit {
 	showSearchBox = input(true);
 	showFilters = input(true);
 	showSelection = input(true);
+	canSelectRooms = computed(() => !!this.currentUserRole() && this.currentUserRole() !== MeetUserRole.ROOM_MEMBER);
 	showLoadMore = input(false);
 	loading = input(false);
-	canViewUserProfiles = input(true);
+	currentUserId = input<string>('');
+	currentUserRole = input<MeetUserRole | undefined>(undefined);
+	canViewUserProfiles = computed(
+		() => !!this.currentUserRole() && this.currentUserRole() !== MeetUserRole.ROOM_MEMBER
+	);
 	initialFilters = input<RoomTableFilter>({
 		nameFilter: '',
 		statusFilter: '',
@@ -166,6 +162,7 @@ export class RoomsListsComponent implements OnInit {
 
 	// Make RoomUiUtils available in template
 	protected readonly RoomUiUtils = RoomUiUtils;
+	protected readonly MeetUserRole = MeetUserRole;
 
 	constructor() {
 		effect(() => {
@@ -256,8 +253,8 @@ export class RoomsListsComponent implements OnInit {
 		return this.selectedRooms().has(room.roomId);
 	}
 
-	canSelectRoom(_room: MeetRoom): boolean {
-		return true;
+	canSelectRoom(room: MeetRoom): boolean {
+		return this.RoomUiUtils.canManageRoom(room, this.currentUserId(), this.currentUserRole());
 	}
 
 	getSelectedRooms(): MeetRoom[] {
@@ -283,12 +280,8 @@ export class RoomsListsComponent implements OnInit {
 		this.roomAction.emit({ rooms: [room], action: 'edit' });
 	}
 
-	copyModeratorLink(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'copyModeratorLink' });
-	}
-
-	copySpeakerLink(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'copySpeakerLink' });
+	shareLink(room: MeetRoom) {
+		this.roomAction.emit({ rooms: [room], action: 'shareLink' });
 	}
 
 	toggleRoomStatus(room: MeetRoom) {
