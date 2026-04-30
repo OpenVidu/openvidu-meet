@@ -741,3 +741,23 @@ export async function joinFromPrejoinWithMediaState(
 	await expect(page.locator('#layout-container')).toBeVisible();
 	await expect(page.locator('.OV_stream.local .OV_video-element')).toBeVisible();
 }
+
+export async function muteRemoteParticipant(page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> {
+	// Hover over the remote stream to reveal the silence button
+	await hoverStream(page, remoteStreamSelector);
+
+	// Wait for and click the silence button
+	const silenceButton = page.locator(`${remoteStreamSelector} #silence-btn`).first();
+	await expect(silenceButton).toBeVisible();
+	await silenceButton.click();
+}
+
+export async function unmuteRemoteParticipant(page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> {
+	// Hover over the remote stream to reveal the silence button
+	await hoverStream(page, remoteStreamSelector);
+
+	// Wait for and click the silence button (toggle to unmute)
+	const silenceButton = page.locator(`${remoteStreamSelector} #silence-btn`).first();
+	await expect(silenceButton).toBeVisible();
+	await silenceButton.click();
+}

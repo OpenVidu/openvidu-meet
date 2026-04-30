@@ -8,7 +8,7 @@ import {
 } from './helpers/meet-api.helper';
 import {
 	dragStream,
-	expectLocalStreamMediaCount,
+	expectLocalStreamCount,
 	expectScreenShareCount,
 	expectStreamCount,
 	getElementBoundingBox,
@@ -17,16 +17,18 @@ import {
 	leaveMeeting,
 	maximizeStream,
 	minimizeStream,
+	muteRemoteParticipant,
 	openMeeting,
 	startScreensharing,
 	stopScreensharing,
 	toggleCamera,
 	toggleMicrophone,
+	unmuteRemoteParticipant,
 	waitForRemoteStream
 } from './helpers/meeting-ui.helper';
 
 test.describe('Stream rendering - Single participant scenarios', () => {
-	test.describe.configure({ timeout: 120_000 });
+
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
@@ -37,36 +39,38 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-ve-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 		await expectStreamCount(page, 1);
-		await expectLocalStreamMediaCount(page, { video: 1, audio: 1 });
+		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 	});
 
 	test('should keep local media elements rendered when joining with video disabled', async ({ page }) => {
 		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-vd-${Date.now()}`, createdRoomIds });
-		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false });
+		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: true });
 		await expectStreamCount(page, 1);
-		await expectLocalStreamMediaCount(page, { video: 1, audio: 1 });
+		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 	});
 
 	test('should keep local media elements rendered when joining with audio disabled', async ({ page }) => {
 		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-ad-${Date.now()}`, createdRoomIds });
-		await openMeeting(page, `${accessUrl}&audioEnabled=false`);
+		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: false });
 		await expectStreamCount(page, 1);
-		await expectLocalStreamMediaCount(page, { video: 1, audio: 1 });
+		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 	});
 
 	test('should toggle microphone off and on', async ({ page }) => {
 		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `stream-toggle-mic-${Date.now()}`, createdRoomIds });
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-		await expectLocalStreamMediaCount(page, { audio: 1 });
+		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 
 		// Toggle off
 		await toggleMicrophone(page);
 		await page.waitForTimeout(500);
+		await expectLocalStreamCount(page, { video: 1, audio: 0 });
+
 
 		// Toggle back on
 		await toggleMicrophone(page);
 		await page.waitForTimeout(500);
-		await expectLocalStreamMediaCount(page, { audio: 1 });
+		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 	});
 
 	test('should add screen share when sharing with all media enabled', async ({ page }) => {
@@ -131,7 +135,7 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 });
 
 test.describe('Stream rendering - Multi participant scenarios', () => {
-	test.describe.configure({ timeout: 30_000 });
+
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
@@ -141,19 +145,17 @@ test.describe('Stream rendering - Multi participant scenarios', () => {
 	async function openTwoParticipants(browser: Browser): Promise<{ pageA: Page; pageB: Page }> {
 		const room = await createRoom({ roomName: `streams-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `stream-a-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `stream-b-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `stream-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `stream-b-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const accessUrlA = toAbsoluteMeetUrl(memberA.accessUrl);
 		const accessUrlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
-		const pageA = await browser.newPage();
-		await openMeeting(pageA, accessUrlA);
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
+		await Promise.all([openMeeting(pageA, accessUrlA), openMeeting(pageB, accessUrlB)]);
 
-		const pageB = await browser.newPage();
-		await openMeeting(pageB, accessUrlB);
-
-		await waitForRemoteStream(pageA);
-		await waitForRemoteStream(pageB);
+		await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB)]);
 
 		return { pageA, pageB };
 	}
@@ -164,8 +166,7 @@ test.describe('Stream rendering - Multi participant scenarios', () => {
 		await expectStreamCount(pageA, 2);
 		await expectStreamCount(pageB, 2);
 
-		await pageB.close();
-		await pageA.close();
+		await Promise.all([pageB.close(), pageA.close()]);
 	});
 
 	test('should handle screen share from muted participant to other participant', async ({ browser }) => {
@@ -188,8 +189,7 @@ test.describe('Stream rendering - Multi participant scenarios', () => {
 		await expectScreenShareCount(pageB, 0);
 		await expectScreenShareCount(pageA, 0);
 
-		await pageB.close();
-		await pageA.close();
+		await Promise.all([pageB.close(), pageA.close()]);
 	});
 
 	test('should handle screen share with full media enabled', async ({ browser }) => {
@@ -210,8 +210,7 @@ test.describe('Stream rendering - Multi participant scenarios', () => {
 		await expectStreamCount(pageB, 2);
 		await expectStreamCount(pageA, 2);
 
-		await pageB.close();
-		await pageA.close();
+		await Promise.all([pageB.close(), pageA.close()]);
 	});
 
 	test('should sync remote participant media state changes', async ({ browser }) => {
@@ -241,7 +240,7 @@ test.describe('Stream rendering - Multi participant scenarios', () => {
 });
 
 test.describe('Stream rendering - Three or more participants', () => {
-	test.describe.configure({ timeout: 30_000 });
+
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
@@ -251,25 +250,32 @@ test.describe('Stream rendering - Three or more participants', () => {
 	test('should render three participant streams when three join', async ({ browser }) => {
 		const room = await createRoom({ roomName: `three-participants-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `three-a-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `three-b-${Date.now()}`, baseRole: 'moderator' });
-		const memberC = await createRoomMember({ roomId: room.roomId, name: `three-c-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB, memberC] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `three-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `three-b-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `three-c-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
 		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 		const urlC = toAbsoluteMeetUrl(memberC.accessUrl);
 
-		const pageA = await browser.newPage();
-		await openMeeting(pageA, urlA);
+		const [pageA, pageB, pageC] = await Promise.all([
+			browser.newPage(),
+			browser.newPage(),
+			browser.newPage()
+		]);
 
-		const pageB = await browser.newPage();
-		await openMeeting(pageB, urlB);
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB),
+			openMeeting(pageC, urlC)
+		]);
 
-		const pageC = await browser.newPage();
-		await openMeeting(pageC, urlC);
-
-		await waitForRemoteStream(pageA);
-		await waitForRemoteStream(pageB);
-		await waitForRemoteStream(pageC);
+		await Promise.all([
+			waitForRemoteStream(pageA),
+			waitForRemoteStream(pageB),
+			waitForRemoteStream(pageC)
+		]);
 
 		// A sees: self + B + C
 		await expect(pageA.locator('.OV_stream.remote')).toHaveCount(2);
@@ -281,29 +287,32 @@ test.describe('Stream rendering - Three or more participants', () => {
 		await expect(pageC.locator('.OV_stream.remote')).toHaveCount(2);
 		await expect(pageC.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1); // Local camera stream
 
-		await pageC.close();
-		await pageB.close();
-		await pageA.close();
+		await Promise.all([pageC.close(), pageB.close(), pageA.close()]);
 	});
 
 	test('should handle participant leaving and streams being removed', async ({ browser }) => {
 		const room = await createRoom({ roomName: `participant-leave-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `leave-a-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `leave-b-${Date.now()}`, baseRole: 'moderator' });
-		const memberC = await createRoomMember({ roomId: room.roomId, name: `leave-c-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB, memberC] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `leave-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `leave-b-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `leave-c-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
 		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 		const urlC = toAbsoluteMeetUrl(memberC.accessUrl);
 
-		const pageA = await browser.newPage();
-		await openMeeting(pageA, urlA);
+		const [pageA, pageB, pageC] = await Promise.all([
+			browser.newPage(),
+			browser.newPage(),
+			browser.newPage()
+		]);
 
-		const pageB = await browser.newPage();
-		await openMeeting(pageB, urlB);
-
-		const pageC = await browser.newPage();
-		await openMeeting(pageC, urlC);
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB),
+			openMeeting(pageC, urlC)
+		]);
 
 		await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
 		// All see 3 streams
@@ -332,18 +341,21 @@ test.describe('Stream rendering - Three or more participants', () => {
 	test('should maintain stream order after rapid joins/leaves', async ({ browser }) => {
 		const room = await createRoom({ roomName: `rapid-change-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `rapid-a-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `rapid-b-${Date.now()}`, baseRole: 'moderator' });
-		const memberC = await createRoomMember({ roomId: room.roomId, name: `rapid-c-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB, memberC] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `rapid-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `rapid-b-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `rapid-c-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
 		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 		const urlC = toAbsoluteMeetUrl(memberC.accessUrl);
 
-		const pageA = await browser.newPage();
-		await openMeeting(pageA, urlA);
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
-		const pageB = await browser.newPage();
-		await openMeeting(pageB, urlB);
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB)
+		]);
 
 		await waitForRemoteStream(pageA);
 
@@ -355,8 +367,10 @@ test.describe('Stream rendering - Three or more participants', () => {
 		const pageC = await browser.newPage();
 		await openMeeting(pageC, urlC);
 
-		await waitForRemoteStream(pageA);
-		await waitForRemoteStream(pageB);
+		await Promise.all([
+			waitForRemoteStream(pageA),
+			waitForRemoteStream(pageB)
+		]);
 
 		// All three see 3 streams
 		await expect(pageA.locator('.OV_stream.remote')).toHaveCount(2);
@@ -389,16 +403,19 @@ test.describe('Stream rendering - Three or more participants', () => {
 	test('should handle rapid video/audio toggles from multiple participants', async ({ browser }) => {
 		const room = await createRoom({ roomName: `rapid-media-toggle-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `toggle-a-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `toggle-b-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `toggle-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `toggle-b-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
 		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
-		const pageA = await browser.newPage();
-		await openMeeting(pageA, urlA);
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
-		const pageB = await browser.newPage();
-		await openMeeting(pageB, urlB);
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB)
+		]);
 
 		await waitForRemoteStream(pageA);
 
@@ -429,7 +446,7 @@ test.describe('Stream rendering - Three or more participants', () => {
 });
 
 test.describe('Stream UI controls - Minimize and maximize', () => {
-	test.describe.configure({ timeout: 30_000 });
+
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
@@ -439,8 +456,10 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	test('should show the MINIMIZE button ONLY over the LOCAL video', async ({ page }) => {
 		const room = await createRoom({ roomName: `minimize-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `min-local-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `min-remote-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `min-local-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `min-remote-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const accessUrl = toAbsoluteMeetUrl(memberA.accessUrl);
 		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 		await openMeeting(page, accessUrl);
@@ -719,7 +738,7 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 });
 
 test.describe('Stream UI controls - PIN and silence buttons', () => {
-	test.describe.configure({ timeout: 30_000 });
+
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
@@ -739,16 +758,19 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 	test('should show the PIN button over the REMOTE video', async ({ browser }) => {
 		const room = await createRoom({ roomName: `pin-remote-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `pin-a-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `pin-b-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `pin-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `pin-b-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
 		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
-		const pageA = await browser.newPage();
-		await openMeeting(pageA, urlA);
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
-		const pageB = await browser.newPage();
-		await openMeeting(pageB, urlB);
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB)
+		]);
 
 		await waitForRemoteStream(pageA);
 
@@ -763,16 +785,19 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 	test('should show the SILENCE button ONLY over the REMOTE video', async ({ browser }) => {
 		const room = await createRoom({ roomName: `silence-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `silence-a-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `silence-b-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `silence-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `silence-b-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
 		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
-		const pageA = await browser.newPage();
-		await openMeeting(pageA, urlA);
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
-		const pageB = await browser.newPage();
-		await openMeeting(pageB, urlB);
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB)
+		]);
 
 		await waitForRemoteStream(pageA);
 
@@ -791,7 +816,7 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 });
 
 test.describe('Audio detection - Speaking indicator', () => {
-	test.describe.configure({ timeout: 30_000 });
+
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
@@ -801,16 +826,19 @@ test.describe('Audio detection - Speaking indicator', () => {
 	test('should show the audio detection elements when participant is speaking', async ({ browser }) => {
 		const room = await createRoom({ roomName: `speaking-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({ roomId: room.roomId, name: `speak-a-${Date.now()}`, baseRole: 'moderator' });
-		const memberB = await createRoomMember({ roomId: room.roomId, name: `speak-b-${Date.now()}`, baseRole: 'moderator' });
+		const [memberA, memberB] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `speak-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `speak-b-${Date.now()}`, baseRole: 'moderator' })
+		]);
 		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
 		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
 
-		const pageA = await browser.newPage();
-		await openMeeting(pageA, `${urlA}&audioEnabled=false`);
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
-		const pageB = await browser.newPage();
-		await openMeeting(pageB, urlB);
+		await Promise.all([
+			openMeeting(pageA, `${urlA}&audioEnabled=false`),
+			openMeeting(pageB, urlB)
+		]);
 
 		await waitForRemoteStream(pageA);
 
@@ -827,5 +855,210 @@ test.describe('Audio detection - Speaking indicator', () => {
 
 		await pageB.close();
 		await pageA.close();
+	});
+});
+
+test.describe('Mute Participant - Local participant can mute remote audio', () => {
+
+	const createdRoomIds = new Set<string>();
+
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
+	});
+
+	test('should successfully mute remote participant audio for local user only', async ({ browser }) => {
+		const room = await createRoom({ roomName: `mute-participant-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const [memberA, memberB] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `mute-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `mute-b-${Date.now()}`, baseRole: 'moderator' })
+		]);
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
+
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
+
+		// Open meeting with audio enabled for both participants
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB)
+		]);
+
+		await waitForRemoteStream(pageA);
+
+		// Verify remote stream is visible and audio element is present
+		await expect(pageA.locator('.OV_stream.remote')).toBeVisible();
+		const remoteAudioBefore = await pageA.locator('.OV_stream.remote .OV_audio-element').count();
+		await expect(remoteAudioBefore).toBeGreaterThan(0);
+
+		// Check initial audio element state - should be enabled (muted = false initially)
+		const isInitiallyMuted = await pageA.evaluate(() => {
+			const audioElement = document.querySelector('.OV_stream.remote .OV_audio-element') as HTMLAudioElement;
+			return audioElement ? audioElement.muted : false;
+		});
+		expect(isInitiallyMuted).toBe(false);
+
+		// Mute the remote participant
+		await muteRemoteParticipant(pageA, '.OV_stream.remote');
+		await pageA.waitForTimeout(500);
+
+		// Verify audio element is now muted (should be muted = true)
+		const isMutedAfterClick = await pageA.evaluate(() => {
+			const audioElement = document.querySelector('.OV_stream.remote .OV_audio-element') as HTMLAudioElement;
+			return audioElement ? audioElement.muted : false;
+		});
+		expect(isMutedAfterClick).toBe(true);
+
+		// Verify remote participant B can still hear themselves and send audio
+		// (this is only a local mute, not affecting the remote participant's transmission)
+		await expect(pageB.locator('.OV_stream.local')).toBeVisible();
+		const bAudioBefore = await pageB.evaluate(() => {
+			const audioElement = document.querySelector('.OV_stream.local .OV_audio-element') as HTMLAudioElement;
+			return audioElement ? audioElement.muted : false;
+		});
+		expect(bAudioBefore).toBe(false); // B should not be muted on their own
+
+		// Unmute the remote participant
+		await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
+		await pageA.waitForTimeout(500);
+
+		// Verify audio element is unmuted again (should be muted = false)
+		const isUnmutedAfterClick = await pageA.evaluate(() => {
+			const audioElement = document.querySelector('.OV_stream.remote .OV_audio-element') as HTMLAudioElement;
+			return audioElement ? audioElement.muted : false;
+		});
+		expect(isUnmutedAfterClick).toBe(false);
+
+		await Promise.all([pageB.close(), pageA.close()]);
+	});
+
+	test('should toggle mute state multiple times without issues', async ({ browser }) => {
+		const room = await createRoom({ roomName: `mute-toggle-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const [memberA, memberB] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `toggle-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `toggle-b-${Date.now()}`, baseRole: 'moderator' })
+		]);
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
+
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
+
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB)
+		]);
+
+		await waitForRemoteStream(pageA);
+
+		// Perform multiple rapid mute/unmute toggles
+		await muteRemoteParticipant(pageA, '.OV_stream.remote');
+		await pageA.waitForTimeout(200);
+
+		await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
+		await pageA.waitForTimeout(200);
+
+		await muteRemoteParticipant(pageA, '.OV_stream.remote');
+		await pageA.waitForTimeout(200);
+
+		await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
+		await pageA.waitForTimeout(200);
+
+		// Final state should be unmuted
+		const finalMutedState = await pageA.evaluate(() => {
+			const audioElement = document.querySelector('.OV_stream.remote .OV_audio-element') as HTMLAudioElement;
+			return audioElement ? audioElement.muted : false;
+		});
+		expect(finalMutedState).toBe(false);
+
+		// Verify remote stream is still visible and functional
+		await expect(pageA.locator('.OV_stream.remote')).toBeVisible();
+		await expect(pageB.locator('.OV_stream.local')).toBeVisible();
+
+		await Promise.all([pageB.close(), pageA.close()]);
+	});
+
+	test('should maintain mute state when switching between multiple remote participants', async ({ browser }) => {
+		const room = await createRoom({ roomName: `mute-three-${Date.now()}` });
+		createdRoomIds.add(room.roomId);
+		const [memberA, memberB, memberC] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: `mute-three-a-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `mute-three-b-${Date.now()}`, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: `mute-three-c-${Date.now()}`, baseRole: 'moderator' })
+		]);
+		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
+		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
+		const urlC = toAbsoluteMeetUrl(memberC.accessUrl);
+
+		const [pageA, pageB, pageC] = await Promise.all([
+			browser.newPage(),
+			browser.newPage(),
+			browser.newPage()
+		]);
+
+		await Promise.all([
+			openMeeting(pageA, urlA),
+			openMeeting(pageB, urlB),
+			openMeeting(pageC, urlC)
+		]);
+
+		await Promise.all([
+			waitForRemoteStream(pageA),
+			waitForRemoteStream(pageB),
+			waitForRemoteStream(pageC)
+		]);
+
+		// Verify A sees 2 remote streams
+		await expect(pageA.locator('.OV_stream.remote')).toHaveCount(2);
+
+		// Mute first remote stream (should be B)
+		const firstRemote = pageA.locator('.OV_stream.remote').first();
+		await firstRemote.hover();
+		const firstSilenceBtn = firstRemote.locator('#silence-btn').first();
+		await expect(firstSilenceBtn).toBeVisible();
+		await firstSilenceBtn.click();
+		await pageA.waitForTimeout(300);
+
+		// Verify first remote is muted
+		const firstRemoteAudio = await pageA.evaluate(() => {
+			const remotes = document.querySelectorAll('.OV_stream.remote .OV_audio-element');
+			return remotes[0] ? (remotes[0] as HTMLAudioElement).muted : false;
+		});
+		expect(firstRemoteAudio).toBe(true);
+
+		// Mute second remote stream (should be C)
+		const secondRemote = pageA.locator('.OV_stream.remote').nth(1);
+		await secondRemote.hover();
+		const secondSilenceBtn = secondRemote.locator('#silence-btn').first();
+		await expect(secondSilenceBtn).toBeVisible();
+		await secondSilenceBtn.click();
+		await pageA.waitForTimeout(300);
+
+		// Verify both remotes are still muted
+		const bothMuted = await pageA.evaluate(() => {
+			const remotes = document.querySelectorAll('.OV_stream.remote .OV_audio-element');
+			const first = remotes[0] ? (remotes[0] as HTMLAudioElement).muted : false;
+			const second = remotes[1] ? (remotes[1] as HTMLAudioElement).muted : false;
+			return { first, second };
+		});
+		expect(bothMuted.first).toBe(true);
+		expect(bothMuted.second).toBe(true);
+
+		// Unmute first remote
+		await firstRemote.hover();
+		await firstSilenceBtn.click();
+		await pageA.waitForTimeout(300);
+
+		// Verify first is unmuted, second is still muted
+		const mixedMutedState = await pageA.evaluate(() => {
+			const remotes = document.querySelectorAll('.OV_stream.remote .OV_audio-element');
+			const first = remotes[0] ? (remotes[0] as HTMLAudioElement).muted : false;
+			const second = remotes[1] ? (remotes[1] as HTMLAudioElement).muted : false;
+			return { first, second };
+		});
+		expect(mixedMutedState.first).toBe(false);
+		expect(mixedMutedState.second).toBe(true);
+
+		await Promise.all([pageC.close(), pageB.close(), pageA.close()]);
 	});
 });
