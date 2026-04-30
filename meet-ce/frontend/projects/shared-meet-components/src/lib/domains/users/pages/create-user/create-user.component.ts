@@ -46,7 +46,12 @@ export class CreateUserComponent {
 	protected readonly UsersUiUtils = UsersUiUtils;
 
 	form = new FormGroup({
-		userId: new FormControl('', [Validators.required, Validators.pattern(/^[a-z0-9_]+$/)]),
+		userId: new FormControl('', [
+			Validators.required,
+			Validators.minLength(5),
+			Validators.maxLength(20),
+			Validators.pattern(/^[a-z0-9_]+$/)
+		]),
 		name: new FormControl('', [Validators.required, Validators.maxLength(50)]),
 		role: new FormControl<MeetUserRole>(MeetUserRole.USER, [Validators.required]),
 		password: new FormControl('', [Validators.required, Validators.minLength(5)])
