@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -17,12 +17,15 @@ import {
 	MeetRoomMember,
 	MeetRoomMemberFilters,
 	MeetRoomStatus,
+	MeetUserRole,
 	SortOrder
 } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { decodeToken } from '../../../../shared/utils/token.utils';
+import { AuthService } from '../../../auth/services/auth.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { RecordingListsComponent } from '../../../recordings/components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../../recordings/models/recording-list.model';
@@ -59,6 +62,7 @@ import { RoomUiUtils } from '../../utils/ui';
 })
 export class RoomDetailComponent implements OnInit {
 	private readonly route = inject(ActivatedRoute);
+	private readonly authService = inject(AuthService);
 	private readonly roomService = inject(RoomService);
 	private readonly roomDeletionService = inject(RoomDeletionService);
 	private readonly roomMemberService = inject(RoomMemberService);
@@ -69,12 +73,25 @@ export class RoomDetailComponent implements OnInit {
 	private readonly clipboard = inject(Clipboard);
 	private readonly loggerService = inject(LoggerService);
 	protected readonly log: ILogger = this.loggerService.get('OpenVidu Meet - RoomDetailComponent');
+	protected readonly MeetUserRole = MeetUserRole;
 
-	canViewUserProfiles = signal(true);
+	currentUserId = signal<string>('');
+	currentUserRole = signal<MeetUserRole | undefined>(undefined);
+	canViewUserProfiles = computed(
+		() => !!this.currentUserRole() && this.currentUserRole() !== MeetUserRole.ROOM_MEMBER
+	);
+	canManageRoom = computed(() => {
+		const room = this.room();
+		if (!room) return false;
+		return RoomUiUtils.canManageRoom(room, this.currentUserId(), this.currentUserRole());
+	});
+	canViewRecordings = signal(false);
+	canDeleteRecordings = signal(false);
 
 	roomId = signal('');
 	room = signal<MeetRoom | undefined>(undefined);
-	isLoading = signal(true);
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
 	breadcrumbItems = signal<BreadcrumbItem[]>([]);
 
 	// Room Members tab
@@ -120,43 +137,71 @@ export class RoomDetailComponent implements OnInit {
 		}
 
 		this.roomId.set(roomId);
+
+		// Update breadcrumb items
+		this.breadcrumbItems.set([
+			{
+				label: 'Rooms',
+				action: () => this.navigationService.navigateTo('/rooms')
+			},
+			{
+				label: roomId
+			}
+		]);
+
+		const [userId, role] = await Promise.all([this.authService.getUserId(), this.authService.getUserRole()]);
+		this.currentUserId.set(userId ?? '');
+		this.currentUserRole.set(role);
+
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader.set(true);
+		}, 200);
+
 		await this.loadRoomDetails();
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	// --- Room management ---
 
 	private async loadRoomDetails() {
-		const delayLoader = setTimeout(() => {
-			this.isLoading.set(true);
-		}, 200);
-
 		try {
 			const room = await this.roomService.getRoom(this.roomId());
 			this.room.set(room);
 
-			// Update breadcrumb items
-			this.breadcrumbItems.set([
-				{
-					label: 'Rooms',
-					action: () => this.navigationService.navigateTo('/rooms')
-				},
-				{
-					label: room.roomId
+			// Determine recording permissions: managers always can view and delete; others need token-based permissions check
+			if (this.canManageRoom()) {
+				this.canViewRecordings.set(true);
+				this.canDeleteRecordings.set(true);
+			} else {
+				try {
+					const { token } = await this.roomMemberService.generateRoomMemberToken(this.roomId(), {
+						joinMeeting: false
+					});
+					const decoded = decodeToken(token);
+					this.canViewRecordings.set(decoded.metadata.permissions.canRetrieveRecordings);
+					this.canDeleteRecordings.set(decoded.metadata.permissions.canDeleteRecordings);
+				} catch {
+					this.canViewRecordings.set(false);
+					this.canDeleteRecordings.set(false);
 				}
-			]);
+			}
 
-			// Load initial data for tabs
-			await Promise.all([
-				this.loadRoomMembers(this.initialMemberFilters()),
-				this.loadRecordings(this.initialRecordingFilters())
-			]);
+			// Load initial data for visible tabs only
+			const tabLoads: Promise<unknown>[] = [];
+			if (this.canViewRecordings()) {
+				tabLoads.push(this.loadRecordings(this.initialRecordingFilters()));
+			}
+			if (this.canManageRoom()) {
+				tabLoads.push(this.loadRoomMembers(this.initialMemberFilters()));
+			}
+			await Promise.all(tabLoads);
 		} catch (error) {
 			this.log.e('Error loading room details:', error);
 			this.notificationService.showSnackbar('Failed to load room details');
 			await this.navigationService.navigateTo('/rooms');
-		} finally {
-			clearTimeout(delayLoader);
-			this.isLoading.set(false);
 		}
 	}
 

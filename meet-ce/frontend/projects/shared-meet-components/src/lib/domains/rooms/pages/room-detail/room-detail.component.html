@@ -1,5 +1,5 @@
 <!-- Loading State -->
-@if (isLoading()) {
+@if (isInitializing() && showInitialLoader()) {
 	<div class="ov-page-loading">
 		<div class="loading-content">
 			<div class="loading-header">
@@ -17,7 +17,7 @@
 	</div>
 }
 
-@if (!isLoading() && room()) {
+@if (!isInitializing() && room()) {
 	<div class="ov-page-container ov-mb-xxl">
 		<!-- Room Detail Header -->
 		<div class="page-header">
@@ -69,47 +69,51 @@
 						</button>
 					</span>
 
-					<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room()!)">
-						<button
-							mat-stroked-button
-							class="action-btn"
-							(click)="copyAccessLink()"
-							[disabled]="!RoomUiUtils.canCopyAccessLink(room()!)"
-						>
-							<mat-icon>link</mat-icon>
-							<span>Copy Link</span>
-						</button>
-					</span>
+					@if (RoomUiUtils.canShareLink(room()!)) {
+						<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room()!)">
+							<button
+								mat-stroked-button
+								class="action-btn"
+								(click)="copyAccessLink()"
+								[disabled]="!RoomUiUtils.canCopyAccessLink(room()!)"
+							>
+								<mat-icon>link</mat-icon>
+								<span>Copy Link</span>
+							</button>
+						</span>
+					}
 
-					<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room()!)">
+					@if (canManageRoom()) {
+						<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room()!)">
+							<button
+								mat-icon-button
+								class="icon-action-btn"
+								(click)="editRoom()"
+								[disabled]="!RoomUiUtils.canEditRoom(room()!)"
+							>
+								<mat-icon>edit</mat-icon>
+							</button>
+						</span>
+
 						<button
 							mat-icon-button
 							class="icon-action-btn"
-							(click)="editRoom()"
-							[disabled]="!RoomUiUtils.canEditRoom(room()!)"
+							[class]="RoomUiUtils.getRoomToggleClass(room()!)"
+							(click)="toggleRoomStatus()"
+							[matTooltip]="RoomUiUtils.getRoomToggleTooltip(room()!)"
 						>
-							<mat-icon>edit</mat-icon>
+							<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room()!) }}</mat-icon>
 						</button>
-					</span>
 
-					<button
-						mat-icon-button
-						class="icon-action-btn"
-						[class]="RoomUiUtils.getRoomToggleClass(room()!)"
-						(click)="toggleRoomStatus()"
-						[matTooltip]="RoomUiUtils.getRoomToggleTooltip(room()!)"
-					>
-						<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room()!) }}</mat-icon>
-					</button>
-
-					<button
-						mat-icon-button
-						class="icon-action-btn delete-btn"
-						(click)="deleteRoom()"
-						matTooltip="Delete room"
-					>
-						<mat-icon>delete</mat-icon>
-					</button>
+						<button
+							mat-icon-button
+							class="icon-action-btn delete-btn"
+							(click)="deleteRoom()"
+							matTooltip="Delete room"
+						>
+							<mat-icon>delete</mat-icon>
+						</button>
+					}
 				</div>
 			</div>
 		</div>
@@ -133,7 +137,7 @@
 								<div class="owner-avatar">
 									<span>{{ RoomUiUtils.getOwnerInitials(room()!) }}</span>
 								</div>
-								@if (canViewUserProfiles()) {
+								@if (canViewUserProfiles() && room()!.owner !== currentUserId()) {
 									<a
 										class="owner-name-link"
 										[routerLink]="['/users', room()!.owner]"
@@ -143,6 +147,9 @@
 									</a>
 								} @else {
 									<p class="info-value">{{ room()!.owner }}</p>
+								}
+								@if (room()!.owner === currentUserId()) {
+									<span class="you-badge">You</span>
 								}
 							</div>
 						</div>
@@ -205,49 +212,59 @@
 						</ng-template>
 
 						<div class="tab-content">
-							<ov-recording-lists
-								[recordings]="recordings()"
-								[canDeleteRecordings]="true"
-								[loading]="loadingRecordings()"
-								[showSearchBox]="false"
-								[showFilters]="true"
-								[showSelection]="true"
-								[showRoomInfo]="false"
-								[showLoadMore]="hasMoreRecordings()"
-								[roomName]="room()!.roomName"
-								[initialFilters]="initialRecordingFilters()"
-								(recordingAction)="onRecordingAction($event)"
-								(recordingClicked)="onRecordingClick($event)"
-								(loadMore)="loadMoreRecordings($event)"
-								(refresh)="refreshRecordings($event)"
-								(filterChange)="refreshRecordings($event)"
-							/>
+							@if (canViewRecordings()) {
+								<ov-recording-lists
+									[recordings]="recordings()"
+									[canDeleteRecordings]="canDeleteRecordings()"
+									[loading]="loadingRecordings()"
+									[showSearchBox]="false"
+									[showFilters]="true"
+									[showSelection]="true"
+									[showRoomInfo]="false"
+									[showLoadMore]="hasMoreRecordings()"
+									[roomName]="room()!.roomName"
+									[initialFilters]="initialRecordingFilters()"
+									(recordingAction)="onRecordingAction($event)"
+									(recordingClicked)="onRecordingClick($event)"
+									(loadMore)="loadMoreRecordings($event)"
+									(refresh)="refreshRecordings($event)"
+									(filterChange)="refreshRecordings($event)"
+								/>
+							} @else {
+								<div class="no-permission-state">
+									<mat-icon>lock</mat-icon>
+									<h3>No access to recordings</h3>
+									<p>You don't have permission to view recordings for this room.</p>
+								</div>
+							}
 						</div>
 					</mat-tab>
 
 					<!-- Room Members Tab -->
-					<mat-tab>
-						<ng-template mat-tab-label>
-							<mat-icon class="tab-icon">people</mat-icon>
-							<span>Room Members</span>
-							<span class="tab-count">{{ roomMembers().length }}</span>
-						</ng-template>
+					@if (canManageRoom()) {
+						<mat-tab>
+							<ng-template mat-tab-label>
+								<mat-icon class="tab-icon">people</mat-icon>
+								<span>Room Members</span>
+								<span class="tab-count">{{ roomMembers().length }}</span>
+							</ng-template>
 
-						<div class="tab-content">
-							<ov-room-members-list
-								[members]="roomMembers()"
-								[loading]="loadingMembers()"
-								[showSearchBox]="true"
-								[showSelection]="true"
-								[showLoadMore]="hasMoreMembers()"
-								[initialFilters]="initialMemberFilters()"
-								(memberAction)="onMemberAction($event)"
-								(loadMore)="loadMoreRoomMembers($event)"
-								(refresh)="refreshRoomMembers($event)"
-								(filterChange)="refreshRoomMembers($event)"
-							/>
-						</div>
-					</mat-tab>
+							<div class="tab-content">
+								<ov-room-members-list
+									[members]="roomMembers()"
+									[loading]="loadingMembers()"
+									[showSearchBox]="true"
+									[showSelection]="true"
+									[showLoadMore]="hasMoreMembers()"
+									[initialFilters]="initialMemberFilters()"
+									(memberAction)="onMemberAction($event)"
+									(loadMore)="loadMoreRoomMembers($event)"
+									(refresh)="refreshRoomMembers($event)"
+									(filterChange)="refreshRoomMembers($event)"
+								/>
+							</div>
+						</mat-tab>
+					}
 				</mat-tab-group>
 			</mat-card>
 		</div>

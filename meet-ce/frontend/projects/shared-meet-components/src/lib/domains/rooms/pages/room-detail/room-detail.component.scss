@@ -219,6 +219,16 @@
 							outline-offset: 2px;
 						}
 					}
+
+					.you-badge {
+						font-size: var(--ov-meet-font-size-xs);
+						font-weight: var(--ov-meet-font-weight-semibold);
+						color: var(--ov-meet-color-primary);
+						background-color: color-mix(in srgb, var(--ov-meet-color-primary) 12%, transparent);
+						padding: 2px var(--ov-meet-spacing-xs);
+						border-radius: var(--ov-meet-radius-sm);
+						white-space: nowrap;
+					}
 				}
 
 				.date-info {
@@ -337,7 +347,32 @@
 
 		.tab-content {
 			padding: var(--ov-meet-spacing-lg);
-			min-height: 400px;
+
+			.no-permission-state {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				justify-content: center;
+				gap: var(--ov-meet-spacing-md);
+				padding: var(--ov-meet-spacing-xxl);
+				color: var(--ov-meet-text-secondary);
+
+				mat-icon {
+					@include ov-icon(xxl);
+					color: var(--ov-meet-text-hint);
+				}
+
+				h3 {
+					margin: 0;
+					color: var(--ov-meet-text-primary);
+					font-size: var(--ov-meet-font-size-lg);
+				}
+
+				p {
+					margin: 0;
+					font-size: var(--ov-meet-font-size-sm);
+				}
+			}
 
 			.loading-state {
 				display: flex;
