@@ -13,7 +13,7 @@ import {
 } from './helpers/meeting-ui.helper';
 
 test.describe('Panels: UI Navigation and Section Switching', () => {
-	test.describe.configure({ timeout: 90_000 });
+	
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {

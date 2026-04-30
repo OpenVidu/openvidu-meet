@@ -3,19 +3,19 @@ import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helpe
 import {
     applyBackgroundEffect,
     captureVideoElementScreenshot,
+    closeBackgroundsPanel,
     closePrejoinBackgroundsPanel,
-    closeRoomBackgroundsPanel,
     expectSignificantImageDifference,
     expectVisible,
+    openBackgroundsPanel,
     openMeeting,
     openPrejoin,
     openPrejoinBackgroundsPanel,
-    openRoomBackgroundsPanel,
-    togglePrejoinCamera
+    setPrejoinCameraStatus
 } from './helpers/meeting-ui.helper';
 
 test.describe('Virtual Backgrounds', () => {
-    test.describe.configure({ timeout: 120_000 });
+
     const createdRoomIds = new Set<string>();
 
     test.afterAll(async () => {
@@ -33,7 +33,7 @@ test.describe('Virtual Backgrounds', () => {
         await expect(backgroundsButton).toBeEnabled();
 
         await openPrejoinBackgroundsPanel(page);
-        await togglePrejoinCamera(page);
+        await setPrejoinCameraStatus(page);
 
         await expectVisible(page, '#video-poster');
         await expect(backgroundsButton).toBeVisible();
@@ -67,8 +67,8 @@ test.describe('Virtual Backgrounds', () => {
         const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-room-toggle-${Date.now()}`, createdRoomIds });
         await openMeeting(page, accessUrl);
 
-        await openRoomBackgroundsPanel(page);
-        await closeRoomBackgroundsPanel(page);
+        await openBackgroundsPanel(page);
+        await closeBackgroundsPanel(page);
     });
 
     test('should apply a background effect in the room', async ({ page }) => {
@@ -76,9 +76,9 @@ test.describe('Virtual Backgrounds', () => {
         await openMeeting(page, accessUrl);
 
         const before = await captureVideoElementScreenshot(page);
-        await openRoomBackgroundsPanel(page);
+        await openBackgroundsPanel(page);
         await applyBackgroundEffect(page, '1');
-        await closeRoomBackgroundsPanel(page);
+        await closeBackgroundsPanel(page);
         const after = await captureVideoElementScreenshot(page);
 
         expectSignificantImageDifference(before, after);

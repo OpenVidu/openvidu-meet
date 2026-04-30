@@ -6,7 +6,7 @@ import { openMeeting, openPrejoin, openSettingsPanel, startScreensharing } from 
 const createdRoomIds = new Set<string>();
 
 test.describe('Media Devices: Virtual Device Replacement and Permissions Handling', () => {
-    test.describe.configure({ timeout: 60_000 });
+    
 
     test.afterAll(async () => {
         await deleteRooms(createdRoomIds);
@@ -98,7 +98,7 @@ test.describe('Media Devices: Virtual Device Replacement and Permissions Handlin
 });
 
 test.describe('Media Devices: UI Behavior Without Media Device Permissions @no-media-permissions', () => {
-    test.describe.configure({ timeout: 60_000 });
+    
     test.use({ permissions: [] });
 
     test('should camera and microphone buttons be disabled in the prejoin page when permissions are denied', async ({ page }) => {

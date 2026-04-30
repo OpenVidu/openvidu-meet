@@ -175,6 +175,21 @@ export async function openSettingsPanel(page: Page): Promise<void> {
 	await expect(page.locator('.sidenav-menu')).toBeVisible();
 }
 
+/**
+ * Opens the layout settings panel by clicking more-options and grid-layout-settings buttons
+ */
+export async function openLayoutSettingsPanel(page: Page): Promise<void> {
+	await page.locator('#more-options-btn').click();
+	await expect(page.locator('#grid-layout-settings-btn')).toBeVisible();
+	await page.locator('#grid-layout-settings-btn').click();
+	await expect(page.locator('#settings-container')).toBeVisible();
+}
+
+export async function closeSettingsPanel(page: Page): Promise<void> {
+	await page.locator('.panel-close-button').click();
+	await expectHidden(page, '#settings-container');
+}
+
 export async function expectVisible(page: Page, selector: string): Promise<void> {
 	await expect(page.locator(selector)).toBeVisible();
 }
@@ -267,7 +282,7 @@ export async function closePrejoinBackgroundsPanel(page: Page): Promise<void> {
 	await expect(page.locator('#background-effects-container')).toHaveCount(0);
 }
 
-export async function togglePrejoinCamera(page: Page, timeoutMs = 10_000): Promise<void> {
+export async function setPrejoinCameraStatus(page: Page, timeoutMs = 10_000): Promise<void> {
 	await page.locator('#camera-button').click();
 }
 
@@ -465,16 +480,15 @@ export async function expectScreenShareCount(page: Page, count: number): Promise
 /**
  * Expects a specific number of local video and audio elements to be present
  */
-export async function expectLocalStreamMediaCount(
-	page: Page,
-	counts: { video?: number; audio?: number }
-): Promise<void> {
+export async function expectLocalStreamCount(page: Page, counts: { video?: number; audio?: number }): Promise<void> {
 	if (counts.video !== undefined) {
 		await expect(page.locator('.OV_stream.local .OV_video-element')).toHaveCount(counts.video);
+		await expect(page.locator('video')).toHaveCount(counts.video);
 	}
 
 	if (counts.audio !== undefined) {
 		await expect(page.locator('.OV_stream.local .OV_audio-element')).toHaveCount(counts.audio);
+		await expect(page.locator('audio')).toHaveCount(counts.audio);
 	}
 }
 
@@ -675,7 +689,7 @@ export async function ensurePrejoinVideoState(page: Page, enabled: boolean, time
 	const currentlyEnabled = await isPrejoinVideoEnabled(page);
 
 	if (currentlyEnabled !== enabled) {
-		await togglePrejoinCamera(page);
+		await setPrejoinCameraStatus(page);
 		await expect
 			.poll(async () => (await isPrejoinVideoEnabled(page)) !== currentlyEnabled, { timeout: timeoutMs })
 			.toBeTruthy()

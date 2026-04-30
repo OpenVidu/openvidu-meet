@@ -14,7 +14,7 @@ import {
 } from './helpers/recordings.helper';
 
 test.describe('Recordings: E2E UI flows', () => {
-	test.describe.configure({ timeout: 30_000 });
+	
 	const createdRoomIds = new Set<string>();
 
 	test.afterEach(async ({ page }) => {

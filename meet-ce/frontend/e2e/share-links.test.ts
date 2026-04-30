@@ -3,7 +3,7 @@ import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helpe
 import { expectCopiedUrl, installClipboardCapture, openMeeting } from './helpers/meeting-ui.helper';
 
 test.describe('Share links overlay', () => {
-	test.describe.configure({ timeout: 90_000 });
+	
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {

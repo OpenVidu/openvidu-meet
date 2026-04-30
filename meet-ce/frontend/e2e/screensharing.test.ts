@@ -1,29 +1,29 @@
 import { expect, test } from '@playwright/test';
 import {
-    createRoom,
-    createRoomAndGetAccessUrl,
-    createRoomMember,
-    deleteRooms,
-    toAbsoluteMeetUrl,
-    type E2ERoom
+	createRoom,
+	createRoomAndGetAccessUrl,
+	createRoomMember,
+	deleteRooms,
+	toAbsoluteMeetUrl,
+	type E2ERoom
 } from './helpers/meet-api.helper';
 import {
-    expectPinnedStreamCount,
-    expectScreenTypeCount,
-    expectVideoCount,
-    getPinnedStreamCount,
-    getScreenTypeTracks,
-    openMeeting,
-    startScreensharing,
-    stopScreensharing,
-    toggleCamera,
-    toggleMicrophone,
-    toggleStreamPin,
-    unpinCurrentPinnedStream
+	expectPinnedStreamCount,
+	expectScreenTypeCount,
+	expectVideoCount,
+	getPinnedStreamCount,
+	getScreenTypeTracks,
+	openMeeting,
+	startScreensharing,
+	stopScreensharing,
+	toggleCamera,
+	toggleMicrophone,
+	toggleStreamPin,
+	unpinCurrentPinnedStream
 } from './helpers/meeting-ui.helper';
 
 test.describe('E2E: Screensharing features', () => {
-	test.describe.configure({ timeout: 120_000 });
+
 	const createdRoomIds = new Set<string>();
 
 	async function createAccessUrlForExistingRoom(room: E2ERoom, participantName: string): Promise<{ accessUrl: string }> {
@@ -90,18 +90,22 @@ test.describe('E2E: Screensharing features', () => {
 	test('should replace pinned video when a second participant starts screensharing', async ({ browser }) => {
 		const room = await createRoom({ roomName: `screensharing-e2e-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const participantA = await createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`);
-		const participantB = await createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`);
+		const [participantA, participantB] = await Promise.all([
+			createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`),
+			createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`)
+		]);
 
-		const pageA = await browser.newPage();
-		const pageB = await browser.newPage();
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
 		try {
-			await openMeeting(pageA, participantA.accessUrl);
+			await Promise.all([
+				openMeeting(pageA, participantA.accessUrl),
+				openMeeting(pageB, participantB.accessUrl)
+			]);
+
 			await startScreensharing(pageA);
 			await expectPinnedStreamCount(pageA, 1);
 
-			await openMeeting(pageB, participantB.accessUrl);
 			await startScreensharing(pageB);
 			await expectVideoCount(pageB, 4);
 			await expectPinnedStreamCount(pageB, 1);
@@ -109,26 +113,29 @@ test.describe('E2E: Screensharing features', () => {
 			await expectVideoCount(pageA, 4);
 			await expectPinnedStreamCount(pageA, 1);
 		} finally {
-			await pageB.close();
-			await pageA.close();
+			await Promise.all([pageB.close(), pageA.close()]);
 		}
 	});
 
 	test('should unpin screensharing and restore previous pinned video when disabled', async ({ browser }) => {
 		const room = await createRoom({ roomName: `screensharing-two-e2e-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const participantA = await createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`);
-		const participantB = await createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`);
+		const [participantA, participantB] = await Promise.all([
+			createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`),
+			createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`)
+		]);
 
-		const pageA = await browser.newPage();
-		const pageB = await browser.newPage();
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
 		try {
-			await openMeeting(pageA, participantA.accessUrl);
+			await Promise.all([
+				openMeeting(pageA, participantA.accessUrl),
+				openMeeting(pageB, participantB.accessUrl)
+			]);
+
 			await startScreensharing(pageA);
 			await expectPinnedStreamCount(pageA, 1);
 
-			await openMeeting(pageB, participantB.accessUrl);
 			await startScreensharing(pageB);
 			await expectVideoCount(pageB, 4);
 			await expectPinnedStreamCount(pageB, 1);
@@ -140,8 +147,7 @@ test.describe('E2E: Screensharing features', () => {
 			await expectVideoCount(pageA, 3);
 			await expectPinnedStreamCount(pageA, 1);
 		} finally {
-			await pageB.close();
-			await pageA.close();
+			await Promise.all([pageB.close(), pageA.close()]);
 		}
 	});
 
@@ -170,11 +176,12 @@ test.describe('E2E: Screensharing features', () => {
 	}) => {
 		const room = await createRoom({ roomName: `screensharing-join-only-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const participantA = await createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`);
-		const participantB = await createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`);
+		const [participantA, participantB] = await Promise.all([
+			createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`),
+			createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`)
+		]);
 
-		const pageA = await browser.newPage();
-		const pageB = await browser.newPage();
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
 		try {
 			await openMeeting(pageA, participantA.accessUrl);
@@ -197,11 +204,12 @@ test.describe('E2E: Screensharing features', () => {
 	test('should NOT have multiple screens pinned when both participants share screen', async ({ browser }) => {
 		const room = await createRoom({ roomName: `pin-bug-case-1-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const participantA = await createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`);
-		const participantB = await createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`);
+		const [participantA, participantB] = await Promise.all([
+			createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`),
+			createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`)
+		]);
 
-		const pageA = await browser.newPage();
-		const pageB = await browser.newPage();
+		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
 		try {
 			await openMeeting(pageA, participantA.accessUrl);
@@ -228,13 +236,17 @@ test.describe('E2E: Screensharing features', () => {
 	test('should NOT re-pin manually unpinned screen when new participant joins', async ({ browser }) => {
 		const room = await createRoom({ roomName: `pin-bug-case-2-${Date.now()}` });
 		createdRoomIds.add(room.roomId);
-		const participantA = await createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`);
-		const participantB = await createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`);
-		const participantC = await createAccessUrlForExistingRoom(room, `participant-c-${Date.now()}`);
+		const [participantA, participantB, participantC] = await Promise.all([
+			createAccessUrlForExistingRoom(room, `participant-a-${Date.now()}`),
+			createAccessUrlForExistingRoom(room, `participant-b-${Date.now()}`),
+			createAccessUrlForExistingRoom(room, `participant-c-${Date.now()}`)
+		]);
 
-		const pageA = await browser.newPage();
-		const pageB = await browser.newPage();
-		const pageC = await browser.newPage();
+		const [pageA, pageB, pageC] = await Promise.all([
+			browser.newPage(),
+			browser.newPage(),
+			browser.newPage()
+		]);
 
 		try {
 			await openMeeting(pageA, participantA.accessUrl);
