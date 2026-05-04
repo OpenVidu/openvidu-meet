@@ -107,7 +107,7 @@
 
 				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu filters-menu" id="filters-menu">
 					<div class="filter-content" (click)="$event.stopPropagation()" id="filter-content">
-						<h4>Filter by Status</h4>
+						<h4>Filter by status</h4>
 						<mat-form-field appearance="outline" id="status-filter-field">
 							<mat-label>Status</mat-label>
 							<mat-select [formControl]="statusFilterControl" id="status-filter-select">
@@ -118,6 +118,76 @@
 								}
 							</mat-select>
 						</mat-form-field>
+
+						@if (currentUserRole() === MeetUserRole.ADMIN) {
+							<mat-divider />
+							<h4>Filter by user</h4>
+							<mat-form-field appearance="outline" id="owner-filter-field">
+								<mat-label>Owner user ID</mat-label>
+								<input
+									matInput
+									[formControl]="ownerFilterControl"
+									placeholder="Filter by owner"
+									id="owner-filter-input"
+									(keydown.enter)="triggerSearch()"
+								/>
+								<button
+									mat-icon-button
+									matSuffix
+									(click)="triggerSearch()"
+									[disabled]="!ownerFilterControl.value"
+									matTooltip="Search"
+									id="owner-search-btn"
+								>
+									<mat-icon>search</mat-icon>
+								</button>
+							</mat-form-field>
+							<mat-form-field appearance="outline" id="member-filter-field">
+								<mat-label>Member user ID</mat-label>
+								<input
+									matInput
+									[formControl]="memberFilterControl"
+									placeholder="Filter by member"
+									id="member-filter-input"
+									(keydown.enter)="triggerSearch()"
+								/>
+								<button
+									mat-icon-button
+									matSuffix
+									(click)="triggerSearch()"
+									[disabled]="!memberFilterControl.value"
+									matTooltip="Search"
+									id="member-search-btn"
+								>
+									<mat-icon>search</mat-icon>
+								</button>
+							</mat-form-field>
+							<mat-divider />
+							<h4>Access</h4>
+							<mat-checkbox
+								[formControl]="showRegisteredAccessRoomsControl"
+								id="registered-access-checkbox"
+							>
+								Registered access only
+							</mat-checkbox>
+						} @else {
+							<mat-divider />
+							<h4>Limit scope to</h4>
+							@if (currentUserRole() === MeetUserRole.USER) {
+								<mat-checkbox [formControl]="showOwnedRoomsControl" id="owned-rooms-checkbox">
+									Only my owned rooms
+								</mat-checkbox>
+							}
+							<mat-checkbox [formControl]="showMemberRoomsControl" id="member-rooms-checkbox">
+								Only rooms I'm a member of
+							</mat-checkbox>
+							<mat-checkbox
+								[formControl]="showRegisteredAccessRoomsControl"
+								id="registered-access-checkbox"
+							>
+								Only open-access rooms
+							</mat-checkbox>
+						}
 					</div>
 				</mat-menu>
 			}

@@ -90,7 +90,12 @@ export class RoomsComponent implements OnInit {
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'creationDate',
-		sortOrder: SortOrder.DESC
+		sortOrder: SortOrder.DESC,
+		ownerFilter: '',
+		memberFilter: '',
+		showOwnedRooms: false,
+		showMemberRooms: false,
+		showRegisteredAccessRooms: false
 	});
 
 	// Pagination
@@ -173,6 +178,22 @@ export class RoomsComponent implements OnInit {
 			// Apply status filter if provided
 			if (filters.statusFilter) {
 				roomFilters.status = filters.statusFilter as MeetRoomStatus;
+			}
+
+			// Apply access-scope filters based on user role
+			const role = this.currentUserRole();
+			const userId = this.currentUserId();
+
+			if (role === MeetUserRole.ADMIN) {
+				// For ADMIN: direct filter pass-through — results are narrowed to rooms matching any selected criterion
+				if (filters.ownerFilter) roomFilters.owner = filters.ownerFilter;
+				if (filters.memberFilter) roomFilters.member = filters.memberFilter;
+				if (filters.showRegisteredAccessRooms) roomFilters.registeredAccess = true;
+			} else if (userId) {
+				// For USER/ROOM_MEMBER: scope selectors bound to the current user's identity
+				if (filters.showOwnedRooms) roomFilters.owner = userId;
+				if (filters.showMemberRooms) roomFilters.member = userId;
+				if (filters.showRegisteredAccessRooms) roomFilters.registeredAccess = true;
 			}
 
 			const response = await this.roomService.listRooms(roomFilters);

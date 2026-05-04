@@ -43,6 +43,16 @@ export interface RoomTableFilter {
 	statusFilter: MeetRoomStatus | '';
 	sortField: MeetRoomSortField;
 	sortOrder: SortOrder;
+	/** ADMIN only: filter by owner userId */
+	ownerFilter: string;
+	/** ADMIN only: filter by member userId */
+	memberFilter: string;
+	/** USER only: include only owned rooms in results */
+	showOwnedRooms: boolean;
+	/** USER/ROOM_MEMBER: include only rooms the user is a member of */
+	showMemberRooms: boolean;
+	/** All roles: include rooms accessible to all registered users */
+	showRegisteredAccessRooms: boolean;
 }
 
 /**
@@ -118,7 +128,12 @@ export class RoomsListsComponent implements OnInit {
 		nameFilter: '',
 		statusFilter: '',
 		sortField: 'creationDate',
-		sortOrder: SortOrder.DESC
+		sortOrder: SortOrder.DESC,
+		ownerFilter: '',
+		memberFilter: '',
+		showOwnedRooms: false,
+		showMemberRooms: false,
+		showRegisteredAccessRooms: false
 	});
 
 	// Host binding state for styling when rooms are selected
@@ -134,6 +149,13 @@ export class RoomsListsComponent implements OnInit {
 	// Filter controls
 	nameFilterControl = new FormControl<string>('', { nonNullable: true });
 	statusFilterControl = new FormControl<MeetRoomStatus | ''>('', { nonNullable: true });
+	// Admin-only: free-text user ID filters
+	ownerFilterControl = new FormControl<string>('', { nonNullable: true });
+	memberFilterControl = new FormControl<string>('', { nonNullable: true });
+	// Scope selectors (USER/ROOM_MEMBER checkboxes)
+	showOwnedRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
+	showMemberRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
+	showRegisteredAccessRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
 
 	// Sort state
 	currentSortField = signal<MeetRoomSortField>('creationDate');
@@ -193,10 +215,16 @@ export class RoomsListsComponent implements OnInit {
 
 	private setupFilters() {
 		// Initialize from initialFilters input
-		this.nameFilterControl.setValue(this.initialFilters().nameFilter);
-		this.statusFilterControl.setValue(this.initialFilters().statusFilter);
-		this.currentSortField.set(this.initialFilters().sortField);
-		this.currentSortOrder.set(this.initialFilters().sortOrder);
+		const initial = this.initialFilters();
+		this.nameFilterControl.setValue(initial.nameFilter);
+		this.statusFilterControl.setValue(initial.statusFilter);
+		this.currentSortField.set(initial.sortField);
+		this.currentSortOrder.set(initial.sortOrder);
+		this.ownerFilterControl.setValue(initial.ownerFilter);
+		this.memberFilterControl.setValue(initial.memberFilter);
+		this.showOwnedRoomsControl.setValue(initial.showOwnedRooms);
+		this.showMemberRoomsControl.setValue(initial.showMemberRooms);
+		this.showRegisteredAccessRoomsControl.setValue(initial.showRegisteredAccessRooms);
 
 		// Set up name filter change detection
 		this.nameFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
@@ -208,6 +236,29 @@ export class RoomsListsComponent implements OnInit {
 
 		// Set up status filter change detection
 		this.statusFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+			this.emitFilterChange();
+		});
+
+		// Admin text filters: auto-emit only when cleared
+		this.ownerFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+			if (!value) {
+				this.emitFilterChange();
+			}
+		});
+		this.memberFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+			if (!value) {
+				this.emitFilterChange();
+			}
+		});
+
+		// Scope checkbox controls: emit immediately on change
+		this.showOwnedRoomsControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+			this.emitFilterChange();
+		});
+		this.showMemberRoomsControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+			this.emitFilterChange();
+		});
+		this.showRegisteredAccessRoomsControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 			this.emitFilterChange();
 		});
 	}
@@ -304,24 +355,30 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	loadMoreRooms() {
-		const nameFilter = this.nameFilterControl.value;
-		const statusFilter = this.statusFilterControl.value;
 		this.loadMore.emit({
-			nameFilter,
-			statusFilter,
+			nameFilter: this.nameFilterControl.value,
+			statusFilter: this.statusFilterControl.value,
 			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
+			sortOrder: this.currentSortOrder(),
+			ownerFilter: this.ownerFilterControl.value,
+			memberFilter: this.memberFilterControl.value,
+			showOwnedRooms: this.showOwnedRoomsControl.value,
+			showMemberRooms: this.showMemberRoomsControl.value,
+			showRegisteredAccessRooms: this.showRegisteredAccessRoomsControl.value
 		});
 	}
 
 	refreshRooms() {
-		const nameFilter = this.nameFilterControl.value;
-		const statusFilter = this.statusFilterControl.value;
 		this.refresh.emit({
-			nameFilter,
-			statusFilter,
+			nameFilter: this.nameFilterControl.value,
+			statusFilter: this.statusFilterControl.value,
 			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
+			sortOrder: this.currentSortOrder(),
+			ownerFilter: this.ownerFilterControl.value,
+			memberFilter: this.memberFilterControl.value,
+			showOwnedRooms: this.showOwnedRoomsControl.value,
+			showMemberRooms: this.showMemberRoomsControl.value,
+			showRegisteredAccessRooms: this.showRegisteredAccessRoomsControl.value
 		});
 	}
 
@@ -342,16 +399,36 @@ export class RoomsListsComponent implements OnInit {
 			nameFilter: this.nameFilterControl.value,
 			statusFilter: this.statusFilterControl.value,
 			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
+			sortOrder: this.currentSortOrder(),
+			ownerFilter: this.ownerFilterControl.value,
+			memberFilter: this.memberFilterControl.value,
+			showOwnedRooms: this.showOwnedRoomsControl.value,
+			showMemberRooms: this.showMemberRoomsControl.value,
+			showRegisteredAccessRooms: this.showRegisteredAccessRoomsControl.value
 		});
 	}
 
 	hasActiveFilters(): boolean {
-		return !!(this.nameFilterControl.value || this.statusFilterControl.value);
+		return !!(
+			this.nameFilterControl.value ||
+			this.statusFilterControl.value ||
+			this.ownerFilterControl.value ||
+			this.memberFilterControl.value ||
+			this.showOwnedRoomsControl.value ||
+			this.showMemberRoomsControl.value ||
+			this.showRegisteredAccessRoomsControl.value
+		);
 	}
 
 	clearFilters() {
-		this.nameFilterControl.setValue('');
-		this.statusFilterControl.setValue('');
+		const silent = { emitEvent: false };
+		this.nameFilterControl.setValue('', silent);
+		this.statusFilterControl.setValue('', silent);
+		this.ownerFilterControl.setValue('', silent);
+		this.memberFilterControl.setValue('', silent);
+		this.showOwnedRoomsControl.setValue(false, silent);
+		this.showMemberRoomsControl.setValue(false, silent);
+		this.showRegisteredAccessRoomsControl.setValue(false, silent);
+		this.emitFilterChange();
 	}
 }
