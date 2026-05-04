@@ -4,6 +4,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } 
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTabsModule } from '@angular/material/tabs';
@@ -37,6 +38,7 @@ import {
 	RoomMembersListsComponent
 } from '../../../room-members/components/room-members-list/room-members-list.component';
 import { RoomMemberService } from '../../../room-members/services/room-member.service';
+import { RoomShareDialogComponent } from '../../components/room-share-dialog/room-share-dialog.component';
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
 import { RoomUiUtils } from '../../utils/ui';
@@ -72,6 +74,7 @@ export class RoomDetailComponent implements OnInit {
 	private readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
+	private readonly dialog = inject(MatDialog);
 	private readonly loggerService = inject(LoggerService);
 	protected readonly log: ILogger = this.loggerService.get('OpenVidu Meet - RoomDetailComponent');
 	protected readonly MeetUserRole = MeetUserRole;
@@ -215,10 +218,13 @@ export class RoomDetailComponent implements OnInit {
 		window.open(room.access.registered.url, '_blank');
 	}
 
-	copyAccessLink() {
+	shareLink() {
 		const room = this.room()!;
-		this.clipboard.copy(room.access.registered.url);
-		this.notificationService.showSnackbar('Access link copied to clipboard');
+		this.dialog.open(RoomShareDialogComponent, {
+			width: '450px',
+			data: { access: room.access },
+			panelClass: 'ov-meet-dialog'
+		});
 	}
 
 	async editRoom() {

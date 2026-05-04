@@ -1,4 +1,3 @@
-import { Clipboard } from '@angular/cdk/clipboard';
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -34,6 +33,7 @@ import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
+import { RoomShareDialogComponent } from '../../components/room-share-dialog/room-share-dialog.component';
 import {
 	RoomsListsComponent,
 	RoomTableAction,
@@ -72,7 +72,6 @@ export class RoomsComponent implements OnInit {
 	private dialogPresetsService = inject(DialogPresetsService);
 	protected navigationService = inject(NavigationService);
 	protected roomDeletionService = inject(RoomDeletionService);
-	private clipboard = inject(Clipboard);
 	private dialog = inject(MatDialog);
 	protected loggerService = inject(LoggerService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomsComponent');
@@ -259,8 +258,11 @@ export class RoomsComponent implements OnInit {
 	}
 
 	private shareLink({ access }: MeetRoom) {
-		this.clipboard.copy(access.anonymous.speaker.url);
-		this.notificationService.showSnackbar('Room link copied to clipboard');
+		this.dialog.open(RoomShareDialogComponent, {
+			width: '450px',
+			data: { access },
+			panelClass: 'ov-meet-dialog'
+		});
 	}
 
 	async onRoomClick(roomId: string) {
