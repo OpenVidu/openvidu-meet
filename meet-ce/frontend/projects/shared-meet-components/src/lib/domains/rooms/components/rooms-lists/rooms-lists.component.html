@@ -93,13 +93,6 @@
 				<mat-icon>refresh</mat-icon>
 			</button>
 
-			@if (currentUserRole() !== MeetUserRole.ROOM_MEMBER) {
-				<button mat-button (click)="createRoom()" class="create-room-btn primary-button" id="create-room-btn">
-					<mat-icon>add</mat-icon>
-					Create Room
-				</button>
-			}
-
 			@if (showFilters()) {
 				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter rooms" id="filters-btn">
 					<mat-icon>tune</mat-icon>
@@ -206,6 +199,13 @@
 						}
 					</div>
 				</mat-menu>
+			}
+
+			@if (currentUserRole() !== MeetUserRole.ROOM_MEMBER) {
+				<button mat-button (click)="createRoom()" class="create-room-btn primary-button" id="create-room-btn">
+					<mat-icon>add</mat-icon>
+					Create Room
+				</button>
 			}
 		</div>
 	</mat-toolbar>
