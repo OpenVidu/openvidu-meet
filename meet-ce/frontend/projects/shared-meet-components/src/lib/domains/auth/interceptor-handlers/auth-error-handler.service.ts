@@ -1,6 +1,6 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable, catchError, from, switchMap } from 'rxjs';
+import { Observable, catchError, from, switchMap, throwError } from 'rxjs';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import {
 	HttpErrorContext,
@@ -38,6 +38,15 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	canHandle(context: HttpErrorContext): boolean {
 		const { error, pageUrl } = context;
 
+		// Handle 403 "Password change required"
+		if (
+			error.status === 403 &&
+			!pageUrl.startsWith('/login') &&
+			error.error?.message?.includes('Password change required')
+		) {
+			return true;
+		}
+
 		// Only handle 401 errors
 		if (error.status !== 401) {
 			return false;
@@ -56,7 +65,14 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	 * Handles the error and returns a recovery Observable
 	 */
 	handle(context: HttpErrorContext): Observable<HttpEvent<unknown>> {
-		const { error } = context;
+		const { error, pageUrl } = context;
+
+		// Special case: password change required
+		if (error.status === 403) {
+			// Logout so user must re-authenticate and change password
+			console.warn('Password change required. Logging out...');
+			return from(this.authService.logout(pageUrl)).pipe(switchMap(() => throwError(() => error)));
+		}
 
 		// Special case: room member token generation failed, need to refresh access token first
 		if (error.url?.includes('/members/token')) {
