@@ -4,7 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRecordingFilters, MeetRecordingInfo, SortOrder } from '@openvidu-meet/typings';
+import { MeetRecordingFilters, MeetRecordingInfo, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -47,6 +47,8 @@ export class RoomRecordingsComponent implements OnInit {
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'startDate',
 		sortOrder: SortOrder.DESC

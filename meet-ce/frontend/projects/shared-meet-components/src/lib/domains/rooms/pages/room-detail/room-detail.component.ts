@@ -18,7 +18,8 @@ import {
 	MeetRoomMemberFilters,
 	MeetRoomStatus,
 	MeetUserRole,
-	SortOrder
+	SortOrder,
+	TextMatchMode
 } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
@@ -114,6 +115,8 @@ export class RoomDetailComponent implements OnInit {
 	hasMoreRecordings = signal(false);
 	initialRecordingFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'startDate',
 		sortOrder: SortOrder.DESC

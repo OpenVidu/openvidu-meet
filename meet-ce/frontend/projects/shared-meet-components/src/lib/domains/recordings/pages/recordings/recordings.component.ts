@@ -2,7 +2,13 @@ import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } 
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRecordingFilters, MeetRecordingInfo, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
+import {
+	MeetRecordingFilters,
+	MeetRecordingInfo,
+	MeetUserRole,
+	SortOrder,
+	TextMatchMode
+} from '@openvidu-meet/typings';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -48,6 +54,8 @@ export class RecordingsComponent implements OnInit {
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'startDate',
 		sortOrder: SortOrder.DESC
@@ -63,17 +71,6 @@ export class RecordingsComponent implements OnInit {
 	async ngOnInit() {
 		const role = await this.authService.getUserRole();
 		this.currentUserRole.set(role);
-
-		// Get room ID from route query params and set initial filters before component initialization
-		const roomId = this.route.snapshot.queryParamMap.get('roomId');
-		if (roomId) {
-			this.initialFilters.set({
-				nameFilter: roomId,
-				statusFilter: '',
-				sortField: 'startDate',
-				sortOrder: SortOrder.DESC
-			});
-		}
 
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader.set(true);
@@ -142,6 +139,8 @@ export class RecordingsComponent implements OnInit {
 			if (filters.nameFilter) {
 				recordingFilters.roomId = filters.nameFilter;
 				recordingFilters.roomName = filters.nameFilter;
+				recordingFilters.roomNameMatchMode = filters.nameMatchMode;
+				recordingFilters.roomNameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 			}
 
 			// Apply status filter if provided

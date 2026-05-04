@@ -30,7 +30,7 @@
 						<mat-label>Search recordings</mat-label>
 						<input
 							matInput
-							[formControl]="nameFilterControl"
+							[formControl]="controls.nameFilter"
 							placeholder="Search by room name or room ID"
 							(keydown.enter)="triggerSearch()"
 						/>
@@ -39,7 +39,7 @@
 							matSuffix
 							class="search-btn"
 							(click)="triggerSearch()"
-							[disabled]="loading() || !nameFilterControl.value"
+							[disabled]="loading() || !controls.nameFilter.value"
 							matTooltip="Search"
 						>
 							<mat-icon>search</mat-icon>
@@ -124,10 +124,22 @@
 
 				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu">
 					<div class="filter-content" (click)="$event.stopPropagation()">
+						<h4>Room name matching</h4>
+						<mat-form-field appearance="outline">
+							<mat-label>Match mode</mat-label>
+							<mat-select [formControl]="controls.nameMatchMode">
+								@for (option of nameMatchModeOptions; track option.value) {
+									<mat-option [value]="option.value">{{ option.label }}</mat-option>
+								}
+							</mat-select>
+						</mat-form-field>
+						<mat-checkbox [formControl]="controls.nameCaseInsensitive">Case insensitive</mat-checkbox>
+
+						<mat-divider />
 						<h4>Filter by Status</h4>
 						<mat-form-field appearance="outline">
 							<mat-label>Status</mat-label>
-							<mat-select [formControl]="statusFilterControl">
+							<mat-select [formControl]="controls.statusFilter">
 								@for (option of statusOptions; track option.value) {
 									<mat-option [value]="option.value">{{ option.label }}</mat-option>
 								}

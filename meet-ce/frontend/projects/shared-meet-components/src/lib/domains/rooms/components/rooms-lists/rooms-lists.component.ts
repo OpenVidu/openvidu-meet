@@ -262,14 +262,14 @@ export class RoomsListsComponent implements OnInit {
 			showRegisteredAccessRooms
 		} = this.filtersForm.controls;
 
-		// Emit only when cleared
+		// Emit only when text field is cleared
 		merge(nameFilter.valueChanges, ownerFilter.valueChanges, memberFilter.valueChanges)
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe((value) => {
 				if (!value) this.emitFilterChange();
 			});
 
-		// Emit immediately on any change
+		// Emit immediately on any option/select change
 		merge(
 			nameMatchMode.valueChanges,
 			nameCaseInsensitive.valueChanges,

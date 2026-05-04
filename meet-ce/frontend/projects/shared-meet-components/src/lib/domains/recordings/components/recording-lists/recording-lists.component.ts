@@ -13,7 +13,7 @@ import {
 	untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -28,7 +28,14 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRecordingInfo, MeetRecordingSortField, MeetRecordingStatus, SortOrder } from '@openvidu-meet/typings';
+import {
+	MeetRecordingInfo,
+	MeetRecordingSortField,
+	MeetRecordingStatus,
+	SortOrder,
+	TextMatchMode
+} from '@openvidu-meet/typings';
+import { merge } from 'rxjs';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { ViewportService } from '../../../meeting/openvidu-components';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
@@ -100,6 +107,8 @@ export class RecordingListsComponent implements OnInit {
 	roomName = input<string | undefined>(undefined);
 	initialFilters = input<RecordingTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'startDate',
 		sortOrder: SortOrder.DESC
@@ -116,8 +125,23 @@ export class RecordingListsComponent implements OnInit {
 	refresh = output<RecordingTableFilter>();
 
 	// Filter controls
-	nameFilterControl = new FormControl<string>('', { nonNullable: true });
-	statusFilterControl = new FormControl<MeetRecordingStatus | ''>('', { nonNullable: true });
+	filtersForm = new FormGroup({
+		nameFilter: new FormControl<string>('', { nonNullable: true }),
+		nameMatchMode: new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true }),
+		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
+		statusFilter: new FormControl<MeetRecordingStatus | ''>('', { nonNullable: true })
+	});
+
+	get controls() {
+		return this.filtersForm.controls;
+	}
+
+	nameMatchModeOptions = [
+		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
+		{ value: TextMatchMode.EXACT, label: 'Exact match' },
+		{ value: TextMatchMode.REGEX, label: 'Regex' }
+	];
 
 	// Sort state
 	currentSortField = signal<MeetRecordingSortField>('startDate');
@@ -205,25 +229,22 @@ export class RecordingListsComponent implements OnInit {
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		// Set up initial filter values from input signal
 		const filters = this.initialFilters();
-		this.nameFilterControl.setValue(filters.nameFilter);
-		this.statusFilterControl.setValue(filters.statusFilter);
+		this.filtersForm.patchValue(filters, { emitEvent: false });
 		this.currentSortField.set(filters.sortField);
 		this.currentSortOrder.set(filters.sortOrder);
 
-		// Set up name filter change detection
-		this.nameFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-			// Emit filter change if value is empty
-			if (!value) {
-				this.emitFilterChange();
-			}
+		const { nameFilter, nameMatchMode, nameCaseInsensitive, statusFilter } = this.controls;
+
+		// Emit only when text field is cleared
+		nameFilter.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+			if (!value) this.emitFilterChange();
 		});
 
-		// Set up status filter change detection
-		this.statusFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			this.emitFilterChange();
-		});
+		// Emit immediately on any option/select change
+		merge(nameMatchMode.valueChanges, nameCaseInsensitive.valueChanges, statusFilter.valueChanges)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.emitFilterChange());
 	}
 
 	// ===== SELECTION METHODS =====
@@ -321,25 +342,11 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	loadMoreRecordings() {
-		const nameFilter = this.nameFilterControl.value;
-		const statusFilter = this.statusFilterControl.value;
-		this.loadMore.emit({
-			nameFilter,
-			statusFilter,
-			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
-		});
+		this.loadMore.emit(this.buildFilterSnapshot());
 	}
 
 	refreshRecordings() {
-		const nameFilter = this.nameFilterControl.value;
-		const statusFilter = this.statusFilterControl.value;
-		this.refresh.emit({
-			nameFilter,
-			statusFilter,
-			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
-		});
+		this.refresh.emit(this.buildFilterSnapshot());
 	}
 
 	onSortChange(sortState: Sort) {
@@ -354,21 +361,33 @@ export class RecordingListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
-	private emitFilterChange() {
-		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value,
-			statusFilter: this.statusFilterControl.value,
+	private buildFilterSnapshot(): RecordingTableFilter {
+		return {
+			...this.filtersForm.getRawValue(),
 			sortField: this.currentSortField(),
 			sortOrder: this.currentSortOrder()
-		});
+		};
+	}
+
+	private emitFilterChange() {
+		this.filterChange.emit(this.buildFilterSnapshot());
 	}
 
 	hasActiveFilters(): boolean {
-		return !!(this.nameFilterControl.value || this.statusFilterControl.value);
+		const { nameFilter, nameMatchMode, nameCaseInsensitive, statusFilter } = this.filtersForm.getRawValue();
+		return !!(nameFilter || nameMatchMode !== TextMatchMode.PREFIX || nameCaseInsensitive || statusFilter);
 	}
 
 	clearFilters() {
-		this.nameFilterControl.setValue('');
-		this.statusFilterControl.setValue('');
+		this.filtersForm.reset(
+			{
+				nameFilter: '',
+				nameMatchMode: TextMatchMode.PREFIX,
+				nameCaseInsensitive: false,
+				statusFilter: ''
+			},
+			{ emitEvent: false }
+		);
+		this.emitFilterChange();
 	}
 }
