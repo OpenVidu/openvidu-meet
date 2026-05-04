@@ -13,7 +13,7 @@ import {
 	untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -37,6 +37,7 @@ import {
 	SortOrder,
 	TextMatchMode
 } from '@openvidu-meet/typings';
+import { merge } from 'rxjs';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 
@@ -160,15 +161,21 @@ export class RoomsListsComponent implements OnInit {
 	roomClicked = output<string>();
 
 	// Filter controls
-	nameFilterControl = new FormControl<string>('', { nonNullable: true });
-	nameMatchModeControl = new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true });
-	nameCaseInsensitiveControl = new FormControl<boolean>(false, { nonNullable: true });
-	statusFilterControl = new FormControl<MeetRoomStatus | ''>('', { nonNullable: true });
-	ownerFilterControl = new FormControl<string>('', { nonNullable: true });
-	memberFilterControl = new FormControl<string>('', { nonNullable: true });
-	showOwnedRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
-	showMemberRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
-	showRegisteredAccessRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
+	filtersForm = new FormGroup({
+		nameFilter: new FormControl<string>('', { nonNullable: true }),
+		nameMatchMode: new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true }),
+		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
+		statusFilter: new FormControl<MeetRoomStatus | ''>('', { nonNullable: true }),
+		ownerFilter: new FormControl<string>('', { nonNullable: true }),
+		memberFilter: new FormControl<string>('', { nonNullable: true }),
+		showOwnedRooms: new FormControl<boolean>(false, { nonNullable: true }),
+		showMemberRooms: new FormControl<boolean>(false, { nonNullable: true }),
+		showRegisteredAccessRooms: new FormControl<boolean>(false, { nonNullable: true })
+	});
+
+	get controls() {
+		return this.filtersForm.controls;
+	}
 
 	// Sort state
 	currentSortField = signal<MeetRoomSortField>('creationDate');
@@ -238,63 +245,41 @@ export class RoomsListsComponent implements OnInit {
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		// Initialize from initialFilters input
 		const initial = this.initialFilters();
-		this.nameFilterControl.setValue(initial.nameFilter);
-		this.statusFilterControl.setValue(initial.statusFilter);
+		this.filtersForm.patchValue(initial, { emitEvent: false });
 		this.currentSortField.set(initial.sortField);
 		this.currentSortOrder.set(initial.sortOrder);
-		this.nameMatchModeControl.setValue(initial.nameMatchMode);
-		this.nameCaseInsensitiveControl.setValue(initial.nameCaseInsensitive);
-		this.ownerFilterControl.setValue(initial.ownerFilter);
-		this.memberFilterControl.setValue(initial.memberFilter);
-		this.showOwnedRoomsControl.setValue(initial.showOwnedRooms);
-		this.showMemberRoomsControl.setValue(initial.showMemberRooms);
-		this.showRegisteredAccessRoomsControl.setValue(initial.showRegisteredAccessRooms);
 
-		// Set up name filter change detection
-		this.nameFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-			// Emit filter change if value is empty
-			if (!value) {
-				this.emitFilterChange();
-			}
-		});
+		const {
+			nameFilter,
+			nameMatchMode,
+			nameCaseInsensitive,
+			statusFilter,
+			ownerFilter,
+			memberFilter,
+			showOwnedRooms,
+			showMemberRooms,
+			showRegisteredAccessRooms
+		} = this.filtersForm.controls;
 
-		// Name match mode and case insensitivity: emit immediately on change
-		this.nameMatchModeControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			this.emitFilterChange();
-		});
-		this.nameCaseInsensitiveControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			this.emitFilterChange();
-		});
+		// Emit only when cleared
+		merge(nameFilter.valueChanges, ownerFilter.valueChanges, memberFilter.valueChanges)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((value) => {
+				if (!value) this.emitFilterChange();
+			});
 
-		// Set up status filter change detection
-		this.statusFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			this.emitFilterChange();
-		});
-
-		// Admin text filters: auto-emit only when cleared
-		this.ownerFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-			if (!value) {
-				this.emitFilterChange();
-			}
-		});
-		this.memberFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-			if (!value) {
-				this.emitFilterChange();
-			}
-		});
-
-		// Scope checkbox controls: emit immediately on change
-		this.showOwnedRoomsControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			this.emitFilterChange();
-		});
-		this.showMemberRoomsControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			this.emitFilterChange();
-		});
-		this.showRegisteredAccessRoomsControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			this.emitFilterChange();
-		});
+		// Emit immediately on any change
+		merge(
+			nameMatchMode.valueChanges,
+			nameCaseInsensitive.valueChanges,
+			statusFilter.valueChanges,
+			showOwnedRooms.valueChanges,
+			showMemberRooms.valueChanges,
+			showRegisteredAccessRooms.valueChanges
+		)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.emitFilterChange());
 	}
 
 	// ===== SELECTION METHODS =====
@@ -389,35 +374,11 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	loadMoreRooms() {
-		this.loadMore.emit({
-			nameFilter: this.nameFilterControl.value,
-			nameMatchMode: this.nameMatchModeControl.value,
-			nameCaseInsensitive: this.nameCaseInsensitiveControl.value,
-			statusFilter: this.statusFilterControl.value,
-			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder(),
-			ownerFilter: this.ownerFilterControl.value,
-			memberFilter: this.memberFilterControl.value,
-			showOwnedRooms: this.showOwnedRoomsControl.value,
-			showMemberRooms: this.showMemberRoomsControl.value,
-			showRegisteredAccessRooms: this.showRegisteredAccessRoomsControl.value
-		});
+		this.loadMore.emit(this.buildFilterSnapshot());
 	}
 
 	refreshRooms() {
-		this.refresh.emit({
-			nameFilter: this.nameFilterControl.value,
-			nameMatchMode: this.nameMatchModeControl.value,
-			nameCaseInsensitive: this.nameCaseInsensitiveControl.value,
-			statusFilter: this.statusFilterControl.value,
-			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder(),
-			ownerFilter: this.ownerFilterControl.value,
-			memberFilter: this.memberFilterControl.value,
-			showOwnedRooms: this.showOwnedRoomsControl.value,
-			showMemberRooms: this.showMemberRoomsControl.value,
-			showRegisteredAccessRooms: this.showRegisteredAccessRoomsControl.value
-		});
+		this.refresh.emit(this.buildFilterSnapshot());
 	}
 
 	onSortChange(sortState: Sort) {
@@ -432,47 +393,58 @@ export class RoomsListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
-	private emitFilterChange() {
-		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value,
-			nameMatchMode: this.nameMatchModeControl.value,
-			nameCaseInsensitive: this.nameCaseInsensitiveControl.value,
-			statusFilter: this.statusFilterControl.value,
+	private buildFilterSnapshot(): RoomTableFilter {
+		return {
+			...this.filtersForm.getRawValue(),
 			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder(),
-			ownerFilter: this.ownerFilterControl.value,
-			memberFilter: this.memberFilterControl.value,
-			showOwnedRooms: this.showOwnedRoomsControl.value,
-			showMemberRooms: this.showMemberRoomsControl.value,
-			showRegisteredAccessRooms: this.showRegisteredAccessRoomsControl.value
-		});
+			sortOrder: this.currentSortOrder()
+		};
+	}
+
+	private emitFilterChange() {
+		this.filterChange.emit(this.buildFilterSnapshot());
 	}
 
 	hasActiveFilters(): boolean {
+		const {
+			nameFilter,
+			nameMatchMode,
+			nameCaseInsensitive,
+			statusFilter,
+			ownerFilter,
+			memberFilter,
+			showOwnedRooms,
+			showMemberRooms,
+			showRegisteredAccessRooms
+		} = this.filtersForm.getRawValue();
 		return !!(
-			this.nameFilterControl.value ||
-			this.nameMatchModeControl.value !== TextMatchMode.PREFIX ||
-			this.nameCaseInsensitiveControl.value ||
-			this.statusFilterControl.value ||
-			this.ownerFilterControl.value ||
-			this.memberFilterControl.value ||
-			this.showOwnedRoomsControl.value ||
-			this.showMemberRoomsControl.value ||
-			this.showRegisteredAccessRoomsControl.value
+			nameFilter ||
+			nameMatchMode !== TextMatchMode.PREFIX ||
+			nameCaseInsensitive ||
+			statusFilter ||
+			ownerFilter ||
+			memberFilter ||
+			showOwnedRooms ||
+			showMemberRooms ||
+			showRegisteredAccessRooms
 		);
 	}
 
 	clearFilters() {
-		const silent = { emitEvent: false };
-		this.nameFilterControl.setValue('', silent);
-		this.nameMatchModeControl.setValue(TextMatchMode.PREFIX, silent);
-		this.nameCaseInsensitiveControl.setValue(false, silent);
-		this.statusFilterControl.setValue('', silent);
-		this.ownerFilterControl.setValue('', silent);
-		this.memberFilterControl.setValue('', silent);
-		this.showOwnedRoomsControl.setValue(false, silent);
-		this.showMemberRoomsControl.setValue(false, silent);
-		this.showRegisteredAccessRoomsControl.setValue(false, silent);
+		this.filtersForm.reset(
+			{
+				nameFilter: '',
+				nameMatchMode: TextMatchMode.PREFIX,
+				nameCaseInsensitive: false,
+				statusFilter: '',
+				ownerFilter: '',
+				memberFilter: '',
+				showOwnedRooms: false,
+				showMemberRooms: false,
+				showRegisteredAccessRooms: false
+			},
+			{ emitEvent: false }
+		);
 		this.emitFilterChange();
 	}
 }

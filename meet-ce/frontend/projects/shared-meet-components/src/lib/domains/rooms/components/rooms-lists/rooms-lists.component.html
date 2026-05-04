@@ -29,7 +29,7 @@
 					<mat-label>Search rooms</mat-label>
 					<input
 						matInput
-						[formControl]="nameFilterControl"
+						[formControl]="controls.nameFilter"
 						placeholder="Search by room name"
 						id="search-input"
 						(keydown.enter)="triggerSearch()"
@@ -39,7 +39,7 @@
 						matSuffix
 						class="search-btn"
 						(click)="triggerSearch()"
-						[disabled]="loading() || !nameFilterControl.value"
+						[disabled]="loading() || !controls.nameFilter.value"
 						matTooltip="Search"
 						id="search-btn"
 					>
@@ -110,7 +110,7 @@
 						<h4>Room name matching</h4>
 						<mat-form-field appearance="outline" id="name-match-mode-field">
 							<mat-label>Match mode</mat-label>
-							<mat-select [formControl]="nameMatchModeControl" id="name-match-mode-select">
+							<mat-select [formControl]="controls.nameMatchMode" id="name-match-mode-select">
 								@for (option of nameMatchModeOptions; track option.value) {
 									<mat-option [value]="option.value" id="name-match-mode-option-{{ option.value }}">{{
 										option.label
@@ -118,7 +118,7 @@
 								}
 							</mat-select>
 						</mat-form-field>
-						<mat-checkbox [formControl]="nameCaseInsensitiveControl" id="case-insensitive-checkbox">
+						<mat-checkbox [formControl]="controls.nameCaseInsensitive" id="case-insensitive-checkbox">
 							Case insensitive
 						</mat-checkbox>
 
@@ -126,7 +126,7 @@
 						<h4>Filter by status</h4>
 						<mat-form-field appearance="outline" id="status-filter-field">
 							<mat-label>Status</mat-label>
-							<mat-select [formControl]="statusFilterControl" id="status-filter-select">
+							<mat-select [formControl]="controls.statusFilter" id="status-filter-select">
 								@for (option of statusOptions; track option.value) {
 									<mat-option [value]="option.value" id="status-option-{{ option.value }}">{{
 										option.label
@@ -142,7 +142,7 @@
 								<mat-label>Owner user ID</mat-label>
 								<input
 									matInput
-									[formControl]="ownerFilterControl"
+									[formControl]="controls.ownerFilter"
 									placeholder="Filter by owner"
 									id="owner-filter-input"
 									(keydown.enter)="triggerSearch()"
@@ -151,7 +151,7 @@
 									mat-icon-button
 									matSuffix
 									(click)="triggerSearch()"
-									[disabled]="!ownerFilterControl.value"
+									[disabled]="!controls.ownerFilter.value"
 									matTooltip="Search"
 									id="owner-search-btn"
 								>
@@ -162,7 +162,7 @@
 								<mat-label>Member user ID</mat-label>
 								<input
 									matInput
-									[formControl]="memberFilterControl"
+									[formControl]="controls.memberFilter"
 									placeholder="Filter by member"
 									id="member-filter-input"
 									(keydown.enter)="triggerSearch()"
@@ -171,7 +171,7 @@
 									mat-icon-button
 									matSuffix
 									(click)="triggerSearch()"
-									[disabled]="!memberFilterControl.value"
+									[disabled]="!controls.memberFilter.value"
 									matTooltip="Search"
 									id="member-search-btn"
 								>
@@ -181,7 +181,7 @@
 							<mat-divider />
 							<h4>Access</h4>
 							<mat-checkbox
-								[formControl]="showRegisteredAccessRoomsControl"
+								[formControl]="controls.showRegisteredAccessRooms"
 								id="registered-access-checkbox"
 							>
 								Registered access only
@@ -190,15 +190,15 @@
 							<mat-divider />
 							<h4>Limit scope to</h4>
 							@if (currentUserRole() === MeetUserRole.USER) {
-								<mat-checkbox [formControl]="showOwnedRoomsControl" id="owned-rooms-checkbox">
+								<mat-checkbox [formControl]="controls.showOwnedRooms" id="owned-rooms-checkbox">
 									Only my owned rooms
 								</mat-checkbox>
 							}
-							<mat-checkbox [formControl]="showMemberRoomsControl" id="member-rooms-checkbox">
+							<mat-checkbox [formControl]="controls.showMemberRooms" id="member-rooms-checkbox">
 								Only rooms I'm a member of
 							</mat-checkbox>
 							<mat-checkbox
-								[formControl]="showRegisteredAccessRoomsControl"
+								[formControl]="controls.showRegisteredAccessRooms"
 								id="registered-access-checkbox"
 							>
 								Only open-access rooms
