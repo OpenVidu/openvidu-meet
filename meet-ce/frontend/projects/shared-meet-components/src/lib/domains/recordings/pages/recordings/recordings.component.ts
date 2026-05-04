@@ -135,9 +135,8 @@ export class RecordingsComponent implements OnInit {
 				sortOrder: filters.sortOrder
 			};
 
-			// Apply room filter if provided
+			// Apply room name filter if provided
 			if (filters.nameFilter) {
-				recordingFilters.roomId = filters.nameFilter;
 				recordingFilters.roomName = filters.nameFilter;
 				recordingFilters.roomNameMatchMode = filters.nameMatchMode;
 				recordingFilters.roomNameCaseInsensitive = filters.nameCaseInsensitive || undefined;
