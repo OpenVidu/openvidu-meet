@@ -15,9 +15,18 @@
 			<span class="input-label">Role</span>
 			<mat-form-field subscriptSizing="dynamic" appearance="outline" class="role-field">
 				<mat-label>Role</mat-label>
+				<mat-icon matPrefix class="field-prefix-icon">{{ UsersUiUtils.getRoleIcon(selectedRole()) }}</mat-icon>
 				<mat-select [ngModel]="selectedRole()" (ngModelChange)="selectedRole.set($event)">
+					<mat-select-trigger>
+						{{ UsersUiUtils.getRoleLabel(selectedRole()) }}
+					</mat-select-trigger>
 					@for (role of availableRoles; track role) {
-						<mat-option [value]="role">{{ UsersUiUtils.getRoleLabel(role, false) }}</mat-option>
+						<mat-option [value]="role">
+							<div class="role-option">
+								<mat-icon class="role-option-icon">{{ UsersUiUtils.getRoleIcon(role) }}</mat-icon>
+								<span>{{ UsersUiUtils.getRoleLabel(role) }}</span>
+							</div>
+						</mat-option>
 					}
 				</mat-select>
 			</mat-form-field>

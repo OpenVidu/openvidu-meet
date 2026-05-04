@@ -21,26 +21,38 @@ export class UsersUiUtils {
 	static readonly AVAILABLE_ROLES: MeetUserRole[] = [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER];
 
 	/**
+	 * Gets the Material icon name for a user role.
+	 */
+	static getRoleIcon(role: MeetUserRole): string {
+		switch (role) {
+			case MeetUserRole.ADMIN:
+				return 'manage_accounts';
+			case MeetUserRole.USER:
+				return 'person';
+			case MeetUserRole.ROOM_MEMBER:
+				return 'meeting_room';
+			default:
+				return '';
+		}
+	}
+
+	/**
 	 * Gets a human-readable label for a user role.
 	 *
 	 * @param role - The user role to format
-	 * @param uppercase - Whether to return the label in uppercase (default: true)
 	 * @returns The display label for the given role
 	 */
-	static getRoleLabel(role: MeetUserRole, uppercase = true): string {
-		const label = (() => {
-			switch (role) {
-				case MeetUserRole.ADMIN:
-					return 'Admin';
-				case MeetUserRole.USER:
-					return 'User';
-				case MeetUserRole.ROOM_MEMBER:
-					return 'Room Member';
-				default:
-					return role;
-			}
-		})();
-		return uppercase ? label.toUpperCase() : label;
+	static getRoleLabel(role: MeetUserRole): string {
+		switch (role) {
+			case MeetUserRole.ADMIN:
+				return 'Admin';
+			case MeetUserRole.USER:
+				return 'User';
+			case MeetUserRole.ROOM_MEMBER:
+				return 'Room Member';
+			default:
+				return role;
+		}
 	}
 
 	/**

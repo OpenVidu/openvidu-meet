@@ -135,24 +135,31 @@
 .role-chip {
 	display: inline-flex;
 	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
 	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
-	border-radius: var(--ov-meet-border-radius-pill, 9999px);
-	font-size: var(--ov-meet-font-size-sm);
+	border-radius: var(--ov-meet-radius-sm);
+	font-size: var(--ov-meet-font-size-xs);
 	font-weight: var(--ov-meet-font-weight-medium);
-	line-height: 1;
+	text-transform: uppercase;
+	background-color: var(--ov-meet-surface-variant);
+	color: var(--ov-meet-text-secondary);
+
+	.role-chip-icon {
+		@include design-tokens.ov-icon(sm);
+	}
 
 	&.role-admin {
-		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 15%, transparent);
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary), transparent 85%);
 		color: var(--ov-meet-color-primary);
 	}
 
 	&.role-user {
-		background-color: color-mix(in srgb, var(--ov-meet-color-success) 15%, transparent);
+		background-color: color-mix(in srgb, var(--ov-meet-color-success), transparent 85%);
 		color: var(--ov-meet-color-success);
 	}
 
 	&.role-room_member {
-		background-color: color-mix(in srgb, var(--ov-meet-color-warning) 15%, transparent);
+		background-color: color-mix(in srgb, var(--ov-meet-color-warning), transparent 85%);
 		color: var(--ov-meet-color-warning);
 	}
 }

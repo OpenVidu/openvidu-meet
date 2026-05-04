@@ -46,6 +46,9 @@
 						<div class="profile-identity">
 							<h2 class="profile-name">{{ targetUser()!.name }}</h2>
 							<span class="role-chip" [ngClass]="'role-' + targetUser()!.role">
+								<mat-icon class="role-chip-icon">{{
+									UsersUiUtils.getRoleIcon(targetUser()!.role)
+								}}</mat-icon>
 								{{ UsersUiUtils.getRoleLabel(targetUser()!.role) }}
 							</span>
 						</div>

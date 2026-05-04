@@ -55,6 +55,23 @@
 	width: 100%;
 }
 
+.field-prefix-icon {
+	@include design-tokens.ov-icon(md);
+	color: var(--ov-meet-text-secondary);
+	margin-right: var(--ov-meet-spacing-xs);
+}
+
+.role-option {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+
+	.role-option-icon {
+		@include design-tokens.ov-icon(md);
+		color: var(--ov-meet-icon-primary);
+	}
+}
+
 .warning-banner {
 	display: flex;
 	align-items: flex-start;

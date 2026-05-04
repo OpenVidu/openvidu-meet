@@ -33,6 +33,19 @@
 	margin-right: var(--ov-meet-spacing-xs);
 }
 
+// ─── Role Select Options ──────────────────────────────────────────────────────
+
+.role-option {
+	display: flex;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+
+	.role-option-icon {
+		@include design-tokens.ov-icon(md);
+		color: var(--ov-meet-icon-primary);
+	}
+}
+
 // ─── Password Section ──────────────────────────────────────────────────────────
 
 .password-section {

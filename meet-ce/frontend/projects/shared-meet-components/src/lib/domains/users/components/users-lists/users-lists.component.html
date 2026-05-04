@@ -237,9 +237,10 @@
 				<ng-container matColumnDef="role">
 					<th mat-header-cell *matHeaderCellDef id="role-header">Role</th>
 					<td mat-cell *matCellDef="let user" id="role-cell-{{ user.userId }}">
-						<span class="role-chip" [ngClass]="'role-' + user.role" id="role-chip-{{ user.userId }}">{{
-							UsersUiUtils.getRoleLabel(user.role)
-						}}</span>
+						<span class="role-chip" [ngClass]="'role-' + user.role" id="role-chip-{{ user.userId }}">
+							<mat-icon class="role-chip-icon">{{ UsersUiUtils.getRoleIcon(user.role) }}</mat-icon>
+							{{ UsersUiUtils.getRoleLabel(user.role) }}
+						</span>
 					</td>
 				</ng-container>
 
