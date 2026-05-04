@@ -13,7 +13,7 @@ import {
 	untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -28,7 +28,8 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetUserDTO, MeetUserRole, MeetUserSortField, SortOrder } from '@openvidu-meet/typings';
+import { MeetUserDTO, MeetUserRole, MeetUserSortField, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
+import { merge } from 'rxjs';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { UsersUiUtils } from '../../utils/ui';
 
@@ -39,6 +40,8 @@ export interface UserTableAction {
 
 export interface UserTableFilter {
 	nameFilter: string;
+	nameMatchMode: TextMatchMode;
+	nameCaseInsensitive: boolean;
 	roleFilter: MeetUserRole | '';
 	sortField: MeetUserSortField;
 	sortOrder: SortOrder;
@@ -109,6 +112,8 @@ export class UsersListsComponent implements OnInit {
 	loading = input(false);
 	initialFilters = input<UserTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		roleFilter: '',
 		sortField: 'registrationDate',
 		sortOrder: SortOrder.DESC
@@ -125,8 +130,23 @@ export class UsersListsComponent implements OnInit {
 	readonly userClicked = output<string>();
 
 	// Filter controls
-	nameFilterControl = new FormControl<string>('', { nonNullable: true });
-	roleFilterControl = new FormControl<MeetUserRole | ''>('', { nonNullable: true });
+	filtersForm = new FormGroup({
+		nameFilter: new FormControl<string>('', { nonNullable: true }),
+		nameMatchMode: new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true }),
+		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
+		roleFilter: new FormControl<MeetUserRole | ''>('', { nonNullable: true })
+	});
+
+	get controls() {
+		return this.filtersForm.controls;
+	}
+
+	nameMatchModeOptions = [
+		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
+		{ value: TextMatchMode.EXACT, label: 'Exact match' },
+		{ value: TextMatchMode.REGEX, label: 'Regex' }
+	];
 
 	// Sort state
 	currentSortField = signal<MeetUserSortField>('registrationDate');
@@ -182,24 +202,22 @@ export class UsersListsComponent implements OnInit {
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		// Initialize from initialFilters input
-		this.nameFilterControl.setValue(this.initialFilters().nameFilter);
-		this.roleFilterControl.setValue(this.initialFilters().roleFilter);
-		this.currentSortField.set(this.initialFilters().sortField);
-		this.currentSortOrder.set(this.initialFilters().sortOrder);
+		const filters = this.initialFilters();
+		this.filtersForm.patchValue(filters, { emitEvent: false });
+		this.currentSortField.set(filters.sortField);
+		this.currentSortOrder.set(filters.sortOrder);
 
-		// Set up name filter change detection
-		this.nameFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-			// Emit filter change if value is empty
-			if (!value) {
-				this.emitFilterChange();
-			}
+		const { nameFilter, nameMatchMode, nameCaseInsensitive, roleFilter } = this.controls;
+
+		// Emit only when text field is cleared
+		nameFilter.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+			if (!value) this.emitFilterChange();
 		});
 
-		// Set up role filter change detection
-		this.roleFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
-			this.emitFilterChange();
-		});
+		// Emit immediately on any option/select change
+		merge(nameMatchMode.valueChanges, nameCaseInsensitive.valueChanges, roleFilter.valueChanges)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.emitFilterChange());
 	}
 
 	// ===== SELECTION METHODS =====
@@ -282,25 +300,11 @@ export class UsersListsComponent implements OnInit {
 	}
 
 	loadMoreUsers() {
-		const nameFilter = this.nameFilterControl.value;
-		const roleFilter = this.roleFilterControl.value;
-		this.loadMore.emit({
-			nameFilter,
-			roleFilter,
-			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
-		});
+		this.loadMore.emit(this.buildFilterSnapshot());
 	}
 
 	refreshUsers() {
-		const nameFilter = this.nameFilterControl.value;
-		const roleFilter = this.roleFilterControl.value;
-		this.refresh.emit({
-			nameFilter,
-			roleFilter,
-			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
-		});
+		this.refresh.emit(this.buildFilterSnapshot());
 	}
 
 	onSortChange(sortState: Sort) {
@@ -315,21 +319,33 @@ export class UsersListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
-	private emitFilterChange() {
-		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value,
-			roleFilter: this.roleFilterControl.value,
+	private buildFilterSnapshot(): UserTableFilter {
+		return {
+			...this.filtersForm.getRawValue(),
 			sortField: this.currentSortField(),
 			sortOrder: this.currentSortOrder()
-		});
+		};
+	}
+
+	private emitFilterChange() {
+		this.filterChange.emit(this.buildFilterSnapshot());
 	}
 
 	hasActiveFilters(): boolean {
-		return !!(this.nameFilterControl.value || this.roleFilterControl.value);
+		const { nameFilter, nameMatchMode, nameCaseInsensitive, roleFilter } = this.filtersForm.getRawValue();
+		return !!(nameFilter || nameMatchMode !== TextMatchMode.PREFIX || nameCaseInsensitive || roleFilter);
 	}
 
 	clearFilters() {
-		this.nameFilterControl.setValue('');
-		this.roleFilterControl.setValue('');
+		this.filtersForm.reset(
+			{
+				nameFilter: '',
+				nameMatchMode: TextMatchMode.PREFIX,
+				nameCaseInsensitive: false,
+				roleFilter: ''
+			},
+			{ emitEvent: false }
+		);
+		this.emitFilterChange();
 	}
 }

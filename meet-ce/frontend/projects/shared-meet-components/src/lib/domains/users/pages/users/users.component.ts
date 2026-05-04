@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
+import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -46,6 +46,8 @@ export class UsersComponent implements OnInit {
 
 	initialFilters = signal<UserTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		roleFilter: '',
 		sortField: 'registrationDate',
 		sortOrder: SortOrder.DESC
@@ -94,6 +96,8 @@ export class UsersComponent implements OnInit {
 			// Apply user name filter if provided
 			if (filters.nameFilter) {
 				userFilters.name = filters.nameFilter;
+				userFilters.nameMatchMode = filters.nameMatchMode;
+				userFilters.nameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 			}
 
 			// Apply role filter if provided

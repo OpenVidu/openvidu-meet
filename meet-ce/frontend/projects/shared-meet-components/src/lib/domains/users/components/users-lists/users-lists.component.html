@@ -23,8 +23,8 @@
 					<mat-label>Search users</mat-label>
 					<input
 						matInput
-						[formControl]="nameFilterControl"
-						placeholder="Search by name or user ID"
+						[formControl]="controls.nameFilter"
+						placeholder="Search by name"
 						id="search-input"
 						(keydown.enter)="triggerSearch()"
 					/>
@@ -33,7 +33,7 @@
 						matSuffix
 						class="search-btn"
 						(click)="triggerSearch()"
-						[disabled]="loading() || !nameFilterControl.value"
+						[disabled]="loading() || !controls.nameFilter.value"
 						matTooltip="Search"
 						id="search-btn"
 					>
@@ -87,11 +87,6 @@
 				<mat-icon>refresh</mat-icon>
 			</button>
 
-			<button mat-button (click)="createUser()" class="create-user-btn primary-button" id="create-user-btn">
-				<mat-icon>person_add</mat-icon>
-				Create User
-			</button>
-
 			@if (showFilters()) {
 				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter users" id="filters-btn">
 					<mat-icon>tune</mat-icon>
@@ -99,10 +94,22 @@
 
 				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu filters-menu" id="filters-menu">
 					<div class="filter-content" (click)="$event.stopPropagation()" id="filter-content">
+						<h4>User name matching</h4>
+						<mat-form-field appearance="outline">
+							<mat-label>Match mode</mat-label>
+							<mat-select [formControl]="controls.nameMatchMode">
+								@for (option of nameMatchModeOptions; track option.value) {
+									<mat-option [value]="option.value">{{ option.label }}</mat-option>
+								}
+							</mat-select>
+						</mat-form-field>
+						<mat-checkbox [formControl]="controls.nameCaseInsensitive">Case insensitive</mat-checkbox>
+
+						<mat-divider />
 						<h4>Filter by Role</h4>
 						<mat-form-field appearance="outline" id="role-filter-field">
 							<mat-label>Role</mat-label>
-							<mat-select [formControl]="roleFilterControl" id="role-filter-select">
+							<mat-select [formControl]="controls.roleFilter" id="role-filter-select">
 								@for (option of roleOptions; track option.value) {
 									<mat-option [value]="option.value" id="role-option-{{ option.value }}">{{
 										option.label
@@ -113,6 +120,11 @@
 					</div>
 				</mat-menu>
 			}
+
+			<button mat-button (click)="createUser()" class="create-user-btn primary-button" id="create-user-btn">
+				<mat-icon>person_add</mat-icon>
+				Create User
+			</button>
 		</div>
 	</mat-toolbar>
 
