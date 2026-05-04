@@ -54,7 +54,7 @@ export class AudioDevicesComponent implements OnInit {
 
 		// Use effect instead of subscription for reactive updates
 		effect(() => {
-			const participant = this.participantService.localParticipantSignal();
+			const participant = this.participantService.localParticipant();
 			if (participant) {
 				this.isMicrophoneEnabled = participant.isMicrophoneEnabled;
 				this.storageSrv.setMicrophoneEnabled(this.isMicrophoneEnabled);

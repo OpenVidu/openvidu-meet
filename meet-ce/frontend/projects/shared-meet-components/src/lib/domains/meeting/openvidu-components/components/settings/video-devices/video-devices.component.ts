@@ -55,7 +55,7 @@ export class VideoDevicesComponent implements OnInit {
 
 		// Use effect instead of subscription for reactive updates
 		effect(() => {
-			const participant = this.participantService.localParticipantSignal();
+			const participant = this.participantService.localParticipant();
 			if (participant) {
 				this.isCameraEnabled = participant.isCameraEnabled;
 				this.storageSrv.setCameraEnabled(this.isCameraEnabled);

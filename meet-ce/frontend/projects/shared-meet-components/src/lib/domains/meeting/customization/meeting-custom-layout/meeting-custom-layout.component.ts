@@ -216,7 +216,7 @@ export class MeetingCustomLayoutComponent {
 
 		for (const p of participants) {
 			// Access audio tracks from all streams
-			for (const stream of p.streams) {
+			for (const stream of p.streams()) {
 				const audioTrack = stream.audioTrack;
 				if (audioTrack?.track && audioTrack.track.attach) {
 					currentAudioTrackSids.add(audioTrack.trackSid);

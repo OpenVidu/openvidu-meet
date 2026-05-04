@@ -1,3 +1,4 @@
+import { computed, signal } from '@angular/core';
 import type { OVLocalParticipant, OVRemoteParticipant, OVRoom, OVTrackPublication } from '../services/livekit-adapter';
 import {
 	AudioCaptureOptions,
@@ -124,10 +125,23 @@ export class ParticipantModel {
 	colorProfile: string;
 	private participant: OVLocalParticipant | OVRemoteParticipant;
 	private room: OVRoom | undefined;
-	private speaking: boolean = false;
 	private customVideoTrack: Partial<AugmentedTrackPublication>;
-	private _hasEncryptionError: boolean = false;
-	private _decryptedName: string | undefined;
+
+	// ── Reactive state ──────────────────────────────────────────────────────────────────────────
+	// These signals replace plain boolean fields. Getters that read them are automatically tracked
+	// by Angular templates and effects, eliminating the need to clone ParticipantModel or spread
+	// the participants array in ParticipantService every time state changes.
+	private readonly _speaking = signal(false);
+	private readonly _hasEncryptionError = signal(false);
+	private readonly _decryptedName = signal<string | undefined>(undefined);
+	/**
+	 * Revision counter — bumped via bump() whenever the underlying LiveKit participant object is
+	 * mutated in-place (track published/unpublished, isCameraEnabled changes, etc.) or when
+	 * augmented-track properties (isPinned, isMinimized, isMutedForcibly) are written.
+	 * Reading _revision() inside augmentedTracks propagates the dependency to every getter and
+	 * computed that calls it — so streams, isMinimized, isPinned, etc. all react automatically.
+	 */
+	private readonly _revision = signal(0);
 
 	constructor(props: ParticipantProperties) {
 		this.participant = props.participant;
@@ -170,7 +184,7 @@ export class ParticipantModel {
 	 * @returns string
 	 */
 	get name(): string | undefined {
-		return this._decryptedName ?? this.participant.name;
+		return this._decryptedName() ?? this.participant.name;
 	}
 
 	/**
@@ -186,6 +200,7 @@ export class ParticipantModel {
 	 * Returns if the participant has enabled its camera.
 	 */
 	get isCameraEnabled(): boolean {
+		this._revision(); // reactive: re-evaluates in effects/computed when bump() is called
 		return this.participant.isCameraEnabled;
 	}
 
@@ -193,6 +208,7 @@ export class ParticipantModel {
 	 * Returns if the participant has enabled its microphone.
 	 */
 	get isMicrophoneEnabled(): boolean {
+		this._revision();
 		return this.participant.isMicrophoneEnabled;
 	}
 
@@ -200,6 +216,7 @@ export class ParticipantModel {
 	 * Returns if the participant has enabled its screen share.
 	 */
 	get isScreenShareEnabled(): boolean {
+		this._revision();
 		return this.participant.isScreenShareEnabled;
 	}
 
@@ -209,7 +226,7 @@ export class ParticipantModel {
 	get isSpeaking(): boolean {
 		// There is a bug when a participant mutes its microphone, it is still considered as speaking
 		// that's why we need to check if the microphone is enabled
-		return this.speaking && this.isMicrophoneEnabled;
+		return this._speaking() && this.isMicrophoneEnabled;
 	}
 
 	/**
@@ -217,6 +234,9 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	private get augmentedTracks(): AugmentedTrackPublication[] {
+		// Reading _revision() registers it as a reactive dependency for any computed/effect/template
+		// that calls this getter — consumers re-evaluate automatically when bump() is called.
+		this._revision();
 		const defaultTracks = this.participant.getTrackPublications().map((track: OVTrackPublication) => {
 			const augmented = track as AugmentedTrackPublication;
 			augmented.participant = this;
@@ -261,8 +281,14 @@ export class ParticipantModel {
 	 * NOTE: This getter intentionally calls `this.tracks` so that any Proxy that wraps
 	 * the participant (e.g. the SmartMosaic video-only proxy in MeetingCustomLayoutComponent)
 	 * is transparently applied via the JS Proxy receiver mechanism.
+	 *
+	 * Reactive: declared as an Angular `computed` signal. LayoutComponent's template reads
+	 * `participant.streams()` — Angular tracks `_revision` (via augmentedTracks) and only
+	 * re-evaluates when track structure or augmented-track properties actually change.
+	 * State-only changes (speaking, encryptionError) are tracked independently per StreamComponent
+	 * via the signal-backed getters (isSpeaking, hasEncryptionError, etc.).
 	 */
-	get streams(): ParticipantStream[] {
+	readonly streams = computed(() => {
 		const allTracks = this.tracks as AugmentedTrackPublication[];
 
 		// Real camera video publication (excludes the synthetic placeholder)
@@ -308,7 +334,7 @@ export class ParticipantModel {
 		}
 
 		return result;
-	}
+	});
 
 	/**
 	 * Returns if the participant is local.
@@ -430,7 +456,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	setSpeaking(speaking: boolean) {
-		this.speaking = speaking;
+		this._speaking.set(speaking);
 	}
 
 	/**
@@ -526,6 +552,7 @@ export class ParticipantModel {
 	 */
 	setAllVideoPinned(pinned: boolean) {
 		this.augmentedTracks.forEach((track) => (track.isPinned = pinned));
+		this.bump();
 	}
 
 	/**
@@ -537,6 +564,7 @@ export class ParticipantModel {
 		const track = this.augmentedTracks.find((track) => track.trackSid === trackSid);
 		if (track) {
 			track.isPinned = !track.isPinned;
+			this.bump();
 		}
 	}
 
@@ -559,6 +587,7 @@ export class ParticipantModel {
 		this.augmentedTracks
 			.filter((track) => track.source === source && track.kind === Track.Kind.Video)
 			.forEach((track) => (track.isPinned = pinned));
+		this.bump();
 	}
 
 	/**
@@ -571,6 +600,7 @@ export class ParticipantModel {
 		const track = this.augmentedTracks.find((track) => track.trackSid === trackSid);
 		if (track) {
 			track.isMinimized = !track.isMinimized;
+			this.bump();
 		}
 	}
 
@@ -586,20 +616,15 @@ export class ParticipantModel {
 		} else {
 			this.screenTrackPublicationDate.set(trackSid, publicationDate);
 		}
+		this.bump();
 	}
-
-	/**
-	 * @internal
-	 */
-	// someHasVideoPinned(): boolean {
-	// 	return Array.from(this.streams.values()).some((conn) => conn.videoPinned);
-	// }
 
 	/**
 	 * @internal
 	 */
 	setMutedForcibly(muted: boolean) {
 		this.augmentedTracks.forEach((track) => (track.isMutedForcibly = muted));
+		this.bump();
 	}
 
 	/**
@@ -608,7 +633,7 @@ export class ParticipantModel {
 	 * @returns boolean
 	 */
 	get hasEncryptionError(): boolean {
-		return this._hasEncryptionError;
+		return this._hasEncryptionError();
 	}
 
 	/**
@@ -617,7 +642,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	setEncryptionError(hasError: boolean) {
-		this._hasEncryptionError = hasError;
+		this._hasEncryptionError.set(hasError);
 	}
 
 	/**
@@ -626,6 +651,17 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	setDecryptedName(decryptedName: string | undefined) {
-		this._decryptedName = decryptedName;
+		this._decryptedName.set(decryptedName);
+	}
+
+	/**
+	 * Bumps the internal revision signal, causing `streams` and all reactive getters
+	 * (isCameraEnabled, isMinimized, isPinned, etc.) to re-evaluate in templates and effects.
+	 * Call this after any operation that mutates the underlying LiveKit participant in-place
+	 * (e.g. after setCameraEnabled, setMicrophoneEnabled, publishTrack).
+	 * @internal
+	 */
+	bump(): void {
+		this._revision.update((v) => v + 1);
 	}
 }

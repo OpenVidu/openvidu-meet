@@ -21,7 +21,6 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 import { ParticipantStream } from '../../models/participant.model';
-import { RemoteParticipantTracksPipe } from '../../pipes/participant.pipe';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { GlobalConfigService } from '../../services/config/global-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
@@ -36,7 +35,7 @@ import { TemplateRegistryService } from '../../services/template/template-regist
  */
 @Component({
 	selector: 'ov-layout',
-	imports: [CommonModule, CdkDrag, RemoteParticipantTracksPipe],
+	imports: [CommonModule, CdkDrag],
 	templateUrl: './layout.component.html',
 	styleUrls: ['./layout.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -91,13 +90,20 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	readonly layoutAdditionalElementsBottomTemplate = computed(
 		() => this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'bottom')?.template
 	);
-	readonly localParticipant = this.participantService.localParticipantSignal;
+	readonly localParticipant = this.participantService.localParticipant;
 	readonly remoteParticipants = computed(() => {
 		const directiveParticipants = this.directiveService.layoutRemoteParticipantsSignal();
 		return directiveParticipants !== undefined
 			? directiveParticipants
-			: this.participantService.remoteParticipantsSignal();
+			: this.participantService.remoteParticipants();
 	});
+	/**
+	 * Flattened stream list for all remote participants, as a computed signal.
+	 * Tracks each ParticipantModel's internal `streams` computed, so the @for loop
+	 * in the template re-evaluates only when tracks, pin/mute state, or the participant
+	 * list actually change — no array spreading or participant cloning needed.
+	 */
+	readonly remoteStreams = computed(() => this.remoteParticipants().flatMap((p) => p.streams()));
 
 	private readonly destroyRef = inject(DestroyRef);
 	private resizeObserver: ResizeObserver | undefined = undefined;
@@ -123,7 +129,9 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		}
 
 		this.wasLocalMinimized = isLocalMinimized;
-		this.remoteParticipants();
+		// Track remote stream changes (track publish/unpublish, pin, mute) in addition to
+		// participant add/remove, so the layout recalculates for all structural changes.
+		this.remoteStreams();
 		this.layoutService.update();
 	});
 

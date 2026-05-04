@@ -1,18 +1,18 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import {
-	AfterViewInit,
-	ChangeDetectionStrategy,
-	Component,
-	computed,
-	DestroyRef,
-	effect,
-	inject,
-	OnDestroy,
-	OnInit,
-	output,
-	signal,
-	viewChild,
-	WritableSignal
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    effect,
+    inject,
+    OnDestroy,
+    OnInit,
+    output,
+    signal,
+    viewChild,
+    WritableSignal
 } from '@angular/core';
 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -27,9 +27,9 @@ import { ILogger } from '../../models/logger.model';
 import { PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
-	RecordingStartRequestedEvent,
-	RecordingState,
-	RecordingStopRequestedEvent
+    RecordingStartRequestedEvent,
+    RecordingState,
+    RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { ActionService } from '../../services/action/action.service';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
@@ -375,7 +375,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 		// Effect to react to local participant changes
 		effect(() => {
-			const p = this.participantService.localParticipantSignal();
+			const p = this.participantService.localParticipant();
 			if (!p) return;
 
 			// Read current state into local variables first

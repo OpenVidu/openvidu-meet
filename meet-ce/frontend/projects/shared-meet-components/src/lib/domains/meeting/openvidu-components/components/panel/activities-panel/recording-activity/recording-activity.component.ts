@@ -7,10 +7,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-	RecordingInfo,
-	RecordingStartRequestedEvent,
-	RecordingState,
-	RecordingStopRequestedEvent
+    RecordingInfo,
+    RecordingStartRequestedEvent,
+    RecordingState,
+    RecordingStopRequestedEvent
 } from '../../../../models/recording.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
@@ -140,8 +140,8 @@ export class RecordingActivityComponent {
 	});
 
 	private readonly roomTracksPublishedEffect = effect(() => {
-		this.participantService.localParticipantSignal();
-		this.participantService.remoteParticipantsSignal();
+		this.participantService.localParticipant();
+		this.participantService.remoteParticipants();
 		this.hasRoomTracksPublished.set(this.openviduService.hasRoomTracksPublished());
 	});
 

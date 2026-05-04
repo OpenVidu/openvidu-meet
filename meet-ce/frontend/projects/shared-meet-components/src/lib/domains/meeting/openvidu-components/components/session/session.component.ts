@@ -1,17 +1,17 @@
 import { CommonModule } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
-	Component,
-	DestroyRef,
-	effect,
-	ElementRef,
-	HostListener,
-	inject,
-	OnDestroy,
-	OnInit,
-	output,
-	signal,
-	viewChild
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    effect,
+    ElementRef,
+    HostListener,
+    inject,
+    OnDestroy,
+    OnInit,
+    output,
+    signal,
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -247,7 +247,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 			this.onRoomCreated.emit(this.room);
 
 			this.loading.set(false);
-			const localParticipant = this.participantService.localParticipantSignal();
+			const localParticipant = this.participantService.localParticipant();
 			if (localParticipant) {
 				this.onParticipantConnected.emit(localParticipant);
 			}

@@ -13,7 +13,7 @@ import { TranslateService } from '../services/translate/translate.service';
 @Pipe({ name: 'tracks', standalone: true })
 export class RemoteParticipantTracksPipe implements PipeTransform {
 	transform(participants: ParticipantModel[]): ParticipantStream[] {
-		return participants.map((p) => p.streams).flat();
+		return participants.map((p) => p.streams()).flat();
 	}
 }
 

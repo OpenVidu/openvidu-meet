@@ -44,11 +44,11 @@ export class ParticipantsPanelComponent {
 	/**
 	 * @ignore
 	 */
-	readonly localParticipant = this.participantService.localParticipantSignal;
+	readonly localParticipant = this.participantService.localParticipant;
 	/**
 	 * @ignore
 	 */
-	readonly remoteParticipants = this.participantService.remoteParticipantsSignal;
+	readonly remoteParticipants = this.participantService.remoteParticipants;
 	readonly participantPanelItemTemplate = computed(
 		() => this.templateRegistry.participantPanelItem() ?? this.defaultParticipantPanelItemTemplateQuery()
 	);

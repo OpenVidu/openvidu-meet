@@ -6,7 +6,7 @@
 		}
 
 		@if (localParticipant(); as participant) {
-			@for (stream of participant.streams; track trackParticipantElement($index, stream)) {
+			@for (stream of participant.streams(); track trackParticipantElement($index, stream)) {
 				<div
 					#localLayoutElement
 					class="local_participant"
@@ -31,7 +31,7 @@
 			<ng-container *ngTemplateOutlet="layoutAdditionalElementsDefaultTemplate()" />
 		}
 
-		@for (stream of remoteParticipants() | tracks; track trackParticipantElement($index, stream)) {
+		@for (stream of remoteStreams(); track trackParticipantElement($index, stream)) {
 			<div
 				class="remote-participant"
 				[id]="'participant-' + stream.participant.identity"
