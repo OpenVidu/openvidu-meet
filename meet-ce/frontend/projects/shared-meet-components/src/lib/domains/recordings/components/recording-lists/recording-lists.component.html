@@ -53,15 +53,21 @@
 		@if (showSelection() && selectedRecordings().size > 0) {
 			<div class="toolbar-center">
 				<div class="batch-actions">
-					@if (canDeleteRecordings()) {
+					@if (canDeleteRecordings() || deletableRoomIds().size > 0) {
 						<button
 							mat-icon-button
-							color="warn"
+							class="bulk-delete-btn"
 							(click)="bulkDeleteSelected()"
-							[disabled]="loading()"
-							matTooltip="Delete selected recordings"
+							[disabled]="loading() || deletableSelected().length === 0"
+							[matTooltip]="
+								'Delete ' +
+								deletableSelected().length +
+								' of ' +
+								selectedRecordings().size +
+								' selected'
+							"
 						>
-							<mat-icon [matBadge]="selectedRecordings().size" matBadgePosition="below after">
+							<mat-icon [matBadge]="deletableSelected().length" matBadgePosition="below after">
 								delete
 							</mat-icon>
 						</button>
@@ -70,10 +76,16 @@
 					<button
 						mat-icon-button
 						(click)="bulkDownloadSelected()"
-						[disabled]="loading()"
-						matTooltip="Download selected recordings"
+						[disabled]="loading() || downloadableSelected().length === 0"
+						[matTooltip]="
+							'Download ' +
+							downloadableSelected().length +
+							' of ' +
+							selectedRecordings().size +
+							' selected'
+						"
 					>
-						<mat-icon [matBadge]="selectedRecordings().size" matBadgePosition="below after">
+						<mat-icon [matBadge]="downloadableSelected().length" matBadgePosition="below after">
 							download
 						</mat-icon>
 					</button>
@@ -265,7 +277,7 @@
 								</button>
 							</span>
 
-							@if (!canDeleteRecordings()) {
+							@if (!canDeleteRecordingItem(recording)) {
 								<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording.status)">
 									<button
 										mat-icon-button
@@ -471,7 +483,7 @@
 									</button>
 								</span>
 
-								@if (!canDeleteRecordings()) {
+								@if (!canDeleteRecordingItem(recording)) {
 									<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording.status)">
 										<button
 											mat-icon-button

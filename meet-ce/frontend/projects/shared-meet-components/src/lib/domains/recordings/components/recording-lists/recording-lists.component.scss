@@ -242,6 +242,19 @@
 	@extend .ov-batch-actions;
 }
 
+.bulk-delete-btn {
+	mat-icon {
+		color: var(--ov-meet-color-error);
+	}
+
+	&:disabled,
+	&.mat-mdc-button-disabled {
+		mat-icon {
+			color: var(--ov-meet-text-hint) !important;
+		}
+	}
+}
+
 // === DESKTOP TABLE VIEW ===
 .table-container {
 	@extend .ov-table-container;

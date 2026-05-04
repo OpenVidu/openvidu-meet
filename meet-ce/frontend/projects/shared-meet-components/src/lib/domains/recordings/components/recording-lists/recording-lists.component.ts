@@ -90,6 +90,7 @@ export class RecordingListsComponent implements OnInit {
 
 	recordings = input<MeetRecordingInfo[]>([]);
 	canDeleteRecordings = input(false);
+	deletableRoomIds = input<Set<string>>(new Set());
 	showSearchBox = input(true);
 	showFilters = input(true);
 	showSelection = input(true);
@@ -128,6 +129,21 @@ export class RecordingListsComponent implements OnInit {
 	selectedRecordings = signal<Set<string>>(new Set());
 	allSelected = signal(false);
 	someSelected = signal(false);
+
+	// Derived subsets of the current selection
+	deletableSelected = computed(() => {
+		const selected = this.selectedRecordings();
+		return this.recordings().filter(
+			(r) =>
+				selected.has(r.recordingId) && RecordingUiUtils.isDeletable(r.status) && this.canDeleteRecordingItem(r)
+		);
+	});
+	downloadableSelected = computed(() => {
+		const selected = this.selectedRecordings();
+		return this.recordings().filter(
+			(r) => selected.has(r.recordingId) && RecordingUiUtils.isDownloadable(r.status)
+		);
+	});
 
 	// Table configuration
 	displayedColumns = computed(() => {
@@ -252,7 +268,15 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	canSelectRecording(recording: MeetRecordingInfo): boolean {
-		return RecordingUiUtils.isSelectable(recording.status);
+		return (
+			RecordingUiUtils.isDownloadable(recording.status) ||
+			(RecordingUiUtils.isDeletable(recording.status) && this.canDeleteRecordingItem(recording))
+		);
+	}
+
+	canDeleteRecordingItem(recording: MeetRecordingInfo): boolean {
+		if (this.canDeleteRecordings()) return true;
+		return this.deletableRoomIds().has(recording.roomId);
 	}
 
 	getSelectedRecordings(): MeetRecordingInfo[] {
@@ -283,16 +307,16 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	bulkDeleteSelected() {
-		const selectedRecordings = this.getSelectedRecordings();
-		if (selectedRecordings.length > 0) {
-			this.recordingAction.emit({ recordings: selectedRecordings, action: 'bulkDelete' });
+		const recordings = this.deletableSelected();
+		if (recordings.length > 0) {
+			this.recordingAction.emit({ recordings, action: 'bulkDelete' });
 		}
 	}
 
 	bulkDownloadSelected() {
-		const selectedRecordings = this.getSelectedRecordings();
-		if (selectedRecordings.length > 0) {
-			this.recordingAction.emit({ recordings: selectedRecordings, action: 'bulkDownload' });
+		const recordings = this.downloadableSelected();
+		if (recordings.length > 0) {
+			this.recordingAction.emit({ recordings, action: 'bulkDownload' });
 		}
 	}
 

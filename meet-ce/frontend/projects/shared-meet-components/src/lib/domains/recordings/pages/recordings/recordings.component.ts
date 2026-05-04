@@ -1,12 +1,15 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRecordingFilters, MeetRecordingInfo, SortOrder } from '@openvidu-meet/typings';
+import { MeetRecordingFilters, MeetRecordingInfo, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { decodeToken } from '../../../../shared/utils/token.utils';
+import { AuthService } from '../../../auth/services/auth.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
+import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingService } from '../../services/recording.service';
@@ -20,7 +23,9 @@ import { RecordingService } from '../../services/recording.service';
 })
 export class RecordingsComponent implements OnInit {
 	protected loggerService: LoggerService = inject(LoggerService);
+	private authService: AuthService = inject(AuthService);
 	private recordingService: RecordingService = inject(RecordingService);
+	private roomMemberService: RoomMemberService = inject(RoomMemberService);
 	private notificationService: NotificationService = inject(NotificationService);
 	private dialogPresetsService = inject(DialogPresetsService);
 	protected route: ActivatedRoute = inject(ActivatedRoute);
@@ -28,6 +33,13 @@ export class RecordingsComponent implements OnInit {
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
 
 	recordings = signal<MeetRecordingInfo[]>([]);
+
+	// Permission signals
+	protected currentUserRole = signal<MeetUserRole | undefined>(undefined);
+	canDeleteRecordings = computed(() => this.currentUserRole() === MeetUserRole.ADMIN);
+	deletableRoomIds = signal<Set<string>>(new Set());
+	// Cache: roomId → canDelete (avoids re-fetching tokens for already-seen rooms)
+	private roomDeletePermissionCache = new Map<string, boolean>();
 
 	// Loading state
 	isInitializing = signal(true);
@@ -49,6 +61,9 @@ export class RecordingsComponent implements OnInit {
 	private currentFilters: RecordingTableFilter = this.initialFilters();
 
 	async ngOnInit() {
+		const role = await this.authService.getUserRole();
+		this.currentUserRole.set(role);
+
 		// Get room ID from route query params and set initial filters before component initialization
 		const roomId = this.route.snapshot.queryParamMap.get('roomId');
 		if (roomId) {
@@ -149,6 +164,9 @@ export class RecordingsComponent implements OnInit {
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
 			this.hasMoreRecordings.set(response.pagination.isTruncated);
+
+			// Resolve per-room delete permissions for the newly loaded recordings
+			await this.resolveDeletePermissions(recordings);
 		} catch (error) {
 			this.notificationService.showSnackbar('Failed to load recordings');
 			this.log.e('Error loading recordings:', error);
@@ -156,6 +174,40 @@ export class RecordingsComponent implements OnInit {
 			clearTimeout(delayLoader);
 			this.isLoading.set(false);
 		}
+	}
+
+	/**
+	 * For non-ADMIN users, fetches room member tokens for any newly loaded room IDs
+	 * and updates the deletableRoomIds signal using a per-session cache.
+	 */
+	private async resolveDeletePermissions(recordings: MeetRecordingInfo[]) {
+		if (this.currentUserRole() === MeetUserRole.ADMIN) return; // ADMIN: handled by canDeleteRecordings=true
+
+		const unseenRoomIds = [...new Set(recordings.map((r) => r.roomId))].filter(
+			(id) => !this.roomDeletePermissionCache.has(id)
+		);
+
+		if (unseenRoomIds.length === 0) return;
+
+		await Promise.all(
+			unseenRoomIds.map(async (roomId) => {
+				try {
+					const { token } = await this.roomMemberService.generateRoomMemberToken(roomId, {
+						joinMeeting: false
+					});
+					const decoded = decodeToken(token);
+					this.roomDeletePermissionCache.set(roomId, decoded.metadata.permissions.canDeleteRecordings);
+				} catch {
+					this.roomDeletePermissionCache.set(roomId, false);
+				}
+			})
+		);
+
+		// Rebuild signal from updated cache
+		const deletable = new Set(
+			[...this.roomDeletePermissionCache.entries()].filter(([, canDelete]) => canDelete).map(([id]) => id)
+		);
+		this.deletableRoomIds.set(deletable);
 	}
 
 	async loadMoreRecordings(filters: RecordingTableFilter) {
