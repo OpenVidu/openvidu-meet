@@ -240,6 +240,9 @@
 							[class]="RoomMemberUiUtils.getRoleClass(member.baseRole)"
 							id="role-badge-{{ member.memberId }}"
 						>
+							<mat-icon class="role-badge-icon material-symbols-outlined">{{
+								RoomMemberUiUtils.getRoleIcon(member.baseRole)
+							}}</mat-icon>
 							{{ RoomMemberUiUtils.getRoleLabel(member.baseRole) }}
 						</span>
 					</td>
@@ -250,7 +253,9 @@
 					<th mat-header-cell *matHeaderCellDef id="members-type-header">Type</th>
 					<td mat-cell *matCellDef="let member" id="members-type-cell-{{ member.memberId }}">
 						<div class="member-type" id="member-type-{{ member.memberId }}">
-							<mat-icon class="type-icon">{{ RoomMemberUiUtils.getMemberTypeIcon(member) }}</mat-icon>
+							<mat-icon class="type-icon material-symbols-outlined">{{
+								RoomMemberUiUtils.getMemberTypeIcon(member)
+							}}</mat-icon>
 							<span>{{ RoomMemberUiUtils.getMemberTypeLabel(member) }}</span>
 						</div>
 					</td>

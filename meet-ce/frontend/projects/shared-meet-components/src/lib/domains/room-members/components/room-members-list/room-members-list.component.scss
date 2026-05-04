@@ -145,6 +145,7 @@
 .role-badge {
 	display: inline-flex;
 	align-items: center;
+	gap: var(--ov-meet-spacing-xs);
 	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
 	border-radius: var(--ov-meet-radius-sm);
 	font-size: var(--ov-meet-font-size-xs);
@@ -152,6 +153,10 @@
 	text-transform: uppercase;
 	background-color: var(--ov-meet-surface-variant);
 	color: var(--ov-meet-text-secondary);
+
+	.role-badge-icon {
+		@include design-tokens.ov-icon(sm);
+	}
 
 	&.moderator {
 		background-color: color-mix(in srgb, var(--ov-meet-color-primary), transparent 85%);

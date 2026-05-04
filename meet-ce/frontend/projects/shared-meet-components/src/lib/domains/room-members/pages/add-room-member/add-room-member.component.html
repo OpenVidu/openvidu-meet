@@ -139,7 +139,9 @@
 					<!-- Base Role -->
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
 						<mat-label>Base Role</mat-label>
-						<mat-icon matPrefix class="field-prefix-icon">manage_accounts</mat-icon>
+						<mat-icon matPrefix class="field-prefix-icon material-symbols-outlined">{{
+							RoomMemberUiUtils.getRoleIcon(form.get('role')!.value!)
+						}}</mat-icon>
 						<mat-select formControlName="role">
 							<mat-select-trigger>
 								{{ RoomMemberUiUtils.getRoleLabel(form.get('role')!.value!) }}
@@ -147,7 +149,7 @@
 							@for (role of RoomMemberUiUtils.AVAILABLE_ROLES; track role) {
 								<mat-option [value]="role">
 									<div class="role-option">
-										<mat-icon class="role-option-icon">{{
+										<mat-icon class="role-option-icon material-symbols-outlined">{{
 											RoomMemberUiUtils.getRoleIcon(role)
 										}}</mat-icon>
 										<span>{{ RoomMemberUiUtils.getRoleLabel(role) }}</span>
