@@ -2,8 +2,9 @@ import { ChangeDetectionStrategy, Component, TemplateRef, inject, viewChild } fr
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetParticipantModerationAction, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
+import { RoomMemberUiUtils } from '../../../room-members/utils/ui';
 import { CustomParticipantModel, ParticipantDisplayProperties } from '../../models/custom-participant.model';
 import { LoggerService, OpenViduComponentsUiModule } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -29,6 +30,8 @@ export class MeetingParticipantItemComponent {
 	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingParticipantItem');
+
+	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
 
 	/**
 	 * Get or compute display properties for a participant
@@ -76,45 +79,6 @@ export class MeetingParticipantItemComponent {
 			displayProperties.showUnmakeModeratorButton ||
 			displayProperties.showKickButton;
 		return displayProperties;
-	}
-
-	getParticipantBadgeIcon(participant: CustomParticipantModel): string {
-		switch (participant.getBadge()) {
-			case MeetRoomMemberUIBadge.OWNER:
-				return 'crown'; // passkey or location_away
-			case MeetRoomMemberUIBadge.ADMIN:
-				return 'manage_accounts';
-			case MeetRoomMemberUIBadge.MODERATOR:
-				return 'shield_person';
-			default:
-				return '';
-		}
-	}
-
-	getParticipantBadgeTooltip(participant: CustomParticipantModel): string {
-		switch (participant.getBadge()) {
-			case MeetRoomMemberUIBadge.OWNER:
-				return 'Owner';
-			case MeetRoomMemberUIBadge.ADMIN:
-				return 'Admin';
-			case MeetRoomMemberUIBadge.MODERATOR:
-				return 'Moderator';
-			default:
-				return '';
-		}
-	}
-
-	getParticipantBadgeClass(participant: CustomParticipantModel): string {
-		switch (participant.getBadge()) {
-			case MeetRoomMemberUIBadge.OWNER:
-				return 'owner-badge';
-			case MeetRoomMemberUIBadge.ADMIN:
-				return 'admin-badge';
-			case MeetRoomMemberUIBadge.MODERATOR:
-				return 'moderator-badge';
-			default:
-				return '';
-		}
 	}
 
 	async onMakeModeratorClick(participant: CustomParticipantModel): Promise<void> {

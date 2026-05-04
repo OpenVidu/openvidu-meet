@@ -7,14 +7,14 @@
 			<ng-container *ovParticipantPanelParticipantBadge>
 				@if (ctx.showBadge) {
 					<span
-						[class]="getParticipantBadgeClass(participant)"
+						[class]="RoomMemberUiUtils.getParticipantBadgeClass(participant.getBadge())"
 						[attr.id]="'participant-badge-' + participant.sid"
 					>
 						<mat-icon
-							[matTooltip]="getParticipantBadgeTooltip(participant)"
+							[matTooltip]="RoomMemberUiUtils.getParticipantBadgeTooltip(participant.getBadge())"
 							class="material-symbols-outlined"
 						>
-							{{ getParticipantBadgeIcon(participant) }}
+							{{ RoomMemberUiUtils.getParticipantBadgeIcon(participant.getBadge()) }}
 						</mat-icon>
 					</span>
 				}
@@ -32,7 +32,7 @@
 						<button
 							mat-icon-button
 							(click)="onMakeModeratorClick(participant)"
-							[matTooltip]="'Make participant moderator'"
+							[matTooltip]="'Promote to moderator'"
 							class="make-moderator-btn"
 							[attr.id]="'make-moderator-btn-' + participant.sid"
 						>
@@ -45,7 +45,7 @@
 						<button
 							mat-icon-button
 							(click)="onUnmakeModeratorClick(participant)"
-							[matTooltip]="'Unmake participant moderator'"
+							[matTooltip]="'Donwngrade to original role'"
 							class="remove-moderator-btn"
 							[attr.id]="'remove-moderator-btn-' + participant.sid"
 						>
