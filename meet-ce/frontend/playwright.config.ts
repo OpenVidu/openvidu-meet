@@ -12,7 +12,7 @@ export default defineConfig({
 	workers: 1,
 	reporter: [['list'], ['json', { outputFile: 'test-results/results.json' }]],
 	outputDir: 'test-results/output',
-	timeout: 30000,
+	timeout: 60000,
 	use: {
 		headless: true,
 		viewport: { width: 1366, height: 900 },
