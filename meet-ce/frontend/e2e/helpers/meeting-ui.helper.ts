@@ -657,7 +657,7 @@ export async function dragStream(page: Page, selector: string, targetX: number, 
 export async function isPrejoinVideoEnabled(page: Page): Promise<boolean> {
 	const cameraButton = page.locator('#camera-button');
 
-	await expect(cameraButton).toBeVisible();
+	await expect(cameraButton).toBeVisible({ timeout: 10_000 });
 
 	if ((await cameraButton.count()) === 0) {
 		return false;
@@ -747,7 +747,7 @@ export async function muteRemoteParticipant(page: Page, remoteStreamSelector = '
 	await hoverStream(page, remoteStreamSelector);
 
 	// Wait for and click the silence button
-	const silenceButton = page.locator(`${remoteStreamSelector} #silence-btn`).first();
+	const silenceButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
 	await expect(silenceButton).toBeVisible();
 	await silenceButton.click();
 }
@@ -757,7 +757,7 @@ export async function unmuteRemoteParticipant(page: Page, remoteStreamSelector =
 	await hoverStream(page, remoteStreamSelector);
 
 	// Wait for and click the silence button (toggle to unmute)
-	const silenceButton = page.locator(`${remoteStreamSelector} #silence-btn`).first();
+	const silenceButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
 	await expect(silenceButton).toBeVisible();
 	await silenceButton.click();
 }

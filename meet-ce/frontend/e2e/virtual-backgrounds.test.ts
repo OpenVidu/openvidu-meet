@@ -3,84 +3,99 @@ import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helpe
 import {
     applyBackgroundEffect,
     captureVideoElementScreenshot,
-    closeBackgroundsPanel,
     closePrejoinBackgroundsPanel,
+    closeRoomBackgroundsPanel,
     expectSignificantImageDifference,
     expectVisible,
-    openBackgroundsPanel,
     openMeeting,
     openPrejoin,
     openPrejoinBackgroundsPanel,
+    openRoomBackgroundsPanel,
     setPrejoinCameraStatus
 } from './helpers/meeting-ui.helper';
 
 test.describe('Virtual Backgrounds', () => {
+	const createdRoomIds = new Set<string>();
 
-    const createdRoomIds = new Set<string>();
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
+	});
 
-    test.afterAll(async () => {
-        await deleteRooms(createdRoomIds);
-    });
+	test('should close BACKGROUNDS on prejoin page when VIDEO is disabled', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl({
+			roomName: `vb-prejoin-${Date.now()}`,
+			queryParams: { prejoin: 'true' },
+			createdRoomIds
+		});
+		await openPrejoin(page, accessUrl);
 
+		const backgroundsButton = page.locator('#backgrounds-button');
+		await expect(backgroundsButton).toBeVisible();
+		await expect(backgroundsButton).toBeEnabled();
 
+		await openPrejoinBackgroundsPanel(page);
+		await setPrejoinCameraStatus(page);
 
-    test('should close BACKGROUNDS on prejoin page when VIDEO is disabled', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-prejoin-${Date.now()}`, queryParams: { prejoin: 'true' }, createdRoomIds });
-        await openPrejoin(page, accessUrl);
+		await expectVisible(page, '#video-poster');
+		await expect(backgroundsButton).toBeVisible();
+		await expect(backgroundsButton).toBeDisabled();
+		await expect(page.locator('#background-effects-container')).toHaveCount(0);
+	});
 
-        const backgroundsButton = page.locator('#backgrounds-button');
-        await expect(backgroundsButton).toBeVisible();
-        await expect(backgroundsButton).toBeEnabled();
+	test('should open and close BACKGROUNDS panel on prejoin page', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl({
+			roomName: `vb-prejoin-toggle-${Date.now()}`,
+			queryParams: { prejoin: 'true' },
+			createdRoomIds
+		});
+		await openPrejoin(page, accessUrl);
 
-        await openPrejoinBackgroundsPanel(page);
-        await setPrejoinCameraStatus(page);
+		await expect(page.locator('#backgrounds-button')).toBeEnabled();
+		await openPrejoinBackgroundsPanel(page);
+		await closePrejoinBackgroundsPanel(page);
+	});
 
-        await expectVisible(page, '#video-poster');
-        await expect(backgroundsButton).toBeVisible();
-        await expect(backgroundsButton).toBeDisabled();
-        await expect(page.locator('#background-effects-container')).toHaveCount(0);
-    });
+	test('should apply a background effect on prejoin page', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl({
+			roomName: `vb-prejoin-apply-${Date.now()}`,
+			queryParams: { prejoin: 'true' },
+			createdRoomIds
+		});
+		await openPrejoin(page, accessUrl);
 
-    test('should open and close BACKGROUNDS panel on prejoin page', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-prejoin-toggle-${Date.now()}`, queryParams: { prejoin: 'true' }, createdRoomIds });
-        await openPrejoin(page, accessUrl);
+		const before = await captureVideoElementScreenshot(page);
+		await openPrejoinBackgroundsPanel(page);
+		await applyBackgroundEffect(page, '1');
+		await closePrejoinBackgroundsPanel(page);
+		const after = await captureVideoElementScreenshot(page);
 
-        await expect(page.locator('#backgrounds-button')).toBeEnabled();
-        await openPrejoinBackgroundsPanel(page);
-        await closePrejoinBackgroundsPanel(page);
-    });
+		expectSignificantImageDifference(before, after);
+	});
 
-    test('should apply a background effect on prejoin page', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-prejoin-apply-${Date.now()}`, queryParams: { prejoin: 'true' }, createdRoomIds });
-        await openPrejoin(page, accessUrl);
+	test('should open and close BACKGROUNDS panel in the room', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl({
+			roomName: `vb-room-toggle-${Date.now()}`,
+			createdRoomIds
+		});
+		await openMeeting(page, accessUrl);
 
-        const before = await captureVideoElementScreenshot(page);
-        await openPrejoinBackgroundsPanel(page);
-        await applyBackgroundEffect(page, '1');
-        await closePrejoinBackgroundsPanel(page);
-        const after = await captureVideoElementScreenshot(page);
+		await openRoomBackgroundsPanel(page);
+		await closeRoomBackgroundsPanel(page);
+	});
 
-        expectSignificantImageDifference(before, after);
-    });
+	test('should apply a background effect in the room', async ({ page }) => {
+		const { accessUrl } = await createRoomAndGetAccessUrl({
+			roomName: `vb-room-apply-${Date.now()}`,
+			createdRoomIds
+		});
+		await openMeeting(page, accessUrl);
 
-    test('should open and close BACKGROUNDS panel in the room', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-room-toggle-${Date.now()}`, createdRoomIds });
-        await openMeeting(page, accessUrl);
+		const before = await captureVideoElementScreenshot(page);
+		await openRoomBackgroundsPanel(page);
+		await applyBackgroundEffect(page, '1');
+		await closeRoomBackgroundsPanel(page);
+		const after = await captureVideoElementScreenshot(page);
 
-        await openBackgroundsPanel(page);
-        await closeBackgroundsPanel(page);
-    });
-
-    test('should apply a background effect in the room', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `vb-room-apply-${Date.now()}`, createdRoomIds });
-        await openMeeting(page, accessUrl);
-
-        const before = await captureVideoElementScreenshot(page);
-        await openBackgroundsPanel(page);
-        await applyBackgroundEffect(page, '1');
-        await closeBackgroundsPanel(page);
-        const after = await captureVideoElementScreenshot(page);
-
-        expectSignificantImageDifference(before, after);
-    });
+		expectSignificantImageDifference(before, after);
+	});
 });
