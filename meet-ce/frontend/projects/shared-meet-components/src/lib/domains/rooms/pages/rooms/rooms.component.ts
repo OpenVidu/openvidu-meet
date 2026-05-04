@@ -23,7 +23,8 @@ import {
 	MeetRoomFilters,
 	MeetRoomStatus,
 	MeetUserRole,
-	SortOrder
+	SortOrder,
+	TextMatchMode
 } from '@openvidu-meet/typings';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -88,6 +89,8 @@ export class RoomsComponent implements OnInit {
 
 	initialFilters = signal<RoomTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'creationDate',
 		sortOrder: SortOrder.DESC,
@@ -170,9 +173,11 @@ export class RoomsComponent implements OnInit {
 				sortOrder: filters.sortOrder
 			};
 
-			// Apply room ID filter if provided
+			// Apply room name filter if provided
 			if (filters.nameFilter) {
 				roomFilters.roomName = filters.nameFilter;
+				roomFilters.roomNameMatchMode = filters.nameMatchMode;
+				roomFilters.roomNameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 			}
 
 			// Apply status filter if provided

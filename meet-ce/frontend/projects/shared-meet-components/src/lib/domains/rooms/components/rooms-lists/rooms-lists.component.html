@@ -107,6 +107,22 @@
 
 				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu filters-menu" id="filters-menu">
 					<div class="filter-content" (click)="$event.stopPropagation()" id="filter-content">
+						<h4>Room name matching</h4>
+						<mat-form-field appearance="outline" id="name-match-mode-field">
+							<mat-label>Match mode</mat-label>
+							<mat-select [formControl]="nameMatchModeControl" id="name-match-mode-select">
+								@for (option of nameMatchModeOptions; track option.value) {
+									<mat-option [value]="option.value" id="name-match-mode-option-{{ option.value }}">{{
+										option.label
+									}}</mat-option>
+								}
+							</mat-select>
+						</mat-form-field>
+						<mat-checkbox [formControl]="nameCaseInsensitiveControl" id="case-insensitive-checkbox">
+							Case insensitive
+						</mat-checkbox>
+
+						<mat-divider />
 						<h4>Filter by status</h4>
 						<mat-form-field appearance="outline" id="status-filter-field">
 							<mat-label>Status</mat-label>

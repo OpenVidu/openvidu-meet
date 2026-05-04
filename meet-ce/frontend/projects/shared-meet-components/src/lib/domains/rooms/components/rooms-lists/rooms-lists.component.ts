@@ -29,7 +29,14 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { MeetRoom, MeetRoomSortField, MeetRoomStatus, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
+import {
+	MeetRoom,
+	MeetRoomSortField,
+	MeetRoomStatus,
+	MeetUserRole,
+	SortOrder,
+	TextMatchMode
+} from '@openvidu-meet/typings';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 
@@ -40,6 +47,10 @@ export interface RoomTableAction {
 
 export interface RoomTableFilter {
 	nameFilter: string;
+	/** Match mode applied to the room name search. Defaults to 'prefix'. */
+	nameMatchMode: TextMatchMode;
+	/** Whether room name matching ignores case. Defaults to false. */
+	nameCaseInsensitive: boolean;
 	statusFilter: MeetRoomStatus | '';
 	sortField: MeetRoomSortField;
 	sortOrder: SortOrder;
@@ -126,6 +137,8 @@ export class RoomsListsComponent implements OnInit {
 	);
 	initialFilters = input<RoomTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'creationDate',
 		sortOrder: SortOrder.DESC,
@@ -148,11 +161,11 @@ export class RoomsListsComponent implements OnInit {
 
 	// Filter controls
 	nameFilterControl = new FormControl<string>('', { nonNullable: true });
+	nameMatchModeControl = new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true });
+	nameCaseInsensitiveControl = new FormControl<boolean>(false, { nonNullable: true });
 	statusFilterControl = new FormControl<MeetRoomStatus | ''>('', { nonNullable: true });
-	// Admin-only: free-text user ID filters
 	ownerFilterControl = new FormControl<string>('', { nonNullable: true });
 	memberFilterControl = new FormControl<string>('', { nonNullable: true });
-	// Scope selectors (USER/ROOM_MEMBER checkboxes)
 	showOwnedRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
 	showMemberRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
 	showRegisteredAccessRoomsControl = new FormControl<boolean>(false, { nonNullable: true });
@@ -181,6 +194,17 @@ export class RoomsListsComponent implements OnInit {
 		{ value: MeetRoomStatus.ACTIVE_MEETING, label: 'Active Meeting' },
 		{ value: MeetRoomStatus.CLOSED, label: 'Closed' }
 	];
+
+	// Room name match mode options
+	nameMatchModeOptions = [
+		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
+		{ value: TextMatchMode.EXACT, label: 'Exact' },
+		{ value: TextMatchMode.REGEX, label: 'Regex' }
+	];
+
+	// Expose TextMatchMode for template
+	protected readonly TextMatchMode = TextMatchMode;
 
 	// Make RoomUiUtils available in template
 	protected readonly RoomUiUtils = RoomUiUtils;
@@ -220,6 +244,8 @@ export class RoomsListsComponent implements OnInit {
 		this.statusFilterControl.setValue(initial.statusFilter);
 		this.currentSortField.set(initial.sortField);
 		this.currentSortOrder.set(initial.sortOrder);
+		this.nameMatchModeControl.setValue(initial.nameMatchMode);
+		this.nameCaseInsensitiveControl.setValue(initial.nameCaseInsensitive);
 		this.ownerFilterControl.setValue(initial.ownerFilter);
 		this.memberFilterControl.setValue(initial.memberFilter);
 		this.showOwnedRoomsControl.setValue(initial.showOwnedRooms);
@@ -232,6 +258,14 @@ export class RoomsListsComponent implements OnInit {
 			if (!value) {
 				this.emitFilterChange();
 			}
+		});
+
+		// Name match mode and case insensitivity: emit immediately on change
+		this.nameMatchModeControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+			this.emitFilterChange();
+		});
+		this.nameCaseInsensitiveControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+			this.emitFilterChange();
 		});
 
 		// Set up status filter change detection
@@ -357,6 +391,8 @@ export class RoomsListsComponent implements OnInit {
 	loadMoreRooms() {
 		this.loadMore.emit({
 			nameFilter: this.nameFilterControl.value,
+			nameMatchMode: this.nameMatchModeControl.value,
+			nameCaseInsensitive: this.nameCaseInsensitiveControl.value,
 			statusFilter: this.statusFilterControl.value,
 			sortField: this.currentSortField(),
 			sortOrder: this.currentSortOrder(),
@@ -371,6 +407,8 @@ export class RoomsListsComponent implements OnInit {
 	refreshRooms() {
 		this.refresh.emit({
 			nameFilter: this.nameFilterControl.value,
+			nameMatchMode: this.nameMatchModeControl.value,
+			nameCaseInsensitive: this.nameCaseInsensitiveControl.value,
 			statusFilter: this.statusFilterControl.value,
 			sortField: this.currentSortField(),
 			sortOrder: this.currentSortOrder(),
@@ -397,6 +435,8 @@ export class RoomsListsComponent implements OnInit {
 	private emitFilterChange() {
 		this.filterChange.emit({
 			nameFilter: this.nameFilterControl.value,
+			nameMatchMode: this.nameMatchModeControl.value,
+			nameCaseInsensitive: this.nameCaseInsensitiveControl.value,
 			statusFilter: this.statusFilterControl.value,
 			sortField: this.currentSortField(),
 			sortOrder: this.currentSortOrder(),
@@ -411,6 +451,8 @@ export class RoomsListsComponent implements OnInit {
 	hasActiveFilters(): boolean {
 		return !!(
 			this.nameFilterControl.value ||
+			this.nameMatchModeControl.value !== TextMatchMode.PREFIX ||
+			this.nameCaseInsensitiveControl.value ||
 			this.statusFilterControl.value ||
 			this.ownerFilterControl.value ||
 			this.memberFilterControl.value ||
@@ -423,6 +465,8 @@ export class RoomsListsComponent implements OnInit {
 	clearFilters() {
 		const silent = { emitEvent: false };
 		this.nameFilterControl.setValue('', silent);
+		this.nameMatchModeControl.setValue(TextMatchMode.PREFIX, silent);
+		this.nameCaseInsensitiveControl.setValue(false, silent);
 		this.statusFilterControl.setValue('', silent);
 		this.ownerFilterControl.setValue('', silent);
 		this.memberFilterControl.setValue('', silent);
