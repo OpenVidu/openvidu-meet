@@ -102,10 +102,13 @@ export class ProfileComponent implements OnInit {
 					this.isAdminViewing.set(true);
 				}
 
-				const user = await this.userService.getUser(userId);
+				const [user, rootAdmin] = await Promise.all([
+					this.userService.getUser(userId),
+					this.userService.getRootAdmin()
+				]);
 				this.targetUser.set(user);
 				this.isOwnProfile.set(false);
-				this.isRootAdmin.set(UsersUiUtils.isRootAdmin(user));
+				this.isRootAdmin.set(UsersUiUtils.isRootAdmin(user, rootAdmin?.userId ?? ''));
 			} else {
 				// Own profile
 				const user = await this.userService.getMe();

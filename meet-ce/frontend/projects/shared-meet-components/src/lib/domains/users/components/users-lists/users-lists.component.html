@@ -216,7 +216,7 @@
 								<span class="user-id" id="user-id-{{ user.userId }}">{{ user.userId }}</span>
 							</div>
 							<div class="user-badges" id="user-badges-{{ user.userId }}">
-								@if (UsersUiUtils.isRootAdmin(user)) {
+								@if (UsersUiUtils.isRootAdmin(user, rootAdminId())) {
 									<span
 										class="badge badge-root"
 										matTooltip="Root admin — cannot be modified"
@@ -279,7 +279,7 @@
 							<span
 								class="action-tooltip-target"
 								[matTooltip]="
-									UsersUiUtils.isProtectedUser(user, currentUserId())
+									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
 										? 'Disabled: protected account (root admin or your own account)'
 										: 'Update role'
 								"
@@ -287,7 +287,9 @@
 								<button
 									mat-icon-button
 									(click)="$event.stopPropagation(); updateRole(user)"
-									[disabled]="loading() || UsersUiUtils.isProtectedUser(user, currentUserId())"
+									[disabled]="
+										loading() || UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+									"
 									id="update-role-btn-{{ user.userId }}"
 								>
 									<mat-icon>manage_accounts</mat-icon>
@@ -298,7 +300,7 @@
 							<span
 								class="action-tooltip-target"
 								[matTooltip]="
-									UsersUiUtils.isProtectedUser(user, currentUserId())
+									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
 										? 'Disabled: protected account (root admin or your own account)'
 										: 'Reset password'
 								"
@@ -306,7 +308,9 @@
 								<button
 									mat-icon-button
 									(click)="$event.stopPropagation(); resetPassword(user)"
-									[disabled]="loading() || UsersUiUtils.isProtectedUser(user, currentUserId())"
+									[disabled]="
+										loading() || UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+									"
 									id="reset-password-btn-{{ user.userId }}"
 								>
 									<mat-icon>key</mat-icon>
@@ -317,7 +321,7 @@
 							<span
 								class="action-tooltip-target"
 								[matTooltip]="
-									UsersUiUtils.isProtectedUser(user, currentUserId())
+									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
 										? 'Disabled: protected account (root admin or your own account)'
 										: 'Delete user'
 								"
@@ -325,7 +329,9 @@
 								<button
 									mat-icon-button
 									(click)="$event.stopPropagation(); deleteUser(user)"
-									[disabled]="loading() || UsersUiUtils.isProtectedUser(user, currentUserId())"
+									[disabled]="
+										loading() || UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
+									"
 									class="delete-action"
 									id="delete-user-btn-{{ user.userId }}"
 								>
@@ -341,8 +347,8 @@
 					mat-row
 					*matRowDef="let row; columns: displayedColumns()"
 					[class.selected-row]="isUserSelected(row)"
-					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId())"
-					[class.root-row]="UsersUiUtils.isRootAdmin(row)"
+					[class.protected-row]="UsersUiUtils.isProtectedUser(row, currentUserId(), rootAdminId())"
+					[class.root-row]="UsersUiUtils.isRootAdmin(row, rootAdminId())"
 					id="table-row-{{ row.userId }}"
 					(click)="onUserClick(row)"
 				></tr>

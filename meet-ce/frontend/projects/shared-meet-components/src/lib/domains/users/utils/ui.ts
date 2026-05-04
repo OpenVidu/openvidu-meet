@@ -5,9 +5,6 @@ import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
  * These are pure functions that can be shared across user pages and components.
  */
 export class UsersUiUtils {
-	// TODO: Obtain root admin user ID from backend instead of hardcoding
-	private static readonly ROOT_ADMIN_USER_ID = 'admin';
-
 	private static readonly LOWERCASE_CHARSET = 'abcdefghijklmnopqrstuvwxyz';
 	private static readonly UPPERCASE_CHARSET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 	private static readonly DIGIT_CHARSET = '123456789';
@@ -88,10 +85,11 @@ export class UsersUiUtils {
 	 * Checks whether the provided user is the root admin account.
 	 *
 	 * @param user - The user to evaluate
+	 * @param rootAdminId - The user ID of the root admin, obtained from the backend
 	 * @returns True if the user is the root admin, otherwise false
 	 */
-	static isRootAdmin(user: MeetUserDTO): boolean {
-		return user.userId === UsersUiUtils.ROOT_ADMIN_USER_ID;
+	static isRootAdmin(user: MeetUserDTO, rootAdminId: string): boolean {
+		return !!rootAdminId && user.userId === rootAdminId;
 	}
 
 	/**
@@ -110,10 +108,11 @@ export class UsersUiUtils {
 	 *
 	 * @param user - The user to evaluate
 	 * @param currentUserId - The authenticated user id
+	 * @param rootAdminId - The user ID of the root admin, obtained from the backend
 	 * @returns True if the user is root admin or current user, otherwise false
 	 */
-	static isProtectedUser(user: MeetUserDTO, currentUserId: string): boolean {
-		return UsersUiUtils.isRootAdmin(user) || UsersUiUtils.isSelf(user, currentUserId);
+	static isProtectedUser(user: MeetUserDTO, currentUserId: string, rootAdminId: string): boolean {
+		return UsersUiUtils.isRootAdmin(user, rootAdminId) || UsersUiUtils.isSelf(user, currentUserId);
 	}
 
 	/**

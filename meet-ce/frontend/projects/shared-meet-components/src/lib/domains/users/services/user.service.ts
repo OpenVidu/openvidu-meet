@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { MeetUserDTO, MeetUserFilters, MeetUserOptions, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetUserDTO, MeetUserFilters, MeetUserOptions, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 
 @Injectable({
@@ -127,6 +127,16 @@ export class UserService {
 	async deleteUser(userId: string): Promise<any> {
 		const path = `${this.USERS_API}/${userId}`;
 		return this.httpService.deleteRequest(path);
+	}
+
+	/**
+	 * Gets the root admin user, identified as the first registered user in the database.
+	 *
+	 * @returns A promise that resolves to the root admin MeetUserDTO, or null if no users exist
+	 */
+	async getRootAdmin(): Promise<MeetUserDTO | null> {
+		const result = await this.listUsers({ sortField: 'registrationDate', sortOrder: SortOrder.ASC, maxItems: 1 });
+		return result.users[0] ?? null;
 	}
 
 	/**

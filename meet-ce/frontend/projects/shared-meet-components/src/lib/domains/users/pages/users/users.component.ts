@@ -38,6 +38,7 @@ export class UsersComponent implements OnInit {
 
 	users = signal<MeetUserDTO[]>([]);
 	currentUserId = signal<string>('');
+	rootAdminId = signal<string>('');
 
 	// Loading state
 	isInitializing = signal(true);
@@ -66,6 +67,10 @@ export class UsersComponent implements OnInit {
 		}, 200);
 
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
+
+		const rootAdmin = await this.userService.getRootAdmin();
+		if (rootAdmin) this.rootAdminId.set(rootAdmin.userId);
+
 		await this.loadUsers(this.initialFilters());
 
 		clearTimeout(delayLoader);
