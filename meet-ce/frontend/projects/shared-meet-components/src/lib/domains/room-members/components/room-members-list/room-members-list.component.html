@@ -23,7 +23,7 @@
 					<mat-label>Search members</mat-label>
 					<input
 						matInput
-						[formControl]="nameFilterControl"
+						[formControl]="controls.nameFilter"
 						placeholder="Search by member name"
 						id="members-search-input"
 						(keydown.enter)="triggerSearch()"
@@ -33,7 +33,7 @@
 						matSuffix
 						class="search-btn"
 						(click)="triggerSearch()"
-						[disabled]="loading() || !nameFilterControl.value"
+						[disabled]="loading() || !controls.nameFilter.value"
 						matTooltip="Search"
 						id="members-search-btn"
 					>
@@ -88,6 +88,27 @@
 			>
 				<mat-icon>refresh</mat-icon>
 			</button>
+
+			@if (showFilters()) {
+				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter members">
+					<mat-icon>tune</mat-icon>
+				</button>
+
+				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu">
+					<div class="filter-content" (click)="$event.stopPropagation()">
+						<h4>Member name matching</h4>
+						<mat-form-field appearance="outline">
+							<mat-label>Match mode</mat-label>
+							<mat-select [formControl]="controls.nameMatchMode">
+								@for (option of nameMatchModeOptions; track option.value) {
+									<mat-option [value]="option.value">{{ option.label }}</mat-option>
+								}
+							</mat-select>
+						</mat-form-field>
+						<mat-checkbox [formControl]="controls.nameCaseInsensitive">Case insensitive</mat-checkbox>
+					</div>
+				</mat-menu>
+			}
 
 			<button
 				mat-button

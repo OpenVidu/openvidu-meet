@@ -101,6 +101,8 @@ export class RoomDetailComponent implements OnInit {
 	hasMoreMembers = signal(false);
 	initialMemberFilters = signal<MemberTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		sortField: 'membershipDate',
 		sortOrder: SortOrder.DESC
 	});
@@ -314,6 +316,8 @@ export class RoomDetailComponent implements OnInit {
 			// Apply member name filter if provided
 			if (filters.nameFilter) {
 				memberFilters.name = filters.nameFilter;
+				memberFilters.nameMatchMode = filters.nameMatchMode;
+				memberFilters.nameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 			}
 
 			const response = await this.roomMemberService.listRoomMembers(this.roomId(), memberFilters);

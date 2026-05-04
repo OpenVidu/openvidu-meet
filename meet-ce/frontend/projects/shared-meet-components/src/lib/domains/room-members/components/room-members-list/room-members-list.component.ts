@@ -13,7 +13,7 @@ import {
 	untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -21,13 +21,16 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { MeetRoomMember, MeetRoomMemberSortField, SortOrder } from '@openvidu-meet/typings';
+import { MeetRoomMember, MeetRoomMemberSortField, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
+import { merge } from 'rxjs';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomMemberUiUtils } from '../../utils/ui';
 
@@ -38,6 +41,8 @@ export interface MemberTableAction {
 
 export interface MemberTableFilter {
 	nameFilter: string;
+	nameMatchMode: TextMatchMode;
+	nameCaseInsensitive: boolean;
 	sortField: MeetRoomMemberSortField;
 	sortOrder: SortOrder;
 }
@@ -76,6 +81,8 @@ export interface MemberTableFilter {
 		MatIconModule,
 		MatFormFieldModule,
 		MatInputModule,
+		MatSelectModule,
+		MatMenuModule,
 		MatTooltipModule,
 		MatProgressSpinnerModule,
 		MatToolbarModule,
@@ -97,13 +104,15 @@ export class RoomMembersListsComponent implements OnInit {
 
 	members = input<MeetRoomMember[]>([]);
 	showSearchBox = input(true);
-	showFilters = input(false);
+	showFilters = input(true);
 	showSelection = input(true);
 	showLoadMore = input(false);
 	loading = input(false);
 	canViewUserProfiles = input(true);
 	initialFilters = input<MemberTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		sortField: 'membershipDate',
 		sortOrder: SortOrder.DESC
 	});
@@ -119,7 +128,22 @@ export class RoomMembersListsComponent implements OnInit {
 	readonly memberClicked = output<string>();
 
 	// Filter controls
-	nameFilterControl = new FormControl<string>('', { nonNullable: true });
+	filtersForm = new FormGroup({
+		nameFilter: new FormControl<string>('', { nonNullable: true }),
+		nameMatchMode: new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true }),
+		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true })
+	});
+
+	get controls() {
+		return this.filtersForm.controls;
+	}
+
+	nameMatchModeOptions = [
+		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
+		{ value: TextMatchMode.EXACT, label: 'Exact match' },
+		{ value: TextMatchMode.REGEX, label: 'Regex' }
+	];
 
 	// Sort state
 	currentSortField = signal<MeetRoomMemberSortField>('membershipDate');
@@ -164,15 +188,22 @@ export class RoomMembersListsComponent implements OnInit {
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		this.nameFilterControl.setValue(this.initialFilters().nameFilter);
-		this.currentSortField.set(this.initialFilters().sortField);
-		this.currentSortOrder.set(this.initialFilters().sortOrder);
+		const filters = this.initialFilters();
+		this.filtersForm.patchValue(filters, { emitEvent: false });
+		this.currentSortField.set(filters.sortField);
+		this.currentSortOrder.set(filters.sortOrder);
 
-		this.nameFilterControl.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
-			if (!value) {
-				this.emitFilterChange();
-			}
+		const { nameFilter, nameMatchMode, nameCaseInsensitive } = this.controls;
+
+		// Emit only when text field is cleared
+		nameFilter.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+			if (!value) this.emitFilterChange();
 		});
+
+		// Emit immediately on any option change
+		merge(nameMatchMode.valueChanges, nameCaseInsensitive.valueChanges)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.emitFilterChange());
 	}
 
 	// ===== SELECTION METHODS =====
@@ -255,21 +286,11 @@ export class RoomMembersListsComponent implements OnInit {
 	}
 
 	loadMoreMembers() {
-		const nameFilter = this.nameFilterControl.value;
-		this.loadMore.emit({
-			nameFilter,
-			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
-		});
+		this.loadMore.emit(this.buildFilterSnapshot());
 	}
 
 	refreshMembers() {
-		const nameFilter = this.nameFilterControl.value;
-		this.refresh.emit({
-			nameFilter,
-			sortField: this.currentSortField(),
-			sortOrder: this.currentSortOrder()
-		});
+		this.refresh.emit(this.buildFilterSnapshot());
 	}
 
 	onSortChange(sortState: Sort) {
@@ -284,19 +305,32 @@ export class RoomMembersListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
-	private emitFilterChange() {
-		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value,
+	private buildFilterSnapshot(): MemberTableFilter {
+		return {
+			...this.filtersForm.getRawValue(),
 			sortField: this.currentSortField(),
 			sortOrder: this.currentSortOrder()
-		});
+		};
+	}
+
+	private emitFilterChange() {
+		this.filterChange.emit(this.buildFilterSnapshot());
 	}
 
 	hasActiveFilters(): boolean {
-		return !!this.nameFilterControl.value;
+		const { nameFilter, nameMatchMode, nameCaseInsensitive } = this.filtersForm.getRawValue();
+		return !!(nameFilter || nameMatchMode !== TextMatchMode.PREFIX || nameCaseInsensitive);
 	}
 
 	clearFilters() {
-		this.nameFilterControl.setValue('');
+		this.filtersForm.reset(
+			{
+				nameFilter: '',
+				nameMatchMode: TextMatchMode.PREFIX,
+				nameCaseInsensitive: false
+			},
+			{ emitEvent: false }
+		);
+		this.emitFilterChange();
 	}
 }
