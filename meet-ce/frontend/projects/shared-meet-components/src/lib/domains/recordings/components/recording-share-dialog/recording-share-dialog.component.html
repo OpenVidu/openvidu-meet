@@ -17,13 +17,27 @@
 				@if (canGenerateUrls()) {
 					<div class="access-type-section">
 						<h3 class="section-label">Access Type</h3>
-						<mat-radio-group [ngModel]="accessType()" (ngModelChange)="accessType.set($event)" class="access-options">
-							<mat-radio-button value="public" class="access-option" [disabled]="!canGeneratePublicUrls()">
+						<mat-radio-group
+							[ngModel]="accessType()"
+							(ngModelChange)="accessType.set($event)"
+							class="access-options"
+						>
+							<mat-radio-button
+								value="public"
+								class="access-option"
+								[disabled]="!canGeneratePublicUrls()"
+							>
 								<div class="option-content">
 									<mat-icon class="option-icon">public</mat-icon>
 									<div class="option-details">
 										<span class="option-title">Public Access</span>
-										<span class="option-description">Anyone with the link can view</span>
+										<span class="option-description">
+											@if (canGeneratePublicUrls()) {
+												Anyone with the link can view
+											} @else {
+												Anonymous access is disabled
+											}
+										</span>
 									</div>
 								</div>
 							</mat-radio-button>
@@ -32,7 +46,9 @@
 									<mat-icon class="option-icon">lock</mat-icon>
 									<div class="option-details">
 										<span class="option-title">Private Access</span>
-										<span class="option-description">Only registered users can view</span>
+										<span class="option-description">
+											Only registered users with the link can view
+										</span>
 									</div>
 								</div>
 							</mat-radio-button>
