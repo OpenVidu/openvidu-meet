@@ -133,6 +133,22 @@
 	}
 }
 
+.details-link-bar {
+	display: flex;
+	justify-content: center;
+	border-top: 1px solid var(--ov-meet-border-color);
+	padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-md);
+
+	.details-link-btn {
+		color: var(--ov-meet-color-primary);
+		font-size: var(--ov-meet-font-size-xs);
+
+		mat-icon {
+			@include design-tokens.ov-icon(sm);
+		}
+	}
+}
+
 // === MAIN PAGE LAYOUT ===
 
 .recording-page-content {
@@ -241,6 +257,31 @@
 					@include design-tokens.ov-icon(sm);
 				}
 			}
+
+			.title {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-sm);
+				margin-bottom: var(--ov-meet-spacing-sm);
+
+				.recording-title {
+					margin: 0;
+				}
+			}
+
+			.details-link-btn {
+				display: inline-flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-xs);
+				padding-left: 0;
+				margin-top: var(--ov-meet-spacing-xs);
+				color: var(--ov-meet-color-primary);
+				font-size: var(--ov-meet-font-size-xs);
+
+				mat-icon {
+					@include design-tokens.ov-icon(sm);
+				}
+			}
 		}
 
 		.recording-title {
@@ -315,37 +356,57 @@
 
 .actions-section {
 	flex: 2;
-	align-self: self-end;
+	align-self: center;
 
 	.primary-actions {
-		@include design-tokens.ov-flex-center;
-		gap: var(--ov-meet-spacing-md);
+		display: flex;
 		flex-wrap: wrap;
-		justify-content: end;
+		gap: var(--ov-meet-spacing-sm);
+		align-items: center;
+		justify-content: flex-end;
 
 		.action-btn {
 			@include design-tokens.ov-button-base;
 			display: flex;
 			align-items: center;
 			gap: var(--ov-meet-spacing-sm);
-			min-width: 120px;
-			height: 48px;
+
+			mat-icon {
+				@include design-tokens.ov-icon(sm);
+			}
+
+			span {
+				display: none;
+
+				@media (min-width: 768px) {
+					display: inline;
+				}
+			}
+		}
+
+		.icon-action-btn {
+			@include design-tokens.ov-theme-transition;
+			border: 1px solid var(--ov-meet-border-color);
+			border-radius: var(--ov-meet-radius-sm);
 
 			mat-icon {
 				@include design-tokens.ov-icon(sm);
 			}
 
 			&.delete-btn {
-				background-color: var(--ov-meet-color-error);
-				color: var(--ov-meet-text-on-primary);
-			}
+				color: var(--ov-meet-color-error);
 
-			&:disabled,
-			&.mat-mdc-button-disabled {
-				color: var(--ov-meet-text-secondary) !important;
+				&:hover {
+					background-color: rgba(244, 67, 54, 0.1);
+				}
 
-				mat-icon {
+				&:disabled,
+				&.mat-mdc-button-disabled {
 					color: var(--ov-meet-text-secondary) !important;
+
+					mat-icon {
+						color: var(--ov-meet-text-secondary) !important;
+					}
 				}
 			}
 		}

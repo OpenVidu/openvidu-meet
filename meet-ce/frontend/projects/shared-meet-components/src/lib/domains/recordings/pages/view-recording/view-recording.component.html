@@ -37,7 +37,7 @@
 				<div class="toolbar-content">
 					@if (shouldShowBackButton()) {
 						<!-- Left: Back button -->
-						<button mat-icon-button class="back-button" (click)="goBack()">
+						<button mat-icon-button class="back-button" [matTooltip]="backButtonText()" (click)="goBack()">
 							<mat-icon>arrow_back</mat-icon>
 						</button>
 					}
@@ -110,6 +110,14 @@
 						}}</span>
 					</div>
 				}
+				@if (canShowRecordingDetailsButton()) {
+					<div class="details-link-bar">
+						<button mat-button class="details-link-btn" (click)="goToRecordingDetails()">
+							<mat-icon>arrow_outward</mat-icon>
+							<span>Go to recording details</span>
+						</button>
+					</div>
+				}
 			</div>
 
 			<!-- Video Player Component -->
@@ -131,10 +139,13 @@
 								@if (shouldShowBackButton()) {
 									<button mat-button class="desktop-back-button" (click)="goBack()">
 										<mat-icon>arrow_back</mat-icon>
-										<span>Back</span>
+										<span>{{ backButtonText() }}</span>
 									</button>
 								}
-								<h1 class="recording-title">{{ recording()!.roomName }}</h1>
+								<div class="title">
+									<mat-icon class="ov-recording-icon">video_library</mat-icon>
+									<h1 class="recording-title">{{ recording()!.roomName }}</h1>
+								</div>
 								<div class="recording-metadata">
 									<span class="recording-date">
 										<mat-icon class="ov-action-icon">schedule</mat-icon>
@@ -155,6 +166,12 @@
 										RecordingUiUtils.getPlayerStatusMessage(recording()!.status)
 									}}</span>
 								</div>
+								@if (canShowRecordingDetailsButton()) {
+									<button mat-button class="details-link-btn" (click)="goToRecordingDetails()">
+										<mat-icon>arrow_outward</mat-icon>
+										<span>Go to recording details</span>
+									</button>
+								}
 							</div>
 							<!-- Actions Section -->
 							<div class="actions-section">
@@ -163,12 +180,13 @@
 										[matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording()!.status)"
 									>
 										<button
-											mat-button
+											mat-flat-button
+											color="primary"
+											class="action-btn"
 											(click)="downloadRecording()"
 											[disabled]="
 												isLoading() || !RecordingUiUtils.isDownloadable(recording()!.status)
 											"
-											class="action-btn primary-button"
 										>
 											<mat-icon>download</mat-icon>
 											<span>Download</span>
@@ -177,13 +195,12 @@
 
 									<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording()!.status)">
 										<button
-											mat-raised-button
-											color="accent"
+											mat-stroked-button
+											class="action-btn"
 											(click)="openShareDialog()"
 											[disabled]="
 												isLoading() || !RecordingUiUtils.isShareable(recording()!.status)
 											"
-											class="action-btn"
 										>
 											<mat-icon>share</mat-icon>
 											<span>Share</span>
@@ -197,15 +214,14 @@
 											"
 										>
 											<button
-												mat-raised-button
+												mat-icon-button
+												class="icon-action-btn delete-btn"
 												(click)="deleteRecording()"
 												[disabled]="
 													isLoading() || !RecordingUiUtils.isDeletable(recording()!.status)
 												"
-												class="action-btn delete-btn"
 											>
 												<mat-icon>delete</mat-icon>
-												<span>Delete</span>
 											</button>
 										</span>
 									}

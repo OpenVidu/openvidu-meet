@@ -12,6 +12,7 @@ import { DialogPresetsService } from 'projects/shared-meet-components/src/lib/sh
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { AuthService } from '../../../auth/services/auth.service';
 import { ViewportService } from '../../../meeting/openvidu-components';
 import { MeetingWebComponentManagerService } from '../../../meeting/services/meeting-webcomponent-manager.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
@@ -44,15 +45,21 @@ export class ViewRecordingComponent implements OnInit {
 	protected readonly wcManagerService = inject(MeetingWebComponentManagerService);
 	protected readonly roomMemberContextService = inject(RoomMemberContextService);
 	protected readonly route = inject(ActivatedRoute);
+	protected readonly authService = inject(AuthService);
 	public readonly viewportService = inject(ViewportService);
 
 	recordingId = '';
 	recordingSecret?: string;
 	recording = signal<MeetRecordingInfo | undefined>(undefined);
 	recordingUrl = signal<string | undefined>(undefined);
+	isAuthenticated = signal(false);
 
 	canRetrieveRecordings = computed(() => this.roomMemberContextService.permissions()?.canRetrieveRecordings ?? false);
 	canDeleteRecordings = computed(() => this.roomMemberContextService.permissions()?.canDeleteRecordings ?? false);
+	backButtonText = computed(() =>
+		this.canRetrieveRecordings() && !!this.recording()?.roomId ? 'Back to Recordings' : 'Back'
+	);
+	canShowRecordingDetailsButton = computed(() => this.isAuthenticated() && this.canRetrieveRecordings());
 
 	isLoading = signal(true);
 	hasError = signal(false);
@@ -62,6 +69,7 @@ export class ViewRecordingComponent implements OnInit {
 	async ngOnInit() {
 		this.recordingId = this.route.snapshot.params['recording-id'];
 		this.recordingSecret = this.route.snapshot.queryParams['recordingSecret'];
+		this.isAuthenticated.set(await this.authService.isUserAuthenticated());
 
 		await this.loadRecording();
 	}
@@ -120,6 +128,11 @@ export class ViewRecordingComponent implements OnInit {
 	async retryLoad() {
 		this.hasError.set(false);
 		await this.loadRecording();
+	}
+
+	goToRecordingDetails(): void {
+		const url = this.navigationService.addBasePath(`/recordings/${this.recordingId}`);
+		window.open(url, '_blank', 'noopener,noreferrer');
 	}
 
 	/**
