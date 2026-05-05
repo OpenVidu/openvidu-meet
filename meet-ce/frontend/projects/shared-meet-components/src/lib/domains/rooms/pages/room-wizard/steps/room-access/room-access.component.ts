@@ -47,6 +47,7 @@ export class RoomAccessComponent implements OnInit {
 	permissionGroups = PERMISSION_GROUPS;
 	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
 
+	editMode = this.wizardService.editMode;
 	pendingMembers = this.wizardService.pendingMembers;
 
 	constructor() {
