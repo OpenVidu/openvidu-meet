@@ -505,6 +505,13 @@ export class RoomWizardStateService {
 	}
 
 	/**
+	 * Updates a pending member at the given index.
+	 */
+	updatePendingMember(index: number, updated: MeetRoomMemberOptions): void {
+		this._pendingMembers.update((members) => members.map((m, i) => (i === index ? updated : m)));
+	}
+
+	/**
 	 * Removes a pending member from the wizard state by index.
 	 */
 	removePendingMember(index: number): void {

@@ -288,27 +288,22 @@
 		flex-direction: column;
 	}
 
-	.add-member-form {
+	.members-header {
 		display: flex;
-		align-items: flex-end;
-		gap: var(--ov-meet-spacing-sm);
-		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--ov-meet-spacing-xl);
 		margin-bottom: var(--ov-meet-spacing-md);
 
-		.user-field {
-			flex: 1 1 220px;
-			min-width: 0;
-		}
+		.members-header-text {
+			display: flex;
+			flex-direction: column;
+			gap: 2px;
 
-		.role-field {
-			flex: 0 1 160px;
-			min-width: 0;
-		}
-
-		.add-member-button {
-			height: 56px; // match form field height
-			white-space: nowrap;
-			border-radius: var(--ov-meet-radius-sm);
+			.section-label,
+			.section-subtitle {
+				margin-bottom: 0;
+			}
 		}
 	}
 
@@ -371,8 +366,22 @@
 				}
 			}
 
-			.remove-member-button {
+			.member-actions {
+				display: flex;
+				align-items: center;
+				gap: var(--ov-meet-spacing-xs);
 				flex-shrink: 0;
+			}
+
+			.edit-member-button {
+				color: var(--ov-meet-text-secondary);
+
+				&:hover {
+					color: var(--ov-meet-color-primary);
+				}
+			}
+
+			.remove-member-button {
 				color: var(--ov-meet-text-secondary);
 
 				&:hover {
@@ -382,68 +391,14 @@
 		}
 	}
 
-	// ─── Shared helpers ──────────────────────────────────────────────────────────
-
-	.field-suffix-icon {
-		color: var(--ov-meet-icon-secondary);
-	}
-
-	.search-spinner {
-		margin-right: var(--ov-meet-spacing-xs);
-	}
-
-	.user-option {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-sm);
-
-		.user-option-icon {
-			@include design-tokens.ov-icon(md);
-			color: var(--ov-meet-icon-secondary);
-		}
-
-		.user-option-info {
-			display: flex;
-			flex-direction: column;
-
-			.user-option-id {
-				font-size: var(--ov-meet-font-size-md);
-				font-weight: var(--ov-meet-font-weight-medium);
-				color: var(--ov-meet-text-primary);
-			}
-
-			.user-option-name {
-				font-size: var(--ov-meet-font-size-sm);
-				color: var(--ov-meet-text-secondary);
-			}
-		}
-	}
-
-	.role-option {
-		display: flex;
-		align-items: center;
-		gap: var(--ov-meet-spacing-sm);
-	}
-
-	.no-results {
-		font-size: var(--ov-meet-font-size-sm);
-		color: var(--ov-meet-text-secondary);
-		font-style: italic;
-	}
-
 	// ─── Responsive ─────────────────────────────────────────────────────────────
 
 	@include design-tokens.ov-mobile-down {
-		.add-member-form {
+		.members-header {
 			flex-direction: column;
+			align-items: stretch;
 
-			.user-field,
-			.role-field {
-				width: 100%;
-				flex: 1 1 auto;
-			}
-
-			.add-member-button {
+			button {
 				width: 100%;
 			}
 		}

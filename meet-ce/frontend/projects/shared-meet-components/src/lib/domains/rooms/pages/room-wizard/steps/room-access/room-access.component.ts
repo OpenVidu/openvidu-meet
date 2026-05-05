@@ -1,22 +1,19 @@
-import { Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
-import { MatChipsModule } from '@angular/material/chips';
+import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatInputModule } from '@angular/material/input';
-import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRoomMemberOptions, MeetRoomMemberRole, MeetRoomOptions, MeetUserDTO } from '@openvidu-meet/typings';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { MeetRoomMemberOptions, MeetRoomOptions, MeetRoomRoles } from '@openvidu-meet/typings';
+import { take } from 'rxjs';
+import { AuthService } from '../../../../../auth/services/auth.service';
+import { MemberFormDialogComponent } from '../../../../../room-members/components/member-form-dialog/member-form-dialog.component';
+import { MemberFormDialogData } from '../../../../../room-members/models/member-form.model';
 import { PERMISSION_GROUPS } from '../../../../../room-members/models/permissions.model';
 import { RoomMemberUiUtils } from '../../../../../room-members/utils/ui';
-import { UserService } from '../../../../../users/services/user.service';
 import {
 	RoomAccessFormGroup,
 	RoomAccessFormValue,
@@ -33,34 +30,24 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		MatIconModule,
 		MatSlideToggleModule,
 		MatExpansionModule,
-		MatFormFieldModule,
-		MatInputModule,
-		MatSelectModule,
-		MatAutocompleteModule,
-		MatProgressSpinnerModule,
-		MatChipsModule,
 		MatTooltipModule
 	],
 	templateUrl: './room-access.component.html',
-	styleUrl: './room-access.component.scss'
+	styleUrl: './room-access.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RoomAccessComponent {
+export class RoomAccessComponent implements OnInit {
 	private wizardService = inject(RoomWizardStateService);
-	private userService = inject(UserService);
+	private dialog = inject(MatDialog);
+	private authService = inject(AuthService);
+
+	currentUserId = signal('');
 
 	roomAccessForm: RoomAccessFormGroup;
 	permissionGroups = PERMISSION_GROUPS;
 	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
 
-	// Member addition form
-	addMemberForm = new FormGroup({
-		userId: new FormControl<string>('', [Validators.required]),
-		role: new FormControl<MeetRoomMemberRole>(MeetRoomMemberRole.SPEAKER, [Validators.required])
-	});
-
 	pendingMembers = this.wizardService.pendingMembers;
-	isLoadingUsers = signal(false);
-	filteredUsers = signal<MeetUserDTO[]>([]);
 
 	constructor() {
 		const roomAccessStep = this.wizardService.getStepById(WizardStepId.ROOM_ACCESS);
@@ -72,18 +59,77 @@ export class RoomAccessComponent {
 		this.roomAccessForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
 			this.saveFormData(value);
 		});
+	}
 
-		// User search autocomplete
-		this.addMemberForm
-			.get('userId')!
-			.valueChanges.pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
-			.subscribe((value) => {
-				if (value && value.length >= 1) {
-					this.searchUsers(value);
-				} else {
-					this.filteredUsers.set([]);
+	async ngOnInit(): Promise<void> {
+		this.currentUserId.set((await this.authService.getUserId()) ?? '');
+	}
+
+	get moderatorForm(): RoomAccessRolePermissionsFormGroup {
+		return this.roomAccessForm.controls.moderator;
+	}
+
+	get speakerForm(): RoomAccessRolePermissionsFormGroup {
+		return this.roomAccessForm.controls.speaker;
+	}
+
+	openAddMemberDialog(): void {
+		this.dialog
+			.open<MemberFormDialogComponent, MemberFormDialogData, MeetRoomMemberOptions | null>(
+				MemberFormDialogComponent,
+				{
+					data: {
+						roomRoles: this.wizardService.roomOptions().roles as MeetRoomRoles,
+						roomOwner: this.currentUserId()
+					},
+					width: '600px',
+					maxWidth: '95vw',
+					maxHeight: '90vh'
+				}
+			)
+			.afterClosed()
+			.pipe(take(1))
+			.subscribe((result) => {
+				if (!result) return;
+				// Deduplicate by userId for registered members
+				const isDuplicate = result.userId
+					? this.pendingMembers().some((m) => m.userId === result.userId)
+					: false;
+				if (!isDuplicate) {
+					this.wizardService.addPendingMember(result);
 				}
 			});
+	}
+
+	openEditMemberDialog(index: number): void {
+		const member = this.pendingMembers()[index];
+		if (!member) return;
+
+		this.dialog
+			.open<MemberFormDialogComponent, MemberFormDialogData, MeetRoomMemberOptions | null>(
+				MemberFormDialogComponent,
+				{
+					data: {
+						roomRoles: this.wizardService.roomOptions().roles as MeetRoomRoles,
+						roomOwner: this.currentUserId(),
+						initialData: member
+					},
+					width: '600px',
+					maxWidth: '95vw',
+					maxHeight: '90vh'
+				}
+			)
+			.afterClosed()
+			.pipe(take(1))
+			.subscribe((result) => {
+				if (result) {
+					this.wizardService.updatePendingMember(index, result);
+				}
+			});
+	}
+
+	onRemoveMember(index: number): void {
+		this.wizardService.removePendingMember(index);
 	}
 
 	private saveFormData(formValue: Partial<RoomAccessFormValue>): void {
@@ -102,64 +148,5 @@ export class RoomAccessComponent {
 		};
 
 		this.wizardService.updateStepData(stepData);
-	}
-
-	get moderatorForm(): RoomAccessRolePermissionsFormGroup {
-		return this.roomAccessForm.controls.moderator;
-	}
-
-	get speakerForm(): RoomAccessRolePermissionsFormGroup {
-		return this.roomAccessForm.controls.speaker;
-	}
-
-	private async searchUsers(query: string): Promise<void> {
-		this.isLoadingUsers.set(true);
-		try {
-			const response = await this.userService.listUsers({ userId: query, maxItems: 20 });
-			this.filteredUsers.set(response.users);
-		} catch {
-			this.filteredUsers.set([]);
-		} finally {
-			this.isLoadingUsers.set(false);
-		}
-	}
-
-	displayUserFn(user: MeetUserDTO | string | null): string {
-		if (!user) return '';
-		if (typeof user === 'string') return user;
-		return user.userId;
-	}
-
-	onUserSelected(userId: string): void {
-		this.addMemberForm.get('userId')!.setValue(userId, { emitEvent: false });
-		this.filteredUsers.set([]);
-	}
-
-	onAddMember(): void {
-		if (this.addMemberForm.invalid) {
-			this.addMemberForm.markAllAsTouched();
-			return;
-		}
-
-		const { userId, role } = this.addMemberForm.getRawValue();
-		if (!userId || !role) return;
-
-		// Avoid duplicates
-		const exists = this.pendingMembers().some((m) => m.userId === userId);
-		if (exists) return;
-
-		const member: MeetRoomMemberOptions = { userId, baseRole: role };
-		this.wizardService.addPendingMember(member);
-
-		// Reset form
-		this.addMemberForm.reset({
-			userId: '',
-			role: MeetRoomMemberRole.SPEAKER
-		});
-		this.filteredUsers.set([]);
-	}
-
-	onRemoveMember(index: number): void {
-		this.wizardService.removePendingMember(index);
 	}
 }
