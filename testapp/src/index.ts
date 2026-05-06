@@ -3,11 +3,11 @@ import http from 'http';
 import path from 'path';
 import { Server as IOServer } from 'socket.io';
 import {
-    deleteAllRecordingsCtrl,
-    deleteAllRoomsCtrl,
-    deleteRoomCtrl,
-    getHome,
-    postCreateRoom
+	deleteAllRecordingsCtrl,
+	deleteAllRoomsCtrl,
+	deleteRoomCtrl,
+	getHome,
+	postCreateRoom
 } from './controllers/homeController';
 import { handleWebhook, joinRoom } from './controllers/roomController';
 import { configService } from './services/configService';
@@ -37,18 +37,18 @@ app.post('/delete-all-rooms', deleteAllRoomsCtrl);
 app.post('/delete-all-recordings', deleteAllRecordingsCtrl);
 app.post('/join-room', joinRoom);
 app.post('/webhook', (req, res) => {
-    handleWebhook(req, res, io);
+	handleWebhook(req, res, io);
 });
 
 const PORT = configService.serverPort;
 server.listen(PORT, () => {
-    console.log('-----------------------------------------');
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Visit http://localhost:${PORT}/ to access the app`);
-    console.log('-----------------------------------------');
-    console.log('');
-    console.log('OpenVidu Meet Configuration:');
-    console.log(`Meet API URL: ${configService.meetApiUrl}`);
-    console.log(`Meet API key: ${configService.meetApiKey}`);
-    console.log(`Meet Webcomponent Source: ${configService.meetWebhookSrc}`);
+	console.log('-----------------------------------------');
+	console.log(`Server running on port ${PORT}`);
+	console.log(`Visit http://localhost:${PORT}/ to access the app`);
+	console.log('-----------------------------------------');
+	console.log('');
+	console.log('OpenVidu Meet Configuration:');
+	console.log(`Meet API URL: ${configService.meetApiUrl}`);
+	console.log(`Meet API key: ${configService.meetApiKey}`);
+	console.log(`Meet Webcomponent Source: ${configService.meetWebhookSrc}`);
 });

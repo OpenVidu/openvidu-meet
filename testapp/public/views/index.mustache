@@ -68,7 +68,7 @@
 											<input
 												type="hidden"
 												name="roomUrl"
-												value="{{ moderatorUrl }}"
+												value="{{ access.anonymous.moderator.url }}"
 											/>
 											<input
 												type="hidden"
@@ -91,7 +91,7 @@
 											<input
 												type="hidden"
 												name="roomUrl"
-												value="{{ speakerUrl }}"
+												value="{{ access.anonymous.speaker.url }}"
 											/>
 											<input
 												type="hidden"
@@ -115,7 +115,7 @@
 											<input
 												type="hidden"
 												name="roomUrl"
-												value="{{ moderatorUrl }}"
+												value="{{ access.anonymous.moderator.url }}"
 											/>
 											<input
 												type="hidden"
@@ -171,11 +171,11 @@
 						</div>
 
 						<div class="mb-3">
-							<label for="expiration-date" class="form-label">Expiration Date</label>
+							<label for="auto-deletion-date" class="form-label">Auto Deletion Date</label>
 							<input
 								type="date"
 								name="autoDeletionDate"
-								id="expiration-date"
+								id="auto-deletion-date"
 								class="form-control"
 							/>
 						</div>
@@ -255,26 +255,6 @@
 											<label for="recording-enabled" class="form-check-label">
 												Enable Recording
 											</label>
-										</div>
-
-										<div id="recording-access-section">
-											<label for="recording-access" class="form-label"
-												>Recording Access Level</label
-											>
-											<select
-												name="config.recording.allowAccessTo"
-												id="recording-access"
-												class="form-select"
-												data-testid="recording-access-select"
-											>
-												<option value="admin">Admin Only</option>
-												<option value="admin_moderator">
-													Admin & Moderator
-												</option>
-												<option value="admin_moderator_speaker" selected>
-													Admin, Moderator & Speaker
-												</option>
-											</select>
 										</div>
 									</div>
 								</div>
