@@ -232,28 +232,28 @@ export class RoomUiUtils {
 	}
 
 	/**
-	 * Checks if the access link can be copied for a room
+	 * Checks if the access links can be shared for a room
 	 */
-	static canCopyAccessLink(room: MeetRoom): boolean {
+	static canShareAccessLinks(room: MeetRoom): boolean {
 		return !RoomUiUtils.isClosed(room);
 	}
 
 	/**
-	 * Checks if the access link can be shared for a room by checking if the anonymous moderator URL is available
+	 * Checks if a room has access links available to be shared
 	 */
-	static canShareLink(room: MeetRoom): boolean {
-		return !!room.access.anonymous.moderator.url;
+	static hasAccessLinks(room: MeetRoom): boolean {
+		return !!room.access.anonymous.moderator.url || !!room.access.anonymous.speaker.url;
 	}
 
 	/**
-	 * Gets the tooltip text for the copy access link action
+	 * Gets the tooltip text for the share access links action
 	 */
-	static getCopyAccessLinkTooltip(room: MeetRoom): string {
-		if (!RoomUiUtils.canCopyAccessLink(room)) {
-			return 'Room is closed. Reopen the room to allow copying the access link';
+	static getShareAccessLinksTooltip(room: MeetRoom): string {
+		if (!RoomUiUtils.canShareAccessLinks(room)) {
+			return 'Room is closed. Reopen the room to allow sharing the access links';
 		}
 
-		return 'Copy access link';
+		return 'Share access links';
 	}
 
 	/**

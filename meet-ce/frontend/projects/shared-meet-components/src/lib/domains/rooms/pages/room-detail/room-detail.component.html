@@ -69,13 +69,13 @@
 						</button>
 					</span>
 
-					@if (RoomUiUtils.canShareLink(room()!)) {
-						<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room()!)">
+					@if (RoomUiUtils.hasAccessLinks(room()!)) {
+						<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room()!)">
 							<button
 								mat-stroked-button
 								class="action-btn"
 								(click)="shareLink()"
-								[disabled]="!RoomUiUtils.canCopyAccessLink(room()!)"
+								[disabled]="!RoomUiUtils.canShareAccessLinks(room()!)"
 							>
 								<mat-icon>share</mat-icon>
 								<span>Share Link</span>

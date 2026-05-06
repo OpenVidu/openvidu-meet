@@ -466,11 +466,11 @@
 								</button>
 
 								<mat-menu #actionsMenu="matMenu" id="actions-menu-{{ room.roomId }}">
-									<span [matTooltip]="RoomUiUtils.getCopyAccessLinkTooltip(room)">
+									<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room)">
 										<button
 											mat-menu-item
 											(click)="$event.stopPropagation(); shareLink(room)"
-											[disabled]="!RoomUiUtils.canCopyAccessLink(room)"
+											[disabled]="!RoomUiUtils.canShareAccessLinks(room)"
 											id="share-link-btn-{{ room.roomId }}"
 										>
 											<mat-icon>share</mat-icon>
@@ -501,12 +501,12 @@
 								</mat-menu>
 							} @else {
 								<!-- Share Link Button (non-managers, only if link is available) -->
-								@if (RoomUiUtils.canShareLink(room)) {
-									<span matTooltip="Share room link">
+								@if (RoomUiUtils.hasAccessLinks(room)) {
+									<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room)">
 										<button
 											mat-icon-button
 											(click)="$event.stopPropagation(); shareLink(room)"
-											[disabled]="!RoomUiUtils.canCopyAccessLink(room)"
+											[disabled]="!RoomUiUtils.canShareAccessLinks(room)"
 											id="share-link-btn-{{ room.roomId }}"
 										>
 											<mat-icon>share</mat-icon>
