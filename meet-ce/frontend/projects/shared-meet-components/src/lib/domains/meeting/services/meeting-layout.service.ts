@@ -78,8 +78,8 @@ export class MeetingLayoutService extends LayoutService {
 	constructor() {
 		super();
 		this.log = this.loggerService.get('MeetLayoutService');
-
-		const isMobileOrTablet = this.viewPortService.isPhysicalMobile() || this.viewPortService.isPhysicalTablet();
+		const viewportInfo = this.viewPortService.viewportInfo();
+		const isMobileOrTablet = viewportInfo.isPhysicalMobile || viewportInfo.isPhysicalTablet;
 		if (isMobileOrTablet) this._maxRemoteSpeakers.set(2);
 
 		this.loadLayoutModeFromStorage();

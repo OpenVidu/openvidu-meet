@@ -1,57 +1,52 @@
 <div class="container" [class.withMargin]="localParticipant()?.isMinimized">
 	<div id="layout" class="layout" #layout>
 		<!-- Top slot: Render elements that should appear at the top -->
-		@if (layoutAdditionalElementsTemplate && templateConfig.layoutAdditionalElementsSlot === 'top') {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate" />
+		@if (layoutAdditionalElementsTopTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTopTemplate()" />
 		}
 
 		@if (localParticipant(); as participant) {
-			@for (track of participant.tracks; track trackParticipantElement($index, track)) {
+			@for (stream of participant.streams(); track trackParticipantElement($index, stream)) {
 				<div
 					#localLayoutElement
 					class="local_participant"
-					[class.OV_root]="!track.isAudioTrack && !track.isMinimized"
-					[class.OV_publisher]="!track.isAudioTrack && !track.isMinimized"
-					[class.OV_minimized]="track.isMinimized"
-					[class.OV_big]="track.isPinned"
-					[class.OV_ignored]="track.isAudioTrack && !track.participant.onlyHasAudioTracks"
-					[class.OV_screen]="track.isScreenTrack"
-					[id]="'participant-' + track.participant.identity"
+					[class.OV_root]="!stream.isMinimized"
+					[class.OV_publisher]="!stream.isMinimized"
+					[class.OV_minimized]="stream.isMinimized"
+					[class.OV_big]="stream.isPinned"
+					[class.OV_screen]="stream.isScreenStream"
+					[id]="'participant-' + stream.participant.identity"
 					cdkDrag
 					cdkDragBoundary=".layout"
-					[cdkDragDisabled]="!track.isMinimized"
+					[cdkDragDisabled]="!stream.isMinimized"
 					[cdkDragFreeDragPosition]="{ x: 0, y: 0 }"
 				>
-					<ng-container *ngTemplateOutlet="streamTemplate; context: { $implicit: track }" />
+					<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
 				</div>
 			}
 		}
 
 		<!-- Default slot: Render additional layout elements (backward compatibility and default position) -->
-		@if (
-			layoutAdditionalElementsTemplate &&
-			(templateConfig.layoutAdditionalElementsSlot === 'default' || !templateConfig.layoutAdditionalElementsSlot)
-		) {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate" />
+		@if (layoutAdditionalElementsDefaultTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsDefaultTemplate()" />
 		}
 
-		@for (track of remoteParticipants() | tracks; track trackParticipantElement($index, track)) {
+		@for (stream of remoteStreams(); track trackParticipantElement($index, stream)) {
 			<div
 				class="remote-participant"
-				[id]="'participant-' + track.participant.identity"
-				[class.OV_root]="!track.isAudioTrack"
-				[class.OV_publisher]="!track.isAudioTrack"
-				[class.OV_big]="track.isPinned"
-				[class.OV_ignored]="track.isAudioTrack && !track.participant.onlyHasAudioTracks"
-				[class.OV_screen]="track.isScreenTrack"
+				[id]="'participant-' + stream.participant.identity"
+				[class.OV_root]="true"
+				[class.OV_publisher]="true"
+				[class.OV_big]="stream.isPinned"
+				[class.OV_screen]="stream.isScreenStream"
 			>
-				<ng-container *ngTemplateOutlet="streamTemplate; context: { $implicit: track }" />
+				<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
 			</div>
 		}
 
 		<!-- Bottom slot: Render elements that should appear at the bottom -->
-		@if (layoutAdditionalElementsTemplate && templateConfig.layoutAdditionalElementsSlot === 'bottom') {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTemplate" />
+		@if (layoutAdditionalElementsBottomTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsBottomTemplate()" />
 		}
 	</div>
 

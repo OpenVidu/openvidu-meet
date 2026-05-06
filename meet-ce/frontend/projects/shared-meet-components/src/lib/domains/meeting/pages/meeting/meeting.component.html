@@ -17,7 +17,6 @@
 	<ov-videoconference
 		[token]="roomMemberToken()!"
 		[prejoin]="true"
-		[prejoinDisplayParticipantName]="false"
 		[videoEnabled]="features().videoEnabled"
 		[audioEnabled]="features().audioEnabled"
 		[e2eeKey]="e2eeKey()"
@@ -39,15 +38,8 @@
 		[activitiesPanelRecordingActivity]="
 			features().showStartStopRecording || (features().showViewRecordings && hasRecordings())
 		"
-		[recordingActivityShowControls]="{
-			play: false,
-			download: false,
-			delete: false,
-			externalView: true
-		}"
 		[recordingActivityStartStopRecordingButton]="features().showStartStopRecording"
 		[recordingActivityViewRecordingsButton]="features().showViewRecordings && hasRecordings()"
-		[recordingActivityShowRecordingsList]="false"
 		[showThemeSelector]="features().showThemeSelector"
 		[showDisconnectionDialog]="false"
 		(onRoomCreated)="onRoomCreated($event)"

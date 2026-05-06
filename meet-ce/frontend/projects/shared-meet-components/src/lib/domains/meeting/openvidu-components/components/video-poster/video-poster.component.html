@@ -23,7 +23,7 @@
 } @else if (showAvatar()) {
 	<div class="poster" id="video-poster">
 		@if (letter()) {
-			<div class="initial" [ngStyle]="{ 'background-color': color() }">
+			<div class="initial" [style.background-color]="color()">
 				<span id="poster-text">{{ letter() }}</span>
 			</div>
 		}

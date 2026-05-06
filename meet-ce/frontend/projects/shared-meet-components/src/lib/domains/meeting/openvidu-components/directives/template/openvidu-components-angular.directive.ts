@@ -120,7 +120,7 @@ import { Directive, TemplateRef, ViewContainerRef, inject } from '@angular/core'
  */
 @Directive({
 	selector: '[ovToolbar]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarDirective {
 	/**
@@ -258,7 +258,7 @@ export class ToolbarDirective {
 
 @Directive({
 	selector: '[ovToolbarAdditionalButtons]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarAdditionalButtonsDirective {
 	/**
@@ -379,7 +379,7 @@ export class ToolbarAdditionalButtonsDirective {
  */
 @Directive({
 	selector: '[ovToolbarAdditionalPanelButtons]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarAdditionalPanelButtonsDirective {
 	/**
@@ -527,7 +527,7 @@ export class ToolbarAdditionalPanelButtonsDirective {
  */
 @Directive({
 	selector: '[ovPanel]',
-	standalone: false
+	standalone: true
 })
 export class PanelDirective {
 	/**
@@ -712,7 +712,7 @@ export class PanelDirective {
  */
 @Directive({
 	selector: '[ovAdditionalPanels]',
-	standalone: false
+	standalone: true
 })
 export class AdditionalPanelsDirective {
 	/**
@@ -888,7 +888,7 @@ export class AdditionalPanelsDirective {
  */
 @Directive({
 	selector: '[ovChatPanel]',
-	standalone: false
+	standalone: true
 })
 export class ChatPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -901,7 +901,7 @@ export class ChatPanelDirective {
  */
 @Directive({
 	selector: '[ovBackgroundEffectsPanel]',
-	standalone: false
+	standalone: true
 })
 export class BackgroundEffectsPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1012,7 +1012,7 @@ export class BackgroundEffectsPanelDirective {
  */
 @Directive({
 	selector: '[ovActivitiesPanel]',
-	standalone: false
+	standalone: true
 })
 export class ActivitiesPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1181,7 +1181,7 @@ export class ActivitiesPanelDirective {
 
 @Directive({
 	selector: '[ovParticipantsPanel]',
-	standalone: false
+	standalone: true
 })
 export class ParticipantsPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1317,7 +1317,7 @@ export class ParticipantsPanelDirective {
 
 @Directive({
 	selector: '[ovParticipantPanelItem]',
-	standalone: false
+	standalone: true
 })
 export class ParticipantPanelItemDirective {
 	public template = inject(TemplateRef<any>);
@@ -1458,7 +1458,7 @@ export class ParticipantPanelItemDirective {
 
 @Directive({
 	selector: '[ovParticipantPanelItemElements]',
-	standalone: false
+	standalone: true
 })
 export class ParticipantPanelItemElementsDirective {
 	public template = inject(TemplateRef<any>);
@@ -1468,10 +1468,10 @@ export class ParticipantPanelItemElementsDirective {
 /**
  * The ***ovLayout** directive empowers you to replace the default room layout with a customized one.
  *
- * To ensure that the default {@link StreamComponent} functions correctly with participant tracks, you can access all local tracks using the [tracks](../classes/ParticipantModel.html#tracks) accessor.
+ * To ensure that the default {@link StreamComponent} functions correctly with participant streams, you can access all local streams using the [streams](../classes/ParticipantModel.html#streams) accessor.
  * Extracting streams from remote participants can be more complex, but openvidu-angular simplifies the process with the {@link RemoteParticipantTracksPipe}, which facilitates the extraction of each participant's stream.
  *
- * In the example below, take note of the HTML template's structure. The `*ngFor` statements employ the `| tracks` pipe to handle tracks effectively.
+ * In the example below, take note of the HTML template's structure. The `@for` statements employ the `| tracks` pipe to handle streams effectively.
  *
  * <!--ovLayout-start-tutorial-->
  * ```typescript
@@ -1483,7 +1483,6 @@ export class ParticipantPanelItemElementsDirective {
  * 	ParticipantService,
  * 	OpenViduComponentsModule,
  * } from 'openvidu-components-angular';
- * import { NgClass } from '@angular/common';
  *
  * @Component({
  * 	selector: 'app-root',
@@ -1497,29 +1496,17 @@ export class ParticipantPanelItemElementsDirective {
  * 			<!-- Custom Layout for Video Streams -->
  * 			<div *ovLayout>
  * 				<div class="container">
- * 					<!-- Local Participant's Tracks -->
- * 					@for (track of localParticipant.tracks; track track) {
- * 					<div
- * 						class="item"
- * 						[ngClass]="{
- * 							hidden:
- * 								track.isAudioTrack && !track.participant.onlyHasAudioTracks
- * 						}"
- * 					>
- * 						<ov-stream [track]="track"></ov-stream>
+ * 					<!-- Local Participant's Streams -->
+ * 					@for (stream of localParticipant.streams; track stream.streamId) {
+ * 					<div class="item">
+ * 						<ov-stream [stream]="stream"></ov-stream>
  * 					</div>
  * 					}
  *
- * 					<!-- Remote Participants' Tracks -->
- * 					@for (track of remoteParticipants | tracks; track track) {
- * 					<div
- * 						class="item"
- * 						[ngClass]="{
- * 							hidden:
- * 								track.isAudioTrack && !track.participant.onlyHasAudioTracks
- * 						}"
- * 					>
- * 						<ov-stream [track]="track"></ov-stream>
+ * 					<!-- Remote Participants' Streams -->
+ * 					@for (stream of remoteParticipants | tracks; track stream.streamId) {
+ * 					<div class="item">
+ * 						<ov-stream [stream]="stream"></ov-stream>
  * 					</div>
  * 					}
  * 				</div>
@@ -1542,7 +1529,7 @@ export class ParticipantPanelItemElementsDirective {
  * 		}
  * 	`,
  * 	standalone: true,
- * 	imports: [OpenViduComponentsModule, NgClass],
+ * 	imports: [OpenViduComponentsModule],
  * })
  * export class AppComponent implements OnInit, OnDestroy {
  * 	// For local development, leave these variables empty
@@ -1652,7 +1639,7 @@ export class ParticipantPanelItemElementsDirective {
  */
 @Directive({
 	selector: '[ovLayout]',
-	standalone: false
+	standalone: true
 })
 export class LayoutDirective {
 	public template = inject(TemplateRef<any>);
@@ -1663,7 +1650,7 @@ export class LayoutDirective {
  * The ***ovStream** directive empowers you to substitute the default {@link StreamComponent} template with a custom one.
  * In the example below, we demonstrate how to customize the position and styles of a participant's nickname by replacing the default stream component.
  *
- * With the **ovStream** directive, you can access the track object within its context using the `let` keyword and referencing the `track` variable as follows: `*ovStream="let track"`. This allows you to access the {@link ParticipantModel} object using `track.participant`.
+ * With the **ovStream** directive, you can access the stream object within its context using the `let` keyword and referencing the `stream` variable as follows: `*ovStream="let stream"`. This allows you to access the {@link ParticipantModel} object using `stream.participant`.
  *
  * In the example provided below, we illustrate how to achieve this customization with just a few lines of code.
  *
@@ -1689,12 +1676,12 @@ export class LayoutDirective {
  * 			(onTokenRequested)="onTokenRequested($event)"
  * 		>
  * 			<!-- Display Video Streams -->
- * 			<div *ovStream="let track">
+ * 			<div *ovStream="let stream">
  * 				<!-- Video Stream Component -->
- * 				<ov-stream [track]="track" [displayParticipantName]="false"></ov-stream>
+ * 				<ov-stream [stream]="stream" [displayParticipantName]="false"></ov-stream>
  *
  * 				<!-- Display Participant's Name -->
- * 				<p>{{ track.participant.name }}</p>
+ * 				<p>{{ stream.participant.name }}</p>
  * 			</div>
  * 		</ov-videoconference>
  * 	`,
@@ -1782,10 +1769,9 @@ export class LayoutDirective {
 
 @Directive({
 	selector: '[ovStream]',
-	standalone: false
+	standalone: true
 })
 export class StreamDirective {
 	public template = inject(TemplateRef<any>);
 	public container = inject(ViewContainerRef);
 }
-

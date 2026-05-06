@@ -1,5 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { createRoom, createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import {
+    createRoom,
+    createRoomAndGetAccessUrl,
+    createRoomMember,
+    deleteRooms,
+    toAbsoluteMeetUrl
+} from './helpers/meet-api.helper';
 import {
     expectChatLinkCount,
     expectChatLinkHrefContains,
@@ -21,7 +27,7 @@ test.describe('Chat features', () => {
 
     test('should send messages', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-send-${Date.now()}`, participantName: senderName, createdRoomIds });
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);
@@ -37,7 +43,7 @@ test.describe('Chat features', () => {
 
     test('should keep unread chat badge hidden at startup when there are no messages', async ({ page }) => {
         const participantName = `participant-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(participantName, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-badge-${Date.now()}`, participantName, createdRoomIds });
 
         await openMeeting(page, accessUrl);
 
@@ -54,30 +60,33 @@ test.describe('Chat features', () => {
         const senderName = `sender-${Date.now()}`;
         const receiverName = `receiver-${Date.now()}`;
 
-        const { accessUrl: receiverAccessUrl } = await createRoomAndGetAccessUrl(receiverName, room, undefined, createdRoomIds);
-        const { accessUrl: senderAccessUrl } = await createRoomAndGetAccessUrl(senderName, room, undefined, createdRoomIds);
+		const [receiverMember, senderMember] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' })
+		]);
+		const receiverAccessUrl = toAbsoluteMeetUrl(receiverMember.accessUrl);
+		const senderAccessUrl = toAbsoluteMeetUrl(senderMember.accessUrl);
 
-        const receiverPage = await browser.newPage();
-        await openMeeting(receiverPage, receiverAccessUrl);
+		const [receiverPage, senderPage] = await Promise.all([browser.newPage(), browser.newPage()]);
+		await Promise.all([
+			openMeeting(receiverPage, receiverAccessUrl),
+			openMeeting(senderPage, senderAccessUrl)
+		]);
 
-        const senderPage = await browser.newPage();
-        await openMeeting(senderPage, senderAccessUrl);
+		await toggleChatPanel(senderPage);
+		await sendChatMessage(senderPage, 'hello from sender');
 
-        await toggleChatPanel(senderPage);
-        await sendChatMessage(senderPage, 'hello from sender');
+		await toggleChatPanel(receiverPage);
+		await expectChatMessageCount(receiverPage, 1);
+		await expectChatMessageTextAt(receiverPage, 0, 'hello from sender');
+		await expectFirstMessageSender(receiverPage, senderName);
 
-        await toggleChatPanel(receiverPage);
-        await expectChatMessageCount(receiverPage, 1);
-        await expectChatMessageTextAt(receiverPage, 0, 'hello from sender');
-        await expectFirstMessageSender(receiverPage, senderName);
-
-        await senderPage.close();
-        await receiverPage.close();
+		await Promise.all([senderPage.close(), receiverPage.close()]);
     });
 
     test('should send an URL message and render it as link', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-url-${Date.now()}`, participantName: senderName, createdRoomIds });
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);
@@ -92,31 +101,34 @@ test.describe('Chat features', () => {
         const senderName = `sender-${Date.now()}`;
         const receiverName = `receiver-${Date.now()}`;
 
-        const { accessUrl: receiverAccessUrl } = await createRoomAndGetAccessUrl(receiverName, room, undefined, createdRoomIds);
-        const { accessUrl: senderAccessUrl } = await createRoomAndGetAccessUrl(senderName, room, undefined, createdRoomIds);
+		const [receiverMember, senderMember] = await Promise.all([
+			createRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' }),
+			createRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' })
+		]);
+		const receiverAccessUrl = toAbsoluteMeetUrl(receiverMember.accessUrl);
+		const senderAccessUrl = toAbsoluteMeetUrl(senderMember.accessUrl);
 
-        const receiverPage = await browser.newPage();
-        await openMeeting(receiverPage, receiverAccessUrl);
+		const [receiverPage, senderPage] = await Promise.all([browser.newPage(), browser.newPage()]);
+		await Promise.all([
+			openMeeting(receiverPage, receiverAccessUrl),
+			openMeeting(senderPage, senderAccessUrl)
+		]);
 
-        const senderPage = await browser.newPage();
-        await openMeeting(senderPage, senderAccessUrl);
+		await toggleChatPanel(senderPage);
+		await sendChatMessage(senderPage, 'message while chat is closed');
 
-        await toggleChatPanel(senderPage);
-        await sendChatMessage(senderPage, 'message while chat is closed');
+		await expectSnackbarNotification(receiverPage);
 
-        await expectSnackbarNotification(receiverPage);
+		await toggleChatPanel(receiverPage);
+		await expectChatMessageCount(receiverPage, 1);
+		await expectChatMessageTextAt(receiverPage, 0, 'message while chat is closed');
 
-        await toggleChatPanel(receiverPage);
-        await expectChatMessageCount(receiverPage, 1);
-        await expectChatMessageTextAt(receiverPage, 0, 'message while chat is closed');
+		await Promise.all([senderPage.close(), receiverPage.close()]);
+	});
 
-        await senderPage.close();
-        await receiverPage.close();
-    });
-
-    test('should preserve message order when sending multiple messages quickly', async ({ page }) => {
+	test('should preserve message order when sending multiple messages quickly', async ({ page }) => {
         const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl(senderName, undefined, undefined, createdRoomIds);
+        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-order-${Date.now()}`, participantName: senderName, createdRoomIds });
 
         await openMeeting(page, accessUrl);
         await toggleChatPanel(page);

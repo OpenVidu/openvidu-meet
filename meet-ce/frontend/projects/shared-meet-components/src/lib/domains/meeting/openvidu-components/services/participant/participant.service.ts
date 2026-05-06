@@ -1,5 +1,4 @@
 import { Injectable, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
-import { ILogger } from '../../models/logger.model';
 import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { GlobalConfigService } from '../config/global-config.service';
@@ -27,61 +26,47 @@ export class ParticipantService {
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly storageSrv = inject(StorageService);
-	private readonly loggerSrv = inject(LoggerService);
 	private readonly e2eeService = inject(E2eeService);
+	private readonly log = inject(LoggerService).get('ParticipantService');
 
 	/**
 	 * Local participant Signal for reactive programming with Angular signals.
 	 */
-	localParticipantSignal: Signal<ParticipantModel | undefined>;
-	private localParticipantWritableSignal: WritableSignal<ParticipantModel | undefined> = signal<
+	localParticipant: Signal<ParticipantModel | undefined>;
+	private _localParticipant: WritableSignal<ParticipantModel | undefined> = signal<
 		ParticipantModel | undefined
 	>(undefined);
-	readonly localParticipantNameSignal = computed(() => this.localParticipantWritableSignal()?.name ?? '');
-	readonly localParticipantIdentitySignal = computed(() => this.localParticipantWritableSignal()?.identity ?? '');
+	readonly localParticipantNameSignal = computed(() => this._localParticipant()?.name ?? '');
+	readonly localParticipantIdentitySignal = computed(() => this._localParticipant()?.identity ?? '');
 
 	/**
 	 * Remote participants Signal for reactive programming with Angular signals.
 	 * This is a modern alternative to remoteParticipants$ Observable.
 	 * @since Angular 16+
 	 */
-	remoteParticipantsSignal: Signal<ParticipantModel[]>;
-	private remoteParticipantsWritableSignal: WritableSignal<ParticipantModel[]> = signal<ParticipantModel[]>([]);
+	remoteParticipants: Signal<ParticipantModel[]>;
+	private _remoteParticipants: WritableSignal<ParticipantModel[]> = signal<ParticipantModel[]>([]);
 	readonly totalParticipantsSignal = computed(
-		() => (this.localParticipantWritableSignal() ? 1 : 0) + this.remoteParticipantsWritableSignal().length
+		() => (this._localParticipant() ? 1 : 0) + this._remoteParticipants().length
 	);
 	readonly hasRemoteEncryptionErrorsSignal = computed(() =>
-		this.remoteParticipantsWritableSignal().some((participant) => participant.hasEncryptionError)
+		this._remoteParticipants().some((participant) => participant.hasEncryptionError)
 	);
-
-	private localParticipant: ParticipantModel | undefined;
-	private remoteParticipants: ParticipantModel[] = [];
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
 
 	/**
 	 * @internal
 	 */
 	constructor() {
-		this.log = this.loggerSrv.get('ParticipantService');
-
-		// Expose readonly signals
-		this.localParticipantSignal = this.localParticipantWritableSignal.asReadonly();
-		this.remoteParticipantsSignal = this.remoteParticipantsWritableSignal.asReadonly();
+		this.localParticipant = this._localParticipant.asReadonly();
+		this.remoteParticipants = this._remoteParticipants.asReadonly();
 	}
 
 	/**
 	 * @internal
 	 */
 	clear(): void {
-		this.localParticipant = undefined;
-		this.remoteParticipants = [];
-		this.localParticipantWritableSignal.set(undefined);
-		this.remoteParticipantsWritableSignal.set([]);
+		this._localParticipant.set(undefined);
+		this._remoteParticipants.set([]);
 	}
 
 	/**
@@ -91,15 +76,8 @@ export class ParticipantService {
 	 */
 	setLocalParticipant(participant: OVLocalParticipant) {
 		const room = this.openviduService.getRoom();
-		this.localParticipant = this.newParticipant({ participant, room });
-		this.updateLocalParticipant();
-	}
-
-	/**
-	 * Returns the local participant object.
-	 */
-	getLocalParticipant(): ParticipantModel | undefined {
-		return this.localParticipant;
+		const newParticipant = this.newParticipant({ participant, room });
+		this._localParticipant.set(newParticipant);
 	}
 
 	/**
@@ -118,19 +96,20 @@ export class ParticipantService {
 		await this.openviduService.connectRoom();
 		this.setLocalParticipant(this.openviduService.getRoom().localParticipant);
 
+		const localParticipant = this.localParticipant();
 		const videoTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Video);
 		const audioTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Audio);
 
 		const promises: Promise<OVLocalTrackPublication>[] = [];
-		if (this.localParticipant && videoTrack) {
-			promises.push(this.localParticipant.publishTrack(videoTrack));
+		if (localParticipant && videoTrack) {
+			promises.push(localParticipant.publishTrack(videoTrack));
 		}
-		if (this.localParticipant && audioTrack) {
-			promises.push(this.localParticipant?.publishTrack(audioTrack));
+		if (localParticipant && audioTrack) {
+			promises.push(localParticipant?.publishTrack(audioTrack));
 		}
 
 		await Promise.all(promises);
-		this.updateLocalParticipant();
+		this._localParticipant()?.bump();
 		// if(!isCameraEnabled) await this.setCameraEnabled(isCameraEnabled);
 		// if(!isMicrophoneEnabled) await this.setMicrophoneEnabled(isMicrophoneEnabled);
 		// Once the Room is created, the temporary tracks are not longer needed.
@@ -146,8 +125,9 @@ export class ParticipantService {
 	 * @param {DataPublishOptions} publishOptions [DataPublishOptions](https://docs.livekit.io/client-sdk-js/types/DataPublishOptions.html)
 	 */
 	publishData(data: Uint8Array, publishOptions: OVDataPublishOptions): Promise<void> {
-		if (this.localParticipant) {
-			return this.localParticipant.publishData(data, publishOptions);
+		const localParticipant = this.localParticipant();
+		if (localParticipant) {
+			return localParticipant.publishData(data, publishOptions);
 		}
 		return Promise.reject('Local participant not found');
 	}
@@ -158,7 +138,8 @@ export class ParticipantService {
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
 		if (this.openviduService.isRoomConnected()) {
-			await this.localParticipant?.switchCamera(deviceId);
+			const localParticipant = this.localParticipant();
+			await localParticipant?.switchCamera(deviceId);
 		} else {
 			await this.openviduService.switchCamera(deviceId);
 		}
@@ -171,7 +152,8 @@ export class ParticipantService {
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
 		if (this.openviduService.isRoomConnected()) {
-			await this.localParticipant?.switchMicrophone(deviceId);
+			const localParticipant = this.localParticipant();
+			await localParticipant?.switchMicrophone(deviceId);
 		} else {
 			await this.openviduService.switchMicrophone(deviceId);
 		}
@@ -182,14 +164,15 @@ export class ParticipantService {
 	 * Switches the active screen share track showing a native browser dialog to select a screen or window.
 	 */
 	async switchScreenShare(): Promise<void> {
-		if (!this.localParticipant) {
+		const localParticipant = this.localParticipant();
+		if (!localParticipant) {
 			this.log.e('Local participant is undefined when switching screenshare');
 			return;
 		}
 
 		// Chrome / Safari: seamless replaceTrack keeps the same publication SID.
 		const options = this.getScreenCaptureOptions();
-		const [newTrack] = await this.localParticipant.createScreenTracks(options);
+		const [newTrack] = await localParticipant.createScreenTracks(options);
 		if (newTrack) {
 			newTrack.addListener('ended', async () => {
 				this.log.d('Clicked native stop button. Stopping screen sharing');
@@ -197,7 +180,7 @@ export class ParticipantService {
 			});
 
 			try {
-				await this.localParticipant.switchScreenshare(newTrack);
+				await localParticipant.switchScreenshare(newTrack);
 			} catch (error) {
 				newTrack.stop();
 				throw error;
@@ -222,8 +205,8 @@ export class ParticipantService {
 					resolution: VideoPresets.h720.resolution
 				};
 			}
-			await this.localParticipant?.setCameraEnabled(enabled, options);
-			this.updateLocalParticipant();
+			await this._localParticipant()?.setCameraEnabled(enabled, options);
+			this._localParticipant()?.bump();
 		} else {
 			await this.openviduService.setVideoTrackEnabled(enabled);
 		}
@@ -242,8 +225,8 @@ export class ParticipantService {
 					deviceId: storageDevice.device
 				};
 			}
-			await this.localParticipant?.setMicrophoneEnabled(enabled, options);
-			this.updateLocalParticipant();
+			await this._localParticipant()?.setMicrophoneEnabled(enabled, options);
+			this._localParticipant()?.bump();
 		} else {
 			this.openviduService.setAudioTrackEnabled(enabled);
 		}
@@ -256,13 +239,13 @@ export class ParticipantService {
 	 */
 	async setScreenShareEnabled(enabled: boolean): Promise<void> {
 		const options = this.getScreenCaptureOptions();
-		const track = await this.localParticipant?.setScreenShareEnabled(enabled, options);
+		const track = await this._localParticipant()?.setScreenShareEnabled(enabled, options);
 		if (enabled && track) {
 			// Set all videos to normal size when a local screen is shared
 			this.resetRemoteStreamsToNormalSize();
-			this.resetMyStreamsToNormalSize();
-			this.localParticipant?.toggleVideoPinned(track.trackSid);
-			this.localParticipant?.setScreenTrackPublicationDate(track.trackSid, new Date().getTime());
+			this.resetLocalStreamsToNormalSize();
+			this._localParticipant()?.toggleVideoPinned(track.trackSid);
+			this._localParticipant()?.setScreenTrackPublicationDate(track.trackSid, new Date().getTime());
 
 			track?.addListener('ended', async () => {
 				this.log.d('Clicked native stop button. Stopping screen sharing');
@@ -270,12 +253,12 @@ export class ParticipantService {
 			});
 		} else if (!enabled && track) {
 			// Enlarge the last screen shared when a local screen is stopped
-			this.localParticipant?.setScreenTrackPublicationDate(track.trackSid, -1);
+			this._localParticipant()?.setScreenTrackPublicationDate(track.trackSid, -1);
 			this.resetRemoteStreamsToNormalSize();
-			this.resetMyStreamsToNormalSize();
+			this.resetLocalStreamsToNormalSize();
 			this.setLastScreenPinned();
 		}
-		this.updateLocalParticipant();
+		this._localParticipant()?.bump();
 	}
 
 	/**
@@ -284,8 +267,8 @@ export class ParticipantService {
 	 * we decided to not allow this feature for now.
 	 */
 	// setMyName(name: string) {
-	// 	if (!this.localParticipant) return;
-	// 	this.localParticipant.setName(name);
+	// 	if (!this.localParticipantWritableSignal()) return;
+	// 	this.localParticipantWritableSignal().setName(name);
 	// 	this.updateLocalParticipant();
 	// }
 
@@ -295,42 +278,19 @@ export class ParticipantService {
 	 * @internal
 	 */
 	setSpeaking(speakers: OVParticipant[]) {
-		let shouldUpdateLocal = false;
-		let shouldUpdateRemotes = false;
+		// Reset speaking state for all participants (_speaking signal update is a no-op if unchanged).
+		this._localParticipant()?.setSpeaking(false);
+		this.remoteParticipants().forEach((p) => p.setSpeaking(false));
 
-		// Set all participants' isSpeaking property to false
-		if (this.localParticipant?.isSpeaking) {
-			this.localParticipant.setSpeaking(false);
-			shouldUpdateLocal = true;
-		}
-		this.remoteParticipants.forEach((participant) => {
-			if (participant.isSpeaking) {
-				participant.setSpeaking(false);
-				shouldUpdateRemotes = true;
-			}
-		});
-
+		// Set speaking state for active speakers.
 		speakers.forEach((s) => {
 			if (s.isLocal) {
-				if (this.localParticipant && !this.localParticipant.isSpeaking) {
-					this.localParticipant.setSpeaking(true);
-					shouldUpdateLocal = true;
-				}
+				this._localParticipant()?.setSpeaking(true);
 			} else {
-				const participant = this.remoteParticipants.find((p) => p.sid === s.sid);
-				if (participant && !participant.isSpeaking) {
-					participant.setSpeaking(true);
-					shouldUpdateRemotes = true;
-				}
+				this.remoteParticipants().find((p) => p.sid === s.sid)?.setSpeaking(true);
 			}
 		});
-
-		if (shouldUpdateLocal) {
-			this.updateLocalParticipant();
-		}
-		if (shouldUpdateRemotes) {
-			this.updateRemoteParticipants();
-		}
+		// Signal propagation is automatic via the _speaking signal in ParticipantModel.
 	}
 
 	/**
@@ -341,18 +301,13 @@ export class ParticipantService {
 	 * @internal
 	 */
 	setEncryptionError(participantSid: string, hasError: boolean) {
-		if (this.localParticipant?.sid === participantSid) {
-			if (this.localParticipant.hasEncryptionError !== hasError) {
-				this.localParticipant.setEncryptionError(hasError);
-				this.updateLocalParticipant();
-			}
+		const local = this._localParticipant();
+		if (local?.sid === participantSid) {
+			local.setEncryptionError(hasError);
 		} else {
-			const participant = this.remoteParticipants.find((p) => p.sid === participantSid);
-			if (participant && participant.hasEncryptionError !== hasError) {
-				participant.setEncryptionError(hasError);
-				this.updateRemoteParticipants();
-			}
+			this.remoteParticipants().find((p) => p.sid === participantSid)?.setEncryptionError(hasError);
 		}
+		// Signal propagation is automatic via the _hasEncryptionError signal in ParticipantModel.
 	}
 
 	/**
@@ -370,32 +325,34 @@ export class ParticipantService {
 	 * @internal
 	 */
 	toggleMyVideoPinned(sid: string | undefined) {
-		if (sid && this.localParticipant) this.localParticipant.toggleVideoPinned(sid);
-		this.updateLocalParticipant();
+		const local = this._localParticipant();
+		if (sid && local) local.toggleVideoPinned(sid);
+		// toggleVideoPinned calls bump() internally — no explicit update needed.
 	}
 
 	/**
 	 * @internal
 	 */
-	toggleMyVideoMinimized(sid: string | undefined) {
-		if (sid && this.localParticipant) this.localParticipant.toggleVideoMinimized(sid);
-		this.updateLocalParticipant();
+	toggleLocalVideoMinimized(sid: string | undefined) {
+		const local = this._localParticipant();
+		if (sid && local) local.toggleVideoMinimized(sid);
+		// toggleVideoMinimized calls bump() internally — no explicit update needed.
 	}
 
 	/**
 	 * @internal
 	 */
-	resetMyStreamsToNormalSize() {
-		this.localParticipant?.setAllVideoPinned(false);
-		// 	this.updateLocalParticipant();
+	resetLocalStreamsToNormalSize() {
+		this._localParticipant()?.setAllVideoPinned(false);
 	}
 
 	/**
 	 * Returns if the local participant camera is enabled.
 	 */
 	isMyCameraEnabled(): boolean {
-		if (this.openviduService.isRoomConnected() && this.localParticipant) {
-			return this.localParticipant.isCameraEnabled;
+		const local = this._localParticipant();
+		if (this.openviduService.isRoomConnected() && local) {
+			return local.isCameraEnabled;
 		} else {
 			const directiveCameraEnabled = this.directiveService.isVideoEnabled();
 
@@ -410,8 +367,9 @@ export class ParticipantService {
 	 * Returns if the local participant microphone is enabled.
 	 */
 	isMyMicrophoneEnabled(): boolean {
-		if (this.openviduService.isRoomConnected() && this.localParticipant) {
-			return this.localParticipant.isMicrophoneEnabled;
+		const local = this._localParticipant();
+		if (this.openviduService.isRoomConnected() && local) {
+			return local.isMicrophoneEnabled;
 		} else {
 			const directiveMicropgoneEnabled = this.directiveService.isAudioEnabled();
 
@@ -426,25 +384,16 @@ export class ParticipantService {
 	 * Returns if the local participant screen is enabled.
 	 */
 	isMyScreenShareEnabled(): boolean {
-		return this.localParticipant?.isScreenShareEnabled || false;
+		return this._localParticipant()?.isScreenShareEnabled || false;
 	}
 
 	/**
 	 * Forces to update the local participant object and notify signal consumers.
+	 * @deprecated No longer needed — ParticipantModel state is now signal-based and propagates
+	 * reactively. Kept for external consumers and subclasses that may override it.
 	 */
 	updateLocalParticipant() {
-		// Update signal with a new reference to trigger reactivity.
-		if (this.localParticipant) {
-			this.localParticipantWritableSignal.set(this.cloneParticipant(this.localParticipant));
-		} else {
-			this.localParticipantWritableSignal.set(undefined);
-		}
-	}
-
-	private cloneParticipant<T extends ParticipantModel>(participant: T): T {
-		return Object.assign(Object.create(Object.getPrototypeOf(participant)), {
-			...participant
-		});
+		this._localParticipant()?.bump();
 	}
 
 	/**
@@ -452,14 +401,15 @@ export class ParticipantService {
 	 * @internal
 	 */
 	setLastScreenPinned() {
-		if (!this.localParticipant?.isScreenShareEnabled && !this.someRemoteIsSharingScreen()) {
-			return; // Exit early if neither local nor remote participants are sharing screen
+		const local = this._localParticipant();
+		if (!local?.isScreenShareEnabled && !this.someRemoteIsSharingScreen()) {
+			return;
 		}
 		let localCreatedAt = -Infinity;
 		let localTrackSid = '';
-		if (this.localParticipant?.isScreenShareEnabled) {
-			localCreatedAt = Math.max(...this.localParticipant.screenTrackPublicationDate.values());
-			this.localParticipant.screenTrackPublicationDate.forEach((value, key) => {
+		if (local?.isScreenShareEnabled) {
+			localCreatedAt = Math.max(...local.screenTrackPublicationDate.values());
+			local.screenTrackPublicationDate.forEach((value, key) => {
 				if (value === localCreatedAt) {
 					localTrackSid = key;
 					return;
@@ -470,7 +420,7 @@ export class ParticipantService {
 		let remoteCreatedAt = -Infinity;
 		let remoteTrackSid = '';
 		if (this.someRemoteIsSharingScreen()) {
-			const lastRemoteParticipant = this.remoteParticipants.reduce((prev, current) => {
+			const lastRemoteParticipant = this.remoteParticipants().reduce((prev, current) => {
 				const prevMax = Math.max(...prev.screenTrackPublicationDate.values());
 				const currentMax = Math.max(...current.screenTrackPublicationDate.values());
 				return prevMax > currentMax ? prev : current;
@@ -497,51 +447,44 @@ export class ParticipantService {
 	 * @returns
 	 */
 	getParticipantByIdentity(identity: string): ParticipantModel | undefined {
-		if (this.localParticipant?.identity === identity) {
-			return this.localParticipant;
+		if (this._localParticipant()?.identity === identity) {
+			return this._localParticipant();
 		}
-		return this.remoteParticipants.find((p) => p.identity === identity);
+		return this.remoteParticipants().find((p) => p.identity === identity);
 	}
 
 	/* ------------------------------ Remote Participants ------------------------------ */
 
 	/**
-	 * Returns all remote participants in the room.
+	 * Forces to update the remote participants array and notify signal consumers.
+	 * @deprecated No longer needed — each ParticipantModel bumps its own _revision signal.
+	 * Kept for external consumers that may call it.
 	 */
-	getRemoteParticipants(): ParticipantModel[] {
-		return this.remoteParticipants;
+	private updateRemoteParticipants(): void {
+		// No-op: remote participant state propagates via each model's internal signals.
 	}
-
 	/**
 	 * Returns the remote participant with the given sid.
 	 * @param sid
 	 */
 	getRemoteParticipantBySid(sid: string): ParticipantModel | undefined {
-		return this.remoteParticipants.find((p) => p.sid === sid);
-	}
-
-	/**
-	 * Force to update the remote participants object and notify signal consumers.
-	 */
-	updateRemoteParticipants() {
-		// Update signal with a new array reference to trigger reactivity.
-		this.remoteParticipantsWritableSignal.set([...this.remoteParticipants]);
+		return this.remoteParticipants().find((p) => p.sid === sid);
 	}
 
 	/**
 	 * @internal
 	 */
 	addRemoteParticipant(participant: OVRemoteParticipant) {
-		const index = this.remoteParticipants.findIndex((p) => p.sid === participant.sid);
-		if (index >= 0) {
-			const remoteParticipant = this.remoteParticipants[index];
-			const pp: ParticipantProperties = remoteParticipant.getProperties();
-			pp.participant = participant;
-			this.remoteParticipants[index] = this.newParticipant(pp);
+		const remotes = this._remoteParticipants();
+		const existing = remotes.find((p) => p.sid === participant.sid);
+		if (existing) {
+			// The LiveKit participant object is mutated in-place by the SDK (new track publications).
+			// Bumping the model's revision signal causes streams to recompute reactively —
+			// no need to clone ParticipantModel or spread the participants array.
+			existing.bump();
 		} else {
-			this.remoteParticipants.push(this.newParticipant({ participant }));
+			this._remoteParticipants.set([...remotes, this.newParticipant({ participant })]);
 		}
-		this.updateRemoteParticipants();
 	}
 
 	/**
@@ -551,15 +494,13 @@ export class ParticipantService {
 	 * @internal
 	 */
 	removeRemoteParticipantTrack(participant: OVRemoteParticipant, trackSid: string) {
-		const index = this.remoteParticipants.findIndex((p) => p.sid === participant.sid);
-		if (index >= 0) {
-			const track = this.remoteParticipants[index].tracks.find((t) => t.trackSid === trackSid);
+		const model = this._remoteParticipants().find((p) => p.sid === participant.sid);
+		if (model) {
+			const track = model.tracks.find((t) => t.trackSid === trackSid);
 			track?.track?.stop();
 			track?.track?.detach();
-			const pp: ParticipantProperties = this.remoteParticipants[index].getProperties();
-			pp.participant = participant;
-			this.remoteParticipants[index] = this.newParticipant(pp);
-			this.updateRemoteParticipants();
+			// LiveKit has already removed the publication from the participant; bump to recompute.
+			model.bump();
 		}
 	}
 
@@ -567,10 +508,11 @@ export class ParticipantService {
 	 * @internal
 	 */
 	removeRemoteParticipant(sid: string) {
-		const index = this.remoteParticipants.findIndex((p) => p.sid === sid);
+		const remotes = [...this.remoteParticipants()];
+		const index = remotes.findIndex((p) => p.sid === sid);
 		if (index !== -1) {
-			this.remoteParticipants.splice(index, 1);
-			this.updateRemoteParticipants();
+			remotes.splice(index, 1);
+			this._remoteParticipants.set(remotes);
 		}
 	}
 
@@ -578,8 +520,8 @@ export class ParticipantService {
 	 * @internal
 	 */
 	resetRemoteStreamsToNormalSize() {
-		this.remoteParticipants.forEach((participant) => participant.setAllVideoPinned(false));
-		// this.updateRemoteParticipants();
+		// setAllVideoPinned calls bump() internally — no array update needed.
+		this.remoteParticipants().forEach((p) => p.setAllVideoPinned(false));
 	}
 
 	/**
@@ -590,17 +532,16 @@ export class ParticipantService {
 	 * @internal
 	 */
 	setScreenTrackPublicationDate(participantSid: string, trackSid: string, createdAt: number) {
-		const participant = this.remoteParticipants.find((p) => p.sid === participantSid);
-		if (participant) {
-			participant.setScreenTrackPublicationDate(trackSid, createdAt);
-		}
+		// setScreenTrackPublicationDate bumps _revision internally.
+		this.remoteParticipants().find((p) => p.sid === participantSid)
+			?.setScreenTrackPublicationDate(trackSid, createdAt);
 	}
 
 	/**
 	 * @internal
 	 */
 	someRemoteIsSharingScreen(): boolean {
-		return this.remoteParticipants.some((p) => p.isScreenShareEnabled);
+		return this.remoteParticipants().some((p) => p.isScreenShareEnabled);
 	}
 
 	/**
@@ -608,11 +549,11 @@ export class ParticipantService {
 	 */
 	toggleRemoteVideoPinned(sid: string | undefined) {
 		if (sid) {
-			const participant = this.remoteParticipants.find((p) => p.tracks.some((track) => track.trackSid === sid));
-			if (participant) {
-				participant.toggleVideoPinned(sid);
-			}
-			this.updateRemoteParticipants();
+			const participant = this.remoteParticipants().find((p) =>
+				p.tracks.some((track) => track.trackSid === sid)
+			);
+			// toggleVideoPinned calls bump() internally — no array update needed.
+			participant?.toggleVideoPinned(sid);
 		}
 	}
 
@@ -621,11 +562,8 @@ export class ParticipantService {
 	 * @internal
 	 */
 	setRemoteMutedForcibly(sid: string, value: boolean) {
-		const p = this.getRemoteParticipantBySid(sid);
-		if (p && p.isMutedForcibly !== value) {
-			p.setMutedForcibly(value);
-			this.updateRemoteParticipants();
-		}
+		// setMutedForcibly calls bump() internally — no array update needed.
+		this.remoteParticipants().find((p) => p.sid === sid)?.setMutedForcibly(value);
 	}
 
 	private newParticipant(props: ParticipantProperties): ParticipantModel {
@@ -656,14 +594,8 @@ export class ParticipantService {
 
 		try {
 			const decryptedName = await this.e2eeService.decryptOrMask(originalName, participant.identity);
+			// setDecryptedName updates a signal — propagates reactively, no explicit update needed.
 			participant.setDecryptedName(decryptedName);
-
-			// Update signals to reflect the decrypted name.
-			if (participant.isLocal) {
-				this.updateLocalParticipant();
-			} else {
-				this.updateRemoteParticipants();
-			}
 		} catch (error) {
 			this.log.w('Failed to decrypt participant name:', error);
 		}

@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import { LayoutClass } from '../../models/layout/layout.model';
 
 /**
  * @internal
@@ -19,10 +18,6 @@ export class DocumentService {
 		} else {
 			this.requestFullscreen(fs);
 		}
-	}
-
-	isSmallElement(element: HTMLElement | Element): boolean {
-		return element?.className.includes(LayoutClass.SMALL_ELEMENT);
 	}
 
 	/**

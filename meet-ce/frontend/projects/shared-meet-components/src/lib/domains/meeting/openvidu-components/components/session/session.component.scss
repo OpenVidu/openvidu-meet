@@ -116,20 +116,29 @@
 	position: absolute;
 }
 
-@media only screen and (max-width: 768px) {
+@media only screen and (max-width: 790px) {
 	#session-container {
 		width: 100%;
 		/* position: fixed; */
 	}
 
+	.sidenav-container {
+		z-index: 1000;
+	}
+
 	.sidenav-menu {
 		width: 100% !important;
 		max-width: 100% !important;
+		z-index: 1002 !important;
 	}
 
 	.big {
 		width: 100% !important;
 		max-width: 100% !important;
+	}
+
+	::ng-deep .mat-drawer-backdrop.mat-drawer-shown {
+		z-index: 1001 !important;
 	}
 }
 

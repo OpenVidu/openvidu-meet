@@ -1,24 +1,26 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
-import { ParticipantModel, ParticipantTrackPublication } from '../models/participant.model';
+import { ParticipantModel, ParticipantStream } from '../models/participant.model';
 import { Track } from '../services/livekit-adapter';
 import { TranslateService } from '../services/translate/translate.service';
 
 /**
- * The **RemoteParticipantTracksPipe** allows us to get all the tracks from all remote participants.
- * This is used to display the tracks in the videoconference layout.
- * @returns {ParticipantTrackPublication[]} Array of tracks
+ * The **RemoteParticipantTracksPipe** flattens all remote participants into a single array of
+ * {@link ParticipantStream} objects. Each stream groups the video and audio tracks for a single
+ * visual element (camera stream or screen-share stream) so the layout can render one DOM
+ * element per stream instead of one per track.
+ * @returns {ParticipantStream[]} Flat array of participant streams
  */
-@Pipe({ name: 'tracks', standalone: false })
+@Pipe({ name: 'tracks', standalone: true })
 export class RemoteParticipantTracksPipe implements PipeTransform {
-	transform(participants: ParticipantModel[]): ParticipantTrackPublication[] {
-		return participants.map((p) => p.tracks).flat();
+	transform(participants: ParticipantModel[]): ParticipantStream[] {
+		return participants.map((p) => p.streams()).flat();
 	}
 }
 
 /**
  * @internal
  */
-@Pipe({ name: 'tracksPublishedTypes', standalone: false })
+@Pipe({ name: 'tracksPublishedTypes', standalone: true })
 export class TrackPublishedTypesPipe implements PipeTransform {
 	private readonly translateService = inject(TranslateService);
 

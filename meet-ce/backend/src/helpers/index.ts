@@ -1,4 +1,3 @@
-export * from './ov-components-adapter.helper.js';
 export * from './password.helper.js';
 export * from './recording.helper.js';
 export * from './redis.helper.js';

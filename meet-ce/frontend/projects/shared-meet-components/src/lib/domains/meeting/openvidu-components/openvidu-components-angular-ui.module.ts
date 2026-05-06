@@ -14,7 +14,7 @@ import { ToolbarComponent } from './components/toolbar/toolbar.component';
 
 import { LinkifyPipe } from './pipes/linkify.pipe';
 import { RemoteParticipantTracksPipe, TrackPublishedTypesPipe } from './pipes/participant.pipe';
-import { DurationFromSecondsPipe, SearchByStringPropertyPipe, ThumbnailFromUrlPipe } from './pipes/recording.pipe';
+import { DurationFromSecondsPipe } from './pipes/recording.pipe';
 import { TranslatePipe } from './pipes/translate.pipe';
 
 import { DragDropModule } from '@angular/cdk/drag-drop';
@@ -24,14 +24,12 @@ import { ParticipantsPanelComponent } from './components/panel/participants-pane
 import { PreJoinComponent } from './components/pre-join/pre-join.component';
 import { VideoconferenceComponent } from './components/videoconference/videoconference.component';
 
-// import { CaptionsComponent } from './components/captions/captions.component';
+import { LandscapeWarningComponent } from './components/landscape-warning/landscape-warning.component';
 import { ActivitiesPanelComponent } from './components/panel/activities-panel/activities-panel.component';
 import { RecordingActivityComponent } from './components/panel/activities-panel/recording-activity/recording-activity.component';
 import { BackgroundEffectsPanelComponent } from './components/panel/background-effects-panel/background-effects-panel.component';
 import { SettingsPanelComponent } from './components/panel/settings-panel/settings-panel.component';
 import { AudioDevicesComponent } from './components/settings/audio-devices/audio-devices.component';
-// import { CaptionsSettingComponent } from './components/settings/captions/captions.component';
-import { LandscapeWarningComponent } from './components/landscape-warning/landscape-warning.component';
 import { LangSelectorComponent } from './components/settings/lang-selector/lang-selector.component';
 import { ParticipantNameInputComponent } from './components/settings/participant-name-input/participant-name-input.component';
 import { ThemeSelectorComponent } from './components/settings/theme-selector/theme-selector.component';
@@ -39,46 +37,32 @@ import { VideoDevicesComponent } from './components/settings/video-devices/video
 import { VideoPosterComponent } from './components/video-poster/video-poster.component';
 import { ApiDirectiveModule } from './directives/api/api.directive.module';
 import { OpenViduComponentsDirectiveModule } from './directives/template/openvidu-components-angular.directive.module';
-import { AppMaterialModule } from './openvidu-components-angular.material.module';
 
 const publicComponents = [
 	VideoconferenceComponent,
 	ToolbarComponent,
 	PanelComponent,
-	ActivitiesPanelComponent,
-	RecordingActivityComponent,
 	ParticipantsPanelComponent,
-	ParticipantPanelItemComponent,
 	ChatPanelComponent,
 	StreamComponent,
 	LayoutComponent
 ];
-const privateComponents = [
-	PreJoinComponent,
-	SessionComponent,
-	BackgroundEffectsPanelComponent,
-	SettingsPanelComponent,
-	MediaElementComponent,
-	ToolbarMediaButtonsComponent,
-	ToolbarPanelButtonsComponent
-];
+const declaredPublicComponents: any[] = [];
+const privateComponents: any[] = [];
 
 @NgModule({
 	declarations: [
-		...publicComponents,
+		...declaredPublicComponents,
 		...privateComponents,
-		LinkifyPipe,
-		RemoteParticipantTracksPipe,
-		DurationFromSecondsPipe,
-		SearchByStringPropertyPipe,
-		ThumbnailFromUrlPipe,
-		TrackPublishedTypesPipe
 	],
 	imports: [
 		CommonModule,
 		FormsModule,
 		ReactiveFormsModule,
-		AppMaterialModule,
+		LinkifyPipe,
+		RemoteParticipantTracksPipe,
+		DurationFromSecondsPipe,
+		TrackPublishedTypesPipe,
 		AudioWaveComponent,
 		LandscapeWarningComponent,
 		AudioDevicesComponent,
@@ -87,6 +71,23 @@ const privateComponents = [
 		ThemeSelectorComponent,
 		VideoDevicesComponent,
 		VideoPosterComponent,
+		MediaElementComponent,
+		ToolbarMediaButtonsComponent,
+		ToolbarPanelButtonsComponent,
+		StreamComponent,
+		PreJoinComponent,
+		LayoutComponent,
+		PanelComponent,
+		ToolbarComponent,
+		ActivitiesPanelComponent,
+		ParticipantPanelItemComponent,
+		ParticipantsPanelComponent,
+		ChatPanelComponent,
+		BackgroundEffectsPanelComponent,
+		SettingsPanelComponent,
+		RecordingActivityComponent,
+		SessionComponent,
+		VideoconferenceComponent,
 		TranslatePipe,
 		OpenViduComponentsDirectiveModule,
 		ApiDirectiveModule,
@@ -94,6 +95,7 @@ const privateComponents = [
 	],
 	exports: [
 		...publicComponents,
+		ParticipantPanelItemComponent,
 		RemoteParticipantTracksPipe,
 		DurationFromSecondsPipe,
 		TrackPublishedTypesPipe,

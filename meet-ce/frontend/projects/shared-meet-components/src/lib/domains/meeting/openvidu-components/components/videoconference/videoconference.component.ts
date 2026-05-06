@@ -1,16 +1,20 @@
+import { CommonModule } from '@angular/common';
 import {
 	AfterViewInit,
-	ChangeDetectorRef,
+	ChangeDetectionStrategy,
 	Component,
 	contentChild,
-	DestroyRef,
 	effect,
 	inject,
 	OnDestroy,
 	output,
+	signal,
 	TemplateRef,
+	untracked,
 	viewChild
 } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import {
 	LayoutAdditionalElementsDirective,
 	LeaveButtonDirective,
@@ -44,28 +48,32 @@ import {
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantModel } from '../../models/participant.model';
 import {
-	RecordingDeleteRequestedEvent,
-	RecordingDownloadClickedEvent,
-	RecordingPlayClickedEvent,
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent
 } from '../../models/recording.model';
-import { VideoconferenceState, VideoconferenceStateInfo } from '../../models/videoconference-state.model';
+import { VideoconferencePhase } from '../../models/videoconference-state.model';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import { E2eeService } from '../../services/e2ee/e2ee.service';
 import type { OVRoom } from '../../services/livekit-adapter';
 import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { StorageService } from '../../services/storage/storage.service';
-import {
-	DefaultTemplates,
-	ExternalDirectives,
-	TemplateConfiguration,
-	TemplateManagerService
-} from '../../services/template/template-manager.service';
+import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { OpenViduThemeService } from '../../services/theme/theme.service';
+import { LayoutComponent } from '../layout/layout.component';
+import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
+import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
+import { ChatPanelComponent } from '../panel/chat-panel/chat-panel.component';
+import { PanelComponent } from '../panel/panel.component';
+import { ParticipantPanelItemComponent } from '../panel/participants-panel/participant-panel-item/participant-panel-item.component';
+import { ParticipantsPanelComponent } from '../panel/participants-panel/participants-panel/participants-panel.component';
+import { SettingsPanelComponent } from '../panel/settings-panel/settings-panel.component';
+import { PreJoinComponent } from '../pre-join/pre-join.component';
+import { SessionComponent } from '../session/session.component';
+import { StreamComponent } from '../stream/stream.component';
+import { ToolbarComponent } from '../toolbar/toolbar.component';
 
 /**
  * The **VideoconferenceComponent** is the parent of all OpenVidu components.
@@ -73,9 +81,29 @@ import { OpenViduThemeService } from '../../services/theme/theme.service';
  */
 @Component({
 	selector: 'ov-videoconference',
+	imports: [
+		CommonModule,
+		MatIconModule,
+		MatProgressSpinnerModule,
+		TranslatePipe,
+		PreJoinComponent,
+		SessionComponent,
+		ToolbarComponent,
+		PanelComponent,
+		BackgroundEffectsPanelComponent,
+		SettingsPanelComponent,
+		ChatPanelComponent,
+		ActivitiesPanelComponent,
+		ParticipantsPanelComponent,
+		ParticipantPanelItemComponent,
+		LayoutComponent,
+		StreamComponent,
+		SettingsPanelGeneralAdditionalElementsDirective
+	],
 	templateUrl: './videoconference.component.html',
 	styleUrls: ['./videoconference.component.scss'],
-	standalone: false
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	standalone: true
 })
 export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
@@ -84,18 +112,15 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly openviduService = inject(OpenViduService);
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly templateManagerService = inject(TemplateManagerService);
 	private readonly themeService = inject(OpenViduThemeService);
-	private readonly e2eeService = inject(E2eeService);
-	private readonly cd = inject(ChangeDetectorRef);
+	readonly templateRegistry = inject(TemplateRegistryService);
 
 	// Constants
-	private static readonly PARTICIPANT_NAME_TIMEOUT_MS = 1000;
-	private static readonly ANIMATION_DURATION_MS = 300;
 	private static readonly MATERIAL_ICONS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined';
 	private static readonly MATERIAL_ICONS_SELECTOR = 'link[href*="Material+Symbols+Outlined"]';
 	private static readonly SPINNER_DIAMETER = 50;
 	private static readonly ENTER_ANIMATION_CLASS = 'ov-fade-in-enter';
+
 	// *** Toolbar ***
 
 	readonly externalToolbar = contentChild(ToolbarDirective);
@@ -121,10 +146,16 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	// *** PreJoin ***
 
 	readonly externalPreJoin = contentChild(PreJoinDirective);
-	readonly externalParticipantPanelAfterLocalParticipant = contentChild(ParticipantPanelAfterLocalParticipantDirective);
+	readonly externalParticipantPanelAfterLocalParticipant = contentChild(
+		ParticipantPanelAfterLocalParticipantDirective
+	);
 	readonly externalLayoutAdditionalElements = contentChild(LayoutAdditionalElementsDirective);
-	readonly externalSettingsPanelGeneralAdditionalElements = contentChild(SettingsPanelGeneralAdditionalElementsDirective);
-	readonly externalToolbarMoreOptionsAdditionalMenuItems = contentChild(ToolbarMoreOptionsAdditionalMenuItemsDirective);
+	readonly externalSettingsPanelGeneralAdditionalElements = contentChild(
+		SettingsPanelGeneralAdditionalElementsDirective
+	);
+	readonly externalToolbarMoreOptionsAdditionalMenuItems = contentChild(
+		ToolbarMoreOptionsAdditionalMenuItemsDirective
+	);
 
 	/**
 	 * @internal
@@ -159,106 +190,36 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * @internal
 	 */
 	readonly defaultStreamTemplate = viewChild('defaultStream', { read: TemplateRef });
+	/**
+	 * @internal
+	 */
+	readonly defaultBackgroundEffectsPanelTemplate = viewChild('defaultBackgroundEffectsPanel', { read: TemplateRef });
+	/**
+	 * @internal
+	 */
+	readonly defaultSettingsPanelTemplate = viewChild('defaultSettingsPanel', { read: TemplateRef });
 
-	/**
-	 * @internal
-	 */
-	openviduAngularToolbarTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularToolbarAdditionalButtonsTemplate: TemplateRef<any> | undefined = undefined;
 
-	/**
-	 * @internal
-	 */
-	openviduAngularToolbarLeaveButtonTemplate: TemplateRef<any> | undefined;
 
-	/**
-	 * @internal
-	 */
-	openviduAngularActivitiesPanelTemplate: TemplateRef<any> | undefined = undefined;
+	// ── State machine ────────────────────────────────────────────────────────
+	// Single phase signal drives all UI branching. Effects only write to it
+	// and use untracked() for any internal reads, so there are no reactive loops.
+	/** @internal */
+	readonly phase = signal<VideoconferencePhase>('loading');
 
-	/**
-	 * @internal
-	 */
-	openviduAngularToolbarAdditionalPanelButtonsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularPanelTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularChatPanelTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularParticipantsPanelTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularAdditionalPanelsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularParticipantPanelAfterLocalParticipantTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularParticipantPanelItemTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularParticipantPanelItemElementsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularLayoutTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularStreamTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	openviduAngularPreJoinTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	ovLayoutAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	ovSettingsPanelGeneralAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
-	/**
-	 * @internal
-	 */
-	ovToolbarMoreOptionsAdditionalMenuItemsTemplate: TemplateRef<any> | undefined = undefined;
+	/** @internal - error details from token operations */
+	readonly tokenError = signal<{ name: string; message: string } | undefined>(undefined);
 
-	/**
-	 * @internal
-	 * Template configuration managed by TemplateManagerService
-	 */
-	private templateConfig: TemplateConfiguration = {} as TemplateConfiguration;
+	// Expose constants to template
+	get spinnerDiameter(): number {
+		return VideoconferenceComponent.SPINNER_DIAMETER;
+	}
 
-	/**
-	 * Provides event notifications that fire when the local participant is ready to join to the room.
-	 * This event emits the participant name as data.
-	 */
-	readonly onTokenRequested = output<string>();
+	get enterAnimationClass(): string {
+		return VideoconferenceComponent.ENTER_ANIMATION_CLASS;
+	}
 
-	/**
-	 * Provides event notifications that fire when the local participant is ready to join to the room.
-	 * This event is only emitted when the prejoin page has been shown.
-	 */
-	readonly onReadyToJoin = output<void>();
-
-	/**
-	 * Provides event notifications that fire when Room is disconnected for the local participant.
-	 * @deprecated Use {@link VideoconferenceComponent.onParticipantLeft} instead
-	 */
-	readonly onRoomDisconnected = output<void>();
+	// ── Outputs ──────────────────────────────────────────────────────────────
 
 	/**
 	 * Provides event notifications that fire when Room is being reconnected for the local participant.
@@ -346,29 +307,11 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	readonly onRecordingStartRequested = output<RecordingStartRequestedEvent>();
 
 	/**
-	 * Provides event notifications that fire when delete recording button has been clicked.
-	 * It provides the {@link RecordingDeleteRequestedEvent} payload as event data.
-	 */
-	readonly onRecordingDeleteRequested = output<RecordingDeleteRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when play recording button is clicked from {@link ActivitiesPanelComponent}.
-	 * It provides the {@link RecordingPlayClickedEvent} payload as event data.
-	 */
-	readonly onRecordingPlayClicked = output<RecordingPlayClickedEvent>();
-
-	/**
 	 * @internal
 	 * This event is fired when the user clicks on the view recording button.
 	 * It provides the recording ID as event data.
 	 */
 	readonly onViewRecordingClicked = output<string>();
-
-	/**
-	 * Provides event notifications that fire when download recording button is clicked from {@link ActivitiesPanelComponent}.
-	 * It provides the {@link RecordingDownloadClickedEvent} payload as event data.
-	 */
-	readonly onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
 
 	/**
 	 * @internal
@@ -383,181 +326,43 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	readonly onRoomCreated = output<OVRoom>();
 
 	/**
-	 * Provides event notifications that fire when local participant is created and connected to the Room.
-	 * @deprecated Use `onParticipantConnected` instead
-	 */
-	readonly onParticipantCreated = output<ParticipantModel>();
-
-	/**
 	 * Provides event notifications that fire when local participant is connected to the Room.
 	 * It provides the {@link ParticipantModel} payload as event data.
 	 */
 	readonly onParticipantConnected = output<ParticipantModel>();
 
+	// ── Effects ──────────────────────────────────────────────────────────────
+	// Each effect reads only from libService signals and uses untracked() for
+	// any reads of internal signals, preventing reactive dependency cycles.
+
 	/**
 	 * @internal
-	 * Centralized state management for the videoconference component
+	 * Handles token errors received from the parent.
 	 */
-	componentState: VideoconferenceStateInfo = {
-		state: VideoconferenceState.INITIALIZING,
-		showPrejoin: true,
-		isRoomReady: false,
-		isConnected: false,
-		hasAudioDevices: false,
-		hasVideoDevices: false,
-		hasUserInitiatedJoin: false,
-		wasPrejoinShown: false,
-		isLoading: true,
-		error: {
-			hasError: false,
-			message: '',
-			tokenError: null
-		}
-	};
-
-	private readonly destroyRef = inject(DestroyRef);
-	private log: ILogger;
-	private latestParticipantName: string | undefined;
-	private latestProcessedToken: string | undefined;
-	private readonly tokenConfigEffect = effect(() => {
-		const token = this.libService.tokenSignal();
-		if (!token || token === this.latestProcessedToken) {
-			return;
-		}
-		this.latestProcessedToken = token;
-
-		try {
-			const livekitUrl = this.libService.getLivekitUrl();
-			this.openviduService.initializeAndSetToken(token, livekitUrl);
-			this.log.d('Token has been successfully set. Room is ready to join');
-
-			if (this.hasUserInitiatedJoin()) {
-				this.log.d('User has initiated join, hiding prejoin and proceeding');
-				this.updateComponentState({
-					state: VideoconferenceState.READY_TO_CONNECT,
-					isRoomReady: true,
-					showPrejoin: false
-				});
-			} else {
-				this.updateComponentState({
-					state: VideoconferenceState.PREJOIN_SHOWN,
-					isRoomReady: true,
-					showPrejoin: this.libService.showPrejoin()
-				});
-			}
-		} catch (error) {
-			this.log.e('Error trying to set token', error);
-			this.updateComponentState({
-				state: VideoconferenceState.ERROR,
-				error: {
-					hasError: true,
-					message: 'Error setting token',
-					tokenError: error
-				}
-			});
-		}
-	});
-	private readonly tokenErrorConfigEffect = effect(() => {
+	private readonly _tokenErrorEffect = effect(() => {
 		const error = this.libService.tokenErrorSignal();
-		if (!error) {
-			return;
-		}
+		if (!error) return;
 
 		this.log.e('Token error received', error);
-		this.updateComponentState({
-			state: VideoconferenceState.ERROR,
-			error: {
-				hasError: true,
-				message: 'Token error',
-				tokenError: error
-			}
-		});
 
-		if (!this.componentState.showPrejoin) {
+		const prevPhase = untracked(() => this.phase());
+		this.tokenError.set(error);
+		this.phase.set('error');
+
+		// Open dialog only when user is already in the session (not on prejoin)
+		if (prevPhase !== 'prejoin' && prevPhase !== 'loading') {
 			this.actionService.openDialog(error.name, error.message, false);
 		}
 	});
-	private readonly prejoinConfigEffect = effect(() => {
-		const value = this.libService.prejoinSignal();
-		this.updateComponentState({
-			showPrejoin: value
-		});
 
-		if (!value) {
-			this.log.d('Prejoin page is hidden, checking participant name');
-			if (this.latestParticipantName) {
-				this._onReadyToJoin();
-			} else {
-				setTimeout(() => {
-					if (!this.latestParticipantName) {
-						this.log.w('No participant name received after timeout, proceeding anyway');
-						const storedName = this.storageSrv.getParticipantName();
-						if (storedName) {
-							this.latestParticipantName = storedName;
-							this.libService.updateGeneralConfig({ participantName: storedName });
-						}
-						this._onReadyToJoin();
-					}
-				}, VideoconferenceComponent.PARTICIPANT_NAME_TIMEOUT_MS);
-			}
-		}
-	});
-	private readonly participantNameConfigEffect = effect(() => {
-		const name = this.libService.participantNameSignal();
-		if (!name) {
-			return;
-		}
-		void this.handleParticipantName(name);
-	});
-
-	// Expose constants to template
-	get spinnerDiameter(): number {
-		return VideoconferenceComponent.SPINNER_DIAMETER;
-	}
-
-	get enterAnimationClass(): string {
-		return VideoconferenceComponent.ENTER_ANIMATION_CLASS;
-	}
-
-	/**
-	 * @internal
-	 * Updates the component state
-	 */
-	private updateComponentState(newState: Partial<VideoconferenceStateInfo>): void {
-		this.componentState = { ...this.componentState, ...newState };
-		this.log.d(`State updated to: ${this.componentState.state}`, this.componentState);
-	}
-
-	/**
-	 * @internal
-	 * Checks if user has initiated the join process
-	 */
-	private hasUserInitiatedJoin(): boolean {
-		return (
-			this.componentState.state === VideoconferenceState.JOINING ||
-			this.componentState.state === VideoconferenceState.READY_TO_CONNECT ||
-			this.componentState.state === VideoconferenceState.CONNECTED
-		);
-	}
+	private log: ILogger;
 
 	/**
 	 * @internal
 	 */
 	constructor() {
 		this.log = this.loggerSrv.get('VideoconferenceComponent');
-
 		this.addMaterialIconsIfNeeded();
-
-		// Initialize state
-		this.updateComponentState({
-			state: VideoconferenceState.INITIALIZING,
-			showPrejoin: true,
-			isRoomReady: false,
-			wasPrejoinShown: false,
-			isLoading: true,
-			error: { hasError: false }
-		});
-
 		this.themeService.initializeTheme();
 	}
 
@@ -574,27 +379,82 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 			.initializeDevices()
 			.catch((error) => {
 				this.log.w('Device initialization failed. Continuing without blocking UI.', error);
-				this.updateComponentState({
-					state: VideoconferenceState.PREJOIN_SHOWN,
-					error: {
-						hasError: false,
-						message: ''
-					}
-				});
 			})
 			.finally(() => {
-				this.updateComponentState({
-					isLoading: false
-				});
-				this.cd.markForCheck();
+				this._transitionAfterDevicesReady();
 			});
+	}
+
+	/**
+	 * @internal
+	 * Called by the PreJoin component when the user clicks join.
+	 * Transitions from 'prejoin' → 'ready' by applying the token immediately.
+	 */
+	_onReadyToJoin(): void {
+		this.log.d('User clicked join in prejoin');
+
+		const rawName = this.libService.getCurrentParticipantName() || this.storageSrv.getParticipantName() || '';
+		this.storageSrv.setParticipantName(rawName);
+
+		this.openviduService.initRoom();
+		this._applyToken(this.libService.tokenSignal());
+	}
+
+	/**
+	 * @internal
+	 */
+	_onParticipantLeft(event: ParticipantLeftEvent) {
+		this.onParticipantLeft.emit(event);
+		// showPrejoin stays false to prevent track creation before navigation
+		this.phase.set('disconnected');
+	}
+
+	// ── Private helpers ───────────────────────────────────────────────────────
+
+	/**
+	 * @internal
+	 * Decides the next phase once device initialization finishes.
+	 */
+	private _transitionAfterDevicesReady(): void {
+		if (this.libService.showPrejoin()) {
+			this.log.d('Devices ready, showing prejoin');
+			this.phase.set('prejoin');
+		} else {
+			this.log.d('Devices ready, no prejoin — requesting token directly');
+			this._requestTokenSkippingPrejoin();
+		}
+	}
+
+	/**
+	 * @internal
+	 * Used when showPrejoin = false. Applies the token directly without showing the prejoin page.
+	 */
+	private _requestTokenSkippingPrejoin(): void {
+		this.openviduService.initRoom();
+		this._applyToken(this.libService.tokenSignal());
+	}
+
+	/**
+	 * @internal
+	 * Applies a received token and transitions to the 'ready' phase.
+	 */
+	private _applyToken(token: string): void {
+		try {
+			const livekitUrl = this.libService.getLivekitUrl();
+			this.openviduService.initializeAndSetToken(token, livekitUrl);
+			this.log.d('Token applied, room is ready to connect');
+			this.phase.set('ready');
+		} catch (error: any) {
+			this.log.e('Error applying token', error);
+			this.tokenError.set({ name: 'Token error', message: error?.message ?? String(error) });
+			this.phase.set('error');
+		}
 	}
 
 	/**
 	 * @internal
 	 */
 	private addMaterialIconsIfNeeded(): void {
-		//Add material icons to the page if not already present
 		const existingLink = document.querySelector(VideoconferenceComponent.MATERIAL_ICONS_SELECTOR);
 		if (!existingLink) {
 			const link = document.createElement('link');
@@ -608,217 +468,40 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * @internal
 	 */
 	private setupTemplates(): void {
-		const externalDirectives: ExternalDirectives = {
-			toolbar: this.externalToolbar(),
-			toolbarAdditionalButtons: this.externalToolbarAdditionalButtons(),
-			toolbarAdditionalPanelButtons: this.externalToolbarAdditionalPanelButtons(),
-			toolbarLeaveButton: this.externalToolbarLeaveButton(),
-			additionalPanels: this.externalAdditionalPanels(),
-			panel: this.externalPanel(),
-			chatPanel: this.externalChatPanel(),
-			activitiesPanel: this.externalActivitiesPanel(),
-			participantsPanel: this.externalParticipantsPanel(),
-			participantPanelAfterLocalParticipant: this.externalParticipantPanelAfterLocalParticipant(),
-			participantPanelItem: this.externalParticipantPanelItem(),
-			participantPanelItemElements: this.externalParticipantPanelItemElements(),
-			layout: this.externalLayout(),
-			stream: this.externalStream(),
-			preJoin: this.externalPreJoin(),
-			layoutAdditionalElements: this.externalLayoutAdditionalElements(),
-			settingsPanelGeneralAdditionalElements: this.externalSettingsPanelGeneralAdditionalElements(),
-			toolbarMoreOptionsAdditionalMenuItems: this.externalToolbarMoreOptionsAdditionalMenuItems()
-		};
+		const r = this.templateRegistry;
 
-		const defaultTemplates: DefaultTemplates = {
-			toolbar: this.defaultToolbarTemplate()!,
-			panel: this.defaultPanelTemplate()!,
-			chatPanel: this.defaultChatPanelTemplate()!,
-			participantsPanel: this.defaultParticipantsPanelTemplate()!,
-			activitiesPanel: this.defaultActivitiesPanelTemplate()!,
-			participantPanelItem: this.defaultParticipantPanelItemTemplate()!,
-			layout: this.defaultLayoutTemplate()!,
-			stream: this.defaultStreamTemplate()!
-		};
+		// Core layout — external directive template takes priority over default
+		r.toolbar.set(this.externalToolbar()?.template ?? this.defaultToolbarTemplate()!);
+		r.panel.set(this.externalPanel()?.template ?? this.defaultPanelTemplate()!);
+		r.layout.set(this.externalLayout()?.template ?? this.defaultLayoutTemplate()!);
+		r.stream.set(this.externalStream()?.template ?? this.defaultStreamTemplate()!);
+		r.preJoin.set(this.externalPreJoin()?.template);
 
-		// Use the template manager service to set up all templates
-		this.templateConfig = this.templateManagerService.setupTemplates(externalDirectives, defaultTemplates);
+		// Panel slots
+		r.chatPanel.set(this.externalChatPanel()?.template ?? this.defaultChatPanelTemplate()!);
+		r.participantsPanel.set(this.externalParticipantsPanel()?.template ?? this.defaultParticipantsPanelTemplate()!);
+		r.activitiesPanel.set(this.externalActivitiesPanel()?.template ?? this.defaultActivitiesPanelTemplate()!);
+		r.additionalPanels.set(this.externalAdditionalPanels()?.template);
+		r.backgroundEffectsPanel.set(this.defaultBackgroundEffectsPanelTemplate());
+		r.settingsPanel.set(this.defaultSettingsPanelTemplate());
 
-		// Apply the configuration to the component properties
-		this.applyTemplateConfiguration();
-	}
+		// Participant slots
+		r.participantPanelItem.set(this.externalParticipantPanelItem()?.template ?? this.defaultParticipantPanelItemTemplate()!);
+		r.participantPanelItemElements.set(this.externalParticipantPanelItemElements()?.template);
+		r.participantPanelAfterLocalParticipant.set(this.externalParticipantPanelAfterLocalParticipant()?.template);
 
-	/**
-	 * @internal
-	 * Applies the template configuration to component properties
-	 */
-	private applyTemplateConfiguration(): void {
-		const assignIfChanged = <K extends keyof this>(prop: K, value: this[K]) => {
-			if (this[prop] !== value) {
-				this[prop] = value;
-			}
-		};
+		// Toolbar extensions
+		r.toolbarAdditionalButtons.set(this.externalToolbarAdditionalButtons()?.template);
+		r.toolbarLeaveButton.set(this.externalToolbarLeaveButton()?.template);
+		r.toolbarAdditionalPanelButtons.set(this.externalToolbarAdditionalPanelButtons()?.template);
+		r.toolbarMoreOptionsAdditionalMenuItems.set(this.externalToolbarMoreOptionsAdditionalMenuItems()?.template);
 
-		assignIfChanged('openviduAngularToolbarTemplate', this.templateConfig.toolbarTemplate);
-		assignIfChanged('openviduAngularPanelTemplate', this.templateConfig.panelTemplate);
-		assignIfChanged('openviduAngularChatPanelTemplate', this.templateConfig.chatPanelTemplate);
-		assignIfChanged('openviduAngularParticipantsPanelTemplate', this.templateConfig.participantsPanelTemplate);
-		assignIfChanged('openviduAngularActivitiesPanelTemplate', this.templateConfig.activitiesPanelTemplate);
-		assignIfChanged(
-			'openviduAngularParticipantPanelItemTemplate',
-			this.templateConfig.participantPanelItemTemplate
-		);
-		assignIfChanged('openviduAngularLayoutTemplate', this.templateConfig.layoutTemplate);
-		assignIfChanged('openviduAngularStreamTemplate', this.templateConfig.streamTemplate);
+		// Additional layout elements
+		const layoutAdditional = this.externalLayoutAdditionalElements();
+		r.layoutAdditionalElements.set(layoutAdditional?.template);
+		r.layoutAdditionalElementsSlot.set(layoutAdditional?.slot ?? 'default');
 
-		// Optional templates
-		if (this.templateConfig.toolbarAdditionalButtonsTemplate) {
-			assignIfChanged(
-				'openviduAngularToolbarAdditionalButtonsTemplate',
-				this.templateConfig.toolbarAdditionalButtonsTemplate
-			);
-		}
-		if (this.templateConfig.toolbarLeaveButtonTemplate) {
-			assignIfChanged(
-				'openviduAngularToolbarLeaveButtonTemplate',
-				this.templateConfig.toolbarLeaveButtonTemplate
-			);
-		}
-		if (this.templateConfig.toolbarAdditionalPanelButtonsTemplate) {
-			assignIfChanged(
-				'openviduAngularToolbarAdditionalPanelButtonsTemplate',
-				this.templateConfig.toolbarAdditionalPanelButtonsTemplate
-			);
-		}
-		if (this.templateConfig.additionalPanelsTemplate) {
-			assignIfChanged('openviduAngularAdditionalPanelsTemplate', this.templateConfig.additionalPanelsTemplate);
-		}
-		if (this.templateConfig.participantPanelAfterLocalParticipantTemplate) {
-			assignIfChanged(
-				'openviduAngularParticipantPanelAfterLocalParticipantTemplate',
-				this.templateConfig.participantPanelAfterLocalParticipantTemplate
-			);
-		}
-		if (this.templateConfig.participantPanelItemElementsTemplate) {
-			assignIfChanged(
-				'openviduAngularParticipantPanelItemElementsTemplate',
-				this.templateConfig.participantPanelItemElementsTemplate
-			);
-		}
-		if (this.templateConfig.preJoinTemplate) {
-			assignIfChanged('openviduAngularPreJoinTemplate', this.templateConfig.preJoinTemplate);
-		}
-		if (this.templateConfig.layoutAdditionalElementsTemplate) {
-			assignIfChanged('ovLayoutAdditionalElementsTemplate', this.templateConfig.layoutAdditionalElementsTemplate);
-		}
-		if (this.templateConfig.settingsPanelGeneralAdditionalElementsTemplate) {
-			assignIfChanged(
-				'ovSettingsPanelGeneralAdditionalElementsTemplate',
-				this.templateConfig.settingsPanelGeneralAdditionalElementsTemplate
-			);
-		}
-		if (this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate) {
-			assignIfChanged(
-				'ovToolbarMoreOptionsAdditionalMenuItemsTemplate',
-				this.templateConfig.toolbarMoreOptionsAdditionalMenuItemsTemplate
-			);
-		}
-	}
-
-	/**
-	 * @internal
-	 * Handles the ready-to-join event, initializing the room and managing the prejoin flow.
-	 * This method coordinates the transition from prejoin state to actual room joining.
-	 */
-	_onReadyToJoin(): void {
-		this.log.d('Ready to join - initializing room and handling prejoin flow');
-		try {
-			// Mark that user has initiated the join process
-			this.updateComponentState({
-				state: VideoconferenceState.JOINING,
-				wasPrejoinShown: this.componentState.showPrejoin
-			});
-
-			// Always initialize the room when ready to join
-			this.openviduService.initRoom();
-
-			// Get the most current participant name from the service
-			// This ensures we have the latest value after any batch updates
-			const participantName = this.libService.getCurrentParticipantName() || this.latestParticipantName;
-
-			if (this.componentState.isRoomReady) {
-				// Room is ready, hide prejoin and proceed
-				this.log.d('Room is ready, proceeding to join');
-				this.updateComponentState({
-					state: VideoconferenceState.READY_TO_CONNECT,
-					showPrejoin: false
-				});
-			} else {
-				// Room not ready, request token if we have a participant name
-				if (participantName) {
-					this.log.d(`Requesting token for participant: ${participantName}`);
-					this.onTokenRequested.emit(participantName);
-				} else {
-					this.log.w('No participant name available when requesting token');
-					// Wait a bit and try again in case name is still propagating
-					setTimeout(() => {
-						const retryName = this.libService.getCurrentParticipantName() || this.latestParticipantName;
-						if (retryName) {
-							this.log.d(`Retrying token request for participant: ${retryName}`);
-							this.onTokenRequested.emit(retryName);
-						} else {
-							this.log.e('Still no participant name available after retry');
-						}
-					}, 10);
-				}
-			}
-
-			// Emit onReadyToJoin event only if prejoin page was actually shown
-			// This ensures the event semantics are correct
-			if (this.componentState.wasPrejoinShown) {
-				this.log.d('Emitting onReadyToJoin event (prejoin was shown)');
-				this.onReadyToJoin.emit();
-			}
-		} catch (error) {
-			this.log.e('Error during ready to join process', error);
-			this.updateComponentState({
-				state: VideoconferenceState.ERROR,
-				error: {
-					hasError: true,
-					message: 'Error during ready to join process'
-				}
-			});
-		}
-	}
-	/**
-	 * @internal
-	 */
-	_onParticipantLeft(event: ParticipantLeftEvent) {
-		this.onParticipantLeft.emit(event);
-
-		// Reset to disconnected state
-		// Set showPrejoin to false to prevent prejoin from showing and creating tracks
-		// This avoids the race condition where tracks are created before navigation
-		this.updateComponentState({
-			state: VideoconferenceState.DISCONNECTED,
-			isRoomReady: false,
-			showPrejoin: false
-		});
-	}
-
-	private async handleParticipantName(name: string) {
-		this.latestParticipantName = await this.e2eeService.decrypt(name);
-		this.storageSrv.setParticipantName(name);
-
-		if (
-			this.componentState.state === VideoconferenceState.JOINING &&
-			this.componentState.isRoomReady &&
-			!this.componentState.showPrejoin
-		) {
-			this.log.d('Participant name received, proceeding to join');
-			this.updateComponentState({
-				state: VideoconferenceState.READY_TO_CONNECT,
-				showPrejoin: false
-			});
-		}
+		// Settings panel extensions
+		r.settingsPanelGeneralAdditionalElements.set(this.externalSettingsPanelGeneralAdditionalElements()?.template);
 	}
 }

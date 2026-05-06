@@ -1,17 +1,6 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { ParticipantModel } from '../../models/participant.model';
-import { RecordingInfo } from '../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
-
-/**
- * Recording activity controls configuration
- */
-export interface RecordingControls {
-	play: boolean;
-	download: boolean;
-	delete: boolean;
-	externalView: boolean;
-}
 
 /**
  * Toolbar configuration grouped by domain
@@ -53,21 +42,8 @@ interface StreamConfig {
  */
 interface RecordingActivityConfig {
 	enabled: boolean;
-	readOnly: boolean;
-	showControls: RecordingControls;
 	startStopButton: boolean;
 	viewRecordingsButton: boolean;
-	showRecordingsList: boolean;
-}
-
-/**
- * Admin dashboard configuration
- */
-interface AdminConfig {
-	recordingsList: RecordingInfo[];
-	loginError: any;
-	loginTitle: string;
-	dashboardTitle: string;
 }
 
 /**
@@ -77,10 +53,8 @@ interface GeneralConfig {
 	token: string;
 	livekitUrl: string;
 	tokenError: any;
-	minimal: boolean;
 	participantName: string;
 	prejoin: boolean;
-	prejoinDisplayParticipantName: boolean;
 	showDisconnectionDialog: boolean;
 	showThemeSelector: boolean;
 	recordingStreamBaseUrl: string;
@@ -99,10 +73,8 @@ export class OpenViduComponentsConfigService {
 		token: '',
 		livekitUrl: '',
 		tokenError: null,
-		minimal: false,
 		participantName: '',
 		prejoin: true,
-		prejoinDisplayParticipantName: true,
 		showDisconnectionDialog: true,
 		showThemeSelector: false,
 		recordingStreamBaseUrl: 'call/api/recordings',
@@ -140,36 +112,19 @@ export class OpenViduComponentsConfigService {
 
 	private readonly recordingActivityConfig = signal<RecordingActivityConfig>({
 		enabled: true,
-		readOnly: false,
-		showControls: {
-			play: true,
-			download: true,
-			delete: true,
-			externalView: false
-		},
 		startStopButton: true,
 		viewRecordingsButton: false,
-		showRecordingsList: true
-	});
-
-	private readonly adminConfig = signal<AdminConfig>({
-		recordingsList: [],
-		loginError: null,
-		loginTitle: '',
-		dashboardTitle: ''
 	});
 
 	// Individual configs that don't fit into groups
 	private readonly layoutRemoteParticipantsConfig = signal<ParticipantModel[] | undefined>(undefined);
 
 	// Signals-first selectors used by migrated consumers/directives
-	readonly minimalSignal = computed(() => this.generalConfig().minimal);
 	readonly tokenSignal = computed(() => this.generalConfig().token);
 	readonly livekitUrlSignal = computed(() => this.generalConfig().livekitUrl);
 	readonly tokenErrorSignal = computed(() => this.generalConfig().tokenError);
 	readonly participantNameSignal = computed(() => this.generalConfig().participantName);
 	readonly prejoinSignal = computed(() => this.generalConfig().prejoin);
-	readonly prejoinDisplayParticipantNameSignal = computed(() => this.generalConfig().prejoinDisplayParticipantName);
 	readonly showDisconnectionDialogSignal = computed(() => this.generalConfig().showDisconnectionDialog);
 	readonly recordingStreamBaseUrlSignal = computed(() => this.generalConfig().recordingStreamBaseUrl);
 	readonly e2eeKeySignal = computed(() => this.generalConfig().e2eeKey);
@@ -198,15 +153,8 @@ export class OpenViduComponentsConfigService {
 	readonly recordingButtonSignal = computed(() => this.toolbarConfig().recording);
 	readonly toolbarViewRecordingsButtonSignal = computed(() => this.toolbarConfig().viewRecordings);
 	readonly recordingActivitySignal = computed(() => this.recordingActivityConfig().enabled);
-	readonly recordingActivityReadOnlySignal = computed(() => this.recordingActivityConfig().readOnly);
-	readonly recordingActivityShowControlsSignal = computed(() => this.recordingActivityConfig().showControls);
 	readonly recordingActivityStartStopRecordingButtonSignal = computed(() => this.recordingActivityConfig().startStopButton);
 	readonly recordingActivityViewRecordingsButtonSignal = computed(() => this.recordingActivityConfig().viewRecordingsButton);
-	readonly recordingActivityShowRecordingsListSignal = computed(() => this.recordingActivityConfig().showRecordingsList);
-	readonly adminRecordingsListSignal = computed(() => this.adminConfig().recordingsList);
-	readonly adminLoginErrorSignal = computed(() => this.adminConfig().loginError);
-	readonly adminLoginTitleSignal = computed(() => this.adminConfig().loginTitle);
-	readonly adminDashboardTitleSignal = computed(() => this.adminConfig().dashboardTitle);
 	readonly layoutRemoteParticipantsSignal = this.layoutRemoteParticipantsConfig.asReadonly();
 
 	// ============================================
@@ -239,22 +187,6 @@ export class OpenViduComponentsConfigService {
 	 */
 	updateRecordingActivityConfig(partialConfig: Partial<RecordingActivityConfig>): void {
 		this.recordingActivityConfig.update((current) => ({ ...current, ...partialConfig }));
-	}
-
-	/**
-	 * Update multiple admin configuration properties at once
-	 */
-	updateAdminConfig(partialConfig: Partial<AdminConfig>): void {
-		this.adminConfig.update((current) => ({ ...current, ...partialConfig }));
-	}
-
-	/**
-	 * Update recording controls specifically with batch support
-	 */
-	updateRecordingControls(partialControls: Partial<RecordingControls>): void {
-		const current = this.recordingActivityConfig();
-		const updatedControls = { ...current.showControls, ...partialControls };
-		this.updateRecordingActivityConfig({ showControls: updatedControls });
 	}
 
 	// ============================================
@@ -324,11 +256,5 @@ export class OpenViduComponentsConfigService {
 	// Internals
 	setLayoutRemoteParticipants(participants: ParticipantModel[] | undefined) {
 		this.layoutRemoteParticipantsConfig.set(participants);
-	}
-
-	// Recording Activity Configuration methods
-
-	showRecordingActivityRecordingsList(): boolean {
-		return this.recordingActivityConfig().showRecordingsList;
 	}
 }

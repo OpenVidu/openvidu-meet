@@ -1,7 +1,10 @@
 
-import { DOCUMENT } from '@angular/common';
-import { Inject, inject, Injectable } from '@angular/core';
-import { OpenViduComponentsConfig, ParticipantFactoryFunction } from '../../config/openvidu-components-angular.config';
+import { inject, Injectable } from '@angular/core';
+import {
+	OPENVIDU_COMPONENTS_CONFIG,
+	OpenViduComponentsConfig,
+	ParticipantFactoryFunction
+} from '../../config/openvidu-components-angular.config';
 
 /**
  * @internal
@@ -10,30 +13,10 @@ import { OpenViduComponentsConfig, ParticipantFactoryFunction } from '../../conf
 	providedIn: 'root'
 })
 export class GlobalConfigService {
-	private readonly document = inject(DOCUMENT);
-	private configuration: OpenViduComponentsConfig = {} as OpenViduComponentsConfig;
+	private readonly configuration = inject(OPENVIDU_COMPONENTS_CONFIG);
 
-	constructor(@Inject('OPENVIDU_COMPONENTS_CONFIG') config: OpenViduComponentsConfig) {
-		this.configuration = config;
+	constructor() {
 		if (this.isProduction()) console.log('OpenVidu Angular Production Mode');
-	}
-
-	/**
-	 * Retrieves the base href of the application.
-	 *
-	 * @returns The base href of the application as a string.
-	 */
-	getBaseHref(): string {
-		const base = this.document.getElementsByTagName('base');
-		if (!base || base.length === 0) {
-			return '/';
-		}
-
-		const baseHref = base[0].href;
-		if (baseHref) {
-			return baseHref;
-		}
-		return '/';
 	}
 
 	hasParticipantFactory(): boolean {

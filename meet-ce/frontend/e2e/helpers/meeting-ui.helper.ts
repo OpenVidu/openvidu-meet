@@ -81,6 +81,7 @@ export async function openMeeting(page: Page, accessUrl: string, timeoutMs = 45_
 	}
 
 	await expect(page.locator('#layout-container')).toBeVisible({ timeout: timeoutMs });
+	await expect(page.locator('#media-buttons-container')).toBeVisible({ timeout: timeoutMs });
 }
 
 export async function openPrejoin(page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> {
@@ -172,6 +173,21 @@ export async function openSettingsPanel(page: Page): Promise<void> {
 	await expect(page.locator('.mat-mdc-menu-content')).toBeVisible();
 	await page.locator('#toolbar-settings-btn').click();
 	await expect(page.locator('.sidenav-menu')).toBeVisible();
+}
+
+/**
+ * Opens the layout settings panel by clicking more-options and grid-layout-settings buttons
+ */
+export async function openLayoutSettingsPanel(page: Page): Promise<void> {
+	await page.locator('#more-options-btn').click();
+	await expect(page.locator('#grid-layout-settings-btn')).toBeVisible();
+	await page.locator('#grid-layout-settings-btn').click();
+	await expect(page.locator('#settings-container')).toBeVisible();
+}
+
+export async function closeSettingsPanel(page: Page): Promise<void> {
+	await page.locator('.panel-close-button').click();
+	await expectHidden(page, '#settings-container');
 }
 
 export async function expectVisible(page: Page, selector: string): Promise<void> {
@@ -266,7 +282,7 @@ export async function closePrejoinBackgroundsPanel(page: Page): Promise<void> {
 	await expect(page.locator('#background-effects-container')).toHaveCount(0);
 }
 
-export async function togglePrejoinCamera(page: Page, timeoutMs = 10_000): Promise<void> {
+export async function setPrejoinCameraStatus(page: Page, timeoutMs = 10_000): Promise<void> {
 	await page.locator('#camera-button').click();
 }
 
@@ -451,7 +467,7 @@ export async function getScreenTypeTracks(
  * Expects a specific number of stream containers to be present
  */
 export async function expectStreamCount(page: Page, count: number): Promise<void> {
-	await expect(page.locator('.OV_publisher .OV_stream ')).toHaveCount(count);
+	await expect(page.locator('.OV_publisher .OV_stream')).toHaveCount(count);
 }
 
 /**
@@ -464,16 +480,15 @@ export async function expectScreenShareCount(page: Page, count: number): Promise
 /**
  * Expects a specific number of local video and audio elements to be present
  */
-export async function expectLocalStreamMediaCount(
-	page: Page,
-	counts: { video?: number; audio?: number }
-): Promise<void> {
+export async function expectLocalStreamCount(page: Page, counts: { video?: number; audio?: number }): Promise<void> {
 	if (counts.video !== undefined) {
 		await expect(page.locator('.OV_stream.local .OV_video-element')).toHaveCount(counts.video);
+		await expect(page.locator('video')).toHaveCount(counts.video);
 	}
 
 	if (counts.audio !== undefined) {
 		await expect(page.locator('.OV_stream.local .OV_audio-element')).toHaveCount(counts.audio);
+		await expect(page.locator('audio')).toHaveCount(counts.audio);
 	}
 }
 
@@ -560,12 +575,89 @@ export async function togglePrejoinMicrophone(page: Page, timeoutMs = 10_000): P
 }
 
 /**
+ * Hovers over a stream element to reveal controls
+ */
+export async function hoverStream(page: Page, selector = '.OV_stream_video.local'): Promise<void> {
+	const locator = page.locator(selector).first();
+	await locator.hover();
+}
+
+/**
+ * Gets the bounding box of an element
+ */
+export async function getElementBoundingBox(
+	page: Page,
+	selector: string
+): Promise<{ x: number; y: number; width: number; height: number } | null> {
+	const locator = page.locator(selector).first();
+
+	if ((await locator.count()) === 0) {
+		return null;
+	}
+
+	await locator.waitFor({ state: 'visible', timeout: 5_000 });
+	const box = await locator.boundingBox();
+
+	if (!box) {
+		return null;
+	}
+
+	return {
+		x: box.x,
+		y: box.y,
+		width: box.width,
+		height: box.height
+	};
+}
+
+/**
+ * Minimizes the local video stream
+ */
+export async function minimizeStream(page: Page): Promise<void> {
+	await hoverStream(page, '.OV_publisher .OV_stream_video.local');
+	await expect(page.locator('#minimize-btn')).toBeVisible();
+	await page.locator('#minimize-btn').click();
+}
+
+/**
+ * Maximizes (restores) the local video stream
+ */
+export async function maximizeStream(page: Page): Promise<void> {
+	await hoverStream(page, '.local_participant .OV_stream_video.local');
+	// Current UI toggles minimize/maximize with the same control id.
+	await expect(page.locator('#minimize-btn')).toBeVisible();
+	await page.locator('#minimize-btn').click();
+}
+
+/**
+ * Drags a stream element to a new position
+ */
+export async function dragStream(page: Page, selector: string, targetX: number, targetY: number): Promise<void> {
+	const element =
+		selector === '.local_participant'
+			? page.locator('.local_participant:has(.OV_stream_video.local)').first()
+			: page.locator(selector).first();
+
+	await element.waitFor({ state: 'visible', timeout: 5_000 });
+	const box = await element.boundingBox();
+
+	if (!box) {
+		throw new Error('Element not found for dragging');
+	}
+
+	await element.hover();
+	await page.mouse.down();
+	await page.mouse.move(targetX, targetY, { steps: 10 });
+	await page.mouse.up();
+}
+
+/**
  * Checks if video is currently enabled in prejoin by inspecting the camera toggle state
  */
 export async function isPrejoinVideoEnabled(page: Page): Promise<boolean> {
 	const cameraButton = page.locator('#camera-button');
 
-	await expect(cameraButton).toBeVisible();
+	await expect(cameraButton).toBeVisible({ timeout: 10_000 });
 
 	if ((await cameraButton.count()) === 0) {
 		return false;
@@ -597,7 +689,7 @@ export async function ensurePrejoinVideoState(page: Page, enabled: boolean, time
 	const currentlyEnabled = await isPrejoinVideoEnabled(page);
 
 	if (currentlyEnabled !== enabled) {
-		await togglePrejoinCamera(page);
+		await setPrejoinCameraStatus(page);
 		await expect
 			.poll(async () => (await isPrejoinVideoEnabled(page)) !== currentlyEnabled, { timeout: timeoutMs })
 			.toBeTruthy()
@@ -648,4 +740,24 @@ export async function joinFromPrejoinWithMediaState(
 	await page.locator('#join-button').click();
 	await expect(page.locator('#layout-container')).toBeVisible();
 	await expect(page.locator('.OV_stream.local .OV_video-element')).toBeVisible();
+}
+
+export async function muteRemoteParticipant(page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> {
+	// Hover over the remote stream to reveal the silence button
+	await hoverStream(page, remoteStreamSelector);
+
+	// Wait for and click the silence button
+	const silenceButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
+	await expect(silenceButton).toBeVisible();
+	await silenceButton.click();
+}
+
+export async function unmuteRemoteParticipant(page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> {
+	// Hover over the remote stream to reveal the silence button
+	await hoverStream(page, remoteStreamSelector);
+
+	// Wait for and click the silence button (toggle to unmute)
+	const silenceButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
+	await expect(silenceButton).toBeVisible();
+	await silenceButton.click();
 }

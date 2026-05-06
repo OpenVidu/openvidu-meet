@@ -10,7 +10,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  */
 @Directive({
 	selector: 'img[ovLogo]',
-	standalone: false
+	standalone: true
 })
 export class FallbackLogoDirective implements OnInit {
 	defaultLogo =
@@ -55,7 +55,7 @@ export class FallbackLogoDirective implements OnInit {
  */
 @Directive({
 	selector: 'ov-layout[ovRemoteParticipants]',
-	standalone: false
+	standalone: true
 })
 export class LayoutRemoteParticipantsDirective {
 	private _ovRemoteParticipants: ParticipantModel[] | undefined;
@@ -89,7 +89,7 @@ export class LayoutRemoteParticipantsDirective {
  */
 @Directive({
 	selector: 'ov-videoconference[brandingLogo], ov-toolbar[brandingLogo]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarBrandingLogoDirective implements AfterViewInit, OnDestroy {
 	/**
@@ -127,152 +127,6 @@ export class ToolbarBrandingLogoDirective implements AfterViewInit, OnDestroy {
 
 /**
  * @internal
- */
-@Directive({
-	selector: 'ov-videoconference[prejoinDisplayParticipantName]',
-	standalone: false
-})
-export class PrejoinDisplayParticipantName implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	@Input() set prejoinDisplayParticipantName(value: boolean) {
-		this.update(value);
-	}
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	private clear() {
-		this.update(true);
-	}
-
-	private update(value: boolean) {
-		this.libService.updateGeneralConfig({ prejoinDisplayParticipantName: value });
-	}
-}
-
-/**
- * @internal
- *
- * The **recordingActivityReadOnly** directive sets the recording activity panel to read-only mode.
- * In this mode, users can only view recordings without the ability to start, stop, or delete them.
- *
- * It is only available for {@link VideoconferenceComponent}.
- *
- * Default: `false`
- *
- * @example
- * <ov-videoconference [recordingActivityReadOnly]="true"></ov-videoconference>
- */
-@Directive({
-	selector: 'ov-videoconference[recordingActivityReadOnly]',
-	standalone: false
-})
-export class RecordingActivityReadOnlyDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	@Input() set recordingActivityReadOnly(value: boolean) {
-		this.update(value);
-	}
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	/**
-	 * @ignore
-	 */
-	clear() {
-		this.update(false);
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(value: boolean) {
-		this.libService.updateRecordingActivityConfig({ readOnly: value });
-	}
-}
-
-/**
- *
- * @internal
- *
- * The **recordingActivityShowControls** directive allows to show/hide specific recording controls (play, download, delete, externalView).
- * You can pass an object with boolean properties to control which buttons are shown.
- *
- * It is only available for {@link VideoconferenceComponent}.
- *
- * Default: `{ play: true, download: true, delete: true, externalView: false }`
- *
- * @example
- * <ov-videoconference [recordingActivityShowControls]="{ play: false, download: true, delete: false }"></ov-videoconference>
- */
-@Directive({
-	selector: 'ov-videoconference[recordingActivityShowControls]',
-	standalone: false
-})
-export class RecordingActivityShowControlsDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	@Input() set recordingActivityShowControls(value: {
-		play: boolean;
-		download: boolean;
-		delete: boolean;
-		externalView: boolean;
-	}) {
-		this.update(value);
-	}
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	/**
-	 * @ignore
-	 */
-	clear() {
-		this.update({ play: true, download: true, delete: true, externalView: false });
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(value: { play: boolean; download: boolean; delete: boolean; externalView: boolean }) {
-		this.libService.updateRecordingActivityConfig({ showControls: value });
-	}
-}
-
-/**
- * @internal
  * The **viewRecordingsButton** directive allows show/hide the view recordings toolbar button.
  *
  * Default: `false`
@@ -291,7 +145,7 @@ export class RecordingActivityShowControlsDirective implements OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[toolbarViewRecordingsButton], ov-toolbar[viewRecordingsButton]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarViewRecordingsButtonDirective implements AfterViewInit, OnDestroy {
 	/**
@@ -348,7 +202,7 @@ export class ToolbarViewRecordingsButtonDirective implements AfterViewInit, OnDe
  */
 @Directive({
 	selector: 'ov-videoconference[recordingActivityStartStopRecordingButton]',
-	standalone: false
+	standalone: true
 })
 export class StartStopRecordingButtonsDirective implements OnDestroy {
 	/**
@@ -390,7 +244,7 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[recordingActivityViewRecordingsButton]',
-	standalone: false
+	standalone: true
 })
 export class RecordingActivityViewRecordingsButtonDirective implements AfterViewInit, OnDestroy {
 	@Input() set recordingActivityViewRecordingsButton(value: boolean) {
@@ -421,49 +275,6 @@ export class RecordingActivityViewRecordingsButtonDirective implements AfterView
 	}
 }
 
-/**
- * @internal
- * The **recordingActivityShowRecordingsList** directive allows to show or hide the recordings list in the recording activity panel.
- *
- * Default: `true`
- *
- * Can be used in {@link VideoconferenceComponent}.
- *
- * @example
- * <ov-videoconference [recordingActivityShowRecordingsList]="false"></ov-videoconference>
- */
-@Directive({
-	selector: 'ov-videoconference[recordingActivityShowRecordingsList]',
-	standalone: false
-})
-export class RecordingActivityShowRecordingsListDirective implements AfterViewInit, OnDestroy {
-	@Input() set recordingActivityShowRecordingsList(value: boolean) {
-		this._value = value;
-		this.update(this._value);
-	}
-
-	private _value: boolean = true;
-
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this._value);
-	}
-
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	private clear() {
-		this._value = true;
-		this.update(this._value);
-	}
-
-	private update(value: boolean) {
-		this.libService.updateRecordingActivityConfig({ showRecordingsList: value });
-	}
-}
 
 /**
  * @internal
@@ -477,7 +288,7 @@ export class RecordingActivityShowRecordingsListDirective implements AfterViewIn
  */
 @Directive({
 	selector: 'ov-videoconference[toolbarRoomName], ov-toolbar[roomName]',
-	standalone: false
+	standalone: true
 })
 export class ToolbarRoomNameDirective implements AfterViewInit, OnDestroy {
 	@Input() set toolbarRoomName(value: string | undefined) {
@@ -526,7 +337,7 @@ export class ToolbarRoomNameDirective implements AfterViewInit, OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[showThemeSelector]',
-	standalone: false
+	standalone: true
 })
 export class ShowThemeSelectorDirective implements AfterViewInit, OnDestroy {
 	@Input() set showThemeSelector(value: boolean) {
@@ -570,7 +381,7 @@ export class ShowThemeSelectorDirective implements AfterViewInit, OnDestroy {
  */
 @Directive({
 	selector: 'ov-videoconference[e2eeKey]',
-	standalone: false
+	standalone: true
 })
 export class E2EEKeyDirective implements AfterViewInit, OnDestroy {
 	@Input() set e2eeKey(value: string | undefined) {

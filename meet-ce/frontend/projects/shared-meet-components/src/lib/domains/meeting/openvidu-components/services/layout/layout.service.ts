@@ -11,7 +11,6 @@ import { ViewportService } from '../viewport/viewport.service';
 	providedIn: 'root'
 })
 export class LayoutService {
-	private readonly loggerSrv = inject(LoggerService);
 	private readonly viewportSrv = inject(ViewportService);
 
 	layoutContainer: HTMLElement | undefined = undefined;
@@ -21,17 +20,18 @@ export class LayoutService {
 	readonly layoutWidth = signal(0);
 	protected openviduLayout: OpenViduLayout | undefined;
 	protected openviduLayoutOptions!: OpenViduLayoutOptions;
-	protected log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
+	protected log: ILogger = inject(LoggerService).get('LayoutService');
+
+	private _layoutUpdateEffect = effect(() => {
+		// Setup reactive viewport listener
+		const viewportInfo = this.viewportSrv.viewportInfo();
+		const isMobile = this.viewportSrv.isMobile();
+		const orientation = this.viewportSrv.orientation();
+		this.updateLayoutOptions();
+	});
 
 	constructor() {
-		this.log = this.loggerSrv.get('LayoutService');
 		this.openviduLayoutOptions = this.getOptions();
-		this.setupViewportListener();
 	}
 
 	initialize(container: HTMLElement) {
@@ -193,15 +193,6 @@ export class LayoutService {
 			bigPercentage: 0.8,
 			minBigPercentage: 0.5
 		};
-	}
-
-	protected setupViewportListener(): void {
-		effect(() => {
-			const viewportInfo = this.viewportSrv.viewportInfo();
-			const isMobile = this.viewportSrv.isMobile();
-			const orientation = this.viewportSrv.orientation();
-			this.updateLayoutOptions();
-		});
 	}
 
 	protected updateLayoutOptions(): void {

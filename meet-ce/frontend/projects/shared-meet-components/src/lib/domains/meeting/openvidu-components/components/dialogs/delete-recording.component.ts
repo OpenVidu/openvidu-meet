@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { MatDialogRef } from '@angular/material/dialog';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
+import { MatButtonModule } from '@angular/material/button';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
@@ -8,7 +8,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
  */
 @Component({
     selector: 'app-delete-dialog',
-	imports: [AppMaterialModule, TranslatePipe],
+	imports: [MatButtonModule, MatDialogModule, TranslatePipe],
     template: `
 		<div mat-dialog-content>{{ 'PANEL.RECORDING.DELETE_QUESTION' | translate }}</div>
 		<div mat-dialog-actions>

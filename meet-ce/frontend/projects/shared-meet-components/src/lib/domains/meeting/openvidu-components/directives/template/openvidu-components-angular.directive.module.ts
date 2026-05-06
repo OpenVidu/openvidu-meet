@@ -24,50 +24,30 @@ import {
 	ToolbarMoreOptionsAdditionalMenuItemsDirective
 } from './internals.directive';
 
+const directives = [
+	ChatPanelDirective,
+	LayoutDirective,
+	PanelDirective,
+	AdditionalPanelsDirective,
+	ParticipantPanelItemDirective,
+	ParticipantsPanelDirective,
+	StreamDirective,
+	ToolbarDirective,
+	ToolbarAdditionalButtonsDirective,
+	LeaveButtonDirective,
+	ToolbarAdditionalPanelButtonsDirective,
+	ParticipantPanelItemElementsDirective,
+	ActivitiesPanelDirective,
+	PreJoinDirective,
+	ParticipantPanelAfterLocalParticipantDirective,
+	LayoutAdditionalElementsDirective,
+	ParticipantPanelParticipantBadgeDirective,
+	SettingsPanelGeneralAdditionalElementsDirective,
+	ToolbarMoreOptionsAdditionalMenuItemsDirective
+];
+
 @NgModule({
-	declarations: [
-		ChatPanelDirective,
-		LayoutDirective,
-		PanelDirective,
-		AdditionalPanelsDirective,
-		ParticipantPanelItemDirective,
-		ParticipantsPanelDirective,
-		StreamDirective,
-		ToolbarDirective,
-		ToolbarAdditionalButtonsDirective,
-		LeaveButtonDirective,
-		ToolbarAdditionalPanelButtonsDirective,
-		ParticipantPanelItemElementsDirective,
-		ActivitiesPanelDirective,
-		PreJoinDirective,
-		ParticipantPanelAfterLocalParticipantDirective,
-		LayoutAdditionalElementsDirective,
-		ParticipantPanelParticipantBadgeDirective,
-		SettingsPanelGeneralAdditionalElementsDirective,
-		ToolbarMoreOptionsAdditionalMenuItemsDirective
-		// BackgroundEffectsPanelDirective
-	],
-	exports: [
-		ChatPanelDirective,
-		LayoutDirective,
-		PanelDirective,
-		AdditionalPanelsDirective,
-		ParticipantPanelItemDirective,
-		ParticipantsPanelDirective,
-		StreamDirective,
-		ToolbarDirective,
-		ToolbarAdditionalButtonsDirective,
-		LeaveButtonDirective,
-		ToolbarAdditionalPanelButtonsDirective,
-		ParticipantPanelItemElementsDirective,
-		ActivitiesPanelDirective,
-		PreJoinDirective,
-		ParticipantPanelAfterLocalParticipantDirective,
-		LayoutAdditionalElementsDirective,
-		ParticipantPanelParticipantBadgeDirective,
-		SettingsPanelGeneralAdditionalElementsDirective,
-		ToolbarMoreOptionsAdditionalMenuItemsDirective
-		// BackgroundEffectsPanelDirective
-	]
+	imports: [...directives],
+	exports: [...directives]
 })
 export class OpenViduComponentsDirectiveModule {}

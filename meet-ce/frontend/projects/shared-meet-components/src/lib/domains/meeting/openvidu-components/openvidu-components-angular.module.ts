@@ -3,7 +3,7 @@ import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http'
 import { EnvironmentProviders, ModuleWithProviders, NgModule, Provider } from '@angular/core';
 
 import { CdkOverlayContainer } from './config/custom-cdk-overlay';
-import { OpenViduComponentsConfig } from './config/openvidu-components-angular.config';
+import { OPENVIDU_COMPONENTS_CONFIG, OpenViduComponentsConfig } from './config/openvidu-components-angular.config';
 import { ActionService } from './services/action/action.service';
 import { ChatService } from './services/chat/chat.service';
 import { DeviceService } from './services/device/device.service';
@@ -30,7 +30,7 @@ import { VirtualBackgroundService } from './services/virtual-background/virtual-
 export class OpenViduComponentsModule {
 	static forRoot(config: OpenViduComponentsConfig): ModuleWithProviders<OpenViduComponentsModule> {
 		const providers: (Provider | EnvironmentProviders)[] = [
-			{ provide: 'OPENVIDU_COMPONENTS_CONFIG', useValue: config },
+			{ provide: OPENVIDU_COMPONENTS_CONFIG, useValue: config },
 			GlobalConfigService,
 			OpenViduComponentsConfigService,
 			ActionService,

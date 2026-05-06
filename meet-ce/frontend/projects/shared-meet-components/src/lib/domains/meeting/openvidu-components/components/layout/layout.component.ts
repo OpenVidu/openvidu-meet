@@ -1,13 +1,13 @@
-import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 
 import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
+import { CommonModule } from '@angular/common';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
-	ChangeDetectorRef,
 	Component,
 	computed,
 	contentChild,
+	contentChildren,
 	DestroyRef,
 	effect,
 	ElementRef,
@@ -15,17 +15,18 @@ import {
 	OnDestroy,
 	TemplateRef,
 	viewChild,
+	viewChildren,
 	ViewContainerRef
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { StreamDirective } from '../../directives/template/openvidu-components-angular.directive';
-import { ParticipantTrackPublication } from '../../models/participant.model';
+import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
+import { ParticipantStream } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { GlobalConfigService } from '../../services/config/global-config.service';
 import { LayoutService } from '../../services/layout/layout.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
-import { LayoutTemplateConfiguration, TemplateManagerService } from '../../services/template/template-manager.service';
+import { TemplateRegistryService } from '../../services/template/template-registry.service';
 
 /**
  *
@@ -34,10 +35,11 @@ import { LayoutTemplateConfiguration, TemplateManagerService } from '../../servi
  */
 @Component({
 	selector: 'ov-layout',
+	imports: [CommonModule, CdkDrag],
 	templateUrl: './layout.component.html',
 	styleUrls: ['./layout.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class LayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly layoutService = inject(LayoutService);
@@ -45,59 +47,63 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly participantService = inject(ParticipantService);
 	private readonly globalService = inject(GlobalConfigService);
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
-	private readonly cd = inject(ChangeDetectorRef);
-	private readonly templateManagerService = inject(TemplateManagerService);
+	private readonly templateRegistry = inject(TemplateRegistryService);
 
 	/**
 	 * @ignore
 	 */
 	readonly streamTemplateQuery = contentChild('stream', { read: TemplateRef });
-	streamTemplate: TemplateRef<any> | undefined = undefined;
 
 	/**
 	 * @ignore
 	 */
-	readonly layoutAdditionalElementsTemplateQuery = contentChild('layoutAdditionalElements', { read: TemplateRef });
-	layoutAdditionalElementsTemplate: TemplateRef<any> | undefined = undefined;
+	readonly layoutAdditionalElementsDirectives = contentChildren(LayoutAdditionalElementsDirective);
 
 	/**
 	 * @ignore
 	 */
-	readonly layoutContainerQuery = viewChild('layout', { read: ViewContainerRef });
-	layoutContainer: ViewContainerRef | undefined = undefined;
+	readonly layoutContainer = viewChild('layout', { read: ViewContainerRef });
 
 	/**
 	 * @ignore
 	 */
-	readonly cdkDragQuery = viewChild(CdkDrag);
-	cdkDrag: CdkDrag | undefined = undefined;
+	readonly cdkDragQueries = viewChildren(CdkDrag);
 
 	/**
 	 * @ignore
 	 */
-	readonly localLayoutElementQuery = viewChild('localLayoutElement', { read: ElementRef });
-	localLayoutElement: ElementRef | undefined = undefined;
-	/**
-	 * @ignore
-	 */
-	readonly externalStream = contentChild(StreamDirective);
+	readonly localLayoutElementQueries = viewChildren('localLayoutElement', { read: ElementRef });
 
-	/**
-	 * @ignore
-	 */
-	readonly externalLayoutAdditionalElements = contentChild(LayoutAdditionalElementsDirective);
+	readonly streamTemplate = computed(
+		() => this.templateRegistry.stream() ?? this.streamTemplateQuery()
+	);
 
-	/**
-	 * @ignore
-	 */
-	templateConfig: LayoutTemplateConfiguration = {};
-	readonly localParticipant = this.participantService.localParticipantSignal;
+	/** Finds a direct content-child directive by slot, or falls back to the registry template for the default slot */
+	readonly layoutAdditionalElementsTopTemplate = computed(
+		() => this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'top')?.template
+	);
+	readonly layoutAdditionalElementsDefaultTemplate = computed(
+		() =>
+			this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'default')?.template ??
+			this.templateRegistry.layoutAdditionalElements()
+	);
+	readonly layoutAdditionalElementsBottomTemplate = computed(
+		() => this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'bottom')?.template
+	);
+	readonly localParticipant = this.participantService.localParticipant;
 	readonly remoteParticipants = computed(() => {
 		const directiveParticipants = this.directiveService.layoutRemoteParticipantsSignal();
 		return directiveParticipants !== undefined
 			? directiveParticipants
-			: this.participantService.remoteParticipantsSignal();
+			: this.participantService.remoteParticipants();
 	});
+	/**
+	 * Flattened stream list for all remote participants, as a computed signal.
+	 * Tracks each ParticipantModel's internal `streams` computed, so the @for loop
+	 * in the template re-evaluates only when tracks, pin/mute state, or the participant
+	 * list actually change — no array spreading or participant cloning needed.
+	 */
+	readonly remoteStreams = computed(() => this.remoteParticipants().flatMap((p) => p.streams()));
 
 	private readonly destroyRef = inject(DestroyRef);
 	private resizeObserver: ResizeObserver | undefined = undefined;
@@ -105,31 +111,32 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	private mutationObserver: MutationObserver | undefined = undefined;
 	private mutationTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 	private videoIsAtRight: boolean = false;
+	private wasLocalMinimized: boolean = false;
 	private lastLayoutWidth: number = 0;
 	private lastLayoutHeight: number = 0;
 
 	private readonly reactiveStateEffect = effect(() => {
 		const localParticipant = this.localParticipant();
-		if (localParticipant && !localParticipant.isMinimized) {
+		const isLocalMinimized = !!localParticipant?.isMinimized;
+
+		if (this.wasLocalMinimized && !isLocalMinimized) {
+			// On minimize -> restore transition, drop any drag offset and let layout place the stream again.
 			this.videoIsAtRight = false;
+			queueMicrotask(() => {
+				this.resetDragPosition();
+				this.layoutService.update();
+			});
 		}
-		this.remoteParticipants();
+
+		this.wasLocalMinimized = isLocalMinimized;
+		// Track remote stream changes (track publish/unpublish, pin, mute) in addition to
+		// participant add/remove, so the layout recalculates for all structural changes.
+		this.remoteStreams();
 		this.layoutService.update();
-		this.cd.markForCheck();
-	});
-	private readonly querySyncEffect = effect(() => {
-		this.streamTemplate = this.streamTemplateQuery() ?? this.streamTemplate;
-		this.layoutAdditionalElementsTemplate =
-			this.layoutAdditionalElementsTemplateQuery() ?? this.layoutAdditionalElementsTemplate;
-		this.layoutContainer = this.layoutContainerQuery() ?? this.layoutContainer;
-		this.cdkDrag = this.cdkDragQuery() ?? this.cdkDrag;
-		this.localLayoutElement = this.localLayoutElementQuery() ?? this.localLayoutElement;
-		this.setupTemplates();
-		this.cd.markForCheck();
 	});
 
 	ngAfterViewInit() {
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
 		if (!layoutContainer) return;
 
 		this.layoutService.initialize(layoutContainer);
@@ -152,33 +159,14 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	trackParticipantElement(_: number, track: ParticipantTrackPublication) {
+	trackParticipantElement(_: number, stream: ParticipantStream) {
 		// This method is used for trackBy in ngFor with the aim of improving performance
 		// https://angular.io/api/core/TrackByFunction
-		return track;
-	}
-
-	private setupTemplates() {
-		this.templateConfig = this.templateManagerService.setupLayoutTemplates(
-			this.externalStream(),
-			this.externalLayoutAdditionalElements()
-		);
-
-		// Apply templates to component properties for backward compatibility
-		this.applyTemplateConfiguration();
-	}
-
-	private applyTemplateConfiguration() {
-		if (this.templateConfig.layoutStreamTemplate) {
-			this.streamTemplate = this.templateConfig.layoutStreamTemplate;
-		}
-		if (this.templateConfig.layoutAdditionalElementsTemplate) {
-			this.layoutAdditionalElementsTemplate = this.templateConfig.layoutAdditionalElementsTemplate;
-		}
+		return stream.streamId;
 	}
 
 	private listenToLayoutDomChanges() {
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
+		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
 		if (!layoutContainer) return;
 
 		this.mutationObserver = new MutationObserver((mutations) => {
@@ -192,7 +180,6 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			clearTimeout(this.mutationTimeout);
 			this.mutationTimeout = setTimeout(() => {
 				this.layoutService.update();
-				this.cd.markForCheck();
 			}, 0);
 		});
 
@@ -203,9 +190,8 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	}
 
 	private listenToResizeLayout() {
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
-		const cdkDrag = this.cdkDrag;
-		if (!layoutContainer || !cdkDrag) return;
+		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
+		if (!layoutContainer) return;
 
 		this.resizeObserver = new ResizeObserver((entries) => {
 			const { width: parentWidth, height: parentHeight } = entries[0].contentRect;
@@ -219,10 +205,16 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 				const heightDiff = Math.abs(this.lastLayoutHeight - parentHeight);
 				if (widthDiff > 1 || heightDiff > 1) {
 					this.layoutService.update();
-					this.cd.markForCheck();
 				}
 				// Handle minimized participant positioning
 				if (this.localParticipant()?.isMinimized) {
+					const cdkDrag = this.getActiveLocalDrag();
+					if (!cdkDrag) {
+						this.lastLayoutWidth = parentWidth;
+						this.lastLayoutHeight = parentHeight;
+						return;
+					}
+
 					if (this.panelService.isPanelOpened()) {
 						if (this.lastLayoutWidth < parentWidth) {
 							// Layout is bigger than before. Maybe the settings panel(wider) has been transitioned to another panel.
@@ -250,8 +242,44 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 
 		this.resizeObserver.observe(layoutContainer);
 	}
+
+	private getActiveLocalDrag(): CdkDrag | undefined {
+		const drags = this.cdkDragQueries();
+
+		const minimizedLocalDrag = drags.find((drag) => {
+			const element = drag.element.nativeElement as HTMLElement;
+			return element.classList.contains('local_participant') && element.classList.contains('OV_minimized');
+		});
+
+		if (minimizedLocalDrag) {
+			return minimizedLocalDrag;
+		}
+
+		return drags.find((drag) => {
+			const element = drag.element.nativeElement as HTMLElement;
+			return element.classList.contains('local_participant') && !element.classList.contains('OV_screen');
+		});
+	}
+
+	private getActiveLocalLayoutElement(): HTMLElement | undefined {
+		const elements = this.localLayoutElementQueries().map((el) => el.nativeElement as HTMLElement);
+
+		const minimizedLocalElement = elements.find(
+			(element) =>
+				element.classList.contains('local_participant') && element.classList.contains('OV_minimized')
+		);
+
+		if (minimizedLocalElement) {
+			return minimizedLocalElement;
+		}
+
+		return elements.find(
+			(element) => element.classList.contains('local_participant') && !element.classList.contains('OV_screen')
+		);
+	}
+
 	private moveStreamToRight(parentWidth: number) {
-		const cdkDrag = this.cdkDrag;
+		const cdkDrag = this.getActiveLocalDrag();
 		if (!cdkDrag) return;
 
 		const { y, width: elementWidth } = cdkDrag.element.nativeElement.getBoundingClientRect();
@@ -260,15 +288,23 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		cdkDrag.setFreeDragPosition({ x: newX, y });
 	}
 
-	private listenToCdkDrag() {
-		const cdkDrag = this.cdkDrag;
-		const layoutContainer = this.layoutContainer?.element?.nativeElement;
-		const localLayoutElement = this.localLayoutElement?.nativeElement;
-		if (!cdkDrag || !layoutContainer || !localLayoutElement) return;
+	private resetDragPosition() {
+		this.cdkDragQueries().forEach((drag) => {
+			const element = drag.element.nativeElement as HTMLElement;
+			if (element.classList.contains('local_participant')) {
+				drag.reset();
+				drag.setFreeDragPosition({ x: 0, y: 0 });
+			}
+		});
+	}
 
-		const handler = (_event: CdkDragRelease<any>) => {
+	private listenToCdkDrag() {
+		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
+		if (!layoutContainer) return;
+
+		const handler = (event: CdkDragRelease<any>) => {
 			if (!this.panelService.isPanelOpened()) return;
-			const { x, width } = localLayoutElement.getBoundingClientRect();
+			const { x, width } = (event.source.element.nativeElement as HTMLElement).getBoundingClientRect();
 			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
 			if (x === 0) {
 				// Video is at the left
@@ -282,14 +318,32 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			}
 		};
 
-		cdkDrag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(handler);
+		this.cdkDragQueries()
+			.filter((drag) => (drag.element.nativeElement as HTMLElement).classList.contains('local_participant'))
+			.forEach((drag) => {
+				drag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(handler);
+			});
 
 		if (this.globalService.isProduction()) return;
 		// Just for allow E2E testing with drag and drop
-		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', handler as unknown as EventListener);
+		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', () => {
+			if (!this.panelService.isPanelOpened()) return;
+			const localLayoutElement = this.getActiveLocalLayoutElement();
+			if (!localLayoutElement) return;
+			const { x, width } = localLayoutElement.getBoundingClientRect();
+			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
+			if (x === 0) {
+				this.videoIsAtRight = false;
+			} else if (x + width >= parentWidth) {
+				this.videoIsAtRight = true;
+			} else {
+				this.videoIsAtRight = false;
+			}
+		});
 		document.addEventListener('webcomponentTestingEndedDragAndDropRightEvent', (event: any) => {
 			const { x, y } = event.detail;
-			cdkDrag.setFreeDragPosition({ x, y });
+			const cdkDrag = this.getActiveLocalDrag();
+			cdkDrag?.setFreeDragPosition({ x, y });
 		});
 	}
 }

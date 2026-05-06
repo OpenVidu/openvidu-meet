@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
+import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { RecordingDialogData } from '../../models/dialog.model';
-import { AppMaterialModule } from '../../openvidu-components-angular.material.module';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
 /**
@@ -9,7 +9,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
  */
 @Component({
     selector: 'app-recording-dialog',
-	imports: [AppMaterialModule, TranslatePipe],
+	imports: [MatButtonModule, MatDialogModule, TranslatePipe],
     template: `
 		<div mat-dialog-content>
 			<video #videoElement controls autoplay [src]="src()" (error)="handleError()"></video>

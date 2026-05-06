@@ -1,113 +1,105 @@
-@if (_track; as track) {
+@if (stream(); as stream) {
 	<div
-		[ngClass]="{
-			OV_stream: true,
-			OV_stream_audio: track.isAudioTrack,
-			OV_stream_video: !track.isAudioTrack,
-			'no-size': !showVideo(),
-			local: track.participant.isLocal,
-			remote: !track.participant.isLocal,
-			speaking: !isMinimal && showAudioDetection && track.participant.isSpeaking && track.isCameraTrack
-		}"
-		[id]="'stream-' + track.source + '-' + track.trackSid"
+		[class.OV_stream]="true"
+		[class.OV_stream_video]="true"
+		[class.no-size]="!showVideo()"
+		[class.local]="stream.participant.isLocal"
+		[class.remote]="!stream.participant.isLocal"
+		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
+		[id]="'stream-' + stream.source + '-' + stream.streamId"
 		(mousemove)="mouseHover($event)"
 		#streamContainer
 	>
-		@if (
-			!isMinimal &&
-			showParticipantName &&
-			(!track.isAudioTrack || (track.isAudioTrack && track.participant.onlyHasAudioTracks))
-		) {
-			<div id="participant-name-container" class="participant-name" [class.fullscreen]="isFullscreen">
+		@if (showParticipantName()) {
+			<div id="participant-name-container" class="participant-name" [class.fullscreen]="isFullscreen()">
 				<div class="participant-name-container">
-					<span id="participant-name">{{ track.participant.name }}</span>
-					@if (track.isScreenTrack) {
+					<span id="participant-name">{{ stream.participant.name }}</span>
+					@if (stream.isScreenStream) {
 						<span id="participant-name">_SCREEN</span>
 					}
 				</div>
 			</div>
 		}
 
-		@if (!isMinimal && showAudioDetection && track.participant.isSpeaking && track.isCameraTrack) {
+		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream) {
 			<div id="audio-wave-container">
 				<ov-audio-wave />
 			</div>
 		}
 
 		<ov-media-element
-			[track]="track.track"
-			[showAvatar]="
-				track.participant.onlyHasAudioTracks || (track.isCameraTrack && !track.participant.isCameraEnabled)
-			"
-			[avatarColor]="track.participant.colorProfile"
-			[avatarName]="track.participant.name ?? ''"
-			[muted]="track.isMutedForcibly ?? false"
-			[isLocal]="track.participant.isLocal"
-			[hasEncryptionError]="track.participant.hasEncryptionError"
+			[videoTrack]="stream.videoTrack?.track"
+			[audioTrack]="stream.audioTrack?.track"
+			[showAvatar]="stream.isCameraStream && (!stream.videoTrack || !stream.participant.isCameraEnabled)"
+			[avatarColor]="stream.participant.colorProfile"
+			[avatarName]="stream.participant.name ?? ''"
+			[muted]="stream.isMutedForcibly"
+			[isLocal]="stream.participant.isLocal"
+			[hasEncryptionError]="stream.participant.hasEncryptionError"
 		/>
 
 		@if (
-			!track.participant.hasEncryptionError &&
-			(!track.participant.isMicrophoneEnabled || track.isMutedForcibly || track.isPinned)
+			!stream.participant.hasEncryptionError &&
+			(!stream.participant.isMicrophoneEnabled || stream.isMutedForcibly || stream.isPinned)
 		) {
 			<div class="status-icons">
-				@if (!track.participant.isMicrophoneEnabled) {
+				@if (!stream.participant.isMicrophoneEnabled) {
 					<mat-icon id="mic-off" fontIcon="mic_off" />
 				}
-				@if (track.isMutedForcibly) {
+				@if (stream.isMutedForcibly) {
 					<mat-icon id="muted-forcibly" fontIcon="volume_off" />
 				}
-				@if (track.isPinned) {
+				@if (stream.isPinned) {
 					<mat-icon id="pinned" fontIcon="push_pin" />
 				}
 			</div>
 		}
 
-		@if (!isMinimal && showVideoControls && mouseHovering && !track.participant.hasEncryptionError) {
+		@if (showVideoControls() && mouseHovering() && !stream.participant.hasEncryptionError) {
 			<div class="stream-video-controls">
 				<div class="flex-container">
 					<button
 						mat-icon-button
 						id="pin-btn"
 						(click)="toggleVideoPinned()"
-						[matTooltip]="track.isPinned ? ('STREAM.UNPIN' | translate) : ('STREAM.PIN' | translate)"
+						[matTooltip]="stream.isPinned ? ('STREAM.UNPIN' | translate) : ('STREAM.PIN' | translate)"
 					>
-						@if (track.isPinned) {
+						@if (stream.isPinned) {
 							<mat-icon fontSet="material-symbols-outlined" fontIcon="keep">keep_off</mat-icon>
 						} @else {
 							<mat-icon id="pinned" fontIcon="push_pin" />
 						}
 					</button>
-					@if (!track.participant.isLocal) {
+					@if (!stream.participant.isLocal) {
 						<button
 							mat-icon-button
-							id="silence-btn"
+							id="mute-btn"
 							(click)="toggleMuteForcibly()"
-							[class.muted-btn]="track.isMutedForcibly"
+							[class.muted-btn]="stream.isMutedForcibly"
 							[matTooltip]="
-								track.isMutedForcibly
+								stream.isMutedForcibly
 									? ('STREAM.UNMUTE_SOUND' | translate)
 									: ('STREAM.MUTE_SOUND' | translate)
 							"
 						>
-							@if (track.isMutedForcibly) {
+							@if (stream.isMutedForcibly) {
 								<mat-icon id="muted-forcibly">volume_off</mat-icon>
 							} @else {
 								<mat-icon id="muted-forcibly">volume_up</mat-icon>
 							}
 						</button>
 					}
-					@if (track.participant.isLocal) {
+					@if (stream.participant.isLocal) {
 						<button
 							mat-icon-button
 							id="minimize-btn"
-							[disabled]="track.isPinned"
+							[disabled]="stream.isPinned"
 							(click)="toggleMinimize()"
 							[matTooltip]="
-								track.isMinimized ? ('STREAM.MAXIMIZE' | translate) : ('STREAM.MINIMIZE' | translate)
+								stream.isMinimized ? ('STREAM.MAXIMIZE' | translate) : ('STREAM.MINIMIZE' | translate)
 							"
 						>
-							@if (track.isMinimized) {
+							@if (stream.isMinimized) {
 								<mat-icon id="minimize">open_in_full</mat-icon>
 							} @else {
 								<mat-icon>close_fullscreen</mat-icon>

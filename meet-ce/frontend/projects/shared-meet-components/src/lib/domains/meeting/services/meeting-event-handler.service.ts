@@ -3,6 +3,8 @@ import {
 	LeftEventReason,
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
+	MeetRecordingStatus,
+	MeetRecordingUpdatedPayload,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
 	MeetRoomMemberUIBadge,
@@ -63,8 +65,8 @@ export class MeetingEventHandlerService {
 			RoomEvent.DataReceived,
 			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
 				// Only process topics that this handler is responsible for
-				const relevantTopics = [
-					'recordingStopped',
+				const relevantTopics: string[] = [
+					MeetSignalType.MEET_RECORDING_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED
 				];
@@ -77,9 +79,8 @@ export class MeetingEventHandlerService {
 					const event = JSON.parse(new TextDecoder().decode(payload));
 
 					switch (topic) {
-						case 'recordingStopped':
-							// Update hasRecordings in MeetingContextService
-							this.meetingContext.setHasRecordings(true);
+						case MeetSignalType.MEET_RECORDING_UPDATED:
+							this.handleRecordingUpdated(event as MeetRecordingUpdatedPayload);
 							break;
 
 						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
@@ -220,6 +221,18 @@ export class MeetingEventHandlerService {
 		} catch (error) {
 			console.error('Error refreshing room member token after role update:', error);
 			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
+		}
+	}
+
+	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {
+		const roomId = this.meetingContext.roomId();
+
+		if (roomId && event.roomId !== roomId) {
+			return;
+		}
+
+		if (event.recording.status === MeetRecordingStatus.COMPLETE) {
+			this.meetingContext.setHasRecordings(true);
 		}
 	}
 

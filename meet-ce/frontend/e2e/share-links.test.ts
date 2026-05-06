@@ -3,7 +3,7 @@ import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helpe
 import { expectCopiedUrl, installClipboardCapture, openMeeting } from './helpers/meeting-ui.helper';
 
 test.describe('Share links overlay', () => {
-	test.describe.configure({ timeout: 90_000 });
+	
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
@@ -11,7 +11,7 @@ test.describe('Share links overlay', () => {
 	});
 
 	test('should show share-link-overlay with main-share-meeting-link and copy-url-btn when joining', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl(`share-overlay-${Date.now()}`, undefined, undefined, createdRoomIds);
+		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `share-overlay-${Date.now()}`, createdRoomIds });
 		await openMeeting(page, accessUrl);
 		await installClipboardCapture(page);
 

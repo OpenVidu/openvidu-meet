@@ -99,7 +99,6 @@ export class LayoutRenderer {
 
 		if (animate) {
 			setTimeout(() => {
-				// Animation added in CSS transition: all .1s linear;
 				this.animateElement(elem, targetPosition);
 				this.fixAspectRatio(elem, width);
 			}, 10);

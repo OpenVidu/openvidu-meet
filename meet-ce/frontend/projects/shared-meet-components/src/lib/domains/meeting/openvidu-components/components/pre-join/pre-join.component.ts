@@ -9,9 +9,14 @@ import {
 	output,
 	signal
 } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
+import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { LocalTrack, Track } from '../../services/livekit-adapter';
@@ -19,19 +24,38 @@ import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { TranslateService } from '../../services/translate/translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
+import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
+import { MediaElementComponent } from '../media-element/media-element.component';
+import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
+import { AudioDevicesComponent } from '../settings/audio-devices/audio-devices.component';
+import { LangSelectorComponent } from '../settings/lang-selector/lang-selector.component';
+import { VideoDevicesComponent } from '../settings/video-devices/video-devices.component';
 
 /**
  * @internal
  */
 @Component({
 	selector: 'ov-pre-join',
+	imports: [
+		MatButtonModule,
+		MatIconModule,
+		MatProgressSpinnerModule,
+		MatTooltipModule,
+		TranslatePipe,
+		LandscapeWarningComponent,
+		LangSelectorComponent,
+		MediaElementComponent,
+		VideoDevicesComponent,
+		AudioDevicesComponent,
+		BackgroundEffectsPanelComponent
+	],
 	templateUrl: './pre-join.component.html',
 	styleUrl: './pre-join.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'(window:resize)': 'sizeChange()'
 	},
-	standalone: false
+	standalone: true
 })
 export class PreJoinComponent implements OnInit, OnDestroy {
 	readonly error = input<{ name: string; message: string } | undefined>(undefined);
@@ -51,11 +75,9 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	readonly isMinimal = this.libService.minimalSignal;
 	readonly showCameraButton = this.libService.cameraButtonSignal;
 	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
 	readonly showLogo = this.libService.displayLogoSignal;
-	readonly showParticipantName = this.libService.prejoinDisplayParticipantNameSignal;
 
 	// Future feature preparation
 	backgroundEffectEnabled: boolean = true; // Enable virtual backgrounds by default
@@ -66,38 +88,29 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	readonly isVideoEnabled = signal(false);
 	readonly hasVideoDevices = signal(true);
 	private tracks: LocalTrack[] = [];
-	private readonly loggerSrv = inject(LoggerService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly translateService = inject(TranslateService);
 	protected readonly viewportService = inject(ViewportService);
-	private log: ILogger = {
-		d: () => {},
-		v: () => {},
-		w: () => {},
-		e: () => {}
-	};
+	private log: ILogger = inject(LoggerService).get('PreJoinComponent');
 	private shouldRemoveTracksWhenComponentIsDestroyed: boolean = true;
+
+	private readonly errorEffect = effect(() => {
+		const currentError = this.error();
+		if (currentError) {
+			this.errorMessage.set(currentError.message ?? currentError.name);
+		}
+	});
+
+	private readonly participantNameEffect = effect(() => {
+		const configuredName = this.libService.participantNameSignal();
+		if (configuredName) {
+			this.participantName.set(configuredName);
+		}
+	});
 
 	sizeChange() {
 		this.windowSize = window.innerWidth;
-	}
-
-	constructor() {
-		this.log = this.loggerSrv.get('PreJoinComponent');
-		effect(() => {
-			const currentError = this.error();
-			if (currentError) {
-				this.errorMessage.set(currentError.message ?? currentError.name);
-			}
-		});
-
-		effect(() => {
-			const configuredName = this.libService.participantNameSignal();
-			if (configuredName) {
-				this.participantName.set(configuredName);
-			}
-		});
 	}
 
 	async ngOnInit() {
@@ -105,11 +118,6 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 		this.windowSize = window.innerWidth;
 		this.isLoading.set(false);
 	}
-
-	// ngAfterContentChecked(): void {
-	// 	// this.changeDetector.detectChanges();
-	// 	this.isLoading = false;
-	// }
 
 	async ngOnDestroy() {
 		this.cdkSrv.setSelector('body');
@@ -130,11 +138,6 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	join() {
 		const participantName = this.participantName().trim();
 
-		if (this.showParticipantName() && !participantName) {
-			this.errorMessage.set(this.translateService.translate('PREJOIN.NICKNAME_REQUIRED'));
-			return;
-		}
-
 		// Clear any previous errors
 		this.errorMessage.set(undefined);
 
@@ -149,19 +152,6 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			// No participant name to set, emit immediately
 			this.onReadyToJoin.emit();
 		}
-	}
-
-	onParticipantNameChanged(name: string) {
-		const trimmedName = name?.trim() || '';
-		this.participantName.set(trimmedName);
-		// Clear error when user starts typing
-		if (this.errorMessage() && trimmedName) {
-			this.errorMessage.set(undefined);
-		}
-	}
-
-	onEnterPressed() {
-		this.join();
 	}
 
 	async videoEnabledChanged(enabled: boolean) {

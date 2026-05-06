@@ -4,6 +4,7 @@ import { HiddenParticipantsIndicatorComponent } from '../../components/hidden-pa
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { CustomParticipantModel } from '../../models/custom-participant.model';
 import { OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from '../../openvidu-components';
+import { Track } from '../../openvidu-components/services/livekit-adapter';
 import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -214,14 +215,15 @@ export class MeetingCustomLayoutComponent {
 		const currentAudioTrackSids = new Set<string>();
 
 		for (const p of participants) {
-			// Access original audio tracks (not proxied)
-			for (const t of p.audioTracks) {
-				if (t.track && t.track.attach) {
-					currentAudioTrackSids.add(t.trackSid);
-					let audio = this.audioElements.get(t.trackSid);
+			// Access audio tracks from all streams
+			for (const stream of p.streams()) {
+				const audioTrack = stream.audioTrack;
+				if (audioTrack?.track && audioTrack.track.attach) {
+					currentAudioTrackSids.add(audioTrack.trackSid);
+					let audio = this.audioElements.get(audioTrack.trackSid);
 					if (!audio) {
-						audio = t.track.attach();
-						this.audioElements.set(t.trackSid, audio);
+						audio = audioTrack.track.attach();
+						this.audioElements.set(audioTrack.trackSid, audio);
 					}
 					audio.muted = p.isMutedForcibly;
 				}
@@ -249,8 +251,8 @@ export class MeetingCustomLayoutComponent {
 					// Return only video tracks to hide audio from ov-layout
 					// Also filter camera tracks if showCamera is false
 					return target.tracks.filter((t) => {
-						if (t.isAudioTrack) return false;
-						if (t.isCameraTrack && !showCamera) return false;
+						if (t.kind === Track.Kind.Audio) return false;
+						if (t.source === Track.Source.Camera && !showCamera) return false;
 						return true;
 					});
 				}

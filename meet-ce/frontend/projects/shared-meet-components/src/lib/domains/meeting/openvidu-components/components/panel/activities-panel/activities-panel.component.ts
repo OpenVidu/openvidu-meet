@@ -1,14 +1,14 @@
 import { ChangeDetectionStrategy, Component, effect, inject, OnInit, output, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { PanelType } from '../../../models/panel.model';
-import {
-	RecordingDeleteRequestedEvent,
-	RecordingDownloadClickedEvent,
-	RecordingPlayClickedEvent,
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent
-} from '../../../models/recording.model';
+import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../../models/recording.model';
+import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
+import { RecordingActivityComponent } from './recording-activity/recording-activity.component';
 
 /**
  * The **ActivitiesPanelComponent** is the component that allows showing the activities panel.
@@ -16,10 +16,11 @@ import { PanelService } from '../../../services/panel/panel.service';
  */
 @Component({
 	selector: 'ov-activities-panel',
+	imports: [MatButtonModule, MatExpansionModule, MatIconModule, MatTooltipModule, TranslatePipe, RecordingActivityComponent],
 	templateUrl: './activities-panel.component.html',
 	styleUrls: ['../panel.component.scss', './activities-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: false
+	standalone: true
 })
 export class ActivitiesPanelComponent implements OnInit {
 	/**
@@ -33,24 +34,6 @@ export class ActivitiesPanelComponent implements OnInit {
 	 * It provides the {@link RecordingStopRequestedEvent} payload as event data.
 	 */
 	onRecordingStopRequested = output<RecordingStopRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when delete recording button has been clicked.
-	 * It provides the {@link RecordingDeleteRequestedEvent} payload as event data.
-	 */
-	onRecordingDeleteRequested = output<RecordingDeleteRequestedEvent>();
-
-	/**
-	 * Provides event notifications that fire when download recording button has been clicked.
-	 * It provides the {@link RecordingDownloadClickedEvent} payload as event data.
-	 */
-	onRecordingDownloadClicked = output<RecordingDownloadClickedEvent>();
-
-	/**
-	 * Provides event notifications that fire when play recording button has been clicked.
-	 * It provides the {@link RecordingPlayClickedEvent} payload as event data.
-	 */
-	onRecordingPlayClicked = output<RecordingPlayClickedEvent>();
 
 	/**
 	 * @internal
