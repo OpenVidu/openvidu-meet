@@ -47,9 +47,6 @@ jobs:
 
       - name: Build and Start OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
-        env:
-          MEET_INITIAL_WEBHOOK_ENABLED: true
-          MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
 
       - name: Run frontend E2E tests
         run: ./meet.sh test-e2e-frontend --skip-install
