@@ -92,7 +92,7 @@ export class AiAssistantService {
 			await this.setParticipantAssistantState(roomId, participantIdentity, capability, false);
 
 			executionResult = await this.mutexService.withLock(lockKey, this.ASSISTANT_STATE_LOCK_TTL, async () => {
-				const enabledParticipants = await this.getEnabledParticipantsCount(roomId, capability);
+				const enabledParticipants = await this.getParticipantCountByCapability(roomId, capability);
 
 				if (enabledParticipants > 0) {
 					this.logger.debug(
@@ -156,9 +156,10 @@ export class AiAssistantService {
 						}
 					}
 
-					const enabledParticipants = await this.getEnabledParticipantsCount(roomId, capability);
+					const participantsWithCapability = await this.getParticipantCountByCapability(roomId, capability);
 
-					if (enabledParticipants > 0) {
+					if (participantsWithCapability > 0) {
+						// There are still participants with the capability enabled, so we should not stop the assistant.
 						return;
 					}
 
@@ -230,7 +231,7 @@ export class AiAssistantService {
 	 * @param capability
 	 * @returns
 	 */
-	protected async getEnabledParticipantsCount(
+	protected async getParticipantCountByCapability(
 		roomId: string,
 		capability: MeetAssistantCapabilityName
 	): Promise<number> {
