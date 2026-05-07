@@ -1,0 +1,21 @@
+/* Global reset & base for the testapp shell */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #0f1117;
+}
+
+app-root {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}

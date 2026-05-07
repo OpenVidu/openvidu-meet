@@ -1,0 +1,9 @@
+@if (errorMessage()) {
+<div class="ov-meet-error" role="alert">
+	<div class="ov-meet-error-icon" aria-hidden="true">⚠️</div>
+	<div class="ov-meet-error-message">{{ errorMessage() }}</div>
+</div>
+} @else if (ready()) {
+
+<ov-meeting></ov-meeting>
+}

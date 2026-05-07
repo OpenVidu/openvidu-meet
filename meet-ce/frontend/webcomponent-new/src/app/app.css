@@ -1,0 +1,84 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}
+
+/* ── Error state ─────────────────────────────────────────────────────────── */
+
+.ov-meet-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  background: var(--ov-meet-error-bg, #f8f8f8);
+  border: 1px solid var(--ov-meet-error-border, #e0e0e0);
+  padding: 1.5rem;
+  text-align: center;
+  font-family: var(--ov-meet-font, Inter, system-ui, Arial, sans-serif);
+  box-sizing: border-box;
+}
+
+.ov-meet-error-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  line-height: 1;
+}
+
+.ov-meet-error-message {
+  color: var(--ov-meet-error-color, #d32f2f);
+  font-size: 0.9375rem;
+  max-width: 36ch;
+  line-height: 1.5;
+}
+
+/* ── Normal layout ───────────────────────────────────────────────────────── */
+
+.ov-meet-root {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--ov-meet-bg, #16181d);
+  color: var(--ov-meet-color, #e2e8f0);
+  font-family: var(--ov-meet-font, Inter, system-ui, Arial, sans-serif);
+}
+
+.ov-meet-layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+.ov-meet-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+
+.ov-meet-layout-injection-slot {
+  display: contents;
+}
+
+/* Slot styles for side panel */
+slot[name='side'] {
+  display: block;
+  flex-shrink: 0;
+}
+
+/* Pass-through slot styling */
+slot[name='toolbar'],
+slot[name='main'] {
+  display: contents;
+}
