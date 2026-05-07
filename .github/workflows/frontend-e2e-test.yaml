@@ -29,10 +29,10 @@ jobs:
           version: 10.28.0
 
       - name: Install safe-chain
-        uses: OpenVidu/actions/install-safe-chain@a5d6165c017b522939a9bf180e2f73c76c44f000 # v1.0.17
+        uses: OpenVidu/actions/install-safe-chain@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
 
       - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
+        uses: OpenVidu/actions/start-openvidu-local-deployment@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -46,7 +46,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Build and Start OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@71140a5995c61cf05c994955f49da71844f2ea3c # v1.0.4
+        uses: OpenVidu/actions/start-openvidu-meet@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         env:
           MEET_INITIAL_WEBHOOK_ENABLED: true
           MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
@@ -107,4 +107,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        uses: OpenVidu/actions/cleanup@0f5592e91f0dca4c62e7a3cf412a6c17cf432b6d # v1.0.4
+        uses: OpenVidu/actions/cleanup@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20

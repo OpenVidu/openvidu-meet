@@ -55,10 +55,10 @@ jobs:
           version: 10.18.3
 
       - name: Install safe-chain
-        uses: OpenVidu/actions/install-safe-chain@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/install-safe-chain@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
 
       - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/start-openvidu-local-deployment@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -72,7 +72,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@71140a5995c61cf05c994955f49da71844f2ea3c # v1.0.4
+        uses: OpenVidu/actions/start-openvidu-meet@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
 
       - name: Run tests
         run: pnpm run ${{ matrix.test-script }}
@@ -97,7 +97,7 @@ jobs:
 
       - name: Clean up
         if: always()
-        uses: OpenVidu/actions/cleanup@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/cleanup@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
 
   start-aws-runner-s3:
     name: Prepare AWS runner (S3)
@@ -109,7 +109,7 @@ jobs:
     steps:
       - name: Start AWS EC2 Runner
         id: start-ec2-runner
-        uses: OpenVidu/actions/start-aws-runner@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/start-aws-runner@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           aws-instance-type: ${{ inputs.aws-instance-type || 'c5.2xlarge' }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -134,7 +134,7 @@ jobs:
     steps:
       - name: Start AWS EC2 Runner
         id: start-ec2-runner
-        uses: OpenVidu/actions/start-aws-runner@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/start-aws-runner@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           aws-instance-type: ${{ inputs.aws-instance-type || 'c5.2xlarge' }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -159,7 +159,7 @@ jobs:
     steps:
       - name: Start AWS EC2 Runner
         id: start-ec2-runner
-        uses: OpenVidu/actions/start-aws-runner@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/start-aws-runner@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           aws-instance-type: ${{ inputs.aws-instance-type || 'c5.2xlarge' }}
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
@@ -197,7 +197,7 @@ jobs:
         with:
           version: 10
       - name: Install safe-chain
-        uses: OpenVidu/actions/install-safe-chain@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/install-safe-chain@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Save GCP credentials
@@ -234,7 +234,7 @@ jobs:
             gsutil -m rm -r gs://openvidu-appdata/openvidu-meet/ || echo "No files found to delete or bucket doesn't exist"
           fi
       - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/start-openvidu-local-deployment@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -268,7 +268,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@71140a5995c61cf05c994955f49da71844f2ea3c # v1.0.4
+        uses: OpenVidu/actions/start-openvidu-meet@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         env:
           MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
           # ABS variables
@@ -316,7 +316,7 @@ jobs:
 
       - name: Clean up
         if: always()
-        uses: OpenVidu/actions/cleanup@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/cleanup@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
 
   stop-runner:
     name: Stop EC2 runner (${{ matrix.storage-provider }})
@@ -334,7 +334,7 @@ jobs:
     steps:
       - name: Stop AWS EC2 Runner
         if: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.result != 'skipped') || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.result != 'skipped') || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.result != 'skipped') }}
-        uses: OpenVidu/actions/stop-aws-runner@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
+        uses: OpenVidu/actions/stop-aws-runner@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
