@@ -1,14 +1,11 @@
-import {
-	BlobItem,
-	BlobServiceClient,
-	BlockBlobClient,
-	BlockBlobUploadResponse,
-	ContainerClient
-} from '@azure/storage-blob';
+import type { BlobItem, BlockBlobClient, BlockBlobUploadResponse, ContainerClient } from '@azure/storage-blob';
+import { BlobServiceClient } from '@azure/storage-blob';
 import { inject, injectable } from 'inversify';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
+import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
 import { MEET_ENV } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
+import { runConcurrently } from '../../../../utils/concurrency.utils.js';
 import { LoggerService } from '../../../logger.service.js';
 
 @injectable()
@@ -82,10 +79,17 @@ export class ABSService {
 	 * @returns A promise that resolves when all blobs are deleted.
 	 */
 	async deleteObjects(keys: string[]): Promise<void> {
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_STORAGE;
+
 		try {
 			this.logger.verbose(`Azure deleteObjects: attempting to delete ${keys.length} blobs`);
-			const deletePromises = keys.map((key) => this.deleteObject(this.getFullKey(key)));
-			await Promise.all(deletePromises);
+			await runConcurrently(
+				keys,
+				async (key) => {
+					await this.deleteObject(this.getFullKey(key));
+				},
+				{ concurrency, failFast: true }
+			);
 			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
 			this.logger.info(`Successfully deleted ${keys.length} objects`);
 		} catch (error) {

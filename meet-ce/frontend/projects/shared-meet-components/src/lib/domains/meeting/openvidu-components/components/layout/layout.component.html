@@ -1,0 +1,53 @@
+<div class="container" [class.withMargin]="localParticipant()?.isMinimized">
+	<div id="layout" class="layout" #layout>
+		<!-- Top slot: Render elements that should appear at the top -->
+		@if (layoutAdditionalElementsTopTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTopTemplate()" />
+		}
+
+		@if (localParticipant(); as participant) {
+			@for (stream of participant.streams(); track trackParticipantElement($index, stream)) {
+				<div
+					#localLayoutElement
+					class="local_participant"
+					[class.OV_root]="!stream.isMinimized"
+					[class.OV_publisher]="!stream.isMinimized"
+					[class.OV_minimized]="stream.isMinimized"
+					[class.OV_big]="stream.isPinned"
+					[class.OV_screen]="stream.isScreenStream"
+					[id]="'participant-' + stream.participant.identity"
+					cdkDrag
+					cdkDragBoundary=".layout"
+					[cdkDragDisabled]="!stream.isMinimized"
+					[cdkDragFreeDragPosition]="{ x: 0, y: 0 }"
+				>
+					<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
+				</div>
+			}
+		}
+
+		<!-- Default slot: Render additional layout elements (backward compatibility and default position) -->
+		@if (layoutAdditionalElementsDefaultTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsDefaultTemplate()" />
+		}
+
+		@for (stream of remoteStreams(); track trackParticipantElement($index, stream)) {
+			<div
+				class="remote-participant"
+				[id]="'participant-' + stream.participant.identity"
+				[class.OV_root]="true"
+				[class.OV_publisher]="true"
+				[class.OV_big]="stream.isPinned"
+				[class.OV_screen]="stream.isScreenStream"
+			>
+				<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
+			</div>
+		}
+
+		<!-- Bottom slot: Render elements that should appear at the bottom -->
+		@if (layoutAdditionalElementsBottomTemplate()) {
+			<ng-container *ngTemplateOutlet="layoutAdditionalElementsBottomTemplate()" />
+		}
+	</div>
+
+</div>

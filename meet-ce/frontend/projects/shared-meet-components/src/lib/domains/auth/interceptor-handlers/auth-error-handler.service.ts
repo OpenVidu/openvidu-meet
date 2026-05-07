@@ -1,10 +1,15 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
-import { Observable, catchError, from, switchMap } from 'rxjs';
-import { HttpErrorContext, HttpErrorHandler, HttpErrorNotifierService } from '../../../shared/services/http-error-notifier.service';
+import { Observable, catchError, from, switchMap, throwError } from 'rxjs';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
+import {
+	HttpErrorContext,
+	HttpErrorHandler,
+	HttpErrorNotifierService
+} from '../../../shared/services/http-error-notifier.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { AuthService } from '../services/auth.service';
+import { AuthHeaderProviderService } from './auth-header-provider.service';
 
 /**
  * Handler for authentication-related HTTP errors.
@@ -17,8 +22,8 @@ import { AuthService } from '../services/auth.service';
 export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	private readonly authService = inject(AuthService);
 	private readonly tokenStorageService = inject(TokenStorageService);
-	private readonly router = inject(Router);
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);
+	private readonly authHeaderProvider = inject(AuthHeaderProviderService);
 
 	/**
 	 * Registers this handler with the error notifier service
@@ -33,6 +38,15 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	canHandle(context: HttpErrorContext): boolean {
 		const { error, pageUrl } = context;
 
+		// Handle 403 "Password change required"
+		if (
+			error.status === 403 &&
+			!pageUrl.startsWith('/login') &&
+			error.error?.message?.includes('Password change required')
+		) {
+			return true;
+		}
+
 		// Only handle 401 errors
 		if (error.status !== 401) {
 			return false;
@@ -43,11 +57,6 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 			return false;
 		}
 
-		// Special case: room member token generation failed, need to refresh access token first
-		if (error.url?.includes('/token')) {
-			return true;
-		}
-
 		// Handle if not on login page OR if there's a refresh token available
 		return !pageUrl.startsWith('/login') || !!this.tokenStorageService.getRefreshToken();
 	}
@@ -56,10 +65,17 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	 * Handles the error and returns a recovery Observable
 	 */
 	handle(context: HttpErrorContext): Observable<HttpEvent<unknown>> {
-		const { error } = context;
+		const { error, pageUrl } = context;
 
-		// Special case: room member token generation failed
-		if (error.url?.includes('/token')) {
+		// Special case: password change required
+		if (error.status === 403) {
+			// Logout so user must re-authenticate and change password
+			console.warn('Password change required. Logging out...');
+			return from(this.authService.logout(pageUrl)).pipe(switchMap(() => throwError(() => error)));
+		}
+
+		// Special case: room member token generation failed, need to refresh access token first
+		if (error.url?.includes('/members/token')) {
 			console.log('Generating room member token failed. Refreshing access token first...');
 		}
 
@@ -77,14 +93,8 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 			switchMap(() => {
 				console.log('Access token refreshed');
 				// Update the request with the new token
-				const newToken = this.tokenStorageService.getAccessToken();
-				const updatedRequest = newToken
-					? originalRequest.clone({
-							setHeaders: {
-								authorization: `Bearer ${newToken}`
-							}
-						})
-					: originalRequest;
+				const headers = this.authHeaderProvider.provideHeaders();
+				const updatedRequest = headers ? originalRequest.clone({ setHeaders: headers }) : originalRequest;
 
 				return next(updatedRequest);
 			}),
@@ -92,10 +102,21 @@ export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 				if (error.url?.includes('/auth/refresh')) {
 					console.error('Error refreshing access token');
 
-					// If the original request was not to the profile endpoint, logout and redirect to the login page
-					if (!originalRequest.url.includes('/profile')) {
+					// If the original request was not to the profile endpoint and does not have the skip-auth-recovery header,
+					// logout and redirect to the login page
+					if (
+						!originalRequest.url.includes('/users/me') &&
+						originalRequest.headers.get(HTTP_HEADERS.SKIP_AUTH_RECOVERY) !== 'true'
+					) {
 						console.log('Logging out...');
 						await this.authService.logout(pageUrl);
+
+						// Add a flag to the error to indicate that the auth redirect has been handled
+						const handledError = originalError as HttpErrorResponse & {
+							authRedirectHandled?: boolean;
+						};
+						handledError.authRedirectHandled = true;
+						throw handledError;
 					}
 
 					throw originalError;

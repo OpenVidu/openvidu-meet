@@ -1,8 +1,9 @@
 import { inject, injectable } from 'inversify';
-import { Room } from 'livekit-server-sdk';
+import type { Room } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
-import { IScheduledTask } from '../models/task-scheduler.model.js';
+import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LivekitWebhookService } from './livekit-webhook.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -59,17 +60,37 @@ export class RoomScheduledTasksService {
 		this.logger.verbose(`Checking expired rooms at ${new Date(Date.now()).toISOString()}`);
 
 		try {
-			const expiredRooms = await this.roomRepository.findExpiredRooms();
+			const BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_ROOMS_EXPIRED_GC;
+			let nextPageToken: string | undefined;
+			let hasMore = true;
+			let totalDeletedCandidates = 0;
+			let hasAnyExpiredRoom = false;
 
-			if (expiredRooms.length === 0) {
+			while (hasMore) {
+				const expiredRoomsPage = await this.roomRepository.findExpiredRooms(BATCH_SIZE, nextPageToken);
+
+				if (expiredRoomsPage.rooms.length === 0) {
+					break;
+				}
+
+				hasAnyExpiredRoom = true;
+				totalDeletedCandidates += expiredRoomsPage.rooms.length;
+				this.logger.verbose(
+					`Trying to delete batch of ${expiredRoomsPage.rooms.length} expired Meet rooms: ${expiredRoomsPage.rooms.map((room) => room.roomId).join(', ')}`
+				);
+
+				await this.roomService.bulkDeleteMeetRooms(expiredRoomsPage.rooms);
+
+				hasMore = expiredRoomsPage.isTruncated;
+				nextPageToken = expiredRoomsPage.nextPageToken;
+			}
+
+			if (!hasAnyExpiredRoom) {
 				this.logger.verbose(`No expired rooms found.`);
 				return;
 			}
 
-			this.logger.verbose(
-				`Trying to delete ${expiredRooms.length} expired Meet rooms: ${expiredRooms.map((room) => room.roomId).join(', ')}`
-			);
-			await this.roomService.bulkDeleteMeetRooms(expiredRooms);
+			this.logger.verbose(`Expired rooms cleanup finished. Total rooms processed: ${totalDeletedCandidates}`);
 		} catch (error) {
 			this.logger.error('Error deleting expired rooms:', error);
 		}
@@ -85,23 +106,65 @@ export class RoomScheduledTasksService {
 		this.logger.verbose(`Checking inconsistent rooms at ${new Date(Date.now()).toISOString()}`);
 
 		try {
-			const activeRooms = await this.roomRepository.findActiveRooms();
+			const BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_ROOMS_STATUS_VALIDATION_GC;
+			let nextPageToken: string | undefined;
+			let hasMore = true;
+			let hasAnyActiveRoom = false;
+			let totalInconsistentRooms = 0;
 
-			if (activeRooms.length === 0) {
+			while (hasMore) {
+				const activeRoomsPage = await this.roomRepository.findActiveRooms(BATCH_SIZE, nextPageToken);
+
+				if (activeRoomsPage.rooms.length === 0) {
+					break;
+				}
+
+				hasAnyActiveRoom = true;
+
+				const roomIds: string[] = activeRoomsPage.rooms.map((room) => room.roomId);
+				const roomExistenceMap = await this.livekitService.roomsExist(roomIds);
+
+				const roomsToCleanup = activeRoomsPage.rooms.filter((room) => {
+					const exists = roomExistenceMap.get(room.roomId);
+					return !exists;
+				});
+
+				totalInconsistentRooms += roomsToCleanup.length;
+
+				if (roomsToCleanup.length > 0) {
+					this.logger.warn(
+						`Found ${roomsToCleanup.length} rooms active in DB but not in LiveKit in current batch. Cleaning up...`
+					);
+
+					await runConcurrently(
+						roomsToCleanup,
+						async (room) => {
+							try {
+								await this.livekitWebhookService.handleRoomFinished({ name: room.roomId } as unknown as Room);
+							} catch (error) {
+								this.logger.error(`Error cleaning up room '${room.roomId}':`, error);
+								// Continue with other rooms even if one fails
+							}
+						},
+						{ concurrency: INTERNAL_CONFIG.CONCURRENCY_VALIDATE_ROOMS_STATUS, failFast: true }
+					);
+				}
+
+				hasMore = activeRoomsPage.isTruncated;
+				nextPageToken = activeRoomsPage.nextPageToken;
+			}
+
+			if (!hasAnyActiveRoom) {
 				this.logger.verbose(`No active rooms found. Skipping room consistency check.`);
 				return;
 			}
 
-			for (const room of activeRooms) {
-				const roomExists = await this.livekitService.roomExists(room.roomId);
-
-				if (!roomExists) {
-					this.logger.warn(
-						`Room '${room.roomId}' is active in DB but does not exist in LiveKit. Cleaning up...`
-					);
-					await this.livekitWebhookService.handleRoomFinished({ name: room.roomId } as unknown as Room);
-				}
+			if (totalInconsistentRooms === 0) {
+				this.logger.verbose(`All active rooms are consistent with LiveKit. No cleanup needed.`);
+				return;
 			}
+
+			this.logger.warn(`Room consistency check finished. Total inconsistent rooms processed: ${totalInconsistentRooms}`);
 		} catch (error) {
 			this.logger.error('Error checking inconsistent rooms:', error);
 		}

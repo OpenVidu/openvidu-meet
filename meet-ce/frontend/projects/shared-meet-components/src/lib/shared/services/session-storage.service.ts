@@ -10,7 +10,8 @@ import { Injectable } from '@angular/core';
 export class SessionStorageService {
 	private readonly ROOM_SECRET_KEY = 'ovMeet-roomSecret';
 	private readonly REDIRECT_URL_KEY = 'ovMeet-redirectUrl';
-	private readonly E2EE_KEY = 'ovMeet-e2eeKey';
+	private readonly E2EE_DATA_KEY = 'ovMeet-e2eeData';
+	private readonly MUST_CHANGE_PASSWORD_KEY = 'ovMeet-mustChangePassword';
 
 	/**
 	 * Stores the room secret.
@@ -31,7 +32,7 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Removes the room secret.
+	 * Removes the stored room secret.
 	 */
 	public removeRoomSecret(): void {
 		this.remove(this.ROOM_SECRET_KEY);
@@ -56,35 +57,71 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Stores the E2EE key.
+	 * Removes the stored redirect URL.
+	 */
+	public removeRedirectUrl(): void {
+		this.remove(this.REDIRECT_URL_KEY);
+	}
+
+	/**
+	 * Stores the E2EE key data (key and origin flag).
 	 *
 	 * @param e2eeKey The E2EE key to store.
+	 * @param fromUrl True if the E2EE key came from a URL parameter.
 	 */
-	public setE2EEKey(e2eeKey: string): void {
-		this.set(this.E2EE_KEY, e2eeKey);
+	public setE2EEData(e2eeKey: string, fromUrl: boolean): void {
+		this.set(this.E2EE_DATA_KEY, { key: e2eeKey, fromUrl });
 	}
 
 	/**
-	 * Retrieves the E2EE key.
+	 * Retrieves the E2EE key data (key and origin flag).
 	 *
-	 * @returns The stored E2EE key or null if not found.
+	 * @returns The stored E2EE data or null if not found.
 	 */
-	public getE2EEKey(): string | null {
-		return this.get<string>(this.E2EE_KEY);
+	public getE2EEData(): { key: string; fromUrl: boolean } | null {
+		return this.get<{ key: string; fromUrl: boolean }>(this.E2EE_DATA_KEY);
 	}
 
 	/**
-	 * Removes the E2EE key.
+	 * Removes the stored E2EE key data.
 	 */
-	public removeE2EEKey(): void {
-		this.remove(this.E2EE_KEY);
+	public removeE2EEData(): void {
+		this.remove(this.E2EE_DATA_KEY);
 	}
 
 	/**
-	 * Clears all data stored in sessionStorage.
+	 * Stores whether the authenticated user must change password before accessing the app.
+	 *
+	 * @param required True when password change is required.
 	 */
-	public clear(): void {
-		sessionStorage.clear();
+	public setMustChangePasswordRequired(required: boolean): void {
+		this.set(this.MUST_CHANGE_PASSWORD_KEY, required);
+	}
+
+	/**
+	 * Retrieves whether the authenticated user must change password before continuing.
+	 *
+	 * @returns True if password change is required; otherwise false.
+	 */
+	public getMustChangePasswordRequired(): boolean {
+		return this.get<boolean>(this.MUST_CHANGE_PASSWORD_KEY) ?? false;
+	}
+
+	/**
+	 * Removes the stored mandatory password change flag.
+	 */
+	public removeMustChangePasswordRequired(): void {
+		this.remove(this.MUST_CHANGE_PASSWORD_KEY);
+	}
+
+	/**
+	 * Clears all session data related to the current meeting session,
+	 * including room secret, redirect URL, and E2EE data.
+	 */
+	public clearRoomSessionData(): void {
+		this.removeRoomSecret();
+		this.removeRedirectUrl();
+		this.removeE2EEData();
 	}
 
 	/**

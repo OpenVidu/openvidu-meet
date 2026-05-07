@@ -15,6 +15,7 @@ content:
             roomName: 'room'
             status: 'ending'
             layout: 'speaker'
+            encoding: 'H264_720P_30'
             filename: 'room-123--XX445.mp4'
             startDate: 1600000000000
             details: 'End reason: StopEgress API'

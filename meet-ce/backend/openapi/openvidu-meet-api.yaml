@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
     $ref: './info/info.yaml'
 servers:
-    - url: /api/v1
+    - url: meet/api/v1
       description: OpenVidu Meet API
 tags:
     $ref: './tags/tags.yaml'
@@ -15,8 +15,16 @@ paths:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}'
     /rooms/{roomId}/config:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1config'
+    /rooms/{roomId}/roles:
+        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1roles'
+    /rooms/{roomId}/access:
+        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1access'
     /rooms/{roomId}/status:
         $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1status'
+    /rooms/{roomId}/members:
+        $ref: './paths/room-members.yaml#/~1rooms~1{roomId}~1members'
+    /rooms/{roomId}/members/{memberId}:
+        $ref: './paths/room-members.yaml#/~1rooms~1{roomId}~1members~1{memberId}'
     /recordings:
         $ref: './paths/recordings.yaml#/~1recordings'
     /recordings/download:
@@ -35,10 +43,12 @@ components:
     schemas:
         MeetRoom:
             $ref: components/schemas/meet-room.yaml
-        MeetRoomOptions:
-            $ref: components/schemas/meet-room-options.yaml
         MeetRoomConfig:
             $ref: './components/schemas/meet-room-config.yaml#/MeetRoomConfig'
+        MeetRoomMember:
+            $ref: components/schemas/meet-room-member.yaml
+        MeetPermissions:
+            $ref: components/schemas/meet-permissions.yaml
         MeetRecording:
             $ref: components/schemas/meet-recording.yaml
         MeetWebhookEvent:

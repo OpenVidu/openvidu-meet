@@ -1,5 +1,16 @@
+import { MeetUserRole } from '@openvidu-meet/typings';
+import { removeQueryParamsGuard } from '../../../shared/guards/remove-query-params.guard';
+import { runGuardsSerially } from '../../../shared/guards/run-serially.guard';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
-import { validateRecordingAccessGuard } from '../guards/recording-validate-access.guard';
+import {
+	extractRecordingParamsGuard,
+	extractRoomRecordingsParamsGuard
+} from '../guards/extract-recordings-params.guard';
+import { checkRecordingAccessGuard } from '../guards/recording-access.guard';
+import {
+	validateRecordingAccessGuard,
+	validateRoomRecordingsAccessGuard
+} from '../guards/validate-recordings-access.guard';
 
 /**
  * Recordings domain public route configurations
@@ -7,10 +18,32 @@ import { validateRecordingAccessGuard } from '../guards/recording-validate-acces
 export const recordingsDomainRoutes: DomainRouteConfig[] = [
 	{
 		route: {
+			path: 'room/:room-id/recordings',
+			loadComponent: () =>
+				import('../../recordings/pages/room-recordings/room-recordings.component').then(
+					(m) => m.RoomRecordingsComponent
+				),
+			canActivate: [
+				runGuardsSerially(
+					extractRoomRecordingsParamsGuard,
+					validateRoomRecordingsAccessGuard,
+					removeQueryParamsGuard(['secret'])
+				)
+			]
+		}
+	},
+	{
+		route: {
 			path: 'recording/:recording-id',
 			loadComponent: () =>
 				import('../pages/view-recording/view-recording.component').then((m) => m.ViewRecordingComponent),
-			canActivate: [validateRecordingAccessGuard]
+			canActivate: [
+				runGuardsSerially(
+					extractRecordingParamsGuard,
+					validateRecordingAccessGuard,
+					removeQueryParamsGuard(['secret'])
+				)
+			]
 		}
 	}
 ];
@@ -29,7 +62,16 @@ export const recordingsConsoleRoutes: DomainRouteConfig[] = [
 			route: 'recordings',
 			icon: 'video_library',
 			iconClass: 'ov-recording-icon',
-			order: 3
+			order: 3,
+			allowedRoles: [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER]
+		}
+	},
+	{
+		route: {
+			path: 'recordings/:recording-id',
+			loadComponent: () =>
+				import('../pages/recording-detail/recording-detail.component').then((m) => m.RecordingDetailComponent),
+			canActivate: [checkRecordingAccessGuard]
 		}
 	}
 ];

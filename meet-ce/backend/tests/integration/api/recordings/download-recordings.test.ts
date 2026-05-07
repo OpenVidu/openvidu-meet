@@ -2,14 +2,15 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import stream from 'stream';
 import unzipper from 'unzipper';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	downloadRecordings,
 	generateRoomMemberToken,
 	startTestServer
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
@@ -20,7 +21,8 @@ describe('Recording API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	const getZipEntries = async (buffer: Buffer) => {
@@ -55,7 +57,7 @@ describe('Recording API Tests', () => {
 			});
 		});
 
-		it('should only include recordings from the room when using a recording token', async () => {
+		it('should only include recordings from the room when using a room member token', async () => {
 			const roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
 			const recordingId = roomData.recordingId!;
@@ -84,7 +86,7 @@ describe('Recording API Tests', () => {
 
 			expect(res.status).toBe(400);
 			expect(res.body).toHaveProperty('error');
-			expect(res.body.message).toContain(`None of the provided recording IDs belong to room '${roomId}'`);
+			expect(res.body.message).toContain('None of the provided recordings are available for ZIP download');
 		});
 	});
 
@@ -92,7 +94,7 @@ describe('Recording API Tests', () => {
 		it('should handle empty recordingIds array gracefully', async () => {
 			const response = await downloadRecordings([], false);
 
-			expectValidationError(response, 'recordingIds', 'recordingIds must contain at least one item');
+			expectValidationError(response, 'recordingIds', 'At least one recordingId is required');
 		});
 
 		it('should reject an array with mixed valid and totally invalid IDs', async () => {
@@ -106,7 +108,7 @@ describe('Recording API Tests', () => {
 			const invalidRecordingIds = ['', '   '];
 			const response = await downloadRecordings(invalidRecordingIds, false);
 
-			expectValidationError(response, 'recordingIds', 'recordingIds must contain at least one item');
+			expectValidationError(response, 'recordingIds', 'At least one recordingId is required');
 		});
 	});
 });

@@ -10,17 +10,19 @@ jobs:
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     steps:
       - name: Setup Node.js
-        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: '22.13'
+          node-version: '24.13.1'
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
           version: 10.18.3
+      - name: Install safe-chain
+        uses: OpenVidu/actions/install-safe-chain@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
       - name: Install LK CLI
         run: curl -sSL https://get.livekit.io/cli | bash
       - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@35d136377813cf9b0b23d12d16d57864ccf3a8c2 # v1.0.2
+        uses: OpenVidu/actions/start-openvidu-local-deployment@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -34,13 +36,13 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Build and Start OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@35d136377813cf9b0b23d12d16d57864ccf3a8c2 # v1.0.2
+        uses: OpenVidu/actions/start-openvidu-meet@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         env:
           MEET_INITIAL_WEBHOOK_ENABLED: true
           MEET_INITIAL_WEBHOOK_URL: 'http://localhost:5080/webhook'
 
       - name: Start OpenVidu Meet Testapp
-        uses: OpenVidu/actions/start-openvidu-meet-testapp@35d136377813cf9b0b23d12d16d57864ccf3a8c2 # v1.0.2
+        uses: OpenVidu/actions/start-openvidu-meet-testapp@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20
         with:
           skip_install: 'true'
           skip_checkout: 'true'
@@ -55,7 +57,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: room-test-results
           path: meet-ce/frontend/webcomponent/test-results/
@@ -63,7 +65,7 @@ jobs:
 
       - name: Upload TestApp logs on failure
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: room-test-testapp-logs
           path: testapp.log
@@ -71,7 +73,7 @@ jobs:
 
       - name: Upload OpenVidu Meet logs on failure
         if: failure()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
         with:
           name: room-test-openvidu-meet-logs
           path: meet_backend.log
@@ -79,4 +81,4 @@ jobs:
 
       - name: Clean up
         if: always()
-        uses: OpenVidu/actions/cleanup@35d136377813cf9b0b23d12d16d57864ccf3a8c2 # v1.0.2
+        uses: OpenVidu/actions/cleanup@1eb0c5759951f915de29647dedfa1ec8fbb5eeac # v1.0.20

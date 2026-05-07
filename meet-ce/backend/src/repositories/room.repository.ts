@@ -1,32 +1,56 @@
-import { MeetRoom, MeetRoomFilters, MeetRoomStatus } from '@openvidu-meet/typings';
+import type { MeetRoom, MeetRoomField, ProjectedMeetRoom } from '@openvidu-meet/typings';
+import { MeetRoomStatus, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { MeetRoomDocument, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
+import type { QueryFilter } from 'mongoose';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type { MeetRoomDocument, MeetRoomDocumentOnlyField } from '../models/mongoose-schemas/room.schema.js';
+import { MEET_ROOM_DOCUMENT_ONLY_FIELDS, MeetRoomModel } from '../models/mongoose-schemas/room.schema.js';
 import { LoggerService } from '../services/logger.service.js';
-import { getBasePath } from '../utils/html-dynamic-base-path.utils.js';
-import { getBaseUrl } from '../utils/url.utils.js';
+import type {
+	MeetRoomPage,
+	RoomQuery,
+	RoomQueryWithFields,
+	RoomQueryWithProjection
+} from '../types/room-projection.types.js';
+import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
+import { addBaseUrlToPath, extractPathFromUrl } from '../utils/url.utils.js';
 import { BaseRepository } from './base.repository.js';
+import { RoomMemberRepository } from './room-member.repository.js';
 
 /**
  * Repository for managing MeetRoom entities in MongoDB.
  * Provides CRUD operations and specialized queries for room data.
- *
- * @template TRoom - The domain type extending MeetRoom (default: MeetRoom)
  */
 @injectable()
-export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepository<TRoom, MeetRoomDocument> {
-	constructor(@inject(LoggerService) logger: LoggerService) {
+export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
+	constructor(
+		@inject(LoggerService) protected logger: LoggerService,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository
+	) {
 		super(logger, MeetRoomModel);
 	}
 
 	/**
-	 * Transforms a MongoDB document into a domain room object.
-	 * Enriches URLs with the base URL.
+	 * Transforms a persisted MeetRoom document into a domain MeetRoom object.
+	 * Enriches access URLs with the base URL.
 	 *
-	 * @param document - The MongoDB document
+	 * @param dbObject - The MongoDB document representing a room
 	 * @returns Room with complete URLs
 	 */
-	protected toDomain(document: MeetRoomDocument): TRoom {
-		return this.enrichRoomWithBaseUrls(document);
+	protected toDomain(dbObject: MeetRoomDocument): MeetRoom {
+		const { schemaVersion, ...room } = dbObject;
+		void schemaVersion;
+		return this.enrichRoomWithBaseUrls(room as MeetRoom);
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetRoomDocumentOnlyField[] {
+		return MEET_ROOM_DOCUMENT_ONLY_FIELDS;
+	}
+
+	protected override getAtomicUpdatePaths(): readonly string[] {
+		// Recording encoding must be treated as an atomic update path because
+		// it can be either a string or an object, and we want to ensure it is fully replaced rather than partially updated.
+		return ['config.recording.encoding'];
 	}
 
 	/**
@@ -36,24 +60,39 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param room - The room data to create
 	 * @returns The created room with enriched URLs
 	 */
-	async create(room: TRoom): Promise<TRoom> {
-		const normalizedRoom = this.normalizeRoomForStorage(room);
-		const document = await this.createDocument(normalizedRoom);
-		return this.enrichRoomWithBaseUrls(document);
+	create(room: MeetRoom): Promise<MeetRoom> {
+		const normalizedRoom = this.normalizeRoomForStorage(room) as MeetRoom;
+		const document: MeetRoomDocument = {
+			...normalizedRoom,
+			schemaVersion: INTERNAL_CONFIG.ROOM_SCHEMA_VERSION
+		};
+		return this.createDocument(document);
 	}
 
 	/**
-	 * Updates an existing room.
+	 * Updates specific fields of a room without replacing the entire document.
+	 *
+	 * @param roomId - The unique room identifier
+	 * @param fieldsToUpdate - Partial room data with fields to update
+	 * @returns The updated room with enriched URLs
+	 * @throws Error if room not found
+	 */
+	updatePartial(roomId: string, fieldsToUpdate: Partial<MeetRoom>): Promise<MeetRoom> {
+		const normalizedFieldsToUpdate = this.normalizeRoomForStorage(fieldsToUpdate);
+		return this.updatePartialOne({ roomId }, normalizedFieldsToUpdate);
+	}
+
+	/**
+	 * Replaces an existing room with new data.
 	 * URLs are stored in the database without the base URL.
 	 *
 	 * @param room - The complete updated room data
 	 * @returns The updated room with enriched URLs
 	 * @throws Error if room not found
 	 */
-	async update(room: TRoom): Promise<TRoom> {
-		const normalizedRoom = this.normalizeRoomForStorage(room);
-		const document = await this.updateOne({ roomId: room.roomId }, normalizedRoom);
-		return this.enrichRoomWithBaseUrls(document);
+	replace(room: MeetRoom): Promise<MeetRoom> {
+		const normalizedRoom = this.normalizeRoomForStorage(room) as MeetRoom;
+		return this.replaceOne({ roomId: room.roomId }, normalizedRoom);
 	}
 
 	/**
@@ -61,12 +100,49 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * Returns the room with enriched URLs (including base URL).
 	 *
 	 * @param roomId - The unique room identifier
-	 * @param fields - Comma-separated list of fields to include in the result
+	 * @param fields - Array of field names to include in the result
 	 * @returns The room or null if not found
 	 */
-	async findByRoomId(roomId: string, fields?: string): Promise<TRoom | null> {
-		const document = await this.findOne({ roomId }, fields);
-		return document ? this.enrichRoomWithBaseUrls(document) : null;
+	findByRoomId(roomId: string): Promise<MeetRoom | null>;
+
+	findByRoomId<const TFields extends readonly MeetRoomField[]>(
+		roomId: string,
+		fields: TFields
+	): Promise<ProjectedMeetRoom<TFields> | null>;
+
+	findByRoomId(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom> | null>;
+
+	findByRoomId(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom> | null> {
+		return this.findOne({ roomId }, fields as string[]) as Promise<MeetRoom | Partial<MeetRoom> | null>;
+	}
+
+	/**
+	 * Finds rooms owned by a specific user.
+	 * Returns rooms with enriched URLs (including base URL).
+	 *
+	 * @param owner - The userId of the room owner
+	 * @param fields - Array of field names to include in the result
+	 * @returns Array of rooms owned by the user
+	 */
+	findByOwner(owner: string): Promise<MeetRoom[]>;
+
+	findByOwner<const TFields extends readonly MeetRoomField[]>(
+		owner: string,
+		fields: TFields
+	): Promise<ProjectedMeetRoom<TFields>[]>;
+
+	findByOwner(owner: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom[] | Partial<MeetRoom>[]> {
+		return this.findAll({ owner }, fields as string[]) as Promise<MeetRoom[] | Partial<MeetRoom>[]>;
+	}
+
+	/**
+	 * Finds room IDs where registered access is enabled.
+	 *
+	 * @returns Array of rooms including only roomId
+	 */
+	async findRoomIdsWithRegisteredAccessEnabled(): Promise<string[]> {
+		const rooms = await this.findAll({ 'access.registered.enabled': true }, ['roomId']);
+		return rooms.map((room) => room.roomId);
 	}
 
 	/**
@@ -77,35 +153,71 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * even when the sort field has duplicate values.
 	 *
 	 * @param options - Query options
-	 * @param options.roomName - Optional room name to filter by (case-insensitive partial match)
+	 * @param options.roomName - Optional room name to filter by
+	 * @param options.roomNameMatchMode - Match mode for room name filtering (default: 'exact')
+	 * @param options.roomNameCaseInsensitive - Whether room name matching should ignore case (default: false)
 	 * @param options.status - Optional room status to filter by
-	 * @param options.fields - Comma-separated list of fields to include in the result
+	 * @param options.owner - Optional owner userId to filter by
+	 * @param options.member - Optional member userId to filter rooms where user is a member
+	 * @param options.registeredAccess - If true, includes rooms with registered access enabled
+	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
 	 * @param options.sortField - Field to sort by (default: 'creationDate')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing rooms array, pagination info, and optional next page token
 	 */
-	async find(options: MeetRoomFilters = {}): Promise<{
-		rooms: TRoom[];
-		isTruncated: boolean;
-		nextPageToken?: string;
-	}> {
+	async find(options?: RoomQuery): Promise<MeetRoomPage<MeetRoom>>;
+
+	async find<const TFields extends readonly MeetRoomField[]>(
+		options: RoomQueryWithProjection<TFields>
+	): Promise<MeetRoomPage<ProjectedMeetRoom<TFields>>>;
+
+	async find(options: RoomQueryWithFields): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>>;
+
+	async find(options: RoomQueryWithFields = {}): Promise<MeetRoomPage<MeetRoom | Partial<MeetRoom>>> {
 		const {
 			roomName,
+			roomNameMatchMode = TextMatchMode.EXACT,
+			roomNameCaseInsensitive = false,
 			status,
+			owner,
+			member,
+			registeredAccess,
 			fields,
 			maxItems = 100,
 			nextPageToken,
 			sortField = 'creationDate',
-			sortOrder = 'desc'
+			sortOrder = SortOrder.DESC
 		} = options;
 
 		// Build base filter
-		const filter: Record<string, unknown> = {};
+		const filter: QueryFilter<MeetRoomDocument> = {};
+
+		const accessScopeOrFilters: QueryFilter<MeetRoomDocument>[] = [];
+
+		if (owner) {
+			accessScopeOrFilters.push({ owner });
+		}
+
+		if (member) {
+			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(member);
+			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
+		}
+
+		if (registeredAccess) {
+			accessScopeOrFilters.push({ 'access.registered.enabled': true });
+		}
+
+		// Combine access scope filters with $or if there are multiple, or merge directly if only one
+		if (accessScopeOrFilters.length === 1) {
+			Object.assign(filter, accessScopeOrFilters[0]);
+		} else if (accessScopeOrFilters.length > 1) {
+			filter.$or = accessScopeOrFilters;
+		}
 
 		if (roomName) {
-			filter.roomName = new RegExp(roomName, 'i');
+			filter.roomName = buildStringMatchFilter(roomName, roomNameMatchMode, roomNameCaseInsensitive);
 		}
 
 		if (status) {
@@ -121,7 +233,7 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 				sortField,
 				sortOrder
 			},
-			fields
+			fields as string[]
 		);
 
 		return {
@@ -132,30 +244,60 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	}
 
 	/**
-	 * Finds all rooms that have expired (autoDeletionDate < now).
-	 * Returns all expired rooms without pagination.
+	 * Finds expired rooms (autoDeletionDate < now) in paginated batches.
 	 *
-	 * @returns Array of expired rooms with enriched URLs
+	 * @param batchSize - Number of rooms to retrieve per page
+	 * @param pageToken - Optional cursor token from a previous call
+	 * @returns A paginated page of expired rooms
 	 */
-	async findExpiredRooms(): Promise<TRoom[]> {
+	async findExpiredRooms(batchSize = 100, pageToken?: string): Promise<MeetRoomPage<MeetRoom>> {
 		const now = Date.now();
 
-		// Find all rooms where autoDeletionDate exists and is less than now
-		return await this.findAll({
-			autoDeletionDate: { $exists: true, $lt: now }
-		});
+		const { items, isTruncated, nextPageToken } = await this.findMany(
+			{
+				autoDeletionDate: { $exists: true, $lt: now }
+			},
+			{
+				maxItems: batchSize,
+				nextPageToken: pageToken,
+				sortField: 'autoDeletionDate',
+				sortOrder: SortOrder.ASC
+			}
+		);
+
+		return {
+			rooms: items,
+			isTruncated,
+			nextPageToken
+		};
 	}
 
 	/**
-	 * Finds all rooms with active meetings.
-	 * Returns all active rooms without pagination.
+	 * Finds active rooms in paginated batches, projecting only roomId.
 	 *
-	 * @returns Array of active rooms with enriched URLs
+	 * @param batchSize - Number of rooms to retrieve per page
+	 * @param pageToken - Optional cursor token from a previous call
+	 * @returns A paginated page of active room identifiers
 	 */
-	async findActiveRooms(): Promise<TRoom[]> {
-		return await this.findAll({
-			status: MeetRoomStatus.ACTIVE_MEETING
-		});
+	async findActiveRooms(batchSize = 100, pageToken?: string): Promise<MeetRoomPage<Pick<MeetRoom, 'roomId'>>> {
+		const { items, isTruncated, nextPageToken } = await this.findMany(
+			{
+				status: MeetRoomStatus.ACTIVE_MEETING
+			},
+			{
+				maxItems: batchSize,
+				nextPageToken: pageToken,
+				sortField: 'creationDate',
+				sortOrder: SortOrder.DESC
+			},
+			['roomId']
+		);
+
+		return {
+			rooms: items as Pick<MeetRoom, 'roomId'>[],
+			isTruncated,
+			nextPageToken
+		};
 	}
 
 	/**
@@ -164,8 +306,8 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param roomId - The unique room identifier
 	 * @throws Error if the room was not found or could not be deleted
 	 */
-	async deleteByRoomId(roomId: string): Promise<void> {
-		await this.deleteOne({ roomId });
+	deleteByRoomId(roomId: string): Promise<void> {
+		return this.deleteOne({ roomId });
 	}
 
 	/**
@@ -174,22 +316,22 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	 * @param roomIds - Array of room identifiers
 	 * @throws Error if no rooms were found or could not be deleted
 	 */
-	async deleteByRoomIds(roomIds: string[]): Promise<void> {
-		await this.deleteMany({ roomId: { $in: roomIds } });
+	deleteByRoomIds(roomIds: string[]): Promise<void> {
+		return this.deleteMany({ roomId: { $in: roomIds } });
 	}
 
 	/**
 	 * Counts the total number of rooms.
 	 */
-	async countTotal(): Promise<number> {
-		return await this.count();
+	countTotal(): Promise<number> {
+		return this.count();
 	}
 
 	/**
 	 * Counts the number of rooms with active meetings.
 	 */
-	async countActiveRooms(): Promise<number> {
-		return await this.count({ status: MeetRoomStatus.ACTIVE_MEETING });
+	countActiveRooms(): Promise<number> {
+		return this.count({ status: MeetRoomStatus.ACTIVE_MEETING });
 	}
 
 	// ==========================================
@@ -197,72 +339,67 @@ export class RoomRepository<TRoom extends MeetRoom = MeetRoom> extends BaseRepos
 	// ==========================================
 
 	/**
-	 * Normalizes room data for storage by removing the base URL from URLs.
+	 * Normalizes room data for storage by removing the base URL from access URLs.
 	 * This ensures only the path is stored in the database.
+	 * NOTE: Only normalizes fields that are present in the partial payload.
 	 *
-	 * @param room - The room data to normalize
-	 * @returns Normalized room data
+	 * @param room - The partial room data to normalize
+	 * @returns Normalized partial room data
 	 */
-	private normalizeRoomForStorage(room: TRoom): TRoom {
-		return {
-			...room,
-			moderatorUrl: this.extractPathFromUrl(room.moderatorUrl),
-			speakerUrl: this.extractPathFromUrl(room.speakerUrl)
-		};
+	private normalizeRoomForStorage(room: Partial<MeetRoom>): Partial<MeetRoom> {
+		const registeredUrl = room.access?.registered.url;
+		const moderatorUrl = room.access?.anonymous.moderator.url;
+		const speakerUrl = room.access?.anonymous.speaker.url;
+		const recordingUrl = room.access?.anonymous.recording.url;
+
+		if (registeredUrl) {
+			room.access!.registered.url = extractPathFromUrl(registeredUrl);
+		}
+
+		if (moderatorUrl) {
+			room.access!.anonymous.moderator.url = extractPathFromUrl(moderatorUrl);
+		}
+
+		if (speakerUrl) {
+			room.access!.anonymous.speaker.url = extractPathFromUrl(speakerUrl);
+		}
+
+		if (recordingUrl) {
+			room.access!.anonymous.recording.url = extractPathFromUrl(recordingUrl);
+		}
+
+		return room;
 	}
 
 	/**
-	 * Extracts the path from a URL, removing the base URL and basePath if present.
-	 * This ensures only the route path is stored in the database, without the basePath prefix.
-	 *
-	 * @param url - The URL to process
-	 * @returns The path portion of the URL without the basePath prefix
-	 */
-	private extractPathFromUrl(url: string): string {
-		const basePath = getBasePath();
-		// Remove trailing slash from basePath for comparison (e.g., '/meet/' -> '/meet')
-		const basePathWithoutTrailingSlash = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-
-		// Helper to strip basePath from a path
-		const stripBasePath = (path: string): string => {
-			if (basePathWithoutTrailingSlash !== '' && path.startsWith(basePathWithoutTrailingSlash)) {
-				return path.slice(basePathWithoutTrailingSlash.length) || '/';
-			}
-
-			return path;
-		};
-
-		// If already a path, strip basePath and return
-		if (url.startsWith('/')) {
-			return stripBasePath(url);
-		}
-
-		try {
-			const urlObj = new URL(url);
-			const pathname = stripBasePath(urlObj.pathname);
-			return pathname + urlObj.search + urlObj.hash;
-		} catch {
-			// If URL parsing fails, assume it's already a path
-			return url;
-		}
-	}
-
-	/**
-	 * Enriches room data by adding the base URL to URLs.
-	 * Converts MongoDB document to domain object.
+	 * Enriches room data by adding the base URL to access URLs.
 	 * Only enriches URLs that are present in the document.
 	 *
 	 * @param document - The MongoDB document
 	 * @returns Room data with complete URLs
 	 */
-	private enrichRoomWithBaseUrls(document: MeetRoomDocument): TRoom {
-		const baseUrl = getBaseUrl();
-		const room = document.toObject() as TRoom;
+	private enrichRoomWithBaseUrls(room: MeetRoom): MeetRoom {
+		const registeredUrl = room.access?.registered.url;
+		const moderatorUrl = room.access?.anonymous.moderator.url;
+		const speakerUrl = room.access?.anonymous.speaker.url;
+		const recordingUrl = room.access?.anonymous.recording.url;
 
-		return {
-			...room,
-			...(room.moderatorUrl !== undefined && { moderatorUrl: `${baseUrl}${room.moderatorUrl}` }),
-			...(room.speakerUrl !== undefined && { speakerUrl: `${baseUrl}${room.speakerUrl}` })
-		};
+		if (registeredUrl) {
+			room.access!.registered.url = addBaseUrlToPath(registeredUrl);
+		}
+
+		if (moderatorUrl) {
+			room.access!.anonymous.moderator.url = addBaseUrlToPath(moderatorUrl);
+		}
+
+		if (speakerUrl) {
+			room.access!.anonymous.speaker.url = addBaseUrlToPath(speakerUrl);
+		}
+
+		if (recordingUrl) {
+			room.access!.anonymous.recording.url = addBaseUrlToPath(recordingUrl);
+		}
+
+		return room;
 	}
 }

@@ -10,13 +10,14 @@ import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { LoggerService } from '../../../../src/services/logger.service.js';
 import { RecordingScheduledTasksService } from '../../../../src/services/recording-scheduled-tasks.service.js';
 import { RecordingService } from '../../../../src/services/recording.service.js';
+import { MeetRecordingPage } from '../../../../src/types/recording-projection.types.js';
 import { startTestServer } from '../../../helpers/request-helpers.js';
 
 describe('Stale Recordings GC Tests', () => {
 	let recordingTaskScheduler: RecordingScheduledTasksService;
 
 	// Mock functions
-	let findActiveRecordingsMock: SpiedFunction<() => Promise<MeetRecordingInfo[]>>;
+	let findActiveRecordingsMock: SpiedFunction<() => Promise<MeetRecordingPage<MeetRecordingInfo>>>;
 	let roomExistsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
 	let roomHasParticipantsMock: SpiedFunction<(roomName: string) => Promise<boolean>>;
 	let getInProgressRecordingsEgressMock: SpiedFunction<(roomName?: string) => Promise<EgressInfo[]>>;
@@ -114,7 +115,7 @@ describe('Stale Recordings GC Tests', () => {
 	describe('performStaleRecordingsGC', () => {
 		it('should not process any recordings when there are no active recordings in database', async () => {
 			// Mock empty response from database
-			findActiveRecordingsMock.mockResolvedValueOnce([]);
+			findActiveRecordingsMock.mockResolvedValueOnce({ recordings: [], isTruncated: false, nextPageToken: undefined });
 
 			// Execute the stale recordings cleanup
 			await recordingTaskScheduler['performStaleRecordingsGC']();
@@ -144,7 +145,7 @@ describe('Stale Recordings GC Tests', () => {
 			];
 
 			// Mock database response with active recordings
-			findActiveRecordingsMock.mockResolvedValueOnce(mockRecordings);
+			findActiveRecordingsMock.mockResolvedValueOnce({ recordings: mockRecordings, isTruncated: false, nextPageToken: undefined });
 
 			// Mock that no egress exists for any recording (all stale)
 			getInProgressRecordingsEgressMock.mockResolvedValue([]);

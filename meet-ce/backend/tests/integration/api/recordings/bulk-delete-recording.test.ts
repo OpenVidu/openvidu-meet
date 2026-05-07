@@ -1,15 +1,16 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { expectValidationError } from '../../../helpers/assertion-helpers';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRecordings,
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	generateRoomMemberToken,
 	getAllRecordings,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
@@ -21,7 +22,8 @@ describe('Recording API Tests', () => {
 	afterEach(async () => {
 		// Ensure a clean state after each test
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 		const recordings = await getAllRecordings();
 		expect(recordings.body.recordings).toHaveLength(0);
 	});
@@ -70,7 +72,7 @@ describe('Recording API Tests', () => {
 				]
 			});
 
-			await stopRecording(activeRecordingId!, activeRecordingRoom!.moderatorToken);
+			await stopRecording(activeRecordingId!);
 
 			deleteResponse = await bulkDeleteRecordings([activeRecordingId]);
 
@@ -98,8 +100,8 @@ describe('Recording API Tests', () => {
 			});
 
 			await Promise.all(
-				recordingIds.map((id, index) => {
-					return stopRecording(id!, testContext.getRoomByIndex(index)!.moderatorToken);
+				recordingIds.map((id) => {
+					return stopRecording(id);
 				})
 			);
 		});
@@ -112,13 +114,13 @@ describe('Recording API Tests', () => {
 			expect(deleteResponse.status).toBe(200);
 		});
 
-		it('should only delete recordings belonging to the room when using a recording token', async () => {
+		it('should only delete recordings belonging to the room when using a room member token', async () => {
 			// Create a room and start a recording
 			const roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
 			const recordingId = roomData.recordingId!;
 
-			// Generate a recording token for the room
+			// Generate a room member token
 			const roomMemberToken = await generateRoomMemberToken(roomId, { secret: roomData.moderatorSecret });
 
 			// Create another room and start a recording
@@ -135,9 +137,7 @@ describe('Recording API Tests', () => {
 				failed: [
 					{
 						recordingId: otherRecordingId,
-						error: expect.stringContaining(
-							`Recording '${otherRecordingId}' does not belong to room '${roomId}'`
-						)
+						error: expect.stringContaining('Insufficient permissions to access this resource')
 					}
 				]
 			});
@@ -164,7 +164,7 @@ describe('Recording API Tests', () => {
 		it('should handle empty recordingIds array gracefully', async () => {
 			const response = await bulkDeleteRecordings([]);
 
-			expectValidationError(response, 'recordingIds', 'recordingIds must contain at least one item');
+			expectValidationError(response, 'recordingIds', 'At least one recordingId is required');
 		});
 
 		it('should reject a CSV string with invalid format', async () => {
@@ -178,7 +178,7 @@ describe('Recording API Tests', () => {
 			const invalidRecordingIds = ['', '   '];
 			const response = await bulkDeleteRecordings(invalidRecordingIds);
 
-			expectValidationError(response, 'recordingIds', 'recordingIds must contain at least one item');
+			expectValidationError(response, 'recordingIds', 'At least one recordingId is required');
 		});
 
 		it('should reject an array with mixed valid and totally invalid IDs', async () => {

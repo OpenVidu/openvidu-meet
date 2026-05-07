@@ -1,37 +1,53 @@
-import { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
-import { NextFunction, Request, Response } from 'express';
+import type { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteRoomsReqSchema,
 	DeleteRoomReqSchema,
-	RoomFiltersSchema,
+	mergeHeaderFieldsIntoQuery,
 	nonEmptySanitizedRoomId,
-	RoomMemberTokenMetadataSchema,
-	RoomMemberTokenOptionsSchema,
+	RoomFiltersSchema,
 	RoomOptionsSchema,
+	RoomQueryFieldsSchema,
+	UpdateRoomAccessReqSchema,
 	UpdateRoomConfigReqSchema,
+	UpdateRoomRolesReqSchema,
 	UpdateRoomStatusReqSchema
 } from '../../models/zod-schemas/room.schema.js';
 
 export const validateCreateRoomReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = RoomOptionsSchema.safeParse(req.body);
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
+
+	const bodyResult = RoomOptionsSchema.safeParse(req.body);
+
+	if (!bodyResult.success) {
+		return rejectUnprocessableRequest(res, bodyResult.error);
+	}
+
+	req.body = bodyResult.data;
+
+	const { success, error, data } = RoomQueryFieldsSchema.safeParse(query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.body = data;
+	res.locals.validatedQuery = data;
 	next();
 };
 
 export const validateGetRoomsReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = RoomFiltersSchema.safeParse(req.query);
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
+
+	const { success, error, data } = RoomFiltersSchema.safeParse(query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = {
+	res.locals.validatedQuery = {
 		...data,
 		maxItems: data.maxItems?.toString()
 	};
@@ -39,13 +55,17 @@ export const validateGetRoomsReq = (req: Request, res: Response, next: NextFunct
 };
 
 export const validateBulkDeleteRoomsReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = BulkDeleteRoomsReqSchema.safeParse(req.query);
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
+
+	const { success, error, data } = BulkDeleteRoomsReqSchema.safeParse(query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
 	}
 
-	req.query = data;
+	res.locals.validatedQuery = data;
 	next();
 };
 
@@ -61,6 +81,21 @@ export const withValidRoomId = (req: Request, res: Response, next: NextFunction)
 	next();
 };
 
+export const validateGetRoomReq = (req: Request, res: Response, next: NextFunction) => {
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
+
+	const { success, error, data } = RoomQueryFieldsSchema.safeParse(query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	res.locals.validatedQuery = data;
+	next();
+};
+
 export const validateDeleteRoomReq = (req: Request, res: Response, next: NextFunction) => {
 	const roomIdResult = nonEmptySanitizedRoomId('roomId').safeParse(req.params.roomId);
 
@@ -70,13 +105,17 @@ export const validateDeleteRoomReq = (req: Request, res: Response, next: NextFun
 
 	req.params.roomId = roomIdResult.data;
 
-	const queryParamsResult = DeleteRoomReqSchema.safeParse(req.query);
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
+
+	const queryParamsResult = DeleteRoomReqSchema.safeParse(query);
 
 	if (!queryParamsResult.success) {
 		return rejectUnprocessableRequest(res, queryParamsResult.error);
 	}
 
-	req.query = queryParamsResult.data;
+	res.locals.validatedQuery = queryParamsResult.data;
 	next();
 };
 
@@ -102,8 +141,8 @@ export const validateUpdateRoomStatusReq = (req: Request, res: Response, next: N
 	next();
 };
 
-export const validateCreateRoomMemberTokenReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = RoomMemberTokenOptionsSchema.safeParse(req.body);
+export const validateUpdateRoomRolesReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = UpdateRoomRolesReqSchema.safeParse(req.body);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
@@ -113,12 +152,13 @@ export const validateCreateRoomMemberTokenReq = (req: Request, res: Response, ne
 	next();
 };
 
-export const validateRoomMemberTokenMetadata = (metadata: unknown): MeetRoomMemberTokenMetadata => {
-	const { success, error, data } = RoomMemberTokenMetadataSchema.safeParse(metadata);
+export const validateUpdateRoomAccessReq = (req: Request, res: Response, next: NextFunction) => {
+	const { success, error, data } = UpdateRoomAccessReqSchema.safeParse(req.body);
 
 	if (!success) {
-		throw new Error(`Invalid metadata: ${error.message}`);
+		return rejectUnprocessableRequest(res, error);
 	}
 
-	return data;
+	req.body = data;
+	next();
 };

@@ -1,5 +1,6 @@
 import chalk from 'chalk';
 import dotenv from 'dotenv';
+import type { StringValue } from 'ms';
 
 let envPath: string | undefined;
 
@@ -30,6 +31,11 @@ export const MEET_ENV = {
 	INITIAL_ADMIN_USER: process.env.MEET_INITIAL_ADMIN_USER || 'admin',
 	INITIAL_ADMIN_PASSWORD: process.env.MEET_INITIAL_ADMIN_PASSWORD || 'admin',
 	INITIAL_API_KEY: process.env.MEET_INITIAL_API_KEY ?? '',
+	ACCESS_TOKEN_EXPIRATION: (process.env.MEET_ACCESS_TOKEN_EXPIRATION || '2h') as StringValue,
+	REFRESH_TOKEN_EXPIRATION: (process.env.MEET_REFRESH_TOKEN_EXPIRATION || '1d') as StringValue,
+	ROOM_MEMBER_TOKEN_EXPIRATION: (process.env.MEET_ROOM_MEMBER_TOKEN_EXPIRATION || '2h') as StringValue,
+	PASSWORD_CHANGE_TOKEN_EXPIRATION: (process.env.MEET_PASSWORD_CHANGE_TOKEN_EXPIRATION || '15m') as StringValue,
+	REFRESH_TOKEN_ROTATION_ENABLED: process.env.MEET_REFRESH_TOKEN_ROTATION_ENABLED || 'true',
 
 	// Webhook configuration
 	INITIAL_WEBHOOK_ENABLED: process.env.MEET_INITIAL_WEBHOOK_ENABLED || 'false',
@@ -50,6 +56,14 @@ export const MEET_ENV = {
 	MONGO_ADMIN_PASSWORD: process.env.MEET_MONGO_ADMIN_PASSWORD ?? 'mongoadmin',
 	MONGO_REPLICA_SET_NAME: process.env.MEET_MONGO_REPLICA_SET_NAME ?? 'rs0',
 	MONGO_DB_NAME: process.env.MEET_MONGO_DB_NAME ?? 'openvidu-meet',
+	// pool configuration
+	MONGO_MAX_POOL_SIZE: parseInt(process.env.MEET_MONGO_MAX_POOL_SIZE ?? '100', 10),
+	MONGO_MIN_POOL_SIZE: parseInt(process.env.MEET_MONGO_MIN_POOL_SIZE ?? '0', 10),
+	// connection timeouts
+	MONGO_SERVER_SELECTION_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SERVER_SELECTION_TIMEOUT_MS ?? '30000', 10),
+	MONGO_CONNECT_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_CONNECT_TIMEOUT_MS ?? '30000', 10),
+	MONGO_SOCKET_TIMEOUT_MS: parseInt(process.env.MEET_MONGO_SOCKET_TIMEOUT_MS ?? '0', 10),
+	MONGO_MAX_IDLE_TIME_MS: parseInt(process.env.MEET_MONGO_MAX_IDLE_TIME_MS ?? '0', 10),
 
 	BLOB_STORAGE_MODE: process.env.MEET_BLOB_STORAGE_MODE || 's3', // Options: 's3', 'abs', 'gcs'
 
@@ -61,6 +75,13 @@ export const MEET_ENV = {
 	S3_SECRET_KEY: process.env.MEET_S3_SECRET_KEY ?? 'minioadmin',
 	AWS_REGION: process.env.MEET_AWS_REGION ?? 'us-east-1',
 	S3_WITH_PATH_STYLE_ACCESS: process.env.MEET_S3_WITH_PATH_STYLE_ACCESS ?? 'true',
+
+	// S3 Server-Side Encryption configuration.
+	// Type must be either "SSE-S3" or "SSE-KMS". When Type is "SSE-KMS", KMS_KEY_ID is required.
+	// KMS_ENCRYPTION_CONTEXT, if set, must be a valid JSON object and is only used with "SSE-KMS".
+	S3_SSE_TYPE: process.env.MEET_S3_SSE_TYPE ?? '',
+	S3_SSE_KMS_KEY_ID: process.env.MEET_S3_SSE_KMS_KEY_ID ?? '',
+	S3_SSE_KMS_ENCRYPTION_CONTEXT: process.env.MEET_S3_SSE_KMS_ENCRYPTION_CONTEXT ?? '',
 
 	// Azure Blob storage configuration
 	AZURE_CONTAINER_NAME: process.env.MEET_AZURE_CONTAINER_NAME ?? 'openvidu-appdata',
@@ -86,8 +107,7 @@ export const MEET_ENV = {
 	// Deployment configuration
 	MODULES_FILE: process.env.MODULES_FILE || undefined,
 	MODULE_NAME: process.env.MODULE_NAME || 'openviduMeet',
-	ENABLED_MODULES: process.env.ENABLED_MODULES ?? '',
-
+	ENABLED_MODULES: process.env.ENABLED_MODULES ?? ''
 };
 
 export function checkModuleEnabled() {
@@ -166,6 +186,19 @@ export const logEnvVars = () => {
 		console.log('S3 SECRET KEY:', credential('****' + MEET_ENV.S3_SECRET_KEY.slice(-3)));
 		console.log('AWS REGION:', text(MEET_ENV.AWS_REGION));
 		console.log('S3 WITH PATH STYLE ACCESS:', text(MEET_ENV.S3_WITH_PATH_STYLE_ACCESS));
+
+		if (MEET_ENV.S3_SSE_TYPE) {
+			console.log('S3 SSE TYPE:', text(MEET_ENV.S3_SSE_TYPE));
+
+			if (MEET_ENV.S3_SSE_KMS_KEY_ID) {
+				console.log('S3 SSE KMS KEY ID:', credential('****' + MEET_ENV.S3_SSE_KMS_KEY_ID.slice(-3)));
+			}
+
+			if (MEET_ENV.S3_SSE_KMS_ENCRYPTION_CONTEXT) {
+				console.log('S3 SSE KMS ENCRYPTION CONTEXT: <set>');
+			}
+		}
+
 		console.log('---------------------------------------------------------');
 	} else if (MEET_ENV.BLOB_STORAGE_MODE === 'abs') {
 		console.log('Azure Blob Storage Configuration');

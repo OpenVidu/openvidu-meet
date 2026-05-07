@@ -6,16 +6,16 @@
 			</div>
 
 			<div class="error-details">
-				<h1 class="error-title">{{ errorName }}</h1>
-				<p class="error-message">{{ message }}</p>
+				<h1 class="error-title">{{ errorName() }}</h1>
+				<p class="error-message">{{ message() }}</p>
 			</div>
 
 			<div class="error-actions">
-				@if (showBackButton) {
+				@if (showBackButton()) {
 					<div class="fade-in-delayed-more">
 						<button mat-button (click)="goBack()">
 							<mat-icon>arrow_back</mat-icon>
-							<span>{{ backButtonText }}</span>
+							<span>{{ backButtonText() }}</span>
 						</button>
 					</div>
 				}

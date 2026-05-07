@@ -1,6 +1,14 @@
-import { GlobalConfig } from '@openvidu-meet/typings';
+import type { GlobalConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { MeetGlobalConfigDocument, MeetGlobalConfigModel } from '../models/mongoose-schemas/global-config.schema.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type {
+	MeetGlobalConfigDocument,
+	MeetGlobalConfigDocumentOnlyField
+} from '../models/mongoose-schemas/global-config.schema.js';
+import {
+	MEET_GLOBAL_CONFIG_DOCUMENT_ONLY_FIELDS,
+	MeetGlobalConfigModel
+} from '../models/mongoose-schemas/global-config.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
@@ -9,44 +17,42 @@ import { BaseRepository } from './base.repository.js';
  *
  * IMPORTANT: This collection should only contain ONE document representing the
  * system-wide global configuration. Methods are designed to work with this singleton pattern.
- *
- * @template TGlobalConfig - The domain type extending GlobalConfig (default: GlobalConfig)
  */
 @injectable()
-export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalConfig> extends BaseRepository<
-	TGlobalConfig,
-	MeetGlobalConfigDocument
-> {
+export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlobalConfigDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetGlobalConfigModel);
 	}
 
-	/**
-	 * Transforms a MongoDB document into a domain GlobalConfig object.
-	 *
-	 * @param document - The MongoDB document
-	 * @returns GlobalConfig domain object
-	 */
-	protected toDomain(document: MeetGlobalConfigDocument): TGlobalConfig {
-		return document.toObject() as TGlobalConfig;
+	protected toDomain(dbObject: MeetGlobalConfigDocument): GlobalConfig {
+		const { schemaVersion, ...globalConfig } = dbObject;
+		void schemaVersion;
+		return globalConfig as GlobalConfig;
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetGlobalConfigDocumentOnlyField[] {
+		return MEET_GLOBAL_CONFIG_DOCUMENT_ONLY_FIELDS;
 	}
 
 	/**
 	 * Creates the global configuration document.
 	 *
 	 * WARNING: This should only be called once during system initialization.
-	 * If a config already exists, use update() instead.
+	 * If a config already exists, use replace() or updatePartial() instead.
 	 *
 	 * @param config - The global configuration data to create
 	 * @returns The created global configuration
 	 */
-	async create(config: TGlobalConfig): Promise<TGlobalConfig> {
-		const document = await this.createDocument(config);
-		return this.toDomain(document);
+	create(config: GlobalConfig): Promise<GlobalConfig> {
+		const document: MeetGlobalConfigDocument = {
+			...config,
+			schemaVersion: INTERNAL_CONFIG.GLOBAL_CONFIG_SCHEMA_VERSION
+		};
+		return this.createDocument(document);
 	}
 
 	/**
-	 * Updates the global configuration.
+	 * Replaces the global configuration.
 	 *
 	 * Since there's only one document, this updates the first (and only) document in the collection.
 	 *
@@ -54,21 +60,33 @@ export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalC
 	 * @returns The updated global configuration
 	 * @throws Error if no config exists
 	 */
-	async update(config: TGlobalConfig): Promise<TGlobalConfig> {
+	replace(config: GlobalConfig): Promise<GlobalConfig> {
 		// Update the first document in the collection (there should only be one)
-		const document = await this.updateOne({}, config);
-		return this.toDomain(document);
+		return this.replaceOne({}, config);
+	}
+
+	/**
+	 * Partially updates the global configuration.
+	 *
+	 * Since there's only one document, this updates the first (and only) document in the collection.
+	 *
+	 * @param fieldsToUpdate - Partial global configuration data to update
+	 * @returns The updated global configuration
+	 * @throws Error if no config exists
+	 */
+	updatePartial(fieldsToUpdate: Partial<GlobalConfig>): Promise<GlobalConfig> {
+		return this.updatePartialOne({}, fieldsToUpdate);
 	}
 
 	/**
 	 * Retrieves the global configuration.
 	 *
+	 * @param fields - Optional array of field names to include in the result
 	 * @returns The global configuration or null if not found
 	 */
-	async get(): Promise<TGlobalConfig | null> {
+	get(fields?: (keyof GlobalConfig)[]): Promise<GlobalConfig | null> {
 		// Get the first (and only) document from the collection
-		const document = await this.findOne({});
-		return document ? this.toDomain(document) : null;
+		return this.findOne({}, fields);
 	}
 
 	/**
@@ -77,7 +95,7 @@ export class GlobalConfigRepository<TGlobalConfig extends GlobalConfig = GlobalC
 	 * WARNING: This will remove the global config document from the database.
 	 * Use with caution.
 	 */
-	async delete(): Promise<void> {
-		await this.deleteMany({});
+	delete(): Promise<void> {
+		return this.deleteMany({});
 	}
 }

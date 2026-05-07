@@ -1,0 +1,40 @@
+import { Injectable, WritableSignal, computed, signal } from '@angular/core';
+import { ApplicationMode, Edition } from '../models';
+
+/**
+ * Centralized service to manage application-wide context such as mode (embedded vs standalone), edition, and version.
+ * This service provides a single source of truth for application-level metadata that can be consumed across the app.
+ */
+@Injectable({
+	providedIn: 'root'
+})
+export class AppContextService {
+	private readonly _mode: WritableSignal<ApplicationMode> = signal(ApplicationMode.STANDALONE);
+	private readonly _edition: WritableSignal<Edition> = signal(Edition.CE);
+	private readonly _version: WritableSignal<string> = signal('');
+
+	readonly mode = this._mode.asReadonly();
+	readonly edition = this._edition.asReadonly();
+	readonly version = this._version.asReadonly();
+
+	readonly isEmbeddedMode = computed(() => this._mode() === ApplicationMode.EMBEDDED);
+	readonly isStandaloneMode = computed(() => this._mode() === ApplicationMode.STANDALONE);
+
+	constructor() {
+		this.detectMode();
+		console.log(`Starting application in ${this._mode()} mode`);
+	}
+
+	private detectMode() {
+		const isRequestedFromIframe = window.self !== window.top;
+		this._mode.set(isRequestedFromIframe ? ApplicationMode.EMBEDDED : ApplicationMode.STANDALONE);
+	}
+
+	setEdition(edition: Edition): void {
+		this._edition.set(edition);
+	}
+
+	setVersion(version: string): void {
+		this._version.set(version);
+	}
+}

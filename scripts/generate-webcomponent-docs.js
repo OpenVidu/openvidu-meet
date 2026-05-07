@@ -207,8 +207,8 @@ class WebComponentDocGenerator {
      * Generates markdown table for events (only public events)
      */
     generateEventsTable() {
-        const enums = this.parseEnumFile(path.join(this.typingsPath, 'event.model.ts'));
-        const payloads = this.extractPayloads(path.join(this.typingsPath, 'event.model.ts'));
+        const enums = this.parseEnumFile(path.join(this.typingsPath, 'events.ts'));
+        const payloads = this.extractPayloads(path.join(this.typingsPath, 'events.ts'));
 
         const eventEnum = enums.find(e => e.name === 'WebComponentEvent');
         if (!eventEnum) return '';
@@ -233,8 +233,8 @@ class WebComponentDocGenerator {
      * Generates markdown table for commands/methods (only public methods)
      */
     generateCommandsTable() {
-        const enums = this.parseEnumFile(path.join(this.typingsPath, 'command.model.ts'));
-        const payloads = this.extractPayloads(path.join(this.typingsPath, 'command.model.ts'));
+        const enums = this.parseEnumFile(path.join(this.typingsPath, 'commands.ts'));
+        const payloads = this.extractPayloads(path.join(this.typingsPath, 'commands.ts'));
 
         const commandEnum = enums.find(e => e.name === 'WebComponentCommand');
         if (!commandEnum) return '';
@@ -316,7 +316,7 @@ class WebComponentDocGenerator {
      * Generates markdown table for attributes/properties
      */
     generateAttributesTable() {
-        const propertyEnums = this.parseEnumFile(path.join(this.typingsPath, 'properties.model.ts'));
+        const propertyEnums = this.parseEnumFile(path.join(this.typingsPath, 'properties.ts'));
         const propertyEnum = propertyEnums.find(e => e.name === 'WebComponentProperty');
 
         let markdown = '| Attribute | Description | Required |\n';

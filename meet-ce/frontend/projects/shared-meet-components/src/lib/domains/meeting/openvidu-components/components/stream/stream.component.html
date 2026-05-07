@@ -1,0 +1,113 @@
+@if (stream(); as stream) {
+	<div
+		[class.OV_stream]="true"
+		[class.OV_stream_video]="true"
+		[class.no-size]="!showVideo()"
+		[class.local]="stream.participant.isLocal"
+		[class.remote]="!stream.participant.isLocal"
+		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
+		[id]="'stream-' + stream.source + '-' + stream.streamId"
+		(mousemove)="mouseHover($event)"
+		#streamContainer
+	>
+		@if (showParticipantName()) {
+			<div id="participant-name-container" class="participant-name" [class.fullscreen]="isFullscreen()">
+				<div class="participant-name-container">
+					<span id="participant-name">{{ stream.participant.name }}</span>
+					@if (stream.isScreenStream) {
+						<span id="participant-name">_SCREEN</span>
+					}
+				</div>
+			</div>
+		}
+
+		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream) {
+			<div id="audio-wave-container">
+				<ov-audio-wave />
+			</div>
+		}
+
+		<ov-media-element
+			[videoTrack]="stream.videoTrack?.track"
+			[audioTrack]="stream.audioTrack?.track"
+			[showAvatar]="stream.isCameraStream && (!stream.videoTrack || !stream.participant.isCameraEnabled)"
+			[avatarColor]="stream.participant.colorProfile"
+			[avatarName]="stream.participant.name ?? ''"
+			[muted]="stream.isMutedForcibly"
+			[isLocal]="stream.participant.isLocal"
+			[hasEncryptionError]="stream.participant.hasEncryptionError"
+		/>
+
+		@if (
+			!stream.participant.hasEncryptionError &&
+			(!stream.participant.isMicrophoneEnabled || stream.isMutedForcibly || stream.isPinned)
+		) {
+			<div class="status-icons">
+				@if (!stream.participant.isMicrophoneEnabled) {
+					<mat-icon id="mic-off" fontIcon="mic_off" />
+				}
+				@if (stream.isMutedForcibly) {
+					<mat-icon id="muted-forcibly" fontIcon="volume_off" />
+				}
+				@if (stream.isPinned) {
+					<mat-icon id="pinned" fontIcon="push_pin" />
+				}
+			</div>
+		}
+
+		@if (showVideoControls() && mouseHovering() && !stream.participant.hasEncryptionError) {
+			<div class="stream-video-controls">
+				<div class="flex-container">
+					<button
+						mat-icon-button
+						id="pin-btn"
+						(click)="toggleVideoPinned()"
+						[matTooltip]="stream.isPinned ? ('STREAM.UNPIN' | translate) : ('STREAM.PIN' | translate)"
+					>
+						@if (stream.isPinned) {
+							<mat-icon fontSet="material-symbols-outlined" fontIcon="keep">keep_off</mat-icon>
+						} @else {
+							<mat-icon id="pinned" fontIcon="push_pin" />
+						}
+					</button>
+					@if (!stream.participant.isLocal) {
+						<button
+							mat-icon-button
+							id="mute-btn"
+							(click)="toggleMuteForcibly()"
+							[class.muted-btn]="stream.isMutedForcibly"
+							[matTooltip]="
+								stream.isMutedForcibly
+									? ('STREAM.UNMUTE_SOUND' | translate)
+									: ('STREAM.MUTE_SOUND' | translate)
+							"
+						>
+							@if (stream.isMutedForcibly) {
+								<mat-icon id="muted-forcibly">volume_off</mat-icon>
+							} @else {
+								<mat-icon id="muted-forcibly">volume_up</mat-icon>
+							}
+						</button>
+					}
+					@if (stream.participant.isLocal) {
+						<button
+							mat-icon-button
+							id="minimize-btn"
+							[disabled]="stream.isPinned"
+							(click)="toggleMinimize()"
+							[matTooltip]="
+								stream.isMinimized ? ('STREAM.MAXIMIZE' | translate) : ('STREAM.MINIMIZE' | translate)
+							"
+						>
+							@if (stream.isMinimized) {
+								<mat-icon id="minimize">open_in_full</mat-icon>
+							} @else {
+								<mat-icon>close_fullscreen</mat-icon>
+							}
+						</button>
+					}
+				</div>
+			</div>
+		}
+	</div>
+}

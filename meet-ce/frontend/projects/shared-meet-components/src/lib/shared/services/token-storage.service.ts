@@ -1,8 +1,7 @@
 import { Injectable } from '@angular/core';
 
 /**
- * Service to manage JWT token storage when using header-based authentication.
- * Tokens are stored in localStorage/sessionStorage when authTransportMode is 'header'.
+ * Service to manage JWT token storage for authentication
  */
 @Injectable({
 	providedIn: 'root'
@@ -10,9 +9,6 @@ import { Injectable } from '@angular/core';
 export class TokenStorageService {
 	private readonly ACCESS_TOKEN_KEY = 'ovMeet-accessToken';
 	private readonly REFRESH_TOKEN_KEY = 'ovMeet-refreshToken';
-	private readonly ROOM_MEMBER_TOKEN_KEY = 'ovMeet-roomMemberToken';
-
-	// ACCESS AND REFRESH TOKEN METHODS
 
 	// Saves the access token to localStorage
 	setAccessToken(token: string): void {
@@ -38,23 +34,5 @@ export class TokenStorageService {
 	clearAccessAndRefreshTokens(): void {
 		localStorage.removeItem(this.ACCESS_TOKEN_KEY);
 		localStorage.removeItem(this.REFRESH_TOKEN_KEY);
-	}
-
-	// ROOM MEMBER TOKEN METHODS
-	// Uses sessionStorage instead of localStorage to ensure token is not shared across browser tabs
-
-	// Saves the room member token to sessionStorage
-	setRoomMemberToken(token: string): void {
-		sessionStorage.setItem(this.ROOM_MEMBER_TOKEN_KEY, token);
-	}
-
-	// Retrieves the room member token from sessionStorage
-	getRoomMemberToken(): string | null {
-		return sessionStorage.getItem(this.ROOM_MEMBER_TOKEN_KEY);
-	}
-
-	// Removes the room member token from sessionStorage
-	clearRoomMemberToken(): void {
-		sessionStorage.removeItem(this.ROOM_MEMBER_TOKEN_KEY);
 	}
 }

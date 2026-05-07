@@ -1,37 +1,48 @@
 import { expect } from '@jest/globals';
 import {
-	AuthMode,
 	MeetAppearanceConfig,
-	MeetRecordingAccess,
+	MeetAssistantCapabilityName,
+	MeetParticipantModerationAction,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingStatus,
 	MeetRoom,
+	MeetRoomAccessConfig,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomMemberRole,
-	MeetRoomMemberTokenMetadata,
+	MeetRoomExtraField,
+	MeetRoomField,
+	MeetRoomMemberOptions,
 	MeetRoomMemberTokenOptions,
 	MeetRoomOptions,
+	MeetRoomRolesConfig,
 	MeetRoomStatus,
+	MeetUserOptions,
 	SecurityConfig,
 	WebhookConfig
 } from '@openvidu-meet/typings';
-import { ChildProcess, spawn } from 'child_process';
 import { Express } from 'express';
 import ms, { StringValue } from 'ms';
 import request, { Response } from 'supertest';
 import { container, initializeEagerServices } from '../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
 import { MEET_ENV } from '../../src/environment.js';
+import { GlobalConfigRepository } from '../../src/repositories/global-config.repository.js';
+import { RoomRepository } from '../../src/repositories/room.repository.js';
 import { createApp, registerDependencies } from '../../src/server.js';
 import { ApiKeyService } from '../../src/services/api-key.service.js';
 import { GlobalConfigService } from '../../src/services/global-config.service.js';
 import { RecordingService } from '../../src/services/recording.service.js';
 import { RoomScheduledTasksService } from '../../src/services/room-scheduled-tasks.service.js';
 import { getBasePath } from '../../src/utils/html-dynamic-base-path.utils.js';
+import {
+	waitForAllRecordingsToStop,
+	waitForAllRoomsToDelete,
+	waitForMeetingToEnd,
+	waitForRecordingToStop
+} from './wait-helpers.js';
 
 /**
  * Constructs the full API path by prepending the base path.
@@ -48,15 +59,7 @@ export const getFullPath = (apiPath: string): string => {
 	return basePath + apiPath;
 };
 
-const CREDENTIALS = {
-	admin: {
-		username: MEET_ENV.INITIAL_ADMIN_USER,
-		password: MEET_ENV.INITIAL_ADMIN_PASSWORD
-	}
-};
-
 let app: Express;
-const fakeParticipantsProcesses = new Map<string, ChildProcess>();
 
 export const sleep = (time: StringValue) => {
 	return new Promise((resolve) => setTimeout(resolve, ms(time)));
@@ -73,10 +76,12 @@ export const startTestServer = async (): Promise<Express> => {
 	return app;
 };
 
+// API KEY HELPERS
+
 export const generateApiKey = async (): Promise<string> => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -89,7 +94,7 @@ export const generateApiKey = async (): Promise<string> => {
 export const getApiKeys = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -100,7 +105,7 @@ export const getApiKeys = async () => {
 export const deleteApiKeys = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -121,6 +126,8 @@ export const restoreDefaultApiKeys = async () => {
 	await apiKeyService.initializeApiKey();
 };
 
+// GLOBAL CONFIG HELPERS
+
 export const getRoomsAppearanceConfig = async () => {
 	checkAppIsRunning();
 
@@ -133,7 +140,7 @@ export const getRoomsAppearanceConfig = async () => {
 export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppearanceConfig }) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -141,10 +148,10 @@ export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppe
 	return response;
 };
 
-export const getWebbhookConfig = async () => {
+export const getWebhookConfig = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -152,10 +159,10 @@ export const getWebbhookConfig = async () => {
 	return response;
 };
 
-export const updateWebbhookConfig = async (config: WebhookConfig) => {
+export const updateWebhookConfig = async (config: WebhookConfig) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -176,14 +183,16 @@ export const testWebhookUrl = async (url: string) => {
 export const getSecurityConfig = async () => {
 	checkAppIsRunning();
 
-	const response = await request(app).get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`)).send();
+	const response = await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`))
+		.send();
 	return response;
 };
 
 export const updateSecurityConfig = async (config: SecurityConfig) => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/security`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
@@ -191,81 +200,280 @@ export const updateSecurityConfig = async (config: SecurityConfig) => {
 	return response;
 };
 
-export const changeSecurityConfig = async (authMode: AuthMode) => {
-	// Get current config to avoid overwriting other properties
-	let response = await getSecurityConfig();
-	expect(response.status).toBe(200);
-	const currentConfig = response.body;
-
-	currentConfig.authentication.authModeToAccessRoom = authMode;
-	response = await updateSecurityConfig(currentConfig);
-	expect(response.status).toBe(200);
-};
-
 export const getCaptionsConfig = async () => {
 	checkAppIsRunning();
 
-	const response = await request(app).get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/captions`)).send();
+	const response = await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/captions`))
+		.send();
 	return response;
 };
 
 export const restoreDefaultGlobalConfig = async () => {
 	const configService = container.get(GlobalConfigService);
 	const defaultGlobalConfig = configService['getDefaultConfig']();
-	await configService['saveGlobalConfig'](defaultGlobalConfig);
+	const configRepository = container.get(GlobalConfigRepository);
+	await configRepository.replace(defaultGlobalConfig);
 };
 
-/**
- * Logs in a user and returns the access token in the format "Bearer <token>"
- */
-export const loginUser = async (): Promise<string> => {
-	checkAppIsRunning();
+// AUTH HELPERS
 
-	const response = await request(app)
-		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`))
-		.send(CREDENTIALS.admin)
-		.expect(200);
-
-	expect(response.body).toHaveProperty('accessToken');
-	return `Bearer ${response.body.accessToken}`;
-};
-
-export const getProfile = async (accessToken: string) => {
+export const loginReq = async (body: { userId: string; password: string }) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/profile`))
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/login`))
+		.send(body);
+};
+
+/**
+ * Logs in a user and returns the access and refresh (if available) tokens in the format "Bearer <token>"
+ */
+export const loginUser = async (
+	userId: string,
+	password: string
+): Promise<{ accessToken: string; refreshToken?: string }> => {
+	const response = await loginReq({ userId, password });
+	expect(response.status).toBe(200);
+	expect(response.body).toHaveProperty('accessToken');
+	const accessToken = `Bearer ${response.body.accessToken}`;
+	const refreshToken = response.body.refreshToken ? `Bearer ${response.body.refreshToken}` : undefined;
+	return { accessToken, refreshToken };
+};
+
+/**
+ * Logs in the root admin user and returns the access an refresh tokens in the format "Bearer <token>"
+ */
+export const loginRootAdmin = async (): Promise<{ accessToken: string; refreshToken: string }> => {
+	const { accessToken, refreshToken } = await loginUser(MEET_ENV.INITIAL_ADMIN_USER, MEET_ENV.INITIAL_ADMIN_PASSWORD);
+	return { accessToken, refreshToken: refreshToken! };
+};
+
+export const refreshTokenReq = async (refreshToken: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth/refresh`))
+		.set(INTERNAL_CONFIG.REFRESH_TOKEN_HEADER, refreshToken);
+};
+
+// USER HELPERS
+
+export const createUser = async (options: MeetUserOptions) => {
+	checkAppIsRunning();
+
+	const { accessToken } = await loginRootAdmin();
+	return await request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.send(options);
+};
+
+export const getUsers = async (query: Record<string, unknown> = {}) => {
+	checkAppIsRunning();
+
+	const { accessToken } = await loginRootAdmin();
+	return await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.query(query);
+};
+
+export const getUser = async (userId: string) => {
+	checkAppIsRunning();
+
+	const { accessToken } = await loginRootAdmin();
+	return await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send();
 };
 
-export const changePassword = async (currentPassword: string, newPassword: string, accessToken: string) => {
+export const getMe = async (accessToken: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/me`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.send();
+};
+
+export const changePasswordReq = async (
+	body: { currentPassword: string; newPassword: string },
+	accessToken: string
+) => {
 	checkAppIsRunning();
 
 	return await request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/change-password`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
-		.send({ currentPassword, newPassword });
+		.send(body);
 };
 
-export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoom> => {
+/**
+ * Changes the password for the authenticated user and
+ * returns the access and refresh tokens in the format "Bearer <token>" if provided.
+ * If the user does not require password change, no tokens are returned
+ */
+export const changePassword = async (
+	currentPassword: string,
+	newPassword: string,
+	accessToken: string
+): Promise<{ accessToken?: string; refreshToken?: string }> => {
+	const response = await changePasswordReq({ currentPassword, newPassword }, accessToken);
+	expect(response.status).toBe(200);
+
+	const newAccessToken = response.body.accessToken;
+	const newRefreshToken = response.body.refreshToken;
+
+	return {
+		accessToken: newAccessToken ? `Bearer ${newAccessToken}` : undefined,
+		refreshToken: newRefreshToken ? `Bearer ${newRefreshToken}` : undefined
+	};
+};
+
+export const resetUserPassword = async (userId: string, newPassword: string, accessToken?: string) => {
 	checkAppIsRunning();
 
-	const response = await request(app)
+	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
+	return await request(app)
+		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/password`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
+		.send({ newPassword });
+};
+
+export const updateUserRole = async (userId: string, role: string, accessToken?: string) => {
+	checkAppIsRunning();
+
+	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
+	return await request(app)
+		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/role`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
+		.send({ role });
+};
+
+export const deleteUser = async (userId: string, accessToken?: string) => {
+	checkAppIsRunning();
+
+	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
+	return await request(app)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
+		.send();
+};
+
+export const bulkDeleteUsers = async (userIds: string[], accessToken?: string) => {
+	checkAppIsRunning();
+
+	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
+	return await request(app)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
+		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
+		.query({ userIds: userIds.join(',') });
+};
+
+export const deleteAllUsers = async () => {
+	checkAppIsRunning();
+
+	let nextPageToken: string | undefined;
+
+	do {
+		const response = await getUsers({ fields: 'userId', maxItems: 100, nextPageToken });
+		expect(response.status).toBe(200);
+
+		nextPageToken = response.body.pagination?.nextPageToken ?? undefined;
+		const userIds = response.body.users
+			.map((user: { userId: string }) => user.userId)
+			.filter((userId: string) => userId !== MEET_ENV.INITIAL_ADMIN_USER);
+
+		if (userIds.length === 0) {
+			break;
+		}
+
+		await bulkDeleteUsers(userIds);
+	} while (nextPageToken);
+};
+
+// ROOM HELPERS
+
+/**
+ * Creates a room with the specified options and optional headers for response customization.
+ *
+ * @param options - Room creation options (roomName, config, etc.)
+ * @param accessToken - Optional access token for authentication (uses API key if not provided)
+ * @param headers - Optional headers object supporting:
+ *                  - xFields: Comma-separated list of fields to include (e.g., 'roomId,roomName')
+ *                  - xExtraFields: Comma-separated list of extra fields to include (e.g., 'config')
+ * @returns A Promise that resolves to the created MeetRoom
+ * @example
+ * ```
+ * // Create room with default collapsed config
+ * const room = await createRoom({ roomName: 'Test' });
+ *
+ * // Create room with specific fields only
+ * const room = await createRoom({ roomName: 'Test' }, undefined, { xFields: 'roomId,roomName' });
+ *
+ * // Create room with extra fields included
+ * const room = await createRoom({ roomName: 'Test' }, undefined, { xExtraFields: 'config' });
+ * ```
+ */
+export const createRoom = async (
+	options: MeetRoomOptions = {},
+	accessToken?: string,
+	headers?: { xFields?: string; xExtraFields?: string }
+): Promise<MeetRoom> => {
+	checkAppIsRunning();
+
+	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(options)
 		.expect(201);
+
+	if (accessToken) {
+		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
+
+	// Add optional headers for response customization
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
+	}
+
+	const response = await req;
 	return response.body;
 };
 
-export const getRooms = async (query: Record<string, unknown> = {}) => {
+export const getRooms = async (
+	query: Record<string, unknown> = {},
+	headers?: { xFields?: string; xExtraFields?: string },
+	accessToken?: string
+) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
+
+	if (accessToken) {
+		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
+	}
+
+	return await req;
 };
 
 /**
@@ -273,19 +481,42 @@ export const getRooms = async (query: Record<string, unknown> = {}) => {
  *
  * @param roomId - The unique identifier of the room to retrieve
  * @param fields - Optional fields to filter in the response
+ * @param extraFields - Optional extraFields parameter to include additional data (e.g., 'config')
  * @param roomMemberToken - Optional room member token for authentication
  * @returns A Promise that resolves to the room data
  * @throws Error if the app instance is not defined
  */
-export const getRoom = async (roomId: string, fields?: string, roomMemberToken?: string) => {
+export const getRoom = async (
+	roomId: string,
+	fields?: string,
+	extraFields?: string,
+	roomMemberToken?: string,
+	headers?: { xFields?: string; xExtraFields?: string }
+) => {
 	checkAppIsRunning();
 
-	const req = request(app).get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`)).query({ fields });
+	const queryParams: Record<string, string> = {};
+
+	if (fields) queryParams.fields = fields;
+
+	if (extraFields) queryParams.extraFields = extraFields;
+
+	const req = request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`))
+		.query(queryParams);
 
 	if (roomMemberToken) {
 		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 	} else {
 		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+	}
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
 	}
 
 	return await req;
@@ -309,16 +540,6 @@ export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomC
 		.send({ config });
 };
 
-export const updateRecordingAccessConfigInRoom = async (roomId: string, recordingAccess: MeetRecordingAccess) => {
-	const response = await updateRoomConfig(roomId, {
-		recording: {
-			enabled: true,
-			allowAccessTo: recordingAccess
-		}
-	});
-	expect(response.status).toBe(200);
-};
-
 export const updateRoomStatus = async (roomId: string, status: MeetRoomStatus) => {
 	checkAppIsRunning();
 
@@ -328,32 +549,92 @@ export const updateRoomStatus = async (roomId: string, status: MeetRoomStatus) =
 		.send({ status });
 };
 
-export const deleteRoom = async (roomId: string, query: Record<string, unknown> = {}) => {
+export const updateRoomRoles = async (roomId: string, rolesConfig: MeetRoomRolesConfig) => {
 	checkAppIsRunning();
 
-	const result = await request(app)
+	return await request(app)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/roles`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send({ roles: rolesConfig });
+};
+
+export const updateRoomAccessConfig = async (roomId: string, accessConfig: MeetRoomAccessConfig) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/access`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send({ access: accessConfig });
+};
+
+export const deleteRoom = async (
+	roomId: string,
+	query: Record<string, unknown> = {},
+	headers?: { xFields?: string; xExtraFields?: string }
+) => {
+	checkAppIsRunning();
+
+	const req = request(app)
 		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
-	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
-	return result;
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
+	}
+
+	return await req;
 };
 
-export const bulkDeleteRooms = async (roomIds: string[], withMeeting?: string, withRecordings?: string) => {
+export const bulkDeleteRooms = async (
+	roomIds: string[],
+	withMeeting?: string,
+	withRecordings?: string,
+	fields?: MeetRoomField[],
+	extraFields?: MeetRoomExtraField[],
+	headers?: { xFields?: string; xExtraFields?: string }
+) => {
 	checkAppIsRunning();
 
-	const result = await request(app)
+	const query: Record<string, string | boolean | undefined> = {
+		roomIds: roomIds.join(','),
+		withMeeting,
+		withRecordings
+	};
+
+	if (fields) {
+		query.fields = fields.join(',');
+	}
+
+	if (extraFields) {
+		query.extraFields = extraFields.join(',');
+	}
+
+	const req = request(app)
 		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.query({ roomIds: roomIds.join(','), withMeeting, withRecordings });
-	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
-	return result;
+		.query(query);
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
+	}
+
+	return await req;
 };
 
 export const deleteAllRooms = async () => {
 	checkAppIsRunning();
 
 	let nextPageToken: string | undefined;
+	const roomIdsToDelete: string[] = [];
 
 	do {
 		const response = await getRooms({ fields: 'roomId', maxItems: 100, nextPageToken });
@@ -366,12 +647,16 @@ export const deleteAllRooms = async () => {
 			break;
 		}
 
+		roomIdsToDelete.push(...roomIds);
+
 		await bulkDeleteRooms(
 			roomIds,
 			MeetRoomDeletionPolicyWithMeeting.FORCE,
 			MeetRoomDeletionPolicyWithRecordings.FORCE
 		);
 	} while (nextPageToken);
+
+	await waitForAllRoomsToDelete(roomIdsToDelete);
 };
 
 /**
@@ -384,62 +669,112 @@ export const deleteAllRooms = async () => {
 export const runExpiredRoomsGC = async () => {
 	checkAppIsRunning();
 
+	// Capture expired rooms without active meetings — these are synchronously deleted by the GC,
+	// which in turn causes LiveKit to emit room_finished webhooks that the backend must process.
+	const roomRepository = container.get(RoomRepository);
+	const { rooms: expiredRooms } = await roomRepository.findExpiredRooms();
+	const expiredRoomIdsToWait = expiredRooms
+		.filter((r) => r.status !== MeetRoomStatus.ACTIVE_MEETING)
+		.map((r) => r.roomId);
+
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
 	await roomTaskScheduler['deleteExpiredRooms']();
-	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
+
+	// Wait until the deleted rooms are confirmed gone (404) or no longer active in the Meet API.
+	await waitForAllRoomsToDelete(expiredRoomIdsToWait);
 };
 
 /**
  * Runs the inconsistent rooms garbage collector.
  *
  * This function retrieves the RoomScheduledTasksService from the dependency injection container
- * and calls its checkInconsistentRooms method to clean up inconsistent rooms.
+ * and calls its validateRoomsStatusGC method to clean up inconsistent rooms.
  * It then waits for 1 second before completing.
  */
 export const executeRoomStatusValidationGC = async () => {
 	checkAppIsRunning();
 
 	const roomTaskScheduler = container.get(RoomScheduledTasksService);
-	await (roomTaskScheduler as any)['validateRoomsStatusGC']();
+	await roomTaskScheduler['validateRoomsStatusGC']();
 	await sleep('1s');
 };
 
-export const runReleaseActiveRecordingLock = async (roomId: string) => {
+// ROOM MEMBER HELPERS
+
+export const createRoomMember = async (roomId: string, memberOptions: MeetRoomMemberOptions) => {
 	checkAppIsRunning();
 
-	const recordingService = container.get(RecordingService);
-	await recordingService.releaseRecordingLockIfNoEgress(roomId);
+	return await request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send(memberOptions);
 };
 
-export const getRoomMemberRoles = async (roomId: string) => {
+export const getRoomMembers = async (roomId: string, query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
-	const response = await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles`))
+	return await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query(query);
+};
+
+export const getRoomMember = async (roomId: string, memberId: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+};
+
+export const updateRoomMember = async (roomId: string, memberId: string, updates: Record<string, unknown>) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send(updates);
+};
+
+export const deleteRoomMember = async (roomId: string, memberId: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
-	return response;
 };
 
-export const getRoomMemberRoleBySecret = async (roomId: string, secret: string) => {
+export const bulkDeleteRoomMembers = async (roomId: string, memberIds: string[]) => {
 	checkAppIsRunning();
 
-	const response = await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/roles/${secret}`))
-		.send();
-	return response;
+	return await request(app)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query({ memberIds: memberIds.join(',') });
 };
 
-export const generateRoomMemberTokenRequest = async (roomId: string, tokenOptions: MeetRoomMemberTokenOptions) => {
+export const generateRoomMemberTokenRequest = async (
+	roomId: string,
+	tokenOptions: MeetRoomMemberTokenOptions,
+	accessToken?: string,
+	previousToken?: string
+) => {
 	checkAppIsRunning();
 
-	// Disable authentication to generate the token
-	await changeSecurityConfig(AuthMode.NONE);
-
-	// Generate the room member token
-	const response = await request(app)
-		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/token`))
+	const req = request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/members/token`))
 		.send(tokenOptions);
-	return response;
+
+	if (accessToken) {
+		req.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken);
+	}
+
+	if (previousToken) {
+		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, previousToken);
+	}
+
+	return await req;
 };
 
 /**
@@ -447,170 +782,98 @@ export const generateRoomMemberTokenRequest = async (roomId: string, tokenOption
  */
 export const generateRoomMemberToken = async (
 	roomId: string,
-	tokenOptions: MeetRoomMemberTokenOptions
+	tokenOptions: MeetRoomMemberTokenOptions,
+	accessToken?: string,
+	previousToken?: string
 ): Promise<string> => {
-	const response = await generateRoomMemberTokenRequest(roomId, tokenOptions);
+	const response = await generateRoomMemberTokenRequest(roomId, tokenOptions, accessToken, previousToken);
 	expect(response.status).toBe(200);
 
 	expect(response.body).toHaveProperty('token');
 	return `Bearer ${response.body.token}`;
 };
 
-/**
- * Adds a fake participant to a LiveKit room for testing purposes.
- *
- * @param roomId The ID of the room to join
- * @param participantIdentity The identity for the fake participant
- */
-export const joinFakeParticipant = async (roomId: string, participantIdentity: string) => {
-	const process = spawn('lk', [
-		'room',
-		'join',
-		'--identity',
-		participantIdentity,
-		'--publish-demo',
-		roomId,
-		'--api-key',
-		MEET_ENV.LIVEKIT_API_KEY,
-		'--api-secret',
-		MEET_ENV.LIVEKIT_API_SECRET
-	]);
+export const refreshRoomMemberTokenRequest = async (roomId: string, previousToken: string) => {
+	checkAppIsRunning();
 
-	// Store the process to be able to terminate it later
-	fakeParticipantsProcesses.set(`${roomId}-${participantIdentity}`, process);
-	await sleep('1s');
+	return await request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms/${roomId}/members/token/refresh`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, previousToken)
+		.send({});
 };
 
-/**
- * Updates the metadata for a participant in a LiveKit room.
- *
- * @param roomId The ID of the room
- * @param participantIdentity The identity of the participant
- * @param metadata The metadata to update
- */
-export const updateParticipantMetadata = async (
-	roomId: string,
-	participantIdentity: string,
-	metadata: MeetRoomMemberTokenMetadata
-) => {
-	await ensureLivekitCliInstalled();
-	spawn('lk', [
-		'room',
-		'participants',
-		'update',
-		'--room',
-		roomId,
-		'--identity',
-		participantIdentity,
-		'--metadata',
-		JSON.stringify(metadata),
-		'--api-key',
-		MEET_ENV.LIVEKIT_API_KEY,
-		'--api-secret',
-		MEET_ENV.LIVEKIT_API_SECRET
-	]);
-	await sleep('1s');
-};
+// MEETING HELPERS
 
-/**
- * Verifies that the LiveKit CLI tool 'lk' is installed and accessible
- * @throws Error if 'lk' command is not found
- */
-const ensureLivekitCliInstalled = async (): Promise<void> => {
-	return new Promise((resolve, reject) => {
-		const checkProcess = spawn('lk', ['--version'], {
-			stdio: 'pipe'
-		});
+export const createAssistant = (
+	token: string,
+	body = { capabilities: [{ name: MeetAssistantCapabilityName.LIVE_CAPTIONS }] }
+): Promise<Response> =>
+	request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai/assistants`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token)
+		.send(body);
 
-		let hasResolved = false;
-
-		const resolveOnce = (success: boolean, message?: string) => {
-			if (hasResolved) return;
-
-			hasResolved = true;
-
-			if (success) {
-				resolve();
-			} else {
-				reject(new Error(message || 'LiveKit CLI check failed'));
-			}
-		};
-
-		checkProcess.on('error', (error) => {
-			if (error.message.includes('ENOENT')) {
-				resolveOnce(false, '❌ LiveKit CLI tool "lk" is not installed or not in PATH.');
-			} else {
-				resolveOnce(false, `Failed to check LiveKit CLI: ${error.message}`);
-			}
-		});
-
-		checkProcess.on('exit', (code) => {
-			if (code === 0) {
-				resolveOnce(true);
-			} else {
-				resolveOnce(false, `LiveKit CLI exited with code ${code}`);
-			}
-		});
-
-		// Timeout after 5 seconds
-		setTimeout(() => {
-			checkProcess.kill();
-			resolveOnce(false, 'LiveKit CLI check timed out');
-		}, 5000);
-	});
-};
-
-export const disconnectFakeParticipants = async () => {
-	fakeParticipantsProcesses.forEach((process, participant) => {
-		process.kill();
-		console.log(`Stopped process for participant '${participant}'`);
-	});
-
-	fakeParticipantsProcesses.clear();
-	await sleep('1s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
-};
+/** DELETE /ai/assistants/:id with a room member token */
+export const cancelAssistant = (assistantId: string, token: string): Promise<Response> =>
+	request(app)
+		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai/assistants/${assistantId}`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, token);
 
 export const updateParticipant = async (
 	roomId: string,
 	participantIdentity: string,
-	newRole: MeetRoomMemberRole,
-	moderatorToken: string
+	action: MeetParticipantModerationAction,
+	roomMemberToken: string
 ) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`))
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
-		.send({ role: newRole });
+		.put(
+			getFullPath(
+				`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`
+			)
+		)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		.send({ action });
 	return response;
 };
 
-export const kickParticipant = async (roomId: string, participantIdentity: string, moderatorToken: string) => {
+export const kickParticipant = async (roomId: string, participantIdentity: string, roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`))
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
+		.delete(
+			getFullPath(
+				`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`
+			)
+		)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send();
 	return response;
 };
 
-export const endMeeting = async (roomId: string, moderatorToken: string) => {
+export const endMeeting = async (roomId: string, roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
 		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`))
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, moderatorToken)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send();
-	await sleep('5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
+
+	await waitForMeetingToEnd(roomId);
 	return response;
 };
+
+// RECORDING HELPERS
 
 export const startRecording = async (
 	roomId: string,
 	config?: {
 		layout?: string;
 		encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
+	},
+	options?: {
+		headers?: { xFields?: string };
 	}
 ) => {
 	checkAppIsRunning();
@@ -627,77 +890,62 @@ export const startRecording = async (
 		body.config = config;
 	}
 
-	return await request(app)
+	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(body);
+
+	if (options?.headers?.xFields) {
+		req.set('x-fields', options.headers.xFields);
+	}
+
+	return await req;
 };
 
-export const stopRecording = async (recordingId: string) => {
+export const stopRecording = async (
+	recordingId: string,
+	options?: {
+		headers?: { xFields?: string };
+	}
+) => {
 	checkAppIsRunning();
 
-	const response = await request(app)
+	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/stop`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
-	await sleep('2.5s'); // TODO - replace with a more robust solution to ensure webhook is processed before proceeding with the tests
+
+	if (options?.headers?.xFields) {
+		req.set('x-fields', options.headers.xFields);
+	}
+
+	const response = await req;
+	await waitForRecordingToStop(recordingId);
 
 	return response;
 };
 
-export const getRecording = async (recordingId: string) => {
-	checkAppIsRunning();
-
-	return await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-};
-
-export const getRecordingMedia = async (recordingId: string, range?: string) => {
+export const getAllRecordings = async (query: Record<string, unknown> = {}, headers?: { xFields?: string }) => {
 	checkAppIsRunning();
 
 	const req = request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query(query);
 
-	if (range) {
-		req.set('range', range);
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
 	}
 
 	return await req;
 };
 
-export const getRecordingUrl = async (recordingId: string, privateAccess = false) => {
+export const getAllRecordingsFromRoom = async (roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	return await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/url`))
-		.query({ privateAccess })
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-};
-
-export const deleteRecording = async (recordingId: string) => {
-	checkAppIsRunning();
-
-	return await request(app)
-		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-};
-
-export const bulkDeleteRecordings = async (recordingIds: string[], roomMemberToken?: string): Promise<Response> => {
-	checkAppIsRunning();
-
-	const req = request(app)
-		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
-		.query({ recordingIds: recordingIds.join(',') });
-
-	if (roomMemberToken) {
-		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
-	} else {
-		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-	}
-
-	return await req;
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 };
 
 export const downloadRecordings = async (
@@ -723,6 +971,97 @@ export const downloadRecordings = async (
 			res.on('data', (chunk) => data.push(chunk));
 			res.on('end', () => cb(null, Buffer.concat(data)));
 		});
+	}
+
+	return await req;
+};
+
+export const getRecording = async (
+	recordingId: string,
+	options?: {
+		fields?: string;
+		headers?: { xFields?: string };
+	}
+) => {
+	checkAppIsRunning();
+
+	const queryParams: Record<string, string> = {};
+
+	if (options?.fields) queryParams.fields = options.fields;
+
+	const req = request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query(queryParams);
+
+	if (options?.headers?.xFields) {
+		req.set('x-fields', options.headers.xFields);
+	}
+
+	return await req;
+};
+
+export const getRecordingMedia = async (recordingId: string, range?: string) => {
+	checkAppIsRunning();
+
+	const req = request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/media`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+
+	if (range) {
+		req.set('range', range);
+	}
+
+	return await req;
+};
+
+export const getRecordingUrl = async (recordingId: string, privateAccess = false) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}/url`))
+		.query({ privateAccess })
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+};
+
+/**
+ * Retrieves the access secret for a specific recording by parsing the recording URL.
+ *
+ * @param recordingId - The unique identifier of the recording
+ * @param privateAccess - Whether to request a private access URL
+ * @returns A Promise that resolves to the access secret string
+ */
+export const getRecordingAccessSecret = async (recordingId: string, privateAccess = false): Promise<string> => {
+	const response = await getRecordingUrl(recordingId, privateAccess);
+	expect(response.status).toBe(200);
+	const recordingUrl = response.body.url;
+	expect(recordingUrl).toBeDefined();
+
+	// Parse the URL to extract the secret from the query parameters
+	const parsedUrl = new URL(recordingUrl);
+	const secret = parsedUrl.searchParams.get('recordingSecret');
+	return secret!;
+};
+
+export const deleteRecording = async (recordingId: string) => {
+	checkAppIsRunning();
+
+	return await request(app)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+};
+
+export const bulkDeleteRecordings = async (recordingIds: string[], roomMemberToken?: string): Promise<Response> => {
+	checkAppIsRunning();
+
+	const req = request(app)
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
+		.query({ recordingIds: recordingIds.join(',') });
+
+	if (roomMemberToken) {
+		req.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+	} else {
+		req.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
 	}
 
 	return await req;
@@ -754,24 +1093,7 @@ export const stopAllRecordings = async () => {
 	results.forEach((response) => {
 		expect(response.status).toBe(202);
 	});
-	await sleep('1s');
-};
-
-export const getAllRecordings = async (query: Record<string, unknown> = {}) => {
-	checkAppIsRunning();
-
-	return await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.query(query);
-};
-
-export const getAllRecordingsFromRoom = async (roomMemberToken: string) => {
-	checkAppIsRunning();
-
-	return await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`))
-		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
+	await waitForAllRecordingsToStop(recordingIds);
 };
 
 export const deleteAllRecordings = async () => {
@@ -800,10 +1122,19 @@ export const deleteAllRecordings = async () => {
 	} while (nextPageToken);
 };
 
+export const runReleaseActiveRecordingLock = async (roomId: string) => {
+	checkAppIsRunning();
+
+	const recordingService = container.get(RecordingService);
+	await recordingService.releaseRecordingLockIfNoEgress(roomId);
+};
+
+// ANALYTICS HELPERS
+
 export const getAnalytics = async () => {
 	checkAppIsRunning();
 
-	const accessToken = await loginUser();
+	const { accessToken } = await loginRootAdmin();
 	const response = await request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)

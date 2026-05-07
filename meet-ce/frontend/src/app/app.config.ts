@@ -1,32 +1,24 @@
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
-import {
-	ApplicationConfig,
-	importProvidersFrom,
-	inject,
-	provideAppInitializer,
-	provideZoneChangeDetection
-} from '@angular/core';
+import type { ApplicationConfig } from '@angular/core';
+import { importProvidersFrom, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { ceRoutes } from '@app/app.routes';
 import { environment } from '@environment/environment';
+import type { OpenViduComponentsConfig, ParticipantProperties } from '@openvidu-meet/shared-components';
 import {
+	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
 	CustomParticipantModel,
 	httpInterceptor,
-	MEETING_CONTEXT_ADAPTER_PROVIDER,
+	LayoutService,
 	MeetingLayoutService,
-	ROOM_MEMBER_ADAPTER_PROVIDER,
+	OpenViduComponentsModule,
+	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
 	ThemeService
 } from '@openvidu-meet/shared-components';
-import {
-	LayoutService,
-	OpenViduComponentsConfig,
-	OpenViduComponentsModule,
-	ParticipantProperties
-} from 'openvidu-components-angular';
 
 const ovComponentsconfig: OpenViduComponentsConfig = {
 	production: environment.production,
@@ -36,12 +28,14 @@ const ovComponentsconfig: OpenViduComponentsConfig = {
 export const appConfig: ApplicationConfig = {
 	providers: [
 		provideAppInitializer(() => inject(ThemeService).init()),
-		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
+		provideAppInitializer(() => inject(RoomMemberHeaderProviderService).init()),
+		// Important to register the room member error handler before the auth error handler,
+		// since the room member error handler has more specific logic to determine if it can handle the error
 		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
+		provideAppInitializer(() => inject(AuthHeaderProviderService).init()),
+		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
 		{ provide: LayoutService, useClass: MeetingLayoutService },
-		MEETING_CONTEXT_ADAPTER_PROVIDER,
-		ROOM_MEMBER_ADAPTER_PROVIDER,
 		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(ceRoutes),
 		provideAnimationsAsync(),

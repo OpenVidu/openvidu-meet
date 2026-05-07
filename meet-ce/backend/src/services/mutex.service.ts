@@ -1,6 +1,8 @@
-import { Lock, Redlock } from '@sesamecare-oss/redlock';
+import type { Redlock } from '@sesamecare-oss/redlock';
+import { Lock } from '@sesamecare-oss/redlock';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { LoggerService } from './logger.service.js';
 import { RedisService } from './redis.service.js';
@@ -17,7 +19,7 @@ type RedisLockRegistryData = {
 export class MutexService {
 	protected redlockWithoutRetry: Redlock;
 	protected readonly TTL_MS = ms('1m');
-	protected readonly LOCK_REGISTRY_BATCH_SIZE = 100;
+	protected readonly LOCK_REGISTRY_BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL;
 
 	constructor(
 		@inject(RedisService) protected redisService: RedisService,

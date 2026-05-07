@@ -1,5 +1,5 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
 
 const API_VERSION = 'v1';
@@ -10,8 +10,7 @@ const API_VERSION = 'v1';
 export class HttpService {
 	public static readonly API_PATH_PREFIX = `api/${API_VERSION}`;
 	public static readonly INTERNAL_API_PATH_PREFIX = `internal-api/${API_VERSION}`;
-
-	constructor(protected http: HttpClient) {}
+	readonly http = inject(HttpClient);
 
 	async getRequest<T>(path: string, headers?: Record<string, string>): Promise<T> {
 		const options = headers ? { headers: new HttpHeaders(headers) } : {};

@@ -1,10 +1,10 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetAnalytics } from '@openvidu-meet/typings';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	getAnalytics,
 	startTestServer,
 	stopRecording
@@ -18,7 +18,8 @@ describe('Analytics API Tests', () => {
 
 	afterEach(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Get analytics', () => {
@@ -90,7 +91,7 @@ describe('Analytics API Tests', () => {
 			expect(analytics.completeRecordings).toBe(1);
 
 			// Now stop the incomplete recording
-			await stopRecording(roomToStop.recordingId!, roomToStop.moderatorToken);
+			await stopRecording(roomToStop.recordingId!);
 		});
 	});
 });

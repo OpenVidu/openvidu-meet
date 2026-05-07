@@ -1,6 +1,13 @@
 import { z } from 'zod';
+import type { TokenMetadata} from '../token.model.js';
+import { TokenType } from '../token.model.js';
 
 export const LoginReqSchema = z.object({
-	username: z.string().min(4, 'Username must be at least 4 characters long'),
-	password: z.string().min(4, 'Password must be at least 4 characters long')
+	userId: z.string().min(5, 'userId must be at least 5 characters long'),
+	password: z.string().min(5, 'password must be at least 5 characters long')
+});
+
+export const TokenMetadataSchema: z.ZodType<TokenMetadata> = z.object({
+	iat: z.number(),
+	tokenType: z.nativeEnum(TokenType)
 });

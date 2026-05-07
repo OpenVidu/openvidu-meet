@@ -1,10 +1,9 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRecordingAccess, MeetRoom } from '@openvidu-meet/typings';
+import { MeetRoom } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { expectValidRoom } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
 	deleteAllRecordings,
@@ -27,17 +26,25 @@ describe('E2EE Room Configuration Tests', () => {
 	});
 
 	afterAll(async () => {
-		await deleteAllRecordings();
 		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('E2EE Default Configuration', () => {
 		it('Should create a room with E2EE disabled by default', async () => {
-			const room = await createRoom({
-				roomName: 'Test E2EE Default'
-			});
+			const room = await createRoom(
+				{
+					roomName: 'Test E2EE Default'
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
 
-			expectValidRoom(room, 'Test E2EE Default');
+			// Validate room structure (skip config validation in expectValidRoom since we're checking it below)
+			expect(room).toBeDefined();
+			expect(room.roomName).toBe('Test E2EE Default');
+			expect(room.roomId).toBeDefined();
+			expect(room.config).toBeDefined();
 			expect(room.config.e2ee).toBeDefined();
 			expect(room.config.e2ee.enabled).toBe(false);
 		});
@@ -49,8 +56,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'Test E2EE Enabled',
 				config: {
 					recording: {
-						enabled: true, // This should be automatically disabled
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true // This should be automatically disabled
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -59,7 +65,7 @@ describe('E2EE Room Configuration Tests', () => {
 				}
 			};
 
-			const room = await createRoom(payload);
+			const room = await createRoom(payload, undefined, { xFields: 'roomName,config', xExtraFields: 'config' });
 
 			expect(room.roomName).toBe('Test E2EE Enabled');
 			expect(room.config.e2ee.enabled).toBe(true);
@@ -85,19 +91,22 @@ describe('E2EE Room Configuration Tests', () => {
 
 		it('Should disable recording when updating room config to enable E2EE', async () => {
 			// Create room with recording enabled and E2EE disabled
-			const room = await createRoom({
-				roomName: 'Test E2EE Update',
-				config: {
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					chat: { enabled: true },
-					virtualBackground: { enabled: true },
-					e2ee: { enabled: false },
-					captions: { enabled: true }
-				}
-			});
+			const room = await createRoom(
+				{
+					roomName: 'Test E2EE Update',
+					config: {
+						recording: {
+							enabled: true
+						},
+						chat: { enabled: true },
+						virtualBackground: { enabled: true },
+						e2ee: { enabled: false },
+						captions: { enabled: true }
+					}
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
 
 			expect(room.config.recording.enabled).toBe(true);
 			expect(room.config.e2ee?.enabled).toBe(false);
@@ -125,8 +134,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'Test Invalid E2EE',
 				config: {
 					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -149,8 +157,7 @@ describe('E2EE Room Configuration Tests', () => {
 				roomName: 'Test Invalid E2EE Enabled',
 				config: {
 					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: true
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -171,16 +178,19 @@ describe('E2EE Room Configuration Tests', () => {
 
 	describe('E2EE Update Configuration Tests', () => {
 		it('Should successfully update room config with E2EE disabled to enabled', async () => {
-			const room = await createRoom({
-				roomName: 'Test E2EE Update Enabled'
-			});
+			const room = await createRoom(
+				{
+					roomName: 'Test E2EE Update Enabled'
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
 
 			expect(room.config.e2ee.enabled).toBe(false);
 
 			const { status, body } = await updateRoomConfig(room.roomId, {
 				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: false
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -203,37 +213,44 @@ describe('E2EE Room Configuration Tests', () => {
 		it('Should return E2EE configuration when listing rooms', async () => {
 			await deleteAllRooms();
 
-			const room1 = await createRoom({
-				roomName: 'E2EE Enabled Room',
-				config: {
-					recording: {
-						enabled: false,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					chat: { enabled: true },
-					virtualBackground: { enabled: true },
-					e2ee: { enabled: true },
-					captions: { enabled: true }
-				}
-			});
+			const room1 = await createRoom(
+				{
+					roomName: 'E2EE Enabled Room',
+					config: {
+						recording: {
+							enabled: false
+						},
+						chat: { enabled: true },
+						virtualBackground: { enabled: true },
+						e2ee: { enabled: true },
+						captions: { enabled: true }
+					}
+				},
+				undefined,
+				{ xFields: 'roomId' }
+			);
 
-			const room2 = await createRoom({
-				roomName: 'E2EE Disabled Room',
-				config: {
-					recording: {
-						enabled: true,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
-					},
-					chat: { enabled: true },
-					virtualBackground: { enabled: true },
-					e2ee: { enabled: false },
-					captions: { enabled: true }
-				}
-			});
+			const room2 = await createRoom(
+				{
+					roomName: 'E2EE Disabled Room',
+					config: {
+						recording: {
+							enabled: true
+						},
+						chat: { enabled: true },
+						virtualBackground: { enabled: true },
+						e2ee: { enabled: false },
+						captions: { enabled: true }
+					}
+				},
+				undefined,
+				{ xFields: 'roomId' }
+			);
 
 			const response = await request(app)
 				.get(ROOMS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.query({ extraFields: 'config' })
 				.expect(200);
 
 			// Filter out any rooms from other test suites

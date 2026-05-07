@@ -1,12 +1,5 @@
-import {
-	AuthenticationConfig,
-	AuthMode,
-	AuthType,
-	SecurityConfig,
-	SingleUserAuth,
-	ValidAuthMethod,
-	WebhookConfig
-} from '@openvidu-meet/typings';
+import type { AuthenticationConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import { OAuthProvider } from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { AppearanceConfigSchema } from './room.schema.js';
 
@@ -37,19 +30,15 @@ export const TestWebhookReqSchema = z.object({
 		.regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' })
 });
 
-const AuthModeSchema: z.ZodType<AuthMode> = z.nativeEnum(AuthMode);
-
-const AuthTypeSchema: z.ZodType<AuthType> = z.nativeEnum(AuthType);
-
-const SingleUserAuthSchema: z.ZodType<SingleUserAuth> = z.object({
-	type: AuthTypeSchema
+const OAuthProviderConfigSchema = z.object({
+	provider: z.nativeEnum(OAuthProvider),
+	clientId: z.string(),
+	clientSecret: z.string(),
+	redirectUri: z.string()
 });
 
-const ValidAuthMethodSchema: z.ZodType<ValidAuthMethod> = SingleUserAuthSchema;
-
 const AuthenticationConfigSchema: z.ZodType<AuthenticationConfig> = z.object({
-	authMethod: ValidAuthMethodSchema,
-	authModeToAccessRoom: AuthModeSchema
+	oauthProviders: z.array(OAuthProviderConfigSchema)
 });
 
 export const SecurityConfigSchema: z.ZodType<SecurityConfig> = z.object({

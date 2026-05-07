@@ -6,6 +6,10 @@ export const enum RedisKeyName {
 	// Stores released numeric suffixes (per base name) in a sorted set, so that freed numbers
 	// can be reused efficiently instead of always incrementing to the next highest number.
 	PARTICIPANT_NAME_POOL = `${REDIS_KEY_PREFIX}participant_pool:`,
+	// Stores active meeting presence indexed by user and room.
+	USER_ACTIVE_MEETING = `${REDIS_KEY_PREFIX}active_meeting_by_user:`,
+	// Stores active meeting presence indexed by room and user.
+	ROOM_ACTIVE_MEETING = `${REDIS_KEY_PREFIX}active_meeting_by_room:`,
 	// Tracks participant-level assistant capability state in a room.
 	AI_ASSISTANT_PARTICIPANT_STATE = `${REDIS_KEY_PREFIX}ai_assistant:participant_state:`
 }

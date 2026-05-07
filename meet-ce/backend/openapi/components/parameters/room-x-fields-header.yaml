@@ -1,0 +1,13 @@
+name: X-Fields
+in: header
+description: >
+    Comma-separated list of **Room** fields to include in the response.
+    Use this header to request only the data you need, reducing payload size and improving performance.
+
+required: false
+schema:
+    type: string
+examples:
+    basic:
+        value: 'roomId,roomName,status'
+        summary: Only return basic room information

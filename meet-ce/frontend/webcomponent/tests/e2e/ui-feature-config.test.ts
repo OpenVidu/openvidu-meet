@@ -1,5 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { MeetRecordingAccess } from '../../../../typings/src/room-config';
 import { MEET_TESTAPP_URL } from '../config';
 import {
 	applyVirtualBackground,
@@ -71,8 +70,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
 				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: true
 				},
 				virtualBackground: { enabled: true }
 			});
@@ -91,8 +89,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: false },
 				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: true
 				},
 				virtualBackground: { enabled: true }
 			});
@@ -116,8 +113,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
 				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: true
 				},
 				virtualBackground: { enabled: true }
 			});
@@ -145,8 +141,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
 				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: true
 				},
 				virtualBackground: { enabled: true }
 			});
@@ -165,8 +160,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
 				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: false
 				},
 				virtualBackground: { enabled: true }
 			});
@@ -202,8 +196,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
 				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: true
 				},
 				virtualBackground: { enabled: true }
 			});
@@ -226,8 +219,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
 				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: true
 				},
 				virtualBackground: { enabled: false }
 			});
@@ -251,8 +243,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
 				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: true
 				},
 				virtualBackground: { enabled: true }
 			});
@@ -270,8 +261,7 @@ test.describe('UI Feature Config Tests', () => {
 			await updateRoomConfig(roomId, {
 				chat: { enabled: true },
 				recording: {
-					enabled: true,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: true
 				},
 				virtualBackground: { enabled: false }
 			});

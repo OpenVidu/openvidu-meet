@@ -1,0 +1,43 @@
+@if (loading()) {
+	<div id="spinner" [animate.enter]="'ov-fade-in-200'" [animate.leave]="'ov-fade-out-200'">
+		<mat-spinner [diameter]="50" />
+		<span>{{ 'ROOM.JOINING' | translate }}</span>
+	</div>
+} @else {
+	@if (viewportService.shouldShowLandscapeWarning()) {
+		<ov-landscape-warning />
+	}
+	<div id="session-container" [animate.enter]="'ov-fade-in-200'" [animate.leave]="'ov-fade-out-200'">
+		<mat-sidenav-container
+			#container
+			#videoContainer
+			class="sidenav-container"
+			[hasBackdrop]="sidenavMode() === SidenavMode.OVER"
+		>
+			<mat-sidenav
+				#sidenav
+				[mode]="sidenavMode()"
+				position="end"
+				class="sidenav-menu"
+				[class.big]="settingsPanelOpened()"
+				fixedInViewport="true"
+				fixedTopGap="0"
+				fixedBottomGap="0"
+			>
+				<ng-container *ngTemplateOutlet="templateRegistry.panel() ?? null" />
+			</mat-sidenav>
+
+			<mat-sidenav-content class="sidenav-main">
+				<div id="layout-container" #layoutContainer>
+					<ng-container *ngTemplateOutlet="templateRegistry.layout() ?? null" />
+				</div>
+			</mat-sidenav-content>
+		</mat-sidenav-container>
+
+		@if (templateRegistry.toolbar()) {
+			<div id="footer-container">
+				<ng-container *ngTemplateOutlet="templateRegistry.toolbar() ?? null" />
+			</div>
+		}
+	</div>
+}

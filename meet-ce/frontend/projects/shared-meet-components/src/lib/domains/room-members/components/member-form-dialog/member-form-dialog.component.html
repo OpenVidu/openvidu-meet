@@ -1,0 +1,15 @@
+<h2 mat-dialog-title class="dialog-title">
+	<mat-icon class="title-icon">{{ data.initialData ? 'edit' : 'person_add' }}</mat-icon>
+	{{ data.initialData ? 'Edit Member' : 'Add Member' }}
+</h2>
+
+<mat-dialog-content>
+	<ov-member-form
+		[roomRoles]="data.roomRoles"
+		[roomOwner]="data.roomOwner"
+		[initialData]="data.initialData"
+		[lockIdentity]="false"
+		(memberSubmitted)="onMemberSubmitted($event)"
+		(cancelled)="onCancelled()"
+	/>
+</mat-dialog-content>

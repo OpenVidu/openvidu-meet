@@ -107,8 +107,8 @@
 	@include layout.ov-theme-transition;
 }
 
-.ov-users-permissions {
-	color: var(--ov-meet-icon-users-permissions) !important;
+.ov-users {
+	color: var(--ov-meet-icon-users) !important;
 	overflow: none;
 	@include layout.ov-theme-transition;
 }

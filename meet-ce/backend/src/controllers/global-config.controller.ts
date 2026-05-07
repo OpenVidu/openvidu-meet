@@ -1,5 +1,5 @@
-import { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
-import { Request, Response } from 'express';
+import type { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { MEET_ENV } from '../environment.js';
 import { handleError } from '../models/error.model.js';

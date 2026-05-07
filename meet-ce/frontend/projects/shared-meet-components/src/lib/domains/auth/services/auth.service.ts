@@ -1,38 +1,59 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
+import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { HttpService } from '../../../shared/services/http.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
+import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
+import { UserService } from '../../users/services/user.service';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class AuthService {
 	protected readonly AUTH_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/auth`;
-	protected readonly USERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/users`;
+
 	protected hasCheckAuth = false;
 	protected user: MeetUserDTO | null = null;
 
 	constructor(
 		protected httpService: HttpService,
+		protected userService: UserService,
 		protected tokenStorageService: TokenStorageService,
-		protected navigationService: NavigationService
+		protected navigationService: NavigationService,
+		protected sessionStorageService: SessionStorageService
 	) {}
 
-	async login(username: string, password: string) {
+	/**
+	 * Logs in a user with the provided credentials.
+	 *
+	 * @param userId - The unique identifier of the user
+	 * @param password - The user's password
+	 * @returns A promise that resolves with login metadata
+	 */
+	async login(userId: string, password: string): Promise<{ mustChangePassword: boolean }> {
 		try {
 			const path = `${this.AUTH_API}/login`;
-			const body = { username, password };
-			const response = await this.httpService.postRequest<any>(path, body);
+			const body = { userId, password };
+			const response = await this.httpService.postRequest<{
+				message: string;
+				accessToken: string;
+				refreshToken?: string;
+				mustChangePassword?: boolean;
+			}>(path, body);
 
-			// Check if we got tokens in the response (header mode)
-			if (response.accessToken && response.refreshToken) {
-				this.tokenStorageService.setAccessToken(response.accessToken);
+			// Save tokens in localStorage
+			this.tokenStorageService.setAccessToken(response.accessToken);
+			if (response.refreshToken) {
 				this.tokenStorageService.setRefreshToken(response.refreshToken);
 			}
 
+			const mustChangePassword = response.mustChangePassword ?? false;
+			this.sessionStorageService.setMustChangePasswordRequired(mustChangePassword);
+
 			await this.getAuthenticatedUser(true);
+			return { mustChangePassword };
 		} catch (err) {
 			const error = err as HttpErrorResponse;
 			console.error(error.error.message || error.error);
@@ -40,6 +61,11 @@ export class AuthService {
 		}
 	}
 
+	/**
+	 * Refreshes the access token using the refresh token.
+	 *
+	 * @returns A promise that resolves to the response from the refresh endpoint
+	 */
 	async refreshToken() {
 		const path = `${this.AUTH_API}/refresh`;
 		const refreshToken = this.tokenStorageService.getRefreshToken();
@@ -48,19 +74,31 @@ export class AuthService {
 		let headers: Record<string, string> | undefined;
 		if (refreshToken) {
 			headers = {};
-			headers['x-refresh-token'] = `Bearer ${refreshToken}`;
+			headers[HTTP_HEADERS.REFRESH_TOKEN] = `Bearer ${refreshToken}`;
 		}
 
-		const response = await this.httpService.postRequest<any>(path, {}, headers);
+		const response = await this.httpService.postRequest<{
+			message: string;
+			accessToken: string;
+			refreshToken?: string;
+		}>(path, {}, headers);
 
-		// Update access token in localStorage if returned in response
-		if (response.accessToken) {
-			this.tokenStorageService.setAccessToken(response.accessToken);
+		// Update tokens in localStorage
+		this.tokenStorageService.setAccessToken(response.accessToken);
+		if (response.refreshToken) {
+			this.tokenStorageService.setRefreshToken(response.refreshToken);
 		}
 
 		return response;
 	}
 
+	/**
+	 * Logs out the currently authenticated user and clears authentication tokens.
+	 * Redirects to the login page after logout, optionally with a query parameter to redirect back after login.
+	 *
+	 * @param redirectToAfterLogin - Optional path to redirect to after login
+	 * @returns A promise that resolves when the logout is successful
+	 */
 	async logout(redirectToAfterLogin?: string) {
 		try {
 			const path = `${this.AUTH_API}/logout`;
@@ -69,6 +107,7 @@ export class AuthService {
 
 			// Clear tokens from localStorage if in header mode
 			this.tokenStorageService.clearAccessAndRefreshTokens();
+			this.sessionStorageService.removeMustChangePasswordRequired();
 
 			// Redirect to login page with a query parameter if provided
 			// to redirect to the original page after login
@@ -78,42 +117,73 @@ export class AuthService {
 		}
 	}
 
+	/**
+	 * Checks if the user is authenticated by attempting to retrieve the authenticated user's information.
+	 *
+	 * @return A promise that resolves to true if the user is authenticated, false otherwise
+	 */
 	async isUserAuthenticated(): Promise<boolean> {
 		await this.getAuthenticatedUser();
 		return !!this.user;
 	}
 
-	async getUsername(): Promise<string | undefined> {
+	/**
+	 * Retrieves the authenticated user's ID.
+	 *
+	 * @return A promise that resolves to the user's ID if authenticated, undefined otherwise
+	 */
+	async getUserId(): Promise<string | undefined> {
 		await this.getAuthenticatedUser();
-		return this.user?.username;
+		return this.user?.userId;
 	}
 
-	async getUserRoles(): Promise<MeetUserRole[] | undefined> {
+	/**
+	 * Retrieves the authenticated user's name.
+	 *
+	 * @return A promise that resolves to the user's name if authenticated, undefined otherwise
+	 */
+	async getUserName(): Promise<string | undefined> {
 		await this.getAuthenticatedUser();
-		return this.user?.roles;
+		return this.user?.name;
 	}
 
+	/**
+	 * Retrieves the authenticated user's role.
+	 *
+	 * @return A promise that resolves to the user's role if authenticated, undefined otherwise
+	 */
+	async getUserRole(): Promise<MeetUserRole | undefined> {
+		await this.getAuthenticatedUser();
+		return this.user?.role;
+	}
+
+	/**
+	 * Checks if the authenticated user has an admin role.
+	 *
+	 * @return A promise that resolves to true if the user is an admin, false otherwise
+	 */
 	async isAdmin(): Promise<boolean> {
-		const roles = await this.getUserRoles();
-		return roles ? roles.includes(MeetUserRole.ADMIN) : false;
+		const role = await this.getUserRole();
+		return role === MeetUserRole.ADMIN;
 	}
 
+	/**
+	 * Retrieves the authenticated user's information and caches it in the service.
+	 * If the user information is already cached and force is not true, it returns immediately.
+	 * If force is true, it will attempt to fetch the user information again from the server.
+	 *
+	 * @param force - If true, forces a refresh of the user information from the server
+	 */
 	private async getAuthenticatedUser(force = false) {
 		if (force || (!this.user && !this.hasCheckAuth)) {
 			try {
-				const path = `${this.USERS_API}/profile`;
-				const user = await this.httpService.getRequest<MeetUserDTO>(path);
+				const user = await this.userService.getMe();
 				this.user = user;
 			} catch (error) {
 				this.user = null;
 			}
-
-			this.hasCheckAuth = true;
 		}
-	}
 
-	async changePassword(currentPassword: string, newPassword: string): Promise<any> {
-		const path = `${this.USERS_API}/change-password`;
-		return this.httpService.postRequest(path, { currentPassword, newPassword });
+		this.hasCheckAuth = true;
 	}
 }

@@ -1,0 +1,51 @@
+<!-- Loading State -->
+@if (isInitializing() && showInitialLoader()) {
+	<div class="ov-page-loading">
+		<div class="loading-content">
+			<div class="loading-header">
+				<div class="loading-title">
+					<mat-icon class="ov-users-icon loading-icon">group</mat-icon>
+					<h1>Loading Users</h1>
+				</div>
+				<p class="loading-subtitle">Please wait while we fetch registered users...</p>
+			</div>
+			<div class="loading-spinner-container">
+				<mat-spinner diameter="48" />
+			</div>
+		</div>
+	</div>
+}
+
+@if (!isInitializing()) {
+	<div class="ov-page-container ov-mb-xxl" id="users-page-container">
+		<!-- Users Header -->
+		<div class="page-header" id="users-page-header">
+			<div class="title" id="users-title">
+				<mat-icon class="material-symbols-outlined ov-users" id="users-icon">group</mat-icon>
+				<h1 id="users-heading">Users</h1>
+			</div>
+			<p class="subtitle" id="users-subtitle">Manage your users, control access, and register new accounts.</p>
+		</div>
+
+		<!-- Content -->
+		<div class="page-content" id="users-content">
+			<ov-users-lists
+				id="users-list"
+				[users]="users()"
+				[currentUserId]="currentUserId()"
+				[rootAdminId]="rootAdminId()"
+				[loading]="isLoading()"
+				[showSearchBox]="true"
+				[showFilters]="true"
+				[showSelection]="true"
+				[showLoadMore]="hasMoreUsers()"
+				[initialFilters]="initialFilters()"
+				(userAction)="onUserAction($event)"
+				(userClicked)="onUserClick($event)"
+				(loadMore)="loadMoreUsers($event)"
+				(refresh)="refreshUsers($event)"
+				(filterChange)="refreshUsers($event)"
+			/>
+		</div>
+	</div>
+}

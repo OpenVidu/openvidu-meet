@@ -1,6 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import {
-	MeetRecordingAccess,
 	MeetRecordingAudioCodec,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
@@ -17,10 +17,11 @@ import { MEET_ENV } from '../../../../src/environment.js';
 import {
 	DEFAULT_RECORDING_ENCODING_PRESET,
 	DEFAULT_RECORDING_LAYOUT,
+	expectExtraFieldsInResponse,
 	expectValidRoom,
 	expectValidationError
 } from '../../../helpers/assertion-helpers.js';
-import { createRoom, deleteAllRooms, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
+import { createRoom, deleteAllRooms, getFullPath, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
 
 const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
@@ -41,6 +42,7 @@ describe('Room API Tests', () => {
 		it('Should create a room with default name when roomName is omitted', async () => {
 			const room = await createRoom();
 			expectValidRoom(room, 'Room');
+			expectExtraFieldsInResponse(room);
 		});
 
 		it('Should create a room without autoDeletionDate (default behavior)', async () => {
@@ -48,6 +50,7 @@ describe('Room API Tests', () => {
 				roomName: 'Test Room'
 			});
 			expectValidRoom(room, 'Test Room');
+			expectExtraFieldsInResponse(room);
 		});
 
 		it('Should create a room with a valid autoDeletionDate', async () => {
@@ -57,6 +60,7 @@ describe('Room API Tests', () => {
 			});
 
 			expectValidRoom(room, 'Room', 'room', undefined, validAutoDeletionDate);
+			expectExtraFieldsInResponse(room);
 		});
 
 		it('Should create a room when sending full valid payload', async () => {
@@ -71,8 +75,7 @@ describe('Room API Tests', () => {
 					recording: {
 						enabled: false,
 						layout: MeetRecordingLayout.GRID,
-						encoding: MeetRecordingEncodingPreset.H264_720P_30,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
 					},
 					chat: { enabled: false },
 					virtualBackground: { enabled: true },
@@ -87,10 +90,11 @@ describe('Room API Tests', () => {
 				room,
 				'Example Room',
 				'example_room',
-				payload.config,
+				undefined,
 				validAutoDeletionDate,
 				payload.autoDeletionPolicy
 			);
+			expectExtraFieldsInResponse(room);
 		});
 
 		it('Should create a room when sending partial config', async () => {
@@ -113,15 +117,23 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: false,
 					layout: MeetRecordingLayout.GRID, // Default value
-					encoding: MeetRecordingEncodingPreset.H264_720P_30, // Default value
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
+					encoding: MeetRecordingEncodingPreset.H264_720P_30 // Default value
 				},
 				chat: { enabled: true }, // Default value
 				virtualBackground: { enabled: true }, // Default value
 				e2ee: { enabled: false }, // Default value
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
+			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', undefined, validAutoDeletionDate);
+			expectExtraFieldsInResponse(room);
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(
+				response.body,
+				'Partial Config Room',
+				'partial_config_room',
+				expectedConfig,
+				validAutoDeletionDate
+			);
 		});
 
 		it('Should create a room when sending partial config with two fields', async () => {
@@ -144,15 +156,82 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true, // Default value
 					layout: MeetRecordingLayout.GRID, // Default value
-					encoding: MeetRecordingEncodingPreset.H264_720P_30, // Default value
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER // Default value
+					encoding: MeetRecordingEncodingPreset.H264_720P_30 // Default value
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
 				e2ee: { enabled: false }, // Default value
 				captions: { enabled: true } // Default value
 			};
-			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', expectedConfig, validAutoDeletionDate);
+			expectValidRoom(room, 'Partial Config Room', 'partial_config_room', undefined, validAutoDeletionDate);
+			expectExtraFieldsInResponse(room);
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(
+				response.body,
+				'Partial Config Room',
+				'partial_config_room',
+				expectedConfig,
+				validAutoDeletionDate
+			);
+		});
+
+		it('should not include config property by default (extraFields not specified)', async () => {
+			const room = await createRoom({
+				roomName: 'Default Room'
+			});
+
+			// Config should not be in the response by default
+			expect(room.config).toBeUndefined();
+			// But _extraFields metadata should be present
+			expect((room as any)._extraFields).toBeDefined();
+			expect((room as any)._extraFields).toContain('config');
+			expect((room as any)._extraFields.length).toBe(1);
+		});
+
+		it('should include extra fields when X-ExtraFields header is provided', async () => {
+			const room = await createRoom(
+				{
+					roomName: 'Extra Fields Room'
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
+
+			// Config should be present when requested via extraFields
+			expect(room.config).toBeDefined();
+			expect(room.config.recording.layout).toBe(DEFAULT_RECORDING_LAYOUT);
+			expect((room as any)._extraFields).toContain('config');
+			expect((room as any)._extraFields.length).toBe(1);
+		});
+
+		it('should filter fields when x-Fields header is provided', async () => {
+			const room = await createRoom(undefined, undefined, { xFields: 'roomName' });
+
+			expect(Object.keys(room).length).toBe(2); // roomName + _extraFields
+			expect(room.roomName).toBeDefined();
+			expect((room as any)._extraFields).toBeDefined();
+			// Config should not be present even though we're filtering fields
+			expect(room.config).toBeUndefined();
+		});
+
+		it('should include extra fields even when fields filter is applied', async () => {
+			const room = await createRoom(undefined, undefined, { xFields: 'roomId,config', xExtraFields: 'config' });
+
+			// Should only have roomId, config, and _extraFields
+			expect(Object.keys(room).length).toBe(3);
+			expect(room.roomId).toBeDefined();
+			expect(room.config).toBeDefined();
+			expect((room as any)._extraFields).toContain('config');
+			expect((room as any)._extraFields.length).toBe(1);
+		});
+
+		it('should not include config if filter fields are provided without config but should include it with extraFields', async () => {
+			const room = await createRoom(undefined, undefined, { xFields: 'roomName', xExtraFields: 'config' });
+
+			expect(Object.keys(room).length).toBe(3); // roomName, config, _extraFields
+			expect(room.roomName).toBeDefined();
+			expect(room.config).toBeDefined();
+			expect((room as any)._extraFields).toBeDefined();
 		});
 	});
 
@@ -316,15 +395,18 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: DEFAULT_RECORDING_LAYOUT,
-					encoding: DEFAULT_RECORDING_ENCODING_PRESET, // Default value
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Room without encoding', 'room_without_encoding', expectedConfig);
+			expectValidRoom(room, 'Room without encoding', 'room_without_encoding', undefined);
+			expectExtraFieldsInResponse(room);
+
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(response.body, 'Room without encoding', 'room_without_encoding', expectedConfig);
 		});
 
 		it('Should create a room with H264_1080P_30 encoding preset', async () => {
@@ -344,15 +426,16 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: DEFAULT_RECORDING_LAYOUT,
-					encoding: MeetRecordingEncodingPreset.H264_1080P_30,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, '1080p Preset Room', '1080p_preset_room', expectedConfig);
+			expectValidRoom(room, '1080p Preset Room', '1080p_preset_room', undefined);
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(response.body, '1080p Preset Room', '1080p_preset_room', expectedConfig);
 		});
 
 		it('Should create a room with PORTRAIT_H264_720P_30 encoding preset', async () => {
@@ -372,15 +455,16 @@ describe('Room API Tests', () => {
 				recording: {
 					enabled: true,
 					layout: DEFAULT_RECORDING_LAYOUT,
-					encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_720P_30,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					encoding: MeetRecordingEncodingPreset.PORTRAIT_H264_720P_30
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Portrait 720p Room', 'portrait_720p_room', expectedConfig);
+			expectValidRoom(room, 'Portrait 720p Room', 'portrait_720p_room', undefined);
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(response.body, 'Portrait 720p Room', 'portrait_720p_room', expectedConfig);
 		});
 
 		it('Should create a room with advanced encoding options - both video and audio', async () => {
@@ -430,15 +514,21 @@ describe('Room API Tests', () => {
 							bitrate: 192,
 							frequency: 44100
 						}
-					},
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					}
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true }
 			};
-			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', expectedConfig);
+			expectValidRoom(room, 'Full Advanced Encoding Room', 'full_advanced_encoding_room', undefined);
+			const response = await getRoom(room.roomId, undefined, 'config');
+			expectValidRoom(
+				response.body,
+				'Full Advanced Encoding Room',
+				'full_advanced_encoding_room',
+				expectedConfig
+			);
 		});
 	});
 
@@ -654,8 +744,7 @@ describe('Room API Tests', () => {
 				autoDeletionDate: validAutoDeletionDate,
 				config: {
 					recording: {
-						enabled: 'yes', // invalid boolean
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						enabled: 'yes' // invalid boolean
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true }

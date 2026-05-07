@@ -1,8 +1,9 @@
 import { Injectable, inject, signal } from '@angular/core';
-import { ILogger, LoggerService, ParticipantService, Room, TextStreamReader } from 'openvidu-components-angular';
-import { AiAssistantService } from '../../../shared';
+import { AiAssistantService } from '../../../shared/services/ai-assistant.service';
 import { Caption, CaptionsConfig } from '../models/captions.model';
 import { CustomParticipantModel } from '../models/custom-participant.model';
+import type { TextStreamReader } from '../openvidu-components';
+import { ILogger, LoggerService, ParticipantService, Room } from '../openvidu-components';
 
 /**
  * Service responsible for managing live transcription captions.
@@ -19,9 +20,9 @@ import { CustomParticipantModel } from '../models/custom-participant.model';
 	providedIn: 'root'
 })
 export class MeetingCaptionsService {
-	private readonly logger: ILogger;
-	private readonly loggerService = inject(LoggerService);
 	private readonly participantService = inject(ParticipantService);
+	private readonly loggerService = inject(LoggerService);
+	private readonly logger: ILogger;
 	private readonly aiAssistantService = inject(AiAssistantService);
 
 	// Configuration with defaults
@@ -41,7 +42,6 @@ export class MeetingCaptionsService {
 	private readonly _captions = signal<Caption[]>([]);
 	private readonly _areCaptionsEnabledByUser = signal<boolean>(false);
 	private readonly _captionsAgentId = signal<string | null>(null);
-	private readonly _isCaptionsTogglePending = signal<boolean>(false);
 
 	/**
 	 * Current list of active captions
@@ -51,11 +51,6 @@ export class MeetingCaptionsService {
 	 * Whether captions are enabled by the user
 	 */
 	readonly areCaptionsEnabledByUser = this._areCaptionsEnabledByUser.asReadonly();
-	/**
-	 * True while an enable() or disable() call is in flight.
-	 * Use this to prevent concurrent toggle requests.
-	 */
-	readonly isCaptionsTogglePending = this._isCaptionsTogglePending.asReadonly();
 
 	// Map to track expiration timeouts
 	private expirationTimeouts = new Map<string, ReturnType<typeof setTimeout>>();
@@ -102,13 +97,6 @@ export class MeetingCaptionsService {
 			return;
 		}
 
-		if (this._isCaptionsTogglePending()) {
-			this.logger.d('Captions toggle already in progress');
-			return;
-		}
-
-		this._isCaptionsTogglePending.set(true);
-
 		try {
 			// Register the LiveKit transcription handler
 			const agent = await this.aiAssistantService.createLiveCaptionsAssistant();
@@ -116,9 +104,8 @@ export class MeetingCaptionsService {
 			this.room.registerTextStreamHandler('lk.transcription', this.handleTranscription.bind(this));
 			this._areCaptionsEnabledByUser.set(true);
 			this.logger.d('Captions enabled');
-		} finally {
-			// Add a small delay before allowing another toggle to prevent rapid concurrent calls
-			setTimeout(() => this._isCaptionsTogglePending.set(false), 500);
+		} catch (error) {
+			this.logger.e('Error enabling captions:', error);
 		}
 	}
 
@@ -131,13 +118,6 @@ export class MeetingCaptionsService {
 			this.logger.d('Captions already disabled');
 			return;
 		}
-
-		if (this._isCaptionsTogglePending()) {
-			this.logger.d('Captions toggle already in progress');
-			return;
-		}
-
-		this._isCaptionsTogglePending.set(true);
 
 		try {
 			const agentId = this._captionsAgentId();
@@ -155,9 +135,6 @@ export class MeetingCaptionsService {
 			this.logger.d('Captions disabled');
 		} catch (error) {
 			this.logger.e('Error disabling captions:', error);
-		} finally {
-			// Add a small delay before allowing another toggle to prevent rapid concurrent calls
-			setTimeout(() => this._isCaptionsTogglePending.set(false), 500);
 		}
 	}
 

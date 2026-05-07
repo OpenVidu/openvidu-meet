@@ -1,23 +1,43 @@
-import { MeetRecordingInfo, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
-import { Document, model, Schema } from 'mongoose';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import type { DocumentOnlyField } from '../database.model.js';
+import type { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
- * Extended interface for Recording documents in MongoDB.
- * Includes the base MeetRecordingInfo plus internal access secrets.
+ * Mongoose Document interface for Recordings.
+ * Extends the MeetRecordingInfo interface with schemaVersion for migration tracking
+ * and internal access secrets.
  */
-export interface MeetRecordingDocument extends MeetRecordingInfo, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-	accessSecrets?: {
+export interface MeetRecordingDocument extends MeetRecordingInfo, SchemaMigratableDocument {
+	roomOwner: string;
+	roomRegisteredAccess: boolean;
+	accessSecrets: {
 		public: string;
 		private: string;
 	};
 }
 
 /**
- * Mongoose schema for Recording entity.
- * Defines the structure for recording documents in MongoDB.
+ * Type for fields in MeetRecordingDocument that are not present in MeetRecordingInfo domain model.
+ */
+export type MeetRecordingDocumentOnlyField = DocumentOnlyField<MeetRecordingDocument, MeetRecordingInfo>;
+
+/**
+ * List of fields that exist only in the MeetRecordingDocument and not in the MeetRecordingInfo domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetRecordingDocument interface
+ */
+export const MEET_RECORDING_DOCUMENT_ONLY_FIELDS = [
+	'schemaVersion',
+	'roomOwner',
+	'roomRegisteredAccess',
+	'accessSecrets'
+] as const satisfies readonly MeetRecordingDocumentOnlyField[];
+
+/**
+ * Mongoose schema for MeetRecordingInfo entity.
+ * Defines the structure and validation rules for recording documents in MongoDB.
  */
 const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 	{
@@ -36,6 +56,14 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 		},
 		roomName: {
 			type: String,
+			required: true
+		},
+		roomOwner: {
+			type: String,
+			required: true
+		},
+		roomRegisteredAccess: {
+			type: Boolean,
 			required: true
 		},
 		status: {
@@ -96,17 +124,7 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				// Remove MongoDB internal fields
-				delete ret._id;
-				delete ret.schemaVersion;
-				// Remove access secrets before returning (they should only be accessed via specific methods)
-				delete ret.accessSecrets;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 
@@ -115,6 +133,8 @@ MeetRecordingSchema.index({ recordingId: 1 }, { unique: true });
 MeetRecordingSchema.index({ startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomId: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomName: 1, startDate: -1, _id: -1 });
+MeetRecordingSchema.index({ roomOwner: 1, startDate: -1, _id: -1 });
+MeetRecordingSchema.index({ roomRegisteredAccess: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ status: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ duration: -1, _id: -1 });
 MeetRecordingSchema.index({ size: -1, _id: -1 });
@@ -122,6 +142,6 @@ MeetRecordingSchema.index({ size: -1, _id: -1 });
 export const meetRecordingCollectionName = 'MeetRecording';
 
 /**
- * Mongoose model for Recording entity.
+ * Mongoose model for MeetRecordingInfo entity.
  */
 export const MeetRecordingModel = model<MeetRecordingDocument>(meetRecordingCollectionName, MeetRecordingSchema);

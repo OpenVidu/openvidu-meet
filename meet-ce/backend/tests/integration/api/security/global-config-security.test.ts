@@ -1,20 +1,31 @@
-import { beforeAll, describe, expect, it } from '@jest/globals';
-import { AuthMode, AuthType, MeetRoomThemeMode } from '@openvidu-meet/typings';
+import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import request from 'supertest';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { getFullPath, loginUser, restoreDefaultGlobalConfig, startTestServer } from '../../../helpers/request-helpers.js';
+import {
+	deleteAllUsers,
+	getFullPath,
+	restoreDefaultGlobalConfig,
+	startTestServer
+} from '../../../helpers/request-helpers.js';
+import { setupTestUsers } from '../../../helpers/test-scenarios.js';
+import { TestUsers } from '../../../interfaces/scenarios.js';
 
 const CONFIG_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`);
 
 describe('Global Config API Security Tests', () => {
 	let app: Express;
-	let adminAccessToken: string;
+	let testUsers: TestUsers;
 
 	beforeAll(async () => {
 		app = await startTestServer();
-		adminAccessToken = await loginUser();
+		testUsers = await setupTestUsers();
+	});
+
+	afterAll(async () => {
+		await deleteAllUsers();
 	});
 
 	describe('Update Webhook Config Tests', () => {
@@ -31,14 +42,30 @@ describe('Global Config API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.put(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
 				.send(webhookConfig);
 			expect(response.status).toBe(200);
 
 			await restoreDefaultGlobalConfig();
+		});
+
+		it('should fail when user is authenticated as USER', async () => {
+			const response = await request(app)
+				.put(`${CONFIG_PATH}/webhooks`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send(webhookConfig);
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
+			const response = await request(app)
+				.put(`${CONFIG_PATH}/webhooks`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send(webhookConfig);
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -55,11 +82,25 @@ describe('Global Config API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.get(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
 			expect(response.status).toBe(200);
+		});
+
+		it('should fail when user is authenticated as USER', async () => {
+			const response = await request(app)
+				.get(`${CONFIG_PATH}/webhooks`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
+			const response = await request(app)
+				.get(`${CONFIG_PATH}/webhooks`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -71,10 +112,8 @@ describe('Global Config API Security Tests', () => {
 	describe('Update Security Config Tests', () => {
 		const securityConfig = {
 			authentication: {
-				authMethod: {
-					type: AuthType.SINGLE_USER
-				},
-				authModeToAccessRoom: AuthMode.ALL_USERS
+				allowUserCreation: true,
+				oauthProviders: []
 			}
 		};
 
@@ -86,14 +125,30 @@ describe('Global Config API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.put(`${CONFIG_PATH}/security`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
 				.send(securityConfig);
 			expect(response.status).toBe(200);
 
 			await restoreDefaultGlobalConfig();
+		});
+
+		it('should fail when user is authenticated as USER', async () => {
+			const response = await request(app)
+				.put(`${CONFIG_PATH}/security`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send(securityConfig);
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
+			const response = await request(app)
+				.put(`${CONFIG_PATH}/security`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send(securityConfig);
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {
@@ -130,14 +185,30 @@ describe('Global Config API Security Tests', () => {
 			expect(response.status).toBe(401);
 		});
 
-		it('should succeed when user is authenticated as admin', async () => {
+		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
 				.put(`${CONFIG_PATH}/rooms/appearance`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, adminAccessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
 				.send(appearanceConfig);
 			expect(response.status).toBe(200);
 
 			await restoreDefaultGlobalConfig();
+		});
+
+		it('should fail when user is authenticated as USER', async () => {
+			const response = await request(app)
+				.put(`${CONFIG_PATH}/rooms/appearance`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.send(appearanceConfig);
+			expect(response.status).toBe(403);
+		});
+
+		it('should fail when user is authenticated as ROOM_MEMBER', async () => {
+			const response = await request(app)
+				.put(`${CONFIG_PATH}/rooms/appearance`)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
+				.send(appearanceConfig);
+			expect(response.status).toBe(403);
 		});
 
 		it('should fail when user is not authenticated', async () => {

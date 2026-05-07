@@ -1,11 +1,13 @@
-import { CommonModule } from '@angular/common';
-import { Component, TemplateRef, ViewChild, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, TemplateRef, inject, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRoomMemberRole } from '@openvidu-meet/typings';
-import { LoggerService, OpenViduComponentsUiModule } from 'openvidu-components-angular';
+import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
+import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
+import { RoomMemberUiUtils } from '../../../room-members/utils/ui';
 import { CustomParticipantModel, ParticipantDisplayProperties } from '../../models/custom-participant.model';
+import { LoggerService, OpenViduComponentsUiModule } from '../../openvidu-components';
+import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
 
 /**
@@ -16,57 +18,83 @@ import { MeetingService } from '../../services/meeting.service';
 	selector: 'ov-meeting-participant-item',
 	templateUrl: './meeting-participant-item.component.html',
 	styleUrls: ['./meeting-participant-item.component.scss'],
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule, OpenViduComponentsUiModule]
+	imports: [MatButtonModule, MatIconModule, MatTooltipModule, OpenViduComponentsUiModule],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingParticipantItemComponent {
 	// Template reference for the component's template
-	@ViewChild('template', { static: true }) template!: TemplateRef<any>;
+	readonly template = viewChild.required<TemplateRef<any>>('template');
 
-	protected meetingService: MeetingService = inject(MeetingService);
+	protected meetingService = inject(MeetingService);
+	protected meetingContextService = inject(MeetingContextService);
+	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingParticipantItem');
+
+	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
 
 	/**
 	 * Get or compute display properties for a participant
 	 */
-	protected getDisplayProperties(
-		participant: CustomParticipantModel,
-		localParticipant: CustomParticipantModel
-	): ParticipantDisplayProperties {
-		// Compute all display properties once
-		const isLocalModerator = localParticipant.isModerator();
-		const isParticipantLocal = participant.isLocal;
-		const isParticipantModerator = participant.isModerator();
-		const isParticipantOriginalModerator = participant.isOriginalModerator();
-
-		return {
-			showModeratorBadge: isParticipantModerator,
-			showModerationControls: isLocalModerator && !isParticipantLocal,
-			showMakeModeratorButton: isLocalModerator && !isParticipantLocal && !isParticipantModerator,
-			showUnmakeModeratorButton:
-				isLocalModerator && !isParticipantLocal && isParticipantModerator && !isParticipantOriginalModerator,
-			showKickButton: isLocalModerator && !isParticipantLocal && !isParticipantOriginalModerator
+	getDisplayProperties(participant: CustomParticipantModel): ParticipantDisplayProperties {
+		const hasBadge = participant.hasBadge();
+		const displayProperties: ParticipantDisplayProperties = {
+			showBadge: hasBadge,
+			showModerationControls: false,
+			showMakeModeratorButton: false,
+			showUnmakeModeratorButton: false,
+			showKickButton: false
 		};
+
+		// Moderation controls are only shown for remote participants
+		// Skip if participant is local (current user)
+		if (participant.isLocal) {
+			return displayProperties;
+		}
+
+		const canMakeModerator = this.roomMemberContextService.hasPermission('canMakeModerator');
+		const canKickParticipants = this.roomMemberContextService.hasPermission('canKickParticipants');
+
+		// If user doesn't have any moderation permissions, no need to compute further
+		if (!canMakeModerator && !canKickParticipants) {
+			return displayProperties;
+		}
+
+		const isPromotedModerator = participant.isPromotedModerator();
+		if (isPromotedModerator) {
+			// Show unmake moderator and/or kick participant buttons if user has correct permission and
+			// this participant is a promoted moderator (not an original moderator, who cannot be kicked or unmade moderator)
+			displayProperties.showUnmakeModeratorButton = canMakeModerator;
+			displayProperties.showKickButton = canKickParticipants;
+		} else {
+			// Show make moderator and/or kick participant buttons if user has correct permission
+			// and this participant doesn't have any badge (is not owner/admin/moderator)
+			displayProperties.showMakeModeratorButton = canMakeModerator && !hasBadge;
+			displayProperties.showKickButton = canKickParticipants && !hasBadge;
+		}
+
+		// Show moderation controls container if any of the buttons should be shown
+		displayProperties.showModerationControls =
+			displayProperties.showMakeModeratorButton ||
+			displayProperties.showUnmakeModeratorButton ||
+			displayProperties.showKickButton;
+		return displayProperties;
 	}
 
-	async onMakeModeratorClick(
-		participantContext: CustomParticipantModel,
-		localParticipant: CustomParticipantModel
-	): Promise<void> {
-		if (!localParticipant.isModerator()) return;
+	async onMakeModeratorClick(participant: CustomParticipantModel): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('canMakeModerator')) return;
 
-		const roomId = localParticipant.roomName;
-
+		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
-			this.log.e('Cannot change participant role: local participant room name is undefined');
+			this.log.e('Cannot change participant role: room ID is undefined');
 			return;
 		}
 
 		try {
 			await this.meetingService.changeParticipantRole(
 				roomId,
-				participantContext.identity,
-				MeetRoomMemberRole.MODERATOR
+				participant.identity,
+				MeetParticipantModerationAction.UPGRADE
 			);
 			this.log.d('Moderator assigned successfully');
 		} catch (error) {
@@ -74,24 +102,20 @@ export class MeetingParticipantItemComponent {
 		}
 	}
 
-	async onUnmakeModeratorClick(
-		participantContext: CustomParticipantModel,
-		localParticipant: CustomParticipantModel
-	): Promise<void> {
-		if (!localParticipant.isModerator()) return;
+	async onUnmakeModeratorClick(participant: CustomParticipantModel): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('canMakeModerator')) return;
 
-		const roomId = localParticipant.roomName;
-
+		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
-			this.log.e('Cannot change participant role: local participant room name is undefined');
+			this.log.e('Cannot change participant role: room ID is undefined');
 			return;
 		}
 
 		try {
 			await this.meetingService.changeParticipantRole(
 				roomId,
-				participantContext.identity,
-				MeetRoomMemberRole.SPEAKER
+				participant.identity,
+				MeetParticipantModerationAction.DOWNGRADE
 			);
 			this.log.d('Moderator unassigned successfully');
 		} catch (error) {
@@ -99,21 +123,17 @@ export class MeetingParticipantItemComponent {
 		}
 	}
 
-	async onKickParticipantClick(
-		participantContext: CustomParticipantModel,
-		localParticipant: CustomParticipantModel
-	): Promise<void> {
-		if (!localParticipant.isModerator()) return;
+	async onKickParticipantClick(participant: CustomParticipantModel): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('canKickParticipants')) return;
 
-		const roomId = localParticipant.roomName;
-
+		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
-			this.log.e('Cannot change participant role: local participant room name is undefined');
+			this.log.e('Cannot kick participant: room ID is undefined');
 			return;
 		}
 
 		try {
-			await this.meetingService.kickParticipant(roomId, participantContext.identity);
+			await this.meetingService.kickParticipant(roomId, participant.identity);
 			this.log.d('Participant kicked successfully');
 		} catch (error) {
 			this.log.e('Error kicking participant:', error);

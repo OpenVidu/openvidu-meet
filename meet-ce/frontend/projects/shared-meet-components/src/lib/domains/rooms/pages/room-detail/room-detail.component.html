@@ -1,0 +1,273 @@
+<!-- Loading State -->
+@if (isInitializing() && showInitialLoader()) {
+	<div class="ov-page-loading">
+		<div class="loading-content">
+			<div class="loading-header">
+				<div class="loading-title">
+					<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
+					<h1>Loading Room Details</h1>
+				</div>
+				<p class="loading-subtitle">Please wait while we fetch the room information...</p>
+			</div>
+
+			<div class="loading-spinner-container">
+				<mat-spinner diameter="48" />
+			</div>
+		</div>
+	</div>
+}
+
+@if (!isInitializing() && room()) {
+	<div class="ov-page-container ov-mb-xxl">
+		<!-- Room Detail Header -->
+		<div class="page-header">
+			<div class="header-top">
+				<!-- Breadcrumb -->
+				<ov-breadcrumb [items]="breadcrumbItems()" />
+			</div>
+
+			<div class="header-content">
+				<div class="title-section">
+					<div class="title">
+						<mat-icon class="ov-room-icon">video_chat</mat-icon>
+						<h1>{{ room()!.roomName }}</h1>
+					</div>
+
+					<!-- Status Badge -->
+					<div class="status-badge" [style.color]="RoomUiUtils.getStatusColor(room()!)">
+						<span class="status-main" [matTooltip]="RoomUiUtils.getStatusTooltip(room()!)">
+							<mat-icon class="status-icon" [style.color]="RoomUiUtils.getStatusColor(room()!)">
+								{{ RoomUiUtils.getStatusIcon(room()!) }}
+							</mat-icon>
+							<span class="status-text">{{ RoomUiUtils.getStatusLabel(room()!) }}</span>
+						</span>
+
+						@if (RoomUiUtils.hasMeetingEndAction(room()!)) {
+							<mat-icon
+								class="meeting-end-info-icon"
+								[class]="RoomUiUtils.getMeetingEndActionClass(room()!)"
+								[matTooltip]="RoomUiUtils.getMeetingEndActionTooltip(room()!)"
+							>
+								info_outline
+							</mat-icon>
+						}
+					</div>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="actions">
+					<span [matTooltip]="RoomUiUtils.getJoinRoomTooltip(room()!)">
+						<button
+							mat-flat-button
+							color="primary"
+							class="action-btn primary-btn"
+							(click)="joinRoom()"
+							[disabled]="!RoomUiUtils.canJoinRoom(room()!)"
+						>
+							<mat-icon>open_in_new</mat-icon>
+							<span>Join Room</span>
+						</button>
+					</span>
+
+					@if (RoomUiUtils.hasAccessLinks(room()!)) {
+						<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room()!)">
+							<button
+								mat-stroked-button
+								class="action-btn"
+								(click)="shareLink()"
+								[disabled]="!RoomUiUtils.canShareAccessLinks(room()!)"
+							>
+								<mat-icon>share</mat-icon>
+								<span>Share Link</span>
+							</button>
+						</span>
+					}
+
+					@if (canManageRoom()) {
+						<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room()!)">
+							<button
+								mat-icon-button
+								class="icon-action-btn"
+								(click)="editRoom()"
+								[disabled]="!RoomUiUtils.canEditRoom(room()!)"
+							>
+								<mat-icon>edit</mat-icon>
+							</button>
+						</span>
+
+						<button
+							mat-icon-button
+							class="icon-action-btn"
+							[class]="RoomUiUtils.getRoomToggleClass(room()!)"
+							(click)="toggleRoomStatus()"
+							[matTooltip]="RoomUiUtils.getRoomToggleTooltip(room()!)"
+						>
+							<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room()!) }}</mat-icon>
+						</button>
+
+						<button
+							mat-icon-button
+							class="icon-action-btn delete-btn"
+							(click)="deleteRoom()"
+							matTooltip="Delete room"
+						>
+							<mat-icon>delete</mat-icon>
+						</button>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- Room Information and Tabs Section -->
+		<div class="page-content">
+			<!-- Room Basic Information Card -->
+			<mat-card class="info-card">
+				<mat-card-content>
+					<div class="info-grid">
+						<!-- Room ID -->
+						<div class="info-item">
+							<p class="info-label">Room ID</p>
+							<p class="info-value monospace">{{ roomId() }}</p>
+						</div>
+
+						<!-- Owner -->
+						<div class="info-item">
+							<p class="info-label">Owner</p>
+							<div class="owner-info">
+								<div class="owner-avatar">
+									<span>{{ RoomUiUtils.getOwnerInitials(room()!) }}</span>
+								</div>
+								@if (canViewUserProfiles() && room()!.owner !== currentUserId()) {
+									<a
+										class="owner-name-link"
+										[routerLink]="['/users', room()!.owner]"
+										matTooltip="View user profile"
+									>
+										{{ room()!.owner }}
+									</a>
+								} @else {
+									<p class="info-value">{{ room()!.owner }}</p>
+								}
+								@if (room()!.owner === currentUserId()) {
+									<span class="you-badge">You</span>
+								}
+							</div>
+						</div>
+
+						<!-- Creation Date -->
+						<div class="info-item">
+							<p class="info-label">Creation Date</p>
+							<div class="date-info">
+								<span class="date">{{ room()!.creationDate | date: 'mediumDate' }}</span>
+								<span class="time">{{ room()!.creationDate | date: 'shortTime' }}</span>
+							</div>
+						</div>
+
+						<!-- Auto-Deletion Status -->
+						<div class="info-item">
+							<p class="info-label">Auto-Deletion</p>
+							<div class="auto-deletion-info">
+								<div
+									class="deletion-badge"
+									[class]="RoomUiUtils.getAutoDeletionClass(room()!)"
+									[matTooltip]="RoomUiUtils.getAutoDeletionTooltip(room()!)"
+								>
+									<mat-icon class="deletion-icon material-symbols-outlined">{{
+										RoomUiUtils.getAutoDeletionIcon(room()!)
+									}}</mat-icon>
+									<span class="deletion-text">{{ RoomUiUtils.getAutoDeletionStatus(room()!) }}</span>
+								</div>
+
+								@if (RoomUiUtils.hasAutoDeletion(room()!)) {
+									<div class="deletion-date-time">
+										<div class="deletion-date">
+											<span class="date">{{
+												room()!.autoDeletionDate | date: 'mediumDate'
+											}}</span>
+										</div>
+										<div class="deletion-time">
+											<span class="time">{{ room()!.autoDeletionDate | date: 'shortTime' }}</span>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+					</div>
+				</mat-card-content>
+			</mat-card>
+
+			<!-- Tabs for Recordings and Room Members -->
+			<mat-card class="tabs-card">
+				<mat-tab-group
+					[selectedIndex]="selectedTabIndex()"
+					(selectedIndexChange)="selectedTabIndex.set($event)"
+					animationDuration="0ms"
+				>
+					<!-- Recordings Tab -->
+					<mat-tab>
+						<ng-template mat-tab-label>
+							<mat-icon class="tab-icon ov-recording-icon">video_library</mat-icon>
+							<span>Recordings</span>
+							<span class="tab-count">{{ recordings().length }}</span>
+						</ng-template>
+
+						<div class="tab-content">
+							@if (canViewRecordings()) {
+								<ov-recording-lists
+									[recordings]="recordings()"
+									[canDeleteRecordings]="canDeleteRecordings()"
+									[loading]="loadingRecordings()"
+									[showSearchBox]="false"
+									[showFilters]="true"
+									[showSelection]="true"
+									[showRoomInfo]="false"
+									[showLoadMore]="hasMoreRecordings()"
+									[roomName]="room()!.roomName"
+									[initialFilters]="initialRecordingFilters()"
+									(recordingAction)="onRecordingAction($event)"
+									(recordingClicked)="onRecordingClick($event)"
+									(loadMore)="loadMoreRecordings($event)"
+									(refresh)="refreshRecordings($event)"
+									(filterChange)="refreshRecordings($event)"
+								/>
+							} @else {
+								<div class="no-permission-state">
+									<mat-icon>lock</mat-icon>
+									<h3>No access to recordings</h3>
+									<p>You don't have permission to view recordings for this room.</p>
+								</div>
+							}
+						</div>
+					</mat-tab>
+
+					<!-- Room Members Tab -->
+					@if (canManageRoom()) {
+						<mat-tab>
+							<ng-template mat-tab-label>
+								<mat-icon class="tab-icon">people</mat-icon>
+								<span>Room Members</span>
+								<span class="tab-count">{{ roomMembers().length }}</span>
+							</ng-template>
+
+							<div class="tab-content">
+								<ov-room-members-list
+									[members]="roomMembers()"
+									[loading]="loadingMembers()"
+									[showSearchBox]="true"
+									[showFilters]="true"
+									[showSelection]="true"
+									[showLoadMore]="hasMoreMembers()"
+									[initialFilters]="initialMemberFilters()"
+									(memberAction)="onMemberAction($event)"
+									(loadMore)="loadMoreRoomMembers($event)"
+									(refresh)="refreshRoomMembers($event)"
+									(filterChange)="refreshRoomMembers($event)"
+								/>
+							</div>
+						</mat-tab>
+					}
+				</mat-tab-group>
+			</mat-card>
+		</div>
+	</div>
+}

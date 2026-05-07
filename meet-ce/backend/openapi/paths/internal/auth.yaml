@@ -3,7 +3,7 @@
         operationId: loginUser
         summary: Login to OpenVidu Meet
         description: >
-            Authenticates a user and returns an access and refresh token in cookies.
+            Authenticates a user and returns an access and refresh token.
         tags:
             - Internal API - Authentication
         requestBody:
@@ -22,7 +22,7 @@
         operationId: logoutUser
         summary: Logout from OpenVidu Meet
         description: >
-            Logs out the user and clears the access and refresh tokens from cookies.
+            Logs out the user.
         tags:
             - Internal API - Authentication
         responses:
@@ -34,7 +34,6 @@
         summary: Refresh access token
         description: >
             Refreshes the access token using the refresh token.
-            The new access token is returned in a cookie.
         tags:
             - Internal API - Authentication
         security:

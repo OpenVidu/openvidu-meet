@@ -1,18 +1,29 @@
-import { MeetUser, MeetUserRole } from '@openvidu-meet/typings';
-import { Document, model, Schema } from 'mongoose';
+import type { MeetUser } from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
+import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import type { DocumentOnlyField } from '../database.model.js';
+import type { SchemaMigratableDocument } from '../migration.model.js';
 
 /**
- * Mongoose Document interface for User.
- * Extends the User interface with MongoDB Document functionality.
+ * Mongoose Document interface for users.
+ * Extends the MeetUser interface with schemaVersion for migration tracking.
  */
-export interface MeetUserDocument extends MeetUser, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-}
+export interface MeetUserDocument extends MeetUser, SchemaMigratableDocument {}
 
 /**
- * Mongoose schema for User entity.
+ * Type for fields in MeetUserDocument that are not present in MeetUser domain model.
+ */
+export type MeetUserDocumentOnlyField = DocumentOnlyField<MeetUserDocument, MeetUser>;
+
+/**
+ * List of fields that exist only in the MeetUserDocument and not in the MeetUser domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetUserDocument interface
+ */
+export const MEET_USER_DOCUMENT_ONLY_FIELDS = ['schemaVersion'] as const satisfies readonly MeetUserDocumentOnlyField[];
+
+/**
+ * Mongoose schema for MeetUser entity.
  * Defines the structure and validation rules for user documents in MongoDB.
  */
 const MeetUserSchema = new Schema<MeetUserDocument>(
@@ -22,39 +33,51 @@ const MeetUserSchema = new Schema<MeetUserDocument>(
 			required: true,
 			default: INTERNAL_CONFIG.USER_SCHEMA_VERSION
 		},
-		username: {
+		userId: {
 			type: String,
+			required: true
+		},
+		name: {
+			type: String,
+			required: true
+		},
+		registrationDate: {
+			type: Number,
+			required: true
+		},
+		role: {
+			type: String,
+			enum: Object.values(MeetUserRole),
+			required: true
+		},
+		roleUpdatedAt: {
+			type: Number,
 			required: true
 		},
 		passwordHash: {
 			type: String,
 			required: true
 		},
-		roles: {
-			type: [String],
-			enum: Object.values(MeetUserRole),
-			required: true,
-			default: [MeetUserRole.USER]
+		mustChangePassword: {
+			type: Boolean,
+			required: true
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				delete ret._id;
-				delete ret.schemaVersion;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 
 // Create indexes for efficient querying
-MeetUserSchema.index({ username: 1 }, { unique: true });
+MeetUserSchema.index({ userId: 1 }, { unique: true });
+MeetUserSchema.index({ registrationDate: -1, _id: -1 });
+MeetUserSchema.index({ name: 1, registrationDate: -1, _id: -1 });
+MeetUserSchema.index({ role: 1, registrationDate: -1, _id: -1 });
+MeetUserSchema.index({ name: 1, role: 1, _id: 1 });
 
 export const meetUserCollectionName = 'MeetUser';
 
 /**
- * Mongoose model for User entity.
+ * Mongoose model for MeetUser entity.
  */
 export const MeetUserModel = model<MeetUserDocument>(meetUserCollectionName, MeetUserSchema);

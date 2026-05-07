@@ -1,26 +1,50 @@
-import { AuthMode, AuthType, GlobalConfig } from '@openvidu-meet/typings';
-import { Document, model, Schema } from 'mongoose';
+import type { GlobalConfig} from '@openvidu-meet/typings';
+import { OAuthProvider } from '@openvidu-meet/typings';
+import { model, Schema } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import type { DocumentOnlyField } from '../database.model.js';
+import type { SchemaMigratableDocument } from '../migration.model.js';
 import { MeetAppearanceConfigSchema } from './room.schema.js';
 
 /**
- * Mongoose Document interface for GlobalConfig.
- * Extends the GlobalConfig interface with MongoDB Document functionality.
+ * Mongoose Document interface for global config.
+ * Extends the GlobalConfig interface with schemaVersion for migration tracking.
  */
-export interface MeetGlobalConfigDocument extends GlobalConfig, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-}
+export interface MeetGlobalConfigDocument extends GlobalConfig, SchemaMigratableDocument {}
 
 /**
- * Sub-schema for authentication method.
- * Currently only supports single_user type.
+ * Type for fields in MeetGlobalConfigDocument that are not present in GlobalConfig domain model.
  */
-const AuthMethodSchema = new Schema(
+export type MeetGlobalConfigDocumentOnlyField = DocumentOnlyField<MeetGlobalConfigDocument, GlobalConfig>;
+
+/**
+ * List of fields that exist only in the MeetGlobalConfigDocument and not in the GlobalConfig domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetGlobalConfigDocument interface
+ */
+export const MEET_GLOBAL_CONFIG_DOCUMENT_ONLY_FIELDS = [
+	'schemaVersion'
+] as const satisfies readonly MeetGlobalConfigDocumentOnlyField[];
+
+/**
+ * Sub-schema for OAuth provider configuration.
+ */
+const OAuthProviderConfigSchema = new Schema(
 	{
-		type: {
+		provider: {
 			type: String,
-			enum: Object.values(AuthType),
+			enum: Object.values(OAuthProvider),
+			required: true
+		},
+		clientId: {
+			type: String,
+			required: true
+		},
+		clientSecret: {
+			type: String,
+			required: true
+		},
+		redirectUri: {
+			type: String,
 			required: true
 		}
 	},
@@ -32,13 +56,8 @@ const AuthMethodSchema = new Schema(
  */
 const AuthenticationConfigSchema = new Schema(
 	{
-		authMethod: {
-			type: AuthMethodSchema,
-			required: true
-		},
-		authModeToAccessRoom: {
-			type: String,
-			enum: Object.values(AuthMode),
+		oauthProviders: {
+			type: [OAuthProviderConfigSchema],
 			required: true
 		}
 	},
@@ -90,7 +109,7 @@ const RoomsConfigSchema = new Schema(
 
 /**
  * Mongoose schema for GlobalConfig entity.
- * Defines the structure for the global configuration document in MongoDB.
+ * Defines the structure and validation rules for the global configuration document in MongoDB.
  */
 const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 	{
@@ -117,14 +136,7 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				delete ret._id;
-				delete ret.schemaVersion;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 

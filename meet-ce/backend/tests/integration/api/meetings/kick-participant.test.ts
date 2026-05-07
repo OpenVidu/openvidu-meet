@@ -3,12 +3,10 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import {
-	deleteAllRooms,
-	deleteRoom,
-	disconnectFakeParticipants,
-	kickParticipant,
-	startTestServer
-} from '../../../helpers/request-helpers.js';
+	disconnectFakeParticipants
+} from '../../../helpers/livekit-cli-helpers.js';
+import { deleteAllRooms, kickParticipant, startTestServer } from '../../../helpers/request-helpers.js';
+
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
@@ -44,11 +42,9 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(200);
 
 			// Check if the participant has been removed from LiveKit
-			try {
-				await livekitService.getParticipant(roomData.room.roomId, participantIdentity);
-			} catch (error) {
-				expect((error as OpenViduMeetError).statusCode).toBe(404);
-			}
+			await expect(livekitService.getParticipant(roomData.room.roomId, participantIdentity)).rejects.toThrow(
+				OpenViduMeetError
+			);
 		});
 
 		it('should fail with 404 if participant does not exist', async () => {
@@ -62,11 +58,7 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should fail with 404 if room does not exist', async () => {
-			// Delete the room to ensure it does not exist
-			let response = await deleteRoom(roomData.room.roomId, { withMeeting: 'force' });
-			expect(response.status).toBe(200);
-
-			response = await kickParticipant(roomData.room.roomId, participantIdentity, roomData.moderatorToken);
+			const response = await kickParticipant('nonexistent-room-id', participantIdentity, roomData.moderatorToken);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Room Error');
 		});

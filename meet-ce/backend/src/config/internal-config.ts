@@ -1,5 +1,5 @@
-import { StringValue } from 'ms';
-import { SchemaVersion } from '../models/migration.model.js';
+import type { StringValue } from 'ms';
+import type { SchemaVersion } from '../models/migration.model.js';
 
 export const INTERNAL_CONFIG = {
 	// Base paths for the API
@@ -12,14 +12,8 @@ export const INTERNAL_CONFIG = {
 	REFRESH_TOKEN_HEADER: 'x-refresh-token',
 	ROOM_MEMBER_TOKEN_HEADER: 'x-room-member-token',
 
-	// Token expiration times
-	ACCESS_TOKEN_EXPIRATION: '2h',
-	REFRESH_TOKEN_EXPIRATION: '1d',
-	ROOM_MEMBER_TOKEN_EXPIRATION: '2h',
-
-	// Authentication usernames
-	ANONYMOUS_USER: 'anonymous',
-	API_USER: 'api-user',
+	// Token verification settings
+	REFRESH_CLOCK_TOLERANCE_SECONDS: 10, // Time in seconds to allow for clock skew when validating token expiration
 
 	// S3 configuration
 	S3_MAX_RETRIES_ATTEMPTS_ON_SAVE_ERROR: '5',
@@ -46,21 +40,45 @@ export const INTERNAL_CONFIG = {
 	MEETING_DEPARTURE_TIMEOUT: (process.env.MEETING_DEPARTURE_TIMEOUT || '20s') as StringValue, // Seconds to keep the meeting (LK room) open after the last participant leaves
 
 	// Participant name reservation
-	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: '20', // Maximum number of request by the same name at the same time allowed
+	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: 20, // Maximum number of request by the same name at the same time allowed
 	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
+	
+	MEETING_PRESENCE_TTL: '32d' as StringValue, // Time-to-live for user/room presence mappings used to kick users from meetings
 
 	CAPTIONS_AGENT_NAME: 'speech-processing',
+	ASSISTANT_STATE_LOCK_TTL: '15s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
+
+	// Batch and concurrency processing settings
+	DEFAULT_CONCURRENCY: 10, // Default concurrency limit for concurrent operations
+	BATCH_SIZE_ROOMS_EXPIRED_GC: 100, // Number of expired rooms to process per batch during GC
+	BATCH_SIZE_ROOMS_STATUS_VALIDATION_GC: 100, // Number of active rooms to validate per batch during status consistency GC
+	BATCH_SIZE_RECORDINGS: 100, // Process 100 recordings at a time to balance throughput and memory
+	BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL: 100, // Number of recording locks to retrieve from registry in each batch during orphaned locks GC
+	CONCURRENCY_STALE_RECORDINGS_GC: 20, // Concurrency limit for processing stale recordings garbage collection
+	CONCURRENCY_ORPHANED_LOCKS_GC: 10, // Concurrency limit for processing orphaned recording locks with failFast enabled
+	CONCURRENCY_VALIDATE_ROOMS_STATUS: 10, // Concurrency limit for validating and cleaning up inconsistent rooms
+	CONCURRENCY_BULK_DELETE_ROOMS: 10, // Concurrency limit for bulk deleting rooms
+	CONCURRENCY_BULK_RETRIEVE_ROOMS: 20, // Concurrency limit for bulk retrieving room info
+	CONCURRENCY_BULK_DELETE_RECORDINGS: 20, // Concurrency limit for bulk deleting recordings
+	CONCURRENCY_BULK_DELETE_ROOM_RECORDINGS: 10, // Concurrency limit for bulk deleting recordings of a room
+	CONCURRENCY_BULK_RETRIEVE_RECORDINGS: 10, // Concurrency limit for bulk retrieving recording info
+	CONCURRENCY_BULK_DELETE_STORAGE: 20, // Concurrency limit for bulk deleting objects in storage
+	CONCURRENCY_BULK_KICK_MEMBERS: 20, // Concurrency limit for bulk kicking members from a room
+	CONCURRENCY_BULK_UPDATE_PERMISSIONS: 20, // Concurrency limit for bulk updating room members' permissions
+	CONCURRENCY_BULK_CLEANUP_USER_RESOURCES: 20, // Concurrency limit for bulk cleanup of user resources
+	CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS: 20, // Concurrency limit for bulk cleanup of participant name reservations
 
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection
 	// Increment when making breaking changes to the schema structure
 	// IMPORTANT: whenever you increment a schema version, update the MIGRATION_REV timestamp too.
 	// This helps surface merge conflicts when multiple branches create schema migrations concurrently.
-	GLOBAL_CONFIG_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	USER_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
+	GLOBAL_CONFIG_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1771580869366
+	USER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1774181859233
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	ROOM_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	RECORDING_SCHEMA_VERSION: 2 as SchemaVersion // MIGRATION_REV: 1771328577054
+	ROOM_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1771580869366
+	ROOM_MEMBER_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
+	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion // MIGRATION_REV: 1774426613463
 };
 
 // This function is used to set private configuration values for testing purposes.

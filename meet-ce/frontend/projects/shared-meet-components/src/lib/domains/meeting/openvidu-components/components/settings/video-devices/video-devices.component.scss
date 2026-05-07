@@ -1,0 +1,49 @@
+@use '../selector-shared' as shared;
+
+:host {
+	display: flex;
+	align-items: center;
+	height: 100%;
+
+	.video-device-selector {
+		@include shared.device-selector-base();
+
+		// Video-specific overrides for compact mode
+		&.compact {
+			.unified-device-button {
+				.toggle-section {
+					display: flex-end; // Video-specific styling
+				}
+			}
+		}
+
+		// Video-specific overrides for normal mode
+		// &:not(.compact) {
+		// 	.normal-device-selector {
+		// 		.device-input-selector {
+		// 			&:not(.disabled) {
+		// 				.selector-button {
+		// 					// Video-specific hover effect with box-shadow
+		// 					&:hover:not([disabled]) {
+		// 						background-color: var(--ov-surface-color) !important;
+		// 						border-color: var(--ov-primary-action-color);
+		// 					}
+		// 				}
+		// 			}
+		// 		}
+		// 	}
+		// }
+	}
+}
+
+// Include shared device menu styles
+@include shared.device-menu-styles();
+
+// Video-specific additional styles
+::ng-deep .mdc-text-field--filled:not(.mdc-text-field--disabled) .mdc-line-ripple::after {
+	border-bottom-color: var(--ov-primary-action-color) !important;
+}
+
+::ng-deep .mat-mdc-option.mdc-list-item--selected:not(.mdc-list-item--disabled):not(.mat-mdc-option-multiple) {
+	background-color: var(--ov-selection-color) !important;
+}

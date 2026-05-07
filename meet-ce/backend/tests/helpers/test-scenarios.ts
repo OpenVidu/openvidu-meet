@@ -1,18 +1,37 @@
-import { MeetRoomConfig } from '@openvidu-meet/typings';
+import {
+	MeetRoomConfig,
+	MeetRoomMember,
+	MeetRoomMemberOptions,
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetUser,
+	MeetUserOptions,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import express, { Request, Response } from 'express';
 import http from 'http';
 import { StringValue } from 'ms';
+import { container } from '../../src/config/dependency-injector.config';
 import { MeetRoomHelper } from '../../src/helpers/room.helper';
-import { RoomData, TestContext } from '../interfaces/scenarios';
+import { RecordingRepository } from '../../src/repositories/recording.repository';
+import { RoomRepository } from '../../src/repositories/room.repository';
+import { LiveKitService } from '../../src/services/livekit.service.js';
+import { RoomData, RoomMemberData, RoomTestUsers, TestContext, TestUsers, UserData } from '../interfaces/scenarios';
 import { expectValidStartRecordingResponse } from './assertion-helpers';
+import { joinFakeParticipant } from './livekit-cli-helpers.js';
 import {
+	changePassword,
 	createRoom,
+	createRoomMember,
+	createUser,
 	generateRoomMemberToken,
-	joinFakeParticipant,
+	loginUser,
 	sleep,
 	startRecording,
-	stopRecording
+	stopRecording,
+	updateRoomMember
 } from './request-helpers';
+import { waitForMeetingToEnd } from './wait-helpers.js';
 
 let mockWebhookServer: http.Server;
 
@@ -35,10 +54,10 @@ export const setupSingleRoom = async (
 	});
 
 	// Extract the room secrets and generate room member tokens
-	const { moderatorSecret, speakerSecret } = MeetRoomHelper.extractSecretsFromRoom(room);
+	const { moderatorSecret, speakerSecret, recordingSecret } = MeetRoomHelper.extractSecretsFromRoom(room.access);
 	const [moderatorToken, speakerToken] = await Promise.all([
-		generateRoomMemberToken(room.roomId, { secret: moderatorSecret, grantJoinMeetingPermission: false }),
-		generateRoomMemberToken(room.roomId, { secret: speakerSecret, grantJoinMeetingPermission: false })
+		generateRoomMemberToken(room.roomId, { secret: moderatorSecret, joinMeeting: false }),
+		generateRoomMemberToken(room.roomId, { secret: speakerSecret, joinMeeting: false })
 	]);
 
 	// Join participant if needed
@@ -51,7 +70,8 @@ export const setupSingleRoom = async (
 		moderatorSecret,
 		moderatorToken,
 		speakerSecret,
-		speakerToken
+		speakerToken,
+		recordingSecret
 	};
 };
 
@@ -114,6 +134,60 @@ export const setupSingleRoomWithRecording = async (
 	}
 
 	return roomData;
+};
+
+/**
+ * Creates a completed recording in an existing room.
+ * Starts a recording, optionally waits for a delay, then stops it.
+ *
+ * Note: The room must already exist and have an active meeting with participants.
+ *
+ * @param roomData  The room data where the recording will be created
+ * @param stopDelay Optional delay before stopping the recording
+ * @returns         The recording ID of the completed recording
+ */
+export const setupCompletedRecording = async (roomData: RoomData, stopDelay?: StringValue): Promise<string> => {
+	// Start recording
+	const response = await startRecording(roomData.room.roomId);
+	expectValidStartRecordingResponse(response, roomData.room.roomId, roomData.room.roomName);
+	const recordingId = response.body.recordingId;
+	roomData.recordingId = recordingId;
+
+	// Wait for the configured delay before stopping the recording
+	if (stopDelay) {
+		await sleep(stopDelay);
+	}
+
+	// Stop recording
+	await stopRecording(recordingId);
+
+	return recordingId;
+};
+
+/**
+ * Creates a recording for a room and ensures it is stopped, returning the recording ID.
+ *
+ * @param roomId The ID of the room where the recording will be created
+ * @returns      The recording ID of the created recording
+ */
+export const createRecordingForRoom = async (roomId: string): Promise<string> => {
+	// Join a participant to ensure the meeting is active
+	await joinFakeParticipant(roomId, `usr-${Date.now()}`);
+
+	// Start recording
+	const startResponse = await startRecording(roomId);
+	expect(startResponse.status).toBe(201);
+	const recordingId = startResponse.body.recordingId as string;
+
+	// Stop recording
+	await stopRecording(recordingId);
+
+	// End the meeting
+	const livekitService = container.get(LiveKitService);
+	await livekitService.deleteRoom(roomId);
+	await waitForMeetingToEnd(roomId);
+
+	return recordingId;
 };
 
 /**
@@ -201,4 +275,204 @@ export const stopWebhookServer = async (): Promise<void> => {
 			mockWebhookServer.close(() => resolve());
 		});
 	}
+};
+
+/**
+ * Creates a registered user with the specified role and returns UserData.
+ *
+ * @param userOptions Options for creating the user
+ * @returns UserData with user info and access token
+ */
+export const setupUser = async (userOptions: MeetUserOptions): Promise<UserData> => {
+	// Create the user
+	const createResponse = await createUser(userOptions);
+	expect(createResponse.status).toBe(201);
+	const user = createResponse.body as MeetUser;
+
+	// Login to get temporal access token for changing password
+	const { accessToken: accessTokenTmp } = await loginUser(userOptions.userId, userOptions.password);
+
+	// Change password and get final access token
+	const newPassword = userOptions.password + '_2';
+	const { accessToken, refreshToken } = await changePassword(userOptions.password, newPassword, accessTokenTmp);
+
+	return {
+		user,
+		password: newPassword,
+		accessToken: accessToken!,
+		refreshToken: refreshToken!
+	};
+};
+
+/**
+ * Creates a collection of basic test users with different roles.
+ *
+ * @returns TestUsers with created users
+ */
+export const setupTestUsers = async (): Promise<TestUsers> => {
+	const timestamp = String(Date.now()).slice(-6); // Use last 6 digits to keep userId under 20 chars
+
+	const [admin, user, roomMember] = await Promise.all([
+		// Create admin user
+		setupUser({
+			userId: `adm_${timestamp}`,
+			name: 'Admin',
+			password: 'admin_pass',
+			role: MeetUserRole.ADMIN
+		}),
+		// Create regular user
+		setupUser({
+			userId: `usr_${timestamp}`,
+			name: 'User',
+			password: 'user_pass',
+			role: MeetUserRole.USER
+		}),
+		// Create room member user
+		setupUser({
+			userId: `rmb_${timestamp}`,
+			name: 'Room Member',
+			password: 'room_member_pass',
+			role: MeetUserRole.ROOM_MEMBER
+		})
+	]);
+
+	return {
+		admin,
+		user,
+		roomMember
+	};
+};
+
+/**
+ * Creates a room member for a specific room and returns RoomMemberData.
+ *
+ * @param roomId The ID of the room
+ * @param memberOptions Options for creating the room member
+ * @returns RoomMemberData with member info and authentication token
+ */
+export const setupRoomMember = async (
+	roomId: string,
+	memberOptions: MeetRoomMemberOptions,
+	accessToken?: string
+): Promise<RoomMemberData> => {
+	// Create the room member
+	const createResponse = await createRoomMember(roomId, memberOptions);
+	expect(createResponse.status).toBe(201);
+	const member = createResponse.body as MeetRoomMember;
+
+	// Generate room member token for this member
+	const secret = member.memberId.startsWith('ext-') ? member.memberId : undefined;
+	const memberToken = await generateRoomMemberToken(
+		roomId,
+		{
+			secret,
+			joinMeeting: false
+		},
+		accessToken
+	);
+
+	return {
+		member,
+		memberToken
+	};
+};
+
+export const updateRoomMemberPermissions = async (
+	roomId: string,
+	memberId: string,
+	permissions: Partial<MeetRoomMemberPermissions>,
+	accessToken?: string
+): Promise<RoomMemberData> => {
+	// Update the room member
+	const updateResponse = await updateRoomMember(roomId, memberId, { customPermissions: permissions });
+	expect(updateResponse.status).toBe(200);
+	const member = updateResponse.body as MeetRoomMember;
+
+	// Generate room member token for this member
+	const secret = member.memberId.startsWith('ext-') ? member.memberId : undefined;
+	const memberToken = await generateRoomMemberToken(
+		roomId,
+		{
+			secret,
+			joinMeeting: false
+		},
+		accessToken
+	);
+
+	return {
+		member,
+		memberToken
+	};
+};
+
+/**
+ * Sets up test users for a room, including owner, member, and room member.
+ *
+ * @param roomData The room data to set up users for
+ * @returns Updated RoomData with test users included
+ */
+export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomData> => {
+	const timestamp = String(Date.now()).slice(-6); // Use last 6 digits to keep userId under 20 chars
+
+	const [userOwner, userMember, roomMember] = await Promise.all([
+		// Create user who is the owner of the room
+		setupUser({
+			userId: `usr_own_${timestamp}`,
+			name: 'User Owner',
+			password: 'owner_pass',
+			role: MeetUserRole.USER
+		}),
+		// Create user who is a member of the room
+		setupUser({
+			userId: `usr_mem_${timestamp}`,
+			name: 'User Member',
+			password: 'member_pass',
+			role: MeetUserRole.USER
+		}),
+		// Create room member user who is a member of the room
+		setupUser({
+			userId: `rmb_${timestamp}`,
+			name: 'Room Member',
+			password: 'room_member_pass',
+			role: MeetUserRole.ROOM_MEMBER
+		})
+	]);
+
+	// Change room ownership to userOwner
+	const roomRepository = container.get(RoomRepository);
+	const recordingRepository = container.get(RecordingRepository);
+	const updatedRoom = await roomRepository.updatePartial(roomData.room.roomId, { owner: userOwner.user.userId });
+	await recordingRepository.updateAccessScopeMetadataByRoomId(roomData.room.roomId, {
+		roomOwner: userOwner.user.userId
+	});
+	roomData.room = updatedRoom;
+
+	// Add userMember and roomMember as room members
+	const [userMemberDetails, roomMemberDetails] = await Promise.all([
+		setupRoomMember(
+			roomData.room.roomId,
+			{
+				userId: userMember.user.userId,
+				baseRole: MeetRoomMemberRole.MODERATOR
+			},
+			userMember.accessToken
+		),
+		setupRoomMember(
+			roomData.room.roomId,
+			{
+				userId: roomMember.user.userId,
+				baseRole: MeetRoomMemberRole.SPEAKER
+			},
+			roomMember.accessToken
+		)
+	]);
+	const testUsers: RoomTestUsers = {
+		userOwner,
+		userMember,
+		userMemberDetails,
+		roomMember,
+		roomMemberDetails
+	};
+	roomData.users = testUsers;
+	return roomData;
 };

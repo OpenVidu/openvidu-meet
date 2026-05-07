@@ -44,143 +44,161 @@
 		.config-form {
 			display: flex;
 			flex-direction: column;
+			gap: var(--ov-meet-spacing-lg);
+		}
+	}
+
+	.feature-category {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-sm);
+	}
+
+	.category-header {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+		padding: 0 var(--ov-meet-spacing-xs);
+
+		.category-icon {
+			@include design-tokens.ov-icon(sm);
+			color: var(--ov-meet-text-hint);
+		}
+
+		.category-label {
+			font-size: var(--ov-meet-font-size-xs);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-hint);
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
 		}
 	}
 
 	.config-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-		gap: var(--ov-meet-spacing-md);
-		width: 100%;
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+	}
 
-		@media (max-width: 768px) {
-			grid-template-columns: 1fr;
-			gap: var(--ov-meet-spacing-sm);
+	// ─── Feature Row (mirrors access-row but slightly larger) ─────────────────────
+
+	.feature-row-wrapper {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-xs);
+	}
+
+	.feature-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--ov-meet-spacing-md);
+		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+		border-radius: var(--ov-meet-radius-sm);
+		border: 1px solid var(--ov-meet-border-secondary);
+		background: var(--ov-meet-surface-variant);
+		transition: background-color var(--ov-meet-transition-fast);
+
+		&:hover {
+			background: var(--ov-meet-surface-hover);
+		}
+
+		&.e2ee-row .feature-icon {
+			color: var(--ov-meet-color-info);
+		}
+
+		.feature-info {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-md);
+			flex: 1;
+			min-width: 0;
+
+			.feature-icon {
+				@include design-tokens.ov-icon(lg);
+				color: var(--ov-meet-icon-settings);
+				flex-shrink: 0;
+			}
+
+			.feature-text {
+				display: flex;
+				flex-direction: column;
+				gap: 3px;
+				min-width: 0;
+
+				.feature-label {
+					font-size: var(--ov-meet-font-size-lg);
+					font-weight: var(--ov-meet-font-weight-medium);
+					color: var(--ov-meet-text-primary);
+					line-height: var(--ov-meet-line-height-tight);
+				}
+
+				.feature-description {
+					font-size: var(--ov-meet-font-size-md);
+					color: var(--ov-meet-text-secondary);
+					line-height: var(--ov-meet-line-height-normal);
+				}
+			}
+		}
+
+		.feature-toggle {
+			flex-shrink: 0;
 		}
 	}
 
-	.config-card {
-		@include design-tokens.ov-card;
-		border: 2px solid var(--ov-meet-border-secondary);
-		transition: all 0.2s ease-in-out;
-		cursor: default;
+	// ─── E2EE Warning Panel ───────────────────────────────────────────────────────
 
-		&.e2ee-card {
-			.feature-icon {
-				color: var(--ov-meet-color-info) !important;
-			}
-		}
+	.e2ee-info-section {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-sm);
+		animation: slideIn 0.3s ease-out;
 
-		&:hover {
-			border-color: var(--ov-meet-border-primary);
-			box-shadow: var(--ov-meet-shadow-md);
-		}
-
-		mat-card-content {
-			padding: 0;
-		}
-
-		.card-header {
+		.warning-card {
 			display: flex;
 			align-items: flex-start;
-			justify-content: space-between;
 			gap: var(--ov-meet-spacing-sm);
-			margin-bottom: var(--ov-meet-spacing-md);
+			padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+			border-radius: var(--ov-meet-radius-sm);
+			background: rgba(255, 152, 0, 0.08);
+			border: 1px solid rgba(255, 152, 0, 0.2);
 
-			.icon-title-group {
-				display: flex;
-				align-items: flex-start;
-				gap: var(--ov-meet-spacing-sm);
+			.warning-icon {
+				@include design-tokens.ov-icon(md);
+				color: var(--ov-meet-color-warning);
+				flex-shrink: 0;
+				margin-top: 2px;
+			}
+
+			.warning-content {
 				flex: 1;
 
-				.feature-icon {
-					@include design-tokens.ov-icon(lg);
-					color: var(--ov-meet-icon-primary);
-					margin-top: var(--ov-meet-spacing-xs);
-				}
-
-				.title-group {
-					flex: 1;
-
-					.card-title {
-						margin: 0 0 var(--ov-meet-spacing-xs) 0;
-						font-size: var(--ov-meet-font-size-lg);
-						font-weight: var(--ov-meet-font-weight-medium);
-						color: var(--ov-meet-text-primary);
-						line-height: var(--ov-meet-line-height-tight);
-					}
-
-					.card-description {
-						margin: 0;
-						font-size: var(--ov-meet-font-size-sm);
-						color: var(--ov-meet-text-secondary);
-						line-height: var(--ov-meet-line-height-normal);
-					}
-				}
-			}
-
-			.feature-toggle {
-				flex-shrink: 0;
-				align-self: flex-start;
-			}
-		}
-
-		.e2ee-info-section {
-			margin-top: var(--ov-meet-spacing-md);
-			display: flex;
-			flex-direction: column;
-			gap: var(--ov-meet-spacing-sm);
-			animation: slideIn 0.3s ease-out;
-
-			.warning-card {
-				display: flex;
-				align-items: flex-start;
-				gap: var(--ov-meet-spacing-sm);
-				padding: var(--ov-meet-spacing-md);
-				border-radius: var(--ov-meet-radius-sm);
-			}
-
-			.warning-card {
-				background: rgba(255, 152, 0, 0.08);
-				border: 1px solid rgba(255, 152, 0, 0.2);
-
-				.warning-icon {
-					@include design-tokens.ov-icon(md);
+				.warning-title {
+					margin: 0 0 var(--ov-meet-spacing-xs) 0;
+					font-size: var(--ov-meet-font-size-sm);
+					font-weight: var(--ov-meet-font-weight-semibold);
 					color: var(--ov-meet-color-warning);
-					flex-shrink: 0;
-					margin-top: 2px;
 				}
 
-				.warning-content {
-					flex: 1;
+				.restrictions-list {
+					margin: 0;
+					padding-left: var(--ov-meet-spacing-md);
+					font-size: var(--ov-meet-font-size-sm);
+					line-height: var(--ov-meet-line-height-relaxed);
+					color: var(--ov-meet-text-primary);
 
-					.warning-title {
-						margin: 0 0 var(--ov-meet-spacing-xs) 0;
-						font-size: var(--ov-meet-font-size-sm);
-						font-weight: var(--ov-meet-font-weight-semibold);
-						color: var(--ov-meet-color-warning);
+					li {
+						margin-bottom: var(--ov-meet-spacing-xs);
+
+						&:last-child {
+							margin-bottom: 0;
+						}
 					}
 
-					.restrictions-list {
-						margin: 0;
-						padding-left: var(--ov-meet-spacing-md);
-						font-size: var(--ov-meet-font-size-sm);
-						line-height: var(--ov-meet-line-height-relaxed);
-						color: var(--ov-meet-text-primary);
-
-						li {
-							margin-bottom: var(--ov-meet-spacing-xs);
-
-							&:last-child {
-								margin-bottom: 0;
-							}
-						}
-
-						.restriction-detail {
-							display: block;
-							color: var(--ov-meet-text-secondary);
-							margin-top: var(--ov-meet-spacing-xs);
-						}
+					.restriction-detail {
+						display: block;
+						color: var(--ov-meet-text-secondary);
+						margin-top: var(--ov-meet-spacing-xs);
 					}
 				}
 			}
@@ -200,21 +218,6 @@
 }
 
 // Responsive design
-@media (max-width: 1024px) {
-	.room-config-step {
-		// padding: var(--ov-meet-spacing-xs);
-
-		.step-header {
-			gap: var(--ov-meet-spacing-xs);
-			margin-bottom: var(--ov-meet-spacing-md);
-		}
-
-		.config-grid {
-			gap: var(--ov-meet-spacing-sm);
-		}
-	}
-}
-
 @media (max-width: 768px) {
 	.room-config-step {
 		.step-header {
@@ -229,38 +232,16 @@
 			}
 		}
 
-		.config-grid {
-			grid-template-columns: 1fr;
-		}
+		.feature-row {
+			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
 
-		.config-card {
-			.card-header {
-				flex-direction: column;
-				align-items: flex-start;
-				gap: var(--ov-meet-spacing-sm);
-
-				.feature-toggle {
-					align-self: flex-end;
+			.feature-info .feature-text {
+				.feature-label {
+					font-size: var(--ov-meet-font-size-md);
 				}
-			}
-		}
-	}
-}
 
-@media (max-width: 480px) {
-	.room-config-step {
-		.config-card {
-			.card-header {
-				.icon-title-group {
-					.title-group {
-						.card-title {
-							font-size: var(--ov-meet-font-size-md);
-						}
-
-						.card-description {
-							font-size: var(--ov-meet-font-size-xs);
-						}
-					}
+				.feature-description {
+					font-size: var(--ov-meet-font-size-sm);
 				}
 			}
 		}

@@ -1,16 +1,16 @@
 import { inject, injectable } from 'inversify';
-import { Model } from 'mongoose';
+import type { Model, QueryFilter, Require_id, Types } from 'mongoose';
 import ms from 'ms';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { runtimeMigrationRegistry } from '../migrations/migration-registry.js';
-import {
+import type {
 	CollectionMigrationRegistry,
-	generateSchemaMigrationName,
 	MigrationResult,
 	SchemaMigratableDocument,
 	SchemaMigrationStep,
 	SchemaVersion
 } from '../models/migration.model.js';
+import { generateSchemaMigrationName } from '../models/migration.model.js';
 import { MigrationRepository } from '../repositories/migration.repository.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';
@@ -28,6 +28,10 @@ export class MigrationService {
 	 * This method should be called during startup to ensure backwards compatibility.
 	 *
 	 * Uses distributed locking to ensure only one instance runs migrations in HA mode.
+	 *
+	 * Migration flow:
+	 * 1) Schema/data migrations
+	 * 2) Index synchronization (drop obsolete + create missing indexes)
 	 */
 	async runMigrations(): Promise<void> {
 		this.logger.info('Running migrations...');
@@ -38,6 +42,9 @@ export class MigrationService {
 				// Run schema migrations to upgrade document structures
 				await this.runSchemaMigrations();
 
+				// Sync collection indexes to match current schema definitions
+				await this.runIndexMigrations();
+
 				this.logger.info('All migrations completed successfully');
 				return true;
 			});
@@ -46,10 +53,88 @@ export class MigrationService {
 				this.logger.warn('Unable to acquire lock for migrations. May be already running on another instance.');
 				return;
 			}
+
+			this.logger.info('All migrations completed successfully');
 		} catch (error) {
 			this.logger.error('Error running migrations:', error);
 			throw error;
 		}
+	}
+
+	/**
+	 * Synchronizes MongoDB indexes for all registered collections.
+	 * This removes obsolete indexes and creates missing ones according to the current schema definitions.
+	 */
+	protected async runIndexMigrations(): Promise<void> {
+		this.logger.info('Running index migrations...');
+
+		try {
+			for (const registry of runtimeMigrationRegistry) {
+				await this.syncCollectionIndexes(registry);
+			}
+
+			this.logger.info('Index migrations completed successfully');
+		} catch (error) {
+			this.logger.error('Error running index migrations:', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Synchronizes indexes for a single collection.
+	 *
+	 * @param registry - The collection migration registry containing model and collection metadata
+	 */
+	protected async syncCollectionIndexes<TDocument extends SchemaMigratableDocument>(
+		registry: CollectionMigrationRegistry<TDocument>
+	): Promise<void> {
+		this.logger.info(`Syncing indexes for collection: ${registry.collectionName}`);
+
+		await this.ensureCollectionExists(registry);
+
+		const indexesBeforeSync = await registry.model.collection.indexes();
+		const indexNamesBeforeSync = new Set(indexesBeforeSync.map((index) => index.name));
+
+		const droppedIndexes = await registry.model.syncIndexes();
+
+		const indexesAfterSync = await registry.model.collection.indexes();
+		const indexNamesAfterSync = new Set(indexesAfterSync.map((index) => index.name!));
+		const createdIndexes = [...indexNamesAfterSync].filter((indexName) => !indexNamesBeforeSync.has(indexName));
+
+		if (droppedIndexes.length === 0 && createdIndexes.length === 0) {
+			this.logger.debug(`No index changes for collection: ${registry.collectionName}`);
+			return;
+		}
+
+		this.logger.info(
+			`Index sync for ${registry.collectionName}: ` +
+				`dropped=${droppedIndexes.length} [${droppedIndexes.join(', ')}], ` +
+				`created=${createdIndexes.length} [${createdIndexes.join(', ')}]`
+		);
+	}
+
+	/**
+	 * Ensures MongoDB collection exists before running index synchronization.
+	 * This avoids NamespaceNotFound errors on fresh databases with no documents.
+	 */
+	protected async ensureCollectionExists<TDocument extends SchemaMigratableDocument>(
+		registry: CollectionMigrationRegistry<TDocument>
+	): Promise<void> {
+		const nativeDb = registry.model.db.db;
+
+		if (!nativeDb) {
+			throw new Error(`MongoDB native connection is not available for ${registry.collectionName}`);
+		}
+
+		const collectionName = registry.model.collection.collectionName;
+		const collectionExists = await nativeDb.listCollections({ name: collectionName }, { nameOnly: true }).hasNext();
+
+		if (collectionExists) {
+			return;
+		}
+
+		await registry.model.createCollection();
+		this.logger.info(`Created missing collection for index sync: ${registry.collectionName}`);
 	}
 
 	/**
@@ -261,7 +346,7 @@ export class MigrationService {
 		let migratedCount = 0;
 		let failedCount = 0;
 
-		const sourceVersionFilter = { schemaVersion: sourceSchemaVersion };
+		const sourceVersionFilter: QueryFilter<TDocument> = { schemaVersion: sourceSchemaVersion };
 		const totalSourceVersionDocuments = await model.countDocuments(sourceVersionFilter).exec();
 
 		if (totalSourceVersionDocuments === 0) {
@@ -273,18 +358,23 @@ export class MigrationService {
 		}
 
 		let processedDocumentsCount = 0;
-		let lastProcessedDocumentId: TDocument['_id'] | null = null;
+		let lastProcessedDocumentId: Types.ObjectId | null = null;
 		let hasMoreBatches = true;
 
 		while (hasMoreBatches) {
-			const batchFilter =
+			const batchFilter: QueryFilter<TDocument> =
 				lastProcessedDocumentId === null
 					? sourceVersionFilter
 					: {
 							...sourceVersionFilter,
 							_id: { $gt: lastProcessedDocumentId }
 						};
-			const documents = await model.find(batchFilter).sort({ _id: 1 }).limit(batchSize).exec();
+			const documents = (await model
+				.find(batchFilter)
+				.sort({ _id: 1 })
+				.limit(batchSize)
+				.lean()
+				.exec()) as Require_id<TDocument>[];
 
 			if (documents.length === 0) {
 				break;
@@ -293,8 +383,8 @@ export class MigrationService {
 			const batchResults = await Promise.allSettled(
 				documents.map(async (doc) => {
 					const migratedDocument = this.applyTransformChain(doc, migrationChain, targetVersion);
-					await migratedDocument.save();
-					return String(doc._id);
+					await model.replaceOne({ _id: doc._id }, migratedDocument).exec();
+					return doc._id;
 				})
 			);
 
@@ -307,7 +397,7 @@ export class MigrationService {
 				}
 
 				failedCount++;
-				this.logger.warn(`Failed to migrate document ${String(documents[i]._id)}:`, batchResult.reason);
+				this.logger.error(`Failed to migrate document ${String(documents[i]._id)}:`, batchResult.reason);
 			}
 
 			processedDocumentsCount += documents.length;

@@ -1,6 +1,41 @@
-import { MeetRecordingFilters, MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingField } from '@openvidu-meet/typings';
+import {
+	MEET_RECORDING_FIELDS,
+	MEET_RECORDING_SORT_FIELDS,
+	MeetRecordingLayout,
+	MeetRecordingStatus,
+	SortOrder,
+	TextMatchMode
+} from '@openvidu-meet/typings';
 import { z } from 'zod';
 import { encodingValidator, nonEmptySanitizedRoomId } from './room.schema.js';
+
+/**
+ * Shared fields validation schema for Recording entity
+ * Validates and transforms comma-separated string to typed array
+ * Only allows fields that exist in MEET_RECORDING_FIELDS
+ */
+const fieldsSchema = z
+	.string()
+	.optional()
+	.transform((value) => {
+		if (!value) return undefined;
+
+		const requested = value
+			.split(',')
+			.map((field) => field.trim())
+			.filter((field) => field !== '');
+
+		// Filter: only keep valid fields that exist in MeetRecordingInfo
+		const validFields = requested.filter((field) =>
+			MEET_RECORDING_FIELDS.includes(field as MeetRecordingField)
+		) as MeetRecordingField[];
+
+		// Deduplicate
+		const unique = Array.from(new Set(validFields));
+
+		return unique.length > 0 ? unique : undefined;
+	});
 
 export const nonEmptySanitizedRecordingId = (fieldName: string) =>
 	z
@@ -59,25 +94,49 @@ export const StartRecordingReqSchema = z.object({
 		.optional()
 });
 
-export const RecordingFiltersSchema: z.ZodType<MeetRecordingFilters> = z.object({
-	roomId: nonEmptySanitizedRoomId('roomId').optional(),
-	roomName: z.string().optional(),
-	status: z.nativeEnum(MeetRecordingStatus).optional(),
-	fields: z.string().optional(),
-	maxItems: z.coerce
-		.number()
-		.positive('maxItems must be a positive number')
-		.transform((val) => {
-			// Convert the value to a number
-			const intVal = Math.floor(val);
-			// Ensure it's not greater than 100
-			return intVal > 100 ? 100 : intVal;
-		})
-		.default(10),
-	nextPageToken: z.string().optional(),
-	sortField: z.enum(['startDate', 'roomName', 'duration', 'size']).optional().default('startDate'),
-	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
-});
+export const RecordingFiltersSchema = z
+	.object({
+		roomId: nonEmptySanitizedRoomId('roomId').optional(),
+		roomName: z.string().optional(),
+		roomNameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		roomNameCaseInsensitive: z.preprocess((arg) => {
+			if (typeof arg === 'string') {
+				if (arg.toLowerCase() === 'true') return true;
+
+				if (arg.toLowerCase() === 'false') return false;
+			}
+
+			return arg;
+		}, z.boolean().optional().default(false)),
+		status: z.nativeEnum(MeetRecordingStatus).optional(),
+		fields: fieldsSchema,
+		maxItems: z.coerce
+			.number()
+			.positive('maxItems must be a positive number')
+			.transform((val) => {
+				// Convert the value to a number
+				const intVal = Math.floor(val);
+				// Ensure it's not greater than 100
+				return intVal > 100 ? 100 : intVal;
+			})
+			.default(10),
+		nextPageToken: z.string().optional(),
+		sortField: z.enum(MEET_RECORDING_SORT_FIELDS).optional().default('startDate'),
+		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+	})
+	.superRefine((data, ctx) => {
+		if (data.roomNameMatchMode === TextMatchMode.REGEX && data.roomName) {
+			try {
+				new RegExp(String(data.roomName));
+			} catch {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ['roomName'],
+					message: 'Invalid regular expression pattern'
+				});
+			}
+		}
+	});
 
 export const BulkDeleteRecordingsReqSchema = z.object({
 	recordingIds: z.preprocess(
@@ -92,18 +151,66 @@ export const BulkDeleteRecordingsReqSchema = z.object({
 
 			return [];
 		},
-		z
-			.array(nonEmptySanitizedRecordingId('recordingId'))
-			.nonempty({ message: 'recordingIds must contain at least one item' })
+		z.array(nonEmptySanitizedRecordingId('recordingId')).min(1, {
+			message: 'At least one recordingId is required'
+		})
 	)
 });
+
+export const RecordingQueryFieldsSchema = z.object({
+	fields: fieldsSchema
+});
+
+export const RecordingHeaderFieldsSchema = z.object({
+	'x-fields': fieldsSchema
+});
+
+/**
+ * Merges X-Fields header values into query.fields for recordings.
+ * When both header and query param provide fields, values are merged (union of unique fields).
+ * This allows API consumers to use either mechanism or both simultaneously.
+ */
+export function mergeRecordingHeaderFieldsIntoQuery(
+	headers: Record<string, unknown>,
+	query: Record<string, unknown>
+): void {
+	const headerResult = RecordingHeaderFieldsSchema.safeParse(headers);
+
+	if (!headerResult.success) {
+		return;
+	}
+
+	const headerFields = headerResult.data['x-fields'];
+
+	if (headerFields) {
+		const existingFields =
+			typeof query.fields === 'string'
+				? query.fields
+						.split(',')
+						.map((f: string) => f.trim())
+						.filter((f: string) => f !== '')
+				: [];
+		const merged = Array.from(new Set([...existingFields, ...headerFields]));
+		query.fields = merged.join(',');
+	}
+}
 
 export const GetRecordingReqSchema = z.object({
 	params: z.object({
 		recordingId: nonEmptySanitizedRecordingId('recordingId')
 	}),
 	query: z.object({
-		secret: z.string().optional()
+		fields: fieldsSchema,
+		recordingSecret: z.string().optional()
+	})
+});
+
+export const StopRecordingReqSchema = z.object({
+	params: z.object({
+		recordingId: nonEmptySanitizedRecordingId('recordingId')
+	}),
+	query: z.object({
+		fields: fieldsSchema
 	})
 });
 
@@ -112,7 +219,7 @@ export const GetRecordingMediaReqSchema = z.object({
 		recordingId: nonEmptySanitizedRecordingId('recordingId')
 	}),
 	query: z.object({
-		secret: z.string().optional()
+		recordingSecret: z.string().optional()
 	}),
 	headers: z
 		.object({

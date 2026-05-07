@@ -1,31 +1,35 @@
 import { Injectable, inject } from '@angular/core';
 import {
 	LeftEventReason,
+	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
-	MeetRoomMemberRole,
+	MeetRecordingStatus,
+	MeetRecordingUpdatedPayload,
+	MeetRoomMemberTokenMetadata,
+	MeetRoomMemberTokenOptions,
+	MeetRoomMemberUIBadge,
 	MeetSignalType,
 	WebComponentEvent,
 	WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
-import {
+import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { NavigationService } from '../../../shared/services/navigation.service';
+import { NotificationService } from '../../../shared/services/notification.service';
+import { SoundService } from '../../../shared/services/sound.service';
+import { RecordingService } from '../../recordings/services/recording.service';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { RoomFeatureService } from '../../rooms/services/room-feature.service';
+import type {
 	DataPacket_Kind,
+	LocalParticipant,
 	ParticipantLeftEvent,
-	ParticipantLeftReason,
 	ParticipantModel,
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent,
 	RemoteParticipant,
-	Room,
-	RoomEvent
-} from 'openvidu-components-angular';
-import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
-import { NavigationService } from '../../../shared/services/navigation.service';
-import { NotificationService } from '../../../shared/services/notification.service';
-import { SessionStorageService } from '../../../shared/services/session-storage.service';
-import { SoundService } from '../../../shared/services/sound.service';
-import { TokenStorageService } from '../../../shared/services/token-storage.service';
-import { RecordingService } from '../../recordings/services/recording.service';
-import { RoomMemberService } from '../../rooms/services/room-member.service';
+	Room
+} from '../openvidu-components';
+import { ParticipantLeftReason, RoomEvent } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
 
@@ -38,11 +42,9 @@ import { MeetingWebComponentManagerService } from './meeting-webcomponent-manage
 @Injectable()
 export class MeetingEventHandlerService {
 	protected meetingContext = inject(MeetingContextService);
-	protected featureConfService = inject(FeatureConfigurationService);
+	protected roomFeatureService = inject(RoomFeatureService);
 	protected recordingService = inject(RecordingService);
-	protected roomMemberService = inject(RoomMemberService);
-	protected sessionStorageService = inject(SessionStorageService);
-	protected tokenStorageService = inject(TokenStorageService);
+	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected wcManagerService = inject(MeetingWebComponentManagerService);
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
@@ -59,22 +61,14 @@ export class MeetingEventHandlerService {
 	 * @param room The LiveKit Room instance
 	 */
 	setupRoomListeners(room: Room): void {
-		this.setupDataReceivedListener(room);
-	}
-
-	/**
-	 * Sets up the DataReceived event listener for handling room signals
-	 * @param room The LiveKit Room instance
-	 */
-	private setupDataReceivedListener(room: Room): void {
 		room.on(
 			RoomEvent.DataReceived,
 			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
 				// Only process topics that this handler is responsible for
-				const relevantTopics = [
-					'recordingStopped',
-					MeetSignalType.MEET_ROOM_CONFIG_UPDATED,
-					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED
+				const relevantTopics: string[] = [
+					MeetSignalType.MEET_RECORDING_UPDATED,
+					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
+					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED
 				];
 
 				if (!topic || !relevantTopics.includes(topic)) {
@@ -85,18 +79,18 @@ export class MeetingEventHandlerService {
 					const event = JSON.parse(new TextDecoder().decode(payload));
 
 					switch (topic) {
-						case 'recordingStopped':
-							// Update hasRecordings in MeetingContextService
-							this.meetingContext.setHasRecordings(true);
-							break;
-
-						case MeetSignalType.MEET_ROOM_CONFIG_UPDATED:
-							// Room cannot be updated if a meeting is ongoing
-							// await this.handleRoomConfigUpdated(event);
+						case MeetSignalType.MEET_RECORDING_UPDATED:
+							this.handleRecordingUpdated(event as MeetRecordingUpdatedPayload);
 							break;
 
 						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
-							await this.handleParticipantRoleUpdated(event);
+							const roleUpdateEvent = event as MeetParticipantRoleUpdatedPayload;
+							await this.handleParticipantRoleUpdated(roleUpdateEvent);
+							break;
+
+						case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED:
+							const permissionsUpdateEvent = event as MeetParticipantPermissionsUpdatedPayload;
+							await this.handleParticipantPermissionsUpdated(permissionsUpdateEvent);
 							break;
 					}
 				} catch (error) {
@@ -104,13 +98,18 @@ export class MeetingEventHandlerService {
 				}
 			}
 		);
+
+		room.on(
+			RoomEvent.ParticipantMetadataChanged,
+			(_prevMetadata: string | undefined, participant: LocalParticipant | RemoteParticipant) => {
+				this.handleParticipantMetadataChanged(participant.identity, participant.metadata);
+			}
+		);
 	}
 
 	/**
 	 * Handles participant connected event.
 	 * Sends JOINED event to parent window (for web component integration).
-	 *
-	 * Arrow function ensures correct 'this' binding when called from template.
 	 *
 	 * @param event Participant model from OpenVidu
 	 */
@@ -129,19 +128,17 @@ export class MeetingEventHandlerService {
 	 * Handles participant left event.
 	 * - Maps technical reason to user-friendly reason
 	 * - Sends LEFT event to parent window
-	 * - Cleans up session storage (secrets, tokens)
+	 * - Clears participant identity and token from RoomMemberContextService
 	 * - Navigates to disconnected page
-	 *
-	 * Arrow function ensures correct 'this' binding when called from template.
 	 *
 	 * @param event Participant left event from OpenVidu
 	 */
 	onParticipantLeft = async (event: ParticipantLeftEvent): Promise<void> => {
 		let leftReason = this.mapLeftReason(event.reason);
 
-		// If meeting was ended by this user, update reason
-		const meetingEndedBy = this.meetingContext.meetingEndedBy();
-		if (leftReason === LeftEventReason.MEETING_ENDED && meetingEndedBy === 'self') {
+		// If meeting was ended by local user, update reason
+		const meetingEndedBySelf = this.meetingContext.meetingEndedBy() === 'self';
+		if (leftReason === LeftEventReason.MEETING_ENDED && meetingEndedBySelf) {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
@@ -156,24 +153,16 @@ export class MeetingEventHandlerService {
 		};
 		this.wcManagerService.sendMessageToParent(message);
 
-		// Clear participant identity and token
-		this.roomMemberService.clearParticipantIdentity();
-		this.tokenStorageService.clearRoomMemberToken();
-
-		// Clean up room secret and e2ee key (if any), except on browser unload)
-		if (event.reason !== ParticipantLeftReason.BROWSER_UNLOAD) {
-			this.sessionStorageService.removeRoomSecret();
-			this.sessionStorageService.removeE2EEKey();
-		}
+		// Clear room member and meeting context
+		this.roomMemberContextService.clearContext();
+		this.meetingContext.clearContext();
 
 		// Navigate to disconnected page
-		await this.navigationService.navigateTo('disconnected', { reason: leftReason }, true);
+		await this.navigationService.navigateTo('/disconnected', { reason: leftReason }, true);
 	};
 
 	/**
 	 * Handles recording start request event.
-	 *
-	 * Arrow function ensures correct 'this' binding when called from template.
 	 *
 	 * @param event Recording start requested event from OpenVidu
 	 */
@@ -195,8 +184,6 @@ export class MeetingEventHandlerService {
 	/**
 	 * Handles recording stop request event.
 	 *
-	 * Arrow function ensures correct 'this' binding when called from template.
-	 *
 	 * @param event Recording stop requested event from OpenVidu
 	 */
 	onRecordingStopRequested = async (event: RecordingStopRequestedEvent): Promise<void> => {
@@ -212,97 +199,132 @@ export class MeetingEventHandlerService {
 	// ============================================
 
 	/**
-	 * Handles room config updated event.
-	 * Updates feature config and refreshes room member token if needed.
-	 * Obtains roomId and roomSecret from MeetingContextService.
-	 */
-	// private async handleRoomConfigUpdated(event: MeetRoomConfigUpdatedPayload): Promise<void> {
-	// 	const { config } = event;
-
-	// 	// Update feature configuration
-	// 	this.featureConfService.setRoomConfig(config);
-
-	// 	// Refresh room member token if recording is enabled
-	// 	if (config.recording.enabled) {
-	// 		try {
-	// 			const roomId = this.meetingContext.roomId();
-	// 			const roomSecret = this.meetingContext.roomSecret();
-	// 			const participantName = this.roomMemberService.getParticipantName();
-	// 			const participantIdentity = this.roomMemberService.getParticipantIdentity();
-
-	// 			if (!roomId || !roomSecret) {
-	// 				console.error('Room ID or secret not available for token refresh');
-	// 				return;
-	// 			}
-
-	// 			await this.roomMemberService.generateToken(roomId, {
-	// 				secret: roomSecret,
-	// 				grantJoinMeetingPermission: true,
-	// 				participantName,
-	// 				participantIdentity
-	// 			});
-	// 		} catch (error) {
-	// 			console.error('Error refreshing room member token:', error);
-	// 		}
-	// 	}
-	// }
-
-	/**
-	 * Handles participant role updated event.
-	 * Updates local or remote participant role and refreshes room member token if needed.
-	 * Obtains all necessary data from MeetingContextService.
+	 * Handles role updated event for the local participant by refreshing the room member token to get updated permissions.
+	 * Also shows a notification to the user about their new role.
+	 *
+	 * @param event Participant role updated event payload
 	 */
 	private async handleParticipantRoleUpdated(event: MeetParticipantRoleUpdatedPayload): Promise<void> {
-		const { participantIdentity, newRole, secret } = event;
-		const roomId = this.meetingContext.roomId();
+		const { roomId, participantIdentity, newBadge } = event;
 		const local = this.meetingContext.localParticipant();
-		const participantName = this.roomMemberService.getParticipantName();
 
-		// Check if the role update is for the local participant
-		if (local && participantIdentity === local.identity) {
-			if (!secret || !roomId) return;
+		if (!roomId || !local || local.identity !== participantIdentity) {
+			return;
+		}
 
-			// Update room secret in context
-			this.meetingContext.setRoomSecret(secret);
-			this.sessionStorageService.setRoomSecret(secret);
+		try {
+			// Refresh room member token to get updated permissions based on new role
+			await this.roomMemberContextService.refreshToken(roomId);
 
-			try {
-				// Refresh participant token with new role
-				await this.roomMemberService.generateToken(roomId, {
-					secret,
-					grantJoinMeetingPermission: true,
-					participantName,
-					participantIdentity
-				});
-
-				// Update local participant role
-				local.meetRole = newRole;
-				this.showParticipantRoleUpdatedNotification(event);
-
-				// Increment version to trigger reactivity
-				this.meetingContext.incrementParticipantsVersion();
-			} catch (error) {
-				console.error('Error refreshing room member token:', error);
-			}
-		} else {
-			// Update remote participant role
-			const remoteParticipants = this.meetingContext.remoteParticipants();
-			const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
-			if (participant) {
-				participant.meetRole = newRole;
-
-				// Increment version to trigger reactivity
-				this.meetingContext.incrementParticipantsVersion();
-			}
+			const isPromotedModerator = newBadge === MeetRoomMemberUIBadge.MODERATOR;
+			this.showParticipantRoleUpdatedNotification(isPromotedModerator);
+		} catch (error) {
+			console.error('Error refreshing room member token after role update:', error);
+			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 		}
 	}
 
-	private showParticipantRoleUpdatedNotification(event: MeetParticipantRoleUpdatedPayload): void {
-		const { newRole } = event as MeetParticipantRoleUpdatedPayload;
-		this.notificationService.showSnackbar(`You have been assigned the role of ${newRole.toUpperCase()}`);
-		newRole === MeetRoomMemberRole.MODERATOR
-			? this.soundService.playParticipantRoleUpgradedSound()
-			: this.soundService.playParticipantRoleDowngradedSound();
+	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {
+		const roomId = this.meetingContext.roomId();
+
+		if (roomId && event.roomId !== roomId) {
+			return;
+		}
+
+		if (event.recording.status === MeetRecordingStatus.COMPLETE) {
+			this.meetingContext.setHasRecordings(true);
+		}
+	}
+
+	/**
+	 * Handles permissions updated event for the local participant by regenerating the room member token to get updated permissions.
+	 *
+	 * @param event Participant permissions updated event payload
+	 */
+	private async handleParticipantPermissionsUpdated(event: MeetParticipantPermissionsUpdatedPayload): Promise<void> {
+		const { participantIdentity } = event;
+		const roomId = this.meetingContext.roomId();
+		const local = this.meetingContext.localParticipant();
+
+		if (!roomId || !local || local.identity !== participantIdentity) {
+			return;
+		}
+
+		try {
+			const roomSecret = this.meetingContext.roomSecret();
+			const tokenOptions: MeetRoomMemberTokenOptions = {
+				secret: roomSecret,
+				joinMeeting: true
+			};
+			await this.roomMemberContextService.generateToken(roomId, tokenOptions);
+
+			this.notificationService.showSnackbar('Your permissions have been updated');
+		} catch (error) {
+			console.error('Error regenerating room member token after permissions update:', error);
+			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
+		}
+	}
+
+	/**
+	 * Handles LiveKit participant metadata updates to synchronize participant badge and moderation state.
+	 * This is necessary to reflect role changes (e.g. promoted to moderator) in the UI based on metadata updates from the backend.
+	 *
+	 * @param participantIdentity - The identity of the participant whose metadata changed
+	 * @param metadata - The new metadata string, expected to be a JSON string containing badge and promotedModerator properties
+	 */
+	private handleParticipantMetadataChanged(participantIdentity: string, metadata: string | undefined): void {
+		const parsedMetadata = this.parseParticipantMetadata(metadata);
+		if (!parsedMetadata) {
+			return;
+		}
+
+		const local = this.meetingContext.localParticipant();
+		if (local && local.identity === participantIdentity) {
+			local.badge = parsedMetadata.badge;
+			local.promotedModerator = Boolean(parsedMetadata.isPromotedModerator);
+			return;
+		}
+
+		const remoteParticipants = this.meetingContext.remoteParticipants();
+		const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
+		if (participant) {
+			participant.badge = parsedMetadata.badge;
+			participant.promotedModerator = Boolean(parsedMetadata.isPromotedModerator);
+		}
+	}
+
+	private parseParticipantMetadata(metadata: string | undefined): MeetRoomMemberTokenMetadata | undefined {
+		if (!metadata) {
+			return undefined;
+		}
+
+		try {
+			const parsed = JSON.parse(metadata) as Partial<MeetRoomMemberTokenMetadata>;
+			if (
+				!parsed.badge ||
+				(parsed.isPromotedModerator !== undefined && typeof parsed.isPromotedModerator !== 'boolean')
+			) {
+				return undefined;
+			}
+
+			return parsed as MeetRoomMemberTokenMetadata;
+		} catch (error) {
+			console.warn('Failed to parse participant metadata', error);
+			return undefined;
+		}
+	}
+
+	private showParticipantRoleUpdatedNotification(isPromotedModerator: boolean): void {
+		const message = isPromotedModerator
+			? 'You have been promoted to moderator'
+			: 'Your moderator role has been removed';
+		this.notificationService.showSnackbar(message);
+
+		if (isPromotedModerator) {
+			this.soundService.playParticipantRoleUpgradedSound();
+		} else {
+			this.soundService.playParticipantRoleDowngradedSound();
+		}
 	}
 
 	/**
@@ -318,7 +340,7 @@ export class MeetingEventHandlerService {
 			[ParticipantLeftReason.SERVER_SHUTDOWN]: LeftEventReason.SERVER_SHUTDOWN,
 			[ParticipantLeftReason.PARTICIPANT_REMOVED]: LeftEventReason.PARTICIPANT_KICKED,
 			[ParticipantLeftReason.ROOM_DELETED]: LeftEventReason.MEETING_ENDED,
-			[ParticipantLeftReason.DUPLICATE_IDENTITY]: LeftEventReason.UNKNOWN,
+			[ParticipantLeftReason.DUPLICATE_IDENTITY]: LeftEventReason.DUPLICATE_IDENTITY,
 			[ParticipantLeftReason.OTHER]: LeftEventReason.UNKNOWN
 		};
 		return reasonMap[reason] ?? LeftEventReason.UNKNOWN;

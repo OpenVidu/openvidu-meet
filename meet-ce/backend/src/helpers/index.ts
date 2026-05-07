@@ -1,6 +1,6 @@
-export * from './ov-components-adapter.helper.js';
 export * from './password.helper.js';
 export * from './recording.helper.js';
 export * from './redis.helper.js';
 export * from './room.helper.js';
+export * from './s3-sse.helper.js';
 

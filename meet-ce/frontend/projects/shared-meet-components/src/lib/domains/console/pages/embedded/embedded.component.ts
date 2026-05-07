@@ -1,5 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, effect, OnInit, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -12,6 +13,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
 @Component({
@@ -28,9 +30,13 @@ import { NotificationService } from '../../../../shared/services/notification.se
 		MatProgressSpinnerModule
 	],
 	templateUrl: './embedded.component.html',
-	styleUrl: './embedded.component.scss'
+	styleUrl: './embedded.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmbeddedComponent implements OnInit {
+	private navigationService = inject(NavigationService);
+	restApiDocsUrl = signal<string>('');
+
 	isLoading = signal(true);
 	hasWebhookChanges = signal(false);
 
@@ -85,6 +91,10 @@ export class EmbeddedComponent implements OnInit {
 	}
 
 	async ngOnInit() {
+		// Build the REST API documentation URL with base href
+		const docsPath = '/api/v1/docs/';
+		this.restApiDocsUrl.set(this.navigationService.addBasePath(docsPath));
+
 		this.isLoading.set(true);
 		await this.loadApiKeyData();
 		await this.loadWebhookConfig();

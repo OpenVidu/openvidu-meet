@@ -1,84 +1,169 @@
-import { MeetRecordingFilters, MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingField, MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingStatus, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import type { QueryFilter } from 'mongoose';
 import { uid as secureUid } from 'uid/secure';
-import { MeetRecordingDocument, MeetRecordingModel } from '../models/mongoose-schemas/recording.schema.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { internalError } from '../models/error.model.js';
+import type {
+	MeetRecordingDocument,
+	MeetRecordingDocumentOnlyField
+} from '../models/mongoose-schemas/recording.schema.js';
+import {
+	MEET_RECORDING_DOCUMENT_ONLY_FIELDS,
+	MeetRecordingModel
+} from '../models/mongoose-schemas/recording.schema.js';
 import { LoggerService } from '../services/logger.service.js';
+import type {
+	MeetRecordingPage,
+	ProjectedRecording,
+	RecordingQuery,
+	RecordingQueryWithFields,
+	RecordingQueryWithProjection
+} from '../types/recording-projection.types.js';
+import { buildStringMatchFilter } from '../utils/string-match-filter.utils.js';
 import { BaseRepository } from './base.repository.js';
+import { RoomMemberRepository } from './room-member.repository.js';
+import { RoomRepository } from './room.repository.js';
 
 /**
  * Repository for managing recording entities in MongoDB.
- * Handles CRUD operations and query filtering for recordings.
+ * Provides CRUD operations and specialized queries for recording data.
  */
 @injectable()
-export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetRecordingInfo> extends BaseRepository<
-	TRecording,
-	MeetRecordingDocument
-> {
-	constructor(@inject(LoggerService) logger: LoggerService) {
+export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetRecordingDocument> {
+	constructor(
+		@inject(LoggerService) logger: LoggerService,
+		@inject(RoomRepository) protected roomRepository: RoomRepository,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository
+	) {
 		super(logger, MeetRecordingModel);
 	}
 
-	/**
-	 * Transforms a Mongoose document to a domain object.
-	 * Removes access secrets before returning.
-	 */
-	protected toDomain(document: MeetRecordingDocument): TRecording {
-		return document.toObject() as TRecording;
+	protected toDomain(dbObject: MeetRecordingDocument): MeetRecordingInfo {
+		const { schemaVersion, roomOwner, roomRegisteredAccess, accessSecrets, ...recording } = dbObject;
+		(void schemaVersion, roomOwner, roomRegisteredAccess, accessSecrets);
+		return recording as MeetRecordingInfo;
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetRecordingDocumentOnlyField[] {
+		return MEET_RECORDING_DOCUMENT_ONLY_FIELDS;
+	}
+
+	protected override getAtomicUpdatePaths(): readonly string[] {
+		// Recording encoding must be treated as an atomic update path because
+		// it can be either a string or an object, and we want to ensure it is fully replaced rather than partially updated.
+		return ['encoding'];
 	}
 
 	/**
-	 * Creates a new recording document in the database.
-	 * Automatically generates access secrets if not provided.
+	 * Creates a new recording with generated access secrets.
 	 *
-	 * @param recording - The recording information to create (optionally includes accessSecrets)
+	 * @param recording - The recording information to create (excluding access secrets)
 	 * @returns The created recording (without access secrets)
 	 */
-	async create(recording: TRecording): Promise<TRecording> {
-		// Check if recording already includes accessSecrets
-		const hasAccessSecrets =
-			'accessSecrets' in recording &&
-			recording.accessSecrets &&
-			typeof recording.accessSecrets === 'object' &&
-			'public' in recording.accessSecrets &&
-			'private' in recording.accessSecrets;
+	async create(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
+		const room = await this.roomRepository.findByRoomId(recording.roomId, ['owner', 'access', 'roles']);
 
-		// Generate access secrets only if not provided
-		const recordingDoc = {
+		if (!room) {
+			throw internalError(
+				`Cannot create recording '${recording.recordingId}' for non-existent room '${recording.roomId}'`
+			);
+		}
+
+		const document: MeetRecordingDocument = {
 			...recording,
-			accessSecrets: hasAccessSecrets
-				? recording.accessSecrets
-				: {
-						public: secureUid(10),
-						private: secureUid(10)
-					}
+			roomOwner: room.owner,
+			roomRegisteredAccess:
+				room.access.registered.enabled && room.roles.speaker.permissions.canRetrieveRecordings,
+			accessSecrets: {
+				public: secureUid(10),
+				private: secureUid(10)
+			},
+			schemaVersion: INTERNAL_CONFIG.RECORDING_SCHEMA_VERSION
 		};
-
-		const result = await this.createDocument(recordingDoc);
-		return this.toDomain(result);
+		return this.createDocument(document);
 	}
 
 	/**
-	 * Updates an existing recording.
+	 * Updates specific fields of a recording without replacing the entire document.
+	 *
+	 * @param recordingId - The recording identifier
+	 * @param fieldsToUpdate - Partial recording data with fields to update
+	 * @returns The updated recording (without access secrets)
+	 * @throws Error if recording not found
+	 */
+	updatePartial(recordingId: string, fieldsToUpdate: Partial<MeetRecordingInfo>): Promise<MeetRecordingInfo> {
+		return this.updatePartialOne({ recordingId }, fieldsToUpdate);
+	}
+
+	/**
+	 * Replaces an existing recording with new data.
 	 *
 	 * @param recording - The recording data to update
 	 * @returns The updated recording (without access secrets)
 	 * @throws Error if recording not found
 	 */
-	async update(recording: TRecording): Promise<TRecording> {
-		const document = await this.updateOne({ recordingId: recording.recordingId }, { $set: recording });
-		return this.toDomain(document);
+	replace(recording: MeetRecordingInfo): Promise<MeetRecordingInfo> {
+		return this.replaceOne({ recordingId: recording.recordingId }, recording);
+	}
+
+	/**
+	 * Updates access-scope metadata fields for all recordings in a room.
+	 *
+	 * @param roomId - The ID of the room whose recordings should be updated
+	 * @param updates - Partial access-scope metadata to apply
+	 */
+	async updateAccessScopeMetadataByRoomId(
+		roomId: string,
+		updates: { roomOwner?: string; roomRegisteredAccess?: boolean }
+	): Promise<void> {
+		const $set: { roomOwner?: string; roomRegisteredAccess?: boolean } = {};
+
+		if (updates.roomOwner !== undefined) {
+			$set.roomOwner = updates.roomOwner;
+		}
+
+		if (updates.roomRegisteredAccess !== undefined) {
+			$set.roomRegisteredAccess = updates.roomRegisteredAccess;
+		}
+
+		if (Object.keys($set).length === 0) {
+			return;
+		}
+
+		const result = await this.model.updateMany({ roomId }, { $set }).exec();
+		this.logger.debug(
+			`Updated recording access-scope metadata for room '${roomId}': matched=${result.matchedCount}, modified=${result.modifiedCount}`
+		);
 	}
 
 	/**
 	 * Finds a recording by its recordingId.
 	 *
 	 * @param recordingId - The ID of the recording to find
-	 * @param fields - Comma-separated list of fields to include in the result
+	 * @param fields - Array of field names to include in the result
 	 * @returns The recording (without access secrets), or null if not found
 	 */
-	async findByRecordingId(recordingId: string, fields?: string): Promise<TRecording | null> {
-		const document = await this.findOne({ recordingId }, fields);
-		return document ? this.toDomain(document) : null;
+	findByRecordingId(recordingId: string): Promise<MeetRecordingInfo | null>;
+
+	findByRecordingId<const TFields extends readonly MeetRecordingField[]>(
+		recordingId: string,
+		fields: TFields
+	): Promise<ProjectedRecording<TFields> | null>;
+
+	findByRecordingId(
+		recordingId: string,
+		fields?: readonly MeetRecordingField[]
+	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo> | null>;
+
+	findByRecordingId(
+		recordingId: string,
+		fields?: readonly MeetRecordingField[]
+	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo> | null> {
+		return this.findOne({ recordingId }, fields as string[]) as Promise<
+			MeetRecordingInfo | Partial<MeetRecordingInfo> | null
+		>;
 	}
 
 	/**
@@ -90,43 +175,83 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 *
 	 * @param options - Query options
 	 * @param options.roomId - Optional room ID for exact match filtering
-	 * @param options.roomName - Optional room name for regex match filtering (case-insensitive)
+	 * @param options.roomName - Optional room name for filtering
+	 * @param options.roomNameMatchMode - Optional room name match mode (default: exact)
+	 * @param options.roomNameCaseInsensitive - Optional room name case-insensitive flag (default: false)
+	 * @param options.roomOwner - Optional room owner ID for access control filtering
+	 * @param options.roomMember - Optional room member ID for access control filtering (requires 'canRetrieveRecordings' permission)
+	 * @param options.roomRegisteredAccess - Optional flag to include recordings from rooms with registered access enabled
 	 * @param options.status - Optional recording status to filter by
-	 * @param options.fields - Comma-separated list of fields to include in the result
+	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 10)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
 	 * @param options.sortField - Field to sort by (default: 'startDate')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
 	 * @returns Object containing recordings array, pagination info, and optional next page token
 	 */
-	async find(options: MeetRecordingFilters = {}): Promise<{
-		recordings: TRecording[];
-		isTruncated: boolean;
-		nextPageToken?: string;
-	}> {
+	async find(options?: RecordingQuery): Promise<MeetRecordingPage<MeetRecordingInfo>>;
+
+	async find<const TFields extends readonly MeetRecordingField[]>(
+		options: RecordingQueryWithProjection<TFields>
+	): Promise<MeetRecordingPage<ProjectedRecording<TFields>>>;
+
+	async find(
+		options: RecordingQueryWithFields
+	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>>;
+
+	async find(
+		options: RecordingQueryWithFields = {}
+	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>> {
 		const {
 			roomId,
 			roomName,
+			roomNameMatchMode = TextMatchMode.EXACT,
+			roomNameCaseInsensitive = false,
+			roomOwner,
+			roomMember,
+			roomRegisteredAccess,
 			status,
 			fields,
 			maxItems = 10,
 			nextPageToken,
 			sortField = 'startDate',
-			sortOrder = 'desc'
+			sortOrder = SortOrder.DESC
 		} = options;
 
 		// Build base filter
-		const filter: Record<string, unknown> = {};
+		const filter: QueryFilter<MeetRecordingDocument> = {};
 
-		if (roomId && roomName) {
-			// Both defined: OR filter with exact roomId match and regex roomName match
-			filter.$or = [{ roomId }, { roomName: new RegExp(roomName, 'i') }];
-		} else if (roomId) {
-			// Only roomId defined: exact match
+		const accessScopeOrFilters: QueryFilter<MeetRecordingDocument>[] = [];
+
+		if (roomOwner) {
+			accessScopeOrFilters.push({ roomOwner });
+		}
+
+		if (roomMember) {
+			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(
+				roomMember,
+				'canRetrieveRecordings'
+			);
+			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
+		}
+
+		if (roomRegisteredAccess) {
+			accessScopeOrFilters.push({ roomRegisteredAccess: true });
+		}
+
+		// Combine access scope filters with $or if multiple, or directly if only one
+		if (accessScopeOrFilters.length === 1) {
+			Object.assign(filter, accessScopeOrFilters[0]);
+		} else if (accessScopeOrFilters.length > 1) {
+			filter.$or = accessScopeOrFilters;
+		}
+
+		if (roomId) {
+			// roomId takes precedence. If both roomId and roomName are provided, roomName is ignored.
 			filter.roomId = roomId;
 		} else if (roomName) {
-			// Only roomName defined: regex match (case-insensitive)
-			filter.roomName = new RegExp(roomName, 'i');
+			// Only roomName defined: apply selected match mode
+			filter.roomName = buildStringMatchFilter(roomName, roomNameMatchMode, roomNameCaseInsensitive);
 		}
 
 		if (status) {
@@ -142,7 +267,7 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 				sortField,
 				sortOrder
 			},
-			fields
+			fields as string[]
 		);
 
 		return {
@@ -158,8 +283,8 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * @param roomId - The ID of the room
 	 * @returns Array of recordings for the specified room
 	 */
-	async findAllByRoomId(roomId: string): Promise<TRecording[]> {
-		return await this.findAll({ roomId });
+	findAllByRoomId(roomId: string): Promise<MeetRecordingInfo[]> {
+		return this.findAll({ roomId });
 	}
 
 	/**
@@ -172,7 +297,7 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	async findAccessSecretsByRecordingId(
 		recordingId: string
 	): Promise<{ publicAccessSecret: string; privateAccessSecret: string } | null> {
-		const result = await this.model.findOne({ recordingId }).select('accessSecrets').exec();
+		const result = await this.model.findOne({ recordingId }).select({ _id: 0, accessSecrets: 1 }).exec();
 
 		if (!result || !result.accessSecrets) {
 			return null;
@@ -185,15 +310,31 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	}
 
 	/**
-	 * Finds all active recordings (status 'ACTIVE' or 'ENDING').
-	 * Returns all active recordings without pagination.
+	 * Finds active recordings (status 'ACTIVE' or 'ENDING') with pagination.
+	 * This method should be used instead of findActiveRecordings() when dealing with potentially large result sets.
+	 * Allows processing active recordings in batches without blocking or loading all into memory at once.
 	 *
-	 * @returns Array of active recordings
+	 * @param batchSize - Number of recordings to fetch per batch (default: 100)
+	 * @param nextPageToken - Optional pagination token from previous call
+	 * @returns Object containing current batch of recordings, pagination flag, and optional next page token
 	 */
-	async findActiveRecordings(): Promise<TRecording[]> {
-		return await this.findAll({
+	async findActiveRecordings(batchSize = 100, pageToken?: string): Promise<MeetRecordingPage<MeetRecordingInfo>> {
+		const filter: QueryFilter<MeetRecordingDocument> = {
 			status: { $in: [MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING] }
+		};
+
+		const { items, isTruncated, nextPageToken } = await this.findMany(filter, {
+			maxItems: batchSize,
+			nextPageToken: pageToken,
+			sortField: 'startDate',
+			sortOrder: SortOrder.DESC
 		});
+
+		return {
+			recordings: items,
+			isTruncated,
+			nextPageToken
+		};
 	}
 
 	/**
@@ -202,8 +343,8 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * @param recordingId - The ID of the recording to delete
 	 * @throws Error if the recording was not found or could not be deleted
 	 */
-	async deleteByRecordingId(recordingId: string): Promise<void> {
-		await this.deleteOne({ recordingId });
+	deleteByRecordingId(recordingId: string): Promise<void> {
+		return this.deleteOne({ recordingId });
 	}
 
 	/**
@@ -212,21 +353,21 @@ export class RecordingRepository<TRecording extends MeetRecordingInfo = MeetReco
 	 * @param recordingIds - Array of recording IDs to delete
 	 * @throws Error if any recording was not found or could not be deleted
 	 */
-	async deleteByRecordingIds(recordingIds: string[]): Promise<void> {
-		await this.deleteMany({ recordingId: { $in: recordingIds } });
+	deleteByRecordingIds(recordingIds: string[]): Promise<void> {
+		return this.deleteMany({ recordingId: { $in: recordingIds } });
 	}
 
 	/**
 	 * Counts the total number of recordings.
 	 */
-	async countTotal(): Promise<number> {
-		return await this.count();
+	countTotal(): Promise<number> {
+		return this.count();
 	}
 
 	/**
 	 * Counts the number of recordings with status 'complete'.
 	 */
-	async countCompleteRecordings(): Promise<number> {
-		return await this.count({ status: 'complete' });
+	countCompleteRecordings(): Promise<number> {
+		return this.count({ status: 'complete' });
 	}
 }

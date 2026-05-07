@@ -1,10 +1,10 @@
 <div class="video-player-wrapper" [class.mobile]="viewportService.isMobileView()">
 	<!-- Video Player -->
-	@if (recordingUrl && !hasVideoError) {
+	@if (recordingUrl() && !hasVideoError()) {
 		<div class="video-container" [class.mobile]="viewportService.isMobileView()">
 			<video
 				#videoPlayer
-				[src]="recordingUrl"
+				[src]="recordingUrl()"
 				controls
 				controlsList="nodownload"
 				playsinline
@@ -15,16 +15,16 @@
 				(error)="onVideoError()"
 			></video>
 
-			@if (!isVideoLoaded) {
+			@if (!isVideoLoaded()) {
 				<div class="video-loading-overlay">
-					<mat-spinner diameter="40"></mat-spinner>
+					<mat-spinner diameter="40" />
 					<span>Loading video...</span>
 				</div>
 			}
 		</div>
 	}
 	<!-- Video Error State -->
-	@else if (hasVideoError) {
+	@else if (hasVideoError()) {
 		<div class="video-error-container">
 			<div class="error-content">
 				<mat-icon class="error-icon">error</mat-icon>
@@ -41,9 +41,11 @@
 	@else {
 		<div class="video-unavailable-container">
 			<div class="unavailable-content">
-				<mat-icon class="status-icon">{{ getStatusIcon() }}</mat-icon>
-				<h3>{{ getStatusMessage() }}</h3>
-				@if (isRecordingInProgress()) {
+				<mat-icon class="status-icon">{{
+					RecordingUiUtils.getPlayerStatusIcon(this.recordingStatus())
+				}}</mat-icon>
+				<h3>{{ RecordingUiUtils.getPlayerStatusMessage(this.recordingStatus()) }}</h3>
+				@if (RecordingUiUtils.isInProgress(this.recordingStatus())) {
 					<p>The recording is still being processed. Please check back in a few minutes.</p>
 					<button mat-raised-button color="primary" (click)="onRetryClick()">
 						<mat-icon>refresh</mat-icon>
@@ -56,4 +58,3 @@
 		</div>
 	}
 </div>
-

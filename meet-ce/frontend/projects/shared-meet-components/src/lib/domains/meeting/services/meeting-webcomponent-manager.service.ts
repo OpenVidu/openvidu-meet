@@ -1,13 +1,13 @@
 import { effect, inject, Injectable } from '@angular/core';
 import {
-	WebComponentCommand,
-	WebComponentEvent,
-	WebComponentInboundCommandMessage,
-	WebComponentOutboundEventMessage
+    WebComponentCommand,
+    WebComponentEvent,
+    WebComponentInboundCommandMessage,
+    WebComponentOutboundEventMessage
 } from '@openvidu-meet/typings';
-import { LoggerService, OpenViduService } from 'openvidu-components-angular';
-import { AppDataService } from '../../../shared/services/app-data.service';
-import { RoomMemberService } from '../../rooms/services/room-member.service';
+import { AppContextService } from '../../../shared/services/app-context.service';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { LoggerService, OpenViduService } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingService } from './meeting.service';
 
@@ -20,23 +20,22 @@ import { MeetingService } from './meeting.service';
 	providedIn: 'root'
 })
 export class MeetingWebComponentManagerService {
+	protected meetingService = inject(MeetingService);
+	protected meetingContextService = inject(MeetingContextService);
+	protected roomMemberContextService = inject(RoomMemberContextService);
+	protected appCtxService = inject(AppContextService);
+	protected openviduService = inject(OpenViduService);
+	protected loggerService = inject(LoggerService);
+	protected log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
+
 	protected isInitialized = false;
 	protected parentDomain: string = '';
 	protected boundHandleMessage: (event: MessageEvent) => Promise<void>;
 
-	protected log;
-	protected readonly meetingContextService = inject(MeetingContextService);
-	protected readonly roomMemberService = inject(RoomMemberService);
-	protected readonly openviduService = inject(OpenViduService);
-	protected readonly meetingService = inject(MeetingService);
-	protected readonly loggerService = inject(LoggerService);
-	protected readonly appDataService = inject(AppDataService);
-
 	constructor() {
-		this.log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
 		this.boundHandleMessage = this.handleMessage.bind(this);
 		effect(() => {
-			if (this.appDataService.isEmbeddedMode()) {
+			if (this.appCtxService.isEmbeddedMode()) {
 				this.initialize();
 			}
 		});
@@ -95,6 +94,7 @@ export class MeetingWebComponentManagerService {
 		const message: WebComponentInboundCommandMessage = event.data;
 		const { command, payload } = message;
 
+		// If parent domain is not set, only accept INITIALIZE command to set the parent domain
 		if (!this.parentDomain) {
 			if (command === WebComponentCommand.INITIALIZE) {
 				if (!payload || !('domain' in payload)) {
@@ -107,6 +107,7 @@ export class MeetingWebComponentManagerService {
 			return;
 		}
 
+		// For security, only accept messages from the parent domain
 		if (event.origin !== this.parentDomain) {
 			console.warn(`Untrusted origin: ${event.origin}`);
 			return;
@@ -121,9 +122,11 @@ export class MeetingWebComponentManagerService {
 		console.debug('Message received from parent:', event.data);
 		switch (command) {
 			case WebComponentCommand.END_MEETING:
-				// Only moderators can end the meeting
-				if (!this.roomMemberService.isModerator()) {
-					this.log.w('End meeting command received but participant is not a moderator');
+				// Only participants with canEndMeeting permission can end the meeting
+				if (!this.roomMemberContextService.hasPermission('canEndMeeting')) {
+					this.log.w(
+						'End meeting command received but participant does not have permissions to end the meeting'
+					);
 					return;
 				}
 
@@ -141,9 +144,11 @@ export class MeetingWebComponentManagerService {
 				await this.openviduService.disconnectRoom();
 				break;
 			case WebComponentCommand.KICK_PARTICIPANT:
-				// Only moderators can kick participants
-				if (!this.roomMemberService.isModerator()) {
-					this.log.w('Kick participant command received but participant is not a moderator');
+				// Only participants with canKickParticipants permission can kick participants
+				if (!this.roomMemberContextService.hasPermission('canKickParticipants')) {
+					this.log.w(
+						'Kick participant command received but participant does not have permissions to kick participants'
+					);
 					return;
 				}
 

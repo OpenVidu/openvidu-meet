@@ -1,21 +1,26 @@
-import { MeetingEndAction, MeetRecordingInfo, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { EgressInfo, ParticipantInfo, Room, WebhookEvent, WebhookReceiver } from 'livekit-server-sdk';
+import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
+import { WebhookReceiver } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { AiAssistantService } from './ai-assistant.service.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
+import { MeetingPresenceService } from './meeting-presence.service.js';
 import { OpenViduWebhookService } from './openvidu-webhook.service.js';
 import { RecordingService } from './recording.service.js';
 import { RoomMemberService } from './room-member.service.js';
 import { RoomService } from './room.service.js';
+import { TokenService } from './token.service.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -30,7 +35,10 @@ export class LivekitWebhookService {
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
+		@inject(MeetingPresenceService) protected meetingPresenceService: MeetingPresenceService,
+		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(AiAssistantService) protected aiAssistantService: AiAssistantService,
+		@inject(TokenService) protected tokenService: TokenService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
@@ -149,9 +157,8 @@ export class LivekitWebhookService {
 	}
 
 	/**
-	 *
 	 * Handles the 'participant_joined' event by gathering relevant room and participant information,
-	 * checking room status, and sending a data payload with room status information to the newly joined participant.
+	 * and syncing the active recording state to the new participant when needed.
 	 * @param room - Information about the room where the participant joined.
 	 * @param participant - Information about the newly joined participant.
 	 */
@@ -160,20 +167,28 @@ export class LivekitWebhookService {
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		try {
-			const { recordings } = await this.recordingService.getAllRecordings({ roomId: room.name });
-			await this.frontendEventService.sendRoomStatusSignalToOpenViduComponents(
-				room.name,
-				participant.sid,
-				recordings
-			);
+			const userId = this.getUserIdFromParticipant(participant);
+
+			if (userId) {
+				await this.meetingPresenceService.upsertUserInRoom(userId, room.name, participant.identity);
+			}
+
+			const { recordings } = await this.recordingService.getAllRecordings({
+				roomId: room.name,
+				status: MeetRecordingStatus.ACTIVE
+			});
+
+			if (recordings.length > 0) {
+				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recordings[0], participant.sid);
+			}
 		} catch (error) {
-			this.logger.error('Error sending room status signal on participant join:', error);
+			this.logger.error('Error sending recording state on participant join:', error);
 		}
 	}
 
 	/**
-	 * Handles the 'participant_left' event by releasing the participant's reserved name
-	 * to make it available for other participants.
+	 * Handles the 'participant_left' event by gathering relevant room and participant information,
+	 * and releasing any reserved participant names.
 	 * @param room - Information about the room where the participant left.
 	 * @param participant - Information about the participant who left.
 	 */
@@ -182,6 +197,12 @@ export class LivekitWebhookService {
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		try {
+			const userId = this.getUserIdFromParticipant(participant);
+
+			if (userId) {
+				await this.meetingPresenceService.removeUserFromRoom(userId, room.name);
+			}
+
 			await Promise.all([
 				this.roomMemberService.releaseParticipantName(room.name, participant.name),
 				this.aiAssistantService.cleanupState(room.name, participant.identity)
@@ -203,21 +224,15 @@ export class LivekitWebhookService {
 	 */
 	async handleRoomStarted({ name: roomId }: Room) {
 		try {
-			const meetRoom = await this.roomService.getMeetRoom(roomId);
-
-			if (!meetRoom) {
-				this.logger.warn(`Room '${roomId}' not found in OpenVidu Meet.`);
-				return;
-			}
-
 			this.logger.info(`Processing room_started event for room: ${roomId}`);
 
 			// Update Meet room status to ACTIVE_MEETING
-			meetRoom.status = MeetRoomStatus.ACTIVE_MEETING;
-			await this.roomRepository.update(meetRoom);
+			const updatedRoom = await this.roomRepository.updatePartial(roomId, {
+				status: MeetRoomStatus.ACTIVE_MEETING
+			});
 
 			// Send webhook notification
-			this.openViduWebhookService.sendMeetingStartedWebhook(meetRoom);
+			this.openViduWebhookService.sendMeetingStartedWebhook(updatedRoom);
 		} catch (error) {
 			this.logger.error('Error handling room started event:', error);
 		}
@@ -242,11 +257,6 @@ export class LivekitWebhookService {
 		try {
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
-			if (!meetRoom) {
-				this.logger.warn(`Room '${roomId}' not found in OpenVidu Meet.`);
-				return;
-			}
-
 			this.logger.info(`Processing room_finished event for room: ${roomId}`);
 			const tasks = [];
 
@@ -255,7 +265,8 @@ export class LivekitWebhookService {
 					this.logger.info(
 						`Deleting room '${roomId}' (and its recordings if any) after meeting finished because it was scheduled to be deleted`
 					);
-					await this.recordingService.deleteAllRoomRecordings(roomId); // This operation must complete before deleting the room
+					tasks.push(this.recordingService.deleteAllRoomRecordings(roomId));
+					tasks.push(this.roomMemberRepository.deleteAllByRoomId(roomId));
 					tasks.push(this.roomRepository.deleteByRoomId(roomId));
 					break;
 				case MeetingEndAction.CLOSE:
@@ -264,18 +275,24 @@ export class LivekitWebhookService {
 					);
 					meetRoom.status = MeetRoomStatus.CLOSED;
 					meetRoom.meetingEndAction = MeetingEndAction.NONE;
-					tasks.push(this.roomRepository.update(meetRoom));
+					tasks.push(
+						this.roomRepository.updatePartial(roomId, {
+							status: MeetRoomStatus.CLOSED,
+							meetingEndAction: MeetingEndAction.NONE
+						})
+					);
 					break;
 				default:
 					// Update Meet room status to OPEN
 					meetRoom.status = MeetRoomStatus.OPEN;
-					tasks.push(this.roomRepository.update(meetRoom));
+					tasks.push(this.roomRepository.updatePartial(roomId, { status: MeetRoomStatus.OPEN }));
 			}
 
 			// Send webhook notification
 			this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom);
 
 			tasks.push(
+				this.meetingPresenceService.removeRoomFromAllUsers(roomId),
 				this.roomMemberService.cleanupParticipantNames(roomId),
 				this.recordingService.releaseRecordingLockIfNoEgress(roomId),
 				this.aiAssistantService.cleanupState(roomId)
@@ -316,7 +333,7 @@ export class LivekitWebhookService {
 				recordingTask = this.recordingRepository.create(recordingInfo);
 			} else {
 				// Update existing recording
-				recordingTask = this.recordingRepository.update(recordingInfo);
+				recordingTask = this.recordingRepository.replace(recordingInfo);
 			}
 
 			const commonTasks = [recordingTask];
@@ -340,15 +357,13 @@ export class LivekitWebhookService {
 						);
 					}
 
-					specificTasks.push(
-						this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
-					);
+					specificTasks.push(this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo));
 
 					break;
 				case 'ended':
 					specificTasks.push(
 						this.recordingService.releaseRecordingLockIfNoEgress(roomId),
-						this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo)
+						this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo)
 					);
 					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo);
 					break;
@@ -360,6 +375,25 @@ export class LivekitWebhookService {
 			this.logger.warn(
 				`Error processing recording_${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
 			);
+		}
+	}
+
+	/**
+	 * Extracts the user ID from a LiveKit participant's metadata.
+	 *
+	 * @param participant - The LiveKit participant from which to extract the user ID.
+	 * @returns The user ID if it can be extracted, or undefined if it cannot be determined.
+	 */
+	protected getUserIdFromParticipant(participant: ParticipantInfo): string | undefined {
+		if (!participant.metadata) {
+			return undefined;
+		}
+
+		try {
+			const tokenMetadata = this.tokenService.parseRoomMemberTokenMetadata(participant.metadata);
+			return tokenMetadata.userId;
+		} catch {
+			return undefined;
 		}
 	}
 }

@@ -1,48 +1,34 @@
 {
 	"compileOnSave": false,
 	"compilerOptions": {
-    "baseUrl": "./",
-    "moduleResolution": "bundler",
-    "emitDecoratorMetadata": false,
-    "resolveJsonModule": true,
-    "typeRoots": [
-      "node_modules/@types"
-    ],
-    "outDir": "./dist/out-tsc",
-    "strict": true,
-    "noImplicitOverride": true,
-    "noPropertyAccessFromIndexSignature": true,
-    "noImplicitReturns": true,
-    "noFallthroughCasesInSwitch": true,
-    "skipLibCheck": true,
-    "isolatedModules": true,
-    "esModuleInterop": true,
-    "sourceMap": true,
-    "declaration": false,
-    "experimentalDecorators": true,
-    "paths": {
-      "core-js/es7/reflect": [
-        "./node_modules/core-js/proposals/reflect-metadata"
-      ],
-      "@environment/*": [
-        "src/environments/*"
-      ],
-      "@app/*": [
-        "src/app/*"
-      ],
-      // path mappings for avoiding build the shared-meet-components library
-      "@openvidu-meet/shared-components": [
-        "projects/shared-meet-components/src/public-api.ts"
-      ]
-    },
-    "importHelpers": true,
-    "target": "ES2022",
-    "module": "ES2022",
-    "lib": [
-      "ES2022",
-      "dom"
-    ]
-  },
+		"baseUrl": "./",
+		"moduleResolution": "bundler",
+		"emitDecoratorMetadata": false,
+		"resolveJsonModule": true,
+		"typeRoots": ["node_modules/@types"],
+		"outDir": "./dist/out-tsc",
+		"strict": true,
+		"noImplicitOverride": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noImplicitReturns": true,
+		"noFallthroughCasesInSwitch": true,
+		"skipLibCheck": true,
+		"isolatedModules": true,
+		"esModuleInterop": true,
+		"sourceMap": true,
+		"declaration": false,
+		"experimentalDecorators": true,
+		"paths": {
+			"core-js/es7/reflect": ["./node_modules/core-js/proposals/reflect-metadata"],
+			"@environment/*": ["src/environments/*"],
+			"@app/*": ["src/app/*"],
+			// path mappings for avoiding build the shared-meet-components library
+			"@openvidu-meet/shared-components": ["projects/shared-meet-components/src/public-api.ts"]
+		},
+		"importHelpers": true,
+		"target": "ES2022",
+		"module": "ES2022"
+	},
 	"angularCompilerOptions": {
 		"enableI18nLegacyMessageIdFormat": false,
 		"strictInjectionParameters": true,

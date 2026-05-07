@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { LeftEventReason } from '@openvidu-meet/typings';
-import { AppDataService } from '../../../../shared/services/app-data.service';
+import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { MeetingWebComponentManagerService } from '../../services/meeting-webcomponent-manager.service';
@@ -13,20 +14,21 @@ import { MeetingWebComponentManagerService } from '../../services/meeting-webcom
 	selector: 'ov-end-meeting',
 	imports: [MatCardModule, MatButtonModule, MatIconModule],
 	templateUrl: './end-meeting.component.html',
-	styleUrl: './end-meeting.component.scss'
+	styleUrl: './end-meeting.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndMeetingComponent implements OnInit {
-	disconnectedTitle = 'You Left the Meeting';
-	disconnectReason = 'You have successfully left the meeting';
+	disconnectedTitle = signal('You Left the Meeting');
+	disconnectReason = signal('You have successfully left the meeting');
 
-	showBackButton = true;
-	backButtonText = 'Back';
+	showBackButton = signal(true);
+	backButtonText = signal('Back');
 
 	constructor(
 		private route: ActivatedRoute,
 		protected authService: AuthService,
 		protected navService: NavigationService,
-		protected appDataService: AppDataService,
+		protected appCtxService: AppContextService,
 		protected wcManagerService: MeetingWebComponentManagerService
 	) {}
 
@@ -42,8 +44,8 @@ export class EndMeetingComponent implements OnInit {
 		const reason = this.route.snapshot.queryParams['reason'];
 		if (reason) {
 			const { title, message } = this.mapReasonToTitleAndMessage(reason);
-			this.disconnectedTitle = title;
-			this.disconnectReason = message;
+			this.disconnectedTitle.set(title);
+			this.disconnectReason.set(message);
 		}
 	}
 
@@ -76,6 +78,10 @@ export class EndMeetingComponent implements OnInit {
 				title: 'Disconnected from Meeting',
 				message: 'Connection lost due to server shutdown'
 			},
+			[LeftEventReason.DUPLICATE_IDENTITY]: {
+				title: 'Disconnected from Meeting',
+				message: 'This session was closed because you joined the same meeting from another tab or device'
+			},
 			[LeftEventReason.UNKNOWN]: {
 				title: 'Disconnected from Meeting',
 				message: 'Some unexpected error occurred, please try again later'
@@ -89,31 +95,32 @@ export class EndMeetingComponent implements OnInit {
 	}
 
 	/**
-	 * Sets the back button text based on the application mode and user role
+	 * Sets the back button text based on the application mode and user authentication
 	 */
 	private async setBackButtonText() {
-		const isStandaloneMode = this.appDataService.isStandaloneMode();
+		const isStandaloneMode = this.appCtxService.isStandaloneMode();
 		const redirection = this.navService.getLeaveRedirectURL();
-		const isAdmin = await this.authService.isAdmin();
+		const isAuthenticated = await this.authService.isUserAuthenticated();
 
-		if (isStandaloneMode && !redirection && !isAdmin) {
-			// If in standalone mode, no redirection URL and not an admin, hide the back button
-			this.showBackButton = false;
+		// If in standalone mode without redirection and user is not authenticated,
+		// hide back button (user has no where to go back to)
+		if (isStandaloneMode && !redirection && !isAuthenticated) {
+			this.showBackButton.set(false);
 			return;
 		}
 
-		this.showBackButton = true;
-		this.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Console' : 'Accept';
+		this.showBackButton.set(true);
+		this.backButtonText.set(isStandaloneMode && !redirection && isAuthenticated ? 'Back to Rooms' : 'Accept');
 	}
 
 	/**
 	 * Handles the back button click event and navigates accordingly
 	 * If in embedded mode, it closes the WebComponentManagerService
 	 * If the redirect URL is set, it navigates to that URL
-	 * If in standalone mode without a redirect URL, it navigates to the admin console
+	 * If in standalone mode without a redirect URL, it navigates to the rooms page
 	 */
 	async goBack() {
-		if (this.appDataService.isEmbeddedMode()) {
+		if (this.appCtxService.isEmbeddedMode()) {
 			this.wcManagerService.close();
 		}
 
@@ -124,9 +131,9 @@ export class EndMeetingComponent implements OnInit {
 			return;
 		}
 
-		if (this.appDataService.isStandaloneMode()) {
-			// Navigate to the admin console
-			await this.navService.navigateTo('/overview', undefined, true);
+		if (this.appCtxService.isStandaloneMode()) {
+			// Navigate to the rooms page
+			await this.navService.navigateTo('/rooms', undefined, true);
 		}
 	}
 }

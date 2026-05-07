@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -12,58 +12,68 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 import { AuthService } from '../../services/auth.service';
 
 @Component({
-    selector: 'ov-login',
-    imports: [
-        MatFormFieldModule,
-        ReactiveFormsModule,
-        MatInputModule,
-        MatButtonModule,
-        FormsModule,
-        MatCardModule,
-        MatIconModule,
-        MatTooltipModule,
-        RouterModule
-    ],
-    templateUrl: './login.component.html',
-    styleUrl: './login.component.scss'
+	selector: 'ov-login',
+	imports: [
+		MatFormFieldModule,
+		ReactiveFormsModule,
+		MatInputModule,
+		MatButtonModule,
+		FormsModule,
+		MatCardModule,
+		MatIconModule,
+		MatTooltipModule,
+		RouterModule
+	],
+	templateUrl: './login.component.html',
+	styleUrl: './login.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginComponent implements OnInit {
 	loginForm = new FormGroup({
-		username: new FormControl('', [Validators.required]),
+		userId: new FormControl('', [Validators.required]),
 		password: new FormControl('', [Validators.required])
 	});
 
-	showPassword = false;
-	loginErrorMessage: string | undefined;
+	showPassword = signal(false);
+	loginErrorMessage = signal<string | undefined>(undefined);
 
-	redirectTo = ''; // By default, redirect to home page
-
-	constructor(
-		private navigationService: NavigationService,
-		private route: ActivatedRoute,
-		private authService: AuthService
-	) {}
+	redirectTo = signal(''); // By default, redirect to home page
+	private navigationService = inject(NavigationService);
+	private route = inject(ActivatedRoute);
+	private authService = inject(AuthService);
 
 	ngOnInit() {
 		this.route.queryParams.subscribe((params) => {
 			if (params['redirectTo']) {
-				this.redirectTo = params['redirectTo'];
+				this.redirectTo.set(params['redirectTo']);
 			}
 		});
 	}
 
 	async login() {
-		this.loginErrorMessage = undefined;
-		const { username, password } = this.loginForm.value;
+		this.loginErrorMessage.set(undefined);
+		const { userId, password } = this.loginForm.value;
 
 		try {
-			await this.authService.login(username!, password!);
-			await this.navigationService.redirectTo(this.redirectTo);
+			const { mustChangePassword } = await this.authService.login(userId!, password!);
+
+			// Redirect to dedicated mandatory password page after first login or password reset
+			if (mustChangePassword) {
+				const redirectTo = this.redirectTo();
+				await this.navigationService.navigateTo(
+					'/change-password-required',
+					redirectTo ? { redirectTo } : undefined,
+					true
+				);
+				return;
+			}
+
+			await this.navigationService.redirectTo(this.redirectTo());
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {
-				this.loginErrorMessage = 'Too many login attempts. Please try again later';
+				this.loginErrorMessage.set('Too many login attempts. Please try again later');
 			} else {
-				this.loginErrorMessage = 'Invalid username or password';
+				this.loginErrorMessage.set('Invalid user ID or password');
 			}
 		}
 	}

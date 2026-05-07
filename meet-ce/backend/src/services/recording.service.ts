@@ -1,18 +1,22 @@
-import {
+import type {
+	MeetRecordingConfig,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
-	MeetRecordingFilters,
+	MeetRecordingField,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
-	MeetRecordingStatus,
-	MeetRoom,
-	MeetRoomConfig
+	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
+import { MeetRecordingStatus } from '@openvidu-meet/typings';
+import type { Archiver } from 'archiver';
+import archiver from 'archiver';
 import { inject, injectable } from 'inversify';
-import { EgressStatus, EncodedFileOutput, EncodedFileType, RoomCompositeOptions } from 'livekit-server-sdk';
+import type { RoomCompositeOptions } from 'livekit-server-sdk';
+import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
 import ms from 'ms';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { uid } from 'uid';
+import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { EncodingConverter } from '../helpers/encoding-converter.helper.js';
@@ -20,26 +24,39 @@ import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
 import {
+	errorAnonymousAccessDisabled,
+	errorInsufficientPermissions,
 	errorRecordingAlreadyStarted,
 	errorRecordingAlreadyStopped,
 	errorRecordingCannotBeStoppedWhileStarting,
 	errorRecordingNotFound,
 	errorRecordingNotStopped,
+	errorRecordingNotStreamable,
 	errorRecordingStartTimeout,
 	errorRoomHasNoParticipants,
-	errorRoomNotFound,
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
 	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
-import { RoomRepository } from '../repositories/room.repository.js';
+import type {
+	MeetRecordingPage,
+	ProjectedRecording,
+	RecordingQuery,
+	RecordingQueryWithFields,
+	RecordingQueryWithProjection
+} from '../types/recording-projection.types.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
+import { getBaseUrl } from '../utils/url.utils.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import { MutexService, RedisLock } from './mutex.service.js';
+import type { RedisLock } from './mutex.service.js';
+import { MutexService } from './mutex.service.js';
+import { RequestSessionService } from './request-session.service.js';
+import type { RoomService } from './room.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';
 
 @injectable()
@@ -48,12 +65,20 @@ export class RecordingService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(MutexService) protected mutexService: MutexService,
 		@inject(DistributedEventService) protected systemEventService: DistributedEventService,
-		@inject(RoomRepository) protected roomRepository: RoomRepository,
 		@inject(RecordingRepository) protected recordingRepository: RecordingRepository,
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(BlobStorageService) protected blobStorageService: BlobStorageService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {}
+
+	/**
+	 * TODO: Prevent circular imports when refactoring backend code
+	 */
+	private async getRoomService(): Promise<RoomService> {
+		const { RoomService } = await import('./room.service.js');
+		return container.get(RoomService);
+	}
 
 	async startRecording(
 		roomId: string,
@@ -74,11 +99,10 @@ export class RecordingService {
 
 			if (!acquiredLock) throw errorRecordingAlreadyStarted(roomId);
 
-			const room = await this.validateRoomForStartRecording(roomId);
+			const roomRecordingConfig = await this.validateRoomForStartRecording(roomId);
 
-			// Manually send the recording signal to OpenVidu Components for avoiding missing event if timeout occurs
-			// and the egress_started webhook is not received.
-			await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, {
+			// Manually send the recording update to avoid missing the state transition if the webhook is delayed.
+			await this.frontendEventService.sendRecordingUpdatedSignal(roomId, {
 				recordingId: '',
 				roomId,
 				roomName: roomId,
@@ -119,7 +143,7 @@ export class RecordingService {
 			// Promise that starts the recording process
 			const startRecordingPromise = (async (): Promise<MeetRecordingInfo> => {
 				try {
-					const options = this.generateCompositeOptionsFromRequest(room.config, configOverride);
+					const options = this.generateCompositeOptionsFromRequest(roomRecordingConfig, configOverride);
 					const output = this.generateFileOutputFromRequest(roomId);
 					const egressInfo = await this.livekitService.startRoomComposite(roomId, output, options);
 
@@ -148,8 +172,8 @@ export class RecordingService {
 					if (isOperationCompleted) {
 						this.logger.warn(`startRoomComposite failed after timeout: ${error}`);
 
-						// Manually send the recording FAILED signal to OpenVidu Components for avoiding missing event
-						await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, {
+						// Manually send the recording FAILED update to avoid missing the state transition.
+						await this.frontendEventService.sendRecordingUpdatedSignal(roomId, {
 							recordingId,
 							roomId,
 							roomName: roomId,
@@ -225,21 +249,44 @@ export class RecordingService {
 	}
 
 	/**
-	 * Retrieves a paginated list of all recordings stored in MongoDB.
+	 * Synchronizes room-derived access metadata on existing recordings for a room.
+	 */
+	updateRoomRecordingsAccessScopeMetadata(
+		roomId: string,
+		updates: { roomOwner?: string; roomRegisteredAccess?: boolean }
+	): Promise<void> {
+		return this.recordingRepository.updateAccessScopeMetadataByRoomId(roomId, updates);
+	}
+
+	/**
+	 * Retrieves a list of recordings based on the provided filtering, pagination, and sorting options.
 	 *
-	 * @param maxItems - The maximum number of items to retrieve in a single request.
-	 * @param nextPageToken - (Optional) A token to retrieve the next page of results.
+	 * If the request is made with a room member token, only recordings for the associated room are returned.
+	 * If the request is made by an authenticated user, access is determined by the user's role and permissions:
+	 * - ADMIN: Can see all recordings
+	 * - USER: Can see recordings from rooms they own OR where they are members with canRetrieveRecordings permission
+	 * - ROOM_MEMBER: Can see recordings from rooms where they are members with canRetrieveRecordings permission
+	 *
+	 * @param filters - Filtering, pagination and sorting options
 	 * @returns A promise that resolves to an object containing:
 	 * - `recordings`: An array of `MeetRecordingInfo` objects representing the recordings.
 	 * - `isTruncated`: A boolean indicating whether there are more items to retrieve.
 	 * - `nextPageToken`: (Optional) A token to retrieve the next page of results, if available.
 	 * @throws Will throw an error if there is an issue retrieving the recordings.
 	 */
-	async getAllRecordings(filters: MeetRecordingFilters): Promise<{
-		recordings: MeetRecordingInfo[];
-		isTruncated: boolean;
-		nextPageToken?: string;
-	}> {
+	async getAllRecordings(filters?: RecordingQuery): Promise<MeetRecordingPage<MeetRecordingInfo>>;
+
+	async getAllRecordings<const TFields extends readonly MeetRecordingField[]>(
+		filters: RecordingQueryWithProjection<TFields>
+	): Promise<MeetRecordingPage<ProjectedRecording<TFields>>>;
+
+	async getAllRecordings(
+		filters: RecordingQueryWithFields
+	): Promise<MeetRecordingPage<MeetRecordingInfo | Partial<MeetRecordingInfo>>>;
+
+	async getAllRecordings(
+		filters: RecordingQueryWithFields = {}
+	): Promise<MeetRecordingPage<MeetRecordingInfo | ProjectedRecording<readonly MeetRecordingField[]>>> {
 		try {
 			const response = await this.recordingRepository.find(filters);
 			this.logger.info(`Retrieved ${response.recordings.length} recordings.`);
@@ -251,68 +298,122 @@ export class RecordingService {
 	}
 
 	/**
+	 * Validates if the authenticated user has permission to access a specific recording.
+	 * First checks if the recording exists, then validates user permissions.
+	 *
+	 * @param recordingId The recording identifier to validate.
+	 * @param permission The permission to check.
+	 * @returns The recording info if accessible.
+	 * @throws Error if recording not found or insufficient permissions.
+	 */
+	async validateRecordingAccess(
+		recordingId: string,
+		permission: keyof MeetRoomMemberPermissions
+	): Promise<MeetRecordingInfo>;
+
+	async validateRecordingAccess<const TFields extends readonly MeetRecordingField[]>(
+		recordingId: string,
+		permission: keyof MeetRoomMemberPermissions,
+		fields: TFields
+	): Promise<ProjectedRecording<TFields>>;
+
+	async validateRecordingAccess(
+		recordingId: string,
+		permission: keyof MeetRoomMemberPermissions,
+		fields?: readonly MeetRecordingField[]
+	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo>> {
+		const requestedFields = fields
+			? (Array.from(new Set(['roomId', ...fields])) as readonly MeetRecordingField[])
+			: undefined;
+
+		// First, check if the recording exists
+		const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId, requestedFields);
+
+		if (!recordingInfo) {
+			throw errorRecordingNotFound(recordingId);
+		}
+
+		// Extract roomId from the recording info
+		const { roomId } = recordingInfo;
+
+		if (!roomId) {
+			throw errorRecordingNotFound(recordingId);
+		}
+
+		// Check room member permissions for the room associated with the recording
+		const roomService = await this.getRoomService();
+		const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
+
+		if (!permissions[permission]) {
+			this.logger.warn(`Insufficient permissions to access recording '${recordingId}'`);
+			throw errorInsufficientPermissions();
+		}
+
+		return recordingInfo as MeetRecordingInfo | Partial<MeetRecordingInfo>;
+	}
+
+	/**
 	 * Deletes multiple recordings in bulk from MongoDB and blob storage.
 	 * For each provided recordingId, the metadata and recording file are deleted (only if the status is stopped).
 	 *
 	 * @param recordingIds Array of recording identifiers.
-	 * @param roomId Optional room identifier to delete only recordings from a specific room.
 	 * @returns An object containing:
 	 * - `deleted`: An array of successfully deleted recording IDs.
-	 * - `notDeleted`: An array of objects containing recording IDs and error messages for those that could not be deleted.
+	 * - `failed`: An array of objects containing recording IDs and error messages for those that could not be deleted.
 	 */
 	async bulkDeleteRecordings(
-		recordingIds: string[],
-		roomId?: string
+		recordingIds: string[]
 	): Promise<{ deleted: string[]; failed: { recordingId: string; error: string }[] }> {
-		const validRecordingIds: Set<string> = new Set<string>();
-		const deletedRecordings: Set<string> = new Set<string>();
-		const failedRecordings: Set<{ recordingId: string; error: string }> = new Set();
+		type BulkDeleteFailed = { recordingId: string; error: string };
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_RECORDINGS;
 
-		for (const recordingId of recordingIds) {
-			// If a roomId is provided, only process recordings from that room
-			if (roomId) {
-				const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+		const settledResults = await runConcurrently<string, string>(
+			recordingIds,
+			async (recordingId) => {
+				try {
+					// Access validation is handled by HTTP middleware; service keeps business validation (deletable status).
+					const { status } = await this.getRecording(recordingId, ['status']);
 
-				if (recRoomId !== roomId) {
-					this.logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
-					failedRecordings.add({
-						recordingId,
-						error: `Recording '${recordingId}' does not belong to room '${roomId}'`
-					});
-					continue;
+					// Check if the recording can be deleted (must be stopped)
+					if (!RecordingHelper.canBeDeleted(status)) {
+						throw errorRecordingNotStopped(recordingId);
+					}
+
+					return recordingId;
+				} catch (error) {
+					this.logger.error(`BulkDelete: Error processing recording '${recordingId}': ${error}`);
+					const message = error instanceof OpenViduMeetError ? error.message : 'Unexpected error';
+					throw { recordingId, error: message } as BulkDeleteFailed;
 				}
+			},
+			{ concurrency }
+		);
+
+		const validRecordingIds = new Set<string>();
+		const failedRecordings: BulkDeleteFailed[] = [];
+
+		settledResults.forEach((result) => {
+			if (result.status === 'fulfilled') {
+				validRecordingIds.add(result.value);
+			} else {
+				failedRecordings.push(result.reason as BulkDeleteFailed);
 			}
+		});
 
-			try {
-				// Check if the recording exists and can be deleted
-				const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
-
-				if (!recordingInfo) {
-					throw errorRecordingNotFound(recordingId);
-				}
-
-				if (!RecordingHelper.canBeDeleted(recordingInfo)) {
-					throw errorRecordingNotStopped(recordingId);
-				}
-
-				validRecordingIds.add(recordingId);
-				deletedRecordings.add(recordingId);
-			} catch (error) {
-				this.logger.error(`BulkDelete: Error processing recording '${recordingId}': ${error}`);
-				failedRecordings.add({ recordingId, error: (error as OpenViduMeetError).message });
-			}
-		}
+		const deletedRecordings = Array.from(validRecordingIds);
 
 		if (validRecordingIds.size === 0) {
 			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
-			return { deleted: Array.from(deletedRecordings), failed: Array.from(failedRecordings) };
+			return { deleted: deletedRecordings, failed: failedRecordings };
 		}
+
+		const validRecordingIdsArray = Array.from(validRecordingIds);
 
 		// Delete recordings metadata from MongoDB and media files from blob storage
 		try {
 			await Promise.all([
-				this.recordingRepository.deleteByRecordingIds(Array.from(validRecordingIds)),
-				this.blobStorageService.deleteRecordingMediaBatch(Array.from(validRecordingIds))
+				this.recordingRepository.deleteByRecordingIds(validRecordingIdsArray),
+				this.blobStorageService.deleteRecordingMediaBatch(validRecordingIdsArray)
 			]);
 			this.logger.info(`BulkDelete: Successfully deleted ${validRecordingIds.size} recordings.`);
 		} catch (error) {
@@ -321,9 +422,52 @@ export class RecordingService {
 		}
 
 		return {
-			deleted: Array.from(deletedRecordings),
-			failed: Array.from(failedRecordings)
+			deleted: deletedRecordings,
+			failed: failedRecordings
 		};
+	}
+
+	/**
+	 * Creates a ZIP archive stream with all recordings
+	 *
+	 * @param recordingIds Array of recording identifiers requested for ZIP download.
+	 * @returns An Archiver instance already populated with recordings.
+	 */
+	async createRecordingsZipArchive(recordingIds: string[]): Promise<Archiver> {
+		const archive = archiver('zip', { zlib: { level: 0 } });
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_RECORDINGS;
+
+		const settledResults = await runConcurrently(
+			recordingIds,
+			async (recordingId) => {
+				this.logger.debug(`Preparing recording '${recordingId}' for ZIP`);
+
+				const [{ filename }, { fileStream }] = await Promise.all([
+					this.getRecording(recordingId, ['filename']),
+					this.getRecordingAsStream(recordingId)
+				]);
+
+				return {
+					fileName: filename || `${recordingId}.mp4`,
+					fileStream
+				};
+			},
+			{ concurrency, failFast: false }
+		);
+
+		for (let index = 0; index < settledResults.length; index++) {
+			const result = settledResults[index];
+			const recordingId = recordingIds[index];
+
+			if (result.status === 'rejected') {
+				this.logger.error(`Error adding recording '${recordingId}' to ZIP: ${result.reason}`);
+				continue;
+			}
+
+			archive.append(result.value.fileStream, { name: result.value.fileName });
+		}
+
+		return archive;
 	}
 
 	/**
@@ -334,6 +478,8 @@ export class RecordingService {
 	 * @param roomId - The unique identifier of the room whose recordings should be deleted.
 	 */
 	async deleteAllRoomRecordings(roomId: string): Promise<void> {
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_ROOM_RECORDINGS;
+
 		try {
 			this.logger.info(`Starting deletion of all recordings for room '${roomId}'`);
 
@@ -345,33 +491,33 @@ export class RecordingService {
 					`Found ${activeRecordings.length} active recording(s) for room '${roomId}', stopping them first`
 				);
 
-				// Stop all active recordings
-				const stopPromises = activeRecordings.map(async (egressInfo) => {
-					const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
+				await runConcurrently(
+					activeRecordings,
+					async (egressInfo) => {
+						const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
 
-					try {
-						this.logger.info(`Stopping active recording '${recordingId}'`);
-						await this.livekitService.stopEgress(egressInfo.egressId);
-						// Wait a bit for recording to fully stop
-						await new Promise((resolve) => setTimeout(resolve, 1000));
+						try {
+							this.logger.info(`Stopping active recording '${recordingId}'`);
+							await this.livekitService.stopEgress(egressInfo.egressId);
+							// Wait a bit for recording to fully stop
+							await new Promise((resolve) => setTimeout(resolve, 1000));
 
-						// Check if the recording has stopped and update status if needed
-						const recording = await this.getRecording(recordingId);
+							// Check if the recording has stopped and update status if needed
+							const { status } = await this.getRecording(recordingId, ['status']);
 
-						if (recording.status !== MeetRecordingStatus.COMPLETE) {
-							this.logger.warn(`Recording '${recordingId}' did not complete successfully`);
-							this.logger.warn(`ABORTING RECORDING '${recordingId}'`);
-							await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
+							if (status !== MeetRecordingStatus.COMPLETE) {
+								this.logger.warn(`Recording '${recordingId}' did not complete successfully`);
+								await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
+							}
+
+							this.logger.info(`Successfully stopped recording '${recordingId}'`);
+						} catch (error) {
+							this.logger.error(`Failed to stop recording '${recordingId}': ${error}`);
+							// Continue with deletion anyway
 						}
-
-						this.logger.info(`Successfully stopped recording '${recordingId}'`);
-					} catch (error) {
-						this.logger.error(`Failed to stop recording '${recordingId}': ${error}`);
-						// Continue with deletion anyway
-					}
-				});
-
-				await Promise.allSettled(stopPromises);
+					},
+					{ concurrency, failFast: true }
+				);
 			}
 
 			// Get all recording IDs for the room
@@ -386,49 +532,12 @@ export class RecordingService {
 				`Found ${allRecordingIds.length} recordings for room '${roomId}', proceeding with deletion`
 			);
 
-			// Attempt initial deletion
-			let remainingRecordings = [...allRecordingIds];
-			let retryCount = 0;
-			const maxRetries = 3;
-			const retryDelayMs = 1000;
-
-			while (remainingRecordings.length > 0 && retryCount < maxRetries) {
-				if (retryCount > 0) {
-					this.logger.info(
-						`Retry ${retryCount}/${maxRetries}: attempting to delete ${remainingRecordings.length} remaining recordings`
-					);
-					await new Promise((resolve) => setTimeout(resolve, retryDelayMs * retryCount));
-				}
-
-				const { failed } = await this.bulkDeleteRecordings(remainingRecordings, roomId);
-
-				if (failed.length === 0) {
-					this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);
-					return;
-				}
-
-				// Prepare for retry with failed recordings
-				remainingRecordings = failed.map((failed) => failed.recordingId);
-				retryCount++;
-
-				this.logger.warn(
-					`${failed.length} recordings failed to delete for room '${roomId}': ${remainingRecordings.join(', ')}`
-				);
-
-				if (retryCount < maxRetries) {
-					this.logger.info(`Will retry deletion in ${retryDelayMs * retryCount}ms`);
-				}
-			}
-
-			// Final check and logging
-			if (remainingRecordings.length > 0) {
-				this.logger.error(
-					`Failed to delete ${remainingRecordings.length} recordings for room '${roomId}' after ${maxRetries} attempts: ${remainingRecordings.join(', ')}`
-				);
-				throw new Error(
-					`Failed to delete all recordings for room '${roomId}'. ${remainingRecordings.length} recordings could not be deleted.`
-				);
-			}
+			// Delete recordings metadata from MongoDB and media files from blob storage
+			await Promise.all([
+				this.recordingRepository.deleteByRecordingIds(allRecordingIds),
+				this.blobStorageService.deleteRecordingMediaBatch(allRecordingIds)
+			]);
+			this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);
 		} catch (error) {
 			this.logger.error(`Error deleting all recordings for room '${roomId}': ${error}`);
 			throw error;
@@ -451,16 +560,32 @@ export class RecordingService {
 	/**
 	 * Retrieves the recording information for a given recording ID.
 	 * @param recordingId - The unique identifier of the recording.
+	 * @param fields - Array of {@link MeetRecordingField} to include in the response
 	 * @returns A promise that resolves to a MeetRecordingInfo object.
 	 */
-	async getRecording(recordingId: string, fields?: string): Promise<MeetRecordingInfo> {
+	async getRecording(recordingId: string): Promise<MeetRecordingInfo>;
+
+	async getRecording<const TFields extends readonly MeetRecordingField[]>(
+		recordingId: string,
+		fields: TFields
+	): Promise<ProjectedRecording<TFields>>;
+
+	async getRecording(
+		recordingId: string,
+		fields?: readonly MeetRecordingField[]
+	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo>>;
+
+	async getRecording(
+		recordingId: string,
+		fields?: readonly MeetRecordingField[]
+	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo>> {
 		const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId, fields);
 
 		if (!recordingInfo) {
 			throw errorRecordingNotFound(recordingId);
 		}
 
-		return recordingInfo;
+		return recordingInfo as MeetRecordingInfo | Partial<MeetRecordingInfo>;
 	}
 
 	/**
@@ -483,22 +608,45 @@ export class RecordingService {
 	}
 
 	/**
+	 * Generates a recording access URL.
+	 *
+	 * Public URLs are only generated when anonymous recording access is enabled in the room config.
+	 * Private URLs are always allowed and require authenticated access when used.
+	 */
+	async generateRecordingUrl(recordingId: string, privateAccess: boolean): Promise<string> {
+		const { roomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+		const recordingSecrets = await this.getRecordingAccessSecrets(recordingId);
+
+		if (!privateAccess) {
+			const roomService = await this.getRoomService();
+			const { access } = await roomService.getMeetRoom(roomId, ['access']);
+
+			if (!access.anonymous.recording.enabled) {
+				throw errorAnonymousAccessDisabled(roomId, 'recording');
+			}
+		}
+
+		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
+		return `${getBaseUrl()}/recording/${recordingId}?recordingSecret=${secret}`;
+	}
+
+	/**
 	 * Deletes a recording and its associated metadata from MongoDB and blob storage.
 	 *
 	 * @param recordingId - The unique identifier of the recording to delete.
 	 * @returns The recording information that was deleted.
 	 */
-	async deleteRecording(recordingId: string): Promise<MeetRecordingInfo> {
+	async deleteRecording(recordingId: string): Promise<void> {
 		try {
-			// Get the recording metadata from MongoDB
-			const recordingInfo = await this.recordingRepository.findByRecordingId(recordingId);
+			// Ensure recording exists and fetch only status for deletability validation
+			const recordingInfo = await this.getRecording(recordingId, ['status']);
 
 			if (!recordingInfo) {
 				throw errorRecordingNotFound(recordingId);
 			}
 
 			// Validate the recording status
-			if (!RecordingHelper.canBeDeleted(recordingInfo)) throw errorRecordingNotStopped(recordingId);
+			if (!RecordingHelper.canBeDeleted(recordingInfo.status)) throw errorRecordingNotStopped(recordingId);
 
 			// Delete recording metadata from MongoDB and media file from blob storage
 			await Promise.all([
@@ -507,8 +655,6 @@ export class RecordingService {
 			]);
 
 			this.logger.info(`Successfully deleted recording ${recordingId}`);
-
-			return recordingInfo;
 		} catch (error) {
 			this.logger.error(`Error deleting recording ${recordingId}: ${error}`);
 			throw error;
@@ -522,10 +668,10 @@ export class RecordingService {
 		const DEFAULT_CHUNK_SIZE = 5 * 1024 * 1024; // 5MB
 
 		// Ensure the recording is streamable
-		const recordingInfo: MeetRecordingInfo = await this.getRecording(recordingId);
+		const { status } = await this.getRecording(recordingId, ['status']);
 
-		if (recordingInfo.status !== MeetRecordingStatus.COMPLETE) {
-			throw errorRecordingNotStopped(recordingId);
+		if (status !== MeetRecordingStatus.COMPLETE) {
+			throw errorRecordingNotStreamable(recordingId);
 		}
 
 		let validatedRange = undefined;
@@ -547,9 +693,9 @@ export class RecordingService {
 	}
 
 	async updateRecordingStatus(recordingId: string, status: MeetRecordingStatus): Promise<void> {
-		const recordingInfo = await this.getRecording(recordingId);
-		recordingInfo.status = status;
-		await this.recordingRepository.update(recordingInfo);
+		// Ensure recording exists before updating
+		await this.getRecording(recordingId, ['recordingId']);
+		await this.recordingRepository.updatePartial(recordingId, { status });
 	}
 
 	/**
@@ -560,11 +706,12 @@ export class RecordingService {
 	 */
 	async hasRoomRecordings(roomId: string): Promise<boolean> {
 		try {
-			const response = await this.recordingRepository.find({
+			const { recordings } = await this.recordingRepository.find({
 				roomId,
-				maxItems: 1
+				maxItems: 1,
+				fields: ['recordingId']
 			});
-			return response.recordings.length > 0;
+			return recordings.length > 0;
 		} catch (error) {
 			this.logger.warn(`Error checking recordings for room '${roomId}': ${error}`);
 			return false;
@@ -575,19 +722,18 @@ export class RecordingService {
 	 * Validates that a room exists and has participants before starting a recording.
 	 *
 	 * @param roomId
-	 * @returns The MeetRoom object if validation passes.
+	 * @returns The MeetRecordingConfig object if validation passes.
 	 * @throws Will throw an error if the room does not exist or has no participants.
 	 */
-	protected async validateRoomForStartRecording(roomId: string): Promise<MeetRoom> {
-		const room = await this.roomRepository.findByRoomId(roomId);
-
-		if (!room) throw errorRoomNotFound(roomId);
+	protected async validateRoomForStartRecording(roomId: string): Promise<MeetRecordingConfig> {
+		const roomService = await this.getRoomService();
+		const { config } = await roomService.getMeetRoom(roomId, ['config']);
 
 		const hasParticipants = await this.livekitService.roomHasParticipants(roomId);
 
 		if (!hasParticipants) throw errorRoomHasNoParticipants(roomId);
 
-		return room;
+		return config.recording;
 	}
 
 	/**
@@ -604,7 +750,10 @@ export class RecordingService {
 		const lockName = MeetLock.getRecordingActiveLock(roomId);
 
 		try {
-			const lock = await this.mutexService.acquireWithRegistry(lockName, ms(INTERNAL_CONFIG.RECORDING_ACTIVE_LOCK_TTL));
+			const lock = await this.mutexService.acquireWithRegistry(
+				lockName,
+				ms(INTERNAL_CONFIG.RECORDING_ACTIVE_LOCK_TTL)
+			);
 			return lock;
 		} catch (error) {
 			this.logger.warn(`Error acquiring lock ${lockName} on egress started: ${error}`);
@@ -677,9 +826,8 @@ export class RecordingService {
 					error: `No egress service was able to register a request. Check your CPU usage or if there's any Media Node with enough CPU. Remember that by default, composite recording uses 2 CPUs for each room.`
 				};
 
-				// Manually send the recording FAILED signal to OpenVidu Components for avoiding missing event
-				// because of the egress_ended or egress_failed webhook is not received.
-				await this.frontendEventService.sendRecordingSignalToOpenViduComponents(roomId, recordingInfo);
+				// Manually send the recording FAILED update because the webhook may never arrive.
+				await this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo);
 			} else {
 				await this.updateRecordingStatus(recordingId, MeetRecordingStatus.FAILED);
 				await this.stopRecording(recordingId);
@@ -722,21 +870,20 @@ export class RecordingService {
 	}
 
 	/**
-	 * Generates composite options for recording based on the provided room configuration.
+	 * Generates composite options for recording based on the provided room recording configuration.
 	 * If configOverride is provided, its values will take precedence over room configuration.
 	 *
-	 * @param roomConfig  The room configuration
+	 * @param roomRecordingConfig  The recording configuration defined for the room
 	 * @param configOverride  Optional configuration override from the request
 	 * @returns The generated RoomCompositeOptions object.
 	 */
 	protected generateCompositeOptionsFromRequest(
-		roomConfig: MeetRoomConfig,
+		roomRecordingConfig: MeetRecordingConfig,
 		configOverride?: {
 			layout?: MeetRecordingLayout;
 			encoding?: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions;
 		}
 	): RoomCompositeOptions {
-		const roomRecordingConfig = roomConfig.recording;
 		const layout = configOverride?.layout ?? roomRecordingConfig.layout;
 		const encoding = configOverride?.encoding ?? roomRecordingConfig.encoding;
 		const encodingOptions = EncodingConverter.toLivekit(encoding);

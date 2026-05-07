@@ -1,7 +1,7 @@
 import { inject, injectable } from 'inversify';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { LoggerService } from '../../../logger.service.js';
-import { StorageProvider } from '../../storage.interface.js';
+import type { StorageProvider } from '../../storage.interface.js';
 import { ABSService } from './abs.service.js';
 
 /**

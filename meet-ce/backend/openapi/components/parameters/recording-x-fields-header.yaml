@@ -1,0 +1,15 @@
+name: X-Fields
+in: header
+description: >
+    Comma-separated list of **Recording** fields to include in the response.
+    Use this header to request only the data you need, reducing payload size and improving performance.
+
+    When combined with the `fields` query parameter, values are merged (union of unique fields).
+
+required: false
+schema:
+    type: string
+examples:
+    basic:
+        value: 'recordingId,roomId,status'
+        summary: Only return basic recording information

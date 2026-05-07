@@ -27,7 +27,6 @@ The OpenVidu Meet application is a monorepo managed with **pnpm workspaces** and
 
 - **Frontend** (`frontend/`): Angular 20 application providing the user interface
     - **shared-meet-components**: Reusable Angular library with shared components for administration and preferences
-    - Integrates [openvidu-components-angular](https://github.com/OpenVidu/openvidu/tree/master/openvidu-components-angular) for core video conferencing functionality
 
 - **Backend** (`backend/`): Node.js/TypeScript REST API server
     - Manages rooms, participants, recordings, and authentication
@@ -51,22 +50,6 @@ Before starting, ensure you have the following installed:
     ```
 
 ## Getting Started
-
-Set up your local development environment by cloning the necessary repositories into a shared folder. This ensures the `openvidu-components-angular` library is available for development and linking.
-
-```
-your-dev-folder/
-├── openvidu/
-│   └── openvidu-components-angular/  # Core Angular components library
-└── openvidu-meet/                     # This repository
-```
-
-> **Note:** Clone the `openvidu` repository alongside `openvidu-meet` to enable proper linking.
-> If you haven't done so yet:
->
-> ```bash
-> git clone https://github.com/OpenVidu/openvidu.git
-> ```
 
 ### Clone and Setup
 
@@ -95,11 +78,16 @@ The recommended way to develop is using the integrated development mode that wat
 
 This command starts concurrent watchers for:
 
-- **openvidu-components-angular**: Core Angular components library
 - **Typings**: Shared type definitions with automatic sync
-- **Backend**: Node.js server with nodemon auto-restart
+- **Shared Meet Components**: Angular library with hot reload
+- **Backend**: Node.js server with auto-restart (ignores public folder)
 - **Frontend**: Angular application with live reload
 - **REST API Docs**: OpenAPI documentation generation
+- **Browser Sync**: Live reload server
+
+Optional flags:
+- `--testapp`: Include testapp watcher
+- `--webcomponent`: Include webcomponent watcher
 
 > [!NOTE]
 > The backend uses `backend/.env.development` for environment variables during development. Configure your LiveKit credentials there:
@@ -350,7 +338,9 @@ The `meet.sh` script is the main entry point for all development and build tasks
 ./meet.sh build-testapp              # Build test application
 
 # Development
-./meet.sh dev                        # Start development mode with watchers
+./meet.sh dev                        # Start development mode with watchers (default)
+./meet.sh dev --testapp              # Include testapp watcher
+./meet.sh dev --webcomponent       # Include webcomponent watcher
 
 # Testing
 ./meet.sh test-unit-backend          # Run backend unit tests

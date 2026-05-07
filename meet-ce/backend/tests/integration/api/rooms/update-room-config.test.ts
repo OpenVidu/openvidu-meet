@@ -1,16 +1,12 @@
-import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
+import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
-	MeetRecordingAccess,
 	MeetRecordingAudioCodec,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingVideoCodec,
-	MeetRoomConfig,
-	MeetSignalType
+	MeetRoomConfig
 } from '@openvidu-meet/typings';
-import { container } from '../../../../src/config/dependency-injector.config.js';
-import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
-import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { DEFAULT_RECORDING_ENCODING_PRESET, expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
 	deleteAllRooms,
@@ -31,22 +27,13 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Update Room Config Tests', () => {
-		let frontendEventService: FrontendEventService;
-
-		beforeAll(() => {
-			// Ensure the FrontendEventService is registered
-			frontendEventService = container.get(FrontendEventService);
-		});
-
 		it('should successfully update room config', async () => {
-			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
 			const createdRoom = await createRoom({
 				roomName: 'update-test',
 				config: {
 					recording: {
 						enabled: true,
-						encoding: MeetRecordingEncodingPreset.H264_720P_30,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						encoding: MeetRecordingEncodingPreset.H264_720P_30
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -59,8 +46,7 @@ describe('Room API Tests', () => {
 			const updatedConfig = {
 				recording: {
 					enabled: false,
-					encoding: MeetRecordingEncodingPreset.H264_1080P_60,
-					allowAccessTo: MeetRecordingAccess.ADMIN
+					encoding: MeetRecordingEncodingPreset.H264_1080P_60
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false },
@@ -69,28 +55,12 @@ describe('Room API Tests', () => {
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
-			// Verify a method of frontend event service is called
-			expect(sendSignalSpy).toHaveBeenCalledWith(
-				createdRoom.roomId,
-				{
-					roomId: createdRoom.roomId,
-					config: {
-						...updatedConfig,
-						recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID }
-					},
-					timestamp: expect.any(Number)
-				},
-				{
-					topic: MeetSignalType.MEET_ROOM_CONFIG_UPDATED
-				}
-			);
-
 			// Verify update response
 			expect(updateResponse.status).toBe(200);
 			expect(updateResponse.body).toHaveProperty('message');
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, 'config', 'config');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config).toEqual({
 				...updatedConfig,
@@ -106,7 +76,6 @@ describe('Room API Tests', () => {
 					recording: {
 						enabled: true,
 						layout: MeetRecordingLayout.SPEAKER
-						// allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: true },
@@ -128,15 +97,14 @@ describe('Room API Tests', () => {
 			expect(updateResponse.body).toHaveProperty('message');
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(getResponse.status).toBe(200);
 
 			const expectedConfig: MeetRoomConfig = {
 				recording: {
 					enabled: false,
 					layout: MeetRecordingLayout.SPEAKER,
-					encoding: MeetRecordingEncodingPreset.H264_720P_30, // Default value
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					encoding: DEFAULT_RECORDING_ENCODING_PRESET
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -177,8 +145,7 @@ describe('Room API Tests', () => {
 
 			const config = {
 				recording: {
-					enabled: false,
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: false
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false }
@@ -212,7 +179,7 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, 'config', 'config');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_1080P_60);
 		});
@@ -254,12 +221,12 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config.recording.encoding).toMatchObject(updatedConfig.recording.encoding);
 		});
 
-		it('should update room encoding from advanced options to preset', async () => {
+		it('should update room encoding config from advanced options to preset', async () => {
 			const recordingEncoding = {
 				video: {
 					width: 1280,
@@ -276,15 +243,19 @@ describe('Room API Tests', () => {
 					frequency: 44100
 				}
 			};
-			const createdRoom = await createRoom({
-				roomName: 'advanced-to-preset',
-				config: {
-					recording: {
-						enabled: true,
-						encoding: recordingEncoding
+			const createdRoom = await createRoom(
+				{
+					roomName: 'advanced-to-preset',
+					config: {
+						recording: {
+							enabled: true,
+							encoding: recordingEncoding
+						}
 					}
-				}
-			});
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
 
 			expect(createdRoom.config.recording.encoding).toMatchObject(recordingEncoding);
 			// Update to preset encoding
@@ -299,23 +270,26 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.PORTRAIT_H264_1080P_60);
 		});
 
 		it('should update only encoding while keeping other recording config', async () => {
-			const createdRoom = await createRoom({
-				roomName: 'partial-encoding-update',
-				config: {
-					recording: {
-						enabled: true,
-						layout: MeetRecordingLayout.SPEAKER,
-						encoding: MeetRecordingEncodingPreset.H264_720P_30,
-						allowAccessTo: MeetRecordingAccess.ADMIN
+			const createdRoom = await createRoom(
+				{
+					roomName: 'partial-encoding-update',
+					config: {
+						recording: {
+							enabled: true,
+							layout: MeetRecordingLayout.SPEAKER,
+							encoding: MeetRecordingEncodingPreset.H264_720P_30
+						}
 					}
-				}
-			});
+				},
+				undefined,
+				{ xExtraFields: 'config' }
+			);
 
 			expect(createdRoom.config.recording.layout).toBe(MeetRecordingLayout.SPEAKER);
 			expect(createdRoom.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_720P_30);
@@ -332,15 +306,14 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 
 			// Verify with a get request
-			const getResponse = await getRoom(createdRoom.roomId);
+			const getResponse = await getRoom(createdRoom.roomId, 'config', 'config');
 			expect(getResponse.status).toBe(200);
 
 			const expectedConfig = {
 				recording: {
 					enabled: true,
 					layout: MeetRecordingLayout.SPEAKER,
-					encoding: MeetRecordingEncodingPreset.H264_1080P_30,
-					allowAccessTo: MeetRecordingAccess.ADMIN
+					encoding: MeetRecordingEncodingPreset.H264_1080P_30
 				},
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
@@ -360,8 +333,7 @@ describe('Room API Tests', () => {
 			// Invalid config (wrong types)
 			const invalidConfig = {
 				recording: {
-					enabled: 'true', // String instead of boolean
-					allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+					enabled: 'true' // String instead of boolean
 				},
 				chat: { enabled: false },
 				virtualBackground: { enabled: false }
@@ -398,7 +370,7 @@ describe('Room API Tests', () => {
 						// No audio encoding
 					}
 				}
-			} as any;
+			} as unknown as MeetRoomConfig;
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
 			expectValidationError(
@@ -431,7 +403,7 @@ describe('Room API Tests', () => {
 						// No video encoding
 					}
 				}
-			} as any;
+			} as unknown as MeetRoomConfig;
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
 			expectValidationError(

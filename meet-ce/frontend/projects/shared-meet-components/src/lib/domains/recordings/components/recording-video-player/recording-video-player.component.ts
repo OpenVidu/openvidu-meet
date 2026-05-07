@@ -1,93 +1,76 @@
-import { Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	ElementRef,
+	OnDestroy,
+	inject,
+	input,
+	output,
+	signal,
+	viewChild
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
-import { ViewportService } from 'openvidu-components-angular';
+import { ViewportService } from '../../../meeting/openvidu-components';
+import { RecordingUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-recording-video-player',
 	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule],
 	templateUrl: './recording-video-player.component.html',
-	styleUrl: './recording-video-player.component.scss'
+	styleUrl: './recording-video-player.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RecordingVideoPlayerComponent implements OnDestroy {
+	viewportService = inject(ViewportService);
+
 	/**
 	 * URL of the recording video to play
 	 */
-	@Input() recordingUrl?: string;
+	recordingUrl = input<string | undefined>(undefined);
 
 	/**
 	 * Recording status (to show appropriate messages)
 	 */
-	@Input() recordingStatus: MeetRecordingStatus = MeetRecordingStatus.COMPLETE;
-
-	/**
-	 * Whether to show download button
-	 */
-	@Input() showDownload = true;
-
-	/**
-	 * Whether to show share button
-	 */
-	@Input() showShare = true;
-
-	/**
-	 * Emitted when video successfully loads
-	 */
-	@Output() videoLoaded = new EventEmitter<void>();
-
-	/**
-	 * Emitted when video fails to load
-	 */
-	@Output() videoError = new EventEmitter<void>();
-
-	/**
-	 * Emitted when download button is clicked
-	 */
-	@Output() download = new EventEmitter<void>();
-
-	/**
-	 * Emitted when share button is clicked
-	 */
-	@Output() share = new EventEmitter<void>();
+	recordingStatus = input<MeetRecordingStatus>(MeetRecordingStatus.COMPLETE);
 
 	/**
 	 * Emitted when retry button is clicked
 	 */
-	@Output() retry = new EventEmitter<void>();
+	retry = output<void>();
 
 	// Internal state
-	hasVideoError = false;
-	isVideoLoaded = false;
-	showMobileControls = true;
-
-	@ViewChild('videoPlayer', { static: false }) videoPlayer?: ElementRef<HTMLVideoElement>;
-
+	hasVideoError = signal(false);
+	isVideoLoaded = signal(false);
+	showMobileControls = signal(true);
 	private controlsTimeout?: number;
 
-	constructor(public viewportService: ViewportService) {}
+	videoPlayer = viewChild<ElementRef<HTMLVideoElement>>('videoPlayer');
+
+	RecordingUiUtils = RecordingUiUtils;
 
 	async onVideoLoaded() {
-		this.isVideoLoaded = true;
-		this.hasVideoError = false;
-		this.videoLoaded.emit();
+		this.isVideoLoaded.set(true);
+		this.hasVideoError.set(false);
 
 		// Start controls timeout for mobile
 		if (this.viewportService.isMobileView()) {
 			this.resetControlsTimeout();
 		}
 
-		// try play unmuted and if it fails, mute and play again
-		if (this.videoPlayer && this.videoPlayer.nativeElement) {
+		// Try play unmuted and if it fails, mute and play again
+		const videoElement = this.videoPlayer()?.nativeElement;
+		if (videoElement) {
 			try {
-				await this.videoPlayer.nativeElement.play();
+				await videoElement.play();
 				// Autoplay started successfully without muting
 			} catch (error) {
 				// Autoplay was prevented, mute and try again
-				this.videoPlayer!.nativeElement.muted = true;
-				this.videoPlayer!.nativeElement.play().catch((err) => {
+				videoElement.muted = true;
+				videoElement.play().catch((err) => {
 					console.error('Error playing video after muting:', err);
 				});
 			}
@@ -96,57 +79,14 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 
 	onVideoError() {
 		console.error('Error loading video');
-		this.hasVideoError = true;
-		this.isVideoLoaded = false;
-		this.videoError.emit();
-	}
-
-	onDownloadClick() {
-		this.download.emit();
-	}
-
-	onShareClick() {
-		this.share.emit();
+		this.hasVideoError.set(true);
+		this.isVideoLoaded.set(false);
 	}
 
 	onRetryClick() {
-		this.hasVideoError = false;
-		this.isVideoLoaded = false;
+		this.hasVideoError.set(false);
+		this.isVideoLoaded.set(false);
 		this.retry.emit();
-	}
-
-	getStatusIcon(): string {
-		switch (this.recordingStatus) {
-			case MeetRecordingStatus.STARTING:
-			case MeetRecordingStatus.ACTIVE:
-			case MeetRecordingStatus.ENDING:
-				return 'hourglass_empty';
-			case MeetRecordingStatus.COMPLETE:
-				return 'check_circle';
-			default:
-				return 'error_outline';
-		}
-	}
-
-	getStatusMessage(): string {
-		switch (this.recordingStatus) {
-			case MeetRecordingStatus.STARTING:
-				return 'Recording is starting...';
-			case MeetRecordingStatus.ACTIVE:
-				return 'Recording is in progress...';
-			case MeetRecordingStatus.ENDING:
-				return 'Recording is finalizing...';
-			case MeetRecordingStatus.COMPLETE:
-				return 'Recording is ready to watch';
-			default:
-				return 'Recording has failed';
-		}
-	}
-
-	isRecordingInProgress(): boolean {
-		return [MeetRecordingStatus.STARTING, MeetRecordingStatus.ACTIVE, MeetRecordingStatus.ENDING].includes(
-			this.recordingStatus
-		);
 	}
 
 	private resetControlsTimeout(): void {
@@ -154,9 +94,9 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 			clearTimeout(this.controlsTimeout);
 		}
 
-		if (this.showMobileControls) {
+		if (this.showMobileControls()) {
 			this.controlsTimeout = window.setTimeout(() => {
-				this.showMobileControls = false;
+				this.showMobileControls.set(false);
 			}, 3000); // Hide controls after 3 seconds
 		}
 	}

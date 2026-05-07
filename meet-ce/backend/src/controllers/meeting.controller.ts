@@ -1,4 +1,5 @@
-import { Request, Response } from 'express';
+import type { MeetParticipantModerationAction } from '@openvidu-meet/typings';
+import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';
@@ -15,7 +16,7 @@ export const endMeeting = async (req: Request, res: Response) => {
 
 	// Check if the room exists
 	try {
-		await roomService.getMeetRoom(roomId);
+		await roomService.getMeetRoom(roomId, ['roomId']);
 	} catch (error) {
 		return handleError(res, error, `getting room '${roomId}'`);
 	}
@@ -34,14 +35,22 @@ export const updateParticipantRole = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);
 	const { roomId, participantIdentity } = req.params;
-	const { role } = req.body;
+	const { action } = req.body as { action: MeetParticipantModerationAction };
 
 	try {
-		logger.verbose(`Changing role of participant '${participantIdentity}' in room '${roomId}' to '${role}'`);
-		await roomMemberService.updateParticipantRole(roomId, participantIdentity, role);
-		res.status(200).json({ message: `Participant '${participantIdentity}' role updated to '${role}'` });
+		logger.verbose(
+			`Applying moderation action '${action}' for participant '${participantIdentity}' in room '${roomId}'`
+		);
+		await roomMemberService.updateParticipantRole(roomId, participantIdentity, action);
+		res.status(200).json({
+			message: `Moderation action '${action}' applied to participant '${participantIdentity}' in room '${roomId}'`
+		});
 	} catch (error) {
-		handleError(res, error, `changing role for participant '${participantIdentity}' in room '${roomId}'`);
+		handleError(
+			res,
+			error,
+			`applying moderation action for participant '${participantIdentity}' in room '${roomId}'`
+		);
 	}
 };
 
@@ -53,7 +62,7 @@ export const kickParticipantFromMeeting = async (req: Request, res: Response) =>
 
 	// Check if the room exists
 	try {
-		await roomService.getMeetRoom(roomId);
+		await roomService.getMeetRoom(roomId, ['roomId']);
 	} catch (error) {
 		return handleError(res, error, `getting room '${roomId}'`);
 	}

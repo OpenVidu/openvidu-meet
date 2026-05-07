@@ -71,8 +71,17 @@ export class MongoDBService {
 
 		try {
 			this.logger.info(`Connecting to MongoDB (database: ${this.dbName})...`);
+			this.logger.info(`MongoDB connection pool: min=${MEET_ENV.MONGO_MIN_POOL_SIZE}, max=${MEET_ENV.MONGO_MAX_POOL_SIZE}`);
+
 			await mongoose.connect(this.connectionString, {
-				dbName: this.dbName
+				dbName: this.dbName,
+				appName: MEET_ENV.NAME_ID,
+				maxPoolSize: MEET_ENV.MONGO_MAX_POOL_SIZE,
+				minPoolSize: MEET_ENV.MONGO_MIN_POOL_SIZE,
+				connectTimeoutMS: MEET_ENV.MONGO_CONNECT_TIMEOUT_MS,
+				socketTimeoutMS: MEET_ENV.MONGO_SOCKET_TIMEOUT_MS,
+				serverSelectionTimeoutMS: MEET_ENV.MONGO_SERVER_SELECTION_TIMEOUT_MS,
+				maxIdleTimeMS: MEET_ENV.MONGO_MAX_IDLE_TIME_MS
 			});
 			this.isConnected = true;
 			this.logger.info(`Successfully connected to MongoDB (database: ${this.dbName})`);

@@ -3,7 +3,7 @@ import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { IScheduledTask } from '../models/task-scheduler.model.js';
+import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { LoggerService } from './logger.service.js';
 import { MutexService } from './mutex.service.js';

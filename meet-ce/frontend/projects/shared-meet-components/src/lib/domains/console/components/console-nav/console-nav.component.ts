@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output, Signal, ViewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -8,13 +7,12 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
-import { AppDataService } from '../../../../shared/services/app-data.service';
+import { AppContextService } from '../../../../shared/services/app-context.service';
 import { ThemeService } from '../../../../shared/services/theme.service';
 
 @Component({
 	selector: 'ov-console-nav',
 	imports: [
-		CommonModule,
 		MatToolbarModule,
 		MatListModule,
 		MatButtonModule,
@@ -24,35 +22,31 @@ import { ThemeService } from '../../../../shared/services/theme.service';
 		RouterModule
 	],
 	templateUrl: './console-nav.component.html',
-	styleUrl: './console-nav.component.scss'
+	styleUrl: './console-nav.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConsoleNavComponent {
-	@ViewChild(MatSidenav) sidenav!: MatSidenav;
-	isMobile = false;
-	isTablet = false;
-	isSideMenuCollapsed = false;
-	version = '';
+	private appCtxService = inject(AppContextService);
+	private themeService = inject(ThemeService);
 
-	isDarkMode: Signal<boolean>;
+	readonly sidenav = viewChild.required(MatSidenav);
+	isMobile = signal(false);
+	isTablet = signal(false);
+	isSideMenuCollapsed = signal(false);
+	readonly version = `v${this.appCtxService.version()} (${this.appCtxService.edition()})`;
 
-	@Input() navLinks: ConsoleNavLink[] = [];
-	@Output() onLogoutClicked: EventEmitter<void> = new EventEmitter<void>();
+	readonly isDarkMode = this.themeService.isDark;
 
-	constructor(
-		private appDataService: AppDataService,
-		private themeService: ThemeService
-	) {
-		this.version = `v${this.appDataService.version()} (${this.appDataService.edition()})`;
-		this.isDarkMode = this.themeService.isDark;
-	}
+	navLinks = input<ConsoleNavLink[]>([]);
+	onLogoutClicked = output<void>();
 
 	async toggleSideMenu() {
-		if (this.isMobile) {
-			this.isSideMenuCollapsed = false;
-			await this.sidenav.toggle();
+		if (this.isMobile()) {
+			this.isSideMenuCollapsed.set(false);
+			await this.sidenav().toggle();
 		} else {
-			this.isSideMenuCollapsed = !this.isSideMenuCollapsed;
-			await this.sidenav.open();
+			this.isSideMenuCollapsed.set(!this.isSideMenuCollapsed());
+			await this.sidenav().open();
 		}
 	}
 

@@ -1,23 +1,24 @@
-import { CommonModule } from '@angular/common';
-import { Component, effect, ElementRef, input, QueryList, signal, untracked, ViewChildren } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { Component, effect, ElementRef, input, signal, untracked, viewChildren } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { Caption } from '../../models/captions.model';
 
 @Component({
 	selector: 'ov-meeting-captions',
-	imports: [CommonModule],
+	imports: [NgClass],
 	templateUrl: './meeting-captions.component.html',
-	styleUrl: './meeting-captions.component.scss'
+	styleUrl: './meeting-captions.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingCaptionsComponent {
 	// Reactive caption data from service
 	captions = input<Caption[]>([]);
 
 	// Track animation state for each caption
-	protected readonly captionAnimationState = signal<Map<string, 'entering' | 'active' | 'leaving'>>(new Map());
+	captionAnimationState = signal<Map<string, 'entering' | 'active' | 'leaving'>>(new Map());
 
 	// ViewChildren to access caption text containers for auto-scroll
-	@ViewChildren('captionTextContainer')
-	captionTextContainers!: QueryList<ElementRef<HTMLDivElement>>;
+	readonly captionTextContainers = viewChildren<ElementRef<HTMLDivElement>>('captionTextContainer');
 
 	constructor() {
 		// Monitor caption changes and update animation states
@@ -78,25 +79,15 @@ export class MeetingCaptionsComponent {
 	}
 
 	/**
-	 * Tracks captions by their ID for optimal Angular rendering.
-	 *
-	 * @param index Item index
-	 * @param caption Caption item
-	 * @returns Unique identifier
-	 */
-	protected trackByCaption(index: number, caption: Caption): string {
-		return caption.id;
-	}
-
-	/**
 	 * Scrolls all caption text containers to the bottom to show the most recent text.
 	 * Called automatically when captions are updated.
 	 */
 	private scrollCaptionsToBottom(): void {
 		// Use setTimeout to ensure DOM has updated
 		setTimeout(() => {
-			if (this.captionTextContainers) {
-				this.captionTextContainers.forEach((container: ElementRef<HTMLDivElement>) => {
+			const captionTextContainers = this.captionTextContainers();
+			if (captionTextContainers) {
+				captionTextContainers.forEach((container: ElementRef<HTMLDivElement>) => {
 					const element = container.nativeElement;
 					element.scrollTop = element.scrollHeight;
 				});

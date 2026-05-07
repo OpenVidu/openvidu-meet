@@ -1,6 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
-	MeetRecordingAccess,
 	MeetRecordingAudioCodec,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
@@ -8,6 +7,7 @@ import {
 } from '@openvidu-meet/typings';
 import ms from 'ms';
 import {
+	expectExtraFieldsInResponse,
 	expectSuccessRoomResponse,
 	expectValidationError,
 	expectValidRoom,
@@ -27,15 +27,15 @@ describe('Room API Tests', () => {
 	});
 
 	describe('Get Room Tests', () => {
-		it('should successfully retrieve a room by its ID', async () => {
+		it('should successfully retrieve a room by its ID without config by default', async () => {
 			const createdRoom = await createRoom({
 				roomName: 'test-room'
 			});
 
-			expectValidRoom(createdRoom, 'test-room');
-
+			// Get room without extraFields - config should not be present
 			const response = await getRoom(createdRoom.roomId);
-			expectSuccessRoomResponse(response, 'test-room', 'test_room');
+			expectValidRoom(response.body, 'test-room');
+			expectExtraFieldsInResponse(response.body);
 		});
 
 		it('should retrieve a room with custom config', async () => {
@@ -45,8 +45,7 @@ describe('Room API Tests', () => {
 					recording: {
 						enabled: true,
 						layout: MeetRecordingLayout.SPEAKER,
-						encoding: MeetRecordingEncodingPreset.H264_1080P_30,
-						allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+						encoding: MeetRecordingEncodingPreset.H264_1080P_30
 					},
 					chat: { enabled: true },
 					virtualBackground: { enabled: false },
@@ -57,8 +56,8 @@ describe('Room API Tests', () => {
 			// Create a room with custom config
 			const { roomId } = await createRoom(payload);
 
-			// Retrieve the room by its ID
-			const response = await getRoom(roomId);
+			// Retrieve the room by its ID with expand=config
+			const response = await getRoom(roomId, undefined, 'config');
 
 			expectSuccessRoomResponse(response, 'custom-config', 'custom_config', undefined, payload.config);
 		});
@@ -89,6 +88,7 @@ describe('Room API Tests', () => {
 			const response = await getRoom(dirtyRoomId);
 
 			expectSuccessRoomResponse(response, 'test-room', 'test_room');
+			expectExtraFieldsInResponse(response.body);
 		});
 
 		it('should retrieve a room with autoDeletionDate', async () => {
@@ -107,11 +107,19 @@ describe('Room API Tests', () => {
 			expectSuccessRoomResponse(response, 'deletion-date', 'deletion_date', validAutoDeletionDate);
 		});
 
-		it('should retrieve a room without moderatorUrl when participant is speaker', async () => {
+		it("should not include access.anonymous URLs when user doesn't have canShareAccessLinks permission", async () => {
 			const roomData = await setupSingleRoom();
-			const response = await getRoom(roomData.room.roomId, undefined, roomData.speakerToken);
+			const response = await getRoom(roomData.room.roomId, undefined, undefined, roomData.speakerToken);
+
 			expect(response.status).toBe(200);
-			expect(response.body.moderatorUrl).toBeUndefined();
+			expect(response.body.access).toBeDefined();
+			expect(response.body.access.anonymous).toBeDefined();
+			expect(response.body.access.anonymous.moderator).toBeDefined();
+			expect(response.body.access.anonymous.moderator.url).toBeUndefined();
+			expect(response.body.access.anonymous.speaker).toBeDefined();
+			expect(response.body.access.anonymous.speaker.url).toBeUndefined();
+			expect(response.body.access.anonymous.recording).toBeDefined();
+			expect(response.body.access.anonymous.recording.url).toBeUndefined();
 		});
 
 		it('should retrieve a room with encoding preset', async () => {
@@ -125,7 +133,7 @@ describe('Room API Tests', () => {
 				}
 			});
 
-			const response = await getRoom(createdRoom.roomId);
+			const response = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(response.status).toBe(200);
 			expect(response.body.config.recording.encoding).toBe(MeetRecordingEncodingPreset.H264_1080P_60);
 		});
@@ -158,7 +166,7 @@ describe('Room API Tests', () => {
 				}
 			});
 
-			const response = await getRoom(createdRoom.roomId);
+			const response = await getRoom(createdRoom.roomId, undefined, 'config');
 			expect(response.status).toBe(200);
 			expect(response.body.config.recording.encoding).toMatchObject(advancedEncoding);
 		});

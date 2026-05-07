@@ -1,7 +1,7 @@
 # ====================================================
 # Stage 1: builder
 # ====================================================
-FROM node:22.21.1 AS builder
+FROM node:24.13.1 AS builder
 
 # Define pnpm version as build argument with default value
 ARG PNPM_VERSION=10.18.3
@@ -17,29 +17,23 @@ RUN mkdir -p meet-ce/typings meet-ce/frontend/webcomponent meet-ce/backend && \
 
 USER node
 
+# --- Install safe-chain for security checks during build
+RUN curl -fsSL https://github.com/AikidoSec/safe-chain/releases/latest/download/install-safe-chain.sh | sh -s -- --ci
+
+ENV PATH=/home/node/.safe-chain/shims:/home/node/.safe-chain/bin:$PATH
+# Only check for ongoing malicious packages to avoid issues in CI
+ENV SAFE_CHAIN_MINIMUM_PACKAGE_AGE_HOURS=0
+
+RUN pnpm safe-chain-verify
+# ---------------------
+
 # =============================================================================
 # Workspace Configuration for Docker/CI
 # =============================================================================
-# We use Docker-specific configuration files to handle external dependencies:
-#
-# 1. pnpm-workspace.docker.yaml: Excludes external packages (openvidu-components-angular)
-# 2. .npmrc.docker: Disables workspace linking, forces registry/tarball installation
-#
-# This allows openvidu-components-angular to be installed from:
-#   - npm registry (e.g., openvidu-components-angular@3.4.0)
-#   - Local tarball (e.g., ./meet-ce/frontend/openvidu-components-angular-3.4.0.tgz)
-#
-# The package.json should already have the correct dependency specified by CI
-# before docker build is executed.
-#
-# See docs/ci-docker-dependencies-strategy.md for more information.
-# =============================================================================
 
 # Copy workspace configuration files
-# Use Docker-specific workspace file that excludes external packages
-COPY --chown=node:node pnpm-workspace.docker.yaml ./pnpm-workspace.yaml
-# Use Docker-specific npmrc that disables workspace linking
-COPY --chown=node:node .npmrc.docker ./.npmrc
+COPY --chown=node:node pnpm-workspace.yaml ./pnpm-workspace.yaml
+COPY --chown=node:node .npmrc ./.npmrc
 COPY --chown=node:node package.json pnpm-lock.yaml ./
 
 # Copy package.json files for all workspace packages
@@ -75,7 +69,7 @@ RUN rm -rf node_modules \
 # ====================================================
 # Stage 2: production
 # ====================================================
-FROM node:22.21.1-alpine3.23 AS production
+FROM node:24.13.1-alpine AS production
 
 # Define pnpm version as build argument with default value
 ARG PNPM_VERSION=10.18.3
