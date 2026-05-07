@@ -35,10 +35,16 @@ import {
 	startWebhookServer,
 	stopWebhookServer
 } from '../../helpers/test-scenarios.js';
-import { waitForRecordingToStop, waitForRoomToDelete } from '../../helpers/wait-helpers.js';
+import {
+	ReceivedWebhook,
+	waitForRecordingToStop,
+	waitForRoomToDelete,
+	waitForWebhookCount,
+	waitForWebhookEvent
+} from '../../helpers/wait-helpers.js';
 
 describe('Webhook Integration Tests', () => {
-	let receivedWebhooks: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }[] = [];
+	let receivedWebhooks: ReceivedWebhook[] = [];
 
 	const defaultRoomConfig: MeetRoomConfig = {
 		recording: {
@@ -102,21 +108,20 @@ describe('Webhook Integration Tests', () => {
 			const context = await setupSingleRoom(true);
 			const roomData = context.room;
 
-			// Verify 'meetingStarted' webhook is sent
-			expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
-			const meetingStartedWebhook = receivedWebhooks.find(
-				(w) => w.body.event === MeetWebhookEventType.MEETING_STARTED
+			// Wait for 'meetingStarted' webhook to be delivered
+			const meetingStartedWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.MEETING_STARTED
 			);
-			expect(meetingStartedWebhook).toBeDefined();
-			expect(meetingStartedWebhook?.body.data.roomId).toBe(roomData.roomId);
-			expect(meetingStartedWebhook?.body.creationDate).toBeLessThanOrEqual(Date.now());
-			expect(meetingStartedWebhook?.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
+			expect(meetingStartedWebhook.body.data.roomId).toBe(roomData.roomId);
+			expect(meetingStartedWebhook.body.creationDate).toBeLessThanOrEqual(Date.now());
+			expect(meetingStartedWebhook.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
 
-			const room: MeetRoom = meetingStartedWebhook!.body.data as MeetRoom;
+			const room: MeetRoom = meetingStartedWebhook.body.data as MeetRoom;
 			expect(room.roomId).toBe(roomData.roomId);
 			expect(room.config).toEqual(defaultRoomConfig);
 
-			expectValidSignature(meetingStartedWebhook!);
+			expectValidSignature(meetingStartedWebhook);
 		});
 
 		it('should send meeting_ended webhook when meeting is closed', async () => {
@@ -127,20 +132,16 @@ describe('Webhook Integration Tests', () => {
 			// Close the room
 			await endMeeting(roomData.roomId, moderatorToken);
 
-			// Verify 'meetingEnded' webhook is sent
-			expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
-			const meetingEndedWebhook = receivedWebhooks.find(
-				(w) => w.body.event === MeetWebhookEventType.MEETING_ENDED
-			);
-			expect(meetingEndedWebhook).toBeDefined();
-			expect(meetingEndedWebhook?.body.creationDate).toBeLessThanOrEqual(Date.now());
-			expect(meetingEndedWebhook?.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
+			// Wait for 'meetingEnded' webhook to be delivered
+			const meetingEndedWebhook = await waitForWebhookEvent(receivedWebhooks, MeetWebhookEventType.MEETING_ENDED);
+			expect(meetingEndedWebhook.body.creationDate).toBeLessThanOrEqual(Date.now());
+			expect(meetingEndedWebhook.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
 
-			const room: MeetRoom = meetingEndedWebhook!.body.data as MeetRoom;
+			const room: MeetRoom = meetingEndedWebhook.body.data as MeetRoom;
 			expect(room.roomId).toBe(roomData.roomId);
 			expect(room.config).toEqual(defaultRoomConfig);
 
-			expectValidSignature(meetingEndedWebhook!);
+			expectValidSignature(meetingEndedWebhook);
 		});
 
 		it('should send meeting_ended when room is forcefully deleted', async () => {
@@ -148,22 +149,18 @@ describe('Webhook Integration Tests', () => {
 			const roomData = context.room;
 			// Forcefully delete the room
 			await deleteRoom(roomData.roomId, { withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE });
-			await waitForRoomToDelete(roomData.roomId); // Wait for the webhook to process the deletion
-			// Verify 'meetingEnded' webhook is sent
-			expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
-			const meetingEndedWebhook = receivedWebhooks.find(
-				(w) => w.body.event === MeetWebhookEventType.MEETING_ENDED
-			);
-			expect(meetingEndedWebhook).toBeDefined();
-			expect(meetingEndedWebhook?.body.data.roomId).toBe(roomData.roomId);
-			expect(meetingEndedWebhook?.body.creationDate).toBeLessThanOrEqual(Date.now());
-			expect(meetingEndedWebhook?.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
+			await waitForRoomToDelete(roomData.roomId); // Wait for the room deletion to be persisted
+			// Wait for 'meetingEnded' webhook to be delivered
+			const meetingEndedWebhook = await waitForWebhookEvent(receivedWebhooks, MeetWebhookEventType.MEETING_ENDED);
+			expect(meetingEndedWebhook.body.data.roomId).toBe(roomData.roomId);
+			expect(meetingEndedWebhook.body.creationDate).toBeLessThanOrEqual(Date.now());
+			expect(meetingEndedWebhook.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
 
-			const room: MeetRoom = meetingEndedWebhook!.body.data as MeetRoom;
+			const room: MeetRoom = meetingEndedWebhook.body.data as MeetRoom;
 			expect(room.roomId).toBe(roomData.roomId);
 			expect(room.config).toEqual(defaultRoomConfig);
 
-			expectValidSignature(meetingEndedWebhook!);
+			expectValidSignature(meetingEndedWebhook);
 		});
 
 		it('should send recordingStarted, recordingUpdated and recordingEnded webhooks when recording is started and stopped', async () => {
@@ -174,6 +171,11 @@ describe('Webhook Integration Tests', () => {
 
 			await waitForRecordingToStop(recordingId!); // Wait for the recording to stop and webhook to be processed
 
+			// Wait for all 4 recording webhooks to be delivered (STARTED, ACTIVE, ENDING, COMPLETE)
+			await waitForWebhookCount(receivedWebhooks, (w) => w.body.event.startsWith('recording'), 4, {
+				errorMessage: 'Expected 4 recording webhooks (started, active, ending, complete)'
+			});
+
 			const recordingWebhooks = receivedWebhooks.filter((w) => w.body.event.startsWith('recording'));
 			// STARTED, ACTIVE, ENDING, COMPLETE
 			expect(recordingWebhooks.length).toBe(4);
@@ -181,17 +183,16 @@ describe('Webhook Integration Tests', () => {
 			// Check recording_started webhook
 			const recordingStartedWebhook = receivedWebhooks.find(
 				(w) => w.body.event === MeetWebhookEventType.RECORDING_STARTED
-			);
+			)!;
 
-			let data = recordingStartedWebhook?.body.data as MeetRecordingInfo;
-			expect(recordingStartedWebhook).toBeDefined();
+			let data = recordingStartedWebhook.body.data as MeetRecordingInfo;
 			expect(data.roomId).toBe(roomData.roomId);
 			expect(data.recordingId).toBe(recordingId);
-			expect(recordingStartedWebhook?.body.creationDate).toBeLessThan(Date.now());
-			expect(recordingStartedWebhook?.body.creationDate).toBeGreaterThan(startDate);
+			expect(recordingStartedWebhook.body.creationDate).toBeLessThan(Date.now());
+			expect(recordingStartedWebhook.body.creationDate).toBeGreaterThan(startDate);
 
-			expectValidSignature(recordingStartedWebhook!);
-			expect(recordingStartedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_STARTED);
+			expectValidSignature(recordingStartedWebhook);
+			expect(recordingStartedWebhook.body.event).toBe(MeetWebhookEventType.RECORDING_STARTED);
 			expect(data.status).toBe(MeetRecordingStatus.STARTING);
 			expect(data.layout).toBeDefined();
 
@@ -205,15 +206,14 @@ describe('Webhook Integration Tests', () => {
 			// Check recording_updated webhook
 			const recordingUpdatedWebhook = receivedWebhooks.find(
 				(w) => w.body.event === MeetWebhookEventType.RECORDING_UPDATED
-			);
-			data = recordingUpdatedWebhook?.body.data as MeetRecordingInfo;
-			expect(recordingUpdatedWebhook).toBeDefined();
+			)!;
+			data = recordingUpdatedWebhook.body.data as MeetRecordingInfo;
 			expect(data.roomId).toBe(roomData.roomId);
 			expect(data.recordingId).toBe(recordingId);
-			expect(recordingUpdatedWebhook?.body.creationDate).toBeLessThan(Date.now());
-			expect(recordingUpdatedWebhook?.body.creationDate).toBeGreaterThan(startDate);
-			expectValidSignature(recordingUpdatedWebhook!);
-			expect(recordingUpdatedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_UPDATED);
+			expect(recordingUpdatedWebhook.body.creationDate).toBeLessThan(Date.now());
+			expect(recordingUpdatedWebhook.body.creationDate).toBeGreaterThan(startDate);
+			expectValidSignature(recordingUpdatedWebhook);
+			expect(recordingUpdatedWebhook.body.event).toBe(MeetWebhookEventType.RECORDING_UPDATED);
 			expect(data.status).toBe(MeetRecordingStatus.ACTIVE);
 			expect(data.layout).toBeDefined();
 
@@ -228,15 +228,14 @@ describe('Webhook Integration Tests', () => {
 			// Check recording_ended webhook
 			const recordingEndedWebhook = receivedWebhooks.find(
 				(w) => w.body.event === MeetWebhookEventType.RECORDING_ENDED
-			);
-			data = recordingEndedWebhook?.body.data as MeetRecordingInfo;
-			expect(recordingEndedWebhook).toBeDefined();
+			)!;
+			data = recordingEndedWebhook.body.data as MeetRecordingInfo;
 			expect(data.roomId).toBe(roomData.roomId);
 			expect(data.recordingId).toBe(recordingId);
-			expect(recordingEndedWebhook?.body.creationDate).toBeLessThan(Date.now());
-			expect(recordingEndedWebhook?.body.creationDate).toBeGreaterThan(startDate);
-			expectValidSignature(recordingEndedWebhook!);
-			expect(recordingEndedWebhook?.body.event).toBe(MeetWebhookEventType.RECORDING_ENDED);
+			expect(recordingEndedWebhook.body.creationDate).toBeLessThan(Date.now());
+			expect(recordingEndedWebhook.body.creationDate).toBeGreaterThan(startDate);
+			expectValidSignature(recordingEndedWebhook);
+			expect(recordingEndedWebhook.body.event).toBe(MeetWebhookEventType.RECORDING_ENDED);
 			expect(data.status).not.toBe(MeetRecordingStatus.ENDING);
 			expect(data.status).toBe(MeetRecordingStatus.COMPLETE);
 			expect(data.layout).toBeDefined();

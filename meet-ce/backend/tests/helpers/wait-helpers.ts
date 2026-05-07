@@ -1,4 +1,5 @@
-import { MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRecordingStatus, MeetRoomStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
+import http from 'http';
 import { container } from '../../src/config/dependency-injector.config.js';
 import { RecordingRepository } from '../../src/repositories/recording.repository.js';
 import { RoomMemberRepository } from '../../src/repositories/room-member.repository.js';
@@ -11,6 +12,7 @@ const DEFAULT_POLL_INTERVAL_MS = 250;
 const DEFAULT_ROOM_TIMEOUT_MS = 15_000;
 const DEFAULT_RECORDING_TIMEOUT_MS = 30_000;
 const DEFAULT_PARTICIPANT_TIMEOUT_MS = 15_000;
+const DEFAULT_WEBHOOK_TIMEOUT_MS = 10_000;
 
 // ─── GENERIC POLLING ─────────────────────────────────────────────────────────
 
@@ -297,4 +299,65 @@ export const waitForAllRecordingsToStop = async (
 	timeoutMs = DEFAULT_RECORDING_TIMEOUT_MS
 ): Promise<void> => {
 	await Promise.all(recordingIds.map((id) => waitForRecordingToStop(id, timeoutMs)));
+};
+
+// ─── WEBHOOK WAIT HELPERS ─────────────────────────────────────────────────────
+
+export type ReceivedWebhook = { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent };
+
+/**
+ * Waits until at least one webhook of the given event type appears in
+ * `receivedWebhooks` and returns the first match.
+ *
+ * Because webhook delivery is asynchronous, tests must call this instead of
+ * reading `receivedWebhooks` directly to avoid race conditions.
+ *
+ * @param receivedWebhooks - Mutable array populated by the test webhook server.
+ * @param eventType        - The webhook event type to wait for.
+ * @param options.timeoutMs - Maximum wait time in milliseconds (default: 10 000).
+ */
+export const waitForWebhookEvent = async (
+	receivedWebhooks: ReceivedWebhook[],
+	eventType: MeetWebhookEventType,
+	options?: { timeoutMs?: number }
+): Promise<ReceivedWebhook> => {
+	let found: ReceivedWebhook | undefined;
+
+	await pollUntil(
+		async () => {
+			found = receivedWebhooks.find((w) => w.body.event === eventType);
+			return !!found;
+		},
+		{
+			timeoutMs: options?.timeoutMs ?? DEFAULT_WEBHOOK_TIMEOUT_MS,
+			errorMessage: `Webhook event '${eventType}' was not received`
+		}
+	);
+
+	return found!;
+};
+
+/**
+ * Waits until `receivedWebhooks` contains at least `count` entries matching
+ * `predicate`.
+ *
+ * Useful for scenarios where multiple webhooks of the same or related types
+ * must all arrive before assertions can be made.
+ *
+ * @param receivedWebhooks - Mutable array populated by the test webhook server.
+ * @param predicate        - Filter function applied to each received webhook.
+ * @param count            - Minimum number of matching webhooks to wait for.
+ * @param options.timeoutMs    - Maximum wait time in milliseconds (default: 10 000).
+ * @param options.errorMessage - Custom error message if the condition times out.
+ */
+export const waitForWebhookCount = async (
+	receivedWebhooks: ReceivedWebhook[],
+	predicate: (w: ReceivedWebhook) => boolean,
+	count: number,
+	options?: { timeoutMs?: number; errorMessage?: string }
+): Promise<void> => {
+	await pollUntil(async () => receivedWebhooks.filter(predicate).length >= count, {
+		timeoutMs: options?.timeoutMs ?? DEFAULT_WEBHOOK_TIMEOUT_MS,
+		errorMessage: options?.errorMessage ?? `Expected at least ${count} matching webhooks within the timeout`
+	});
 };
