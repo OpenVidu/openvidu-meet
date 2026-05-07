@@ -99,7 +99,7 @@ export const getRooms = async (_req: Request, res: Response) => {
 export const getRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 	// Zod already validated and transformed to typed arrays
 	const { fields, extraFields } = res.locals.validatedQuery as {
 		fields?: MeetRoomField[];
@@ -133,7 +133,7 @@ export const deleteRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 	const { fields, extraFields, withMeeting, withRecordings } = res.locals.validatedQuery as {
 		fields?: MeetRoomField[];
 		extraFields?: MeetRoomExtraField[];
@@ -231,7 +231,7 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 export const getRoomConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Getting room config for room '${roomId}'`);
 
@@ -247,7 +247,7 @@ export const updateRoomConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const { config } = req.body;
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Updating room config for room '${roomId}'`);
 
@@ -263,7 +263,7 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const { status } = req.body;
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Updating room status for room '${roomId}' to '${status}'`);
 
@@ -287,7 +287,7 @@ export const updateRoomRoles = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const { roles } = req.body;
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Updating roles permissions for room '${roomId}'`);
 
@@ -303,7 +303,7 @@ export const updateRoomAccess = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const { access } = req.body;
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Updating access config for room '${roomId}'`);
 

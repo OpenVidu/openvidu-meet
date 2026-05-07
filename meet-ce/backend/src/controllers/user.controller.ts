@@ -57,7 +57,7 @@ export const getUsers = async (req: Request, res: Response) => {
 };
 
 export const getUser = async (req: Request, res: Response) => {
-	const { userId } = req.params;
+	const { userId } = req.params as Record<string, string>;
 
 	const logger = container.get(LoggerService);
 	logger.verbose(`Getting user with ID '${userId}'`);
@@ -91,7 +91,7 @@ export const getMe = (_req: Request, res: Response) => {
 };
 
 export const resetUserPassword = async (req: Request, res: Response) => {
-	const { userId } = req.params;
+	const { userId } = req.params as Record<string, string>;
 	const { newPassword } = req.body as { newPassword: string };
 
 	const logger = container.get(LoggerService);
@@ -151,7 +151,7 @@ export const changePassword = async (req: Request, res: Response) => {
 };
 
 export const updateUserRole = async (req: Request, res: Response) => {
-	const { userId } = req.params;
+	const { userId } = req.params as Record<string, string>;
 	const { role } = req.body as { role: MeetUserRole };
 
 	const logger = container.get(LoggerService);
@@ -171,7 +171,7 @@ export const updateUserRole = async (req: Request, res: Response) => {
 };
 
 export const deleteUser = async (req: Request, res: Response) => {
-	const { userId } = req.params;
+	const { userId } = req.params as Record<string, string>;
 
 	const logger = container.get(LoggerService);
 	logger.verbose(`Deleting user with ID '${userId}'`);

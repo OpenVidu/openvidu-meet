@@ -1,4 +1,4 @@
-import type { MeetRoomMemberPermissions, MeetRoomMemberTokenOptions} from '@openvidu-meet/typings';
+import type { MeetRoomMemberPermissions, MeetRoomMemberTokenOptions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
@@ -13,7 +13,7 @@ import {
 import { RequestSessionService } from '../services/request-session.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
-import type { AuthValidator} from './auth.middleware.js';
+import type { AuthValidator } from './auth.middleware.js';
 import { accessTokenValidator, allowAnonymous, withAuth } from './auth.middleware.js';
 
 /**
@@ -114,7 +114,7 @@ export const setupRoomMemberTokenAuthentication = async (req: Request, res: Resp
  * - If no secret is provided, it checks if the authenticated user has permissions to access the room (admin, owner, or member).
  */
 export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Response, next: NextFunction) => {
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 	const { secret } = req.body as MeetRoomMemberTokenOptions;
 
 	const roomService = container.get(RoomService);

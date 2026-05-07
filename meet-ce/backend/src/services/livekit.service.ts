@@ -342,7 +342,7 @@ export class LiveKitService {
 		try {
 			return await this.agentClient.listDispatch(roomName);
 		} catch (error) {
-			this.logger.error(`Error listing agents for room '${roomName}':`, error);
+			this.logger.warn(`Error listing agents for room '${roomName}':`, error);
 			return [];
 		}
 	}
