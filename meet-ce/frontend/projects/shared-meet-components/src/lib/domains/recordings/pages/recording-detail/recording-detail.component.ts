@@ -1,0 +1,195 @@
+import { Clipboard } from '@angular/cdk/clipboard';
+import { DatePipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCardModule } from '@angular/material/card';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute, RouterModule } from '@angular/router';
+import {
+	MeetRecordingEncodingOptions,
+	MeetRecordingEncodingPreset,
+	MeetRecordingInfo,
+	MeetUserRole
+} from '@openvidu-meet/typings';
+import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { NavigationService } from '../../../../shared/services/navigation.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
+import { decodeToken } from '../../../../shared/utils/token.utils';
+import { AuthService } from '../../../auth/services/auth.service';
+import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
+import { RoomMemberService } from '../../../room-members/services/room-member.service';
+import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
+import { RecordingService } from '../../services/recording.service';
+import { RecordingUiUtils } from '../../utils/ui';
+
+@Component({
+	selector: 'ov-recording-detail',
+	imports: [
+		MatCardModule,
+		MatButtonModule,
+		MatIconModule,
+		MatTooltipModule,
+		MatProgressSpinnerModule,
+		MatDividerModule,
+		DatePipe,
+		RouterModule,
+		BreadcrumbComponent,
+		RecordingVideoPlayerComponent
+	],
+	templateUrl: './recording-detail.component.html',
+	styleUrl: './recording-detail.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class RecordingDetailComponent implements OnInit {
+	private readonly route = inject(ActivatedRoute);
+	private readonly authService = inject(AuthService);
+	private readonly recordingService = inject(RecordingService);
+	private readonly roomMemberService = inject(RoomMemberService);
+	private readonly notificationService = inject(NotificationService);
+	private readonly dialogPresetsService = inject(DialogPresetsService);
+	protected readonly navigationService = inject(NavigationService);
+	private readonly clipboard = inject(Clipboard);
+	protected readonly loggerService = inject(LoggerService);
+	protected readonly log: ILogger = this.loggerService.get('OpenVidu Meet - RecordingDetailComponent');
+
+	recordingId = signal<string>('');
+	recording = signal<MeetRecordingInfo | undefined>(undefined);
+	recordingUrl = signal<string | undefined>(undefined);
+
+	currentUserRole = signal<MeetUserRole | undefined>(undefined);
+	canDeleteRecording = signal(false);
+
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+
+	breadcrumbItems = signal<BreadcrumbItem[]>([]);
+
+	protected readonly RecordingUiUtils = RecordingUiUtils;
+
+	async ngOnInit() {
+		const recordingId = this.route.snapshot.paramMap.get('recording-id');
+		if (!recordingId) {
+			await this.navigationService.navigateTo('/recordings');
+			return;
+		}
+
+		this.recordingId.set(recordingId);
+
+		// Update breadcrumb items
+		this.breadcrumbItems.set([
+			{
+				label: 'Recordings',
+				action: () => this.navigationService.navigateTo('/recordings')
+			},
+			{
+				label: this.recordingId()
+			}
+		]);
+
+		const role = await this.authService.getUserRole();
+		this.currentUserRole.set(role);
+
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader.set(true);
+		}, 200);
+
+		await this.loadRecordingDetails();
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
+	}
+
+	private async loadRecordingDetails() {
+		try {
+			const recording = await this.recordingService.getRecording(this.recordingId());
+			this.recording.set(recording);
+
+			// Determine delete permission: ADMIN can always delete; others need token-based check
+			if (this.currentUserRole() === MeetUserRole.ADMIN) {
+				this.canDeleteRecording.set(true);
+			} else {
+				try {
+					const { token } = await this.roomMemberService.generateRoomMemberToken(recording.roomId, {
+						joinMeeting: false
+					});
+					const decoded = decodeToken(token);
+					this.canDeleteRecording.set(decoded.metadata.permissions.canDeleteRecordings);
+				} catch {
+					this.canDeleteRecording.set(false);
+				}
+			}
+
+			if (RecordingUiUtils.isPlayable(recording.status)) {
+				this.recordingUrl.set(this.recordingService.getRecordingMediaUrl(this.recordingId()));
+			}
+		} catch (error) {
+			this.log.e('Error loading recording details:', error);
+			this.notificationService.showSnackbar('Failed to load recording details');
+			await this.navigationService.navigateTo('/recordings');
+		}
+	}
+
+	async downloadRecording() {
+		const rec = this.recording()!;
+		this.recordingService.downloadRecording(rec);
+	}
+
+	async shareRecording() {
+		this.recordingService.openShareRecordingDialog(this.recordingId(), true);
+	}
+
+	copyRecordingId() {
+		this.clipboard.copy(this.recordingId());
+		this.notificationService.showSnackbar('Recording ID copied to clipboard');
+	}
+
+	async deleteRecording() {
+		const deleteCallback = async () => {
+			try {
+				await this.recordingService.deleteRecording(this.recordingId());
+				this.notificationService.showSnackbar('Recording deleted successfully');
+
+				// After deletion, navigate back to recordings page
+				await this.navigationService.navigateTo('/recordings');
+			} catch (error) {
+				console.error('Error deleting recording:', error);
+				this.notificationService.showSnackbar('Failed to delete recording');
+			}
+		};
+
+		this.notificationService.showDialog({
+			...this.dialogPresetsService.getDeleteRecordingDialogPreset(this.recordingId()),
+			confirmCallback: deleteCallback
+		});
+	}
+
+	async retryLoad() {
+		this.isInitializing.set(true);
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader.set(true);
+		}, 200);
+
+		await this.loadRecordingDetails();
+
+		clearTimeout(delayLoader);
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
+	}
+
+	protected isEncodingPreset(
+		encoding: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions
+	): encoding is MeetRecordingEncodingPreset {
+		return typeof encoding === 'string';
+	}
+
+	protected getEncodingOptions(
+		encoding: MeetRecordingEncodingPreset | MeetRecordingEncodingOptions
+	): MeetRecordingEncodingOptions | undefined {
+		return this.isEncodingPreset(encoding) ? undefined : encoding;
+	}
+}

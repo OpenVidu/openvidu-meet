@@ -1,34 +1,40 @@
-import {
+import type {
 	MeetAppearanceConfig,
 	MeetChatConfig,
 	MeetE2EEConfig,
-	MeetPermissions,
-	MeetRecordingAccess,
-	MeetRecordingAudioCodec,
 	MeetRecordingConfig,
 	MeetRecordingEncodingOptions,
-	MeetRecordingEncodingPreset,
-	MeetRecordingLayout,
-	MeetRecordingVideoCodec,
+	MeetRoomAccessConfig,
 	MeetRoomAutoDeletionPolicy,
 	MeetRoomCaptionsConfig,
 	MeetRoomConfig,
+	MeetRoomExtraField,
+	MeetRoomField,
+	MeetRoomOptions,
+	MeetRoomRolesConfig,
+	MeetRoomTheme,
+	MeetVirtualBackgroundConfig
+} from '@openvidu-meet/typings';
+import {
+	MEET_ROOM_EXTRA_FIELDS,
+	MEET_ROOM_FIELDS,
+	MEET_ROOM_SORT_FIELDS,
+	MeetRecordingAudioCodec,
+	MeetRecordingEncodingPreset,
+	MeetRecordingLayout,
+	MeetRecordingVideoCodec,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
-	MeetRoomFilters,
-	MeetRoomMemberRole,
-	MeetRoomMemberTokenMetadata,
-	MeetRoomMemberTokenOptions,
-	MeetRoomOptions,
 	MeetRoomStatus,
-	MeetRoomTheme,
 	MeetRoomThemeMode,
-	MeetVirtualBackgroundConfig
+	SortOrder,
+	TextMatchMode
 } from '@openvidu-meet/typings';
 import ms from 'ms';
 import { z } from 'zod';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MeetRoomHelper } from '../../helpers/room.helper.js';
+import { PartialMeetPermissionsSchema } from './room-member.schema.js';
 
 export const nonEmptySanitizedRoomId = (fieldName: string) =>
 	z
@@ -150,13 +156,10 @@ export const encodingValidator = z.any().superRefine((value, ctx) => {
 	}
 });
 
-const RecordingAccessSchema: z.ZodType<MeetRecordingAccess> = z.nativeEnum(MeetRecordingAccess);
-
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
 	enabled: z.boolean(),
 	layout: z.nativeEnum(MeetRecordingLayout).optional(),
-	encoding: encodingValidator.optional(),
-	allowAccessTo: RecordingAccessSchema.optional()
+	encoding: encodingValidator.optional()
 });
 
 const ChatConfigSchema: z.ZodType<MeetChatConfig> = z.object({
@@ -235,13 +238,12 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
  * IMPORTANT: Using functions in .default() to avoid shared mutable state.
  * Each call creates a new object instance instead of reusing the same reference.
  */
-const CreateRoomConfigSchema = z
+const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
 		recording: RecordingConfigSchema.optional().default(() => ({
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
-			encoding: MeetRecordingEncodingPreset.H264_720P_30,
-			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		})),
 		chat: ChatConfigSchema.optional().default(() => ({ enabled: true })),
 		virtualBackground: VirtualBackgroundConfigSchema.optional().default(() => ({ enabled: true })),
@@ -258,11 +260,6 @@ const CreateRoomConfigSchema = z
 		// Apply default encoding if not provided
 		if (data.recording.encoding === undefined) {
 			data.recording.encoding = MeetRecordingEncodingPreset.H264_720P_30;
-		}
-
-		// Apply default allowAccessTo if not provided
-		if (data.recording.allowAccessTo === undefined) {
-			data.recording.allowAccessTo = MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER;
 		}
 
 		// Automatically disable recording when E2EE is enabled
@@ -287,6 +284,46 @@ const RoomDeletionPolicyWithRecordingsSchema: z.ZodType<MeetRoomDeletionPolicyWi
 const RoomAutoDeletionPolicySchema: z.ZodType<MeetRoomAutoDeletionPolicy> = z.object({
 	withMeeting: RoomDeletionPolicyWithMeetingSchema,
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema
+});
+
+const RoomRolesConfigSchema: z.ZodType<MeetRoomRolesConfig> = z.object({
+	moderator: z
+		.object({
+			permissions: PartialMeetPermissionsSchema
+		})
+		.optional(),
+	speaker: z
+		.object({
+			permissions: PartialMeetPermissionsSchema
+		})
+		.optional()
+});
+
+const RoomAccessConfigSchema: z.ZodType<MeetRoomAccessConfig> = z.object({
+	anonymous: z
+		.object({
+			moderator: z
+				.object({
+					enabled: z.boolean()
+				})
+				.optional(),
+			speaker: z
+				.object({
+					enabled: z.boolean()
+				})
+				.optional(),
+			recording: z
+				.object({
+					enabled: z.boolean()
+				})
+				.optional()
+		})
+		.optional(),
+	registered: z
+		.object({
+			enabled: z.boolean()
+		})
+		.optional()
 });
 
 export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
@@ -331,13 +368,21 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		recording: {
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
-			encoding: MeetRecordingEncodingPreset.H264_720P_30,
-			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
 		captions: { enabled: true }
+	}),
+	roles: RoomRolesConfigSchema.optional(),
+	access: RoomAccessConfigSchema.optional().default({
+		anonymous: {
+			moderator: { enabled: true },
+			speaker: { enabled: true },
+			recording: { enabled: true }
+		},
+		registered: { enabled: false }
 	})
 	// maxParticipants: z
 	// 	.number()
@@ -347,26 +392,173 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	// 	.default(null)
 });
 
-export const RoomFiltersSchema: z.ZodType<MeetRoomFilters> = z.object({
-	roomName: z.string().optional(),
-	status: z.nativeEnum(MeetRoomStatus).optional(),
-	fields: z.string().optional(),
-	maxItems: z.coerce
-		.number()
-		.positive('maxItems must be a positive number')
-		.transform((val) => {
-			// Convert the value to a number
-			const intVal = Math.floor(val);
-			// Ensure it's not greater than 100
-			return intVal > 100 ? 100 : intVal;
-		})
-		.default(10),
-	nextPageToken: z.string().optional(),
-	sortField: z.enum(['creationDate', 'roomName', 'autoDeletionDate']).optional().default('creationDate'),
-	sortOrder: z.enum(['asc', 'desc']).optional().default('desc')
+// Shared extraFields validation schema for Room entity
+// Validates and transforms comma-separated string to typed array
+const extraFieldsSchema = z
+	.string()
+	.optional()
+	.transform((value) => {
+		// Transform to typed array of MeetRoomExtraField
+		if (!value) return undefined;
+
+		const allowed = MEET_ROOM_EXTRA_FIELDS;
+		const requested = value.split(',').map((p) => p.trim());
+		const valid = requested.filter((p) => allowed.includes(p as MeetRoomExtraField));
+
+		return valid.length > 0 ? (valid as MeetRoomExtraField[]) : undefined;
+	});
+
+// Shared fields validation schema for Room entity
+// Validates and transforms comma-separated string to typed array
+// IMPORTANT: Only allows BASE fields (non-extra fields) in the 'fields' parameter.
+// Any extra fields included in 'fields' will be automatically filtered out.
+// Extra fields MUST be requested via the 'extraFields' parameter.
+const fieldsSchema = z
+	.string()
+	.optional()
+	.transform((value) => {
+		if (!value) return undefined;
+
+		const requested = value
+			.split(',')
+			.map((field) => field.trim())
+			.filter((field) => field !== '');
+
+		// Filter: only keep valid BASE fields (exclude extra fields)
+		// This ensures 'fields' parameter can ONLY contain base fields
+		const validBaseFields = requested.filter((field) => {
+			// Must be a valid field AND NOT an extra field
+			return (
+				MEET_ROOM_FIELDS.includes(field as MeetRoomField) &&
+				!MEET_ROOM_EXTRA_FIELDS.includes(field as MeetRoomExtraField)
+			);
+		}) as MeetRoomField[];
+
+		// Deduplicate
+		const unique = Array.from(new Set(validBaseFields));
+
+		return unique.length > 0 ? unique : undefined;
+	});
+
+export const RoomFiltersSchema = z
+	.object({
+		roomName: z.string().optional(),
+		roomNameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		roomNameCaseInsensitive: z.preprocess((arg) => {
+			if (typeof arg === 'string') {
+				if (arg.toLowerCase() === 'true') return true;
+
+				if (arg.toLowerCase() === 'false') return false;
+			}
+
+			return arg;
+		}, z.boolean().optional().default(false)),
+		owner: z.string().min(1, 'owner cannot be empty').optional(),
+		member: z.string().min(1, 'member cannot be empty').optional(),
+		registeredAccess: z.preprocess((arg) => {
+			if (typeof arg === 'string') {
+				if (arg.toLowerCase() === 'true') return true;
+
+				if (arg.toLowerCase() === 'false') return false;
+			}
+
+			return arg;
+		}, z.boolean().optional()),
+		status: z.nativeEnum(MeetRoomStatus).optional(),
+		fields: fieldsSchema,
+		extraFields: extraFieldsSchema,
+		maxItems: z.coerce
+			.number()
+			.positive('maxItems must be a positive number')
+			.transform((val) => {
+				// Convert the value to a number
+				const intVal = Math.floor(val);
+				// Ensure it's not greater than 100
+				return intVal > 100 ? 100 : intVal;
+			})
+			.default(10),
+		nextPageToken: z.string().optional(),
+		sortField: z.enum(MEET_ROOM_SORT_FIELDS).optional().default('creationDate'),
+		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+	})
+	.superRefine((data, ctx) => {
+		if (data.roomNameMatchMode === TextMatchMode.REGEX && data.roomName) {
+			try {
+				new RegExp(String(data.roomName));
+			} catch {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ['roomName'],
+					message: 'Invalid regular expression pattern'
+				});
+			}
+		}
+	});
+
+export const RoomQueryFieldsSchema = z.object({
+	fields: fieldsSchema,
+	extraFields: extraFieldsSchema
 });
 
+/**
+ * Schema for validating X-Fields and X-ExtraFields headers.
+ * Used across all room operations to support field filtering via headers.
+ */
+export const RoomHeaderFieldsSchema = z.object({
+	'x-fields': fieldsSchema,
+	'x-extrafields': extraFieldsSchema
+});
+
+/**
+ * Merges validated header field values into query params.
+ * Headers are merged with query params using union (deduplication).
+ * If a header and query param overlap, the merged result contains unique values from both.
+ *
+ * This allows controllers to only read from req.query regardless of whether
+ * the client used headers, query params, or both.
+ *
+ * @param headers - The request headers object
+ * @param query - The current query params object (will be mutated)
+ */
+export function mergeHeaderFieldsIntoQuery(headers: Record<string, unknown>, query: Record<string, unknown>): void {
+	const headerResult = RoomHeaderFieldsSchema.safeParse(headers);
+
+	if (!headerResult.success) {
+		// If headers are invalid, skip merging (they'll be ignored)
+		return;
+	}
+
+	const headerFields = headerResult.data['x-fields'];
+	const headerExtraFields = headerResult.data['x-extrafields'];
+
+	if (headerFields) {
+		const existingFields =
+			typeof query.fields === 'string'
+				? query.fields
+						.split(',')
+						.map((f: string) => f.trim())
+						.filter((f: string) => f !== '')
+				: [];
+		const merged = Array.from(new Set([...existingFields, ...headerFields]));
+		query.fields = merged.join(',');
+	}
+
+	if (headerExtraFields) {
+		const existingExtraFields =
+			typeof query.extraFields === 'string'
+				? query.extraFields
+						.split(',')
+						.map((f: string) => f.trim())
+						.filter((f: string) => f !== '')
+				: [];
+		const merged = Array.from(new Set([...existingExtraFields, ...headerExtraFields]));
+		query.extraFields = merged.join(',');
+	}
+}
+
 export const DeleteRoomReqSchema = z.object({
+	fields: fieldsSchema,
+	extraFields: extraFieldsSchema,
 	withMeeting: RoomDeletionPolicyWithMeetingSchema.optional().default(MeetRoomDeletionPolicyWithMeeting.FAIL),
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });
@@ -406,6 +598,8 @@ export const BulkDeleteRoomsReqSchema = z.object({
 			message: 'At least one valid roomId is required after sanitization'
 		})
 	),
+	fields: fieldsSchema,
+	extraFields: extraFieldsSchema,
 	withMeeting: RoomDeletionPolicyWithMeetingSchema.optional().default(MeetRoomDeletionPolicyWithMeeting.FAIL),
 	withRecordings: RoomDeletionPolicyWithRecordingsSchema.optional().default(MeetRoomDeletionPolicyWithRecordings.FAIL)
 });
@@ -414,38 +608,14 @@ export const UpdateRoomConfigReqSchema = z.object({
 	config: UpdateRoomConfigSchema
 });
 
+export const UpdateRoomRolesReqSchema = z.object({
+	roles: RoomRolesConfigSchema
+});
+
+export const UpdateRoomAccessReqSchema = z.object({
+	access: RoomAccessConfigSchema
+});
+
 export const UpdateRoomStatusReqSchema = z.object({
 	status: z.enum([MeetRoomStatus.OPEN, MeetRoomStatus.CLOSED])
-});
-
-export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z
-	.object({
-		secret: z.string().nonempty('Secret is required'),
-		grantJoinMeetingPermission: z.boolean().optional().default(false),
-		participantName: z.string().optional(),
-		participantIdentity: z.string().optional()
-	})
-	.refine(
-		(data) => {
-			// If grantJoinMeetingPermission is true, participantName must be provided
-			return !data.grantJoinMeetingPermission || data.participantName;
-		},
-		{
-			message: 'participantName is required when grantJoinMeetingPermission is true',
-			path: ['participantName']
-		}
-	);
-
-const MeetPermissionsSchema: z.ZodType<MeetPermissions> = z.object({
-	canRecord: z.boolean(),
-	canRetrieveRecordings: z.boolean(),
-	canDeleteRecordings: z.boolean(),
-	canChat: z.boolean(),
-	canChangeVirtualBackground: z.boolean()
-});
-
-export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
-	livekitUrl: z.string().url('LiveKit URL must be a valid URL'),
-	role: z.nativeEnum(MeetRoomMemberRole),
-	permissions: MeetPermissionsSchema
 });

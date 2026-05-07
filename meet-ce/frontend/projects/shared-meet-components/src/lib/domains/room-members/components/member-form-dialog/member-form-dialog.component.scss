@@ -1,0 +1,16 @@
+@use '../../../../../../../../src/assets/styles/design-tokens';
+
+.dialog-title {
+	@include design-tokens.ov-flex-center;
+	justify-content: flex-start;
+	gap: var(--ov-meet-spacing-sm);
+	margin: 0;
+	padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-xl);
+	font-size: var(--ov-meet-font-size-xl);
+	font-weight: var(--ov-meet-font-weight-semibold);
+	color: var(--ov-meet-text-primary);
+
+	.title-icon {
+		@include design-tokens.ov-icon(md);
+	}
+}

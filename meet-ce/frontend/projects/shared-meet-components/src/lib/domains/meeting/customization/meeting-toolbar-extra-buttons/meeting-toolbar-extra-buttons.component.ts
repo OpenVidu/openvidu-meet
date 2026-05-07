@@ -1,13 +1,13 @@
-import { CommonModule } from '@angular/common';
-import { Component, computed, inject } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { LoggerService } from 'openvidu-components-angular';
+import { LoggerService } from '../../openvidu-components';
+import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
-import { MeetingService } from '../../services/meeting.service';
 
 /**
  * Component for extra toolbar buttons (like copy meeting link).
@@ -17,75 +17,62 @@ import { MeetingService } from '../../services/meeting.service';
 	selector: 'ov-meeting-toolbar-extra-buttons',
 	templateUrl: './meeting-toolbar-extra-buttons.component.html',
 	styleUrls: ['./meeting-toolbar-extra-buttons.component.scss'],
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule]
+	imports: [NgClass, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarExtraButtonsComponent {
 	protected meetingContextService = inject(MeetingContextService);
-	protected meetingService = inject(MeetingService);
-	protected loggerService = inject(LoggerService);
+	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
 	protected captionService = inject(MeetingCaptionsService);
+	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
-	protected readonly copyLinkTooltip = 'Copy the meeting link';
-	protected readonly copyLinkText = 'Copy meeting link';
 
+	/** Whether to show the copy link button (only for moderators) */
+	showCopyLinkButton = computed(() => this.meetingContextService.meetingUI().showShareAccessLinks);
+	copyLinkTooltip = 'Copy the meeting link';
+	copyLinkText = 'Copy meeting link';
+
+	/** Whether to show the captions button (visible when not HIDDEN) */
+	showCaptionsButton = computed(() => this.meetingContextService.meetingUI().showCaptionsControls);
+	/** Whether captions button is disabled (true when DISABLED_WITH_WARNING) */
+	isCaptionsButtonDisabled = computed(() => this.meetingContextService.meetingUI().showCaptionsControlsDisabled);
 	/**
-	 * Whether to show the copy link button
+	 * True while an enable() or disable() call is in flight.
+	 * Use this to prevent concurrent toggle requests.
 	 */
-	protected showCopyLinkButton = computed(() => this.meetingContextService.canModerateRoom());
+	isCaptionsTogglePending = signal<boolean>(false);
+	/** Whether captions are currently enabled by the user */
+	areCaptionsEnabledByUser = this.captionService.areCaptionsEnabledByUser;
 
-	/**
-	 * Captions status based on room and global configuration
-	 */
-	protected captionsStatus = computed(() => this.meetingContextService.getCaptionsStatus());
-
-	/**
-	 * Whether to show the captions button (visible when not HIDDEN)
-	 */
-	protected showCaptionsButton = computed(() => this.captionsStatus() !== 'HIDDEN');
-
-	/**
-	 * Whether captions button is disabled:
-	 * - Always disabled when captions are turned off at admin/system level (DISABLED_WITH_WARNING)
-	 * - Also disabled while an enable/disable request is in flight to prevent concurrent calls
-	 */
-	protected isCaptionsButtonDisabled = computed(
-		() => this.captionsStatus() === 'DISABLED_WITH_WARNING' || this.captionService.isCaptionsTogglePending()
-	);
-
-	/**
-	 * Whether the captions toggle is pending a server response
-	 */
-	protected isCaptionsTogglePending = computed(() => this.captionService.isCaptionsTogglePending());
-
-	/**
-	 * Whether the device is mobile (affects button style)
-	 */
-	protected isMobile = computed(() => this.meetingContextService.isMobile());
-
-	protected areCaptionsEnabledByUser = computed(() => this.captionService.areCaptionsEnabledByUser());
+	/** Whether the device is mobile (affects button style) */
+	isMobile = this.meetingContextService.isMobile;
 
 	onCopyLinkClick(): void {
-		const room = this.meetingContextService.meetRoom();
-		if (!room) {
-			this.log.e('Cannot copy link: meeting room is undefined');
-			return;
-		}
-
-		this.meetingService.copyMeetingSpeakerLink(room);
+		void this.meetingAccessLinkService.copyMeetingSpeakerLink();
 	}
 
 	async onCaptionsClick(): Promise<void> {
+		if (this.isCaptionsTogglePending()) {
+			return;
+		}
+
+		this.isCaptionsTogglePending.set(true);
+
 		try {
 			// Don't allow toggling if captions are disabled at system level
 			if (this.isCaptionsButtonDisabled()) {
 				this.log.w('Captions are disabled at system level (MEET_CAPTIONS_ENABLED=false)');
 				return;
 			}
+
 			this.captionService.areCaptionsEnabledByUser()
 				? await this.captionService.disable()
 				: await this.captionService.enable();
 		} catch (error) {
 			this.log.e('Error toggling captions:', error);
+		} finally {
+			// Add a small delay before allowing another toggle to prevent rapid concurrent calls
+			setTimeout(() => this.isCaptionsTogglePending.set(false), 500);
 		}
 	}
 }

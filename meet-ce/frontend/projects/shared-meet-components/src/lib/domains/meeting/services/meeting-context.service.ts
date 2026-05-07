@@ -1,10 +1,10 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
-import { MeetRoom } from 'node_modules/@openvidu-meet/typings/dist/room';
-import { ParticipantService, Room, ViewportService } from 'openvidu-components-angular';
-import { AppConfigService } from '../../../shared/services/app-config.service';
-import { FeatureConfigurationService } from '../../../shared/services/feature-configuration.service';
+import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
+import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { CustomParticipantModel } from '../models';
+import { ParticipantService, Room, ViewportService } from '../openvidu-components';
+import { MeetingAccessLinkService } from './meeting-access-link.service';
 
 /**
  * Central service for managing meeting context and state during the MEETING PHASE.
@@ -16,102 +16,60 @@ import { CustomParticipantModel } from '../models';
 })
 export class MeetingContextService {
 	private readonly ovParticipantService = inject(ParticipantService);
-	private readonly featureConfigService = inject(FeatureConfigurationService);
+	private readonly roomFeatureService = inject(RoomFeatureService);
+	private readonly globalConfigService = inject(GlobalConfigService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
-	private readonly appConfigService = inject(AppConfigService);
+	private readonly meetingAccessLinkService = inject(MeetingAccessLinkService);
 
-	private readonly _meetRoom = signal<MeetRoom | undefined>(undefined);
-	private readonly _lkRoom = signal<Room | undefined>(undefined);
 	private readonly _roomId = signal<string | undefined>(undefined);
-	private readonly _meetingUrl = signal<string>('');
-	private readonly _e2eeKey = signal<string>('');
 	private readonly _roomSecret = signal<string | undefined>(undefined);
+	private readonly _e2eeKey = signal<string>('');
+	private readonly _isE2eeKeyFromUrl = signal<boolean>(false);
 	private readonly _hasRecordings = signal<boolean>(false);
+	private readonly _isActiveMeeting = signal<boolean>(false);
 	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
-	private readonly _participantsVersion = signal<number>(0);
+	private readonly _lkRoom = signal<Room | undefined>(undefined);
 	private readonly _localParticipant = signal<CustomParticipantModel | undefined>(undefined);
 	private readonly _remoteParticipants = signal<CustomParticipantModel[]>([]);
 
-	/**
-	 * Readonly signal for the current room
-	 */
-	readonly meetRoom = this._meetRoom.asReadonly();
-
-	/**
-	 * Readonly signal for the current room ID
-	 */
+	/** Readonly signal for the current room ID */
 	readonly roomId = this._roomId.asReadonly();
 
-	/**
-	 * Readonly signal for the current lk room
-	 */
-	readonly lkRoom = this._lkRoom.asReadonly();
-
-	/**
-	 * Readonly signal for the meeting URL
-	 */
-	readonly meetingUrl = this._meetingUrl.asReadonly();
-
-	/**
-	 * Readonly signal for the E2EE key
-	 */
-	readonly e2eeKey = this._e2eeKey.asReadonly();
-
-	/**
-	 * Readonly signal for the room secret
-	 */
+	/** Readonly signal for the room secret (if any) */
 	readonly roomSecret = this._roomSecret.asReadonly();
+	/** Readonly signal for the stored E2EE key (if any) */
+	readonly e2eeKey = this._e2eeKey.asReadonly();
+	/** Readonly signal for whether the E2EE key came from a URL parameter */
+	readonly isE2eeKeyFromUrl = this._isE2eeKeyFromUrl.asReadonly();
 
-	/**
-	 * Readonly signal for whether the room has recordings
-	 */
+	/** Readonly signal for whether the room has recordings */
 	readonly hasRecordings = this._hasRecordings.asReadonly();
-
-	/**
-	 * Readonly signal for who ended the meeting ('self', 'other', or null)
-	 */
+	/** Readonly signal for who ended the meeting ('self', 'other', or null) */
 	readonly meetingEndedBy = this._meetingEndedBy.asReadonly();
+	/** Readonly signal for whether the meeting is active */
+	readonly isActiveMeeting = this._isActiveMeeting.asReadonly();
 
-	/**
-	 * Readonly signal for participants version (increments on role changes)
-	 * Used to trigger reactivity when participant properties change without array reference changes
-	 */
-	readonly participantsVersion = this._participantsVersion.asReadonly();
-
-	/**
-	 * Readonly signal for the local participant
-	 */
+	/** Readonly signal for the current LiveKit room */
+	readonly lkRoom = this._lkRoom.asReadonly();
+	/** Readonly signal for the local participant */
 	readonly localParticipant = this._localParticipant.asReadonly();
-
-	/**
-	 * Readonly signal for the remote participants
-	 */
+	/** Readonly signal for the remote participants */
 	readonly remoteParticipants = this._remoteParticipants.asReadonly();
-
-	/**
-	 * Computed signal that combines local and remote participants
-	 */
+	/** Computed signal that combines local and remote participants */
 	readonly allParticipants = computed(() => {
 		const local = this._localParticipant();
 		const remotes = this._remoteParticipants();
 		return local ? [local, ...remotes] : remotes;
 	});
 
-	/**
-	 * Computed signal for whether the current user can moderate the room
-	 */
-	readonly canModerateRoom = computed(() => this.featureConfigService.features().canModerateRoom);
+	/** Readonly signal for meeting features */
+	readonly meetingUI = this.roomFeatureService.features;
+	/** Readonly signal for room appearance configuration from global settings */
+	readonly meetingAppearance = this.globalConfigService.roomAppearanceConfig;
 
-	/**
-	 * Computed signal for whether layout switching is allowed
-	 */
-	readonly allowLayoutSwitching = computed(() => this.featureConfigService.features().allowLayoutSwitching);
-
-	/**
-	 * Computed signal for whether the device is mobile
-	 */
-	readonly isMobile = computed(() => this.viewportService.isMobile());
+	/** Readonly signal for whether the device is mobile */
+	readonly isMobile = this.viewportService.isMobile;
 
 	constructor() {
 		// Setup automatic synchronization with ParticipantService signals
@@ -127,13 +85,62 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Sets the meeting context with meet room information
-	 * @param room The room object
+	 * Sets the room secret in context
+	 * @param secret The room secret
+	 * @param updateStorage Whether to persist in SessionStorage (default: false)
 	 */
-	setMeetRoom(room: MeetRoom): void {
-		this._meetRoom.set(room);
-		this.setRoomId(room.roomId);
-		this.setMeetingUrl(room.roomId);
+	setRoomSecret(secret: string, updateStorage = false): void {
+		if (updateStorage) {
+			this.sessionStorageService.setRoomSecret(secret);
+		}
+
+		this._roomSecret.set(secret);
+	}
+
+	/**
+	 * Stores the E2EE key in context
+	 * @param key The E2EE key
+	 * @param fromUrl Whether the key came from a URL parameter (default: false)
+	 */
+	setE2eeKey(key: string, fromUrl = false): void {
+		this.sessionStorageService.setE2EEData(key, fromUrl);
+		this._e2eeKey.set(key);
+		this._isE2eeKeyFromUrl.set(fromUrl);
+	}
+
+	/**
+	 * Loads the E2EE key data from session storage
+	 */
+	loadE2eeKeyFromStorage(): void {
+		const e2eeData = this.sessionStorageService.getE2EEData();
+		if (e2eeData) {
+			this._e2eeKey.set(e2eeData.key);
+			this._isE2eeKeyFromUrl.set(e2eeData.fromUrl);
+		}
+	}
+
+	/**
+	 * Updates whether the room has recordings
+	 * @param hasRecordings True if recordings exist
+	 */
+	setHasRecordings(hasRecordings: boolean): void {
+		this._hasRecordings.set(hasRecordings);
+	}
+
+	/**
+	 * Sets whether the meeting is active
+	 * @param isActive True if the meeting is active, false otherwise
+	 */
+	setIsActiveMeeting(isActive: boolean): void {
+		this._isActiveMeeting.set(isActive);
+	}
+
+	/**
+	 * Sets who ended the meeting
+	 * @param by 'self' if ended by this user, 'other' if ended by someone else
+	 */
+	setMeetingEndedBy(by: 'self' | 'other' | null): void {
+		this._meetingEndedBy.set(by);
 	}
 
 	/**
@@ -151,104 +158,30 @@ export class MeetingContextService {
 	private setupParticipantSynchronization(): void {
 		// Sync local participant signal
 		effect(() => {
-			const localParticipant = this.ovParticipantService.localParticipantSignal();
+			const localParticipant = this.ovParticipantService.localParticipant();
 			this._localParticipant.set(localParticipant as CustomParticipantModel);
 		});
 
 		// Sync remote participants signal
 		effect(() => {
-			const remoteParticipants = this.ovParticipantService.remoteParticipantsSignal();
+			const remoteParticipants = this.ovParticipantService.remoteParticipants();
 			this._remoteParticipants.set(remoteParticipants as CustomParticipantModel[]);
 		});
-	}
-
-	/**
-	 * Updates the meeting URL based on room ID
-	 * @param roomId The room ID
-	 */
-	private setMeetingUrl(roomId: string): void {
-		const hostname = window.location.origin.replace('http://', '').replace('https://', '');
-		const basePath = this.appConfigService.basePath;
-		// Remove trailing slash from base path for URL construction
-		const basePathForUrl = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-		const meetingUrl = roomId ? `${hostname}${basePathForUrl}/room/${roomId}` : '';
-		this._meetingUrl.set(meetingUrl);
-	}
-
-	/**
-	 * Stores the E2EE key in context
-	 * @param key The E2EE key
-	 */
-	setE2eeKey(key: string): void {
-		this._e2eeKey.set(key);
-	}
-
-	/**
-	 * Returns whether E2EE is enabled (has a key set)
-	 * @returns true if E2EE is enabled, false otherwise
-	 */
-	isE2eeEnabled(): boolean {
-		return this._e2eeKey().length > 0;
-	}
-
-	/**
-	 * Returns the captions status based on room and global configuration
-	 * @returns CaptionsStatus ('HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING')
-	 */
-	getCaptionsStatus() {
-		return this.featureConfigService.features().captionsStatus;
-	}
-
-	/**
-	 * Sets the room secret in context
-	 * @param secret The room secret
-	 * @param updateStorage Whether to persist in SessionStorage (default: false)
-	 */
-	setRoomSecret(secret: string, updateStorage = false): void {
-		if (updateStorage) {
-			this.sessionStorageService.setRoomSecret(secret);
-		}
-
-		this._roomSecret.set(secret);
-	}
-
-	/**
-	 * Updates whether the room has recordings
-	 * @param hasRecordings True if recordings exist
-	 */
-	setHasRecordings(hasRecordings: boolean): void {
-		this._hasRecordings.set(hasRecordings);
-	}
-
-	/**
-	 * Sets who ended the meeting
-	 * @param by 'self' if ended by this user, 'other' if ended by someone else
-	 */
-	setMeetingEndedBy(by: 'self' | 'other' | null): void {
-		this._meetingEndedBy.set(by);
-	}
-
-	/**
-	 * Increments the participants version counter
-	 * Used to trigger reactivity when participant properties (like role) change
-	 */
-	incrementParticipantsVersion(): void {
-		this._participantsVersion.update((v) => v + 1);
 	}
 
 	/**
 	 * Clears the meeting context
 	 */
 	clearContext(): void {
-		this._meetRoom.set(undefined);
-		this._lkRoom.set(undefined);
 		this._roomId.set(undefined);
-		this._meetingUrl.set('');
-		this._e2eeKey.set('');
+		this.meetingAccessLinkService.clear();
 		this._roomSecret.set(undefined);
+		this._e2eeKey.set('');
+		this._isE2eeKeyFromUrl.set(false);
 		this._hasRecordings.set(false);
+		this._isActiveMeeting.set(false);
 		this._meetingEndedBy.set(null);
-		this._participantsVersion.set(0);
+		this._lkRoom.set(undefined);
 		this._localParticipant.set(undefined);
 		this._remoteParticipants.set([]);
 	}

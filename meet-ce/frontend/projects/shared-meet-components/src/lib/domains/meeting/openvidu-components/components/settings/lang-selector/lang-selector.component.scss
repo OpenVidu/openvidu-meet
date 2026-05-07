@@ -1,0 +1,32 @@
+@use '../selector-shared' as shared;
+
+:host {
+	display: inline-block;
+
+	.language-selector-container {
+		.compact-lang-button {
+			width: 40px;
+			height: 40px;
+			background: rgba(255, 255, 255, 0.9);
+			backdrop-filter: blur(10px);
+			border: 1px solid var(--ov-border-color, #e0e0e0);
+			border-radius: 10px;
+			transition: all 0.2s ease;
+			color: var(--ov-text-secondary-color, #666);
+
+			mat-icon {
+				font-size: 18px;
+				width: 18px;
+				height: 18px;
+			}
+		}
+
+		.full-lang-button {
+			@include shared.selector-button('lang-icon', 'lang-name', 'expand-icon');
+		}
+	}
+}
+
+::ng-deep .language-menu.mat-mdc-menu-panel {
+	@include shared.selector-menu('language-option', 'lang-option-name');
+}

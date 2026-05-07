@@ -1,14 +1,17 @@
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
+import type { MeetRecordingInfo } from '@openvidu-meet/typings';
+import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { IScheduledTask } from '../models/task-scheduler.model.js';
+import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import { MutexService, RedisLock } from './mutex.service.js';
+import type { RedisLock } from './mutex.service.js';
+import { MutexService } from './mutex.service.js';
 import { RecordingService } from './recording.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
 
@@ -89,21 +92,19 @@ export class RecordingScheduledTasksService {
 			const lockPrefix = lockPattern.replace('*', '');
 			const roomIds = recordingLocks.map((lock) => lock.resources[0].replace(lockPrefix, ''));
 
-			const BATCH_SIZE = 10;
-
-			for (let i = 0; i < roomIds.length; i += BATCH_SIZE) {
-				const batch = roomIds.slice(i, i + BATCH_SIZE);
-
-				const results = await Promise.allSettled(
-					batch.map((roomId) => this.evaluateAndReleaseOrphanedLock(roomId, lockPrefix))
-				);
-
-				results.forEach((result, index) => {
-					if (result.status === 'rejected') {
-						this.logger.error(`Failed to process lock for room ${batch[index]}:`, result.reason);
+			await runConcurrently(
+				roomIds,
+				async (roomId) => {
+					try {
+						await this.evaluateAndReleaseOrphanedLock(roomId, lockPrefix);
+						this.logger.verbose(`Processed orphaned lock for room ${roomId} successfully.`);
+					} catch (error) {
+						this.logger.error(`Failed to process lock for room ${roomId}:`, error);
+						// Continue processing other locks even if one fails
 					}
-				});
-			}
+				},
+				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_ORPHANED_LOCKS_GC, failFast: true }
+			);
 		} catch (error) {
 			this.logger.error('Error retrieving recording locks:', error);
 		}
@@ -195,10 +196,14 @@ export class RecordingScheduledTasksService {
 	 * Performs garbage collection for stale recordings in the system.
 	 *
 	 * This method identifies and aborts recordings that have become stale by:
-	 * 1. Getting all active recordings from database (ACTIVE or ENDING status)
-	 * 2. Checking if there's a corresponding in-progress egress in LiveKit
-	 * 3. If no egress exists, marking the recording as ABORTED
-	 * 4. If egress exists, checking last update time and aborting if stale
+	 * 1. Getting active recordings from database in paginated batches (ACTIVE status only)
+	 * 2. Processing each batch with bounded concurrency to avoid memory overhead
+	 * 3. For each recording, checking if there's a corresponding in-progress egress in LiveKit
+	 * 4. If no egress exists, marking the recording as ABORTED
+	 * 5. If egress exists, checking last update time and aborting if stale
+	 *
+	 * Uses pagination to avoid loading all active recordings into memory at once,
+	 * which is critical when dealing with thousands of concurrent recordings.
 	 *
 	 * Stale recordings can occur when:
 	 * - Network issues prevent normal completion
@@ -207,27 +212,31 @@ export class RecordingScheduledTasksService {
 	protected async performStaleRecordingsGC(): Promise<void> {
 		this.logger.debug('Starting stale recordings cleanup process');
 
+		const BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_RECORDINGS;
+		let totalProcessed = 0;
+		let totalAborted = 0;
+		let nextPageToken: string | undefined;
+		let hasMore = true;
+
 		try {
-			// Get all active recordings from database (ACTIVE or ENDING status)
-			const activeRecordings = await this.recordingRepository.findActiveRecordings();
+			while (hasMore) {
+				// Fetch one batch of active recordings
+				const batch = await this.recordingRepository.findActiveRecordings(BATCH_SIZE, nextPageToken);
 
-			if (activeRecordings.length === 0) {
-				this.logger.debug('No active recordings found in database');
-				return;
-			}
+				if (batch.recordings.length === 0) {
+					this.logger.debug('No more active recordings found in database');
+					break;
+				}
 
-			this.logger.debug(`Found ${activeRecordings.length} active recordings in database to check`);
+				this.logger.debug(
+					`Processing batch of ${batch.recordings.length} active recordings (total processed: ${totalProcessed})`
+				);
 
-			// Process in batches to avoid overwhelming the system
-			const BATCH_SIZE = 10;
-			let totalProcessed = 0;
-			let totalAborted = 0;
-
-			for (let i = 0; i < activeRecordings.length; i += BATCH_SIZE) {
-				const batch = activeRecordings.slice(i, i + BATCH_SIZE);
-
-				const results = await Promise.allSettled(
-					batch.map((recording: MeetRecordingInfo) => this.evaluateAndAbortStaleRecording(recording))
+				// Process this batch with bounded concurrency
+				const results = await runConcurrently<MeetRecordingInfo, boolean>(
+					batch.recordings,
+					(recording) => this.evaluateAndAbortStaleRecording(recording),
+					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_STALE_RECORDINGS_GC }
 				);
 
 				results.forEach((result: PromiseSettledResult<boolean>, index: number) => {
@@ -236,13 +245,19 @@ export class RecordingScheduledTasksService {
 					if (result.status === 'fulfilled' && result.value) {
 						totalAborted++;
 					} else if (result.status === 'rejected') {
-						const recordingId = batch[index].recordingId;
-						this.logger.error(`Failed to process recording ${recordingId}:`, result.reason);
+						this.logger.error(
+							`Failed to process recording ${batch.recordings[index].recordingId}:`,
+							result.reason
+						);
 					}
 				});
+
+				// Check if there are more batches to process
+				hasMore = batch.isTruncated;
+				nextPageToken = batch.nextPageToken;
 			}
 
-			this.logger.info(
+			this.logger.debug(
 				`Stale recordings cleanup completed: processed=${totalProcessed}, aborted=${totalAborted}`
 			);
 		} catch (error) {

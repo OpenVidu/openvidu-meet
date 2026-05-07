@@ -1,22 +1,22 @@
 <div class="meeting-url-badge">
-	@if (title) {
-		<div class="meeting-url-badge-title" [class]="[titleSize, titleWeight]">{{ title }}</div>
+	@if (title()) {
+		<div class="meeting-url-badge-title" [class]="[titleSize(), titleWeight()]">{{ title() }}</div>
 	}
 
-	@if (subtitle) {
+	@if (subtitle()) {
 		<div class="meeting-url-badge-subtitle">
-			{{ subtitle }}
+			{{ subtitle() }}
 		</div>
 	}
 
 	<div class="meeting-url-badge-container" (click)="copyClicked.emit()">
-		<span class="meeting-url-text">{{ meetingUrl }}</span>
+		<span class="meeting-url-text">{{ meetingUrl() }}</span>
 		<button matIconButton class="copy-url-btn" matTooltip="Copy meeting link">
 			<mat-icon>content_copy</mat-icon>
 		</button>
 	</div>
 
-	@if (additionalInfo) {
-		<div class="meeting-url-badge-additional-info">{{ additionalInfo }}</div>
+	@if (additionalInfo()) {
+		<div class="meeting-url-badge-additional-info">{{ additionalInfo() }}</div>
 	}
 </div>

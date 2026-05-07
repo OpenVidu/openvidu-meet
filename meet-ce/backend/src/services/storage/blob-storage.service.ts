@@ -1,9 +1,9 @@
 import { inject, injectable } from 'inversify';
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 import { errorRecordingNotFound, errorRecordingRangeNotSatisfiable } from '../../models/error.model.js';
 import { LoggerService } from '../logger.service.js';
 import { StorageFactory } from './storage.factory.js';
-import { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
+import type { StorageKeyBuilder, StorageProvider } from './storage.interface.js';
 
 /**
  * Service responsible for managing binary files (blobs) in object storage.

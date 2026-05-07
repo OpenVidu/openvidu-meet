@@ -1,12 +1,12 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
-	MeetRecordingAccess,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
 	MeetRecordingStatus,
 	MeetRoom,
 	MeetRoomConfig,
+	MeetRoomDeletionPolicyWithMeeting,
 	MeetWebhookEvent,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
@@ -18,16 +18,16 @@ import { lkWebhookHandler } from '../../../src/controllers/livekit-webhook.contr
 import { MeetLock } from '../../../src/helpers/redis.helper.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
+import { disconnectFakeParticipants } from '../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRoom,
-	disconnectFakeParticipants,
 	endMeeting,
 	restoreDefaultGlobalConfig,
 	sleep,
 	startTestServer,
-	updateWebbhookConfig
+	updateWebhookConfig
 } from '../../helpers/request-helpers.js';
 import {
 	setupSingleRoom,
@@ -35,6 +35,7 @@ import {
 	startWebhookServer,
 	stopWebhookServer
 } from '../../helpers/test-scenarios.js';
+import { waitForRecordingToStop, waitForRoomToDelete } from '../../helpers/wait-helpers.js';
 
 describe('Webhook Integration Tests', () => {
 	let receivedWebhooks: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }[] = [];
@@ -43,8 +44,7 @@ describe('Webhook Integration Tests', () => {
 		recording: {
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
-			encoding: MeetRecordingEncodingPreset.H264_720P_30,
-			allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
 		},
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
@@ -67,7 +67,7 @@ describe('Webhook Integration Tests', () => {
 	beforeEach(async () => {
 		receivedWebhooks = [];
 		// Enable webhooks in global config
-		await updateWebbhookConfig({
+		await updateWebhookConfig({
 			enabled: true,
 			url: `http://localhost:5080/webhook`
 		});
@@ -78,7 +78,8 @@ describe('Webhook Integration Tests', () => {
 		await restoreDefaultGlobalConfig();
 
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	const expectValidSignature = (webhook: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }) => {
@@ -88,23 +89,18 @@ describe('Webhook Integration Tests', () => {
 
 	describe('Webhook sending', () => {
 		it('should not send webhooks when disabled', async () => {
-			await updateWebbhookConfig({
+			await updateWebhookConfig({
 				enabled: false
 			});
 
 			await setupSingleRoom(true);
 
-			// Wait for the room to be created
-			await sleep('3s');
 			expect(receivedWebhooks.length).toBe(0);
 		});
 
 		it('should send meeting_started webhook when room is created', async () => {
 			const context = await setupSingleRoom(true);
 			const roomData = context.room;
-
-			// Wait for the room to be created
-			await sleep('1s');
 
 			// Verify 'meetingStarted' webhook is sent
 			expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
@@ -131,9 +127,6 @@ describe('Webhook Integration Tests', () => {
 			// Close the room
 			await endMeeting(roomData.roomId, moderatorToken);
 
-			// Wait for the room to be closed
-			await sleep('1s');
-
 			// Verify 'meetingEnded' webhook is sent
 			expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
 			const meetingEndedWebhook = receivedWebhooks.find(
@@ -154,8 +147,8 @@ describe('Webhook Integration Tests', () => {
 			const context = await setupSingleRoom(true);
 			const roomData = context.room;
 			// Forcefully delete the room
-			await deleteRoom(roomData.roomId, { withMeeting: 'force' });
-
+			await deleteRoom(roomData.roomId, { withMeeting: MeetRoomDeletionPolicyWithMeeting.FORCE });
+			await waitForRoomToDelete(roomData.roomId); // Wait for the webhook to process the deletion
 			// Verify 'meetingEnded' webhook is sent
 			expect(receivedWebhooks.length).toBeGreaterThanOrEqual(1);
 			const meetingEndedWebhook = receivedWebhooks.find(
@@ -178,6 +171,8 @@ describe('Webhook Integration Tests', () => {
 			const context = await setupSingleRoomWithRecording(true, '2s');
 			const roomData = context.room;
 			const recordingId = context.recordingId;
+
+			await waitForRecordingToStop(recordingId!); // Wait for the recording to stop and webhook to be processed
 
 			const recordingWebhooks = receivedWebhooks.filter((w) => w.body.event.startsWith('recording'));
 			// STARTED, ACTIVE, ENDING, COMPLETE

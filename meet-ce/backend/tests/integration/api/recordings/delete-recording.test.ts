@@ -1,15 +1,16 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { MeetRoom } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRecording,
-	disconnectFakeParticipants,
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
@@ -20,22 +21,24 @@ describe('Recording API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Delete Recording Tests', () => {
-		let recordingId: string, moderatorToken: string;
+		let recordingId: string;
 
 		beforeEach(async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const roomData = testContext.getRoomByIndex(0)!;
 
-			({ recordingId = '', moderatorToken } = roomData);
+			({ recordingId = '' } = roomData);
 		});
 
 		afterAll(async () => {
-			await stopAllRecordings(moderatorToken);
-			await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+			await stopAllRecordings();
+			await deleteAllRooms();
+			await deleteAllRecordings();
 		});
 
 		it('should delete a recording successfully', async () => {
@@ -50,18 +53,19 @@ describe('Recording API Tests', () => {
 	});
 
 	describe('Delete Recording Validation', () => {
-		let room: MeetRoom, recordingId: string, moderatorToken: string;
+		let room: MeetRoom, recordingId: string;
 		beforeAll(async () => {
 			await deleteAllRecordings();
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 1);
 			const roomData = testContext.getRoomByIndex(0)!;
 
-			({ room, recordingId = '', moderatorToken } = roomData);
+			({ room, recordingId = '' } = roomData);
 		});
 
 		afterAll(async () => {
-			await stopAllRecordings(moderatorToken);
-			await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+			await stopAllRecordings();
+			await deleteAllRooms();
+			await deleteAllRecordings();
 		});
 
 		it('should fail when recordingId has incorrect format', async () => {
@@ -101,13 +105,13 @@ describe('Recording API Tests', () => {
 
 		it('should return 409 when attempting to delete an active recording', async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 0);
-			const { recordingId: activeRecordingId = '', moderatorToken } = testContext.rooms[0];
+			const { recordingId: activeRecordingId = '' } = testContext.rooms[0];
 
 			// Attempt to delete the active recording
 			let deleteResponse = await deleteRecording(activeRecordingId);
 			expect(deleteResponse.status).toBe(409);
 
-			await stopRecording(activeRecordingId, moderatorToken);
+			await stopRecording(activeRecordingId);
 			// Attempt to delete the recording again
 			deleteResponse = await deleteRecording(activeRecordingId);
 			expect(deleteResponse.status).toBe(200);

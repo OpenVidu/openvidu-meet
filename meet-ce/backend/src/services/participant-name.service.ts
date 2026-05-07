@@ -2,12 +2,13 @@ import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RedisKeyName } from '../models/redis.model.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LoggerService } from './logger.service.js';
 import { RedisService } from './redis.service.js';
 
 @injectable()
 export class ParticipantNameService {
-	private readonly MAX_CONCURRENT_NAME_REQUESTS = Number(INTERNAL_CONFIG.PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS);
+	private readonly MAX_CONCURRENT_NAME_REQUESTS = INTERNAL_CONFIG.PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS;
 	private readonly PARTICIPANT_NAME_TTL = ms(INTERNAL_CONFIG.PARTICIPANT_NAME_RESERVATION_TTL);
 
 	constructor(
@@ -132,7 +133,7 @@ export class ParticipantNameService {
 	}
 
 	/**
-	 * Cleans up expired participant reservations for a room.
+	 * Cleans up expired participant name reservations for a room.
 	 * This should be called periodically or when a room is cleaned up.
 	 *
 	 * @param roomId - The room identifier
@@ -142,6 +143,7 @@ export class ParticipantNameService {
 		const participantsPoolKey = `${RedisKeyName.PARTICIPANT_NAME_POOL}${roomId}`;
 		const pattern = `${participantsKey}:*`;
 		const poolPattern = `${participantsPoolKey}:*`;
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS;
 
 		try {
 			const [participantKeys, poolKeys] = await Promise.all([
@@ -152,17 +154,27 @@ export class ParticipantNameService {
 				`Found ${participantKeys.length} participant reservations to check for room '${roomId}'`
 			);
 
-			// Redis TTL will automatically clean up expired keys, but we can force cleanup if needed
-			const promises = participantKeys.map((key) => this.redisService.delete(key));
-			await Promise.all(promises);
+			// Redis TTL will automatically clean up expired keys, but we can force cleanup if needed.
+			await runConcurrently(
+				participantKeys,
+				async (key) => {
+					await this.redisService.delete(key);
+				},
+				{ concurrency, failFast: true }
+			);
 			this.logger.verbose(
 				`Cleaned up ${participantKeys.length} expired participant names reservations for room '${roomId}'`
 			);
 
 			// Clean up expired participant name numbers from the pool
 			this.logger.verbose(`Found ${poolKeys.length} participant name numbers to check for room '${roomId}'`);
-			const poolPromises = poolKeys.map((key) => this.redisService.delete(key));
-			await Promise.all(poolPromises);
+			await runConcurrently(
+				poolKeys,
+				async (key) => {
+					await this.redisService.delete(key);
+				},
+				{ concurrency, failFast: true }
+			);
 			this.logger.verbose(`Cleaned up ${poolKeys.length} expired participant name numbers for room '${roomId}'`);
 		} catch (error) {
 			this.logger.error(`Error cleaning up reservations for room '${roomId}':`, error);

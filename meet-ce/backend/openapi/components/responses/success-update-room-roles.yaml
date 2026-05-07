@@ -1,0 +1,10 @@
+description: Success response for updating room roles configuration
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+        example:
+            message: Roles permissions for room 'room-123' updated successfully

@@ -1,0 +1,11 @@
+description: Successfully updated user role
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: Role for user 'alice_smith' updated successfully to 'admin'
+                user:
+                    $ref: '../../schemas/internal/meet-user.yaml'

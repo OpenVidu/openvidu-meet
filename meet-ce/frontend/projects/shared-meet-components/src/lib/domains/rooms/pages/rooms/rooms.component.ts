@@ -1,5 +1,4 @@
-import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -17,24 +16,30 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
 import {
 	MeetRoom,
-	MeetRoomDeletionErrorCode,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomDeletionSuccessCode,
 	MeetRoomFilters,
-	MeetRoomStatus
+	MeetRoomStatus,
+	MeetUserRole,
+	SortOrder,
+	TextMatchMode
 } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from 'openvidu-components-angular';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { AuthService } from '../../../auth/services/auth.service';
+import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
+import { RoomShareDialogComponent } from '../../components/room-share-dialog/room-share-dialog.component';
 import {
 	RoomsListsComponent,
 	RoomTableAction,
 	RoomTableFilter
 } from '../../components/rooms-lists/rooms-lists.component';
+import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
 
 @Component({
@@ -57,50 +62,65 @@ import { RoomService } from '../../services/room.service';
 		RoomsListsComponent
 	],
 	templateUrl: './rooms.component.html',
-	styleUrl: './rooms.component.scss'
+	styleUrl: './rooms.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomsComponent implements OnInit {
+	private roomService = inject(RoomService);
+	private authService = inject(AuthService);
+	private notificationService = inject(NotificationService);
+	private dialogPresetsService = inject(DialogPresetsService);
+	protected navigationService = inject(NavigationService);
+	protected roomDeletionService = inject(RoomDeletionService);
+	private dialog = inject(MatDialog);
+	protected loggerService = inject(LoggerService);
+	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomsComponent');
+
 	rooms = signal<MeetRoom[]>([]);
+	currentUserId = signal<string>('');
+	currentUserRole = signal<MeetUserRole | undefined>(undefined);
+	protected readonly MeetUserRole = MeetUserRole;
 
 	// Loading state
-	isInitializing = true;
-	showInitialLoader = false;
-	isLoading = false;
+	isInitializing = signal(true);
+	showInitialLoader = signal(false);
+	isLoading = signal(false);
 
 	initialFilters = signal<RoomTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'creationDate',
-		sortOrder: 'desc'
+		sortOrder: SortOrder.DESC,
+		ownerFilter: '',
+		memberFilter: '',
+		showOwnedRooms: false,
+		showMemberRooms: false,
+		showRegisteredAccessRooms: false
 	});
 
 	// Pagination
-	hasMoreRooms = false;
+	hasMoreRooms = signal(false);
 	private nextPageToken?: string;
 
-	protected log: ILogger;
-
-	constructor(
-		protected loggerService: LoggerService,
-		private roomService: RoomService,
-		private notificationService: NotificationService,
-		protected navigationService: NavigationService,
-		private clipboard: Clipboard,
-		private dialog: MatDialog
-	) {
-		this.log = this.loggerService.get('OpenVidu Meet - RoomService');
-	}
+	// Track current active filters so deletions can trigger auto-load
+	private currentFilters: RoomTableFilter = this.initialFilters();
 
 	async ngOnInit() {
+		const [userId, role] = await Promise.all([this.authService.getUserId(), this.authService.getUserRole()]);
+		this.currentUserId.set(userId ?? '');
+		this.currentUserRole.set(role);
+
 		const delayLoader = setTimeout(() => {
-			this.showInitialLoader = true;
+			this.showInitialLoader.set(true);
 		}, 200);
 
 		await this.loadRooms(this.initialFilters());
 
 		clearTimeout(delayLoader);
-		this.showInitialLoader = false;
-		this.isInitializing = false;
+		this.showInitialLoader.set(false);
+		this.isInitializing.set(false);
 	}
 
 	async onRoomAction(action: RoomTableAction) {
@@ -108,20 +128,14 @@ export class RoomsComponent implements OnInit {
 			case 'create':
 				await this.createRoom();
 				break;
-			case 'open':
-				this.openRoom(action.rooms[0]);
+			case 'join':
+				this.joinRoom(action.rooms[0]);
 				break;
 			case 'edit':
 				await this.editRoomConfig(action.rooms[0]);
 				break;
-			case 'copyModeratorLink':
-				this.copyModeratorLink(action.rooms[0]);
-				break;
-			case 'copySpeakerLink':
-				this.copySpeakerLink(action.rooms[0]);
-				break;
-			case 'viewRecordings':
-				await this.viewRecordings(action.rooms[0]);
+			case 'shareLink':
+				this.shareLink(action.rooms[0]);
 				break;
 			case 'reopen':
 				this.reopenRoom(action.rooms[0]);
@@ -138,9 +152,16 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
+	private async autoLoadIfEmpty() {
+		if (this.rooms().length === 0 && this.hasMoreRooms()) {
+			await this.loadRooms(this.currentFilters);
+		}
+	}
+
 	private async loadRooms(filters: RoomTableFilter, refresh = false) {
+		this.currentFilters = filters;
 		const delayLoader = setTimeout(() => {
-			this.isLoading = true;
+			this.isLoading.set(true);
 		}, 200);
 
 		try {
@@ -151,14 +172,32 @@ export class RoomsComponent implements OnInit {
 				sortOrder: filters.sortOrder
 			};
 
-			// Apply room ID filter if provided
+			// Apply room name filter if provided
 			if (filters.nameFilter) {
 				roomFilters.roomName = filters.nameFilter;
+				roomFilters.roomNameMatchMode = filters.nameMatchMode;
+				roomFilters.roomNameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 			}
 
 			// Apply status filter if provided
 			if (filters.statusFilter) {
 				roomFilters.status = filters.statusFilter as MeetRoomStatus;
+			}
+
+			// Apply access-scope filters based on user role
+			const role = this.currentUserRole();
+			const userId = this.currentUserId();
+
+			if (role === MeetUserRole.ADMIN) {
+				// For ADMIN: direct filter pass-through — results are narrowed to rooms matching any selected criterion
+				if (filters.ownerFilter) roomFilters.owner = filters.ownerFilter;
+				if (filters.memberFilter) roomFilters.member = filters.memberFilter;
+				if (filters.showRegisteredAccessRooms) roomFilters.registeredAccess = true;
+			} else if (userId) {
+				// For USER/ROOM_MEMBER: scope selectors bound to the current user's identity
+				if (filters.showOwnedRooms) roomFilters.owner = userId;
+				if (filters.showMemberRooms) roomFilters.member = userId;
+				if (filters.showRegisteredAccessRooms) roomFilters.registeredAccess = true;
 			}
 
 			const response = await this.roomService.listRooms(roomFilters);
@@ -175,18 +214,18 @@ export class RoomsComponent implements OnInit {
 
 			// Update pagination
 			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRooms = response.pagination.isTruncated;
+			this.hasMoreRooms.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.notificationService.showSnackbar('Error loading rooms');
 			this.log.e('Error loading rooms:', error);
 		} finally {
 			clearTimeout(delayLoader);
-			this.isLoading = false;
+			this.isLoading.set(false);
 		}
 	}
 
 	async loadMoreRooms(filters: RoomTableFilter) {
-		if (!this.hasMoreRooms || this.isLoading) return;
+		if (!this.hasMoreRooms() || this.isLoading()) return;
 		await this.loadRooms(filters);
 	}
 
@@ -197,7 +236,7 @@ export class RoomsComponent implements OnInit {
 
 	private async createRoom() {
 		try {
-			await this.navigationService.navigateTo('rooms/new');
+			await this.navigationService.navigateTo('/rooms/new');
 		} catch (error) {
 			this.notificationService.showSnackbar('Error creating room');
 			this.log.e('Error creating room:', error);
@@ -205,36 +244,33 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private openRoom(room: MeetRoom) {
-		window.open(room.moderatorUrl, '_blank');
+	private joinRoom({ access }: MeetRoom) {
+		window.open(access.registered.url, '_blank');
 	}
 
 	private async editRoomConfig(room: MeetRoom) {
 		try {
-			await this.navigationService.navigateTo(`rooms/${room.roomId}/edit`);
+			await this.navigationService.navigateTo(`/rooms/${room.roomId}/edit`);
 		} catch (error) {
 			this.notificationService.showSnackbar('Error navigating to room config');
 			this.log.e('Error navigating to room config:', error);
 		}
 	}
 
-	private copyModeratorLink(room: MeetRoom) {
-		this.clipboard.copy(room.moderatorUrl);
-		this.notificationService.showSnackbar('Moderator link copied to clipboard');
+	private shareLink({ access }: MeetRoom) {
+		this.dialog.open(RoomShareDialogComponent, {
+			width: '450px',
+			data: { access },
+			panelClass: 'ov-meet-dialog'
+		});
 	}
 
-	private copySpeakerLink(room: MeetRoom) {
-		this.clipboard.copy(room.speakerUrl);
-		this.notificationService.showSnackbar('Speaker link copied to clipboard');
-	}
-
-	private async viewRecordings(room: MeetRoom) {
-		// Navigate to recordings page for this room
+	async onRoomClick(roomId: string) {
 		try {
-			await this.navigationService.navigateTo('recordings', { 'room-id': room.roomId });
+			await this.navigationService.navigateTo(`/rooms/${roomId}`);
 		} catch (error) {
-			this.notificationService.showSnackbar('Error navigating to recordings');
-			this.log.e('Error navigating to recordings:', error);
+			this.notificationService.showSnackbar('Error navigating to room detail');
+			this.log.e('Error navigating to room detail:', error);
 		}
 	}
 
@@ -260,7 +296,7 @@ export class RoomsComponent implements OnInit {
 
 			// Update room in the list
 			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
-			this.notificationService.showSnackbar(this.removeRoomIdFromMessage(message));
+			this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));
 		} catch (error) {
 			this.notificationService.showSnackbar('Failed to close room');
 			this.log.e('Error closing room:', error);
@@ -268,43 +304,16 @@ export class RoomsComponent implements OnInit {
 	}
 
 	private deleteRoom({ roomId }: MeetRoom) {
-		const deleteCallback = async () => {
-			try {
-				const {
-					successCode,
-					message,
-					room: updatedRoom
-				} = await this.roomService.deleteRoom(
-					roomId,
-					MeetRoomDeletionPolicyWithMeeting.FAIL,
-					MeetRoomDeletionPolicyWithRecordings.FAIL
-				);
-				this.handleSuccessfulDeletion(roomId, successCode, message, updatedRoom);
-			} catch (error: any) {
-				// Check if errorCode exists and is a valid MeetRoomDeletionErrorCode
-				const errorCode = error.error?.error;
-				if (errorCode && this.isValidMeetRoomDeletionErrorCode(errorCode)) {
-					const errorMessage = this.removeRoomIdFromMessage(error.error.message);
-					this.showDeletionErrorDialogWithOptions(roomId, errorMessage);
-				} else {
-					this.notificationService.showSnackbar('Failed to delete room');
-					this.log.e('Error deleting room:', error);
-					return;
-				}
+		this.roomDeletionService.deleteRoomWithConfirmation({
+			roomId,
+			log: this.log,
+			onSuccess: async ({ room: updatedRoom, successCode, message }) => {
+				await this.handleSuccessfulDeletion(roomId, successCode, message, updatedRoom);
 			}
-		};
-
-		this.notificationService.showDialog({
-			title: 'Delete Room',
-			icon: 'delete_outline',
-			message: `Are you sure you want to delete the room <b>${roomId}</b>?`,
-			confirmText: 'Delete',
-			cancelText: 'Cancel',
-			confirmCallback: deleteCallback
 		});
 	}
 
-	private handleSuccessfulDeletion(
+	private async handleSuccessfulDeletion(
 		roomId: string,
 		successCode: MeetRoomDeletionSuccessCode,
 		message: string,
@@ -320,42 +329,10 @@ export class RoomsComponent implements OnInit {
 		} else {
 			// Room was deleted, remove from list
 			this.rooms.set(this.rooms().filter((r) => r.roomId !== roomId));
+			await this.autoLoadIfEmpty();
 		}
 
-		this.notificationService.showSnackbar(this.removeRoomIdFromMessage(message));
-	}
-
-	private showDeletionErrorDialogWithOptions(roomId: string, errorMessage: string) {
-		const deleteWithPoliciesCallback = async (
-			meetingPolicy: MeetRoomDeletionPolicyWithMeeting,
-			recordingPolicy: MeetRoomDeletionPolicyWithRecordings
-		) => {
-			try {
-				const {
-					successCode,
-					message,
-					room: updatedRoom
-				} = await this.roomService.deleteRoom(roomId, meetingPolicy, recordingPolicy);
-				this.handleSuccessfulDeletion(roomId, successCode, message, updatedRoom);
-			} catch (error) {
-				// If it fails again, just show a snackbar
-				this.notificationService.showSnackbar('Failed to delete room');
-				this.log.e('Error in second deletion attempt:', error);
-			}
-		};
-
-		const dialogOptions: DeleteRoomDialogOptions = {
-			title: 'Error Deleting Room',
-			message: errorMessage,
-			confirmText: 'Delete with Options',
-			showWithMeetingPolicy: true,
-			showWithRecordingsPolicy: true,
-			confirmCallback: deleteWithPoliciesCallback
-		};
-		this.dialog.open(DeleteRoomDialogComponent, {
-			data: dialogOptions,
-			disableClose: true
-		});
+		this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));
 	}
 
 	private bulkDeleteRooms(rooms: MeetRoom[]) {
@@ -370,6 +347,7 @@ export class RoomsComponent implements OnInit {
 
 				this.handleSuccessfulBulkDeletion(successful);
 				this.notificationService.showSnackbar(message);
+				await this.autoLoadIfEmpty();
 			} catch (error: any) {
 				// Check if it's a structured error with failed rooms
 				const failed = error.error?.failed as { roomId: string; error: string; message: string }[];
@@ -378,9 +356,10 @@ export class RoomsComponent implements OnInit {
 
 				if (failed) {
 					this.handleSuccessfulBulkDeletion(successful);
+					await this.autoLoadIfEmpty();
 
 					const hasRoomDeletionError = failed.some((result) =>
-						this.isValidMeetRoomDeletionErrorCode(result.error)
+						this.roomDeletionService.isValidDeletionErrorCode(result.error)
 					);
 					if (hasRoomDeletionError) {
 						this.showBulkDeletionErrorDialogWithOptions(failed, errorMessage);
@@ -396,11 +375,7 @@ export class RoomsComponent implements OnInit {
 		};
 
 		this.notificationService.showDialog({
-			title: 'Delete Rooms',
-			icon: 'delete_outline',
-			message: `Are you sure you want to delete <b>${rooms.length}</b> rooms?`,
-			confirmText: 'Delete all',
-			cancelText: 'Cancel',
+			...this.dialogPresetsService.getBulkDeleteRoomsDialogPreset(rooms.length),
 			confirmCallback: bulkDeleteCallback
 		});
 	}
@@ -465,6 +440,7 @@ export class RoomsComponent implements OnInit {
 
 				this.handleSuccessfulBulkDeletion(successful);
 				this.notificationService.showSnackbar(message);
+				await this.autoLoadIfEmpty();
 			} catch (error: any) {
 				this.log.e('Error in second bulk deletion attempt:', error);
 
@@ -476,6 +452,7 @@ export class RoomsComponent implements OnInit {
 				if (failed && successful) {
 					this.handleSuccessfulBulkDeletion(successful);
 					this.notificationService.showSnackbar(message);
+					await this.autoLoadIfEmpty();
 				} else {
 					this.notificationService.showSnackbar('Failed to delete rooms');
 				}
@@ -495,32 +472,5 @@ export class RoomsComponent implements OnInit {
 			data: dialogOptions,
 			disableClose: true
 		});
-	}
-
-	private isValidMeetRoomDeletionErrorCode(errorCode: string): boolean {
-		const validErrorCodes = [
-			MeetRoomDeletionErrorCode.ROOM_HAS_ACTIVE_MEETING,
-			MeetRoomDeletionErrorCode.ROOM_HAS_RECORDINGS,
-			MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS,
-			MeetRoomDeletionErrorCode.ROOM_WITH_ACTIVE_MEETING_HAS_RECORDINGS_CANNOT_SCHEDULE_DELETION,
-			MeetRoomDeletionErrorCode.ROOM_WITH_RECORDINGS_HAS_ACTIVE_MEETING
-		];
-		return validErrorCodes.includes(errorCode as MeetRoomDeletionErrorCode);
-	}
-
-	/**
-	 * Removes the room ID from API response messages to create generic messages.
-	 *
-	 * @param message - The original message from the API response
-	 * @returns The message without the specific room ID
-	 */
-	private removeRoomIdFromMessage(message: string): string {
-		// Pattern to match room ID in single quotes: 'room-id'
-		const roomIdPattern = /'[^']+'/g;
-		let filteredMessage = message.replace(roomIdPattern, '');
-
-		// Clean up any double spaces that might result from the replacement
-		filteredMessage = filteredMessage.replace(/\s+/g, ' ').trim();
-		return filteredMessage;
 	}
 }

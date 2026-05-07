@@ -1,0 +1,16 @@
+description: Forbidden
+content:
+    application/json:
+        schema:
+            $ref: '../schemas/error.yaml'
+        examples:
+            forbidden_error:
+                summary: Forbidden Error Example
+                value:
+                    error: Authorization Error
+                    message: 'Insufficient permissions to access this resource'
+            anonymous_recording_access_disabled:
+                summary: Anonymous Recording Access Disabled Example
+                value:
+                    error: Room Error
+                    message: "Anonymous access in room 'room-123' is disabled for recordings"

@@ -1,7 +1,8 @@
 import chalk from 'chalk';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
-import express, { Express, Request, Response, Router } from 'express';
+import type { Express, Request, Response, Router } from 'express';
+import express from 'express';
 import { initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_ENV, logEnvVars } from './environment.js';
@@ -129,7 +130,7 @@ const startServer = (app: express.Application) => {
 	const basePath = getBasePath();
 	const basePathDisplay = basePath === '/' ? '' : basePath.slice(0, -1);
 
-	app.listen(MEET_ENV.SERVER_PORT, async () => {
+	const server = app.listen(MEET_ENV.SERVER_PORT, () => {
 		console.log(' ');
 		console.log('---------------------------------------------------------');
 		console.log(' ');
@@ -146,6 +147,11 @@ const startServer = (app: express.Application) => {
 			)
 		);
 		logEnvVars();
+	});
+
+	server.on('error', (error: Error) => {
+		console.error('Server failed to start:', error.message);
+		process.exit(1);
 	});
 };
 

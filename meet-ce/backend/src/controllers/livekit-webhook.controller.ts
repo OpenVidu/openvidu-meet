@@ -1,5 +1,5 @@
-import { Request, Response } from 'express';
-import { WebhookEvent } from 'livekit-server-sdk';
+import type { Request, Response } from 'express';
+import type { WebhookEvent } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../config/dependency-injector.config.js';
 import { MeetLock } from '../helpers/redis.helper.js';

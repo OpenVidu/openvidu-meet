@@ -1,14 +1,15 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MeetRoom } from '@openvidu-meet/typings';
 import { expectSuccessRecordingMediaResponse, expectValidationError } from '../../../helpers/assertion-helpers';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	getRecordingMedia,
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
 
 describe('Recording API Tests', () => {
@@ -26,7 +27,8 @@ describe('Recording API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Recording Media Tests', () => {
@@ -167,16 +169,16 @@ describe('Recording API Tests', () => {
 
 		it('should return a 409 when the recording is in progress', async () => {
 			const testContext = await setupMultiRecordingsTestContext(1, 1, 0);
-			const { recordingId: activeRecordingId = '', moderatorToken } = testContext.rooms[0];
+			const { recordingId: activeRecordingId = '' } = testContext.rooms[0];
 
 			// Attempt to get the media of an active recording
 			const response = await getRecordingMedia(activeRecordingId);
 			expect(response.status).toBe(409);
 			expect(response.body).toHaveProperty('error', 'Recording Error');
 			expect(response.body).toHaveProperty('message');
-			expect(response.body.message).toContain(`Recording '${activeRecordingId}' is not stopped yet`);
+			expect(response.body.message).toContain(`Recording '${activeRecordingId}' is not streamable`);
 
-			await stopRecording(activeRecordingId, moderatorToken);
+			await stopRecording(activeRecordingId);
 		});
 
 		it('should return 404 when recording not found', async () => {

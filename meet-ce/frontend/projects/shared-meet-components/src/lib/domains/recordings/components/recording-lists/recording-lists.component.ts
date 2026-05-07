@@ -1,6 +1,19 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { Component, computed, effect, EventEmitter, input, OnInit, Output, signal, untracked } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	DestroyRef,
+	effect,
+	inject,
+	input,
+	OnInit,
+	output,
+	signal,
+	untracked
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -15,11 +28,18 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRecordingInfo, MeetRecordingStatus } from '@openvidu-meet/typings';
-import { ViewportService } from 'openvidu-components-angular';
+import {
+	MeetRecordingInfo,
+	MeetRecordingSortField,
+	MeetRecordingStatus,
+	SortOrder,
+	TextMatchMode
+} from '@openvidu-meet/typings';
+import { merge } from 'rxjs';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
-import { formatBytes, formatDurationToHMS } from '../../../../shared/utils/format.utils';
+import { ViewportService } from '../../../meeting/openvidu-components';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
+import { RecordingUiUtils } from '../../utils/ui';
 
 /**
  * Reusable component for displaying a list of recordings with filtering, selection, and bulk operations.
@@ -47,7 +67,6 @@ import { RecordingTableAction, RecordingTableFilter } from '../../models/recordi
 @Component({
 	selector: 'ov-recording-lists',
 	imports: [
-		CommonModule,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,
@@ -66,11 +85,19 @@ import { RecordingTableAction, RecordingTableFilter } from '../../models/recordi
 		DatePipe
 	],
 	templateUrl: './recording-lists.component.html',
-	styleUrl: './recording-lists.component.scss'
+	styleUrl: './recording-lists.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'[class.has-selections]': 'hasSelections()'
+	}
 })
 export class RecordingListsComponent implements OnInit {
+	private viewportService = inject(ViewportService);
+	private destroyRef = inject(DestroyRef);
+
 	recordings = input<MeetRecordingInfo[]>([]);
 	canDeleteRecordings = input(false);
+	deletableRoomIds = input<Set<string>>(new Set());
 	showSearchBox = input(true);
 	showFilters = input(true);
 	showSelection = input(true);
@@ -80,34 +107,79 @@ export class RecordingListsComponent implements OnInit {
 	roomName = input<string | undefined>(undefined);
 	initialFilters = input<RecordingTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'startDate',
-		sortOrder: 'desc'
+		sortOrder: SortOrder.DESC
 	});
 
+	// Host binding state for styling when rooms are selected
+	hasSelections = computed(() => this.selectedRecordings().size > 0);
+
 	// Output events
-	@Output() recordingAction = new EventEmitter<RecordingTableAction>();
-	@Output() filterChange = new EventEmitter<RecordingTableFilter>();
-	@Output() loadMore = new EventEmitter<RecordingTableFilter>();
-	@Output() refresh = new EventEmitter<RecordingTableFilter>();
+	recordingAction = output<RecordingTableAction>();
+	recordingClicked = output<string>();
+	filterChange = output<RecordingTableFilter>();
+	loadMore = output<RecordingTableFilter>();
+	refresh = output<RecordingTableFilter>();
 
 	// Filter controls
-	nameFilterControl = new FormControl('');
-	statusFilterControl = new FormControl('');
+	filtersForm = new FormGroup({
+		nameFilter: new FormControl<string>('', { nonNullable: true }),
+		nameMatchMode: new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true }),
+		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
+		statusFilter: new FormControl<MeetRecordingStatus | ''>('', { nonNullable: true })
+	});
+
+	get controls() {
+		return this.filtersForm.controls;
+	}
+
+	nameMatchModeOptions = [
+		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
+		{ value: TextMatchMode.EXACT, label: 'Exact match' },
+		{ value: TextMatchMode.REGEX, label: 'Regex' }
+	];
 
 	// Sort state
-	currentSortField: 'roomName' | 'startDate' | 'duration' | 'size' = 'startDate';
-	currentSortOrder: 'asc' | 'desc' = 'desc';
+	currentSortField = signal<MeetRecordingSortField>('startDate');
+	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = false; // Show message when no recordings match filters
+	showEmptyFilterMessage = signal(false); // Show message when no recordings match filters
 
 	// Selection state
 	selectedRecordings = signal<Set<string>>(new Set());
 	allSelected = signal(false);
 	someSelected = signal(false);
 
+	// Derived subsets of the current selection
+	deletableSelected = computed(() => {
+		const selected = this.selectedRecordings();
+		return this.recordings().filter(
+			(r) =>
+				selected.has(r.recordingId) && RecordingUiUtils.isDeletable(r.status) && this.canDeleteRecordingItem(r)
+		);
+	});
+	downloadableSelected = computed(() => {
+		const selected = this.selectedRecordings();
+		return this.recordings().filter(
+			(r) => selected.has(r.recordingId) && RecordingUiUtils.isDownloadable(r.status)
+		);
+	});
+
 	// Table configuration
-	displayedColumns: string[] = ['select', 'roomInfo', 'status', 'startDate', 'duration', 'size', 'actions'];
+	displayedColumns = computed(() => {
+		const columns = ['status', 'startDate', 'duration', 'size', 'actions'];
+		if (this.showRoomInfo()) {
+			columns.unshift('roomInfo');
+		}
+		if (this.showSelection()) {
+			columns.unshift('select');
+		}
+		return columns;
+	});
 
 	// Status options using enum values
 	statusOptions = [
@@ -121,29 +193,12 @@ export class RecordingListsComponent implements OnInit {
 		{ value: MeetRecordingStatus.LIMIT_REACHED, label: 'Limit Reached' }
 	];
 
-	// Recording status sets for different states using enum constants
-	private readonly STATUS_GROUPS = {
-		ACTIVE: [MeetRecordingStatus.ACTIVE] as readonly MeetRecordingStatus[],
-		COMPLETED: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[],
-		ERROR: [
-			MeetRecordingStatus.FAILED,
-			MeetRecordingStatus.ABORTED,
-			MeetRecordingStatus.LIMIT_REACHED
-		] as readonly MeetRecordingStatus[],
-		IN_PROGRESS: [MeetRecordingStatus.STARTING, MeetRecordingStatus.ENDING] as readonly MeetRecordingStatus[],
-		SELECTABLE: [
-			MeetRecordingStatus.COMPLETE,
-			MeetRecordingStatus.FAILED,
-			MeetRecordingStatus.ABORTED,
-			MeetRecordingStatus.LIMIT_REACHED
-		] as readonly MeetRecordingStatus[],
-		PLAYABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[],
-		DOWNLOADABLE: [MeetRecordingStatus.COMPLETE] as readonly MeetRecordingStatus[]
-	} as const;
+	protected isMobileView = this.viewportService.isMobileView;
 
-	protected isMobileView = computed(() => this.viewportService.isMobileView());
+	// Make RecordingUiUtils available in template
+	protected readonly RecordingUiUtils = RecordingUiUtils;
 
-	constructor(private viewportService: ViewportService) {
+	constructor() {
 		effect(() => {
 			// Update selected recordings based on current recordings
 			const recordings = this.recordings();
@@ -160,53 +215,36 @@ export class RecordingListsComponent implements OnInit {
 			}
 
 			// Show message when no recordings match filters
-			this.showEmptyFilterMessage = recordings.length === 0 && this.hasActiveFilters();
+			this.showEmptyFilterMessage.set(recordings.length === 0 && this.hasActiveFilters());
 		});
 	}
 
 	ngOnInit() {
 		this.setupFilters();
-		this.updateDisplayedColumns();
 
 		// Calculate showEmptyFilterMessage based on initial state
-		this.showEmptyFilterMessage = this.recordings().length === 0 && this.hasActiveFilters();
+		this.showEmptyFilterMessage.set(this.recordings().length === 0 && this.hasActiveFilters());
 	}
 
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		// Set up initial filter values from input signal
 		const filters = this.initialFilters();
-		this.nameFilterControl.setValue(filters.nameFilter);
-		this.statusFilterControl.setValue(filters.statusFilter);
-		this.currentSortField = filters.sortField;
-		this.currentSortOrder = filters.sortOrder;
+		this.filtersForm.patchValue(filters, { emitEvent: false });
+		this.currentSortField.set(filters.sortField);
+		this.currentSortOrder.set(filters.sortOrder);
 
-		// Set up name filter change detection
-		this.nameFilterControl.valueChanges.subscribe((value) => {
-			// Emit filter change if value is empty
-			if (!value) {
-				this.emitFilterChange();
-			}
+		const { nameFilter, nameMatchMode, nameCaseInsensitive, statusFilter } = this.controls;
+
+		// Emit only when text field is cleared
+		nameFilter.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
+			if (!value) this.emitFilterChange();
 		});
 
-		// Set up status filter change detection
-		this.statusFilterControl.valueChanges.subscribe(() => {
-			this.emitFilterChange();
-		});
-	}
-
-	private updateDisplayedColumns() {
-		this.displayedColumns = [];
-
-		if (this.showSelection()) {
-			this.displayedColumns.push('select');
-		}
-		if (this.showRoomInfo()) {
-			this.displayedColumns.push('roomInfo');
-		}
-
-		this.displayedColumns.push('status', 'startDate', 'duration', 'size', 'actions');
+		// Emit immediately on any option/select change
+		merge(nameMatchMode.valueChanges, nameCaseInsensitive.valueChanges, statusFilter.valueChanges)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.emitFilterChange());
 	}
 
 	// ===== SELECTION METHODS =====
@@ -251,7 +289,15 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	canSelectRecording(recording: MeetRecordingInfo): boolean {
-		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
+		return (
+			RecordingUiUtils.isDownloadable(recording.status) ||
+			(RecordingUiUtils.isDeletable(recording.status) && this.canDeleteRecordingItem(recording))
+		);
+	}
+
+	canDeleteRecordingItem(recording: MeetRecordingInfo): boolean {
+		if (this.canDeleteRecordings()) return true;
+		return this.deletableRoomIds().has(recording.roomId);
 	}
 
 	getSelectedRecordings(): MeetRecordingInfo[] {
@@ -260,6 +306,10 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	// ===== ACTION METHODS =====
+
+	onRecordingClick(recording: MeetRecordingInfo) {
+		this.recordingClicked.emit(recording.recordingId);
+	}
 
 	playRecording(recording: MeetRecordingInfo) {
 		this.recordingAction.emit({ recordings: [recording], action: 'play' });
@@ -278,44 +328,30 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	bulkDeleteSelected() {
-		const selectedRecordings = this.getSelectedRecordings();
-		if (selectedRecordings.length > 0) {
-			this.recordingAction.emit({ recordings: selectedRecordings, action: 'bulkDelete' });
+		const recordings = this.deletableSelected();
+		if (recordings.length > 0) {
+			this.recordingAction.emit({ recordings, action: 'bulkDelete' });
 		}
 	}
 
 	bulkDownloadSelected() {
-		const selectedRecordings = this.getSelectedRecordings();
-		if (selectedRecordings.length > 0) {
-			this.recordingAction.emit({ recordings: selectedRecordings, action: 'bulkDownload' });
+		const recordings = this.downloadableSelected();
+		if (recordings.length > 0) {
+			this.recordingAction.emit({ recordings, action: 'bulkDownload' });
 		}
 	}
 
 	loadMoreRecordings() {
-		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = (this.statusFilterControl.value || '') as MeetRecordingStatus | '';
-		this.loadMore.emit({
-			nameFilter,
-			statusFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
-		});
+		this.loadMore.emit(this.buildFilterSnapshot());
 	}
 
 	refreshRecordings() {
-		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = (this.statusFilterControl.value || '') as MeetRecordingStatus | '';
-		this.refresh.emit({
-			nameFilter,
-			statusFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
-		});
+		this.refresh.emit(this.buildFilterSnapshot());
 	}
 
 	onSortChange(sortState: Sort) {
-		this.currentSortField = sortState.active as 'roomName' | 'startDate' | 'duration' | 'size';
-		this.currentSortOrder = sortState.direction as 'asc' | 'desc';
+		this.currentSortField.set(sortState.active as MeetRecordingSortField);
+		this.currentSortOrder.set(sortState.direction as SortOrder);
 		this.emitFilterChange();
 	}
 
@@ -325,101 +361,33 @@ export class RecordingListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
+	private buildFilterSnapshot(): RecordingTableFilter {
+		return {
+			...this.filtersForm.getRawValue(),
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
+		};
+	}
+
 	private emitFilterChange() {
-		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value || '',
-			statusFilter: (this.statusFilterControl.value || '') as MeetRecordingStatus | '',
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
-		});
+		this.filterChange.emit(this.buildFilterSnapshot());
 	}
 
 	hasActiveFilters(): boolean {
-		return !!(this.nameFilterControl.value || this.statusFilterControl.value);
+		const { nameFilter, nameMatchMode, nameCaseInsensitive, statusFilter } = this.filtersForm.getRawValue();
+		return !!(nameFilter || nameMatchMode !== TextMatchMode.PREFIX || nameCaseInsensitive || statusFilter);
 	}
 
 	clearFilters() {
-		this.nameFilterControl.setValue('');
-		this.statusFilterControl.setValue('');
-	}
-
-	// ===== STATUS UTILITY METHODS =====
-
-	private isStatusInGroup(status: MeetRecordingStatus, group: readonly MeetRecordingStatus[]): boolean {
-		return group.includes(status);
-	}
-
-	/**
-	 * Get a human-readable status label
-	 */
-	getStatusLabel(status: MeetRecordingStatus): string {
-		const statusOption = this.statusOptions.find((option) => option.value === status);
-		const label = statusOption?.label || status;
-		return label.toUpperCase().replace(/_/g, ' ');
-	}
-
-	// ===== PERMISSION AND CAPABILITY METHODS =====
-
-	canPlayRecording(recording: MeetRecordingInfo): boolean {
-		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.PLAYABLE);
-	}
-
-	canDownloadRecording(recording: MeetRecordingInfo): boolean {
-		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.DOWNLOADABLE);
-	}
-
-	canDeleteRecording(recording: MeetRecordingInfo): boolean {
-		return this.canDeleteRecordings() && this.isStatusInGroup(recording.status, this.STATUS_GROUPS.SELECTABLE);
-	}
-
-	isRecordingFailed(recording: MeetRecordingInfo): boolean {
-		return this.isStatusInGroup(recording.status, this.STATUS_GROUPS.ERROR);
-	}
-
-	// ===== UI HELPER METHODS =====
-
-	getStatusIcon(status: MeetRecordingStatus): string {
-		switch (status) {
-			case MeetRecordingStatus.COMPLETE:
-				return 'check_circle';
-			case MeetRecordingStatus.ACTIVE:
-				return 'radio_button_checked';
-			case MeetRecordingStatus.STARTING:
-				return 'hourglass_top';
-			case MeetRecordingStatus.ENDING:
-				return 'hourglass_bottom';
-			case MeetRecordingStatus.FAILED:
-				return 'error';
-			case MeetRecordingStatus.ABORTED:
-				return 'cancel';
-			case MeetRecordingStatus.LIMIT_REACHED:
-				return 'warning';
-			default:
-				return 'help';
-		}
-	}
-
-	getStatusColor(status: MeetRecordingStatus): string {
-		if (this.isStatusInGroup(status, this.STATUS_GROUPS.COMPLETED)) {
-			return 'var(--ov-meet-color-success)';
-		}
-		if (this.isStatusInGroup(status, this.STATUS_GROUPS.ACTIVE)) {
-			return 'var(--ov-meet-color-primary)';
-		}
-		if (this.isStatusInGroup(status, this.STATUS_GROUPS.IN_PROGRESS)) {
-			return 'var(--ov-meet-color-warning)';
-		}
-		if (this.isStatusInGroup(status, this.STATUS_GROUPS.ERROR)) {
-			return 'var(--ov-meet-color-error)';
-		}
-		return 'var(--ov-meet-text-secondary)';
-	}
-
-	formatDuration(duration?: number): string {
-		return formatDurationToHMS(duration);
-	}
-
-	formatFileSize(bytes?: number): string {
-		return formatBytes(bytes);
+		this.filtersForm.reset(
+			{
+				nameFilter: '',
+				nameMatchMode: TextMatchMode.PREFIX,
+				nameCaseInsensitive: false,
+				statusFilter: ''
+			},
+			{ emitEvent: false }
+		);
+		this.emitFilterChange();
 	}
 }

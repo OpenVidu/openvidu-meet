@@ -3,11 +3,11 @@ import { MeetRoomStatus } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { RoomRepository } from '../../../../src/repositories/room.repository.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	executeRoomStatusValidationGC,
 	getRoom,
 	startTestServer
@@ -36,20 +36,14 @@ describe('Active Rooms Status GC Tests', () => {
 		});
 
 		// Force status to ACTIVE_MEETING directly in DB
-		const room = await roomRepository.findByRoomId(createdRoom.roomId);
-
-
-		if (room) {
-			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room);
-		}
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
 
 		let response = await getRoom(createdRoom.roomId);
 		expect(response.status).toBe(200);
 		expect(response.body.status).toBe(MeetRoomStatus.ACTIVE_MEETING);
 
 		// Mock LiveKitService.roomExists to return false
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(false);
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist').mockResolvedValue(new Map([[createdRoom.roomId, false]]));
 
 		await executeRoomStatusValidationGC();
 
@@ -67,14 +61,9 @@ describe('Active Rooms Status GC Tests', () => {
 		});
 
 		// Force status to ACTIVE_MEETING directly in DB
-		const room = await roomRepository.findByRoomId(createdRoom.roomId);
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
 
-		if (room) {
-			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room);
-		}
-
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(true);
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist').mockResolvedValue(new Map([[createdRoom.roomId, true]]));
 
 		await executeRoomStatusValidationGC();
 
@@ -83,6 +72,9 @@ describe('Active Rooms Status GC Tests', () => {
 		expect(response.body.status).toBe(MeetRoomStatus.ACTIVE_MEETING);
 
 		roomExistsSpy.mockRestore();
+		// Cleanup: set back to OPEN so afterAll can delete it
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.OPEN });
+
 	});
 
 	it('should not run the GC if no active rooms exist', async () => {
@@ -90,7 +82,7 @@ describe('Active Rooms Status GC Tests', () => {
 		await deleteAllRooms();
 
 		// Spy on LiveKitService.roomExists to ensure it's not called
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists');
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist');
 
 		// Clear any previous calls that could have been recorded by earlier test runs
 		roomExistsSpy.mockClear();
@@ -105,15 +97,10 @@ describe('Active Rooms Status GC Tests', () => {
 		const createdRoom = await createRoom({ roomName: 'test-livekit-error-gc' });
 
 		// Force status to ACTIVE_MEETING directly in DB
-		const room = await roomRepository.findByRoomId(createdRoom.roomId);
-
-		if (room) {
-			room.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room);
-		}
+		await roomRepository.updatePartial(createdRoom.roomId, { status: MeetRoomStatus.ACTIVE_MEETING });
 
 		// Mock LiveKitService.roomExists to throw an error
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockRejectedValue(new Error('LiveKit down'));
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist').mockRejectedValue(new Error('LiveKit down'));
 
 		// Run GC - it should catch the error and continue without throwing
 		await expect(executeRoomStatusValidationGC()).resolves.not.toThrow();
@@ -153,21 +140,13 @@ describe('Active Rooms Status GC Tests', () => {
 		const r1 = await createRoom({ roomName: 'test-multi-inconsistent-1' });
 		const r2 = await createRoom({ roomName: 'test-multi-inconsistent-2' });
 
-		const room1 = await roomRepository.findByRoomId(r1.roomId);
-		const room2 = await roomRepository.findByRoomId(r2.roomId);
-
-		if (room1) {
-			room1.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room1);
-		}
-
-		if (room2) {
-			room2.status = MeetRoomStatus.ACTIVE_MEETING;
-			await roomRepository.update(room2);
-		}
+		await Promise.all([
+			roomRepository.updatePartial(r1.roomId, { status: MeetRoomStatus.ACTIVE_MEETING }),
+			roomRepository.updatePartial(r2.roomId, { status: MeetRoomStatus.ACTIVE_MEETING })
+		]);
 
 		// Mock LiveKitService.roomExists to return false for both rooms
-		const roomExistsSpy = jest.spyOn(liveKitService, 'roomExists').mockResolvedValue(false);
+		const roomExistsSpy = jest.spyOn(liveKitService, 'roomsExist').mockResolvedValue(new Map([[r1.roomId, false], [r2.roomId, false]]));
 
 		await executeRoomStatusValidationGC();
 

@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { ProFeatureBadgeComponent } from '../pro-feature-badge/pro-feature-badge.component';
 
@@ -29,137 +29,140 @@ export interface SelectionCardEvent {
 
 @Component({
     selector: 'ov-selectable-card',
-    imports: [CommonModule, MatIconModule, ProFeatureBadgeComponent],
+	imports: [NgClass, MatIconModule, ProFeatureBadgeComponent],
     templateUrl: './selectable-card.component.html',
-    styleUrl: './selectable-card.component.scss'
+    styleUrl: './selectable-card.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SelectableCardComponent {
 	/**
 	 * The option data to display in the card
 	 */
-	@Input({ required: true }) option!: SelectableCardOption;
+	option = input.required<SelectableCardOption>();
 
 	/**
 	 * Currently selected value(s)
 	 * Can be a string (single select) or string[] (multi select)
 	 */
-	@Input() selectedValue: string | string[] | undefined;
+	selectedValue = input<string | string[] | undefined>(undefined);
 
 	/**
 	 * Whether multiple options can be selected simultaneously
 	 * @default false
 	 */
-	@Input() allowMultiSelect: boolean = false;
+	allowMultiSelect = input(false);
 
 	/**
 	 * Whether to show the selection indicator (radio button)
 	 * @default true
 	 */
-	@Input() showSelectionIndicator: boolean = true;
+	showSelectionIndicator = input(true);
 
 	/**
 	 * Whether to show the PRO badge for premium features
 	 * @default true
 	 */
-	@Input() showProBadge: boolean = true;
+	showProBadge = input(true);
 
 	/**
 	 * Custom icon for the PRO badge
 	 * @default 'crown'
 	 */
-	@Input() proBadgeIcon: string = 'crown';
+	proBadgeIcon = input('crown');
 
 	/**
 	 * Custom text for the PRO badge
 	 * @default 'PRO'
 	 */
-	@Input() proBadgeText: string = 'PRO';
+	proBadgeText = input('PRO');
 
 	/**
 	 * Whether to show the recommended badge
 	 * @default true
 	 */
-	@Input() showRecommendedBadge: boolean = true;
+	showRecommendedBadge = input(true);
 
 	/**
 	 * Whether to show image instead of icon (when imageUrl is provided)
 	 * @default false
 	 */
-	@Input() showImage: boolean = false;
+	showImage = input(false);
 
 	/**
 	 * Whether to show both image and icon (when both are provided)
 	 * @default false
 	 */
-	@Input() showImageAndIcon: boolean = false;
+	showImageAndIcon = input(false);
 
 	/**
 	 * Image aspect ratio for layout control
 	 * @default '16/9'
 	 */
-	@Input() imageAspectRatio: string = '16/9';
+	imageAspectRatio = input('16/9');
 
 	/**
 	 * Whether the card should show hover effects
 	 * @default true
 	 */
-	@Input() enableHover: boolean = true;
+	enableHover = input(true);
 
 	/**
 	 * Whether the card should show selection animations
 	 * @default true
 	 */
-	@Input() enableAnimations: boolean = true;
+	enableAnimations = input(true);
 
 	/**
 	 * Custom CSS classes to apply to the card
 	 */
-	@Input() customClasses: string = '';
+	customClasses = input('');
 
 	/**
 	 * Event emitted when an option is selected
 	 */
-	@Output() optionSelected = new EventEmitter<SelectionCardEvent>();
+	optionSelected = output<SelectionCardEvent>();
 
 	/**
 	 * Event emitted when the card is hovered
 	 */
-	@Output() cardHover = new EventEmitter<{ option: SelectableCardOption; isHovering: boolean }>();
+	cardHover = output<{ option: SelectableCardOption; isHovering: boolean }>();
 
 	/**
 	 * Check if the current option is selected
 	 */
 	isOptionSelected(optionId: string): boolean {
-		if (!this.selectedValue) {
+		const selectedValue = this.selectedValue();
+		if (!selectedValue) {
 			return false;
 		}
 
-		if (Array.isArray(this.selectedValue)) {
-			return this.selectedValue.includes(optionId);
+		if (Array.isArray(selectedValue)) {
+			return selectedValue.includes(optionId);
 		}
 
-		return this.selectedValue === optionId;
+		return selectedValue === optionId;
 	}
 
 	/**
 	 * Handle option selection click
 	 */
 	onOptionSelect(optionId: string): void {
+		const option = this.option();
 		// Don't allow selection if option is disabled
-		if (this.option.disabled) {
+		if (option.disabled) {
 			return;
 		}
 
 		const wasSelected = this.isOptionSelected(optionId);
-		if (!this.allowMultiSelect && wasSelected) {
+		if (!this.allowMultiSelect() && wasSelected) {
 			return; // No change if already selected
 		}
 
 		// Emit selection event
 		const selectionEvent: SelectionCardEvent = {
 			optionId,
-			option: this.option,
-			previousSelection: this.selectedValue
+			option,
+			previousSelection: this.selectedValue()
 		};
 		this.optionSelected.emit(selectionEvent);
 	}
@@ -168,8 +171,8 @@ export class SelectableCardComponent {
 	 * Handle mouse enter event
 	 */
 	onMouseEnter(): void {
-		if (this.enableHover) {
-			this.cardHover.emit({ option: this.option, isHovering: true });
+		if (this.enableHover()) {
+			this.cardHover.emit({ option: this.option(), isHovering: true });
 		}
 	}
 
@@ -177,8 +180,8 @@ export class SelectableCardComponent {
 	 * Handle mouse leave event
 	 */
 	onMouseLeave(): void {
-		if (this.enableHover) {
-			this.cardHover.emit({ option: this.option, isHovering: false });
+		if (this.enableHover()) {
+			this.cardHover.emit({ option: this.option(), isHovering: false });
 		}
 	}
 
@@ -186,28 +189,29 @@ export class SelectableCardComponent {
 	 * Get dynamic CSS classes for the card
 	 */
 	getCardClasses(): string {
+		const option = this.option();
 		const classes = ['option-card'];
 
-		if (this.isOptionSelected(this.option.id)) {
+		if (this.isOptionSelected(option.id)) {
 			classes.push('selected');
 		}
-		if (this.option.recommended && this.showRecommendedBadge) {
+		if (option.recommended && this.showRecommendedBadge()) {
 			classes.push('recommended');
 		}
-		if (this.option.isPro && this.showProBadge) {
+		if (option.isPro && this.showProBadge()) {
 			classes.push('pro-feature');
 		}
-		if (this.option.disabled) {
+		if (option.disabled) {
 			classes.push('disabled');
 		}
-		if (!this.enableHover) {
+		if (!this.enableHover()) {
 			classes.push('no-hover');
 		}
-		if (!this.enableAnimations) {
+		if (!this.enableAnimations()) {
 			classes.push('no-animations');
 		}
-		if (this.customClasses) {
-			classes.push(this.customClasses);
+		if (this.customClasses()) {
+			classes.push(this.customClasses());
 		}
 
 		return classes.join(' ');
@@ -217,10 +221,11 @@ export class SelectableCardComponent {
 	 * Get the selection icon based on current state
 	 */
 	getSelectionIcon(): string {
-		if (this.allowMultiSelect) {
-			return this.isOptionSelected(this.option.id) ? 'check_box' : 'check_box_outline_blank';
+		const option = this.option();
+		if (this.allowMultiSelect()) {
+			return this.isOptionSelected(option.id) ? 'check_box' : 'check_box_outline_blank';
 		} else {
-			return this.isOptionSelected(this.option.id) ? 'radio_button_checked' : 'radio_button_unchecked';
+			return this.isOptionSelected(option.id) ? 'radio_button_checked' : 'radio_button_unchecked';
 		}
 	}
 
@@ -228,19 +233,20 @@ export class SelectableCardComponent {
 	 * Get aria-label for accessibility
 	 */
 	getAriaLabel(): string {
-		const baseLabel = `${this.option.title}. ${this.option.description}`;
+		const option = this.option();
+		const baseLabel = `${option.title}. ${option.description}`;
 		const statusParts = [];
 
-		if (this.option.recommended) {
+		if (option.recommended) {
 			statusParts.push('Recommended');
 		}
-		if (this.option.isPro) {
+		if (option.isPro) {
 			statusParts.push('PRO feature');
 		}
-		if (this.option.disabled) {
+		if (option.disabled) {
 			statusParts.push('Disabled');
 		}
-		if (this.isOptionSelected(this.option.id)) {
+		if (this.isOptionSelected(option.id)) {
 			statusParts.push('Selected');
 		}
 
@@ -252,16 +258,18 @@ export class SelectableCardComponent {
 	 * Check if should show image
 	 */
 	shouldShowImage(): boolean {
-		return this.showImage && !!this.option.imageUrl;
+		const option = this.option();
+		return this.showImage() && !!option.imageUrl;
 	}
 
 	/**
 	 * Check if should show icon
 	 */
 	shouldShowIcon(): boolean {
-		if (this.showImageAndIcon) {
-			return !!this.option.icon;
+		const option = this.option();
+		if (this.showImageAndIcon()) {
+			return !!option.icon;
 		}
-		return !this.shouldShowImage() && !!this.option.icon;
+		return !this.shouldShowImage() && !!option.icon;
 	}
 }

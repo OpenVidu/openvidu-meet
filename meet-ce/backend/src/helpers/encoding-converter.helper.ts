@@ -1,6 +1,7 @@
+import type {
+	MeetRecordingEncodingOptions} from '@openvidu-meet/typings';
 import {
 	MeetRecordingAudioCodec,
-	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingVideoCodec
 } from '@openvidu-meet/typings';

@@ -1,5 +1,5 @@
 <!-- Loading State -->
-@if (isInitializing && showInitialLoader) {
+@if (isInitializing() && showInitialLoader()) {
 	<div class="ov-page-loading">
 		<div class="loading-content">
 			<div class="loading-header">
@@ -11,13 +11,13 @@
 			</div>
 
 			<div class="loading-spinner-container">
-				<mat-spinner diameter="48"></mat-spinner>
+				<mat-spinner diameter="48" />
 			</div>
 		</div>
 	</div>
 }
 
-@if (!isInitializing) {
+@if (!isInitializing()) {
 	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container">
 		<!-- Rooms Header -->
 		<div class="page-header" id="rooms-page-header">
@@ -25,9 +25,13 @@
 				<mat-icon class="ov-room-icon" id="rooms-icon">video_chat</mat-icon>
 				<h1 id="rooms-heading">Rooms</h1>
 			</div>
-			<p class="subtitle" id="rooms-subtitle">
-				Manage your rooms, create new ones, and configure settings for your meetings.
-			</p>
+			@if (currentUserRole() === MeetUserRole.ROOM_MEMBER) {
+				<p class="subtitle" id="rooms-subtitle">Browse and join the rooms available to you.</p>
+			} @else {
+				<p class="subtitle" id="rooms-subtitle">
+					Manage your rooms, create new ones, or join the rooms available to you.
+				</p>
+			}
 		</div>
 
 		<!-- Content -->
@@ -35,17 +39,20 @@
 			<ov-rooms-lists
 				id="rooms-list"
 				[rooms]="rooms()"
-				[loading]="isLoading"
+				[loading]="isLoading()"
 				[showSearchBox]="true"
 				[showFilters]="true"
 				[showSelection]="true"
-				[showLoadMore]="hasMoreRooms"
+				[showLoadMore]="hasMoreRooms()"
 				[initialFilters]="initialFilters()"
+				[currentUserId]="currentUserId()"
+				[currentUserRole]="currentUserRole()"
 				(roomAction)="onRoomAction($event)"
+				(roomClicked)="onRoomClick($event)"
 				(loadMore)="loadMoreRooms($event)"
 				(refresh)="refreshRooms($event)"
 				(filterChange)="refreshRooms($event)"
-			></ov-rooms-lists>
+			/>
 		</div>
 	</div>
 }

@@ -13,10 +13,6 @@
 
 	<span class="toolbar-spacer"></span>
 
-	<!-- <button mat-icon-button aria-label="Profile" id="profile-btn">
-		<mat-icon>account_circle</mat-icon>
-	</button> -->
-
 	<button
 		mat-icon-button
 		(click)="toggleTheme()"
@@ -26,6 +22,18 @@
 	>
 		<mat-icon>{{ isDarkMode() ? 'wb_sunny' : 'nights_stay' }}</mat-icon>
 	</button>
+
+	<span class="icon-division"></span>
+	<button
+		mat-icon-button
+		aria-label="Profile"
+		id="profile-btn"
+		[matTooltip]="'My profile'"
+		routerLink="profile"
+		aria-label="Profile"
+	>
+		<mat-icon>account_circle</mat-icon>
+	</button>
 	<button mat-icon-button (click)="onLogoutClicked.emit()" matTooltip="Logout" aria-label="Logout" id="logout-btn">
 		<mat-icon>logout</mat-icon>
 	</button>
@@ -34,13 +42,14 @@
 <mat-sidenav-container autosize class="sidenav-container" id="sidenav-container">
 	<mat-sidenav
 		#sidenav
-		[ngClass]="isSideMenuCollapsed ? 'collapsed' : 'expanded'"
-		[mode]="isMobile ? 'over' : 'side'"
-		[opened]="isMobile ? 'false' : 'true'"
+		[class.collapsed]="isSideMenuCollapsed()"
+		[class.expanded]="!isSideMenuCollapsed()"
+		[mode]="isMobile() ? 'over' : 'side'"
+		[opened]="!isMobile()"
 		id="side-navigation"
 	>
 		<mat-nav-list id="nav-list">
-			@for (link of navLinks; track link.route) {
+			@for (link of navLinks(); track link.route) {
 				<ng-container>
 					<a
 						mat-list-item
@@ -49,15 +58,15 @@
 						routerLinkActive="active-nav-item"
 						[routerLinkActiveOptions]="{ exact: false }"
 						(click)="link.clickHandler ? link.clickHandler() : null"
-						[matTooltip]="isSideMenuCollapsed ? link.label : ''"
+						[matTooltip]="isSideMenuCollapsed() ? link.label : ''"
 						[matTooltipPosition]="'right'"
 						[matTooltipClass]="'nav-tooltip'"
-						[matTooltipDisabled]="!isSideMenuCollapsed"
+						[matTooltipDisabled]="!isSideMenuCollapsed()"
 						[id]="'nav-link-' + link.route!.replace('/', '')"
 					>
-						<span class="entry" [ngClass]="isSideMenuCollapsed ? 'centeredEntry' : 'entry'">
-							<mat-icon [ngClass]="link.iconClass">{{ link.icon }}</mat-icon>
-							@if (!isSideMenuCollapsed) {
+						<span class="entry" [class.centeredEntry]="isSideMenuCollapsed()">
+							<mat-icon [class]="link.iconClass">{{ link.icon }}</mat-icon>
+							@if (!isSideMenuCollapsed()) {
 								{{ link.label }}
 							}
 						</span>
@@ -66,7 +75,7 @@
 			}
 		</mat-nav-list>
 
-		@if (!isSideMenuCollapsed) {
+		@if (!isSideMenuCollapsed()) {
 			<div class="separator" id="nav-separator"></div>
 			<div class="version" id="version-info">
 				<p>{{ version }}</p>
@@ -77,7 +86,7 @@
 	<!-- Main content -->
 	<mat-sidenav-content id="main-content">
 		<div class="page-content" id="page-content">
-			<router-outlet></router-outlet>
+			<router-outlet />
 		</div>
 	</mat-sidenav-content>
 </mat-sidenav-container>

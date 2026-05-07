@@ -1,6 +1,6 @@
-import { MeetRoomDeletionErrorCode } from '@openvidu-meet/typings';
-import { Response } from 'express';
-import { z } from 'zod';
+import type { MeetRoomDeletionErrorCode, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import type { Response } from 'express';
+import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
 import { LoggerService } from '../services/logger.service.js';
 
@@ -63,10 +63,14 @@ export const errorAzureNotAvailable = (error: unknown): OpenViduMeetError => {
 	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${error}`, 503);
 };
 
+export const errorConfigurationError = (message: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Configuration Error', message, 500);
+};
+
 // Auth errors
 
 export const errorInvalidCredentials = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Login Error', 'Invalid username or password', 404);
+	return new OpenViduMeetError('Login Error', 'Invalid user ID or password', 404);
 };
 
 export const errorInvalidPassword = (): OpenViduMeetError => {
@@ -97,8 +101,24 @@ export const errorInsufficientPermissions = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Authorization Error', 'Insufficient permissions to access this resource', 403);
 };
 
+export const errorPasswordChangeRequired = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Authorization Error',
+		'Password change required. Please change your password before accessing other resources.',
+		403
+	);
+};
+
 export const errorInvalidApiKey = (): OpenViduMeetError => {
 	return new OpenViduMeetError('Authentication Error', 'Invalid API key', 401);
+};
+
+export const errorInvalidApiKeySubject = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Authorization Error',
+		'Invalid API key subject. The user associated with the API key does not exist',
+		403
+	);
 };
 
 export const errorApiKeyNotConfigured = (): OpenViduMeetError => {
@@ -139,6 +159,10 @@ export const errorRecordingStartTimeout = (roomId: string): OpenViduMeetError =>
 	return new OpenViduMeetError('Recording Error', `Recording in room '${roomId}' timed out while starting`, 503);
 };
 
+export const errorRecordingNotStreamable = (recordingId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is not streamable`, 409);
+};
+
 export const errorRecordingRangeNotSatisfiable = (recordingId: string, fileSize: number): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Recording Error',
@@ -159,10 +183,10 @@ export const errorInvalidRecordingSecret = (recordingId: string, secret: string)
 	);
 };
 
-export const errorRecordingsNotFromSameRoom = (roomId: string): OpenViduMeetError => {
+export const errorRecordingsZipEmpty = (): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Recording Error',
-		`None of the provided recording IDs belong to room '${roomId}'`,
+		'None of the provided recordings are available for ZIP download',
 		400
 	);
 };
@@ -191,6 +215,64 @@ export const isErrorRecordingCannotBeStoppedWhileStarting = (
 	return isMatchingError(error, errorRecordingCannotBeStoppedWhileStarting(recordingId));
 };
 
+// User errors
+
+export const errorUserNotFound = (userId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('User Error', `User '${userId}' not found`, 404);
+};
+
+export const errorUserAlreadyExists = (userId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('User Error', `User '${userId}' already exists`, 409);
+};
+
+export const errorCannotResetRootAdminPassword = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot reset password for the root admin user. The root admin must change their own password.',
+		403
+	);
+};
+
+export const errorCannotResetOwnPassword = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot reset your own password. Please use the change-password endpoint to change your password.',
+		403
+	);
+};
+
+export const errorCannotDeleteRootAdmin = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot delete the root admin user. This account is required for system administration.',
+		403
+	);
+};
+
+export const errorCannotDeleteOwnAccount = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot delete your own account. Please have another administrator delete your account if needed.',
+		403
+	);
+};
+
+export const errorCannotChangeRootAdminRole = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot change the role of the root admin user. This account must retain administrative privileges.',
+		403
+	);
+};
+
+export const errorCannotChangeOwnRole = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'User Error',
+		'Cannot change your own role. Please have another administrator change your role if needed.',
+		403
+	);
+};
+
 // Room errors
 
 export const errorRoomNotFound = (roomId: string): OpenViduMeetError => {
@@ -209,19 +291,46 @@ export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenVidu
 	return new OpenViduMeetError('Room Error', `Secret '${secret}' is not recognized for room '${roomId}'`, 400);
 };
 
+export const errorAnonymousAccessDisabled = (
+	roomId: string,
+	role: MeetRoomMemberRole | 'recording'
+): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Error',
+		`Anonymous access in room '${roomId}' is disabled for ${role === 'recording' ? 'recordings' : `role '${role}'`}`,
+		403
+	);
+};
+
 export const errorDeletingRoom = (errorCode: MeetRoomDeletionErrorCode, message: string): OpenViduMeetError => {
 	return new OpenViduMeetError(errorCode, message, 409);
 };
 
-export const errorInvalidRoomMemberToken = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Room Error', 'Invalid room member token', 400);
+// Room member errors
+
+export const errorRoomMemberNotFound = (roomId: string, memberId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Member Error', `Room member '${memberId}' not found in room '${roomId}'`, 404);
 };
 
-export const errorInvalidRoomMemberRole = (): OpenViduMeetError => {
-	return new OpenViduMeetError('Room Error', 'No valid room member role provided', 400);
+export const errorRoomMemberAlreadyExists = (roomId: string, userId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Member Error', `User '${userId}' is already a member of room '${roomId}'`, 409);
 };
 
-// Participant errors
+export const errorRoomMemberCannotBeOwnerOrAdmin = (roomId: string, userId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Member Error',
+		`User '${userId}' cannot be added as a member of room '${roomId}' because they are the room owner or an admin`,
+		409
+	);
+};
+
+export const errorParticipantNameRequiredForMeetingJoin = (): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Member Error',
+		'participantName is required when joining a meeting and it cannot be inferred from member/user context',
+		400
+	);
+};
 
 export const errorParticipantNotFound = (participantIdentity: string, roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
@@ -229,6 +338,34 @@ export const errorParticipantNotFound = (participantIdentity: string, roomId: st
 		`Participant '${participantIdentity}' not found in room '${roomId}'`,
 		404
 	);
+};
+
+export const errorParticipantCannotBePromotedToModerator = (
+	participantIdentity: string,
+	roomId: string
+): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' cannot be promoted to moderator because they are not eligible for promotion`,
+		409
+	);
+};
+
+export const errorParticipantCannotBeDemotedFromModerator = (
+	participantIdentity: string,
+	roomId: string
+): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' cannot be demoted because they are not a promoted moderator`,
+		409
+	);
+};
+
+// AI Assistant errors
+
+export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('AI Assistant Error', `AI assistant  for room '${roomId}' is already starting`, 409);
 };
 
 // Webhook errors

@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import {
 	MeetingComponent,
 	MeetingCustomLayoutComponent,
@@ -24,15 +25,16 @@ import {
 	],
 	template: `
 		<ov-meeting>
-			<ov-meeting-toolbar-leave-button></ov-meeting-toolbar-leave-button>
-			<ov-meeting-toolbar-extra-buttons></ov-meeting-toolbar-extra-buttons>
-			<ov-meeting-toolbar-more-options-menu></ov-meeting-toolbar-more-options-menu>
-			<ov-meeting-invite-panel></ov-meeting-invite-panel>
-			<ov-meeting-participant-item></ov-meeting-participant-item>
-			<ov-meeting-settings-extensions></ov-meeting-settings-extensions>
-			<ov-meeting-custom-layout></ov-meeting-custom-layout>
+			<ov-meeting-toolbar-leave-button />
+			<ov-meeting-toolbar-extra-buttons />
+			<ov-meeting-toolbar-more-options-menu />
+			<ov-meeting-invite-panel />
+			<ov-meeting-participant-item />
+			<ov-meeting-settings-extensions />
+			<ov-meeting-custom-layout />
 		</ov-meeting>
 	`,
-	styles: ''
+	styles: '',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppCeMeetingComponent {}

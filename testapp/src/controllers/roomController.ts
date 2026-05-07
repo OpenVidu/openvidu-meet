@@ -1,5 +1,5 @@
-import { MeetRoomMemberRole, MeetWebhookEvent } from '@openvidu-meet/typings';
-import { Request, Response } from 'express';
+import type { MeetRoomMemberRole, MeetWebhookEvent } from '@openvidu-meet/typings';
+import type { Request, Response } from 'express';
 import { Server as IOServer } from 'socket.io';
 import { configService } from '../services/configService';
 
@@ -17,7 +17,6 @@ export const joinRoom = (req: Request, res: Response) => {
             participantRole,
             roomUrl,
             roomId,
-            participantName = 'User',
             showOnlyRecordings
         } = req.body as JoinRoomRequest;
         if (!roomUrl) {
@@ -27,7 +26,6 @@ export const joinRoom = (req: Request, res: Response) => {
         res.render('room', {
             roomUrl,
             isModerator: participantRole === 'moderator',
-            participantName,
             roomId,
             showOnlyRecordings: showOnlyRecordings || false,
             webcomponentSrc: configService.meetWebhookSrc

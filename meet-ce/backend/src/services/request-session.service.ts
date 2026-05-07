@@ -1,7 +1,7 @@
-import { LiveKitPermissions, MeetPermissions, MeetRoomMemberRole, MeetUser } from '@openvidu-meet/typings';
+import type { MeetRoomMemberPermissions, MeetRoomMemberTokenMetadata, MeetUser, MeetUserRole } from '@openvidu-meet/typings';
 import { AsyncLocalStorage } from 'async_hooks';
 import { injectable } from 'inversify';
-import { RequestContext } from '../models/request-context.model.js';
+import type { RequestContext } from '../models/request-context.model.js';
 
 /**
  * Service that manages request-scoped session data using Node.js AsyncLocalStorage.
@@ -66,58 +66,58 @@ export class RequestSessionService {
 	/**
 	 * Gets the authenticated user from the current request context.
 	 */
-	getUser(): MeetUser | undefined {
+	getAuthenticatedUser(): MeetUser | undefined {
 		return this.getContext()?.user;
 	}
 
 	/**
-	 * Sets the room member token information (role, permissions, and token claims)
-	 * in the current request context.
-	 * If called outside a request context, this operation is silently ignored.
+	 * Gets the authenticated user's role from the current request context.
 	 */
-	setRoomMemberTokenInfo(
-		role: MeetRoomMemberRole,
-		meetPermissions: MeetPermissions,
-		livekitPermissions: LiveKitPermissions
-	): void {
+	getAuthenticatedUserRole(): MeetUserRole | undefined {
+		return this.getContext()?.user?.role;
+	}
+
+	/**
+	 * Sets the room member token information in the current request context.
+	 * If called outside a request context, this operation is silently ignored.
+	 *
+	 * @param metadata - The room member token metadata to store in the context
+	 * @param participantIdentity - The participant identity (token subject) to store in the context
+	 */
+	setRoomMemberTokenInfo(metadata: MeetRoomMemberTokenMetadata, participantIdentity?: string): void {
 		const context = this.getContext();
 
 		if (context) {
-			context.roomMember = {
-				role,
-				permissions: {
-					meet: meetPermissions,
-					livekit: livekitPermissions
-				}
-			};
+			context.roomMember = metadata;
+			context.roomMember.participantIdentity = participantIdentity;
 		}
 	}
 
 	/**
-	 * Gets the room member role from the current request context.
+	 * Gets the room ID to which the room member belongs from the current request context.
 	 */
-	getRoomMemberRole(): MeetRoomMemberRole | undefined {
-		return this.getContext()?.roomMember?.role;
+	getRoomIdFromMember(): string | undefined {
+		return this.getContext()?.roomMember?.roomId;
 	}
 
 	/**
-	 * Gets the room member Meet permissions from the current request context.
+	 * Gets the room member ID from the current request context.
 	 */
-	getRoomMemberMeetPermissions(): MeetPermissions | undefined {
-		return this.getContext()?.roomMember?.permissions.meet;
+	getRoomMemberId(): string | undefined {
+		return this.getContext()?.roomMember?.memberId;
 	}
 
 	/**
-	 * Gets the room member LiveKit permissions from the current request context.
+	 * Gets the participant identity from the current request context.
 	 */
-	getRoomMemberLivekitPermissions(): LiveKitPermissions | undefined {
-		return this.getContext()?.roomMember?.permissions.livekit;
+	getParticipantIdentity(): string | undefined {
+		return this.getContext()?.roomMember?.participantIdentity;
 	}
 
 	/**
-	 * Gets the room ID from the token claims in the current request context.
+	 * Gets the room member permissions from the current request context.
 	 */
-	getRoomIdFromToken(): string | undefined {
-		return this.getContext()?.roomMember?.permissions.livekit.room;
+	getRoomMemberPermissions(): MeetRoomMemberPermissions | undefined {
+		return this.getContext()?.roomMember?.permissions;
 	}
 }

@@ -1,4 +1,4 @@
-import { Readable } from 'stream';
+import type { Readable } from 'stream';
 
 /**
  * Basic storage interface that defines primitive storage operations.

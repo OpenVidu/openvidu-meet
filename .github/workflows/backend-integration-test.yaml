@@ -26,25 +26,14 @@ on:
         default: 'spot'
 
 jobs:
-  build-components:
-    name: Build OpenVidu Components Angular
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    steps:
-      - name: Build Components
-        id: build
-        uses: OpenVidu/actions/build-openvidu-components-angular@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
-    outputs:
-      artifact_name: ${{ steps.build.outputs.artifact_name }}
-
   test-api:
     name: ${{ matrix.test-name }}
-    needs: build-components
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
     strategy:
       fail-fast: false
       matrix:
         include:
-          - test-name: 'Room Management API Tests (Rooms, Meetings)'
+          - test-name: 'Room Management API Tests (Rooms, Room Members, Meetings)'
             test-script: 'test:integration-backend-room-management'
           - test-name: 'Webhook Tests'
             test-script: 'test:integration-backend-webhooks'
@@ -59,7 +48,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: '22.13'
+          node-version: '24.13.1'
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
@@ -83,10 +72,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
-        with:
-          build_components_angular: 'true'
-          components_artifact_name: ${{ needs.build-components.outputs.artifact_name }}
+        uses: OpenVidu/actions/start-openvidu-meet@71140a5995c61cf05c994955f49da71844f2ea3c # v1.0.4
 
       - name: Run tests
         run: pnpm run ${{ matrix.test-script }}
@@ -194,7 +180,6 @@ jobs:
       - start-aws-runner-s3
       - start-aws-runner-abs
       - start-aws-runner-gcs
-      - build-components
     if: ${{ always() && (needs.start-aws-runner-s3.result == 'success' || needs.start-aws-runner-s3.result == 'skipped') && (needs.start-aws-runner-abs.result == 'success' || needs.start-aws-runner-abs.result == 'skipped') && (needs.start-aws-runner-gcs.result == 'success' || needs.start-aws-runner-gcs.result == 'skipped') }}
     runs-on: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.label) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.label) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.label) || vars.LABEL_WORKER_SELFHOSTED }}
     strategy:
@@ -206,7 +191,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
         with:
-          node-version: '22.13'
+          node-version: '24.13.1'
       - name: Setup pnpm
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5.0.0
         with:
@@ -283,10 +268,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Setup OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@58e9bb7b49e14849ee3cde9b532c4af48fe1d827 # v1.0.19
-        with:
-          build_components_angular: 'true'
-          components_artifact_name: ${{ needs.build-components.outputs.artifact_name }}
+        uses: OpenVidu/actions/start-openvidu-meet@71140a5995c61cf05c994955f49da71844f2ea3c # v1.0.4
         env:
           MEET_BLOB_STORAGE_MODE: ${{ matrix.storage-provider }}
           # ABS variables
@@ -360,17 +342,3 @@ jobs:
           github-token: ${{ secrets.OPENVIDU_GITHUB_TOKEN }}
           label: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.label) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.label) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.label) }}
           ec2-instance-id: ${{ (matrix.storage-provider == 's3' && needs.start-aws-runner-s3.outputs.ec2-instance-id) || (matrix.storage-provider == 'abs' && needs.start-aws-runner-abs.outputs.ec2-instance-id) || (matrix.storage-provider == 'gcs' && needs.start-aws-runner-gcs.outputs.ec2-instance-id) }}
-
-  remove-components-artifact:
-    name: Remove OpenVidu Components Angular Artifact
-    needs:
-      - build-components
-      - test-api
-      - test-recordings
-    runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    if: ${{ always() }}
-    steps:
-      - name: Remove Artifact
-        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118 # v6.0.0
-        with:
-          name: ${{ needs.build-components.outputs.artifact_name }}

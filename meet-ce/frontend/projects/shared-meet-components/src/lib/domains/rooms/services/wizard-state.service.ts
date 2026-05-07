@@ -1,26 +1,91 @@
-import { computed, Injectable, signal } from '@angular/core';
-import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
+import { computed, inject, Injectable, signal } from '@angular/core';
+import { AbstractControl, FormBuilder, FormControl, ValidationErrors, Validators } from '@angular/forms';
 import {
-	MeetRecordingAccess,
+	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
 	MeetRecordingLayout,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomMemberOptions,
+	MeetRoomMemberPermissions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
-import { WizardNavigationConfig, WizardStep } from '../models';
+import merge from 'lodash.merge';
+import { WizardNavigationConfig, WizardStepId } from '../models';
+import {
+	AnyWizardStep,
+	RecordingEnabledOption,
+	RecordingTriggerType,
+	RoomAccessPermissionsControls,
+	RoomDetailsFormGroup
+} from '../models/wizard-forms.model';
+
+// Default permissions for each role
+const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
+	canRecord: true,
+	canRetrieveRecordings: true,
+	canDeleteRecordings: true,
+	canJoinMeeting: true,
+	canShareAccessLinks: true,
+	canMakeModerator: true,
+	canKickParticipants: true,
+	canEndMeeting: true,
+	canPublishVideo: true,
+	canPublishAudio: true,
+	canShareScreen: true,
+	canReadChat: true,
+	canWriteChat: true,
+	canChangeVirtualBackground: true
+};
+
+const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
+	canRecord: false,
+	canRetrieveRecordings: true,
+	canDeleteRecordings: false,
+	canJoinMeeting: true,
+	canShareAccessLinks: false,
+	canMakeModerator: false,
+	canKickParticipants: false,
+	canEndMeeting: false,
+	canPublishVideo: true,
+	canPublishAudio: true,
+	canShareScreen: true,
+	canReadChat: true,
+	canWriteChat: true,
+	canChangeVirtualBackground: true
+};
 
 // Default room config following the app's defaults
 const DEFAULT_CONFIG: MeetRoomConfig = {
 	recording: {
 		enabled: true,
-		layout: MeetRecordingLayout.GRID,
-		allowAccessTo: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER
+		layout: MeetRecordingLayout.GRID
 	},
 	chat: { enabled: true },
 	virtualBackground: { enabled: true },
 	e2ee: { enabled: false },
 	captions: { enabled: true }
+};
+
+const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
+	roomName: 'Room',
+	config: DEFAULT_CONFIG,
+	access: {
+		anonymous: {
+			moderator: { enabled: true },
+			speaker: { enabled: true },
+			recording: { enabled: true }
+		},
+		registered: { enabled: false }
+	},
+	roles: {
+		moderator: {
+			permissions: DEFAULT_MODERATOR_PERMISSIONS
+		},
+		speaker: {
+			permissions: DEFAULT_SPEAKER_PERMISSIONS
+		}
+	}
 };
 
 /**
@@ -31,17 +96,24 @@ const DEFAULT_CONFIG: MeetRoomConfig = {
 	providedIn: 'root'
 })
 export class RoomWizardStateService {
+	private formBuilder = inject(FormBuilder);
+
 	// Signals for reactive state management
-	private _steps = signal<WizardStep[]>([]);
+	private _steps = signal<AnyWizardStep[]>([]);
 	private _visibleSteps = computed(() => this._steps().filter((step) => step.isVisible));
 	private _currentStepIndex = signal<number>(0);
-	private _roomOptions = signal<MeetRoomOptions>({
-		config: DEFAULT_CONFIG
-	});
+	private _isInitialized = signal<boolean>(false);
+	private _editMode = signal<boolean>(false);
+	private _roomOptions = signal<MeetRoomOptions>(merge({}, DEFAULT_ROOM_OPTIONS));
+	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
+	private _recordingStateBeforeE2EE = signal<RecordingEnabledOption | undefined>(undefined);
+	private _e2eeStateBeforeRecording = signal<boolean | undefined>(undefined);
 
-	public readonly steps = computed(() => this._steps());
-	public readonly currentStepIndex = computed(() => this._currentStepIndex());
-	public readonly currentStep = computed<WizardStep | undefined>(() => {
+	public readonly steps = this._steps.asReadonly();
+	public readonly currentStepIndex = this._currentStepIndex.asReadonly();
+	public readonly isInitialized = this._isInitialized.asReadonly();
+	public readonly editMode = this._editMode.asReadonly();
+	public readonly currentStep = computed<AnyWizardStep | undefined>(() => {
 		const visibleSteps = this._visibleSteps();
 		const currentIndex = this._currentStepIndex();
 
@@ -51,9 +123,8 @@ export class RoomWizardStateService {
 
 		return visibleSteps[currentIndex];
 	});
-	public readonly roomOptions = computed(() => this._roomOptions());
-
-	constructor(private formBuilder: FormBuilder) {}
+	public readonly roomOptions = this._roomOptions.asReadonly();
+	public readonly pendingMembers = this._pendingMembers.asReadonly();
 
 	/**
 	 * Initializes the wizard with base steps and default room options.
@@ -61,40 +132,40 @@ export class RoomWizardStateService {
 	 * @param existingData - Existing room options to prefill the wizard
 	 */
 	initializeWizard(editMode: boolean = false, existingData?: MeetRoomOptions): void {
+		this._isInitialized.set(false);
+		this._editMode.set(editMode);
+
 		// Initialize room options with defaults merged with existing data
-		const initialRoomOptions: MeetRoomOptions = {
-			...existingData,
-			config: {
-				...DEFAULT_CONFIG,
-				...(existingData?.config || {})
-			}
-		};
+		const currentOptions = this._roomOptions();
+		const initialRoomOptions: MeetRoomOptions = merge(currentOptions, existingData ?? {});
 
 		this._roomOptions.set(initialRoomOptions);
+		this._pendingMembers.set([]);
 
 		// Define wizard steps
-		const baseSteps: WizardStep[] = [
+		const baseSteps: AnyWizardStep[] = [
 			{
-				id: 'roomDetails',
+				id: WizardStepId.ROOM_DETAILS,
 				label: 'Room Details',
 				isCompleted: editMode, // In edit mode, mark as completed but not editable
 				isActive: !editMode, // Start with roomDetails step active in create mode
 				isVisible: true,
 				formGroup: this.formBuilder.group(
 					{
-						roomName: [
-							{ value: initialRoomOptions.roomName || 'Room', disabled: editMode },
-							editMode ? [] : [Validators.maxLength(50)]
-						],
-						autoDeletionDate: [
+						roomName: this.formBuilder.nonNullable.control<string | undefined>(
 							{
-								value: initialRoomOptions.autoDeletionDate
-									? new Date(initialRoomOptions.autoDeletionDate)
-									: undefined,
+								value: initialRoomOptions.roomName,
 								disabled: editMode
-							}
-						],
-						autoDeletionHour: [
+							},
+							editMode ? [] : [Validators.maxLength(50)]
+						),
+						autoDeletionDate: this.formBuilder.nonNullable.control<Date | undefined>({
+							value: initialRoomOptions.autoDeletionDate
+								? new Date(initialRoomOptions.autoDeletionDate)
+								: undefined,
+							disabled: editMode
+						}),
+						autoDeletionHour: this.formBuilder.nonNullable.control(
 							{
 								value: initialRoomOptions.autoDeletionDate
 									? new Date(initialRoomOptions.autoDeletionDate).getHours()
@@ -102,8 +173,8 @@ export class RoomWizardStateService {
 								disabled: editMode
 							},
 							editMode ? [] : [Validators.min(0), Validators.max(23)]
-						],
-						autoDeletionMinute: [
+						),
+						autoDeletionMinute: this.formBuilder.nonNullable.control(
 							{
 								value: initialRoomOptions.autoDeletionDate
 									? new Date(initialRoomOptions.autoDeletionDate).getMinutes()
@@ -111,23 +182,19 @@ export class RoomWizardStateService {
 								disabled: editMode
 							},
 							editMode ? [] : [Validators.min(0), Validators.max(59)]
-						],
-						autoDeletionPolicyWithMeeting: [
-							{
-								value:
-									initialRoomOptions.autoDeletionPolicy?.withMeeting ||
-									MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-								disabled: editMode
-							}
-						],
-						autoDeletionPolicyWithRecordings: [
-							{
-								value:
-									initialRoomOptions.autoDeletionPolicy?.withRecordings ||
-									MeetRoomDeletionPolicyWithRecordings.CLOSE,
-								disabled: editMode
-							}
-						]
+						),
+						autoDeletionPolicyWithMeeting: this.formBuilder.nonNullable.control({
+							value:
+								initialRoomOptions.autoDeletionPolicy?.withMeeting ??
+								MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
+							disabled: editMode
+						}),
+						autoDeletionPolicyWithRecordings: this.formBuilder.nonNullable.control({
+							value:
+								initialRoomOptions.autoDeletionPolicy?.withRecordings ??
+								MeetRoomDeletionPolicyWithRecordings.CLOSE,
+							disabled: editMode
+						})
 					},
 					{
 						// Apply future date-time validation only if not in edit mode
@@ -135,14 +202,14 @@ export class RoomWizardStateService {
 							? []
 							: [
 									(control: AbstractControl): ValidationErrors | null => {
-										const date = control.get('autoDeletionDate')?.value as Date | null;
-										const hour = control.get('autoDeletionHour')?.value as number | null;
-										const minute = control.get('autoDeletionMinute')?.value as number | null;
+										const formGroup = control as RoomDetailsFormGroup;
+										const { autoDeletionDate, autoDeletionHour, autoDeletionMinute } =
+											formGroup.getRawValue();
 
-										if (!date) return null;
+										if (!autoDeletionDate) return null;
 
-										const selected = new Date(date);
-										selected.setHours(hour ?? 0, minute ?? 0, 0, 0);
+										const selected = new Date(autoDeletionDate);
+										selected.setHours(autoDeletionHour, autoDeletionMinute, 0, 0);
 
 										const now = new Date();
 										now.setMinutes(now.getMinutes() + 61, 0, 0); // Ensure at least 1 hour in the future
@@ -154,47 +221,79 @@ export class RoomWizardStateService {
 				)
 			},
 			{
-				id: 'recording',
-				label: 'Recording Settings',
-				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: editMode, // Only active in edit mode
+				id: WizardStepId.ROOM_CONFIG,
+				label: 'Room Features',
+				isCompleted: editMode,
+				isActive: editMode, // Start with Room Features step active in edit mode
 				isVisible: true,
 				formGroup: this.formBuilder.group({
-					recordingEnabled: initialRoomOptions.config!.recording!.enabled ? 'enabled' : 'disabled',
-					allowAccessTo: initialRoomOptions.config!.recording!.allowAccessTo
+					chatEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.chat!.enabled),
+					virtualBackgroundEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.virtualBackground!.enabled
+					),
+					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
+					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled)
 				})
 			},
 			{
-				id: 'recordingTrigger',
+				id: WizardStepId.ROOM_ACCESS,
+				label: 'Room Access',
+				isCompleted: editMode,
+				isActive: false,
+				isVisible: true,
+				formGroup: this.formBuilder.group({
+					anonymousModeratorEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.access!.anonymous!.moderator!.enabled
+					),
+					anonymousSpeakerEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.access!.anonymous!.speaker!.enabled
+					),
+					registeredEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.access!.registered!.enabled
+					),
+					moderator: this.formBuilder.group({
+						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.moderator!.permissions)
+					}),
+					speaker: this.formBuilder.group({
+						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.speaker!.permissions)
+					})
+				})
+			},
+			{
+				id: WizardStepId.RECORDING,
+				label: 'Recording Settings',
+				isCompleted: editMode, // In edit mode, all editable steps are completed
+				isActive: false,
+				isVisible: true,
+				formGroup: this.formBuilder.group({
+					recordingEnabled: this.formBuilder.nonNullable.control<RecordingEnabledOption>(
+						initialRoomOptions.config!.recording!.enabled ? 'enabled' : 'disabled'
+					),
+					anonymousRecordingEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.access!.anonymous!.recording!.enabled
+					)
+				})
+			},
+			{
+				id: WizardStepId.RECORDING_TRIGGER,
 				label: 'Recording Trigger',
 				isCompleted: editMode, // In edit mode, all editable steps are completed
 				isActive: false,
 				isVisible: false, // Initially hidden, will be shown based on recording settings
 				formGroup: this.formBuilder.group({
-					triggerType: 'manual'
+					triggerType: this.formBuilder.nonNullable.control<RecordingTriggerType>('manual')
 				})
 			},
 			{
-				id: 'recordingLayout',
+				id: WizardStepId.RECORDING_LAYOUT,
 				label: 'Recording Layout',
 				isCompleted: editMode, // In edit mode, all editable steps are completed
 				isActive: false,
 				isVisible: false, // Initially hidden, will be shown based on recording settings
 				formGroup: this.formBuilder.group({
-					layout: initialRoomOptions.config?.recording?.layout || MeetRecordingLayout.GRID
-				})
-			},
-			{
-				id: 'config',
-				label: 'Room Features',
-				isCompleted: editMode, // In edit mode, all editable steps are completed
-				isActive: false,
-				isVisible: true,
-				formGroup: this.formBuilder.group({
-					chatEnabled: initialRoomOptions.config!.chat!.enabled,
-					virtualBackgroundEnabled: initialRoomOptions.config!.virtualBackground!.enabled,
-					e2eeEnabled: initialRoomOptions.config!.e2ee!.enabled,
-					captionsEnabled: initialRoomOptions.config!.captions!.enabled
+					layout: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.recording!.layout ?? MeetRecordingLayout.GRID
+					)
 				})
 			}
 		];
@@ -205,88 +304,26 @@ export class RoomWizardStateService {
 
 		// Update step visibility after index is set
 		this.updateStepsVisibility();
+		this._isInitialized.set(true);
+	}
+
+	/**
+	 * Gets a step by its ID. The returned step type is narrowed based on the provided step ID.
+	 * @param stepId - The ID of the step to retrieve
+	 * @returns The step with the specified ID, or undefined if not found
+	 */
+	getStepById<TStepId extends WizardStepId>(stepId: TStepId): Extract<AnyWizardStep, { id: TStepId }> | undefined {
+		return this._steps().find((step): step is Extract<AnyWizardStep, { id: TStepId }> => step.id === stepId);
 	}
 
 	/**
 	 * Updates room options for a specific step.
 	 * This method merges the provided data with the current room options.
-	 * @param stepId - The ID of the step being updated
 	 * @param stepData - The data to update in the room options
 	 */
-	updateStepData(stepId: string, stepData: Partial<MeetRoomOptions>): void {
+	updateStepData(stepData: Partial<MeetRoomOptions>): void {
 		const currentOptions = this._roomOptions();
-		let updatedOptions: MeetRoomOptions;
-
-		switch (stepId) {
-			case 'roomDetails':
-				updatedOptions = {
-					...currentOptions
-				};
-
-				// Only update fields that are explicitly provided
-				if ('roomName' in stepData) {
-					updatedOptions.roomName = stepData.roomName;
-				}
-				if ('autoDeletionDate' in stepData) {
-					updatedOptions.autoDeletionDate = stepData.autoDeletionDate;
-				}
-				if ('autoDeletionPolicy' in stepData) {
-					updatedOptions.autoDeletionPolicy = stepData.autoDeletionPolicy;
-				}
-
-				break;
-			case 'recording':
-			case 'recordingLayout':
-				updatedOptions = {
-					...currentOptions,
-					config: {
-						...currentOptions.config,
-						recording: {
-							...currentOptions.config?.recording,
-							...stepData.config?.recording
-						}
-					} as MeetRoomConfig
-				};
-				break;
-			case 'recordingTrigger':
-				// These steps don't update room options
-				updatedOptions = { ...currentOptions };
-				break;
-			case 'config':
-				updatedOptions = {
-					...currentOptions,
-					config: {
-						...currentOptions.config,
-						chat: {
-							...currentOptions.config?.chat,
-							...stepData.config?.chat
-						},
-						virtualBackground: {
-							...currentOptions.config?.virtualBackground,
-							...stepData.config?.virtualBackground
-						},
-						e2ee: {
-							...currentOptions.config?.e2ee,
-							...stepData.config?.e2ee
-						},
-						captions: {
-							...currentOptions.config?.captions,
-							...stepData.config?.captions
-						},
-						recording: {
-							...currentOptions.config?.recording,
-							// If recording is explicitly set in stepData, use it
-							...(stepData.config?.recording?.enabled !== undefined && {
-								enabled: stepData.config.recording.enabled
-							})
-						}
-					} as MeetRoomConfig
-				};
-				break;
-			default:
-				console.warn(`Unknown step ID: ${stepId}`);
-				updatedOptions = currentOptions;
-		}
+		const updatedOptions = merge(currentOptions, stepData);
 
 		this._roomOptions.set(updatedOptions);
 		this.updateStepsVisibility();
@@ -304,16 +341,16 @@ export class RoomWizardStateService {
 
 		// Update recording steps visibility based on recordingEnabled
 		const updatedSteps = currentSteps.map((step) => {
-			if (step.id === 'recordingLayout') {
+			if (step.id === WizardStepId.RECORDING_LAYOUT) {
 				return {
 					...step,
 					isVisible: recordingEnabled // Only show if recording is enabled
 				};
 			}
-			if (step.id === 'recordingTrigger') {
+			if (step.id === WizardStepId.RECORDING_TRIGGER) {
 				return {
 					...step,
-					isVisible: false // TODO: Change to true when recording trigger config is implemented
+					isVisible: false // TODO: Change to 'recordingEnabled' when recording trigger config is implemented
 				};
 			}
 			return step;
@@ -400,7 +437,7 @@ export class RoomWizardStateService {
 		const isFirstStep = currentIndex === 0;
 		const isLastStep = currentIndex === visibleSteps.length - 1;
 
-		const isEditMode = this.isEditMode();
+		const isEditMode = this._editMode();
 		const isSomeStepInvalid = visibleSteps.some((step) => step.formGroup.invalid);
 
 		return {
@@ -413,32 +450,85 @@ export class RoomWizardStateService {
 			disableFinish: isSomeStepInvalid,
 			nextLabel: 'Next',
 			previousLabel: 'Previous',
-			finishLabel: isEditMode ? 'Update Room' : 'Create Room',
-			skipAndFinishLabel: 'Create with defaults'
+			finishLabel: isEditMode ? 'Update Room' : 'Create Room'
 		};
 	}
 
 	/**
-	 * Checks if the wizard is in edit mode.
-	 * Edit mode is determined by whether the roomDetails step is completed and its form is disabled.
-	 * @returns True if in edit mode, false otherwise
+	 * Builds a flat form controls config from a permissions object.
 	 */
-	private isEditMode(): boolean {
-		const visibleSteps = this._visibleSteps();
-		const roomDetailsStep = visibleSteps.find((step) => step.id === 'roomDetails');
-		const isEditMode = !!roomDetailsStep && roomDetailsStep.isCompleted && roomDetailsStep.formGroup.disabled;
-		return isEditMode;
+	private buildPermissionsFormConfig(permissions: Partial<MeetRoomMemberPermissions>): RoomAccessPermissionsControls {
+		return this.buildBooleanControls(MEET_ROOM_MEMBER_PERMISSIONS_FIELDS, permissions);
+	}
+
+	private buildBooleanControls<T extends string>(
+		keys: readonly T[],
+		values: Partial<Record<T, boolean>>
+	): { [K in T]: FormControl<boolean> } {
+		const controls = {} as { [K in T]: FormControl<boolean> };
+		for (const key of keys) {
+			controls[key] = this.formBuilder.nonNullable.control(values[key] ?? false);
+		}
+		return controls;
+	}
+
+	setRecordingStateBeforeE2EE(value: RecordingEnabledOption): void {
+		this._recordingStateBeforeE2EE.set(value);
+	}
+
+	getRecordingStateBeforeE2EE(): RecordingEnabledOption | undefined {
+		return this._recordingStateBeforeE2EE();
+	}
+
+	clearRecordingStateBeforeE2EE(): void {
+		this._recordingStateBeforeE2EE.set(undefined);
+	}
+
+	setE2EEStateBeforeRecording(value: boolean): void {
+		this._e2eeStateBeforeRecording.set(value);
+	}
+
+	getE2EEStateBeforeRecording(): boolean | undefined {
+		return this._e2eeStateBeforeRecording();
+	}
+
+	clearE2EEStateBeforeRecording(): void {
+		this._e2eeStateBeforeRecording.set(undefined);
+	}
+
+	/**
+	 * Adds a pending member to the wizard state.
+	 * Members are created after the room is successfully created.
+	 */
+	addPendingMember(member: MeetRoomMemberOptions): void {
+		this._pendingMembers.update((members) => [...members, member]);
+	}
+
+	/**
+	 * Updates a pending member at the given index.
+	 */
+	updatePendingMember(index: number, updated: MeetRoomMemberOptions): void {
+		this._pendingMembers.update((members) => members.map((m, i) => (i === index ? updated : m)));
+	}
+
+	/**
+	 * Removes a pending member from the wizard state by index.
+	 */
+	removePendingMember(index: number): void {
+		this._pendingMembers.update((members) => members.filter((_, i) => i !== index));
 	}
 
 	/**
 	 * Resets the wizard to its initial state with default options.
 	 */
 	resetWizard(): void {
-		const defaultOptions: MeetRoomOptions = {
-			config: DEFAULT_CONFIG
-		};
-		this._roomOptions.set(defaultOptions);
+		this._isInitialized.set(false);
+		this._editMode.set(false);
+		this._recordingStateBeforeE2EE.set(undefined);
+		this._e2eeStateBeforeRecording.set(undefined);
+		this._roomOptions.set(merge({}, DEFAULT_ROOM_OPTIONS));
 		this._steps.set([]);
 		this._currentStepIndex.set(0);
+		this._pendingMembers.set([]);
 	}
 }

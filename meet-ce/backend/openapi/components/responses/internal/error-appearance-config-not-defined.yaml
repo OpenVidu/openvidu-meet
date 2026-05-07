@@ -1,8 +1,0 @@
-description: Rooms appearance configuration not defined
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/error.yaml'
-        example:
-            error: 'Global Config Error'
-            message: Rooms appearance configuration not defined

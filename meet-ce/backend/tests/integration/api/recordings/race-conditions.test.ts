@@ -9,12 +9,12 @@ import {
 	expectValidStopRecordingResponse
 } from '../../../helpers/assertion-helpers';
 import { eventController } from '../../../helpers/event-controller';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRecordings,
 	deleteAllRecordings,
 	deleteAllRooms,
 	deleteRecording,
-	disconnectFakeParticipants,
 	getRecording,
 	getRecordingMedia,
 	sleep,
@@ -23,6 +23,7 @@ import {
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers';
+
 import { setupMultiRecordingsTestContext, setupMultiRoomTestContext } from '../../../helpers/test-scenarios';
 import { TestContext } from '../../../interfaces/scenarios.js';
 
@@ -39,15 +40,12 @@ describe('Recording API Race Conditions Tests', () => {
 	});
 
 	afterEach(async () => {
-		const moderatorToken = context?.getRoomByIndex(0)?.moderatorToken;
-
-		if (moderatorToken) {
-			await stopAllRecordings(moderatorToken);
-		}
-
-		eventController.reset();
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRecordings(), deleteAllRooms()]);
+		await stopAllRecordings();
+
+		await deleteAllRooms();
+		await deleteAllRecordings();
+		eventController.reset();
 		jest.clearAllMocks();
 	});
 
@@ -223,9 +221,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		try {
 			// Start recordings in all rooms simultaneously (all should timeout)
-			const results = await Promise.all(
-				rooms.map((room) => startRecording(room.room.roomId))
-			);
+			const results = await Promise.all(rooms.map((room) => startRecording(room.room.roomId)));
 
 			// All should timeout
 			results.forEach((result) => {
@@ -238,9 +234,7 @@ describe('Recording API Race Conditions Tests', () => {
 			});
 
 			// ✅ EXPECTED BEHAVIOR: After timeouts, all rooms should be available again
-			const retryResults = await Promise.all(
-				rooms.map((room) => startRecording(room.room.roomId))
-			);
+			const retryResults = await Promise.all(rooms.map((room) => startRecording(room.room.roomId)));
 
 			for (const startResult of retryResults) {
 				expect(startResult.status).toBe(201);
@@ -300,9 +294,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		const roomDataList = Array.from({ length: 5 }, (_, index) => context!.getRoomByIndex(index)!);
 
-		const startResponses = await Promise.all(
-			roomDataList.map((roomData) => startRecording(roomData.room.roomId))
-		);
+		const startResponses = await Promise.all(roomDataList.map((roomData) => startRecording(roomData.room.roomId)));
 
 		startResponses.forEach((response, index) => {
 			expectValidStartRecordingResponse(
@@ -314,9 +306,7 @@ describe('Recording API Race Conditions Tests', () => {
 
 		const recordingIds = startResponses.map((res) => res.body.recordingId);
 
-		const stopResponses = await Promise.all(
-			recordingIds.map((recordingId) => stopRecording(recordingId))
-		);
+		const stopResponses = await Promise.all(recordingIds.map((recordingId) => stopRecording(recordingId)));
 
 		stopResponses.forEach((response, index) => {
 			expectValidStopRecordingResponse(

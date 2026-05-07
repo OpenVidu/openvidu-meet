@@ -5,8 +5,7 @@
 	"description": "OpenVidu Meet Monorepo",
 	"scripts": {
 		"build": "pnpm run build:typings && pnpm run build:backend && pnpm run build:shared-components && pnpm run build:frontend && pnpm run build:webcomponent",
-		"clean": "rm -f pnpm-lock.yaml && pnpm --filter @openvidu-meet/backend run clean && pnpm --filter @openvidu-meet/frontend run clean && pnpm run clean:ov-components",
-		"clean:ov-components": "cd ../openvidu/openvidu-components-angular && rm -rf node_modules package-lock.json dist && rm -f projects/openvidu-components-angular/package-lock.json && cd ../../openvidu-meet",
+		"clean": "rm -f pnpm-lock.yaml && pnpm --filter @openvidu-meet/backend run clean && pnpm --filter @openvidu-meet/frontend run clean",
 		"build:frontend": "pnpm --filter @openvidu-meet/frontend run build ${BASE_HREF:-/}",
 		"build:backend": "pnpm --filter @openvidu-meet/backend run build",
 		"build:webcomponent": "pnpm --filter openvidu-meet-webcomponent run build",
@@ -15,7 +14,6 @@
 		"build:webcomponent-doc": "node scripts/generate-webcomponent-docs.js docs",
 		"build:rest-api-docs": "pnpm --filter @openvidu-meet/backend run doc:api && pnpm --filter @openvidu-meet/backend run doc:internal-api",
 		"build:shared-components": "pnpm --filter @openvidu-meet/frontend run lib:build",
-		"build:ov-components": "cd ../openvidu/openvidu-components-angular && npm install && npm run lib:build && cd ../../openvidu-meet",
 		"dev:frontend": "pnpm --filter @openvidu-meet/frontend run dev",
 		"dev:pro-frontend": "pnpm --filter openvidu-meet-pro-frontend run dev",
 		"dev:backend": "pnpm --filter @openvidu-meet/backend run start:dev",
@@ -33,6 +31,7 @@
 		"test:integration-backend-config-analytics": "pnpm --filter @openvidu-meet/backend run test:integration-config-analytics",
 		"test:integration-backend-recordings": "pnpm --filter @openvidu-meet/backend run test:integration-recordings",
 		"test:unit-backend": "pnpm --filter @openvidu-meet/backend run test:unit",
+		"test:e2e-frontend-components": "pnpm --filter @openvidu-meet/frontend run e2e:playwright:all",
 		"test:e2e-webcomponent": "pnpm --filter openvidu-meet-webcomponent run test:e2e",
 		"test:unit-webcomponent": "pnpm --filter openvidu-meet-webcomponent run test:unit"
 	},

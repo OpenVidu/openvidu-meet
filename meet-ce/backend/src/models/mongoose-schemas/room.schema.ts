@@ -1,48 +1,57 @@
+import type {
+	MeetRoom} from '@openvidu-meet/typings';
 import {
-	MeetRecordingAccess,
 	MeetRecordingLayout,
-	MeetRoom,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomStatus,
 	MeetRoomThemeMode,
 	MeetingEndAction
 } from '@openvidu-meet/typings';
-import { Document, Schema, model } from 'mongoose';
+import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
+import type { DocumentOnlyField } from '../database.model.js';
+import type { SchemaMigratableDocument } from '../migration.model.js';
+import { MeetRoomMemberPermissionsSchema } from './room-member.schema.js';
 
 /**
- * Mongoose Document interface for MeetRoom.
- * Extends the MeetRoom interface with MongoDB Document functionality.
+ * Mongoose Document interface for rooms.
+ * Extends the MeetRoom interface with schemaVersion for migration tracking.
  */
-export interface MeetRoomDocument extends MeetRoom, Document {
-	/** Schema version for migration tracking (internal use only) */
-	schemaVersion?: number;
-}
+export interface MeetRoomDocument extends MeetRoom, SchemaMigratableDocument {}
 
 /**
- * Mongoose schema for MeetRoom auto-deletion policy.
+ * Type for fields in MeetRoomDocument that are not present in MeetRoom domain model.
+ */
+export type MeetRoomDocumentOnlyField = DocumentOnlyField<MeetRoomDocument, MeetRoom>;
+
+/**
+ * List of fields that exist only in the MeetRoomDocument and not in the MeetRoom domain model.
+ * IMPORTANT: Update this list if new document-only fields are added to the MeetRoomDocument interface
+ */
+export const MEET_ROOM_DOCUMENT_ONLY_FIELDS = ['schemaVersion'] as const satisfies readonly MeetRoomDocumentOnlyField[];
+
+/**
+ * Sub-schema for auto-deletion policy.
  */
 const MeetRoomAutoDeletionPolicySchema = new Schema(
 	{
 		withMeeting: {
 			type: String,
 			enum: Object.values(MeetRoomDeletionPolicyWithMeeting),
-			required: true,
-			default: MeetRoomDeletionPolicyWithMeeting.FAIL
+			required: true
 		},
 		withRecordings: {
 			type: String,
 			enum: Object.values(MeetRoomDeletionPolicyWithRecordings),
-			required: true,
-			default: MeetRoomDeletionPolicyWithRecordings.FAIL
+			required: true
 		}
 	},
 	{ _id: false }
 );
 
 /**
- * Mongoose schema for MeetRoom recording configuration.
+ * Sub-schema recording configuration.
  */
 const MeetRecordingConfigSchema = new Schema(
 	{
@@ -58,18 +67,13 @@ const MeetRecordingConfigSchema = new Schema(
 		encoding: {
 			type: Schema.Types.Mixed,
 			required: true
-		},
-		allowAccessTo: {
-			type: String,
-			enum: Object.values(MeetRecordingAccess),
-			required: true
 		}
 	},
 	{ _id: false }
 );
 
 /**
- * Mongoose schema for MeetRoom chat configuration.
+ * Sub-schema for chat configuration.
  */
 const MeetChatConfigSchema = new Schema(
 	{
@@ -82,7 +86,7 @@ const MeetChatConfigSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom virtual background configuration.
+ * Sub-schema for virtual background configuration.
  */
 const MeetVirtualBackgroundConfigSchema = new Schema(
 	{
@@ -95,7 +99,7 @@ const MeetVirtualBackgroundConfigSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom E2EE configuration.
+ * Sub-schema for E2EE configuration.
  */
 const MeetE2EEConfigSchema = new Schema(
 	{
@@ -108,7 +112,7 @@ const MeetE2EEConfigSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom captions configuration.
+ * Sub-schema for captions configuration.
  */
 const MeetCaptionsConfigSchema = new Schema(
 	{
@@ -176,7 +180,79 @@ export const MeetAppearanceConfigSchema = new Schema(
 );
 
 /**
- * Mongoose schema for MeetRoom configuration.
+ * Sub-schema for room roles configuration.
+ */
+const MeetRoomRolesSchema = new Schema(
+	{
+		moderator: {
+			permissions: {
+				type: MeetRoomMemberPermissionsSchema,
+				required: true
+			}
+		},
+		speaker: {
+			permissions: {
+				type: MeetRoomMemberPermissionsSchema,
+				required: true
+			}
+		}
+	},
+	{ _id: false }
+);
+
+/**
+ * Sub-schema for access configuration.
+ */
+const MeetRoomAccessSchema = new Schema(
+	{
+		anonymous: {
+			moderator: {
+				enabled: {
+					type: Boolean,
+					required: true
+				},
+				url: {
+					type: String,
+					required: true
+				}
+			},
+			speaker: {
+				enabled: {
+					type: Boolean,
+					required: true
+				},
+				url: {
+					type: String,
+					required: true
+				}
+			},
+			recording: {
+				enabled: {
+					type: Boolean,
+					required: true
+				},
+				url: {
+					type: String,
+					required: true
+				}
+			}
+		},
+		registered: {
+			enabled: {
+				type: Boolean,
+				required: true
+			},
+			url: {
+				type: String,
+				required: true
+			}
+		}
+	},
+	{ _id: false }
+);
+
+/**
+ * Sub-schema for room configuration.
  */
 const MeetRoomConfigSchema = new Schema(
 	{
@@ -223,6 +299,10 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			type: String,
 			required: true
 		},
+		owner: {
+			type: String,
+			required: true
+		},
 		creationDate: {
 			type: Number,
 			required: true
@@ -239,17 +319,21 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 			type: MeetRoomConfigSchema,
 			required: true
 		},
-		moderatorUrl: {
-			type: String,
+		roles: {
+			type: MeetRoomRolesSchema,
 			required: true
 		},
-		speakerUrl: {
-			type: String,
+		access: {
+			type: MeetRoomAccessSchema,
 			required: true
 		},
 		status: {
 			type: String,
 			enum: Object.values(MeetRoomStatus),
+			required: true
+		},
+		rolesUpdatedAt: {
+			type: Number,
 			required: true
 		},
 		meetingEndAction: {
@@ -259,14 +343,7 @@ const MeetRoomSchema = new Schema<MeetRoomDocument>(
 		}
 	},
 	{
-		toObject: {
-			versionKey: false,
-			transform: (_doc, ret) => {
-				delete ret._id;
-				delete ret.schemaVersion;
-				return ret;
-			}
-		}
+		versionKey: false
 	}
 );
 
@@ -275,11 +352,13 @@ MeetRoomSchema.index({ roomId: 1 }, { unique: true });
 MeetRoomSchema.index({ creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ roomName: 1, creationDate: -1, _id: -1 });
 MeetRoomSchema.index({ status: 1, creationDate: -1, _id: -1 });
-MeetRoomSchema.index({ autoDeletionDate: 1 });
+MeetRoomSchema.index({ owner: 1, creationDate: -1, _id: -1 });
+MeetRoomSchema.index({ 'access.registered.enabled': 1, creationDate: -1, _id: -1 });
+MeetRoomSchema.index({ autoDeletionDate: 1, _id: 1 });
 
 export const meetRoomCollectionName = 'MeetRoom';
 
 /**
- * Mongoose model for MeetRoom.
+ * Mongoose model for MeetRoom entity.
  */
 export const MeetRoomModel = model<MeetRoomDocument>(meetRoomCollectionName, MeetRoomSchema);

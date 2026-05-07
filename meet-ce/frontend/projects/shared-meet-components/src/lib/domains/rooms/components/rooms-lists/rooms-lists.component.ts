@@ -1,6 +1,19 @@
-import { CommonModule, DatePipe } from '@angular/common';
-import { Component, effect, EventEmitter, HostBinding, input, OnInit, Output, signal, untracked } from '@angular/core';
-import { FormControl, ReactiveFormsModule } from '@angular/forms';
+import { DatePipe, NgClass } from '@angular/common';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	DestroyRef,
+	effect,
+	inject,
+	input,
+	OnInit,
+	output,
+	signal,
+	untracked
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -15,29 +28,43 @@ import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetingEndAction, MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
+import { RouterModule } from '@angular/router';
+import {
+	MeetRoom,
+	MeetRoomSortField,
+	MeetRoomStatus,
+	MeetUserRole,
+	SortOrder,
+	TextMatchMode
+} from '@openvidu-meet/typings';
+import { merge } from 'rxjs';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
+import { RoomUiUtils } from '../../utils/ui';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];
-	action:
-		| 'create'
-		| 'open'
-		| 'edit'
-		| 'copyModeratorLink'
-		| 'copySpeakerLink'
-		| 'viewRecordings'
-		| 'reopen'
-		| 'close'
-		| 'delete'
-		| 'bulkDelete';
+	action: 'create' | 'join' | 'edit' | 'shareLink' | 'reopen' | 'close' | 'delete' | 'bulkDelete';
 }
 
 export interface RoomTableFilter {
 	nameFilter: string;
+	/** Match mode applied to the room name search. Defaults to 'prefix'. */
+	nameMatchMode: TextMatchMode;
+	/** Whether room name matching ignores case. Defaults to false. */
+	nameCaseInsensitive: boolean;
 	statusFilter: MeetRoomStatus | '';
-	sortField: 'roomName' | 'creationDate' | 'autoDeletionDate';
-	sortOrder: 'asc' | 'desc';
+	sortField: MeetRoomSortField;
+	sortOrder: SortOrder;
+	/** ADMIN only: filter by owner userId */
+	ownerFilter: string;
+	/** ADMIN only: filter by member userId */
+	memberFilter: string;
+	/** USER only: include only owned rooms in results */
+	showOwnedRooms: boolean;
+	/** USER/ROOM_MEMBER: include only rooms the user is a member of */
+	showMemberRooms: boolean;
+	/** All roles: include rooms accessible to all registered users */
+	showRegisteredAccessRooms: boolean;
 }
 
 /**
@@ -68,8 +95,9 @@ export interface RoomTableFilter {
 @Component({
 	selector: 'ov-rooms-lists',
 	imports: [
-		CommonModule,
+		NgClass,
 		ReactiveFormsModule,
+		RouterModule,
 		MatTableModule,
 		MatCheckboxModule,
 		MatButtonModule,
@@ -87,43 +115,73 @@ export interface RoomTableFilter {
 		DatePipe
 	],
 	templateUrl: './rooms-lists.component.html',
-	styleUrl: './rooms-lists.component.scss'
+	styleUrl: './rooms-lists.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'[class.has-selections]': 'hasSelections()'
+	}
 })
 export class RoomsListsComponent implements OnInit {
+	private destroyRef = inject(DestroyRef);
+
 	rooms = input<MeetRoom[]>([]);
 	showSearchBox = input(true);
 	showFilters = input(true);
 	showSelection = input(true);
+	canSelectRooms = computed(() => !!this.currentUserRole() && this.currentUserRole() !== MeetUserRole.ROOM_MEMBER);
 	showLoadMore = input(false);
 	loading = input(false);
+	currentUserId = input<string>('');
+	currentUserRole = input<MeetUserRole | undefined>(undefined);
+	canViewUserProfiles = computed(
+		() => !!this.currentUserRole() && this.currentUserRole() !== MeetUserRole.ROOM_MEMBER
+	);
 	initialFilters = input<RoomTableFilter>({
 		nameFilter: '',
+		nameMatchMode: TextMatchMode.PREFIX,
+		nameCaseInsensitive: false,
 		statusFilter: '',
 		sortField: 'creationDate',
-		sortOrder: 'desc'
+		sortOrder: SortOrder.DESC,
+		ownerFilter: '',
+		memberFilter: '',
+		showOwnedRooms: false,
+		showMemberRooms: false,
+		showRegisteredAccessRooms: false
 	});
 
-	// Host binding for styling when rooms are selected
-	@HostBinding('class.has-selections')
-	get hasSelections(): boolean {
-		return this.selectedRooms().size > 0;
-	}
+	// Host binding state for styling when rooms are selected
+	hasSelections = computed(() => this.selectedRooms().size > 0);
 
 	// Output events
-	@Output() roomAction = new EventEmitter<RoomTableAction>();
-	@Output() filterChange = new EventEmitter<RoomTableFilter>();
-	@Output() loadMore = new EventEmitter<RoomTableFilter>();
-	@Output() refresh = new EventEmitter<RoomTableFilter>();
+	roomAction = output<RoomTableAction>();
+	filterChange = output<RoomTableFilter>();
+	loadMore = output<RoomTableFilter>();
+	refresh = output<RoomTableFilter>();
+	roomClicked = output<string>();
 
 	// Filter controls
-	nameFilterControl = new FormControl('');
-	statusFilterControl = new FormControl('');
+	filtersForm = new FormGroup({
+		nameFilter: new FormControl<string>('', { nonNullable: true }),
+		nameMatchMode: new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true }),
+		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
+		statusFilter: new FormControl<MeetRoomStatus | ''>('', { nonNullable: true }),
+		ownerFilter: new FormControl<string>('', { nonNullable: true }),
+		memberFilter: new FormControl<string>('', { nonNullable: true }),
+		showOwnedRooms: new FormControl<boolean>(false, { nonNullable: true }),
+		showMemberRooms: new FormControl<boolean>(false, { nonNullable: true }),
+		showRegisteredAccessRooms: new FormControl<boolean>(false, { nonNullable: true })
+	});
+
+	get controls() {
+		return this.filtersForm.controls;
+	}
 
 	// Sort state
-	currentSortField: 'roomName' | 'creationDate' | 'autoDeletionDate' = 'creationDate';
-	currentSortOrder: 'asc' | 'desc' = 'desc';
+	currentSortField = signal<MeetRoomSortField>('creationDate');
+	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
 
-	showEmptyFilterMessage = false; // Show message when no rooms match filters
+	showEmptyFilterMessage = signal(false); // Show message when no rooms match filters
 
 	// Selection state
 	selectedRooms = signal<Set<string>>(new Set());
@@ -131,7 +189,10 @@ export class RoomsListsComponent implements OnInit {
 	someSelected = signal(false);
 
 	// Table configuration
-	displayedColumns: string[] = ['select', 'roomName', 'status', 'creationDate', 'autoDeletion', 'actions'];
+	displayedColumns = computed(() => {
+		const columns = ['roomName', 'owner', 'status', 'creationDate', 'autoDeletionDate', 'actions'];
+		return this.showSelection() ? ['select', ...columns] : columns;
+	});
 
 	// Status options
 	statusOptions = [
@@ -140,6 +201,21 @@ export class RoomsListsComponent implements OnInit {
 		{ value: MeetRoomStatus.ACTIVE_MEETING, label: 'Active Meeting' },
 		{ value: MeetRoomStatus.CLOSED, label: 'Closed' }
 	];
+
+	// Room name match mode options
+	nameMatchModeOptions = [
+		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
+		{ value: TextMatchMode.EXACT, label: 'Exact' },
+		{ value: TextMatchMode.REGEX, label: 'Regex' }
+	];
+
+	// Expose TextMatchMode for template
+	protected readonly TextMatchMode = TextMatchMode;
+
+	// Make RoomUiUtils available in template
+	protected readonly RoomUiUtils = RoomUiUtils;
+	protected readonly MeetUserRole = MeetUserRole;
 
 	constructor() {
 		effect(() => {
@@ -151,7 +227,6 @@ export class RoomsListsComponent implements OnInit {
 			const currentSelection = untracked(() => this.selectedRooms());
 			const filteredSelection = new Set([...currentSelection].filter((id) => validRoomIds.has(id)));
 
-
 			// Only update if the selection has actually changed
 			if (!setsAreEqual(filteredSelection, currentSelection)) {
 				this.selectedRooms.set(filteredSelection);
@@ -159,46 +234,52 @@ export class RoomsListsComponent implements OnInit {
 			}
 
 			// Show message when no rooms match filters
-			this.showEmptyFilterMessage = rooms.length === 0 && this.hasActiveFilters();
+			this.showEmptyFilterMessage.set(rooms.length === 0 && this.hasActiveFilters());
 		});
 	}
 
 	ngOnInit() {
 		this.setupFilters();
-		this.updateDisplayedColumns();
 	}
 
 	// ===== INITIALIZATION METHODS =====
 
 	private setupFilters() {
-		// Initialize from initialFilters input
-		this.nameFilterControl.setValue(this.initialFilters().nameFilter);
-		this.statusFilterControl.setValue(this.initialFilters().statusFilter);
-		this.currentSortField = this.initialFilters().sortField;
-		this.currentSortOrder = this.initialFilters().sortOrder;
+		const initial = this.initialFilters();
+		this.filtersForm.patchValue(initial, { emitEvent: false });
+		this.currentSortField.set(initial.sortField);
+		this.currentSortOrder.set(initial.sortOrder);
 
-		// Set up name filter change detection
-		this.nameFilterControl.valueChanges.subscribe((value) => {
-			// Emit filter change if value is empty
-			if (!value) {
-				this.emitFilterChange();
-			}
-		});
+		const {
+			nameFilter,
+			nameMatchMode,
+			nameCaseInsensitive,
+			statusFilter,
+			ownerFilter,
+			memberFilter,
+			showOwnedRooms,
+			showMemberRooms,
+			showRegisteredAccessRooms
+		} = this.filtersForm.controls;
 
-		// Set up status filter change detection
-		this.statusFilterControl.valueChanges.subscribe(() => {
-			this.emitFilterChange();
-		});
-	}
+		// Emit only when text field is cleared
+		merge(nameFilter.valueChanges, ownerFilter.valueChanges, memberFilter.valueChanges)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe((value) => {
+				if (!value) this.emitFilterChange();
+			});
 
-	private updateDisplayedColumns() {
-		this.displayedColumns = [];
-
-		if (this.showSelection()) {
-			this.displayedColumns.push('select');
-		}
-
-		this.displayedColumns.push('roomName', 'status', 'creationDate', 'autoDeletion', 'actions');
+		// Emit immediately on any option/select change
+		merge(
+			nameMatchMode.valueChanges,
+			nameCaseInsensitive.valueChanges,
+			statusFilter.valueChanges,
+			showOwnedRooms.valueChanges,
+			showMemberRooms.valueChanges,
+			showRegisteredAccessRooms.valueChanges
+		)
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.emitFilterChange());
 	}
 
 	// ===== SELECTION METHODS =====
@@ -242,8 +323,8 @@ export class RoomsListsComponent implements OnInit {
 		return this.selectedRooms().has(room.roomId);
 	}
 
-	canSelectRoom(_room: MeetRoom): boolean {
-		return true;
+	canSelectRoom(room: MeetRoom): boolean {
+		return this.RoomUiUtils.canManageRoom(room, this.currentUserId(), this.currentUserRole());
 	}
 
 	getSelectedRooms(): MeetRoom[] {
@@ -257,24 +338,20 @@ export class RoomsListsComponent implements OnInit {
 		this.roomAction.emit({ rooms: [], action: 'create' });
 	}
 
-	openRoom(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'open' });
+	joinRoom(room: MeetRoom) {
+		this.roomAction.emit({ rooms: [room], action: 'join' });
+	}
+
+	onRoomClick(room: MeetRoom) {
+		this.roomClicked.emit(room.roomId);
 	}
 
 	editRoom(room: MeetRoom) {
 		this.roomAction.emit({ rooms: [room], action: 'edit' });
 	}
 
-	copyModeratorLink(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'copyModeratorLink' });
-	}
-
-	copySpeakerLink(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'copySpeakerLink' });
-	}
-
-	viewRecordings(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'viewRecordings' });
+	shareLink(room: MeetRoom) {
+		this.roomAction.emit({ rooms: [room], action: 'shareLink' });
 	}
 
 	toggleRoomStatus(room: MeetRoom) {
@@ -297,30 +374,16 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	loadMoreRooms() {
-		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = (this.statusFilterControl.value || '') as MeetRoomStatus | '';
-		this.loadMore.emit({
-			nameFilter,
-			statusFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
-		});
+		this.loadMore.emit(this.buildFilterSnapshot());
 	}
 
 	refreshRooms() {
-		const nameFilter = this.nameFilterControl.value || '';
-		const statusFilter = (this.statusFilterControl.value || '') as MeetRoomStatus | '';
-		this.refresh.emit({
-			nameFilter,
-			statusFilter,
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
-		});
+		this.refresh.emit(this.buildFilterSnapshot());
 	}
 
 	onSortChange(sortState: Sort) {
-		this.currentSortField = sortState.active as 'roomName' | 'creationDate' | 'autoDeletionDate';
-		this.currentSortOrder = sortState.direction as 'asc' | 'desc';
+		this.currentSortField.set(sortState.active as MeetRoomSortField);
+		this.currentSortOrder.set(sortState.direction as SortOrder);
 		this.emitFilterChange();
 	}
 
@@ -330,164 +393,58 @@ export class RoomsListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
+	private buildFilterSnapshot(): RoomTableFilter {
+		return {
+			...this.filtersForm.getRawValue(),
+			sortField: this.currentSortField(),
+			sortOrder: this.currentSortOrder()
+		};
+	}
+
 	private emitFilterChange() {
-		this.filterChange.emit({
-			nameFilter: this.nameFilterControl.value || '',
-			statusFilter: (this.statusFilterControl.value || '') as MeetRoomStatus | '',
-			sortField: this.currentSortField,
-			sortOrder: this.currentSortOrder
-		});
+		this.filterChange.emit(this.buildFilterSnapshot());
 	}
 
 	hasActiveFilters(): boolean {
-		return !!(this.nameFilterControl.value || this.statusFilterControl.value);
+		const {
+			nameFilter,
+			nameMatchMode,
+			nameCaseInsensitive,
+			statusFilter,
+			ownerFilter,
+			memberFilter,
+			showOwnedRooms,
+			showMemberRooms,
+			showRegisteredAccessRooms
+		} = this.filtersForm.getRawValue();
+		return !!(
+			nameFilter ||
+			nameMatchMode !== TextMatchMode.PREFIX ||
+			nameCaseInsensitive ||
+			statusFilter ||
+			ownerFilter ||
+			memberFilter ||
+			showOwnedRooms ||
+			showMemberRooms ||
+			showRegisteredAccessRooms
+		);
 	}
 
 	clearFilters() {
-		this.nameFilterControl.setValue('');
-		this.statusFilterControl.setValue('');
-	}
-
-	// ===== PERMISSION AND CAPABILITY METHODS =====
-
-	canOpenRoom(room: MeetRoom): boolean {
-		return room.status !== MeetRoomStatus.CLOSED;
-	}
-
-	canEditRoom(room: MeetRoom): boolean {
-		return room.status !== MeetRoomStatus.ACTIVE_MEETING;
-	}
-
-	// ===== UI HELPER METHODS =====
-
-	// ===== STATUS =====
-
-	getRoomStatus(room: MeetRoom): string {
-		return room.status.toUpperCase().replace(/_/g, ' ');
-	}
-
-	getStatusIcon(room: MeetRoom): string {
-		switch (room.status) {
-			case MeetRoomStatus.OPEN:
-				return 'meeting_room';
-			case MeetRoomStatus.ACTIVE_MEETING:
-				return 'videocam';
-			case MeetRoomStatus.CLOSED:
-				return 'lock';
-		}
-	}
-
-	getStatusTooltip(room: MeetRoom): string {
-		switch (room.status) {
-			case MeetRoomStatus.OPEN:
-				return 'Room is open and ready to accept participants';
-			case MeetRoomStatus.ACTIVE_MEETING:
-				return 'A meeting is currently ongoing in this room';
-			case MeetRoomStatus.CLOSED:
-				return 'Room is closed and not accepting participants';
-		}
-	}
-
-	getStatusColor(room: MeetRoom): string {
-		switch (room.status) {
-			case MeetRoomStatus.OPEN:
-				return 'var(--ov-meet-color-success)';
-			case MeetRoomStatus.ACTIVE_MEETING:
-				return 'var(--ov-meet-color-primary)';
-			case MeetRoomStatus.CLOSED:
-				return 'var(--ov-meet-color-warning)';
-		}
-	}
-
-	// ===== MEETING END ACTION INFO =====
-
-	hasMeetingEndAction(room: MeetRoom): boolean {
-		return room.status === MeetRoomStatus.ACTIVE_MEETING && room.meetingEndAction !== MeetingEndAction.NONE;
-	}
-
-	getMeetingEndActionTooltip(room: MeetRoom): string {
-		switch (room.meetingEndAction) {
-			case MeetingEndAction.CLOSE:
-				return 'The room will be closed when the meeting ends';
-			case MeetingEndAction.DELETE:
-				return 'The room and its recordings will be deleted when the meeting ends';
-			default:
-				return '';
-		}
-	}
-
-	getMeetingEndActionClass(room: MeetRoom): string {
-		switch (room.meetingEndAction) {
-			case MeetingEndAction.CLOSE:
-				return 'meeting-end-close';
-			case MeetingEndAction.DELETE:
-				return 'meeting-end-delete';
-			default:
-				return '';
-		}
-	}
-
-	// ===== AUTO-DELETION =====
-
-	hasAutoDeletion(room: MeetRoom): boolean {
-		return !!room.autoDeletionDate;
-	}
-
-	isAutoDeletionExpired(room: MeetRoom): boolean {
-		if (!room.autoDeletionDate) return false;
-
-		// Check if auto-deletion date is more than 1 hour in the past
-		const oneHourAgo = Date.now() - 60 * 60 * 1000;
-		return room.autoDeletionDate < oneHourAgo;
-	}
-
-	getAutoDeletionStatus(room: MeetRoom): string {
-		if (!room.autoDeletionDate) {
-			return 'DISABLED';
-		}
-
-		return this.isAutoDeletionExpired(room) ? 'EXPIRED' : 'SCHEDULED';
-	}
-
-	getAutoDeletionIcon(room: MeetRoom): string {
-		if (!room.autoDeletionDate) {
-			return 'close';
-		}
-
-		return this.isAutoDeletionExpired(room) ? 'warning' : 'auto_delete';
-	}
-
-	getAutoDeletionTooltip(room: MeetRoom): string {
-		if (!room.autoDeletionDate) {
-			return 'No auto-deletion. Room remains until manually deleted';
-		}
-
-		if (this.isAutoDeletionExpired(room)) {
-			return 'Auto-deletion date has passed but room was not deleted due to auto-deletion policy';
-		}
-
-		return 'Auto-deletion scheduled';
-	}
-
-	getAutoDeletionClass(room: MeetRoom): string {
-		if (!room.autoDeletionDate) {
-			return 'auto-deletion-disabled';
-		}
-
-		return this.isAutoDeletionExpired(room) ? 'auto-deletion-expired' : 'auto-deletion-scheduled';
-	}
-
-	// ===== ROOM TOGGLE =====
-
-	getRoomToggleIcon(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'lock' : 'meeting_room';
-	}
-
-	getRoomToggleLabel(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'Close Room' : 'Open Room';
-	}
-
-	getRoomToggleIconClass(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'close-room-icon' : 'open-room-icon';
+		this.filtersForm.reset(
+			{
+				nameFilter: '',
+				nameMatchMode: TextMatchMode.PREFIX,
+				nameCaseInsensitive: false,
+				statusFilter: '',
+				ownerFilter: '',
+				memberFilter: '',
+				showOwnedRooms: false,
+				showMemberRooms: false,
+				showRegisteredAccessRooms: false
+			},
+			{ emitEvent: false }
+		);
+		this.emitFilterChange();
 	}
 }

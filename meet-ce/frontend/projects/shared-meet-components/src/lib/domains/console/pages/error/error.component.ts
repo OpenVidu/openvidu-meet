@@ -1,10 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { NavigationErrorReason } from '../../../../shared/models/navigation.model';
-import { AppDataService } from '../../../../shared/services/app-data.service';
+import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { MeetingWebComponentManagerService } from '../../../meeting/services/meeting-webcomponent-manager.service';
@@ -13,20 +14,21 @@ import { MeetingWebComponentManagerService } from '../../../meeting/services/mee
 	selector: 'ov-error',
 	imports: [MatCardModule, MatIconModule, MatButtonModule],
 	templateUrl: './error.component.html',
-	styleUrl: './error.component.scss'
+	styleUrl: './error.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ErrorComponent implements OnInit {
-	errorName = 'Error';
-	message = '';
+	errorName = signal('Error');
+	message = signal('');
 
-	showBackButton = true;
-	backButtonText = 'Back';
+	showBackButton = signal(true);
+	backButtonText = signal('Back');
 
 	constructor(
 		private route: ActivatedRoute,
 		protected authService: AuthService,
 		protected navService: NavigationService,
-		protected appDataService: AppDataService,
+		protected appCtxService: AppContextService,
 		protected wcManagerService: MeetingWebComponentManagerService
 	) {}
 
@@ -42,8 +44,8 @@ export class ErrorComponent implements OnInit {
 		const reason = this.route.snapshot.queryParams['reason'];
 		if (reason) {
 			const { title, message } = this.mapReasonToNameAndMessage(reason);
-			this.errorName = title;
-			this.message = message;
+			this.errorName.set(title);
+			this.message.set(message);
 		}
 	}
 
@@ -54,21 +56,20 @@ export class ErrorComponent implements OnInit {
 		const reasonMap: { [key in NavigationErrorReason]: { title: string; message: string } } = {
 			[NavigationErrorReason.CLOSED_ROOM]: {
 				title: 'Closed room',
-				message: 'The room you are trying to access is closed'
+				message: 'Meetings in this room are not available while it is closed'
 			},
-			[NavigationErrorReason.MISSING_ROOM_SECRET]: {
-				title: 'Invalid link',
-				message:
-					'The link you used to access this room is not valid. Please ask the moderator to share the correct link using the share buttons available in the room. Note: Sharing the URL from the browser address bar is not valid'
+			[NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED]: {
+				title: 'Anonymous access disabled',
+				message: 'The anonymous access for your role has been disabled in this room (and its recordings)'
 			},
-			[NavigationErrorReason.MISSING_RECORDING_SECRET]: {
-				title: 'Invalid link',
-				message: 'The link you used to access this recording is not valid'
+			[NavigationErrorReason.ANONYMOUS_RECORDING_ACCESS_DISABLED]: {
+				title: 'Anonymous access disabled',
+				message: 'The anonymous access for this recording has been disabled'
 			},
 			[NavigationErrorReason.INVALID_ROOM_SECRET]: {
 				title: 'Invalid link',
 				message:
-					'The link you used to access this room is not valid. Please ask the moderator to share the correct link using the share buttons available in the room. Note: Sharing the URL from the browser address bar is not valid'
+					'The link you used to access this room (or its recordings) is not valid. Please ask a moderator to share the correct link using the available share buttons'
 			},
 			[NavigationErrorReason.INVALID_RECORDING_SECRET]: {
 				title: 'Invalid link',
@@ -76,15 +77,32 @@ export class ErrorComponent implements OnInit {
 			},
 			[NavigationErrorReason.INVALID_ROOM]: {
 				title: 'Invalid room',
-				message: 'The room you are trying to access does not exist or has been deleted'
+				message: 'The room (or its recordings) you are trying to access does not exist or has been deleted'
 			},
 			[NavigationErrorReason.INVALID_RECORDING]: {
 				title: 'Invalid recording',
 				message: 'The recording you are trying to access does not exist or has been deleted'
 			},
-			[NavigationErrorReason.UNAUTHORIZED_RECORDING_ACCESS]: {
-				title: 'Unauthorized recording access',
+			[NavigationErrorReason.INVALID_MEMBER]: {
+				title: 'Invalid member',
+				message: 'You are no longer a member of this room or the member information is incorrect'
+			},
+			[NavigationErrorReason.FORBIDDEN_ROOM_ACCESS]: {
+				title: 'Forbidden room access',
+				message: 'You are not authorized to access this room (nor its recordings)'
+			},
+			[NavigationErrorReason.FORBIDDEN_ROOM_RECORDINGS_ACCESS]: {
+				title: 'Forbidden recordings access',
 				message: 'You are not authorized to access the recordings in this room'
+			},
+			[NavigationErrorReason.FORBIDDEN_RECORDING_ACCESS]: {
+				title: 'Forbidden recording access',
+				message: 'You are not authorized to access this recording'
+			},
+			[NavigationErrorReason.ROOM_ACCESS_REVOKED]: {
+				title: 'Room access revoked',
+				message:
+					'Your permissions in this room have been changed, and you no longer have access (nor its recordings). Please contact a moderator for more information'
 			},
 			[NavigationErrorReason.INTERNAL_ERROR]: {
 				title: 'Internal error',
@@ -99,31 +117,32 @@ export class ErrorComponent implements OnInit {
 	}
 
 	/**
-	 * Sets the back button text based on the application mode and user role
+	 * Sets the back button text based on the application mode and user authentication
 	 */
 	async setBackButtonText() {
-		const isStandaloneMode = this.appDataService.isStandaloneMode();
+		const isStandaloneMode = this.appCtxService.isStandaloneMode();
 		const redirection = this.navService.getLeaveRedirectURL();
-		const isAdmin = await this.authService.isAdmin();
+		const isAuthenticated = await this.authService.isUserAuthenticated();
 
-		if (isStandaloneMode && !redirection && !isAdmin) {
-			// If in standalone mode, no redirection URL and not an admin, hide the back button
-			this.showBackButton = false;
+		// If in standalone mode without redirection and user is not authenticated,
+		// hide back button (user has no where to go back to)
+		if (isStandaloneMode && !redirection && !isAuthenticated) {
+			this.showBackButton.set(false);
 			return;
 		}
 
-		this.showBackButton = true;
-		this.backButtonText = isStandaloneMode && !redirection && isAdmin ? 'Back to Console' : 'Accept';
+		this.showBackButton.set(true);
+		this.backButtonText.set(isStandaloneMode && !redirection && isAuthenticated ? 'Back to Console' : 'Accept');
 	}
 
 	/**
 	 * Handles the back button click event and navigates accordingly
 	 * If in embedded mode, it closes the WebComponentManagerService
 	 * If the redirect URL is set, it navigates to that URL
-	 * If in standalone mode without a redirect URL, it navigates to the admin console
+	 * If in standalone mode without a redirect URL, it navigates to the console
 	 */
 	async goBack() {
-		if (this.appDataService.isEmbeddedMode()) {
+		if (this.appCtxService.isEmbeddedMode()) {
 			this.wcManagerService.close();
 		}
 
@@ -134,9 +153,9 @@ export class ErrorComponent implements OnInit {
 			return;
 		}
 
-		if (this.appDataService.isStandaloneMode()) {
-			// Navigate to the admin console
-			await this.navService.navigateTo('/overview', undefined, true);
+		if (this.appCtxService.isStandaloneMode()) {
+			// Navigate to the console
+			await this.navService.navigateTo('/', undefined, true);
 		}
 	}
 }

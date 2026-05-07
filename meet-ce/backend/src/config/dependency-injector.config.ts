@@ -7,6 +7,7 @@ import { GlobalConfigRepository } from '../repositories/global-config.repository
 import { MigrationRepository } from '../repositories/migration.repository.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
+import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 
 /*
@@ -38,7 +39,7 @@ import { GCSStorageProvider } from '../services/storage/providers/gcp/gcs-storag
 
 import { MongoDBService } from '../services/storage/mongodb.service.js';
 import { StorageInitService } from '../services/storage/storage-init.service.js';
-import { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
+import type { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
 import { StorageFactory } from '../services/storage/storage.factory.js';
 import { BlobStorageService } from '../services/storage/blob-storage.service.js';
 
@@ -48,6 +49,7 @@ import { FrontendEventService } from '../services/frontend-event.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { RoomService } from '../services/room.service.js';
 import { ParticipantNameService } from '../services/participant-name.service.js';
+import { MeetingPresenceService } from '../services/meeting-presence.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
@@ -86,6 +88,7 @@ export const registerDependencies = () => {
 	container.bind(MongoDBService).toSelf().inSingletonScope();
 	container.bind(BaseRepository).toSelf().inSingletonScope();
 	container.bind(RoomRepository).toSelf().inSingletonScope();
+	container.bind(RoomMemberRepository).toSelf().inSingletonScope();
 	container.bind(UserRepository).toSelf().inSingletonScope();
 	container.bind(ApiKeyRepository).toSelf().inSingletonScope();
 	container.bind(GlobalConfigRepository).toSelf().inSingletonScope();
@@ -108,6 +111,7 @@ export const registerDependencies = () => {
 	container.bind(RecordingService).toSelf().inSingletonScope();
 	container.bind(RoomService).toSelf().inSingletonScope();
 	container.bind(ParticipantNameService).toSelf().inSingletonScope();
+	container.bind(MeetingPresenceService).toSelf().inSingletonScope();
 	container.bind(RoomMemberService).toSelf().inSingletonScope();
 	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
 	container.bind(LivekitWebhookService).toSelf().inSingletonScope();

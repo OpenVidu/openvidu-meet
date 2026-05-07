@@ -1,21 +1,25 @@
-import { AgentDispatch, ParticipantInfo_Kind } from '@livekit/protocol';
+import type { AgentDispatch } from '@livekit/protocol';
+import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
-import {
-	AgentDispatchClient,
+import type {
 	CreateOptions,
-	DataPacket_Kind,
-	EgressClient,
 	EgressInfo,
-	EgressStatus,
 	EncodedFileOutput,
 	ListEgressOptions,
 	ParticipantInfo,
 	Room,
 	RoomCompositeOptions,
-	RoomServiceClient,
 	SendDataOptions,
 	StreamOutput
 } from 'livekit-server-sdk';
+import {
+	AgentDispatchClient,
+	DataPacket_Kind,
+	EgressClient,
+	EgressStatus,
+	RoomServiceClient
+} from 'livekit-server-sdk';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
@@ -25,7 +29,7 @@ import {
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
-import { chunkArray } from '../utils/array.utils.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LoggerService } from './logger.service.js';
 
 @injectable()
@@ -56,6 +60,38 @@ export class LiveKitService {
 			this.logger.error('Error creating LiveKit room:', error);
 			throw internalError('creating LiveKit room');
 		}
+	}
+
+	/**
+	 * Checks if multiple rooms exist in LiveKit using a single API call.
+	 *
+	 * @param roomNames - Array of room names to check
+	 * @returns A Map with room names as keys and boolean indicating existence as values
+	 */
+	async roomsExist(roomNames: string[]): Promise<Map<string, boolean>> {
+		const result = new Map<string, boolean>();
+
+		if (roomNames.length === 0) {
+			return result;
+		}
+
+		try {
+			const existingRooms = await this.roomClient.listRooms(roomNames);
+			const existingRoomNames = new Set(existingRooms.map((room) => room.name));
+
+			for (const roomName of roomNames) {
+				result.set(roomName, existingRoomNames.has(roomName));
+			}
+		} catch (error) {
+			this.logger.error(`Error batch checking rooms: ${error}`);
+
+			// If the API call fails, assume no rooms exist
+			for (const roomName of roomNames) {
+				result.set(roomName, false);
+			}
+		}
+
+		return result;
 	}
 
 	/**
@@ -159,24 +195,26 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Deletes multiple LiveKit rooms in batches to avoid overwhelming the server.
+	 * Deletes multiple LiveKit rooms with bounded concurrency to avoid overwhelming the server.
 	 *
 	 * @param roomNames - Array of room names to delete
-	 * @param batchSize - Number of rooms to delete per batch (default: 10)
-	 * @returns Promise that resolves when all batches have been processed
+	 * @returns Promise that resolves when all room deletions have been processed
 	 */
-	async batchDeleteRooms(roomNames: string[], batchSize = 10): Promise<void> {
-		const batches = chunkArray(roomNames, batchSize);
-
-		for (const batch of batches) {
-			try {
-				await Promise.allSettled(batch.map((roomId) => this.deleteRoom(roomId)));
-				this.logger.debug(`Deleted LiveKit batch: ${batch.join(', ')}`);
-			} catch (error) {
-				this.logger.warn(`Error deleting LiveKit batch ${batch.join(', ')}: ${error}`);
-				// Continue with next batch even if this one fails
-			}
-		}
+	async batchDeleteRooms(roomNames: string[]): Promise<void> {
+		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_ROOMS;
+		await runConcurrently<string, void>(
+			roomNames,
+			async (roomName) => {
+				try {
+					await this.deleteRoom(roomName);
+					this.logger.verbose(`Deleted LiveKit room '${roomName}' successfully.`);
+				} catch (error) {
+					this.logger.warn(`Error deleting LiveKit room '${roomName}': ${error}`);
+					// Continue with deletion of other rooms even if one fails
+				}
+			},
+			{ concurrency, failFast: true }
+		);
 	}
 
 	/**

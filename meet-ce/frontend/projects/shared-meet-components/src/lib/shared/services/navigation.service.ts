@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
 import { NavigationErrorReason } from '../models/navigation.model';
-import { AppConfigService } from './app-config.service';
-import { AppDataService } from './app-data.service';
+import { AppContextService } from './app-context.service';
+import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
 
 @Injectable({
@@ -14,15 +14,70 @@ export class NavigationService {
 	constructor(
 		private router: Router,
 		private sessionStorageService: SessionStorageService,
-		private appDataService: AppDataService,
-		private appConfigService: AppConfigService
+		private appCtxService: AppContextService,
+		private runtimeConfigService: RuntimeConfigService
 	) {}
 
-	setLeaveRedirectUrl(leaveRedirectUrl: string): void {
+	private getBasePathPrefix(): string {
+		const basePath = this.runtimeConfigService.basePath;
+		if (!basePath || basePath === '/') {
+			return '';
+		}
+
+		return basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+	}
+
+	/**
+	 * Adds configured base path to an internal URL path.
+	 *
+	 * @param url - The internal URL path to add the base path to
+	 * @return The URL with the base path prefixed, if a base path is configured; otherwise, returns the original URL
+	 */
+	addBasePath(url: string): string {
+		if (!url) {
+			return this.getBasePathPrefix() || '/';
+		}
+
+		const basePathPrefix = this.getBasePathPrefix();
+		const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+
+		if (!basePathPrefix || normalizedUrl.startsWith(`${basePathPrefix}/`)) {
+			return normalizedUrl;
+		}
+
+		return `${basePathPrefix}${normalizedUrl}`;
+	}
+
+	/**
+	 * Removes configured base path prefix from an internal URL path.
+	 *
+	 * @param url - The internal URL path to strip the base path from
+	 * @return The URL with the base path stripped, if a base path is configured; otherwise, returns the original URL
+	 */
+	stripBasePath(url: string): string {
+		const basePathPrefix = this.getBasePathPrefix();
+		if (!basePathPrefix || !url.startsWith(basePathPrefix)) {
+			return url;
+		}
+
+		return url.slice(basePathPrefix.length) || '/';
+	}
+
+	/**
+	 * Sets the leave redirect URL and stores it in session storage for persistence across page reloads.
+	 *
+	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
+	 */
+	protected setLeaveRedirectUrl(leaveRedirectUrl: string): void {
 		this.leaveRedirectUrl = leaveRedirectUrl;
 		this.sessionStorageService.setRedirectUrl(leaveRedirectUrl);
 	}
 
+	/**
+	 * Retrieves the leave redirect URL, checking both the service property and session storage.
+	 *
+	 * @returns The leave redirect URL if set, otherwise undefined
+	 */
 	getLeaveRedirectURL(): string | undefined {
 		const storedRedirectUrl = this.sessionStorageService.getRedirectUrl();
 		if (!this.leaveRedirectUrl && storedRedirectUrl) {
@@ -30,6 +85,80 @@ export class NavigationService {
 		}
 
 		return this.leaveRedirectUrl;
+	}
+
+	/**
+	 * Handles the leave redirect URL logic with automatic referrer detection
+	 *
+	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
+	 */
+	handleLeaveRedirectUrl(leaveRedirectUrl: string | undefined) {
+		const isEmbeddedMode = this.appCtxService.isEmbeddedMode();
+
+		// Explicit valid URL provided - use as is
+		if (leaveRedirectUrl && this.isValidUrl(leaveRedirectUrl)) {
+			this.setLeaveRedirectUrl(leaveRedirectUrl);
+			return;
+		}
+
+		// Absolute path provided in embedded mode - construct full URL based on parent origin
+		if (isEmbeddedMode && leaveRedirectUrl?.startsWith('/')) {
+			const parentUrl = document.referrer;
+			const parentOrigin = new URL(parentUrl).origin;
+			this.setLeaveRedirectUrl(parentOrigin + leaveRedirectUrl);
+			return;
+		}
+
+		// Auto-detect from referrer (only if no explicit URL provided and not embedded)
+		if (!leaveRedirectUrl && !isEmbeddedMode) {
+			const autoRedirectUrl = this.getAutoRedirectUrl();
+			if (autoRedirectUrl) {
+				this.setLeaveRedirectUrl(autoRedirectUrl);
+			}
+		}
+	}
+
+	/**
+	 * Automatically detects if user came from another domain and returns appropriate redirect URL
+	 */
+	protected getAutoRedirectUrl(): string | null {
+		try {
+			const referrer = document.referrer;
+
+			// No referrer means user typed URL directly or came from bookmark
+			if (!referrer) {
+				return null;
+			}
+
+			const referrerUrl = new URL(referrer);
+			const currentUrl = new URL(window.location.href);
+
+			// Check if referrer is from a different domain
+			if (referrerUrl.origin !== currentUrl.origin) {
+				console.log(`Auto-configuring leave redirect to referrer: ${referrer}`);
+				return referrer;
+			}
+
+			return null;
+		} catch (error) {
+			console.warn('Error detecting auto redirect URL:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Validates if a given string is a well-formed URL
+	 *
+	 * @param url - The URL string to validate
+	 * @returns True if the URL is valid, false otherwise
+	 */
+	protected isValidUrl(url: string): boolean {
+		try {
+			new URL(url);
+			return true;
+		} catch (error) {
+			return false;
+		}
 	}
 
 	/**
@@ -48,7 +177,7 @@ export class NavigationService {
 			return;
 		}
 
-		const isEmbeddedMode = this.appDataService.isEmbeddedMode();
+		const isEmbeddedMode = this.appCtxService.isEmbeddedMode();
 		if (isEmbeddedMode) {
 			// Change the top window location if in embedded mode
 			window.top!.location.href = url;
@@ -79,18 +208,15 @@ export class NavigationService {
 	 * Redirects to internal URL
 	 *
 	 * @param url - The URL to redirect to
+	 * @param replaceUrl - If true, replaces the current URL in the browser history
 	 */
-	async redirectTo(url: string): Promise<void> {
+	async redirectTo(url: string, replaceUrl: boolean = true): Promise<void> {
 		try {
 			// Strip basePath prefix if present, since Angular router operates relative to <base href>
-			const basePath = this.appConfigService.basePath;
-			const basePathPrefix = basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-			if (basePathPrefix && url.startsWith(basePathPrefix)) {
-				url = url.slice(basePathPrefix.length) || '/';
-			}
+			url = this.stripBasePath(url);
 
 			let urlTree = this.router.parseUrl(url);
-			await this.router.navigateByUrl(urlTree, { replaceUrl: true });
+			await this.router.navigateByUrl(urlTree, { replaceUrl });
 		} catch (error) {
 			console.error('Error navigating to internal route:', error);
 		}
@@ -115,7 +241,7 @@ export class NavigationService {
 	 * @returns The UrlTree for the error page
 	 */
 	async redirectToErrorPage(reason: NavigationErrorReason, navigate = false): Promise<UrlTree> {
-		const urlTree = this.createRedirectionTo('error', { reason });
+		const urlTree = this.createRedirectionTo('/error', { reason });
 
 		if (navigate) {
 			try {
@@ -137,7 +263,7 @@ export class NavigationService {
 	 */
 	async redirectToLoginPage(redirectTo?: string, navigate = false): Promise<UrlTree> {
 		const queryParams = redirectTo ? { redirectTo } : undefined;
-		const urlTree = this.createRedirectionTo('login', queryParams);
+		const urlTree = this.createRedirectionTo('/login', queryParams);
 
 		if (navigate) {
 			try {

@@ -1,0 +1,130 @@
+import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { ParticipantStream } from '../../models/participant.model';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
+import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { LayoutService } from '../../services/layout/layout.service';
+import { ParticipantService } from '../../services/participant/participant.service';
+import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
+import { MediaElementComponent } from '../media-element/media-element.component';
+
+/**
+ * The **StreamComponent** is hosted inside of the {@link LayoutComponent}.
+ * It is in charge of displaying the participant video stream in the videoconference layout.
+ */
+@Component({
+	selector: 'ov-stream',
+	imports: [
+		MatButtonModule,
+		MatIconModule,
+		MatTooltipModule,
+		TranslatePipe,
+		AudioWaveComponent,
+		MediaElementComponent
+	],
+	templateUrl: './stream.component.html',
+	styleUrls: ['./stream.component.scss'],
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	standalone: true
+})
+export class StreamComponent implements OnDestroy {
+	private readonly layoutService = inject(LayoutService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly cdkSrv = inject(CdkOverlayService);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	readonly stream = input<ParticipantStream | undefined>(undefined);
+
+	readonly showParticipantName = this.libService.displayParticipantNameSignal;
+	readonly showAudioDetection = this.libService.displayAudioDetectionSignal;
+	readonly showVideoControls = this.libService.streamVideoControlsSignal;
+	readonly showVideo = signal(false);
+	readonly isFullscreen = signal(false);
+	readonly mouseHovering = signal(false);
+
+	/**
+	 * @ignore
+	 */
+	hoveringTimeout: ReturnType<typeof setTimeout> | undefined;
+	private showVideoTimeout: ReturnType<typeof setTimeout> | undefined;
+
+	/**
+	 * @ignore
+	 */
+	readonly streamContainerQuery = viewChild('streamContainer', { read: ElementRef });
+
+	private readonly HOVER_TIMEOUT = 2000;
+	private readonly NO_SIZE_TIMEOUT = 100;
+	private readonly querySyncEffect = effect(() => {
+		if (this.streamContainerQuery()) {
+			if (this.showVideoTimeout) {
+				clearTimeout(this.showVideoTimeout);
+			}
+			this.showVideoTimeout = setTimeout(() => {
+				this.showVideo.set(true);
+			}, this.NO_SIZE_TIMEOUT);
+		}
+	});
+
+	ngOnDestroy() {
+		if (this.showVideoTimeout) {
+			clearTimeout(this.showVideoTimeout);
+		}
+		if (this.hoveringTimeout) {
+			clearTimeout(this.hoveringTimeout);
+		}
+		this.cdkSrv.setSelector('body');
+	}
+
+	/**
+	 * @ignore
+	 */
+	toggleVideoPinned() {
+		const stream = this.stream();
+		const sid = stream?.videoTrack?.trackSid;
+		if (stream?.participant) {
+			if (stream.participant.isLocal) {
+				if (stream.participant.isMinimized) {
+					this.participantService.toggleLocalVideoMinimized(sid);
+				}
+				this.participantService.toggleMyVideoPinned(sid);
+			} else {
+				this.participantService.toggleRemoteVideoPinned(sid);
+			}
+		}
+		this.layoutService.update();
+	}
+
+	/**
+	 * @ignore
+	 */
+	toggleMinimize() {
+		const stream = this.stream();
+		const sid = stream?.videoTrack?.trackSid;
+		if (stream?.participant && stream.participant.isLocal) {
+			this.participantService.toggleLocalVideoMinimized(sid);
+			this.layoutService.update();
+		}
+	}
+
+	toggleMuteForcibly() {
+		const stream = this.stream();
+		if (stream?.participant) {
+			this.participantService.setRemoteMutedForcibly(stream.participant.sid, !stream.isMutedForcibly);
+		}
+	}
+
+	/**
+	 * @ignore
+	 */
+	mouseHover(event: MouseEvent) {
+		event.preventDefault();
+		clearTimeout(this.hoveringTimeout);
+		this.mouseHovering.set(true);
+		this.hoveringTimeout = setTimeout(() => {
+			this.mouseHovering.set(false);
+		}, this.HOVER_TIMEOUT);
+	}
+}

@@ -6,10 +6,10 @@ import {
 	expectValidRecording,
 	expectValidRecordingWithFields
 } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	generateRoomMemberToken,
 	getAllRecordings,
 	getAllRecordingsFromRoom,
@@ -17,6 +17,7 @@ import {
 	startTestServer,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
+
 import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 import { RoomData, TestContext } from '../../../interfaces/scenarios.js';
 
@@ -30,7 +31,8 @@ describe('Recordings API Tests', () => {
 
 	describe('List Recordings Tests', () => {
 		beforeEach(async () => {
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 			const response = await getAllRecordings();
 			expect(response.status).toBe(200);
 			expectSuccessListRecordingResponse(response, 0, false, false);
@@ -38,7 +40,8 @@ describe('Recordings API Tests', () => {
 
 		afterAll(async () => {
 			await disconnectFakeParticipants();
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 			context = null;
 		});
 
@@ -55,12 +58,12 @@ describe('Recordings API Tests', () => {
 			expectSuccessListRecordingResponse(response, 1, false, false);
 		});
 
-		it('should return a list of recordings belonging to the room when using recording token', async () => {
+		it('should return a list of recordings belonging to the room when using room member token', async () => {
 			// Create a room and start a recording
 			let roomData = await setupSingleRoomWithRecording(true);
 			const roomId = roomData.room.roomId;
 
-			// Generate a recording token for the room
+			// Generate a room member token for the room
 			const roomMemberToken = await generateRoomMemberToken(roomId, { secret: roomData.speakerSecret });
 
 			// Create a new room and start a recording
@@ -79,6 +82,96 @@ describe('Recordings API Tests', () => {
 			expect(response.body.recordings[0].roomId).toBe(room.roomId);
 		});
 
+		it('should prioritize roomId and ignore roomName when both filters are provided', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const exactRoomResponse = await getAllRecordings({ roomName: 'Other Room' });
+			expectSuccessListRecordingResponse(exactRoomResponse, 1, false, false);
+			const prioritizedRoomId = exactRoomResponse.body.recordings[0].roomId;
+
+			const response = await getAllRecordings({ roomId: prioritizedRoomId, roomName: 'Focus Room' });
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(response.body.recordings[0].roomId).toBe(prioritizedRoomId);
+			expect(response.body.recordings[0].roomName).toBe('Other Room');
+		});
+
+		it('should filter recordings by roomName using exact match by default', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Extra'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const response = await getAllRecordings({ roomName: 'Focus Room' });
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(response.body.recordings[0].roomName).toBe('Focus Room');
+		});
+
+		it('should filter recordings by roomName prefix match mode', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Extra'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const response = await getAllRecordings({ roomName: 'Focus', roomNameMatchMode: 'prefix' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+			const roomNames = response.body.recordings.map((recording: MeetRecordingInfo) => recording.roomName);
+			expect(roomNames).toContain('Focus Room');
+			expect(roomNames).toContain('Focus Room Extra');
+			expect(roomNames).not.toContain('Other Room');
+		});
+
+		it('should filter recordings by roomName partial match mode', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Alpha Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Beta'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const response = await getAllRecordings({ roomName: 'Focus', roomNameMatchMode: 'partial' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+			const roomNames = response.body.recordings.map((recording: MeetRecordingInfo) => recording.roomName);
+			expect(roomNames).toContain('Alpha Focus Room');
+			expect(roomNames).toContain('Focus Room Beta');
+			expect(roomNames).not.toContain('Other Room');
+		});
+
+		it('should filter recordings by roomName regex match mode', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Extra'),
+				setupSingleRoomWithRecording(true, '1s', 'Other Room')
+			]);
+
+			const response = await getAllRecordings({
+				roomName: '^Focus Room( Extra)?$',
+				roomNameMatchMode: 'regex'
+			});
+			expectSuccessListRecordingResponse(response, 2, false, false);
+			const roomNames = response.body.recordings.map((recording: MeetRecordingInfo) => recording.roomName);
+			expect(roomNames).toContain('Focus Room');
+			expect(roomNames).toContain('Focus Room Extra');
+			expect(roomNames).not.toContain('Other Room');
+		});
+
+		it('should filter recordings by roomName using case-insensitive exact match', async () => {
+			await Promise.all([
+				setupSingleRoomWithRecording(true, '1s', 'Focus ROOM'),
+				setupSingleRoomWithRecording(true, '1s', 'Focus Room Extra')
+			]);
+
+			const response = await getAllRecordings({
+				roomName: 'focus room',
+				roomNameCaseInsensitive: true
+			});
+			expectSuccessListRecordingResponse(response, 1, false, false);
+			expect(response.body.recordings[0].roomName).toBe('Focus ROOM');
+		});
+
 		it('should filter recordings by status', async () => {
 			// Create recordings with different statuses
 			const [roomData] = await Promise.all([
@@ -93,7 +186,7 @@ describe('Recordings API Tests', () => {
 			expect(recordings[0].status).toBe(MeetRecordingStatus.COMPLETE);
 
 			// Stop the active recording to clean up
-			await stopRecording(roomData.recordingId!, roomData.moderatorToken);
+			await stopRecording(roomData.recordingId!);
 		});
 
 		it('should return recordings with fields filter applied', async () => {
@@ -108,7 +201,7 @@ describe('Recordings API Tests', () => {
 					(recording: MeetRecordingInfo) => recording.roomId === room.roomId
 				);
 				expect(recording).toBeDefined();
-				expectValidRecordingWithFields(recording, ['roomId', 'recordingId']);
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId']);
 				expect(recording).toHaveProperty('roomId', room.roomId);
 				expect(recording.recordingId).toContain(room.roomId);
 			});
@@ -180,11 +273,12 @@ describe('Recordings API Tests', () => {
 
 		afterAll(async () => {
 			// Stop the active recording
-			await stopRecording(roomDataC.recordingId!, roomDataC.moderatorToken);
+			await stopRecording(roomDataC.recordingId!);
 
 			// Disconnect participants and clean up
 			await disconnectFakeParticipants();
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 		});
 
 		it('should sort recordings by startDate ascending and descending', async () => {
@@ -287,7 +381,96 @@ describe('Recordings API Tests', () => {
 		});
 	});
 
+	describe('List recordings - Fields filtering', () => {
+		beforeAll(async () => {
+			await deleteAllRooms();
+			await deleteAllRecordings();
+			context = await setupMultiRecordingsTestContext(2, 2, 2);
+		});
+
+		afterAll(async () => {
+			await disconnectFakeParticipants();
+			await deleteAllRooms();
+			await deleteAllRecordings();
+			context = null;
+		});
+
+		it('should filter fields using X-Fields header', async () => {
+			const response = await getAllRecordings({}, { xFields: 'recordingId,roomId' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId']);
+			});
+		});
+
+		it('should combine X-Fields header with fields query param (union)', async () => {
+			// Query param requests 'recordingId', header requests 'roomName' → result should have both
+			const response = await getAllRecordings({ fields: 'recordingId' }, { xFields: 'roomName' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomName']);
+			});
+		});
+
+		it('should deduplicate fields when same field is in both query param and header', async () => {
+			const response = await getAllRecordings(
+				{ fields: 'recordingId,roomId' },
+				{ xFields: 'recordingId,status' }
+			);
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId', 'status']);
+			});
+		});
+
+		it('should work with only headers and no query params', async () => {
+			const response = await getAllRecordings({}, { xFields: 'recordingId,status,roomId' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId', 'status']);
+			});
+		});
+
+		it('should ignore invalid header values gracefully and fallback to query params', async () => {
+			const response = await getAllRecordings({ fields: 'recordingId,roomId' }, { xFields: '' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId']);
+			});
+		});
+
+		it('should ignore invalid field names in X-Fields header', async () => {
+			const response = await getAllRecordings({}, { xFields: 'recordingId,invalidField,roomId' });
+			expectSuccessListRecordingResponse(response, 2, false, false);
+
+			response.body.recordings.forEach((recording: MeetRecordingInfo) => {
+				expectValidRecordingWithFields(recording, ['recordingId', 'roomId']);
+				expect(recording).not.toHaveProperty('invalidField');
+			});
+		});
+	});
+
 	describe('List Recordings Validation', () => {
+		it('should fail when roomNameMatchMode is invalid', async () => {
+			const response = await getAllRecordings({ roomName: 'Focus Room', roomNameMatchMode: 'invalid' });
+			expectValidationError(response, 'roomNameMatchMode', 'Invalid enum value');
+		});
+
+		it('should fail when roomNameCaseInsensitive is not a boolean', async () => {
+			const response = await getAllRecordings({ roomNameCaseInsensitive: 'not-a-boolean' });
+			expectValidationError(response, 'roomNameCaseInsensitive', 'Expected boolean, received string');
+		});
+
+		it('should fail when roomName regex pattern is invalid', async () => {
+			const response = await getAllRecordings({ roomName: '[invalid-regex', roomNameMatchMode: 'regex' });
+			expectValidationError(response, 'roomName', 'Invalid regular expression pattern');
+		});
+
 		it('should fail when maxItems is not a number', async () => {
 			const response = await getAllRecordings({ maxItems: 'not-a-number' });
 			expectValidationError(response, 'maxItems', 'Expected number');
@@ -301,11 +484,6 @@ describe('Recordings API Tests', () => {
 		it('should fail when maxItems is zero', async () => {
 			const response = await getAllRecordings({ maxItems: 0 });
 			expectValidationError(response, 'maxItems', 'must be a positive number');
-		});
-
-		it('should fail when fields is not a string', async () => {
-			const response = await getAllRecordings({ fields: { invalid: 'object' } });
-			expectValidationError(response, 'fields', 'Expected string');
 		});
 
 		it('should fail when sortField is invalid', async () => {

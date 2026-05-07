@@ -1,24 +1,22 @@
-import { Component, OnDestroy } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
-import { MeetRecordingAccess, MeetRoomOptions } from '@openvidu-meet/typings';
-import { Subject, takeUntil } from 'rxjs';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MeetRoomOptions } from '@openvidu-meet/typings';
 import {
 	SelectableCardComponent,
 	SelectableCardOption,
 	SelectionCardEvent
 } from '../../../../../../shared/components/selectable-card/selectable-card.component';
+import { RecordingEnabledOption, RecordingFormGroup, RecordingFormValue } from '../../../../models/wizard-forms.model';
+import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
-
-interface RecordingAccessOption {
-	value: MeetRecordingAccess;
-	label: string;
-}
 
 @Component({
 	selector: 'ov-recording-config',
@@ -30,17 +28,17 @@ interface RecordingAccessOption {
 		MatRadioModule,
 		MatSelectModule,
 		MatFormFieldModule,
+		MatSlideToggleModule,
 		SelectableCardComponent
 	],
 	templateUrl: './recording-config.component.html',
-	styleUrl: './recording-config.component.scss'
+	styleUrl: './recording-config.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RecordingConfigComponent implements OnDestroy {
-	recordingForm: FormGroup;
-	isAnimatingOut = false;
+export class RecordingConfigComponent {
+	private wizardService = inject(RoomWizardStateService);
 
-	// Store the previous E2EE state before recording disables it
-	private e2eeStateBeforeRecording: boolean | null = null;
+	recordingForm: RecordingFormGroup;
 
 	recordingOptions: SelectableCardOption[] = [
 		{
@@ -58,67 +56,57 @@ export class RecordingConfigComponent implements OnDestroy {
 			icon: 'videocam_off'
 		}
 	];
-	recordingAccessOptions: RecordingAccessOption[] = [
-		{
-			value: MeetRecordingAccess.ADMIN,
-			label: 'Only Admin'
-		},
-		{
-			value: MeetRecordingAccess.ADMIN_MODERATOR,
-			label: 'Admin and Moderators'
-		},
-		{
-			value: MeetRecordingAccess.ADMIN_MODERATOR_SPEAKER,
-			label: 'Admin, Moderators and Speakers'
+
+	constructor() {
+		const recordingStep = this.wizardService.getStepById(WizardStepId.RECORDING);
+		if (!recordingStep) {
+			throw new Error('recording step not found in wizard state');
 		}
-	];
+		this.recordingForm = recordingStep.formGroup;
 
-	private destroy$ = new Subject<void>();
-
-	constructor(private wizardState: RoomWizardStateService) {
-		const currentStep = this.wizardState.currentStep();
-		this.recordingForm = currentStep!.formGroup;
-
-		this.recordingForm.valueChanges.pipe(takeUntil(this.destroy$)).subscribe((value) => {
+		this.recordingForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
 			this.saveFormData(value);
 		});
 	}
 
-	ngOnDestroy() {
-		this.destroy$.next();
-		this.destroy$.complete();
-	}
-
-	private saveFormData(formValue: any) {
-		const enabled = formValue.recordingEnabled === 'enabled';
-
+	private saveFormData(formValue: Partial<RecordingFormValue>) {
 		const stepData: Partial<MeetRoomOptions> = {
 			config: {
 				recording: {
-					enabled,
-					...(enabled && { allowAccessTo: formValue.allowAccessTo })
+					enabled: formValue.recordingEnabled === 'enabled'
+				}
+			},
+			access: {
+				anonymous: {
+					recording: {
+						enabled: formValue.anonymousRecordingEnabled ?? false
+					}
 				}
 			}
 		};
 
-		this.wizardState.updateStepData('recording', stepData);
+		this.wizardService.updateStepData(stepData);
 	}
 
 	onOptionSelect(event: SelectionCardEvent): void {
+		if (!this.isRecordingEnabledOption(event.optionId)) {
+			return;
+		}
+
 		const previouslyEnabled = this.isRecordingEnabled;
 		const willBeEnabled = event.optionId === 'enabled';
 
-		const configStep = this.wizardState.steps().find((step) => step.id === 'config');
+		const configStep = this.wizardService.getStepById(WizardStepId.ROOM_CONFIG);
 
 		// Handle E2EE state when recording changes
 		if (configStep) {
 			if (!previouslyEnabled && willBeEnabled) {
 				// Enabling recording: save E2EE state and disable it if needed
-				const e2eeEnabled = configStep.formGroup.get('e2eeEnabled')?.value;
+				const e2eeEnabled = configStep.formGroup.controls.e2eeEnabled.value;
 
 				if (e2eeEnabled) {
 					// Save the E2EE state before disabling it
-					this.e2eeStateBeforeRecording = true;
+					this.wizardService.setE2EEStateBeforeRecording(true);
 
 					// Disable E2EE when enabling recording
 					configStep.formGroup.patchValue(
@@ -127,50 +115,54 @@ export class RecordingConfigComponent implements OnDestroy {
 						},
 						{ emitEvent: true }
 					);
+
+					this.wizardService.updateStepData({
+						config: {
+							e2ee: {
+								enabled: false
+							}
+						}
+					});
 				}
 			} else if (previouslyEnabled && !willBeEnabled) {
 				// Disabling recording: restore E2EE state if it was saved
-				if (this.e2eeStateBeforeRecording !== null) {
+				const previousE2EEState = this.wizardService.getE2EEStateBeforeRecording();
+				if (previousE2EEState !== undefined) {
 					configStep.formGroup.patchValue(
 						{
-							e2eeEnabled: this.e2eeStateBeforeRecording
+							e2eeEnabled: previousE2EEState
 						},
 						{ emitEvent: true }
 					);
 
+					this.wizardService.updateStepData({
+						config: {
+							e2ee: {
+								enabled: previousE2EEState
+							}
+						}
+					});
+
 					// Clear the saved state
-					this.e2eeStateBeforeRecording = null;
+					this.wizardService.clearE2EEStateBeforeRecording();
 				}
 			}
 		}
 
-		// Handle recording form update with animation
-		if (previouslyEnabled && !willBeEnabled) {
-			this.isAnimatingOut = true;
-			// Wait for the animation to finish before updating the form
-			setTimeout(() => {
-				this.recordingForm.patchValue({
-					recordingEnabled: event.optionId
-				});
-				this.isAnimatingOut = false;
-			}, 100); // Animation duration
-		} else {
-			// If we are enabling or keeping it enabled, just update the form
-			this.recordingForm.patchValue({
-				recordingEnabled: event.optionId
-			});
-		}
+		this.recordingForm.patchValue({
+			recordingEnabled: event.optionId
+		});
 	}
 
-	get selectedValue(): string {
-		return this.recordingForm.value.recordingEnabled || 'disabled';
+	private isRecordingEnabledOption(optionId: string): optionId is RecordingEnabledOption {
+		return optionId === 'enabled' || optionId === 'disabled';
+	}
+
+	get selectedValue(): RecordingEnabledOption {
+		return this.recordingForm.controls.recordingEnabled.value;
 	}
 
 	get isRecordingEnabled(): boolean {
 		return this.selectedValue === 'enabled';
-	}
-
-	get shouldShowAccessSection(): boolean {
-		return this.isRecordingEnabled || this.isAnimatingOut;
 	}
 }

@@ -1,6 +1,6 @@
 import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
-import { DistributedEventPayload, DistributedEventType } from '../models/distributed-event.model.js';
+import type { DistributedEventPayload, DistributedEventType } from '../models/distributed-event.model.js';
 import { LoggerService } from './logger.service.js';
 import { RedisService } from './redis.service.js';
 

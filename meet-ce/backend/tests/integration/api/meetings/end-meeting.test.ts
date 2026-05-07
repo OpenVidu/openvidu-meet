@@ -2,14 +2,9 @@ import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import {
-	deleteAllRooms,
-	deleteRoom,
-	disconnectFakeParticipants,
-	endMeeting,
-	getRoom,
-	startTestServer
-} from '../../../helpers/request-helpers.js';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
+import { deleteAllRooms, endMeeting, getRoom, startTestServer } from '../../../helpers/request-helpers.js';
+
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
@@ -71,11 +66,7 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should fail with 404 if the room does not exist', async () => {
-			// Delete the room to ensure it does not exist
-			let response = await deleteRoom(roomData.room.roomId, { withMeeting: 'force' });
-			expect(response.status).toBe(200);
-
-			response = await endMeeting(roomData.room.roomId, roomData.moderatorToken);
+			const response = await endMeeting('nonexistent-room-id', roomData.moderatorToken);
 			expect(response.status).toBe(404);
 		});
 	});

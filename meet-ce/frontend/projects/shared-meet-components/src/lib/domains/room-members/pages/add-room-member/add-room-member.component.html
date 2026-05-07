@@ -1,0 +1,58 @@
+<div class="ov-page-container ov-mb-xxl">
+	<!-- Page Header -->
+	<div class="page-header">
+		<div class="title">
+			<mat-icon>{{ isEditMode() ? 'edit' : 'person_add' }}</mat-icon>
+			<h1>{{ isEditMode() ? 'Edit Room Member' : 'Add Room Member' }}</h1>
+		</div>
+		<p class="subtitle">
+			@if (isEditMode()) {
+				Update permissions for this room member.
+			} @else {
+				Assign a registered user or an external member to this room.
+			}
+		</p>
+	</div>
+
+	<!-- Form Card Wrapper -->
+	<div class="form-card-wrapper">
+		<mat-card class="section-card add-member-card">
+			<mat-card-header>
+				<div mat-card-avatar class="section-avatar">
+					<mat-icon class="section-icon">group_add</mat-icon>
+				</div>
+				<mat-card-title>Member Configuration</mat-card-title>
+				<mat-card-subtitle>
+					@if (isEditMode()) {
+						@if (memberType() === 'registered') {
+							Update registered user's permissions in this room
+						} @else {
+							Update external member's permissions in this room
+						}
+					} @else {
+						@if (memberType() === 'registered') {
+							Select a registered user and configure their permissions
+						} @else {
+							Add an external member and configure their permissions
+						}
+					}
+				</mat-card-subtitle>
+			</mat-card-header>
+
+			<mat-card-content>
+				@if (roomRoles()) {
+					<ov-member-form
+						[roomRoles]="roomRoles()!"
+						[roomOwner]="roomOwner()"
+						[initialData]="memberInitData()"
+						[lockIdentity]="isEditMode()"
+						[isSaving]="isSaving()"
+						(memberSubmitted)="onMemberSubmitted($event)"
+						(memberTypeChanged)="onMemberTypeChanged($event)"
+						(cancelled)="onCancelled()"
+					/>
+				}
+			</mat-card-content>
+		</mat-card>
+	</div>
+</div>

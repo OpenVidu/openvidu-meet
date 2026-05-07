@@ -1,10 +1,11 @@
-import { MeetAssistantCapabilityName, MeetCreateAssistantResponse } from '@openvidu-meet/typings';
+import type { MeetCreateAssistantResponse } from '@openvidu-meet/typings';
+import { MeetAssistantCapabilityName } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { MeetLock } from '../helpers/redis.helper.js';
-import { errorInsufficientPermissions } from '../models/error.model.js';
+import { errorAiAssistantAlreadyStarting, errorConfigurationError } from '../models/error.model.js';
 import { RedisKeyName } from '../models/redis.model.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
@@ -14,7 +15,7 @@ import { RoomService } from './room.service.js';
 
 @injectable()
 export class AiAssistantService {
-	private readonly ASSISTANT_STATE_LOCK_TTL = ms('15s');
+	private readonly ASSISTANT_STATE_LOCK_TTL = ms(INTERNAL_CONFIG.ASSISTANT_STATE_LOCK_TTL);
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
@@ -62,8 +63,8 @@ export class AiAssistantService {
 			});
 
 			if (executionResult === null) {
-				this.logger.error(`Could not acquire lock '${lockKey}' for creating assistant in room '${roomId}'`);
-				throw new Error('Could not acquire lock for creating assistant. Please try again.');
+				this.logger.warn(`Could not acquire lock '${lockKey}' for creating assistant in room '${roomId}'. Another assistant may have been created concurrently.`);
+				throw errorAiAssistantAlreadyStarting(roomId);
 			}
 
 			return executionResult;
@@ -183,13 +184,13 @@ export class AiAssistantService {
 	protected async validateCreateConditions(roomId: string, capability: MeetAssistantCapabilityName): Promise<void> {
 		if (capability === MeetAssistantCapabilityName.LIVE_CAPTIONS) {
 			if (MEET_ENV.CAPTIONS_ENABLED !== 'true') {
-				throw errorInsufficientPermissions();
+				throw errorConfigurationError('Live captions are not enabled in the server configuration. Please set CAPTIONS_ENABLED to true to enable this feature.');
 			}
 
 			const room = await this.roomService.getMeetRoom(roomId);
 
 			if (!room.config.captions.enabled) {
-				throw errorInsufficientPermissions();
+				throw errorConfigurationError('Live captions are not enabled in the room configuration.');
 			}
 		}
 	}

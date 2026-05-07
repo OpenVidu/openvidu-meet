@@ -1,19 +1,34 @@
 import { EgressStatus } from '@livekit/protocol';
-import {
+import { MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import type {
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
-	MeetRecordingInfo,
-	MeetRecordingLayout,
-	MeetRecordingStatus
+	MeetRecordingField,
+	MeetRecordingInfo
 } from '@openvidu-meet/typings';
-import { EgressInfo } from 'livekit-server-sdk';
+import type { EgressInfo } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
 import { EncodingConverter } from './encoding-converter.helper.js';
+import { applyHttpFieldFiltering } from './field-filter.helper.js';
 
 export class RecordingHelper {
 	private constructor() {
 		// Prevent instantiation of this utility class
+	}
+
+	/**
+	 * Applies HTTP-level field filtering to a MeetRecordingInfo object.
+	 * Since recordings have no extra fields, this simply filters to the requested fields.
+	 * When no fields are specified, the full recording object is returned unmodified.
+	 */
+	static applyFieldFilters(recording: MeetRecordingInfo, fields?: MeetRecordingField[]): MeetRecordingInfo {
+		if (!fields || fields.length === 0) {
+			return recording;
+		}
+
+		// Recordings have no extra fields concept, so we pass empty arrays for extra fields params
+		return applyHttpFieldFiltering(recording, fields, undefined, []);
 	}
 
 	static async toRecordingInfo(egressInfo: EgressInfo): Promise<MeetRecordingInfo> {
@@ -29,7 +44,7 @@ export class RecordingHelper {
 		const layout = RecordingHelper.extractRecordingLayout(egressInfo);
 		const encoding = RecordingHelper.extractRecordingEncoding(egressInfo);
 		const roomService = container.get(RoomService);
-		const { roomName } = await roomService.getMeetRoom(roomId);
+		const { roomName } = await roomService.getMeetRoom(roomId, ['roomName']);
 
 		return {
 			recordingId,
@@ -60,8 +75,7 @@ export class RecordingHelper {
 		return fileResults.length > 0 && streamResults.length === 0;
 	}
 
-	static canBeDeleted(recordingInfo: MeetRecordingInfo): boolean {
-		const { status } = recordingInfo;
+	static canBeDeleted(status: MeetRecordingStatus): boolean {
 		const isFinished = [
 			MeetRecordingStatus.COMPLETE,
 			MeetRecordingStatus.FAILED,

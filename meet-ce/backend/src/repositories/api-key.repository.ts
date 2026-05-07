@@ -1,40 +1,46 @@
-import { MeetApiKey } from '@openvidu-meet/typings';
+import type { MeetApiKey } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
-import { MeetApiKeyDocument, MeetApiKeyModel } from '../models/mongoose-schemas/api-key.schema.js';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import type { MeetApiKeyDocument, MeetApiKeyDocumentOnlyField } from '../models/mongoose-schemas/api-key.schema.js';
+import { MEET_API_KEY_DOCUMENT_ONLY_FIELDS, MeetApiKeyModel } from '../models/mongoose-schemas/api-key.schema.js';
 import { LoggerService } from '../services/logger.service.js';
 import { BaseRepository } from './base.repository.js';
 
 /**
  * Repository for managing MeetApiKey entities in MongoDB.
- *
- * @template TApiKey - The domain type extending MeetApiKey (default: MeetApiKey)
  */
 @injectable()
-export class ApiKeyRepository<TApiKey extends MeetApiKey = MeetApiKey> extends BaseRepository<
-	TApiKey,
-	MeetApiKeyDocument
-> {
+export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocument> {
 	constructor(@inject(LoggerService) logger: LoggerService) {
 		super(logger, MeetApiKeyModel);
 	}
 
-	protected toDomain(document: MeetApiKeyDocument): TApiKey {
-		return document.toObject() as TApiKey;
+	protected toDomain(dbObject: MeetApiKeyDocument): MeetApiKey {
+		const { schemaVersion, ...apiKey } = dbObject;
+		void schemaVersion;
+		return apiKey as MeetApiKey;
+	}
+
+	protected override getDocumentOnlyFields(): readonly MeetApiKeyDocumentOnlyField[] {
+		return MEET_API_KEY_DOCUMENT_ONLY_FIELDS;
 	}
 
 	/**
 	 * Creates a new API key.
 	 */
-	async create(apiKey: TApiKey): Promise<TApiKey> {
-		const doc = await this.createDocument(apiKey);
-		return this.toDomain(doc);
+	create(apiKey: MeetApiKey): Promise<MeetApiKey> {
+		const document: MeetApiKeyDocument = {
+			...apiKey,
+			schemaVersion: INTERNAL_CONFIG.API_KEY_SCHEMA_VERSION
+		};
+		return this.createDocument(document);
 	}
 
 	/**
 	 * Returns all API keys.
 	 */
-	async findAll(): Promise<TApiKey[]> {
-		return await super.findAll();
+	findAll(): Promise<MeetApiKey[]> {
+		return super.findAll();
 	}
 
 	/**

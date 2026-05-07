@@ -1,10 +1,11 @@
 import { Redlock } from '@sesamecare-oss/redlock';
 import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
-import { Redis, RedisOptions, SentinelAddress } from 'ioredis';
+import type { RedisOptions, SentinelAddress } from 'ioredis';
+import { Redis } from 'ioredis';
 import ms from 'ms';
 import { checkModuleEnabled, MEET_ENV } from '../environment.js';
-import { DistributedEventPayload } from '../models/distributed-event.model.js';
+import type { DistributedEventPayload } from '../models/distributed-event.model.js';
 import { internalError } from '../models/error.model.js';
 import { LoggerService } from './logger.service.js';
 
@@ -149,15 +150,15 @@ export class RedisService extends EventEmitter {
 	 */
 	async getKeys(pattern: string): Promise<string[]> {
 		let cursor = '0';
-		const keys: Set<string> = new Set();
+		const keys: string[] = [];
 
 		do {
 			const [nextCursor, partialKeys] = await this.redisPublisher.scan(cursor, 'MATCH', pattern);
-			partialKeys.forEach((key) => keys.add(key));
+			keys.push(...partialKeys);
 			cursor = nextCursor;
 		} while (cursor !== '0');
 
-		return Array.from(keys);
+		return keys;
 	}
 
 	/**

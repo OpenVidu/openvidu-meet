@@ -1,18 +1,21 @@
-import { Component, OnInit, inject } from '@angular/core';
+import type { OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AppDataService } from '@openvidu-meet/shared-components';
+import { AppContextService } from '@openvidu-meet/shared-components';
 import packageInfo from '../../package.json';
 
 @Component({
 	selector: 'app-root',
-	template: ` <router-outlet></router-outlet> `,
+	template: ` <router-outlet /> `,
 	styles: '',
-	imports: [RouterOutlet]
+	imports: [RouterOutlet],
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AppComponent implements OnInit {
-	private readonly appDataService = inject(AppDataService);
+	private readonly appCtxService = inject(AppContextService);
 
 	ngOnInit() {
-		this.appDataService.setVersion(packageInfo.version);
+		this.appCtxService.setVersion(packageInfo.version);
 	}
 }

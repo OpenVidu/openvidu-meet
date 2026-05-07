@@ -1,0 +1,48 @@
+description: Successfully retrieved the list of users
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                users:
+                    type: array
+                    items:
+                        $ref: '../../schemas/internal/meet-user.yaml'
+                pagination:
+                    $ref: '../../schemas/meet-pagination.yaml'
+        examples:
+            multiple_users:
+                summary: Response with multiple users
+                value:
+                    users:
+                        - userId: 'admin'
+                          name: 'Admin'
+                          registrationDate: 1620000000000
+                          role: 'admin'
+                          roleUpdatedAt: 1620000000000
+                        - userId: 'alice_smith'
+                          name: 'Alice Smith'
+                          registrationDate: 1620050000000
+                          role: 'user'
+                          roleUpdatedAt: 1620050000000
+                        - userId: 'bob_jones'
+                          name: 'Bob Jones'
+                          registrationDate: 1620100000000
+                          role: 'room_member'
+                          roleUpdatedAt: 1620100000000
+                    pagination:
+                        nextPageToken: 'eyJvZmZzZXQiOjEwfQ=='
+                        isTruncated: true
+                        maxItems: 3
+            single_page:
+                summary: Response with all users in a single page
+                value:
+                    users:
+                        - userId: 'admin'
+                          name: 'Admin'
+                          registrationDate: 1620000000000
+                          role: 'admin'
+                          roleUpdatedAt: 1620000000000
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10

@@ -1,5 +1,5 @@
-import { SchemaMigrationMap } from '../models/migration.model.js';
-import { MeetApiKeyDocument } from '../models/mongoose-schemas/api-key.schema.js';
+import type { SchemaMigrationMap } from '../models/migration.model.js';
+import type { MeetApiKeyDocument } from '../models/mongoose-schemas/api-key.schema.js';
 
 /**
  * Schema migrations for MeetApiKey.

@@ -1,15 +1,16 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import { MeetRoomStatus } from '@openvidu-meet/typings';
+import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	createRoom,
 	deleteAllRooms,
-	disconnectFakeParticipants,
 	endMeeting,
 	getRoom,
 	startTestServer,
 	updateRoomStatus
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
-import { MeetRoomStatus } from '@openvidu-meet/typings';
+import { waitForRoomToClose } from '../../../helpers/wait-helpers.js';
 
 describe('Room API Tests', () => {
 	beforeAll(async () => {
@@ -70,7 +71,7 @@ describe('Room API Tests', () => {
 
 			// End meeting and verify closed status
 			await endMeeting(roomData.room.roomId, roomData.moderatorToken);
-
+			await waitForRoomToClose(roomData.room.roomId);
 			getResponse = await getRoom(roomData.room.roomId);
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.status).toEqual('closed');

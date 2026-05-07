@@ -1,33 +1,34 @@
-import archiver from 'archiver';
-import { Request, Response } from 'express';
-import { Readable } from 'stream';
+import type { MeetRecordingField } from '@openvidu-meet/typings';
+import type { Request, Response } from 'express';
+import type { Readable } from 'stream';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import {
-	errorRecordingsNotFromSameRoom,
+	errorRecordingsZipEmpty,
 	handleError,
 	internalError,
 	rejectRequestFromMeetError
 } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RecordingService } from '../services/recording.service.js';
-import { RequestSessionService } from '../services/request-session.service.js';
 import { getBaseUrl } from '../utils/url.utils.js';
 
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const { roomId, config } = req.body;
+	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 	logger.info(`Starting recording in room '${roomId}'`);
 
 	try {
-		const recordingInfo = await recordingService.startRecording(roomId, config);
+		let recordingInfo = await recordingService.startRecording(roomId, config);
 		res.setHeader(
 			'Location',
 			`${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingInfo.recordingId}`
 		);
 
+		recordingInfo = RecordingHelper.applyFieldFilters(recordingInfo, fields);
 		return res.status(201).json(recordingInfo);
 	} catch (error) {
 		handleError(res, error, `starting recording in room '${roomId}'`);
@@ -37,13 +38,16 @@ export const startRecording = async (req: Request, res: Response) => {
 export const stopRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingId = req.params.recordingId;
+	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 
 	try {
 		logger.info(`Stopping recording '${recordingId}'`);
 		const recordingService = container.get(RecordingService);
 
-		const recordingInfo = await recordingService.stopRecording(recordingId);
+		let recordingInfo = await recordingService.stopRecording(recordingId);
 		res.setHeader('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings/${recordingId}`);
+
+		recordingInfo = RecordingHelper.applyFieldFilters(recordingInfo, fields);
 		return res.status(202).json(recordingInfo);
 	} catch (error) {
 		handleError(res, error, `stopping recording '${recordingId}'`);
@@ -53,18 +57,9 @@ export const stopRecording = async (req: Request, res: Response) => {
 export const getRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const requestSessionService = container.get(RequestSessionService);
-	const queryParams = req.query;
+	const queryParams = res.locals.validatedQuery ?? {};
 
-	// If room member token is present, retrieve only recordings for the room associated with the token
-	const roomId = requestSessionService.getRoomIdFromToken();
-
-	if (roomId) {
-		queryParams.roomId = roomId;
-		logger.info(`Getting recordings for room '${roomId}'`);
-	} else {
-		logger.info('Getting all recordings');
-	}
+	logger.info('Getting all recordings');
 
 	try {
 		const { recordings, isTruncated, nextPageToken } = await recordingService.getAllRecordings(queryParams);
@@ -86,26 +81,30 @@ export const getRecordings = async (req: Request, res: Response) => {
 export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const requestSessionService = container.get(RequestSessionService);
-	const { recordingIds } = req.query;
+	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
+	const bulkValidation = res.locals.bulkValidation;
 
 	logger.info(`Deleting recordings: ${recordingIds}`);
 
 	try {
-		const recordingIdsArray = (recordingIds as string).split(',');
+		const recordingIdsToProcess = bulkValidation?.processableIds ?? [];
+		const preFailed = (bulkValidation?.failed as { recordingId: string; error: string }[]) ?? [];
 
-		// If room member token is present, delete only recordings for the room associated with the token
-		const roomId = requestSessionService.getRoomIdFromToken();
-
-		const { deleted, failed } = await recordingService.bulkDeleteRecordings(recordingIdsArray, roomId);
+		const { deleted, failed } =
+			recordingIdsToProcess.length > 0
+				? await recordingService.bulkDeleteRecordings(recordingIdsToProcess)
+				: { deleted: [], failed: [] };
+		const allFailed = [...preFailed, ...failed];
 
 		// All recordings were successfully deleted
-		if (deleted.length > 0 && failed.length === 0) {
+		if (deleted.length > 0 && allFailed.length === 0) {
 			return res.status(200).json({ message: 'All recordings deleted successfully', deleted });
 		}
 
 		// Some or all recordings could not be deleted
-		return res.status(400).json({ message: `${failed.length} recording(s) could not be deleted`, deleted, failed });
+		return res
+			.status(400)
+			.json({ message: `${allFailed.length} recording(s) could not be deleted`, deleted, failed: allFailed });
 	} catch (error) {
 		handleError(res, error, 'deleting recordings');
 	}
@@ -115,7 +114,7 @@ export const getRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
-	const fields = req.query.fields as string | undefined;
+	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 
 	logger.info(`Getting recording '${recordingId}'`);
 
@@ -230,15 +229,12 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
 	const recordingId = req.params.recordingId;
-	const privateAccess = req.query.privateAccess === 'true';
+	const { privateAccess } = res.locals.validatedQuery as { privateAccess: boolean };
 
 	logger.info(`Getting URL for recording '${recordingId}'`);
 
 	try {
-		const recordingSecrets = await recordingService.getRecordingAccessSecrets(recordingId);
-		const secret = privateAccess ? recordingSecrets.privateAccessSecret : recordingSecrets.publicAccessSecret;
-		const recordingUrl = `${getBaseUrl()}/recording/${recordingId}?secret=${secret}`;
-
+		const recordingUrl = await recordingService.generateRecordingUrl(recordingId, privateAccess);
 		return res.status(200).json({ url: recordingUrl });
 	} catch (error) {
 		handleError(res, error, `getting URL for recording '${recordingId}'`);
@@ -248,65 +244,43 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const requestSessionService = container.get(RequestSessionService);
 
-	const recordingIds = req.query.recordingIds as string;
-	const recordingIdsArray = (recordingIds as string).split(',');
+	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
+	const bulkValidation = res.locals.bulkValidation;
 
-	// Filter recording IDs if a room ID is provided
-	let validRecordingIds = recordingIdsArray;
+	logger.info(`Preparing ZIP download for recordings: ${recordingIds}`);
 
-	// If room member token is present, download only recordings for the room associated with the token
-	const roomId = requestSessionService.getRoomIdFromToken();
+	try {
+		const recordingIdsToProccess = bulkValidation?.processableIds ?? [];
+		const failed = (bulkValidation?.failed as { recordingId: string; error: string }[]) ?? [];
 
-	if (roomId) {
-		validRecordingIds = recordingIdsArray.filter((recordingId) => {
-			const { roomId: recRoomId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
-			const isValid = recRoomId === roomId;
-
-			if (!isValid) {
-				logger.warn(`Skipping recording '${recordingId}' as it does not belong to room '${roomId}'`);
-			}
-
-			return isValid;
+		failed.forEach((failure) => {
+			logger.warn(
+				`Skipping recording '${failure.recordingId}' from ZIP download due to access issue: ${failure.error}`
+			);
 		});
-	}
 
-	if (validRecordingIds.length === 0) {
-		logger.warn(`None of the provided recording IDs belong to room '${roomId}'`);
-		const error = errorRecordingsNotFromSameRoom(roomId!);
-		return rejectRequestFromMeetError(res, error);
-	}
-
-	logger.info(`Creating ZIP for recordings: ${recordingIds}`);
-
-	res.setHeader('Content-Type', 'application/zip');
-	res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
-
-	const archive = archiver('zip', { zlib: { level: 0 } });
-
-	// Handle errors in the archive
-	archive.on('error', (err) => {
-		logger.error(`ZIP archive error: ${err.message}`);
-		res.status(500).end();
-	});
-
-	// Pipe the archive to the response
-	archive.pipe(res);
-
-	for (const recordingId of validRecordingIds) {
-		try {
-			logger.debug(`Adding recording '${recordingId}' to ZIP`);
-			const result = await recordingService.getRecordingAsStream(recordingId);
-			const recordingInfo = await recordingService.getRecording(recordingId, 'filename');
-
-			const filename = recordingInfo.filename || `${recordingId}.mp4`;
-			archive.append(result.fileStream, { name: filename });
-		} catch (error) {
-			logger.error(`Error adding recording '${recordingId}' to ZIP: ${error}`);
+		if (recordingIdsToProccess.length === 0) {
+			throw errorRecordingsZipEmpty();
 		}
-	}
 
-	// Finalize the archive
-	archive.finalize();
+		const archive = await recordingService.createRecordingsZipArchive(recordingIdsToProccess);
+
+		res.setHeader('Content-Type', 'application/zip');
+		res.setHeader('Content-Disposition', 'attachment; filename="recordings.zip"');
+
+		// Handle errors in the archive
+		archive.on('error', (err) => {
+			logger.error(`ZIP archive error: ${err.message}`);
+			res.status(500).end();
+		});
+
+		// Pipe the archive to the response
+		archive.pipe(res);
+
+		// Finalize the archive
+		archive.finalize();
+	} catch (error) {
+		handleError(res, error, 'downloading recordings ZIP');
+	}
 };

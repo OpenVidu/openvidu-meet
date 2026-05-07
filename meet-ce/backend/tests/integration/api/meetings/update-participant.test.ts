@@ -1,18 +1,18 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetSignalType } from '@openvidu-meet/typings';
+import {
+	MeetParticipantModerationAction,
+	MeetRoomMemberRole,
+	MeetRoomMemberTokenMetadata,
+	MeetRoomMemberUIBadge,
+	MeetSignalType
+} from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
-import { getPermissions } from '../../../helpers/assertion-helpers.js';
-import {
-	deleteAllRooms,
-	deleteRoom,
-	disconnectFakeParticipants,
-	startTestServer,
-	updateParticipant,
-	updateParticipantMetadata
-} from '../../../helpers/request-helpers.js';
+import { expectValidationError } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants, updateParticipantMetadata } from '../../../helpers/livekit-cli-helpers.js';
+import { deleteAllRooms, startTestServer, updateParticipant } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
@@ -33,13 +33,19 @@ describe('Meetings API Tests', () => {
 	});
 
 	describe('Update Participant Tests', () => {
-		const setParticipantMetadata = async (roomId: string, role: MeetRoomMemberRole) => {
+		const setParticipantMetadata = async (roomData: RoomData, baseRole: MeetRoomMemberRole) => {
 			const metadata: MeetRoomMemberTokenMetadata = {
+				iat: Date.now(),
 				livekitUrl: MEET_ENV.LIVEKIT_URL,
-				role,
-				permissions: getPermissions(roomId, role, true, true).meet
+				roomId: roomData.room.roomId,
+				permissions: roomData.room.roles[baseRole].permissions,
+				badge:
+					baseRole === MeetRoomMemberRole.MODERATOR
+						? MeetRoomMemberUIBadge.MODERATOR
+						: MeetRoomMemberUIBadge.OTHER,
+				isPromotedModerator: undefined
 			};
-			await updateParticipantMetadata(roomId, participantIdentity, metadata);
+			await updateParticipantMetadata(roomData.room.roomId, participantIdentity, metadata);
 		};
 
 		beforeEach(async () => {
@@ -50,12 +56,12 @@ describe('Meetings API Tests', () => {
 			const frontendEventService = container.get(FrontendEventService);
 			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
 
-			await setParticipantMetadata(roomData.room.roomId, MeetRoomMemberRole.SPEAKER);
+			await setParticipantMetadata(roomData, MeetRoomMemberRole.SPEAKER);
 
 			const response = await updateParticipant(
 				roomData.room.roomId,
 				participantIdentity,
-				MeetRoomMemberRole.MODERATOR,
+				MeetParticipantModerationAction.UPGRADE,
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(200);
@@ -64,20 +70,25 @@ describe('Meetings API Tests', () => {
 			const participant = await livekitService.getParticipant(roomData.room.roomId, participantIdentity);
 			expect(participant).toBeDefined();
 			expect(participant).toHaveProperty('metadata');
+
 			const metadata = JSON.parse(participant.metadata || '{}');
-			expect(metadata).toHaveProperty('role', MeetRoomMemberRole.MODERATOR);
+			expect(metadata).toHaveProperty('roomId', roomData.room.roomId);
+			expect(metadata).toHaveProperty('badge', MeetRoomMemberUIBadge.MODERATOR);
+			expect(metadata).toHaveProperty('isPromotedModerator', true);
 
-			// Verify sendSignal method has been called twice
-			expect(sendSignalSpy).toHaveBeenCalledTimes(2);
+			const moderatorPermissions = roomData.room.roles.moderator.permissions;
+			const speakerPermissions = roomData.room.roles.speaker.permissions;
+			expect(metadata).toHaveProperty('permissions', moderatorPermissions);
+			expect(metadata).toHaveProperty('originalPermissions', speakerPermissions);
 
-			expect(sendSignalSpy).toHaveBeenNthCalledWith(
-				1,
+			// Verify sendSignal method has been called once
+			expect(sendSignalSpy).toHaveBeenCalledTimes(1);
+			expect(sendSignalSpy).toHaveBeenCalledWith(
 				roomData.room.roomId,
 				{
 					roomId: roomData.room.roomId,
 					participantIdentity,
-					newRole: MeetRoomMemberRole.MODERATOR,
-					secret: expect.any(String),
+					newBadge: MeetRoomMemberUIBadge.MODERATOR,
 					timestamp: expect.any(Number)
 				},
 				{
@@ -85,31 +96,21 @@ describe('Meetings API Tests', () => {
 					destinationIdentities: [participantIdentity]
 				}
 			);
-
-			expect(sendSignalSpy).toHaveBeenNthCalledWith(
-				2,
-				roomData.room.roomId,
-				{
-					roomId: roomData.room.roomId,
-					participantIdentity,
-					newRole: MeetRoomMemberRole.MODERATOR,
-					secret: undefined,
-					timestamp: expect.any(Number)
-				},
-				{
-					topic: MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
-					destinationIdentities: []
-				}
-			);
 		});
 
-		it('should update participant role from moderator to speaker', async () => {
-			await setParticipantMetadata(roomData.room.roomId, MeetRoomMemberRole.MODERATOR);
+		it('should downgrade participant role from promoted moderator to original permissions', async () => {
+			await setParticipantMetadata(roomData, MeetRoomMemberRole.SPEAKER);
+			await updateParticipant(
+				roomData.room.roomId,
+				participantIdentity,
+				MeetParticipantModerationAction.UPGRADE,
+				roomData.moderatorToken
+			);
 
 			const response = await updateParticipant(
 				roomData.room.roomId,
 				participantIdentity,
-				MeetRoomMemberRole.SPEAKER,
+				MeetParticipantModerationAction.DOWNGRADE,
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(200);
@@ -118,15 +119,20 @@ describe('Meetings API Tests', () => {
 			const participant = await livekitService.getParticipant(roomData.room.roomId, participantIdentity);
 			expect(participant).toBeDefined();
 			expect(participant).toHaveProperty('metadata');
+
 			const metadata = JSON.parse(participant.metadata || '{}');
-			expect(metadata).toHaveProperty('role', MeetRoomMemberRole.SPEAKER);
+			expect(metadata).toHaveProperty('roomId', roomData.room.roomId);
+			expect(metadata).toHaveProperty('badge', MeetRoomMemberUIBadge.OTHER);
+			const permissions = roomData.room.roles.speaker.permissions;
+			expect(metadata).toHaveProperty('permissions', permissions);
+			expect(metadata).not.toHaveProperty('originalPermissions');
 		});
 
 		it('should fail with 404 if participant does not exist', async () => {
 			const response = await updateParticipant(
 				roomData.room.roomId,
 				'NON_EXISTENT_PARTICIPANT',
-				MeetRoomMemberRole.MODERATOR,
+				MeetParticipantModerationAction.UPGRADE,
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
@@ -134,18 +140,70 @@ describe('Meetings API Tests', () => {
 		});
 
 		it('should fail with 404 if room does not exist', async () => {
-			// Delete the room to ensure it does not exist
-			let response = await deleteRoom(roomData.room.roomId, { withMeeting: 'force' });
-			expect(response.status).toBe(200);
-
-			response = await updateParticipant(
-				roomData.room.roomId,
+			const response = await updateParticipant(
+				'nonexistent-room-id',
 				participantIdentity,
-				MeetRoomMemberRole.MODERATOR,
+				MeetParticipantModerationAction.UPGRADE,
 				roomData.moderatorToken
 			);
 			expect(response.status).toBe(404);
 			expect(response.body.error).toBe('Room Error');
+		});
+
+		it('should fail with 409 when upgrading an already moderator participant', async () => {
+			await setParticipantMetadata(roomData, MeetRoomMemberRole.MODERATOR);
+
+			const response = await updateParticipant(
+				roomData.room.roomId,
+				participantIdentity,
+				MeetParticipantModerationAction.UPGRADE,
+				roomData.moderatorToken
+			);
+
+			expect(response.status).toBe(409);
+			expect(response.body.error).toBe('Participant Error');
+			expect(response.body.message).toContain('cannot be promoted to moderator');
+		});
+
+		it('should fail with 409 when downgrading a non-promoted participant', async () => {
+			await setParticipantMetadata(roomData, MeetRoomMemberRole.SPEAKER);
+
+			const response = await updateParticipant(
+				roomData.room.roomId,
+				participantIdentity,
+				MeetParticipantModerationAction.DOWNGRADE,
+				roomData.moderatorToken
+			);
+
+			expect(response.status).toBe(409);
+			expect(response.body.error).toBe('Participant Error');
+			expect(response.body.message).toContain('cannot be demoted');
+		});
+	});
+
+	describe('Update Participant Validation Tests', () => {
+		beforeAll(async () => {
+			roomData = await setupSingleRoom(true);
+		});
+
+		it('should fail when action is missing', async () => {
+			const response = await updateParticipant(
+				roomData.room.roomId,
+				participantIdentity,
+				undefined as unknown as MeetParticipantModerationAction,
+				roomData.moderatorToken
+			);
+			expectValidationError(response, 'action', 'Required');
+		});
+
+		it('should fail when action is invalid', async () => {
+			const response = await updateParticipant(
+				roomData.room.roomId,
+				participantIdentity,
+				'invalid-action' as unknown as MeetParticipantModerationAction,
+				roomData.moderatorToken
+			);
+			expectValidationError(response, 'action', 'Invalid enum value');
 		});
 	});
 });

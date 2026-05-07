@@ -1,7 +1,8 @@
-import { SortAndPagination } from '@openvidu-meet/typings';
+import type { SortAndPagination } from '@openvidu-meet/typings';
+import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
-import { Document, FilterQuery, Model, UpdateQuery } from 'mongoose';
-import { PaginatedResult, PaginationCursor } from '../models/db-pagination.model.js';
+import type { Model, QueryFilter, Require_id, UpdateQuery } from 'mongoose';
+import type { DocumentOnlyField, PaginatedResult, PaginationCursor } from '../models/database.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
 /**
@@ -9,44 +10,71 @@ import { LoggerService } from '../services/logger.service.js';
  * This class is meant to be extended by specific entity repositories.
  *
  * @template TDomain - The domain interface type
- * @template TDocument - The Mongoose document type extending Document
+ * @template TDocument - The persisted model shape used in MongoDB (extends TDomain)
  */
 @injectable()
-export abstract class BaseRepository<TDomain, TDocument extends Document> {
+export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomain> {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@unmanaged() protected model: Model<TDocument>
 	) {}
 
 	/**
-	 * Transforms a document into a domain object.
-	 * Must be implemented by each concrete repository to handle entity-specific transformations.
+	 * Transforms a persisted object into a domain object.
+	 * Must be implemented by each concrete repository to apply entity-specific transformations.
 	 *
-	 * @param document - The MongoDB document to transform
+	 * @param dbObject - The persisted object to transform
 	 * @returns The domain object
 	 */
-	protected abstract toDomain(document: TDocument): TDomain;
+	protected abstract toDomain(dbObject: TDocument): TDomain;
+
+	/**
+	 * Returns the list of fields that exist only in the persistence model (TDocument)
+	 * and are not part of the domain contract (TDomain).
+	 */
+	protected getDocumentOnlyFields(): readonly DocumentOnlyField<TDocument, TDomain>[] {
+		return [];
+	}
+
+	/**
+	 * Returns document paths that must be updated atomically.
+	 *
+	 * Paths listed here are treated as leaf values during partial updates,
+	 * so nested properties are not flattened into dot notation.
+	 */
+	protected getAtomicUpdatePaths(): readonly string[] {
+		return [];
+	}
+
+	/**
+	 * Creates a new document.
+	 *
+	 * @param data - The data to create
+	 * @returns The created domain object
+	 */
+	protected async createDocument(data: TDocument): Promise<TDomain> {
+		try {
+			const document = await this.model.create(data);
+			this.logger.debug(`Document created with ID: ${document._id}`);
+			return this.toDomain(this.stripMetadataFromDocument(document.toObject()));
+		} catch (error) {
+			this.logger.error('Error creating document:', error);
+			throw error;
+		}
+	}
 
 	/**
 	 * Finds a single document matching the given filter.
+	 *
 	 * @param filter - MongoDB query filter
-	 * @param fields - Optional comma-separated list of fields to select from database
-	 * @returns The document or null if not found
+	 * @param fields - Optional array of field names to select from database
+	 * @returns The domain object or null if not found
 	 */
-	protected async findOne(filter: FilterQuery<TDocument>, fields?: string): Promise<TDocument | null> {
+	protected async findOne(filter: QueryFilter<TDocument>, fields?: string[]): Promise<TDomain | null> {
 		try {
-			let query = this.model.findOne(filter);
-
-			if (fields) {
-				const fieldSelection = fields
-					.split(',')
-					.map((field) => field.trim())
-					.filter((field) => field !== '')
-					.join(' ');
-				query = query.select(fieldSelection);
-			}
-
-			return await query.exec();
+			const projection = this.buildProjection(fields);
+			const document = (await this.model.findOne(filter, projection).lean().exec()) as TDocument | null;
+			return document ? this.toDomain(document) : null;
 		} catch (error) {
 			this.logger.error('Error finding document with filter:', filter, error);
 			throw error;
@@ -55,18 +83,16 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 	/**
 	 * Finds all documents matching the given filter without pagination.
-	 * Useful for queries where you need all matching documents.
-	 *
 	 * WARNING: Use with caution on large collections. Consider using findMany() with pagination instead.
 	 *
 	 * @param filter - Base MongoDB query filter
+	 * @param fields - Optional array of field names to select from database
 	 * @returns Array of domain objects matching the filter
 	 */
-	protected async findAll(filter: FilterQuery<TDocument> = {}): Promise<TDomain[]> {
+	protected async findAll(filter: QueryFilter<TDocument> = {}, fields?: string[]): Promise<TDomain[]> {
 		try {
-			const documents = await this.model.find(filter).exec();
-
-			// Transform documents to domain objects
+			const projection = this.buildProjection(fields);
+			const documents = (await this.model.find(filter, projection).lean().exec()) as TDocument[];
 			return documents.map((doc) => this.toDomain(doc));
 		} catch (error) {
 			this.logger.error('Error finding all documents with filter:', filter, error);
@@ -81,17 +107,17 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * @param options - Pagination options
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor)
-	 * @param options.sortField - Field to sort by (default: 'createdAt')
+	 * @param options.sortField - Field to sort by (default: '_id')
 	 * @param options.sortOrder - Sort order: 'asc' or 'desc' (default: 'desc')
-	 * @param fields - Optional comma-separated list of fields to select from database
+	 * @param fields - Optional array of field names to select from database
 	 * @returns Paginated result with items, truncation flag, and optional next token
 	 */
 	protected async findMany(
-		filter: FilterQuery<TDocument> = {},
+		filter: QueryFilter<TDocument> = {},
 		options: SortAndPagination = {},
-		fields?: string
+		fields?: string[]
 	): Promise<PaginatedResult<TDomain>> {
-		const { maxItems = 100, nextPageToken, sortField = '_id', sortOrder = 'desc' } = options;
+		const { maxItems = 100, nextPageToken, sortField = '_id', sortOrder = SortOrder.DESC } = options;
 
 		// Parse and apply pagination cursor if provided
 		if (nextPageToken) {
@@ -100,7 +126,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 		}
 
 		// Convert sort order to MongoDB format
-		const mongoSortOrder: 1 | -1 = sortOrder === 'asc' ? 1 : -1;
+		const mongoSortOrder: 1 | -1 = sortOrder === SortOrder.ASC ? 1 : -1;
 
 		// Build compound sort: primary field + _id
 		const sort: Record<string, 1 | -1> = {
@@ -111,29 +137,17 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 		// Fetch one more than requested to check if there are more results
 		const limit = maxItems + 1;
 
-		// Build query
-		let query = this.model.find(filter).sort(sort).limit(limit);
-
-		// Apply field selection if specified
-		if (fields) {
-			// Convert comma-separated string to space-separated format for MongoDB select()
-			const fieldSelection = fields
-				.split(',')
-				.map((field) => field.trim())
-				.filter((field) => field !== '')
-				.join(' ');
-
-			query = query.select(fieldSelection);
-		}
-
-		const documents = await query.exec();
+		const projection = this.buildProjection(fields, true);
+		const documents = (await this.model.find(filter, projection).sort(sort).limit(limit).lean().exec()) as Array<
+			Require_id<TDocument> & { __v?: number }
+		>;
 
 		// Check if there are more results
 		const hasMore = documents.length > maxItems;
 		const resultDocuments = hasMore ? documents.slice(0, maxItems) : documents;
 
 		// Transform documents to domain objects
-		const items = resultDocuments.map((doc) => this.toDomain(doc));
+		const items = resultDocuments.map((doc) => this.toDomain(this.stripMetadataFromDocument(doc)));
 
 		// Generate next page token (encode last document's sort field value and _id)
 		const nextToken =
@@ -149,36 +163,36 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	}
 
 	/**
-	 * Creates a new document.
-	 * @param data - The data to create
-	 * @returns The created document
-	 */
-	protected async createDocument(data: TDomain): Promise<TDocument> {
-		try {
-			const document = await this.model.create(data);
-			this.logger.debug(`Document created with id: ${document._id}`);
-			return document;
-		} catch (error) {
-			this.logger.error('Error creating document:', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Updates a document by a custom filter.
+	 * Updates specific fields of a document using MongoDB operators.
+	 *
 	 * @param filter - MongoDB query filter
-	 * @param updateData - The data to update
-	 * @returns The updated document
+	 * @param update - Partial update operators, or a partial object to be converted into operators
+	 * @returns The updated domain object
 	 * @throws Error if document not found or update fails
 	 */
-	protected async updateOne(filter: FilterQuery<TDocument>, updateData: UpdateQuery<TDocument>): Promise<TDocument> {
+	protected async updatePartialOne(
+		filter: QueryFilter<TDocument>,
+		update: UpdateQuery<TDocument> | Partial<TDocument>
+	): Promise<TDomain> {
 		try {
-			const document = await this.model
-				.findOneAndUpdate(filter, updateData, {
-					new: true,
-					runValidators: true
+			const isUpdateQuery = Object.keys(update).some((key) => key.startsWith('$'));
+			const safeUpdate = isUpdateQuery
+				? (update as UpdateQuery<TDocument>)
+				: this.buildUpdateQuery(update as Partial<TDocument>);
+
+			if (!safeUpdate.$set && !safeUpdate.$unset) {
+				throw new Error('Partial update requires at least one field to set or unset');
+			}
+
+			const document = (await this.model
+				.findOneAndUpdate(filter, safeUpdate, {
+					returnDocument: 'after', // Return the document after replacement
+					runValidators: true, // Ensure update data is validated against schema
+					lean: true, // Return plain JavaScript object instead of Mongoose document
+					projection: { _id: 0, __v: 0 }, // Exclude persistence-only metadata fields
+					upsert: false // Do not create a new document if none matches the filter
 				})
-				.exec();
+				.exec()) as TDocument | null;
 
 			if (!document) {
 				this.logger.error('No document found to update with filter:', filter);
@@ -186,7 +200,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 			}
 
 			this.logger.debug('Document updated');
-			return document;
+			return this.toDomain(document);
 		} catch (error) {
 			this.logger.error('Error updating document:', error);
 			throw error;
@@ -194,11 +208,69 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	}
 
 	/**
+	 * Replaces a full document by a custom filter.
+	 * The replacement document is built by merging the replacement domain object
+	 * with the existing document's fields that are not present in the replacement.
+	 * This ensures that fields like _id and other database-only fields are preserved during replacement.
+	 *
+	 * @param filter - MongoDB query filter
+	 * @param replacement - Full replacement payload
+	 * @returns The replaced domain object
+	 * @throws Error if document not found or replace fails
+	 */
+	protected async replaceOne(filter: QueryFilter<TDocument>, replacement: TDomain): Promise<TDomain> {
+		try {
+			const documentOnlyFields = this.getDocumentOnlyFields();
+			const replacementDocument = { ...replacement } as TDocument;
+
+			if (documentOnlyFields.length > 0) {
+				const projection = documentOnlyFields.join(' ');
+				const existingDocument = (await this.model
+					.findOne(filter, projection)
+					.lean()
+					.exec()) as TDocument | null;
+
+				if (!existingDocument) {
+					this.logger.error('No document found to replace with filter:', filter);
+					throw new Error('Document not found for replacement');
+				}
+
+				// Copy document-only fields from existing document to replacement document
+				for (const key of documentOnlyFields) {
+					replacementDocument[key] = existingDocument[key];
+				}
+			}
+
+			const document = (await this.model
+				.findOneAndReplace(filter, replacementDocument, {
+					returnDocument: 'after', // Return the document after replacement
+					runValidators: true, // Validate replacement document against schema
+					lean: true, // Return plain JavaScript object instead of Mongoose document
+					projection: { _id: 0, __v: 0 }, // Exclude persistence-only metadata fields
+					upsert: false // Do not create a new document if none matches the filter
+				})
+				.exec()) as TDocument | null;
+
+			if (!document) {
+				this.logger.error('No document found to replace with filter:', filter);
+				throw new Error('Document not found for replacement');
+			}
+
+			this.logger.debug('Document replaced');
+			return this.toDomain(document);
+		} catch (error) {
+			this.logger.error('Error replacing document:', error);
+			throw error;
+		}
+	}
+
+	/**
 	 * Deletes a document by a custom filter.
+	 *
 	 * @param filter - MongoDB query filter
 	 * @throws Error if no document was found or deleted
 	 */
-	protected async deleteOne(filter: FilterQuery<TDocument>): Promise<void> {
+	protected async deleteOne(filter: QueryFilter<TDocument>): Promise<void> {
 		try {
 			const result = await this.model.findOneAndDelete(filter).exec();
 
@@ -207,7 +279,7 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 				throw new Error('Document not found for deletion');
 			}
 
-			this.logger.debug('Document deleted');
+			this.logger.debug(`Document with ID '${result._id}' deleted`);
 		} catch (error) {
 			this.logger.error('Error deleting document:', error);
 			throw error;
@@ -216,21 +288,31 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 	/**
 	 * Deletes multiple documents matching the given filter.
+	 *
 	 * @param filter - MongoDB query filter
-	 * @throws Error if no documents were found or deleted
+	 * @param failIfEmpty - Whether to throw error if no documents are found (default: true)
+	 * @throws Error if no documents were found or deleted (only when failIfEmpty is true)
 	 */
-	protected async deleteMany(filter: FilterQuery<TDocument> = {}): Promise<void> {
+	protected async deleteMany(filter: QueryFilter<TDocument> = {}, failIfEmpty = true): Promise<void> {
 		try {
 			const result = await this.model.deleteMany(filter).exec();
 			const deletedCount = result.deletedCount || 0;
 
 			if (deletedCount === 0) {
-				this.logger.error('No documents found to delete with filter:', filter);
-				throw new Error('No documents found for deletion');
+				if (failIfEmpty) {
+					this.logger.error('No documents found to delete with filter:', filter);
+					throw new Error('No documents found for deletion');
+				} else {
+					this.logger.debug('No documents found to delete with filter:', filter);
+				}
+			} else {
+				this.logger.debug(`Deleted ${deletedCount} documents`);
+			}
+		} catch (error) {
+			if (error instanceof Error && error.message === 'No documents found for deletion') {
+				throw error;
 			}
 
-			this.logger.debug(`Deleted ${deletedCount} documents`);
-		} catch (error) {
 			this.logger.error('Error deleting documents:', error);
 			throw error;
 		}
@@ -238,10 +320,11 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 
 	/**
 	 * Counts the total number of documents matching the given filter.
+	 *
 	 * @param filter - MongoDB query filter (optional, defaults to counting all documents)
 	 * @returns The number of documents matching the filter
 	 */
-	protected async count(filter: FilterQuery<TDocument> = {}): Promise<number> {
+	protected async count(filter: QueryFilter<TDocument> = {}): Promise<number> {
 		try {
 			return await this.model.countDocuments(filter).exec();
 		} catch (error) {
@@ -251,8 +334,100 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	}
 
 	// ==========================================
-	// PAGINATION HELPER METHODS
+	// HELPER METHODS
 	// ==========================================
+
+	/**
+	 * Builds query projection while excluding persistence-only metadata fields.
+	 *
+	 * @param fields - Optional list of fields to include
+	 * @param includeId - Whether to keep _id in the result (required for cursor pagination)
+	 */
+	private buildProjection(fields?: string[], includeId = false): Record<string, 0 | 1> {
+		if (fields && fields.length > 0) {
+			const sanitizedFields = fields.filter((field) => field !== '_id' && field !== '__v');
+			const projection: Record<string, 0 | 1> = Object.fromEntries(
+				sanitizedFields.map((field) => [field, 1] as const)
+			);
+
+			if (!includeId) {
+				projection._id = 0;
+			}
+
+			return projection;
+		}
+
+		return includeId ? { __v: 0 } : { _id: 0, __v: 0 };
+	}
+
+	/**
+	 * Removes persistence-only metadata fields from a document before mapping it to domain.
+	 */
+	private stripMetadataFromDocument(document: Require_id<TDocument> & { __v?: number }): TDocument {
+		const { _id, __v, ...domainDocument } = document;
+		(void _id, __v);
+		return domainDocument as TDocument;
+	}
+
+	/**
+	 * Builds a MongoDB update query from a partial object, converting undefined values to $unset operators.
+	 * Handles nested objects recursively.
+	 *
+	 * @param partial - The partial object containing fields to update (undefined values will be unset)
+	 * @returns An UpdateQuery object with $set and $unset operators
+	 */
+	protected buildUpdateQuery(partial: Partial<TDocument>): UpdateQuery<TDocument> {
+		const $set: Record<string, unknown> = {};
+		const $unset: Record<string, ''> = {};
+		const atomicUpdatePaths = new Set(this.getAtomicUpdatePaths());
+
+		const buildUpdateQueryDeep = (input: Record<string, unknown>, prefix = ''): void => {
+			for (const key in input) {
+				const value = input[key];
+				const path = prefix ? `${prefix}.${key}` : key;
+
+				if (value === undefined) {
+					// Mark field for unsetting if value is undefined
+					$unset[path] = '';
+				} else if (this.isPlainObject(value) && !atomicUpdatePaths.has(path)) {
+					// Recursively build update query for nested objects that are not atomic paths
+					buildUpdateQueryDeep(value, path);
+				} else {
+					// Set field value for $set operator
+					$set[path] = value;
+				}
+			}
+		};
+
+		buildUpdateQueryDeep(partial as Record<string, unknown>);
+
+		const updateQuery: UpdateQuery<TDocument> = {};
+
+		if (Object.keys($set).length > 0) {
+			updateQuery.$set = $set;
+		}
+
+		if (Object.keys($unset).length > 0) {
+			updateQuery.$unset = $unset;
+		}
+
+		return updateQuery;
+	}
+
+	/**
+	 * Checks whether a value is a plain object.
+	 */
+	private isPlainObject(value: unknown): value is Record<string, unknown> {
+		if (value === null || typeof value !== 'object') {
+			return false;
+		}
+
+		if (Array.isArray(value)) {
+			return false;
+		}
+
+		return Object.getPrototypeOf(value) === Object.prototype;
+	}
 
 	/**
 	 * Encodes a cursor for pagination.
@@ -263,8 +438,8 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * @param sortField - The field used for sorting
 	 * @returns Base64-encoded cursor token
 	 */
-	protected encodeCursor(document: TDocument, sortField: string): string {
-		const fieldValue = document.get(sortField);
+	protected encodeCursor(document: Require_id<TDocument>, sortField: string): string {
+		const fieldValue = document[sortField as keyof Require_id<TDocument>];
 
 		const cursor: PaginationCursor = {
 			// Convert undefined to null for JSON serialization
@@ -323,17 +498,17 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 	 * @param sortOrder - The sort order ('asc' or 'desc')
 	 */
 	protected applyCursorToFilter(
-		filter: FilterQuery<TDocument>,
+		filter: QueryFilter<TDocument>,
 		cursor: PaginationCursor,
 		sortField: string,
-		sortOrder: 'asc' | 'desc'
+		sortOrder: SortOrder
 	): void {
-		const comparison = sortOrder === 'asc' ? '$gt' : '$lt';
-		const equalComparison = sortOrder === 'asc' ? '$gt' : '$lt';
+		const comparison = sortOrder === SortOrder.ASC ? '$gt' : '$lt';
+		const equalComparison = sortOrder === SortOrder.ASC ? '$gt' : '$lt';
 
 		// Build compound filter for pagination
 		// This ensures correct ordering even when sortField values are not unique
-		const orConditions: FilterQuery<TDocument>[] = [];
+		const orConditions: QueryFilter<TDocument>[] = [];
 
 		// If cursor field value is null (field doesn't exist in the document)
 		if (cursor.fieldValue === null) {
@@ -341,31 +516,31 @@ export abstract class BaseRepository<TDomain, TDocument extends Document> {
 			orConditions.push({
 				[sortField]: { $exists: false },
 				_id: { [equalComparison]: cursor.id }
-			} as FilterQuery<TDocument>);
+			} as QueryFilter<TDocument>);
 
 			// In ascending order, also include documents where the field exists (they come after missing fields)
-			if (sortOrder === 'asc') {
+			if (sortOrder === SortOrder.ASC) {
 				orConditions.push({
 					[sortField]: { $exists: true }
-				} as FilterQuery<TDocument>);
+				} as QueryFilter<TDocument>);
 			}
 		} else {
 			// Normal case: field has a value
 			orConditions.push(
 				{
 					[sortField]: { [comparison]: cursor.fieldValue }
-				} as FilterQuery<TDocument>,
+				} as QueryFilter<TDocument>,
 				{
 					[sortField]: cursor.fieldValue,
 					_id: { [equalComparison]: cursor.id }
-				} as FilterQuery<TDocument>
+				} as QueryFilter<TDocument>
 			);
 
 			// In descending order, also include documents where the field doesn't exist (they come after all values)
-			if (sortOrder === 'desc') {
+			if (sortOrder === SortOrder.DESC) {
 				orConditions.push({
 					[sortField]: { $exists: false }
-				} as FilterQuery<TDocument>);
+				} as QueryFilter<TDocument>);
 			}
 		}
 

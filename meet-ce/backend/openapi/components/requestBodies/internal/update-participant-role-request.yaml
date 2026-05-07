@@ -4,9 +4,14 @@ content:
     application/json:
         schema:
             type: object
+            required:
+                - action
             properties:
-                role:
+                action:
                     type: string
-                    enum: ['moderator', 'speaker']
-                    description: The new role to assign to the participant.
-                    example: 'moderator'
+                    enum: ['upgrade', 'downgrade']
+                    description: |
+                        Moderation action to apply to the participant. Possible values:
+                        - `upgrade`: Promote the participant to moderator role.
+                        - `downgrade`: Demote the participant to their original role
+                    example: 'upgrade'

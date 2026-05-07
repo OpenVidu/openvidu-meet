@@ -13,19 +13,21 @@ import { errorRoomNotFound } from '../../../../src/models/error.model.js';
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import {
 	expectValidationError,
+	expectValidRecordingLocationHeader,
+	expectValidRecordingWithFields,
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
 } from '../../../helpers/assertion-helpers.js';
+import { disconnectFakeParticipants, joinFakeParticipant } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
-	disconnectFakeParticipants,
-	joinFakeParticipant,
 	startRecording,
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
 } from '../../../helpers/request-helpers.js';
+
 import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
 import { TestContext } from '../../../interfaces/scenarios.js';
 
@@ -40,7 +42,8 @@ describe('Recording API Tests', () => {
 
 	afterAll(async () => {
 		await disconnectFakeParticipants();
-		await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+		await deleteAllRooms();
+		await deleteAllRecordings();
 	});
 
 	describe('Start Recording Tests', () => {
@@ -52,7 +55,8 @@ describe('Recording API Tests', () => {
 
 		afterAll(async () => {
 			await disconnectFakeParticipants();
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 			context = null;
 		});
 
@@ -129,6 +133,37 @@ describe('Recording API Tests', () => {
 				roomDataB.room.roomId,
 				roomDataB.room.roomName
 			);
+		});
+	});
+
+	describe('Start recordings - Fields filtering', () => {
+		let room: MeetRoom;
+
+		beforeAll(async () => {
+			// Create a room and join a participant
+			context = await setupMultiRoomTestContext(1, true);
+			({ room } = context.getRoomByIndex(0)!);
+		});
+
+		afterAll(async () => {
+			await disconnectFakeParticipants();
+			await deleteAllRooms();
+			await deleteAllRecordings();
+			context = null;
+		});
+
+		it('should filter response fields using X-Fields header on start recording', async () => {
+			// Start a new recording with X-Fields header
+			const response = await startRecording(room.roomId, undefined, {
+				headers: { xFields: 'recordingId,roomId,status' }
+			});
+
+			expect(response.status).toBe(201);
+			expectValidRecordingLocationHeader(response);
+			expectValidRecordingWithFields(response.body, ['recordingId', 'roomId', 'status']);
+
+			// Clean up
+			await stopRecording(response.body.recordingId);
 		});
 	});
 
@@ -512,7 +547,8 @@ describe('Recording API Tests', () => {
 
 		afterAll(async () => {
 			await disconnectFakeParticipants();
-			await Promise.all([deleteAllRooms(), deleteAllRecordings()]);
+			await deleteAllRooms();
+			await deleteAllRecordings();
 			context = null;
 		});
 

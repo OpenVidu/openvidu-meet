@@ -1,0 +1,216 @@
+<div class="room-access-step fade-in">
+	<!-- Header Section -->
+	<header class="step-header">
+		<mat-icon class="step-icon">lock_open</mat-icon>
+		<div class="step-title-group">
+			<h3 class="step-title">Room Access</h3>
+			<p class="step-description">Define who can access this room and what permissions they have.</p>
+		</div>
+	</header>
+
+	<main class="step-content">
+		<form [formGroup]="roomAccessForm">
+			<!-- ── Access Settings Section ── -->
+			<section class="access-section">
+				<p class="section-label">ACCESS POLICY</p>
+
+				<!-- Anonymous Moderator Access -->
+				<div class="access-row">
+					<div class="access-info">
+						<mat-icon class="access-icon material-symbols-outlined">shield_person</mat-icon>
+						<div class="access-text">
+							<span class="access-label">Anonymous Moderator</span>
+							<span class="access-description">
+								Allow users to join as Moderator without logging in
+							</span>
+						</div>
+					</div>
+					<mat-slide-toggle
+						formControlName="anonymousModeratorEnabled"
+						color="primary"
+						class="access-toggle"
+					/>
+				</div>
+
+				<!-- Anonymous Speaker Access -->
+				<div class="access-row">
+					<div class="access-info">
+						<mat-icon class="access-icon material-symbols-outlined">record_voice_over</mat-icon>
+						<div class="access-text">
+							<span class="access-label">Anonymous Speaker</span>
+							<span class="access-description"> Allow users to join as Speaker without logging in </span>
+						</div>
+					</div>
+					<mat-slide-toggle formControlName="anonymousSpeakerEnabled" color="primary" class="access-toggle" />
+				</div>
+
+				<!-- Registered Users Access -->
+				<div class="access-row">
+					<div class="access-info">
+						<mat-icon class="access-icon material-symbols-outlined">verified_user</mat-icon>
+						<div class="access-text">
+							<span class="access-label">Registered Users</span>
+							<span class="access-description"> Allow any registered user to access the room </span>
+						</div>
+					</div>
+					<mat-slide-toggle formControlName="registeredEnabled" color="primary" class="access-toggle" />
+				</div>
+			</section>
+
+			<!-- ── Role Permissions Section ── -->
+			<section class="permissions-section">
+				<p class="section-label">ROLE PERMISSIONS</p>
+
+				<mat-accordion class="roles-accordion" multi>
+					<!-- Moderator Permissions -->
+					<mat-expansion-panel class="role-expansion-panel">
+						<mat-expansion-panel-header>
+							<mat-panel-title class="role-panel-title">
+								<mat-icon class="role-panel-icon material-symbols-outlined">shield_person</mat-icon>
+								<span>Moderator</span>
+							</mat-panel-title>
+							<mat-panel-description class="role-panel-description">
+								Configure what moderators can do in this room
+							</mat-panel-description>
+						</mat-expansion-panel-header>
+
+						<div class="role-permissions-content" [formGroup]="moderatorForm">
+							@for (group of permissionGroups; track group.label) {
+								<div class="permission-group">
+									<div class="permission-group-header">
+										<mat-icon class="permission-group-icon">{{ group.icon }}</mat-icon>
+										<span class="permission-group-label">{{ group.label }}</span>
+									</div>
+									@for (permission of group.permissions; track permission.key) {
+										<div class="permission-row">
+											<div class="permission-info">
+												<mat-icon class="permission-icon material-symbols-outlined">{{
+													permission.icon
+												}}</mat-icon>
+												<div class="permission-text">
+													<span class="permission-label">{{ permission.label }}</span>
+													<span class="permission-description">{{
+														permission.description
+													}}</span>
+												</div>
+											</div>
+											<mat-slide-toggle
+												[formControlName]="permission.key"
+												color="primary"
+												class="permission-toggle"
+											/>
+										</div>
+									}
+								</div>
+							}
+						</div>
+					</mat-expansion-panel>
+
+					<!-- Speaker Permissions -->
+					<mat-expansion-panel class="role-expansion-panel">
+						<mat-expansion-panel-header>
+							<mat-panel-title class="role-panel-title">
+								<mat-icon class="role-panel-icon material-symbols-outlined">record_voice_over</mat-icon>
+								<span>Speaker</span>
+							</mat-panel-title>
+							<mat-panel-description class="role-panel-description">
+								Configure what speakers can do in this room
+							</mat-panel-description>
+						</mat-expansion-panel-header>
+
+						<div class="role-permissions-content" [formGroup]="speakerForm">
+							@for (group of permissionGroups; track group.label) {
+								<div class="permission-group">
+									<div class="permission-group-header">
+										<mat-icon class="permission-group-icon">{{ group.icon }}</mat-icon>
+										<span class="permission-group-label">{{ group.label }}</span>
+									</div>
+									@for (permission of group.permissions; track permission.key) {
+										<div class="permission-row">
+											<div class="permission-info">
+												<mat-icon class="permission-icon material-symbols-outlined">{{
+													permission.icon
+												}}</mat-icon>
+												<div class="permission-text">
+													<span class="permission-label">{{ permission.label }}</span>
+													<span class="permission-description">{{
+														permission.description
+													}}</span>
+												</div>
+											</div>
+											<mat-slide-toggle
+												[formControlName]="permission.key"
+												color="primary"
+												class="permission-toggle"
+											/>
+										</div>
+									}
+								</div>
+							}
+						</div>
+					</mat-expansion-panel>
+				</mat-accordion>
+			</section>
+		</form>
+
+		<!-- ── Members Section ── -->
+		@if (!editMode()) {
+			<section class="members-section">
+				<div class="members-header">
+					<div class="members-header-text">
+						<p class="section-label">MEMBERS</p>
+						<p class="section-subtitle">
+							Add specific members to this room and assign them custom permissions.
+						</p>
+					</div>
+					<button mat-stroked-button color="primary" type="button" (click)="openAddMemberDialog()">
+						<mat-icon>person_add</mat-icon>
+						Add Member
+					</button>
+				</div>
+
+				<!-- Pending Members List -->
+				@if (pendingMembers().length > 0) {
+					<div class="pending-members-list">
+						<p class="pending-label">Members to add ({{ pendingMembers().length }})</p>
+						@for (member of pendingMembers(); track member.userId; let i = $index) {
+							<div class="pending-member-row">
+								<div class="member-info">
+									<mat-icon class="member-icon material-symbols-outlined">{{
+										RoomMemberUiUtils.getRoleIcon(member.baseRole)
+									}}</mat-icon>
+									<div class="member-text">
+										<span class="member-user-id">{{ member.userId || member.name }}</span>
+										<span class="member-role">{{
+											RoomMemberUiUtils.getRoleLabel(member.baseRole)
+										}}</span>
+									</div>
+								</div>
+								<div class="member-actions">
+									<button
+										mat-icon-button
+										class="edit-member-button"
+										(click)="openEditMemberDialog(i)"
+										matTooltip="Edit member"
+										type="button"
+									>
+										<mat-icon>edit</mat-icon>
+									</button>
+									<button
+										mat-icon-button
+										class="remove-member-button"
+										(click)="onRemoveMember(i)"
+										matTooltip="Remove member"
+										type="button"
+									>
+										<mat-icon>close</mat-icon>
+									</button>
+								</div>
+							</div>
+						}
+					</div>
+				}
+			</section>
+		}
+	</main>
+</div>

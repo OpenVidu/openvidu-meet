@@ -8,4 +8,4 @@ content:
                     type: string
                     format: uri
                     description: URL to access the recording.
-                    example: https://example.com/recording/room-123--EG_XYZ--XX445?secret=abc123
+                    example: https://example.com/recording/room-123--EG_XYZ--XX445?recordingSecret=abc123

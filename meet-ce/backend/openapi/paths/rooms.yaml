@@ -2,14 +2,16 @@
     post:
         operationId: createRoom
         summary: Create a room
-        description: >
-            Creates a new OpenVidu Meet room.
-            The room will be available for participants to join using the generated URLs.
+        description: |
+            Creates a new OpenVidu Meet room using the provided data and returns the room details along with the generated participant URLs.
         tags:
             - OpenVidu Meet - Rooms
         security:
             - apiKeyHeader: []
             - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-x-fields-header.yaml'
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
         requestBody:
             $ref: '../components/requestBodies/create-room-request.yaml'
         responses:
@@ -26,23 +28,31 @@
     get:
         operationId: getRooms
         summary: Get all rooms
-        description: >
-            Retrieves a paginated list of all rooms available in the system.
-            You can apply filters to narrow down the results based on specific criteria.
+        description: |
+            Retrieves a paginated list of rooms in the system, optionally filtered by criteria.
+            By default, rooms are sorted by creation date, newest first.
 
-            By default, the rooms are sorted by creation date in descending order (newest first).
+            > Only rooms accessible to the authenticated user are returned when using the `accessTokenHeader` authentication method.
         tags:
             - OpenVidu Meet - Rooms
         security:
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
+            - $ref: '../components/parameters/room-x-fields-header.yaml'
             - $ref: '../components/parameters/room-name.yaml'
+            - $ref: '../components/parameters/room-name-match-mode.yaml'
+            - $ref: '../components/parameters/room-name-case-insensitive.yaml'
+            - $ref: '../components/parameters/room-owner.yaml'
+            - $ref: '../components/parameters/room-member.yaml'
+            - $ref: '../components/parameters/room-registered-access.yaml'
             - $ref: '../components/parameters/room-status.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
+            - $ref: '../components/parameters/room-extra-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
-            - $ref: '../components/parameters/sort-field.yaml'
+            - $ref: '../components/parameters/room-sort-field.yaml'
             - $ref: '../components/parameters/sort-order.yaml'
         responses:
             '200':
@@ -59,20 +69,25 @@
         operationId: bulkDeleteRooms
         summary: Bulk delete rooms
         description: |
-            Delete multiple OpenVidu Meet rooms at once with the specified room IDs.
+            Deletes multiple OpenVidu Meet rooms using the specified room IDs.
+            <br/><br/>
+            Deletion behavior depends on the `withMeeting` and `withRecordings` policies:
+              - Rooms may be deleted or closed immediately
+              - Deletion may be scheduled to occur after ongoing meetings end
+              - The operation may fail if deletion is not permitted
 
-            If any of the rooms have active meetings or recordings,
-            deletion behavior is determined by the provided `withMeeting` and `withRecordings` deletion policies.
-
-            Depending on these policies, the rooms may be deleted/closed immediately, scheduled to be deleted/closed once the meetings end,
-            or the operation may fail if deletion is not permitted.
+            > Only rooms the authenticated user can manage are affected when using the `accessTokenHeader` authentication method.
         tags:
             - OpenVidu Meet - Rooms
         security:
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
+            - $ref: '../components/parameters/room-x-fields-header.yaml'
             - $ref: '../components/parameters/room-ids.yaml'
+            - $ref: '../components/parameters/room-fields.yaml'
+            - $ref: '../components/parameters/room-extra-fields.yaml'
             - $ref: '../components/parameters/meeting-deletion-policy.yaml'
             - $ref: '../components/parameters/recordings-deletion-policy.yaml'
         responses:
@@ -92,8 +107,9 @@
     get:
         operationId: getRoom
         summary: Get a room
-        description: >
-            Retrieves the details of an OpenVidu Meet room with the specified room ID.
+        description: |
+            Retrieves the details of an OpenVidu Meet room by its room ID.
+
         tags:
             - OpenVidu Meet - Rooms
         security:
@@ -102,7 +118,10 @@
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/room-x-fields-header.yaml'
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
             - $ref: '../components/parameters/room-fields.yaml'
+            - $ref: '../components/parameters/room-extra-fields.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-room.yaml'
@@ -122,25 +141,28 @@
         description: |
             Deletes the specified OpenVidu Meet room by its room ID.
 
-            If the room has an active meeting or existing recordings,
-            deletion behavior is determined by the provided `withMeeting` and `withRecordings` deletion policies.
-
-            Depending on these policies, the room may be deleted/closed immediately, scheduled to be deleted/closed once the meeting ends,
-            or the operation may fail if deletion is not permitted.
+            Deletion behavior depends on the `withMeeting` and `withRecordings` policies:
+              - The room may be deleted or closed immediately
+              - Deletion may be scheduled to occur after the meeting ends
+              - The operation may fail if deletion is not allowed
         tags:
             - OpenVidu Meet - Rooms
         security:
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../components/parameters/room-x-fields-header.yaml'
+            - $ref: '../components/parameters/room-x-extra-fields-header.yaml'
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/meeting-deletion-policy.yaml'
             - $ref: '../components/parameters/recordings-deletion-policy.yaml'
+            - $ref: '../components/parameters/room-fields.yaml'
+            - $ref: '../components/parameters/room-extra-fields.yaml'
         responses:
             '200':
-                $ref: '../components/responses/success-room-process-deletion.yaml'
+                $ref: '../components/responses/success-delete-room-processed.yaml'
             '202':
-                $ref: '../components/responses/success-room-schedule-deletion.yaml'
+                $ref: '../components/responses/success-delete-room-scheduled.yaml'
             '401':
                 $ref: '../components/responses/unauthorized-error.yaml'
             '403':
@@ -236,6 +258,72 @@
                 $ref: '../components/responses/forbidden-error.yaml'
             '404':
                 $ref: '../components/responses/error-room-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/roles:
+    put:
+        operationId: updateRoomRoles
+        summary: Update roles permissions for a room
+        description: |
+            Updates the permissions by role for the specified room.
+
+            You can customize permissions for moderator and/or speaker roles.
+            Only specify the permissions you want to change from the current configuration.
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-roles-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-roles.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-room-active-meeting.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/rooms/{roomId}/access:
+    put:
+        operationId: updateRoomAccess
+        summary: Update access config for a room
+        description: |
+            Updates the access configuration for the specified room.
+
+            This allows you to enable or disable access for registered users and anonymous roles
+            (moderator/speaker/recording).
+        tags:
+            - OpenVidu Meet - Rooms
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-room-access-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-room-access.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-room-not-found.yaml'
+            '409':
+                $ref: '../components/responses/error-room-active-meeting.yaml'
             '422':
                 $ref: '../components/responses/validation-error.yaml'
             '500':
