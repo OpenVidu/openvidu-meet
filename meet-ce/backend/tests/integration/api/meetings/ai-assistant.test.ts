@@ -5,7 +5,11 @@ import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { RedisKeyName } from '../../../../src/models/redis.model.js';
+import { AiAssistantService } from '../../../../src/services/ai-assistant.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { MutexService } from '../../../../src/services/mutex.service.js';
+import { RedisService } from '../../../../src/services/redis.service.js';
 import { RequestSessionService } from '../../../../src/services/request-session.service.js';
 import { expectValidAssistantResponse } from '../../../helpers/assertion-helpers.js';
 import {
@@ -25,7 +29,10 @@ const MOCK_DISPATCH_ID = 'dispatch-test-001';
 const MOCK_DISPATCH = { id: MOCK_DISPATCH_ID, agentName: INTERNAL_CONFIG.CAPTIONS_AGENT_NAME };
 
 let app: Express;
+let aiAssistantService: AiAssistantService;
 let livekitService: LiveKitService;
+let mutexService: MutexService;
+let redisService: RedisService;
 let requestSessionService: RequestSessionService;
 
 describe('AI Assistant API Tests', () => {
@@ -34,7 +41,10 @@ describe('AI Assistant API Tests', () => {
 	// Bypass participantIdentity resolution from token
 	beforeAll(async () => {
 		app = await startTestServer();
+		aiAssistantService = container.get(AiAssistantService);
 		livekitService = container.get(LiveKitService);
+		mutexService = container.get(MutexService);
+		redisService = container.get(RedisService);
 		requestSessionService = container.get(RequestSessionService);
 		jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest');
 	});
@@ -51,7 +61,6 @@ describe('AI Assistant API Tests', () => {
 			roomData = await setupSingleRoom(true);
 
 			// Default LiveKit stubs: no dispatch running → creation succeeds
-			jest.spyOn(livekitService, 'getAgent').mockResolvedValue(null as any);
 			createAgentSpy = jest.spyOn(livekitService, 'createAgent');
 			createAgentSpy.mockResolvedValue(MOCK_DISPATCH as any);
 			jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest2');
@@ -70,6 +79,7 @@ describe('AI Assistant API Tests', () => {
 			afterAll(async () => {
 				MEET_ENV.CAPTIONS_ENABLED = captionsDefaultValue;
 			});
+
 			it('should create a live captions assistant and return id and status active', async () => {
 				const response = await createAssistant(roomData.moderatorToken);
 
@@ -78,12 +88,13 @@ describe('AI Assistant API Tests', () => {
 			});
 
 			it('should reuse existing dispatch and not create a new one when agent is already running', async () => {
-				(livekitService.getAgent as jest.Mock).mockResolvedValue(MOCK_DISPATCH as any);
+				await createAssistant(roomData.speakerToken);
+				jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest3');
 
-				const response = await createAssistant(roomData.speakerToken);
+				const response = await createAssistant(roomData.moderatorToken);
 
 				expectValidAssistantResponse(response);
-				expect(livekitService.createAgent).not.toHaveBeenCalled();
+				expect(livekitService.createAgent).toHaveBeenCalledTimes(1);
 			});
 
 			it('should allow a second participant to enable captions when agent is already running for another participant', async () => {
@@ -91,7 +102,7 @@ describe('AI Assistant API Tests', () => {
 				await createAssistant(roomData.speakerToken);
 
 				// Now the agent is running; second participant enables
-				(livekitService.getAgent as jest.Mock).mockResolvedValue(MOCK_DISPATCH as any);
+				jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest4');
 				const response = await createAssistant(roomData.moderatorToken);
 
 				expectValidAssistantResponse(response);
@@ -101,14 +112,11 @@ describe('AI Assistant API Tests', () => {
 
 			it('should allow a participant to re-enable captions after previously disabling them', async () => {
 				jest.spyOn(livekitService, 'stopAgent').mockResolvedValue(undefined as any);
-				jest.spyOn(livekitService, 'listAgents').mockResolvedValue([MOCK_DISPATCH] as any);
 
 				// Enable → disable → re-enable
 				await createAssistant(roomData.speakerToken);
 				await cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken);
 
-				// After cancel, no dispatch running
-				(livekitService.getAgent as jest.Mock).mockResolvedValue(null as any);
 				createAgentSpy.mockClear(); // Clear call count from previous enable
 				const response = await createAssistant(roomData.speakerToken);
 
@@ -207,49 +215,52 @@ describe('AI Assistant API Tests', () => {
 			});
 
 			it('should create exactly one agent dispatch when two participants enable captions simultaneously', async () => {
-				let createCallCount = 0;
+				(livekitService.createAgent as jest.Mock).mockImplementation(async () => MOCK_DISPATCH);
 
-				// Simulate: during concurrent execution getAgent returns null until dispatch is created
-				(livekitService.getAgent as jest.Mock).mockImplementation(async () => {
-					return createCallCount > 0 ? MOCK_DISPATCH : null;
-				});
-				(livekitService.createAgent as jest.Mock).mockImplementation(async () => {
-					createCallCount++;
-					return MOCK_DISPATCH;
-				});
-
-				const [res1, res2] = await Promise.all([
-					createAssistant(roomData.speakerToken),
-					createAssistant(roomData.moderatorToken)
+				const [assistant1, assistant2] = await Promise.all([
+					aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantA'),
+					aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantB')
 				]);
 
-				expect([200, 409]).toContain(res1.status);
-				expect([200, 409]).toContain(res2.status);
+				expect(assistant1.status).toBe('active');
+				expect(assistant2.status).toBe('active');
+				expect(assistant1.id).toBe(MOCK_DISPATCH_ID);
+				expect(assistant2.id).toBe(MOCK_DISPATCH_ID);
 				// The distributed lock guarantees at most one dispatch is created
 				expect(livekitService.createAgent).toHaveBeenCalledTimes(1);
 			});
 
+			it('should register the participant using Redis fallback when create lock retries are exhausted', async () => {
+				const participantIdentity = 'fallbackParticipant';
+				const assistantIdKey = `${RedisKeyName.AI_ASSISTANT_ID}${roomData.room.roomId}:${MeetAssistantCapabilityName.LIVE_CAPTIONS}`;
+				const participantStateKey = `${RedisKeyName.AI_ASSISTANT_PARTICIPANT_STATE}${roomData.room.roomId}:${MeetAssistantCapabilityName.LIVE_CAPTIONS}:${participantIdentity}`;
+
+				jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue(participantIdentity);
+				await redisService.setIfNotExists(assistantIdKey, MOCK_DISPATCH_ID);
+				jest.spyOn(mutexService, 'withRetryLock').mockResolvedValue(null);
+
+				const response = await createAssistant(roomData.speakerToken);
+
+				expectValidAssistantResponse(response);
+				expect(response.body.id).toBe(MOCK_DISPATCH_ID);
+				expect(livekitService.createAgent).not.toHaveBeenCalled();
+				expect(await redisService.exists(participantStateKey)).toBe(true);
+
+				await redisService.delete([assistantIdKey, participantStateKey]);
+			});
+
 			it('should not create more than one dispatch when the same participant clicks enable rapidly', async () => {
-				let createCallCount = 0;
+				(livekitService.createAgent as jest.Mock).mockImplementation(async () => MOCK_DISPATCH);
 
-				// Simulate: during concurrent execution getAgent returns null until dispatch is created
-				(livekitService.getAgent as jest.Mock).mockImplementation(async () => {
-					return createCallCount > 0 ? MOCK_DISPATCH : null;
-				});
-				(livekitService.createAgent as jest.Mock).mockImplementation(async () => {
-					createCallCount++;
-					return MOCK_DISPATCH;
-				});
-
-				const [res1, res2] = await Promise.all([
-					createAssistant(roomData.speakerToken),
-					createAssistant(roomData.speakerToken)
+				const [assistant1, assistant2] = await Promise.all([
+					aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantA'),
+					aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantA')
 				]);
 
-				// One succeeds; the other may succeed (lock acquired sequentially) or return an error
-				// Either way, createAgent must be called at most once
-				const successCount = [res1, res2].filter((r) => r.status === 200).length;
-				expect(successCount).toBeGreaterThanOrEqual(1);
+				expect(assistant1.status).toBe('active');
+				expect(assistant2.status).toBe('active');
+				expect(assistant1.id).toBe(MOCK_DISPATCH_ID);
+				expect(assistant2.id).toBe(MOCK_DISPATCH_ID);
 				expect(livekitService.createAgent).toHaveBeenCalledTimes(1);
 			});
 		});
@@ -262,10 +273,8 @@ describe('AI Assistant API Tests', () => {
 			roomData = await setupSingleRoom(true);
 
 			// Default stubs: dispatch exists and can be stopped
-			jest.spyOn(livekitService, 'getAgent').mockResolvedValue(null as any);
 			jest.spyOn(livekitService, 'createAgent').mockResolvedValue(MOCK_DISPATCH as any);
 			jest.spyOn(livekitService, 'stopAgent').mockResolvedValue(undefined as any);
-			jest.spyOn(livekitService, 'listAgents').mockResolvedValue([MOCK_DISPATCH] as any);
 			jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest');
 		});
 
@@ -282,10 +291,10 @@ describe('AI Assistant API Tests', () => {
 			afterAll(async () => {
 				MEET_ENV.CAPTIONS_ENABLED = captionsDefaultValue;
 			});
+
 			it('should return 204 and stop the dispatch when the last participant disables captions', async () => {
 				await createAssistant(roomData.speakerToken);
 
-				jest.spyOn(livekitService, 'getAgent').mockResolvedValue(MOCK_DISPATCH as any);
 				const response = await cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken);
 
 				expect(response.status).toBe(204);
@@ -295,7 +304,6 @@ describe('AI Assistant API Tests', () => {
 			it('should return 204 but not stop the dispatch when another participant still has captions enabled', async () => {
 				// Two participants enable captions
 				await createAssistant(roomData.speakerToken);
-				(livekitService.getAgent as jest.Mock).mockResolvedValue(MOCK_DISPATCH as any);
 				jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest2');
 
 				await createAssistant(roomData.moderatorToken);
@@ -311,7 +319,6 @@ describe('AI Assistant API Tests', () => {
 
 			it('should stop the dispatch only after all participants have disabled captions', async () => {
 				await createAssistant(roomData.speakerToken);
-				(livekitService.getAgent as jest.Mock).mockResolvedValue(MOCK_DISPATCH as any);
 				jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest2');
 
 				await createAssistant(roomData.moderatorToken);
@@ -331,29 +338,26 @@ describe('AI Assistant API Tests', () => {
 
 			it('should be idempotent — calling cancel twice for the same participant returns 204 both times', async () => {
 				await createAssistant(roomData.speakerToken);
-				(livekitService.getAgent as jest.Mock).mockResolvedValue(MOCK_DISPATCH as any);
 
 				const res1 = await cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken);
-				(livekitService.getAgent as jest.Mock).mockResolvedValue(null as any);
 
 				const res2 = await cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken);
 
 				expect(res1.status).toBe(204);
 				expect(res2.status).toBe(204);
-				// State is already disabled after first cancel → second call sees 0 participants
-				// → attempts to stop, but dispatch is no longer listed
 				expect(livekitService.stopAgent).toHaveBeenCalledTimes(1);
 			});
 
-			it('should return 204 and skip stop gracefully when the LiveKit dispatch no longer exists', async () => {
-				// Dispatch already gone from LiveKit (crashed, network partition, etc.)
-				(livekitService.listAgents as jest.Mock).mockResolvedValue([]);
+			it('should return 204 even when LiveKit stopAgent resolves after the dispatch is already gone', async () => {
+				// The service uses Redis as the source of truth, so it will still attempt stopAgent.
+				// As long as stopAgent resolves gracefully, cancel remains successful.
+				(livekitService.stopAgent as jest.Mock).mockResolvedValue(undefined as any);
 
 				await createAssistant(roomData.speakerToken);
 				const response = await cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken);
 
 				expect(response.status).toBe(204);
-				expect(livekitService.stopAgent).not.toHaveBeenCalled();
+				expect(livekitService.stopAgent).toHaveBeenCalledTimes(1);
 			});
 
 			it('should return 204 even when cancel is called without a prior enable by that participant', async () => {
@@ -384,45 +388,20 @@ describe('AI Assistant API Tests', () => {
 			afterAll(async () => {
 				MEET_ENV.CAPTIONS_ENABLED = captionsDefaultValue;
 			});
+
 			it('should call stopAgent exactly once when two participants cancel simultaneously', async () => {
 				// Both enable captions first
-				await createAssistant(roomData.speakerToken);
-				(livekitService.getAgent as jest.Mock).mockResolvedValue(MOCK_DISPATCH as any);
-				await createAssistant(roomData.moderatorToken);
+				await aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantA');
+				await aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantB');
 
 				// Both cancel at the same time
-				const [res1, res2] = await Promise.all([
-					cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken),
-					cancelAssistant(MOCK_DISPATCH_ID, roomData.moderatorToken)
+				await Promise.all([
+					aiAssistantService.cancelAssistant(MOCK_DISPATCH_ID, roomData.room.roomId, 'participantA'),
+					aiAssistantService.cancelAssistant(MOCK_DISPATCH_ID, roomData.room.roomId, 'participantB')
 				]);
 
-				expect(res1.status).toBe(204);
-				expect(res2.status).toBe(204);
 				// The distributed lock ensures only one of them executes stopAgent
 				expect(livekitService.stopAgent).toHaveBeenCalledTimes(1);
-			});
-
-			it('should not create duplicate dispatches when a create races with another create while lock is held', async () => {
-				let agentCreated = false;
-
-				(livekitService.getAgent as jest.Mock).mockImplementation(async () =>
-					agentCreated ? MOCK_DISPATCH : null
-				);
-				(livekitService.createAgent as jest.Mock).mockImplementation(async () => {
-					agentCreated = true;
-					return MOCK_DISPATCH;
-				});
-
-				// Three concurrent enable requests from the same room
-				const responses = await Promise.all([
-					createAssistant(roomData.speakerToken),
-					createAssistant(roomData.moderatorToken),
-					createAssistant(roomData.speakerToken)
-				]);
-
-				const successCount = responses.filter((r) => r.status === 200).length;
-				expect(successCount).toBeGreaterThanOrEqual(1);
-				expect(livekitService.createAgent).toHaveBeenCalledTimes(1);
 			});
 		});
 	});

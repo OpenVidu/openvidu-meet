@@ -11,7 +11,9 @@ export const enum RedisKeyName {
 	// Stores active meeting presence indexed by room and user.
 	ROOM_ACTIVE_MEETING = `${REDIS_KEY_PREFIX}active_meeting_by_room:`,
 	// Tracks participant-level assistant capability state in a room.
-	AI_ASSISTANT_PARTICIPANT_STATE = `${REDIS_KEY_PREFIX}ai_assistant:participant_state:`
+	AI_ASSISTANT_PARTICIPANT_STATE = `${REDIS_KEY_PREFIX}ai_assistant:participant_state:`,
+	// Stores the active AI assistant ID for the AI assistant per room and capability.
+	AI_ASSISTANT_ID = `${REDIS_KEY_PREFIX}ai_assistant:id:`
 }
 
 export const enum RedisLockPrefix {

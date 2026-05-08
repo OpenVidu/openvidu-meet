@@ -368,6 +368,10 @@ export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetErr
 	return new OpenViduMeetError('AI Assistant Error', `AI assistant  for room '${roomId}' is already starting`, 409);
 };
 
+export const errorAiAssistantCannotBeStopped = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('AI Assistant Error', `AI assistant cannot be stopped for room '${roomId}'`, 409);
+};
+
 // Webhook errors
 
 export const errorInvalidWebhookUrl = (url: string, reason: string): OpenViduMeetError => {

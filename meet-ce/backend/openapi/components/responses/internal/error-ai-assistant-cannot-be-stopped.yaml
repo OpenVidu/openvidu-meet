@@ -1,0 +1,11 @@
+description: Conflict — The AI assistant cannot be stopped because it is being stopped by another participant
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/error.yaml'
+        examples:
+            already_stopping:
+                summary: AI assistant is already stopping
+                value:
+                    error: 'AI Assistant Error'
+                    message: 'AI assistant cannot be stopped for room "room_123"'
