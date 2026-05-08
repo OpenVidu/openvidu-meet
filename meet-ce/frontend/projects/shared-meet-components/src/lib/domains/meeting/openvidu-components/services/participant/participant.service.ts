@@ -13,7 +13,7 @@ import type {
 	OVScreenShareCaptureOptions,
 	OVVideoCaptureOptions
 } from '../livekit-adapter';
-import { Track, VideoPresets } from '../livekit-adapter';
+import { ConnectionQuality, Track, VideoPresets } from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
@@ -308,6 +308,22 @@ export class ParticipantService {
 			this.remoteParticipants().find((p) => p.sid === participantSid)?.setEncryptionError(hasError);
 		}
 		// Signal propagation is automatic via the _hasEncryptionError signal in ParticipantModel.
+	}
+
+	/**
+	 * Sets the connection quality for a participant.
+	 * @param participantSid - The SID of the participant
+	 * @param quality - The new connection quality value
+	 * @internal
+	 */
+	setConnectionQuality(participantSid: string, quality: ConnectionQuality) {
+		const local = this._localParticipant();
+		if (local?.sid === participantSid) {
+			local.setConnectionQuality(quality);
+		} else {
+			this.remoteParticipants().find((p) => p.sid === participantSid)?.setConnectionQuality(quality);
+		}
+		// Signal propagation is automatic via the _connectionQuality signal in ParticipantModel.
 	}
 
 	/**

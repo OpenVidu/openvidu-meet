@@ -2,6 +2,7 @@ import { computed, signal } from '@angular/core';
 import type { OVLocalParticipant, OVRemoteParticipant, OVRoom, OVTrackPublication } from '../services/livekit-adapter';
 import {
 	AudioCaptureOptions,
+	ConnectionQuality,
 	DataPublishOptions,
 	LocalParticipant,
 	LocalTrack,
@@ -134,6 +135,7 @@ export class ParticipantModel {
 	private readonly _speaking = signal(false);
 	private readonly _hasEncryptionError = signal(false);
 	private readonly _decryptedName = signal<string | undefined>(undefined);
+	private readonly _connectionQuality = signal<ConnectionQuality>(ConnectionQuality.Unknown);
 	/**
 	 * Revision counter — bumped via bump() whenever the underlying LiveKit participant object is
 	 * mutated in-place (track published/unpublished, isCameraEnabled changes, etc.) or when
@@ -643,6 +645,22 @@ export class ParticipantModel {
 	 */
 	setEncryptionError(hasError: boolean) {
 		this._hasEncryptionError.set(hasError);
+	}
+
+	/**
+	 * Returns the connection quality of this participant.
+	 */
+	get connectionQuality(): ConnectionQuality {
+		return this._connectionQuality();
+	}
+
+	/**
+	 * Sets the connection quality for this participant.
+	 * @param quality
+	 * @internal
+	 */
+	setConnectionQuality(quality: ConnectionQuality) {
+		this._connectionQuality.set(quality);
 	}
 
 	/**

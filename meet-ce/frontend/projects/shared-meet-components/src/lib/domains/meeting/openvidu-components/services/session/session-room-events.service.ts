@@ -8,6 +8,7 @@ import {
 import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
+	ConnectionQuality,
 	DataPacket_Kind,
 	DisconnectReason,
 	LocalParticipant,
@@ -61,6 +62,7 @@ export class SessionRoomEventsService {
 		this.subscribeToParticipantMetadataChanged(room);
 		this.subscribeToDataMessage(room);
 		this.subscribeToReconnection(room, callbacks);
+		this.subscribeToConnectionQualityChanged(room);
 	}
 
 	private subscribeToEncryptionErrors(room: Room) {
@@ -325,6 +327,12 @@ export class SessionRoomEventsService {
 					this.translateService.translate(descriptionErrorKey)
 				);
 			}
+		});
+	}
+
+	private subscribeToConnectionQualityChanged(room: Room) {
+		room.on(RoomEvent.ConnectionQualityChanged, (quality: ConnectionQuality, participant: Participant) => {
+			this.participantService.setConnectionQuality(participant.sid, quality);
 		});
 	}
 }
