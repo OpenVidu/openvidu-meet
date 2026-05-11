@@ -12,7 +12,7 @@ export const createRoomMember = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);
 
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 	const memberOptions = req.body;
 
 	try {
@@ -32,7 +32,7 @@ export const getRoomMembers = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);
 
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 	const filters = res.locals.validatedQuery as MeetRoomMemberFilters;
 
 	try {
@@ -49,7 +49,7 @@ export const getRoomMember = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);
 
-	const { roomId, memberId } = req.params;
+	const { roomId, memberId } = req.params as Record<string, string>;
 
 	try {
 		logger.verbose(`Getting member '${memberId}' from room '${roomId}'`);
@@ -69,7 +69,7 @@ export const updateRoomMember = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);
 
-	const { roomId, memberId } = req.params;
+	const { roomId, memberId } = req.params as Record<string, string>;
 	const updates = req.body;
 
 	try {
@@ -85,7 +85,7 @@ export const deleteRoomMember = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);
 
-	const { roomId, memberId } = req.params;
+	const { roomId, memberId } = req.params as Record<string, string>;
 
 	try {
 		logger.verbose(`Deleting member '${memberId}' from room '${roomId}'`);
@@ -100,7 +100,7 @@ export const bulkDeleteRoomMembers = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);
 
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 	const { memberIds } = res.locals.validatedQuery as { memberIds: string[] };
 
 	try {
@@ -125,7 +125,7 @@ export const generateRoomMemberToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberTokenService = container.get(RoomMemberService);
 
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 	const tokenOptions = req.body as MeetRoomMemberTokenOptions;
 	const previousToken = getRoomMemberToken(req);
 
@@ -142,7 +142,7 @@ export const refreshRoomMemberToken = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberTokenService = container.get(RoomMemberService);
 
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 	const previousToken = getRoomMemberToken(req);
 
 	try {

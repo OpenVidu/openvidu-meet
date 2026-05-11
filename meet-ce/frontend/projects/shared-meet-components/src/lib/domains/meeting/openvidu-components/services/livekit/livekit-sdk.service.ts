@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import {
+	ConnectionQuality,
 	ConnectionState,
 	createKeyMaterialFromString,
 	createLocalTracks,
@@ -63,6 +64,7 @@ export class LivekitSdkService {
 
 export {
 	AudioCaptureOptions,
+	ConnectionQuality,
 	ConnectionState,
 	createKeyMaterialFromString,
 	createLocalTracks,

@@ -12,7 +12,7 @@ export const endMeeting = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 	const livekitService = container.get(LiveKitService);
 
-	const { roomId } = req.params;
+	const { roomId } = req.params as Record<string, string>;
 
 	// Check if the room exists
 	try {
@@ -34,7 +34,7 @@ export const endMeeting = async (req: Request, res: Response) => {
 export const updateParticipantRole = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomMemberService = container.get(RoomMemberService);
-	const { roomId, participantIdentity } = req.params;
+	const { roomId, participantIdentity } = req.params as Record<string, string>;
 	const { action } = req.body as { action: MeetParticipantModerationAction };
 
 	try {
@@ -58,7 +58,7 @@ export const kickParticipantFromMeeting = async (req: Request, res: Response) =>
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
 	const roomMemberService = container.get(RoomMemberService);
-	const { roomId, participantIdentity } = req.params;
+	const { roomId, participantIdentity } = req.params as Record<string, string>;
 
 	// Check if the room exists
 	try {

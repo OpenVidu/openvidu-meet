@@ -33,7 +33,7 @@ export const cancelAssistant = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const requestSessionService = container.get(RequestSessionService);
 	const aiAssistantService = container.get(AiAssistantService);
-	const { assistantId } = req.params;
+	const { assistantId } = req.params as Record<string, string>;
 
 	const roomId = requestSessionService.getRoomIdFromMember();
 	const participantIdentity = requestSessionService.getParticipantIdentity();

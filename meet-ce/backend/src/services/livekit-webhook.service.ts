@@ -265,9 +265,11 @@ export class LivekitWebhookService {
 					this.logger.info(
 						`Deleting room '${roomId}' (and its recordings if any) after meeting finished because it was scheduled to be deleted`
 					);
-					tasks.push(this.recordingService.deleteAllRoomRecordings(roomId));
-					tasks.push(this.roomMemberRepository.deleteAllByRoomId(roomId));
-					tasks.push(this.roomRepository.deleteByRoomId(roomId));
+					tasks.push(
+						this.recordingService.deleteAllRoomRecordings(roomId),
+						this.roomMemberRepository.deleteAllByRoomId(roomId),
+						this.roomRepository.deleteByRoomId(roomId)
+					);
 					break;
 				case MeetingEndAction.CLOSE:
 					this.logger.info(

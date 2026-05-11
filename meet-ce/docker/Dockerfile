@@ -1,10 +1,10 @@
 # ====================================================
 # Stage 1: builder
 # ====================================================
-FROM node:24.13.1 AS builder
+FROM node:24.15.0 AS builder
 
 # Define pnpm version as build argument with default value
-ARG PNPM_VERSION=10.18.3
+ARG PNPM_VERSION=11.0.8
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
@@ -33,7 +33,6 @@ RUN pnpm safe-chain-verify
 
 # Copy workspace configuration files
 COPY --chown=node:node pnpm-workspace.yaml ./pnpm-workspace.yaml
-COPY --chown=node:node .npmrc ./.npmrc
 COPY --chown=node:node package.json pnpm-lock.yaml ./
 
 # Copy package.json files for all workspace packages
@@ -69,10 +68,10 @@ RUN rm -rf node_modules \
 # ====================================================
 # Stage 2: production
 # ====================================================
-FROM node:24.13.1-alpine AS production
+FROM node:24.15.0-alpine AS production
 
 # Define pnpm version as build argument with default value
-ARG PNPM_VERSION=10.18.3
+ARG PNPM_VERSION=11.0.8
 
 # Set pnpm version as environment variable (available at runtime)
 ENV PNPM_VERSION=${PNPM_VERSION}
@@ -89,7 +88,6 @@ WORKDIR /opt/openvidu-meet
 COPY --from=builder --chown=node:node /app/meet.sh ./
 COPY --from=builder --chown=node:node /app/package.json ./
 COPY --from=builder --chown=node:node /app/pnpm-workspace.yaml ./
-COPY --from=builder --chown=node:node /app/.npmrc ./
 
 # Copy the compiled backend with all node_modules from builder
 COPY --from=builder --chown=node:node /app/meet-ce/backend/dist ./meet-ce/backend/dist

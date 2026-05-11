@@ -334,35 +334,6 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Lists all agents in a LiveKit room.
-	 * @param roomName
-	 * @returns An array of agents in the specified room
-	 */
-	async listAgents(roomName: string): Promise<AgentDispatch[]> {
-		try {
-			return await this.agentClient.listDispatch(roomName);
-		} catch (error) {
-			this.logger.error(`Error listing agents for room '${roomName}':`, error);
-			return [];
-		}
-	}
-
-	/**
-	 * Gets an agent dispatch by its ID in a LiveKit room.
-	 * @param roomName
-	 * @param agentId
-	 * @returns The agent if found, otherwise undefined
-	 */
-	async getAgent(roomName: string, agentId: string): Promise<AgentDispatch | undefined> {
-		try {
-			return await this.agentClient.getDispatch(agentId, roomName);
-		} catch (error) {
-			this.logger.error(`Error getting agent dispatch '${agentId}' for room '${roomName}':`, error);
-			return undefined;
-		}
-	}
-
-	/**
 	 * Stops an agent in a LiveKit room.
 	 * @param agentId
 	 * @param roomName
@@ -372,6 +343,8 @@ export class LiveKitService {
 			await this.agentClient.deleteDispatch(agentId, roomName);
 		} catch (error) {
 			this.logger.error(`Error deleting agent dispatch '${agentId}' for room '${roomName}':`, error);
+			throw error;
+
 		}
 	}
 

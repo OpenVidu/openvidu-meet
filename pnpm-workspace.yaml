@@ -15,10 +15,20 @@ packages:
   - meet-pro/typings
   - testapp
 
-ignoredBuiltDependencies:
-  - chromedriver
-  - core-js
-  - esbuild
+allowBuilds:
+  '@parcel/watcher': false
+  bcrypt: true
+  chromedriver: false
+  core-js: false
+  esbuild: false
+  lmdb: false
+  msgpackr-extract: false
 
-onlyBuiltDependencies:
-  - bcrypt
+overrides:
+  livekit-client: 2.16.1
+  
+strictPeerDependencies: false
+autoInstallPeers: true
+shamefullyHoist: true
+nodeLinker: hoisted
+lockfile: true

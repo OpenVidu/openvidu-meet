@@ -20,7 +20,7 @@
             '403':
                 $ref: '../../components/responses/forbidden-error.yaml'
             '409':
-                $ref: '../../components/responses/error-ai-assistant-starting.yaml'
+                $ref: '../../components/responses/internal/error-ai-assistant-starting.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':
@@ -54,6 +54,8 @@
                 $ref: '../../components/responses/unauthorized-error.yaml'
             '403':
                 $ref: '../../components/responses/forbidden-error.yaml'
+            '409':
+                $ref: '../../components/responses/internal/error-ai-assistant-cannot-be-stopped.yaml'
             '422':
                 $ref: '../../components/responses/validation-error.yaml'
             '500':

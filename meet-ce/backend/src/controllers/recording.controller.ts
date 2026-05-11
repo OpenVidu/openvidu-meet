@@ -37,7 +37,7 @@ export const startRecording = async (req: Request, res: Response) => {
 
 export const stopRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
-	const recordingId = req.params.recordingId;
+	const recordingId = req.params.recordingId as string;
 	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 
 	try {
@@ -113,7 +113,7 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 export const getRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const recordingId = req.params.recordingId;
+	const recordingId = req.params.recordingId as string;
 	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 
 	logger.info(`Getting recording '${recordingId}'`);
@@ -129,7 +129,7 @@ export const getRecording = async (req: Request, res: Response) => {
 export const deleteRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const recordingId = req.params.recordingId;
+	const recordingId = req.params.recordingId as string;
 	logger.info(`Deleting recording '${recordingId}'`);
 
 	try {
@@ -150,7 +150,7 @@ export const deleteRecording = async (req: Request, res: Response) => {
 export const getRecordingMedia = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
-	const recordingId = req.params.recordingId;
+	const recordingId = req.params.recordingId as string;
 	const range = req.headers.range;
 	let fileStream: Readable | undefined;
 
@@ -228,7 +228,7 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 export const getRecordingUrl = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const recordingId = req.params.recordingId;
+	const recordingId = req.params.recordingId as string;
 	const { privateAccess } = res.locals.validatedQuery as { privateAccess: boolean };
 
 	logger.info(`Getting URL for recording '${recordingId}'`);
