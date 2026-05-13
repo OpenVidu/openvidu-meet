@@ -77,12 +77,12 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 				url: legacyRoom.speakerUrl!
 			},
 			recording: {
-				enabled: false,
+				enabled: true,
 				url: `/room/${room.roomId}/recordings?secret=${secureUid(10)}`
 			}
 		},
 		registered: {
-			enabled: true,
+			enabled: false,
 			url: `/room/${room.roomId}`
 		}
 	};
