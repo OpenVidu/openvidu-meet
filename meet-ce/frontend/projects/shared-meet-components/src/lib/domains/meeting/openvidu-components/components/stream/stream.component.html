@@ -50,7 +50,7 @@
 		<ov-media-element
 			[videoTrack]="stream.videoTrack?.track"
 			[audioTrack]="stream.audioTrack?.track"
-			[showAvatar]="stream.isCameraStream && (!stream.videoTrack || !stream.participant.isCameraEnabled)"
+			[showAvatar]="stream.isCameraStream && (!stream.videoTrack?.track || !stream.participant.isCameraEnabled)"
 			[avatarColor]="stream.participant.colorProfile"
 			[avatarName]="stream.participant.name ?? ''"
 			[muted]="stream.isMutedForcibly"

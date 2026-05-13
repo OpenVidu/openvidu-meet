@@ -160,9 +160,13 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	trackParticipantElement(_: number, stream: ParticipantStream) {
-		// This method is used for trackBy in ngFor with the aim of improving performance
-		// https://angular.io/api/core/TrackByFunction
-		return stream.streamId;
+		// Use identity+source as a stable key so the component instance is reused when the
+		// real trackSid arrives (replacing the `camera-{identity}` fallback). Using streamId
+		// here caused @for to destroy+recreate the StreamComponent on every track subscription,
+		// producing a brief window where two identical elements coexisted in the DOM — one with
+		// the `no-size` class (new instance, showVideo=false) and one without it (old instance
+		// being destroyed) — resulting in visible flickering.
+		return `${stream.participant.identity}-${stream.source}`;
 	}
 
 	private listenToLayoutDomChanges() {

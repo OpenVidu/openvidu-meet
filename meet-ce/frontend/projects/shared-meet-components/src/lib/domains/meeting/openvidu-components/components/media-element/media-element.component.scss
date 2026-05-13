@@ -1,6 +1,21 @@
+:host {
+	position: relative;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
 video {
 	-o-object-fit: cover;
 	object-fit: cover;
+	/* Overlay the poster so the video crossfades in on top of it.
+	   Starts invisible (opacity 0) and transitions to visible only when
+	   the .ov-video-ready class is added (camera enabled + track ready).
+	   This covers both the initial join fade-in AND camera enable/disable. */
+	position: absolute;
+	top: 0;
+	left: 0;
+	z-index: 889; /* one above .poster's z-index: 888 */
 	width: 100%;
 	height: 100%;
 	color: var(--ov-text-primary-color);
@@ -10,6 +25,12 @@ video {
 	font-size: 100%;
 	border-radius: var(--ov-video-radius);
 	background-color: var(--ov-video-background, var(--ov-primary-action-color));
+	opacity: 0;
+	transition: opacity 300ms ease-in;
+
+	&.ov-video-ready {
+		opacity: 1;
+	}
 }
 
 .ov-poster-enter {

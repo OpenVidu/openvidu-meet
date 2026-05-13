@@ -30,7 +30,7 @@ import { VideoPosterComponent } from '../video-poster/video-poster.component';
 			[hasEncryptionError]="hasEncryptionError()"
 		/>
 		@if (videoTrack()) {
-			<video #videoElement class="OV_media-element OV_video-element" [attr.id]="videoTrack()!.sid"></video>
+			<video #videoElement class="OV_media-element OV_video-element" [class.ov-video-ready]="!showAvatar()" [attr.id]="videoTrack()!.sid"></video>
 		} @else if (!isLocal() && audioTrack()) {
 			<audio #audioElement class="OV_media-element OV_audio-element" [attr.id]="audioTrack()!.sid"></audio>
 		}
@@ -132,8 +132,8 @@ export class MediaElementComponent implements OnDestroy {
 		const isScreen = track.source === Track.Source.ScreenShare;
 		const isCamera = track.source === Track.Source.Camera;
 
-		video.classList.toggle('screen-type', isScreen);
-		video.classList.toggle('camera-type', isCamera);
+		video.classList.toggle('screen-source', isScreen);
+		video.classList.toggle('camera-source', isCamera);
 
 		// Screen shares should use 'contain' to avoid cropping, while camera streams use 'cover' to fill the area.
 		video.style.objectFit = isScreen ? 'contain' : 'cover';
