@@ -52,13 +52,13 @@
 	gap: 8px;
 	flex-wrap: wrap;
 
-	.count-number {
+	.participant-count-value {
 		font-size: 24px;
 		font-weight: 700;
 		color: var(--ov-text-primary-color);
 	}
 
-	.description {
+	.participant-count-label {
 		font-size: 14px;
 		font-weight: 500;
 		color: var(--ov-text-secondary-color);
@@ -142,9 +142,15 @@
 		color: var(--ov-text-primary-color);
 	}
 
-	.count-text {
+	.participant-count-value {
 		font-size: 15px;
 		font-weight: 600;
+		letter-spacing: 0.3px;
+	}
+
+	.participant-count-label {
+		font-size: 14px;
+		font-weight: 500;
 		letter-spacing: 0.3px;
 	}
 
@@ -268,18 +274,10 @@
 	}
 
 	.count-info {
-		.count-number {
-			font-size: 20px;
-		}
-		.description {
-			font-size: 12px;
-		}
-	}
-
-	.vertical-content {
-		padding: 16px;
-		gap: 12px;
-
+			.participant-count-value {
+				font-size: 20px;
+			}
+			.participant-count-label {
 		.count-section {
 			.count-badge {
 				width: 64px;

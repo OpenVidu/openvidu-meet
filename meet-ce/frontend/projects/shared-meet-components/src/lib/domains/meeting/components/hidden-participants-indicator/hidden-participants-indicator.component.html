@@ -12,7 +12,8 @@
 						}
 					</mat-icon>
 					<div class="text-container">
-						<span class="count-text">+{{ count() }} {{ descriptionText() }}</span>
+						<span class="participant-count-value">+{{ count() }}</span>
+						<span class="participant-count-label">{{ descriptionText() }}</span>
 						@if (formattedParticipantNames()) {
 							<span class="names-text">({{ formattedParticipantNames() }})</span>
 						}
@@ -34,8 +35,8 @@
 						<span class="badge-number">+{{ count() }}</span>
 					</div>
 					<div class="count-info">
-						<span class="count-number">+{{ count() }}</span>
-						<span class="description">{{ descriptionText() }}</span>
+						<span class="participant-count-value">+{{ count() }}</span>
+						<span class="participant-count-label">{{ descriptionText() }}</span>
 					</div>
 					@if (formattedParticipantNames()) {
 						<div class="participant-names">
