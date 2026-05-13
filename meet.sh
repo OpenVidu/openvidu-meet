@@ -363,7 +363,7 @@ test_e2e_frontend() {
 
   ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
-  echo -e "${GREEN}Running frontend migrated E2E tests...${NC}"
+  echo -e "${GREEN}Running frontend E2E tests...${NC}"
   pnpm run test:e2e-frontend-components
 }
 

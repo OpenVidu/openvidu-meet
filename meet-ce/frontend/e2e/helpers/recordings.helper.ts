@@ -11,7 +11,7 @@ const MORE_OPTIONS_BUTTON = '#more-options-btn';
 const SETTINGS_RECORDING_BUTTON = '#recording-btn';
 const RECORDING_TAG = '#recording-tag';
 
-async function isVisible(page: Page, selector: string): Promise<boolean> {
+const isVisible = async (page: Page, selector: string): Promise<boolean> => {
 	const locator = page.locator(selector);
 	return (
 		(await locator.count()) > 0 &&
@@ -20,22 +20,22 @@ async function isVisible(page: Page, selector: string): Promise<boolean> {
 			.isVisible()
 			.catch(() => false))
 	);
-}
+};
 
-export async function ensureActivitiesPanelOpen(page: Page): Promise<void> {
+export const ensureActivitiesPanelOpen = async (page: Page): Promise<void> => {
 	if (!(await isVisible(page, ACTIVITIES_CONTAINER))) {
 		await toggleActivitiesPanel(page);
 	}
-}
+};
 
-export async function openMoreOptionsMenu(page: Page): Promise<void> {
+export const openMoreOptionsMenu = async (page: Page): Promise<void> => {
 	await page.locator(MORE_OPTIONS_BUTTON).click();
 	await expect(
 		page.locator(`${SETTINGS_RECORDING_BUTTON}:visible, #toolbar-settings-btn:visible`).first()
 	).toBeVisible();
-}
+};
 
-export async function ensureRecordingActivityExpanded(page: Page): Promise<void> {
+export const ensureRecordingActivityExpanded = async (page: Page): Promise<void> => {
 	await ensureActivitiesPanelOpen(page);
 
 	await expectVisible(page, RECORDING_ACTIVITY);
@@ -56,9 +56,9 @@ export async function ensureRecordingActivityExpanded(page: Page): Promise<void>
 	if (!hasAnyControlVisible) {
 		await page.locator(`${RECORDING_ACTIVITY} mat-expansion-panel-header`).click();
 	}
-}
+};
 
-export async function startStopRecordingFromActivitiesPanel(page: Page, action: 'start' | 'stop'): Promise<void> {
+export const startStopRecordingFromActivitiesPanel = async (page: Page, action: 'start' | 'stop'): Promise<void> => {
 	await ensureRecordingActivityExpanded(page);
 
 	const button = page.locator(action === 'start' ? START_RECORDING_BUTTON : STOP_RECORDING_BUTTON);
@@ -66,9 +66,9 @@ export async function startStopRecordingFromActivitiesPanel(page: Page, action: 
 	await expect(button).toBeVisible();
 	await expect(button).toBeEnabled();
 	await button.click();
-}
+};
 
-export async function startStopRecordingFromToolbar(page: Page, action: 'start' | 'stop'): Promise<void> {
+export const startStopRecordingFromToolbar = async (page: Page): Promise<void> => {
 	await openMoreOptionsMenu(page);
 
 	const recordingButton = page.locator(`${SETTINGS_RECORDING_BUTTON}:visible`).first();
@@ -77,22 +77,22 @@ export async function startStopRecordingFromToolbar(page: Page, action: 'start' 
 	await recordingButton.click();
 	await expectVisible(page, ACTIVITIES_CONTAINER);
 	await expectVisible(page, RECORDING_ACTIVITY);
-}
+};
 
-export async function getRecordingStatusText(page: Page): Promise<string> {
+export const getRecordingStatusText = async (page: Page): Promise<string> => {
 	const status = await page.locator(RECORDING_STATUS).first().innerText();
 	return status.trim().toUpperCase();
-}
+};
 
-export async function expectRecordingStatus(
+export const expectRecordingStatus = async (
 	page: Page,
 	expectedStatus: 'STARTING' | 'STARTED',
 	timeoutMs = 20_000
-): Promise<void> {
+): Promise<void> => {
 	await expect.poll(async () => await getRecordingStatusText(page), { timeout: timeoutMs }).toBe(expectedStatus);
-}
+};
 
-export async function waitForRecordingStarted(page: Page, timeoutMs = 40_000): Promise<void> {
+export const waitForRecordingStarted = async (page: Page, timeoutMs = 40_000): Promise<void> => {
 	const deadline = Date.now() + timeoutMs;
 
 	while (Date.now() < deadline) {
@@ -119,27 +119,30 @@ export async function waitForRecordingStarted(page: Page, timeoutMs = 40_000): P
 		`Recording did not reach STARTED within ${timeoutMs}ms (last status: ${lastStatus}). ` +
 			'If it remains STARTING, verify recording egress service availability in the test environment.'
 	);
-}
+};
 
-export async function expectActivitiesPanelOpenedWithRecordingStarting(page: Page, timeoutMs = 20_000): Promise<void> {
+export const expectActivitiesPanelOpenedWithRecordingStarting = async (
+	page: Page,
+	timeoutMs = 20_000
+): Promise<void> => {
 	await expect(page.locator(ACTIVITIES_CONTAINER)).toBeVisible({ timeout: timeoutMs });
 	await expect(page.locator(RECORDING_ACTIVITY)).toBeVisible({ timeout: timeoutMs });
 	await expectRecordingStatus(page, 'STARTING', timeoutMs);
-}
+};
 
-export async function expectStopRecordingButtonVisible(page: Page, timeoutMs = 10_000): Promise<void> {
+export const expectStopRecordingButtonVisible = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await expectVisible(page, RECORDING_ACTIVITY);
 	const stopButton = page.locator(STOP_RECORDING_BUTTON);
 	await expect(stopButton).toBeVisible({ timeout: timeoutMs });
-}
+};
 
-export async function expectStartRecordingButtonVisible(page: Page, timeoutMs = 10_000): Promise<void> {
+export const expectStartRecordingButtonVisible = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await expectVisible(page, RECORDING_ACTIVITY);
 	const stopButton = page.locator(START_RECORDING_BUTTON);
 	await expect(stopButton).toBeVisible({ timeout: timeoutMs });
-}
+};
 
-export async function expectRecordingBadgeVisible(page: Page, timeoutMs = 30_000): Promise<void> {
+export const expectRecordingBadgeVisible = async (page: Page, timeoutMs = 30_000): Promise<void> => {
 	const recordingTag = page.locator(RECORDING_TAG);
 	await expect(recordingTag).toBeVisible({ timeout: timeoutMs });
 	await expect(recordingTag).toContainText('REC', { timeout: timeoutMs });
@@ -153,9 +156,9 @@ export async function expectRecordingBadgeVisible(page: Page, timeoutMs = 30_000
 			{ timeout: timeoutMs }
 		)
 		.toMatch(/REC\s*\|\s*\d{1,2}:\d{2}:\d{2}/);
-}
+};
 
-export async function stopRecordingIfActive(page: Page): Promise<void> {
+export const stopRecordingIfActive = async (page: Page): Promise<void> => {
 	await ensureRecordingActivityExpanded(page);
 
 	const stopButton = page.locator(STOP_RECORDING_BUTTON);
@@ -170,33 +173,31 @@ export async function stopRecordingIfActive(page: Page): Promise<void> {
 		await stopButton.first().click();
 		await expect.poll(async () => await getRecordingStatusText(page), { timeout: 45_000 }).toBe('STOPPED');
 	}
-}
+};
 
-export async function expectViewRecordingsButtonVisible(page: Page, timeoutMs = 10_000): Promise<void> {
+export const expectViewRecordingsButtonVisible = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	const viewButton = page.locator(VIEW_RECORDINGS_BUTTON);
 	await expect(viewButton).toBeVisible({ timeout: timeoutMs });
-}
+};
 
-export async function clickViewRecordingsButton(page: Page): Promise<Page> {
+export const clickViewRecordingsButton = async (page: Page): Promise<Page> => {
 	await expectViewRecordingsButtonVisible(page);
 	const viewButton = page.locator(VIEW_RECORDINGS_BUTTON);
 	const [newPage] = await Promise.all([page.context().waitForEvent('page'), viewButton.click()]);
 	return newPage;
-}
+};
 
-export async function stopRecordingAndOpenActivitiesPanel(page: Page): Promise<void> {
+export const stopRecordingAndOpenActivitiesPanel = async (page: Page): Promise<void> => {
 	await stopRecordingIfActive(page);
 	await expectActivitiesPanelOpenedWithRecording(page);
-}
+};
 
-export async function expectViewRecordingsPageOpened(page: Page, roomName: string, timeoutMs = 5_000): Promise<void> {
-	await expect
-		.poll(() => page.url(), { timeout: timeoutMs })
-		.toMatch(new RegExp(`/meet/room/${roomName}.*\\/recordings$`));
-}
+export const expectViewRecordingsPageOpened = async (page: Page, roomId: string, timeoutMs = 5_000): Promise<void> => {
+	await expect.poll(() => page.url(), { timeout: timeoutMs }).toContain(`/meet/room/${roomId}/recordings`);
+};
 
-export async function expectActivitiesPanelOpenedWithRecording(page: Page, timeoutMs = 10_000): Promise<void> {
+export const expectActivitiesPanelOpenedWithRecording = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await expect(page.locator(ACTIVITIES_CONTAINER)).toBeVisible({ timeout: timeoutMs });
 	await expect(page.locator(RECORDING_ACTIVITY)).toBeVisible({ timeout: timeoutMs });
 	await expect(page.locator(RECORDING_STATUS)).toBeVisible({ timeout: timeoutMs });
-}
+};

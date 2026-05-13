@@ -1,22 +1,16 @@
 import { expect, test } from '@playwright/test';
 import { selectMosaicLayout, setSmartMosaicSliderValue } from './helpers/layout.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
-    createRoom,
-    createRoomAndGetAccessUrl,
-    createRoomMember,
-    deleteRooms,
-    toAbsoluteMeetUrl
-} from './helpers/meet-api.helper';
-import {
-    closeSettingsPanel,
-    expectHidden,
-    expectVisible,
-    openLayoutSettingsPanel,
-    openMeeting,
-    startScreensharing,
-    stopScreensharing,
-    toggleStreamPin,
-    waitForRemoteStream
+	closeSettingsPanel,
+	expectHidden,
+	expectVisible,
+	openLayoutSettingsPanel,
+	openMeeting,
+	startScreensharing,
+	stopScreensharing,
+	toggleStreamPin,
+	waitForRemoteStream
 } from './helpers/meeting-ui.helper';
 
 // ---------------------------------------------------------------------------
@@ -33,10 +27,8 @@ test.describe('Layout: Meeting UI elements on join', () => {
 	test('should render layout container, share-link overlay and local video stream after joining', async ({
 		page
 	}) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `layout-join-${Date.now()}`,
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await expect(page.locator('#layout')).toBeVisible();
@@ -53,10 +45,8 @@ test.describe('Layout: Toolbar and settings panel', () => {
 	});
 
 	test('should show #more-options-btn in toolbar and reveal #grid-layout-settings-btn on click', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `layout-toolbar-btn-${Date.now()}`,
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await expect(page.locator('#more-options-btn')).toBeVisible();
@@ -67,10 +57,8 @@ test.describe('Layout: Toolbar and settings panel', () => {
 	test('should open settings panel with layout and theme sections when clicking #grid-layout-settings-btn', async ({
 		page
 	}) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `layout-settings-open-${Date.now()}`,
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openLayoutSettingsPanel(page);
@@ -79,10 +67,8 @@ test.describe('Layout: Toolbar and settings panel', () => {
 	});
 
 	test('should have smart-mosaic selected by default and show participant count of 4', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `layout-defaults-${Date.now()}`,
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openLayoutSettingsPanel(page);
@@ -92,10 +78,8 @@ test.describe('Layout: Toolbar and settings panel', () => {
 	});
 
 	test('should hide participant count container when mosaic layout is selected', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `layout-mosaic-select-${Date.now()}`,
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openLayoutSettingsPanel(page);
@@ -115,36 +99,17 @@ test.describe('Layout: Smart Mosaic participant count filter', () => {
 	test('should show all streams with default settings and limit visible remote streams when participant count is set to 1', async ({
 		browser
 	}) => {
-		const room = await createRoom({ roomName: `layout-smart-mosaic-count-${Date.now()}` });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
 		createdRoomIds.add(room.roomId);
-		const memberA = await createRoomMember({
-			roomId: room.roomId,
-			name: `layout-part-a-${Date.now()}`,
-			baseRole: 'moderator'
-		});
-		const memberB = await createRoomMember({
-			roomId: room.roomId,
-			name: `layout-part-b-${Date.now()}`,
-			baseRole: 'moderator'
-		});
-		const memberC = await createRoomMember({
-			roomId: room.roomId,
-			name: `layout-part-c-${Date.now()}`,
-			baseRole: 'moderator'
-		});
-		const urlA = toAbsoluteMeetUrl(memberA.accessUrl);
-		const urlB = toAbsoluteMeetUrl(memberB.accessUrl);
-		const urlC = toAbsoluteMeetUrl(memberC.accessUrl);
 
-		const pageA = await browser.newPage();
-		const pageB = await browser.newPage();
-		const pageC = await browser.newPage();
+		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
-			await openMeeting(pageA, urlA);
-			await openMeeting(pageB, urlB);
-			await openMeeting(pageC, urlC);
-
+			await Promise.all([
+				openMeeting(pageA, accessUrl),
+				openMeeting(pageB, accessUrl),
+				openMeeting(pageC, accessUrl)
+			]);
 			await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
 
 			// Participant A should see 3 streams: 1 local + 2 remote
@@ -161,9 +126,7 @@ test.describe('Layout: Smart Mosaic participant count filter', () => {
 			await expect(pageA.locator('.OV_stream_video.local')).toHaveCount(1);
 			await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1);
 		} finally {
-			await pageC.close();
-			await pageB.close();
-			await pageA.close();
+			await Promise.all([pageC.close(), pageB.close(), pageA.close()]);
 		}
 	});
 });
@@ -182,21 +145,16 @@ test.describe('Layout: Smart Mosaic - Hidden participants indicator', () => {
 	test('should show ov-hidden-participants-indicator when remote participants exceed the visible limit', async ({
 		browser
 	}) => {
-		const room = await createRoom({ roomName: `layout-hidden-ind-${Date.now()}` });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
 		createdRoomIds.add(room.roomId);
-		const [memberA, memberB, memberC] = await Promise.all([
-			createRoomMember({ roomId: room.roomId, name: `ind-a-${Date.now()}`, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: `ind-b-${Date.now()}`, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: `ind-c-${Date.now()}`, baseRole: 'moderator' })
-		]);
 
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
 			await Promise.all([
-				openMeeting(pageA, toAbsoluteMeetUrl(memberA.accessUrl)),
-				openMeeting(pageB, toAbsoluteMeetUrl(memberB.accessUrl)),
-				openMeeting(pageC, toAbsoluteMeetUrl(memberC.accessUrl))
+				openMeeting(pageA, accessUrl),
+				openMeeting(pageB, accessUrl),
+				openMeeting(pageC, accessUrl)
 			]);
 			await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
 
@@ -215,21 +173,16 @@ test.describe('Layout: Smart Mosaic - Hidden participants indicator', () => {
 	test('should hide the indicator when switching from smart mosaic to standard mosaic layout', async ({
 		browser
 	}) => {
-		const room = await createRoom({ roomName: `layout-hidden-mosaic-${Date.now()}` });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
 		createdRoomIds.add(room.roomId);
-		const [memberA, memberB, memberC] = await Promise.all([
-			createRoomMember({ roomId: room.roomId, name: `mosaic-a-${Date.now()}`, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: `mosaic-b-${Date.now()}`, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: `mosaic-c-${Date.now()}`, baseRole: 'moderator' })
-		]);
 
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
 			await Promise.all([
-				openMeeting(pageA, toAbsoluteMeetUrl(memberA.accessUrl)),
-				openMeeting(pageB, toAbsoluteMeetUrl(memberB.accessUrl)),
-				openMeeting(pageC, toAbsoluteMeetUrl(memberC.accessUrl))
+				openMeeting(pageA, accessUrl),
+				openMeeting(pageB, accessUrl),
+				openMeeting(pageC, accessUrl)
 			]);
 			await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
 
@@ -249,16 +202,10 @@ test.describe('Layout: Smart Mosaic - Hidden participants indicator', () => {
 	});
 
 	test('should update indicator count correctly when the smart mosaic limit is raised', async ({ browser }) => {
-		const room = await createRoom({ roomName: `layout-hidden-count-${Date.now()}` });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
 		createdRoomIds.add(room.roomId);
-		// 4 participants: A (observer) + B, C, D (3 remotes)
-		const [memberA, memberB, memberC, memberD] = await Promise.all([
-			createRoomMember({ roomId: room.roomId, name: `cnt-a-${Date.now()}`, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: `cnt-b-${Date.now()}`, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: `cnt-c-${Date.now()}`, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: `cnt-d-${Date.now()}`, baseRole: 'moderator' })
-		]);
 
+		// 4 participants: A (observer) + B, C, D (3 remotes)
 		const [pageA, pageB, pageC, pageD] = await Promise.all([
 			browser.newPage(),
 			browser.newPage(),
@@ -268,10 +215,10 @@ test.describe('Layout: Smart Mosaic - Hidden participants indicator', () => {
 
 		try {
 			await Promise.all([
-				openMeeting(pageA, toAbsoluteMeetUrl(memberA.accessUrl)),
-				openMeeting(pageB, toAbsoluteMeetUrl(memberB.accessUrl)),
-				openMeeting(pageC, toAbsoluteMeetUrl(memberC.accessUrl)),
-				openMeeting(pageD, toAbsoluteMeetUrl(memberD.accessUrl))
+				openMeeting(pageA, accessUrl),
+				openMeeting(pageB, accessUrl),
+				openMeeting(pageC, accessUrl),
+				openMeeting(pageD, accessUrl)
 			]);
 			await Promise.all([
 				waitForRemoteStream(pageA),
@@ -306,33 +253,16 @@ test.describe('Layout: Smart Mosaic - Indicator placement mode', () => {
 	});
 
 	test('should display indicator in topbar mode when no participant is pinned', async ({ browser }) => {
-		const room = await createRoom({ roomName: `layout-topbar-${Date.now()}` });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
 		createdRoomIds.add(room.roomId);
-		const [memberA, memberB, memberC] = await Promise.all([
-			createRoomMember({
-				roomId: room.roomId,
-				name: `topbar-a-${Date.now()}`,
-				baseRole: 'moderator'
-			}),
-			createRoomMember({
-				roomId: room.roomId,
-				name: `topbar-b-${Date.now()}`,
-				baseRole: 'moderator'
-			}),
-			createRoomMember({
-				roomId: room.roomId,
-				name: `topbar-c-${Date.now()}`,
-				baseRole: 'moderator'
-			})
-		]);
 
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
 			await Promise.all([
-				openMeeting(pageA, toAbsoluteMeetUrl(memberA.accessUrl)),
-				openMeeting(pageB, toAbsoluteMeetUrl(memberB.accessUrl)),
-				openMeeting(pageC, toAbsoluteMeetUrl(memberC.accessUrl))
+				openMeeting(pageA, accessUrl),
+				openMeeting(pageB, accessUrl),
+				openMeeting(pageC, accessUrl)
 			]);
 			await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
 
@@ -343,42 +273,23 @@ test.describe('Layout: Smart Mosaic - Indicator placement mode', () => {
 			await expectVisible(pageA, '.OV_top-bar ov-hidden-participants-indicator');
 			await expectHidden(pageA, '.OV_last ov-hidden-participants-indicator');
 		} finally {
-			await pageC.close();
-			await pageB.close();
-			await pageA.close();
+			await Promise.all([pageC.close(), pageB.close(), pageA.close()]);
 		}
 	});
 
 	test('should switch indicator to standard mode when the visible remote participant is pinned', async ({
 		browser
 	}) => {
-		const room = await createRoom({ roomName: `layout-pin-mode-${Date.now()}` });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
 		createdRoomIds.add(room.roomId);
-		const [memberA, memberB, memberC] = await Promise.all([
-			createRoomMember({
-				roomId: room.roomId,
-				name: `pin-a-${Date.now()}`,
-				baseRole: 'moderator'
-			}),
-			createRoomMember({
-				roomId: room.roomId,
-				name: `pin-b-${Date.now()}`,
-				baseRole: 'moderator'
-			}),
-			createRoomMember({
-				roomId: room.roomId,
-				name: `pin-c-${Date.now()}`,
-				baseRole: 'moderator'
-			})
-		]);
 
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
 			await Promise.all([
-				openMeeting(pageA, toAbsoluteMeetUrl(memberA.accessUrl)),
-				openMeeting(pageB, toAbsoluteMeetUrl(memberB.accessUrl)),
-				openMeeting(pageC, toAbsoluteMeetUrl(memberC.accessUrl))
+				openMeeting(pageA, accessUrl),
+				openMeeting(pageB, accessUrl),
+				openMeeting(pageC, accessUrl)
 			]);
 			await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
 
@@ -399,9 +310,7 @@ test.describe('Layout: Smart Mosaic - Indicator placement mode', () => {
 			await toggleStreamPin(pageA, '.OV_stream_video.remote');
 			await expectVisible(pageA, '.OV_top-bar ov-hidden-participants-indicator');
 		} finally {
-			await pageC.close();
-			await pageB.close();
-			await pageA.close();
+			await Promise.all([pageC.close(), pageB.close(), pageA.close()]);
 		}
 	});
 });
@@ -420,33 +329,16 @@ test.describe('Layout: Smart Mosaic - Screen sharing always visible', () => {
 	test('should always render a remote screen share stream even when the visible participant count limit is 1', async ({
 		browser
 	}) => {
-		const room = await createRoom({ roomName: `layout-screen-mosaic-${Date.now()}` });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
 		createdRoomIds.add(room.roomId);
-		const [memberA, memberB, memberC] = await Promise.all([
-			createRoomMember({
-				roomId: room.roomId,
-				name: `screen-a-${Date.now()}`,
-				baseRole: 'moderator'
-			}),
-			createRoomMember({
-				roomId: room.roomId,
-				name: `screen-b-${Date.now()}`,
-				baseRole: 'moderator'
-			}),
-			createRoomMember({
-				roomId: room.roomId,
-				name: `screen-c-${Date.now()}`,
-				baseRole: 'moderator'
-			})
-		]);
 
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
 			await Promise.all([
-				openMeeting(pageA, toAbsoluteMeetUrl(memberA.accessUrl)),
-				openMeeting(pageB, toAbsoluteMeetUrl(memberB.accessUrl)),
-				openMeeting(pageC, toAbsoluteMeetUrl(memberC.accessUrl))
+				openMeeting(pageA, accessUrl),
+				openMeeting(pageB, accessUrl),
+				openMeeting(pageC, accessUrl)
 			]);
 			await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
 
@@ -467,33 +359,16 @@ test.describe('Layout: Smart Mosaic - Screen sharing always visible', () => {
 	test('should remove a remote screen share from the layout only when the screensharer stops', async ({
 		browser
 	}) => {
-		const room = await createRoom({ roomName: `layout-screen-stop-${Date.now()}` });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
 		createdRoomIds.add(room.roomId);
-		const [memberA, memberB, memberC] = await Promise.all([
-			createRoomMember({
-				roomId: room.roomId,
-				name: `stop-a-${Date.now()}`,
-				baseRole: 'moderator'
-			}),
-			createRoomMember({
-				roomId: room.roomId,
-				name: `stop-b-${Date.now()}`,
-				baseRole: 'moderator'
-			}),
-			createRoomMember({
-				roomId: room.roomId,
-				name: `stop-c-${Date.now()}`,
-				baseRole: 'moderator'
-			})
-		]);
 
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
 			await Promise.all([
-				openMeeting(pageA, toAbsoluteMeetUrl(memberA.accessUrl)),
-				openMeeting(pageB, toAbsoluteMeetUrl(memberB.accessUrl)),
-				openMeeting(pageC, toAbsoluteMeetUrl(memberC.accessUrl))
+				openMeeting(pageA, accessUrl),
+				openMeeting(pageB, accessUrl),
+				openMeeting(pageC, accessUrl)
 			]);
 			await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
 

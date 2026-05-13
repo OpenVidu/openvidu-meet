@@ -5,6 +5,7 @@ const fakeAudioPath = path.resolve(__dirname, 'e2e/assets/audio_test.wav');
 
 export default defineConfig({
 	testDir: './e2e',
+	tsconfig: './tsconfig.test.json',
 	testMatch: ['**/*.test.ts'],
 	testIgnore: ['**/selenium/**'],
 	fullyParallel: false,
@@ -14,7 +15,7 @@ export default defineConfig({
 	outputDir: 'test-results/output',
 	timeout: 60000,
 	use: {
-		headless: true,
+		headless: process.env['RUN_MODE'] === 'CI',
 		viewport: { width: 1366, height: 900 },
 		trace: 'on-first-retry',
 		video: 'off',

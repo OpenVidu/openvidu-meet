@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
 	expectCopiedUrl,
 	expectHidden,
@@ -13,7 +13,6 @@ import {
 } from './helpers/meeting-ui.helper';
 
 test.describe('Panels: UI Navigation and Section Switching', () => {
-	
 	const createdRoomIds = new Set<string>();
 
 	test.afterAll(async () => {
@@ -21,18 +20,20 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 	});
 
 	test('should open and close the CHAT panel and verify its content', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-chat-${Date.now()}`, createdRoomIds });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleChatPanel(page, 'open');
-			await expectVisible(page, '#chat-input');
-			await expectVisible(page, '#chat-container .messages-container');
+		await expectVisible(page, '#chat-input');
+		await expectVisible(page, '#chat-container .messages-container');
 
 		await toggleChatPanel(page, 'close');
 	});
 
 	test('should open and close the PARTICIPANTS panel and verify its content', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-participants-${Date.now()}`, createdRoomIds });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleParticipantsPanel(page);
@@ -46,7 +47,8 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 	});
 
 	test('should show participant role badge in participant panel item', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-owner-badge-${Date.now()}`, createdRoomIds });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleParticipantsPanel(page);
@@ -58,7 +60,8 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 	});
 
 	test('should copy meeting url from participant panel copy button', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-copy-url-${Date.now()}`, createdRoomIds });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleParticipantsPanel(page);
@@ -71,7 +74,8 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 	});
 
 	test('should open and close the ACTIVITIES panel and verify its content', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-activities-${Date.now()}`, createdRoomIds });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleActivitiesPanel(page);
@@ -85,7 +89,8 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 	});
 
 	test('should open the SETTINGS panel and verify its content', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-settings-${Date.now()}`, createdRoomIds });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openSettingsPanel(page);
@@ -93,7 +98,8 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 	});
 
 	test('should switch between PARTICIPANTS and CHAT panels and verify correct content is shown', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-switch-${Date.now()}`, createdRoomIds });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleChatPanel(page);
@@ -117,7 +123,8 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 	test('should switch between sections in the SETTINGS panel and verify correct content is shown', async ({
 		page
 	}) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `panel-sections-${Date.now()}`, createdRoomIds });
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openSettingsPanel(page);

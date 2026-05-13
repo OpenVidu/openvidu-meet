@@ -2,7 +2,7 @@ import { expect, type Locator, type Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 
-async function clickIfReady(locator: Locator, timeoutMs = 2_000): Promise<boolean> {
+const clickIfReady = async (locator: Locator, timeoutMs = 2_000): Promise<boolean> => {
 	try {
 		await locator.click({ timeout: timeoutMs });
 		return true;
@@ -11,7 +11,7 @@ async function clickIfReady(locator: Locator, timeoutMs = 2_000): Promise<boolea
 	}
 }
 
-async function completeLobbyIfPresent(page: Page): Promise<void> {
+const completeLobbyIfPresent = async (page: Page): Promise<void> => {
 	const submit = page.locator('#participant-name-submit');
 
 	if (!(await submit.isVisible().catch(() => false))) {
@@ -38,7 +38,7 @@ async function completeLobbyIfPresent(page: Page): Promise<void> {
 	await clickIfReady(submit);
 }
 
-async function clickJoinIfPrejoinVisible(page: Page): Promise<boolean> {
+const clickJoinIfPrejoinVisible = async (page: Page): Promise<boolean> => {
 	const prejoinContainer = page.locator('#prejoin-container');
 	const joinButton = page.locator('#join-button');
 	const joiningSpinner = page.locator('#spinner');
@@ -63,7 +63,7 @@ async function clickJoinIfPrejoinVisible(page: Page): Promise<boolean> {
 	return false;
 }
 
-export async function openMeeting(page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> {
+export const openMeeting = async (page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> => {
 	for (let attempt = 0; attempt < 2; attempt += 1) {
 		await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
 
@@ -84,7 +84,7 @@ export async function openMeeting(page: Page, accessUrl: string, timeoutMs = 45_
 	await expect(page.locator('#media-buttons-container')).toBeVisible({ timeout: timeoutMs });
 }
 
-export async function openPrejoin(page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> {
+export const openPrejoin = async (page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> => {
 	for (let attempt = 0; attempt < 2; attempt += 1) {
 		await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
 
@@ -103,7 +103,7 @@ export async function openPrejoin(page: Page, accessUrl: string, timeoutMs = 45_
 	await expect(page.locator('#prejoin-container')).toBeVisible({ timeout: timeoutMs });
 }
 
-export async function toggleChatPanel(page: Page, action: 'open' | 'close' = 'open'): Promise<void> {
+export const toggleChatPanel = async (page: Page, action: 'open' | 'close' = 'open'): Promise<void> => {
 	const chatInput = page.locator('#chat-input');
 	const shouldOpen = action === 'open';
 	const isOpen = await chatInput.isVisible().catch(() => false);
@@ -131,44 +131,44 @@ export async function toggleChatPanel(page: Page, action: 'open' | 'close' = 'op
 	}
 }
 
-export async function sendChatMessage(page: Page, message: string): Promise<void> {
+export const sendChatMessage = async (page: Page, message: string): Promise<void> => {
 	await page.locator('#chat-input').fill(message);
 	await page.locator('#send-btn').click();
 }
 
-export async function expectChatMessageCount(page: Page, count: number): Promise<void> {
+export const expectChatMessageCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.message')).toHaveCount(count);
 }
 
-export async function expectFirstMessageSender(page: Page, senderName: string): Promise<void> {
+export const expectFirstMessageSender = async (page: Page, senderName: string): Promise<void> => {
 	await expect(page.locator('.participant-name-container > p').first()).toContainText(senderName);
 }
 
-export async function expectChatLinkCount(page: Page, count: number): Promise<void> {
+export const expectChatLinkCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.chat-message a')).toHaveCount(count);
 }
 
-export async function expectChatMessageTextAt(page: Page, index: number, text: string): Promise<void> {
+export const expectChatMessageTextAt = async (page: Page, index: number, text: string): Promise<void> => {
 	await expect(page.locator('.chat-message').nth(index)).toContainText(text);
 }
 
-export async function expectChatLinkHrefContains(page: Page, index: number, expectedHrefPart: string): Promise<void> {
+export const expectChatLinkHrefContains = async (page: Page, index: number, expectedHrefPart: string): Promise<void> => {
 	await expect(page.locator('.chat-message a').nth(index)).toHaveAttribute('href', new RegExp(expectedHrefPart));
 }
 
-export async function expectSnackbarNotification(page: Page): Promise<void> {
+export const expectSnackbarNotification = async (page: Page): Promise<void> => {
 	await expect(page.locator('.snackbarNotification')).toBeVisible();
 }
 
-export async function toggleParticipantsPanel(page: Page): Promise<void> {
+export const toggleParticipantsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#participants-panel-btn').click();
 }
 
-export async function toggleActivitiesPanel(page: Page): Promise<void> {
+export const toggleActivitiesPanel = async (page: Page): Promise<void> => {
 	await page.locator('#activities-panel-btn').click();
 }
 
-export async function openSettingsPanel(page: Page): Promise<void> {
+export const openSettingsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#more-options-btn').click();
 	await expect(page.locator('.mat-mdc-menu-content')).toBeVisible();
 	await page.locator('#toolbar-settings-btn').click();
@@ -178,23 +178,23 @@ export async function openSettingsPanel(page: Page): Promise<void> {
 /**
  * Opens the layout settings panel by clicking more-options and grid-layout-settings buttons
  */
-export async function openLayoutSettingsPanel(page: Page): Promise<void> {
+export const openLayoutSettingsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#more-options-btn').click();
 	await expect(page.locator('#grid-layout-settings-btn')).toBeVisible();
 	await page.locator('#grid-layout-settings-btn').click();
 	await expect(page.locator('#settings-container')).toBeVisible();
 }
 
-export async function closeSettingsPanel(page: Page): Promise<void> {
+export const closeSettingsPanel = async (page: Page): Promise<void> => {
 	await page.locator('.panel-close-button').click();
 	await expectHidden(page, '#settings-container');
 }
 
-export async function expectVisible(page: Page, selector: string): Promise<void> {
+export const expectVisible = async (page: Page, selector: string): Promise<void> => {
 	await expect(page.locator(selector)).toBeVisible();
 }
 
-export async function expectHidden(page: Page, selector: string): Promise<void> {
+export const expectHidden = async (page: Page, selector: string): Promise<void> => {
 	const locator = page.locator(selector);
 
 	await expect
@@ -219,7 +219,7 @@ export async function expectHidden(page: Page, selector: string): Promise<void> 
 		.toBeTruthy();
 }
 
-export async function installClipboardCapture(page: Page): Promise<void> {
+export const installClipboardCapture = async (page: Page): Promise<void> => {
 	await page.evaluate(() => {
 		const w = window as Window & {
 			__ovCopiedText?: string;
@@ -248,7 +248,7 @@ export async function installClipboardCapture(page: Page): Promise<void> {
 	});
 }
 
-export async function getCopiedText(page: Page): Promise<string> {
+export const getCopiedText = async (page: Page): Promise<string> => {
 	return await page.evaluate(async () => {
 		const w = window as Window & {
 			__ovCopiedText?: string;
@@ -268,37 +268,37 @@ export async function getCopiedText(page: Page): Promise<string> {
 	});
 }
 
-export async function expectCopiedUrl(page: Page, timeoutMs = 5_000): Promise<void> {
+export const expectCopiedUrl = async (page: Page, timeoutMs = 5_000): Promise<void> => {
 	await expect.poll(async () => await getCopiedText(page), { timeout: timeoutMs }).toMatch(/^https?:\/\//);
 }
 
-export async function openPrejoinBackgroundsPanel(page: Page): Promise<void> {
+export const openPrejoinBackgroundsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#backgrounds-button').click();
 	await expect(page.locator('#background-effects-container')).toBeVisible();
 }
 
-export async function closePrejoinBackgroundsPanel(page: Page): Promise<void> {
+export const closePrejoinBackgroundsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#backgrounds-button').click();
 	await expect(page.locator('#background-effects-container')).toHaveCount(0);
 }
 
-export async function setPrejoinCameraStatus(page: Page, timeoutMs = 10_000): Promise<void> {
+export const setPrejoinCameraStatus = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#camera-button').click();
 }
 
-export async function openRoomBackgroundsPanel(page: Page): Promise<void> {
+export const openRoomBackgroundsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#more-options-btn').click();
 	await page.locator('#virtual-bg-btn:visible').click();
 	await expect(page.locator('#background-effects-container')).toBeVisible();
 }
 
-export async function closeRoomBackgroundsPanel(page: Page, timeoutMs = 10_000): Promise<void> {
+export const closeRoomBackgroundsPanel = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#more-options-btn').click();
 	await page.locator('#virtual-bg-btn:visible').click();
 	await expect(page.locator('#background-effects-container')).toHaveCount(0);
 }
 
-export async function applyBackgroundEffect(page: Page, effectId: string, timeoutMs = 10_000): Promise<void> {
+export const applyBackgroundEffect = async (page: Page, effectId: string, timeoutMs = 10_000): Promise<void> => {
 	await page.locator(`#effect-${effectId}`).click();
 	await expect
 		.poll(async () => (await page.locator(`.OV_stream`).count()) > 0, { timeout: timeoutMs })
@@ -306,7 +306,7 @@ export async function applyBackgroundEffect(page: Page, effectId: string, timeou
 		.catch(() => Promise.resolve());
 }
 
-export async function captureVideoElementScreenshot(page: Page): Promise<Buffer> {
+export const captureVideoElementScreenshot = async (page: Page): Promise<Buffer> => {
 	const videoLocator = page.locator('.OV_video-element').first();
 
 	for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -329,11 +329,11 @@ export async function captureVideoElementScreenshot(page: Page): Promise<Buffer>
 	throw new Error('Unable to capture video screenshot after retries');
 }
 
-export function expectSignificantImageDifference(
+export const expectSignificantImageDifference = (
 	beforePngBuffer: Buffer,
 	afterPngBuffer: Buffer,
 	options?: { threshold?: number; minDiffPixels?: number }
-): void {
+): void => {
 	const beforeImg = PNG.sync.read(beforePngBuffer);
 	const afterImg = PNG.sync.read(afterPngBuffer);
 	const width = Math.min(beforeImg.width, afterImg.width);
@@ -351,11 +351,11 @@ export function expectSignificantImageDifference(
 	expect(numDiffPixels).toBeGreaterThan(options?.minDiffPixels ?? 500);
 }
 
-export async function startScreensharing(page: Page): Promise<void> {
+export const startScreensharing = async (page: Page): Promise<void> => {
 	await page.locator('#screenshare-btn').click();
 }
 
-export async function stopScreensharing(page: Page, timeoutMs = 10_000): Promise<void> {
+export const stopScreensharing = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#screenshare-btn').click();
 
 	const disableButton = page.locator('#disable-screen-button');
@@ -374,38 +374,38 @@ export async function stopScreensharing(page: Page, timeoutMs = 10_000): Promise
 		.toBe(0);
 }
 
-export async function toggleCamera(page: Page): Promise<void> {
+export const toggleCamera = async (page: Page): Promise<void> => {
 	await page.locator('#camera-btn').click();
 }
 
-export async function toggleMicrophone(page: Page): Promise<void> {
+export const toggleMicrophone = async (page: Page): Promise<void> => {
 	await page.locator('#mic-btn').click();
 }
 
-export async function leaveMeeting(page: Page, timeoutMs = 10_000): Promise<void> {
+export const leaveMeeting = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#leave-btn').click();
 	await page.locator('#leave-option').click();
 
 	await expect.poll(async () => await page.locator('#layout-container').count(), { timeout: timeoutMs }).toBe(0);
 }
 
-export async function expectVideoCount(page: Page, count: number): Promise<void> {
+export const expectVideoCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('video')).toHaveCount(count);
 }
 
-export async function expectPinnedStreamCount(page: Page, count: number): Promise<void> {
+export const expectPinnedStreamCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.OV_big .OV_stream')).toHaveCount(count);
 }
 
-export async function expectScreenTypeCount(page: Page, count: number): Promise<void> {
+export const expectScreenTypeCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.screen-type')).toHaveCount(count);
 }
 
-export async function getPinnedStreamCount(page: Page): Promise<number> {
+export const getPinnedStreamCount = async (page: Page): Promise<number> => {
 	return await page.locator('.OV_big .OV_stream').count();
 }
 
-export async function toggleStreamPin(page: Page, selector: string, timeoutMs = 10_000): Promise<void> {
+export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 10_000): Promise<void> => {
 	const target = page.locator(selector).first();
 	await target.click({ force: true });
 
@@ -424,7 +424,7 @@ export async function toggleStreamPin(page: Page, selector: string, timeoutMs = 
 		.catch(() => Promise.resolve());
 }
 
-export async function unpinCurrentPinnedStream(page: Page, timeoutMs = 10_000): Promise<void> {
+export const unpinCurrentPinnedStream = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	const pinnedStream = page.locator('.OV_big').first();
 	await pinnedStream.click({ force: true });
 
@@ -442,9 +442,9 @@ export async function unpinCurrentPinnedStream(page: Page, timeoutMs = 10_000): 
 		.catch(() => Promise.resolve());
 }
 
-export async function getScreenTypeTracks(
+export const getScreenTypeTracks = async (
 	page: Page
-): Promise<Array<{ kind: string; enabled: boolean; id: string; label: string }>> {
+): Promise<Array<{ kind: string; enabled: boolean; id: string; label: string }>> => {
 	return await page.evaluate(() => {
 		const video = document.querySelector('.screen-type') as HTMLVideoElement | null;
 
@@ -466,21 +466,21 @@ export async function getScreenTypeTracks(
 /**
  * Expects a specific number of stream containers to be present
  */
-export async function expectStreamCount(page: Page, count: number): Promise<void> {
+export const expectStreamCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.OV_publisher .OV_stream')).toHaveCount(count);
 }
 
 /**
  * Expects a specific number of screen share streams to be present
  */
-export async function expectScreenShareCount(page: Page, count: number): Promise<void> {
+export const expectScreenShareCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.OV_screen')).toHaveCount(count);
 }
 
 /**
  * Expects a specific number of local video and audio elements to be present
  */
-export async function expectLocalStreamCount(page: Page, counts: { video?: number; audio?: number }): Promise<void> {
+export const expectLocalStreamCount = async (page: Page, counts: { video?: number; audio?: number }): Promise<void> => {
 	if (counts.video !== undefined) {
 		await expect(page.locator('.OV_stream.local .OV_video-element')).toHaveCount(counts.video);
 		await expect(page.locator('video')).toHaveCount(counts.video);
@@ -495,7 +495,7 @@ export async function expectLocalStreamCount(page: Page, counts: { video?: numbe
 /**
  * Joins a meeting from prejoin by clicking join button and waiting for layout
  */
-export async function joinFromPrejoin(page: Page, accessUrl: string): Promise<void> {
+export const joinFromPrejoin = async (page: Page, accessUrl: string): Promise<void> => {
 	await openPrejoin(page, accessUrl);
 	await page.locator('#join-button').click();
 	await expect(page.locator('#layout-container')).toBeVisible();
@@ -505,7 +505,7 @@ export async function joinFromPrejoin(page: Page, accessUrl: string): Promise<vo
 /**
  * Waits for a participant's remote stream to appear and be visible
  */
-export async function waitForRemoteStream(page: Page): Promise<void> {
+export const waitForRemoteStream = async (page: Page): Promise<void> => {
 	await expect
 		.poll(
 			async () => {
@@ -536,14 +536,14 @@ export async function waitForRemoteStream(page: Page): Promise<void> {
 /**
  * Gets all audio elements on the page (local + remote participants)
  */
-export async function getAudioElementCount(page: Page): Promise<number> {
+export const getAudioElementCount = async (page: Page): Promise<number> => {
 	return await page.locator('audio').count();
 }
 
 /**
  * Expects no-size class to be removed from a stream element (video should be visible)
  */
-export async function expectStreamVideoVisible(page: Page, selector = '.OV_stream.local'): Promise<void> {
+export const expectStreamVideoVisible = async (page: Page, selector = '.OV_stream.local'): Promise<void> => {
 	const stream = page.locator(selector);
 	const classes = await stream.getAttribute('class');
 	expect(classes).not.toContain('no-size');
@@ -552,7 +552,7 @@ export async function expectStreamVideoVisible(page: Page, selector = '.OV_strea
 /**
  * Checks if local participant has only audio tracks (no video)
  */
-export async function expectLocalParticipantAudioOnly(page: Page): Promise<void> {
+export const expectLocalParticipantAudioOnly = async (page: Page): Promise<void> => {
 	const videoElements = await page.locator('.OV_stream.local .OV_video-element').count();
 	expect(videoElements).toBe(0);
 	const audioElements = await page.locator('.OV_stream.local .OV_audio-element').count();
@@ -562,7 +562,7 @@ export async function expectLocalParticipantAudioOnly(page: Page): Promise<void>
 /**
  * Checks if no streams are being played
  */
-export async function expectNoStreamsPlaying(page: Page): Promise<void> {
+export const expectNoStreamsPlaying = async (page: Page): Promise<void> => {
 	await expect(page.locator('.OV_stream .OV_video-element')).toHaveCount(0);
 	await expect(page.locator('.OV_stream .OV_audio-element')).toHaveCount(0);
 }
@@ -570,14 +570,14 @@ export async function expectNoStreamsPlaying(page: Page): Promise<void> {
 /**
  * Toggles microphone in prejoin (companion to togglePrejoinCamera)
  */
-export async function togglePrejoinMicrophone(page: Page, timeoutMs = 10_000): Promise<void> {
+export const togglePrejoinMicrophone = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#microphone-button').click();
 }
 
 /**
  * Hovers over a stream element to reveal controls
  */
-export async function hoverStream(page: Page, selector = '.OV_stream_video.local'): Promise<void> {
+export const hoverStream = async (page: Page, selector = '.OV_stream_video.local'): Promise<void> => {
 	const locator = page.locator(selector).first();
 	await locator.hover();
 }
@@ -585,10 +585,10 @@ export async function hoverStream(page: Page, selector = '.OV_stream_video.local
 /**
  * Gets the bounding box of an element
  */
-export async function getElementBoundingBox(
+export const getElementBoundingBox = async (
 	page: Page,
 	selector: string
-): Promise<{ x: number; y: number; width: number; height: number } | null> {
+): Promise<{ x: number; y: number; width: number; height: number } | null> => {
 	const locator = page.locator(selector).first();
 
 	if ((await locator.count()) === 0) {
@@ -613,7 +613,7 @@ export async function getElementBoundingBox(
 /**
  * Minimizes the local video stream
  */
-export async function minimizeStream(page: Page): Promise<void> {
+export const minimizeStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.OV_publisher .OV_stream_video.local');
 	await expect(page.locator('#minimize-btn')).toBeVisible();
 	await page.locator('#minimize-btn').click();
@@ -622,7 +622,7 @@ export async function minimizeStream(page: Page): Promise<void> {
 /**
  * Maximizes (restores) the local video stream
  */
-export async function maximizeStream(page: Page): Promise<void> {
+export const maximizeStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.local_participant .OV_stream_video.local');
 	// Current UI toggles minimize/maximize with the same control id.
 	await expect(page.locator('#minimize-btn')).toBeVisible();
@@ -632,7 +632,7 @@ export async function maximizeStream(page: Page): Promise<void> {
 /**
  * Drags a stream element to a new position
  */
-export async function dragStream(page: Page, selector: string, targetX: number, targetY: number): Promise<void> {
+export const dragStream = async (page: Page, selector: string, targetX: number, targetY: number): Promise<void> => {
 	const element =
 		selector === '.local_participant'
 			? page.locator('.local_participant:has(.OV_stream_video.local)').first()
@@ -654,7 +654,7 @@ export async function dragStream(page: Page, selector: string, targetX: number, 
 /**
  * Checks if video is currently enabled in prejoin by inspecting the camera toggle state
  */
-export async function isPrejoinVideoEnabled(page: Page): Promise<boolean> {
+export const isPrejoinVideoEnabled = async (page: Page): Promise<boolean> => {
 	const cameraButton = page.locator('#camera-button');
 
 	await expect(cameraButton).toBeVisible({ timeout: 10_000 });
@@ -669,7 +669,7 @@ export async function isPrejoinVideoEnabled(page: Page): Promise<boolean> {
 /**
  * Checks if audio is currently enabled in prejoin by inspecting the microphone toggle state
  */
-export async function isPrejoinAudioEnabled(page: Page): Promise<boolean> {
+export const isPrejoinAudioEnabled = async (page: Page): Promise<boolean> => {
 	const microphoneButton = page.locator('#microphone-button');
 
 	await expect(microphoneButton).toBeVisible();
@@ -685,7 +685,7 @@ export async function isPrejoinAudioEnabled(page: Page): Promise<boolean> {
  * Ensures video is in the desired state in prejoin before joining
  * If current state doesn't match desired, toggles the camera button
  */
-export async function ensurePrejoinVideoState(page: Page, enabled: boolean, timeoutMs = 10_000): Promise<void> {
+export const ensurePrejoinVideoState = async (page: Page, enabled: boolean, timeoutMs = 10_000): Promise<void> => {
 	const currentlyEnabled = await isPrejoinVideoEnabled(page);
 
 	if (currentlyEnabled !== enabled) {
@@ -701,7 +701,7 @@ export async function ensurePrejoinVideoState(page: Page, enabled: boolean, time
  * Ensures audio is in the desired state in prejoin before joining
  * Note: Audio state detection is limited in UI - this toggles if needed
  */
-export async function ensurePrejoinAudioState(page: Page, enabled: boolean, timeoutMs = 10_000): Promise<void> {
+export const ensurePrejoinAudioState = async (page: Page, enabled: boolean, timeoutMs = 10_000): Promise<void> => {
 	const currentlyEnabled = await isPrejoinAudioEnabled(page);
 
 	if (currentlyEnabled !== enabled) {
@@ -717,11 +717,11 @@ export async function ensurePrejoinAudioState(page: Page, enabled: boolean, time
  * Joins a meeting from prejoin with specific media states
  * Handles both video and audio state configuration before joining
  */
-export async function joinFromPrejoinWithMediaState(
+export const joinFromPrejoinWithMediaState = async (
 	page: Page,
 	accessUrl: string,
 	options?: { videoEnabled?: boolean; audioEnabled?: boolean }
-): Promise<void> {
+): Promise<void> => {
 	const { videoEnabled, audioEnabled } = options || {};
 
 	// Open prejoin
@@ -742,7 +742,7 @@ export async function joinFromPrejoinWithMediaState(
 	await expect(page.locator('.OV_stream.local .OV_video-element')).toBeVisible();
 }
 
-export async function muteRemoteParticipant(page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> {
+export const muteRemoteParticipant = async (page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> => {
 	// Hover over the remote stream to reveal the silence button
 	await hoverStream(page, remoteStreamSelector);
 
@@ -752,7 +752,7 @@ export async function muteRemoteParticipant(page: Page, remoteStreamSelector = '
 	await silenceButton.click();
 }
 
-export async function unmuteRemoteParticipant(page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> {
+export const unmuteRemoteParticipant = async (page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> => {
 	// Hover over the remote stream to reveal the silence button
 	await hoverStream(page, remoteStreamSelector);
 

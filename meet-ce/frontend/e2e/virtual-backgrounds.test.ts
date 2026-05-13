@@ -1,17 +1,17 @@
 import { expect, test } from '@playwright/test';
-import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
-    applyBackgroundEffect,
-    captureVideoElementScreenshot,
-    closePrejoinBackgroundsPanel,
-    closeRoomBackgroundsPanel,
-    expectSignificantImageDifference,
-    expectVisible,
-    openMeeting,
-    openPrejoin,
-    openPrejoinBackgroundsPanel,
-    openRoomBackgroundsPanel,
-    setPrejoinCameraStatus
+	applyBackgroundEffect,
+	captureVideoElementScreenshot,
+	closePrejoinBackgroundsPanel,
+	closeRoomBackgroundsPanel,
+	expectSignificantImageDifference,
+	expectVisible,
+	openMeeting,
+	openPrejoin,
+	openPrejoinBackgroundsPanel,
+	openRoomBackgroundsPanel,
+	setPrejoinCameraStatus
 } from './helpers/meeting-ui.helper';
 
 test.describe('Virtual Backgrounds', () => {
@@ -22,11 +22,8 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should close BACKGROUNDS on prejoin page when VIDEO is disabled', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `vb-prejoin-${Date.now()}`,
-			queryParams: { prejoin: 'true' },
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openPrejoin(page, accessUrl);
 
 		const backgroundsButton = page.locator('#backgrounds-button');
@@ -43,11 +40,8 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should open and close BACKGROUNDS panel on prejoin page', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `vb-prejoin-toggle-${Date.now()}`,
-			queryParams: { prejoin: 'true' },
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openPrejoin(page, accessUrl);
 
 		await expect(page.locator('#backgrounds-button')).toBeEnabled();
@@ -56,11 +50,8 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should apply a background effect on prejoin page', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `vb-prejoin-apply-${Date.now()}`,
-			queryParams: { prejoin: 'true' },
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openPrejoin(page, accessUrl);
 
 		const before = await captureVideoElementScreenshot(page);
@@ -73,10 +64,8 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should open and close BACKGROUNDS panel in the room', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `vb-room-toggle-${Date.now()}`,
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openRoomBackgroundsPanel(page);
@@ -84,10 +73,8 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should apply a background effect in the room', async ({ page }) => {
-		const { accessUrl } = await createRoomAndGetAccessUrl({
-			roomName: `vb-room-apply-${Date.now()}`,
-			createdRoomIds
-		});
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
+		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		const before = await captureVideoElementScreenshot(page);
