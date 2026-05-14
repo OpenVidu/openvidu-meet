@@ -5,6 +5,7 @@ import {
 	expectHidden,
 	expectVisible,
 	installClipboardCapture,
+	openLayoutSettingsPanel,
 	openMeeting,
 	openSettingsPanel,
 	toggleActivitiesPanel,
@@ -26,6 +27,64 @@ test.afterAll(async () => {
 });
 
 test.describe('Panels: UI Navigation and Section Switching', () => {
+	test('should switch between PARTICIPANTS and CHAT panels and verify correct content is shown', async ({ page }) => {
+		await openMeeting(page, accessUrl);
+
+		await toggleChatPanel(page);
+		await expectVisible(page, '.sidenav-menu');
+		await expectVisible(page, '#chat-input');
+		await expectVisible(page, '#chat-container .messages-container');
+
+		await toggleParticipantsPanel(page);
+		await expectVisible(page, '.local-participant-container');
+		await expectVisible(page, 'ov-participant-panel-item');
+		await expectHidden(page, '#chat-input');
+		await expectHidden(page, '#chat-container .messages-container');
+
+		await toggleChatPanel(page);
+		await expectVisible(page, '#chat-input');
+		await expectVisible(page, '#chat-container .messages-container');
+		await expectHidden(page, '.local-participant-container');
+		await expectHidden(page, 'ov-participant-panel-item');
+	});
+});
+
+test.describe('Settings Panel', () => {
+	test('should open the SETTINGS panel and verify its content', async ({ page }) => {
+		await openMeeting(page, accessUrl);
+
+		await openSettingsPanel(page);
+		await expectVisible(page, '#default-settings-panel');
+	});
+
+	test('should switch between sections in the SETTINGS panel and verify correct content is shown', async ({
+		page
+	}) => {
+		await openMeeting(page, accessUrl);
+
+		await openSettingsPanel(page);
+		await expectVisible(page, '.sidenav-menu');
+
+		await page.locator('#general-opt').click();
+		await expectVisible(page, 'ov-participant-name-input');
+
+		await page.locator('#video-opt').click();
+		await expectVisible(page, 'ov-video-devices-select');
+
+		await page.locator('#audio-opt').click();
+		await expectVisible(page, 'ov-audio-devices-select');
+	});
+
+	test('should open settings panel clicking layout toolbar button', async ({ page }) => {
+		await openMeeting(page, accessUrl);
+
+		await openLayoutSettingsPanel(page);
+		await expect(page.locator('.layout-section')).toBeVisible();
+		await expect(page.locator('.theme-section')).toBeVisible();
+	});
+});
+
+test.describe('Chat Panel', () => {
 	test('should open and close the CHAT panel and verify its content', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
@@ -35,7 +94,9 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 
 		await toggleChatPanel(page, 'close');
 	});
+});
 
+test.describe('Participants Panel', () => {
 	test('should open and close the PARTICIPANTS panel and verify its content', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
@@ -71,7 +132,9 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 		await page.locator('.share-meeting-link-container .copy-url-btn').first().click();
 		await expectCopiedUrl(page);
 	});
+});
 
+test.describe('Activities Panel', () => {
 	test('should open and close the ACTIVITIES panel and verify its content', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
@@ -83,51 +146,5 @@ test.describe('Panels: UI Navigation and Section Switching', () => {
 		await toggleActivitiesPanel(page);
 		await expectHidden(page, '#activities-container');
 		await expectHidden(page, '#recording-activity');
-	});
-
-	test('should open the SETTINGS panel and verify its content', async ({ page }) => {
-		await openMeeting(page, accessUrl);
-
-		await openSettingsPanel(page);
-		await expectVisible(page, '#default-settings-panel');
-	});
-
-	test('should switch between PARTICIPANTS and CHAT panels and verify correct content is shown', async ({ page }) => {
-		await openMeeting(page, accessUrl);
-
-		await toggleChatPanel(page);
-		await expectVisible(page, '.sidenav-menu');
-		await expectVisible(page, '#chat-input');
-		await expectVisible(page, '#chat-container .messages-container');
-
-		await toggleParticipantsPanel(page);
-		await expectVisible(page, '.local-participant-container');
-		await expectVisible(page, 'ov-participant-panel-item');
-		await expectHidden(page, '#chat-input');
-		await expectHidden(page, '#chat-container .messages-container');
-
-		await toggleChatPanel(page);
-		await expectVisible(page, '#chat-input');
-		await expectVisible(page, '#chat-container .messages-container');
-		await expectHidden(page, '.local-participant-container');
-		await expectHidden(page, 'ov-participant-panel-item');
-	});
-
-	test('should switch between sections in the SETTINGS panel and verify correct content is shown', async ({
-		page
-	}) => {
-		await openMeeting(page, accessUrl);
-
-		await openSettingsPanel(page);
-		await expectVisible(page, '.sidenav-menu');
-
-		await page.locator('#general-opt').click();
-		await expectVisible(page, 'ov-participant-name-input');
-
-		await page.locator('#video-opt').click();
-		await expectVisible(page, 'ov-video-devices-select');
-
-		await page.locator('#audio-opt').click();
-		await expectVisible(page, 'ov-audio-devices-select');
 	});
 });
