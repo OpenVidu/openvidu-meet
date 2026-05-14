@@ -1,11 +1,6 @@
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import {
-	createRoom,
-	createRoomAndGetAnonymousAccessUrl,
-	createRoomMember,
-	deleteRooms
-} from './helpers/meet-api.helper';
+import { createRoomAndGetAnonymousAccessUrl, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
 import {
 	expectChatLinkCount,
 	expectChatLinkHrefContains,
@@ -19,16 +14,20 @@ import {
 } from './helpers/meeting-ui.helper';
 
 test.describe('Chat features', () => {
-	const createdRoomIds = new Set<string>();
+	let roomId: string;
+	let accessUrl: string;
+
+	test.beforeAll(async () => {
+		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+		roomId = room.roomId;
+		accessUrl = url;
+	});
 
 	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
+		await deleteRooms([roomId]);
 	});
 
 	test('should send messages', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		await openMeeting(page, accessUrl);
 		await toggleChatPanel(page);
 
@@ -44,9 +43,6 @@ test.describe('Chat features', () => {
 	});
 
 	test('should keep unread chat badge hidden at startup when there are no messages', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		await openMeeting(page, accessUrl);
 
 		const unreadBadge = page.locator('#chat-panel-btn .mat-badge-content:visible');
@@ -57,14 +53,11 @@ test.describe('Chat features', () => {
 	});
 
 	test('should receive a message', async ({ browser }) => {
-		const room = await createRoom();
-		createdRoomIds.add(room.roomId);
-
 		const senderName = `sender`;
 		const receiverName = `receiver`;
 		const [receiverMember, senderMember] = await Promise.all([
-			createRoomMember(room.roomId, { name: receiverName, baseRole: MeetRoomMemberRole.MODERATOR }),
-			createRoomMember(room.roomId, { name: senderName, baseRole: MeetRoomMemberRole.MODERATOR })
+			createRoomMember(roomId, { name: receiverName, baseRole: MeetRoomMemberRole.MODERATOR }),
+			createRoomMember(roomId, { name: senderName, baseRole: MeetRoomMemberRole.MODERATOR })
 		]);
 		const receiverAccessUrl = receiverMember.accessUrl;
 		const senderAccessUrl = senderMember.accessUrl;
@@ -85,9 +78,6 @@ test.describe('Chat features', () => {
 	});
 
 	test('should send an URL message and render it as link', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		await openMeeting(page, accessUrl);
 		await toggleChatPanel(page);
 		await sendChatMessage(page, 'demos.openvidu.io');
@@ -96,9 +86,6 @@ test.describe('Chat features', () => {
 	});
 
 	test('should show snackbar notification when receiving a message with chat panel closed', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [receiverPage, senderPage] = await Promise.all([browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(receiverPage, accessUrl), openMeeting(senderPage, accessUrl)]);
 
@@ -116,9 +103,6 @@ test.describe('Chat features', () => {
 	});
 
 	test('should preserve message order when sending multiple messages quickly', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		await openMeeting(page, accessUrl);
 		await toggleChatPanel(page);
 

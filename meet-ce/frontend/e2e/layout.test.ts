@@ -17,18 +17,23 @@ import {
 // Tests
 // ---------------------------------------------------------------------------
 
+let roomId: string;
+let accessUrl: string;
+
+test.beforeAll(async () => {
+	const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+	roomId = room.roomId;
+	accessUrl = url;
+});
+
+test.afterAll(async () => {
+	await deleteRooms([roomId]);
+});
+
 test.describe('Layout: Meeting UI elements on join', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should render layout container, share-link overlay and local video stream after joining', async ({
 		page
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await expect(page.locator('#layout')).toBeVisible();
@@ -38,15 +43,7 @@ test.describe('Layout: Meeting UI elements on join', () => {
 });
 
 test.describe('Layout: Toolbar and settings panel', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should show #more-options-btn in toolbar and reveal #grid-layout-settings-btn on click', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await expect(page.locator('#more-options-btn')).toBeVisible();
@@ -57,8 +54,6 @@ test.describe('Layout: Toolbar and settings panel', () => {
 	test('should open settings panel with layout and theme sections when clicking #grid-layout-settings-btn', async ({
 		page
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openLayoutSettingsPanel(page);
@@ -67,8 +62,6 @@ test.describe('Layout: Toolbar and settings panel', () => {
 	});
 
 	test('should have smart-mosaic selected by default and show participant count of 4', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openLayoutSettingsPanel(page);
@@ -78,8 +71,6 @@ test.describe('Layout: Toolbar and settings panel', () => {
 	});
 
 	test('should hide participant count container when mosaic layout is selected', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openLayoutSettingsPanel(page);
@@ -90,18 +81,9 @@ test.describe('Layout: Toolbar and settings panel', () => {
 });
 
 test.describe('Layout: Smart Mosaic participant count filter', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should show all streams with default settings and limit visible remote streams when participant count is set to 1', async ({
 		browser
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
@@ -136,18 +118,9 @@ test.describe('Layout: Smart Mosaic participant count filter', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Layout: Smart Mosaic - Hidden participants indicator', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should show ov-hidden-participants-indicator when remote participants exceed the visible limit', async ({
 		browser
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
@@ -173,9 +146,6 @@ test.describe('Layout: Smart Mosaic - Hidden participants indicator', () => {
 	test('should hide the indicator when switching from smart mosaic to standard mosaic layout', async ({
 		browser
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
@@ -202,9 +172,6 @@ test.describe('Layout: Smart Mosaic - Hidden participants indicator', () => {
 	});
 
 	test('should update indicator count correctly when the smart mosaic limit is raised', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		// 4 participants: A (observer) + B, C, D (3 remotes)
 		const [pageA, pageB, pageC, pageD] = await Promise.all([
 			browser.newPage(),
@@ -246,16 +213,7 @@ test.describe('Layout: Smart Mosaic - Hidden participants indicator', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Layout: Smart Mosaic - Indicator placement mode', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should display indicator in topbar mode when no participant is pinned', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
@@ -280,9 +238,6 @@ test.describe('Layout: Smart Mosaic - Indicator placement mode', () => {
 	test('should switch indicator to standard mode when the visible remote participant is pinned', async ({
 		browser
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
@@ -320,18 +275,9 @@ test.describe('Layout: Smart Mosaic - Indicator placement mode', () => {
 // ---------------------------------------------------------------------------
 
 test.describe('Layout: Smart Mosaic - Screen sharing always visible', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should always render a remote screen share stream even when the visible participant count limit is 1', async ({
 		browser
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {
@@ -359,9 +305,6 @@ test.describe('Layout: Smart Mosaic - Screen sharing always visible', () => {
 	test('should remove a remote screen share from the layout only when the screensharer stops', async ({
 		browser
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {

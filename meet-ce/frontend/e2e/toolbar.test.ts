@@ -8,16 +8,21 @@ import {
 	toggleMicrophone
 } from './helpers/meeting-ui.helper';
 
+let roomId: string;
+let accessUrl: string;
+
+test.beforeAll(async () => {
+	const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+	roomId = room.roomId;
+	accessUrl = url;
+});
+
+test.afterAll(async () => {
+	await deleteRooms([roomId]);
+});
+
 test.describe('Toolbar button functionality for local media control', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should toggle mute/unmute on the local microphone and update the icon accordingly', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleMicrophone(page);
@@ -28,8 +33,6 @@ test.describe('Toolbar button functionality for local media control', () => {
 	});
 
 	test('should toggle mute/unmute on the local camera and update the icon accordingly', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleCamera(page);
@@ -40,8 +43,6 @@ test.describe('Toolbar button functionality for local media control', () => {
 	});
 
 	test('should copy speaker link from toolbar copy-speaker-link button', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 		await installClipboardCapture(page);
 

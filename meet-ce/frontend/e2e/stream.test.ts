@@ -21,40 +21,39 @@ import {
 	waitForRemoteStream
 } from './helpers/meeting-ui.helper';
 
+let roomId: string;
+let accessUrl: string;
+
+test.beforeAll(async () => {
+	const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+	roomId = room.roomId;
+	accessUrl = url;
+});
+
+test.afterAll(async () => {
+	await deleteRooms([roomId]);
+});
+
 test.describe('Stream rendering - Single participant scenarios', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should render video element when joining with video enabled', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 		await expectStreamCount(page, 1);
 		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 	});
 
 	test('should keep local media elements rendered when joining with video disabled', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: true });
 		await expectStreamCount(page, 1);
 		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 	});
 
 	test('should keep local media elements rendered when joining with audio disabled', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: false });
 		await expectStreamCount(page, 1);
 		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 	});
 
 	test('should toggle microphone off and on', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 		await expectLocalStreamCount(page, { video: 1, audio: 0 });
 
@@ -70,8 +69,6 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 	});
 
 	test('should add screen share when sharing with all media enabled', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 		await expectStreamCount(page, 1);
 
@@ -86,8 +83,6 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 	});
 
 	test('should add screen share even when video is disabled', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: true });
 		await expectStreamCount(page, 1);
 
@@ -102,8 +97,6 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 	});
 
 	test('should add screen share even when audio is disabled', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: false });
 		await expectStreamCount(page, 1);
 
@@ -118,8 +111,6 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 	});
 
 	test('should add screen share even when all media is disabled', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: false });
 		await expectStreamCount(page, 1);
 
@@ -135,16 +126,7 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 });
 
 test.describe('Stream rendering - Multi participant scenarios', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	async function openTwoParticipants(browser: Browser): Promise<{ pageA: Page; pageB: Page }> {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
 		await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB)]);
@@ -231,16 +213,7 @@ test.describe('Stream rendering - Multi participant scenarios', () => {
 });
 
 test.describe('Stream rendering - Three or more participants', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should render three participant streams when three join', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 		await Promise.all([
 			openMeeting(pageA, accessUrl),
@@ -265,9 +238,6 @@ test.describe('Stream rendering - Three or more participants', () => {
 	});
 
 	test('should handle participant leaving and streams being removed', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 		await Promise.all([
 			openMeeting(pageA, accessUrl),
@@ -303,9 +273,6 @@ test.describe('Stream rendering - Three or more participants', () => {
 	});
 
 	test('should maintain stream order after rapid joins/leaves', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
 
@@ -354,9 +321,6 @@ test.describe('Stream rendering - Three or more participants', () => {
 	});
 
 	test('should handle rapid video/audio toggles from multiple participants', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
 		await waitForRemoteStream(pageA);
@@ -387,16 +351,7 @@ test.describe('Stream rendering - Three or more participants', () => {
 });
 
 test.describe('Stream UI controls - Minimize and maximize', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should show the MINIMIZE button ONLY over the LOCAL video', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		await openMeeting(page, accessUrl);
 		await expectStreamCount(page, 1);
 
@@ -421,8 +376,6 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should minimize the LOCAL video', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		// Get initial stream dimensions
@@ -448,8 +401,6 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should MAXIMIZE the local video (restore to layout)', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
@@ -487,8 +438,6 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should be able to drag the minimized LOCAL video', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		// Minimize stream
@@ -513,8 +462,6 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should be the MINIMIZED video ALWAYS VISIBLE when toggling panels', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		// Minimize stream
@@ -554,8 +501,6 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should be the MINIMIZED video go to the right when panel closes', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		// Open chat panel first
@@ -589,8 +534,6 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should be the MINIMIZED video ALWAYS VISIBLE when toggling from small to bigger panel', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		// Minimize stream
@@ -634,8 +577,6 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 	});
 
 	test('should MAXIMIZE the local video after drag (reset position to layout)', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await page.waitForTimeout(1000);
@@ -676,15 +617,7 @@ test.describe('Stream UI controls - Minimize and maximize', () => {
 });
 
 test.describe('Stream UI controls - PIN and silence buttons', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should show the PIN button over the LOCAL video', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await hoverStream(page, '.OV_publisher .OV_stream_video.local');
@@ -694,9 +627,6 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 	});
 
 	test('should show the PIN button over the REMOTE video', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
 		await waitForRemoteStream(pageA);
@@ -709,9 +639,6 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 	});
 
 	test('should show the SILENCE button ONLY over the REMOTE video', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
 		await waitForRemoteStream(pageA);
@@ -730,16 +657,7 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 });
 
 test.describe('Audio detection - Speaking indicator', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should show the audio detection elements when participant is speaking', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
 		await waitForRemoteStream(pageA);
@@ -760,16 +678,7 @@ test.describe('Audio detection - Speaking indicator', () => {
 });
 
 test.describe('Mute Participant - Local participant can mute remote audio', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should successfully mute remote participant audio for local user only', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		// Open meeting with audio enabled for both participants
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
@@ -822,9 +731,6 @@ test.describe('Mute Participant - Local participant can mute remote audio', () =
 	});
 
 	test('should toggle mute state multiple times without issues', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
 		await waitForRemoteStream(pageA);
@@ -858,9 +764,6 @@ test.describe('Mute Participant - Local participant can mute remote audio', () =
 	});
 
 	test('should maintain mute state when switching between multiple remote participants', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 		await Promise.all([
 			openMeeting(pageA, accessUrl),

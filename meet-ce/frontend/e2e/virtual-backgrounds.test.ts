@@ -14,16 +14,21 @@ import {
 	setPrejoinCameraStatus
 } from './helpers/meeting-ui.helper';
 
+let roomId: string;
+let accessUrl: string;
+
+test.beforeAll(async () => {
+	const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+	roomId = room.roomId;
+	accessUrl = url;
+});
+
+test.afterAll(async () => {
+	await deleteRooms([roomId]);
+});
+
 test.describe('Virtual Backgrounds', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should close BACKGROUNDS on prejoin page when VIDEO is disabled', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openPrejoin(page, accessUrl);
 
 		const backgroundsButton = page.locator('#backgrounds-button');
@@ -40,8 +45,6 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should open and close BACKGROUNDS panel on prejoin page', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openPrejoin(page, accessUrl);
 
 		await expect(page.locator('#backgrounds-button')).toBeEnabled();
@@ -50,8 +53,6 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should apply a background effect on prejoin page', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openPrejoin(page, accessUrl);
 
 		const before = await captureVideoElementScreenshot(page);
@@ -64,8 +65,6 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should open and close BACKGROUNDS panel in the room', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await openRoomBackgroundsPanel(page);
@@ -73,8 +72,6 @@ test.describe('Virtual Backgrounds', () => {
 	});
 
 	test('should apply a background effect in the room', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		const before = await captureVideoElementScreenshot(page);

@@ -139,8 +139,8 @@ export const createRoomAndGetMemberAccessUrl = async (
 /**
  * Deletes the specified rooms.
  */
-export const deleteRooms = async (roomIds: Iterable<string>): Promise<void> => {
-	const ids = Array.from(roomIds).filter((roomId) => roomId.trim().length > 0);
+export const deleteRooms = async (roomIds: string[]): Promise<void> => {
+	const ids = roomIds.filter((roomId) => roomId.trim().length > 0);
 
 	if (ids.length === 0) {
 		return;

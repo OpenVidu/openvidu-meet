@@ -15,16 +15,21 @@ import {
 	unpinCurrentPinnedStream
 } from './helpers/meeting-ui.helper';
 
+let roomId: string;
+let accessUrl: string;
+
+test.beforeAll(async () => {
+	const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+	roomId = room.roomId;
+	accessUrl = url;
+});
+
+test.afterAll(async () => {
+	await deleteRooms([roomId]);
+});
+
 test.describe('E2E: Screensharing features', () => {
-	const createdRoomIds = new Set<string>();
-
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should toggle screensharing on and off twice, updating video count', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await startScreensharing(page);
@@ -47,8 +52,6 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should show screenshare and muted camera (camera off, screenshare on)', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleCamera(page);
@@ -63,8 +66,6 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should display screensharing with a single pinned video', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await startScreensharing(page);
@@ -73,9 +74,6 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should replace pinned video when a second participant starts screensharing', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
 		try {
@@ -96,9 +94,6 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should unpin screensharing and restore previous pinned video when disabled', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
 		try {
@@ -123,8 +118,6 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should correctly share screen with microphone muted and maintain proper track state', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await toggleMicrophone(page);
@@ -146,9 +139,6 @@ test.describe('E2E: Screensharing features', () => {
 	test('should keep single pinned stream when second participant joins without sharing screen', async ({
 		browser
 	}) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
 		try {
@@ -169,9 +159,6 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should NOT have multiple screens pinned when both participants share screen', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
 
 		try {
@@ -196,9 +183,6 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should NOT re-pin manually unpinned screen when new participant joins', async ({ browser }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
-
 		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
 
 		try {

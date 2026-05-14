@@ -13,20 +13,25 @@ import {
 	waitForRecordingStarted
 } from './helpers/recordings.helper';
 
-test.describe('Recordings: E2E UI flows', () => {
-	const createdRoomIds = new Set<string>();
+let roomId: string;
+let accessUrl: string;
 
+test.beforeAll(async () => {
+	const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+	roomId = room.roomId;
+	accessUrl = url;
+});
+
+test.afterAll(async () => {
+	await deleteRooms([roomId]);
+});
+
+test.describe('Recordings: E2E UI flows', () => {
 	test.afterEach(async ({ page }) => {
 		await leaveMeeting(page);
 	});
 
-	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
-	});
-
 	test('should start a recording from activities recording panel', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await startStopRecordingFromActivitiesPanel(page, 'start');
@@ -39,12 +44,10 @@ test.describe('Recordings: E2E UI flows', () => {
 		await expectViewRecordingsButtonVisible(page);
 
 		const newPage = await clickViewRecordingsButton(page);
-		await expectViewRecordingsPageOpened(newPage, room.roomId);
+		await expectViewRecordingsPageOpened(newPage, roomId);
 	});
 
 	test('should start a recording from toolbar and open recording panel', async ({ page }) => {
-		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl();
-		createdRoomIds.add(room.roomId);
 		await openMeeting(page, accessUrl);
 
 		await startStopRecordingFromToolbar(page);
@@ -57,6 +60,6 @@ test.describe('Recordings: E2E UI flows', () => {
 		await expectViewRecordingsButtonVisible(page);
 
 		const newPage = await clickViewRecordingsButton(page);
-		await expectViewRecordingsPageOpened(newPage, room.roomId);
+		await expectViewRecordingsPageOpened(newPage, roomId);
 	});
 });

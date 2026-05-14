@@ -3,7 +3,7 @@ import { createRoomAndGetAnonymousAccessUrl } from './meet-api.helper';
 
 export const createCaptionsRoom = async (params: {
 	enableCaptions: boolean;
-	createdRoomIds: Set<string>;
+	createdRoomIds: string[];
 }): Promise<string> => {
 	const roomOptions = {
 		config: {
@@ -14,14 +14,14 @@ export const createCaptionsRoom = async (params: {
 	};
 
 	const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl(roomOptions);
-	params.createdRoomIds.add(room.roomId);
+	params.createdRoomIds.push(room.roomId);
 	return accessUrl;
-}
+};
 
 export const getCaptionsButton = (page: Page): Locator => {
 	return page.locator('#captions-button').first();
-}
+};
 
 export const getCaptionsButtonIcon = (page: Page): Locator => {
 	return page.locator('#captions-button mat-icon').first();
-}
+};

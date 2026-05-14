@@ -4,7 +4,7 @@ import { deleteRooms, getCaptionsGlobalConfig } from './helpers/meet-api.helper'
 import { openMeeting } from './helpers/meeting-ui.helper';
 
 test.describe('Captions controls', () => {
-	const createdRoomIds = new Set<string>();
+	const createdRoomIds: string[] = [];
 
 	test.afterAll(async () => {
 		await deleteRooms(createdRoomIds);
