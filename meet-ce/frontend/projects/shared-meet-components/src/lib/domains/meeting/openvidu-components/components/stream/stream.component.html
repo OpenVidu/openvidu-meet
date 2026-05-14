@@ -6,6 +6,8 @@
 		[class.local]="stream.participant.isLocal"
 		[class.remote]="!stream.participant.isLocal"
 		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
+		[class.screen-source]="stream.isScreenStream"
+		[class.camera-source]="stream.isCameraStream"
 		[id]="'stream-' + stream.source + '-' + stream.streamId"
 		(mousemove)="mouseHover($event)"
 		#streamContainer

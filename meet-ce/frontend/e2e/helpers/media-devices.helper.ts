@@ -11,7 +11,7 @@ export const getFirstVideoTrackLabel = async (page: Page): Promise<string | null
 
 export const getScreenTrackLabel = async (page: Page): Promise<string | null> => {
 	return await page.evaluate(() => {
-		const screenVideo = document.querySelector('.OV_video-element.screen-type') as HTMLVideoElement | null;
+		const screenVideo = document.querySelector('.OV_video-element.screen-source') as HTMLVideoElement | null;
 		const stream = screenVideo?.srcObject as MediaStream | null;
 		const track = stream?.getVideoTracks()?.[0];
 		return track?.label ?? null;

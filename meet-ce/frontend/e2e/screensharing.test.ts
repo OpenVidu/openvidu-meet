@@ -5,7 +5,7 @@ import {
 	expectScreenTypeCount,
 	expectVideoCount,
 	getPinnedStreamCount,
-	getScreenTypeTracks,
+	getScreenSourceTracks,
 	openMeeting,
 	startScreensharing,
 	stopScreensharing,
@@ -122,11 +122,11 @@ test.describe('E2E: Screensharing features', () => {
 
 		await toggleMicrophone(page);
 		await startScreensharing(page);
-		await page.locator('.screen-type').first().waitFor({ state: 'attached' });
+		await page.locator('.OV_stream.screen-source').first().waitFor({ state: 'attached' });
 		await expectScreenTypeCount(page, 1);
 		await expectVideoCount(page, 2);
 
-		const screenTracks = await getScreenTypeTracks(page);
+		const screenTracks = await getScreenSourceTracks(page);
 		expect(screenTracks.length).toBe(1);
 		expect(screenTracks[0].kind).toBe('video');
 		expect(screenTracks[0].enabled).toBe(true);
@@ -206,7 +206,7 @@ test.describe('E2E: Screensharing features', () => {
 			expect(await getPinnedStreamCount(pageB)).toBe(0);
 
 			for (let i = 0; i < 3; i++) {
-				await toggleStreamPin(pageB, '.OV_stream.remote .screen-type');
+				await toggleStreamPin(pageB, '.OV_stream.remote.screen-source');
 
 				if ((await getPinnedStreamCount(pageB)) === 1) {
 					break;

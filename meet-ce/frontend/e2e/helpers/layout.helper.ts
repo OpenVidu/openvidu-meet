@@ -7,10 +7,11 @@ import { expect, type Page } from '@playwright/test';
  */
 export const setSmartMosaicSliderValue = async (page: Page, targetValue: number): Promise<void> => {
 	const sliderInput = page.locator('.participant-slider input[matSliderThumb]');
+	const participantCountValue = page.locator('.participant-count-container .participant-count-value');
 	await expect(sliderInput).toBeVisible();
 	await sliderInput.focus();
 	await sliderInput.fill(targetValue.toString());
-	await expect(page.locator('.participant-count-value')).toHaveText(String(targetValue), { timeout: 5_000 });
+	await expect(participantCountValue).toHaveText(String(targetValue), { timeout: 5_000 });
 }
 
 /**

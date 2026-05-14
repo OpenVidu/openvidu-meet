@@ -1,4 +1,4 @@
-import { expect, type Locator, type Page } from '@playwright/test';
+import { Browser, expect, type Locator, type Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
 
@@ -9,7 +9,7 @@ const clickIfReady = async (locator: Locator, timeoutMs = 2_000): Promise<boolea
 	} catch {
 		return false;
 	}
-}
+};
 
 const completeLobbyIfPresent = async (page: Page): Promise<void> => {
 	const submit = page.locator('#participant-name-submit');
@@ -36,7 +36,7 @@ const completeLobbyIfPresent = async (page: Page): Promise<void> => {
 	}
 
 	await clickIfReady(submit);
-}
+};
 
 const clickJoinIfPrejoinVisible = async (page: Page): Promise<boolean> => {
 	const prejoinContainer = page.locator('#prejoin-container');
@@ -61,7 +61,24 @@ const clickJoinIfPrejoinVisible = async (page: Page): Promise<boolean> => {
 	}
 
 	return false;
-}
+};
+
+export const joinParticipants = async (
+	browser: Browser,
+	accessUrl: string,
+	numParticipants: number
+): Promise<{ pageA: Page; pages: Page[] }> => {
+	if (numParticipants < 1) {
+		throw new Error('Number of participants must be at least 1');
+	}
+
+	const pages = await Promise.all(Array.from({ length: numParticipants }, () => browser.newPage()));
+
+	await Promise.all(pages.map((page) => openMeeting(page, accessUrl)));
+	await Promise.all(pages.map((page) => waitForRemoteStream(page, numParticipants - 1)));
+
+	return { pageA: pages[0], pages: pages };
+};
 
 export const openMeeting = async (page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> => {
 	for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -82,7 +99,7 @@ export const openMeeting = async (page: Page, accessUrl: string, timeoutMs = 45_
 
 	await expect(page.locator('#layout-container')).toBeVisible({ timeout: timeoutMs });
 	await expect(page.locator('#media-buttons-container')).toBeVisible({ timeout: timeoutMs });
-}
+};
 
 export const openPrejoin = async (page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> => {
 	for (let attempt = 0; attempt < 2; attempt += 1) {
@@ -101,7 +118,7 @@ export const openPrejoin = async (page: Page, accessUrl: string, timeoutMs = 45_
 	}
 
 	await expect(page.locator('#prejoin-container')).toBeVisible({ timeout: timeoutMs });
-}
+};
 
 export const toggleChatPanel = async (page: Page, action: 'open' | 'close' = 'open'): Promise<void> => {
 	const chatInput = page.locator('#chat-input');
@@ -129,70 +146,91 @@ export const toggleChatPanel = async (page: Page, action: 'open' | 'close' = 'op
 		await expect(page.locator('#chat-container')).toHaveCount(0, { timeout: 10_000 });
 		await expect(chatInput).toHaveCount(0, { timeout: 10_000 });
 	}
-}
+};
 
 export const sendChatMessage = async (page: Page, message: string): Promise<void> => {
 	await page.locator('#chat-input').fill(message);
 	await page.locator('#send-btn').click();
-}
+};
 
 export const expectChatMessageCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.message')).toHaveCount(count);
-}
+};
 
 export const expectFirstMessageSender = async (page: Page, senderName: string): Promise<void> => {
 	await expect(page.locator('.participant-name-container > p').first()).toContainText(senderName);
-}
+};
 
 export const expectChatLinkCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.chat-message a')).toHaveCount(count);
-}
+};
 
 export const expectChatMessageTextAt = async (page: Page, index: number, text: string): Promise<void> => {
 	await expect(page.locator('.chat-message').nth(index)).toContainText(text);
-}
+};
 
-export const expectChatLinkHrefContains = async (page: Page, index: number, expectedHrefPart: string): Promise<void> => {
+export const expectChatLinkHrefContains = async (
+	page: Page,
+	index: number,
+	expectedHrefPart: string
+): Promise<void> => {
 	await expect(page.locator('.chat-message a').nth(index)).toHaveAttribute('href', new RegExp(expectedHrefPart));
-}
+};
 
 export const expectSnackbarNotification = async (page: Page): Promise<void> => {
 	await expect(page.locator('.snackbarNotification')).toBeVisible();
-}
+};
 
 export const toggleParticipantsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#participants-panel-btn').click();
-}
+};
 
 export const toggleActivitiesPanel = async (page: Page): Promise<void> => {
 	await page.locator('#activities-panel-btn').click();
-}
+};
 
 export const openSettingsPanel = async (page: Page): Promise<void> => {
-	await page.locator('#more-options-btn').click();
+	const moreOptionsButton = page.locator('#more-options-btn');
+	await expect(moreOptionsButton).toBeVisible();
+
+	if (!(await clickIfReady(moreOptionsButton, 5_000))) {
+		await moreOptionsButton.click({ force: true });
+	}
+
 	await expect(page.locator('.mat-mdc-menu-content')).toBeVisible();
 	await page.locator('#toolbar-settings-btn').click();
 	await expect(page.locator('.sidenav-menu')).toBeVisible();
-}
+};
 
 /**
  * Opens the layout settings panel by clicking more-options and grid-layout-settings buttons
  */
 export const openLayoutSettingsPanel = async (page: Page): Promise<void> => {
-	await page.locator('#more-options-btn').click();
-	await expect(page.locator('#grid-layout-settings-btn')).toBeVisible();
-	await page.locator('#grid-layout-settings-btn').click();
+	const moreOptionsButton = page.locator('#more-options-btn');
+	await expect(moreOptionsButton).toBeVisible();
+
+	if (!(await clickIfReady(moreOptionsButton, 5_000))) {
+		await moreOptionsButton.click({ force: true });
+	}
+
+	const gridLayoutSettingsButton = page.locator('#grid-layout-settings-btn');
+	await expect(gridLayoutSettingsButton).toBeVisible();
+
+	if (!(await clickIfReady(gridLayoutSettingsButton, 5_000))) {
+		await gridLayoutSettingsButton.click({ force: true });
+	}
+
 	await expect(page.locator('#settings-container')).toBeVisible();
-}
+};
 
 export const closeSettingsPanel = async (page: Page): Promise<void> => {
 	await page.locator('.panel-close-button').click();
 	await expectHidden(page, '#settings-container');
-}
+};
 
 export const expectVisible = async (page: Page, selector: string): Promise<void> => {
 	await expect(page.locator(selector)).toBeVisible();
-}
+};
 
 export const expectHidden = async (page: Page, selector: string): Promise<void> => {
 	const locator = page.locator(selector);
@@ -217,7 +255,7 @@ export const expectHidden = async (page: Page, selector: string): Promise<void> 
 			{ timeout: 10_000 }
 		)
 		.toBeTruthy();
-}
+};
 
 export const installClipboardCapture = async (page: Page): Promise<void> => {
 	await page.evaluate(() => {
@@ -246,7 +284,7 @@ export const installClipboardCapture = async (page: Page): Promise<void> => {
 			true
 		);
 	});
-}
+};
 
 export const getCopiedText = async (page: Page): Promise<string> => {
 	return await page.evaluate(async () => {
@@ -266,37 +304,37 @@ export const getCopiedText = async (page: Page): Promise<string> => {
 			return '';
 		}
 	});
-}
+};
 
 export const expectCopiedUrl = async (page: Page, timeoutMs = 5_000): Promise<void> => {
 	await expect.poll(async () => await getCopiedText(page), { timeout: timeoutMs }).toMatch(/^https?:\/\//);
-}
+};
 
 export const openPrejoinBackgroundsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#backgrounds-button').click();
 	await expect(page.locator('#background-effects-container')).toBeVisible();
-}
+};
 
 export const closePrejoinBackgroundsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#backgrounds-button').click();
 	await expect(page.locator('#background-effects-container')).toHaveCount(0);
-}
+};
 
 export const setPrejoinCameraStatus = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#camera-button').click();
-}
+};
 
 export const openRoomBackgroundsPanel = async (page: Page): Promise<void> => {
 	await page.locator('#more-options-btn').click();
 	await page.locator('#virtual-bg-btn:visible').click();
 	await expect(page.locator('#background-effects-container')).toBeVisible();
-}
+};
 
 export const closeRoomBackgroundsPanel = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#more-options-btn').click();
 	await page.locator('#virtual-bg-btn:visible').click();
 	await expect(page.locator('#background-effects-container')).toHaveCount(0);
-}
+};
 
 export const applyBackgroundEffect = async (page: Page, effectId: string, timeoutMs = 10_000): Promise<void> => {
 	await page.locator(`#effect-${effectId}`).click();
@@ -304,7 +342,7 @@ export const applyBackgroundEffect = async (page: Page, effectId: string, timeou
 		.poll(async () => (await page.locator(`.OV_stream`).count()) > 0, { timeout: timeoutMs })
 		.toBeTruthy()
 		.catch(() => Promise.resolve());
-}
+};
 
 export const captureVideoElementScreenshot = async (page: Page): Promise<Buffer> => {
 	const videoLocator = page.locator('.OV_video-element').first();
@@ -327,7 +365,7 @@ export const captureVideoElementScreenshot = async (page: Page): Promise<Buffer>
 	}
 
 	throw new Error('Unable to capture video screenshot after retries');
-}
+};
 
 export const expectSignificantImageDifference = (
 	beforePngBuffer: Buffer,
@@ -349,11 +387,11 @@ export const expectSignificantImageDifference = (
 	});
 
 	expect(numDiffPixels).toBeGreaterThan(options?.minDiffPixels ?? 500);
-}
+};
 
 export const startScreensharing = async (page: Page): Promise<void> => {
 	await page.locator('#screenshare-btn').click();
-}
+};
 
 export const stopScreensharing = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#screenshare-btn').click();
@@ -372,38 +410,38 @@ export const stopScreensharing = async (page: Page, timeoutMs = 10_000): Promise
 			{ timeout: timeoutMs }
 		)
 		.toBe(0);
-}
+};
 
 export const toggleCamera = async (page: Page): Promise<void> => {
 	await page.locator('#camera-btn').click();
-}
+};
 
 export const toggleMicrophone = async (page: Page): Promise<void> => {
 	await page.locator('#mic-btn').click();
-}
+};
 
 export const leaveMeeting = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#leave-btn').click();
 	await page.locator('#leave-option').click();
 
 	await expect.poll(async () => await page.locator('#layout-container').count(), { timeout: timeoutMs }).toBe(0);
-}
+};
 
 export const expectVideoCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('video')).toHaveCount(count);
-}
+};
 
 export const expectPinnedStreamCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.OV_big .OV_stream')).toHaveCount(count);
-}
+};
 
-export const expectScreenTypeCount = async (page: Page, count: number): Promise<void> => {
-	await expect(page.locator('.screen-type')).toHaveCount(count);
+export async function expectScreenTypeCount(page: Page, count: number): Promise<void> {
+	await expect(page.locator('.screen-source')).toHaveCount(count);
 }
 
 export const getPinnedStreamCount = async (page: Page): Promise<number> => {
 	return await page.locator('.OV_big .OV_stream').count();
-}
+};
 
 export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 10_000): Promise<void> => {
 	const target = page.locator(selector).first();
@@ -422,7 +460,7 @@ export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 
 		.poll(async () => (await page.locator('.OV_big .OV_stream').count()) > 0, { timeout: timeoutMs })
 		.toBeTruthy()
 		.catch(() => Promise.resolve());
-}
+};
 
 export const unpinCurrentPinnedStream = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	const pinnedStream = page.locator('.OV_big').first();
@@ -440,13 +478,13 @@ export const unpinCurrentPinnedStream = async (page: Page, timeoutMs = 10_000): 
 		.poll(async () => (await page.locator('.OV_big .OV_stream').count()) === 0, { timeout: timeoutMs })
 		.toBeTruthy()
 		.catch(() => Promise.resolve());
-}
+};
 
-export const getScreenTypeTracks = async (
+export async function getScreenSourceTracks(
 	page: Page
-): Promise<Array<{ kind: string; enabled: boolean; id: string; label: string }>> => {
+): Promise<Array<{ kind: string; enabled: boolean; id: string; label: string }>> {
 	return await page.evaluate(() => {
-		const video = document.querySelector('.screen-type') as HTMLVideoElement | null;
+		const video = document.querySelector('.screen-source') as HTMLVideoElement | null;
 
 		if (!video || !video.srcObject) {
 			return [];
@@ -468,14 +506,14 @@ export const getScreenTypeTracks = async (
  */
 export const expectStreamCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.OV_publisher .OV_stream')).toHaveCount(count);
-}
+};
 
 /**
  * Expects a specific number of screen share streams to be present
  */
 export const expectScreenShareCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.OV_screen')).toHaveCount(count);
-}
+};
 
 /**
  * Expects a specific number of local video and audio elements to be present
@@ -490,7 +528,7 @@ export const expectLocalStreamCount = async (page: Page, counts: { video?: numbe
 		await expect(page.locator('.OV_stream.local .OV_audio-element')).toHaveCount(counts.audio);
 		await expect(page.locator('audio')).toHaveCount(counts.audio);
 	}
-}
+};
 
 /**
  * Joins a meeting from prejoin by clicking join button and waiting for layout
@@ -500,45 +538,74 @@ export const joinFromPrejoin = async (page: Page, accessUrl: string): Promise<vo
 	await page.locator('#join-button').click();
 	await expect(page.locator('#layout-container')).toBeVisible();
 	await expect(page.locator('.OV_stream.local')).toBeVisible();
-}
+};
 
 /**
  * Waits for a participant's remote stream to appear and be visible
  */
-export const waitForRemoteStream = async (page: Page): Promise<void> => {
+export const waitForRemoteStream = async (
+	page: Page,
+	count = 1,
+	options?: { requireAudioTracks?: boolean }
+): Promise<void> => {
 	await expect
 		.poll(
-			async () => {
-				return await page.evaluate(() => {
+			async () =>
+				await page.evaluate((requireAudioTracks) => {
 					const remoteStreams = Array.from(document.querySelectorAll('.OV_stream.remote')) as HTMLElement[];
-
-					return remoteStreams.some((stream) => {
+					const visibleRemoteStreams = remoteStreams.filter((stream) => {
 						const rect = stream.getBoundingClientRect();
 						const style = window.getComputedStyle(stream);
-						const hasMediaElement = !!stream.querySelector('.OV_video-element, .OV_audio-element');
-						const isVisible =
+						return (
 							rect.width > 0 &&
 							rect.height > 0 &&
 							style.display !== 'none' &&
 							style.visibility !== 'hidden' &&
-							style.opacity !== '0';
-
-						// Ignore temporary placeholder streams while waiting for a renderable remote stream.
-						return isVisible && hasMediaElement && !stream.classList.contains('no-size');
+							style.opacity !== '0' &&
+							!stream.classList.contains('no-size')
+						);
 					});
-				});
-			},
-			{ timeout: 10_000 }
+
+					const playableRemoteVideos = visibleRemoteStreams.filter((stream) => {
+						const video = stream.querySelector('video') as HTMLVideoElement | null;
+
+						if (
+							!video ||
+							!video.srcObject ||
+							video.paused ||
+							video.readyState < 2 ||
+							video.videoWidth <= 0
+						) {
+							return false;
+						}
+
+						const mediaStream = video.srcObject as MediaStream;
+						const liveVideoTracks = mediaStream
+							.getVideoTracks()
+							.filter((track) => track.readyState === 'live');
+						const liveAudioTracks = mediaStream
+							.getAudioTracks()
+							.filter((track) => track.readyState === 'live');
+
+						return liveVideoTracks.length > 0 && (!requireAudioTracks || liveAudioTracks.length > 0);
+					});
+
+					return {
+						visibleRemoteStreams: visibleRemoteStreams.length,
+						playableRemoteVideos: playableRemoteVideos.length
+					};
+				}, options?.requireAudioTracks ?? false),
+			{ timeout: 15_000 }
 		)
-		.toBe(true);
-}
+		.toEqual({ visibleRemoteStreams: count, playableRemoteVideos: count });
+};
 
 /**
  * Gets all audio elements on the page (local + remote participants)
  */
 export const getAudioElementCount = async (page: Page): Promise<number> => {
 	return await page.locator('audio').count();
-}
+};
 
 /**
  * Expects no-size class to be removed from a stream element (video should be visible)
@@ -547,7 +614,7 @@ export const expectStreamVideoVisible = async (page: Page, selector = '.OV_strea
 	const stream = page.locator(selector);
 	const classes = await stream.getAttribute('class');
 	expect(classes).not.toContain('no-size');
-}
+};
 
 /**
  * Checks if local participant has only audio tracks (no video)
@@ -557,7 +624,7 @@ export const expectLocalParticipantAudioOnly = async (page: Page): Promise<void>
 	expect(videoElements).toBe(0);
 	const audioElements = await page.locator('.OV_stream.local .OV_audio-element').count();
 	expect(audioElements).toBeGreaterThan(0);
-}
+};
 
 /**
  * Checks if no streams are being played
@@ -565,14 +632,14 @@ export const expectLocalParticipantAudioOnly = async (page: Page): Promise<void>
 export const expectNoStreamsPlaying = async (page: Page): Promise<void> => {
 	await expect(page.locator('.OV_stream .OV_video-element')).toHaveCount(0);
 	await expect(page.locator('.OV_stream .OV_audio-element')).toHaveCount(0);
-}
+};
 
 /**
  * Toggles microphone in prejoin (companion to togglePrejoinCamera)
  */
 export const togglePrejoinMicrophone = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#microphone-button').click();
-}
+};
 
 /**
  * Hovers over a stream element to reveal controls
@@ -580,7 +647,7 @@ export const togglePrejoinMicrophone = async (page: Page, timeoutMs = 10_000): P
 export const hoverStream = async (page: Page, selector = '.OV_stream_video.local'): Promise<void> => {
 	const locator = page.locator(selector).first();
 	await locator.hover();
-}
+};
 
 /**
  * Gets the bounding box of an element
@@ -608,7 +675,7 @@ export const getElementBoundingBox = async (
 		width: box.width,
 		height: box.height
 	};
-}
+};
 
 /**
  * Minimizes the local video stream
@@ -617,7 +684,7 @@ export const minimizeStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.OV_publisher .OV_stream_video.local');
 	await expect(page.locator('#minimize-btn')).toBeVisible();
 	await page.locator('#minimize-btn').click();
-}
+};
 
 /**
  * Maximizes (restores) the local video stream
@@ -627,7 +694,7 @@ export const maximizeStream = async (page: Page): Promise<void> => {
 	// Current UI toggles minimize/maximize with the same control id.
 	await expect(page.locator('#minimize-btn')).toBeVisible();
 	await page.locator('#minimize-btn').click();
-}
+};
 
 /**
  * Drags a stream element to a new position
@@ -649,7 +716,7 @@ export const dragStream = async (page: Page, selector: string, targetX: number, 
 	await page.mouse.down();
 	await page.mouse.move(targetX, targetY, { steps: 10 });
 	await page.mouse.up();
-}
+};
 
 /**
  * Checks if video is currently enabled in prejoin by inspecting the camera toggle state
@@ -664,7 +731,7 @@ export const isPrejoinVideoEnabled = async (page: Page): Promise<boolean> => {
 	}
 
 	return await cameraButton.evaluate((element) => element.classList.contains('device-enabled'));
-}
+};
 
 /**
  * Checks if audio is currently enabled in prejoin by inspecting the microphone toggle state
@@ -679,7 +746,7 @@ export const isPrejoinAudioEnabled = async (page: Page): Promise<boolean> => {
 	}
 
 	return await microphoneButton.evaluate((element) => element.classList.contains('device-enabled'));
-}
+};
 
 /**
  * Ensures video is in the desired state in prejoin before joining
@@ -695,7 +762,7 @@ export const ensurePrejoinVideoState = async (page: Page, enabled: boolean, time
 			.toBeTruthy()
 			.catch(() => Promise.resolve());
 	}
-}
+};
 
 /**
  * Ensures audio is in the desired state in prejoin before joining
@@ -711,7 +778,7 @@ export const ensurePrejoinAudioState = async (page: Page, enabled: boolean, time
 			.toBeTruthy()
 			.catch(() => Promise.resolve());
 	}
-}
+};
 
 /**
  * Joins a meeting from prejoin with specific media states
@@ -740,7 +807,7 @@ export const joinFromPrejoinWithMediaState = async (
 	await page.locator('#join-button').click();
 	await expect(page.locator('#layout-container')).toBeVisible();
 	await expect(page.locator('.OV_stream.local .OV_video-element')).toBeVisible();
-}
+};
 
 export const muteRemoteParticipant = async (page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> => {
 	// Hover over the remote stream to reveal the silence button
@@ -750,9 +817,12 @@ export const muteRemoteParticipant = async (page: Page, remoteStreamSelector = '
 	const silenceButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
 	await expect(silenceButton).toBeVisible();
 	await silenceButton.click();
-}
+};
 
-export const unmuteRemoteParticipant = async (page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> => {
+export const unmuteRemoteParticipant = async (
+	page: Page,
+	remoteStreamSelector = '.OV_stream.remote'
+): Promise<void> => {
 	// Hover over the remote stream to reveal the silence button
 	await hoverStream(page, remoteStreamSelector);
 
@@ -760,4 +830,4 @@ export const unmuteRemoteParticipant = async (page: Page, remoteStreamSelector =
 	const silenceButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
 	await expect(silenceButton).toBeVisible();
 	await silenceButton.click();
-}
+};

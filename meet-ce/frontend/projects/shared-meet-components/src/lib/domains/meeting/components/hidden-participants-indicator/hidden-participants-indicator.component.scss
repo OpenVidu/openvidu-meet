@@ -274,18 +274,19 @@
 	}
 
 	.count-info {
-			.participant-count-value {
-				font-size: 20px;
-			}
-			.participant-count-label {
-		.count-section {
-			.count-badge {
-				width: 64px;
-				height: 64px;
-				font-size: 28px;
-			}
-			.count-info {
-				font-size: 13px;
+		.participant-count-value {
+			font-size: 20px;
+		}
+		.participant-count-label {
+			.count-section {
+				.count-badge {
+					width: 64px;
+					height: 64px;
+					font-size: 28px;
+				}
+				.count-info {
+					font-size: 13px;
+				}
 			}
 		}
 	}
