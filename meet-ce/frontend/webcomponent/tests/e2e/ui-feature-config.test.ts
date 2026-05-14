@@ -68,11 +68,7 @@ test.describe('UI Feature Config Tests', () => {
 
 		test('should show chat button when chat is enabled', async ({ page }) => {
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: {
-					enabled: true
-				},
-				virtualBackground: { enabled: true }
+				chat: { enabled: true }
 			});
 
 			await page.goto(MEET_TESTAPP_URL);
@@ -87,11 +83,7 @@ test.describe('UI Feature Config Tests', () => {
 		test('should hide chat button when chat is disabled', async ({ page }) => {
 			// Disable chat via API
 			await updateRoomConfig(roomId, {
-				chat: { enabled: false },
-				recording: {
-					enabled: true
-				},
-				virtualBackground: { enabled: true }
+				chat: { enabled: false }
 			});
 
 			await page.goto(MEET_TESTAPP_URL);
@@ -111,11 +103,7 @@ test.describe('UI Feature Config Tests', () => {
 	test.describe('Recording Feature', () => {
 		test('should show recording button for moderators', async ({ page }) => {
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: {
-					enabled: true
-				},
-				virtualBackground: { enabled: true }
+				recording: { enabled: true }
 			});
 
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -139,15 +127,13 @@ test.describe('UI Feature Config Tests', () => {
 
 		test('should not show recording button for speaker', async ({ page }) => {
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: {
-					enabled: true
-				},
-				virtualBackground: { enabled: true }
+				recording: { enabled: true }
 			});
 
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('speaker', participantName, page);
+
+			await openMoreOptionsMenu(page);
 
 			// Check that recording button is not visible for speaker
 			const recordingButton = await waitForElementInIframe(page, '#recording-btn', { state: 'hidden' });
@@ -158,19 +144,14 @@ test.describe('UI Feature Config Tests', () => {
 		test('should not show recording button for moderators when recording is disabled', async ({ page }) => {
 			// Disable recording via API
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: {
-					enabled: false
-				},
-				virtualBackground: { enabled: true }
+				recording: { enabled: false }
 			});
 
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
 			await joinRoomAs('moderator', participantName, page);
 
 			// Check that recording button is not visible
-			await interactWithElementInIframe(page, '#more-options-btn', { action: 'click' });
-			await page.waitForTimeout(500);
+			await openMoreOptionsMenu(page);
 			await waitForElementInIframe(page, '#recording-btn', { state: 'hidden' });
 			await closeMoreOptionsMenu(page);
 			await waitForElementInIframe(page, '#activities-panel-btn', {
@@ -194,10 +175,6 @@ test.describe('UI Feature Config Tests', () => {
 		test('should show virtual background button when enabled', async ({ page }) => {
 			// Ensure virtual backgrounds are enabled
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: {
-					enabled: true
-				},
 				virtualBackground: { enabled: true }
 			});
 
@@ -217,10 +194,6 @@ test.describe('UI Feature Config Tests', () => {
 		test('should hide virtual background button when disabled', async ({ page }) => {
 			// Disable virtual backgrounds via API
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: {
-					enabled: true
-				},
 				virtualBackground: { enabled: false }
 			});
 
@@ -241,10 +214,6 @@ test.describe('UI Feature Config Tests', () => {
 		}) => {
 			// Ensure virtual backgrounds are enabled
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: {
-					enabled: true
-				},
 				virtualBackground: { enabled: true }
 			});
 
@@ -259,10 +228,6 @@ test.describe('UI Feature Config Tests', () => {
 
 			// Now disable virtual backgrounds
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: {
-					enabled: true
-				},
 				virtualBackground: { enabled: false }
 			});
 

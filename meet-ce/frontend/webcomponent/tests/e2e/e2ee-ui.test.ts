@@ -59,9 +59,6 @@ test.describe('E2EE UI Tests', () => {
 		test('should show E2EE key input and badge in lobby when E2EE is enabled', async ({ page }) => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: { enabled: false },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
 
@@ -93,9 +90,7 @@ test.describe('E2EE UI Tests', () => {
 		test('should hide E2EE elements in lobby when E2EE is disabled', async ({ page }) => {
 			// Disable E2EE
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
 				recording: { enabled: true },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: false }
 			});
 
@@ -140,9 +135,6 @@ test.describe('E2EE UI Tests', () => {
 		}) => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: { enabled: false },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
 
@@ -236,9 +228,6 @@ test.describe('E2EE UI Tests', () => {
 		test('should show encryption error poster when using wrong E2EE key', async ({ page, context }) => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: { enabled: false },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
 
@@ -352,9 +341,6 @@ test.describe('E2EE UI Tests', () => {
 		test('should decrypt participant names and chat messages with correct E2EE key', async ({ page, context }) => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: { enabled: false },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
 
@@ -573,9 +559,6 @@ test.describe('E2EE UI Tests', () => {
 		}) => {
 			// Enable E2EE
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: { enabled: false },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
 
@@ -826,9 +809,6 @@ test.describe('E2EE UI Tests', () => {
 		test('should hide recording button when E2EE is enabled', async ({ page }) => {
 			// Enable E2EE (which should auto-disable recording)
 			await updateRoomConfig(roomId, {
-				chat: { enabled: true },
-				recording: { enabled: false },
-				virtualBackground: { enabled: true },
 				e2ee: { enabled: true }
 			});
 

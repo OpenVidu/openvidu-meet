@@ -1,4 +1,4 @@
-import { MeetRoomStatus } from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRoomStatus } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../../config.js';
 import {
@@ -7,7 +7,7 @@ import {
 	deleteAllRooms,
 	getRecordingFromAPI,
 	getRoomFromAPI,
-	getRoomFromWebhookStorage,
+	getWebhookFromStorage,
 	joinRoomAs,
 	prepareForJoiningRoom,
 	startStopRecording
@@ -62,11 +62,11 @@ test.describe('Web Component E2E Tests', () => {
 
 			// Get the actual room object from localStorage and compare deeply
 			let [meetingStartedWebhook, actualRoom] = await Promise.all([
-				getRoomFromWebhookStorage(page, roomId, 'meetingStarted'),
+				getWebhookFromStorage(page, roomId, 'meetingStarted'),
 				getRoomFromAPI(roomId)
 			]);
 
-			expect(meetingStartedWebhook.data).toMatchObject(actualRoom);
+			expect(meetingStartedWebhook.data).toMatchObject(actualRoom as any);
 
 			// End the meeting
 			await page.click('#end-meeting-btn');
@@ -75,10 +75,10 @@ test.describe('Web Component E2E Tests', () => {
 			expect(meetingEndedElements.length).toBe(1);
 
 			// Verify meetingEnded webhook also matches room object
-			const meetingEndedWebhook = await getRoomFromWebhookStorage(page, roomId, 'meetingEnded');
+			const meetingEndedWebhook = await getWebhookFromStorage(page, roomId, 'meetingEnded');
 			// Update actualRoom status to OPEN for comparison
 			actualRoom.status = MeetRoomStatus.OPEN;
-			expect(meetingEndedWebhook.data).toMatchObject(actualRoom);
+			expect(meetingEndedWebhook.data).toMatchObject(actualRoom as any);
 		});
 
 		test('should successfully receive recordingStarted, recordingUpdated and recordingEnded webhooks', async ({
@@ -93,19 +93,19 @@ test.describe('Web Component E2E Tests', () => {
 			expect(recordingStartedElements.length).toBe(1);
 
 			// Verify recordingStarted webhook payload
-			const recordingStartedWebhook = await getRoomFromWebhookStorage(page, roomId, 'recordingStarted');
+			const recordingStartedWebhook = await getWebhookFromStorage(page, roomId, 'recordingStarted');
 			expect(recordingStartedWebhook.event).toBe('recordingStarted');
 			expect(recordingStartedWebhook.data).toBeDefined();
-			expect(recordingStartedWebhook.data.recordingId).toBeDefined();
 
-			const recordingId = recordingStartedWebhook.data.recordingId;
+			const recordingId = (recordingStartedWebhook.data as MeetRecordingInfo).recordingId;
+			expect(recordingId).toBeDefined();
 
 			// Get the actual recording object from API and compare
 			const actualRecording = await getRecordingFromAPI(recordingId);
 			expect(recordingStartedWebhook.data).toMatchObject({
 				...actualRecording,
 				startDate: expect.any(Number),
-				status:  expect.stringMatching(/active|starting/)
+				status: expect.stringMatching(/active|starting/)
 			});
 
 			// Update recording
@@ -115,14 +115,14 @@ test.describe('Web Component E2E Tests', () => {
 			expect(recordingUpdatedElements.length).toBe(1);
 
 			// Verify recordingUpdated webhook payload
-			const recordingUpdatedWebhook = await getRoomFromWebhookStorage(page, roomId, 'recordingUpdated');
+			const recordingUpdatedWebhook = await getWebhookFromStorage(page, roomId, 'recordingUpdated');
 			expect(recordingUpdatedWebhook.event).toBe('recordingUpdated');
 			expect(recordingUpdatedWebhook.data).toBeDefined();
-			expect(recordingUpdatedWebhook.data.recordingId).toBe(recordingId);
+			expect((recordingUpdatedWebhook.data as MeetRecordingInfo).recordingId).toBe(recordingId);
 
 			// Get updated recording from API and compare
 			const updatedRecording = await getRecordingFromAPI(recordingId);
-			expect(recordingUpdatedWebhook.data).toMatchObject(updatedRecording);
+			expect(recordingUpdatedWebhook.data).toMatchObject(updatedRecording as any);
 
 			// End recording
 			await startStopRecording(page, 'stop');
@@ -131,14 +131,14 @@ test.describe('Web Component E2E Tests', () => {
 			expect(recordingEndedElements.length).toBe(1);
 
 			// Verify recordingEnded webhook payload
-			const recordingEndedWebhook = await getRoomFromWebhookStorage(page, roomId, 'recordingEnded');
+			const recordingEndedWebhook = await getWebhookFromStorage(page, roomId, 'recordingEnded');
 			expect(recordingEndedWebhook.event).toBe('recordingEnded');
 			expect(recordingEndedWebhook.data).toBeDefined();
-			expect(recordingEndedWebhook.data.recordingId).toBe(recordingId);
+			expect((recordingEndedWebhook.data as MeetRecordingInfo).recordingId).toBe(recordingId);
 
 			// Get final recording state from API and compare
 			const endedRecording = await getRecordingFromAPI(recordingId);
-			expect(recordingEndedWebhook.data).toMatchObject(endedRecording);
+			expect(recordingEndedWebhook.data).toMatchObject(endedRecording as any);
 		});
 	});
 });

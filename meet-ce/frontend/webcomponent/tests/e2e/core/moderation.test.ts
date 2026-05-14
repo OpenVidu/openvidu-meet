@@ -7,7 +7,7 @@ import {
 	getIframeInShadowDom,
 	getLocalParticipantId,
 	getParticipantIdByName,
-	isShareLinkOverlayyHidden,
+	isShareLinkOverlayHidden,
 	joinRoomAs,
 	leaveRoom,
 	makeParticipantModerator,
@@ -36,16 +36,6 @@ test.describe('Moderation Functionality Tests', () => {
 	test.beforeAll(async () => {
 		// Create a test room before all tests
 		roomId = await createTestRoom('moderation-test-room');
-	});
-
-	test.afterAll(async ({ browser }) => {
-		const tempContext = await browser.newContext();
-		const tempPage = await tempContext.newPage();
-		await deleteAllRooms(tempPage);
-		await deleteAllRecordings(tempPage);
-
-		await tempContext.close();
-		await tempPage.close();
 	});
 
 	test.beforeEach(async ({ page }) => {
@@ -126,7 +116,7 @@ test.describe('Moderation Functionality Tests', () => {
 			await page.waitForTimeout(3000);
 
 			// Check that share link overlay is no longer visible for moderator
-			const isHidden = await isShareLinkOverlayyHidden(page, '#share-link-overlay');
+			const isHidden = await isShareLinkOverlayHidden(page, '#share-link-overlay');
 			expect(isHidden).toBeTruthy();
 
 			// Cleanup
@@ -134,6 +124,7 @@ test.describe('Moderation Functionality Tests', () => {
 			await leaveRoom(page, 'moderator');
 			await speakerContext.close();
 		});
+
 		test('should not show share link overlay when user is not a moderator', async ({ page }) => {
 			// Speaker joins the room
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -144,7 +135,7 @@ test.describe('Moderation Functionality Tests', () => {
 			await page.waitForTimeout(2000);
 
 			// Check that share link overlay is not visible
-			const isHidden = await isShareLinkOverlayyHidden(page, '#share-link-overlay');
+			const isHidden = await isShareLinkOverlayHidden(page, '#share-link-overlay');
 			expect(isHidden).toBeTruthy();
 
 			await leaveRoom(page);

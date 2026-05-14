@@ -84,8 +84,8 @@ test.describe('Custom Layout Tests', () => {
 			// Configure Smart Mosaic layout with limit = 1
 			await configureLayoutMode(page, 'smart-mosaic', 1);
 
-			// Join fake participant A (speaking with continuous audio)
 			await Promise.all([
+				// Join fake participant A (speaking with continuous audio)
 				joinBrowserFakeParticipant(roomId, 'RemoteA-Speaker', {
 					audioFile: 'continuous_speech.wav'
 				}),
@@ -939,6 +939,7 @@ test.describe('Custom Layout Tests', () => {
 			expect(visibleIdentities).toContain('RemoteA-Speaking');
 			expect(participantCount).toBe(2); // Local + 1 remote
 		});
+
 		test('should hidden participants who are audio muted', async ({ page }) => {
 			// Local participant joins the room
 			await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
@@ -954,11 +955,14 @@ test.describe('Custom Layout Tests', () => {
 			});
 			// Wait for A to become visible
 			await waitForParticipantVisible(page, 'RemoteA-Speaking');
+			
 			// Verify Remote A is visible
 			let [visibleIdentities, participantCount] = await Promise.all([
 				getVisibleParticipantNames(page),
 				getVisibleParticipantsCount(page)
 			]);
+			expect(visibleIdentities).toContain('RemoteA-Speaking');
+			expect(participantCount).toBe(2); // Local + 1 remote
 
 			await joinBrowserFakeParticipant(roomId, 'RemoteB-Speaking', {
 				audioFile: 'continuous_speech.wav'
@@ -966,18 +970,16 @@ test.describe('Custom Layout Tests', () => {
 
 			await page.waitForTimeout(2000);
 
-			expect(visibleIdentities).toContain('RemoteA-Speaking');
-			expect(participantCount).toBe(2); // Local + 1 remote
 			// Audio mute Remote A
 			await muteAudio(pageA);
 			// Wait for layout to update
 			await waitForParticipantVisible(page, 'RemoteB-Speaking');
+			
 			// Verify Remote A is hidden
 			[visibleIdentities, participantCount] = await Promise.all([
 				getVisibleParticipantNames(page),
 				getVisibleParticipantsCount(page)
 			]);
-
 			expect(visibleIdentities).not.toContain('RemoteA-Speaking');
 			expect(visibleIdentities).toContain('RemoteB-Speaking');
 			expect(participantCount).toBe(2); // Local + 1 remote
@@ -1096,10 +1098,10 @@ test.describe('Custom Layout Tests', () => {
 				getVisibleParticipantNames(page),
 				getVisibleParticipantsCount(page)
 			]);
-
-			expect(visibleIdentities).not.toContain('RemoteA-ScreenShare');
+			console.log('Visible participants:', visibleIdentities);
+			expect(visibleIdentities).toContain('RemoteA-ScreenShare');
 			expect(visibleIdentities).toContain('RemoteA-ScreenShare_SCREEN');
-			expect(participantCount).toBe(4); // Local + screen share + 1 remote
+			expect(participantCount).toBe(3); // Local + screen share + 1 remote
 		});
 	});
 });

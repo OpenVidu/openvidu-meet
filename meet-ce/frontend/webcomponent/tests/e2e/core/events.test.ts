@@ -5,6 +5,7 @@ import {
 	createTestRoom,
 	deleteAllRecordings,
 	deleteAllRooms,
+	interactWithElementInIframe,
 	joinRoomAs,
 	leaveRoom,
 	prepareForJoiningRoom
@@ -90,9 +91,7 @@ test.describe('Web Component E2E Tests', () => {
 		});
 
 		test.describe('LEFT Event', () => {
-			test('should receive left event with voluntary_leave reason when using leave command', async ({
-				page
-			}) => {
+			test('should receive left event with voluntary_leave reason when using leave command', async ({ page }) => {
 				await joinRoomAs('moderator', participantName, page);
 				await page.waitForSelector('.event-joined', { timeout: 10000 });
 
@@ -172,16 +171,11 @@ test.describe('Web Component E2E Tests', () => {
 				await page.click('#leave-room-btn');
 				await page.waitForSelector('.event-left', { timeout: 10000 });
 
-				// The closed event should be emitted after the left event
-				// Wait for a reasonable amount of time for the closed event
-				try {
-					await page.waitForSelector('.event-closed', { timeout: 5000 });
-					const closedElements = await page.locator('.event-closed').all();
-					expect(closedElements.length).toBeGreaterThanOrEqual(1);
-				} catch (e) {
-					// Closed event might not always be emitted depending on the flow
-					console.log('Closed event not received - this might be expected behavior');
-				}
+				await interactWithElementInIframe(page, '#back-btn', { action: 'click' });
+
+				await page.waitForSelector('.event-closed', { timeout: 5000 });
+				const closedElements = await page.locator('.event-closed').all();
+				expect(closedElements.length).toBeGreaterThanOrEqual(1);
 			});
 
 			test('should receive closed event after ending meeting', async ({ page }) => {
@@ -191,14 +185,11 @@ test.describe('Web Component E2E Tests', () => {
 				await page.click('#end-meeting-btn');
 				await page.waitForSelector('.event-left', { timeout: 10000 });
 
-				// Wait for closed event after ending meeting
-				try {
-					await page.waitForSelector('.event-closed', { timeout: 5000 });
-					const closedElements = await page.locator('.event-closed').all();
-					expect(closedElements.length).toBeGreaterThanOrEqual(1);
-				} catch (e) {
-					console.log('Closed event not received - this might be expected behavior');
-				}
+				await interactWithElementInIframe(page, '#back-btn', { action: 'click' });
+
+				await page.waitForSelector('.event-closed', { timeout: 5000 });
+				const closedElements = await page.locator('.event-closed').all();
+				expect(closedElements.length).toBeGreaterThanOrEqual(1);
 			});
 		});
 

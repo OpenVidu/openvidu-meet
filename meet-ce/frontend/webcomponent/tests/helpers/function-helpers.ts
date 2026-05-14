@@ -1,3 +1,4 @@
+import { MeetRecordingInfo, MeetRoom, MeetRoomConfig, MeetWebhookEvent } from '@openvidu-meet/typings';
 import { expect, FrameLocator, Locator, Page } from '@playwright/test';
 import * as fs from 'fs';
 import { PNG } from 'pngjs';
@@ -154,19 +155,8 @@ export async function interactWithElementInIframe(
 	}
 }
 
-// Helper function to get default room config
-const getDefaultRoomConfig = (): MeetRoomConfig => ({
-	recording: {
-		enabled: true
-	},
-	chat: { enabled: true },
-	virtualBackground: { enabled: true },
-	e2ee: { enabled: false },
-	captions: { enabled: true }
-});
-
 // Helper function to create a room for testing
-export const createTestRoom = async (roomName: string, config: MeetRoomConfig = getDefaultRoomConfig()) => {
+export const createTestRoom = async (roomName: string, config?: Partial<MeetRoomConfig>) => {
 	const response = await fetch(`${MEET_API_URL}/api/v1/rooms`, {
 		method: 'POST',
 		headers: {
@@ -191,7 +181,7 @@ export const createTestRoom = async (roomName: string, config: MeetRoomConfig = 
 };
 
 // Helper function to update room config via REST API
-export const updateRoomConfig = async (roomId: string, config: any) => {
+export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomConfig>) => {
 	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}/config`, {
 		method: 'PUT',
 		headers: {
@@ -598,7 +588,7 @@ export const removeParticipantModerator = async (page: Page, participantId: stri
  * @param overlaySelector - CSS selector for the overlay element
  * @returns Promise resolving to true if the overlay is hidden, false otherwise
  */
-export const isShareLinkOverlayyHidden = async (page: Page, overlaySelector: string): Promise<boolean> => {
+export const isShareLinkOverlayHidden = async (page: Page, overlaySelector: string): Promise<boolean> => {
 	const frameLocator = await getIframeInShadowDom(page);
 	const overlay = frameLocator.locator(overlaySelector);
 	const count = await overlay.count();
@@ -755,7 +745,7 @@ export const sleep = (ms: number): Promise<void> => {
  * @param eventName - The webhook event name (e.g., 'meetingStarted')
  * @returns The complete webhook event object from sessionStorage (with event, data, creationDate)
  */
-export async function getRoomFromWebhookStorage(page: Page, roomId: string, eventName: string): Promise<any> {
+export async function getWebhookFromStorage(page: Page, roomId: string, eventName: string): Promise<MeetWebhookEvent> {
 	// Wait a bit to ensure the webhook is saved to localStorage
 	await page.waitForTimeout(500);
 
@@ -783,7 +773,7 @@ export async function getRoomFromWebhookStorage(page: Page, roomId: string, even
 				return null;
 			}
 
-			return event; // Return the complete event { event, data, creationDate }
+			return event as MeetWebhookEvent; // Return the complete event { event, data, creationDate }
 		},
 		{ roomId, eventName }
 	);
@@ -800,7 +790,7 @@ export async function getRoomFromWebhookStorage(page: Page, roomId: string, even
  * @param recordingId - The recording ID to retrieve
  * @returns The complete recording object from the API
  */
-export async function getRecordingFromAPI(recordingId: string): Promise<any> {
+export async function getRecordingFromAPI(recordingId: string): Promise<MeetRecordingInfo> {
 	const response = await fetch(`${MEET_API_URL}/api/v1/recordings/${recordingId}`, {
 		method: 'GET',
 		headers: {
@@ -823,8 +813,8 @@ export async function getRecordingFromAPI(recordingId: string): Promise<any> {
  * @param roomId
  * @returns
  */
-export async function getRoomFromAPI(roomId: string): Promise<any> {
-	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}`, {
+export async function getRoomFromAPI(roomId: string): Promise<MeetRoom> {
+	const response = await fetch(`${MEET_API_URL}/api/v1/rooms/${roomId}?extraFields=config`, {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',
@@ -838,5 +828,7 @@ export async function getRoomFromAPI(roomId: string): Promise<any> {
 		throw new Error(`Failed to get room: ${response.status}`);
 	}
 
-	return await response.json();
+	const room = (await response.json()) as MeetRoom & { _extraFields?: string };
+	delete room._extraFields; // Remove extraFields to simplify comparisons
+	return room;
 }
