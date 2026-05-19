@@ -78,17 +78,22 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		() => this.templateRegistry.stream() ?? this.streamTemplateQuery()
 	);
 
-	/** Finds a direct content-child directive by slot, or falls back to the registry template for the default slot */
-	readonly layoutAdditionalElementsTopTemplate = computed(
-		() => this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'top')?.template
+	readonly layoutAdditionalElementsTopTemplates = computed(() =>
+		this.layoutAdditionalElementsDirectives()
+			.filter((directive) => directive.slot === 'top')
+			.map((directive) => directive.template)
 	);
-	readonly layoutAdditionalElementsDefaultTemplate = computed(
-		() =>
-			this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'default')?.template ??
-			this.templateRegistry.layoutAdditionalElements()
-	);
-	readonly layoutAdditionalElementsBottomTemplate = computed(
-		() => this.layoutAdditionalElementsDirectives().find((d) => d.slot === 'bottom')?.template
+	readonly layoutAdditionalElementsDefaultTemplates = computed(() => {
+		const templates = this.layoutAdditionalElementsDirectives()
+			.filter((directive) => directive.slot === 'default')
+			.map((directive) => directive.template);
+		const fallbackTemplate = this.templateRegistry.layoutAdditionalElements();
+		return templates.length > 0 ? templates : fallbackTemplate ? [fallbackTemplate] : [];
+	});
+	readonly layoutAdditionalElementsBottomTemplates = computed(() =>
+		this.layoutAdditionalElementsDirectives()
+			.filter((directive) => directive.slot === 'bottom')
+			.map((directive) => directive.template)
 	);
 	readonly localParticipant = this.participantService.localParticipant;
 	readonly remoteParticipants = computed(() => {

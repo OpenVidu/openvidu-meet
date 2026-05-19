@@ -1,8 +1,8 @@
 <div class="container" [class.withMargin]="localParticipant()?.isMinimized">
 	<div id="layout" class="layout" #layout>
 		<!-- Top slot: Render elements that should appear at the top -->
-		@if (layoutAdditionalElementsTopTemplate()) {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsTopTemplate()" />
+		@for (template of layoutAdditionalElementsTopTemplates(); track template) {
+			<ng-container *ngTemplateOutlet="template" />
 		}
 
 		@if (localParticipant(); as participant) {
@@ -27,8 +27,8 @@
 		}
 
 		<!-- Default slot: Render additional layout elements (backward compatibility and default position) -->
-		@if (layoutAdditionalElementsDefaultTemplate()) {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsDefaultTemplate()" />
+		@for (template of layoutAdditionalElementsDefaultTemplates(); track template) {
+			<ng-container *ngTemplateOutlet="template" />
 		}
 
 		@for (stream of remoteStreams(); track trackParticipantElement($index, stream)) {
@@ -45,8 +45,8 @@
 		}
 
 		<!-- Bottom slot: Render elements that should appear at the bottom -->
-		@if (layoutAdditionalElementsBottomTemplate()) {
-			<ng-container *ngTemplateOutlet="layoutAdditionalElementsBottomTemplate()" />
+		@for (template of layoutAdditionalElementsBottomTemplates(); track template) {
+			<ng-container *ngTemplateOutlet="template" />
 		}
 	</div>
 

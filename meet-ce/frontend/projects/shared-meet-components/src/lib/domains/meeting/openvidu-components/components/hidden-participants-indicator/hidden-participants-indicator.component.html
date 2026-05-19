@@ -1,7 +1,6 @@
 @if (count() > 0) {
 	<div class="hidden-participants-container" [class.horizontal]="isTopBarMode()" [class.vertical]="!isTopBarMode()">
 		@if (isTopBarMode()) {
-			<!-- Horizontal/Bar Layout -->
 			<div class="horizontal-content">
 				<div class="unified-indicator" (click)="clicked.emit()">
 					<mat-icon class="indicator-icon">
@@ -21,7 +20,6 @@
 				</div>
 			</div>
 		} @else {
-			<!-- Vertical/Standard Layout -->
 			<div class="vertical-content" (click)="clicked.emit()">
 				<div class="count-section">
 					<div class="count-badge">

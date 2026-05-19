@@ -1,0 +1,24 @@
+<ov-layout [ovRemoteParticipants]="visibleRemoteParticipants()">
+	@for (d of projectedAdditionalElements(); track d) {
+		<ng-container *ovLayoutAdditionalElements="d.slot">
+			<ng-container *ngTemplateOutlet="d.template" />
+		</ng-container>
+	}
+
+	@if (shouldShowHiddenParticipantsIndicator()) {
+		<ng-container *ovLayoutAdditionalElements="'bottom'">
+			<div [class.OV_top-bar]="showTopBarHiddenParticipantsIndicator()" [class.OV_last]="!showTopBarHiddenParticipantsIndicator()">
+				<ov-hidden-participants-indicator
+					(clicked)="hiddenParticipantsIndicatorClicked.emit()"
+					[count]="hiddenParticipantsCount()"
+					[mode]="showTopBarHiddenParticipantsIndicator() ? 'topbar' : 'standard'"
+					[hiddenParticipantNames]="hiddenParticipantNames()"
+				/>
+			</div>
+		</ng-container>
+	}
+
+	<ng-template #stream let-stream>
+		<ov-stream [stream]="stream" />
+	</ng-template>
+</ov-layout>

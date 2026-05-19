@@ -45,7 +45,7 @@ export class MeetingComponent implements OnInit {
 	protected participantItemTemplate = computed(() => this.participantItem().template());
 
 	/** Controls whether to show lobby (true) or meeting view (false) */
-	showLobby = signal(true);
+	showLobby = computed(() => !this.roomMemberToken());
 	lobbyState = signal<'loading' | 'ready' | 'error'>('loading');
 
 	/** Controls whether to show the videoconference component */
@@ -78,14 +78,6 @@ export class MeetingComponent implements OnInit {
 			}
 		});
 
-		// Observe lobby state changes reactively
-		// When roomMemberToken is set, transition from lobby to meeting
-		effect(async () => {
-			const token = this.roomMemberToken();
-			if (token && this.showLobby()) {
-				this.showLobby.set(false);
-			}
-		});
 	}
 
 	async ngOnInit() {

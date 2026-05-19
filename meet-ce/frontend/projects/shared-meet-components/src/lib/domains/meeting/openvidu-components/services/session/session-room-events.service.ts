@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import {
 	MeetingChatSignalPayload,
 	MeetRecordingStatus,
@@ -48,8 +48,11 @@ export class SessionRoomEventsService {
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(TranslateService);
 	private readonly log = this.loggerSrv.get('SessionRoomEventsService');
+	private readonly _activeSpeakers = signal<Participant[]>([]);
+	readonly activeSpeakers = this._activeSpeakers.asReadonly();
 
 	bindRoom(room: Room, callbacks: SessionRoomEventCallbacks): void {
+		this._activeSpeakers.set([]);
 		this.subscribeToEncryptionErrors(room);
 		this.subscribeToActiveSpeakersChanged(room);
 		this.subscribeToParticipantConnected(room);
@@ -77,6 +80,7 @@ export class SessionRoomEventsService {
 
 	private subscribeToActiveSpeakersChanged(room: Room) {
 		room.on(RoomEvent.ActiveSpeakersChanged, (speakers: Participant[]) => {
+			this._activeSpeakers.set(speakers);
 			this.participantService.setSpeaking(speakers);
 		});
 	}
@@ -279,6 +283,7 @@ export class SessionRoomEventsService {
 		});
 
 		room.on(RoomEvent.Disconnected, async (reason: DisconnectReason | undefined) => {
+			this._activeSpeakers.set([]);
 			this.actionService.closeConnectionDialog();
 			const participantLeftEvent: ParticipantLeftEvent = {
 				roomName: this.openviduService.getRoomName(),
@@ -335,4 +340,5 @@ export class SessionRoomEventsService {
 			this.participantService.setConnectionQuality(participant.sid, quality);
 		});
 	}
+
 }

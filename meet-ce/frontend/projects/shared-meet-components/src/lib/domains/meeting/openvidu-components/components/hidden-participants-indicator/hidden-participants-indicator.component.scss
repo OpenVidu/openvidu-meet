@@ -16,10 +16,6 @@
 	background-color: transparent;
 }
 
-// ============================================
-// SHARED STYLES
-// ============================================
-
 .count-badge {
 	display: flex;
 	align-items: center;
@@ -95,9 +91,6 @@
 	}
 }
 
-// ============================================
-// HORIZONTAL MODE (Barra superior compacta)
-// ============================================
 .horizontal-content {
 	display: flex;
 	align-items: center;
@@ -163,9 +156,6 @@
 	}
 }
 
-// ============================================
-// VERTICAL MODE (Tile estándar 16:9)
-// ============================================
 .vertical-content {
 	cursor: pointer;
 	display: flex;
@@ -187,7 +177,6 @@
 		width: 100%;
 	}
 
-	// Overrides for vertical mode
 	.participant-names {
 		justify-content: center;
 		gap: 6px;
@@ -208,10 +197,6 @@
 		}
 	}
 }
-
-// ============================================
-// RESPONSIVE & CONTAINER QUERIES
-// ============================================
 
 @container hidden-indicator (max-height: 145px) {
 	.vertical-content {

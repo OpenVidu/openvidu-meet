@@ -30,8 +30,8 @@
 			</mat-radio-group>
 		</div>
 
-		<!-- Participant Count Selection (only visible in Smart mode) -->
-		@if (isSmartMode()) {
+		<!-- Participant Count Selection (only visible in smart layout mode) -->
+		@if (isSmartLayoutEnabled()) {
 			<div class="participant-count-container">
 				<mat-label class="input-label">Number of visible participants</mat-label>
 				<p class="helper-text">Choose how many remote participants are shown in the grid</p>

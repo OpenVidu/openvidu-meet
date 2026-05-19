@@ -7,7 +7,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
-import { MeetLayoutMode } from '../../models/layout.model';
+import { SmartLayoutMode } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingLayoutService } from '../../services/meeting-layout.service';
 
@@ -36,23 +36,23 @@ export class MeetingSettingsExtensionsComponent {
 	/** Whether the layout switching feature is allowed */
 	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
 	/** Expose LayoutMode enum to template */
-	LayoutMode = MeetLayoutMode;
+	LayoutMode = SmartLayoutMode;
 	/** Current layout mode */
 	layoutMode = this.layoutService.layoutMode;
-	/** Whether Smart Mosaic layout is enabled */
-	isSmartMode = this.layoutService.isSmartMosaicEnabled;
+	/** Whether smart layout mode is enabled */
+	isSmartLayoutEnabled = this.layoutService.isSmartLayoutEnabled;
 
-	/** Minimum number of participants that can be shown when Smart Mosaic layout is enabled */
-	minParticipants = this.layoutService.MIN_REMOTE_SPEAKERS;
+	/** Minimum number of participants that can be shown when smart layout mode is enabled */
+	minParticipants = this.layoutService.MIN_VISIBLE_REMOTE_PARTICIPANTS;
 	/** Maximum number of participants that can be shown */
-	maxParticipants = this.layoutService.MAX_REMOTE_SPEAKERS_LIMIT;
+	maxParticipants = this.layoutService.MAX_VISIBLE_REMOTE_PARTICIPANTS_LIMIT;
 	/** Current participant count */
-	participantCount = this.layoutService.maxRemoteSpeakers;
+	participantCount = this.layoutService.maxVisibleRemoteParticipants;
 
 	/**
 	 * Handler for layout mode change
 	 */
-	onLayoutModeChange(mode: MeetLayoutMode): void {
+	onLayoutModeChange(mode: SmartLayoutMode): void {
 		this.layoutService.setLayoutMode(mode);
 	}
 
@@ -60,7 +60,7 @@ export class MeetingSettingsExtensionsComponent {
 	 * Handler for participant count change
 	 */
 	onParticipantCountChange(count: number): void {
-		this.layoutService.setMaxRemoteSpeakers(count);
+		this.layoutService.setMaxVisibleRemoteParticipants(count);
 	}
 
 	/**
