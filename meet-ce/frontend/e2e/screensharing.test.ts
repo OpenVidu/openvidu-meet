@@ -6,6 +6,7 @@ import {
 	expectVideoCount,
 	getPinnedStreamCount,
 	getScreenSourceTracks,
+	joinParticipants,
 	openMeeting,
 	startScreensharing,
 	stopScreensharing,
@@ -74,11 +75,10 @@ test.describe('E2E: Screensharing features', () => {
 	});
 
 	test('should replace pinned video when a second participant starts screensharing', async ({ browser }) => {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
 		try {
-			await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-
 			await startScreensharing(pageA);
 			await expectPinnedStreamCount(pageA, 1);
 
@@ -89,16 +89,15 @@ test.describe('E2E: Screensharing features', () => {
 			await expectVideoCount(pageA, 4);
 			await expectPinnedStreamCount(pageA, 1);
 		} finally {
-			await Promise.all([pageB.close(), pageA.close()]);
+			await Promise.all(pages.map((page) => page.close()));
 		}
 	});
 
 	test('should unpin screensharing and restore previous pinned video when disabled', async ({ browser }) => {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
 		try {
-			await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-
 			await startScreensharing(pageA);
 			await expectPinnedStreamCount(pageA, 1);
 
@@ -113,7 +112,7 @@ test.describe('E2E: Screensharing features', () => {
 			await expectVideoCount(pageA, 3);
 			await expectPinnedStreamCount(pageA, 1);
 		} finally {
-			await Promise.all([pageB.close(), pageA.close()]);
+			await Promise.all(pages.map((page) => page.close()));
 		}
 	});
 
@@ -154,7 +153,7 @@ test.describe('E2E: Screensharing features', () => {
 			await expectPinnedStreamCount(pageA, 1);
 			await expectScreenTypeCount(pageA, 1);
 		} finally {
-			await Promise.all([pageB.close(), pageA.close()]);
+			await Promise.all([pageA.close(), pageB.close()]);
 		}
 	});
 
@@ -178,7 +177,7 @@ test.describe('E2E: Screensharing features', () => {
 			await expectVideoCount(pageA, 4);
 			expect(await getPinnedStreamCount(pageA)).toBe(1);
 		} finally {
-			await Promise.all([pageB.close(), pageA.close()]);
+			await Promise.all([pageA.close(), pageB.close()]);
 		}
 	});
 
@@ -221,7 +220,7 @@ test.describe('E2E: Screensharing features', () => {
 			expect(await getPinnedStreamCount(pageB)).toBe(1);
 			expect(await getPinnedStreamCount(pageA)).toBe(1);
 		} finally {
-			await Promise.all([pageC.close(), pageB.close(), pageA.close()]);
+			await Promise.all([pageA.close(), pageB.close(), pageC.close()]);
 		}
 	});
 });

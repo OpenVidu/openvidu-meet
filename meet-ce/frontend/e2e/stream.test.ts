@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
 	dragStream,
@@ -8,6 +8,7 @@ import {
 	getElementBoundingBox,
 	hoverStream,
 	joinFromPrejoinWithMediaState,
+	joinParticipants,
 	leaveMeeting,
 	maximizeStream,
 	minimizeStream,
@@ -126,227 +127,177 @@ test.describe('Stream rendering - Single participant scenarios', () => {
 });
 
 test.describe('Stream rendering - Multi participant scenarios', () => {
-	async function openTwoParticipants(browser: Browser): Promise<{ pageA: Page; pageB: Page }> {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-		await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB)]);
-
-		return { pageA, pageB };
-	}
-
 	test('should render both participant streams', async ({ browser }) => {
-		const { pageA, pageB } = await openTwoParticipants(browser);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
-		await expectStreamCount(pageA, 2);
-		await expectStreamCount(pageB, 2);
-
-		await Promise.all([pageA.close(), pageB.close()]);
+		try {
+			await expectStreamCount(pageA, 2);
+			await expectStreamCount(pageB, 2);
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 
 	test('should handle screen share from muted participant to other participant', async ({ browser }) => {
-		const { pageA, pageB } = await openTwoParticipants(browser);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
-		await expectStreamCount(pageA, 2);
-		await expectStreamCount(pageB, 2);
+		try {
+			await expectStreamCount(pageA, 2);
+			await expectStreamCount(pageB, 2);
 
-		// B shares screen
-		await startScreensharing(pageB);
-		await expect(pageB.locator('.OV_screen .local')).toBeVisible();
-		await expectStreamCount(pageB, 3);
-		await expectStreamCount(pageA, 3);
-		await expectScreenShareCount(pageB, 1);
-		await expectScreenShareCount(pageA, 1);
+			// B shares screen
+			await startScreensharing(pageB);
+			await expect(pageB.locator('.OV_screen .local')).toBeVisible();
+			await expectStreamCount(pageB, 3);
+			await expectStreamCount(pageA, 3);
+			await expectScreenShareCount(pageB, 1);
+			await expectScreenShareCount(pageA, 1);
 
-		await stopScreensharing(pageB);
-		await expectStreamCount(pageB, 2);
-		await expectStreamCount(pageA, 2);
-		await expectScreenShareCount(pageB, 0);
-		await expectScreenShareCount(pageA, 0);
-
-		await Promise.all([pageA.close(), pageB.close()]);
+			await stopScreensharing(pageB);
+			await expectStreamCount(pageB, 2);
+			await expectStreamCount(pageA, 2);
+			await expectScreenShareCount(pageB, 0);
+			await expectScreenShareCount(pageA, 0);
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 
 	test('should handle screen share with full media enabled', async ({ browser }) => {
-		const { pageA, pageB } = await openTwoParticipants(browser);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
-		await expectStreamCount(pageA, 2);
-		await expectStreamCount(pageB, 2);
+		try {
+			await expectStreamCount(pageA, 2);
+			await expectStreamCount(pageB, 2);
 
-		// B shares screen
-		await startScreensharing(pageB);
-		await expect(pageB.locator('.OV_screen .local')).toBeVisible();
-		await expectStreamCount(pageB, 3);
-		await expectStreamCount(pageA, 3);
-		await expectScreenShareCount(pageB, 1);
-		await expectScreenShareCount(pageA, 1);
+			// B shares screen
+			await startScreensharing(pageB);
+			await expect(pageB.locator('.OV_screen .local')).toBeVisible();
+			await expectStreamCount(pageB, 3);
+			await expectStreamCount(pageA, 3);
+			await expectScreenShareCount(pageB, 1);
+			await expectScreenShareCount(pageA, 1);
 
-		await stopScreensharing(pageB);
-		await expectStreamCount(pageB, 2);
-		await expectStreamCount(pageA, 2);
-
-		await Promise.all([pageA.close(), pageB.close()]);
+			await stopScreensharing(pageB);
+			await expectStreamCount(pageB, 2);
+			await expectStreamCount(pageA, 2);
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 
 	test('should sync remote participant media state changes', async ({ browser }) => {
-		const { pageA, pageB } = await openTwoParticipants(browser);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
-		// Both have video and audio
-		await expect(pageA.locator('.OV_publisher .OV_stream_video.local .OV_video-element')).toHaveCount(1);
-		await expect(pageA.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
+		try {
+			// Both have video and audio
+			await expect(pageA.locator('.OV_publisher .OV_stream_video.local .OV_video-element')).toHaveCount(1);
+			await expect(pageA.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
 
-		// pageB disables camera
-		await toggleCamera(pageB);
-		await pageB.waitForTimeout(1000);
+			// pageB disables camera
+			await toggleCamera(pageB);
+			await pageB.waitForTimeout(1000);
 
-		// pageA should see pageB's video poster
-		await expect(pageA.locator('.OV_stream.remote #video-poster')).toHaveCount(1);
+			// pageA should see pageB's video poster
+			await expect(pageA.locator('.OV_stream.remote #video-poster')).toHaveCount(1);
 
-		// pageB re-enables camera
-		await toggleCamera(pageB);
-		await pageB.waitForTimeout(1000);
+			// pageB re-enables camera
+			await toggleCamera(pageB);
+			await pageB.waitForTimeout(1000);
 
-		// pageA should see pageB's video restored
-		await expect(pageA.locator('.OV_stream.remote #video-poster')).toHaveCount(0);
-
-		await Promise.all([pageA.close(), pageB.close()]);
+			// pageA should see pageB's video restored
+			await expect(pageA.locator('.OV_stream.remote #video-poster')).toHaveCount(0);
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 });
 
 test.describe('Stream rendering - Three or more participants', () => {
 	test('should render three participant streams when three join', async ({ browser }) => {
-		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
-		await Promise.all([
-			openMeeting(pageA, accessUrl),
-			openMeeting(pageB, accessUrl),
-			openMeeting(pageC, accessUrl)
-		]);
-		await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
+		const { pages } = await joinParticipants(browser, accessUrl, 3);
 
-		await Promise.all([
-			// A sees: self + B + C
-			expect(pageA.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageA.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1), // Local camera stream
-			// B sees: self + A + C
-			expect(pageB.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageB.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1), // Local camera stream
-			// C sees: self + A + B
-			expect(pageC.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageC.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1) // Local camera stream
-		]);
-
-		await Promise.all([pageA.close(), pageB.close(), pageC.close()]);
+		try {
+			// Each participant sees the other 2 as remote streams and their own as local stream (total 3)
+			await Promise.all(pages.map((page) => expectStreamCount(page, 3)));
+		} finally {
+			await Promise.all(pages.map((page) => page.close()));
+		}
 	});
 
 	test('should handle participant leaving and streams being removed', async ({ browser }) => {
-		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
-		await Promise.all([
-			openMeeting(pageA, accessUrl),
-			openMeeting(pageB, accessUrl),
-			openMeeting(pageC, accessUrl)
-		]);
-		await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 3);
+		const [, pageB, pageC] = pages;
 
-		// All see 3 streams
-		await Promise.all([
-			expect(pageA.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageA.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1),
-			expect(pageB.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageB.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1),
-			expect(pageC.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageC.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1)
-		]);
+		try {
+			// Each participant sees the other 2 as remote streams and their own as local stream (total 3)
+			await Promise.all(pages.map((page) => expectStreamCount(page, 3)));
 
-		// C leaves
-		await leaveMeeting(pageC);
-		await pageB.waitForTimeout(1000);
+			// C leaves
+			await leaveMeeting(pageC);
+			await pageB.waitForTimeout(1000);
 
-		await Promise.all([
-			// A now sees 2 streams (self + B)
-			expect(pageA.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1),
-			expect(pageA.locator('.OV_stream.remote')).toHaveCount(1),
-			// B now sees 2 streams (self + A)
-			expect(pageB.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1),
-			expect(pageB.locator('.OV_stream.remote')).toHaveCount(1)
-		]);
-
-		await Promise.all([pageA.close(), pageB.close()]);
+			// A and B each now see only the other as a remote stream (total 2)
+			await Promise.all([pageA, pageB].map((page) => expectStreamCount(page, 2)));
+		} finally {
+			await Promise.all(pages.map((page) => page.close()));
+		}
 	});
 
 	test('should maintain stream order after rapid joins/leaves', async ({ browser }) => {
-		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 3);
+		const [, pageB] = pages;
 
-		await waitForRemoteStream(pageA);
+		try {
+			// B leaves
+			await leaveMeeting(pageB);
+			await pageA.waitForTimeout(500);
 
-		// A and B see each other
-		await Promise.all([
-			expect(pageA.locator('.OV_stream.remote')).toHaveCount(1),
-			expect(pageB.locator('.OV_stream.remote')).toHaveCount(1)
-		]);
+			// A should now see only C's stream (total 2)
+			await expectStreamCount(pageA, 2);
 
-		// C joins
-		await openMeeting(pageC, accessUrl);
-		await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB)]);
+			// B rejoins
+			await openMeeting(pageB, accessUrl);
 
-		// All three see 3 streams
-		await Promise.all([
-			expect(pageA.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageA.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1),
-			expect(pageB.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageB.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1),
-			expect(pageC.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageC.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1)
-		]);
-
-		// B leaves and rejoins
-		await leaveMeeting(pageB);
-		await pageA.waitForTimeout(500);
-
-		// A should now see only C's stream
-		await Promise.all([
-			expect(pageA.locator('.OV_stream.remote')).toHaveCount(1),
-			expect(pageA.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1)
-		]);
-
-		await openMeeting(pageB, accessUrl);
-		await waitForRemoteStream(pageA);
-
-		// Back to 3 streams
-		await Promise.all([
-			expect(pageA.locator('.OV_stream.remote')).toHaveCount(2),
-			expect(pageA.locator('.OV_publisher .OV_stream_video.local')).toHaveCount(1)
-		]);
-
-		await Promise.all([pageA.close(), pageB.close(), pageC.close()]);
+			// Back to seeing both B and C as remote streams (total 3)
+			await expectStreamCount(pageA, 3);
+		} finally {
+			await Promise.all(pages.map((page) => page.close()));
+		}
 	});
 
 	test('should handle rapid video/audio toggles from multiple participants', async ({ browser }) => {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-		await waitForRemoteStream(pageA);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
-		// Both have 2 streams with video
-		await expect(pageA.locator('.OV_publisher .OV_stream_video.local .OV_video-element')).toHaveCount(1);
-		await expect(pageA.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
+		try {
+			// Both have 2 streams with video
+			await expect(pageA.locator('.OV_publisher .OV_stream_video.local .OV_video-element')).toHaveCount(1);
+			await expect(pageA.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
 
-		// Rapid toggles on A
-		await toggleCamera(pageA);
-		await pageA.waitForTimeout(100);
-		await toggleCamera(pageA);
-		await pageA.waitForTimeout(100);
+			// Rapid toggles on A
+			await toggleCamera(pageA);
+			await pageA.waitForTimeout(100);
+			await toggleCamera(pageA);
+			await pageA.waitForTimeout(100);
 
-		// Should still have 2 video streams
-		await expect(pageA.locator('.OV_stream .OV_video-element')).toHaveCount(2);
+			// Should still have 2 video streams
+			await expect(pageA.locator('.OV_stream .OV_video-element')).toHaveCount(2);
 
-		// Rapid toggles on B simultaneously
-		await toggleCamera(pageB);
-		await pageB.waitForTimeout(100);
-		await toggleCamera(pageB);
+			// Rapid toggles on B simultaneously
+			await toggleCamera(pageB);
+			await pageB.waitForTimeout(100);
+			await toggleCamera(pageB);
 
-		// A should still see remote video
-		await expect(pageA.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
-
-		await Promise.all([pageA.close(), pageB.close()]);
+			// A should still see remote video
+			await expect(pageA.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 });
 
@@ -627,204 +578,201 @@ test.describe('Stream UI controls - PIN and silence buttons', () => {
 	});
 
 	test('should show the PIN button over the REMOTE video', async ({ browser }) => {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-		await waitForRemoteStream(pageA);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
 
-		// Hover over remote stream
-		await hoverStream(pageA, '.OV_stream.remote');
-		await expect(pageA.locator('#pin-btn')).toBeVisible();
-
-		await Promise.all([pageA.close(), pageB.close()]);
+		try {
+			// Hover over remote stream
+			await hoverStream(pageA, '.OV_stream.remote');
+			await expect(pageA.locator('#pin-btn')).toBeVisible();
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 
 	test('should show the SILENCE button ONLY over the REMOTE video', async ({ browser }) => {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-		await waitForRemoteStream(pageA);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
 
-		// Local stream should NOT have silence button
-		await hoverStream(pageA, '.OV_publisher .OV_stream_video.local');
-		await pageA.waitForTimeout(500);
-		await expect(pageA.locator('.OV_publisher .OV_stream_video.local #mute-btn')).toHaveCount(0);
+		try {
+			// Local stream should NOT have silence button
+			await hoverStream(pageA, '.OV_publisher .OV_stream_video.local');
+			await pageA.waitForTimeout(500);
+			await expect(pageA.locator('.OV_publisher .OV_stream_video.local #mute-btn')).toHaveCount(0);
 
-		// Remote stream should have silence button
-		await hoverStream(pageA, '.OV_stream.remote');
-		await expect(pageA.locator('#mute-btn')).toBeVisible();
-
-		await Promise.all([pageA.close(), pageB.close()]);
+			// Remote stream should have silence button
+			await hoverStream(pageA, '.OV_stream.remote');
+			await expect(pageA.locator('#mute-btn')).toBeVisible();
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 });
 
 test.describe('Audio detection - Speaking indicator', () => {
 	test('should show the audio detection elements when participant is speaking', async ({ browser }) => {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-		await waitForRemoteStream(pageA);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
 
-		// Wait for audio detection on remote stream (speaking indicator)
-		await expect
-			.poll(
-				async () => {
-					const count = await pageA.locator('.OV_stream.remote.speaking').count();
-					return count >= 1;
-				},
-				{ timeout: 10_000 }
-			)
-			.toBeTruthy();
-
-		await Promise.all([pageA.close(), pageB.close()]);
+		try {
+			// Wait for audio detection on remote stream (speaking indicator)
+			await expect
+				.poll(
+					async () => {
+						const count = await pageA.locator('.OV_stream.remote.speaking').count();
+						return count >= 1;
+					},
+					{ timeout: 10_000 }
+				)
+				.toBeTruthy();
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 });
 
 test.describe('Mute Participant - Local participant can mute remote audio', () => {
 	test('should successfully mute remote participant audio for local user only', async ({ browser }) => {
-		// Open meeting with audio enabled for both participants
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-		await waitForRemoteStream(pageA);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
-		// Wait for exactly 1 remote stream (placeholder with no-size may still be in DOM briefly)
-		await expect(pageA.locator('.OV_stream.remote')).toHaveCount(1, { timeout: 10_000 });
-		await expect(pageA.locator('.OV_stream.remote .OV_media-element')).toHaveCount(1);
+		try {
+			// Wait for exactly 1 remote stream (placeholder with no-size may still be in DOM briefly)
+			await expect(pageA.locator('.OV_stream.remote')).toHaveCount(1, { timeout: 10_000 });
+			await expect(pageA.locator('.OV_stream.remote .OV_media-element')).toHaveCount(1);
 
-		// Check initial muted state — audio is always attached to the <video> element (AV mode)
-		const isInitiallyMuted = await pageA.evaluate(() => {
-			const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
-			return el!.muted;
-		});
-		expect(isInitiallyMuted).toBe(false);
-		// There must be no standalone audio elements — audio is always carried by the video element
-		await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
+			// Check initial muted state — audio is always attached to the <video> element (AV mode)
+			const isInitiallyMuted = await pageA.evaluate(() => {
+				const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
+				return el!.muted;
+			});
+			expect(isInitiallyMuted).toBe(false);
+			// There must be no standalone audio elements — audio is always carried by the video element
+			await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
 
-		// Mute the remote participant
-		await muteRemoteParticipant(pageA, '.OV_stream.remote');
-		await pageA.waitForTimeout(500);
+			// Mute the remote participant
+			await muteRemoteParticipant(pageA, '.OV_stream.remote');
+			await pageA.waitForTimeout(500);
 
-		// Verify the video element is now muted
-		const isMutedAfterClick = await pageA.evaluate(() => {
-			const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
-			return el!.muted;
-		});
-		expect(isMutedAfterClick).toBe(true);
-		await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(1);
+			// Verify the video element is now muted
+			const isMutedAfterClick = await pageA.evaluate(() => {
+				const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
+				return el!.muted;
+			});
+			expect(isMutedAfterClick).toBe(true);
+			await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(1);
 
-		// Verify remote participant B can still hear themselves and send audio
-		// (this is only a local mute, not affecting the remote participant's transmission)
-		await expect(pageB.locator('.OV_stream.local')).toBeVisible();
-		// No audio elements exist in the DOM — audio is always on the video element
-		await expect(pageB.locator('.OV_stream.local .OV_audio-element')).toHaveCount(0);
+			// Verify remote participant B can still hear themselves and send audio
+			// (this is only a local mute, not affecting the remote participant's transmission)
+			await expect(pageB.locator('.OV_stream.local')).toBeVisible();
+			// No audio elements exist in the DOM — audio is always on the video element
+			await expect(pageB.locator('.OV_stream.local .OV_audio-element')).toHaveCount(0);
 
-		// Unmute the remote participant
-		await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
-		await pageA.waitForTimeout(500);
+			// Unmute the remote participant
+			await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
+			await pageA.waitForTimeout(500);
 
-		// Verify the video element is unmuted again
-		const isUnmutedAfterClick = await pageA.evaluate(() => {
-			const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
-			return el!.muted;
-		});
-		expect(isUnmutedAfterClick).toBe(false);
-		await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(0);
-
-		await Promise.all([pageA.close(), pageB.close()]);
+			// Verify the video element is unmuted again
+			const isUnmutedAfterClick = await pageA.evaluate(() => {
+				const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
+				return el!.muted;
+			});
+			expect(isUnmutedAfterClick).toBe(false);
+			await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(0);
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 
 	test('should toggle mute state multiple times without issues', async ({ browser }) => {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(pageA, accessUrl), openMeeting(pageB, accessUrl)]);
-		await waitForRemoteStream(pageA);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, pageB] = pages;
 
-		// Perform multiple rapid mute/unmute toggles
-		await muteRemoteParticipant(pageA, '.OV_stream.remote');
-		await pageA.waitForTimeout(200);
+		try {
+			// Perform multiple rapid mute/unmute toggles
+			await muteRemoteParticipant(pageA, '.OV_stream.remote');
+			await pageA.waitForTimeout(200);
 
-		await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
-		await pageA.waitForTimeout(200);
+			await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
+			await pageA.waitForTimeout(200);
 
-		await muteRemoteParticipant(pageA, '.OV_stream.remote');
-		await pageA.waitForTimeout(200);
+			await muteRemoteParticipant(pageA, '.OV_stream.remote');
+			await pageA.waitForTimeout(200);
 
-		await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
-		await pageA.waitForTimeout(200);
+			await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
+			await pageA.waitForTimeout(200);
 
-		// Final state should be unmuted — audio is always on the video element, no standalone audio elements
-		const finalMutedState = await pageA.evaluate(() => {
-			const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
-			return el!.muted;
-		});
-		expect(finalMutedState).toBe(false);
-		await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
+			// Final state should be unmuted — audio is always on the video element, no standalone audio elements
+			const finalMutedState = await pageA.evaluate(() => {
+				const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
+				return el!.muted;
+			});
+			expect(finalMutedState).toBe(false);
+			await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
 
-		// Verify remote stream is still visible and functional
-		await expect(pageA.locator('.OV_stream.remote')).toBeVisible();
-		await expect(pageB.locator('.OV_stream.local')).toBeVisible();
-
-		await Promise.all([pageA.close(), pageB.close()]);
+			// Verify remote stream is still visible and functional
+			await expect(pageA.locator('.OV_stream.remote')).toBeVisible();
+			await expect(pageB.locator('.OV_stream.local')).toBeVisible();
+		} finally {
+			await Promise.all(pages.map((p) => p.close()));
+		}
 	});
 
 	test('should maintain mute state when switching between multiple remote participants', async ({ browser }) => {
-		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
-		await Promise.all([
-			openMeeting(pageA, accessUrl),
-			openMeeting(pageB, accessUrl),
-			openMeeting(pageC, accessUrl)
-		]);
-		await Promise.all([waitForRemoteStream(pageA), waitForRemoteStream(pageB), waitForRemoteStream(pageC)]);
+		const { pageA, pages } = await joinParticipants(browser, accessUrl, 3);
 
-		// Verify A sees 2 remote streams
-		await expect(pageA.locator('.OV_stream.remote')).toHaveCount(2);
+		try {
+			// Verify A sees 2 remote streams
+			await expect(pageA.locator('.OV_stream.remote')).toHaveCount(2);
 
-		// Mute first remote stream (should be B)
-		const firstRemote = pageA.locator('.OV_stream.remote').first();
-		await firstRemote.hover();
-		const firstSilenceBtn = firstRemote.locator('#mute-btn').first();
-		await expect(firstSilenceBtn).toBeVisible();
-		await firstSilenceBtn.click();
-		await pageA.waitForTimeout(300);
+			// Mute first remote stream (should be B)
+			const firstRemote = pageA.locator('.OV_stream.remote').first();
+			await firstRemote.hover();
+			const firstSilenceBtn = firstRemote.locator('#mute-btn').first();
+			await expect(firstSilenceBtn).toBeVisible();
+			await firstSilenceBtn.click();
+			await pageA.waitForTimeout(300);
 
-		// Verify first remote is muted — audio is always on the video element
-		const firstRemoteAudio = await pageA.evaluate(() => {
-			const streams = document.querySelectorAll('.OV_stream.remote');
-			const el = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-			return el!.muted;
-		});
-		expect(firstRemoteAudio).toBe(true);
+			// Verify first remote is muted — audio is always on the video element
+			const firstRemoteAudio = await pageA.evaluate(() => {
+				const streams = document.querySelectorAll('.OV_stream.remote');
+				const el = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
+				return el!.muted;
+			});
+			expect(firstRemoteAudio).toBe(true);
 
-		// Mute second remote stream (should be C)
-		const secondRemote = pageA.locator('.OV_stream.remote').nth(1);
-		await secondRemote.hover();
-		const secondSilenceBtn = secondRemote.locator('#mute-btn').first();
-		await expect(secondSilenceBtn).toBeVisible();
-		await secondSilenceBtn.click();
-		await pageA.waitForTimeout(300);
+			// Mute second remote stream (should be C)
+			const secondRemote = pageA.locator('.OV_stream.remote').nth(1);
+			await secondRemote.hover();
+			const secondSilenceBtn = secondRemote.locator('#mute-btn').first();
+			await expect(secondSilenceBtn).toBeVisible();
+			await secondSilenceBtn.click();
+			await pageA.waitForTimeout(300);
 
-		// Verify both remotes are still muted — no standalone audio elements exist
-		const bothMuted = await pageA.evaluate(() => {
-			const streams = document.querySelectorAll('.OV_stream.remote');
-			const elFirst = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-			const elSecond = streams[1]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-			return { first: elFirst!.muted, second: elSecond!.muted };
-		});
-		expect(bothMuted.first).toBe(true);
-		expect(bothMuted.second).toBe(true);
-		await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
+			// Verify both remotes are still muted — no standalone audio elements exist
+			const bothMuted = await pageA.evaluate(() => {
+				const streams = document.querySelectorAll('.OV_stream.remote');
+				const elFirst = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
+				const elSecond = streams[1]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
+				return { first: elFirst!.muted, second: elSecond!.muted };
+			});
+			expect(bothMuted.first).toBe(true);
+			expect(bothMuted.second).toBe(true);
+			await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
 
-		// Unmute first remote
-		await firstRemote.hover();
-		await firstSilenceBtn.click();
-		await pageA.waitForTimeout(300);
+			// Unmute first remote
+			await firstRemote.hover();
+			await firstSilenceBtn.click();
+			await pageA.waitForTimeout(300);
 
-		// Verify first is unmuted, second is still muted
-		const mixedMutedState = await pageA.evaluate(() => {
-			const streams = document.querySelectorAll('.OV_stream.remote');
-			const elFirst = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-			const elSecond = streams[1]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-			return { first: elFirst!.muted, second: elSecond!.muted };
-		});
-		expect(mixedMutedState.first).toBe(false);
-		expect(mixedMutedState.second).toBe(true);
-
-		await Promise.all([pageA.close(), pageB.close(), pageC.close()]);
+			// Verify first is unmuted, second is still muted
+			const mixedMutedState = await pageA.evaluate(() => {
+				const streams = document.querySelectorAll('.OV_stream.remote');
+				const elFirst = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
+				const elSecond = streams[1]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
+				return { first: elFirst!.muted, second: elSecond!.muted };
+			});
+			expect(mixedMutedState.first).toBe(false);
+			expect(mixedMutedState.second).toBe(true);
+		} finally {
+			await Promise.all(pages.map((page) => page.close()));
+		}
 	});
 });

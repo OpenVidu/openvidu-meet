@@ -7,7 +7,7 @@ export const getFirstVideoTrackLabel = async (page: Page): Promise<string | null
 		const track = stream?.getVideoTracks()?.[0];
 		return track?.label ?? null;
 	});
-}
+};
 
 export const getScreenTrackLabel = async (page: Page): Promise<string | null> => {
 	return await page.evaluate(() => {
@@ -16,8 +16,8 @@ export const getScreenTrackLabel = async (page: Page): Promise<string | null> =>
 		const track = stream?.getVideoTracks()?.[0];
 		return track?.label ?? null;
 	});
-}
+};
 
 export const assertHasVideoDeviceOption = async (page: Page): Promise<void> => {
 	await expect(page.locator('[id^="option-"]').first()).toBeVisible();
-}
+};

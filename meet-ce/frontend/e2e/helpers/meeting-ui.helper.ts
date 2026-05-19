@@ -165,6 +165,7 @@ export async function joinParticipants(
 	accessUrl: string,
 	numParticipants: number
 ): Promise<{ pageA: Page; pages: Page[] }>;
+
 export async function joinParticipants(
 	browser: Browser,
 	config: JoinParticipantsNamedConfig
@@ -864,9 +865,9 @@ export const expectPinnedStreamCount = async (page: Page, count: number): Promis
 	await expect(page.locator('.OV_big .OV_stream')).toHaveCount(count);
 };
 
-export async function expectScreenTypeCount(page: Page, count: number): Promise<void> {
+export const expectScreenTypeCount = async (page: Page, count: number): Promise<void> => {
 	await expect(page.locator('.screen-source')).toHaveCount(count);
-}
+};
 
 export const getPinnedStreamCount = async (page: Page): Promise<number> => {
 	return await page.locator('.OV_big .OV_stream').count();
@@ -909,9 +910,9 @@ export const unpinCurrentPinnedStream = async (page: Page, timeoutMs = 10_000): 
 		.catch(() => Promise.resolve());
 };
 
-export async function getScreenSourceTracks(
+export const getScreenSourceTracks = async (
 	page: Page
-): Promise<Array<{ kind: string; enabled: boolean; id: string; label: string }>> {
+): Promise<Array<{ kind: string; enabled: boolean; id: string; label: string }>> => {
 	return await page.evaluate(() => {
 		const video = document.querySelector('.screen-source') as HTMLVideoElement | null;
 
@@ -928,7 +929,7 @@ export async function getScreenSourceTracks(
 			label: track.label
 		}));
 	});
-}
+};
 
 /**
  * Expects a specific number of stream containers to be present
@@ -960,14 +961,7 @@ export const expectLocalStreamCount = async (page: Page, counts: { video?: numbe
 };
 
 /**
- * Joins a meeting from prejoin by clicking join button and waiting for layout
- */
-export const joinFromPrejoin = async (page: Page, accessUrl: string): Promise<void> => {
-	await joinFromPrejoinWithMediaState(page, accessUrl);
-};
-
-/**
- * Waits for a participant's remote stream to appear and be visible
+ * Waits for a specific number of remote streams to be visible and have playable video tracks (if applicable)
  */
 export const waitForRemoteStream = async (
 	page: Page,
@@ -1024,40 +1018,6 @@ export const waitForRemoteStream = async (
 			{ timeout: 15_000 }
 		)
 		.toEqual({ visibleRemoteStreams: count, playableRemoteVideos: count });
-};
-
-/**
- * Gets all audio elements on the page (local + remote participants)
- */
-export const getAudioElementCount = async (page: Page): Promise<number> => {
-	return await page.locator('audio').count();
-};
-
-/**
- * Expects no-size class to be removed from a stream element (video should be visible)
- */
-export const expectStreamVideoVisible = async (page: Page, selector = '.OV_stream.local'): Promise<void> => {
-	const stream = page.locator(selector);
-	const classes = await stream.getAttribute('class');
-	expect(classes).not.toContain('no-size');
-};
-
-/**
- * Checks if local participant has only audio tracks (no video)
- */
-export const expectLocalParticipantAudioOnly = async (page: Page): Promise<void> => {
-	const videoElements = await page.locator('.OV_stream.local .OV_video-element').count();
-	expect(videoElements).toBe(0);
-	const audioElements = await page.locator('.OV_stream.local .OV_audio-element').count();
-	expect(audioElements).toBeGreaterThan(0);
-};
-
-/**
- * Checks if no streams are being played
- */
-export const expectNoStreamsPlaying = async (page: Page): Promise<void> => {
-	await expect(page.locator('.OV_stream .OV_video-element')).toHaveCount(0);
-	await expect(page.locator('.OV_stream .OV_audio-element')).toHaveCount(0);
 };
 
 /**

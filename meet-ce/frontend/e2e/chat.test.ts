@@ -8,9 +8,11 @@ import {
 	expectChatMessageTextAt,
 	expectFirstMessageSender,
 	expectSnackbarNotification,
+	joinParticipants,
 	openMeeting,
 	sendChatMessage,
-	toggleChatPanel
+	toggleChatPanel,
+	waitForRemoteStream
 } from './helpers/meeting-ui.helper';
 
 test.describe('Chat features', () => {
@@ -63,18 +65,22 @@ test.describe('Chat features', () => {
 		const senderAccessUrl = senderMember.accessUrl;
 
 		const [receiverPage, senderPage] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(receiverPage, receiverAccessUrl), openMeeting(senderPage, senderAccessUrl)]);
 
-		const message = 'hello from sender';
-		await toggleChatPanel(senderPage);
-		await sendChatMessage(senderPage, message);
+		try {
+			await Promise.all([openMeeting(receiverPage, receiverAccessUrl), openMeeting(senderPage, senderAccessUrl)]);
+			await Promise.all([waitForRemoteStream(receiverPage), waitForRemoteStream(senderPage)]);
+			
+			const message = 'hello from sender';
+			await toggleChatPanel(senderPage);
+			await sendChatMessage(senderPage, message);
 
-		await toggleChatPanel(receiverPage);
-		await expectChatMessageCount(receiverPage, 1);
-		await expectChatMessageTextAt(receiverPage, 0, message);
-		await expectFirstMessageSender(receiverPage, senderName);
-
-		await Promise.all([senderPage.close(), receiverPage.close()]);
+			await toggleChatPanel(receiverPage);
+			await expectChatMessageCount(receiverPage, 1);
+			await expectChatMessageTextAt(receiverPage, 0, message);
+			await expectFirstMessageSender(receiverPage, senderName);
+		} finally {
+			await Promise.all([senderPage.close(), receiverPage.close()]);
+		}
 	});
 
 	test('should send an URL message and render it as link', async ({ page }) => {
@@ -86,20 +92,22 @@ test.describe('Chat features', () => {
 	});
 
 	test('should show snackbar notification when receiving a message with chat panel closed', async ({ browser }) => {
-		const [receiverPage, senderPage] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([openMeeting(receiverPage, accessUrl), openMeeting(senderPage, accessUrl)]);
+		const { pageA: receiverPage, pages } = await joinParticipants(browser, accessUrl, 2);
+		const [, senderPage] = pages;
 
-		const message = 'message while chat is closed';
-		await toggleChatPanel(senderPage);
-		await sendChatMessage(senderPage, message);
+		try {
+			const message = 'message while chat is closed';
+			await toggleChatPanel(senderPage);
+			await sendChatMessage(senderPage, message);
 
-		await expectSnackbarNotification(receiverPage);
+			await expectSnackbarNotification(receiverPage);
 
-		await toggleChatPanel(receiverPage);
-		await expectChatMessageCount(receiverPage, 1);
-		await expectChatMessageTextAt(receiverPage, 0, message);
-
-		await Promise.all([senderPage.close(), receiverPage.close()]);
+			await toggleChatPanel(receiverPage);
+			await expectChatMessageCount(receiverPage, 1);
+			await expectChatMessageTextAt(receiverPage, 0, message);
+		} finally {
+			await Promise.all(pages.map((page) => page.close()));
+		}
 	});
 
 	test('should preserve message order when sending multiple messages quickly', async ({ page }) => {
