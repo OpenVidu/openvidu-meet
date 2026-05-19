@@ -1,6 +1,76 @@
-import { Browser, expect, type Locator, type Page } from '@playwright/test';
+import { MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { Browser, chromium, expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
+import { existsSync, rmSync } from 'fs';
+import path from 'path';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
+import { createRoomMember } from './meet-api.helper';
+
+export type MeetingParticipantJoinConfig = {
+	name: string;
+	audioEnabled?: boolean;
+	videoEnabled?: boolean;
+	baseRole?: MeetRoomMemberRole;
+	headless?: boolean;
+	audioFile?: string;
+	screenShare?: boolean;
+};
+
+export type BrowserFakeParticipantOptions = {
+	audioFile?: string;
+	enableAudio?: boolean;
+	enableVideo?: boolean;
+	screenShare?: boolean;
+	baseRole?: MeetRoomMemberRole;
+};
+
+export type JoinedNamedParticipants = {
+	pageA: Page;
+	pages: Page[];
+	byName: Record<string, Page>;
+	addParticipant: (config: MeetingParticipantJoinConfig) => Promise<Page>;
+	removeParticipant: (name: string) => Promise<void>;
+	removeAllParticipants: () => Promise<void>;
+};
+
+export type JoinParticipantsNamedConfig = {
+	roomId: string;
+	participants: MeetingParticipantJoinConfig[];
+	mode?: 'parallel' | 'sequential';
+	skipInitialRemoteCountCheck?: boolean;
+};
+
+type BrowserFakeParticipant = {
+	context: BrowserContext;
+	page: Page;
+	userDataDir: string;
+};
+
+const AUDIO_ASSETS_DIR = path.resolve(__dirname, '../assets/audio');
+const DEFAULT_HEADLESS_AUDIO_FILE = 'continuous_speech.wav';
+const browserFakeParticipants = new Map<string, BrowserFakeParticipant>();
+
+const getBrowserFakeParticipantKey = (roomId: string, identity: string): string => {
+	return `${roomId}-${identity}`;
+};
+
+const resolveAudioFilePath = (audioFile?: string): string | undefined => {
+	if (!audioFile) {
+		return undefined;
+	}
+
+	const audioFilePath = path.isAbsolute(audioFile) ? audioFile : path.resolve(AUDIO_ASSETS_DIR, audioFile);
+
+	if (!existsSync(audioFilePath)) {
+		throw new Error(`Audio file not found: ${audioFilePath}`);
+	}
+
+	return audioFilePath;
+};
+
+const syncParticipantCollections = (pagesByName: Record<string, Page>, pages: Page[]): void => {
+	pages.splice(0, pages.length, ...Object.values(pagesByName));
+};
 
 const clickIfReady = async (locator: Locator, timeoutMs = 2_000): Promise<boolean> => {
 	try {
@@ -63,21 +133,379 @@ const clickJoinIfPrejoinVisible = async (page: Page): Promise<boolean> => {
 	return false;
 };
 
-export const joinParticipants = async (
+const openMoreOptionsMenu = async (page: Page): Promise<void> => {
+	const moreOptionsButton = page.locator('#more-options-btn');
+	await expect(moreOptionsButton).toBeVisible();
+
+	if (!(await clickIfReady(moreOptionsButton, 5_000))) {
+		await moreOptionsButton.click({ force: true });
+	}
+
+	await expect(page.locator('.mat-mdc-menu-content')).toBeVisible();
+};
+
+const clickControlButton = async (page: Page, selector: string, timeoutMs = 5_000): Promise<void> => {
+	const button = page.locator(selector);
+	await expect(button).toBeVisible({ timeout: timeoutMs });
+
+	if (!(await clickIfReady(button, timeoutMs))) {
+		await button.click({ force: true, timeout: timeoutMs });
+	}
+};
+
+const toggleRemoteParticipantMute = async (page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> => {
+	await hoverStream(page, remoteStreamSelector);
+	const muteButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
+	await expect(muteButton).toBeVisible();
+	await muteButton.click();
+};
+
+export async function joinParticipants(
 	browser: Browser,
 	accessUrl: string,
 	numParticipants: number
-): Promise<{ pageA: Page; pages: Page[] }> => {
-	if (numParticipants < 1) {
-		throw new Error('Number of participants must be at least 1');
+): Promise<{ pageA: Page; pages: Page[] }>;
+export async function joinParticipants(
+	browser: Browser,
+	config: JoinParticipantsNamedConfig
+): Promise<JoinedNamedParticipants>;
+
+export async function joinParticipants(
+	browser: Browser,
+	accessUrlOrConfig: string | JoinParticipantsNamedConfig,
+	numParticipants?: number
+): Promise<{ pageA: Page; pages: Page[] } | JoinedNamedParticipants> {
+	if (typeof accessUrlOrConfig === 'string') {
+		if (!numParticipants || numParticipants < 1) {
+			throw new Error('Number of participants must be at least 1');
+		}
+
+		const pages = await Promise.all(Array.from({ length: numParticipants }, () => browser.newPage()));
+
+		await Promise.all(pages.map((page) => openMeeting(page, accessUrlOrConfig)));
+		await Promise.all(pages.map((page) => waitForRemoteStream(page, numParticipants - 1)));
+
+		return { pageA: pages[0], pages };
 	}
 
-	const pages = await Promise.all(Array.from({ length: numParticipants }, () => browser.newPage()));
+	const mode = accessUrlOrConfig.mode ?? 'sequential';
+	const skipInitialRemoteCountCheck = accessUrlOrConfig.skipInitialRemoteCountCheck ?? true;
+	const byName: Record<string, Page> = {};
+	const pages: Page[] = [];
+	const headlessParticipantNames = new Set<string>();
 
-	await Promise.all(pages.map((page) => openMeeting(page, accessUrl)));
-	await Promise.all(pages.map((page) => waitForRemoteStream(page, numParticipants - 1)));
+	const addParticipant = async (config: MeetingParticipantJoinConfig): Promise<Page> => {
+		const page = await joinParticipant(browser, accessUrlOrConfig.roomId, config);
 
-	return { pageA: pages[0], pages: pages };
+		byName[config.name] = page;
+
+		if (config.headless) {
+			headlessParticipantNames.add(config.name);
+		} else {
+			headlessParticipantNames.delete(config.name);
+		}
+
+		syncParticipantCollections(byName, pages);
+
+		return page;
+	};
+
+	const removeParticipant = async (name: string): Promise<void> => {
+		const participantPage = byName[name];
+
+		if (!participantPage) {
+			return;
+		}
+
+		if (headlessParticipantNames.has(name)) {
+			await disconnectFakeParticipant(accessUrlOrConfig.roomId, name);
+		} else {
+			try {
+				await leaveMeeting(participantPage);
+			} catch {
+				// Ignore cleanup failures.
+			}
+
+			try {
+				await participantPage.close();
+			} catch {
+				// Ignore cleanup failures.
+			}
+		}
+
+		delete byName[name];
+		headlessParticipantNames.delete(name);
+		syncParticipantCollections(byName, pages);
+	};
+
+	const removeAllParticipants = async (): Promise<void> => {
+		await Promise.all(Object.keys(byName).map((name) => removeParticipant(name)));
+	};
+
+	const pagesByName =
+		mode === 'parallel'
+			? await Promise.all(
+					accessUrlOrConfig.participants.map(
+						async (participant) =>
+							[
+								participant.name,
+								await joinParticipant(browser, accessUrlOrConfig.roomId, participant)
+							] as const
+					)
+				)
+			: await (async () => {
+					const joinedPages: Array<readonly [string, Page]> = [];
+
+					for (const participant of accessUrlOrConfig.participants) {
+						joinedPages.push([
+							participant.name,
+							await joinParticipant(browser, accessUrlOrConfig.roomId, participant)
+						] as const);
+					}
+
+					return joinedPages;
+				})();
+
+	for (const [name, page] of pagesByName) {
+		byName[name] = page;
+	}
+
+	for (const participant of accessUrlOrConfig.participants) {
+		if (participant.headless) {
+			headlessParticipantNames.add(participant.name);
+		}
+	}
+
+	syncParticipantCollections(byName, pages);
+
+	const pageA =
+		accessUrlOrConfig.participants
+			.map((participant) => byName[participant.name])
+			.find((page) => page !== undefined) ?? pages[0];
+
+	if (!skipInitialRemoteCountCheck) {
+		await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(Math.max(0, pages.length - 1), {
+			timeout: 20_000
+		});
+	}
+
+	return {
+		pageA,
+		pages,
+		byName,
+		addParticipant,
+		removeParticipant,
+		removeAllParticipants
+	};
+}
+
+const joinHeadlessParticipant = async (roomId: string, config: MeetingParticipantJoinConfig): Promise<Page> => {
+	const {
+		name,
+		audioFile,
+		audioEnabled = true,
+		videoEnabled = true,
+		screenShare = false,
+		baseRole = MeetRoomMemberRole.MODERATOR
+	} = config;
+	const key = getBrowserFakeParticipantKey(roomId, name);
+	const audioFilePath = resolveAudioFilePath(audioFile ?? DEFAULT_HEADLESS_AUDIO_FILE);
+
+	await disconnectFakeParticipant(roomId, name);
+
+	const chromeArgs = [
+		'--use-fake-ui-for-media-stream',
+		'--use-fake-device-for-media-stream',
+		'--allow-file-access-from-files',
+		'--no-sandbox',
+		'--disable-setuid-sandbox',
+		'--disable-gpu',
+		'--disable-dev-shm-usage'
+	];
+
+	if (audioFilePath) {
+		chromeArgs.push(`--use-file-for-fake-audio-capture=${audioFilePath}`);
+	}
+
+	const userDataDir = `/tmp/playwright-fake-participant-${name}-${Date.now()}`;
+	const context = await chromium.launchPersistentContext(userDataDir, {
+		headless: true,
+		args: chromeArgs,
+		ignoreHTTPSErrors: true,
+		bypassCSP: true
+	});
+	const page = context.pages()[0] || (await context.newPage());
+	const member = await createRoomMember(roomId, {
+		name,
+		baseRole
+	});
+
+	browserFakeParticipants.set(key, { context, page, userDataDir });
+
+	try {
+		await joinFromPrejoinWithMediaState(page, member.accessUrl, {
+			audioEnabled,
+			videoEnabled
+		});
+
+		if (screenShare) {
+			await startScreensharing(page);
+		}
+
+		return page;
+	} catch (error) {
+		await disconnectFakeParticipant(roomId, name);
+		throw error;
+	}
+};
+
+const joinParticipant = async (
+	browser: Browser,
+	roomId: string,
+	config: MeetingParticipantJoinConfig
+): Promise<Page> => {
+	if (config.headless) {
+		return await joinHeadlessParticipant(roomId, config);
+	}
+
+	return await joinParticipantInternal(browser, roomId, config);
+};
+
+export const joinFakeParticipant = async (
+	roomId: string,
+	identity: string,
+	options: BrowserFakeParticipantOptions = {}
+): Promise<Page> => {
+	return await joinHeadlessParticipant(roomId, {
+		name: identity,
+		headless: true,
+		audioFile: options.audioFile,
+		audioEnabled: options.enableAudio,
+		videoEnabled: options.enableVideo,
+		screenShare: options.screenShare,
+		baseRole: options.baseRole ?? MeetRoomMemberRole.SPEAKER
+	});
+};
+
+export const disconnectFakeParticipant = async (roomId: string, identity: string): Promise<void> => {
+	const key = getBrowserFakeParticipantKey(roomId, identity);
+	const participant = browserFakeParticipants.get(key);
+
+	if (!participant) {
+		return;
+	}
+
+	try {
+		await participant.page.close();
+	} catch {
+		// Ignore cleanup failures.
+	}
+
+	try {
+		await participant.context.close();
+	} catch {
+		// Ignore cleanup failures.
+	}
+
+	rmSync(participant.userDataDir, { force: true, recursive: true });
+	browserFakeParticipants.delete(key);
+};
+
+export const disconnectAllBrowserFakeParticipants = async (): Promise<void> => {
+	const participants = [...browserFakeParticipants.entries()];
+
+	for (const [key, participant] of participants) {
+		try {
+			await participant.page.close();
+		} catch {
+			// Ignore cleanup failures.
+		}
+
+		try {
+			await participant.context.close();
+		} catch {
+			// Ignore cleanup failures.
+		}
+
+		rmSync(participant.userDataDir, { force: true, recursive: true });
+		browserFakeParticipants.delete(key);
+	}
+};
+
+const joinParticipantInternal = async (
+	browser: Browser,
+	roomId: string,
+	config: MeetingParticipantJoinConfig
+): Promise<Page> => {
+	const {
+		name,
+		audioEnabled = false,
+		videoEnabled = true,
+		baseRole = MeetRoomMemberRole.MODERATOR,
+		screenShare = false
+	} = config;
+	const member = await createRoomMember(roomId, {
+		name,
+		baseRole
+	});
+	const page = await browser.newPage();
+
+	await joinFromPrejoinWithMediaState(page, member.accessUrl, { audioEnabled, videoEnabled });
+
+	if (screenShare) {
+		await startScreensharing(page);
+	}
+
+	return page;
+};
+
+export const getVisibleRemoteParticipantNames = async (page: Page): Promise<string[]> => {
+	return await page.evaluate(() => {
+		const names = Array.from(document.querySelectorAll('.OV_stream_video.remote'))
+			.filter((stream) => {
+				const element = stream as HTMLElement;
+				const rect = element.getBoundingClientRect();
+				const style = window.getComputedStyle(element);
+
+				return (
+					rect.width > 0 &&
+					rect.height > 0 &&
+					style.display !== 'none' &&
+					style.visibility !== 'hidden' &&
+					style.opacity !== '0' &&
+					!element.classList.contains('no-size')
+				);
+			})
+			.map((stream) => stream.querySelector('#participant-name-container')?.textContent?.trim() ?? '')
+			.filter((name) => name.length > 0);
+
+		return [...new Set(names)];
+	});
+};
+
+export const waitForVisibleRemoteParticipants = async (
+	page: Page,
+	options: { includes?: string[]; excludes?: string[]; count?: number },
+	timeout = 20_000
+): Promise<void> => {
+	await expect
+		.poll(
+			async () => {
+				const names = await getVisibleRemoteParticipantNames(page);
+
+				return {
+					matchesCount: options.count === undefined || names.length === options.count,
+					matchesIncludes: (options.includes ?? []).every((name) => names.includes(name)),
+					matchesExcludes: (options.excludes ?? []).every((name) => !names.includes(name))
+				};
+			},
+			{ timeout }
+		)
+		.toEqual({
+			matchesCount: true,
+			matchesIncludes: true,
+			matchesExcludes: true
+		});
 };
 
 export const openMeeting = async (page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> => {
@@ -190,14 +618,7 @@ export const toggleActivitiesPanel = async (page: Page): Promise<void> => {
 };
 
 export const openSettingsPanel = async (page: Page): Promise<void> => {
-	const moreOptionsButton = page.locator('#more-options-btn');
-	await expect(moreOptionsButton).toBeVisible();
-
-	if (!(await clickIfReady(moreOptionsButton, 5_000))) {
-		await moreOptionsButton.click({ force: true });
-	}
-
-	await expect(page.locator('.mat-mdc-menu-content')).toBeVisible();
+	await openMoreOptionsMenu(page);
 	await page.locator('#toolbar-settings-btn').click();
 	await expect(page.locator('.sidenav-menu')).toBeVisible();
 };
@@ -206,12 +627,7 @@ export const openSettingsPanel = async (page: Page): Promise<void> => {
  * Opens the layout settings panel by clicking more-options and grid-layout-settings buttons
  */
 export const openLayoutSettingsPanel = async (page: Page): Promise<void> => {
-	const moreOptionsButton = page.locator('#more-options-btn');
-	await expect(moreOptionsButton).toBeVisible();
-
-	if (!(await clickIfReady(moreOptionsButton, 5_000))) {
-		await moreOptionsButton.click({ force: true });
-	}
+	await openMoreOptionsMenu(page);
 
 	const gridLayoutSettingsButton = page.locator('#grid-layout-settings-btn');
 	await expect(gridLayoutSettingsButton).toBeVisible();
@@ -321,17 +737,21 @@ export const closePrejoinBackgroundsPanel = async (page: Page): Promise<void> =>
 };
 
 export const setPrejoinCameraStatus = async (page: Page, timeoutMs = 10_000): Promise<void> => {
-	await page.locator('#camera-button').click();
+	await togglePrejoinCamera(page, timeoutMs);
+};
+
+export const togglePrejoinCamera = async (page: Page, timeoutMs = 10_000): Promise<void> => {
+	await clickControlButton(page, '#camera-button', timeoutMs);
 };
 
 export const openRoomBackgroundsPanel = async (page: Page): Promise<void> => {
-	await page.locator('#more-options-btn').click();
+	await openMoreOptionsMenu(page);
 	await page.locator('#virtual-bg-btn:visible').click();
 	await expect(page.locator('#background-effects-container')).toBeVisible();
 };
 
-export const closeRoomBackgroundsPanel = async (page: Page, timeoutMs = 10_000): Promise<void> => {
-	await page.locator('#more-options-btn').click();
+export const closeRoomBackgroundsPanel = async (page: Page): Promise<void> => {
+	await openMoreOptionsMenu(page);
 	await page.locator('#virtual-bg-btn:visible').click();
 	await expect(page.locator('#background-effects-container')).toHaveCount(0);
 };
@@ -413,16 +833,25 @@ export const stopScreensharing = async (page: Page, timeoutMs = 10_000): Promise
 };
 
 export const toggleCamera = async (page: Page): Promise<void> => {
-	await page.locator('#camera-btn').click();
+	await clickControlButton(page, '#camera-btn');
 };
 
 export const toggleMicrophone = async (page: Page): Promise<void> => {
-	await page.locator('#mic-btn').click();
+	await clickControlButton(page, '#mic-btn');
+};
+
+export const speakFor = async (page: Page, durationMs: number): Promise<void> => {
+	await toggleMicrophone(page);
+	await page.waitForTimeout(durationMs);
+	await toggleMicrophone(page);
 };
 
 export const leaveMeeting = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#leave-btn').click();
-	await page.locator('#leave-option').click();
+
+	if (await page.locator('#leave-option').isVisible()) {
+		await page.locator('#leave-option').click();
+	}
 
 	await expect.poll(async () => await page.locator('#layout-container').count(), { timeout: timeoutMs }).toBe(0);
 };
@@ -534,10 +963,7 @@ export const expectLocalStreamCount = async (page: Page, counts: { video?: numbe
  * Joins a meeting from prejoin by clicking join button and waiting for layout
  */
 export const joinFromPrejoin = async (page: Page, accessUrl: string): Promise<void> => {
-	await openPrejoin(page, accessUrl);
-	await page.locator('#join-button').click();
-	await expect(page.locator('#layout-container')).toBeVisible();
-	await expect(page.locator('.OV_stream.local')).toBeVisible();
+	await joinFromPrejoinWithMediaState(page, accessUrl);
 };
 
 /**
@@ -638,7 +1064,7 @@ export const expectNoStreamsPlaying = async (page: Page): Promise<void> => {
  * Toggles microphone in prejoin (companion to togglePrejoinCamera)
  */
 export const togglePrejoinMicrophone = async (page: Page, timeoutMs = 10_000): Promise<void> => {
-	await page.locator('#microphone-button').click();
+	await clickControlButton(page, '#microphone-button', timeoutMs);
 };
 
 /**
@@ -806,28 +1232,16 @@ export const joinFromPrejoinWithMediaState = async (
 	// Click join button and wait for meeting to load
 	await page.locator('#join-button').click();
 	await expect(page.locator('#layout-container')).toBeVisible();
-	await expect(page.locator('.OV_stream.local .OV_video-element')).toBeVisible();
+	await expect(page.locator('.OV_stream.local')).toBeVisible();
 };
 
 export const muteRemoteParticipant = async (page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> => {
-	// Hover over the remote stream to reveal the silence button
-	await hoverStream(page, remoteStreamSelector);
-
-	// Wait for and click the silence button
-	const silenceButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
-	await expect(silenceButton).toBeVisible();
-	await silenceButton.click();
+	await toggleRemoteParticipantMute(page, remoteStreamSelector);
 };
 
 export const unmuteRemoteParticipant = async (
 	page: Page,
 	remoteStreamSelector = '.OV_stream.remote'
 ): Promise<void> => {
-	// Hover over the remote stream to reveal the silence button
-	await hoverStream(page, remoteStreamSelector);
-
-	// Wait for and click the silence button (toggle to unmute)
-	const silenceButton = page.locator(`${remoteStreamSelector} #mute-btn`).first();
-	await expect(silenceButton).toBeVisible();
-	await silenceButton.click();
+	await toggleRemoteParticipantMute(page, remoteStreamSelector);
 };

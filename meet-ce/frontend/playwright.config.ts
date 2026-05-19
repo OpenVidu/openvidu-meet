@@ -1,7 +1,44 @@
 import { defineConfig, devices } from '@playwright/test';
+import { existsSync } from 'node:fs';
 import path from 'node:path';
 
-const fakeAudioPath = path.resolve(__dirname, 'e2e/assets/audio_test.wav');
+const resolveFakeAudioPath = (): string => {
+	const fakeAudioPathFromEnv = process.env['E2E_FAKE_AUDIO_PATH'];
+
+	if (fakeAudioPathFromEnv) {
+		return path.resolve(__dirname, fakeAudioPathFromEnv);
+	}
+
+	const fakeAudioFile = process.env['E2E_FAKE_AUDIO_FILE'];
+
+	if (fakeAudioFile) {
+		const candidatePaths = [
+			path.resolve(__dirname, 'e2e/assets/audio', fakeAudioFile),
+			path.resolve(__dirname, 'e2e/assets', fakeAudioFile)
+		];
+
+		for (const candidate of candidatePaths) {
+			if (existsSync(candidate)) {
+				return candidate;
+			}
+		}
+	}
+
+	const defaultCandidates = [
+		path.resolve(__dirname, 'e2e/assets/audio/continuous_speech.wav'),
+		path.resolve(__dirname, 'e2e/assets/audio_test.wav')
+	];
+
+	for (const candidate of defaultCandidates) {
+		if (existsSync(candidate)) {
+			return candidate;
+		}
+	}
+
+	return defaultCandidates[0];
+};
+
+const fakeAudioPath = resolveFakeAudioPath();
 
 export default defineConfig({
 	testDir: './e2e',
