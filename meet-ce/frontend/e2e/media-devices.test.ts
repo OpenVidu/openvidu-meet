@@ -98,14 +98,13 @@ test.describe('Media Devices E2E Tests', () => {
 			await page.locator('#screenshare-btn').click();
 			await page.waitForTimeout(500);
 
-			const replaceButton = page.locator('#replace-screen-button');
-			await expect(replaceButton).toBeVisible();
-			await replaceButton.click();
-			await page.waitForTimeout(1000);
-			const replacedLabel = await getScreenTrackLabel(page);
-			expect(replacedLabel).not.toBeNull();
-			await expect(page.locator('.OV_video-element.screen-type')).toHaveCount(1);
-		});
+		const replaceButton = page.locator('#replace-screen-button');
+		await expect(replaceButton).toBeVisible();
+		await replaceButton.click();
+		await page.waitForTimeout(1000);
+		const replacedLabel = await getScreenTrackLabel(page);
+		expect(replacedLabel).not.toBeNull();
+		await expect(page.locator('.OV_video-element.screen-source')).toHaveCount(1);
 	});
 
 	test.describe('UI Behavior Without Media Device Permissions', () => {
