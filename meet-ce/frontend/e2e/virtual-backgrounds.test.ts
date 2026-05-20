@@ -14,20 +14,20 @@ import {
 	setPrejoinCameraStatus
 } from './helpers/meeting-ui.helper';
 
-let roomId: string;
-let accessUrl: string;
+test.describe('Virtual Background E2E Tests', () => {
+	let roomId: string;
+	let accessUrl: string;
 
-test.beforeAll(async () => {
-	const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
-	roomId = room.roomId;
-	accessUrl = url;
-});
+	test.beforeAll(async () => {
+		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+		roomId = room.roomId;
+		accessUrl = url;
+	});
 
-test.afterAll(async () => {
-	await deleteRooms([roomId]);
-});
+	test.afterAll(async () => {
+		await deleteRooms([roomId]);
+	});
 
-test.describe('Virtual Backgrounds', () => {
 	test('should close BACKGROUNDS on prejoin page when VIDEO is disabled', async ({ page }) => {
 		await openPrejoin(page, accessUrl);
 

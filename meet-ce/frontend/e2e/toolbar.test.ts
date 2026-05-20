@@ -8,20 +8,20 @@ import {
 	toggleMicrophone
 } from './helpers/meeting-ui.helper';
 
-let roomId: string;
-let accessUrl: string;
+test.describe('Toolbar Buttons E2E Tests', () => {
+	let roomId: string;
+	let accessUrl: string;
 
-test.beforeAll(async () => {
-	const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
-	roomId = room.roomId;
-	accessUrl = url;
-});
+	test.beforeAll(async () => {
+		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+		roomId = room.roomId;
+		accessUrl = url;
+	});
 
-test.afterAll(async () => {
-	await deleteRooms([roomId]);
-});
+	test.afterAll(async () => {
+		await deleteRooms([roomId]);
+	});
 
-test.describe('Toolbar button functionality for local media control', () => {
 	test('should toggle mute/unmute on the local microphone and update the icon accordingly', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 

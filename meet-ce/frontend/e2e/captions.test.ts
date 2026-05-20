@@ -3,7 +3,7 @@ import { createCaptionsRoom, getCaptionsButton, getCaptionsButtonIcon } from './
 import { deleteRooms, getCaptionsGlobalConfig } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-ui.helper';
 
-test.describe('Captions controls', () => {
+test.describe('Captions E2E Tests', () => {
 	const createdRoomIds: string[] = [];
 
 	test.afterAll(async () => {

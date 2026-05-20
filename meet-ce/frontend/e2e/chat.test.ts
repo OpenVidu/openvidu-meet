@@ -15,7 +15,7 @@ import {
 	waitForRemoteStream
 } from './helpers/meeting-ui.helper';
 
-test.describe('Chat features', () => {
+test.describe('Chat E2E Tests', () => {
 	let roomId: string;
 	let accessUrl: string;
 
