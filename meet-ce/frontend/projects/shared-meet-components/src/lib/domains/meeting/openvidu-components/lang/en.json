@@ -177,7 +177,7 @@
 		"DUPLICATE_IDENTITY": "You have been disconnected because your alias was assigned to another participant",
 		"UNKNOWN_DISCONNECT": "You have been disconnected from the room",
 		"TOGGLE_CAMERA": "There was an error toggling camera",
-		"TOGGLE_MICROPHONE": "There was an error toggling microhpone",
+		"TOGGLE_MICROPHONE": "There was an error toggling microphone",
 		"SCREEN_SHARING": "Error sharing screen",
 		"SCREEN_SUPPORT": "Your browser does not support screen sharing",
 		"MEDIA_ACCESS": "Access to media devices was not allowed.",

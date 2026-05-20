@@ -173,7 +173,7 @@
 		"DUPLICATE_IDENTITY": "Vous avez été déconnecté car votre pseudo a été attribué à un autre participant",
 		"UNKNOWN_DISCONNECT": "Vous avez été déconnecté de la salle",
 		"TOGGLE_CAMERA": "There was an error toggle camera",
-		"TOGGLE_MICROPHONE": "There was an error toggling microhpone",
+		"TOGGLE_MICROPHONE": "There was an error toggling microphone",
 		"SCREEN_SHARING": "Erreur de partage d'écran",
 		"SCREEN_SUPPORT": "Votre navigateur ne prend pas en charge le partage d'écran",
 		"MEDIA_ACCESS": "L'accès aux périphériques médias n'a pas été autorisé",
