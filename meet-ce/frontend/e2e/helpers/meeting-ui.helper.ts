@@ -72,74 +72,47 @@ const syncParticipantCollections = (pagesByName: Record<string, Page>, pages: Pa
 	pages.splice(0, pages.length, ...Object.values(pagesByName));
 };
 
-const clickIfReady = async (locator: Locator, timeoutMs = 2_000): Promise<boolean> => {
-	try {
-		await locator.click({ timeout: timeoutMs });
-		return true;
-	} catch {
-		return false;
-	}
+const click = async (locator: Locator, timeoutMs = 2_000): Promise<void> => {
+	await locator.click({ timeout: timeoutMs });
 };
 
-const completeLobbyIfPresent = async (page: Page): Promise<void> => {
-	const submit = page.locator('#participant-name-submit');
-
-	if (!(await submit.isVisible().catch(() => false))) {
-		return;
-	}
-
+const completeLobby = async (page: Page, options?: { name?: string; e2eeKey?: string }): Promise<void> => {
+	await expect(page.locator('#participant-name-submit')).toBeVisible({ timeout: 10000 });
+	await expect(page.locator('#participant-name-input')).toBeVisible({ timeout: 10000 });
+	const nameSubmit = page.locator('#participant-name-submit');
 	const nameInput = page.locator('#participant-name-input');
 
-	if (await nameInput.isVisible()) {
-		const value = await nameInput.inputValue();
-
-		if (!value) {
-			await nameInput.fill(`pw-${Date.now()}`);
-		}
-
-		if (await clickIfReady(submit)) {
-			return;
-		}
-
-		await nameInput.press('Enter').catch(() => Promise.resolve());
-		return;
+	if (options?.name) {
+		await nameInput.fill(options.name);
+	} else if (!(await nameInput.inputValue())) {
+		await nameInput.fill(`pw-${Date.now()}`);
 	}
 
-	await clickIfReady(submit);
+	if (options?.e2eeKey) {
+		const e2eeKeyInputId = '#participant-e2eekey-input';
+		await Promise.all([
+			expect(page.locator(e2eeKeyInputId)).toBeVisible({ timeout: 10000 }),
+			expect(page.locator(e2eeKeyInputId)).toBeEditable({ timeout: 10000 })
+		]);
+		const e2eeInput = page.locator(e2eeKeyInputId);
+
+		await e2eeInput.fill(options.e2eeKey);
+	}
+
+	await click(nameSubmit);
 };
 
-const clickJoinIfPrejoinVisible = async (page: Page): Promise<boolean> => {
-	const prejoinContainer = page.locator('#prejoin-container');
+const clickJoinRoom = async (page: Page): Promise<void> => {
+	await expect(page.locator('#join-button')).toBeVisible({ timeout: 10_000 });
 	const joinButton = page.locator('#join-button');
-	const joiningSpinner = page.locator('#spinner');
-
-	if (!(await prejoinContainer.isVisible().catch(() => false))) {
-		return false;
-	}
-
-	// Join was already requested and the transition spinner is visible.
-	if (await joiningSpinner.isVisible().catch(() => false)) {
-		return true;
-	}
-
-	if (!(await joinButton.isVisible().catch(() => false))) {
-		return false;
-	}
-
-	if (await clickIfReady(joinButton)) {
-		return true;
-	}
-
-	return false;
+	await click(joinButton);
 };
 
-const openMoreOptionsMenu = async (page: Page): Promise<void> => {
+export const openMoreOptionsMenu = async (page: Page): Promise<void> => {
 	const moreOptionsButton = page.locator('#more-options-btn');
 	await expect(moreOptionsButton).toBeVisible();
 
-	if (!(await clickIfReady(moreOptionsButton, 5_000))) {
-		await moreOptionsButton.click({ force: true });
-	}
+	await click(moreOptionsButton, 5_000);
 
 	await expect(page.locator('.mat-mdc-menu-content')).toBeVisible();
 };
@@ -148,9 +121,7 @@ const clickControlButton = async (page: Page, selector: string, timeoutMs = 5_00
 	const button = page.locator(selector);
 	await expect(button).toBeVisible({ timeout: timeoutMs });
 
-	if (!(await clickIfReady(button, timeoutMs))) {
-		await button.click({ force: true, timeout: timeoutMs });
-	}
+	await click(button, timeoutMs);
 };
 
 const toggleRemoteParticipantMute = async (page: Page, remoteStreamSelector = '.OV_stream.remote'): Promise<void> => {
@@ -509,44 +480,36 @@ export const waitForVisibleRemoteParticipants = async (
 		});
 };
 
-export const openMeeting = async (page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> => {
-	for (let attempt = 0; attempt < 2; attempt += 1) {
-		await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+export const openMeeting = async (
+	page: Page,
+	accessUrl: string,
+	options?: { timeoutMs?: number; name?: string; e2eeKey?: string }
+): Promise<void> => {
+	const timeoutMs = options?.timeoutMs ?? 45_000;
 
-		const joinDeadline = Date.now() + timeoutMs;
-
-		while (Date.now() < joinDeadline) {
-			if (await page.locator('#layout-container').isVisible()) {
-				return;
-			}
-
-			await completeLobbyIfPresent(page);
-			await clickJoinIfPrejoinVisible(page);
-			await page.waitForTimeout(100); // Use expect.poll in next assertion
-		}
-	}
+	await openPrejoin(page, accessUrl, options);
+	await clickJoinRoom(page);
 
 	await expect(page.locator('#layout-container')).toBeVisible({ timeout: timeoutMs });
 	await expect(page.locator('#media-buttons-container')).toBeVisible({ timeout: timeoutMs });
 };
 
-export const openPrejoin = async (page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> => {
-	for (let attempt = 0; attempt < 2; attempt += 1) {
-		await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+export const openPrejoin = async (
+	page: Page,
+	accessUrl: string,
+	options?: { timeoutMs?: number; name?: string; e2eeKey?: string }
+): Promise<void> => {
+	const timeoutMs = options?.timeoutMs ?? 45_000;
 
-		const prejoinDeadline = Date.now() + timeoutMs;
+	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+	await completeLobby(page, options);
 
-		while (Date.now() < prejoinDeadline) {
-			if (await page.locator('#prejoin-container').isVisible()) {
-				return;
-			}
+	await expect(page.locator('#join-button')).toBeVisible({ timeout: timeoutMs });
+};
 
-			await completeLobbyIfPresent(page);
-			await page.waitForTimeout(100); // Use expect.poll in next assertion
-		}
-	}
-
-	await expect(page.locator('#prejoin-container')).toBeVisible({ timeout: timeoutMs });
+export const openLobby = async (page: Page, accessUrl: string, timeoutMs = 45_000): Promise<void> => {
+	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+	await expect(page.locator('#participant-name-input')).toBeVisible({ timeout: timeoutMs });
 };
 
 export const toggleChatPanel = async (page: Page, action: 'open' | 'close' = 'open'): Promise<void> => {
@@ -632,11 +595,7 @@ export const openLayoutSettingsPanel = async (page: Page): Promise<void> => {
 
 	const gridLayoutSettingsButton = page.locator('#grid-layout-settings-btn');
 	await expect(gridLayoutSettingsButton).toBeVisible();
-
-	if (!(await clickIfReady(gridLayoutSettingsButton, 5_000))) {
-		await gridLayoutSettingsButton.click({ force: true });
-	}
-
+	await click(gridLayoutSettingsButton, 5_000);
 	await expect(page.locator('#settings-container')).toBeVisible();
 };
 
@@ -850,8 +809,14 @@ export const speakFor = async (page: Page, durationMs: number): Promise<void> =>
 export const leaveMeeting = async (page: Page, timeoutMs = 10_000): Promise<void> => {
 	await page.locator('#leave-btn').click();
 
-	if (await page.locator('#leave-option').isVisible()) {
-		await page.locator('#leave-option').click();
+	const leaveOption = page.locator('#leave-option');
+	const leaveDropdownVisible = await leaveOption
+		.waitFor({ state: 'visible', timeout: 1_000 })
+		.then(() => true)
+		.catch(() => false);
+
+	if (leaveDropdownVisible) {
+		await leaveOption.click();
 	}
 
 	await expect.poll(async () => await page.locator('#layout-container').count(), { timeout: timeoutMs }).toBe(0);
@@ -961,13 +926,20 @@ export const expectLocalStreamCount = async (page: Page, counts: { video?: numbe
 };
 
 /**
- * Waits for a specific number of remote streams to be visible and have playable video tracks (if applicable)
+ * Waits for a specific number of remote streams to be visible and have playable video tracks (if applicable).
+ *
+ * @param count - Total number of visible remote streams expected.
+ * @param options.requireAudioTracks - When true, also requires live audio tracks on each video stream.
+ * @param options.videoCount - Number of those remote streams expected to have playable video.
+ *   Defaults to `count` (all streams). Use a lower value when some participants have their camera off.
  */
 export const waitForRemoteStream = async (
 	page: Page,
 	count = 1,
-	options?: { requireAudioTracks?: boolean }
+	options?: { requireAudioTracks?: boolean; videoCount?: number }
 ): Promise<void> => {
+	const expectedVideoCount = options?.videoCount ?? count;
+
 	await expect
 		.poll(
 			async () =>
@@ -1017,7 +989,7 @@ export const waitForRemoteStream = async (
 				}, options?.requireAudioTracks ?? false),
 			{ timeout: 15_000 }
 		)
-		.toEqual({ visibleRemoteStreams: count, playableRemoteVideos: count });
+		.toEqual({ visibleRemoteStreams: count, playableRemoteVideos: expectedVideoCount });
 };
 
 /**
