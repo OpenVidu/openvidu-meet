@@ -98,65 +98,66 @@ test.describe('Media Devices E2E Tests', () => {
 			await page.locator('#screenshare-btn').click();
 			await page.waitForTimeout(500);
 
-		const replaceButton = page.locator('#replace-screen-button');
-		await expect(replaceButton).toBeVisible();
-		await replaceButton.click();
-		await page.waitForTimeout(1000);
-		const replacedLabel = await getScreenTrackLabel(page);
-		expect(replacedLabel).not.toBeNull();
-		await expect(page.locator('.OV_video-element.screen-source')).toHaveCount(1);
-	});
-
-	test.describe('UI Behavior Without Media Device Permissions', () => {
-		test.use({ permissions: [] });
-
-		test('should camera and microphone buttons be disabled in the prejoin page when permissions are denied', async ({
-			page
-		}) => {
-			await openPrejoin(page, accessUrl);
-
-			await expect(page.locator('#no-video-device-message')).toBeVisible();
-			await expect(page.locator('#no-audio-device-message')).toBeVisible();
-			const backgroundsButton = page.locator('#backgrounds-button');
-
-			if ((await backgroundsButton.count()) > 0) {
-				await expect(backgroundsButton).toBeDisabled();
-			}
+			const replaceButton = page.locator('#replace-screen-button');
+			await expect(replaceButton).toBeVisible();
+			await replaceButton.click();
+			await page.waitForTimeout(1000);
+			const replacedLabel = await getScreenTrackLabel(page);
+			expect(replacedLabel).not.toBeNull();
+			await expect(page.locator('.OV_video-element.screen-source')).toHaveCount(1);
 		});
 
-		test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({
-			page
-		}) => {
-			await openPrejoin(page, accessUrl);
-			await page.locator('#join-button').click();
-			await expect(page.locator('#layout-container')).toBeVisible();
+		test.describe('UI Behavior Without Media Device Permissions', () => {
+			test.use({ permissions: [] });
 
-			await expect(page.locator('#camera-btn')).toBeDisabled();
-			await expect(page.locator('#mic-btn')).toBeDisabled();
-		});
+			test('should camera and microphone buttons be disabled in the prejoin page when permissions are denied', async ({
+				page
+			}) => {
+				await openPrejoin(page, accessUrl);
 
-		test('should camera and microphone buttons be disabled in the room page without prejoin when permissions are denied', async ({
-			page
-		}) => {
-			await openMeeting(page, accessUrl);
+				await expect(page.locator('#no-video-device-message')).toBeVisible();
+				await expect(page.locator('#no-audio-device-message')).toBeVisible();
+				const backgroundsButton = page.locator('#backgrounds-button');
 
-			await expect(page.locator('#camera-btn')).toBeDisabled();
-			await expect(page.locator('#mic-btn')).toBeDisabled();
-		});
+				if ((await backgroundsButton.count()) > 0) {
+					await expect(backgroundsButton).toBeDisabled();
+				}
+			});
 
-		test('should show an audio and video device warning in settings when permissions are denied', async ({
-			page
-		}) => {
-			await openMeeting(page, accessUrl);
+			test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({
+				page
+			}) => {
+				await openPrejoin(page, accessUrl);
+				await page.locator('#join-button').click();
+				await expect(page.locator('#layout-container')).toBeVisible();
 
-			await openSettingsPanel(page);
-			await page.locator('#video-opt').click();
-			await expect(page.locator('ov-video-devices-select')).toBeVisible();
-			await expect(page.locator('#no-video-device-message')).toBeVisible();
+				await expect(page.locator('#camera-btn')).toBeDisabled();
+				await expect(page.locator('#mic-btn')).toBeDisabled();
+			});
 
-			await page.locator('#audio-opt').click();
-			await expect(page.locator('ov-audio-devices-select')).toBeVisible();
-			await expect(page.locator('#no-audio-device-message')).toBeVisible();
+			test('should camera and microphone buttons be disabled in the room page without prejoin when permissions are denied', async ({
+				page
+			}) => {
+				await openMeeting(page, accessUrl);
+
+				await expect(page.locator('#camera-btn')).toBeDisabled();
+				await expect(page.locator('#mic-btn')).toBeDisabled();
+			});
+
+			test('should show an audio and video device warning in settings when permissions are denied', async ({
+				page
+			}) => {
+				await openMeeting(page, accessUrl);
+
+				await openSettingsPanel(page);
+				await page.locator('#video-opt').click();
+				await expect(page.locator('ov-video-devices-select')).toBeVisible();
+				await expect(page.locator('#no-video-device-message')).toBeVisible();
+
+				await page.locator('#audio-opt').click();
+				await expect(page.locator('ov-audio-devices-select')).toBeVisible();
+				await expect(page.locator('#no-audio-device-message')).toBeVisible();
+			});
 		});
 	});
 });
