@@ -17,20 +17,8 @@ export class SmartLayoutService extends LayoutService {
 	readonly MIN_VISIBLE_REMOTE_PARTICIPANTS = 1;
 	readonly MAX_VISIBLE_REMOTE_PARTICIPANTS_LIMIT = 6;
 
-	/**
-	 * Minimum audio level threshold (0-1) to consider a participant as actively speaking.
-	 */
 	private readonly AUDIO_LEVEL_THRESHOLD = 0.1;
-
-	/**
-	 * Minimum duration in milliseconds that a participant must be speaking
-	 * before being considered for display in the smart layout.
-	 */
 	private readonly MIN_SPEAKING_DURATION_MS = 2000;
-
-	/**
-	 * Grace period in milliseconds to keep tracking a speaker after they stop.
-	 */
 	private readonly SPEAKING_GRACE_PERIOD_MS = 3000;
 
 	private readonly _layoutMode = signal<SmartLayoutMode>(SmartLayoutMode.SMART_MOSAIC);
@@ -41,9 +29,6 @@ export class SmartLayoutService extends LayoutService {
 
 	readonly isSmartLayoutEnabled = computed(() => this._layoutMode() === SmartLayoutMode.SMART_MOSAIC);
 
-	/**
-	 * Ordered list of participant IDs based on their speaking priority.
-	 */
 	private readonly _speakerPriorityOrder = signal<string[]>([]);
 	readonly speakerPriorityOrder = this._speakerPriorityOrder.asReadonly();
 
@@ -112,74 +97,73 @@ export class SmartLayoutService extends LayoutService {
 			this._speakerPriorityOrder.set(filteredOrder);
 		}
 
-		for (const id of [...this.speakingStartTimes.keys()]) {
-			if (!connectedParticipantIds.has(id)) {
-				this.speakingStartTimes.delete(id);
-			}
+		for (const id of this.speakingStartTimes.keys()) {
+			if (!connectedParticipantIds.has(id)) this.speakingStartTimes.delete(id);
 		}
-
-		for (const id of [...this.speakingStopTimes.keys()]) {
-			if (!connectedParticipantIds.has(id)) {
-				this.speakingStopTimes.delete(id);
-			}
+		for (const id of this.speakingStopTimes.keys()) {
+			if (!connectedParticipantIds.has(id)) this.speakingStopTimes.delete(id);
 		}
 	}
 
+	/**
+	 * Returns the set of participant IDs to render fully (camera + optional screen).
+	 * Priority: (1) recent speakers → (2) silent fillers.
+	 *
+	 * Screen-sharing participants are **not** given camera-slot priority because their
+	 * screen tile is always rendered by the layout regardless of whether they appear
+	 * in this set (see the non-displayed screen-sharing participants block in `visibleState`),
+	 * so the participant limit controls camera slots only.
+	 */
 	computeParticipantsToDisplay(availableIds: Set<string>): Set<string> {
 		const maxCount = this._maxVisibleRemoteParticipants();
 		const speakerOrder = this._speakerPriorityOrder();
 
 		const recentSpeakers = speakerOrder.filter((id) => availableIds.has(id)).slice(0, maxCount);
-
-		if (recentSpeakers.length >= maxCount) {
-			return new Set(recentSpeakers);
-		}
+		if (recentSpeakers.length >= maxCount) return new Set(recentSpeakers);
 
 		const recentSpeakerSet = new Set(recentSpeakers);
-		const fillersNeeded = maxCount - recentSpeakers.length;
-		const fillers = [...availableIds].filter((id) => !recentSpeakerSet.has(id)).slice(0, fillersNeeded);
+		const remaining = maxCount - recentSpeakers.length;
 
-		return new Set([...recentSpeakers, ...fillers]);
+		// Fill remaining slots with non-speaker participants (screen sharers are not
+		// given camera-slot priority because their screen tile is always rendered
+		// separately via the non-displayed screen-sharing block in visibleState).
+		const regularFillers = [...availableIds].filter((id) => !recentSpeakerSet.has(id)).slice(0, remaining);
+
+		return new Set([...recentSpeakers, ...regularFillers]);
 	}
 
 	private processActiveSpeakersChanged(speakers: Participant[]): void {
 		if (!this.isSmartLayoutEnabled()) return;
 
 		const now = Date.now();
-		const loudSpeakers = speakers.filter((participant) => !participant.isLocal && participant.audioLevel >= this.AUDIO_LEVEL_THRESHOLD);
-		const loudSpeakerIds = new Set(loudSpeakers.map((participant) => participant.identity));
+		const activeSpeakerIds = new Set(
+			speakers
+				.filter((p) => !p.isLocal && p.audioLevel >= this.AUDIO_LEVEL_THRESHOLD)
+				.map((p) => p.identity)
+		);
 
-		this.updateSpeakerActivityTimers(loudSpeakerIds, now);
+		this.updateSpeakerActivityTimers(activeSpeakerIds, now);
 
-		const activeForLayoutIds: string[] = [];
-		for (const [id, startTime] of this.speakingStartTimes) {
-			const isLoud = loudSpeakerIds.has(id);
-			const stopTime = this.speakingStopTimes.get(id);
-			const endTime = isLoud ? now : stopTime || now;
-			const duration = endTime - startTime;
+		const qualifiedSpeakers = [...this.speakingStartTimes.entries()]
+			.filter(([id, startTime]) => {
+				const stopTime = this.speakingStopTimes.get(id);
+				const endTime = activeSpeakerIds.has(id) ? now : (stopTime ?? now);
+				return endTime - startTime >= this.MIN_SPEAKING_DURATION_MS;
+			})
+			.map(([id]) => id);
 
-			if (duration >= this.MIN_SPEAKING_DURATION_MS) {
-				activeForLayoutIds.push(id);
-			}
-		}
-
-		this.updateSpeakerPriority(activeForLayoutIds);
+		this.updateSpeakerPriority(qualifiedSpeakers, activeSpeakerIds);
 	}
 
-	private updateSpeakerActivityTimers(currentLoudSpeakerIds: Set<string>, now: number): void {
-		for (const id of currentLoudSpeakerIds) {
+	private updateSpeakerActivityTimers(activeSpeakerIds: Set<string>, now: number): void {
+		for (const id of activeSpeakerIds) {
 			this.speakingStopTimes.delete(id);
-
-			if (!this.speakingStartTimes.has(id)) {
-				this.speakingStartTimes.set(id, now);
-			}
+			if (!this.speakingStartTimes.has(id)) this.speakingStartTimes.set(id, now);
 		}
 
 		for (const id of this.speakingStartTimes.keys()) {
-			if (!currentLoudSpeakerIds.has(id)) {
-				if (!this.speakingStopTimes.has(id)) {
-					this.speakingStopTimes.set(id, now);
-				}
+			if (!activeSpeakerIds.has(id)) {
+				if (!this.speakingStopTimes.has(id)) this.speakingStopTimes.set(id, now);
 
 				const stopTime = this.speakingStopTimes.get(id);
 				if (stopTime && now - stopTime >= this.SPEAKING_GRACE_PERIOD_MS) {
@@ -190,16 +174,26 @@ export class SmartLayoutService extends LayoutService {
 		}
 	}
 
-	private updateSpeakerPriority(activeSpeakerIds: string[]): void {
+	private updateSpeakerPriority(qualifiedSpeakerIds: string[], activeSpeakerIds: Set<string> = new Set()): void {
 		const currentOrder = this._speakerPriorityOrder();
-		const activeSet = new Set(activeSpeakerIds);
+		const qualifiedSet = new Set(qualifiedSpeakerIds);
+		const currentSet = new Set(currentOrder);
 
-		const existingActive = currentOrder.filter((id) => activeSet.has(id));
-		const newActive = activeSpeakerIds.filter((id) => !currentOrder.includes(id));
-		const inactive = currentOrder.filter((id) => !activeSet.has(id));
+		// Participants currently sending audio above the threshold
+		const activelySpeakingSet = new Set(qualifiedSpeakerIds.filter((id) => activeSpeakerIds.has(id)));
 
-		const newOrder = [...existingActive, ...newActive, ...inactive];
-		const maxHistorySize = this._maxVisibleRemoteParticipants() * 2;
-		this._speakerPriorityOrder.set(newOrder.slice(0, maxHistorySize));
+		// Group 1a: already-visible active speakers (preserve relative order for stability)
+		const existingActiveSpeakers = currentOrder.filter((id) => activelySpeakingSet.has(id));
+		// Group 1b: newly-qualified active speakers (first time reaching the threshold)
+		const newActiveSpeakers = qualifiedSpeakerIds.filter((id) => activeSpeakerIds.has(id) && !currentSet.has(id));
+		// Group 2a: grace-period speakers already in the order (they stopped but haven't expired)
+		const gracePeriodExisting = currentOrder.filter((id) => qualifiedSet.has(id) && !activelySpeakingSet.has(id));
+		// Group 2b: participants that first qualified exactly as they stopped (edge case)
+		const newGracePeriod = qualifiedSpeakerIds.filter((id) => !activeSpeakerIds.has(id) && !currentSet.has(id));
+		// Group 3: no longer qualified — keep at the tail for ordered removal
+		const inactive = currentOrder.filter((id) => !qualifiedSet.has(id));
+
+		const updated = [...existingActiveSpeakers, ...newActiveSpeakers, ...gracePeriodExisting, ...newGracePeriod, ...inactive];
+		this._speakerPriorityOrder.set(updated.slice(0, this._maxVisibleRemoteParticipants() * 2));
 	}
 }

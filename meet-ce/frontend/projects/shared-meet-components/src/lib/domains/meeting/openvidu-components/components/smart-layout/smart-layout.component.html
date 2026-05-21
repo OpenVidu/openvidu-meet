@@ -1,4 +1,4 @@
-<ov-layout [ovRemoteParticipants]="visibleRemoteParticipants()">
+<ov-layout [ovRemoteStreams]="visibleRemoteStreams()">
 	@for (d of projectedAdditionalElements(); track d) {
 		<ng-container *ovLayoutAdditionalElements="d.slot">
 			<ng-container *ngTemplateOutlet="d.template" />

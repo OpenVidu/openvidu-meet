@@ -31,14 +31,20 @@
 			<ng-container *ngTemplateOutlet="template" />
 		}
 
-		@for (stream of remoteStreams(); track trackParticipantElement($index, stream)) {
+		@for (stream of remoteCameraStreams(); track trackParticipantElement($index, stream)) {
 			<div
-				class="remote-participant"
+				class="remote-participant OV_root OV_publisher"
 				[id]="'participant-' + stream.participant.identity"
-				[class.OV_root]="true"
-				[class.OV_publisher]="true"
 				[class.OV_big]="stream.isPinned"
-				[class.OV_screen]="stream.isScreenStream"
+			>
+				<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
+			</div>
+		}
+		@for (stream of remoteScreenStreams(); track trackParticipantElement($index, stream)) {
+			<div
+				class="remote-participant OV_root OV_publisher OV_screen"
+				[id]="'participant-' + stream.participant.identity"
+				[class.OV_big]="stream.isPinned"
 			>
 				<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
 			</div>

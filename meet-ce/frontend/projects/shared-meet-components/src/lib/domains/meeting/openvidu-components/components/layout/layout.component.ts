@@ -12,6 +12,7 @@ import {
 	effect,
 	ElementRef,
 	inject,
+	input,
 	OnDestroy,
 	TemplateRef,
 	viewChild,
@@ -103,12 +104,27 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			: this.participantService.remoteParticipants();
 	});
 	/**
-	 * Flattened stream list for all remote participants, as a computed signal.
-	 * Tracks each ParticipantModel's internal `streams` computed, so the @for loop
-	 * in the template re-evaluates only when tracks, pin/mute state, or the participant
-	 * list actually change — no array spreading or participant cloning needed.
+	 * Pre-computed stream list injected by a parent (e.g. {@link SmartLayoutComponent}).
+	 * When provided, bypasses the local participant-to-streams derivation.
 	 */
-	readonly remoteStreams = computed(() => this.remoteParticipants().flatMap((p) => p.streams()));
+	readonly remoteStreamsOverride = input<ParticipantStream[] | undefined>(undefined, { alias: 'ovRemoteStreams' });
+
+	/** Flattened remote stream list. Re-evaluates on track publish/unpublish, pin, mute, or participant list changes. */
+	readonly remoteStreams = computed(() => this.remoteStreamsOverride() ?? this.remoteParticipants().flatMap((p) => p.streams()));
+
+	/**
+	 * Camera-only remote streams, rendered in a dedicated `@for` loop.
+	 * Keeping cameras and screens in separate loops ensures screen DOM positions
+	 * are never affected by camera additions or removals.
+	 */
+	readonly remoteCameraStreams = computed(() => this.remoteStreams().filter((s) => !s.isScreenStream));
+
+	/**
+	 * Screen-share-only remote streams, rendered in a dedicated `@for` loop.
+	 * Keeping screens and cameras in separate loops ensures camera DOM positions
+	 * are never affected by screen-share start or stop events.
+	 */
+	readonly remoteScreenStreams = computed(() => this.remoteStreams().filter((s) => s.isScreenStream));
 
 	private readonly destroyRef = inject(DestroyRef);
 	private resizeObserver: ResizeObserver | undefined = undefined;
@@ -125,7 +141,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		const isLocalMinimized = !!localParticipant?.isMinimized;
 
 		if (this.wasLocalMinimized && !isLocalMinimized) {
-			// On minimize -> restore transition, drop any drag offset and let layout place the stream again.
+			// Restore from minimized: clear drag offset and let layout reposition the stream.
 			this.videoIsAtRight = false;
 			queueMicrotask(() => {
 				this.resetDragPosition();
@@ -134,13 +150,11 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		}
 
 		this.wasLocalMinimized = isLocalMinimized;
-		// Track remote stream changes (track publish/unpublish, pin, mute) in addition to
-		// participant add/remove, so the layout recalculates for all structural changes.
-		this.remoteStreams();
+		this.remoteStreams(); // subscribe to track publish/unpublish, pin, mute changes
 		this.layoutService.update();
 	});
 
-	ngAfterViewInit() {
+	ngAfterViewInit(): void {
 		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
 		if (!layoutContainer) return;
 
@@ -153,7 +167,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 		this.listenToCdkDrag();
 	}
 
-	ngOnDestroy() {
+	ngOnDestroy(): void {
 		this.resizeObserver?.disconnect();
 		this.mutationObserver?.disconnect();
 		clearTimeout(this.resizeTimeout);
@@ -162,16 +176,12 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	}
 
 	/**
-	 * @ignore
+	 * Track-by function for `@for` loops over {@link ParticipantStream} items.
+	 * Using a stable `identity-streamId` key ensures the `StreamComponent` instance is
+	 * reused across track subscription cycles, preventing flicker from DOM recreation.
 	 */
-	trackParticipantElement(_: number, stream: ParticipantStream) {
-		// Use identity+source as a stable key so the component instance is reused when the
-		// real trackSid arrives (replacing the `camera-{identity}` fallback). Using streamId
-		// here caused @for to destroy+recreate the StreamComponent on every track subscription,
-		// producing a brief window where two identical elements coexisted in the DOM — one with
-		// the `no-size` class (new instance, showVideo=false) and one without it (old instance
-		// being destroyed) — resulting in visible flickering.
-		return `${stream.participant.identity}-${stream.source}`;
+	trackParticipantElement(_: number, stream: ParticipantStream): string {
+		return `${stream.participant.identity}-${stream.streamId}`;
 	}
 
 	private listenToLayoutDomChanges() {
@@ -208,14 +218,12 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			clearTimeout(this.resizeTimeout);
 
 			this.resizeTimeout = setTimeout(() => {
-				// Always update layout when container size changes
-				// This ensures layout recalculates when parent containers change
 				const widthDiff = Math.abs(this.lastLayoutWidth - parentWidth);
 				const heightDiff = Math.abs(this.lastLayoutHeight - parentHeight);
 				if (widthDiff > 1 || heightDiff > 1) {
 					this.layoutService.update();
 				}
-				// Handle minimized participant positioning
+
 				if (this.localParticipant()?.isMinimized) {
 					const cdkDrag = this.getActiveLocalDrag();
 					if (!cdkDrag) {
@@ -226,19 +234,18 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 
 					if (this.panelService.isPanelOpened()) {
 						if (this.lastLayoutWidth < parentWidth) {
-							// Layout is bigger than before. Maybe the settings panel(wider) has been transitioned to another panel.
+							// Layout grew (e.g. wider panel replaced a narrower one): keep video pinned to the right edge.
 							if (this.videoIsAtRight) {
 								this.moveStreamToRight(parentWidth);
 							}
 						} else {
-							// Layout is smaller than before. Emit resize event to update video position.
+							// Layout shrank: re-evaluate whether the video is still at the right edge.
 							window.dispatchEvent(new Event('resize'));
 							const { x, width } = cdkDrag.element.nativeElement.getBoundingClientRect();
 							this.videoIsAtRight = x + width >= parentWidth;
 						}
 					} else {
 						if (this.videoIsAtRight) {
-							// Panel is closed and layout has been resized. Video is at right, so move it to right.
 							this.moveStreamToRight(parentWidth);
 						}
 					}
@@ -315,16 +322,7 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			if (!this.panelService.isPanelOpened()) return;
 			const { x, width } = (event.source.element.nativeElement as HTMLElement).getBoundingClientRect();
 			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
-			if (x === 0) {
-				// Video is at the left
-				this.videoIsAtRight = false;
-			} else if (x + width >= parentWidth) {
-				// Video is at the right
-				this.videoIsAtRight = true;
-			} else {
-				// Video is in another position
-				this.videoIsAtRight = false;
-			}
+			this.videoIsAtRight = x !== 0 && x + width >= parentWidth;
 		};
 
 		this.cdkDragQueries()
@@ -334,25 +332,19 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 			});
 
 		if (this.globalService.isProduction()) return;
-		// Just for allow E2E testing with drag and drop
+
+		// Development-only hooks used by E2E tests to simulate drag-and-drop events.
 		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', () => {
 			if (!this.panelService.isPanelOpened()) return;
 			const localLayoutElement = this.getActiveLocalLayoutElement();
 			if (!localLayoutElement) return;
 			const { x, width } = localLayoutElement.getBoundingClientRect();
 			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
-			if (x === 0) {
-				this.videoIsAtRight = false;
-			} else if (x + width >= parentWidth) {
-				this.videoIsAtRight = true;
-			} else {
-				this.videoIsAtRight = false;
-			}
+			this.videoIsAtRight = x !== 0 && x + width >= parentWidth;
 		});
 		document.addEventListener('webcomponentTestingEndedDragAndDropRightEvent', (event: any) => {
 			const { x, y } = event.detail;
-			const cdkDrag = this.getActiveLocalDrag();
-			cdkDrag?.setFreeDragPosition({ x, y });
+			this.getActiveLocalDrag()?.setFreeDragPosition({ x, y });
 		});
 	}
 }

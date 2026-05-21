@@ -1,6 +1,11 @@
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { selectMosaicLayout, selectSmartMosaicLayout, setSmartMosaicSliderValue } from './helpers/layout.helper';
+import {
+	runScreenShareRotationCycles,
+	selectMosaicLayout,
+	selectSmartMosaicLayout,
+	setSmartMosaicSliderValue
+} from './helpers/layout.helper';
 import { createRoomAndGetAnonymousAccessUrl, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
 import {
 	closeSettingsPanel,
@@ -94,8 +99,164 @@ test.describe('Meeting UI elements', () => {
 });
 
 test.describe('Mosaic Layout', () => {
-	// screen sharing pinned
-	// show grid participant
+	test('should display all remote participants in mosaic layout without filtering', async ({ browser }) => {
+		const prefix = `mosaic-all-${Date.now()}`;
+		const { pageA, pages, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			participants: [
+				{ name: `${prefix}-viewer`, audioEnabled: false, videoEnabled: true },
+				{ name: `${prefix}-remote-a`, audioEnabled: false, videoEnabled: true, headless: true },
+				{ name: `${prefix}-remote-b`, audioEnabled: false, videoEnabled: true, headless: true },
+				{ name: `${prefix}-remote-c`, audioEnabled: false, videoEnabled: true, headless: true }
+			]
+		});
+
+		try {
+			await openLayoutSettingsPanel(pageA);
+			await selectMosaicLayout(pageA);
+
+			await waitForRemoteStream(pageA, 3);
+			await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(3, { timeout: 15_000 });
+			await expectHidden(pageA, 'ov-hidden-participants-indicator');
+		} finally {
+			await removeAllParticipants();
+			await Promise.all(pages.map((page) => leaveMeeting(page)));
+			await Promise.all(pages.map((page) => page.close()));
+		}
+	});
+
+	test('should display screen sharing as pinned in mosaic layout', async ({ browser }) => {
+		const prefix = `mosaic-screen-${Date.now()}`;
+		const { pageA, pages, byName, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			participants: [
+				{ name: `${prefix}-viewer`, audioEnabled: false, videoEnabled: true },
+				{ name: `${prefix}-sharer`, audioEnabled: false, videoEnabled: true, headless: true },
+				{ name: `${prefix}-remote-b`, audioEnabled: false, videoEnabled: true, headless: true }
+			]
+		});
+
+		try {
+			await openLayoutSettingsPanel(pageA);
+			await selectMosaicLayout(pageA);
+
+			await waitForRemoteStream(pageA, 2);
+
+			await startScreensharing(byName[`${prefix}-sharer`]);
+
+			await expect(pageA.locator('.OV_stream.remote.screen-source')).toHaveCount(1, { timeout: 20_000 });
+			await waitForVisibleRemoteParticipants(
+				pageA,
+				{
+					includes: [`${prefix}-sharer`, `${prefix}-sharer_SCREEN`, `${prefix}-remote-b`]
+				},
+				20_000
+			);
+
+			await stopScreensharing(byName[`${prefix}-sharer`]);
+			await expect(pageA.locator('.OV_stream.remote.screen-source')).toHaveCount(0, { timeout: 20_000 });
+			await waitForVisibleRemoteParticipants(
+				pageA,
+				{
+					count: 2,
+					includes: [`${prefix}-sharer`, `${prefix}-remote-b`]
+				},
+				20_000
+			);
+		} finally {
+			await removeAllParticipants();
+			await Promise.all(pages.map((page) => leaveMeeting(page)));
+			await Promise.all(pages.map((page) => page.close()));
+		}
+	});
+
+	test('should keep all participants visible after screen share stops in mosaic layout', async ({ browser }) => {
+		const { pageA, pages, byName, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			participants: [
+				{ name: 'local', audioEnabled: false, videoEnabled: true },
+				{ name: 'remote-A', audioEnabled: false, videoEnabled: true, headless: true, screenShare: true },
+				{ name: 'remote-B', audioEnabled: false, videoEnabled: true, headless: true, screenShare: true },
+				{ name: 'remote-C', audioEnabled: false, videoEnabled: true, headless: true }
+			]
+		});
+
+		try {
+			await selectMosaicLayout(pageA);
+
+			// All 3 remotes + 3 screen shares should be visible
+			await waitForVisibleRemoteParticipants(pageA, {
+				count: 3 + 2, // 3 remotes + 2 screen shares
+				includes: [`remote-A`, `remote-A_SCREEN`, `remote-B`, `remote-B_SCREEN`, `remote-C`]
+			});
+
+			await selectSmartMosaicLayout(pageA);
+			await waitForVisibleRemoteParticipants(pageA, {
+				count: 3 + 2, // 3 remotes + 2 screen shares (never hide screen shares in smart mosaic)
+				includes: [`remote-A_SCREEN`, `remote-B_SCREEN`]
+			});
+
+			await selectMosaicLayout(pageA);
+
+			// All 3 remotes + 3 screen shares should be visible
+			await waitForVisibleRemoteParticipants(pageA, {
+				count: 3 + 2,
+				includes: [`remote-A`, `remote-A_SCREEN`, `remote-B`, `remote-B_SCREEN`, `remote-C`]
+			});
+			// B stops screen sharing — DOM indices shift for later participants.
+			// All remaining participants must stay visible.
+			await stopScreensharing(byName[`remote-B`]);
+
+			await waitForVisibleRemoteParticipants(pageA, {
+				count: 3 + 1, // 3 remotes + 1 screen share
+				includes: [`remote-A`, `remote-A_SCREEN`, `remote-B`, `remote-C`]
+			});
+
+			expect(await pageA.locator('.OV_stream.remote.screen-source').count()).toBe(1);
+		} finally {
+			await removeAllParticipants();
+			await Promise.all(pages.map((page) => leaveMeeting(page)));
+			await Promise.all(pages.map((page) => page.close()));
+		}
+	});
+
+	test('should update participant count correctly after join and leave in mosaic layout', async ({ browser }) => {
+		const prefix = `mosaic-joinleave-${Date.now()}`;
+		const { pageA, pages, addParticipant, removeParticipant, removeAllParticipants } = await joinParticipants(
+			browser,
+			{
+				roomId,
+				participants: [
+					{ name: `${prefix}-viewer`, audioEnabled: false, videoEnabled: true },
+					{ name: `${prefix}-remote-a`, audioEnabled: false, videoEnabled: true, headless: true }
+				]
+			}
+		);
+
+		try {
+			await openLayoutSettingsPanel(pageA);
+			await selectMosaicLayout(pageA);
+
+			await waitForRemoteStream(pageA, 1);
+			await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1, { timeout: 15_000 });
+
+			await addParticipant({
+				name: `${prefix}-remote-b`,
+				audioEnabled: false,
+				videoEnabled: true,
+				headless: true
+			});
+
+			await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(2, { timeout: 20_000 });
+
+			await removeParticipant(`${prefix}-remote-a`);
+			await expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1, { timeout: 20_000 });
+		} finally {
+			await removeAllParticipants();
+			await Promise.all(pages.map((page) => leaveMeeting(page)));
+			await Promise.all(pages.map((page) => page.close()));
+		}
+	});
 });
 
 test.describe('Smart Mosaic Layout', () => {
@@ -219,14 +380,11 @@ test.describe('Smart Mosaic Layout', () => {
 
 	test.describe('Screen sharing visibility', () => {
 		test('should retain screen sharing participant regardless smart-mosaic limit', async ({ browser }) => {
-			const prefix = `screen-share-retain-${Date.now()}`;
-			const remoteScreenShareName = `${prefix}-remote-a`;
-			const remoteSpeakerName = `${prefix}-remote-b`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: remoteScreenShareName, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-screen', audioEnabled: false, headless: true }
 			];
-			const { pageA, pages, byName } = await joinParticipants(browser, {
+			const { pageA, pages, byName, addParticipant } = await joinParticipants(browser, {
 				roomId,
 				participants
 			});
@@ -234,76 +392,159 @@ test.describe('Smart Mosaic Layout', () => {
 			try {
 				await setSmartMosaicSliderValue(pageA, 1);
 
-				await startScreensharing(byName[remoteScreenShareName]);
+				await startScreensharing(byName['remote-screen']);
 
-				await waitForRemoteStream(pageA, 2, { requireAudioTracks: true });
+				await waitForRemoteStream(pageA, 2, { requireAudioTracks: true }); // screen + 1 remote
 				await expect(pageA.locator('.OV_stream.remote.screen-source')).toHaveCount(1, { timeout: 20_000 });
 
-				let visibleNames = await getVisibleRemoteParticipantNames(pageA);
-				let participantCount = await pageA.locator('.OV_stream_video').count();
-				expect(visibleNames).toContain(remoteScreenShareName);
-				expect(visibleNames).toContain(`${remoteScreenShareName}_SCREEN`);
-				expect(participantCount).toBe(3);
+				expect(await pageA.locator('.OV_stream_video').count()).toBe(3); // local + remote + remote screen
 
-				const { byName: lateJoinByName } = await joinParticipants(browser, {
-					roomId,
-					participants: [{ name: remoteSpeakerName, audioEnabled: false, headless: true }],
-					skipInitialRemoteCountCheck: true
-				});
-				const lateSpeakerPage = lateJoinByName[remoteSpeakerName];
-				pages.push(lateSpeakerPage);
-				byName[remoteSpeakerName] = lateSpeakerPage;
-
-				await toggleMicrophone(byName[remoteSpeakerName]);
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
-						includes: [remoteSpeakerName, `${remoteScreenShareName}_SCREEN`],
-						excludes: [remoteScreenShareName]
+						count: 2,
+						includes: ['remote-screen', 'remote-screen_SCREEN']
 					},
 					20_000
 				);
 
-				visibleNames = await getVisibleRemoteParticipantNames(pageA);
-				participantCount = await pageA.locator('.OV_stream_video').count();
-				expect(visibleNames).toContain(remoteSpeakerName);
-				expect(visibleNames).not.toContain(remoteScreenShareName);
-				expect(visibleNames).toContain(`${remoteScreenShareName}_SCREEN`);
-				expect(participantCount).toBe(3);
+				await addParticipant({
+					name: 'remote-speaker',
+					audioEnabled: true,
+					videoEnabled: true,
+					headless: true
+				});
 
-				await stopScreensharing(byName[remoteScreenShareName]);
+				// await toggleMicrophone(byName['remote-speaker']);
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 2,
+						includes: ['remote-speaker', 'remote-screen_SCREEN'],
+						excludes: ['remote-screen']
+					},
+					20_000
+				);
+
+				expect(await pageA.locator('.OV_stream_video').count()).toBe(3); // local + remote speaker + remote screen
+
+				await stopScreensharing(byName['remote-screen']);
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
 						count: 1,
-						includes: [remoteSpeakerName],
-						excludes: [remoteScreenShareName]
+						includes: ['remote-speaker'],
+						excludes: ['remote-screen']
 					},
 					20_000
 				);
 
-				visibleNames = await getVisibleRemoteParticipantNames(pageA);
-				participantCount = await pageA.locator('.OV_stream_video').count();
-				expect(visibleNames).toContain(remoteSpeakerName);
-				expect(visibleNames).not.toContain(remoteScreenShareName);
-				expect(participantCount).toBe(2);
+				expect(await pageA.locator('.OV_stream_video').count()).toBe(2); // local + remote speaker
 			} finally {
 				await Promise.all(pages.map((page) => leaveMeeting(page)));
 				await Promise.all(pages.map((page) => page.close()));
 			}
 		});
 
-		test('should show a screen-sharing participant over silent ones', async ({ browser }) => {
-			const prefix = `screen-share-over-silent-${Date.now()}`;
-			const remoteScreenShareName = `${prefix}-remote-a`;
-			const remoteSilentBName = `${prefix}-remote-b`;
-			const remoteSilentCName = `${prefix}-remote-c`;
+		test('should show screen-sharing when joining an already active screen share with smart mosaic limit at 1', async ({
+			browser
+		}) => {
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: remoteSilentBName, audioEnabled: false, headless: true },
-				{ name: remoteSilentCName, audioEnabled: false, headless: true }
+				{ name: 'remote-screen', audioEnabled: false, screenShare: true, headless: true },
+				{ name: 'remote-a', audioEnabled: false, headless: true },
+				{ name: 'remote-b', audioEnabled: true, headless: true }
 			];
-			const { pageA, pages, byName, removeAllParticipants } = await joinParticipants(browser, {
+
+			const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants
+			});
+
+			try {
+				const pageA = await addParticipant({
+					name: 'local',
+					audioEnabled: true,
+					videoEnabled: true
+				});
+
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 4,
+						includes: ['remote-a', 'remote-b', 'remote-screen', 'remote-screen_SCREEN']
+					},
+					20_000
+				);
+				await setSmartMosaicSliderValue(pageA, 1);
+
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 2,
+						includes: ['remote-b', 'remote-screen_SCREEN']
+					},
+					20_000
+				);
+			} finally {
+				await removeAllParticipants();
+				await Promise.all(pages.map((page) => leaveMeeting(page)));
+				await Promise.all(pages.map((page) => page.close()));
+			}
+		});
+
+		test('should show two screen-sharing when joining an already active screen share with smart mosaic limit at 1', async ({
+			browser
+		}) => {
+			const participants = [
+				{ name: 'remote-screen', audioEnabled: false, screenShare: true, headless: true },
+				{ name: 'remote-a', audioEnabled: false, screenShare: true, headless: true },
+				{ name: 'remote-b', audioEnabled: true, headless: true }
+			];
+
+			const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants
+			});
+
+			try {
+				const pageA = await addParticipant({
+					name: 'local',
+					audioEnabled: true,
+					videoEnabled: true
+				});
+
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 5,
+						includes: ['remote-a', 'remote-a_SCREEN', 'remote-b', 'remote-screen', 'remote-screen_SCREEN']
+					},
+					20_000
+				);
+				await setSmartMosaicSliderValue(pageA, 1);
+
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 3,
+						includes: ['remote-b', 'remote-a_SCREEN', 'remote-screen_SCREEN']
+					},
+					20_000
+				);
+			} finally {
+				await removeAllParticipants();
+				await Promise.all(pages.map((page) => leaveMeeting(page)));
+				await Promise.all(pages.map((page) => page.close()));
+			}
+		});
+
+		test('should show a screen-sharing participant over silent ones', async ({ browser }) => {
+			const participants = [
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-b', audioEnabled: false, headless: true },
+				{ name: 'remote-c', audioEnabled: false, headless: true }
+			];
+			const { pageA, pages, byName, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants
 			});
@@ -311,32 +552,64 @@ test.describe('Smart Mosaic Layout', () => {
 			try {
 				await setSmartMosaicSliderValue(pageA, 2);
 
-				const { byName: lateJoinByName } = await joinParticipants(browser, {
-					roomId,
-					participants: [{ name: remoteScreenShareName, audioEnabled: false, headless: true }],
-					skipInitialRemoteCountCheck: true
-				});
-				const lateScreenSharePage = lateJoinByName[remoteScreenShareName];
-				pages.push(lateScreenSharePage);
-				byName[remoteScreenShareName] = lateScreenSharePage;
-
-				await startScreensharing(byName[remoteScreenShareName]);
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
-						includes: [remoteScreenShareName, `${remoteScreenShareName}_SCREEN`],
-						excludes: [remoteSilentBName, remoteSilentCName]
+						count: 2,
+						includes: ['remote-b', 'remote-c']
+					}
+				);
+
+				await addParticipant({
+					name: 'remote-screen',
+					audioEnabled: false,
+					headless: true
+				});
+
+				await startScreensharing(byName['remote-screen']);
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 3,
+						includes: ['remote-b', 'remote-c', 'remote-screen_SCREEN'],
+						excludes: ['remote-screen']
 					},
 					20_000
 				);
 
-				const visibleNames = await getVisibleRemoteParticipantNames(pageA);
 				const participantCount = await pageA.locator('.OV_stream_video').count();
-				expect(visibleNames).toContain(remoteScreenShareName);
-				expect(visibleNames).toContain(`${remoteScreenShareName}_SCREEN`);
-				expect(participantCount).toBe(3);
+				expect(participantCount).toBe(4);
 			} finally {
 				await removeAllParticipants();
+				await Promise.all(pages.map((page) => leaveMeeting(page)));
+				await Promise.all(pages.map((page) => page.close()));
+			}
+		});
+
+		test('should exclude screen-sharing stream of rotation logic', async ({ browser }) => {
+			const participants = [
+				{ name: `local`, audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: false, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true }
+			];
+
+			const { pageA, pages, byName } = await joinParticipants(browser, {
+				roomId,
+				participants
+			});
+
+			try {
+				await waitForRemoteStream(pageA, 2); //2 remotes
+				await setSmartMosaicSliderValue(pageA, 1);
+
+				await waitForRemoteStream(pageA, 1); //1 remote
+
+				await startScreensharing(byName['remote-b']);
+
+				await expect(pageA.locator('.OV_stream.remote.screen-source')).toHaveCount(1, { timeout: 20_000 });
+
+				await runScreenShareRotationCycles(pageA, byName, 'remote-a', 'remote-b', 'remote-b', 5);
+			} finally {
 				await Promise.all(pages.map((page) => leaveMeeting(page)));
 				await Promise.all(pages.map((page) => page.close()));
 			}
@@ -347,13 +620,12 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should show hidden participants indicator when remote participants exceed the visible limit', async ({
 			browser
 		}) => {
-			const prefix = `hidden-indicator-${Date.now()}`;
 			const { pageA, pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants: [
-					{ name: `${prefix}-viewer`, audioEnabled: true, videoEnabled: true },
-					{ name: `${prefix}-remote-a`, audioEnabled: true, videoEnabled: true, headless: true },
-					{ name: `${prefix}-remote-b`, audioEnabled: true, videoEnabled: true, headless: true }
+					{ name: 'viewer', audioEnabled: true, videoEnabled: true },
+					{ name: 'remote-a', audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: 'remote-b', audioEnabled: true, videoEnabled: true, headless: true }
 				]
 			});
 
@@ -377,13 +649,12 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should switch indicator to standard mode when the visible remote participant is pinned', async ({
 			browser
 		}) => {
-			const prefix = `hidden-pin-${Date.now()}`;
 			const { pageA, pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants: [
-					{ name: `${prefix}-viewer`, audioEnabled: true, videoEnabled: true },
-					{ name: `${prefix}-remote-a`, audioEnabled: true, videoEnabled: true, headless: true },
-					{ name: `${prefix}-remote-b`, audioEnabled: true, videoEnabled: true, headless: true }
+					{ name: 'viewer', audioEnabled: true, videoEnabled: true },
+					{ name: 'remote-a', audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: 'remote-b', audioEnabled: true, videoEnabled: true, headless: true }
 				]
 			});
 
@@ -419,13 +690,12 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should hide the indicator when switching from smart mosaic to standard mosaic layout', async ({
 			browser
 		}) => {
-			const prefix = `hidden-mosaic-${Date.now()}`;
 			const { pageA, pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants: [
-					{ name: `${prefix}-viewer`, audioEnabled: true, videoEnabled: true },
-					{ name: `${prefix}-remote-a`, audioEnabled: true, videoEnabled: true, headless: true },
-					{ name: `${prefix}-remote-b`, audioEnabled: true, videoEnabled: true, headless: true }
+					{ name: 'viewer', audioEnabled: true, videoEnabled: true },
+					{ name: 'remote-a', audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: 'remote-b', audioEnabled: true, videoEnabled: true, headless: true }
 				]
 			});
 
@@ -459,14 +729,13 @@ test.describe('Smart Mosaic Layout', () => {
 		});
 
 		test('should update indicator count correctly when the smart mosaic limit is raised', async ({ browser }) => {
-			const prefix = `hidden-count-${Date.now()}`;
 			const { pageA, pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants: [
-					{ name: `${prefix}-viewer`, audioEnabled: true, videoEnabled: true },
-					{ name: `${prefix}-remote-a`, audioEnabled: true, videoEnabled: true, headless: true },
-					{ name: `${prefix}-remote-b`, audioEnabled: true, videoEnabled: true, headless: true },
-					{ name: `${prefix}-remote-c`, audioEnabled: true, videoEnabled: true, headless: true }
+					{ name: 'viewer', audioEnabled: true, videoEnabled: true },
+					{ name: 'remote-a', audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: 'remote-b', audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: 'remote-c', audioEnabled: true, videoEnabled: true, headless: true }
 				]
 			});
 
@@ -501,11 +770,10 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should prioritize an active speaker over a muted remote participant when the limit is 1', async ({
 			browser
 		}) => {
-			const prefix = `speaker-limit-1-${Date.now()}`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: `${prefix}-remote-muted`, audioEnabled: false, headless: true },
-				{ name: `${prefix}-remote-speaker`, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: false, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true }
 			];
 			const { pageA, pages, byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
@@ -516,12 +784,12 @@ test.describe('Smart Mosaic Layout', () => {
 				await setSmartMosaicSliderValue(pageA, 1);
 				await waitForVisibleRemoteParticipants(pageA, { count: 1 });
 
-				await toggleMicrophone(byName[`${prefix}-remote-speaker`]);
+				await toggleMicrophone(byName['remote-a']);
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [`${prefix}-remote-speaker`],
-					excludes: [`${prefix}-remote-muted`]
+					includes: ['remote-a'],
+					excludes: ['remote-b']
 				});
 			} finally {
 				await removeAllParticipants();
@@ -533,14 +801,11 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should keep the two most recent active speakers visible when the limit is exceeded', async ({
 			browser
 		}) => {
-			test.setTimeout(120_000);
-
-			const prefix = `speaker-rotate-${Date.now()}`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: `${prefix}-remote-a`, audioEnabled: true, headless: true },
-				{ name: `${prefix}-remote-b`, audioEnabled: false, headless: true },
-				{ name: `${prefix}-remote-c`, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: true, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true },
+				{ name: 'remote-c', audioEnabled: false, headless: true }
 			];
 			const { pageA, pages, byName } = await joinParticipants(browser, {
 				roomId,
@@ -552,21 +817,21 @@ test.describe('Smart Mosaic Layout', () => {
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 2,
-					includes: [`${prefix}-remote-a`]
+					includes: ['remote-a']
 				});
 
 				await Promise.all([
-					toggleMicrophone(byName[`${prefix}-remote-a`]),
-					toggleMicrophone(byName[`${prefix}-remote-b`]),
-					toggleMicrophone(byName[`${prefix}-remote-c`])
+					toggleMicrophone(byName['remote-a']),
+					toggleMicrophone(byName['remote-b']),
+					toggleMicrophone(byName['remote-c'])
 				]);
 
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
 						count: 2,
-						includes: [`${prefix}-remote-b`, `${prefix}-remote-c`],
-						excludes: [`${prefix}-remote-a`]
+						includes: ['remote-b', 'remote-c'],
+						excludes: ['remote-a']
 					},
 					20_000
 				);
@@ -579,15 +844,12 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should display the three active remote speakers and keep silent participants hidden when the limit is 3', async ({
 			browser
 		}) => {
-			const prefix = `speaker-limit-3-${Date.now()}`;
-			test.setTimeout(90_000);
-
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: `${prefix}-remote-a`, audioEnabled: true, headless: true },
-				{ name: `${prefix}-remote-b`, audioEnabled: false, headless: true },
-				{ name: `${prefix}-remote-c`, audioEnabled: false, headless: true },
-				{ name: `${prefix}-remote-d`, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: true, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true },
+				{ name: 'remote-c', audioEnabled: false, headless: true },
+				{ name: 'remote-d', audioEnabled: false, headless: true }
 			];
 			const { pageA, pages, byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
@@ -598,18 +860,20 @@ test.describe('Smart Mosaic Layout', () => {
 			try {
 				await setSmartMosaicSliderValue(pageA, 3);
 
+				await waitForVisibleRemoteParticipants(pageA, { includes: ['remote-a'] }, 20_000);
+
 				await Promise.all([
-					toggleMicrophone(byName[`${prefix}-remote-a`]),
-					toggleMicrophone(byName[`${prefix}-remote-b`]),
-					toggleMicrophone(byName[`${prefix}-remote-c`])
+					toggleMicrophone(byName['remote-a']),
+					toggleMicrophone(byName['remote-b']),
+					toggleMicrophone(byName['remote-c'])
 				]);
 
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
 						count: 3,
-						includes: [`${prefix}-remote-a`, `${prefix}-remote-b`, `${prefix}-remote-c`],
-						excludes: [`${prefix}-remote-d`]
+						includes: ['remote-a', 'remote-b', 'remote-c'],
+						excludes: ['remote-d']
 					},
 					20_000
 				);
@@ -623,11 +887,10 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should keep the first visible speaker stable when another continuous speaker becomes active at limit 1', async ({
 			browser
 		}) => {
-			const prefix = `speaker-stable-${Date.now()}`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: `${prefix}-remote-a`, audioEnabled: false, headless: true },
-				{ name: `${prefix}-remote-b`, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: false, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true }
 			];
 			const { pageA, pages, byName } = await joinParticipants(browser, {
 				roomId,
@@ -636,21 +899,20 @@ test.describe('Smart Mosaic Layout', () => {
 
 			try {
 				await setSmartMosaicSliderValue(pageA, 1);
-
-				await toggleMicrophone(byName[`${prefix}-remote-a`]);
+				await toggleMicrophone(byName['remote-a']);
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [`${prefix}-remote-a`],
-					excludes: [`${prefix}-remote-b`]
+					includes: ['remote-a'],
+					excludes: ['remote-b']
 				});
 
-				await toggleMicrophone(byName[`${prefix}-remote-b`]);
+				await toggleMicrophone(byName['remote-b']);
 
 				for (let i = 0; i < 5; i++) {
 					await waitForVisibleRemoteParticipants(pageA, {
 						count: 1,
-						includes: [`${prefix}-remote-a`],
-						excludes: [`${prefix}-remote-b`]
+						includes: ['remote-a'],
+						excludes: ['remote-b']
 					});
 					await pageA.waitForTimeout(500);
 				}
@@ -663,13 +925,12 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should prioritize a newly joined speaking participant over already connected silent participants', async ({
 			browser
 		}) => {
-			const prefix = `speaker-new-join-${Date.now()}`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: `${prefix}-remote-a`, audioEnabled: false, headless: true },
-				{ name: `${prefix}-remote-b`, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: false, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true }
 			];
-			const { pageA, pages, removeAllParticipants } = await joinParticipants(browser, {
+			const { pageA, pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants
 			});
@@ -679,27 +940,20 @@ test.describe('Smart Mosaic Layout', () => {
 
 				await waitForVisibleRemoteParticipants(pageA, { count: 1 });
 
-				const newSpeakerName = `${prefix}-remote-c`;
-				const { byName: lateJoinByName } = await joinParticipants(browser, {
-					roomId,
-					participants: [
-						{
-							name: newSpeakerName,
-							audioEnabled: true,
-							headless: true
-						}
-					],
-					skipInitialRemoteCountCheck: true
+				const newSpeakerName = 'remote-c';
+				await addParticipant({
+					name: newSpeakerName,
+					audioEnabled: true,
+					videoEnabled: true,
+					headless: true
 				});
-				const newSpeakerPage = lateJoinByName[newSpeakerName];
-				pages.push(newSpeakerPage);
 
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
 						count: 1,
 						includes: [newSpeakerName],
-						excludes: [`${prefix}-remote-a`, `${prefix}-remote-b`]
+						excludes: ['remote-a', 'remote-b']
 					},
 					20_000
 				);
@@ -713,15 +967,11 @@ test.describe('Smart Mosaic Layout', () => {
 
 	test.describe('Participant Join/Leave Handling', () => {
 		test('should update visible participants when an active speaker leaves', async ({ browser }) => {
-			const prefix = `speaker-leave-${Date.now()}`;
-			const leavingSpeakerName = `${prefix}-remote-a`;
-			const remainingSpeakerName = `${prefix}-remote-b`;
-			const silentName = `${prefix}-remote-c`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: leavingSpeakerName, audioEnabled: true, headless: true },
-				{ name: remainingSpeakerName, audioEnabled: false, headless: true },
-				{ name: silentName, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: true, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true },
+				{ name: 'remote-c', audioEnabled: false, headless: true }
 			];
 			const { pageA, pages, byName, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
@@ -735,18 +985,17 @@ test.describe('Smart Mosaic Layout', () => {
 					pageA,
 					{
 						count: 1,
-						includes: [leavingSpeakerName]
+						includes: ['remote-a']
 					},
 					20_000
 				);
 
-				const leavingPage = byName[leavingSpeakerName];
-				await leaveMeeting(leavingPage);
+				await leaveMeeting(byName['remote-a']);
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
 						count: 1,
-						excludes: [leavingSpeakerName]
+						excludes: ['remote-a']
 					},
 					20_000
 				);
@@ -760,13 +1009,10 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should not promote newly joined silent participants when a speaker is already visible', async ({
 			browser
 		}) => {
-			const prefix = `speaker-silent-join-${Date.now()}`;
-			const speakerName = `${prefix}-remote-a`;
-			const silentName = `${prefix}-remote-b`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: speakerName, audioEnabled: true, headless: true },
-				{ name: silentName, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: true, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true }
 			];
 			const { pageA, pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
@@ -778,11 +1024,11 @@ test.describe('Smart Mosaic Layout', () => {
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [speakerName],
-					excludes: [silentName]
+					includes: ['remote-a'],
+					excludes: ['remote-b']
 				});
 
-				const lateSilentName = `${prefix}-remote-c`;
+				const lateSilentName = 'remote-c';
 				await addParticipant({
 					name: lateSilentName,
 					audioEnabled: false,
@@ -794,8 +1040,8 @@ test.describe('Smart Mosaic Layout', () => {
 					pageA,
 					{
 						count: 1,
-						includes: [speakerName],
-						excludes: [silentName, lateSilentName]
+						includes: ['remote-a'],
+						excludes: ['remote-b', 'remote-c']
 					},
 					20_000
 				);
@@ -807,17 +1053,9 @@ test.describe('Smart Mosaic Layout', () => {
 		});
 	});
 
-	// =========================================================================
-	// These tests verify the hysteresis mechanisms that filter out:
-	// 1. Low volume audio (below audioLevel threshold of 0.15)
-	// 2. Brief sounds (below minimum speaking duration of 1.5s)
-	// =========================================================================
 	test.describe('Audio Level and Duration Filtering', () => {
 		test('should keep the layout stable when a low-volume participant joins', async ({ browser }) => {
-			const prefix = `af-low-${Date.now()}`;
-			const initialVisibleName = `${prefix}-init`;
-			const lowVolumeName = `${prefix}-low`;
-			const participants = [{ name: `${prefix}-viewer`, audioEnabled: false }];
+			const participants = [{ name: 'local', audioEnabled: false }];
 			const { pageA, pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants
@@ -826,17 +1064,17 @@ test.describe('Smart Mosaic Layout', () => {
 			try {
 				await setSmartMosaicSliderValue(pageA, 1);
 				await addParticipant({
-					name: initialVisibleName,
+					name: 'remote-silence',
 					headless: true,
 					audioFile: 'complete_silence.wav'
 				});
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [initialVisibleName]
+					includes: ['remote-silence']
 				});
 
 				await addParticipant({
-					name: lowVolumeName,
+					name: 'remote-low',
 					headless: true,
 					audioFile: 'low_volume_speech.wav'
 				});
@@ -846,9 +1084,11 @@ test.describe('Smart Mosaic Layout', () => {
 				for (let i = 0; i < 5; i++) {
 					await waitForVisibleRemoteParticipants(pageA, {
 						count: 1,
-						includes: [initialVisibleName],
-						excludes: [lowVolumeName]
+						includes: ['remote-silence'],
+						excludes: ['remote-low']
 					});
+
+					await pageA.waitForTimeout(500);
 				}
 			} finally {
 				await removeAllParticipants();
@@ -858,11 +1098,7 @@ test.describe('Smart Mosaic Layout', () => {
 		});
 
 		test('should remain stable with multiple low-volume speakers', async ({ browser }) => {
-			const prefix = `af-stable-${Date.now()}`;
-			const initialVisibleName = `${prefix}-init`;
-			const lowVolumeAName = `${prefix}-a`;
-			const lowVolumeBName = `${prefix}-b`;
-			const participants = [{ name: `${prefix}-viewer`, audioEnabled: false }];
+			const participants = [{ name: 'local', audioEnabled: false }];
 			const { pageA, pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants
@@ -871,24 +1107,24 @@ test.describe('Smart Mosaic Layout', () => {
 			try {
 				await setSmartMosaicSliderValue(pageA, 1);
 				await addParticipant({
-					name: initialVisibleName,
+					name: 'remote-silence',
 					headless: true,
 					audioFile: 'complete_silence.wav'
 				});
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [initialVisibleName]
+					includes: ['remote-silence']
 				});
 
 				await Promise.all([
 					addParticipant({
-						name: lowVolumeAName,
+						name: 'remote-low-a',
 						headless: true,
 						audioFile: 'ambient_pink_noise.wav'
 					}),
 					addParticipant({
-						name: lowVolumeBName,
+						name: 'remote-low-b',
 						headless: true,
 						audioFile: 'ambient_pink_noise.wav'
 					})
@@ -922,10 +1158,7 @@ test.describe('Smart Mosaic Layout', () => {
 		});
 
 		test('should filter out brief sounds under minimum duration', async ({ browser }) => {
-			const prefix = `af-brief-${Date.now()}`;
-			const initialVisibleName = `${prefix}-init`;
-			const coughLikeName = `${prefix}-cough`;
-			const participants = [{ name: `${prefix}-viewer`, audioEnabled: false }];
+			const participants = [{ name: 'local', audioEnabled: false }];
 			const { pageA, pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants
@@ -934,19 +1167,19 @@ test.describe('Smart Mosaic Layout', () => {
 			try {
 				await setSmartMosaicSliderValue(pageA, 1);
 				await addParticipant({
-					name: initialVisibleName,
+					name: 'remote-silence',
 					headless: true,
 					audioFile: 'complete_silence.wav'
 				});
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [initialVisibleName],
-					excludes: [coughLikeName]
+					includes: ['remote-silence'],
+					excludes: ['remote-cough']
 				});
 
 				await addParticipant({
-					name: coughLikeName,
+					name: 'remote-cough',
 					headless: true,
 					audioFile: 'brief_cough_at_5s.wav'
 				});
@@ -956,8 +1189,8 @@ test.describe('Smart Mosaic Layout', () => {
 				for (let i = 0; i < 5; i++) {
 					await waitForVisibleRemoteParticipants(pageA, {
 						count: 1,
-						includes: [initialVisibleName],
-						excludes: [coughLikeName]
+						includes: ['remote-silence'],
+						excludes: ['remote-cough']
 					});
 					await pageA.waitForTimeout(500);
 				}
@@ -969,10 +1202,7 @@ test.describe('Smart Mosaic Layout', () => {
 		});
 
 		test('should not swap to a speaker that only produces a one-second burst', async ({ browser }) => {
-			const prefix = `af-1s-${Date.now()}`;
-			const initialVisibleName = `${prefix}-init`;
-			const briefSpeakerName = `${prefix}-brief`;
-			const participants = [{ name: `${prefix}-viewer`, audioEnabled: false }];
+			const participants = [{ name: 'local', audioEnabled: false }];
 			const { pageA, pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				participants
@@ -981,19 +1211,19 @@ test.describe('Smart Mosaic Layout', () => {
 			try {
 				await setSmartMosaicSliderValue(pageA, 1);
 				await addParticipant({
-					name: initialVisibleName,
+					name: 'remote-silence',
 					headless: true,
 					audioFile: 'complete_silence.wav'
 				});
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [initialVisibleName],
-					excludes: [briefSpeakerName]
+					includes: ['remote-silence'],
+					excludes: ['remote-brief']
 				});
 
 				await addParticipant({
-					name: briefSpeakerName,
+					name: 'remote-brief',
 					headless: true,
 					audioFile: 'brief_sound_1s_at_5s.wav'
 				});
@@ -1003,8 +1233,8 @@ test.describe('Smart Mosaic Layout', () => {
 				for (let i = 0; i < 5; i++) {
 					await waitForVisibleRemoteParticipants(pageA, {
 						count: 1,
-						includes: [initialVisibleName],
-						excludes: [briefSpeakerName]
+						includes: ['remote-silence'],
+						excludes: ['remote-brief']
 					});
 					await pageA.waitForTimeout(500);
 				}
@@ -1018,13 +1248,10 @@ test.describe('Smart Mosaic Layout', () => {
 
 	test.describe('Mute participants', () => {
 		test('should keep a muted participant visible after muting and unmuting cycles', async ({ browser }) => {
-			const prefix = `speaker-mute-cycle-${Date.now()}`;
-			const remoteAName = `${prefix}-remote-a`;
-			const remoteBName = `${prefix}-remote-b`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: remoteAName, audioEnabled: true, headless: true },
-				{ name: remoteBName, audioEnabled: false, headless: true }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: true, headless: true },
+				{ name: 'remote-b', audioEnabled: false, headless: true }
 			];
 			const { pageA, pages, byName } = await joinParticipants(browser, {
 				roomId,
@@ -1036,27 +1263,27 @@ test.describe('Smart Mosaic Layout', () => {
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [remoteAName],
-					excludes: [remoteBName]
+					includes: ['remote-a'],
+					excludes: ['remote-b']
 				});
 
-				await Promise.all([toggleMicrophone(byName[remoteAName]), toggleMicrophone(byName[remoteBName])]);
+				await Promise.all([toggleMicrophone(byName['remote-a']), toggleMicrophone(byName['remote-b'])]);
 
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
 						count: 1,
-						includes: [remoteBName],
-						excludes: [remoteAName]
+						includes: ['remote-b'],
+						excludes: ['remote-a']
 					},
 					20_000
 				);
 
-				await toggleMicrophone(byName[remoteAName]);
+				await toggleMicrophone(byName['remote-a']);
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [remoteBName]
+					includes: ['remote-b']
 				});
 			} finally {
 				await Promise.all(pages.map((page) => leaveMeeting(page)));
@@ -1067,13 +1294,10 @@ test.describe('Smart Mosaic Layout', () => {
 		test('should hide a participant when they become audio-muted and promote the other active speaker', async ({
 			browser
 		}) => {
-			const prefix = `speaker-mute-hide-${Date.now()}`;
-			const remoteAName = `${prefix}-remote-a`;
-			const remoteBName = `${prefix}-remote-b`;
 			const participants = [
-				{ name: `${prefix}-viewer`, audioEnabled: false },
-				{ name: remoteAName, audioEnabled: false },
-				{ name: remoteBName, audioEnabled: false }
+				{ name: 'local', audioEnabled: false },
+				{ name: 'remote-a', audioEnabled: false },
+				{ name: 'remote-b', audioEnabled: false }
 			];
 			const { pageA, pages, byName } = await joinParticipants(browser, {
 				roomId,
@@ -1083,24 +1307,24 @@ test.describe('Smart Mosaic Layout', () => {
 			try {
 				await setSmartMosaicSliderValue(pageA, 1);
 
-				await toggleMicrophone(byName[remoteAName]);
+				await toggleMicrophone(byName['remote-a']);
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 1,
-					includes: [remoteAName],
-					excludes: [remoteBName]
+					includes: ['remote-a'],
+					excludes: ['remote-b']
 				});
 
-				await toggleMicrophone(byName[remoteBName]);
+				await toggleMicrophone(byName['remote-b']);
 				await pageA.waitForTimeout(1_000);
 
-				await toggleMicrophone(byName[remoteAName]);
+				await toggleMicrophone(byName['remote-a']);
 
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
 						count: 1,
-						includes: [remoteBName],
-						excludes: [remoteAName]
+						includes: ['remote-b'],
+						excludes: ['remote-a']
 					},
 					20_000
 				);
@@ -1110,18 +1334,180 @@ test.describe('Smart Mosaic Layout', () => {
 			}
 		});
 	});
+
+	test.describe('Smart Mosaic Layout Edge Cases', () => {
+		test('should keep remaining participants visible when a displayed participant disconnects and budget decreases', async ({
+			browser
+		}) => {
+			const prefix = `edge-netremoval-${Date.now()}`;
+			const { pageA, pages, removeParticipant, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: `${prefix}-viewer`, audioEnabled: false, videoEnabled: true },
+					{ name: `${prefix}-A`, audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: `${prefix}-B`, audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: `${prefix}-C`, audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: `${prefix}-D`, audioEnabled: false, videoEnabled: true, headless: true }
+				]
+			});
+
+			try {
+				// Set limit to 3 so A, B, C are visible, D is hidden
+				await setSmartMosaicSliderValue(pageA, 3);
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 3,
+						includes: [`${prefix}-A`, `${prefix}-B`, `${prefix}-C`],
+						excludes: [`${prefix}-D`]
+					},
+					20_000
+				);
+
+				// Remove A (interior position) and simultaneously reduce budget to 2
+				// This creates a net-removal scenario: departures exceed arrivals in syncDisplayOrder
+				await removeParticipant(`${prefix}-A`);
+				await setSmartMosaicSliderValue(pageA, 2);
+
+				// B and C (or B/C + promoted D) must remain visible without layout errors
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 2,
+						excludes: [`${prefix}-A`]
+					},
+					20_000
+				);
+
+				// Verify that the remaining visible participants have active video
+				await waitForRemoteStream(pageA, 2);
+			} finally {
+				await removeAllParticipants();
+				await Promise.all(pages.map((page) => leaveMeeting(page)));
+				await Promise.all(pages.map((page) => page.close()));
+			}
+		});
+
+		test('should handle multiple simultaneous disconnects without breaking the layout', async ({ browser }) => {
+			const prefix = `edge-multidisconnect-${Date.now()}`;
+			const { pageA, pages, removeParticipant, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: `${prefix}-viewer`, audioEnabled: false, videoEnabled: true },
+					{ name: `${prefix}-A`, audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: `${prefix}-B`, audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: `${prefix}-C`, audioEnabled: true, videoEnabled: true, headless: true },
+					{ name: `${prefix}-D`, audioEnabled: true, videoEnabled: true, headless: true }
+				]
+			});
+
+			try {
+				await setSmartMosaicSliderValue(pageA, 4);
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 4,
+						includes: [`${prefix}-A`, `${prefix}-B`, `${prefix}-C`, `${prefix}-D`]
+					},
+					20_000
+				);
+
+				// Remove two interior participants simultaneously — forces syncDisplayOrder to
+				// handle multiple splice shifts
+				await Promise.all([removeParticipant(`${prefix}-B`), removeParticipant(`${prefix}-C`)]);
+
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 2,
+						includes: [`${prefix}-A`, `${prefix}-D`],
+						excludes: [`${prefix}-B`, `${prefix}-C`]
+					},
+					20_000
+				);
+
+				await waitForRemoteStream(pageA, 2);
+			} finally {
+				await removeAllParticipants();
+				await Promise.all(pages.map((page) => leaveMeeting(page)));
+				await Promise.all(pages.map((page) => page.close()));
+			}
+		});
+
+		test('should remain stable when switching from mosaic to smart mosaic after screen share stops', async ({
+			browser
+		}) => {
+			const prefix = `edge-switch-screen-${Date.now()}`;
+			const { pageA, pages, byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: `${prefix}-viewer`, audioEnabled: false, videoEnabled: true },
+					{
+						name: `${prefix}-sharer`,
+						audioEnabled: true,
+						videoEnabled: true,
+						headless: true,
+						screenShare: true
+					},
+					{ name: `${prefix}-remote-b`, audioEnabled: false, videoEnabled: true, headless: true }
+				]
+			});
+
+			try {
+				// Start in mosaic mode — all participants and screen share visible
+				await openLayoutSettingsPanel(pageA);
+				await selectMosaicLayout(pageA);
+
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						includes: [`${prefix}-sharer`, `${prefix}-sharer_SCREEN`, `${prefix}-remote-b`]
+					},
+					20_000
+				);
+
+				// Stop screen sharing while in mosaic mode — triggers DOM reorder in orderedStreams
+				await stopScreensharing(byName[`${prefix}-sharer`]);
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 2,
+						includes: [`${prefix}-sharer`, `${prefix}-remote-b`]
+					},
+					20_000
+				);
+
+				// Switch to smart mosaic — the displayedCameraOrder is fresh, no stale entries
+				await selectSmartMosaicLayout(pageA);
+				await setSmartMosaicSliderValue(pageA, 1);
+
+				await waitForVisibleRemoteParticipants(
+					pageA,
+					{
+						count: 1
+					},
+					20_000
+				);
+
+				await waitForRemoteStream(pageA, 1);
+			} finally {
+				await removeAllParticipants();
+				await Promise.all(pages.map((page) => leaveMeeting(page)));
+				await Promise.all(pages.map((page) => page.close()));
+			}
+		});
+	});
 });
 
 test.describe('Mosaic Layout and Smart Mosaic Layout Switching', () => {
 	test('should filter remote participants after switching from mosaic to smart mosaic', async ({ browser }) => {
-		const prefix = `smart-switch-${Date.now()}`;
 		const { pageA, pages, removeAllParticipants } = await joinParticipants(browser, {
 			roomId,
 			participants: [
-				{ name: `${prefix}-viewer`, audioEnabled: true, videoEnabled: true },
-				{ name: `${prefix}-remote-a`, audioEnabled: true, videoEnabled: true, headless: true },
-				{ name: `${prefix}-remote-b`, audioEnabled: true, videoEnabled: true, headless: true },
-				{ name: `${prefix}-remote-c`, audioEnabled: true, videoEnabled: true, headless: true }
+				{ name: 'viewer', audioEnabled: true, videoEnabled: true },
+				{ name: 'remote-a', audioEnabled: true, videoEnabled: true, headless: true },
+				{ name: 'remote-b', audioEnabled: true, videoEnabled: true, headless: true },
+				{ name: 'remote-c', audioEnabled: true, videoEnabled: true, headless: true }
 			]
 		});
 
@@ -1150,6 +1536,49 @@ test.describe('Mosaic Layout and Smart Mosaic Layout Switching', () => {
 			await setSmartMosaicSliderValue(pageA, 4);
 			await waitForRemoteStream(pageA, 3, { requireAudioTracks: true });
 			await expectHidden(pageA, 'ov-hidden-participants-indicator');
+		} finally {
+			await removeAllParticipants();
+			await Promise.all(pages.map((page) => leaveMeeting(page)));
+			await Promise.all(pages.map((page) => page.close()));
+		}
+	});
+
+	test('should maintain the same visible participants when switching between mosaic and smart mosaic', async ({
+		browser
+	}) => {
+		const { pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			participants: [
+				{ name: 'remote-a', audioEnabled: true, videoEnabled: true, screenShare: true, headless: true },
+				{ name: 'remote-b', audioEnabled: true, videoEnabled: true, headless: true }
+			]
+		});
+
+		try {
+			await waitForRemoteStream(pages[1], 2);
+
+			const pageA = await addParticipant({ name: 'local', audioEnabled: true, videoEnabled: true });
+
+			await waitForVisibleRemoteParticipants(pageA, {
+				count: 3,
+				includes: ['remote-a', 'remote-b', 'remote-a_SCREEN']
+			});
+
+			// Switch to mosaic and verify the same participants are visible
+			await selectMosaicLayout(pageA);
+			await pageA.waitForTimeout(1_000);
+			await waitForVisibleRemoteParticipants(pageA, {
+				count: 3,
+				includes: ['remote-a', 'remote-b', 'remote-a_SCREEN']
+			});
+
+			// Switch back to smart mosaic and verify the same participants are visible
+			await selectSmartMosaicLayout(pageA);
+			await pageA.waitForTimeout(1_000);
+			await waitForVisibleRemoteParticipants(pageA, {
+				count: 3,
+				includes: ['remote-a', 'remote-b', 'remote-a_SCREEN']
+			});
 		} finally {
 			await removeAllParticipants();
 			await Promise.all(pages.map((page) => leaveMeeting(page)));

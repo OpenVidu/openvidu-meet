@@ -1,21 +1,29 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, contentChildren, effect, inject, input, OnDestroy, output, signal, untracked } from '@angular/core';
-import { LayoutRemoteParticipantsDirective } from '../../directives/api/internals.directive';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	contentChildren,
+	effect,
+	inject,
+	input,
+	OnDestroy,
+	output,
+	untracked
+} from '@angular/core';
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
-import { ParticipantModel } from '../../models/participant.model';
+import { ParticipantModel, ParticipantStream } from '../../models/participant.model';
+import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../services/participant/participant.service';
+import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
 import { LayoutComponent } from '../layout/layout.component';
 import { StreamComponent } from '../stream/stream.component';
-import { Track } from '../../services/livekit-adapter';
-import { SmartLayoutService } from '../../services/layout/smart-layout.service';
-import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
 
 @Component({
 	selector: 'ov-smart-layout',
 	imports: [
 		NgTemplateOutlet,
 		LayoutComponent,
-		LayoutRemoteParticipantsDirective,
 		LayoutAdditionalElementsDirective,
 		StreamComponent,
 		HiddenParticipantsIndicatorComponent
@@ -28,140 +36,195 @@ export class SmartLayoutComponent implements OnDestroy {
 	readonly layoutService = inject(SmartLayoutService);
 	private readonly participantService = inject(ParticipantService);
 
-	/** Collects *ovLayoutAdditionalElements directives projected from the parent into this component */
+	/** `*ovLayoutAdditionalElements` directives projected from the parent. */
 	readonly projectedAdditionalElements = contentChildren(LayoutAdditionalElementsDirective);
 
-	readonly remoteParticipantsInput = input<ParticipantModel[] | undefined>(undefined, { alias: 'remoteParticipants' });
+	/** Whether smart-layout mode is allowed by the host. Defaults to `true`. */
 	readonly smartLayoutEnabled = input(true);
+
+	/** Whether to show the hidden-participants indicator badge. Defaults to `true`. */
 	readonly showHiddenParticipantsIndicator = input(true);
+
+	/** Emits when the user clicks the hidden-participants indicator. */
 	readonly hiddenParticipantsIndicatorClicked = output<void>();
-	readonly remoteParticipants = computed(() => this.remoteParticipantsInput() ?? this.participantService.remoteParticipants());
+
+	readonly remoteParticipants = this.participantService.remoteParticipants;
 	readonly localParticipant = this.participantService.localParticipant;
 
-	readonly isSmartLayoutActive = computed(() => this.smartLayoutEnabled() && this.layoutService.isSmartLayoutEnabled());
+	/** True when both the host allows smart layout and the service has it enabled. */
+	readonly isSmartLayoutActive = computed(
+		() => this.smartLayoutEnabled() && this.layoutService.isSmartLayoutEnabled()
+	);
 
-	private readonly _visibleRemoteParticipants = signal<ParticipantModel[]>([]);
-	readonly visibleRemoteParticipants = this._visibleRemoteParticipants.asReadonly();
+	/**
+	 * Stable identity order for the camera-stream `@for` loop.
+	 * In-place replacements (departing → arriving at the same index) let Angular see
+	 * INSERT+REMOVE at the same slot rather than a DOM MOVE, preventing layout crashes.
+	 */
+	private displayedCameraOrder: string[] = [];
 
+	private readonly visibleState = computed(() => {
+		const allRemotes = this.remoteParticipants();
+		const targetIds = new Set<string>();
+		const streams: ParticipantStream[] = [];
+
+		if (!this.isSmartLayoutActive()) {
+			// Mosaic mode: preserve displayedCameraOrder across smart↔mosaic transitions
+			// so existing DOM nodes keep their positions. Newcomers are appended at the end.
+			const allIds = allRemotes.map((p) => p.identity);
+			const currentSet = new Set(this.displayedCameraOrder.filter((id) => allIds.includes(id)));
+			const mosaicOrder = this.displayedCameraOrder.filter((id) => allIds.includes(id));
+			for (const p of allRemotes) {
+				if (!currentSet.has(p.identity)) mosaicOrder.push(p.identity);
+			}
+			this.displayedCameraOrder = mosaicOrder;
+
+			const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
+			for (const id of mosaicOrder) {
+				targetIds.add(id);
+				const p = participantMap.get(id);
+				if (p) streams.push(...p.streams());
+			}
+			return { streams, targetIds };
+		}
+
+		const availableIds = new Set(allRemotes.map((p) => p.identity));
+		const toDisplayIds = this.layoutService.computeParticipantsToDisplay(availableIds);
+
+		// Sync identity order with in-place swaps: departing participants are replaced
+		// by arriving ones at the same index, so Angular @for sees INSERT+REMOVE instead of MOVE.
+		this.displayedCameraOrder = this.syncDisplayOrder(this.displayedCameraOrder, toDisplayIds, availableIds);
+
+		const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
+
+		// Displayed participants: push all streams (camera + screen).
+		// LayoutComponent splits them into separate camera/screen @for loops,
+		// so interleaving here is safe — only within-category order matters.
+		for (const id of this.displayedCameraOrder) {
+			targetIds.add(id);
+			const p = participantMap.get(id);
+			if (p) streams.push(...p.streams());
+		}
+
+		// Non-displayed screen-sharing participants: add their screen stream only
+		// so their audio+video is rendered without occupying a camera slot.
+		for (const p of allRemotes) {
+			if (!targetIds.has(p.identity) && p.isScreenShareEnabled) {
+				const screen = p.streams().find((s) => s.isScreenStream);
+				if (screen) streams.push(screen);
+			}
+		}
+
+		return { streams, targetIds };
+	});
+
+	/** Streams to pass to {@link LayoutComponent} via `ovRemoteStreams`. */
+	readonly visibleRemoteStreams = computed(() => this.visibleState().streams);
+
+	/** Number of remote participants hidden from the layout (smart layout only). */
 	readonly hiddenParticipantsCount = computed(() => {
 		const total = this.remoteParticipants().length;
-		const visible = this.visibleRemoteParticipants().length;
-		return Math.max(0, total - visible);
+		return Math.max(0, total - this.visibleState().targetIds.size);
 	});
 
+	/** Display names of the hidden remote participants, for tooltip rendering. */
 	readonly hiddenParticipantNames = computed(() => {
-		const visibleIds = new Set(this.visibleRemoteParticipants().map((participant) => participant.identity));
+		const { targetIds } = this.visibleState();
 		return this.remoteParticipants()
-			.filter((participant) => !visibleIds.has(participant.identity))
-			.map((participant) => participant.name || 'Unknown');
+			.filter((p) => !targetIds.has(p.identity))
+			.map((p) => p.name || 'Unknown');
 	});
 
+	/** Whether to render the hidden-participants indicator in the layout. */
 	readonly shouldShowHiddenParticipantsIndicator = computed(
 		() => this.showHiddenParticipantsIndicator() && this.isSmartLayoutActive() && this.hiddenParticipantsCount() > 0
 	);
 
+	/**
+	 * When `true`, the indicator is rendered in the toolbar row rather than below the grid.
+	 * This happens when no participant is pinned and the visible slot count is below the maximum,
+	 * meaning there is room in the top bar.
+	 */
 	readonly showTopBarHiddenParticipantsIndicator = computed(() => {
 		const hasPinnedParticipant =
-			!!this.localParticipant()?.isPinned || this.remoteParticipants().some((participant) => participant.isPinned);
-		const visibleParticipantsCount = this.visibleRemoteParticipants().length;
-		return !hasPinnedParticipant && visibleParticipantsCount < this.layoutService.MAX_VISIBLE_REMOTE_PARTICIPANTS_LIMIT;
+			!!this.localParticipant()?.isPinned || this.remoteParticipants().some((p) => p.isPinned);
+		const visibleCount = this.visibleState().targetIds.size;
+		return !hasPinnedParticipant && visibleCount < this.layoutService.MAX_VISIBLE_REMOTE_PARTICIPANTS_LIMIT;
 	});
 
-	private displayedParticipantIds: string[] = [];
-	private audioElements = new Map<string, HTMLMediaElement>();
-	private proxyCache = new WeakMap<ParticipantModel, { proxy: ParticipantModel; showCamera: boolean }>();
+	/**
+	 * Returns a new identity order applying in-place replacements:
+	 * each departing participant (present in `previousOrder` but absent from `targetIds`)
+	 * is replaced by an arriving one at the same index, keeping all others at stable positions.
+	 *
+	 * @param previousOrder - Ordered identity list from the previous evaluation.
+	 * @param targetIds - Identities that should be visible after this update.
+	 * @param availableIds - Identities of all currently connected participants.
+	 */
+	private syncDisplayOrder(previousOrder: string[], targetIds: Set<string>, availableIds: Set<string>): string[] {
+		const order = previousOrder.filter((id) => availableIds.has(id));
+		const currentSet = new Set(order);
 
-	private readonly visibleParticipantsEffect = effect(() => {
-		const allRemotes = this.remoteParticipants();
+		const departing = order.filter((id) => !targetIds.has(id));
+		const arriving = [...targetIds].filter((id) => !currentSet.has(id));
 
-		if (!this.isSmartLayoutActive()) {
-			this._visibleRemoteParticipants.set(allRemotes);
-			return;
+		for (const dep of departing) {
+			const replacement = arriving.shift();
+			const idx = order.indexOf(dep);
+			if (idx === -1) continue;
+			if (replacement) {
+				order[idx] = replacement;
+			} else {
+				order.splice(idx, 1);
+			}
 		}
 
-		const participantMap = new Map(allRemotes.map((participant) => [participant.identity, participant]));
-		const availableIds = new Set(participantMap.keys());
-		const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
+		for (const arr of arriving) {
+			if (order.length < targetIds.size) order.push(arr);
+		}
 
-		const screenSharerIds = allRemotes
-			.filter((participant) => participant.isScreenShareEnabled)
-			.map((participant) => participant.identity);
-		const idsToDisplay = new Set([...targetIds, ...screenSharerIds]);
+		return order;
+	}
 
-		this.syncDisplayedParticipantsWithTarget(idsToDisplay, availableIds);
+	/** Detached `<audio>` elements for participants not currently rendered in the DOM. */
+	private audioElements = new Map<string, { element: HTMLMediaElement; detach: () => void }>();
+	private previousIsSmartLayoutActive = false;
 
-		const visibleParticipants = this.displayedParticipantIds
-			.map((id) => participantMap.get(id))
-			.filter((participant): participant is ParticipantModel => participant !== undefined);
-
-		const proxiedParticipants = visibleParticipants.map((participant) => {
-			const showCamera = targetIds.has(participant.identity);
-			return this.getOrCreateVideoOnlyProxy(participant, showCamera);
-		});
-
-		this._visibleRemoteParticipants.set(proxiedParticipants);
-	});
-
+	/** Resets speaker tracking when leaving smart-layout mode. */
 	private readonly smartLayoutResetEffect = effect(() => {
-		if (this.isSmartLayoutActive()) return;
-
-		untracked(() => this.layoutService.resetSpeakerTrackingState());
+		const isActive = this.isSmartLayoutActive();
+		if (!isActive && this.previousIsSmartLayoutActive) {
+			untracked(() => this.layoutService.resetSpeakerTrackingState());
+		}
+		this.previousIsSmartLayoutActive = isActive;
 	});
 
+	/**
+	 * Manages `<audio>` elements for participants excluded from the rendered stream list.
+	 * `streams()` is read before `untracked` to register track-publish/unpublish as reactive dependencies.
+	 */
 	private readonly audioElementsEffect = effect(() => {
-		const participants = this.remoteParticipants();
+		const allRemotes = this.remoteParticipants();
+		const { targetIds } = this.visibleState();
 		const isSmartLayout = this.isSmartLayoutActive();
+		const audioParticipants = allRemotes.filter((p) => !targetIds.has(p.identity));
+		audioParticipants.forEach((p) => p.streams());
 
-		untracked(() => {
-			this.manageAudioTracks(participants, isSmartLayout);
-		});
+		untracked(() => this.manageAudioTracks(audioParticipants, isSmartLayout));
 	});
 
+	/** Removes disconnected participants from the speaker-priority list. */
 	private readonly participantCleanupEffect = effect(() => {
 		if (!this.isSmartLayoutActive()) return;
 
-		const currentIds = new Set(this.remoteParticipants().map((participant) => participant.identity));
+		const currentIds = new Set(this.remoteParticipants().map((p) => p.identity));
 		untracked(() => this.layoutService.removeDisconnectedSpeakers(currentIds));
 	});
 
 	ngOnDestroy(): void {
 		this.cleanupAudioElements(new Set());
 		this.layoutService.resetSpeakerTrackingState();
-	}
-
-	private getOrCreateVideoOnlyProxy(participant: ParticipantModel, showCamera: boolean): ParticipantModel {
-		const cached = this.proxyCache.get(participant);
-		if (cached && cached.showCamera === showCamera) {
-			return cached.proxy;
-		}
-
-		const proxy = this.createVideoOnlyProxy(participant, showCamera);
-		this.proxyCache.set(participant, { proxy, showCamera });
-		return proxy;
-	}
-
-	private syncDisplayedParticipantsWithTarget(targetIds: Set<string>, availableIds: Set<string>): void {
-		this.displayedParticipantIds = this.displayedParticipantIds.filter((id) => availableIds.has(id));
-
-		const currentDisplaySet = new Set(this.displayedParticipantIds);
-		const idsToRemove = this.displayedParticipantIds.filter((id) => !targetIds.has(id));
-		const idsToAdd = [...targetIds].filter((id) => !currentDisplaySet.has(id));
-
-		for (const removeId of idsToRemove) {
-			const addId = idsToAdd.shift();
-			if (addId) {
-				const index = this.displayedParticipantIds.indexOf(removeId);
-				if (index !== -1) this.displayedParticipantIds[index] = addId;
-			} else {
-				this.displayedParticipantIds = this.displayedParticipantIds.filter((id) => id !== removeId);
-			}
-		}
-
-		for (const addId of idsToAdd) {
-			if (this.displayedParticipantIds.length < targetIds.size) {
-				this.displayedParticipantIds.push(addId);
-			}
-		}
+		this.displayedCameraOrder = [];
 	}
 
 	private manageAudioTracks(participants: ParticipantModel[], isSmartLayout: boolean): void {
@@ -170,50 +233,38 @@ export class SmartLayoutComponent implements OnDestroy {
 			return;
 		}
 
-		const currentAudioTrackSids = new Set<string>();
+		const activeTrackSids = new Set<string>();
 
 		for (const participant of participants) {
 			for (const stream of participant.streams()) {
+				// Skip screen streams: their audio is rendered by StreamComponent.
+				if (stream.isScreenStream) continue;
+
 				const audioTrack = stream.audioTrack;
 				if (audioTrack?.track && audioTrack.track.attach) {
-					currentAudioTrackSids.add(audioTrack.trackSid);
-					let audio = this.audioElements.get(audioTrack.trackSid);
-					if (!audio) {
-						audio = audioTrack.track.attach();
-						this.audioElements.set(audioTrack.trackSid, audio);
+					activeTrackSids.add(audioTrack.trackSid);
+					let entry = this.audioElements.get(audioTrack.trackSid);
+					if (!entry) {
+						const element = audioTrack.track.attach();
+						const track = audioTrack.track;
+						entry = { element, detach: () => track.detach(element) };
+						this.audioElements.set(audioTrack.trackSid, entry);
 					}
-					audio.muted = participant.isMutedForcibly;
+					entry.element.muted = participant.isMutedForcibly;
 				}
 			}
 		}
 
-		this.cleanupAudioElements(currentAudioTrackSids);
+		this.cleanupAudioElements(activeTrackSids);
 	}
 
 	private cleanupAudioElements(activeSids: Set<string>): void {
-		for (const [sid, audio] of this.audioElements) {
+		for (const [sid, { element, detach }] of this.audioElements) {
 			if (!activeSids.has(sid)) {
-				audio.pause();
-				audio.srcObject = null;
-				audio.remove();
+				detach();
+				element.remove();
 				this.audioElements.delete(sid);
 			}
 		}
-	}
-
-	private createVideoOnlyProxy(participant: ParticipantModel, showCamera: boolean): ParticipantModel {
-		return new Proxy(participant, {
-			get: (target, prop, receiver) => {
-				if (prop === 'tracks') {
-					return target.tracks.filter((track) => {
-						if (track.kind === Track.Kind.Audio) return false;
-						if (track.source === Track.Source.Camera && !showCamera) return false;
-						return true;
-					});
-				}
-
-				return Reflect.get(target, prop, receiver);
-			}
-		});
 	}
 }
