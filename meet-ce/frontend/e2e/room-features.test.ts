@@ -1,15 +1,9 @@
 import { expect, test } from '@playwright/test';
+import { applyBackgroundEffect, openRoomBackgroundsPanel } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import {
-	applyBackgroundEffect,
-	expectHidden,
-	expectVisible,
-	leaveMeeting,
-	openMeeting,
-	openMoreOptionsMenu,
-	openRoomBackgroundsPanel,
-	toggleActivitiesPanel
-} from './helpers/meeting-ui.helper';
+import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
+import { openMoreOptionsMenu, toggleActivitiesPanel } from './helpers/panels.helper';
+import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
 test.describe('Room UI Features E2E Tests', () => {
 	const createdRoomIds: string[] = [];

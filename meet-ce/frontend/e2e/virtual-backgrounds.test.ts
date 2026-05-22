@@ -1,31 +1,35 @@
 import { expect, test } from '@playwright/test';
-import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
 	applyBackgroundEffect,
-	captureVideoElementScreenshot,
 	closePrejoinBackgroundsPanel,
 	closeRoomBackgroundsPanel,
-	expectSignificantImageDifference,
-	expectVisible,
-	openMeeting,
-	openPrejoin,
 	openPrejoinBackgroundsPanel,
 	openRoomBackgroundsPanel,
-	setPrejoinCameraStatus
-} from './helpers/meeting-ui.helper';
+	togglePrejoinCamera
+} from './helpers/media-controls.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { openMeeting, openPrejoin } from './helpers/meeting-navigation.helper';
+import {
+	captureVideoElementScreenshot,
+	expectSignificantImageDifference,
+	expectVisible
+} from './helpers/ui-utils.helper';
 
 test.describe('Virtual Background E2E Tests', () => {
+	const createdRoomIds: string[] = [];
+
 	let roomId: string;
 	let accessUrl: string;
 
-	test.beforeAll(async () => {
+	test.beforeEach(async () => {
 		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
 		roomId = room.roomId;
 		accessUrl = url;
+		createdRoomIds.push(roomId);
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms([roomId]);
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should close BACKGROUNDS on prejoin page when VIDEO is disabled', async ({ page }) => {
@@ -36,7 +40,7 @@ test.describe('Virtual Background E2E Tests', () => {
 		await expect(backgroundsButton).toBeEnabled();
 
 		await openPrejoinBackgroundsPanel(page);
-		await setPrejoinCameraStatus(page);
+		await togglePrejoinCamera(page);
 
 		await expectVisible(page, '#video-poster');
 		await expect(backgroundsButton).toBeVisible();

@@ -1,6 +1,6 @@
 import { test } from '@playwright/test';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import { openMeeting } from './helpers/meeting-ui.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
 	clickViewRecordingsButton,
 	expectRecordingBadgeVisible,
@@ -14,17 +14,20 @@ import {
 } from './helpers/recordings.helper';
 
 test.describe('Recordings E2E Tests', () => {
+	const createdRoomIds: string[] = [];
+
 	let roomId: string;
 	let accessUrl: string;
 
-	test.beforeAll(async () => {
+	test.beforeEach(async () => {
 		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
 		roomId = room.roomId;
 		accessUrl = url;
+		createdRoomIds.push(roomId);
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms([roomId]);
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should start a recording from activities recording panel', async ({ page }) => {

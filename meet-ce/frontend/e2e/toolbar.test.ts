@@ -1,25 +1,24 @@
 import { expect, test } from '@playwright/test';
+import { toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import {
-	expectCopiedUrl,
-	installClipboardCapture,
-	openMeeting,
-	toggleCamera,
-	toggleMicrophone
-} from './helpers/meeting-ui.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
+import { expectCopiedUrl, installClipboardCapture } from './helpers/ui-utils.helper';
 
 test.describe('Toolbar Buttons E2E Tests', () => {
+	const createdRoomIds: string[] = [];
+
 	let roomId: string;
 	let accessUrl: string;
 
-	test.beforeAll(async () => {
+	test.beforeEach(async () => {
 		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
 		roomId = room.roomId;
 		accessUrl = url;
+		createdRoomIds.push(roomId);
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms([roomId]);
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should toggle mute/unmute on the local microphone and update the icon accordingly', async ({ page }) => {

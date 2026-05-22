@@ -1,30 +1,30 @@
 import { expect, test } from '@playwright/test';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
-	expectCopiedUrl,
-	expectHidden,
-	expectVisible,
-	installClipboardCapture,
 	openLayoutSettingsPanel,
-	openMeeting,
 	openSettingsPanel,
 	toggleActivitiesPanel,
 	toggleChatPanel,
 	toggleParticipantsPanel
-} from './helpers/meeting-ui.helper';
+} from './helpers/panels.helper';
+import { expectCopiedUrl, expectHidden, expectVisible, installClipboardCapture } from './helpers/ui-utils.helper';
 
 test.describe('Panels E2E Tests', () => {
+	const createdRoomIds: string[] = [];
+
 	let roomId: string;
 	let accessUrl: string;
 
-	test.beforeAll(async () => {
+	test.beforeEach(async () => {
 		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
 		roomId = room.roomId;
 		accessUrl = url;
+		createdRoomIds.push(roomId);
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms([roomId]);
+		await deleteRooms(createdRoomIds);
 	});
 
 	test.describe('UI Navigation and Section Switching', () => {

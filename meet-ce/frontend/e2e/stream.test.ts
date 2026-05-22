@@ -1,39 +1,41 @@
 import { expect, test } from '@playwright/test';
+import {
+	muteRemoteParticipant,
+	startScreensharing,
+	stopScreensharing,
+	toggleCamera,
+	toggleMicrophone,
+	unmuteRemoteParticipant
+} from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
+import { joinFromPrejoinWithMediaState, joinParticipants } from './helpers/participant-management.helper';
 import {
 	dragStream,
 	expectLocalStreamCount,
 	expectScreenShareCount,
 	expectStreamCount,
-	getElementBoundingBox,
-	hoverStream,
-	joinFromPrejoinWithMediaState,
-	joinParticipants,
-	leaveMeeting,
 	maximizeStream,
 	minimizeStream,
-	muteRemoteParticipant,
-	openMeeting,
-	startScreensharing,
-	stopScreensharing,
-	toggleCamera,
-	toggleMicrophone,
-	unmuteRemoteParticipant,
 	waitForRemoteStream
-} from './helpers/meeting-ui.helper';
+} from './helpers/stream.helper';
+import { getElementBoundingBox, hoverStream } from './helpers/ui-utils.helper';
 
 test.describe('Stream E2E Tests', () => {
+	const createdRoomIds: string[] = [];
+
 	let roomId: string;
 	let accessUrl: string;
 
-	test.beforeAll(async () => {
+	test.beforeEach(async () => {
 		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
 		roomId = room.roomId;
 		accessUrl = url;
+		createdRoomIds.push(roomId);
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms([roomId]);
+		await deleteRooms(createdRoomIds);
 	});
 
 	test.describe('Stream rendering - Single participant scenarios', () => {

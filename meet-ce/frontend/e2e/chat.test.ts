@@ -1,32 +1,35 @@
 import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRoomAndGetAnonymousAccessUrl, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
 	expectChatLinkCount,
 	expectChatLinkHrefContains,
 	expectChatMessageCount,
 	expectChatMessageTextAt,
 	expectFirstMessageSender,
-	expectSnackbarNotification,
-	joinParticipants,
-	openMeeting,
 	sendChatMessage,
-	toggleChatPanel,
-	waitForRemoteStream
-} from './helpers/meeting-ui.helper';
+	toggleChatPanel
+} from './helpers/panels.helper';
+import { joinParticipants } from './helpers/participant-management.helper';
+import { waitForRemoteStream } from './helpers/stream.helper';
+import { expectSnackbarNotification } from './helpers/ui-utils.helper';
 
 test.describe('Chat E2E Tests', () => {
+	const createdRoomIds: string[] = [];
+
 	let roomId: string;
 	let accessUrl: string;
 
-	test.beforeAll(async () => {
+	test.beforeEach(async () => {
 		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
 		roomId = room.roomId;
 		accessUrl = url;
+		createdRoomIds.push(roomId);
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms([roomId]);
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should send messages', async ({ page }) => {
@@ -83,7 +86,7 @@ test.describe('Chat E2E Tests', () => {
 		}
 	});
 
-	test('should send an URL message and render it as link', async ({ page }) => {
+	test('should send a URL message and render it as link', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 		await toggleChatPanel(page);
 		await sendChatMessage(page, 'demos.openvidu.io');

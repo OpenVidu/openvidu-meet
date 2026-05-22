@@ -1,54 +1,54 @@
 import { expect, test } from '@playwright/test';
+import { startScreensharing, stopScreensharing, toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
+import { joinParticipants } from './helpers/participant-management.helper';
 import {
 	expectPinnedStreamCount,
-	expectScreenTypeCount,
+	expectScreenSourceCount,
 	expectVideoCount,
 	getPinnedStreamCount,
 	getScreenSourceTracks,
-	joinParticipants,
-	openMeeting,
-	startScreensharing,
-	stopScreensharing,
-	toggleCamera,
-	toggleMicrophone,
 	toggleStreamPin,
 	unpinCurrentPinnedStream
-} from './helpers/meeting-ui.helper';
+} from './helpers/stream.helper';
 
 test.describe('Screensharing E2E Tests', () => {
+	const createdRoomIds: string[] = [];
+
 	let roomId: string;
 	let accessUrl: string;
 
-	test.beforeAll(async () => {
+	test.beforeEach(async () => {
 		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
 		roomId = room.roomId;
 		accessUrl = url;
+		createdRoomIds.push(roomId);
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms([roomId]);
+		await deleteRooms(createdRoomIds);
 	});
 
 	test('should toggle screensharing on and off twice, updating video count', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
 		await startScreensharing(page);
-		await expectScreenTypeCount(page, 1);
+		await expectScreenSourceCount(page, 1);
 		await expectPinnedStreamCount(page, 1);
 		await expectVideoCount(page, 2);
 
 		await stopScreensharing(page);
-		await expectScreenTypeCount(page, 0);
+		await expectScreenSourceCount(page, 0);
 		await expectVideoCount(page, 1);
 
 		await startScreensharing(page);
-		await expectScreenTypeCount(page, 1);
+		await expectScreenSourceCount(page, 1);
 		await expectPinnedStreamCount(page, 1);
 		await expectVideoCount(page, 2);
 
 		await stopScreensharing(page);
-		await expectScreenTypeCount(page, 0);
+		await expectScreenSourceCount(page, 0);
 		await expectVideoCount(page, 1);
 	});
 
@@ -57,12 +57,12 @@ test.describe('Screensharing E2E Tests', () => {
 
 		await toggleCamera(page);
 		await startScreensharing(page);
-		await expectScreenTypeCount(page, 1);
+		await expectScreenSourceCount(page, 1);
 		await expectPinnedStreamCount(page, 1);
 		await expectVideoCount(page, 2);
 
 		await stopScreensharing(page);
-		await expectScreenTypeCount(page, 0);
+		await expectScreenSourceCount(page, 0);
 		await expectVideoCount(page, 1);
 	});
 
@@ -70,7 +70,7 @@ test.describe('Screensharing E2E Tests', () => {
 		await openMeeting(page, accessUrl);
 
 		await startScreensharing(page);
-		await expectScreenTypeCount(page, 1);
+		await expectScreenSourceCount(page, 1);
 		await expectPinnedStreamCount(page, 1);
 	});
 
@@ -121,8 +121,7 @@ test.describe('Screensharing E2E Tests', () => {
 
 		await toggleMicrophone(page);
 		await startScreensharing(page);
-		await page.locator('.OV_stream.screen-source').first().waitFor({ state: 'attached' });
-		await expectScreenTypeCount(page, 1);
+		await expectScreenSourceCount(page, 1);
 		await expectVideoCount(page, 2);
 
 		const screenTracks = await getScreenSourceTracks(page);
@@ -131,7 +130,7 @@ test.describe('Screensharing E2E Tests', () => {
 		expect(screenTracks[0].enabled).toBe(true);
 
 		await stopScreensharing(page);
-		await expectScreenTypeCount(page, 0);
+		await expectScreenSourceCount(page, 0);
 		await expectVideoCount(page, 1);
 	});
 
@@ -148,10 +147,10 @@ test.describe('Screensharing E2E Tests', () => {
 			await openMeeting(pageB, accessUrl);
 			await expectVideoCount(pageB, 3);
 			await expectPinnedStreamCount(pageB, 1);
-			await expectScreenTypeCount(pageB, 1);
+			await expectScreenSourceCount(pageB, 1);
 
 			await expectPinnedStreamCount(pageA, 1);
-			await expectScreenTypeCount(pageA, 1);
+			await expectScreenSourceCount(pageA, 1);
 		} finally {
 			await Promise.all([pageA.close(), pageB.close()]);
 		}

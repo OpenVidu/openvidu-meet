@@ -1,23 +1,32 @@
 import { expect, test } from '@playwright/test';
-import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import {
-	closeSettingsPanel,
+	expectOwnNameInSettings,
+	expectUnmaskedParticipantPanelNames,
+	expectUnmaskedVideoGridNames
+} from './helpers/e2ee.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { openLobby, openMeeting } from './helpers/meeting-navigation.helper';
+import {
 	expectChatMessageCount,
 	expectChatMessageTextAt,
-	expectHidden,
-	expectVisible,
-	openLobby,
-	openMeeting,
 	openMoreOptionsMenu,
-	openSettingsPanel,
 	sendChatMessage,
 	toggleChatPanel,
-	toggleParticipantsPanel,
-	waitForRemoteStream
-} from './helpers/meeting-ui.helper';
+	toggleParticipantsPanel
+} from './helpers/panels.helper';
+import { waitForRemoteStream } from './helpers/stream.helper';
+import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
 test.describe('E2EE E2E Tests', () => {
 	const createdRoomIds: string[] = [];
+
+	const createE2eeRoom = async (enabled = true): Promise<string> => {
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
+			config: { e2ee: { enabled } }
+		});
+		createdRoomIds.push(room.roomId);
+		return accessUrl;
+	};
 
 	test.afterAll(async () => {
 		await deleteRooms(createdRoomIds);
@@ -25,10 +34,7 @@ test.describe('E2EE E2E Tests', () => {
 
 	test.describe('E2EE Lobby Elements', () => {
 		test('should show E2EE key input and badge in lobby when E2EE is enabled', async ({ page }) => {
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { e2ee: { enabled: true } }
-			});
-			createdRoomIds.push(room.roomId);
+			const accessUrl = await createE2eeRoom();
 
 			await openLobby(page, accessUrl);
 
@@ -43,10 +49,7 @@ test.describe('E2EE E2E Tests', () => {
 		});
 
 		test('should hide E2EE elements in lobby when E2EE is disabled', async ({ page }) => {
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { e2ee: { enabled: false } }
-			});
-			createdRoomIds.push(room.roomId);
+			const accessUrl = await createE2eeRoom(false);
 
 			await openLobby(page, accessUrl);
 
@@ -61,10 +64,7 @@ test.describe('E2EE E2E Tests', () => {
 			browser
 		}) => {
 			const e2eeKey = 'test-encryption-key-123';
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { e2ee: { enabled: true } }
-			});
-			createdRoomIds.push(room.roomId);
+			const accessUrl = await createE2eeRoom();
 
 			const page2 = await browser.newPage();
 
@@ -75,8 +75,8 @@ test.describe('E2EE E2E Tests', () => {
 				]);
 				await Promise.all([waitForRemoteStream(page), waitForRemoteStream(page2)]);
 
-				expect(await page.locator('.OV_video-element').count()).toBeGreaterThanOrEqual(2);
-				expect(await page2.locator('.OV_video-element').count()).toBeGreaterThanOrEqual(2);
+				await expect.poll(() => page.locator('.OV_video-element').count()).toBeGreaterThanOrEqual(2);
+				await expect.poll(() => page2.locator('.OV_video-element').count()).toBeGreaterThanOrEqual(2);
 
 				// Check that no encryption error posters are shown
 				await expectHidden(page, '.encryption-error-poster');
@@ -89,10 +89,7 @@ test.describe('E2EE E2E Tests', () => {
 		test('should show encryption error poster when using wrong E2EE key', async ({ page, browser }) => {
 			const key1 = 'correct-key-abc';
 			const key2 = 'wrong-key-xyz';
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { e2ee: { enabled: true } }
-			});
-			createdRoomIds.push(room.roomId);
+			const accessUrl = await createE2eeRoom();
 
 			const [page2, page3] = await Promise.all([browser.newPage(), browser.newPage()]);
 
@@ -130,10 +127,7 @@ test.describe('E2EE E2E Tests', () => {
 			const e2eeKey = 'shared-encryption-key-456';
 			const participant1Name = 'Alice';
 			const participant2Name = 'Bob';
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { e2ee: { enabled: true } }
-			});
-			createdRoomIds.push(room.roomId);
+			const accessUrl = await createE2eeRoom();
 
 			const page2 = await browser.newPage();
 
@@ -144,44 +138,17 @@ test.describe('E2EE E2E Tests', () => {
 				]);
 				await Promise.all([waitForRemoteStream(page), waitForRemoteStream(page2)]);
 
-				// Checknames names in video grid
-				const nameElements1 = page.locator('.participant-name-container #participant-name');
-				const names1 = await nameElements1.allTextContents();
-				expect(names1.every((n) => !n.includes('*'))).toBeTruthy();
-
-				const nameElements2 = page2.locator('.participant-name-container #participant-name');
-				const names2 = await nameElements2.allTextContents();
-				expect(names2.every((n) => !n.includes('*'))).toBeTruthy();
+				// Check names in video grid
+				await expectUnmaskedVideoGridNames(page);
+				await expectUnmaskedVideoGridNames(page2);
 
 				// Check names in participants panel
-				await toggleParticipantsPanel(page);
-				await expectVisible(page, 'ov-participants-panel');
-				const panelNames1 = page.locator('.participant-name-text');
-				await expect(panelNames1).toHaveCount(2);
-				const panelNamesText1 = await panelNames1.allTextContents();
-				expect(panelNamesText1.every((n) => !n.includes('*'))).toBeTruthy();
-				await toggleParticipantsPanel(page);
-
-				await toggleParticipantsPanel(page2);
-				await expectVisible(page2, 'ov-participants-panel');
-				const panelNames2 = page2.locator('.participant-name-text');
-				await expect(panelNames2).toHaveCount(2);
-				const panelNamesText2 = await panelNames2.allTextContents();
-				expect(panelNamesText2.every((n) => !n.includes('*'))).toBeTruthy();
-				await toggleParticipantsPanel(page2);
+				await expectUnmaskedParticipantPanelNames(page, 2);
+				await expectUnmaskedParticipantPanelNames(page2, 2);
 
 				// Check own name in settings panel
-				await openSettingsPanel(page);
-				const ownName1 = await page.locator('#participant-name-input').inputValue();
-				expect(ownName1).toBe(participant1Name);
-				expect(ownName1).not.toContain('*');
-				await closeSettingsPanel(page);
-
-				await openSettingsPanel(page2);
-				const ownName2 = await page2.locator('#participant-name-input').inputValue();
-				expect(ownName2).toBe(participant2Name);
-				expect(ownName2).not.toContain('*');
-				await closeSettingsPanel(page2);
+				await expectOwnNameInSettings(page, participant1Name);
+				await expectOwnNameInSettings(page2, participant2Name);
 
 				// Check chat messages
 				await toggleChatPanel(page);
@@ -210,10 +177,7 @@ test.describe('E2EE E2E Tests', () => {
 			const participant1Name = 'Charlie';
 			const participant2Name = 'David';
 			const participant3Name = 'Eve';
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { e2ee: { enabled: true } }
-			});
-			createdRoomIds.push(room.roomId);
+			const accessUrl = await createE2eeRoom();
 
 			const [page2, page3] = await Promise.all([browser.newPage(), browser.newPage()]);
 
@@ -234,8 +198,7 @@ test.describe('E2EE E2E Tests', () => {
 				const nameElements3 = page3.locator('.participant-name-container #participant-name');
 				await expect(nameElements3).toHaveCount(3);
 				const names3 = await nameElements3.allTextContents();
-				const maskedNames = names3.filter((n) => n.includes('******'));
-				expect(maskedNames.length).toBe(2);
+				expect(names3.filter((n) => n.includes('*'))).toHaveLength(2);
 				expect(names3).toContain(participant3Name);
 				expect(names3.join(' ')).not.toContain(participant1Name);
 				expect(names3.join(' ')).not.toContain(participant2Name);
@@ -246,17 +209,12 @@ test.describe('E2EE E2E Tests', () => {
 				const panelNames3 = page3.locator('.participant-name-text');
 				await expect(panelNames3).toHaveCount(3);
 				const panelNamesText3 = await panelNames3.allTextContents();
-				const maskedPanelNames = panelNamesText3.filter((n) => n.includes('******'));
-				expect(maskedPanelNames.length).toBe(2);
+				expect(panelNamesText3.filter((n) => n.includes('*'))).toHaveLength(2);
 				expect(panelNamesText3).toContain(participant3Name);
 				await toggleParticipantsPanel(page3);
 
 				// P3 own name in settings is not masked
-				await openSettingsPanel(page3);
-				const ownName3 = await page3.locator('#participant-name-input').inputValue();
-				expect(ownName3).toBe(participant3Name);
-				expect(ownName3).not.toContain('*');
-				await closeSettingsPanel(page3);
+				await expectOwnNameInSettings(page3, participant3Name);
 
 				// P1 sends message — P2 sees it, P3 does not
 				await Promise.all([toggleChatPanel(page), toggleChatPanel(page2), toggleChatPanel(page3)]);
@@ -268,7 +226,7 @@ test.describe('E2EE E2E Tests', () => {
 				await expectChatMessageCount(page2, 1);
 
 				// P3 (wrong key) should see no messages
-				await expect.poll(async () => await page3.locator('.message').count(), { timeout: 5_000 }).toBe(0);
+				await expect(page3.locator('.message')).toHaveCount(0, { timeout: 5_000 });
 
 				// P1 and P2 still see each other's names
 				const names1 = await page.locator('.participant-name-container #participant-name').allTextContents();
@@ -284,10 +242,7 @@ test.describe('E2EE E2E Tests', () => {
 
 	test.describe('E2EE and Recording', () => {
 		test('should hide recording button when E2EE is enabled', async ({ page }) => {
-			const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
-				config: { e2ee: { enabled: true } }
-			});
-			createdRoomIds.push(room.roomId);
+			const accessUrl = await createE2eeRoom();
 
 			await openMeeting(page, accessUrl, { e2eeKey: 'test-key-recording' });
 

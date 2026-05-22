@@ -1,9 +1,32 @@
 import { expect, type Page } from '@playwright/test';
-import { openLayoutSettingsPanel, toggleMicrophone, waitForVisibleRemoteParticipants } from './meeting-ui.helper';
+import { toggleMicrophone } from './media-controls.helper';
+import { openLayoutSettingsPanel } from './panels.helper';
+import { waitForVisibleRemoteParticipants } from './stream.helper';
 
 /**
- * Sets the Smart Mosaic participant count slider to a specific value
- * @param page - Playwright page object
+ * Selects the mosaic layout radio button.
+ */
+export const selectMosaicLayout = async (page: Page): Promise<void> => {
+	if (!(await page.locator('.settings-container').isVisible())) {
+		await openLayoutSettingsPanel(page);
+	}
+
+	await page.locator('#layout-mosaic').click();
+};
+
+/**
+ * Selects the smart mosaic layout radio button.
+ */
+export const selectSmartMosaicLayout = async (page: Page): Promise<void> => {
+	if (!(await page.locator('.settings-container').isVisible())) {
+		await openLayoutSettingsPanel(page);
+	}
+
+	await page.locator('#layout-smart-mosaic').click();
+};
+
+/**
+ * Sets the Smart Mosaic participant count slider to a specific value.
  * @param targetValue - Target participant count (1-6)
  */
 export const setSmartMosaicSliderValue = async (page: Page, targetValue: number): Promise<void> => {
@@ -17,24 +40,6 @@ export const setSmartMosaicSliderValue = async (page: Page, targetValue: number)
 	await sliderInput.focus();
 	await sliderInput.fill(targetValue.toString());
 	await expect(participantCountValue).toHaveText(String(targetValue), { timeout: 5_000 });
-};
-
-/**
- * Selects the mosaic layout radio button
- */
-export const selectMosaicLayout = async (page: Page): Promise<void> => {
-	if (!(await page.locator('.settings-container').isVisible())) {
-		await openLayoutSettingsPanel(page);
-	}
-
-	await page.locator('#layout-mosaic').click();
-};
-
-/**
- * Selects the smart mosaic layout radio button
- */
-export const selectSmartMosaicLayout = async (page: Page): Promise<void> => {
-	await page.locator('#layout-smart-mosaic').click();
 };
 
 /**
