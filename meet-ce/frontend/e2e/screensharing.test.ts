@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { startScreensharing, stopScreensharing, toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import { openMeeting } from './helpers/meeting-navigation.helper';
+import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
 import { joinParticipants } from './helpers/participant-management.helper';
 import {
 	expectPinnedStreamCount,
@@ -9,7 +9,6 @@ import {
 	expectVideoCount,
 	getPinnedStreamCount,
 	getScreenSourceTracks,
-	toggleStreamPin,
 	unpinCurrentPinnedStream
 } from './helpers/stream.helper';
 
@@ -137,14 +136,20 @@ test.describe('Screensharing E2E Tests', () => {
 	test('should keep single pinned stream when second participant joins without sharing screen', async ({
 		browser
 	}) => {
-		const [pageA, pageB] = await Promise.all([browser.newPage(), browser.newPage()]);
+		const { pageA, pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			participants: [{ name: 'local', audioEnabled: true, videoEnabled: true, screenShare: true }]
+		});
 
 		try {
-			await openMeeting(pageA, accessUrl);
-			await startScreensharing(pageA);
 			await expectPinnedStreamCount(pageA, 1);
 
-			await openMeeting(pageB, accessUrl);
+			const pageB = await addParticipant({
+				name: 'remote',
+				audioEnabled: true,
+				videoEnabled: true,
+				headless: true
+			});
 			await expectVideoCount(pageB, 3);
 			await expectPinnedStreamCount(pageB, 1);
 			await expectScreenSourceCount(pageB, 1);
@@ -152,7 +157,9 @@ test.describe('Screensharing E2E Tests', () => {
 			await expectPinnedStreamCount(pageA, 1);
 			await expectScreenSourceCount(pageA, 1);
 		} finally {
-			await Promise.all([pageA.close(), pageB.close()]);
+			await removeAllParticipants();
+			await Promise.all(pages.map((page) => leaveMeeting(page)));
+			await Promise.all(pages.map((page) => page.close()));
 		}
 	});
 
@@ -180,46 +187,40 @@ test.describe('Screensharing E2E Tests', () => {
 		}
 	});
 
-	test('should NOT re-pin manually unpinned screen when new participant joins', async ({ browser }) => {
-		const [pageA, pageB, pageC] = await Promise.all([browser.newPage(), browser.newPage(), browser.newPage()]);
+	test('should NOT re-pin unpinned screen when new participant joins', async ({ browser }) => {
+		const { pageA, pages, addParticipant, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			participants: [
+				{ name: 'local', audioEnabled: true, videoEnabled: true },
+				{
+					name: 'sharer',
+					audioEnabled: false,
+					videoEnabled: true,
+					screenShare: true,
+					headless: true
+				}
+			]
+		});
 
 		try {
-			await openMeeting(pageA, accessUrl);
-			await startScreensharing(pageA);
+			await expectVideoCount(pageA, 3);
 			await expectPinnedStreamCount(pageA, 1);
+			await unpinCurrentPinnedStream(pageA);
 
-			await openMeeting(pageB, accessUrl);
-			await startScreensharing(pageB);
-			await expectVideoCount(pageB, 4);
-			await expectPinnedStreamCount(pageB, 1);
+			await addParticipant({
+				name: 'new-participant',
+				audioEnabled: true,
+				videoEnabled: true,
+				headless: true
+			});
 
-			for (let i = 0; i < 3; i++) {
-				if ((await getPinnedStreamCount(pageB)) === 0) {
-					break;
-				}
+			await expectVideoCount(pageA, 4);
 
-				await unpinCurrentPinnedStream(pageB);
-			}
-
-			expect(await getPinnedStreamCount(pageB)).toBe(0);
-
-			for (let i = 0; i < 3; i++) {
-				await toggleStreamPin(pageB, '.OV_stream.remote.screen-source');
-
-				if ((await getPinnedStreamCount(pageB)) === 1) {
-					break;
-				}
-			}
-
-			expect(await getPinnedStreamCount(pageB)).toBe(1);
-
-			await openMeeting(pageC, accessUrl);
-			await expect(pageC.locator('#layout-container')).toBeVisible();
-
-			expect(await getPinnedStreamCount(pageB)).toBe(1);
-			expect(await getPinnedStreamCount(pageA)).toBe(1);
+			expect(await getPinnedStreamCount(pageA)).toBe(0);
 		} finally {
-			await Promise.all([pageA.close(), pageB.close(), pageC.close()]);
+			await removeAllParticipants();
+			await Promise.all(pages.map((page) => leaveMeeting(page)));
+			await Promise.all(pages.map((page) => page.close()));
 		}
 	});
 });

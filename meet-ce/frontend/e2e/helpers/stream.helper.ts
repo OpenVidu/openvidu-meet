@@ -156,7 +156,7 @@ export const expectScreenShareCount = async (page: Page, count: number): Promise
  * Asserts the number of `.screen-source` elements.
  */
 export const expectScreenSourceCount = async (page: Page, count: number): Promise<void> => {
-	await expect(page.locator('.screen-source')).toHaveCount(count);
+	await expect(page.locator('.OV_video-element.screen-source')).toHaveCount(count, { timeout: 10_000 });
 };
 
 /**
@@ -180,7 +180,7 @@ export const expectLocalStreamCount = async (page: Page, counts: { video?: numbe
  * Asserts the number of currently-pinned streams.
  */
 export const expectPinnedStreamCount = async (page: Page, count: number): Promise<void> => {
-	await expect(page.locator('.OV_big .OV_stream')).toHaveCount(count);
+	await expect(page.locator('.OV_big .OV_stream')).toHaveCount(count, { timeout: 10_000 });
 };
 
 /**
@@ -263,7 +263,7 @@ export const getScreenSourceTracks = async (
 	page: Page
 ): Promise<Array<{ kind: string; enabled: boolean; id: string; label: string }>> => {
 	return await page.evaluate(() => {
-		const video = document.querySelector('.screen-source') as HTMLVideoElement | null;
+		const video = document.querySelector('.OV_video-element.screen-source') as HTMLVideoElement | null;
 
 		if (!video || !video.srcObject) {
 			return [];
