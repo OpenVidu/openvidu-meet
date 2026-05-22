@@ -9,9 +9,9 @@ import { test as base, chromium, type Page } from '@playwright/test';
  * of the project-level launch flags used by the rest of the test suite.
  */
 export const test = base.extend<{ noMediaPage: Page }>({
-	noMediaPage: async ({}, use) => {
+	noMediaPage: async ({}, use, testInfo) => {
 		const browser = await chromium.launch({
-			headless: false,
+			headless: testInfo.project.use.headless,
 			args: ['--window-size=1366,900']
 		});
 		const context = await browser.newContext({
