@@ -1,11 +1,4 @@
-import { inject, Injectable, signal, Signal } from '@angular/core';
-import {
-	BackgroundProcessor,
-	BackgroundProcessorWrapper,
-	supportsBackgroundProcessors,
-	supportsModernBackgroundProcessors,
-	SwitchBackgroundProcessorOptions
-} from '@livekit/track-processors';
+import { inject, Injectable, Signal } from '@angular/core';
 import { ILogger } from '../../models/logger.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { DeviceService } from '../device/device.service';
@@ -28,6 +21,7 @@ import { LivekitAdapterInterface } from '../livekit-adapter/interfaces/livekit.a
 import { LivekitAdapterFactory } from '../livekit-adapter/livekit-adapter.factory';
 import { LoggerService } from '../logger/logger.service';
 import { StorageService } from '../storage/storage.service';
+import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -38,6 +32,7 @@ export class OpenViduService {
 	private readonly configService = inject(OpenViduComponentsConfigService);
 	private readonly livekitAdapterFactory = inject(LivekitAdapterFactory);
 	private readonly livekitAdapter: LivekitAdapterInterface = this.livekitAdapterFactory.createLiveKitAdapter();
+	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
 
 	private room: OVRoom | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
@@ -58,56 +53,11 @@ export class OpenViduService {
 	private log: ILogger = inject(LoggerService).get('OpenViduService');
 
 	/**
-	 * Background processor for video tracks. Initialized in disabled mode.
-	 * This processor is shared between prejoin and in-room states.
-	 * Only initialized if browser supports background processing (GPU available).
+	 * Readonly signal indicating whether the background processor is available.
+	 * Delegates to VideoTrackProcessorService.
 	 */
-	private backgroundProcessor?: BackgroundProcessorWrapper;
-
-	/**
-	 * Signal to track if background processor is supported (requires GPU).
-	 * Set to false if browser doesn't support it or processor initialization fails.
-	 */
-	private _isBackgroundProcessorSupported = signal(false);
-
-	/**
-	 * Public readonly signal for background processor support status.
-	 */
-	readonly isBackgroundProcessorSupported: Signal<boolean> = this._isBackgroundProcessorSupported.asReadonly();
-
-	/**
-	 * Stores the last applied background options so they can be re-applied after a camera switch.
-	 */
-	private currentBackgroundOptions: SwitchBackgroundProcessorOptions | null = null;
-
-	/**
-	 * @internal
-	 */
-	constructor() {
-		// Check if browser supports background processors
-		if (!supportsBackgroundProcessors()) {
-			this.log.w('Background processors not supported in this browser (GPU may be disabled)');
-			this._isBackgroundProcessorSupported.set(false);
-			return;
-		}
-
-		// Only initialize processor immediately for browsers supporting modern processors
-		// Browsers without modern support (e.g., Firefox) will initialize on-demand
-		if (supportsModernBackgroundProcessors()) {
-			try {
-				this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled' });
-				this._isBackgroundProcessorSupported.set(true);
-				this.log.d('Background processor initialized at startup (modern processors supported)');
-			} catch (error: any) {
-				this.log.w('Failed to initialize background processor:', error?.message || error);
-				this._isBackgroundProcessorSupported.set(false);
-			}
-		} else {
-			// Mark as supported but don't initialize yet - will be created on-demand
-			this._isBackgroundProcessorSupported.set(true);
-			this.log.d('Background processors supported but not modern - will initialize on-demand');
-		}
-	}
+	readonly isBackgroundProcessorSupported: Signal<boolean> =
+		this.videoTrackProcessorService.isBackgroundProcessorSupported;
 
 	/**
 	 * Creates a new Room with audio and video devices selected or default ones.
@@ -320,77 +270,6 @@ export class OpenViduService {
 	}
 
 	/**
-	 * Switches the background mode on the local video track.
-	 * Works both in prejoin and in-room states.
-	 * For Firefox: applies processor when effect is activated to avoid performance issues
-	 * For other browsers: processor is pre-attached, so just switch mode
-	 * @param options - The switch options (mode, blurRadius, imagePath)
-	 * @returns Promise<void>
-	 * @internal
-	 */
-	async switchBackgroundMode(options: SwitchBackgroundProcessorOptions): Promise<void> {
-		if (!this.isBackgroundProcessorSupported()) {
-			this.log.w('Background processor not supported (GPU disabled). Virtual background is disabled.');
-			return;
-		}
-
-		try {
-			// For browsers without modern processor support: attach processor on-demand when effect is activated
-			if (!supportsModernBackgroundProcessors()) {
-				await this.handleLazyProcessorAttachment(options.mode);
-			}
-
-			// If processor exists, switch mode (either pre-initialized or just created on-demand)
-			if (this.backgroundProcessor) {
-				await this.backgroundProcessor.switchTo(options);
-				this.currentBackgroundOptions = options;
-				this.log.d('Background mode switched:', options);
-			}
-		} catch (error: any) {
-			this.log.e('Failed to switch background mode:', error?.message || error);
-			this._isBackgroundProcessorSupported.set(false);
-			// Don't throw - gracefully disable virtual background instead of crashing
-		}
-	}
-
-	/**
-	 * Handles lazy processor attachment for browsers without modern processor support.
-	 * Creates and attaches processor on-demand when effect is activated.
-	 * This is used for browsers like Firefox that don't support modern background processors.
-	 * @internal
-	 */
-	private async handleLazyProcessorAttachment(mode: SwitchBackgroundProcessorOptions['mode']): Promise<void> {
-		const videoTrack = await this.getVideoTrack();
-		if (!videoTrack) return;
-
-		const hasProcessor = Boolean(videoTrack.getProcessor());
-		const isDisabled = mode === 'disabled';
-
-		if (!isDisabled && !hasProcessor) {
-			try {
-				// Create processor on-demand if not already created
-				if (!this.backgroundProcessor) {
-					this.log.d('Creating background processor on-demand');
-					this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled' });
-				}
-
-				this.log.d('Attaching processor on effect activation (lazy loading)');
-				await videoTrack.setProcessor(this.backgroundProcessor);
-			} catch (error: any) {
-				this.log.w('Failed to attach background processor (GPU may be disabled):', error?.message || error);
-				this._isBackgroundProcessorSupported.set(false);
-				// Continue without crashing - virtual background will be disabled
-			}
-			return;
-		}
-
-		if (isDisabled && hasProcessor) {
-			this.log.d('Stopping processor on effect deactivation');
-			await videoTrack.stopProcessor();
-		}
-	}
-
-	/**
 	 * @internal
 	 **/
 	removeLocalTracks(): void {
@@ -465,12 +344,9 @@ export class OpenViduService {
 				newLocalTracks = await this.livekitAdapter.createLocalTracks(options);
 			}
 
-			// Apply background processor to the new video track.
-			// applyProcessorToVideoTrack handles both modern (pre-attach + auto-restore via
-			// transformer.options) and Firefox/non-modern (lazy attach only when a VBG is active).
 			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
 			if (videoTrack) {
-				await this.applyProcessorToVideoTrack(videoTrack);
+				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
 			}
 
 			// Mute tracks if devices are disabled
@@ -625,7 +501,7 @@ export class OpenViduService {
 					await videoTrack.mute();
 				}
 				// Attach processor (and restore active background if any) to the fresh track
-				await this.applyProcessorToVideoTrack(videoTrack);
+				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
 				this.localTracks.push(videoTrack);
 				this.log.d('New camera track created and added:', deviceId);
 			}
@@ -633,48 +509,6 @@ export class OpenViduService {
 			this.log.e('Failed to create new video track:', error);
 			const message = error instanceof Error ? error.message : 'Unknown error';
 			throw new Error(`Failed to switch camera: ${message}`);
-		}
-	}
-
-	/**
-	 * Attaches the background processor to a freshly-created video track.
-	 * Called only for brand-new track objects (createLocalTracks or the no-existing-track fallback).
-	 *
-	 * - Modern browsers: pre-attaches the shared processor object; `processor.init()` uses the
-	 *   transformer's stored options so any previously active mode is automatically restored.
-	 * - Firefox (non-modern / stream fallback): lazily attaches the processor only when a
-	 *   background effect was already active, then re-applies the stored options.
-	 * @internal
-	 */
-	private async applyProcessorToVideoTrack(videoTrack: OVLocalVideoTrack): Promise<void> {
-		if (!this.isBackgroundProcessorSupported()) return;
-
-		if (supportsModernBackgroundProcessors()) {
-			if (!this.backgroundProcessor) return;
-			try {
-				// setProcessor calls processor.init() which re-initialises the pipeline using
-				// transformer.options (updated by every switchTo call), so the active background
-				// effect is restored without an explicit switchTo here.
-				await videoTrack.setProcessor(this.backgroundProcessor);
-				this.log.d('Background processor applied to video track');
-			} catch (error: any) {
-				this.log.w('Failed to apply background processor to video track:', error?.message || error);
-				this._isBackgroundProcessorSupported.set(false);
-			}
-		} else if (this.currentBackgroundOptions && this.currentBackgroundOptions.mode !== 'disabled') {
-			// Firefox / non-modern: processor is not pre-allocated; create on first use
-			try {
-				if (!this.backgroundProcessor) {
-					this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled' });
-				}
-				await videoTrack.setProcessor(this.backgroundProcessor);
-				// For the non-modern path the processor's transformer options are reset on init;
-				// we must explicitly re-apply the active effect.
-				await this.backgroundProcessor.switchTo(this.currentBackgroundOptions);
-				this.log.d('Background effect restored on new track (non-modern):', this.currentBackgroundOptions);
-			} catch (error: any) {
-				this.log.w('Failed to restore background processor (non-modern):', error?.message || error);
-			}
 		}
 	}
 
@@ -731,11 +565,11 @@ export class OpenViduService {
 	}
 
 	/**
-	 * Gets the current video track from local tracks or room
+	 * Gets the current video track from local tracks or room.
 	 * @returns LocalVideoTrack or undefined
 	 * @internal
 	 */
-	private async getVideoTrack(): Promise<OVLocalVideoTrack | undefined> {
+	async getCurrentVideoTrack(): Promise<OVLocalVideoTrack | undefined> {
 		// First try to get from local tracks (prejoin state)
 		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
 

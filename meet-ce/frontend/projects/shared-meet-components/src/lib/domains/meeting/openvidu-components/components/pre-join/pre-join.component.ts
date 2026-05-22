@@ -24,6 +24,7 @@ import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { TranslateService } from '../../services/translate/translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
+import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 import { MediaElementComponent } from '../media-element/media-element.component';
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
@@ -90,6 +91,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	private tracks: LocalTrack[] = [];
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly openviduService = inject(OpenViduService);
+	private readonly virtualBackgroundService = inject(VirtualBackgroundService);
 	private readonly translateService = inject(TranslateService);
 	protected readonly viewportService = inject(ViewportService);
 	private log: ILogger = inject(LoggerService).get('PreJoinComponent');
@@ -268,6 +270,14 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 				this.videoTrack = this.tracks.find((track) => track.kind === Track.Kind.Video);
 				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
 				this.isVideoEnabled.set(this.openviduService.isVideoTrackEnabled());
+
+				// Restore previously selected virtual background in prejoin when possible.
+				// Keep prejoin usable even if restore fails.
+				try {
+					await this.virtualBackgroundService.applyBackgroundFromStorage();
+				} catch (error) {
+					this.log.w('Failed to restore virtual background from storage in prejoin:', error);
+				}
 
 				return; // Success, exit retry loop
 			} catch (error) {

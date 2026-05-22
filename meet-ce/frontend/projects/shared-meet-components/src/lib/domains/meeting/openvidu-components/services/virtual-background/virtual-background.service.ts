@@ -4,6 +4,7 @@ import { BackgroundEffect, EffectType } from '../../models/background-effect.mod
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
+import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 
 /**
  * @internal
@@ -13,6 +14,7 @@ import { StorageService } from '../storage/storage.service';
 })
 export class VirtualBackgroundService {
 	private readonly openviduService = inject(OpenViduService);
+	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
 	private readonly storageService = inject(StorageService);
 	private readonly log = inject(LoggerService).get('VirtualBackgroundService');
 
@@ -150,7 +152,7 @@ export class VirtualBackgroundService {
 	 * Reactively tracks the support status from OpenViduService.
 	 */
 	readonly isVirtualBackgroundSupported: Signal<boolean> = computed(() =>
-		this.openviduService.isBackgroundProcessorSupported()
+		this.videoTrackProcessorService.isBackgroundProcessorSupported()
 	);
 
 	isBackgroundApplied(): boolean {
@@ -185,7 +187,8 @@ export class VirtualBackgroundService {
 
 		try {
 			const options = this.getBackgroundOptions(bg);
-			await this.openviduService.switchBackgroundMode(options);
+			const videoTrack = await this.openviduService.getCurrentVideoTrack();
+			await this.videoTrackProcessorService.switchBackgroundMode(options, videoTrack);
 
 			this.storageService.setBackground(bg.id);
 			this.backgroundIdSelectedWritable.set(bg.id);
@@ -199,7 +202,8 @@ export class VirtualBackgroundService {
 		if (this.isBackgroundApplied()) {
 			this.backgroundIdSelectedWritable.set('no_effect');
 			try {
-				await this.openviduService.switchBackgroundMode({ mode: 'disabled' });
+				const videoTrack = await this.openviduService.getCurrentVideoTrack();
+				await this.videoTrackProcessorService.switchBackgroundMode({ mode: 'disabled' }, videoTrack);
 			} catch (e) {
 				this.log.w('Error disabling processor:', e);
 			}
