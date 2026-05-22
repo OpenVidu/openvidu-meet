@@ -38,6 +38,12 @@ export const expectVisible = async (page: Page, selector: string): Promise<void>
 	await expect(page.locator(selector)).toBeVisible();
 };
 
+export const expectDisabled = async (page: Page, selector: string): Promise<void> => {
+	const locator = page.locator(selector);
+	await expect(locator).toBeVisible();
+	await expect(locator).toBeDisabled();
+};
+
 /**
  * Asserts that no element matching {@link selector} is visible (either absent or hidden).
  */

@@ -72,7 +72,6 @@ export const runScreenShareRotationCycles = async (
 	await toggleMicrophone(byName[speakerA]);
 
 	for (let cycle = 0; cycle < cycles; cycle++) {
-		console.log(`Cycle ${cycle}`);
 		const activeSpeaker = cycle % 2 === 0 ? speakerA : speakerB;
 		const silentParticipant = cycle % 2 === 0 ? speakerB : speakerA;
 

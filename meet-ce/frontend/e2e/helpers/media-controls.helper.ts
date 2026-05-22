@@ -168,12 +168,11 @@ export const closeRoomBackgroundsPanel = async (page: Page): Promise<void> => {
 };
 
 /**
- * Applies a background effect by clicking its button and waiting for a stream
- * element to appear.
+ * Applies a background effect by its id
  */
 export const applyBackgroundEffect = async (page: Page, effectId: string, timeoutMs = 10_000): Promise<void> => {
+	await expect(page.locator('.OV_media-element.camera-source')).toBeVisible({ timeout: timeoutMs });
 	await page.locator(`#effect-${effectId}`).click();
-	await expect(page.locator('.OV_stream').first()).toBeVisible({ timeout: timeoutMs });
 };
 
 // ─── Device selector ─────────────────────────────────────────────────────────
