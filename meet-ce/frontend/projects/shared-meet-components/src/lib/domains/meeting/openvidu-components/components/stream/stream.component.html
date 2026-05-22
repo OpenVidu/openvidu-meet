@@ -23,24 +23,8 @@
 			</div>
 		}
 
-		@if (stream.isCameraStream && stream.participant.connectionQuality !== 'unknown') {
-			<div
-				id="connection-quality-badge"
-				class="connection-quality-badge"
-				[class.quality-excellent]="stream.participant.connectionQuality === 'excellent'"
-				[class.quality-good]="stream.participant.connectionQuality === 'good'"
-				[class.quality-poor]="stream.participant.connectionQuality === 'poor'"
-				[class.quality-lost]="stream.participant.connectionQuality === 'lost'"
-			>
-				<mat-icon
-					[fontIcon]="
-						stream.participant.connectionQuality === 'excellent' ? 'signal_wifi_4_bar' :
-						stream.participant.connectionQuality === 'good' ? 'network_wifi_3_bar' :
-						stream.participant.connectionQuality === 'poor' ? 'network_wifi_2_bar' :
-						'signal_wifi_off'
-					"
-				/>
-			</div>
+		@if (stream.isCameraStream) {
+			<ov-connection-quality-indicator [participant]="stream.participant" />
 		}
 
 		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream) {

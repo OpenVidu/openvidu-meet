@@ -3,16 +3,17 @@
  */
 
 // Components
-export * from './components/landscape-warning/landscape-warning.component';
+export * from './components/connection-quality-indicator/connection-quality-indicator.component';
 export * from './components/hidden-participants-indicator/hidden-participants-indicator.component';
+export * from './components/landscape-warning/landscape-warning.component';
 export * from './components/layout/layout.component';
-export * from './components/smart-layout/smart-layout.component';
 export * from './components/panel/activities-panel/activities-panel.component';
 export * from './components/panel/activities-panel/recording-activity/recording-activity.component';
 export * from './components/panel/chat-panel/chat-panel.component';
 export * from './components/panel/panel.component';
 export * from './components/panel/participants-panel/participant-panel-item/participant-panel-item.component';
 export * from './components/panel/participants-panel/participants-panel/participants-panel.component';
+export * from './components/smart-layout/smart-layout.component';
 export * from './components/stream/stream.component';
 export * from './components/toolbar/toolbar-media-buttons/toolbar-media-buttons.component';
 export * from './components/toolbar/toolbar-panel-buttons/toolbar-panel-buttons.component';

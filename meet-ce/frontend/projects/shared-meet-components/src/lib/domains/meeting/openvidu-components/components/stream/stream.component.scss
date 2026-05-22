@@ -137,37 +137,4 @@
 		border-color: var(--ov-accent-action-color);
 	}
 
-	.connection-quality-badge {
-		position: absolute;
-		top: 3px;
-		right: 3px;
-		z-index: 999;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background-color: var(--ov-secondary-action-color);
-		backdrop-filter: blur(8px);
-		border-radius: var(--ov-video-radius);
-		width: 28px;
-		height: 28px;
-
-		mat-icon {
-			font-size: 18px;
-			width: 18px;
-			height: 18px;
-		}
-
-		&.quality-excellent mat-icon,
-		&.quality-good mat-icon {
-			color: var(--ov-success-color, #28a745);
-		}
-
-		&.quality-poor mat-icon {
-			color: var(--ov-warn-color, #eea300);
-		}
-
-		&.quality-lost mat-icon {
-			color: var(--ov-error-color, #dc3545);
-		}
-	}
 }
