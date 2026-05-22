@@ -61,7 +61,6 @@ export default defineConfig({
 	projects: [
 		{
 			name: 'chromium',
-			grepInvert: /@no-media-permissions/,
 			use: {
 				...devices['Desktop Chrome'],
 				permissions: ['microphone', 'camera'],
@@ -72,17 +71,6 @@ export default defineConfig({
 						`--use-file-for-fake-audio-capture=${fakeAudioPath}`,
 						'--window-size=1366,900'
 					]
-				}
-			}
-		},
-		{
-			name: 'chromium-no-media-permissions',
-			grep: /@no-media-permissions/,
-			use: {
-				...devices['Desktop Chrome'],
-				permissions: [],
-				launchOptions: {
-					args: ['--window-size=1366,900']
 				}
 			}
 		}

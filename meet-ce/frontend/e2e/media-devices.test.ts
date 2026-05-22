@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './fixtures/no-media-permissions.fixture';
 import {
 	assertHasVideoDeviceOption,
 	getFirstVideoTrackLabel,
@@ -106,58 +106,56 @@ test.describe('Media Devices E2E Tests', () => {
 			expect(replacedLabel).not.toBeNull();
 			await expect(page.locator('.OV_video-element.screen-source')).toHaveCount(1);
 		});
+	});
 
-		test.describe('UI Behavior Without Media Device Permissions', () => {
-			test.use({ permissions: [] });
+	test.describe('UI Behavior Without Media Device Permissions', () => {
+		test('should camera and microphone buttons be disabled in the prejoin page when permissions are denied', async ({
+			noMediaPage
+		}) => {
+			await openPrejoin(noMediaPage, accessUrl);
 
-			test('should camera and microphone buttons be disabled in the prejoin page when permissions are denied', async ({
-				page
-			}) => {
-				await openPrejoin(page, accessUrl);
+			await expect(noMediaPage.locator('#no-video-device-message')).toBeVisible();
+			await expect(noMediaPage.locator('#no-audio-device-message')).toBeVisible();
+			const backgroundsButton = noMediaPage.locator('#backgrounds-button');
 
-				await expect(page.locator('#no-video-device-message')).toBeVisible();
-				await expect(page.locator('#no-audio-device-message')).toBeVisible();
-				const backgroundsButton = page.locator('#backgrounds-button');
+			if ((await backgroundsButton.count()) > 0) {
+				await expect(backgroundsButton).toBeDisabled();
+			}
+		});
 
-				if ((await backgroundsButton.count()) > 0) {
-					await expect(backgroundsButton).toBeDisabled();
-				}
-			});
+		test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({
+			noMediaPage
+		}) => {
+			await openPrejoin(noMediaPage, accessUrl);
+			await noMediaPage.locator('#join-button').click();
+			await expect(noMediaPage.locator('#layout-container')).toBeVisible();
 
-			test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({
-				page
-			}) => {
-				await openPrejoin(page, accessUrl);
-				await page.locator('#join-button').click();
-				await expect(page.locator('#layout-container')).toBeVisible();
+			await expect(noMediaPage.locator('#camera-btn')).toBeDisabled();
+			await expect(noMediaPage.locator('#mic-btn')).toBeDisabled();
+		});
 
-				await expect(page.locator('#camera-btn')).toBeDisabled();
-				await expect(page.locator('#mic-btn')).toBeDisabled();
-			});
+		test('should camera and microphone buttons be disabled in the room page without prejoin when permissions are denied', async ({
+			noMediaPage
+		}) => {
+			await openMeeting(noMediaPage, accessUrl);
 
-			test('should camera and microphone buttons be disabled in the room page without prejoin when permissions are denied', async ({
-				page
-			}) => {
-				await openMeeting(page, accessUrl);
+			await expect(noMediaPage.locator('#camera-btn')).toBeDisabled();
+			await expect(noMediaPage.locator('#mic-btn')).toBeDisabled();
+		});
 
-				await expect(page.locator('#camera-btn')).toBeDisabled();
-				await expect(page.locator('#mic-btn')).toBeDisabled();
-			});
+		test('should show an audio and video device warning in settings when permissions are denied', async ({
+			noMediaPage
+		}) => {
+			await openMeeting(noMediaPage, accessUrl);
 
-			test('should show an audio and video device warning in settings when permissions are denied', async ({
-				page
-			}) => {
-				await openMeeting(page, accessUrl);
+			await openSettingsPanel(noMediaPage);
+			await noMediaPage.locator('#video-opt').click();
+			await expect(noMediaPage.locator('ov-video-devices-select')).toBeVisible();
+			await expect(noMediaPage.locator('#no-video-device-message')).toBeVisible();
 
-				await openSettingsPanel(page);
-				await page.locator('#video-opt').click();
-				await expect(page.locator('ov-video-devices-select')).toBeVisible();
-				await expect(page.locator('#no-video-device-message')).toBeVisible();
-
-				await page.locator('#audio-opt').click();
-				await expect(page.locator('ov-audio-devices-select')).toBeVisible();
-				await expect(page.locator('#no-audio-device-message')).toBeVisible();
-			});
+			await noMediaPage.locator('#audio-opt').click();
+			await expect(noMediaPage.locator('ov-audio-devices-select')).toBeVisible();
+			await expect(noMediaPage.locator('#no-audio-device-message')).toBeVisible();
 		});
 	});
 });
