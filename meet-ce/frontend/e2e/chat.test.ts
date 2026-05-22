@@ -86,7 +86,69 @@ test.describe('Chat E2E Tests', () => {
 		}
 	});
 
-	test('should send a URL message and render it as link', async ({ page }) => {
+	test('should auto-scroll when receiving new messages with chat panel open', async ({ browser }) => {
+		const { pages, byName } = await joinParticipants(browser, {
+			roomId,
+			participants: [
+				{ name: 'receiver', headless: false },
+				{ name: 'sender', headless: true }
+			]
+		});
+
+		try {
+			await toggleChatPanel(byName['receiver']);
+			await toggleChatPanel(byName['sender']);
+
+			for (let i = 0; i < 45; i++) {
+				await sendChatMessage(byName['sender'], `seed-message-${i}`);
+			}
+
+			await expectChatMessageCount(byName['receiver'], 45);
+
+			const scrollState = await byName['receiver'].evaluate(() => {
+				const container = document.querySelector('.messages-container') as HTMLElement | null;
+
+				if (!container) {
+					return null;
+				}
+
+				container.scrollTop = 0;
+
+				return {
+					scrollTop: container.scrollTop,
+					scrollHeight: container.scrollHeight,
+					clientHeight: container.clientHeight
+				};
+			});
+
+			expect(scrollState).not.toBeNull();
+			expect(scrollState!.scrollHeight).toBeGreaterThan(scrollState!.clientHeight);
+			expect(scrollState!.scrollTop).toBe(0);
+
+			await sendChatMessage(byName['sender'], 'newest-message');
+
+			await expect
+				.poll(
+					async () => {
+						return await byName['receiver'].evaluate(() => {
+							const container = document.querySelector('.messages-container') as HTMLElement | null;
+
+							if (!container) {
+								return Number.POSITIVE_INFINITY;
+							}
+
+							return Math.abs(container.scrollHeight - container.clientHeight - container.scrollTop);
+						});
+					},
+					{ timeout: 8_000 }
+				)
+				.toBeLessThanOrEqual(3);
+		} finally {
+			await Promise.all(pages.map((page) => page.close()));
+		}
+	});
+
+	test('should send an URL message and render it as link', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 		await toggleChatPanel(page);
 		await sendChatMessage(page, 'demos.openvidu.io');
