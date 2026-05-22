@@ -69,7 +69,7 @@ test.describe('Chat E2E Tests', () => {
 		try {
 			await Promise.all([openMeeting(receiverPage, receiverAccessUrl), openMeeting(senderPage, senderAccessUrl)]);
 			await Promise.all([waitForRemoteStream(receiverPage), waitForRemoteStream(senderPage)]);
-			
+
 			const message = 'hello from sender';
 			await toggleChatPanel(senderPage);
 			await sendChatMessage(senderPage, message);
@@ -92,19 +92,24 @@ test.describe('Chat E2E Tests', () => {
 	});
 
 	test('should show snackbar notification when receiving a message with chat panel closed', async ({ browser }) => {
-		const { pageA: receiverPage, pages } = await joinParticipants(browser, accessUrl, 2);
-		const [, senderPage] = pages;
+		const { pageA, pages, byName } = await joinParticipants(browser, {
+			roomId,
+			participants: [
+				{ name: 'receiver', headless: false },
+				{ name: 'sender', headless: true }
+			]
+		});
 
 		try {
 			const message = 'message while chat is closed';
-			await toggleChatPanel(senderPage);
-			await sendChatMessage(senderPage, message);
+			await toggleChatPanel(byName['sender']);
+			await sendChatMessage(byName['sender'], message);
 
-			await expectSnackbarNotification(receiverPage);
+			await expectSnackbarNotification(pageA);
 
-			await toggleChatPanel(receiverPage);
-			await expectChatMessageCount(receiverPage, 1);
-			await expectChatMessageTextAt(receiverPage, 0, message);
+			await toggleChatPanel(pageA);
+			await expectChatMessageCount(pageA, 1);
+			await expectChatMessageTextAt(pageA, 0, message);
 		} finally {
 			await Promise.all(pages.map((page) => page.close()));
 		}
