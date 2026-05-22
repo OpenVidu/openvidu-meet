@@ -1,6 +1,13 @@
-import { ChangeDetectionStrategy, Component, ElementRef, OnDestroy, effect, input, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, InjectionToken, input, OnDestroy, viewChild } from '@angular/core';
 import { Track } from '../../services/livekit-adapter';
 import { VideoPosterComponent } from '../video-poster/video-poster.component';
+
+/**
+ * When provided (truthy), signals that remote audio playback is managed by an ancestor
+ * (e.g. {@link SmartLayoutComponent}'s persistent audio layer).
+ * {@link MediaElementComponent} will skip audio attachment for remote participants.
+ */
+export const EXTERNAL_AUDIO_MANAGED = new InjectionToken<boolean>('EXTERNAL_AUDIO_MANAGED');
 
 /**
  *
@@ -31,7 +38,7 @@ import { VideoPosterComponent } from '../video-poster/video-poster.component';
 		/>
 		@if (videoTrack()) {
 			<video #videoElement class="OV_media-element OV_video-element" [class.ov-video-ready]="!showAvatar()" [attr.id]="videoTrack()!.sid"></video>
-		} @else if (!isLocal() && audioTrack()) {
+		} @else if (!isLocal() && !externalAudioManaged && audioTrack()) {
 			<audio #audioElement class="OV_media-element OV_audio-element" [attr.id]="audioTrack()!.sid"></audio>
 		}
 	`,
@@ -50,6 +57,9 @@ export class MediaElementComponent implements OnDestroy {
 	readonly hasEncryptionError = input(false);
 	readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('videoElement');
 	readonly audioElement = viewChild<ElementRef<HTMLAudioElement>>('audioElement');
+
+	/** When `true`, remote audio is managed externally (persistent audio layer). */
+	readonly externalAudioManaged = inject(EXTERNAL_AUDIO_MANAGED, { optional: true }) ?? false;
 
 	// Track references to correctly detach on change or destroy.
 	private previousVideoTrack: Track | null = null;
@@ -88,7 +98,8 @@ export class MediaElementComponent implements OnDestroy {
 		}
 
 		// --- Audio track (remote only — local playback causes feedback) ---
-		if (!local && (this.previousAudioTrack !== newAudioTrack || this.previousAudioElement !== targetAudioElement)) {
+		// When audio is externally managed (persistent audio layer), skip attachment entirely.
+		if (!local && !this.externalAudioManaged && (this.previousAudioTrack !== newAudioTrack || this.previousAudioElement !== targetAudioElement)) {
 			if (this.previousAudioTrack && this.previousAudioElement) {
 				this.previousAudioTrack.detach(this.previousAudioElement);
 			}
@@ -110,7 +121,7 @@ export class MediaElementComponent implements OnDestroy {
 		const local = this.isLocal();
 		const muted = this.muted();
 
-		if (!local && newAudioTrack) {
+		if (!local && !this.externalAudioManaged && newAudioTrack) {
 			const targetAudioElement: HTMLMediaElement | null = video ?? audio;
 			if (targetAudioElement) {
 				targetAudioElement.muted = muted;

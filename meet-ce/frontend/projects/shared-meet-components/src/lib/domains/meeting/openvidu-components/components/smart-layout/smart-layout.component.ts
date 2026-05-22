@@ -17,6 +17,7 @@ import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
 import { LayoutComponent } from '../layout/layout.component';
+import { EXTERNAL_AUDIO_MANAGED } from '../media-element/media-element.component';
 import { StreamComponent } from '../stream/stream.component';
 
 @Component({
@@ -30,7 +31,8 @@ import { StreamComponent } from '../stream/stream.component';
 	],
 	templateUrl: './smart-layout.component.html',
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	standalone: true,
+	providers: [{ provide: EXTERNAL_AUDIO_MANAGED, useValue: true }]
 })
 export class SmartLayoutComponent implements OnDestroy {
 	readonly layoutService = inject(SmartLayoutService);
@@ -186,7 +188,7 @@ export class SmartLayoutComponent implements OnDestroy {
 		return order;
 	}
 
-	/** Detached `<audio>` elements for participants not currently rendered in the DOM. */
+	/** Persistent `<audio>` elements for all remote participants' camera audio tracks. */
 	private audioElements = new Map<string, { element: HTMLMediaElement; detach: () => void }>();
 	private previousIsSmartLayoutActive = false;
 
@@ -200,17 +202,16 @@ export class SmartLayoutComponent implements OnDestroy {
 	});
 
 	/**
-	 * Manages `<audio>` elements for participants excluded from the rendered stream list.
+	 * Manages persistent `<audio>` elements for all remote participants' camera audio tracks.
+	 * Audio lifecycle is decoupled from layout visibility to prevent glitches during rotation.
 	 * `streams()` is read before `untracked` to register track-publish/unpublish as reactive dependencies.
 	 */
 	private readonly audioElementsEffect = effect(() => {
 		const allRemotes = this.remoteParticipants();
-		const { targetIds } = this.visibleState();
-		const isSmartLayout = this.isSmartLayoutActive();
-		const audioParticipants = allRemotes.filter((p) => !targetIds.has(p.identity));
-		audioParticipants.forEach((p) => p.streams());
+		// Read streams() for every remote participant to register track changes as dependencies.
+		allRemotes.forEach((p) => p.streams());
 
-		untracked(() => this.manageAudioTracks(audioParticipants, isSmartLayout));
+		untracked(() => this.manageAudioTracks(allRemotes));
 	});
 
 	/** Removes disconnected participants from the speaker-priority list. */
@@ -227,12 +228,7 @@ export class SmartLayoutComponent implements OnDestroy {
 		this.displayedCameraOrder = [];
 	}
 
-	private manageAudioTracks(participants: ParticipantModel[], isSmartLayout: boolean): void {
-		if (!isSmartLayout) {
-			this.cleanupAudioElements(new Set());
-			return;
-		}
-
+	private manageAudioTracks(participants: ParticipantModel[]): void {
 		const activeTrackSids = new Set<string>();
 
 		for (const participant of participants) {
