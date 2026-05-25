@@ -870,6 +870,12 @@ test.describe('Layout E2E Tests', () => {
 
 					await waitForVisibleRemoteParticipants(pageA, { includes: ['remote-a'] }, 20_000);
 
+					// Ensure remote-a has accumulated ≥ MIN_SPEAKING_DURATION_MS (2s) so it enters
+					// _speakerPriorityOrder before the toggle. Otherwise, in parallel join mode
+					// where remote-a may be a filler rather than the qualified speaker, toggling
+					// before it qualifies prevents it from being preserved in the priority tail.
+					await pageA.waitForTimeout(3_000);
+
 					await Promise.all([
 						toggleMicrophone(byName['remote-a']),
 						toggleMicrophone(byName['remote-b']),
