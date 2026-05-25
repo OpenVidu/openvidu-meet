@@ -4,7 +4,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AudioWaveComponent } from './components/audio-wave/audio-wave.component';
 import { SmartLayoutComponent } from './components/layout/smart-layout/smart-layout.component';
-import { MediaElementComponent } from './components/media-element/media-element.component';
+import { VideoElementComponent } from './components/video-element/video-element.component';
 import { ChatPanelComponent } from './components/panel/chat-panel/chat-panel.component';
 import { SessionComponent } from './components/session/session.component';
 import { StreamComponent } from './components/stream/stream.component';
@@ -68,7 +68,7 @@ const privateComponents: any[] = [];
 		ThemeSelectorComponent,
 		VideoDevicesComponent,
 		VideoPosterComponent,
-		MediaElementComponent,
+		VideoElementComponent,
 		ToolbarMediaButtonsComponent,
 		ToolbarPanelButtonsComponent,
 		StreamComponent,

@@ -26,7 +26,7 @@ import { TranslateService } from '../../services/translate/translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
-import { MediaElementComponent } from '../media-element/media-element.component';
+import { VideoElementComponent } from '../video-element/video-element.component';
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
 import { AudioDevicesComponent } from '../settings/audio-devices/audio-devices.component';
 import { LangSelectorComponent } from '../settings/lang-selector/lang-selector.component';
@@ -45,7 +45,7 @@ import { VideoDevicesComponent } from '../settings/video-devices/video-devices.c
 		TranslatePipe,
 		LandscapeWarningComponent,
 		LangSelectorComponent,
-		MediaElementComponent,
+		VideoElementComponent,
 		VideoDevicesComponent,
 		AudioDevicesComponent,
 		BackgroundEffectsPanelComponent

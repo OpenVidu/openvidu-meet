@@ -20,7 +20,7 @@ import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
 import { ConnectionQualityIndicatorComponent } from '../connection-quality-indicator/connection-quality-indicator.component';
-import { MediaElementComponent } from '../media-element/media-element.component';
+import { VideoElementComponent } from '../video-element/video-element.component';
 
 /**
  * The **StreamComponent** is hosted inside of the {@link LayoutComponent}.
@@ -35,7 +35,7 @@ import { MediaElementComponent } from '../media-element/media-element.component'
 		TranslatePipe,
 		AudioWaveComponent,
 		ConnectionQualityIndicatorComponent,
-		MediaElementComponent
+		VideoElementComponent
 	],
 	templateUrl: './stream.component.html',
 	styleUrls: ['./stream.component.scss'],

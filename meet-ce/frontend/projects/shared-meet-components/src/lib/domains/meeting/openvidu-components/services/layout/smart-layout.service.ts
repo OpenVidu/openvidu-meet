@@ -41,9 +41,13 @@ export class SmartLayoutService extends BaseLayoutService {
 		}
 	});
 
+	/**
+	 * Speaker tracking runs in **every** layout mode, not just Smart Mosaic.
+	 * Keeping the priority list warm in Mosaic mode means a user who was already
+	 * speaking is immediately promoted when the host flips back to Smart Mosaic,
+	 * instead of being eclipsed by the first-N iteration order for {@link MIN_SPEAKING_DURATION_MS}.
+	 */
 	private readonly activeSpeakersTrackingEffect = effect(() => {
-		if (!this.isSmartLayoutEnabled()) return;
-
 		const speakers = this.sessionRoomEventsService.activeSpeakers();
 		untracked(() => this.processActiveSpeakersChanged(speakers));
 	});
@@ -133,8 +137,6 @@ export class SmartLayoutService extends BaseLayoutService {
 	}
 
 	private processActiveSpeakersChanged(speakers: Participant[]): void {
-		if (!this.isSmartLayoutEnabled()) return;
-
 		const now = Date.now();
 		const activeSpeakerIds = new Set(
 			speakers

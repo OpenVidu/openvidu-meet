@@ -33,13 +33,11 @@
 			</div>
 		}
 
-		<ov-media-element
+		<ov-video-element
 			[videoTrack]="stream.videoTrack?.track"
-			[audioTrack]="stream.audioTrack?.track"
 			[showAvatar]="stream.isCameraStream && (!stream.videoTrack?.track || !stream.participant.isCameraEnabled)"
 			[avatarColor]="stream.participant.colorProfile"
 			[avatarName]="stream.participant.name ?? ''"
-			[muted]="stream.isMutedForcibly"
 			[isLocal]="stream.participant.isLocal"
 			[hasEncryptionError]="stream.participant.hasEncryptionError"
 		/>

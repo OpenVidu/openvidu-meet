@@ -4,19 +4,28 @@ import {
 	computed,
 	contentChildren,
 	effect,
+	ElementRef,
 	inject,
 	input,
 	OnDestroy,
 	output,
-	untracked
+	signal,
+	untracked,
+	viewChild
 } from '@angular/core';
 import { LayoutAdditionalElementsDirective } from '../../../directives/template/internals.directive';
 import { ParticipantModel, ParticipantStream } from '../../../models/participant.model';
 import { SmartLayoutService } from '../../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
+import { Track } from '../../../services/livekit-adapter';
 import { HiddenParticipantsIndicatorComponent } from '../../hidden-participants-indicator/hidden-participants-indicator.component';
-import { EXTERNAL_AUDIO_MANAGED } from '../../media-element/media-element.component';
 import { BaseLayoutComponent } from '../base-layout.component';
+
+interface PersistentAudioEntry {
+	element: HTMLAudioElement;
+	track: Track;
+	mounted: boolean;
+}
 
 @Component({
 	selector: 'ov-smart-layout',
@@ -27,8 +36,7 @@ import { BaseLayoutComponent } from '../base-layout.component';
 	],
 	templateUrl: './smart-layout.component.html',
 	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true,
-	providers: [{ provide: EXTERNAL_AUDIO_MANAGED, useValue: true }]
+	standalone: true
 })
 export class SmartLayoutComponent implements OnDestroy {
 	readonly layoutService = inject(SmartLayoutService);
@@ -46,6 +54,9 @@ export class SmartLayoutComponent implements OnDestroy {
 	/** Emits when the user clicks the hidden-participants indicator. */
 	readonly hiddenParticipantsIndicatorClicked = output<void>();
 
+	/** Hidden container that hosts the persistent `<audio>` elements (DOM-mounted for Safari). */
+	private readonly audioContainer = viewChild<ElementRef<HTMLElement>>('audioContainer');
+
 	readonly remoteParticipants = this.participantService.remoteParticipants;
 	readonly localParticipant = this.participantService.localParticipant;
 
@@ -55,61 +66,79 @@ export class SmartLayoutComponent implements OnDestroy {
 	);
 
 	/**
-	 * Stable identity order for the camera-stream `@for` loop.
+	 * Previous-frame identity order for the camera-stream `@for` loop.
+	 * Pure backing state for {@link displayedCameraOrder}; never mutated from computeds.
 	 * In-place replacements (departing → arriving at the same index) let Angular see
 	 * INSERT+REMOVE at the same slot rather than a DOM MOVE, preventing layout crashes.
 	 */
-	private displayedCameraOrder: string[] = [];
+	private readonly _displayedCameraOrder = signal<string[]>([]);
 
-	private readonly visibleState = computed(() => {
+	/**
+	 * Derives the next identity order from the current inputs and the previous order.
+	 * Pure — does not mutate `_displayedCameraOrder`; {@link orderSyncEffect} persists the
+	 * result back so the next evaluation sees the up-to-date previous frame.
+	 */
+	private readonly displayedCameraOrder = computed<string[]>(() => {
 		const allRemotes = this.remoteParticipants();
-		const targetIds = new Set<string>();
-		const streams: ParticipantStream[] = [];
+		const isSmart = this.isSmartLayoutActive();
+		const previous = untracked(() => this._displayedCameraOrder());
 
-		if (!this.isSmartLayoutActive()) {
-			// Mosaic mode: preserve displayedCameraOrder across smart↔mosaic transitions
-			// so existing DOM nodes keep their positions. Newcomers are appended at the end.
+		if (!isSmart) {
+			// Mosaic mode: preserve previous order across smart↔mosaic transitions so existing
+			// DOM nodes keep their positions. Newcomers are appended at the end.
 			const allIds = allRemotes.map((p) => p.identity);
-			const currentSet = new Set(this.displayedCameraOrder.filter((id) => allIds.includes(id)));
-			const mosaicOrder = this.displayedCameraOrder.filter((id) => allIds.includes(id));
+			const allIdSet = new Set(allIds);
+			const mosaicOrder = previous.filter((id) => allIdSet.has(id));
+			const orderSet = new Set(mosaicOrder);
 			for (const p of allRemotes) {
-				if (!currentSet.has(p.identity)) mosaicOrder.push(p.identity);
+				if (!orderSet.has(p.identity)) mosaicOrder.push(p.identity);
 			}
-			this.displayedCameraOrder = mosaicOrder;
-
-			const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
-			for (const id of mosaicOrder) {
-				targetIds.add(id);
-				const p = participantMap.get(id);
-				if (p) streams.push(...p.streams());
-			}
-			return { streams, targetIds };
+			return mosaicOrder;
 		}
 
 		const availableIds = new Set(allRemotes.map((p) => p.identity));
 		const toDisplayIds = this.layoutService.computeParticipantsToDisplay(availableIds);
+		// In-place swaps: departing participants are replaced by arriving ones at the same index,
+		// so Angular @for sees INSERT+REMOVE instead of MOVE.
+		return this.syncDisplayOrder(previous, toDisplayIds, availableIds);
+	});
 
-		// Sync identity order with in-place swaps: departing participants are replaced
-		// by arriving ones at the same index, so Angular @for sees INSERT+REMOVE instead of MOVE.
-		this.displayedCameraOrder = this.syncDisplayOrder(this.displayedCameraOrder, toDisplayIds, availableIds);
+	/** Persists the latest computed order into `_displayedCameraOrder` for the next frame. */
+	private readonly orderSyncEffect = effect(() => {
+		const next = this.displayedCameraOrder();
+		untracked(() => {
+			const current = this._displayedCameraOrder();
+			if (current.length === next.length && current.every((v, i) => v === next[i])) return;
+			this._displayedCameraOrder.set(next);
+		});
+	});
+
+	private readonly visibleState = computed(() => {
+		const order = this.displayedCameraOrder();
+		const allRemotes = this.remoteParticipants();
+		const isSmart = this.isSmartLayoutActive();
+		const targetIds = new Set<string>(order);
+		const streams: ParticipantStream[] = [];
 
 		const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
 
 		// Displayed participants: push all streams (camera + screen).
 		// LayoutComponent splits them into separate camera/screen @for loops,
 		// so interleaving here is safe — only within-category order matters.
-		for (const id of this.displayedCameraOrder) {
-			targetIds.add(id);
+		for (const id of order) {
 			const p = participantMap.get(id);
 			if (p) streams.push(...p.streams());
 		}
 
-		// Non-displayed screen-sharing participants: add their screen stream only
-		// so their audio+video is rendered without occupying a camera slot.
-		for (const p of allRemotes) {
-			if (!targetIds.has(p.identity) && p.isScreenShareEnabled) {
-				const screen = p.streams().find((s) => s.isScreenStream);
-				if (screen) streams.push(screen);
+		if (isSmart) {
+			// Non-displayed screen-sharing participants: add their screen stream only
+			// so their video is rendered without occupying a camera slot.
+			// (Their screen audio is handled by the persistent audio layer regardless.)
+			for (const p of allRemotes) {
+				if (!targetIds.has(p.identity) && p.isScreenShareEnabled) {
+					const screen = p.streams().find((s) => s.isScreenStream);
+					if (screen) streams.push(screen);
+				}
 			}
 		}
 
@@ -184,21 +213,16 @@ export class SmartLayoutComponent implements OnDestroy {
 		return order;
 	}
 
-	/** Persistent `<audio>` elements for all remote participants' camera audio tracks. */
-	private audioElements = new Map<string, { element: HTMLMediaElement; detach: () => void }>();
-	private previousIsSmartLayoutActive = false;
-
-	/** Resets speaker tracking when leaving smart-layout mode. */
-	private readonly smartLayoutResetEffect = effect(() => {
-		const isActive = this.isSmartLayoutActive();
-		if (!isActive && this.previousIsSmartLayoutActive) {
-			untracked(() => this.layoutService.resetSpeakerTrackingState());
-		}
-		this.previousIsSmartLayoutActive = isActive;
-	});
+	/**
+	 * Persistent `<audio>` elements for every remote audio track (camera + screen-share).
+	 * Keyed by `${identity}:${source}` so that a track re-publish (new `trackSid` under the
+	 * same participant + source) reuses the same `<audio>` element via attach/detach swap,
+	 * preventing the audible gap that would otherwise occur on tear-down + rebuild.
+	 */
+	private audioElements = new Map<string, PersistentAudioEntry>();
 
 	/**
-	 * Manages persistent `<audio>` elements for all remote participants' camera audio tracks.
+	 * Manages persistent `<audio>` elements for every remote audio track (camera + screen).
 	 * Audio lifecycle is decoupled from layout visibility to prevent glitches during rotation.
 	 * `streams()` is read before `untracked` to register track-publish/unpublish as reactive dependencies.
 	 */
@@ -206,8 +230,10 @@ export class SmartLayoutComponent implements OnDestroy {
 		const allRemotes = this.remoteParticipants();
 		// Read streams() for every remote participant to register track changes as dependencies.
 		allRemotes.forEach((p) => p.streams());
+		// Track the container so we re-run once viewChild resolves and can mount queued elements.
+		const container = this.audioContainer()?.nativeElement ?? null;
 
-		untracked(() => this.manageAudioTracks(allRemotes));
+		untracked(() => this.manageAudioTracks(allRemotes, container));
 	});
 
 	/** Removes disconnected participants from the speaker-priority list. */
@@ -220,42 +246,55 @@ export class SmartLayoutComponent implements OnDestroy {
 
 	ngOnDestroy(): void {
 		this.cleanupAudioElements(new Set());
-		this.layoutService.resetSpeakerTrackingState();
-		this.displayedCameraOrder = [];
 	}
 
-	private manageAudioTracks(participants: ParticipantModel[]): void {
-		const activeTrackSids = new Set<string>();
+	private manageAudioTracks(participants: ParticipantModel[], container: HTMLElement | null): void {
+		const activeKeys = new Set<string>();
 
 		for (const participant of participants) {
 			for (const stream of participant.streams()) {
-				// Skip screen streams: their audio is rendered by StreamComponent.
-				if (stream.isScreenStream) continue;
-
 				const audioTrack = stream.audioTrack;
-				if (audioTrack?.track && audioTrack.track.attach) {
-					activeTrackSids.add(audioTrack.trackSid);
-					let entry = this.audioElements.get(audioTrack.trackSid);
-					if (!entry) {
-						const element = audioTrack.track.attach();
-						const track = audioTrack.track;
-						entry = { element, detach: () => track.detach(element) };
-						this.audioElements.set(audioTrack.trackSid, entry);
-					}
-					entry.element.muted = participant.isMutedForcibly;
+				const track = audioTrack?.track;
+				if (!track || typeof track.attach !== 'function') continue;
+
+				const key = `${participant.identity}:${stream.source}`;
+				activeKeys.add(key);
+
+				let entry = this.audioElements.get(key);
+				if (!entry) {
+					const element = document.createElement('audio');
+					element.autoplay = true;
+					element.setAttribute('data-participant', participant.identity);
+					element.setAttribute('data-source', stream.source);
+					track.attach(element);
+					entry = { element, track, mounted: false };
+					this.audioElements.set(key, entry);
+				} else if (entry.track !== track) {
+					// Track re-publish under the same participant+source: swap the underlying
+					// source without recreating the element, so playback never gaps.
+					entry.track.detach(entry.element);
+					track.attach(entry.element);
+					entry.track = track;
 				}
+
+				if (container && !entry.mounted) {
+					container.appendChild(entry.element);
+					entry.mounted = true;
+				}
+
+				entry.element.muted = stream.isMutedForcibly;
 			}
 		}
 
-		this.cleanupAudioElements(activeTrackSids);
+		this.cleanupAudioElements(activeKeys);
 	}
 
-	private cleanupAudioElements(activeSids: Set<string>): void {
-		for (const [sid, { element, detach }] of this.audioElements) {
-			if (!activeSids.has(sid)) {
-				detach();
-				element.remove();
-				this.audioElements.delete(sid);
+	private cleanupAudioElements(activeKeys: Set<string>): void {
+		for (const [key, entry] of this.audioElements) {
+			if (!activeKeys.has(key)) {
+				entry.track.detach(entry.element);
+				entry.element.remove();
+				this.audioElements.delete(key);
 			}
 		}
 	}
