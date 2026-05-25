@@ -5,7 +5,7 @@
 		[class.no-size]="!showVideo()"
 		[class.local]="stream.participant.isLocal"
 		[class.remote]="!stream.participant.isLocal"
-		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
+		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream && stream.participant.isCameraEnabled"
 		[class.screen-source]="stream.isScreenStream"
 		[class.camera-source]="stream.isCameraStream"
 		[id]="'stream-' + stream.source + '-' + stream.streamId"
@@ -27,7 +27,7 @@
 			<ov-connection-quality-indicator [participant]="stream.participant" />
 		}
 
-		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream) {
+		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream && stream.participant.isCameraEnabled) {
 			<div id="audio-wave-container">
 				<ov-audio-wave />
 			</div>
@@ -40,6 +40,7 @@
 			[avatarName]="stream.participant.name ?? ''"
 			[isLocal]="stream.participant.isLocal"
 			[hasEncryptionError]="stream.participant.hasEncryptionError"
+			[isSpeaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
 		/>
 
 		@if (

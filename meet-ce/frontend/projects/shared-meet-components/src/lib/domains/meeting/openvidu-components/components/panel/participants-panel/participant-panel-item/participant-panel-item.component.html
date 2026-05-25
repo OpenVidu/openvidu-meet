@@ -7,14 +7,15 @@
 				[attr.data-participant-id]="_participant.sid"
 				[attr.data-participant-name]="participantDisplayName()"
 			>
-				<!-- Avatar section with dynamic color -->
-				<div
-					class="participant-avatar"
-					[style.background-color]="_participant.colorProfile"
+				<!-- Avatar section -->
+				<ov-participant-avatar
+					variant="panel"
+					[nickname]="_participant.name ?? ''"
+					[color]="_participant.colorProfile"
+					[isSpeaking]="showAudioDetection() && _participant.isSpeaking"
+					[hasEncryptionError]="_participant.hasEncryptionError"
 					[attr.aria-label]="'Avatar for ' + participantDisplayName()"
-				>
-					<mat-icon>{{ _participant.hasEncryptionError ? 'lock_person' : 'person' }}</mat-icon>
-				</div>
+				/>
 
 				<!-- Content section with name and status -->
 				<div class="participant-content">

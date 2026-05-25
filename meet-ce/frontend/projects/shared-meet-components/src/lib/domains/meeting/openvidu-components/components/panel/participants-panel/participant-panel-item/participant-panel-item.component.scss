@@ -47,28 +47,10 @@
 		}
 	}
 
-	// Avatar styling with improved design
-	.participant-avatar {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 40px;
-		height: 40px;
-		border-radius: var(--ov-surface-radius);
+	// Avatar layout — sizing and visuals live inside ParticipantAvatarComponent
+	ov-participant-avatar {
 		margin-right: 12px;
-		padding: 0;
-		color: var(--ov-text-primary-color);
-		font-weight: 500;
 		flex-shrink: 0;
-		position: relative;
-		overflow: hidden;
-
-		mat-icon {
-			font-size: 20px;
-			width: 20px;
-			height: 20px;
-			z-index: 1;
-		}
 	}
 
 	// Main content area
@@ -353,25 +335,6 @@
 			min-height: 56px;
 		}
 
-		.participant-avatar {
-			width: 36px;
-			height: 36px;
-			margin-right: 10px;
-
-			mat-icon {
-				font-size: 18px;
-				width: 18px;
-				height: 18px;
-			}
-
-			&::after {
-				width: 10px;
-				height: 10px;
-				bottom: 1px;
-				right: 1px;
-			}
-		}
-
 		.participant-name {
 			max-width: calc(100% - 60px); // Less space on mobile
 
@@ -415,10 +378,6 @@
 	@media (prefers-contrast: high) {
 		.participant-container {
 			border: 2px solid var(--ov-text-primary, #212121);
-		}
-
-		.participant-avatar {
-			border: 2px solid var(--ov-surface-background, #ffffff);
 		}
 
 		.local-indicator {

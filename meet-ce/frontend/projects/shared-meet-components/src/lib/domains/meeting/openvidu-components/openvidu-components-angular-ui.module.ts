@@ -34,7 +34,7 @@ import { LangSelectorComponent } from './components/settings/lang-selector/lang-
 import { ParticipantNameInputComponent } from './components/settings/participant-name-input/participant-name-input.component';
 import { ThemeSelectorComponent } from './components/settings/theme-selector/theme-selector.component';
 import { VideoDevicesComponent } from './components/settings/video-devices/video-devices.component';
-import { VideoPosterComponent } from './components/video-poster/video-poster.component';
+import { ParticipantAvatarComponent } from './components/participant-avatar/participant-avatar.component';
 import { ApiDirectiveModule } from './directives/api/api.directive.module';
 import { OpenViduComponentsDirectiveModule } from './directives/template/openvidu-components-angular.directive.module';
 
@@ -67,7 +67,7 @@ const privateComponents: any[] = [];
 		ParticipantNameInputComponent,
 		ThemeSelectorComponent,
 		VideoDevicesComponent,
-		VideoPosterComponent,
+		ParticipantAvatarComponent,
 		VideoElementComponent,
 		ToolbarMediaButtonsComponent,
 		ToolbarPanelButtonsComponent,

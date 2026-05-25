@@ -1,0 +1,219 @@
+// ── Poster variant ──────────────────────────────────────────────────────────
+
+:host.poster {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+.encryption-error-poster {
+	position: absolute;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, rgba(15, 15, 20, 0.95) 0%, rgba(25, 25, 35, 0.9) 100%);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-radius: var(--ov-video-radius);
+	z-index: 10;
+}
+
+.encryption-error-content {
+	text-align: center;
+	padding: 1.5rem;
+	max-width: 280px;
+	color: var(--ov-meet-text-primary, #ffffff);
+
+	svg {
+		color: var(--ov-meet-color-error, #ef4444);
+		margin-bottom: 0.75rem;
+		filter: drop-shadow(0 4px 12px rgba(239, 68, 68, 0.25));
+		opacity: 0.9;
+	}
+
+	h3 {
+		font-size: 0.95rem;
+		font-weight: 600;
+		margin: 0 0 0.4rem 0;
+		color: var(--ov-meet-text-primary, #ffffff);
+		letter-spacing: 0.02em;
+	}
+
+	p {
+		font-size: 0.8rem;
+		margin: 0;
+		opacity: 0.7;
+		line-height: 1.5;
+		color: var(--ov-meet-text-secondary, #a1a1aa);
+	}
+}
+
+.poster {
+	height: 100%;
+	width: 100%;
+	background: linear-gradient(145deg, #1a1a1f 0%, #0f0f12 100%);
+	position: absolute;
+	z-index: 888;
+	border-radius: var(--ov-video-radius);
+	overflow: hidden;
+	// Enables cqh units on children so the avatar circle can scale with tile height
+	container-type: size;
+
+	&::before {
+		content: '';
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		background: radial-gradient(circle at 50% 120%, rgba(255, 255, 255, 0.03) 0%, transparent 60%);
+		pointer-events: none;
+	}
+}
+
+.initial {
+	position: absolute;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1;
+	margin: auto;
+	inset: 0;
+	// Scales with the tile height: 40 % of height, clamped between 36 px (tiny tile) and 80 px (normal)
+	height: clamp(36px, 40cqh, 80px);
+	width: clamp(36px, 40cqh, 80px);
+	border-radius: var(--ov-video-radius);
+	box-shadow:
+		0 8px 32px rgba(0, 0, 0, 0.4),
+		0 0 0 1px rgba(255, 255, 255, 0.05);
+	transition: box-shadow 0.3s ease;
+	color: var(--ov-meet-text-on-primary);
+
+	&.speaking {
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.4),
+			0 0 0 1px rgba(255, 255, 255, 0.05),
+			0 0 0 3px var(--ov-accent-action-color);
+		animation: posterSpeakingPulse 1.5s ease-in-out infinite;
+	}
+}
+
+.poster-text {
+	font-weight: 500;
+	// Scales proportionally with the circle: ~half the circle's cqh percentage, clamped to match
+	font-size: clamp(0.9rem, 16cqh, 2rem);
+	letter-spacing: 0.02em;
+	text-transform: uppercase;
+	opacity: 0.95;
+}
+
+// ── Panel variant ───────────────────────────────────────────────────────────
+
+:host.panel {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.panel-avatar {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 40px;
+	height: 40px;
+	border-radius: var(--ov-surface-radius);
+	color: var(--ov-text-primary-color);
+	font-weight: 500;
+	position: relative;
+	overflow: hidden;
+	box-shadow: 0 0 0 2px transparent;
+	transition: box-shadow 0.2s ease-in-out;
+
+	mat-icon {
+		font-size: 20px;
+		width: 20px;
+		height: 20px;
+	}
+
+	.panel-initial {
+		font-size: 16px;
+		font-weight: 600;
+		text-transform: uppercase;
+		color: inherit;
+		line-height: 1;
+	}
+
+	&.speaking {
+		box-shadow: 0 0 0 2px var(--ov-accent-action-color);
+		animation: panelSpeakingPulse 1.5s ease-in-out infinite;
+	}
+}
+
+// ── Animations ──────────────────────────────────────────────────────────────
+
+@keyframes posterSpeakingPulse {
+	0%,
+	100% {
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.4),
+			0 0 0 1px rgba(255, 255, 255, 0.05),
+			0 0 0 3px var(--ov-accent-action-color);
+	}
+	50% {
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.4),
+			0 0 0 1px rgba(255, 255, 255, 0.05),
+			0 0 0 6px var(--ov-accent-action-color);
+	}
+}
+
+@keyframes panelSpeakingPulse {
+	0%,
+	100% {
+		box-shadow: 0 0 0 2px var(--ov-accent-action-color);
+	}
+	50% {
+		box-shadow: 0 0 0 4px var(--ov-accent-action-color);
+	}
+}
+
+// ── Responsive ──────────────────────────────────────────────────────────────
+
+@media (max-width: 768px) {
+	.panel-avatar {
+		width: 36px;
+		height: 36px;
+
+		mat-icon {
+			font-size: 18px;
+			width: 18px;
+			height: 18px;
+		}
+
+		.panel-initial {
+			font-size: 14px;
+		}
+	}
+}
+
+// ── Accessibility ───────────────────────────────────────────────────────────
+
+@media (prefers-reduced-motion: reduce) {
+	.initial.speaking,
+	.panel-avatar.speaking {
+		animation: none;
+	}
+}
+
+@media (prefers-contrast: high) {
+	.panel-avatar {
+		border: 2px solid var(--ov-surface-background, #ffffff);
+	}
+}

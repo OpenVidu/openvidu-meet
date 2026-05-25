@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, ElementRef, input, OnDestroy, viewChild } from '@angular/core';
 import { Track } from '../../services/livekit-adapter';
-import { VideoPosterComponent } from '../video-poster/video-poster.component';
+import { ParticipantAvatarComponent } from '../participant-avatar/participant-avatar.component';
 
 /**
  * Renders the video element (or avatar) for a participant stream.
@@ -17,14 +17,14 @@ import { VideoPosterComponent } from '../video-poster/video-poster.component';
  */
 @Component({
 	selector: 'ov-video-element',
-	imports: [VideoPosterComponent],
+	imports: [ParticipantAvatarComponent],
 	template: `
-		<ov-video-poster
-			[animate.enter]="'ov-poster-enter'"
-			[animate.leave]="'ov-poster-leave'"
+		<ov-participant-avatar
+			variant="poster"
 			[showAvatar]="showAvatar()"
 			[nickname]="avatarName()"
 			[color]="avatarColor()"
+			[isSpeaking]="isSpeaking()"
 			[hasEncryptionError]="hasEncryptionError()"
 		/>
 		@if (videoTrack()) {
@@ -42,6 +42,7 @@ export class VideoElementComponent implements OnDestroy {
 	readonly avatarName = input('User');
 	readonly isLocal = input(false);
 	readonly hasEncryptionError = input(false);
+	readonly isSpeaking = input(false);
 	readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('videoElement');
 
 	private previousVideoTrack: Track | null = null;
