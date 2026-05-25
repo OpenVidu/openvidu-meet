@@ -300,23 +300,23 @@ test.describe('Layout E2E Tests', () => {
 				const [pageA] = pages;
 
 				try {
-					await waitForRemoteStream(pageA, 3, { requireAudioTracks: true });
+					await waitForRemoteStream(pageA, 3, { audioCount: 3 });
 
 					await setSmartMosaicSliderValue(pageA, 2);
-					await waitForRemoteStream(pageA, 2, { requireAudioTracks: true });
+					await waitForRemoteStream(pageA, 2, { audioCount: 3 });
 					await expect(
 						pageA.locator('.hidden-participants-container .participant-count-value')
 					).toContainText('+1');
 
 					await setSmartMosaicSliderValue(pageA, 1);
-					await waitForRemoteStream(pageA, 1, { requireAudioTracks: true });
+					await waitForRemoteStream(pageA, 1, { audioCount: 3 });
 					await expectVisible(pageA, 'ov-hidden-participants-indicator');
 					await expect(
 						pageA.locator('.hidden-participants-container .participant-count-value')
 					).toContainText('+2');
 
 					await setSmartMosaicSliderValue(pageA, 4);
-					await waitForRemoteStream(pageA, 3, { requireAudioTracks: true });
+					await waitForRemoteStream(pageA, 3, { audioCount: 3 });
 					await expectHidden(pageA, 'ov-hidden-participants-indicator');
 				} finally {
 					await removeAllParticipants();
@@ -337,14 +337,14 @@ test.describe('Layout E2E Tests', () => {
 
 				try {
 					await Promise.all([
-						startScreensharing(byName['screen-share']),
-						waitForRemoteStream(pageA, 3, { requireAudioTracks: true })
+						startScreensharing(byName[screenShareName]),
+						waitForRemoteStream(pageA, 3, { audioCount: 3 })
 					]);
 
 					await setSmartMosaicSliderValue(pageA, 1);
 
 					// Expect 1 remote + screen share
-					await waitForRemoteStream(pageA, 2, { requireAudioTracks: true });
+					await waitForRemoteStream(pageA, 2, { audioCount: 3 });
 					await expectVisible(pageA, '.OV_stream.remote.screen-source');
 
 					await expectVisible(pageA, 'ov-hidden-participants-indicator');
@@ -354,7 +354,7 @@ test.describe('Layout E2E Tests', () => {
 
 					await setSmartMosaicSliderValue(pageA, 2);
 
-					await waitForRemoteStream(pageA, 3, { requireAudioTracks: true });
+					await waitForRemoteStream(pageA, 3, { audioCount: 3 });
 					await expectHidden(pageA, 'ov-hidden-participants-indicator');
 				} finally {
 					await removeAllParticipants();
@@ -379,7 +379,7 @@ test.describe('Layout E2E Tests', () => {
 
 					await startScreensharing(byName['remote-screen']);
 
-					await waitForRemoteStream(pageA, 2, { requireAudioTracks: true }); // screen + 1 remote
+					await waitForRemoteStream(pageA, 2, { audioCount: 2 }); // screen + 1 remote
 					await expect(pageA.locator('.OV_stream.remote.screen-source')).toHaveCount(1, { timeout: 20_000 });
 
 					expect(await pageA.locator('.OV_stream_video').count()).toBe(3); // local + remote + remote screen
@@ -574,7 +574,7 @@ test.describe('Layout E2E Tests', () => {
 					await waitForRemoteStream(pageA, 2); //2 remotes
 					await setSmartMosaicSliderValue(pageA, 1);
 
-					await waitForRemoteStream(pageA, 1); //1 remote
+					await waitForRemoteStream(pageA, 1, { audioCount: 2 }); //1 remote
 
 					await startScreensharing(byName['remote-b']);
 
@@ -605,7 +605,7 @@ test.describe('Layout E2E Tests', () => {
 				try {
 					// Limit to 1 visible remote on A's view: 2 remotes present, 1 is hidden
 					await setSmartMosaicSliderValue(pageA, 1);
-					await waitForRemoteStream(pageA, 1, { requireAudioTracks: true });
+					await waitForRemoteStream(pageA, 1, { audioCount: 2 });
 
 					// The hidden participants indicator must be present and show "+1 more participant"
 					await Promise.all([
@@ -691,7 +691,7 @@ test.describe('Layout E2E Tests', () => {
 					]);
 
 					await selectSmartMosaicLayout(pageA);
-					await waitForRemoteStream(pageA, 1, { requireAudioTracks: true });
+					await waitForRemoteStream(pageA, 1, { audioCount: 2 });
 					await Promise.all([
 						expect(pageA.locator('ov-hidden-participants-indicator')).toBeVisible({ timeout: 10_000 }),
 						expect(pageA.locator('.OV_stream_video.remote')).toHaveCount(1, { timeout: 15_000 })
@@ -1338,7 +1338,7 @@ test.describe('Layout E2E Tests', () => {
 					);
 
 					// Verify that the remaining visible participants have active video
-					await waitForRemoteStream(pageA, 2);
+					await waitForRemoteStream(pageA, 2, { videoCount: 2, audioCount: 3 });
 				} finally {
 					await removeAllParticipants();
 				}
@@ -1383,7 +1383,7 @@ test.describe('Layout E2E Tests', () => {
 						20_000
 					);
 
-					await waitForRemoteStream(pageA, 2);
+					await waitForRemoteStream(pageA, 2, { audioCount: 2 });
 				} finally {
 					await removeAllParticipants();
 				}
@@ -1439,7 +1439,7 @@ test.describe('Layout E2E Tests', () => {
 						20_000
 					);
 
-					await waitForRemoteStream(pageA, 1);
+					await waitForRemoteStream(pageA, 1, { audioCount: 2 });
 				} finally {
 					await removeAllParticipants();
 				}
@@ -1462,35 +1462,35 @@ test.describe('Layout E2E Tests', () => {
 			const [pageA] = pages;
 
 			try {
-				await waitForRemoteStream(pageA, 3, { requireAudioTracks: true });
+				await waitForRemoteStream(pageA, 3, { audioCount: 3 });
 
 				await setSmartMosaicSliderValue(pageA, 2);
-				await waitForRemoteStream(pageA, 2, { requireAudioTracks: true });
+				await waitForRemoteStream(pageA, 2, { audioCount: 3 });
 				await expect(pageA.locator('.hidden-participants-container .participant-count-value')).toContainText(
 					'+1'
 				);
 
 				// Switch to mosaic and verify all remotes are visible
 				await selectMosaicLayout(pageA);
-				await waitForRemoteStream(pageA, 3, { requireAudioTracks: true });
+				await waitForRemoteStream(pageA, 3, { audioCount: 3 });
 				await expectHidden(pageA, 'ov-hidden-participants-indicator');
 
 				// Switch back to smart mosaic and verify the previous limit is applied (2 visible remotes, 1 hidden)
 				await selectSmartMosaicLayout(pageA);
-				await waitForRemoteStream(pageA, 2, { requireAudioTracks: true });
+				await waitForRemoteStream(pageA, 2, { audioCount: 3 });
 				await expect(pageA.locator('.hidden-participants-container .participant-count-value')).toContainText(
 					'+1'
 				);
 
 				await setSmartMosaicSliderValue(pageA, 1);
-				await waitForRemoteStream(pageA, 1, { requireAudioTracks: true });
+				await waitForRemoteStream(pageA, 1, { audioCount: 3 });
 				await expectVisible(pageA, 'ov-hidden-participants-indicator');
 				await expect(pageA.locator('.hidden-participants-container .participant-count-value')).toContainText(
 					'+2'
 				);
 
 				await setSmartMosaicSliderValue(pageA, 4);
-				await waitForRemoteStream(pageA, 3, { requireAudioTracks: true });
+				await waitForRemoteStream(pageA, 3, { audioCount: 3 });
 				await expectHidden(pageA, 'ov-hidden-participants-indicator');
 			} finally {
 				await removeAllParticipants();
@@ -1510,7 +1510,7 @@ test.describe('Layout E2E Tests', () => {
 			});
 
 			try {
-				await waitForRemoteStream(pages[1], 2);
+				await waitForRemoteStream(pages[1], 2, { audioCount: 3 });
 
 				const pageA = await addParticipant({ name: 'local' });
 

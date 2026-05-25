@@ -4,26 +4,35 @@ import { expectVisible, hoverStream } from './ui-utils.helper';
 // ─── Remote stream waiting ──────────────────────────────────────────────────
 
 /**
- * Waits until the expected number of remote streams are visible **and** the
- * specified number have playable video tracks.
+ * Waits until the expected number of remote streams are visible, the specified
+ * number have playable video tracks, and the expected number of remote audio
+ * elements are mounted (hidden) in the persistent audio layer.
+ *
+ * Audio is no longer attached to the `<video>` element — `SmartLayoutComponent`
+ * mounts a dedicated `<audio data-participant data-source>` per remote audio
+ * track inside a `[hidden]` container so playback survives layout changes and
+ * works on Safari. We assert those elements exist with live tracks.
  *
  * @param count   - Total visible remote streams expected.
- * @param options.requireAudioTracks - Also require live audio tracks.
  * @param options.videoCount - How many of the streams must have playable video.
- *   Defaults to {@link count} (all). Use a lower value when some participants
- *   have their camera off.
+ *   Defaults to {@link count}. Lower when some participants have camera off.
+ * @param options.audioCount - How many hidden remote `<audio>` elements with
+ *   live tracks are expected. Defaults to {@link count}. Override for cases
+ *   where audio and visible-stream counts diverge (e.g. screen-share without
+ *   audio, or a remote with mic off).
  */
 export const waitForRemoteStream = async (
 	page: Page,
 	count = 1,
-	options?: { requireAudioTracks?: boolean; videoCount?: number }
+	options?: { videoCount?: number; audioCount?: number }
 ): Promise<void> => {
 	const expectedVideoCount = options?.videoCount ?? count;
+	const expectedAudioCount = options?.audioCount ?? count;
 
 	await expect
 		.poll(
 			async () =>
-				await page.evaluate((requireAudioTracks) => {
+				await page.evaluate(() => {
 					const remoteStreams = Array.from(document.querySelectorAll('.OV_stream.remote')) as HTMLElement[];
 					const visibleRemoteStreams = remoteStreams.filter((stream) => {
 						const rect = stream.getBoundingClientRect();
@@ -55,21 +64,36 @@ export const waitForRemoteStream = async (
 						const liveVideoTracks = mediaStream
 							.getVideoTracks()
 							.filter((track) => track.readyState === 'live');
-						const liveAudioTracks = mediaStream
-							.getAudioTracks()
-							.filter((track) => track.readyState === 'live');
 
-						return liveVideoTracks.length > 0 && (!requireAudioTracks || liveAudioTracks.length > 0);
+						return liveVideoTracks.length > 0;
+					});
+
+					const audioElements = Array.from(
+						document.querySelectorAll('audio[data-participant]')
+					) as HTMLAudioElement[];
+					const hiddenLiveRemoteAudios = audioElements.filter((audio) => {
+						if (!audio.closest('[hidden]')) return false;
+
+						const stream = audio.srcObject as MediaStream | null;
+
+						if (!stream) return false;
+
+						return stream.getAudioTracks().some((track) => track.readyState === 'live');
 					});
 
 					return {
 						visibleRemoteStreams: visibleRemoteStreams.length,
-						playableRemoteVideos: playableRemoteVideos.length
+						playableRemoteVideos: playableRemoteVideos.length,
+						hiddenLiveRemoteAudios: hiddenLiveRemoteAudios.length
 					};
-				}, options?.requireAudioTracks ?? false),
+				}),
 			{ timeout: 15_000 }
 		)
-		.toEqual({ visibleRemoteStreams: count, playableRemoteVideos: expectedVideoCount });
+		.toEqual({
+			visibleRemoteStreams: count,
+			playableRemoteVideos: expectedVideoCount,
+			hiddenLiveRemoteAudios: expectedAudioCount
+		});
 };
 
 // ─── Remote participant name helpers ────────────────────────────────────────
