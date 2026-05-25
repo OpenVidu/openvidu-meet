@@ -100,7 +100,7 @@ const joinParticipantInternal = async (
 ): Promise<Page> => {
 	const {
 		name,
-		audioEnabled = false,
+		audioEnabled = true,
 		videoEnabled = true,
 		screenShare = false,
 		baseRole = MeetRoomMemberRole.MODERATOR,

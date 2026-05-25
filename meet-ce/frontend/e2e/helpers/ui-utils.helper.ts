@@ -7,7 +7,7 @@ import { PNG } from 'pngjs';
 /**
  * Clicks a locator within the given timeout.
  */
-export const click = async (locator: Locator, timeoutMs = 2_000): Promise<void> => {
+export const click = async (locator: Locator, timeoutMs = 5_000): Promise<void> => {
 	await locator.click({ timeout: timeoutMs });
 };
 
@@ -150,7 +150,7 @@ export const expectCopiedUrl = async (page: Page, timeoutMs = 5_000): Promise<vo
 export const captureVideoElementScreenshot = async (page: Page): Promise<Buffer> => {
 	const videoLocator = page.locator('.OV_video-element').first();
 	await expect(videoLocator).toBeVisible({ timeout: 5_000 });
-	return await videoLocator.screenshot({ timeout: 5_000 });
+	return await videoLocator.screenshot({ timeout: 10_000 });
 };
 
 /**

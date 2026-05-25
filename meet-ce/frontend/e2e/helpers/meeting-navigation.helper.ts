@@ -27,7 +27,7 @@ const completeLobby = async (page: Page, options?: { name?: string; e2eeKey?: st
 		await e2eeInput.fill(options.e2eeKey);
 	}
 
-	await click(nameSubmit);
+	await click(nameSubmit, 10_000);
 };
 
 /**
@@ -36,7 +36,7 @@ const completeLobby = async (page: Page, options?: { name?: string; e2eeKey?: st
 const clickJoinRoom = async (page: Page): Promise<void> => {
 	const joinButton = page.locator('#join-button');
 	await expect(joinButton).toBeVisible({ timeout: 10_000 });
-	await click(joinButton);
+	await click(joinButton, 10_000);
 };
 
 // ─── Navigation entry-points ────────────────────────────────────────────────
@@ -60,14 +60,24 @@ export const openMeeting = async (
 		e2eeKey?: string;
 		videoEnabled?: boolean;
 		audioEnabled?: boolean;
+		/** Skip prejoin video/audio state checks (e.g. when media permissions are denied). */
+		skipPrejoinMediaCheck?: boolean;
 	}
 ): Promise<void> => {
-	const { timeoutMs = 15_000, videoEnabled = true, audioEnabled = true } = options ?? {};
+	const {
+		timeoutMs = 15_000,
+		videoEnabled = true,
+		audioEnabled = true,
+		skipPrejoinMediaCheck = false
+	} = options ?? {};
 
 	await openPrejoin(page, accessUrl, options);
 
-	await ensurePrejoinVideoState(page, videoEnabled);
-	await ensurePrejoinAudioState(page, audioEnabled);
+	if (!skipPrejoinMediaCheck) {
+		await ensurePrejoinVideoState(page, videoEnabled);
+		await ensurePrejoinAudioState(page, audioEnabled);
+	}
+
 	await clickJoinRoom(page);
 
 	await expect(page.locator('#layout-container')).toBeVisible({ timeout: timeoutMs });

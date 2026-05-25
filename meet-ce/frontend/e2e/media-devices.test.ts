@@ -119,7 +119,7 @@ test.describe('Media Devices E2E Tests', () => {
 		test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({
 			noMediaPage
 		}) => {
-			await openMeeting(noMediaPage, accessUrl);
+			await openMeeting(noMediaPage, accessUrl, { skipPrejoinMediaCheck: true });
 
 			await expect(noMediaPage.locator('#camera-btn')).toBeDisabled();
 			await expect(noMediaPage.locator('#mic-btn')).toBeDisabled();
@@ -128,7 +128,7 @@ test.describe('Media Devices E2E Tests', () => {
 		test('should show an audio and video device warning in settings when permissions are denied', async ({
 			noMediaPage
 		}) => {
-			await openMeeting(noMediaPage, accessUrl);
+			await openMeeting(noMediaPage, accessUrl, { skipPrejoinMediaCheck: true });
 
 			await openSettingsPanel(noMediaPage);
 			await noMediaPage.locator('#video-opt').click();
