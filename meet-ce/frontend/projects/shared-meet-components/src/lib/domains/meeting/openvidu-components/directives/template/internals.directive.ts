@@ -181,7 +181,7 @@
  * @internal
  */
 
-import { Directive, Input, TemplateRef, ViewContainerRef, inject } from '@angular/core';
+import { Directive, TemplateRef, ViewContainerRef, computed, inject, input } from '@angular/core';
 
 @Directive({
 	selector: '[ovPreJoin]',
@@ -277,25 +277,17 @@ export class LeaveButtonDirective {
 	standalone: true
 })
 export class LayoutAdditionalElementsDirective {
-	/**
-	 * Slot position: 'top', 'bottom', or 'default'
-	 */
-	slot: 'top' | 'bottom' | 'default' = 'default';
+	/** Raw input value — the microsyntax `*ovLayoutAdditionalElements="'bottom'"` binds here. */
+	readonly ovLayoutAdditionalElements = input<'top' | 'bottom' | 'default' | ''>('default');
+
+	/** Normalised slot: empty string is treated as 'default'. */
+	readonly slot = computed<'top' | 'bottom' | 'default'>(() => {
+		const v = this.ovLayoutAdditionalElements();
+		return v === 'top' || v === 'bottom' || v === 'default' ? v : 'default';
+	});
 
 	public template = inject(TemplateRef<any>);
 	public container = inject(ViewContainerRef);
-
-	/**
-	 * @ignore
-	 */
-	@Input('ovLayoutAdditionalElements')
-	set ovLayoutAdditionalElements(slot: 'top' | 'bottom' | 'default' | '') {
-		if (slot === 'top' || slot === 'bottom' || slot === 'default') {
-			this.slot = slot;
-		} else {
-			this.slot = 'default';
-		}
-	}
 }
 
 /**

@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
@@ -11,22 +10,19 @@ import {
 	output,
 	untracked
 } from '@angular/core';
-import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
-import { ParticipantModel, ParticipantStream } from '../../models/participant.model';
-import { SmartLayoutService } from '../../services/layout/smart-layout.service';
-import { ParticipantService } from '../../services/participant/participant.service';
-import { HiddenParticipantsIndicatorComponent } from '../hidden-participants-indicator/hidden-participants-indicator.component';
-import { LayoutComponent } from '../layout/layout.component';
-import { EXTERNAL_AUDIO_MANAGED } from '../media-element/media-element.component';
-import { StreamComponent } from '../stream/stream.component';
+import { LayoutAdditionalElementsDirective } from '../../../directives/template/internals.directive';
+import { ParticipantModel, ParticipantStream } from '../../../models/participant.model';
+import { SmartLayoutService } from '../../../services/layout/smart-layout.service';
+import { ParticipantService } from '../../../services/participant/participant.service';
+import { HiddenParticipantsIndicatorComponent } from '../../hidden-participants-indicator/hidden-participants-indicator.component';
+import { EXTERNAL_AUDIO_MANAGED } from '../../media-element/media-element.component';
+import { BaseLayoutComponent } from '../base-layout.component';
 
 @Component({
 	selector: 'ov-smart-layout',
 	imports: [
-		NgTemplateOutlet,
-		LayoutComponent,
+		BaseLayoutComponent,
 		LayoutAdditionalElementsDirective,
-		StreamComponent,
 		HiddenParticipantsIndicatorComponent
 	],
 	templateUrl: './smart-layout.component.html',
@@ -42,10 +38,10 @@ export class SmartLayoutComponent implements OnDestroy {
 	readonly projectedAdditionalElements = contentChildren(LayoutAdditionalElementsDirective);
 
 	/** Whether smart-layout mode is allowed by the host. Defaults to `true`. */
-	readonly smartLayoutEnabled = input(true);
+	readonly ovSmartLayoutAllowed = input(true);
 
 	/** Whether to show the hidden-participants indicator badge. Defaults to `true`. */
-	readonly showHiddenParticipantsIndicator = input(true);
+	readonly ovShowHiddenParticipantsIndicator = input(true);
 
 	/** Emits when the user clicks the hidden-participants indicator. */
 	readonly hiddenParticipantsIndicatorClicked = output<void>();
@@ -55,7 +51,7 @@ export class SmartLayoutComponent implements OnDestroy {
 
 	/** True when both the host allows smart layout and the service has it enabled. */
 	readonly isSmartLayoutActive = computed(
-		() => this.smartLayoutEnabled() && this.layoutService.isSmartLayoutEnabled()
+		() => this.ovSmartLayoutAllowed() && this.layoutService.isSmartLayoutEnabled()
 	);
 
 	/**
@@ -120,7 +116,7 @@ export class SmartLayoutComponent implements OnDestroy {
 		return { streams, targetIds };
 	});
 
-	/** Streams to pass to {@link LayoutComponent} via `ovRemoteStreams`. */
+	/** Streams to pass to {@link BaseLayoutComponent} via `ovRemoteStreams`. */
 	readonly visibleRemoteStreams = computed(() => this.visibleState().streams);
 
 	/** Number of remote participants hidden from the layout (smart layout only). */
@@ -139,7 +135,7 @@ export class SmartLayoutComponent implements OnDestroy {
 
 	/** Whether to render the hidden-participants indicator in the layout. */
 	readonly shouldShowHiddenParticipantsIndicator = computed(
-		() => this.showHiddenParticipantsIndicator() && this.isSmartLayoutActive() && this.hiddenParticipantsCount() > 0
+		() => this.ovShowHiddenParticipantsIndicator() && this.isSmartLayoutActive() && this.hiddenParticipantsCount() > 0
 	);
 
 	/**

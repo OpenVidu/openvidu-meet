@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, signal } from '@angular/core';
+import { effect, inject, Injectable } from '@angular/core';
 import { LayoutAlignment, LayoutClass, OpenViduLayout, OpenViduLayoutOptions } from '../../models/layout/layout.model';
 import { ILogger } from '../../models/logger.model';
 import { LoggerService } from '../logger/logger.service';
@@ -10,17 +10,13 @@ import { ViewportService } from '../viewport/viewport.service';
 @Injectable({
 	providedIn: 'root'
 })
-export class LayoutService {
+export class BaseLayoutService {
 	private readonly viewportSrv = inject(ViewportService);
 
 	layoutContainer: HTMLElement | undefined = undefined;
-	/**
-	 * Signal that emits the current layout width in pixels
-	 */
-	readonly layoutWidth = signal(0);
 	protected openviduLayout: OpenViduLayout | undefined;
 	protected openviduLayoutOptions!: OpenViduLayoutOptions;
-	protected log: ILogger = inject(LoggerService).get('LayoutService');
+	protected log: ILogger = inject(LoggerService).get('BaseLayoutService');
 
 	private _layoutUpdateEffect = effect(() => {
 		// Setup reactive viewport listener
@@ -41,7 +37,6 @@ export class LayoutService {
 		if (this.layoutContainer) {
 			this.openviduLayout.initLayoutContainer(this.layoutContainer, this.openviduLayoutOptions);
 		}
-		this.sendLayoutWidthEvent();
 	}
 
 	update(timeout: number | undefined = undefined) {
@@ -49,7 +44,6 @@ export class LayoutService {
 			if (this.openviduLayout && this.layoutContainer) {
 				this.openviduLayoutOptions = this.getOptions();
 				this.openviduLayout.updateLayout(this.layoutContainer, this.openviduLayoutOptions);
-				this.sendLayoutWidthEvent();
 			}
 		};
 		if (typeof timeout === 'number' && timeout >= 0) {
@@ -203,7 +197,6 @@ export class LayoutService {
 
 			if (this.openviduLayout && this.layoutContainer) {
 				this.openviduLayout.updateLayout(this.layoutContainer, this.openviduLayoutOptions);
-				this.sendLayoutWidthEvent();
 			}
 		}
 	}
@@ -226,27 +219,5 @@ export class LayoutService {
 				Math.abs((oldOptions[prop] as number) - (newOptions[prop] as number)) > 0.01 ||
 				oldOptions[prop] !== newOptions[prop]
 		);
-	}
-
-	protected sendLayoutWidthEvent() {
-		const layoutContainer = this.openviduLayout?.getLayoutContainer();
-		if (!layoutContainer) {
-			this.log.e('Layout container not found. Cannot send layout width event');
-			return;
-		}
-		const sidenavLayoutElement = this.getHTMLElementByClassName(layoutContainer, LayoutClass.SIDENAV_CONTAINER);
-		if (sidenavLayoutElement && sidenavLayoutElement.clientWidth) {
-			this.layoutWidth.set(sidenavLayoutElement.clientWidth);
-		}
-	}
-
-	protected getHTMLElementByClassName(element: HTMLElement | null, className: string): HTMLElement | null {
-		while (!!element && element !== document.body) {
-			if (element.className.includes(className)) {
-				return element;
-			}
-			element = element.parentElement;
-		}
-		return null;
 	}
 }

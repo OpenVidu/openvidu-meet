@@ -62,7 +62,7 @@ import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { StorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { OpenViduThemeService } from '../../services/theme/theme.service';
-import { LayoutComponent } from '../layout/layout.component';
+import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
 import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
 import { ChatPanelComponent } from '../panel/chat-panel/chat-panel.component';
@@ -96,7 +96,7 @@ import { ToolbarComponent } from '../toolbar/toolbar.component';
 		ActivitiesPanelComponent,
 		ParticipantsPanelComponent,
 		ParticipantPanelItemComponent,
-		LayoutComponent,
+		SmartLayoutComponent,
 		StreamComponent,
 		SettingsPanelGeneralAdditionalElementsDirective
 	],
@@ -499,7 +499,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		// Additional layout elements
 		const layoutAdditional = this.externalLayoutAdditionalElements();
 		r.layoutAdditionalElements.set(layoutAdditional?.template);
-		r.layoutAdditionalElementsSlot.set(layoutAdditional?.slot ?? 'default');
+		r.layoutAdditionalElementsSlot.set(layoutAdditional?.slot() ?? 'default');
 
 		// Settings panel extensions
 		r.settingsPanelGeneralAdditionalElements.set(this.externalSettingsPanelGeneralAdditionalElements()?.template);

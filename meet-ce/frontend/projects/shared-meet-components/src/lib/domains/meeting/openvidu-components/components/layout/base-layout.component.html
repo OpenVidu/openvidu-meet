@@ -57,3 +57,8 @@
 	</div>
 
 </div>
+
+<!-- Built-in default stream template — used when no #stream is provided via content projection or TemplateRegistry. -->
+<ng-template #defaultStream let-stream>
+	<ov-stream [stream]="stream" />
+</ng-template>

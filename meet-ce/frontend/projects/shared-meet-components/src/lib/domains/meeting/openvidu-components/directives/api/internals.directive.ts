@@ -54,7 +54,7 @@ export class FallbackLogoDirective implements OnInit {
  * @internal
  */
 @Directive({
-	selector: 'ov-layout[ovRemoteParticipants]',
+	selector: 'ov-smart-layout[ovRemoteParticipants]',
 	standalone: true
 })
 export class LayoutRemoteParticipantsDirective {

@@ -24,26 +24,27 @@ import { LayoutAdditionalElementsDirective } from '../../directives/template/int
 import { ParticipantStream } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { GlobalConfigService } from '../../services/config/global-config.service';
-import { LayoutService } from '../../services/layout/layout.service';
+import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
+import { StreamComponent } from '../stream/stream.component';
 
 /**
  *
- * The **LayoutComponent** is hosted inside of the {@link VideoconferenceComponent}.
+ * The **BaseLayoutComponent** is hosted inside of the {@link VideoconferenceComponent}.
  * It is in charge of displaying the participants streams layout.
  */
 @Component({
-	selector: 'ov-layout',
-	imports: [CommonModule, CdkDrag],
-	templateUrl: './layout.component.html',
-	styleUrls: ['./layout.component.scss'],
+	selector: 'ov-base-layout',
+	imports: [CommonModule, CdkDrag, StreamComponent],
+	templateUrl: './base-layout.component.html',
+	styleUrls: ['./base-layout.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
-export class LayoutComponent implements OnDestroy, AfterViewInit {
-	private readonly layoutService = inject(LayoutService);
+export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
+	private readonly layoutService = inject(SmartLayoutService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly globalService = inject(GlobalConfigService);
@@ -68,6 +69,11 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
+	readonly defaultStreamTemplate = viewChild<TemplateRef<any>>('defaultStream');
+
+	/**
+	 * @ignore
+	 */
 	readonly cdkDragQueries = viewChildren(CdkDrag);
 
 	/**
@@ -75,26 +81,37 @@ export class LayoutComponent implements OnDestroy, AfterViewInit {
 	 */
 	readonly localLayoutElementQueries = viewChildren('localLayoutElement', { read: ElementRef });
 
+	/**
+	 * Additional elements passed by a parent orchestrator (e.g. {@link SmartLayoutComponent}).
+	 * Merged with content-projected `*ovLayoutAdditionalElements` directives.
+	 */
+	readonly externalAdditionalElements = input<readonly LayoutAdditionalElementsDirective[]>([]);
+
 	readonly streamTemplate = computed(
-		() => this.templateRegistry.stream() ?? this.streamTemplateQuery()
+		() => this.templateRegistry.stream() ?? this.streamTemplateQuery() ?? this.defaultStreamTemplate()
 	);
 
+	private readonly allAdditionalElements = computed(() => [
+		...this.layoutAdditionalElementsDirectives(),
+		...this.externalAdditionalElements()
+	]);
+
 	readonly layoutAdditionalElementsTopTemplates = computed(() =>
-		this.layoutAdditionalElementsDirectives()
-			.filter((directive) => directive.slot === 'top')
-			.map((directive) => directive.template)
+		this.allAdditionalElements()
+			.filter((d) => d.slot() === 'top')
+			.map((d) => d.template)
 	);
 	readonly layoutAdditionalElementsDefaultTemplates = computed(() => {
-		const templates = this.layoutAdditionalElementsDirectives()
-			.filter((directive) => directive.slot === 'default')
-			.map((directive) => directive.template);
+		const templates = this.allAdditionalElements()
+			.filter((d) => d.slot() === 'default')
+			.map((d) => d.template);
 		const fallbackTemplate = this.templateRegistry.layoutAdditionalElements();
 		return templates.length > 0 ? templates : fallbackTemplate ? [fallbackTemplate] : [];
 	});
 	readonly layoutAdditionalElementsBottomTemplates = computed(() =>
-		this.layoutAdditionalElementsDirectives()
-			.filter((directive) => directive.slot === 'bottom')
-			.map((directive) => directive.template)
+		this.allAdditionalElements()
+			.filter((d) => d.slot() === 'bottom')
+			.map((d) => d.template)
 	);
 	readonly localParticipant = this.participantService.localParticipant;
 	readonly remoteParticipants = computed(() => {

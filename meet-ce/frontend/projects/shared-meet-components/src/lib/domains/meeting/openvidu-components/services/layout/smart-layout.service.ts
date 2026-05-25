@@ -4,12 +4,12 @@ import { Participant } from '../../services/livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { SessionRoomEventsService } from '../session/session-room-events.service';
 import { ViewportService } from '../viewport/viewport.service';
-import { LayoutService } from './layout.service';
+import { BaseLayoutService } from './layout.service';
 
 @Injectable({
 	providedIn: 'root'
 })
-export class SmartLayoutService extends LayoutService {
+export class SmartLayoutService extends BaseLayoutService {
 	private readonly loggerService = inject(LoggerService);
 	private readonly sessionRoomEventsService = inject(SessionRoomEventsService);
 	private readonly viewportService = inject(ViewportService);

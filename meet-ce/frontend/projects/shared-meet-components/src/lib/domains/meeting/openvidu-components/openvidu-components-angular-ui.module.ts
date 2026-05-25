@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AudioWaveComponent } from './components/audio-wave/audio-wave.component';
-import { LayoutComponent } from './components/layout/layout.component';
+import { SmartLayoutComponent } from './components/layout/smart-layout/smart-layout.component';
 import { MediaElementComponent } from './components/media-element/media-element.component';
 import { ChatPanelComponent } from './components/panel/chat-panel/chat-panel.component';
 import { SessionComponent } from './components/session/session.component';
@@ -45,16 +45,13 @@ const publicComponents = [
 	ParticipantsPanelComponent,
 	ChatPanelComponent,
 	StreamComponent,
-	LayoutComponent
+	SmartLayoutComponent
 ];
 const declaredPublicComponents: any[] = [];
 const privateComponents: any[] = [];
 
 @NgModule({
-	declarations: [
-		...declaredPublicComponents,
-		...privateComponents,
-	],
+	declarations: [...declaredPublicComponents, ...privateComponents],
 	imports: [
 		CommonModule,
 		FormsModule,
@@ -76,7 +73,7 @@ const privateComponents: any[] = [];
 		ToolbarPanelButtonsComponent,
 		StreamComponent,
 		PreJoinComponent,
-		LayoutComponent,
+		SmartLayoutComponent,
 		PanelComponent,
 		ToolbarComponent,
 		ActivitiesPanelComponent,

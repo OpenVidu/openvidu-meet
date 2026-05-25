@@ -8,7 +8,6 @@ export enum LayoutClass {
 	TOP_BAR_ELEMENT = 'OV_top-bar',
 	IGNORED_ELEMENT = 'OV_ignored',
 	MINIMIZED_ELEMENT = 'OV_minimized',
-	SIDENAV_CONTAINER = 'sidenav-container',
 	NO_SIZE_ELEMENT = 'no-size',
 	CLASS_NAME = 'layout'
 }

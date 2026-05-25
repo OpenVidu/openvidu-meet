@@ -16,7 +16,7 @@ import { ParticipantStream } from '../../models/participant.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
-import { LayoutService } from '../../services/layout/layout.service';
+import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
 import { ConnectionQualityIndicatorComponent } from '../connection-quality-indicator/connection-quality-indicator.component';
@@ -43,7 +43,7 @@ import { MediaElementComponent } from '../media-element/media-element.component'
 	standalone: true
 })
 export class StreamComponent implements OnDestroy {
-	private readonly layoutService = inject(LayoutService);
+	private readonly layoutService = inject(SmartLayoutService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly libService = inject(OpenViduComponentsConfigService);

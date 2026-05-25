@@ -2,7 +2,7 @@ import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
 import { OpenViduComponentsUiModule, PanelService, PanelType } from '../../openvidu-components';
-import { SmartLayoutComponent } from '../../openvidu-components/components/smart-layout/smart-layout.component';
+import { SmartLayoutComponent } from '../../openvidu-components/components/layout/smart-layout/smart-layout.component';
 import { SmartLayoutService } from '../../openvidu-components/services/layout/smart-layout.service';
 import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';

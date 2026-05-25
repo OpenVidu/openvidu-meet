@@ -1,8 +1,8 @@
 @if (lkRoom()) {
 	<div class="main-container" [ngClass]="{ withFooter: areCaptionsEnabledByUser() }">
 		<ov-smart-layout
-			[smartLayoutEnabled]="showLayoutSelector()"
-			[showHiddenParticipantsIndicator]="!shouldShowLinkOverlay()"
+			[ovSmartLayoutAllowed]="showLayoutSelector()"
+			[ovShowHiddenParticipantsIndicator]="!shouldShowLinkOverlay()"
 			[ngClass]="{ withFooter: areCaptionsEnabledByUser() }"
 			(hiddenParticipantsIndicatorClicked)="toggleParticipantsPanel()"
 		>

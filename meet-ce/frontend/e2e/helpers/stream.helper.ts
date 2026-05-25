@@ -1,5 +1,5 @@
 import { expect, type Page } from '@playwright/test';
-import { hoverStream } from './ui-utils.helper';
+import { expectVisible, hoverStream } from './ui-utils.helper';
 
 // ─── Remote stream waiting ──────────────────────────────────────────────────
 
@@ -191,23 +191,36 @@ export const getPinnedStreamCount = async (page: Page): Promise<number> => {
 };
 
 /**
- * Pins a stream by clicking on the element matching {@link selector} and then
- * clicking the pin button that appears.
+ * Toggles the pin state of a stream by clicking on the element matching {@link selector}
+ * and then clicking the pin/unpin button that appears.
+ * Automatically detects whether the stream is currently pinned and clicks the appropriate button.
  */
 export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 10_000): Promise<void> => {
+
+	// Hover the stream to reveal pin/unpin buttons, then click the stream to focus it
 	const target = page.locator(selector).first();
 	await target.click({ force: true });
 
-	const stream = target.locator('xpath=ancestor::*[contains(@class,"OV_stream")]').first();
-	const streamPinButton = stream.locator('#pin-btn').first();
+	await expectVisible(page, '.stream-video-controls');
 
-	if (await streamPinButton.isVisible()) {
-		await streamPinButton.click();
+	// Determine if the stream is already pinned by checking which button is visible
+	const pinButton = page.locator('#pin-btn').first();
+	const unpinButton = page.locator('#unpin-btn').first();
+
+	const isPinButtonVisible = await pinButton.isVisible().catch(() => false);
+	const isUnpinButtonVisible = await unpinButton.isVisible().catch(() => false);
+
+	if (isPinButtonVisible) {
+		// Stream is not pinned, click pin button
+		await pinButton.click();
+		await expect(page.locator('.OV_big .OV_stream').first()).toBeVisible({ timeout: timeoutMs });
+	} else if (isUnpinButtonVisible) {
+		// Stream is already pinned, click unpin button
+		await unpinButton.click();
+		await expect(page.locator('.OV_big .OV_stream')).toHaveCount(0, { timeout: timeoutMs });
 	} else {
-		await page.locator('#pin-btn').first().click();
+		throw new Error('Neither pin nor unpin button is visible for the stream');
 	}
-
-	await expect(page.locator('.OV_big .OV_stream').first()).toBeVisible({ timeout: timeoutMs });
 };
 
 /**

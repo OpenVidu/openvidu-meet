@@ -662,7 +662,7 @@ test.describe('Layout E2E Tests', () => {
 					participants: [
 						{ name: 'viewer', audioEnabled: true, videoEnabled: true },
 						{ name: 'remote-a', audioEnabled: true, videoEnabled: true, headless: true },
-						{ name: 'remote-b', audioEnabled: true, videoEnabled: true, headless: true }
+						{ name: 'remote-b', audioEnabled: false, videoEnabled: true, headless: true }
 					]
 				});
 
