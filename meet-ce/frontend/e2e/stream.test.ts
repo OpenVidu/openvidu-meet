@@ -222,14 +222,14 @@ test.describe('Stream E2E Tests', () => {
 				await pageB.waitForTimeout(1000);
 
 				// pageA should see pageB's video poster
-				await expect(pageA.locator('.OV_stream.remote #video-poster')).toHaveCount(1);
+				await expect(pageA.locator('.OV_stream.remote .poster > .poster')).toHaveCount(1);
 
 				// pageB re-enables camera
 				await toggleCamera(pageB);
 				await pageB.waitForTimeout(1000);
 
 				// pageA should see pageB's video restored
-				await expect(pageA.locator('.OV_stream.remote #video-poster')).toHaveCount(0);
+				await expect(pageA.locator('.OV_stream.remote .poster > .poster')).toHaveCount(0);
 			} finally {
 				await removeAllParticipants();
 			}
