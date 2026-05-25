@@ -9,7 +9,7 @@ import {
 } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
-import { joinFromPrejoinWithMediaState, joinParticipants } from './helpers/participant-management.helper';
+import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
 import {
 	dragStream,
 	expectLocalStreamCount,
@@ -35,30 +35,30 @@ test.describe('Stream E2E Tests', () => {
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
+		await Promise.all([disconnectAllBrowserFakeParticipants(), deleteRooms(createdRoomIds)]);
 	});
 
 	test.describe('Stream rendering - Single participant scenarios', () => {
 		test('should render video element when joining with video enabled', async ({ page }) => {
-			await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
+			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 			await expectStreamCount(page, 1);
 			await expectLocalStreamCount(page, { video: 1, audio: 0 });
 		});
 
 		test('should keep local media elements rendered when joining with video disabled', async ({ page }) => {
-			await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: true });
+			await openMeeting(page, accessUrl, { videoEnabled: false, audioEnabled: true });
 			await expectStreamCount(page, 1);
 			await expectLocalStreamCount(page, { video: 1, audio: 0 });
 		});
 
 		test('should keep local media elements rendered when joining with audio disabled', async ({ page }) => {
-			await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: false });
+			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: false });
 			await expectStreamCount(page, 1);
 			await expectLocalStreamCount(page, { video: 1, audio: 0 });
 		});
 
 		test('should toggle microphone off and on', async ({ page }) => {
-			await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
+			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 			await expectLocalStreamCount(page, { video: 1, audio: 0 });
 
 			// Toggle off
@@ -73,7 +73,7 @@ test.describe('Stream E2E Tests', () => {
 		});
 
 		test('should add screen share when sharing with all media enabled', async ({ page }) => {
-			await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: true });
+			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 			await expectStreamCount(page, 1);
 
 			await startScreensharing(page);
@@ -87,7 +87,7 @@ test.describe('Stream E2E Tests', () => {
 		});
 
 		test('should add screen share even when video is disabled', async ({ page }) => {
-			await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: true });
+			await openMeeting(page, accessUrl, { videoEnabled: false, audioEnabled: true });
 			await expectStreamCount(page, 1);
 
 			await startScreensharing(page);
@@ -101,7 +101,7 @@ test.describe('Stream E2E Tests', () => {
 		});
 
 		test('should add screen share even when audio is disabled', async ({ page }) => {
-			await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: true, audioEnabled: false });
+			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: false });
 			await expectStreamCount(page, 1);
 
 			await startScreensharing(page);
@@ -115,7 +115,7 @@ test.describe('Stream E2E Tests', () => {
 		});
 
 		test('should add screen share even when all media is disabled', async ({ page }) => {
-			await joinFromPrejoinWithMediaState(page, accessUrl, { videoEnabled: false, audioEnabled: false });
+			await openMeeting(page, accessUrl, { videoEnabled: false, audioEnabled: false });
 			await expectStreamCount(page, 1);
 
 			await startScreensharing(page);
@@ -131,20 +131,28 @@ test.describe('Stream E2E Tests', () => {
 
 	test.describe('Stream rendering - Multi participant scenarios', () => {
 		test('should render both participant streams', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
-			const [, pageB] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
 
 			try {
 				await expectStreamCount(pageA, 2);
 				await expectStreamCount(pageB, 2);
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should handle screen share from muted participant to other participant', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
-			const [, pageB] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
 
 			try {
 				await expectStreamCount(pageA, 2);
@@ -164,13 +172,17 @@ test.describe('Stream E2E Tests', () => {
 				await expectScreenShareCount(pageB, 0);
 				await expectScreenShareCount(pageA, 0);
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should handle screen share with full media enabled', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
-			const [, pageB] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
 
 			try {
 				await expectStreamCount(pageA, 2);
@@ -188,13 +200,17 @@ test.describe('Stream E2E Tests', () => {
 				await expectStreamCount(pageB, 2);
 				await expectStreamCount(pageA, 2);
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should sync remote participant media state changes', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
-			const [, pageB] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
 
 			try {
 				// Both have video and audio
@@ -215,26 +231,42 @@ test.describe('Stream E2E Tests', () => {
 				// pageA should see pageB's video restored
 				await expect(pageA.locator('.OV_stream.remote #video-poster')).toHaveCount(0);
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 	});
 
 	test.describe('Stream rendering - Three or more participants', () => {
 		test('should render three participant streams when three join', async ({ browser }) => {
-			const { pages } = await joinParticipants(browser, accessUrl, 3);
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'participant-0' },
+					{ name: 'participant-1', headless: true },
+					{ name: 'participant-2', headless: true }
+				]
+			});
 
 			try {
 				// Each participant sees the other 2 as remote streams and their own as local stream (total 3)
 				await Promise.all(pages.map((page) => expectStreamCount(page, 3)));
 			} finally {
-				await Promise.all(pages.map((page) => page.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should handle participant leaving and streams being removed', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 3);
-			const [, pageB, pageC] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'participant-0' },
+					{ name: 'participant-1', headless: true },
+					{ name: 'participant-2', headless: true }
+				]
+			});
+			const [pageA, pageB, pageC] = pages;
 
 			try {
 				// Each participant sees the other 2 as remote streams and their own as local stream (total 3)
@@ -247,13 +279,21 @@ test.describe('Stream E2E Tests', () => {
 				// A and B each now see only the other as a remote stream (total 2)
 				await Promise.all([pageA, pageB].map((page) => expectStreamCount(page, 2)));
 			} finally {
-				await Promise.all(pages.map((page) => page.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should maintain stream order after rapid joins/leaves', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 3);
-			const [, pageB] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'participant-0' },
+					{ name: 'participant-1', headless: true },
+					{ name: 'participant-2', headless: true }
+				]
+			});
+			const [pageA, pageB] = pages;
 
 			try {
 				// B leaves
@@ -269,13 +309,17 @@ test.describe('Stream E2E Tests', () => {
 				// Back to seeing both B and C as remote streams (total 3)
 				await expectStreamCount(pageA, 3);
 			} finally {
-				await Promise.all(pages.map((page) => page.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should handle rapid video/audio toggles from multiple participants', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
-			const [, pageB] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
 
 			try {
 				// Both have 2 streams with video
@@ -299,7 +343,7 @@ test.describe('Stream E2E Tests', () => {
 				// A should still see remote video
 				await expect(pageA.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 	});
@@ -583,19 +627,29 @@ test.describe('Stream E2E Tests', () => {
 		});
 
 		test('should show the PIN button over the REMOTE video', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA] = pages;
 
 			try {
 				// Hover over remote stream
 				await hoverStream(pageA, '.OV_stream.remote');
 				await expect(pageA.locator('#pin-btn')).toBeVisible();
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should show the SILENCE button ONLY over the REMOTE video', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA] = pages;
 
 			try {
 				// Local stream should NOT have silence button
@@ -607,14 +661,19 @@ test.describe('Stream E2E Tests', () => {
 				await hoverStream(pageA, '.OV_stream.remote');
 				await expect(pageA.locator('#mute-btn')).toBeVisible();
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 	});
 
 	test.describe('Audio detection - Speaking indicator', () => {
 		test('should show the audio detection elements when participant is speaking', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA] = pages;
 
 			try {
 				// Wait for audio detection on remote stream (speaking indicator)
@@ -628,15 +687,19 @@ test.describe('Stream E2E Tests', () => {
 					)
 					.toBeTruthy();
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 	});
 
 	test.describe('Mute Participant - Local participant can mute remote audio', () => {
 		test('should successfully mute remote participant audio for local user only', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
-			const [, pageB] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
 
 			try {
 				// Wait for exactly 1 remote stream (placeholder with no-size may still be in DOM briefly)
@@ -682,13 +745,17 @@ test.describe('Stream E2E Tests', () => {
 				expect(isUnmutedAfterClick).toBe(false);
 				await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(0);
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should toggle mute state multiple times without issues', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 2);
-			const [, pageB] = pages;
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
 
 			try {
 				// Perform multiple rapid mute/unmute toggles
@@ -716,12 +783,21 @@ test.describe('Stream E2E Tests', () => {
 				await expect(pageA.locator('.OV_stream.remote')).toBeVisible();
 				await expect(pageB.locator('.OV_stream.local')).toBeVisible();
 			} finally {
-				await Promise.all(pages.map((p) => p.close()));
+				await removeAllParticipants();
 			}
 		});
 
 		test('should maintain mute state when switching between multiple remote participants', async ({ browser }) => {
-			const { pageA, pages } = await joinParticipants(browser, accessUrl, 3);
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [
+					{ name: 'participant-0' },
+					{ name: 'participant-1', headless: true },
+					{ name: 'participant-2', headless: true }
+				]
+			});
+			const [pageA] = pages;
 
 			try {
 				// Verify A sees 2 remote streams
@@ -777,7 +853,7 @@ test.describe('Stream E2E Tests', () => {
 				expect(mixedMutedState.first).toBe(false);
 				expect(mixedMutedState.second).toBe(true);
 			} finally {
-				await Promise.all(pages.map((page) => page.close()));
+				await removeAllParticipants();
 			}
 		});
 	});

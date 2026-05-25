@@ -1,6 +1,5 @@
-import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { createRoomAndGetAnonymousAccessUrl, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
 	expectChatLinkCount,
@@ -11,8 +10,7 @@ import {
 	sendChatMessage,
 	toggleChatPanel
 } from './helpers/panels.helper';
-import { joinParticipants } from './helpers/participant-management.helper';
-import { waitForRemoteStream } from './helpers/stream.helper';
+import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
 import { expectSnackbarNotification } from './helpers/ui-utils.helper';
 
 test.describe('Chat E2E Tests', () => {
@@ -29,7 +27,7 @@ test.describe('Chat E2E Tests', () => {
 	});
 
 	test.afterAll(async () => {
-		await deleteRooms(createdRoomIds);
+		await Promise.all([disconnectAllBrowserFakeParticipants(), deleteRooms(createdRoomIds)]);
 	});
 
 	test('should send messages', async ({ page }) => {
@@ -60,19 +58,18 @@ test.describe('Chat E2E Tests', () => {
 	test('should receive a message', async ({ browser }) => {
 		const senderName = `sender`;
 		const receiverName = `receiver`;
-		const [receiverMember, senderMember] = await Promise.all([
-			createRoomMember(roomId, { name: receiverName, baseRole: MeetRoomMemberRole.MODERATOR }),
-			createRoomMember(roomId, { name: senderName, baseRole: MeetRoomMemberRole.MODERATOR })
-		]);
-		const receiverAccessUrl = receiverMember.accessUrl;
-		const senderAccessUrl = senderMember.accessUrl;
-
-		const [receiverPage, senderPage] = await Promise.all([browser.newPage(), browser.newPage()]);
+		const { byName, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			accessUrl,
+			participants: [
+				{ name: receiverName, headless: false },
+				{ name: senderName, headless: true }
+			]
+		});
+		const senderPage = byName[senderName];
+		const receiverPage = byName[receiverName];
 
 		try {
-			await Promise.all([openMeeting(receiverPage, receiverAccessUrl), openMeeting(senderPage, senderAccessUrl)]);
-			await Promise.all([waitForRemoteStream(receiverPage), waitForRemoteStream(senderPage)]);
-
 			const message = 'hello from sender';
 			await toggleChatPanel(senderPage);
 			await sendChatMessage(senderPage, message);
@@ -82,30 +79,34 @@ test.describe('Chat E2E Tests', () => {
 			await expectChatMessageTextAt(receiverPage, 0, message);
 			await expectFirstMessageSender(receiverPage, senderName);
 		} finally {
-			await Promise.all([senderPage.close(), receiverPage.close()]);
+			await removeAllParticipants();
 		}
 	});
 
 	test('should auto-scroll when receiving new messages with chat panel open', async ({ browser }) => {
-		const { pages, byName } = await joinParticipants(browser, {
+		const senderName = `sender`;
+		const receiverName = `receiver`;
+		const { byName, removeAllParticipants } = await joinParticipants(browser, {
 			roomId,
+			accessUrl,
 			participants: [
-				{ name: 'receiver', headless: false },
-				{ name: 'sender', headless: true }
+				{ name: receiverName, headless: false },
+				{ name: senderName, headless: true }
 			]
 		});
+		const senderPage = byName[senderName];
+		const receiverPage = byName[receiverName];
 
 		try {
-			await toggleChatPanel(byName['receiver']);
-			await toggleChatPanel(byName['sender']);
+			await Promise.all([toggleChatPanel(receiverPage), toggleChatPanel(senderPage)]);
 
 			for (let i = 0; i < 45; i++) {
-				await sendChatMessage(byName['sender'], `seed-message-${i}`);
+				await sendChatMessage(senderPage, `seed-message-${i}`);
 			}
 
-			await expectChatMessageCount(byName['receiver'], 45);
+			await expectChatMessageCount(receiverPage, 45);
 
-			const scrollState = await byName['receiver'].evaluate(() => {
+			const scrollState = await receiverPage.evaluate(() => {
 				const container = document.querySelector('.messages-container') as HTMLElement | null;
 
 				if (!container) {
@@ -125,12 +126,12 @@ test.describe('Chat E2E Tests', () => {
 			expect(scrollState!.scrollHeight).toBeGreaterThan(scrollState!.clientHeight);
 			expect(scrollState!.scrollTop).toBe(0);
 
-			await sendChatMessage(byName['sender'], 'newest-message');
+			await sendChatMessage(senderPage, 'newest-message');
 
 			await expect
 				.poll(
 					async () => {
-						return await byName['receiver'].evaluate(() => {
+						return await receiverPage.evaluate(() => {
 							const container = document.querySelector('.messages-container') as HTMLElement | null;
 
 							if (!container) {
@@ -144,7 +145,7 @@ test.describe('Chat E2E Tests', () => {
 				)
 				.toBeLessThanOrEqual(3);
 		} finally {
-			await Promise.all(pages.map((page) => page.close()));
+			await removeAllParticipants();
 		}
 	});
 
@@ -157,26 +158,32 @@ test.describe('Chat E2E Tests', () => {
 	});
 
 	test('should show snackbar notification when receiving a message with chat panel closed', async ({ browser }) => {
-		const { pageA, pages, byName } = await joinParticipants(browser, {
+		const senderName = `sender`;
+		const receiverName = `receiver`;
+		const { byName, removeAllParticipants } = await joinParticipants(browser, {
 			roomId,
+			accessUrl,
 			participants: [
-				{ name: 'receiver', headless: false },
-				{ name: 'sender', headless: true }
+				{ name: receiverName, headless: false },
+				{ name: senderName, headless: true }
 			]
 		});
 
+		const senderPage = byName[senderName];
+		const receiverPage = byName[receiverName];
+
 		try {
 			const message = 'message while chat is closed';
-			await toggleChatPanel(byName['sender']);
-			await sendChatMessage(byName['sender'], message);
+			await toggleChatPanel(senderPage);
+			await sendChatMessage(senderPage, message);
 
-			await expectSnackbarNotification(pageA);
+			await expectSnackbarNotification(receiverPage);
 
-			await toggleChatPanel(pageA);
-			await expectChatMessageCount(pageA, 1);
-			await expectChatMessageTextAt(pageA, 0, message);
+			await toggleChatPanel(receiverPage);
+			await expectChatMessageCount(receiverPage, 1);
+			await expectChatMessageTextAt(receiverPage, 0, message);
 		} finally {
-			await Promise.all(pages.map((page) => page.close()));
+			await removeAllParticipants();
 		}
 	});
 

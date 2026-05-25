@@ -184,19 +184,11 @@ export const expectPinnedStreamCount = async (page: Page, count: number): Promis
 };
 
 /**
- * Returns the number of currently-pinned streams.
- */
-export const getPinnedStreamCount = async (page: Page): Promise<number> => {
-	return await page.locator('.OV_big .OV_stream').count();
-};
-
-/**
  * Toggles the pin state of a stream by clicking on the element matching {@link selector}
  * and then clicking the pin/unpin button that appears.
  * Automatically detects whether the stream is currently pinned and clicks the appropriate button.
  */
 export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 10_000): Promise<void> => {
-
 	// Hover the stream to reveal pin/unpin buttons, then click the stream to focus it
 	const target = page.locator(selector).first();
 	await target.click({ force: true });
@@ -207,8 +199,8 @@ export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 
 	const pinButton = page.locator('#pin-btn').first();
 	const unpinButton = page.locator('#unpin-btn').first();
 
-	const isPinButtonVisible = await pinButton.isVisible().catch(() => false);
-	const isUnpinButtonVisible = await unpinButton.isVisible().catch(() => false);
+	const isPinButtonVisible = await pinButton.isVisible();
+	const isUnpinButtonVisible = await unpinButton.isVisible();
 
 	if (isPinButtonVisible) {
 		// Stream is not pinned, click pin button
@@ -230,14 +222,9 @@ export const unpinCurrentPinnedStream = async (page: Page, timeoutMs = 10_000): 
 	const pinnedStream = page.locator('.OV_big').first();
 	await pinnedStream.click({ force: true });
 
-	const pinnedButton = pinnedStream.locator('#pin-btn').first();
-
-	if (await pinnedButton.isVisible()) {
-		await pinnedButton.click();
-	} else {
-		await page.locator('#pin-btn').first().click();
-	}
-
+	const unpinButton = pinnedStream.locator('#unpin-btn').first();
+	await expect(unpinButton).toBeVisible({ timeout: timeoutMs });
+	await unpinButton.click();
 	await expect(page.locator('.OV_big .OV_stream')).toHaveCount(0, { timeout: timeoutMs });
 };
 

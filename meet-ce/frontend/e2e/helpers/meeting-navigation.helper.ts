@@ -1,4 +1,5 @@
 import { expect, type Page } from '@playwright/test';
+import { ensurePrejoinAudioState, ensurePrejoinVideoState } from './media-controls.helper';
 import { click } from './ui-utils.helper';
 
 // ─── Internal lobby / prejoin steps ─────────────────────────────────────────
@@ -13,7 +14,7 @@ const completeLobby = async (page: Page, options?: { name?: string; e2eeKey?: st
 	await expect(nameSubmit).toBeVisible({ timeout: 10_000 });
 	await expect(nameInput).toBeVisible({ timeout: 10_000 });
 
-	if (options?.name) {
+	if (options?.name && (await nameInput.isEditable())) {
 		await nameInput.fill(options.name);
 	} else if (!(await nameInput.inputValue())) {
 		await nameInput.fill(`pw-${Date.now()}`);
@@ -46,16 +47,27 @@ const clickJoinRoom = async (page: Page): Promise<void> => {
  *
  * @param options.name     - Participant display name (auto-generated when omitted).
  * @param options.e2eeKey  - End-to-end encryption passphrase.
+ * @param options.videoEnabled - Whether the participant should have their video enabled at join.
+ * @param options.audioEnabled - Whether the participant should have their audio enabled at join.
  * @param options.timeoutMs - Maximum wait time for each visibility assertion.
  */
 export const openMeeting = async (
 	page: Page,
 	accessUrl: string,
-	options?: { timeoutMs?: number; name?: string; e2eeKey?: string }
+	options?: {
+		timeoutMs?: number;
+		name?: string;
+		e2eeKey?: string;
+		videoEnabled?: boolean;
+		audioEnabled?: boolean;
+	}
 ): Promise<void> => {
-	const timeoutMs = options?.timeoutMs ?? 15_000;
+	const { timeoutMs = 15_000, videoEnabled = true, audioEnabled = true } = options ?? {};
 
 	await openPrejoin(page, accessUrl, options);
+
+	await ensurePrejoinVideoState(page, videoEnabled);
+	await ensurePrejoinAudioState(page, audioEnabled);
 	await clickJoinRoom(page);
 
 	await expect(page.locator('#layout-container')).toBeVisible({ timeout: timeoutMs });

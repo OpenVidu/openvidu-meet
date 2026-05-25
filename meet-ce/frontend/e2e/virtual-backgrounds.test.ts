@@ -104,7 +104,7 @@ test.describe('Virtual Background E2E Tests', () => {
 		await expectDisabled(page, '#virtual-bg-btn');
 	});
 
-	test('should close BACKGROUNDS in roomwhen VIDEO is disabled', async ({ page }) => {
+	test('should close BACKGROUNDS in room when VIDEO is disabled', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 		await openRoomBackgroundsPanel(page);
 		await toggleCamera(page);
