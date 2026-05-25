@@ -31,50 +31,25 @@ export class OpenViduLayout {
 	private calculator: LayoutCalculator;
 	private renderer: LayoutRenderer;
 
+	/**
+	 * Pending animation-frame handle. Coalesces bursts of updateLayout calls (resize, mutation,
+	 * sidenav animation, signal-driven re-renders) into a single layout pass per frame.
+	 */
+	private pendingFrame: number | null = null;
+
 	constructor() {
 		this.dimensionsCache = new LayoutDimensionsCache();
 		this.calculator = new LayoutCalculator(this.dimensionsCache);
 		this.renderer = new LayoutRenderer();
 	}
 
-	updateLayout(container: HTMLElement, opts: OpenViduLayoutOptions) {
-		setTimeout(() => {
-			this.layoutContainer = container;
-			this.opts = opts;
-
-			if (readStyle(this.layoutContainer, 'display') === 'none') {
-				return;
-			}
-
-			if (!this.layoutContainer.id) {
-				this.layoutContainer.id = `OV_${this.cheapUUID()}`;
-			}
-
-			const extendedOpts: ExtendedLayoutOptions = {
-				...opts,
-				containerHeight:
-					elementHeight(this.layoutContainer) -
-					readStyleNumber(this.layoutContainer, 'border-top') -
-					readStyleNumber(this.layoutContainer, 'border-bottom'),
-				containerWidth:
-					elementWidth(this.layoutContainer) -
-					readStyleNumber(this.layoutContainer, 'border-left') -
-					readStyleNumber(this.layoutContainer, 'border-right')
-			};
-
-			const selector = `#${this.layoutContainer.id}>*:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.MINIMIZED_ELEMENT})`;
-			const children = Array.from(this.layoutContainer.querySelectorAll<HTMLElement>(selector));
-
-			const elements = children.map((element) => this.describeElement(element));
-
-			const layout = this.calculator.calculateLayout(extendedOpts, elements);
-			this.renderer.renderLayout(this.layoutContainer, layout.boxes, children, this.opts.animate);
-		}, LAYOUT_CONSTANTS.UPDATE_TIMEOUT);
+	updateLayout(container: HTMLElement, opts: OpenViduLayoutOptions): void {
+		this.layoutContainer = container;
+		this.opts = opts;
+		this.scheduleLayout();
 	}
 
-	initLayoutContainer(container: HTMLElement, opts: OpenViduLayoutOptions) {
-		this.opts = opts;
-		this.layoutContainer = container;
+	initLayoutContainer(container: HTMLElement, opts: OpenViduLayoutOptions): void {
 		this.updateLayout(container, opts);
 	}
 
@@ -84,6 +59,60 @@ export class OpenViduLayout {
 
 	clearCache(): void {
 		this.dimensionsCache.clear();
+	}
+
+	/**
+	 * Cancel any pending layout pass. Safe to call multiple times.
+	 */
+	destroy(): void {
+		if (this.pendingFrame !== null) {
+			cancelAnimationFrame(this.pendingFrame);
+			this.pendingFrame = null;
+		}
+		this.dimensionsCache.clear();
+	}
+
+	/**
+	 * Schedules the actual layout for the next animation frame. By the time the rAF callback
+	 * fires the browser has computed style and layout for any synchronous DOM mutations, so
+	 * `offsetWidth`/`offsetHeight` reads are accurate — replacing the prior 50ms guess.
+	 */
+	private scheduleLayout(): void {
+		if (this.pendingFrame !== null) return;
+		this.pendingFrame = requestAnimationFrame(() => {
+			this.pendingFrame = null;
+			this.applyLayout();
+		});
+	}
+
+	private applyLayout(): void {
+		if (!this.layoutContainer) return;
+		if (readStyle(this.layoutContainer, 'display') === 'none') return;
+
+		if (!this.layoutContainer.id) {
+			this.layoutContainer.id = `OV_${this.cheapUUID()}`;
+		}
+
+		const containerWidth =
+			elementWidth(this.layoutContainer) -
+			readStyleNumber(this.layoutContainer, 'border-left') -
+			readStyleNumber(this.layoutContainer, 'border-right');
+		const containerHeight =
+			elementHeight(this.layoutContainer) -
+			readStyleNumber(this.layoutContainer, 'border-top') -
+			readStyleNumber(this.layoutContainer, 'border-bottom');
+
+		// If the container hasn't been laid out yet (e.g. just attached and still display:none on
+		// an ancestor), skip silently — the next caller will re-schedule once it has size.
+		if (containerWidth <= 0 || containerHeight <= 0) return;
+
+		const extendedOpts: ExtendedLayoutOptions = { ...this.opts, containerWidth, containerHeight };
+		const selector = `#${this.layoutContainer.id}>*:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.MINIMIZED_ELEMENT})`;
+		const children = Array.from(this.layoutContainer.querySelectorAll<HTMLElement>(selector));
+		const elements = children.map((element) => this.describeElement(element));
+
+		const layout = this.calculator.calculateLayout(extendedOpts, elements);
+		this.renderer.renderLayout(this.layoutContainer, layout.boxes, children, this.opts.animate);
 	}
 
 	private describeElement(element: HTMLElement): ElementDimensions {

@@ -39,18 +39,10 @@ export class BaseLayoutService {
 		}
 	}
 
-	update(timeout: number | undefined = undefined) {
-		const updateAux = () => {
-			if (this.openviduLayout && this.layoutContainer) {
-				this.openviduLayoutOptions = this.getOptions();
-				this.openviduLayout.updateLayout(this.layoutContainer, this.openviduLayoutOptions);
-			}
-		};
-		if (typeof timeout === 'number' && timeout >= 0) {
-			setTimeout(() => updateAux(), timeout);
-		} else {
-			updateAux();
-		}
+	update() {
+		if (!this.openviduLayout || !this.layoutContainer) return;
+		this.openviduLayoutOptions = this.getOptions();
+		this.openviduLayout.updateLayout(this.layoutContainer, this.openviduLayoutOptions);
 	}
 
 	updateResponsive() {
@@ -62,6 +54,7 @@ export class BaseLayoutService {
 	}
 
 	clear() {
+		this.openviduLayout?.destroy();
 		this.openviduLayout = undefined;
 	}
 
