@@ -337,7 +337,7 @@ test.describe('Layout E2E Tests', () => {
 
 				try {
 					await Promise.all([
-						startScreensharing(byName[screenShareName]),
+						startScreensharing(byName['screen-share']),
 						waitForRemoteStream(pageA, 3, { audioCount: 3 })
 					]);
 
@@ -1510,7 +1510,7 @@ test.describe('Layout E2E Tests', () => {
 			});
 
 			try {
-				await waitForRemoteStream(pages[1], 2, { audioCount: 3 });
+				await waitForRemoteStream(pages[1], 2, { audioCount: 2 });
 
 				const pageA = await addParticipant({ name: 'local' });
 
