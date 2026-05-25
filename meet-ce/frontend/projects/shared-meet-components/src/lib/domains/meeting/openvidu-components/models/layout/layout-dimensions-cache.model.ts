@@ -1,67 +1,53 @@
 import { BestDimensions } from './layout-types.model';
 
+const DEFAULT_MAX_ENTRIES = 256;
+
 /**
- * Manages caching of dimension calculations for layout optimization.
- * Uses memoization to avoid recalculating the same layout dimensions.
- * 
+ * Memoizes layout dimension calculations to avoid recomputing the same layout repeatedly.
+ * Bounded with an LRU policy so long sessions or aggressive resizing don't grow the map unbounded.
+ *
  * @internal
  */
 export class LayoutDimensionsCache {
 	private cache = new Map<string, BestDimensions>();
 
-	/**
-	 * Retrieves cached dimension calculation if available
-	 * @param key Cache key generated from calculation parameters
-	 * @returns Cached dimensions or undefined if not found
-	 */
+	constructor(private readonly maxEntries: number = DEFAULT_MAX_ENTRIES) {}
+
 	get(key: string): BestDimensions | undefined {
-		return this.cache.get(key);
+		const value = this.cache.get(key);
+		if (value !== undefined) {
+			// Move to most-recently-used position by reinserting.
+			this.cache.delete(key);
+			this.cache.set(key, value);
+		}
+		return value;
 	}
 
-	/**
-	 * Stores dimension calculation result in cache
-	 * @param key Cache key generated from calculation parameters
-	 * @param value Calculated best dimensions
-	 */
 	set(key: string, value: BestDimensions): void {
+		if (this.cache.has(key)) {
+			this.cache.delete(key);
+		} else if (this.cache.size >= this.maxEntries) {
+			// Map preserves insertion order — first key is the least-recently-used.
+			const oldest = this.cache.keys().next().value;
+			if (oldest !== undefined) {
+				this.cache.delete(oldest);
+			}
+		}
 		this.cache.set(key, value);
 	}
 
-	/**
-	 * Clears all cached dimensions to free memory
-	 */
 	clear(): void {
 		this.cache.clear();
 	}
 
-	/**
-	 * Gets the current cache size
-	 * @returns Number of cached entries
-	 */
 	size(): number {
 		return this.cache.size;
 	}
 
-	/**
-	 * Checks if a key exists in the cache
-	 * @param key Cache key to check
-	 * @returns True if key exists
-	 */
 	has(key: string): boolean {
 		return this.cache.has(key);
 	}
 
-	/**
-	 * Generates a cache key from calculation parameters
-	 * @param minRatio Minimum aspect ratio
-	 * @param maxRatio Maximum aspect ratio
-	 * @param width Container width
-	 * @param height Container height
-	 * @param count Number of elements
-	 * @param maxWidth Maximum element width
-	 * @param maxHeight Maximum element height
-	 * @returns Cache key string
-	 */
 	static generateKey(
 		minRatio: number,
 		maxRatio: number,

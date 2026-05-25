@@ -56,9 +56,9 @@ export interface LayoutArea {
 }
 
 /**
- * Layout box positioning
+ * Layout box positioning. Alias kept for backwards compatibility with the public surface.
  */
-export interface LayoutBox extends LayoutArea {}
+export type LayoutBox = LayoutArea;
 
 /**
  * Row structure for layout calculations
@@ -108,7 +108,14 @@ export interface LayoutAreas {
 }
 
 /**
- * Categorized elements by type
+ * Element category used to route each element through the right layout area.
+ * @internal
+ */
+export type ElementCategory = 'big' | 'normal' | 'small' | 'topBar';
+
+/**
+ * Categorized elements by type. `categories[i]` is the category assigned to the
+ * original element at index `i` — used for O(N) reconstruction in original order.
  * @internal
  */
 export interface CategorizedElements {
@@ -116,10 +123,7 @@ export interface CategorizedElements {
 	normal: ElementDimensions[];
 	small: ElementDimensions[];
 	topBar: ElementDimensions[];
-	bigIndices: number[];
-	normalIndices: number[];
-	smallIndices: number[];
-	topBarIndices: number[];
+	categories: ElementCategory[];
 }
 
 /**
