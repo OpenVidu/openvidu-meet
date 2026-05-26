@@ -3,22 +3,22 @@
 // while organizing the code in a more maintainable structure
 
 // Core tokens (colors, spacing, typography, etc.)
-@forward 'tokens-core';
+@forward './_tokens-core.scss';
 
 // Theme-specific variables (light/dark themes)
-@forward 'tokens-themes';
+@forward './_tokens-themes.scss';
 
 // Layout-related mixins (containers, grids, positioning)
-@forward 'mixins-layout';
+@forward './_mixins-layout.scss';
 
 // Component-specific mixins (cards, buttons, headers)
-@forward 'mixins-components';
+@forward './_mixins-components.scss';
 
 // Responsive design utilities
-@forward 'mixins-responsive';
+@forward './_mixins-responsive.scss';
 
 // Animation keyframes and classes
-@forward 'animations';
+@forward './_animations.scss';
 
 // Utility classes
-@forward 'utilities';
+@forward './_utilities.scss';

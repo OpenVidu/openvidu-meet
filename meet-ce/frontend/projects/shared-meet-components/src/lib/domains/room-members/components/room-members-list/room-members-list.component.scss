@@ -1,4 +1,4 @@
-@use '../../../../../../../../src/assets/styles/design-tokens';
+@use '_design-tokens.scss';
 
 .members-toolbar {
 	@extend .ov-data-toolbar;

@@ -1,4 +1,13 @@
-@use '../../../../../../../../src/assets/styles/design-tokens';
+@use '_design-tokens.scss';
+
+// Ensure the component fills the available height so that child elements
+// that use height:100% (like .ov-page-container in ov-meeting-lobby) resolve
+// correctly. In the main app the router outlet provides this; in the
+// webcomponent (no router) we need the explicit rule here.
+:host {
+	display: block;
+	height: 100%;
+}
 
 .prejoin-loading-container,
 .prejoin-error-container {

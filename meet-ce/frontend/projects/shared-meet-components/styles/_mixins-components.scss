@@ -1,8 +1,8 @@
 // Component Mixins - Specific mixins for UI components like cards, buttons, headers
 // This file contains mixins for specific component patterns
 
-@use 'mixins-layout' as layout;
-@use 'mixins-responsive' as responsive;
+@use './_mixins-layout.scss' as layout;
+@use './_mixins-responsive.scss' as responsive;
 
 // Mixin for consistent cards
 @mixin ov-card {

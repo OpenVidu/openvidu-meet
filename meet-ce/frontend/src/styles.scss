@@ -1,25 +1,17 @@
-@use '@angular/material' as mat;
-@use './assets/styles/openvidu-theme.scss';
-@use './assets/styles/design-tokens';
+// Import Sass meta helpers so we can inline shared CSS partials from one place.
+@use 'sass:meta';
+// Import the shared runtime theme mixin consumed by both SPA and webcomponent.
+@use '_runtime-theme.scss';
 
-@include mat.elevation-classes();
-@include mat.app-background();
+// Inline shared animation utilities in the main app stylesheet.
+@include meta.load-css('_animations.scss');
+// Inline shared utility classes in the main app stylesheet.
+@include meta.load-css('_utilities.scss');
+
+// Apply the shared runtime theme to the document root and its dark-mode variant.
+@include runtime-theme.emit-runtime-theme('html', "html[data-theme='dark']");
 
 // Light theme by default
-html {
-	@include mat.elevation-classes();
-	@include mat.app-background();
-	@include mat.all-component-bases(openvidu-theme.$light-theme);
-	@include mat.all-component-colors(openvidu-theme.$light-theme);
-	@include mat.all-component-typographies(openvidu-theme.$light-theme);
-	@include mat.all-component-densities(openvidu-theme.$light-theme);
-}
-
-// Dark theme styles when data-theme="dark"
-html[data-theme='dark'] {
-	@include mat.all-component-colors(openvidu-theme.$dark-theme);
-}
-
 html,
 body {
 	height: 100%;

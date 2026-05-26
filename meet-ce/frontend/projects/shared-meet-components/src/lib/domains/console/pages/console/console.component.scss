@@ -1,5 +1,5 @@
 
-@use '../../../../../../../../src/assets/styles/design-tokens';
+@use '_design-tokens.scss';
 
 ::ng-deep {
 	mat-slide-toggle {

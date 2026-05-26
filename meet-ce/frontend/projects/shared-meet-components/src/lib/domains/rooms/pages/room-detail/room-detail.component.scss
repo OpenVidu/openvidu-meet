@@ -1,4 +1,4 @@
-@use '../../../../../../../../src/assets/styles/design-tokens' as *;
+@use '_design-tokens.scss' as *;
 
 .ov-page-container {
 	overflow-y: auto;

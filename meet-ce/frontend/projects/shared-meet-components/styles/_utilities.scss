@@ -1,9 +1,9 @@
 // Utility Classes - Helper classes for common styling patterns
 // This file contains reusable utility classes
 
-@use 'mixins-layout' as layout;
-@use 'mixins-components' as components;
-@use 'mixins-responsive' as responsive;
+@use './_mixins-layout.scss' as layout;
+@use './_mixins-components.scss' as components;
+@use './_mixins-responsive.scss' as responsive;
 
 // === UTILITY CLASSES ===
 

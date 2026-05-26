@@ -1,7 +1,8 @@
 // Core Design Tokens - Basic variables for colors, spacing, typography, etc.
 // This file contains the fundamental design tokens used throughout the application
 
-:root {
+// Expose the core token declarations as a mixin so different roots can reuse them.
+@mixin emit-core-token-values {
 	// === PRIMARY COLORS ===
 	// These colors come from Angular Material theme but we centralize them for direct use
 	--ov-meet-color-primary: #1976d2;
@@ -115,4 +116,10 @@
 	--ov-meet-input-padding: var(--ov-meet-spacing-md);
 	--ov-meet-input-border-color: var(--ov-meet-border-color);
 	--ov-meet-input-border-color-focus: var(--ov-meet-color-primary);
+}
+
+// Preserve the existing global SPA behavior by emitting the same tokens on :root.
+:root {
+	// Reuse the extracted mixin instead of duplicating the token declarations.
+	@include emit-core-token-values;
 }

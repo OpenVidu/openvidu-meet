@@ -1,5 +1,5 @@
 // Import design system utilities
-@use '../../../../../../../../src/assets/styles/design-tokens';
+@use '_design-tokens.scss';
 
 // === DIALOG CONTAINER ===
 ::ng-deep {
