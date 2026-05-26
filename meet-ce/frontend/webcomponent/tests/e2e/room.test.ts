@@ -1,260 +1,152 @@
 import { expect, test } from '@playwright/test';
-import * as fs from 'fs';
-import pixelmatch from 'pixelmatch';
-import { PNG } from 'pngjs';
-import { MEET_TESTAPP_URL } from '../config.js';
-import {
-	applyVirtualBackground,
-	createTestRoom,
-	interactWithElementInIframe,
-	joinRoomAs,
-	leaveRoom,
-	openMoreOptionsMenu,
-	prepareForJoiningRoom,
-	saveScreenshot,
-	startScreenSharing,
-	stopScreenSharing,
-	waitForElementInIframe
-} from '../helpers/function-helpers.js';
+import { iframeLocator } from '../helpers/iframe.helper';
+import { applyBackgroundEffect, startScreensharing, stopScreensharing } from '../helpers/media-controls.helper';
+import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
+import { openMoreOptionsMenu } from '../helpers/panels.helper';
+import { startRecording, stopRecording } from '../helpers/recordings.helper';
+import { expectSignificantImageDifference, screenshotIframeElement } from '../helpers/stream.helper';
+import { leaveMeeting, openMeeting } from '../helpers/testapp.helper';
 
-// Test suite for room functionality in OpenVidu Meet
-test.describe('Room Functionality Tests', () => {
+test.describe('Room Features E2E Tests', () => {
+	const createdRoomIds: string[] = [];
 	let roomId: string;
-	let participantName: string;
 
-	// ==========================================
-	// SETUP & TEARDOWN
-	// ==========================================
-
-	test.beforeAll(async () => {
-		// Create a test room before all tests
-		roomId = await createTestRoom('test-room');
+	test.beforeEach(async () => {
+		({ roomId } = await createRoom());
+		createdRoomIds.push(roomId);
 	});
 
-	test.beforeEach(async ({ page }) => {
-		// Subscribe to console logs for this page
-		page.on('console', (msg) => {
-			const type = msg.type();
-			const tag = type === 'error' ? 'ERROR' : type === 'warning' ? 'WARNING' : 'LOG';
-			console.log('[' + tag + ']', msg.text());
-		});
-
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
 	});
-
-	// ==========================================
-	// COMPONENT RENDERING TESTS
-	// ==========================================
 
 	test.describe('Component Rendering', () => {
 		test('should load the web component with proper iframe', async ({ page }) => {
-			await joinRoomAs('moderator', participantName, page);
+			await openMeeting(page, roomId, { role: 'moderator' });
 
-			const component = page.locator('openvidu-meet');
-			await expect(component).toBeVisible();
+			await expect(page.locator('openvidu-meet')).toBeVisible();
+			await expect(iframeLocator(page, 'body')).toBeAttached();
 
-			const hasIframe = await page.evaluate(() => {
-				const component = document.querySelector('openvidu-meet');
-				return !!component?.shadowRoot?.querySelector('iframe');
-			});
-			expect(hasIframe).toBeTruthy();
-
-			await leaveRoom(page, 'moderator');
+			await leaveMeeting(page, { role: 'moderator' });
 		});
 	});
-
-	// ==========================================
-	// BASIC FUNCTIONALITY TESTS
-	// ==========================================
 
 	test.describe('Basic Room Features', () => {
-		test('should show the toolbar and media buttons', async ({ page }) => {
-			await joinRoomAs('speaker', participantName, page);
-			await waitForElementInIframe(page, '#toolbar');
-
-			// Check media buttons are present
-			await waitForElementInIframe(page, '#camera-btn');
-			await waitForElementInIframe(page, '#mic-btn');
-
-			await leaveRoom(page);
-		});
-
 		test('should start a videoconference and display video elements', async ({ page, browser }) => {
-			// First participant (speaker) joins
-			await joinRoomAs('speaker', participantName, page);
-			const localVideo = await waitForElementInIframe(page, '.OV_stream.local');
+			await openMeeting(page, roomId, { role: 'speaker' });
+			await expect(iframeLocator(page, '.OV_stream.local')).toBeVisible();
 
-			await expect(localVideo).toBeVisible();
-
-			// Second participant (moderator) joins
-			// const context = await browser.newContext();
 			const moderatorPage = await browser.newPage();
-			await prepareForJoiningRoom(moderatorPage, MEET_TESTAPP_URL, roomId);
-			await joinRoomAs('moderator', 'moderator', moderatorPage);
+			await openMeeting(moderatorPage, roomId, { role: 'moderator' });
 
-			// Verify session established and remote video appears
-			await waitForElementInIframe(moderatorPage, '.OV_stream.remote');
+			await expect(iframeLocator(page, '.OV_stream.remote')).toBeVisible();
 
-			// Cleanup - order matters to avoid crashes
-			await leaveRoom(moderatorPage, 'moderator');
+			await leaveMeeting(moderatorPage, { role: 'moderator' });
 			await moderatorPage.close();
 
-			// Small delay to ensure browser resources are freed
-			await leaveRoom(page);
+			await leaveMeeting(page);
 		});
-	});
 
-	// ==========================================
-	// SCREEN SHARING TESTS
-	// ==========================================
-
-	test.describe('Screen Sharing', () => {
 		test('should be able to share and stop screen sharing', async ({ page }) => {
-			await joinRoomAs('speaker', participantName, page);
+			await openMeeting(page, roomId, { role: 'speaker' });
+			await expect(iframeLocator(page, '#toolbar')).toBeVisible();
 
-			await waitForElementInIframe(page, '#toolbar');
+			const videos = iframeLocator(page, 'video');
+			await expect(videos).toHaveCount(1);
 
-			// Initial state: only camera video
-			let videoCount = await page.frameLocator('iframe').locator('video').count();
-			expect(videoCount).toBe(1);
+			await startScreensharing(page);
+			await expect(videos).toHaveCount(2);
 
-			// Enable screen share
-			await startScreenSharing(page);
-			videoCount = await page.frameLocator('iframe').locator('video').count();
-			expect(videoCount).toBe(2);
+			await stopScreensharing(page);
+			await expect(videos).toHaveCount(1);
 
-			// Disable screen share
-			await stopScreenSharing(page);
-			videoCount = await page.frameLocator('iframe').locator('video').count();
-			expect(videoCount).toBe(1);
+			await startScreensharing(page);
+			await expect(videos).toHaveCount(2);
 
-			// Test toggle functionality
-			await startScreenSharing(page);
-			videoCount = await page.frameLocator('iframe').locator('video').count();
-			expect(videoCount).toBe(2);
+			await stopScreensharing(page);
+			await expect(videos).toHaveCount(1);
 
-			await stopScreenSharing(page);
-			videoCount = await page.frameLocator('iframe').locator('video').count();
-			expect(videoCount).toBe(1);
+			await leaveMeeting(page);
+		});
 
-			await leaveRoom(page);
+		test('should apply virtual background and detect visual changes', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'speaker' });
+
+			const before = await screenshotIframeElement(page, '.OV_video-element');
+			await applyBackgroundEffect(page, '2');
+			const after = await screenshotIframeElement(page, '.OV_video-element');
+
+			expectSignificantImageDifference(before, after, { threshold: 0.4, minDiffPixels: 500 });
+
+			await leaveMeeting(page);
+		});
+
+		test('should start and stop a recording', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+
+			await startRecording(page);
+			await expect(iframeLocator(page, '#stop-recording-btn')).toBeVisible();
+
+			await stopRecording(page);
+			await expect(iframeLocator(page, '#stop-recording-btn')).toBeHidden();
+
+			await leaveMeeting(page, { role: 'moderator' });
 		});
 	});
-
-	// ==========================================
-	// UI PANELS TESTS
-	// ==========================================
 
 	test.describe('UI Panels and Components', () => {
+		test('should show the toolbar and media buttons', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'speaker' });
+
+			await expect(iframeLocator(page, '#toolbar')).toBeVisible();
+			await expect(iframeLocator(page, '#camera-btn')).toBeVisible();
+			await expect(iframeLocator(page, '#mic-btn')).toBeVisible();
+
+			await leaveMeeting(page);
+		});
+
 		test('should show and interact with chat panel', async ({ page }) => {
-			await joinRoomAs('speaker', participantName, page);
+			await openMeeting(page, roomId, { role: 'speaker' });
 
-			// Open chat panel
-			await waitForElementInIframe(page, '#chat-panel-btn');
-			await interactWithElementInIframe(page, '#chat-panel-btn', { action: 'click' });
+			await iframeLocator(page, '#chat-panel-btn').click();
 
-			// Send a message
-			await waitForElementInIframe(page, '#chat-input');
-			await interactWithElementInIframe(page, '#chat-input', {
-				action: 'fill',
-				value: 'Hello world'
-			});
-			await interactWithElementInIframe(page, '#send-btn', { action: 'click' });
+			const chatInput = iframeLocator(page, '#chat-input');
+			await expect(chatInput).toBeVisible();
+			await chatInput.fill('Hello world');
+			await iframeLocator(page, '#send-btn').click();
 
-			// Verify message appears
-			const chatMessage = await waitForElementInIframe(page, '.chat-message');
-			await expect(chatMessage).toBeVisible();
+			await expect(iframeLocator(page, '.chat-message')).toBeVisible();
 
-			await leaveRoom(page);
+			await leaveMeeting(page);
 		});
 
 		test('should show activities panel', async ({ page }) => {
-			await joinRoomAs('moderator', participantName, page);
+			await openMeeting(page, roomId, { role: 'moderator' });
 
-			// Open activities panel
-			await waitForElementInIframe(page, '#activities-panel-btn');
-			await interactWithElementInIframe(page, '#activities-panel-btn', { action: 'click' });
+			await iframeLocator(page, '#activities-panel-btn').click();
+			await expect(iframeLocator(page, 'ov-activities-panel')).toBeVisible();
 
-			// Verify panel is visible
-			const activitiesPanel = await waitForElementInIframe(page, 'ov-activities-panel');
-			await expect(activitiesPanel).toBeVisible();
-
-			await leaveRoom(page, 'moderator');
+			await leaveMeeting(page, { role: 'moderator' });
 		});
 
 		test('should show participants panel', async ({ page }) => {
-			await joinRoomAs('speaker', participantName, page);
+			await openMeeting(page, roomId, { role: 'speaker' });
 
-			// Open participants panel
-			await waitForElementInIframe(page, '#participants-panel-btn');
-			await interactWithElementInIframe(page, '#participants-panel-btn', { action: 'click' });
+			await iframeLocator(page, '#participants-panel-btn').click();
+			await expect(iframeLocator(page, 'ov-participants-panel')).toBeVisible();
 
-			// Verify panel is visible
-			const participantsPanel = await waitForElementInIframe(page, 'ov-participants-panel');
-			await expect(participantsPanel).toBeVisible();
-
-			await leaveRoom(page);
+			await leaveMeeting(page);
 		});
 
 		test('should show settings panel', async ({ page }) => {
-			await joinRoomAs('speaker', participantName, page);
+			await openMeeting(page, roomId, { role: 'speaker' });
 
 			await openMoreOptionsMenu(page);
+			await iframeLocator(page, '#toolbar-settings-btn').click();
 
-			// Open settings panel
-			await interactWithElementInIframe(page, '#toolbar-settings-btn', { action: 'click' });
+			await expect(iframeLocator(page, 'ov-settings-panel')).toBeVisible();
 
-			// Verify panel is visible
-			const settingsPanel = await waitForElementInIframe(page, 'ov-settings-panel');
-			await expect(settingsPanel).toBeVisible();
-
-			await leaveRoom(page);
-		});
-	});
-
-	// ==========================================
-	// ADVANCED FEATURES TESTS
-	// ==========================================
-
-	test.describe('Advanced Features', () => {
-		test('should apply virtual background and detect visual changes', async ({ page }) => {
-			await joinRoomAs('speaker', participantName, page);
-
-			// Wait for video element to be ready
-			await waitForElementInIframe(page, '.OV_video-element');
-
-			// Capture baseline screenshot
-			await saveScreenshot(page, 'before.png', '.OV_video-element');
-
-			// Apply virtual background
-			await applyVirtualBackground(page, '2');
-
-			// Capture post-change screenshot
-			await saveScreenshot(page, 'after.png', '.OV_video-element');
-
-			// Compare images to detect changes
-			const img1 = PNG.sync.read(fs.readFileSync('before.png'));
-			const img2 = PNG.sync.read(fs.readFileSync('after.png'));
-			const { width, height } = img1;
-			const diff = new PNG({ width, height });
-
-			const numDiffPixels = pixelmatch(img1.data, img2.data, diff.data, width, height, {
-				threshold: 0.4
-			});
-
-			// Save diff for debugging purposes
-			fs.writeFileSync('diff.png', PNG.sync.write(diff));
-
-			// Verify significant visual change occurred
-			expect(numDiffPixels).toBeGreaterThan(500);
-
-			// Cleanup test artifacts
-			fs.unlinkSync('before.png');
-			fs.unlinkSync('after.png');
-			fs.unlinkSync('diff.png');
-
-			await leaveRoom(page);
+			await leaveMeeting(page);
 		});
 	});
 });

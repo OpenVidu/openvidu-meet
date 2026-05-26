@@ -1,314 +1,205 @@
-import { LeftEventReason } from '@openvidu-meet/typings';
+import { LeftEventReason, WebComponentEvent } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { MEET_TESTAPP_URL } from '../config';
+import { iframeLocator } from '../helpers/iframe.helper';
+import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
 import {
-	createTestRoom,
-	deleteAllRecordings,
-	deleteAllRooms,
-	interactWithElementInIframe,
-	joinRoomAs,
-	leaveRoom,
-	prepareForJoiningRoom
-} from '../helpers/function-helpers';
+	endMeetingCommand,
+	eventLocator,
+	expectEvent,
+	leaveMeeting,
+	leaveRoomCommand,
+	openMeeting
+} from '../helpers/testapp.helper';
 
-let subscribedToAppErrors = false;
-
-test.describe('Web Component E2E Tests', () => {
+test.describe('WebComponent Events E2E Tests', () => {
+	const createdRoomIds: string[] = [];
 	let roomId: string;
-	let participantName: string;
 
-	test.beforeAll(async () => {
-		// Create a test room before all tests
-		roomId = await createTestRoom('test-room');
+	test.beforeEach(async () => {
+		({ roomId } = await createRoom());
+		createdRoomIds.push(roomId);
 	});
 
-	test.beforeEach(async ({ page }) => {
-		if (!subscribedToAppErrors) {
-			page.on('console', (msg) => {
-				const type = msg.type();
-				const tag = type === 'error' ? 'ERROR' : type === 'warning' ? 'WARNING' : 'LOG';
-				console.log('[' + tag + ']', msg.text());
-			});
-			subscribedToAppErrors = true;
-		}
-
-		await prepareForJoiningRoom(page, MEET_TESTAPP_URL, roomId);
-		participantName = `P-${Math.random().toString(36).substring(2, 9)}`;
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
 	});
 
-	test.afterEach(async ({ context }) => {
-		await context.storageState({ path: 'test_localstorage_state.json' });
+	test.describe('JOINED Event', () => {
+		test('should receive joined event when joining as moderator', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+
+			const joined = await expectEvent(page, WebComponentEvent.JOINED);
+			await expect(joined).toContainText('roomId');
+			await expect(joined).toContainText('participantIdentity');
+			await expect(joined).toContainText(roomId);
+		});
+
+		test('should receive joined event when joining as speaker', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'speaker' });
+
+			const joined = await expectEvent(page, WebComponentEvent.JOINED);
+			await expect(joined).toContainText('roomId');
+			await expect(joined).toContainText('participantIdentity');
+			await expect(joined).toContainText(roomId);
+		});
+
+		test('should receive only one joined event per join action', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
+		});
 	});
 
-	test.afterAll(async ({ browser }) => {
-		const tempContext = await browser.newContext();
-		const tempPage = await tempContext.newPage();
-		await deleteAllRooms(tempPage);
-		await deleteAllRecordings(tempPage);
+	test.describe('LEFT Event', () => {
+		test('should receive left event with voluntary_leave reason when using leave command', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
 
-		await tempContext.close();
-		await tempPage.close();
+			await leaveRoomCommand(page);
+
+			const left = await expectEvent(page, WebComponentEvent.LEFT);
+			await expect(left).toContainText('roomId');
+			await expect(left).toContainText('participantIdentity');
+			await expect(left).toContainText('reason');
+			await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+		});
+
+		test('should receive left event with voluntary_leave reason when using disconnect button', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
+
+			await leaveMeeting(page, { role: 'moderator' });
+
+			const left = await expectEvent(page, WebComponentEvent.LEFT);
+			await expect(left).toContainText('reason');
+			await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+		});
+
+		test('should receive left event with meeting_ended reason when moderator ends meeting', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
+
+			await endMeetingCommand(page);
+
+			const left = await expectEvent(page, WebComponentEvent.LEFT);
+			await expect(left).toContainText('reason');
+			await expect(left).toContainText(LeftEventReason.MEETING_ENDED);
+		});
+
+		test('should receive left event when speaker leaves room', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'speaker' });
+			await expectEvent(page, WebComponentEvent.JOINED);
+
+			await leaveMeeting(page);
+
+			const left = await expectEvent(page, WebComponentEvent.LEFT);
+			await expect(left).toContainText('roomId');
+			await expect(left).toContainText('participantIdentity');
+			await expect(left).toContainText('reason');
+		});
 	});
 
-	test.describe('Event Handling', () => {
-		test.describe('JOINED Event', () => {
-			test('should receive joined event when joining as moderator', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-				const joinElements = await page.locator('.event-joined').all();
-				expect(joinElements.length).toBe(1);
+	test.describe('CLOSED Event', () => {
+		test('should receive closed event after leaving as moderator', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
 
-				// Verify event payload contains required data
-				const eventText = await joinElements[0].textContent();
-				expect(eventText).toContain('roomId');
-				expect(eventText).toContain('participantIdentity');
-				expect(eventText).toContain(roomId);
-			});
+			await leaveRoomCommand(page);
+			await expectEvent(page, WebComponentEvent.LEFT);
 
-			test('should receive joined event when joining as speaker', async ({ page }) => {
-				await joinRoomAs('speaker', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-				const joinElements = await page.locator('.event-joined').all();
-				expect(joinElements.length).toBe(1);
-
-				// Verify event payload contains required data
-				const eventText = await joinElements[0].textContent();
-				expect(eventText).toContain('roomId');
-				expect(eventText).toContain('participantIdentity');
-				expect(eventText).toContain(roomId);
-			});
-
-			test('should receive only one joined event per join action', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-
-				// Wait a bit to ensure no duplicate events
-				await page.waitForTimeout(1000);
-
-				const joinElements = await page.locator('.event-joined').all();
-				expect(joinElements.length).toBe(1);
-			});
+			await iframeLocator(page, '#back-btn').click();
+			await expect(eventLocator(page, WebComponentEvent.CLOSED).first()).toBeVisible({ timeout: 5_000 });
 		});
 
-		test.describe('LEFT Event', () => {
-			test('should receive left event with voluntary_leave reason when using leave command', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
+		test('should receive closed event after ending meeting', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
 
-				await page.click('#leave-room-btn');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
+			await endMeetingCommand(page);
+			await expectEvent(page, WebComponentEvent.LEFT);
 
-				const leftElements = await page.locator('.event-left').all();
-				expect(leftElements.length).toBe(1);
+			await iframeLocator(page, '#back-btn').click();
+			await expect(eventLocator(page, WebComponentEvent.CLOSED).first()).toBeVisible({ timeout: 5_000 });
+		});
+	});
 
-				// Verify event payload contains required data including reason
-				const eventText = await leftElements[0].textContent();
-				expect(eventText).toContain('roomId');
-				expect(eventText).toContain('participantIdentity');
-				expect(eventText).toContain('reason');
-				expect(eventText).toContain(LeftEventReason.VOLUNTARY_LEAVE);
-			});
+	test.describe('Event Sequences', () => {
+		test('should receive events in correct order: joined -> left', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
 
-			test('should receive left event with voluntary_leave reason when using disconnect button', async ({
-				page
-			}) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
+			const joined = eventLocator(page, WebComponentEvent.JOINED);
+			const left = eventLocator(page, WebComponentEvent.LEFT);
+			await expect(joined).toHaveCount(1, { timeout: 10_000 });
+			await expect(left).toHaveCount(0);
 
-				await leaveRoom(page, 'moderator');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
+			await leaveRoomCommand(page);
 
-				const leftElements = await page.locator('.event-left').all();
-				expect(leftElements.length).toBe(1);
+			await expect(left).toHaveCount(1, { timeout: 10_000 });
+			await expect(joined).toHaveCount(1);
+		});
+	});
 
-				// Verify event payload
-				const eventText = await leftElements[0].textContent();
-				expect(eventText).toContain('reason');
-				expect(eventText).toContain(LeftEventReason.VOLUNTARY_LEAVE);
-			});
+	test.describe('Event Payload Validation', () => {
+		test('should include correct roomId in joined event payload', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
 
-			test('should receive left event with meeting_ended reason when moderator ends meeting', async ({
-				page
-			}) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-
-				await page.click('#end-meeting-btn');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-
-				const leftElements = await page.locator('.event-left').all();
-				expect(leftElements.length).toBe(1);
-
-				// Verify event payload contains meeting_ended_by_self reason
-				const eventText = await leftElements[0].textContent();
-				expect(eventText).toContain('reason');
-				expect(eventText).toContain(LeftEventReason.MEETING_ENDED);
-			});
-
-			test('should receive left event when speaker leaves room', async ({ page }) => {
-				await joinRoomAs('speaker', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-
-				await leaveRoom(page, 'speaker');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-
-				const leftElements = await page.locator('.event-left').all();
-				expect(leftElements.length).toBe(1);
-
-				// Verify event payload
-				const eventText = await leftElements[0].textContent();
-				expect(eventText).toContain('roomId');
-				expect(eventText).toContain('participantIdentity');
-				expect(eventText).toContain('reason');
-			});
+			const joined = await expectEvent(page, WebComponentEvent.JOINED);
+			await expect(joined).toContainText(roomId);
+			await expect(joined).toContainText('"roomId"');
 		});
 
-		test.describe('CLOSED Event', () => {
-			test('should receive closed event after leaving as moderator', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
+		test('should include participantIdentity in joined event payload', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
 
-				await page.click('#leave-room-btn');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-
-				await interactWithElementInIframe(page, '#back-btn', { action: 'click' });
-
-				await page.waitForSelector('.event-closed', { timeout: 5000 });
-				const closedElements = await page.locator('.event-closed').all();
-				expect(closedElements.length).toBeGreaterThanOrEqual(1);
-			});
-
-			test('should receive closed event after ending meeting', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-
-				await page.click('#end-meeting-btn');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-
-				await interactWithElementInIframe(page, '#back-btn', { action: 'click' });
-
-				await page.waitForSelector('.event-closed', { timeout: 5000 });
-				const closedElements = await page.locator('.event-closed').all();
-				expect(closedElements.length).toBeGreaterThanOrEqual(1);
-			});
+			const joined = await expectEvent(page, WebComponentEvent.JOINED);
+			await expect(joined).toContainText('"participantIdentity"');
+			await expect(joined).toHaveText(/participantIdentity.*:/);
 		});
 
-		test.describe('Event Sequences', () => {
-			test('should receive events in correct order: joined -> left', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
+		test('should include all required fields in left event payload', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
 
-				// Verify joined event is received first
-				let joinElements = await page.locator('.event-joined').all();
-				expect(joinElements.length).toBe(1);
+			await leaveRoomCommand(page);
 
-				await page.click('#leave-room-btn');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-
-				// Verify both events are present
-				const leftElements = await page.locator('.event-left').all();
-				expect(leftElements.length).toBe(1);
-
-				// Verify joined event is still present
-				joinElements = await page.locator('.event-joined').all();
-				expect(joinElements.length).toBe(1);
-			});
+			const left = await expectEvent(page, WebComponentEvent.LEFT);
+			await expect(left).toContainText('"roomId"');
+			await expect(left).toContainText('"participantIdentity"');
+			await expect(left).toContainText('"reason"');
+			await expect(left).toContainText(roomId);
 		});
 
-		test.describe('Event Payload Validation', () => {
-			test('should include correct roomId in joined event payload', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
+		test('should have valid reason in left event payload', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
 
-				const joinElements = await page.locator('.event-joined').all();
-				const eventText = await joinElements[0].textContent();
+			await leaveRoomCommand(page);
+			const left = await expectEvent(page, WebComponentEvent.LEFT);
 
-				// Parse the event text to extract the payload
-				expect(eventText).toContain(roomId);
-				expect(eventText).toContain('"roomId"');
-			});
+			const eventText = (await left.textContent()) ?? '';
+			const validReasons = Object.values(LeftEventReason);
+			const hasValidReason = validReasons.some((reason) => eventText.includes(reason));
+			expect(hasValidReason).toBe(true);
+		});
+	});
 
-			test('should include participantIdentity in joined event payload', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
+	test.describe('Event Error Handling', () => {
+		test('should handle joining and immediately leaving', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
 
-				const joinElements = await page.locator('.event-joined').all();
-				const eventText = await joinElements[0].textContent();
-
-				expect(eventText).toContain('"participantIdentity"');
-				// The participantIdentity should be present (actual value may vary)
-				expect(eventText).toMatch(/participantIdentity.*:/);
-			});
-
-			test('should include all required fields in left event payload', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-
-				await page.click('#leave-room-btn');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-
-				const leftElements = await page.locator('.event-left').all();
-				const eventText = await leftElements[0].textContent();
-
-				// Verify all required fields are present
-				expect(eventText).toContain('"roomId"');
-				expect(eventText).toContain('"participantIdentity"');
-				expect(eventText).toContain('"reason"');
-				expect(eventText).toContain(roomId);
-			});
-
-			test('should have valid reason in left event payload', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-
-				await page.click('#leave-room-btn');
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-
-				const leftElements = await page.locator('.event-left').all();
-				const eventText = await leftElements[0].textContent();
-
-				// Check for valid reason values from LeftEventReason enum
-				const validReasons = Object.values(LeftEventReason);
-
-				const hasValidReason = validReasons.some((reason) => eventText?.includes(reason));
-				expect(hasValidReason).toBe(true);
-			});
+			await leaveRoomCommand(page);
+			await expectEvent(page, WebComponentEvent.LEFT);
 		});
 
-		test.describe('Event Error Handling', () => {
-			test('should handle joining and immediately leaving', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
+		test('should not emit duplicate events on rapid actions', async ({ page }) => {
+			await openMeeting(page, roomId, { role: 'moderator' });
+			await expectEvent(page, WebComponentEvent.JOINED);
 
-				// Leave immediately after join (without waiting for full connection)
-				await page.waitForTimeout(500); // Minimal wait
-				await page.click('#leave-room-btn');
+			const leaveBtn = page.locator('#leave-room-btn');
+			await leaveBtn.click();
+			await leaveBtn.click().catch(() => {});
+			await leaveBtn.click().catch(() => {});
 
-				// Should still receive left event
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-				const leftElements = await page.locator('.event-left').all();
-				expect(leftElements.length).toBe(1);
-			});
-
-			test('should not emit duplicate events on rapid actions', async ({ page }) => {
-				await joinRoomAs('moderator', participantName, page);
-				await page.waitForSelector('.event-joined', { timeout: 10000 });
-
-				// Rapid clicking on leave button
-				await page.click('#leave-room-btn');
-				await page.click('#leave-room-btn').catch(() => {
-					/* Button might not be available */
-				});
-				await page.click('#leave-room-btn').catch(() => {
-					/* Button might not be available */
-				});
-
-				await page.waitForSelector('.event-left', { timeout: 10000 });
-				await page.waitForTimeout(1000); // Wait for any potential duplicate events
-
-				// Should only have one left event
-				const leftElements = await page.locator('.event-left').all();
-				expect(leftElements.length).toBe(1);
-			});
+			await expectEvent(page, WebComponentEvent.LEFT);
 		});
 	});
 });
