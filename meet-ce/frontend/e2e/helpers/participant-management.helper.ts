@@ -268,6 +268,7 @@ export const joinParticipants = async (
 		} else {
 			try {
 				await leaveMeeting(participantPage);
+				await participantPage.waitForSelector('.disconnected-container', { timeout: 5000 });
 			} catch {
 				// Ignore cleanup failures.
 			}
