@@ -90,22 +90,16 @@
 			white-space: nowrap;
 			overflow: hidden;
 			text-overflow: ellipsis;
-			flex: 1;
+			flex: 0 1 auto;
 			min-width: 0;
 		}
 
-		// Local participant indicator
-		.local-indicator {
-			font-size: 10px;
-			font-weight: 600;
-			color: var(--ov-text-surface-color);
-			background-color: var(--ov-surface-color);
-			padding: 4px 8px;
-			border-radius: var(--ov-surface-radius);
-			text-transform: uppercase;
-			letter-spacing: 0.5px;
+		// "(you)" suffix integrated into the name
+		.you-suffix {
+			font-size: 13px;
+			font-weight: 400;
+			color: var(--ov-text-secondary-color);
 			flex-shrink: 0;
-			border: 1px solid var(--ov-accent-action-color);
 			white-space: nowrap;
 		}
 	}
@@ -210,24 +204,27 @@
 		}
 	}
 
-	// Participant badges container
+	// Participant badges container — inline with the participant name
 	.participant-badges {
-		display: flex;
+		display: inline-flex;
 		align-items: center;
-		gap: 4px;
+		gap: 2px;
 		flex-shrink: 0;
-		max-width: 80px; // Limit badges width
-		overflow: hidden;
 
-		// Badge styling
+		// Scale down icons and text so the badge sits unobtrusively next to the name
+		::ng-deep mat-icon {
+			font-size: 20px;
+			width: 20px;
+			height: 20px;
+			line-height: 20px;
+		}
+
 		::ng-deep .badge {
+			display: inline-flex;
+			align-items: center;
 			flex-shrink: 0;
-			white-space: nowrap;
-			overflow: hidden;
-			text-overflow: ellipsis;
-			max-width: 60px;
+			font-size: 20px;
 
-			// Badge variants
 			&.moderator {
 				color: var(--ov-warning-color, #f57c00);
 			}
@@ -341,15 +338,6 @@
 			.participant-name-text {
 				font-size: 13px;
 			}
-
-			.local-indicator {
-				font-size: 9px;
-				padding: 2px 6px;
-			}
-		}
-
-		.participant-badges {
-			max-width: 60px;
 		}
 
 		.participant-subtitle {

@@ -24,13 +24,14 @@
 						<div class="participant-name">
 							<span class="participant-name-text">{{ participantDisplayName() }}</span>
 							@if (isLocalParticipant()) {
-								<span class="local-indicator">{{ 'PANEL.PARTICIPANTS.YOU' | translate }}</span>
+								<span class="you-suffix" aria-label="({{ 'PANEL.PARTICIPANTS.YOU' | translate | lowercase }})"
+									>({{ 'PANEL.PARTICIPANTS.YOU' | translate | lowercase }})</span
+								>
 							}
-						</div>
-
-						<!-- Participant badges in separate container -->
-						<div class="participant-badges">
-							<ng-container *ngTemplateOutlet="participantBadgeTemplate()" />
+							<!-- Role badge inline with name -->
+							<div class="participant-badges">
+								<ng-container *ngTemplateOutlet="participantBadgeTemplate()" />
+							</div>
 						</div>
 					</div>
 
