@@ -18,8 +18,7 @@
 		<div class="action-cards-grid">
 			<!-- Join Room Card -->
 			<mat-card
-				class="action-card primary-card fade-in"
-				[ngClass]="{ 'room-closed-card': roomClosed() || !canJoinMeeting() }"
+				[class]="'action-card primary-card fade-in' + (roomClosed() || !canJoinMeeting() ? ' room-closed-card' : '')"
 			>
 				<mat-card-header class="card-header">
 					<mat-icon class="ov-room-icon card-icon">{{

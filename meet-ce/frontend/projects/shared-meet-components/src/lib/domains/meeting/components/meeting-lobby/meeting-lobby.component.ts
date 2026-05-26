@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -18,7 +17,6 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	templateUrl: './meeting-lobby.component.html',
 	styleUrls: ['./meeting-lobby.component.scss'],
 	imports: [
-		NgClass,
 		MatFormFieldModule,
 		MatInputModule,
 		FormsModule,
