@@ -1,11 +1,11 @@
 import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
+import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
 import { BackgroundEffect, EffectType } from '../../models/background-effect.model';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
-
 /**
  * @internal
  */
@@ -17,127 +17,32 @@ export class VirtualBackgroundService {
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
 	private readonly storageService = inject(StorageService);
 	private readonly log = inject(LoggerService).get('VirtualBackgroundService');
-
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly backgroundIdSelectedWritable = signal<string>('');
 	readonly backgroundIdSelected = this.backgroundIdSelectedWritable.asReadonly();
+
+	private readonly backgroundsBasePath = '/assets/backgrounds';
+
+	private buildBackgroundPath(path: string): string {
+		return this.runtimeConfigService.resolvePath(`${this.backgroundsBasePath}/${path}`);
+	}
+
+	private createImageBackground(id: number): BackgroundEffect {
+		const fileName = `bg-${id}.jpg`;
+
+		return {
+			id: id.toString(),
+			type: EffectType.IMAGE,
+			thumbnail: this.buildBackgroundPath(`thumbnails/${fileName}`),
+			src: this.buildBackgroundPath(fileName)
+		};
+	}
+
 	backgrounds: BackgroundEffect[] = [
 		{ id: 'no_effect', type: EffectType.NONE, thumbnail: 'block' },
 		{ id: 'soft_blur', type: EffectType.BLUR, thumbnail: 'blur_on' },
 		{ id: 'hard_blur', type: EffectType.BLUR, thumbnail: 'blur_on' },
-		{
-			id: '1',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-1.jpg',
-			src: 'assets/backgrounds/bg-1.jpg'
-		},
-		{
-			id: '2',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-2.jpg',
-			src: 'assets/backgrounds/bg-2.jpg'
-		},
-		{
-			id: '3',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-3.jpg',
-			src: 'assets/backgrounds/bg-3.jpg'
-		},
-		{
-			id: '4',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-4.jpg',
-			src: 'assets/backgrounds/bg-4.jpg'
-		},
-		{
-			id: '5',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-5.jpg',
-			src: 'assets/backgrounds/bg-5.jpg'
-		},
-		{
-			id: '6',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-6.jpg',
-			src: 'assets/backgrounds/bg-6.jpg'
-		},
-		{
-			id: '7',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-7.jpg',
-			src: 'assets/backgrounds/bg-7.jpg'
-		},
-		{
-			id: '8',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-8.jpg',
-			src: 'assets/backgrounds/bg-8.jpg'
-		},
-		{
-			id: '9',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-9.jpg',
-			src: 'assets/backgrounds/bg-9.jpg'
-		},
-		{
-			id: '10',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-10.jpg',
-			src: 'assets/backgrounds/bg-10.jpg'
-		},
-		{
-			id: '11',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-11.jpg',
-			src: 'assets/backgrounds/bg-11.jpg'
-		},
-		{
-			id: '12',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-12.jpg',
-			src: 'assets/backgrounds/bg-12.jpg'
-		},
-		{
-			id: '13',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-13.jpg',
-			src: 'assets/backgrounds/bg-13.jpg'
-		},
-		{
-			id: '14',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-14.jpg',
-			src: 'assets/backgrounds/bg-14.jpg'
-		},
-		{
-			id: '15',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-15.jpg',
-			src: 'assets/backgrounds/bg-15.jpg'
-		},
-		{
-			id: '16',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-16.jpg',
-			src: 'assets/backgrounds/bg-16.jpg'
-		},
-		{
-			id: '17',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-17.jpg',
-			src: 'assets/backgrounds/bg-17.jpg'
-		},
-		{
-			id: '18',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-18.jpg',
-			src: 'assets/backgrounds/bg-18.jpg'
-		},
-		{
-			id: '19',
-			type: EffectType.IMAGE,
-			thumbnail: 'assets/backgrounds/thumbnails/bg-19.jpg',
-			src: 'assets/backgrounds/bg-19.jpg'
-		}
+		...Array.from({ length: 19 }, (_, index) => this.createImageBackground(index + 1))
 	];
 
 	private SOFT_BLUR_INTENSITY = 20;
