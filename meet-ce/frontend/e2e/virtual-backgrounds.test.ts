@@ -45,7 +45,7 @@ test.describe('Virtual Background E2E Tests', () => {
 		await openPrejoinBackgroundsPanel(page);
 		await togglePrejoinCamera(page);
 
-		await expectVisible(page, '.poster > .poster');
+		await expectVisible(page, '.participant-avatar > .poster');
 		await expect(backgroundsButton).toBeVisible();
 		await expect(backgroundsButton).toBeDisabled();
 		await expect(page.locator('#background-effects-container')).toHaveCount(0);
@@ -60,7 +60,7 @@ test.describe('Virtual Background E2E Tests', () => {
 
 		await togglePrejoinCamera(page);
 
-		await expectVisible(page, '.poster > .poster');
+		await expectVisible(page, '.participant-avatar > .poster');
 		await expect(backgroundsButton).toBeVisible();
 		await expect(backgroundsButton).toBeDisabled();
 		await expect(page.locator('#background-effects-container')).toHaveCount(0);
@@ -98,7 +98,7 @@ test.describe('Virtual Background E2E Tests', () => {
 
 		await toggleCamera(page);
 
-		await expectVisible(page, '.poster > .poster');
+		await expectVisible(page, '.participant-avatar > .poster');
 		await openMoreOptionsMenu(page);
 
 		await expectDisabled(page, '#virtual-bg-btn');

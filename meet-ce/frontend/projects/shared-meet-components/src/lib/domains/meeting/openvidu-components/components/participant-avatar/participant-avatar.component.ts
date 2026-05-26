@@ -19,8 +19,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true,
 	host: {
-		'[class.poster]': 'variant() === "poster"',
-		'[class.panel]': 'variant() === "panel"'
+		'[class.participant-avatar]': 'true'
 	}
 })
 export class ParticipantAvatarComponent {
