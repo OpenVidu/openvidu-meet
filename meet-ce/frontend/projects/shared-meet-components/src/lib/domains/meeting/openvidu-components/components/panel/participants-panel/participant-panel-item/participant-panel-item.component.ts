@@ -11,6 +11,7 @@ import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { TemplateRegistryService } from '../../../../services/template/template-registry.service';
+import { ConnectionQualityIndicatorComponent } from '../../../connection-quality-indicator/connection-quality-indicator.component';
 import { ParticipantAvatarComponent } from '../../../participant-avatar/participant-avatar.component';
 
 /**
@@ -20,7 +21,7 @@ import { ParticipantAvatarComponent } from '../../../participant-avatar/particip
  */
 @Component({
 	selector: 'ov-participant-panel-item',
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, TrackPublishedTypesPipe, ParticipantAvatarComponent],
+	imports: [CommonModule, MatButtonModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, TrackPublishedTypesPipe, ParticipantAvatarComponent, ConnectionQualityIndicatorComponent],
 	templateUrl: './participant-panel-item.component.html',
 	styleUrls: ['./participant-panel-item.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

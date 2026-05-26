@@ -1,23 +1,36 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, OnDestroy, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { ParticipantModel } from '../../models/participant.model';
 import { ConnectionQuality } from '../../services/livekit-adapter';
+import { TranslateService } from '../../services/translate/translate.service';
 
 @Component({
 	selector: 'ov-connection-quality-indicator',
 	standalone: true,
-	imports: [MatIconModule],
+	imports: [MatIconModule, MatTooltipModule],
 	templateUrl: './connection-quality-indicator.component.html',
 	styleUrl: './connection-quality-indicator.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConnectionQualityIndicatorComponent implements OnDestroy {
 	readonly participant = input.required<ParticipantModel>();
+	readonly transparent = input(false);
+	readonly forceVisible = input(false);
 	readonly connectionQuality = computed(() => this.participant().connectionQuality);
 	readonly participantKey = computed(() => this.participant().sid);
+	private readonly translateService = inject(TranslateService);
 
 	readonly showBadge = computed(() => {
-		return this.connectionQuality() !== ConnectionQuality.Unknown && this.isVisible();
+		const qualityKnown = this.connectionQuality() !== ConnectionQuality.Unknown;
+		return this.forceVisible() ? qualityKnown : qualityKnown && this.isVisible();
+	});
+
+	readonly tooltipText = computed(() => {
+		const label = this.translateService.translate('PANEL.PARTICIPANTS.CONNECTION_QUALITY.LABEL');
+		const qualityKey = this.qualityTranslationKey(this.connectionQuality());
+		const value = this.translateService.translate(`PANEL.PARTICIPANTS.CONNECTION_QUALITY.${qualityKey}`);
+		return `${label}: ${value}`;
 	});
 
 	readonly icon = computed(() => {
@@ -92,6 +105,15 @@ export class ConnectionQualityIndicatorComponent implements OnDestroy {
 		if (this.visibilityTimeout) {
 			clearTimeout(this.visibilityTimeout);
 			this.visibilityTimeout = undefined;
+		}
+	}
+
+	private qualityTranslationKey(quality: ConnectionQuality): string {
+		switch (quality) {
+			case ConnectionQuality.Excellent: return 'EXCELLENT';
+			case ConnectionQuality.Good: return 'GOOD';
+			case ConnectionQuality.Poor: return 'POOR';
+			default: return 'LOST';
 		}
 	}
 }
