@@ -11,6 +11,7 @@ import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-
 import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
 import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
 import {
+	countMutedRemoteAudios,
 	dragStream,
 	expectLocalStreamCount,
 	expectScreenShareCount,
@@ -706,43 +707,29 @@ test.describe('Stream E2E Tests', () => {
 				await expect(pageA.locator('.OV_stream.remote')).toHaveCount(1, { timeout: 10_000 });
 				await expect(pageA.locator('.OV_stream.remote .OV_media-element')).toHaveCount(1);
 
-				// Check initial muted state — audio is always attached to the <video> element (AV mode)
-				const isInitiallyMuted = await pageA.evaluate(() => {
-					const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
-					return el!.muted;
-				});
-				expect(isInitiallyMuted).toBe(false);
-				// There must be no standalone audio elements — audio is always carried by the video element
-				await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
+				// Audio is managed by SmartLayoutComponent in a hidden <audio data-participant> element
+				expect(await countMutedRemoteAudios(pageA)).toBe(0);
 
 				// Mute the remote participant
 				await muteRemoteParticipant(pageA, '.OV_stream.remote');
 				await pageA.waitForTimeout(500);
 
-				// Verify the video element is now muted
-				const isMutedAfterClick = await pageA.evaluate(() => {
-					const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
-					return el!.muted;
-				});
-				expect(isMutedAfterClick).toBe(true);
+				// Verify the persistent audio element is now muted
+				expect(await countMutedRemoteAudios(pageA)).toBe(1);
 				await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(1);
 
 				// Verify remote participant B can still hear themselves and send audio
 				// (this is only a local mute, not affecting the remote participant's transmission)
 				await expect(pageB.locator('.OV_stream.local')).toBeVisible();
-				// No audio elements exist in the DOM — audio is always on the video element
+				// No audio elements inside the local stream container
 				await expect(pageB.locator('.OV_stream.local .OV_audio-element')).toHaveCount(0);
 
 				// Unmute the remote participant
 				await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
 				await pageA.waitForTimeout(500);
 
-				// Verify the video element is unmuted again
-				const isUnmutedAfterClick = await pageA.evaluate(() => {
-					const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
-					return el!.muted;
-				});
-				expect(isUnmutedAfterClick).toBe(false);
+				// Verify the persistent audio element is unmuted again
+				expect(await countMutedRemoteAudios(pageA)).toBe(0);
 				await expect(pageA.locator('.OV_stream.remote .status-icons #muted-forcibly')).toHaveCount(0);
 			} finally {
 				await removeAllParticipants();
@@ -771,12 +758,8 @@ test.describe('Stream E2E Tests', () => {
 				await unmuteRemoteParticipant(pageA, '.OV_stream.remote');
 				await pageA.waitForTimeout(200);
 
-				// Final state should be unmuted — audio is always on the video element, no standalone audio elements
-				const finalMutedState = await pageA.evaluate(() => {
-					const el = document.querySelector('.OV_stream.remote .OV_video-element') as HTMLVideoElement | null;
-					return el!.muted;
-				});
-				expect(finalMutedState).toBe(false);
+				// Final state should be unmuted — audio lives in the hidden persistent audio layer
+				expect(await countMutedRemoteAudios(pageA)).toBe(0);
 				await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
 
 				// Verify remote stream is still visible and functional
@@ -811,13 +794,8 @@ test.describe('Stream E2E Tests', () => {
 				await firstSilenceBtn.click();
 				await pageA.waitForTimeout(300);
 
-				// Verify first remote is muted — audio is always on the video element
-				const firstRemoteAudio = await pageA.evaluate(() => {
-					const streams = document.querySelectorAll('.OV_stream.remote');
-					const el = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-					return el!.muted;
-				});
-				expect(firstRemoteAudio).toBe(true);
+				// Verify exactly 1 remote audio element is muted in the persistent audio layer
+				expect(await countMutedRemoteAudios(pageA)).toBe(1);
 
 				// Mute second remote stream (should be C)
 				const secondRemote = pageA.locator('.OV_stream.remote').nth(1);
@@ -827,15 +805,8 @@ test.describe('Stream E2E Tests', () => {
 				await secondSilenceBtn.click();
 				await pageA.waitForTimeout(300);
 
-				// Verify both remotes are still muted — no standalone audio elements exist
-				const bothMuted = await pageA.evaluate(() => {
-					const streams = document.querySelectorAll('.OV_stream.remote');
-					const elFirst = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-					const elSecond = streams[1]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-					return { first: elFirst!.muted, second: elSecond!.muted };
-				});
-				expect(bothMuted.first).toBe(true);
-				expect(bothMuted.second).toBe(true);
+				// Verify both remote audio elements are muted in the persistent audio layer
+				expect(await countMutedRemoteAudios(pageA)).toBe(2);
 				await expect(pageA.locator('.OV_stream.remote .OV_audio-element')).toHaveCount(0);
 
 				// Unmute first remote
@@ -843,15 +814,8 @@ test.describe('Stream E2E Tests', () => {
 				await firstSilenceBtn.click();
 				await pageA.waitForTimeout(300);
 
-				// Verify first is unmuted, second is still muted
-				const mixedMutedState = await pageA.evaluate(() => {
-					const streams = document.querySelectorAll('.OV_stream.remote');
-					const elFirst = streams[0]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-					const elSecond = streams[1]?.querySelector('.OV_video-element') as HTMLVideoElement | null;
-					return { first: elFirst!.muted, second: elSecond!.muted };
-				});
-				expect(mixedMutedState.first).toBe(false);
-				expect(mixedMutedState.second).toBe(true);
+				// Verify exactly 1 audio element is still muted (the second); the first is now unmuted
+				expect(await countMutedRemoteAudios(pageA)).toBe(1);
 			} finally {
 				await removeAllParticipants();
 			}

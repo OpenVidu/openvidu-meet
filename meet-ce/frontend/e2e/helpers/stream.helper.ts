@@ -198,6 +198,20 @@ export const expectLocalStreamCount = async (page: Page, counts: { video?: numbe
 	}
 };
 
+// ─── Persistent audio layer ─────────────────────────────────────────────────
+
+/**
+ * Returns the number of `<audio data-participant>` elements in the hidden
+ * audio container that currently have `muted === true`.
+ */
+export const countMutedRemoteAudios = async (page: Page): Promise<number> => {
+	return await page.evaluate(() => {
+		const audios = Array.from(document.querySelectorAll('audio[data-participant]')) as HTMLAudioElement[];
+
+		return audios.filter((a) => a.muted).length;
+	});
+};
+
 // ─── Pinning ────────────────────────────────────────────────────────────────
 
 /**
