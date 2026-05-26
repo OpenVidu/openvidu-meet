@@ -1,0 +1,17 @@
+// Global styles for the webcomponent bundle.
+//
+// NOTE: This file compiles to dist/wc/browser/styles.css which is a SEPARATE
+// output that esbuild (concat-wc.js) does NOT include in openvidu-meet-wc.js.
+// Only styles declared in component styleUrls are bundled into main.js and
+// therefore injected into the Shadow DOM.
+//
+// The Angular Material theme and Material icon font class definitions live in
+// app.material.scss (component styleUrls) so they reach the shadow root.
+// Keep this file minimal — only bare-page resets that affect the testapp shell.
+
+html,
+body {
+	height: 100%;
+	margin: 0;
+	font-family: Inter, system-ui, Arial, sans-serif;
+}

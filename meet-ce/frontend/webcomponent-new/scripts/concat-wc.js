@@ -48,6 +48,17 @@ esbuild
   })
   .then(() => {
     console.log('[concat-wc] wrote', path.relative(path.resolve(__dirname, '..'), out));
+
+    // Copy runtime assets (sounds, backgrounds, images, layouts, livekit worker)
+    // from the WC build output to dist/assets/ so they are distributed alongside
+    // the WC bundle.
+    const assetsSrc = path.join(browserDir, 'assets');
+    const assetsDst = path.resolve(__dirname, '..', 'dist', 'assets');
+
+    if (fs.existsSync(assetsSrc)) {
+      fs.cpSync(assetsSrc, assetsDst, { recursive: true, force: true });
+      console.log('[concat-wc] copied assets →', path.relative(path.resolve(__dirname, '..'), assetsDst));
+    }
   })
   .catch((err) => {
     console.error('[concat-wc] esbuild failed:', err.message);

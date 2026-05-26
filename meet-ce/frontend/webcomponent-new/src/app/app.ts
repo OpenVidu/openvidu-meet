@@ -1,16 +1,19 @@
 import {
+	afterNextRender,
 	ChangeDetectionStrategy,
 	Component,
+	DestroyRef,
 	effect,
+	ElementRef,
 	inject,
 	input,
 	output,
 	signal,
 	ViewEncapsulation
 } from '@angular/core';
-import { MeetingComponent, MeetingContextService, RuntimeConfigService } from '@openvidu-meet/shared-components';
-import { RoomAccessService, RoomMemberContextService } from '@openvidu-meet/shared-components';
-import { NavigationService } from '@openvidu-meet/shared-components';
+import { AppCeMeetingComponent, MeetingContextService, NavigationService, RoomAccessService, RoomMemberContextService, RuntimeConfigService, ThemeService } from '@openvidu-meet/shared-components';
+import { ShadowOverlayContainer } from './shadow-overlay-container.service.js';
+import { ShadowStylesService } from './shadow-styles.service.js';
 
 // ---------------------------------------------------------------------------
 // Event detail interfaces — keep in sync with openvidu-meet.contract.js
@@ -31,22 +34,32 @@ export interface OpenViduMeetLeftDetail {
 
 @Component({
 	selector: 'app-root',
-	imports: [MeetingComponent],
+	imports: [AppCeMeetingComponent],
 	templateUrl: './app.html',
-	styleUrl: './app.css',
+	styleUrls: ['./app.material.scss', './app.css'],
 	encapsulation: ViewEncapsulation.ShadowDom,
 	changeDetection: ChangeDetectionStrategy.OnPush,
+	providers: [ShadowStylesService],
 	host: {
 		'[attr.role]': '"application"',
-		'[attr.aria-label]': '"OpenVidu Meet"'
+		'[attr.aria-label]': '"OpenVidu Meet"',
+		// Mirror the document-level theme attribute onto :host so that the
+		// :host([data-theme='dark']) CSS selector in app.material.scss works
+		// inside the shadow root (document[data-theme] cannot pierce the boundary).
+		'[attr.data-theme]': 'themeService.isDark() ? "dark" : null'
 	}
 })
 export class App {
+	protected readonly themeService = inject(ThemeService);
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly roomAccessService = inject(RoomAccessService);
 	private readonly navigationService = inject(NavigationService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly _elRef = inject(ElementRef);
+	private readonly _destroyRef = inject(DestroyRef);
+	private readonly _shadowStyles = inject(ShadowStylesService);
+	private readonly _shadowOverlay = inject(ShadowOverlayContainer);
 
 	// ── Web Component API: Properties ──────────────────────────────────────
 	readonly roomUrl = input('');
@@ -69,6 +82,20 @@ export class App {
 
 	constructor() {
 		this.runtimeConfigService.enableWebcomponentMode();
+
+		// Mirror Angular Material styles from document.head into the shadow root.
+		// Material components use ViewEncapsulation.None, so Angular injects their
+		// styles globally — those cannot cross the Shadow DOM boundary on their own.
+		afterNextRender(() => {
+			const shadowRoot = (this._elRef.nativeElement as HTMLElement).shadowRoot;
+
+			if (shadowRoot) {
+				this._shadowStyles.reflect(shadowRoot, this._destroyRef);
+				// Place CDK overlay container (tooltips, menus, dialogs) inside
+				// the shadow root so they inherit theme tokens and Material styles.
+				this._shadowOverlay.setShadowRoot(shadowRoot);
+			}
+		});
 	}
 
 	// ── Effects ───────────────────────────────────────────────────────────────
@@ -241,7 +268,6 @@ export class App {
 	private async validateAccessAndSetReady(): Promise<void> {
 		try {
 			const result = await this.roomAccessService.validateAccess();
-			debugger;
 
 			if (result.allowed) {
 				this.ready.set(true);

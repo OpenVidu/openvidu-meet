@@ -1,0 +1,61 @@
+// Import Sass meta helpers so shared CSS partials can be injected into the shadow-root stylesheet.
+@use 'sass:meta';
+// Import the same shared runtime theme mixin used by the SPA entrypoint.
+@use '_runtime-theme.scss';
+
+// Shared frontend utility classes such as .ov-page-container and animation
+// helpers are authored as global CSS in the main app. Load them here so they
+// are bundled into the webcomponent and injected into the shadow root.
+@include meta.load-css('_animations.scss');
+@include meta.load-css('_utilities.scss');
+
+// Apply the shared runtime theme to the shadow host, switching on shadow-specific Material handling.
+@include runtime-theme.emit-runtime-theme(':host', ":host([data-theme='dark'])", $is-shadow-root: true);
+
+// ── Angular Material theme ────────────────────────────────────────────────
+// Applied to :host so the Material CSS custom properties are available to all
+// content rendered inside the shadow root.  This is the only way to get the
+// theme into the bundle AND into the shadow root — component styleUrls are
+// compiled into main.js and injected directly into the shadow root at runtime,
+// unlike global styles (styles.scss → styles.css) which are a separate file
+// that esbuild does NOT include in the webcomponent bundle.
+
+// ── Material icon font classes ────────────────────────────────────────────
+// Google Fonts loads the @font-face declarations into document.head.
+// @font-face rules ARE inherited by shadow roots (per spec), so the font
+// files load correctly.  However, the CSS class selectors that set
+// font-family (.material-icons, .material-symbols-outlined) come from
+// Google's stylesheet in document.head and do NOT penetrate Shadow DOM.
+// We must redefine them here so mat-icon renders correctly.
+
+.material-icons {
+	font-family: 'Material Icons';
+	font-weight: normal;
+	font-style: normal;
+	font-size: 24px;
+	line-height: 1;
+	letter-spacing: normal;
+	text-transform: none;
+	display: inline-block;
+	white-space: nowrap;
+	word-wrap: normal;
+	direction: ltr;
+	-webkit-font-feature-settings: 'liga';
+	font-feature-settings: 'liga';
+	-webkit-font-smoothing: antialiased;
+}
+
+.material-symbols-outlined {
+	font-family: 'Material Symbols Outlined';
+	font-weight: normal;
+	font-style: normal;
+	font-size: 24px;
+	line-height: 1;
+	letter-spacing: normal;
+	text-transform: none;
+	display: inline-block;
+	white-space: nowrap;
+	word-wrap: normal;
+	direction: ltr;
+	-webkit-font-smoothing: antialiased;
+}

@@ -3,6 +3,19 @@
   width: 100%;
   height: 100%;
   box-sizing: border-box;
+  /* Provide a default background so the consumer's page colour does not bleed
+     through transparent areas (e.g. around the lobby's centred container).
+     Uses the Material surface token so it automatically adapts to dark theme. */
+  background-color: var(--mat-sys-surface, var(--ov-meet-background-color, #fff));
+}
+
+/* Propagate full height from the shadow root down through the component tree
+   so that children using height:100% (e.g. .ov-page-container) resolve
+   correctly. In the main app the router outlet provides this context; in the
+   webcomponent there is no router, so we must set it explicitly here. */
+app-ce-ov-meeting {
+  display: block;
+  height: 100%;
 }
 
 *,
