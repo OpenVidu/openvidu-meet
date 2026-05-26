@@ -385,6 +385,56 @@ export class RedisService extends EventEmitter {
 		}
 	}
 
+	/**
+	 * Adds a member to a Redis Set and refreshes the key TTL atomically.
+	 *
+	 * @param key - The key of the set
+	 * @param member - The member to add
+	 * @param ttlMs - TTL in milliseconds to (re)apply to the key
+	 * @returns Number of new members added (0 or 1)
+	 */
+	async addToSet(key: string, member: string, ttlMs?: number): Promise<number> {
+		try {
+			if (ttlMs !== undefined) {
+				const [added] = await this.redisPublisher.multi().sadd(key, member).pexpire(key, ttlMs).exec() as [[Error | null, number], unknown];
+				return added[1];
+			}
+
+			return await this.redisPublisher.sadd(key, member);
+		} catch (error) {
+			this.logger.error('Error adding to set in Redis', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Removes a member from a Redis Set.
+	 *
+	 * @param key - The key of the set
+	 * @param member - The member to remove
+	 * @returns Number of members removed (0 or 1)
+	 */
+	async removeFromSet(key: string, member: string): Promise<number> {
+		try {
+			return await this.redisPublisher.srem(key, member);
+		} catch (error) {
+			this.logger.error('Error removing from set in Redis', error);
+			throw error;
+		}
+	}
+
+	/**
+	 * Returns the cardinality (number of members) of a Redis Set.
+	 */
+	async getCardinality(key: string): Promise<number> {
+		try {
+			return await this.redisPublisher.scard(key);
+		} catch (error) {
+			this.logger.error('Error reading set cardinality from Redis', error);
+			throw error;
+		}
+	}
+
 	cleanup() {
 		this.logger.verbose('Cleaning up Redis connections');
 		this.redisPublisher.quit();

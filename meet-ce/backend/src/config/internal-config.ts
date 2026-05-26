@@ -46,7 +46,7 @@ export const INTERNAL_CONFIG = {
 	MEETING_PRESENCE_TTL: '32d' as StringValue, // Time-to-live for user/room presence mappings used to kick users from meetings
 
 	CAPTIONS_AGENT_NAME: 'speech-processing',
-	ASSISTANT_STATE_LOCK_TTL: '15s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
+	ASSISTANT_STATE_LOCK_TTL: '60s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 
 	// Batch and concurrency processing settings
 	DEFAULT_CONCURRENCY: 10, // Default concurrency limit for concurrent operations

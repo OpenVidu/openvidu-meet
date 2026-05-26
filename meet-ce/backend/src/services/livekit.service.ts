@@ -334,17 +334,50 @@ export class LiveKitService {
 	}
 
 	/**
+	 * Lists all agent dispatches for a LiveKit room.
+	 *
+	 * LiveKit can take a few seconds to time out when listing dispatches for a room
+	 * that no longer exists, so check room existence first and return an empty list
+	 * when the room is already gone.
+	 */
+	async listAgentDispatches(roomName: string): Promise<AgentDispatch[]> {
+		const roomExists = await this.roomExists(roomName);
+
+		if (!roomExists) {
+			this.logger.debug(`Skipping agent dispatch listing because LiveKit room '${roomName}' does not exist`);
+			return [];
+		}
+
+		try {
+			return await this.agentClient.listDispatch(roomName);
+		} catch (error) {
+			this.logger.error(`Error listing agent dispatches for room '${roomName}':`, error);
+			throw internalError(`listing agent dispatches for room '${roomName}'`);
+		}
+	}
+
+	async getAgentDispatch(roomName: string, agentName: string): Promise<AgentDispatch | null> {
+		const dispatches = await this.listAgentDispatches(roomName);
+
+		return dispatches.find((dispatch) => dispatch.agentName === agentName) ?? null;
+	}
+
+	/**
 	 * Stops an agent in a LiveKit room.
-	 * @param agentId
-	 * @param roomName
+	 * Treats a "not found" response as a no-op: the dispatch is already gone,
+	 * which is the desired end state.
 	 */
 	async stopAgent(agentId: string, roomName: string): Promise<void> {
 		try {
 			await this.agentClient.deleteDispatch(agentId, roomName);
-		} catch (error) {
-			this.logger.error(`Error deleting agent dispatch '${agentId}' for room '${roomName}':`, error);
-			throw error;
+		} catch (error: any) {
+			if (error?.code === 'not_found' || error?.status === 404) {
+				this.logger.debug(`Agent dispatch '${agentId}' already gone in room '${roomName}', skipping stop.`);
+				return;
+			}
 
+			this.logger.error(`Error deleting agent dispatch '${agentId}' for room '${roomName}':`, error);
+			throw internalError(`stopping agent dispatch '${agentId}' in room '${roomName}'`);
 		}
 	}
 

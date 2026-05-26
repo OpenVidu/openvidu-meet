@@ -5,7 +5,6 @@ import request from 'supertest';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
-import { RedisKeyName } from '../../../../src/models/redis.model.js';
 import { AiAssistantService } from '../../../../src/services/ai-assistant.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { MutexService } from '../../../../src/services/mutex.service.js';
@@ -34,6 +33,7 @@ let livekitService: LiveKitService;
 let mutexService: MutexService;
 let redisService: RedisService;
 let requestSessionService: RequestSessionService;
+let activeDispatch: { id: string; agentName: string } | null;
 
 describe('AI Assistant API Tests', () => {
 	const captionsDefaultValue = MEET_ENV.CAPTIONS_ENABLED;
@@ -59,10 +59,19 @@ describe('AI Assistant API Tests', () => {
 
 		beforeEach(async () => {
 			roomData = await setupSingleRoom(true);
+			activeDispatch = null;
 
-			// Default LiveKit stubs: no dispatch running → creation succeeds
+			jest.spyOn(livekitService, 'getAgentDispatch').mockImplementation(async () => activeDispatch as any);
 			createAgentSpy = jest.spyOn(livekitService, 'createAgent');
-			createAgentSpy.mockResolvedValue(MOCK_DISPATCH as any);
+			createAgentSpy.mockImplementation(async () => {
+				activeDispatch = MOCK_DISPATCH;
+				return MOCK_DISPATCH as any;
+			});
+			jest.spyOn(livekitService, 'stopAgent').mockImplementation(async (assistantId) => {
+				if (activeDispatch?.id === assistantId) {
+					activeDispatch = null;
+				}
+			});
 			jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest2');
 		});
 
@@ -111,8 +120,6 @@ describe('AI Assistant API Tests', () => {
 			});
 
 			it('should allow a participant to re-enable captions after previously disabling them', async () => {
-				jest.spyOn(livekitService, 'stopAgent').mockResolvedValue(undefined as any);
-
 				// Enable → disable → re-enable
 				await createAssistant(roomData.speakerToken);
 				await cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken);
@@ -215,8 +222,6 @@ describe('AI Assistant API Tests', () => {
 			});
 
 			it('should create exactly one agent dispatch when two participants enable captions simultaneously', async () => {
-				(livekitService.createAgent as jest.Mock).mockImplementation(async () => MOCK_DISPATCH);
-
 				const [assistant1, assistant2] = await Promise.all([
 					aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantA'),
 					aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantB')
@@ -230,28 +235,7 @@ describe('AI Assistant API Tests', () => {
 				expect(livekitService.createAgent).toHaveBeenCalledTimes(1);
 			});
 
-			it('should register the participant using Redis fallback when create lock retries are exhausted', async () => {
-				const participantIdentity = 'fallbackParticipant';
-				const assistantIdKey = `${RedisKeyName.AI_ASSISTANT_ID}${roomData.room.roomId}:${MeetAssistantCapabilityName.LIVE_CAPTIONS}`;
-				const participantStateKey = `${RedisKeyName.AI_ASSISTANT_PARTICIPANT_STATE}${roomData.room.roomId}:${MeetAssistantCapabilityName.LIVE_CAPTIONS}:${participantIdentity}`;
-
-				jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue(participantIdentity);
-				await redisService.setIfNotExists(assistantIdKey, MOCK_DISPATCH_ID);
-				jest.spyOn(mutexService, 'withRetryLock').mockResolvedValue(null);
-
-				const response = await createAssistant(roomData.speakerToken);
-
-				expectValidAssistantResponse(response);
-				expect(response.body.id).toBe(MOCK_DISPATCH_ID);
-				expect(livekitService.createAgent).not.toHaveBeenCalled();
-				expect(await redisService.exists(participantStateKey)).toBe(true);
-
-				await redisService.delete([assistantIdKey, participantStateKey]);
-			});
-
 			it('should not create more than one dispatch when the same participant clicks enable rapidly', async () => {
-				(livekitService.createAgent as jest.Mock).mockImplementation(async () => MOCK_DISPATCH);
-
 				const [assistant1, assistant2] = await Promise.all([
 					aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantA'),
 					aiAssistantService.createLiveCaptionsAssistant(roomData.room.roomId, 'participantA')
@@ -271,10 +255,19 @@ describe('AI Assistant API Tests', () => {
 
 		beforeEach(async () => {
 			roomData = await setupSingleRoom(true);
+			activeDispatch = null;
 
 			// Default stubs: dispatch exists and can be stopped
-			jest.spyOn(livekitService, 'createAgent').mockResolvedValue(MOCK_DISPATCH as any);
-			jest.spyOn(livekitService, 'stopAgent').mockResolvedValue(undefined as any);
+			jest.spyOn(livekitService, 'getAgentDispatch').mockImplementation(async () => activeDispatch as any);
+			jest.spyOn(livekitService, 'createAgent').mockImplementation(async () => {
+				activeDispatch = MOCK_DISPATCH;
+				return MOCK_DISPATCH as any;
+			});
+			jest.spyOn(livekitService, 'stopAgent').mockImplementation(async (assistantId) => {
+				if (activeDispatch?.id === assistantId) {
+					activeDispatch = null;
+				}
+			});
 			jest.spyOn(requestSessionService, 'getParticipantIdentity').mockReturnValue('moderatorTest');
 		});
 
@@ -348,16 +341,15 @@ describe('AI Assistant API Tests', () => {
 				expect(livekitService.stopAgent).toHaveBeenCalledTimes(1);
 			});
 
-			it('should return 204 even when LiveKit stopAgent resolves after the dispatch is already gone', async () => {
-				// The service uses Redis as the source of truth, so it will still attempt stopAgent.
-				// As long as stopAgent resolves gracefully, cancel remains successful.
-				(livekitService.stopAgent as jest.Mock).mockResolvedValue(undefined as any);
-
+			it('should return 204 and skip stopAgent when the dispatch is already gone in LiveKit', async () => {
+				// The service resolves the active dispatch via LiveKit (not a stale client-supplied ID).
+				// If LiveKit reports no dispatch, stopAgent is correctly skipped.
 				await createAssistant(roomData.speakerToken);
+				activeDispatch = null;
 				const response = await cancelAssistant(MOCK_DISPATCH_ID, roomData.speakerToken);
 
 				expect(response.status).toBe(204);
-				expect(livekitService.stopAgent).toHaveBeenCalledTimes(1);
+				expect(livekitService.stopAgent).not.toHaveBeenCalled();
 			});
 
 			it('should return 204 even when cancel is called without a prior enable by that participant', async () => {
