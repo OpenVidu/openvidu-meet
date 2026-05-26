@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, effect, ElementRef, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	effect,
+	ElementRef,
+	inject,
+	input,
+	OnDestroy,
+	signal,
+	viewChild
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -6,10 +16,11 @@ import { ParticipantStream } from '../../models/participant.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
-import { LayoutService } from '../../services/layout/layout.service';
+import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
-import { MediaElementComponent } from '../media-element/media-element.component';
+import { ConnectionQualityIndicatorComponent } from '../connection-quality-indicator/connection-quality-indicator.component';
+import { VideoElementComponent } from '../video-element/video-element.component';
 
 /**
  * The **StreamComponent** is hosted inside of the {@link LayoutComponent}.
@@ -23,7 +34,8 @@ import { MediaElementComponent } from '../media-element/media-element.component'
 		MatTooltipModule,
 		TranslatePipe,
 		AudioWaveComponent,
-		MediaElementComponent
+		ConnectionQualityIndicatorComponent,
+		VideoElementComponent
 	],
 	templateUrl: './stream.component.html',
 	styleUrls: ['./stream.component.scss'],
@@ -31,7 +43,7 @@ import { MediaElementComponent } from '../media-element/media-element.component'
 	standalone: true
 })
 export class StreamComponent implements OnDestroy {
-	private readonly layoutService = inject(LayoutService);
+	private readonly layoutService = inject(SmartLayoutService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly libService = inject(OpenViduComponentsConfigService);

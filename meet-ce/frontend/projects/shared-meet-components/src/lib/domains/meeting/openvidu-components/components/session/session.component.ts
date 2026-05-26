@@ -1,17 +1,17 @@
 import { CommonModule } from '@angular/common';
 import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    effect,
-    ElementRef,
-    HostListener,
-    inject,
-    OnDestroy,
-    OnInit,
-    output,
-    signal,
-    viewChild
+	ChangeDetectionStrategy,
+	Component,
+	DestroyRef,
+	effect,
+	ElementRef,
+	HostListener,
+	inject,
+	OnDestroy,
+	OnInit,
+	output,
+	signal,
+	viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -22,7 +22,7 @@ import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '.
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
-import { LayoutService } from '../../services/layout/layout.service';
+import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import type { OVRoom } from '../../services/livekit-adapter';
 import { Room } from '../../services/livekit-adapter';
 import { LoggerService } from '../../services/logger/logger.service';
@@ -89,7 +89,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private shouldDisconnectRoomWhenComponentIsDestroyed: boolean = true;
 	private readonly SIDENAV_WIDTH_LIMIT_MODE = 790;
 	private readonly destroyRef = inject(DestroyRef);
-	private readonly layoutService = inject(LayoutService);
+	private readonly layoutService = inject(SmartLayoutService);
 	private readonly actionService = inject(ActionService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly participantService = inject(ParticipantService);
@@ -108,6 +108,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private layoutUpdateTimeoutId: any = null;
 	private contentMarginUpdateTimeoutId: ReturnType<typeof setTimeout> | null = null;
 	private updateLayoutInterval: ReturnType<typeof setInterval> | undefined = undefined;
+	private sidenavResizeObserver: ResizeObserver | undefined = undefined;
 	private log = inject(LoggerService).get('SessionComponent');
 	private readonly LAYOUT_UPDATE_DEBOUNCE_MS = 100;
 
@@ -142,6 +143,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 					this.drawer._contentMarginChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
 						this.scheduleContentMarginUpdate();
 					});
+					this.observeContainerWidth(container);
 					this.initializeSidenavBindings();
 				}
 			});
@@ -194,10 +196,6 @@ export class SessionComponent implements OnInit, OnDestroy {
 				ev.isOpened ? this.sideMenu.open() : this.sideMenu.close();
 			}
 		}
-	});
-	private readonly layoutWidthEffect = effect(() => {
-		const width = this.layoutService.layoutWidth();
-		this.sidenavMode.set(width <= this.SIDENAV_WIDTH_LIMIT_MODE ? SidenavMode.OVER : SidenavMode.SIDE);
 	});
 
 	@HostListener('window:beforeunload')
@@ -285,6 +283,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 			this.contentMarginUpdateTimeoutId = null;
 		}
 		this.stopUpdateLayoutInterval();
+		this.sidenavResizeObserver?.disconnect();
 
 		if (this.shouldDisconnectRoomWhenComponentIsDestroyed) {
 			await this.disconnectRoom(ParticipantLeftReason.LEAVE);
@@ -350,6 +349,21 @@ export class SessionComponent implements OnInit, OnDestroy {
 			clearInterval(this.updateLayoutInterval);
 			this.updateLayoutInterval = undefined;
 		}
+	}
+
+	private observeContainerWidth(container: MatDrawerContainer): void {
+		this.sidenavResizeObserver?.disconnect();
+		const el = (container as any)._element?.nativeElement ?? (container as any)._elementRef?.nativeElement;
+		if (!el) return;
+
+		this.sidenavResizeObserver = new ResizeObserver((entries) => {
+			const width = entries[0]?.contentRect.width ?? 0;
+			const mode = width <= this.SIDENAV_WIDTH_LIMIT_MODE ? SidenavMode.OVER : SidenavMode.SIDE;
+			if (this.sidenavMode() !== mode) {
+				this.sidenavMode.set(mode);
+			}
+		});
+		this.sidenavResizeObserver.observe(el);
 	}
 
 	private initializeSidenavBindings(): void {

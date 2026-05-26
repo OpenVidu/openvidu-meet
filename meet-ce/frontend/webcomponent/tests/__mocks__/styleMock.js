@@ -1,2 +1,2 @@
-// Mock para imports de CSS en tests de Jest
+// Mock for CSS imports in Jest tests
 module.exports = ''

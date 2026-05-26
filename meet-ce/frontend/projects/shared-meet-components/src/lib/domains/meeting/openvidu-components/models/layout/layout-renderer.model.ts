@@ -1,87 +1,74 @@
-import { LAYOUT_CONSTANTS, LayoutBox } from './layout-types.model';
+import { writeStyles } from './layout-dom.util';
+import { LAYOUT_CONSTANTS, LayoutBox, LayoutClass } from './layout-types.model';
 
-/**
- * Position information for DOM element
- */
-interface ElementPosition {
+interface ElementPosition extends Record<string, string> {
 	left: string;
 	top: string;
 	width: string;
 	height: string;
-	[key: string]: string; // Allow index signature for dynamic access
 }
+
+const BOX_PROPS = [
+	'margin-left',
+	'margin-right',
+	'margin-top',
+	'margin-bottom',
+	'padding-left',
+	'padding-right',
+	'padding-top',
+	'padding-bottom',
+	'border-left',
+	'border-right',
+	'border-top',
+	'border-bottom'
+] as const;
 
 /**
  * Handles DOM manipulation and rendering for layout elements.
- * Manages positioning, animations, and visual updates without calculation logic.
  *
  * @internal
  */
 export class LayoutRenderer {
-
-	/**
-	 * Render layout boxes to DOM elements
-	 * @param container Parent container element
-	 * @param boxes Calculated layout boxes
-	 * @param elements DOM elements to position
-	 * @param animate Whether to animate transitions
-	 */
 	renderLayout(container: HTMLElement, boxes: LayoutBox[], elements: HTMLElement[], animate: boolean): void {
 		boxes.forEach((box, idx) => {
 			const elem = elements[idx];
 			if (!elem) return;
 
-			// Set position:absolute for proper layout positioning
-			this.getCssProperty(elem, 'position', 'absolute');
+			elem.style.position = 'absolute';
 
-			const actualDimensions = this.calculateActualDimensions(elem, box);
-			this.positionElement(elem, box.left, box.top, actualDimensions.width, actualDimensions.height, animate);
+			const actual = this.calculateActualDimensions(elem, box);
+			this.positionElement(elem, box.left, box.top, actual.width, actual.height, animate);
 		});
 	}
 
 	/**
-	 * Calculate actual element dimensions accounting for margins, padding, and borders
-	 * @param elem DOM element
-	 * @param box Layout box dimensions
-	 * @returns Actual width and height
+	 * Subtract margin, padding and border from the box so the element renders inside `box`.
+	 * Reads computed style once per element to avoid repeated getComputedStyle calls.
 	 */
 	private calculateActualDimensions(elem: HTMLElement, box: LayoutBox): { width: number; height: number } {
-		const actualWidth =
-			box.width -
-			this.getCSSNumber(elem, 'margin-left') -
-			this.getCSSNumber(elem, 'margin-right') -
-			(this.getCssProperty(elem, 'box-sizing') !== 'border-box'
-				? this.getCSSNumber(elem, 'padding-left') +
-				  this.getCSSNumber(elem, 'padding-right') +
-				  this.getCSSNumber(elem, 'border-left') +
-				  this.getCSSNumber(elem, 'border-right')
-				: 0);
+		const cs = window.getComputedStyle(elem);
+		const px = (prop: string): number => parseInt(cs.getPropertyValue(prop), 10) || 0;
+		const includesPaddingAndBorder = cs.getPropertyValue('box-sizing') === 'border-box';
 
-		const actualHeight =
-			box.height -
-			this.getCSSNumber(elem, 'margin-top') -
-			this.getCSSNumber(elem, 'margin-bottom') -
-			(this.getCssProperty(elem, 'box-sizing') !== 'border-box'
-				? this.getCSSNumber(elem, 'padding-top') +
-				  this.getCSSNumber(elem, 'padding-bottom') +
-				  this.getCSSNumber(elem, 'border-top') +
-				  this.getCSSNumber(elem, 'border-bottom')
-				: 0);
+		// Cache reads so the same computed value isn't pulled twice.
+		const m: Record<string, number> = {};
+		for (const p of BOX_PROPS) m[p] = px(p);
 
-		return { width: actualWidth, height: actualHeight };
+		const inset = includesPaddingAndBorder
+			? { x: 0, y: 0 }
+			: {
+					x: m['padding-left'] + m['padding-right'] + m['border-left'] + m['border-right'],
+					y: m['padding-top'] + m['padding-bottom'] + m['border-top'] + m['border-bottom']
+			  };
+
+		return {
+			width: box.width - m['margin-left'] - m['margin-right'] - inset.x,
+			height: box.height - m['margin-top'] - m['margin-bottom'] - inset.y
+		};
 	}
 
-	/**
-	 * Position element at specified coordinates with optional animation
-	 * @param elem Video or HTML element to position
-	 * @param x Left position
-	 * @param y Top position
-	 * @param width Element width
-	 * @param height Element height
-	 * @param animate Whether to animate the transition
-	 */
 	private positionElement(
-		elem: HTMLVideoElement | HTMLElement,
+		elem: HTMLElement,
 		x: number,
 		y: number,
 		width: number,
@@ -95,101 +82,33 @@ export class LayoutRenderer {
 			height: `${height}px`
 		};
 
-		this.fixAspectRatio(elem, width);
-
 		if (animate) {
 			setTimeout(() => {
 				this.animateElement(elem, targetPosition);
 				this.fixAspectRatio(elem, width);
 			}, 10);
 		} else {
-			this.setElementPosition(elem, targetPosition);
-			if (!elem.classList.contains('layout')) {
-				elem.classList.add('layout');
-			}
+			writeStyles(elem, targetPosition);
+			elem.classList.add(LayoutClass.CLASS_NAME);
 		}
 
 		this.fixAspectRatio(elem, width);
 	}
 
-	/**
-	 * Set element position without animation
-	 * @param elem Element to position
-	 * @param targetPosition Target position object
-	 */
-	private setElementPosition(elem: HTMLVideoElement | HTMLElement, targetPosition: ElementPosition): void {
-		Object.keys(targetPosition).forEach((key) => {
-			(elem.style as any)[key] = targetPosition[key];
-		});
-	}
-
-	/**
-	 * Animate element to target position
-	 * @param elem Element to animate
-	 * @param targetPosition Target position object
-	 */
-	private animateElement(elem: HTMLVideoElement | HTMLElement, targetPosition: ElementPosition): void {
+	private animateElement(elem: HTMLElement, targetPosition: ElementPosition): void {
 		elem.style.transition = `all ${LAYOUT_CONSTANTS.ANIMATION_DURATION} ${LAYOUT_CONSTANTS.ANIMATION_EASING}`;
-		this.setElementPosition(elem, targetPosition);
+		writeStyles(elem, targetPosition);
 	}
 
 	/**
-	 * Fix aspect ratio for video elements
-	 * @param elem Element to fix
-	 * @param width Target width
+	 * Force the publisher/subscriber's mutation observer to re-run by toggling width on
+	 * the inner .OV_root element.
 	 */
-	private fixAspectRatio(elem: HTMLVideoElement | HTMLElement, width: number): void {
-		const sub = elem.querySelector('.OV_root') as HTMLVideoElement;
-		if (sub) {
-			// If this is the parent of a subscriber or publisher, then we need
-			// to force the mutation observer on the publisher or subscriber to
-			// trigger to get it to fix its layout
-			const oldWidth = sub.style.width;
-			sub.style.width = `${width}px`;
-			sub.style.width = oldWidth || '';
-		}
-	}
-
-	/**
-	 * Get CSS property value or set it
-	 * @param el Element to query/modify
-	 * @param propertyName Property name or object of properties
-	 * @param value Optional value to set
-	 * @returns Property value if getting, void if setting
-	 */
-	private getCssProperty(
-		el: HTMLVideoElement | HTMLElement,
-		propertyName: any,
-		value?: string
-	): void | string {
-		if (value !== undefined) {
-			// Set one CSS property
-			el.style[propertyName] = value;
-		} else if (typeof propertyName === 'object') {
-			// Set several CSS properties at once
-			Object.keys(propertyName).forEach((key) => {
-				this.getCssProperty(el, key, propertyName[key]);
-			});
-		} else {
-			// Get the CSS property
-			const computedStyle = window.getComputedStyle(el);
-			let currentValue = computedStyle.getPropertyValue(propertyName);
-
-			if (currentValue === '') {
-				currentValue = el.style[propertyName];
-			}
-			return currentValue;
-		}
-	}
-
-	/**
-	 * Get CSS property as number
-	 * @param elem Element to query
-	 * @param prop Property name
-	 * @returns Numeric value or 0 if not found
-	 */
-	private getCSSNumber(elem: HTMLElement, prop: string): number {
-		const cssStr = this.getCssProperty(elem, prop);
-		return cssStr ? parseInt(cssStr, 10) : 0;
+	private fixAspectRatio(elem: HTMLElement, width: number): void {
+		const sub = elem.querySelector<HTMLElement>('.OV_root');
+		if (!sub) return;
+		const oldWidth = sub.style.width;
+		sub.style.width = `${width}px`;
+		sub.style.width = oldWidth || '';
 	}
 }

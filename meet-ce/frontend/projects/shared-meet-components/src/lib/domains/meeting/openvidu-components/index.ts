@@ -3,8 +3,10 @@
  */
 
 // Components
+export * from './components/connection-quality-indicator/connection-quality-indicator.component';
+export * from './components/hidden-participants-indicator/hidden-participants-indicator.component';
 export * from './components/landscape-warning/landscape-warning.component';
-export * from './components/layout/layout.component';
+export * from './components/layout/smart-layout/smart-layout.component';
 export * from './components/panel/activities-panel/activities-panel.component';
 export * from './components/panel/activities-panel/recording-activity/recording-activity.component';
 export * from './components/panel/chat-panel/chat-panel.component';
@@ -34,6 +36,7 @@ export * from './models/data-topic.model';
 export * from './models/device.model';
 export * from './models/lang.model';
 export * from './models/layout/layout.model';
+export * from './models/layout/smart-layout.model';
 export * from './models/logger.model';
 export * from './models/panel.model';
 export * from './models/participant.model';
@@ -49,7 +52,7 @@ export * from './pipes/translate.pipe';
 export * from './services/action/action.service';
 export * from './services/chat/chat.service';
 export * from './services/e2ee/e2ee.service';
-export * from './services/layout/layout.service';
+export * from './services/layout/smart-layout.service';
 export * from './services/logger/logger.service';
 export * from './services/openvidu/openvidu.service';
 export * from './services/panel/panel.service';

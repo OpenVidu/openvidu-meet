@@ -20,6 +20,11 @@ import { RoomService } from './room.service.js';
 @injectable()
 export class AiAssistantService {
 	private readonly ASSISTANT_STATE_LOCK_TTL = ms(INTERNAL_CONFIG.ASSISTANT_STATE_LOCK_TTL);
+	// Defensive TTL on the participant set so a missed cleanup doesn't leak forever.
+	private readonly PARTICIPANT_SET_TTL_MS = ms('24h');
+	// Bounded polling for dispatch visibility when the create lock can't be acquired.
+	private readonly DISPATCH_VISIBILITY_RETRIES = 3;
+	private readonly DISPATCH_VISIBILITY_DELAY_MS = 250;
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
@@ -32,9 +37,6 @@ export class AiAssistantService {
 	/**
 	 * Creates a live captions assistant for the specified room.
 	 * If an assistant already exists for the room, it will be reused.
-	 * @param roomId
-	 * @param participantIdentity
-	 * @returns
 	 */
 	async createLiveCaptionsAssistant(
 		roomId: string,
@@ -43,61 +45,46 @@ export class AiAssistantService {
 		// ! For now, we are assuming that the only capability is live captions.
 		const capability = MeetAssistantCapabilityName.LIVE_CAPTIONS;
 		const lockKey = MeetLock.getAiAssistantLock(roomId, capability);
-		let executionResult: MeetCreateAssistantResponse | null = null;
 
 		try {
 			await this.validateCreateConditions(roomId, capability);
 
-			executionResult = await this.mutexService.withRetryLock(
+			const executionResult = await this.mutexService.withRetryLock(
 				lockKey,
 				this.ASSISTANT_STATE_LOCK_TTL,
 				async () => {
-					const currentAssistantId = await this.getAiAssistantId(roomId, capability);
+					const existingDispatch = await this.getActiveAiAssistant(roomId, capability);
 
-					if (currentAssistantId) {
-						await this.setParticipantAssistantState(roomId, participantIdentity, capability, true);
-						return { id: currentAssistantId, status: 'active' };
+					if (existingDispatch) {
+						await this.addParticipant(roomId, participantIdentity, capability);
+						return { id: existingDispatch.id, status: 'active' as const };
 					}
 
-					// Create a new assistant if none exists for this room/capability.
-					const { id: assistantId } = await this.livekitService.createAgent(
-						roomId,
-						INTERNAL_CONFIG.CAPTIONS_AGENT_NAME
-					);
+					// Record participant intent first so a backend crash between createAgent
+					// and the state write does not leave a dispatch with no tracked participants.
+					await this.addParticipant(roomId, participantIdentity, capability);
 
-					await Promise.all([
-						this.setAiAssistantId(roomId, capability, assistantId),
-						this.setParticipantAssistantState(roomId, participantIdentity, capability, true)
-					]);
+					try {
+						const { id: assistantId } = await this.livekitService.createAgent(
+							roomId,
+							INTERNAL_CONFIG.CAPTIONS_AGENT_NAME
+						);
 
-					return {
-						id: assistantId,
-						status: 'active'
-					};
+						return { id: assistantId, status: 'active' as const };
+					} catch (error) {
+						// Roll back the state write so a failed dispatch creation does not
+						// keep the participant counted as active.
+						await this.removeParticipant(roomId, participantIdentity, capability);
+						throw error;
+					}
 				}
 			);
 
-			if (executionResult === null) {
-				// Lock could not be acquired after retries. The agent is likely being created
-				// by a concurrent request. Try to read the ID already written to Redis and
-				// register this participant so their state is not lost.
-				this.logger.warn(
-					`Could not acquire lock for creating assistant in room '${roomId}'. ` +
-						`Attempting to register participant '${participantIdentity}' using existing Redis state.`
-				);
-
-				const existingAssistantId = await this.getAiAssistantId(roomId, capability);
-
-				if (existingAssistantId) {
-					await this.setParticipantAssistantState(roomId, participantIdentity, capability, true);
-					return { id: existingAssistantId, status: 'active' };
-				}
-
-				// ID not in Redis yet — creation is still in progress and we cannot safely proceed.
-				throw errorAiAssistantAlreadyStarting(roomId);
+			if (executionResult !== null) {
+				return executionResult;
 			}
 
-			return executionResult;
+			throw errorAiAssistantAlreadyStarting(roomId);
 		} catch (error) {
 			this.logger.error(`Error creating live captions assistant for room '${roomId}': ${error}`);
 			throw error;
@@ -105,19 +92,20 @@ export class AiAssistantService {
 	}
 
 	/**
-	 * Stops the specified assistant for the given participant and room.
+	 * Stops the assistant for the given participant.
 	 * If no other participants are using the assistant, it will be stopped in LiveKit.
-	 * @param assistantId
-	 * @param roomId
-	 * @param participantIdentity
+	 *
+	 * The caller-supplied assistantId is intentionally ignored: it could be stale (e.g.
+	 * after a rapid disable/enable cycle that produced a new dispatch). The active
+	 * dispatch is always resolved through LiveKit inside the lock.
 	 */
-	async cancelAssistant(assistantId: string, roomId: string, participantIdentity: string): Promise<void> {
+	async cancelAssistant(_assistantId: string, roomId: string, participantIdentity: string): Promise<void> {
 		const capability = MeetAssistantCapabilityName.LIVE_CAPTIONS;
 
 		try {
 			await this.deactivateParticipant(roomId, participantIdentity, capability);
 		} catch (error) {
-			this.logger.error(`Error cancelling assistant '${assistantId}' in room '${roomId}': ${error}`);
+			this.logger.error(`Error cancelling assistant in room '${roomId}': ${error}`);
 			throw error;
 		}
 	}
@@ -125,19 +113,16 @@ export class AiAssistantService {
 	/**
 	 * Cleans up assistant state in a room triggered by a LiveKit webhook.
 	 * - If participantIdentity is provided, removes only that participant's state.
-	 * - If participantIdentity is omitted, removes all participant state in the room.
-	 *
-	 * If no enabled participants remain after cleanup, the agent is stopped in LiveKit.
+	 * - If participantIdentity is omitted, removes all participant state in the room
+	 *   and stops the agent.
 	 */
 	async cleanupState(roomId: string, participantIdentity?: string): Promise<void> {
 		const capability = MeetAssistantCapabilityName.LIVE_CAPTIONS;
 
 		try {
 			if (participantIdentity) {
-				// Single participant left: deactivate them and stop the agent if no one else is active.
 				await this.deactivateParticipant(roomId, participantIdentity, capability);
 			} else {
-				// Entire room finished: wipe all participant states and unconditionally stop the agent.
 				await this.cleanupRoom(roomId, capability);
 			}
 		} catch (error) {
@@ -148,13 +133,6 @@ export class AiAssistantService {
 	/**
 	 * Atomically removes a participant's active state and stops the agent if no other
 	 * participants remain with the capability enabled.
-	 *
-	 * Both operations run inside the same distributed lock to prevent the race condition
-	 * where a concurrent process observes a stale count between the state deletion and
-	 * the stop decision.
-	 *
-	 * @throws {OpenViduMeetError} if the lock cannot be acquired after all retries,
-	 * ensuring callers always know when the operation was not performed.
 	 */
 	protected async deactivateParticipant(
 		roomId: string,
@@ -167,7 +145,12 @@ export class AiAssistantService {
 			lockKey,
 			this.ASSISTANT_STATE_LOCK_TTL,
 			async () => {
-				await this.setParticipantAssistantState(roomId, participantIdentity, capability, false);
+				const removed = await this.removeParticipant(roomId, participantIdentity, capability);
+
+				if (removed === 0) {
+					// Participant was not tracked as active. Nothing else to do.
+					return;
+				}
 
 				const remainingCount = await this.getParticipantCountByCapability(roomId, capability);
 
@@ -183,15 +166,16 @@ export class AiAssistantService {
 		);
 
 		if (executionResult === null) {
-			await this.setParticipantAssistantState(roomId, participantIdentity, capability, false);
+			// Lock could not be acquired. Do NOT mutate state outside the lock — that would
+			// break atomicity. Surface the failure so the caller (or the next webhook) can
+			// reconcile. Webhook-driven cleanups already swallow this error.
 			throw errorAiAssistantCannotBeStopped(roomId);
 		}
 	}
 
 	/**
-	 * Removes all participant states for a room and stops the agent unconditionally.
-	 * Called when a room_finished webhook is received — no need to count participants
-	 * since all state is being wiped.
+	 * Removes all participant states for a room and stops the agent.
+	 * Called when a room_finished webhook is received.
 	 */
 	protected async cleanupRoom(roomId: string, capability: MeetAssistantCapabilityName): Promise<void> {
 		const lockKey = MeetLock.getAiAssistantLock(roomId, capability);
@@ -201,7 +185,7 @@ export class AiAssistantService {
 			this.ASSISTANT_STATE_LOCK_TTL,
 			async () => {
 				await Promise.all([
-					this.deleteParticipantAssistantState(roomId, capability),
+					this.redisService.delete(this.getParticipantSetKey(roomId, capability)),
 					this.stopCaptionsAssistantIfRunning(roomId)
 				]);
 			}
@@ -210,7 +194,7 @@ export class AiAssistantService {
 		if (executionResult === null) {
 			this.logger.error(
 				`Could not acquire lock '${lockKey}' for room cleanup '${roomId}' after retries. ` +
-					`Room state and agent stop were skipped.`
+					`Participant set has a TTL fallback, but the agent may still be running in LiveKit.`
 			);
 		}
 	}
@@ -231,117 +215,65 @@ export class AiAssistantService {
 		}
 	}
 
-	protected async deleteParticipantAssistantState(
-		roomId: string,
-		capability: MeetAssistantCapabilityName,
-		participantIdentity?: string
-	): Promise<void> {
-		if (participantIdentity) {
-			const key = this.getParticipantAssistantStateKey(roomId, participantIdentity, capability);
-			await this.redisService.delete(key);
-			return;
-		}
-
-		const pattern = `${RedisKeyName.AI_ASSISTANT_PARTICIPANT_STATE}${roomId}:${capability}:*`;
-		const keys = await this.redisService.getKeys(pattern);
-
-		if (keys.length === 0) {
-			return;
-		}
-
-		await this.redisService.delete(keys);
-	}
-
 	/**
-	 * Sets or clears the assistant state for a participant in Redis.
-	 * @param roomId
-	 * @param participantIdentity
-	 * @param capability
-	 * @param enabled
+	 * Adds the participant to the active set and refreshes the TTL on the key.
 	 */
-	protected async setParticipantAssistantState(
+	protected async addParticipant(
 		roomId: string,
 		participantIdentity: string,
-		capability: MeetAssistantCapabilityName,
-		enabled: boolean
+		capability: MeetAssistantCapabilityName
 	): Promise<void> {
-		if (enabled) {
-			const key = this.getParticipantAssistantStateKey(roomId, participantIdentity, capability);
-			await this.redisService.setIfNotExists(
-				key,
-				JSON.stringify({
-					enabled: true,
-					updatedAt: Date.now()
-				})
-			);
-			return;
-		}
-
-		await this.deleteParticipantAssistantState(roomId, capability, participantIdentity);
+		await this.redisService.addToSet(
+			this.getParticipantSetKey(roomId, capability),
+			participantIdentity,
+			this.PARTICIPANT_SET_TTL_MS
+		);
 	}
 
 	/**
-	 * Gets the count of participants that have the specified assistant capability enabled in the given room.
-	 * @param roomId
-	 * @param capability
-	 * @returns
+	 * Removes the participant from the active set.
+	 * @returns 1 if the participant was previously tracked, 0 otherwise.
 	 */
+	protected async removeParticipant(
+		roomId: string,
+		participantIdentity: string,
+		capability: MeetAssistantCapabilityName
+	): Promise<number> {
+		return this.redisService.removeFromSet(this.getParticipantSetKey(roomId, capability), participantIdentity);
+	}
+
 	protected async getParticipantCountByCapability(
 		roomId: string,
 		capability: MeetAssistantCapabilityName
 	): Promise<number> {
-		const pattern = `${RedisKeyName.AI_ASSISTANT_PARTICIPANT_STATE}${roomId}:${capability}:*`;
-		const keys = await this.redisService.getKeys(pattern);
-		return keys.length;
+		return this.redisService.getCardinality(this.getParticipantSetKey(roomId, capability));
 	}
 
-	protected getParticipantAssistantStateKey(
-		roomId: string,
-		participantIdentity: string,
-		capability: MeetAssistantCapabilityName
-	): string {
-		return `${RedisKeyName.AI_ASSISTANT_PARTICIPANT_STATE}${roomId}:${capability}:${participantIdentity}`;
-	}
-
-	protected getAiAssistantIdKey(roomId: string, capability: MeetAssistantCapabilityName): string {
-		return `${RedisKeyName.AI_ASSISTANT_ID}${roomId}:${capability}`;
+	protected getParticipantSetKey(roomId: string, capability: MeetAssistantCapabilityName): string {
+		return `${RedisKeyName.AI_ASSISTANT_PARTICIPANTS}${roomId}:${capability}`;
 	}
 
 	/**
-	 * Gets the active AI assistant ID for the given room and capability, or null if no assistant is currently active.
-	 * @param roomId
-	 * @param capability
-	 * @returns
+	 * Gets the active LiveKit dispatch for the given room and capability, or null if no
+	 * assistant is currently active.
 	 */
-	protected async getAiAssistantId(roomId: string, capability: MeetAssistantCapabilityName): Promise<string | null> {
-		return this.redisService.get(this.getAiAssistantIdKey(roomId, capability));
-	}
+	protected async getActiveAiAssistant(roomId: string, capability: MeetAssistantCapabilityName) {
+		if (capability !== MeetAssistantCapabilityName.LIVE_CAPTIONS) {
+			return null;
+		}
 
-	protected async setAiAssistantId(
-		roomId: string,
-		capability: MeetAssistantCapabilityName,
-		aiAssistantId: string
-	): Promise<void> {
-		await this.redisService.setIfNotExists(this.getAiAssistantIdKey(roomId, capability), aiAssistantId);
+		return this.livekitService.getAgentDispatch(roomId, INTERNAL_CONFIG.CAPTIONS_AGENT_NAME);
 	}
 
 	/**
-	 * Deletes the stored AI assistant ID for the given room and capability.
-	 * @param roomId
-	 * @param capability
+	 * Resolves the active dispatch via LiveKit and stops it if present. No-op if no
+	 * dispatch is active (e.g. room already torn down).
 	 */
-	protected async deleteAiAssistantId(roomId: string, capability: MeetAssistantCapabilityName): Promise<void> {
-		await this.redisService.delete(this.getAiAssistantIdKey(roomId, capability));
-	}
-
 	protected async stopCaptionsAssistantIfRunning(roomId: string): Promise<void> {
-		const capability = MeetAssistantCapabilityName.LIVE_CAPTIONS;
-		const aiAssistantId = await this.getAiAssistantId(roomId, capability);
+		const dispatch = await this.getActiveAiAssistant(roomId, MeetAssistantCapabilityName.LIVE_CAPTIONS);
 
-		// If no assistant ID is stored, we can skip the stop call to LiveKit.
-		if (!aiAssistantId) return;
+		if (!dispatch) return;
 
-		await this.livekitService.stopAgent(aiAssistantId, roomId);
-		await this.deleteAiAssistantId(roomId, capability);
+		await this.livekitService.stopAgent(dispatch.id, roomId);
 	}
 }

@@ -111,12 +111,12 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 					url: `/room/${roomId}?secret=abcdef`
 				},
 				recording: {
-					enabled: false,
+					enabled: true,
 					url: expect.stringContaining(`/room/${roomId}/recordings`)
 				}
 			},
 			registered: {
-				enabled: true,
+				enabled: false,
 				url: `/room/${roomId}`
 			}
 		},
@@ -279,12 +279,12 @@ describe('Room Schema Migrations', () => {
 							url: '/room/room-v2?secret=abcdef'
 						},
 						recording: {
-							enabled: false,
+							enabled: true,
 							url: expect.stringContaining('/room/room-v2/recordings')
 						}
 					},
 					registered: {
-						enabled: true,
+						enabled: false,
 						url: '/room/room-v2'
 					}
 				},

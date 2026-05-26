@@ -58,6 +58,8 @@ export class ChatPanelComponent implements AfterViewInit {
 	private readonly participantService = inject(ParticipantService);
 
 	private readonly scrollEffect = effect(() => {
+		this.messageList();
+
 		if (this.panelService.isChatPanelOpened()) {
 			this.scrollToBottom();
 		}

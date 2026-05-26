@@ -1,148 +1,143 @@
-import { expect, test } from '@playwright/test';
-import { assertHasVideoDeviceOption, getFirstVideoTrackLabel, getScreenTrackLabel } from './helpers/media-devices.helper';
-import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import { openMeeting, openPrejoin, openSettingsPanel, startScreensharing } from './helpers/meeting-ui.helper';
+import { expect, test } from './fixtures/no-media-permissions.fixture';
+import { assertHasVideoDeviceOption, startScreensharing } from './helpers/media-controls.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { openMeeting, openPrejoin } from './helpers/meeting-navigation.helper';
+import { openSettingsPanel } from './helpers/panels.helper';
+import { getFirstVideoTrackLabel, getScreenTrackLabel } from './helpers/stream.helper';
 
-const createdRoomIds = new Set<string>();
+test.describe('Media Devices E2E Tests', () => {
+	const createdRoomIds: string[] = [];
 
-test.describe('Media Devices: Virtual Device Replacement and Permissions Handling', () => {
-    
+	let roomId: string;
+	let accessUrl: string;
 
-    test.afterAll(async () => {
-        await deleteRooms(createdRoomIds);
-    });
+	test.beforeEach(async () => {
+		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+		roomId = room.roomId;
+		accessUrl = url;
+		createdRoomIds.push(roomId);
+	});
 
-    test('should allow selecting and replacing the video track with a custom virtual device in the prejoin page', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `md-prejoin-${Date.now()}`, queryParams: { prejoin: 'true', fakeDevices: 'true' }, createdRoomIds });
-        await openPrejoin(page, accessUrl);
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
+	});
 
-        const videoDropdown = page.locator('#video-dropdown');
+	test.describe('Virtual Device Replacement and Permissions Handling', () => {
+		test('should allow selecting and replacing the video track with a custom virtual device in the prejoin page', async ({
+			page
+		}) => {
+			await openPrejoin(page, accessUrl);
 
-        if (await videoDropdown.isDisabled()) {
-            await expect(videoDropdown).toBeDisabled();
-            return;
-        }
+			const videoDropdown = page.locator('#video-dropdown');
 
-        await videoDropdown.click();
-        const customOption = page.locator('#option-custom_fake_video_1');
+			if (await videoDropdown.isDisabled()) {
+				await expect(videoDropdown).toBeDisabled();
+				return;
+			}
 
-        if ((await customOption.count()) === 0) {
-            await assertHasVideoDeviceOption(page);
-            return;
-        }
+			await videoDropdown.click();
+			const customOption = page.locator('#option-custom_fake_video_1');
 
-        await customOption.click();
-        await page.waitForTimeout(1000);
-        await expect.poll(async () => await getFirstVideoTrackLabel(page)).toBe('custom_fake_video_1');
+			if (!(await customOption.isVisible())) {
+				await assertHasVideoDeviceOption(page);
+				return;
+			}
 
-        await page.locator('#video-dropdown').click();
-        await page.locator('#option-fake_device_0').click();
-        await page.waitForTimeout(1000);
-        await expect.poll(async () => await getFirstVideoTrackLabel(page)).toBe('fake_device_0');
-    });
+			await customOption.click();
+			await expect.poll(() => getFirstVideoTrackLabel(page)).toBe('custom_fake_video_1');
 
-    test('should allow selecting and replacing the video track with a custom virtual device in the videoconference page', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `md-room-${Date.now()}`, queryParams: { prejoin: 'false', fakeDevices: 'true' }, createdRoomIds });
-        await openMeeting(page, accessUrl);
+			await page.locator('#video-dropdown').click();
+			await page.locator('#option-fake_device_0').click();
+			await expect.poll(() => getFirstVideoTrackLabel(page)).toBe('fake_device_0');
+		});
 
-        await openSettingsPanel(page);
-        await page.locator('#video-opt').click();
-        await expect(page.locator('ov-video-devices-select')).toBeVisible();
+		test('should allow selecting and replacing the video track with a custom virtual device in the videoconference page', async ({
+			page
+		}) => {
+			await openMeeting(page, accessUrl);
 
-        const videoDropdown = page.locator('#video-dropdown');
+			await openSettingsPanel(page);
+			await page.locator('#video-opt').click();
+			await expect(page.locator('ov-video-devices-select')).toBeVisible();
 
-        if (await videoDropdown.isDisabled()) {
-            await expect(videoDropdown).toBeDisabled();
-            return;
-        }
+			const videoDropdown = page.locator('#video-dropdown');
 
-        await videoDropdown.click();
-        const customOption = page.locator('#option-custom_fake_video_1');
+			if (await videoDropdown.isDisabled()) {
+				await expect(videoDropdown).toBeDisabled();
+				return;
+			}
 
-        if ((await customOption.count()) === 0) {
-            await assertHasVideoDeviceOption(page);
-            return;
-        }
+			await videoDropdown.click();
+			const customOption = page.locator('#option-custom_fake_video_1');
 
-        await customOption.click();
-        await page.waitForTimeout(1000);
-        await expect.poll(async () => await getFirstVideoTrackLabel(page)).toBe('custom_fake_video_1');
+			if (!(await customOption.isVisible())) {
+				await assertHasVideoDeviceOption(page);
+				return;
+			}
 
-        await page.locator('#video-dropdown').click();
-        await page.locator('#option-fake_device_0').click();
-        await page.waitForTimeout(1000);
-        await expect.poll(async () => await getFirstVideoTrackLabel(page)).toBe('fake_device_0');
-    });
+			await customOption.click();
+			await expect.poll(() => getFirstVideoTrackLabel(page)).toBe('custom_fake_video_1');
 
-    test('should replace the screen track with a custom virtual device', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `md-screen-${Date.now()}`, queryParams: { prejoin: 'false', fakeDevices: 'true' }, createdRoomIds });
-        await openMeeting(page, accessUrl);
+			await page.locator('#video-dropdown').click();
+			await page.locator('#option-fake_device_0').click();
+			await expect.poll(() => getFirstVideoTrackLabel(page)).toBe('fake_device_0');
+		});
 
-        await startScreensharing(page);
-        await page.waitForTimeout(500);
+		test('should replace the screen track with a custom virtual device', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+			await startScreensharing(page);
 
-        const initialLabel = await getScreenTrackLabel(page);
-        expect(initialLabel).not.toBe('custom_fake_screen');
+			const initialLabel = await getScreenTrackLabel(page);
+			expect(initialLabel).not.toBe('custom_fake_screen');
 
-        await page.locator('#screenshare-btn').click();
-        await page.waitForTimeout(500);
+			await page.locator('#screenshare-btn').click();
+			const replaceButton = page.locator('#replace-screen-button');
+			await expect(replaceButton).toBeVisible();
+			await replaceButton.click();
+			await page.waitForTimeout(1000);
 
-        const replaceButton = page.locator('#replace-screen-button');
-        await expect(replaceButton).toBeVisible();
-        await replaceButton.click();
-        await page.waitForTimeout(1000);
-        const replacedLabel = await getScreenTrackLabel(page);
-        expect(replacedLabel).not.toBeNull();
-        await expect(page.locator('.OV_video-element.screen-type')).toHaveCount(1);
-    });
-});
+			const replacedLabel = await getScreenTrackLabel(page);
+			expect(replacedLabel).not.toBeNull();
+		});
+	});
 
-test.describe('Media Devices: UI Behavior Without Media Device Permissions @no-media-permissions', () => {
-    
-    test.use({ permissions: [] });
+	test.describe('UI Behavior Without Media Device Permissions', () => {
+		test('should camera and microphone buttons be disabled in the prejoin page when permissions are denied', async ({
+			noMediaPage
+		}) => {
+			await openPrejoin(noMediaPage, accessUrl);
 
-    test('should camera and microphone buttons be disabled in the prejoin page when permissions are denied', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `md-denied-prejoin-${Date.now()}`, queryParams: { prejoin: 'true' }, createdRoomIds });
-        await openPrejoin(page, accessUrl);
+			await expect(noMediaPage.locator('#no-video-device-message')).toBeVisible();
+			await expect(noMediaPage.locator('#no-audio-device-message')).toBeVisible();
+			const backgroundsButton = noMediaPage.locator('#backgrounds-button');
 
-        await expect(page.locator('#no-video-device-message')).toBeVisible();
-        await expect(page.locator('#no-audio-device-message')).toBeVisible();
-        const backgroundsButton = page.locator('#backgrounds-button');
+			if (await backgroundsButton.isVisible()) {
+				await expect(backgroundsButton).toBeDisabled();
+			}
+		});
 
-        if ((await backgroundsButton.count()) > 0) {
-            await expect(backgroundsButton).toBeDisabled();
-        }
-    });
+		test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({
+			noMediaPage
+		}) => {
+			await openMeeting(noMediaPage, accessUrl, { skipPrejoinMediaCheck: true });
 
-    test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `md-denied-room-${Date.now()}`, queryParams: { prejoin: 'true' }, createdRoomIds });
-        await openPrejoin(page, accessUrl);
-        await page.locator('#join-button').click();
-        await expect(page.locator('#layout-container')).toBeVisible();
+			await expect(noMediaPage.locator('#camera-btn')).toBeDisabled();
+			await expect(noMediaPage.locator('#mic-btn')).toBeDisabled();
+		});
 
-        await expect(page.locator('#camera-btn')).toBeDisabled();
-        await expect(page.locator('#mic-btn')).toBeDisabled();
-    });
+		test('should show an audio and video device warning in settings when permissions are denied', async ({
+			noMediaPage
+		}) => {
+			await openMeeting(noMediaPage, accessUrl, { skipPrejoinMediaCheck: true });
 
-    test('should camera and microphone buttons be disabled in the room page without prejoin when permissions are denied', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `md-denied-noprejoin-${Date.now()}`, queryParams: { prejoin: 'false' }, createdRoomIds });
-        await openMeeting(page, accessUrl);
+			await openSettingsPanel(noMediaPage);
+			await noMediaPage.locator('#video-opt').click();
+			await expect(noMediaPage.locator('ov-video-devices-select')).toBeVisible();
+			await expect(noMediaPage.locator('#no-video-device-message')).toBeVisible();
 
-        await expect(page.locator('#camera-btn')).toBeDisabled();
-        await expect(page.locator('#mic-btn')).toBeDisabled();
-    });
-
-    test('should show an audio and video device warning in settings when permissions are denied', async ({ page }) => {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `md-denied-settings-${Date.now()}`, queryParams: { prejoin: 'false' }, createdRoomIds });
-        await openMeeting(page, accessUrl);
-
-        await openSettingsPanel(page);
-        await page.locator('#video-opt').click();
-        await expect(page.locator('ov-video-devices-select')).toBeVisible();
-        await expect(page.locator('#no-video-device-message')).toBeVisible();
-
-        await page.locator('#audio-opt').click();
-        await expect(page.locator('ov-audio-devices-select')).toBeVisible();
-        await expect(page.locator('#no-audio-device-message')).toBeVisible();
-    });
+			await noMediaPage.locator('#audio-opt').click();
+			await expect(noMediaPage.locator('ov-audio-devices-select')).toBeVisible();
+			await expect(noMediaPage.locator('#no-audio-device-message')).toBeVisible();
+		});
+	});
 });

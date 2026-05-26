@@ -1,15 +1,30 @@
 import { LayoutDimensionsCache } from './layout-dimensions-cache.model';
 import {
 	BestDimensions,
+	BigFirstOption,
 	CategorizedElements,
+	ElementCategory,
 	ElementDimensions,
 	ExtendedLayoutOptions,
 	LAYOUT_CONSTANTS,
 	LayoutAlignment,
+	LayoutArea,
 	LayoutBox,
 	LayoutCalculationResult,
 	LayoutRow
 } from './layout-types.model';
+
+const RATIO_EPSILON = 1e-9;
+
+interface BigAreaPlacement {
+	bigWidth: number;
+	bigHeight: number;
+	offsetTop: number;
+	offsetLeft: number;
+	bigOffsetTop: number;
+	bigOffsetLeft: number;
+	showBigFirst: boolean | 'column' | 'row';
+}
 
 /**
  * Pure calculation logic for layout positioning.
@@ -20,12 +35,6 @@ import {
 export class LayoutCalculator {
 	constructor(private dimensionsCache: LayoutDimensionsCache) {}
 
-	/**
-	 * Calculate complete layout including boxes and areas
-	 * @param opts Extended layout options with container dimensions
-	 * @param elements Array of element dimensions
-	 * @returns Layout calculation result with boxes and areas
-	 */
 	calculateLayout(opts: ExtendedLayoutOptions, elements: ElementDimensions[]): LayoutCalculationResult {
 		const {
 			maxRatio = LAYOUT_CONSTANTS.DEFAULT_MAX_RATIO,
@@ -52,131 +61,41 @@ export class LayoutCalculator {
 			bigScaleLastRow = true
 		} = opts;
 
-		const availableRatio = containerHeight / containerWidth;
-		let offsetLeft = 0;
-		let offsetTop = 0;
-		let bigOffsetTop = 0;
-		let bigOffsetLeft = 0;
-
-		// Categorize elements
 		const categorized = this.categorizeElements(elements);
-		const { bigOnes, normalOnes, smallOnes, topBarOnes } = categorized;
+		const { big: bigOnes, normal: normalOnes, small: smallOnes, topBar: topBarOnes } = categorized;
 
+		const areas: LayoutCalculationResult['areas'] = { big: null, normal: null, small: null, topBar: null };
 		let bigBoxes: LayoutBox[] = [];
+		let normalBoxes: LayoutBox[] = [];
 		let smallBoxes: LayoutBox[] = [];
 		let topBarBoxes: LayoutBox[] = [];
-		let normalBoxes: LayoutBox[] = [];
-		let areas: LayoutCalculationResult['areas'] = { big: null, normal: null, small: null, topBar: null };
 
-		// Handle different layout scenarios based on element types
-		if (bigOnes.length > 0 && (normalOnes.length > 0 || smallOnes.length > 0 || topBarOnes.length > 0)) {
-			// Scenario: Big elements with normal/small/topbar elements
-			let bigWidth;
-			let bigHeight;
-			let showBigFirst = bigFirst;
+		const hasBig = bigOnes.length > 0;
+		const hasOthers = normalOnes.length + smallOnes.length + topBarOnes.length > 0;
 
-			if (availableRatio > this.getVideoRatio(bigOnes[0])) {
-				// We are tall, going to take up the whole width and arrange small guys at the bottom
-				bigWidth = containerWidth;
-				bigHeight = Math.floor(containerHeight * bigPercentage);
+		if (hasBig && hasOthers) {
+			const isTall = containerHeight / containerWidth > this.getVideoRatio(bigOnes[0]);
+			const placement = this.computeBigAreaPlacement({
+				isTall,
+				containerWidth,
+				containerHeight,
+				bigPercentage,
+				minBigPercentage,
+				bigFixedRatio,
+				bigMinRatio,
+				bigMaxRatio,
+				bigMaxWidth,
+				bigMaxHeight,
+				minRatio,
+				maxRatio,
+				smallMaxWidth,
+				smallMaxHeight,
+				bigFirst,
+				bigOnes,
+				othersCount: normalOnes.length + smallOnes.length + topBarOnes.length
+			});
 
-				if (minBigPercentage > 0) {
-					// Find the best size for the big area
-					let bigDimensions;
-					if (!bigFixedRatio) {
-						bigDimensions = this.getBestDimensions(
-							bigMinRatio,
-							bigMaxRatio,
-							bigWidth,
-							bigHeight,
-							bigOnes.length,
-							bigMaxWidth,
-							bigMaxHeight
-						);
-					} else {
-						// Use the ratio of the first video element we find to approximate
-						const ratio = bigOnes[0].height / bigOnes[0].width;
-						bigDimensions = this.getBestDimensions(ratio, ratio, bigWidth, bigHeight, bigOnes.length, bigMaxWidth, bigMaxHeight);
-					}
-
-					bigHeight = Math.max(
-						containerHeight * minBigPercentage,
-						Math.min(bigHeight, bigDimensions.targetHeight * bigDimensions.targetRows)
-					);
-
-					// Don't awkwardly scale the small area bigger than we need to and end up with floating videos in the middle
-					const smallDimensions = this.getBestDimensions(
-						minRatio,
-						maxRatio,
-						containerWidth,
-						containerHeight - bigHeight,
-						normalOnes.length + smallOnes.length + topBarOnes.length,
-						smallMaxWidth,
-						smallMaxHeight
-					);
-					bigHeight = Math.max(bigHeight, containerHeight - smallDimensions.targetRows * smallDimensions.targetHeight);
-				}
-
-				offsetTop = bigHeight;
-				bigOffsetTop = containerHeight - offsetTop;
-
-				if (bigFirst === 'column') {
-					showBigFirst = false;
-				} else if (bigFirst === 'row') {
-					showBigFirst = true;
-				}
-			} else {
-				// We are wide, going to take up the whole height and arrange the small guys on the right
-				bigHeight = containerHeight;
-				bigWidth = Math.floor(containerWidth * bigPercentage);
-
-				if (minBigPercentage > 0) {
-					// Find the best size for the big area
-					let bigDimensions;
-					if (!bigFixedRatio) {
-						bigDimensions = this.getBestDimensions(
-							bigMinRatio,
-							bigMaxRatio,
-							bigWidth,
-							bigHeight,
-							bigOnes.length,
-							bigMaxWidth,
-							bigMaxHeight
-						);
-					} else {
-						// Use the ratio of the first video element we find to approximate
-						const ratio = bigOnes[0].height / bigOnes[0].width;
-						bigDimensions = this.getBestDimensions(ratio, ratio, bigWidth, bigHeight, bigOnes.length, bigMaxWidth, bigMaxHeight);
-					}
-
-					bigWidth = Math.max(
-						containerWidth * minBigPercentage,
-						Math.min(bigWidth, bigDimensions.targetWidth * bigDimensions.targetCols)
-					);
-
-					// Don't awkwardly scale the small area bigger than we need to and end up with floating videos in the middle
-					const smallDimensions = this.getBestDimensions(
-						minRatio,
-						maxRatio,
-						containerWidth - bigWidth,
-						containerHeight,
-						normalOnes.length + smallOnes.length + topBarOnes.length,
-						smallMaxWidth,
-						smallMaxHeight
-					);
-					bigWidth = Math.max(bigWidth, containerWidth - smallDimensions.targetCols * smallDimensions.targetWidth);
-				}
-
-				offsetLeft = bigWidth;
-				bigOffsetLeft = containerWidth - offsetLeft;
-
-				if (bigFirst === 'column') {
-					showBigFirst = true;
-				} else if (bigFirst === 'row') {
-					showBigFirst = false;
-				}
-			}
-
+			const { bigWidth, bigHeight, offsetTop, offsetLeft, bigOffsetTop, bigOffsetLeft, showBigFirst } = placement;
 			if (showBigFirst) {
 				areas.big = { top: 0, left: 0, width: bigWidth, height: bigHeight };
 				areas.normal = { top: offsetTop, left: offsetLeft, width: containerWidth - offsetLeft, height: containerHeight - offsetTop };
@@ -184,15 +103,12 @@ export class LayoutCalculator {
 				areas.big = { left: bigOffsetLeft, top: bigOffsetTop, width: bigWidth, height: bigHeight };
 				areas.normal = { top: 0, left: 0, width: containerWidth - offsetLeft, height: containerHeight - offsetTop };
 			}
-		} else if (bigOnes.length > 0 && normalOnes.length === 0 && smallOnes.length === 0 && topBarOnes.length === 0) {
-			// We only have bigOnes just center it
+		} else if (hasBig) {
 			areas.big = { top: 0, left: 0, width: containerWidth, height: containerHeight };
-		} else if (normalOnes.length > 0 || smallOnes.length > 0 || topBarOnes.length > 0) {
-			// Only normal, small, and/or topbar elements
-			areas.normal = { top: offsetTop, left: offsetLeft, width: containerWidth - offsetLeft, height: containerHeight - offsetTop };
+		} else if (hasOthers) {
+			areas.normal = { top: 0, left: 0, width: containerWidth, height: containerHeight };
 		}
 
-		// Calculate boxes for each area
 		if (areas.big) {
 			bigBoxes = this.calculateBoxesForArea(
 				{
@@ -213,104 +129,30 @@ export class LayoutCalculator {
 		}
 
 		if (areas.normal) {
-			let currentTop = areas.normal.top;
-			let remainingHeight = areas.normal.height;
-
-			// 1. Position TopBar Elements at the very top (header style: full width, 50px height)
-			if (topBarOnes.length > 0) {
-				const topBarHeight = 50;
-				const topBarWidth = Math.floor(containerWidth / topBarOnes.length);
-
-				topBarBoxes = topBarOnes.map((element, idx) => {
-					return {
-						left: areas.normal!.left + idx * topBarWidth,
-						top: currentTop,
-						width: topBarWidth,
-						height: topBarHeight
-					};
-				});
-
-				currentTop += topBarHeight;
-				remainingHeight -= topBarHeight;
-			}
-
-			// 2. Position Small Elements (reduced format)
-			if (smallOnes.length > 0) {
-				const maxSmallWidthAvailable = smallMaxWidth;
-				const maxSmallHeightAvailable = smallMaxHeight;
-
-				const tentativeCols = maxSmallWidthAvailable === Infinity
-					? smallOnes.length
-					: Math.max(1, Math.floor(containerWidth / maxSmallWidthAvailable));
-				const displayCols = Math.max(1, Math.min(smallOnes.length, tentativeCols));
-
-				const computedWidth = maxSmallWidthAvailable === Infinity
-					? Math.floor(containerWidth / displayCols)
-					: maxSmallWidthAvailable;
-				const computedHeight = maxSmallHeightAvailable === Infinity ? computedWidth : maxSmallHeightAvailable;
-
-				const rowWidth = displayCols * computedWidth;
-				const rowOffset = Math.floor(Math.max(0, containerWidth - rowWidth) / 2);
-
-				smallBoxes = smallOnes.map((element, idx) => {
-					const col = idx % displayCols;
-					return {
-						left: areas.normal!.left + col * computedWidth + rowOffset,
-						top: currentTop,
-						width: computedWidth,
-						height: computedHeight
-					};
-				});
-
-				currentTop += computedHeight;
-				remainingHeight -= computedHeight;
-			}
-
-			// 3. Position Normal Elements in remaining space
-			if (normalOnes.length > 0) {
-				normalBoxes = this.calculateBoxesForArea(
-					{
-						containerWidth: areas.normal.width,
-						containerHeight: Math.max(0, remainingHeight),
-						offsetLeft: areas.normal.left,
-						offsetTop: currentTop,
-						fixedRatio,
-						minRatio,
-						maxRatio,
-						alignItems: areas.big ? smallAlignItems : alignItems,
-						maxWidth: areas.big ? maxWidth : maxWidth,
-						maxHeight: areas.big ? maxHeight : maxHeight,
-						scaleLastRow
-					},
-					normalOnes
-				);
-			}
+			const placed = this.placeNormalArea(areas.normal, {
+				topBarOnes,
+				smallOnes,
+				normalOnes,
+				containerWidth,
+				smallMaxWidth,
+				smallMaxHeight,
+				fixedRatio,
+				minRatio,
+				maxRatio,
+				maxWidth,
+				maxHeight,
+				scaleLastRow,
+				alignItems: areas.big ? smallAlignItems : alignItems
+			});
+			topBarBoxes = placed.topBarBoxes;
+			smallBoxes = placed.smallBoxes;
+			normalBoxes = placed.normalBoxes;
 		}
 
-		// Rebuild the array in the right order based on element types
-		const boxes = this.reconstructBoxesInOrder(
-			elements,
-			categorized,
-			bigBoxes,
-			normalBoxes,
-			smallBoxes,
-			topBarBoxes
-		);
-
+		const boxes = this.reconstructBoxesInOrder(categorized, bigBoxes, normalBoxes, smallBoxes, topBarBoxes);
 		return { boxes, areas };
 	}
 
-	/**
-	 * Calculate best dimensions for a set of elements
-	 * @param minRatio Minimum aspect ratio
-	 * @param maxRatio Maximum aspect ratio
-	 * @param width Available width
-	 * @param height Available height
-	 * @param count Number of elements
-	 * @param maxWidth Maximum element width
-	 * @param maxHeight Maximum element height
-	 * @returns Best dimensions calculation result
-	 */
 	getBestDimensions(
 		minRatio: number,
 		maxRatio: number,
@@ -320,7 +162,6 @@ export class LayoutCalculator {
 		maxWidth: number,
 		maxHeight: number
 	): BestDimensions {
-		// Cache key for memoization
 		const cacheKey = LayoutDimensionsCache.generateKey(minRatio, maxRatio, width, height, count, maxWidth, maxHeight);
 		const cached = this.dimensionsCache.get(cacheKey);
 		if (cached) {
@@ -333,23 +174,18 @@ export class LayoutCalculator {
 		let targetHeight = 0;
 		let targetWidth = 0;
 
-		// Iterate through every possible combination of rows and columns
-		// and see which one has the least amount of whitespace
-		for (let i = 1; i <= count; i++) {
-			const cols = i;
+		// Iterate through every row/column combination and pick the one with the least whitespace.
+		for (let cols = 1; cols <= count; cols++) {
 			const rows = Math.ceil(count / cols);
 
-			// Try taking up the whole height and width
 			let tHeight = Math.floor(height / rows);
 			let tWidth = Math.floor(width / cols);
 
 			let tRatio = tHeight / tWidth;
 			if (tRatio > maxRatio) {
-				// We went over decrease the height
 				tRatio = maxRatio;
 				tHeight = tWidth * tRatio;
 			} else if (tRatio < minRatio) {
-				// We went under decrease the width
 				tRatio = minRatio;
 				tWidth = tHeight / tRatio;
 			}
@@ -359,41 +195,34 @@ export class LayoutCalculator {
 
 			const area = tWidth * tHeight * count;
 
-			// If this width and height takes up the most space then we're going with that
-			if (maxArea === undefined || area >= maxArea) {
-				if (!(area === maxArea && count % (cols * rows) > count % (targetRows * targetCols))) {
-					// Favour even numbers of participants in each row, eg. 2 on each row
-					// instead of 3 in one row and then 1 on the next
-					maxArea = area;
-					targetHeight = tHeight;
-					targetWidth = tWidth;
-					targetCols = cols;
-					targetRows = rows;
-				}
+			// Accept if first iteration, strictly larger area, or same area with fewer stragglers in the last row.
+			const isBetter =
+				maxArea === undefined ||
+				area > maxArea ||
+				(area === maxArea && count % (cols * rows) <= count % (targetRows * targetCols));
+
+			if (isBetter) {
+				maxArea = area;
+				targetHeight = tHeight;
+				targetWidth = tWidth;
+				targetCols = cols;
+				targetRows = rows;
 			}
 		}
 
 		const result: BestDimensions = {
-			maxArea: maxArea || 0,
-			targetCols: targetCols,
-			targetRows: targetRows,
-			targetHeight: targetHeight,
-			targetWidth: targetWidth,
-			ratio: targetHeight / targetWidth || 0
+			maxArea: maxArea ?? 0,
+			targetCols,
+			targetRows,
+			targetHeight,
+			targetWidth,
+			ratio: targetWidth > 0 ? targetHeight / targetWidth : 0
 		};
 
-		// Cache the result for future use
 		this.dimensionsCache.set(cacheKey, result);
-
 		return result;
 	}
 
-	/**
-	 * Calculate boxes for a specific area
-	 * @param opts Area-specific layout options
-	 * @param elements Elements to position in this area
-	 * @returns Array of layout boxes
-	 */
 	private calculateBoxesForArea(
 		opts: Partial<ExtendedLayoutOptions & { offsetLeft: number; offsetTop: number }>,
 		elements: ElementDimensions[]
@@ -415,52 +244,37 @@ export class LayoutCalculator {
 		const ratios = elements.map((element) => element.height / element.width);
 		const count = ratios.length;
 
-		let dimensions;
+		const dimensions = fixedRatio
+			? this.getBestDimensions(
+					ratios[0] ?? LAYOUT_CONSTANTS.DEFAULT_MIN_RATIO,
+					ratios[0] ?? LAYOUT_CONSTANTS.DEFAULT_MIN_RATIO,
+					containerWidth,
+					containerHeight,
+					count,
+					maxWidth,
+					maxHeight
+			  )
+			: this.getBestDimensions(minRatio, maxRatio, containerWidth, containerHeight, count, maxWidth, maxHeight);
 
-		if (!fixedRatio) {
-			dimensions = this.getBestDimensions(minRatio, maxRatio, containerWidth, containerHeight, count, maxWidth, maxHeight);
-		} else {
-			// Use the ratio of the first video element we find to approximate
-			const ratio = ratios.length > 0 ? ratios[0] : LAYOUT_CONSTANTS.DEFAULT_MIN_RATIO;
-			dimensions = this.getBestDimensions(ratio, ratio, containerWidth, containerHeight, count, maxWidth, maxHeight);
-		}
-
-		// Loop through each stream in the container and place it inside
-		let x = 0;
-		let y = 0;
+		// Bucket elements into rows of `dimensions.targetCols`.
 		const rows: LayoutRow[] = [];
-		let row: LayoutRow | undefined;
-		const boxes: LayoutBox[] = [];
-
-		// Iterate through the children and create an array with a new item for each row
-		// and calculate the width of each row so that we know if we go over the size and need to adjust
-		for (let i = 0; i < ratios.length; i++) {
-			if (i % dimensions.targetCols === 0) {
-				// This is a new row
-				row = { ratios: [], width: 0, height: 0 };
-				rows.push(row);
-			}
+		for (let i = 0; i < count; i++) {
 			const ratio = ratios[i];
-			if (row) {
-				row.ratios.push(ratio);
-				let targetWidth = dimensions.targetWidth;
-				const targetHeight = dimensions.targetHeight;
-				// If we're using a fixedRatio then we need to set the correct ratio for this element
-				if (fixedRatio) {
-					targetWidth = targetHeight / ratio;
-				}
-				row.width += targetWidth;
-				row.height = targetHeight;
+			if (i % dimensions.targetCols === 0) {
+				rows.push({ ratios: [], width: 0, height: 0 });
 			}
+			const row = rows[rows.length - 1];
+			const widthForElement = fixedRatio ? dimensions.targetHeight / ratio : dimensions.targetWidth;
+			row.ratios.push(ratio);
+			row.width += widthForElement;
+			row.height = dimensions.targetHeight;
 		}
 
-		// Calculate total row height adjusting if we go too wide
+		// Shrink overflowing rows; count rows that still have room to grow.
 		let totalRowHeight = 0;
 		let remainingShortRows = 0;
-		for (let i = 0; i < rows.length; i++) {
-			row = rows[i];
+		for (const row of rows) {
 			if (row.width > containerWidth) {
-				// Went over on the width, need to adjust the height proportionally
 				row.height = Math.floor(row.height * (containerWidth / row.width));
 				row.width = containerWidth;
 			} else if (row.width < containerWidth && row.height < maxHeight) {
@@ -470,16 +284,12 @@ export class LayoutCalculator {
 		}
 
 		if (scaleLastRow && totalRowHeight < containerHeight && remainingShortRows > 0) {
-			// We can grow some of the rows, we're not taking up the whole height
 			let remainingHeightDiff = containerHeight - totalRowHeight;
 			totalRowHeight = 0;
-			for (let i = 0; i < rows.length; i++) {
-				row = rows[i];
+			for (const row of rows) {
 				if (row.width < containerWidth) {
-					// Evenly distribute the extra height between the short rows
 					let extraHeight = remainingHeightDiff / remainingShortRows;
 					if (extraHeight / row.height > (containerWidth - row.width) / row.width) {
-						// We can't go that big or we'll go too wide
 						extraHeight = Math.floor(((containerWidth - row.width) / row.width) * row.height);
 					}
 					row.width += Math.floor((extraHeight / row.height) * row.width);
@@ -491,176 +301,301 @@ export class LayoutCalculator {
 			}
 		}
 
-		// vertical centering
-		switch (alignItems) {
-			case LayoutAlignment.START:
-				y = 0;
-				break;
-			case LayoutAlignment.END:
-				y = containerHeight - totalRowHeight;
-				break;
-			case LayoutAlignment.CENTER:
-			default:
-				y = (containerHeight - totalRowHeight) / 2;
-				break;
-		}
+		const baseRatio = dimensions.targetHeight / dimensions.targetWidth;
+		let y = this.alignmentOffset(alignItems, containerHeight, totalRowHeight);
+		const boxes: LayoutBox[] = [];
 
-		// Iterate through each row and place each child
-		for (let i = 0; i < rows.length; i++) {
-			row = rows[i];
-			let rowMarginLeft;
-			switch (alignItems) {
-				case LayoutAlignment.START:
-					rowMarginLeft = 0;
-					break;
-				case LayoutAlignment.END:
-					rowMarginLeft = containerWidth - row.width;
-					break;
-				case LayoutAlignment.CENTER:
-				default:
-					rowMarginLeft = (containerWidth - row.width) / 2;
-					break;
-			}
-			x = rowMarginLeft;
-			let targetHeight = row.height;
-			for (let j = 0; j < row.ratios.length; j++) {
-				const ratio = row.ratios[j];
-
-				let targetWidth = dimensions.targetWidth;
-				targetHeight = row.height;
-				// If we're using a fixedRatio then we need to set the correct ratio for this element
+		for (const row of rows) {
+			let x = this.alignmentOffset(alignItems, containerWidth, row.width);
+			const rowHeight = row.height;
+			for (const ratio of row.ratios) {
+				let targetWidth: number;
 				if (fixedRatio) {
-					targetWidth = Math.floor(targetHeight / ratio);
-				} else if (targetHeight / targetWidth !== dimensions.targetHeight / dimensions.targetWidth) {
-					// We grew this row, we need to adjust the width to account for the increase in height
-					targetWidth = Math.floor((dimensions.targetWidth / dimensions.targetHeight) * targetHeight);
+					targetWidth = Math.floor(rowHeight / ratio);
+				} else if (Math.abs(rowHeight / dimensions.targetWidth - baseRatio) > RATIO_EPSILON) {
+					// Row was grown — scale width to match the new height while preserving the dimensions ratio.
+					targetWidth = Math.floor((dimensions.targetWidth / dimensions.targetHeight) * rowHeight);
+				} else {
+					targetWidth = dimensions.targetWidth;
 				}
 
 				boxes.push({
 					left: x + offsetLeft,
 					top: y + offsetTop,
 					width: targetWidth,
-					height: targetHeight
+					height: rowHeight
 				});
 				x += targetWidth;
 			}
-			y += targetHeight;
+			y += rowHeight;
 		}
 		return boxes;
 	}
 
-	/**
-	 * Categorize elements into big, normal, small, and topBar
-	 * @param elements Elements to categorize
-	 * @returns Categorized elements with their indices
-	 */
-	private categorizeElements(elements: ElementDimensions[]): CategorizedElements & {
-		bigOnes: ElementDimensions[];
-		normalOnes: ElementDimensions[];
-		smallOnes: ElementDimensions[];
-		topBarOnes: ElementDimensions[];
-	} {
-		const bigIndices: number[] = [];
-		const smallIndices: number[] = [];
-		const topBarIndices: number[] = [];
-		const normalIndices: number[] = [];
-
-		const bigOnes = elements.filter((element, idx) => {
-			if (element.big) {
-				bigIndices.push(idx);
-				return true;
-			}
-			return false;
-		});
-
-		const topBarOnes = elements.filter((element, idx) => {
-			if (!element.big && element.topBar) {
-				topBarIndices.push(idx);
-				return true;
-			}
-			return false;
-		});
-
-		const smallOnes = elements.filter((element, idx) => {
-			if (!element.big && !element.topBar && element.small) {
-				smallIndices.push(idx);
-				return true;
-			}
-			return false;
-		});
-
-		const normalOnes = elements.filter((element, idx) => {
-			if (!element.big && !element.topBar && !element.small) {
-				normalIndices.push(idx);
-				return true;
-			}
-			return false;
-		});
-
-		return {
-			big: bigOnes,
-			normal: normalOnes,
-			small: smallOnes,
-			topBar: topBarOnes,
-			bigOnes,
-			normalOnes,
-			smallOnes,
+	private placeNormalArea(
+		area: LayoutArea,
+		opts: {
+			topBarOnes: ElementDimensions[];
+			smallOnes: ElementDimensions[];
+			normalOnes: ElementDimensions[];
+			containerWidth: number;
+			smallMaxWidth: number;
+			smallMaxHeight: number;
+			fixedRatio: boolean;
+			minRatio: number;
+			maxRatio: number;
+			maxWidth: number;
+			maxHeight: number;
+			scaleLastRow: boolean;
+			alignItems: LayoutAlignment;
+		}
+	): { topBarBoxes: LayoutBox[]; smallBoxes: LayoutBox[]; normalBoxes: LayoutBox[] } {
+		const {
 			topBarOnes,
-			bigIndices,
-			normalIndices,
-			smallIndices,
-			topBarIndices
-		};
+			smallOnes,
+			normalOnes,
+			containerWidth,
+			smallMaxWidth,
+			smallMaxHeight,
+			fixedRatio,
+			minRatio,
+			maxRatio,
+			maxWidth,
+			maxHeight,
+			scaleLastRow,
+			alignItems
+		} = opts;
+
+		let currentTop = area.top;
+		let remainingHeight = area.height;
+		let topBarBoxes: LayoutBox[] = [];
+		let smallBoxes: LayoutBox[] = [];
+		let normalBoxes: LayoutBox[] = [];
+
+		if (topBarOnes.length > 0) {
+			const topBarHeight = 50;
+			const topBarWidth = Math.floor(containerWidth / topBarOnes.length);
+			topBarBoxes = topBarOnes.map((_element, idx) => ({
+				left: area.left + idx * topBarWidth,
+				top: currentTop,
+				width: topBarWidth,
+				height: topBarHeight
+			}));
+			currentTop += topBarHeight;
+			remainingHeight -= topBarHeight;
+		}
+
+		if (smallOnes.length > 0) {
+			const tentativeCols =
+				smallMaxWidth === Infinity ? smallOnes.length : Math.max(1, Math.floor(containerWidth / smallMaxWidth));
+			const displayCols = Math.max(1, Math.min(smallOnes.length, tentativeCols));
+			const computedWidth = smallMaxWidth === Infinity ? Math.floor(containerWidth / displayCols) : smallMaxWidth;
+			const computedHeight = smallMaxHeight === Infinity ? computedWidth : smallMaxHeight;
+			const rowWidth = displayCols * computedWidth;
+			const rowOffset = Math.floor(Math.max(0, containerWidth - rowWidth) / 2);
+
+			smallBoxes = smallOnes.map((_element, idx) => ({
+				left: area.left + (idx % displayCols) * computedWidth + rowOffset,
+				top: currentTop,
+				width: computedWidth,
+				height: computedHeight
+			}));
+			currentTop += computedHeight;
+			remainingHeight -= computedHeight;
+		}
+
+		if (normalOnes.length > 0) {
+			normalBoxes = this.calculateBoxesForArea(
+				{
+					containerWidth: area.width,
+					containerHeight: Math.max(0, remainingHeight),
+					offsetLeft: area.left,
+					offsetTop: currentTop,
+					fixedRatio,
+					minRatio,
+					maxRatio,
+					alignItems,
+					maxWidth,
+					maxHeight,
+					scaleLastRow
+				},
+				normalOnes
+			);
+		}
+
+		return { topBarBoxes, smallBoxes, normalBoxes };
 	}
 
 	/**
-	 * Reconstruct boxes in original element order
-	 * @param elements Original elements
-	 * @param categorized Categorized elements
-	 * @param bigBoxes Boxes for big elements
-	 * @param normalBoxes Boxes for normal elements
-	 * @param smallBoxes Boxes for small elements
-	 * @param topBarBoxes Boxes for topBar elements
-	 * @returns Boxes in original order
+	 * Compute the big area's footprint and the resulting offsets for the secondary area, unifying
+	 * the previously duplicated tall-vs-wide branches behind a single `isTall` flag.
+	 */
+	private computeBigAreaPlacement(opts: {
+		isTall: boolean;
+		containerWidth: number;
+		containerHeight: number;
+		bigPercentage: number;
+		minBigPercentage: number;
+		bigFixedRatio: boolean;
+		bigMinRatio: number;
+		bigMaxRatio: number;
+		bigMaxWidth: number;
+		bigMaxHeight: number;
+		minRatio: number;
+		maxRatio: number;
+		smallMaxWidth: number;
+		smallMaxHeight: number;
+		bigFirst: BigFirstOption;
+		bigOnes: ElementDimensions[];
+		othersCount: number;
+	}): BigAreaPlacement {
+		const {
+			isTall,
+			containerWidth,
+			containerHeight,
+			bigPercentage,
+			minBigPercentage,
+			bigFixedRatio,
+			bigMinRatio,
+			bigMaxRatio,
+			bigMaxWidth,
+			bigMaxHeight,
+			minRatio,
+			maxRatio,
+			smallMaxWidth,
+			smallMaxHeight,
+			bigFirst,
+			bigOnes,
+			othersCount
+		} = opts;
+
+		let bigWidth = isTall ? containerWidth : Math.floor(containerWidth * bigPercentage);
+		let bigHeight = isTall ? Math.floor(containerHeight * bigPercentage) : containerHeight;
+
+		if (minBigPercentage > 0) {
+			const ratio0 = bigOnes[0].height / bigOnes[0].width;
+			const bigDimensions = bigFixedRatio
+				? this.getBestDimensions(ratio0, ratio0, bigWidth, bigHeight, bigOnes.length, bigMaxWidth, bigMaxHeight)
+				: this.getBestDimensions(bigMinRatio, bigMaxRatio, bigWidth, bigHeight, bigOnes.length, bigMaxWidth, bigMaxHeight);
+
+			if (isTall) {
+				bigHeight = Math.max(
+					containerHeight * minBigPercentage,
+					Math.min(bigHeight, bigDimensions.targetHeight * bigDimensions.targetRows)
+				);
+				const smallDimensions = this.getBestDimensions(
+					minRatio,
+					maxRatio,
+					containerWidth,
+					containerHeight - bigHeight,
+					othersCount,
+					smallMaxWidth,
+					smallMaxHeight
+				);
+				bigHeight = Math.max(bigHeight, containerHeight - smallDimensions.targetRows * smallDimensions.targetHeight);
+			} else {
+				bigWidth = Math.max(
+					containerWidth * minBigPercentage,
+					Math.min(bigWidth, bigDimensions.targetWidth * bigDimensions.targetCols)
+				);
+				const smallDimensions = this.getBestDimensions(
+					minRatio,
+					maxRatio,
+					containerWidth - bigWidth,
+					containerHeight,
+					othersCount,
+					smallMaxWidth,
+					smallMaxHeight
+				);
+				bigWidth = Math.max(bigWidth, containerWidth - smallDimensions.targetCols * smallDimensions.targetWidth);
+			}
+		}
+
+		const offsetTop = isTall ? bigHeight : 0;
+		const offsetLeft = isTall ? 0 : bigWidth;
+		const bigOffsetTop = isTall ? containerHeight - offsetTop : 0;
+		const bigOffsetLeft = isTall ? 0 : containerWidth - offsetLeft;
+
+		// Tall orientation lays rows; wide orientation lays columns. `bigFirst === 'row'` means
+		// "big takes a row" — that only places big first when we're stacked vertically (tall).
+		let showBigFirst: BigAreaPlacement['showBigFirst'] = bigFirst;
+		if (bigFirst === 'column') {
+			showBigFirst = !isTall;
+		} else if (bigFirst === 'row') {
+			showBigFirst = isTall;
+		}
+
+		return { bigWidth, bigHeight, offsetTop, offsetLeft, bigOffsetTop, bigOffsetLeft, showBigFirst };
+	}
+
+	/**
+	 * Single pass through `elements` puts each one in exactly one bucket and stamps its
+	 * category. The category stamps are what makes reconstruction O(N).
+	 */
+	private categorizeElements(elements: ElementDimensions[]): CategorizedElements {
+		const big: ElementDimensions[] = [];
+		const normal: ElementDimensions[] = [];
+		const small: ElementDimensions[] = [];
+		const topBar: ElementDimensions[] = [];
+		const categories: ElementCategory[] = new Array(elements.length);
+
+		for (let i = 0; i < elements.length; i++) {
+			const el = elements[i];
+			if (el.big) {
+				big.push(el);
+				categories[i] = 'big';
+			} else if (el.topBar) {
+				topBar.push(el);
+				categories[i] = 'topBar';
+			} else if (el.small) {
+				small.push(el);
+				categories[i] = 'small';
+			} else {
+				normal.push(el);
+				categories[i] = 'normal';
+			}
+		}
+
+		return { big, normal, small, topBar, categories };
+	}
+
+	/**
+	 * Reconstruct boxes in original element order in O(N) using per-category cursors.
 	 */
 	private reconstructBoxesInOrder(
-		elements: ElementDimensions[],
 		categorized: CategorizedElements,
 		bigBoxes: LayoutBox[],
 		normalBoxes: LayoutBox[],
 		smallBoxes: LayoutBox[],
 		topBarBoxes: LayoutBox[]
 	): LayoutBox[] {
-		const boxes: LayoutBox[] = [];
-		let bigBoxesIdx = 0;
-		let normalBoxesIdx = 0;
-		let smallBoxesIdx = 0;
-		let topBarBoxesIdx = 0;
+		const sources: Record<ElementCategory, { boxes: LayoutBox[]; idx: number }> = {
+			big: { boxes: bigBoxes, idx: 0 },
+			normal: { boxes: normalBoxes, idx: 0 },
+			small: { boxes: smallBoxes, idx: 0 },
+			topBar: { boxes: topBarBoxes, idx: 0 }
+		};
 
-		elements.forEach((element, idx) => {
-			if (categorized.bigIndices.indexOf(idx) > -1) {
-				boxes[idx] = bigBoxes[bigBoxesIdx];
-				bigBoxesIdx += 1;
-			} else if (categorized.topBarIndices.indexOf(idx) > -1) {
-				boxes[idx] = topBarBoxes[topBarBoxesIdx];
-				topBarBoxesIdx += 1;
-			} else if (categorized.smallIndices.indexOf(idx) > -1) {
-				boxes[idx] = smallBoxes[smallBoxesIdx];
-				smallBoxesIdx += 1;
-			} else {
-				boxes[idx] = normalBoxes[normalBoxesIdx];
-				normalBoxesIdx += 1;
-			}
-		});
-
-		return boxes;
+		const result: LayoutBox[] = new Array(categorized.categories.length);
+		for (let i = 0; i < categorized.categories.length; i++) {
+			const src = sources[categorized.categories[i]];
+			result[i] = src.boxes[src.idx++];
+		}
+		return result;
 	}
 
-	/**
-	 * Get video aspect ratio
-	 * @param element Element dimensions
-	 * @returns Aspect ratio (height/width)
-	 */
+	private alignmentOffset(alignment: LayoutAlignment, container: number, content: number): number {
+		switch (alignment) {
+			case LayoutAlignment.START:
+				return 0;
+			case LayoutAlignment.END:
+				return container - content;
+			case LayoutAlignment.CENTER:
+			default:
+				return (container - content) / 2;
+		}
+	}
+
 	private getVideoRatio(element: ElementDimensions): number {
 		return element.height / element.width;
 	}

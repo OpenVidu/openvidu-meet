@@ -1,49 +1,52 @@
 import { expect, test } from '@playwright/test';
-import { createRoomAndGetAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import { expectCopiedUrl, installClipboardCapture, openMeeting, toggleCamera, toggleMicrophone } from './helpers/meeting-ui.helper';
+import { toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
+import { expectCopiedUrl, installClipboardCapture } from './helpers/ui-utils.helper';
 
-test.describe('Toolbar button functionality for local media control', () => {
-    
-    const createdRoomIds = new Set<string>();
+test.describe('Toolbar Buttons E2E Tests', () => {
+	const createdRoomIds: string[] = [];
 
-    test.afterAll(async () => {
-        await deleteRooms(createdRoomIds);
-    });
+	let roomId: string;
+	let accessUrl: string;
 
-async function createTrackedAccessUrl(roomName: string): Promise<string> {
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName, createdRoomIds });
-        return accessUrl;
-    }
+	test.beforeEach(async () => {
+		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+		roomId = room.roomId;
+		accessUrl = url;
+		createdRoomIds.push(roomId);
+	});
 
-    test('should toggle mute/unmute on the local microphone and update the icon accordingly', async ({ page }) => {
-        const accessUrl = await createTrackedAccessUrl(`toolbar-mic-${Date.now()}`);
-        await openMeeting(page, accessUrl);
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
+	});
 
-        await toggleMicrophone(page);
-        await expect(page.locator('#mic-btn #mic_off')).toBeVisible();
+	test('should toggle mute/unmute on the local microphone and update the icon accordingly', async ({ page }) => {
+		await openMeeting(page, accessUrl);
 
-        await toggleMicrophone(page);
-        await expect(page.locator('#mic-btn #mic')).toBeVisible();
-    });
+		await toggleMicrophone(page);
+		await expect(page.locator('#mic-btn #mic_off')).toBeVisible();
 
-    test('should toggle mute/unmute on the local camera and update the icon accordingly', async ({ page }) => {
-        const accessUrl = await createTrackedAccessUrl(`toolbar-cam-${Date.now()}`);
-        await openMeeting(page, accessUrl);
+		await toggleMicrophone(page);
+		await expect(page.locator('#mic-btn #mic')).toBeVisible();
+	});
 
-        await toggleCamera(page);
-        await expect(page.locator('#camera-btn #videocam_off')).toBeVisible();
+	test('should toggle mute/unmute on the local camera and update the icon accordingly', async ({ page }) => {
+		await openMeeting(page, accessUrl);
 
-        await toggleCamera(page);
-        await expect(page.locator('#camera-btn #videocam')).toBeVisible();
-    });
+		await toggleCamera(page);
+		await expect(page.locator('#camera-btn #videocam_off')).toBeVisible();
 
-    test('should copy speaker link from toolbar copy-speaker-link button', async ({ page }) => {
-        const accessUrl = await createTrackedAccessUrl(`toolbar-copy-speaker-link-${Date.now()}`);
-        await openMeeting(page, accessUrl);
-        await installClipboardCapture(page);
+		await toggleCamera(page);
+		await expect(page.locator('#camera-btn #videocam')).toBeVisible();
+	});
 
-        await expect(page.locator('#copy-speaker-link')).toBeVisible();
-        await page.locator('#copy-speaker-link').click();
-        await expectCopiedUrl(page);
-    });
+	test('should copy speaker link from toolbar copy-speaker-link button', async ({ page }) => {
+		await openMeeting(page, accessUrl);
+		await installClipboardCapture(page);
+
+		await expect(page.locator('#copy-speaker-link')).toBeVisible();
+		await page.locator('#copy-speaker-link').click();
+		await expectCopiedUrl(page);
+	});
 });

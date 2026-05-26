@@ -1,145 +1,203 @@
 import { expect, test } from '@playwright/test';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
-    createRoom,
-    createRoomAndGetAccessUrl,
-    createRoomMember,
-    deleteRooms,
-    toAbsoluteMeetUrl
-} from './helpers/meet-api.helper';
-import {
-    expectChatLinkCount,
-    expectChatLinkHrefContains,
-    expectChatMessageCount,
-    expectChatMessageTextAt,
-    expectFirstMessageSender,
-    expectSnackbarNotification,
-    openMeeting,
-    sendChatMessage,
-    toggleChatPanel
-} from './helpers/meeting-ui.helper';
+	expectChatLinkCount,
+	expectChatLinkHrefContains,
+	expectChatMessageCount,
+	expectChatMessageTextAt,
+	expectFirstMessageSender,
+	sendChatMessage,
+	toggleChatPanel
+} from './helpers/panels.helper';
+import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
+import { expectSnackbarNotification } from './helpers/ui-utils.helper';
 
-test.describe('Chat features', () => {
-    const createdRoomIds = new Set<string>();
+test.describe('Chat E2E Tests', () => {
+	const createdRoomIds: string[] = [];
 
-    test.afterAll(async () => {
-        await deleteRooms(createdRoomIds);
-    });
+	let roomId: string;
+	let accessUrl: string;
 
-    test('should send messages', async ({ page }) => {
-        const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-send-${Date.now()}`, participantName: senderName, createdRoomIds });
+	test.beforeEach(async () => {
+		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
+		roomId = room.roomId;
+		accessUrl = url;
+		createdRoomIds.push(roomId);
+	});
 
-        await openMeeting(page, accessUrl);
-        await toggleChatPanel(page);
+	test.afterAll(async () => {
+		await Promise.all([disconnectAllBrowserFakeParticipants(), deleteRooms(createdRoomIds)]);
+	});
 
-        await sendChatMessage(page, 'Test message');
-        await expectChatMessageCount(page, 1);
-        await expectChatMessageTextAt(page, 0, 'Test message');
+	test('should send messages', async ({ page }) => {
+		await openMeeting(page, accessUrl);
+		await toggleChatPanel(page);
 
-        await sendChatMessage(page, 'Test message 2');
-        await expectChatMessageCount(page, 2);
-        await expectChatMessageTextAt(page, 1, 'Test message 2');
-    });
+		let message = 'Test message';
+		await sendChatMessage(page, message);
+		await expectChatMessageCount(page, 1);
+		await expectChatMessageTextAt(page, 0, message);
 
-    test('should keep unread chat badge hidden at startup when there are no messages', async ({ page }) => {
-        const participantName = `participant-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-badge-${Date.now()}`, participantName, createdRoomIds });
+		message = 'Test message 2';
+		await sendChatMessage(page, message);
+		await expectChatMessageCount(page, 2);
+		await expectChatMessageTextAt(page, 1, message);
+	});
 
-        await openMeeting(page, accessUrl);
+	test('should keep unread chat badge hidden at startup when there are no messages', async ({ page }) => {
+		await openMeeting(page, accessUrl);
 
-        const unreadBadge = page.locator('#chat-panel-btn .mat-badge-content:visible');
-        await expect(unreadBadge).toHaveCount(0);
+		const unreadBadge = page.locator('#chat-panel-btn .mat-badge-content:visible');
+		await expect(unreadBadge).toHaveCount(0);
 
-        await toggleChatPanel(page);
-        await expectChatMessageCount(page, 0);
-    });
+		await toggleChatPanel(page);
+		await expectChatMessageCount(page, 0);
+	});
 
-    test('should receive a message', async ({ browser }) => {
-        const room = await createRoom({ roomName: `chat-pw-receive-${Date.now()}` });
-        createdRoomIds.add(room.roomId);
-        const senderName = `sender-${Date.now()}`;
-        const receiverName = `receiver-${Date.now()}`;
+	test('should receive a message', async ({ browser }) => {
+		const senderName = `sender`;
+		const receiverName = `receiver`;
+		const { byName, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			accessUrl,
+			participants: [
+				{ name: receiverName, headless: false },
+				{ name: senderName, headless: true }
+			]
+		});
+		const senderPage = byName[senderName];
+		const receiverPage = byName[receiverName];
 
-		const [receiverMember, senderMember] = await Promise.all([
-			createRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' })
-		]);
-		const receiverAccessUrl = toAbsoluteMeetUrl(receiverMember.accessUrl);
-		const senderAccessUrl = toAbsoluteMeetUrl(senderMember.accessUrl);
+		try {
+			const message = 'hello from sender';
+			await toggleChatPanel(senderPage);
+			await sendChatMessage(senderPage, message);
 
-		const [receiverPage, senderPage] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([
-			openMeeting(receiverPage, receiverAccessUrl),
-			openMeeting(senderPage, senderAccessUrl)
-		]);
+			await toggleChatPanel(receiverPage);
+			await expectChatMessageCount(receiverPage, 1);
+			await expectChatMessageTextAt(receiverPage, 0, message);
+			await expectFirstMessageSender(receiverPage, senderName);
+		} finally {
+			await removeAllParticipants();
+		}
+	});
 
-		await toggleChatPanel(senderPage);
-		await sendChatMessage(senderPage, 'hello from sender');
+	test('should auto-scroll when receiving new messages with chat panel open', async ({ browser }) => {
+		const senderName = `sender`;
+		const receiverName = `receiver`;
+		const { byName, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			accessUrl,
+			participants: [
+				{ name: receiverName, headless: false },
+				{ name: senderName, headless: true }
+			]
+		});
+		const senderPage = byName[senderName];
+		const receiverPage = byName[receiverName];
 
-		await toggleChatPanel(receiverPage);
-		await expectChatMessageCount(receiverPage, 1);
-		await expectChatMessageTextAt(receiverPage, 0, 'hello from sender');
-		await expectFirstMessageSender(receiverPage, senderName);
+		try {
+			await Promise.all([toggleChatPanel(receiverPage), toggleChatPanel(senderPage)]);
 
-		await Promise.all([senderPage.close(), receiverPage.close()]);
-    });
+			for (let i = 0; i < 45; i++) {
+				await sendChatMessage(senderPage, `seed-message-${i}`);
+			}
 
-    test('should send an URL message and render it as link', async ({ page }) => {
-        const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-url-${Date.now()}`, participantName: senderName, createdRoomIds });
+			await expectChatMessageCount(receiverPage, 45);
 
-        await openMeeting(page, accessUrl);
-        await toggleChatPanel(page);
-        await sendChatMessage(page, 'demos.openvidu.io');
-        await expectChatLinkCount(page, 1);
-        await expectChatLinkHrefContains(page, 0, 'demos\\.openvidu\\.io');
-    });
+			const scrollState = await receiverPage.evaluate(() => {
+				const container = document.querySelector('.messages-container') as HTMLElement | null;
 
-    test('should show snackbar notification when receiving a message with chat panel closed', async ({ browser }) => {
-        const room = await createRoom({ roomName: `chat-pw-snackbar-${Date.now()}` });
-        createdRoomIds.add(room.roomId);
-        const senderName = `sender-${Date.now()}`;
-        const receiverName = `receiver-${Date.now()}`;
+				if (!container) {
+					return null;
+				}
 
-		const [receiverMember, senderMember] = await Promise.all([
-			createRoomMember({ roomId: room.roomId, name: receiverName, baseRole: 'moderator' }),
-			createRoomMember({ roomId: room.roomId, name: senderName, baseRole: 'moderator' })
-		]);
-		const receiverAccessUrl = toAbsoluteMeetUrl(receiverMember.accessUrl);
-		const senderAccessUrl = toAbsoluteMeetUrl(senderMember.accessUrl);
+				container.scrollTop = 0;
 
-		const [receiverPage, senderPage] = await Promise.all([browser.newPage(), browser.newPage()]);
-		await Promise.all([
-			openMeeting(receiverPage, receiverAccessUrl),
-			openMeeting(senderPage, senderAccessUrl)
-		]);
+				return {
+					scrollTop: container.scrollTop,
+					scrollHeight: container.scrollHeight,
+					clientHeight: container.clientHeight
+				};
+			});
 
-		await toggleChatPanel(senderPage);
-		await sendChatMessage(senderPage, 'message while chat is closed');
+			expect(scrollState).not.toBeNull();
+			expect(scrollState!.scrollHeight).toBeGreaterThan(scrollState!.clientHeight);
+			expect(scrollState!.scrollTop).toBe(0);
 
-		await expectSnackbarNotification(receiverPage);
+			await sendChatMessage(senderPage, 'newest-message');
 
-		await toggleChatPanel(receiverPage);
-		await expectChatMessageCount(receiverPage, 1);
-		await expectChatMessageTextAt(receiverPage, 0, 'message while chat is closed');
+			await expect
+				.poll(
+					async () => {
+						return await receiverPage.evaluate(() => {
+							const container = document.querySelector('.messages-container') as HTMLElement | null;
 
-		await Promise.all([senderPage.close(), receiverPage.close()]);
+							if (!container) {
+								return Number.POSITIVE_INFINITY;
+							}
+
+							return Math.abs(container.scrollHeight - container.clientHeight - container.scrollTop);
+						});
+					},
+					{ timeout: 8_000 }
+				)
+				.toBeLessThanOrEqual(3);
+		} finally {
+			await removeAllParticipants();
+		}
+	});
+
+	test('should send an URL message and render it as link', async ({ page }) => {
+		await openMeeting(page, accessUrl);
+		await toggleChatPanel(page);
+		await sendChatMessage(page, 'demos.openvidu.io');
+		await expectChatLinkCount(page, 1);
+		await expectChatLinkHrefContains(page, 0, 'demos\\.openvidu\\.io');
+	});
+
+	test('should show snackbar notification when receiving a message with chat panel closed', async ({ browser }) => {
+		const senderName = `sender`;
+		const receiverName = `receiver`;
+		const { byName, removeAllParticipants } = await joinParticipants(browser, {
+			roomId,
+			accessUrl,
+			participants: [
+				{ name: receiverName, headless: false },
+				{ name: senderName, headless: true }
+			]
+		});
+
+		const senderPage = byName[senderName];
+		const receiverPage = byName[receiverName];
+
+		try {
+			const message = 'message while chat is closed';
+			await toggleChatPanel(senderPage);
+			await sendChatMessage(senderPage, message);
+
+			await expectSnackbarNotification(receiverPage);
+
+			await toggleChatPanel(receiverPage);
+			await expectChatMessageCount(receiverPage, 1);
+			await expectChatMessageTextAt(receiverPage, 0, message);
+		} finally {
+			await removeAllParticipants();
+		}
 	});
 
 	test('should preserve message order when sending multiple messages quickly', async ({ page }) => {
-        const senderName = `sender-${Date.now()}`;
-        const { accessUrl } = await createRoomAndGetAccessUrl({ roomName: `chat-order-${Date.now()}`, participantName: senderName, createdRoomIds });
+		await openMeeting(page, accessUrl);
+		await toggleChatPanel(page);
 
-        await openMeeting(page, accessUrl);
-        await toggleChatPanel(page);
+		await sendChatMessage(page, 'message-1');
+		await sendChatMessage(page, 'message-2');
+		await sendChatMessage(page, 'message-3');
 
-        await sendChatMessage(page, 'message-1');
-        await sendChatMessage(page, 'message-2');
-        await sendChatMessage(page, 'message-3');
-
-        await expectChatMessageCount(page, 3);
-        await expectChatMessageTextAt(page, 0, 'message-1');
-        await expectChatMessageTextAt(page, 1, 'message-2');
-        await expectChatMessageTextAt(page, 2, 'message-3');
-    });
+		await expectChatMessageCount(page, 3);
+		await expectChatMessageTextAt(page, 0, 'message-1');
+		await expectChatMessageTextAt(page, 1, 'message-2');
+		await expectChatMessageTextAt(page, 2, 'message-3');
+	});
 });

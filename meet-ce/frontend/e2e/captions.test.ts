@@ -1,69 +1,60 @@
 import { expect, test } from '@playwright/test';
-import {
-    createCaptionsAccessUrlWithRoomConfig,
-    getCaptionsButton,
-    getCaptionsButtonIcon
-} from './helpers/captions.helper';
-import { deleteRooms, getCaptionsGlobalConfig, type CaptionsGlobalConfig } from './helpers/meet-api.helper';
-import { openMeeting } from './helpers/meeting-ui.helper';
+import { getCaptionsButton, getCaptionsButtonIcon } from './helpers/captions.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms, getCaptionsGlobalConfig } from './helpers/meet-api.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
 
-test.describe('Captions controls', () => {
-    
-    const createdRoomIds = new Set<string>();
+test.describe('Captions E2E Tests', () => {
+	const createdRoomIds: string[] = [];
 
-    test.afterAll(async () => {
-        await deleteRooms(createdRoomIds);
-    });
+	const createCaptionsRoom = async (enabled = true): Promise<string> => {
+		const { room, accessUrl } = await createRoomAndGetAnonymousAccessUrl({
+			config: { captions: { enabled } }
+		});
+		createdRoomIds.push(room.roomId);
+		return accessUrl;
+	};
 
-    test('should hide captions button when captions are disabled in room config', async ({ page }) => {
-        const accessUrl = await createCaptionsAccessUrlWithRoomConfig({
-            participantName: `captions-hidden-${Date.now()}`,
-            captionsEnabledInRoom: false,
-            createdRoomIds
-        });
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
+	});
 
-        await openMeeting(page, accessUrl);
-        await expect(page.locator('#captions-button')).toHaveCount(0);
-    });
+	test('should hide captions button when captions are disabled in room config', async ({ page }) => {
+		const accessUrl = await createCaptionsRoom(false);
 
-    test('should show captions button and reflect global backend enablement', async ({ page }) => {
-        const globalCaptionsConfig: CaptionsGlobalConfig = await getCaptionsGlobalConfig();
-        const accessUrl = await createCaptionsAccessUrlWithRoomConfig({
-            participantName: `captions-state-${Date.now()}`,
-            captionsEnabledInRoom: true,
-            createdRoomIds
-        });
+		await openMeeting(page, accessUrl);
+		await expect(page.locator('#captions-button')).toHaveCount(0);
+	});
 
-        await openMeeting(page, accessUrl);
-        await expect(getCaptionsButton(page)).toBeVisible();
+	test('should show captions button and reflect global backend enablement', async ({ page }) => {
+		const globalCaptionsConfig = await getCaptionsGlobalConfig();
+		const accessUrl = await createCaptionsRoom(true);
 
-        if (globalCaptionsConfig.enabled) {
-            await expect(getCaptionsButton(page)).toBeEnabled();
-            await expect(getCaptionsButtonIcon(page)).toContainText('subtitles');
-        } else {
-            await expect(getCaptionsButton(page)).toBeDisabled();
-            await expect(getCaptionsButtonIcon(page)).toContainText('subtitles_off');
-        }
-    });
+		await openMeeting(page, accessUrl);
+		await expect(getCaptionsButton(page)).toBeVisible();
 
-    test('should toggle captions panel when room captions and global captions are enabled', async ({ page }) => {
-        const globalCaptionsConfig = await getCaptionsGlobalConfig();
-        test.skip(!globalCaptionsConfig.enabled, 'Global captions are disabled in backend configuration');
+		if (globalCaptionsConfig.enabled) {
+			await expect(getCaptionsButton(page)).toBeEnabled();
+			await expect(getCaptionsButtonIcon(page)).toContainText('subtitles');
+		} else {
+			await expect(getCaptionsButton(page)).toBeDisabled();
+			await expect(getCaptionsButtonIcon(page)).toContainText('subtitles_off');
+		}
+	});
 
-        const accessUrl = await createCaptionsAccessUrlWithRoomConfig({
-            participantName: `captions-toggle-${Date.now()}`,
-            captionsEnabledInRoom: true,
-            createdRoomIds
-        });
+	test('should toggle captions panel when room captions and global captions are enabled', async ({ page }) => {
+		const globalCaptionsConfig = await getCaptionsGlobalConfig();
+		test.skip(!globalCaptionsConfig.enabled, 'Global captions are disabled in backend configuration');
 
-        await openMeeting(page, accessUrl);
-        await expect(getCaptionsButton(page)).toBeVisible();
-        await expect(getCaptionsButton(page)).toBeEnabled();
+		const accessUrl = await createCaptionsRoom(true);
 
-        await getCaptionsButton(page).click();
-        await expect(page.locator('.captions-container')).toBeVisible();
+		await openMeeting(page, accessUrl);
+		await expect(getCaptionsButton(page)).toBeVisible();
+		await expect(getCaptionsButton(page)).toBeEnabled();
 
-        await getCaptionsButton(page).click();
-        await expect(page.locator('.captions-container')).toHaveCount(0);
-    });
+		await getCaptionsButton(page).click();
+		await expect(page.locator('.captions-container')).toBeVisible();
+
+		await getCaptionsButton(page).click();
+		await expect(page.locator('.captions-container')).toHaveCount(0);
+	});
 });

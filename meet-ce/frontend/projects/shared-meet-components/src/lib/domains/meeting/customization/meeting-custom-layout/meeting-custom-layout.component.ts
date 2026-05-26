@@ -1,10 +1,9 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { HiddenParticipantsIndicatorComponent } from '../../components/hidden-participants-indicator/hidden-participants-indicator.component';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
-import { CustomParticipantModel } from '../../models/custom-participant.model';
-import { OpenViduComponentsUiModule, PanelService, PanelType, ParticipantModel } from '../../openvidu-components';
-import { Track } from '../../openvidu-components/services/livekit-adapter';
+import { OpenViduComponentsUiModule, PanelService, PanelType } from '../../openvidu-components';
+import { SmartLayoutComponent } from '../../openvidu-components/components/layout/smart-layout/smart-layout.component';
+import { SmartLayoutService } from '../../openvidu-components/services/layout/smart-layout.service';
 import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -16,81 +15,39 @@ import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.c
 	imports: [
 		NgClass,
 		OpenViduComponentsUiModule,
+		SmartLayoutComponent,
 		ShareMeetingLinkComponent,
-		HiddenParticipantsIndicatorComponent,
 		MeetingCaptionsComponent
 	],
 	templateUrl: './meeting-custom-layout.component.html',
 	styleUrl: './meeting-custom-layout.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	providers: [{ provide: SmartLayoutService, useExisting: MeetingLayoutService }]
 })
 export class MeetingCustomLayoutComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
-	protected layoutService = inject(MeetingLayoutService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected panelService = inject(PanelService);
 
 	lkRoom = this.meetingContextService.lkRoom;
-
 	meetingUrl = this.meetingAccessLinkService.speakerPublicLink;
-	shouldShowLinkOverlay = computed(() => {
-		const hasNoRemotes = this.remoteParticipants().length === 0;
-		const hasPublicSpeakerLink = !!this.meetingUrl();
-		return this.meetingContextService.meetingUI().showShareAccessLinks && hasNoRemotes && hasPublicSpeakerLink;
-	});
+	remoteParticipants = this.meetingContextService.remoteParticipants;
+	areCaptionsEnabledByUser = this.captionsService.areCaptionsEnabledByUser;
+	captions = this.captionsService.captions;
 	linkOverlayConfig = {
 		title: 'Start collaborating',
 		subtitle: 'Share this link to bring others into the meeting',
 		titleSize: 'xl' as const,
 		titleWeight: 'bold' as const
 	};
-
-	areCaptionsEnabledByUser = this.captionsService.areCaptionsEnabledByUser;
-	private showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
-	isSmartMosaicActive = computed(() => this.showLayoutSelector() && this.layoutService.isSmartMosaicEnabled());
-	captions = this.captionsService.captions;
-
-	remoteParticipants = this.meetingContextService.remoteParticipants;
-	private _visibleRemoteParticipants = signal<ParticipantModel[]>([]);
-	visibleRemoteParticipants = this._visibleRemoteParticipants.asReadonly();
-
-	hiddenParticipantsCount = computed(() => {
-		const total = this.remoteParticipants().length;
-		const visible = this.visibleRemoteParticipants().length;
-		return Math.max(0, total - visible);
-	});
-	hiddenParticipantNames = computed(() => {
-		const visibleIds = new Set(this.visibleRemoteParticipants().map((p) => p.identity));
-		return this.remoteParticipants()
-			.filter((p) => !visibleIds.has(p.identity))
-			.map((p) => p.name || 'Unknown');
+	shouldShowLinkOverlay = computed(() => {
+		const hasNoRemotes = this.remoteParticipants().length === 0;
+		const hasPublicSpeakerLink = !!this.meetingUrl();
+		return this.meetingContextService.meetingUI().showShareAccessLinks && hasNoRemotes && hasPublicSpeakerLink;
 	});
 
-	/**
-	 * Indicates whether to show the hidden participants indicator in the top bar
-	 * when in smart mosaic mode.
-	 */
-	showTopBarHiddenParticipantsIndicator = computed(() => {
-		const localParticipant = this.meetingContextService.localParticipant()!;
-		const hasPinnedParticipant =
-			localParticipant.isPinned || this.remoteParticipants().some((p) => (p as CustomParticipantModel).isPinned);
-		const visibleParticipantsCount = this.visibleRemoteParticipants().length;
-		const showTopBar =
-			!hasPinnedParticipant && visibleParticipantsCount < this.layoutService.MAX_REMOTE_SPEAKERS_LIMIT;
-		return showTopBar;
-	});
-
-	private displayedParticipantIds: string[] = [];
-	private audioElements = new Map<string, HTMLMediaElement>();
-	private proxyCache = new WeakMap<ParticipantModel, { proxy: ParticipantModel; showCamera: boolean }>();
-
-	constructor() {
-		this.setupSpeakerTrackingEffect();
-		this.setupParticipantCleanupEffect();
-		this.handleAudioElementsEffect();
-		this.setupVisibleParticipantsUpdate();
-	}
+	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
 
 	protected onCopyMeetingLinkClicked(): void {
 		this.meetingAccessLinkService.copyMeetingSpeakerLink();
@@ -98,166 +55,5 @@ export class MeetingCustomLayoutComponent {
 
 	protected toggleParticipantsPanel(): void {
 		this.panelService.togglePanel(PanelType.PARTICIPANTS);
-	}
-
-	private setupVisibleParticipantsUpdate(): void {
-		effect(() => {
-			const allRemotes = this.remoteParticipants();
-
-			if (!this.isSmartMosaicActive()) {
-				this._visibleRemoteParticipants.set(allRemotes);
-				return;
-			}
-
-			const participantMap = new Map(allRemotes.map((p) => [p.identity, p]));
-			const availableIds = new Set(participantMap.keys());
-			const targetIds = this.layoutService.computeParticipantsToDisplay(availableIds);
-
-			// Include screen sharers in the display list, even if they are not active speakers
-			const screenSharerIds = allRemotes.filter((p) => p.isScreenShareEnabled).map((p) => p.identity);
-			const idsToDisplay = new Set([...targetIds, ...screenSharerIds]);
-
-			this.syncDisplayedParticipantsWithTarget(idsToDisplay, availableIds);
-
-			const visibleParticipants = this.displayedParticipantIds
-				.map((id) => participantMap.get(id))
-				.filter((p): p is CustomParticipantModel => p !== undefined);
-
-			// Return proxies that hide audio tracks to prevent ov-layout from rendering audio
-			// Also hide camera tracks if the participant is displayed ONLY because of screen share (not in targetIds)
-			const proxiedParticipants = visibleParticipants.map((p) => {
-				const showCamera = targetIds.has(p.identity);
-				return this.getOrCreateVideoOnlyProxy(p, showCamera);
-			});
-			this._visibleRemoteParticipants.set(proxiedParticipants);
-		});
-	}
-
-	private getOrCreateVideoOnlyProxy(participant: ParticipantModel, showCamera: boolean): ParticipantModel {
-		const cached = this.proxyCache.get(participant);
-		if (cached && cached.showCamera === showCamera) {
-			return cached.proxy;
-		}
-		const proxy = this.createVideoOnlyProxy(participant, showCamera);
-		this.proxyCache.set(participant, { proxy, showCamera });
-		return proxy;
-	}
-
-	/**
-	 * Synchronizes the list of displayed participants with the target set of participant IDs.
-	 * Ensures that only available participants are shown, replaces removed IDs with new ones
-	 * when possible, and appends any remaining participants needed to match the target state.
-	 * @param targetIds Set of participant IDs that should be displayed.
-	 * @param availableIds Set of participant IDs that are currently available for display.
-	 */
-	private syncDisplayedParticipantsWithTarget(targetIds: Set<string>, availableIds: Set<string>): void {
-		this.displayedParticipantIds = this.displayedParticipantIds.filter((id) => availableIds.has(id));
-
-		const currentDisplaySet = new Set(this.displayedParticipantIds);
-		const idsToRemove = this.displayedParticipantIds.filter((id) => !targetIds.has(id));
-		const idsToAdd = [...targetIds].filter((id) => !currentDisplaySet.has(id));
-
-		// Substitute removed with added at same positions
-		for (const removeId of idsToRemove) {
-			const addId = idsToAdd.shift();
-			if (addId) {
-				const index = this.displayedParticipantIds.indexOf(removeId);
-				if (index !== -1) this.displayedParticipantIds[index] = addId;
-			} else {
-				this.displayedParticipantIds = this.displayedParticipantIds.filter((id) => id !== removeId);
-			}
-		}
-
-		// Append remaining
-		for (const addId of idsToAdd) {
-			if (this.displayedParticipantIds.length < targetIds.size) {
-				this.displayedParticipantIds.push(addId);
-			}
-		}
-	}
-
-	private setupSpeakerTrackingEffect(): void {
-		effect(() => {
-			const room = this.lkRoom();
-			if (this.showLayoutSelector() && room) {
-				this.layoutService.initializeSpeakerTracking(room);
-			}
-		});
-	}
-
-	private handleAudioElementsEffect(): void {
-		effect(() => {
-			const participants = this.remoteParticipants();
-			const isSmartMosaic = this.isSmartMosaicActive();
-
-			// Use untracked to avoid re-running effect when we manipulate DOM or internal state
-			untracked(() => {
-				this.manageAudioTracks(participants, isSmartMosaic);
-			});
-		});
-	}
-
-	private setupParticipantCleanupEffect(): void {
-		effect(() => {
-			if (!this.isSmartMosaicActive()) return;
-
-			const currentIds = new Set(this.remoteParticipants().map((p) => p.identity));
-			untracked(() => this.layoutService.removeDisconnectedSpeakers(currentIds));
-		});
-	}
-
-	private manageAudioTracks(participants: ParticipantModel[], isSmartMosaic: boolean) {
-		if (!isSmartMosaic) {
-			this.cleanupAudioElements(new Set());
-			return;
-		}
-
-		const currentAudioTrackSids = new Set<string>();
-
-		for (const p of participants) {
-			// Access audio tracks from all streams
-			for (const stream of p.streams()) {
-				const audioTrack = stream.audioTrack;
-				if (audioTrack?.track && audioTrack.track.attach) {
-					currentAudioTrackSids.add(audioTrack.trackSid);
-					let audio = this.audioElements.get(audioTrack.trackSid);
-					if (!audio) {
-						audio = audioTrack.track.attach();
-						this.audioElements.set(audioTrack.trackSid, audio);
-					}
-					audio.muted = p.isMutedForcibly;
-				}
-			}
-		}
-
-		this.cleanupAudioElements(currentAudioTrackSids);
-	}
-
-	private cleanupAudioElements(activeSids: Set<string>) {
-		for (const [sid, audio] of this.audioElements) {
-			if (!activeSids.has(sid)) {
-				audio.pause();
-				audio.srcObject = null;
-				audio.remove();
-				this.audioElements.delete(sid);
-			}
-		}
-	}
-
-	private createVideoOnlyProxy(participant: ParticipantModel, showCamera: boolean): ParticipantModel {
-		return new Proxy(participant, {
-			get: (target, prop, receiver) => {
-				if (prop === 'tracks') {
-					// Return only video tracks to hide audio from ov-layout
-					// Also filter camera tracks if showCamera is false
-					return target.tracks.filter((t) => {
-						if (t.kind === Track.Kind.Audio) return false;
-						if (t.source === Track.Source.Camera && !showCamera) return false;
-						return true;
-					});
-				}
-				return Reflect.get(target, prop, receiver);
-			}
-		});
 	}
 }

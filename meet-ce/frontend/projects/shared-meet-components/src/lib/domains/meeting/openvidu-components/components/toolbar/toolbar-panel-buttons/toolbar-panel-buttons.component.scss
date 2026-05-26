@@ -108,6 +108,7 @@
 			width: 20px !important;
 			height: 20px !important;
 			margin: 0 !important;
+			color: var(--ov-text-primary-color) !important;
 		}
 
 		// Chat badge adjustments for menu
@@ -122,6 +123,7 @@
 			border-radius: 7px !important;
 			top: -2px !important;
 			right: -2px !important;
+			margin: -4px !important;
 		}
 
 		// Remove default mat-menu-item styles

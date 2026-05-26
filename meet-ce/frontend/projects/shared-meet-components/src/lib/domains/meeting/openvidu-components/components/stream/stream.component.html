@@ -5,7 +5,9 @@
 		[class.no-size]="!showVideo()"
 		[class.local]="stream.participant.isLocal"
 		[class.remote]="!stream.participant.isLocal"
-		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
+		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream && stream.participant.isCameraEnabled"
+		[class.screen-source]="stream.isScreenStream"
+		[class.camera-source]="stream.isCameraStream"
 		[id]="'stream-' + stream.source + '-' + stream.streamId"
 		(mousemove)="mouseHover($event)"
 		#streamContainer
@@ -21,41 +23,24 @@
 			</div>
 		}
 
-		@if (stream.isCameraStream && stream.participant.connectionQuality !== 'unknown') {
-			<div
-				id="connection-quality-badge"
-				class="connection-quality-badge"
-				[class.quality-excellent]="stream.participant.connectionQuality === 'excellent'"
-				[class.quality-good]="stream.participant.connectionQuality === 'good'"
-				[class.quality-poor]="stream.participant.connectionQuality === 'poor'"
-				[class.quality-lost]="stream.participant.connectionQuality === 'lost'"
-			>
-				<mat-icon
-					[fontIcon]="
-						stream.participant.connectionQuality === 'excellent' ? 'signal_wifi_4_bar' :
-						stream.participant.connectionQuality === 'good' ? 'network_wifi_3_bar' :
-						stream.participant.connectionQuality === 'poor' ? 'network_wifi_2_bar' :
-						'signal_wifi_off'
-					"
-				/>
-			</div>
+		@if (stream.isCameraStream) {
+			<ov-connection-quality-indicator [participant]="stream.participant" />
 		}
 
-		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream) {
+		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream && stream.participant.isCameraEnabled) {
 			<div id="audio-wave-container">
 				<ov-audio-wave />
 			</div>
 		}
 
-		<ov-media-element
+		<ov-video-element
 			[videoTrack]="stream.videoTrack?.track"
-			[audioTrack]="stream.audioTrack?.track"
-			[showAvatar]="stream.isCameraStream && (!stream.videoTrack || !stream.participant.isCameraEnabled)"
+			[showAvatar]="stream.isCameraStream && (!stream.videoTrack?.track || !stream.participant.isCameraEnabled)"
 			[avatarColor]="stream.participant.colorProfile"
 			[avatarName]="stream.participant.name ?? ''"
-			[muted]="stream.isMutedForcibly"
 			[isLocal]="stream.participant.isLocal"
 			[hasEncryptionError]="stream.participant.hasEncryptionError"
+			[isSpeaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
 		/>
 
 		@if (
@@ -80,7 +65,7 @@
 				<div class="flex-container">
 					<button
 						mat-icon-button
-						id="pin-btn"
+						[id]="stream.isPinned ? 'unpin-btn' : 'pin-btn'"
 						(click)="toggleVideoPinned()"
 						[matTooltip]="stream.isPinned ? ('STREAM.UNPIN' | translate) : ('STREAM.PIN' | translate)"
 					>

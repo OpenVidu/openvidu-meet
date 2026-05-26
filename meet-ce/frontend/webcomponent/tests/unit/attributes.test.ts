@@ -199,17 +199,32 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.SHOW_ONLY_RECORDINGS)).toBe('true');
 		});
 
+		// Add `show-recording` attribute should append it as a query parameter to the iframe URL
+		it('should add show-recording as query parameter', () => {
+			const recordingId = 'testRoom-123--EG_XYZ--XX445';
+			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
+			component.setAttribute(WebComponentProperty.SHOW_RECORDING, recordingId);
+
+			(component as any).updateIframeSrc();
+
+			const iframe = component.shadowRoot?.querySelector('iframe');
+			const url = new URL(iframe?.src || '');
+			expect(url.searchParams.get(WebComponentProperty.SHOW_RECORDING)).toBe(recordingId);
+		});
+
 		// Multiple optional attributes should all be included as query parameters
 		it('should add multiple optional attributes as query parameters', () => {
 			const participantName = 'Jane Smith';
 			const e2eeKey = 'encryption-key-456';
 			const redirectUrl = 'https://example.com/thanks';
+			const recordingId = 'testRoom-123--EG_XYZ--XX445';
 
 			component.setAttribute(WebComponentProperty.ROOM_URL, baseRoomUrl);
 			component.setAttribute(WebComponentProperty.PARTICIPANT_NAME, participantName);
 			component.setAttribute(WebComponentProperty.E2EE_KEY, e2eeKey);
 			component.setAttribute(WebComponentProperty.LEAVE_REDIRECT_URL, redirectUrl);
 			component.setAttribute(WebComponentProperty.SHOW_ONLY_RECORDINGS, 'false');
+			component.setAttribute(WebComponentProperty.SHOW_RECORDING, recordingId);
 
 			(component as any).updateIframeSrc();
 
@@ -220,6 +235,7 @@ describe('OpenViduMeet WebComponent Attributes', () => {
 			expect(url.searchParams.get(WebComponentProperty.E2EE_KEY)).toBe(e2eeKey);
 			expect(url.searchParams.get(WebComponentProperty.LEAVE_REDIRECT_URL)).toBe(redirectUrl);
 			expect(url.searchParams.get(WebComponentProperty.SHOW_ONLY_RECORDINGS)).toBe('false');
+			expect(url.searchParams.get(WebComponentProperty.SHOW_RECORDING)).toBe(recordingId);
 		});
 
 		// The base `room-url`/`recording-url` should not appear as query parameters

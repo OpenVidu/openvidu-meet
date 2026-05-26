@@ -11,6 +11,8 @@ import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { TemplateRegistryService } from '../../../../services/template/template-registry.service';
+import { ConnectionQualityIndicatorComponent } from '../../../connection-quality-indicator/connection-quality-indicator.component';
+import { ParticipantAvatarComponent } from '../../../participant-avatar/participant-avatar.component';
 
 /**
  * The **ParticipantPanelItemComponent** is hosted inside of the {@link ParticipantsPanelComponent}.
@@ -19,7 +21,7 @@ import { TemplateRegistryService } from '../../../../services/template/template-
  */
 @Component({
 	selector: 'ov-participant-panel-item',
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, TrackPublishedTypesPipe],
+	imports: [CommonModule, MatButtonModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, TrackPublishedTypesPipe, ParticipantAvatarComponent, ConnectionQualityIndicatorComponent],
 	templateUrl: './participant-panel-item.component.html',
 	styleUrls: ['./participant-panel-item.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -36,6 +38,10 @@ export class ParticipantPanelItemComponent {
 	 * @ignore
 	 */
 	readonly showMuteButton = this.libService.participantItemMuteButtonSignal;
+	/**
+	 * @ignore
+	 */
+	readonly showAudioDetection = this.libService.displayAudioDetectionSignal;
 
 	/**
 	 * @ignore

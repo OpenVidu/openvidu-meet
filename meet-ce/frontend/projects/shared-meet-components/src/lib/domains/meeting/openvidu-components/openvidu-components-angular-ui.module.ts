@@ -3,8 +3,8 @@ import { NgModule } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { AudioWaveComponent } from './components/audio-wave/audio-wave.component';
-import { LayoutComponent } from './components/layout/layout.component';
-import { MediaElementComponent } from './components/media-element/media-element.component';
+import { SmartLayoutComponent } from './components/layout/smart-layout/smart-layout.component';
+import { VideoElementComponent } from './components/video-element/video-element.component';
 import { ChatPanelComponent } from './components/panel/chat-panel/chat-panel.component';
 import { SessionComponent } from './components/session/session.component';
 import { StreamComponent } from './components/stream/stream.component';
@@ -34,7 +34,7 @@ import { LangSelectorComponent } from './components/settings/lang-selector/lang-
 import { ParticipantNameInputComponent } from './components/settings/participant-name-input/participant-name-input.component';
 import { ThemeSelectorComponent } from './components/settings/theme-selector/theme-selector.component';
 import { VideoDevicesComponent } from './components/settings/video-devices/video-devices.component';
-import { VideoPosterComponent } from './components/video-poster/video-poster.component';
+import { ParticipantAvatarComponent } from './components/participant-avatar/participant-avatar.component';
 import { ApiDirectiveModule } from './directives/api/api.directive.module';
 import { OpenViduComponentsDirectiveModule } from './directives/template/openvidu-components-angular.directive.module';
 
@@ -45,16 +45,13 @@ const publicComponents = [
 	ParticipantsPanelComponent,
 	ChatPanelComponent,
 	StreamComponent,
-	LayoutComponent
+	SmartLayoutComponent
 ];
 const declaredPublicComponents: any[] = [];
 const privateComponents: any[] = [];
 
 @NgModule({
-	declarations: [
-		...declaredPublicComponents,
-		...privateComponents,
-	],
+	declarations: [...declaredPublicComponents, ...privateComponents],
 	imports: [
 		CommonModule,
 		FormsModule,
@@ -70,13 +67,13 @@ const privateComponents: any[] = [];
 		ParticipantNameInputComponent,
 		ThemeSelectorComponent,
 		VideoDevicesComponent,
-		VideoPosterComponent,
-		MediaElementComponent,
+		ParticipantAvatarComponent,
+		VideoElementComponent,
 		ToolbarMediaButtonsComponent,
 		ToolbarPanelButtonsComponent,
 		StreamComponent,
 		PreJoinComponent,
-		LayoutComponent,
+		SmartLayoutComponent,
 		PanelComponent,
 		ToolbarComponent,
 		ActivitiesPanelComponent,
