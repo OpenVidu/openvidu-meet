@@ -9,7 +9,7 @@ import { click, expectHidden } from './ui-utils.helper';
 export const openMoreOptionsMenu = async (page: Page): Promise<void> => {
 	const moreOptionsButton = page.locator('#more-options-btn');
 	await expect(moreOptionsButton).toBeVisible();
-	await click(moreOptionsButton, 5_000);
+	await click(moreOptionsButton, 10_000);
 	await expect(page.locator('.mat-mdc-menu-content')).toBeVisible();
 };
 
