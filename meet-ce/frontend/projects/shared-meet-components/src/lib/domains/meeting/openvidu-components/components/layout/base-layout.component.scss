@@ -64,13 +64,87 @@
 }
 
 .OV_minimized {
-	width: 230px !important;
-	height: 130px !important;
-	// position: absolute !important;
+	// Width/height use CSS custom properties so the resize feature can override them
+	// while !important still beats the layout renderer's inline styles.
+	position: relative;
+	width: var(--ov-min-w, 230px) !important;
+	height: var(--ov-min-h, 130px) !important;
 	bottom: 0 !important;
 	right: 0 !important;
 	top: 0 !important;
 	left: 0 !important;
-	z-index: 999 !important;
+	z-index: 1000 !important;
 	cursor: move;
+
+	.resize-handle {
+		position: absolute;
+		width: 20px;
+		height: 20px;
+		z-index: 1001;
+
+		&::after {
+			content: '';
+			position: absolute;
+		}
+
+		&.resize-se {
+			bottom: 0;
+			right: 0;
+			cursor: se-resize;
+
+			&::after {
+				bottom: 3px;
+				right: 3px;
+				width: 8px;
+				height: 8px;
+				border-right: 2px solid rgba(255, 255, 255, 0.65);
+				border-bottom: 2px solid rgba(255, 255, 255, 0.65);
+			}
+		}
+
+		&.resize-sw {
+			bottom: 0;
+			left: 0;
+			cursor: sw-resize;
+
+			&::after {
+				bottom: 3px;
+				left: 3px;
+				width: 8px;
+				height: 8px;
+				border-left: 2px solid rgba(255, 255, 255, 0.65);
+				border-bottom: 2px solid rgba(255, 255, 255, 0.65);
+			}
+		}
+
+		&.resize-ne {
+			top: 0;
+			right: 0;
+			cursor: ne-resize;
+
+			&::after {
+				top: 3px;
+				right: 3px;
+				width: 8px;
+				height: 8px;
+				border-right: 2px solid rgba(255, 255, 255, 0.65);
+				border-top: 2px solid rgba(255, 255, 255, 0.65);
+			}
+		}
+
+		&.resize-nw {
+			top: 0;
+			left: 0;
+			cursor: nw-resize;
+
+			&::after {
+				top: 3px;
+				left: 3px;
+				width: 8px;
+				height: 8px;
+				border-left: 2px solid rgba(255, 255, 255, 0.65);
+				border-top: 2px solid rgba(255, 255, 255, 0.65);
+			}
+		}
+	}
 }

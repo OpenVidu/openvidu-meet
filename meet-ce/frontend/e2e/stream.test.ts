@@ -18,6 +18,7 @@ import {
 	expectStreamCount,
 	maximizeStream,
 	minimizeStream,
+	resizeStream,
 	waitForRemoteStream
 } from './helpers/stream.helper';
 import { getElementBoundingBox, hoverStream } from './helpers/ui-utils.helper';
@@ -612,6 +613,95 @@ test.describe('Stream E2E Tests', () => {
 			expect(Math.abs(streamBox!.x - xAfterDrag)).toBeGreaterThan(50);
 			expect(Math.abs(streamBox!.x - initialBox!.x)).toBeCloseTo(0);
 			expect(Math.abs(streamBox!.y - initialBox!.y)).toBeCloseTo(0);
+
+			await page.close();
+		});
+
+		test('should AUTO-MINIMIZE the local video when the first remote participant joins', async ({ browser }) => {
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA] = pages;
+
+			try {
+				// Wait until participant-0 sees the remote stream from participant-1
+				await waitForRemoteStream(pageA);
+
+				// Local video should have been auto-minimized
+				const localContainer = pageA.locator('.local_participant:has(.OV_stream_video.local)').first();
+				await expect(localContainer).toHaveClass(/OV_minimized/, { timeout: 5_000 });
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should resize the minimized LOCAL video using the SE corner handle', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+			await minimizeStream(page);
+			await page.waitForTimeout(500);
+
+			const beforeBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
+			expect(beforeBox).not.toBeNull();
+
+			await resizeStream(page, 'resize-se', 80, 45);
+			await page.waitForTimeout(300);
+
+			const afterBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
+			expect(afterBox).not.toBeNull();
+			expect(afterBox!.width).toBeGreaterThan(beforeBox!.width);
+			expect(afterBox!.height).toBeGreaterThan(beforeBox!.height);
+
+			await page.close();
+		});
+
+		test('should maintain the 16:9 aspect ratio after resizing the minimized video', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+			await minimizeStream(page);
+			await page.waitForTimeout(500);
+
+			await resizeStream(page, 'resize-se', 100, 0);
+			await page.waitForTimeout(300);
+
+			const box = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
+			expect(box).not.toBeNull();
+
+			const ratio = box!.width / box!.height;
+			const expectedRatio = 16 / 9;
+			// Allow 5% tolerance
+			expect(Math.abs(ratio - expectedRatio) / expectedRatio).toBeLessThan(0.05);
+
+			await page.close();
+		});
+
+		test('should RESET the minimized video size to default after maximize and re-minimize', async ({ page }) => {
+			await openMeeting(page, accessUrl);
+			await minimizeStream(page);
+			await page.waitForTimeout(500);
+
+			// Record the default minimized size
+			const defaultBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
+			expect(defaultBox).not.toBeNull();
+
+			// Resize to a larger size
+			await resizeStream(page, 'resize-se', 100, 56);
+			await page.waitForTimeout(300);
+
+			const resizedBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
+			expect(resizedBox!.width).toBeGreaterThan(defaultBox!.width + 50);
+
+			// Maximize then re-minimize
+			await maximizeStream(page);
+			await page.waitForTimeout(800);
+			await minimizeStream(page);
+			await page.waitForTimeout(500);
+
+			// Size should be back to default (~230×130)
+			const resetBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
+			expect(resetBox).not.toBeNull();
+			expect(Math.abs(resetBox!.width - defaultBox!.width)).toBeLessThan(20);
+			expect(Math.abs(resetBox!.height - defaultBox!.height)).toBeLessThan(20);
 
 			await page.close();
 		});

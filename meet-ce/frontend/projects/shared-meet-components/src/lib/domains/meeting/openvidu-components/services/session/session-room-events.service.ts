@@ -88,6 +88,10 @@ export class SessionRoomEventsService {
 	private subscribeToParticipantConnected(room: Room) {
 		room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
 			this.participantService.addRemoteParticipant(participant);
+			// Auto-minimize the local video the first time a remote participant joins.
+			if (this.participantService.remoteParticipants().length === 1) {
+				this.participantService.minimizeLocalCameraVideo();
+			}
 		});
 	}
 
@@ -171,6 +175,9 @@ export class SessionRoomEventsService {
 	private subscribeToParticipantDisconnected(room: Room) {
 		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
 			this.participantService.removeRemoteParticipant(participant.sid);
+			if (this.participantService.remoteParticipants().length === 0) {
+				this.participantService.maximizeLocalCameraVideo();
+			}
 		});
 	}
 

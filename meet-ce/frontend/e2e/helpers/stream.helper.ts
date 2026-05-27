@@ -340,6 +340,25 @@ export const maximizeStream = async (page: Page): Promise<void> => {
 };
 
 /**
+ * Drags a resize handle on the minimized local video by the given pixel delta.
+ * {@link handleClass} should be one of: resize-se, resize-sw, resize-ne, resize-nw.
+ */
+export const resizeStream = async (page: Page, handleClass: string, deltaX: number, deltaY: number): Promise<void> => {
+	const handle = page.locator(`.OV_minimized .resize-handle.${handleClass}`).first();
+	await expect(handle).toBeVisible({ timeout: 5_000 });
+	const box = await handle.boundingBox();
+
+	if (!box) throw new Error(`Resize handle .${handleClass} not found`);
+
+	const startX = box.x + box.width / 2;
+	const startY = box.y + box.height / 2;
+	await page.mouse.move(startX, startY);
+	await page.mouse.down();
+	await page.mouse.move(startX + deltaX, startY + deltaY, { steps: 10 });
+	await page.mouse.up();
+};
+
+/**
  * Drags a stream element to a new viewport position.
  */
 export const dragStream = async (page: Page, selector: string, targetX: number, targetY: number): Promise<void> => {
