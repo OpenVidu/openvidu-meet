@@ -622,13 +622,20 @@ start() {
     exit 1
   fi
 
+  if [ "$SKIP_BUILD" != true ]; then
+    echo -e "${BLUE}Building backend...${NC}"
+    install_dependencies
+    pnpm run build:typings
+    pnpm run build:backend
+  fi
+
   case "$MODE" in
     prod)
-      echo -e "${BLUE}Building and starting in production mode...${NC}"
+      echo -e "${BLUE}Starting in production mode...${NC}"
       NODE_ENV=production node meet-ce/backend/dist/src/server.js
       ;;
     ci)
-      echo -e "${BLUE}Building and starting in CI mode...${NC}"
+      echo -e "${BLUE}Starting in CI mode...${NC}"
       NODE_ENV=ci node meet-ce/backend/dist/src/server.js
       ;;
   esac
