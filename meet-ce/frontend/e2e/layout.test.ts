@@ -635,7 +635,7 @@ test.describe('Layout E2E Tests', () => {
 
 				try {
 					// Wait for both remotes to be live before adjusting the slider
-					await waitForRemoteStream(pageA, 2, { audioCount: 1 });
+					await waitForRemoteStream(pageA, 2, { audioCount: 2});
 
 					// Set limit to 1 so the indicator appears in topbar mode initially
 					await setSmartMosaicSliderValue(pageA, 1);
