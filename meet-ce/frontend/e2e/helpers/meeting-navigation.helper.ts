@@ -117,13 +117,23 @@ export const openLobby = async (page: Page, accessUrl: string, timeoutMs = 15_00
 /**
  * Clicks the leave button (and the secondary confirmation if it appears) and
  * waits until the meeting layout is removed from the DOM.
+ *
+ * If a sidenav panel is open, it is closed first — the panel uses
+ * fixedInViewport which causes it to cover the toolbar leave button.
  */
 export const leaveMeeting = async (page: Page, timeoutMs = 10_000): Promise<void> => {
+	const panelCloseButton = page.locator('.panel-close-button').first();
+
+	if (await panelCloseButton.isVisible()) {
+		await panelCloseButton.click();
+		await expect(page.locator('.sidenav-menu')).not.toBeVisible({ timeout: 5_000 });
+	}
+
 	await page.locator('#leave-btn').click();
 
 	const leaveOption = page.locator('#leave-option');
 	const leaveDropdownVisible = await leaveOption
-		.waitFor({ state: 'visible', timeout: 1_000 })
+		.waitFor({ state: 'visible', timeout: 3_000 })
 		.then(() => true)
 		.catch(() => false);
 
