@@ -2,8 +2,8 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { AppContextService } from '../../../shared/services/app-context.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
+import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -26,8 +26,8 @@ export class MeetingLobbyService {
 	protected authService = inject(AuthService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected navigationService = inject(NavigationService);
-	protected appCtxService = inject(AppContextService);
-	protected wcManagerService = inject(MeetingWebComponentManagerService);
+	protected runtimeConfigService = inject(RuntimeConfigService);
+	protected wcManager = inject(MeetingWebComponentManagerService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingLobbyService');
 
@@ -215,15 +215,17 @@ export class MeetingLobbyService {
 	}
 
 	/**
-	 * Handles the back button click event and navigates accordingly
-	 * If in embedded mode, it closes the WebComponentManagerService
-	 * If the redirect URL is set, it navigates to that URL
-	 * If in standalone mode without a redirect URL, it navigates to the rooms page
+	 * Back-button handler:
+	 * - In webcomponent mode, emit `closed` so the host can unmount / follow
+	 *   the configured `leave-redirect-url`. No SPA-router navigation.
+	 * - In standalone mode, redirect to `leaveRedirectUrl` if set, otherwise
+	 *   navigate to /rooms.
 	 */
 	async goBack() {
 		try {
-			if (this.appCtxService.isEmbeddedMode()) {
-				this.wcManagerService.close();
+			if (this.runtimeConfigService.isWebcomponentMode()) {
+				this.wcManager.emitClosedEvent();
+				return;
 			}
 
 			const redirectTo = this.navigationService.getLeaveRedirectURL();
@@ -233,7 +235,7 @@ export class MeetingLobbyService {
 				return;
 			}
 
-			if (this.appCtxService.isStandaloneMode()) {
+			if (!this.runtimeConfigService.isWebcomponentMode()) {
 				// Navigate to rooms page
 				await this.navigationService.navigateTo('/rooms');
 			}
@@ -280,7 +282,7 @@ export class MeetingLobbyService {
 	 * Sets the back button text based on the application mode and user authentication
 	 */
 	protected async setBackButtonText(): Promise<void> {
-		const isStandaloneMode = this.appCtxService.isStandaloneMode();
+		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
 		const redirection = this.navigationService.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 

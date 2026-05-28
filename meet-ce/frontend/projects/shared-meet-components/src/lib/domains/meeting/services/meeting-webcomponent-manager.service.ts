@@ -1,176 +1,179 @@
-import { effect, inject, Injectable } from '@angular/core';
-import {
-    WebComponentCommand,
-    WebComponentEvent,
-    WebComponentInboundCommandMessage,
-    WebComponentOutboundEventMessage
-} from '@openvidu-meet/typings';
-import { AppContextService } from '../../../shared/services/app-context.service';
+import { inject, Injectable, signal } from '@angular/core';
+import { LeftEventReason } from '@openvidu-meet/typings';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService, OpenViduService } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingService } from './meeting.service';
 
 /**
- * Service to manage the commands from OpenVidu Meet WebComponent/Iframe.
- * This service listens for messages from the iframe and processes them.
- * It also sends messages to the iframe.
+ * Payload for the `joined` event surfaced to the webcomponent host.
+ */
+export interface MeetingJoinedEventDetail {
+	roomId: string;
+	participantIdentity: string;
+}
+
+/**
+ * Payload for the `left` event surfaced to the webcomponent host. Carries the
+ * precise {@link LeftEventReason} so hosts can distinguish voluntary leaves
+ * from network drops, kicks, server shutdowns, etc.
+ */
+export interface MeetingLeftEventDetail {
+	roomId: string;
+	participantIdentity: string;
+	reason: LeftEventReason;
+}
+
+/**
+ * Payload for the `closed` event surfaced to the webcomponent host. Empty by
+ * contract — `closed` is a pure lifecycle signal: the WC has finished its
+ * post-meeting/post-recording flow and the host can unmount the element or
+ * follow the configured leave-redirect URL.
+ *
+ * Internally we carry a monotonically-increasing nonce so consecutive
+ * `emitClosedEvent()` calls always produce a new signal reference (the
+ * payload itself has no observable fields).
+ */
+export interface MeetingClosedEventDetail {
+	/** @internal Forces signal-equality to detect each emission as a change. */
+	_nonce: number;
+}
+
+/**
+ * Adapter between the shared meeting domain logic and the Angular Elements
+ * `<openvidu-meet>` webcomponent.
+ *
+ * Direction of flow:
+ * - **Out (domain → host):** event signals (`joinedEvent`, `leftEvent`) that
+ *   the webcomponent observes and re-emits as DOM `CustomEvent`s on the
+ *   custom element.
+ * - **In (host → domain):** imperative command methods (`endMeeting()`,
+ *   `leaveRoom()`, `kickParticipant()`) that the webcomponent's public API
+ *   calls and that delegate to the appropriate domain services.
+ *
+ * This service is the single integration point between the shared library
+ * and the webcomponent shell.
  */
 @Injectable({
 	providedIn: 'root'
 })
 export class MeetingWebComponentManagerService {
-	protected meetingService = inject(MeetingService);
-	protected meetingContextService = inject(MeetingContextService);
-	protected roomMemberContextService = inject(RoomMemberContextService);
-	protected appCtxService = inject(AppContextService);
-	protected openviduService = inject(OpenViduService);
-	protected loggerService = inject(LoggerService);
-	protected log = this.loggerService.get('OpenVidu Meet - WebComponentManagerService');
+	private readonly meetingService = inject(MeetingService);
+	private readonly meetingContextService = inject(MeetingContextService);
+	private readonly roomMemberContextService = inject(RoomMemberContextService);
+	private readonly openviduService = inject(OpenViduService);
+	private readonly log = inject(LoggerService).get('WebComponentManagerService');
 
-	protected isInitialized = false;
-	protected parentDomain: string = '';
-	protected boundHandleMessage: (event: MessageEvent) => Promise<void>;
+	private readonly _joinedEvent = signal<MeetingJoinedEventDetail | null>(null);
+	private readonly _leftEvent = signal<MeetingLeftEventDetail | null>(null);
+	private readonly _closedEvent = signal<MeetingClosedEventDetail | null>(null);
+	private _closedNonce = 0;
 
-	constructor() {
-		this.boundHandleMessage = this.handleMessage.bind(this);
-		effect(() => {
-			if (this.appCtxService.isEmbeddedMode()) {
-				this.initialize();
-			}
-		});
+	/**
+	 * Last `joined` payload, or `null` if the local participant has not joined
+	 * yet in this session. The webcomponent observes this and dispatches the
+	 * public `joined` DOM event. A new object reference is allocated on every
+	 * emit so re-joins with identical room/identity still trigger the host
+	 * effect.
+	 */
+	readonly joinedEvent = this._joinedEvent.asReadonly();
+
+	/**
+	 * Last `left` payload, or `null` if no leave has occurred yet in this
+	 * session.
+	 */
+	readonly leftEvent = this._leftEvent.asReadonly();
+
+	/**
+	 * Last `closed` payload, or `null` until the WC has finished its
+	 * post-meeting flow. Re-emissions yield a fresh reference even though the
+	 * public payload is empty.
+	 */
+	readonly closedEvent = this._closedEvent.asReadonly();
+
+	// ── Event emitters (domain → host) ─────────────────────────────────────
+
+	emitJoinedEvent(detail: MeetingJoinedEventDetail): void {
+		this.log.d('Emitting joined event', detail);
+		this._joinedEvent.set({ ...detail });
 	}
 
-	initialize() {
-		if (this.isInitialized) return;
-
-		this.log.d('Initializing service...');
-		this.isInitialized = true;
-		this.startCommandsListener();
-
-		// Send READY event to parent
-		this.sendMessageToParent(
-			{
-				event: WebComponentEvent.READY,
-				payload: {}
-			},
-			'*'
-		);
+	emitLeftEvent(detail: MeetingLeftEventDetail): void {
+		this.log.d('Emitting left event', detail);
+		this._leftEvent.set({ ...detail });
 	}
 
-	close() {
-		if (!this.isInitialized) return;
-
-		this.log.d('Closing service...');
-		this.stopCommandsListener();
-
-		// Send CLOSED event to parent
-		this.sendMessageToParent({
-			event: WebComponentEvent.CLOSED,
-			payload: {}
-		});
-		this.isInitialized = false;
+	emitClosedEvent(): void {
+		this.log.d('Emitting closed event');
+		this._closedEvent.set({ _nonce: ++this._closedNonce });
 	}
 
-	protected startCommandsListener() {
-		// Listen for messages from the iframe
-		window.addEventListener('message', this.boundHandleMessage);
-		this.log.d('Started commands listener');
-	}
+	// ── Command methods (host → domain) ────────────────────────────────────
 
-	protected stopCommandsListener() {
-		window.removeEventListener('message', this.boundHandleMessage);
-		this.log.d('Stopped commands listener');
-	}
-
-	sendMessageToParent(event: WebComponentOutboundEventMessage, targetOrigin: string = this.parentDomain) {
-		if (!this.isInitialized) return;
-
-		this.log.d('Sending message to parent:', event);
-		window.parent.postMessage(event, targetOrigin);
-	}
-
-	protected async handleMessage(event: MessageEvent): Promise<void> {
-		const message: WebComponentInboundCommandMessage = event.data;
-		const { command, payload } = message;
-
-		// If parent domain is not set, only accept INITIALIZE command to set the parent domain
-		if (!this.parentDomain) {
-			if (command === WebComponentCommand.INITIALIZE) {
-				if (!payload || !('domain' in payload)) {
-					console.error('Parent domain not provided in message payload');
-					return;
-				}
-				this.log.d(`Parent domain set: ${event.origin}`);
-				this.parentDomain = payload['domain'];
-			}
+	/**
+	 * Ends the meeting for all participants. Requires the local participant
+	 * to hold the `canEndMeeting` permission; otherwise the call is a no-op.
+	 */
+	async endMeeting(): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('canEndMeeting')) {
+			this.log.w('endMeeting() called but local participant lacks canEndMeeting permission');
 			return;
 		}
 
-		// For security, only accept messages from the parent domain
-		if (event.origin !== this.parentDomain) {
-			console.warn(`Untrusted origin: ${event.origin}`);
+		const roomId = this.meetingContextService.roomId();
+		if (!roomId) {
+			this.log.w('endMeeting() called but room id is undefined');
 			return;
 		}
 
-		// Check if participant is connected to room before processing command
-		if (!this.openviduService.isRoomConnected()) {
-			this.log.w('Received command but participant is not connected to the room');
+		try {
+			this.log.d(`Ending meeting ${roomId}...`);
+			await this.meetingService.endMeeting(roomId);
+		} catch (error) {
+			this.log.e('Error ending meeting:', error);
+		}
+	}
+
+	/**
+	 * Disconnects the local participant from the current room. Voluntary
+	 * leave; surfaces as `LeftEventReason.VOLUNTARY_LEAVE` to the host.
+	 */
+	async leaveRoom(): Promise<void> {
+		try {
+			this.log.d('Leaving room...');
+			await this.openviduService.disconnectRoom();
+		} catch (error) {
+			this.log.e('Error leaving room:', error);
+		}
+	}
+
+	/**
+	 * Removes the named participant from the meeting. Requires the local
+	 * participant to hold the `canKickParticipants` permission; otherwise the
+	 * call is a no-op.
+	 */
+	async kickParticipant(participantIdentity: string): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('canKickParticipants')) {
+			this.log.w('kickParticipant() called but local participant lacks canKickParticipants permission');
 			return;
 		}
 
-		console.debug('Message received from parent:', event.data);
-		switch (command) {
-			case WebComponentCommand.END_MEETING:
-				// Only participants with canEndMeeting permission can end the meeting
-				if (!this.roomMemberContextService.hasPermission('canEndMeeting')) {
-					this.log.w(
-						'End meeting command received but participant does not have permissions to end the meeting'
-					);
-					return;
-				}
+		if (!participantIdentity) {
+			this.log.w('kickParticipant() called without a participant identity');
+			return;
+		}
 
-				try {
-					this.log.d('Ending meeting...');
-					const roomId = this.meetingContextService.roomId();
-					if (!roomId) throw new Error('Room ID is undefined while trying to end meeting');
-					await this.meetingService.endMeeting(roomId);
-				} catch (error) {
-					this.log.e('Error ending meeting:', error);
-				}
+		const roomId = this.meetingContextService.roomId();
+		if (!roomId) {
+			this.log.w('kickParticipant() called but room id is undefined');
+			return;
+		}
 
-				break;
-			case WebComponentCommand.LEAVE_ROOM:
-				await this.openviduService.disconnectRoom();
-				break;
-			case WebComponentCommand.KICK_PARTICIPANT:
-				// Only participants with canKickParticipants permission can kick participants
-				if (!this.roomMemberContextService.hasPermission('canKickParticipants')) {
-					this.log.w(
-						'Kick participant command received but participant does not have permissions to kick participants'
-					);
-					return;
-				}
-
-				if (!payload || !('participantIdentity' in payload)) {
-					this.log.e('Kick participant command received without participant identity');
-					return;
-				}
-
-				const participantIdentity = payload['participantIdentity'];
-
-				try {
-					this.log.d(`Kicking participant '${participantIdentity}' from the meeting...`);
-					const roomId = this.meetingContextService.roomId();
-					if (!roomId) throw new Error('Room ID is undefined while trying to kick participant');
-					await this.meetingService.kickParticipant(roomId, participantIdentity);
-				} catch (error) {
-					this.log.e(`Error kicking participant '${participantIdentity}':`, error);
-				}
-
-				break;
-			default:
-				break;
+		try {
+			this.log.d(`Kicking participant ${participantIdentity} from meeting ${roomId}...`);
+			await this.meetingService.kickParticipant(roomId, participantIdentity);
+		} catch (error) {
+			this.log.e(`Error kicking participant ${participantIdentity}:`, error);
 		}
 	}
 }

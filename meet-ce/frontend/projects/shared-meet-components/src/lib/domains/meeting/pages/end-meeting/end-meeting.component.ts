@@ -1,12 +1,12 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { LeftEventReason } from '@openvidu-meet/typings';
-import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { MeetingWebComponentManagerService } from '../../services/meeting-webcomponent-manager.service';
 
@@ -24,12 +24,13 @@ export class EndMeetingComponent implements OnInit {
 	showBackButton = signal(true);
 	backButtonText = signal('Back');
 
+	protected readonly runtimeConfigService = inject(RuntimeConfigService);
+	protected readonly wcManager = inject(MeetingWebComponentManagerService);
+
 	constructor(
 		private route: ActivatedRoute,
 		protected authService: AuthService,
-		protected navService: NavigationService,
-		protected appCtxService: AppContextService,
-		protected wcManagerService: MeetingWebComponentManagerService
+		protected navService: NavigationService
 	) {}
 
 	ngOnInit() {
@@ -98,7 +99,7 @@ export class EndMeetingComponent implements OnInit {
 	 * Sets the back button text based on the application mode and user authentication
 	 */
 	private async setBackButtonText() {
-		const isStandaloneMode = this.appCtxService.isStandaloneMode();
+		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
 		const redirection = this.navService.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
@@ -114,14 +115,17 @@ export class EndMeetingComponent implements OnInit {
 	}
 
 	/**
-	 * Handles the back button click event and navigates accordingly
-	 * If in embedded mode, it closes the WebComponentManagerService
-	 * If the redirect URL is set, it navigates to that URL
-	 * If in standalone mode without a redirect URL, it navigates to the rooms page
+	 * Back-button handler:
+	 * - In webcomponent mode, emit `closed` so the host can unmount / follow
+	 *   the configured `leave-redirect-url`. No SPA-router navigation (the WC
+	 *   has no router).
+	 * - In standalone mode, redirect to `leaveRedirectUrl` if set, otherwise
+	 *   navigate to /rooms.
 	 */
 	async goBack() {
-		if (this.appCtxService.isEmbeddedMode()) {
-			this.wcManagerService.close();
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcManager.emitClosedEvent();
+			return;
 		}
 
 		const redirectTo = this.navService.getLeaveRedirectURL();
@@ -131,7 +135,7 @@ export class EndMeetingComponent implements OnInit {
 			return;
 		}
 
-		if (this.appCtxService.isStandaloneMode()) {
+		if (!this.runtimeConfigService.isWebcomponentMode()) {
 			// Navigate to the rooms page
 			await this.navService.navigateTo('/rooms', undefined, true);
 		}

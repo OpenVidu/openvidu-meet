@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Params, Router, UrlTree } from '@angular/router';
 import { NavigationErrorReason } from '../models/navigation.model';
-import { AppContextService } from './app-context.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
 
@@ -14,7 +13,6 @@ export class NavigationService {
 	constructor(
 		private router: Router,
 		private sessionStorageService: SessionStorageService,
-		private appCtxService: AppContextService,
 		private runtimeConfigService: RuntimeConfigService
 	) {}
 
@@ -93,7 +91,7 @@ export class NavigationService {
 	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
 	 */
 	handleLeaveRedirectUrl(leaveRedirectUrl: string | undefined) {
-		const isEmbeddedMode = this.appCtxService.isEmbeddedMode();
+		const isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode();
 
 		// Explicit valid URL provided - use as is
 		if (leaveRedirectUrl && this.isValidUrl(leaveRedirectUrl)) {
@@ -101,16 +99,17 @@ export class NavigationService {
 			return;
 		}
 
-		// Absolute path provided in embedded mode - construct full URL based on parent origin
-		if (isEmbeddedMode && leaveRedirectUrl?.startsWith('/')) {
-			const parentUrl = document.referrer;
-			const parentOrigin = new URL(parentUrl).origin;
-			this.setLeaveRedirectUrl(parentOrigin + leaveRedirectUrl);
+		// Relative path provided while embedded as a webcomponent — resolve it
+		// against the host page's origin. The Angular Elements element runs in
+		// the host's window, so `window.location.origin` IS the host origin
+		// (in the legacy iframe model this was reconstructed via document.referrer).
+		if (isWebcomponentMode && leaveRedirectUrl?.startsWith('/')) {
+			this.setLeaveRedirectUrl(window.location.origin + leaveRedirectUrl);
 			return;
 		}
 
-		// Auto-detect from referrer (only if no explicit URL provided and not embedded)
-		if (!leaveRedirectUrl && !isEmbeddedMode) {
+		// Auto-detect from referrer (only when running standalone and no explicit URL provided)
+		if (!leaveRedirectUrl && !isWebcomponentMode) {
 			const autoRedirectUrl = this.getAutoRedirectUrl();
 			if (autoRedirectUrl) {
 				this.setLeaveRedirectUrl(autoRedirectUrl);
@@ -177,13 +176,10 @@ export class NavigationService {
 			return;
 		}
 
-		const isEmbeddedMode = this.appCtxService.isEmbeddedMode();
-		if (isEmbeddedMode) {
-			// Change the top window location if in embedded mode
-			window.top!.location.href = url;
-		} else {
-			window.location.href = url;
-		}
+		// The Angular Elements webcomponent runs in the host's window, so
+		// `window` already refers to the top-level document. No iframe-era
+		// `window.top` indirection needed.
+		window.location.href = url;
 	}
 
 	/**

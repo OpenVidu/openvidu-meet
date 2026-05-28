@@ -8,13 +8,12 @@ import {
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
 	MeetRoomMemberUIBadge,
-	MeetSignalType,
-	WebComponentEvent,
-	WebComponentOutboundEventMessage
+	MeetSignalType
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../shared/services/sound.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -49,6 +48,7 @@ export class MeetingEventHandlerService {
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
+	protected runtimeConfigService = inject(RuntimeConfigService);
 
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
@@ -108,28 +108,24 @@ export class MeetingEventHandlerService {
 	}
 
 	/**
-	 * Handles participant connected event.
-	 * Sends JOINED event to parent window (for web component integration).
+	 * Handles participant connected event by forwarding it to the
+	 * webcomponent adapter so the host receives a `joined` DOM event.
 	 *
 	 * @param event Participant model from OpenVidu
 	 */
 	onParticipantConnected = (event: ParticipantModel): void => {
-		const message: WebComponentOutboundEventMessage<WebComponentEvent.JOINED> = {
-			event: WebComponentEvent.JOINED,
-			payload: {
-				roomId: event.getProperties().room?.name || '',
-				participantIdentity: event.identity
-			}
-		};
-		this.wcManagerService.sendMessageToParent(message);
+		this.wcManagerService.emitJoinedEvent({
+			roomId: event.getProperties().room?.name || '',
+			participantIdentity: event.identity
+		});
 	};
 
 	/**
-	 * Handles participant left event.
-	 * - Maps technical reason to user-friendly reason
-	 * - Sends LEFT event to parent window
-	 * - Clears participant identity and token from RoomMemberContextService
-	 * - Navigates to disconnected page
+	 * Handles participant left event:
+	 * - Maps technical reason to a user-friendly {@link LeftEventReason}.
+	 * - Emits a `left` event to the webcomponent host via the adapter.
+	 * - Clears room member and meeting context state.
+	 * - In standalone mode, navigates to the `/disconnected` page.
 	 *
 	 * @param event Participant left event from OpenVidu
 	 */
@@ -142,22 +138,22 @@ export class MeetingEventHandlerService {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
-		// Send LEFT event to parent window
-		const message: WebComponentOutboundEventMessage<WebComponentEvent.LEFT> = {
-			event: WebComponentEvent.LEFT,
-			payload: {
-				roomId: event.roomName,
-				participantIdentity: event.participantName,
-				reason: leftReason
-			}
-		};
-		this.wcManagerService.sendMessageToParent(message);
+		this.wcManagerService.emitLeftEvent({
+			roomId: event.roomName,
+			participantIdentity: event.participantName,
+			reason: leftReason
+		});
 
 		// Clear room member and meeting context
 		this.roomMemberContextService.clearContext();
 		this.meetingContext.clearContext();
 
-		// Navigate to disconnected page
+		// In webcomponent mode the host page owns routing; the LEFT event above
+		// is the integration point. The standalone app navigates to the disconnected page.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			return;
+		}
+
 		await this.navigationService.navigateTo('/disconnected', { reason: leftReason }, true);
 	};
 
