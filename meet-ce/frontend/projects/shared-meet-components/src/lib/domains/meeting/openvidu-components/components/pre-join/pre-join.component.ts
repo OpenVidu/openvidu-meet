@@ -78,10 +78,9 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	 */
 	readonly showCameraButton = this.libService.cameraButtonSignal;
 	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
+	readonly showBackgroundsButton = this.libService.backgroundEffectsButtonSignal;
 	readonly showLogo = this.libService.displayLogoSignal;
 
-	// Future feature preparation
-	backgroundEffectEnabled: boolean = true; // Enable virtual backgrounds by default
 	readonly showBackgroundPanel = signal(false);
 
 	videoTrack: LocalTrack | undefined;
@@ -272,11 +271,14 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 				this.isVideoEnabled.set(this.openviduService.isVideoTrackEnabled());
 
 				// Restore previously selected virtual background in prejoin when possible.
+				// Skip restore when the user is not allowed to use virtual backgrounds.
 				// Keep prejoin usable even if restore fails.
-				try {
-					await this.virtualBackgroundService.applyBackgroundFromStorage();
-				} catch (error) {
-					this.log.w('Failed to restore virtual background from storage in prejoin:', error);
+				if (this.showBackgroundsButton()) {
+					try {
+						await this.virtualBackgroundService.applyBackgroundFromStorage();
+					} catch (error) {
+						this.log.w('Failed to restore virtual background from storage in prejoin:', error);
+					}
 				}
 
 				return; // Success, exit retry loop

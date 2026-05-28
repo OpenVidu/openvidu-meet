@@ -67,7 +67,7 @@
 									</div>
 
 									<!-- Virtual Background Button -->
-									@if (backgroundEffectEnabled && hasVideoDevices()) {
+									@if (showBackgroundsButton() && hasVideoDevices()) {
 										<div class="background-control">
 											<button
 												mat-flat-button
