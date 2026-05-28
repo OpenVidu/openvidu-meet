@@ -20,6 +20,14 @@ export interface OpenViduMeetLeftDetail {
 	reason: string;
 }
 
+/**
+ * Fired after the WC's post-meeting/post-recording UI has finished and the
+ * host can safely unmount the element (or perform the `leave-redirect-url`
+ * redirect). Payload is intentionally empty.
+ */
+// eslint-disable-next-line @typescript-eslint/no-empty-interface
+export interface OpenViduMeetClosedDetail {}
+
 export type OpenViduMeetErrorReason =
 	| 'invalid-config'
 	| 'invalid-room-url'

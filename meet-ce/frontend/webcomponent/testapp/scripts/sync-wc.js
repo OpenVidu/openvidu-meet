@@ -1,14 +1,14 @@
 /**
  * sync-wc.js
  *
- * Copies the generated API artifacts from the webcomponent-new build into the
+ * Copies the generated API artifacts from the webcomponent build into the
  * testapp's src/ tree so that Angular's build can process them within the
  * project root. Also copies the WC bundle into public/ for the dev server.
  *
  * Run automatically via:  pnpm run start | serve | build
  * Run manually:           node scripts/sync-wc.js
  *
- * Source:  ../dist/   (produced by `pnpm run build:wc` in webcomponent-new)
+ * Source:  ../dist/   (produced by `pnpm run build:wc` in webcomponent)
  * Destination:
  *   public/openvidu-meet-wc.js                               ← served as /openvidu-meet-wc.js
  *   src/openvidu-meet/generated/types/openvidu-meet.d.ts

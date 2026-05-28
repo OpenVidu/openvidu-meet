@@ -20,7 +20,12 @@ import {
 	ThemeService,
 	ViewRecordingComponent
 } from '@openvidu-meet/shared-components';
-import type { OpenViduMeetErrorDetail, OpenViduMeetJoinedDetail, OpenViduMeetLeftDetail } from './api/events';
+import type {
+	OpenViduMeetClosedDetail,
+	OpenViduMeetErrorDetail,
+	OpenViduMeetJoinedDetail,
+	OpenViduMeetLeftDetail
+} from './api/events';
 import { ModeCoordinatorService } from './modes/mode-coordinator.service';
 import { resolveMode, type Mode } from './modes/mode';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
@@ -30,6 +35,7 @@ import { computeServerUrl, lastPathSegment, queryParam } from './utils/url';
 // Re-export the public event detail types under the App module so existing
 // consumers (and the auto-generated `openvidu-meet.d.ts`) keep their imports.
 export type {
+	OpenViduMeetClosedDetail,
 	OpenViduMeetErrorDetail,
 	OpenViduMeetErrorReason,
 	OpenViduMeetJoinedDetail,
@@ -87,6 +93,7 @@ export class App {
 	// ── Web Component API: Events ──────────────────────────────────────────
 	readonly joined = output<OpenViduMeetJoinedDetail>();
 	readonly left = output<OpenViduMeetLeftDetail>();
+	readonly closed = output<OpenViduMeetClosedDetail>();
 	readonly error = output<OpenViduMeetErrorDetail>();
 
 	// ── UI state ───────────────────────────────────────────────────────────
@@ -226,6 +233,17 @@ export class App {
 			participantIdentity: detail.participantIdentity,
 			reason: detail.reason
 		});
+	});
+
+	/**
+	 * Emits `closed` after the WC's post-meeting / post-recording flow is done
+	 * (user dismissed end-meeting/error/recording-view, or the failed lobby).
+	 * Hosts use this to unmount the element or follow `leave-redirect-url`.
+	 */
+	private readonly _closedEffect = effect(() => {
+		if (!this.wcManager.closedEvent()) return;
+
+		this.closed.emit({});
 	});
 
 	// ── Web Component API: Imperative methods ──────────────────────────────

@@ -3,22 +3,22 @@ import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { extractParams } from '../../../shared/utils/url-params.utils';
-import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RecordingEntryService } from '../services/recording-entry.service';
+import { RoomRecordingsEntryService } from '../services/room-recordings-entry.service';
 
+/**
+ * Adapter guard: extracts room recordings params from the route + session
+ * storage fallback and delegates context-seeding to
+ * {@link RoomRecordingsEntryService.prepare}.
+ */
 export const extractRoomRecordingsParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-	const meetingContextService = inject(MeetingContextService);
+	const roomRecordingsEntry = inject(RoomRecordingsEntryService);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomId, secret: querySecret } = extractParams(route);
-	const secret = querySecret || sessionStorageService.getRoomSecret();
+	const secret = querySecret || sessionStorageService.getRoomSecret() || undefined;
 
-	// Save parameters in the meeting context service
-	meetingContextService.setRoomId(roomId);
-	if (secret) {
-		meetingContextService.setRoomSecret(secret, true);
-	}
-
+	roomRecordingsEntry.prepare({ roomId, secret });
 	return true;
 };
 

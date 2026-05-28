@@ -6,7 +6,7 @@ This package provides the `<openvidu-meet>` custom element built with Angular El
 ## Architecture
 
 ```
-webcomponent-new/
+webcomponent/
 ├── contracts/
 │   └── openvidu-meet.contract.js   ← Single source of truth for the public API
 ├── scripts/

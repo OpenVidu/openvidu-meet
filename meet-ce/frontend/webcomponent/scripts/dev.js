@@ -9,7 +9,7 @@
  *   5. Starts browser-sync as a proxy on port 4200, watching the WC bundle.
  *      After every rebuild browser-sync triggers a full browser reload.
  *
- * Usage (from webcomponent-new/):
+ * Usage (from webcomponent/):
  *   pnpm run dev
  *
  * URLs:

@@ -1,28 +1,26 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
 import { NavigationService } from '../../../shared/services';
-import { RoomAccessService } from '../../rooms/services/room-access.service';
 import { RecordingEntryService } from '../services/recording-entry.service';
+import { RoomRecordingsEntryService } from '../services/room-recordings-entry.service';
 
 /**
- * Guard to validate the access to recordings of a room by generating a room member token and checking permissions.
+ * Adapter guard: delegates the room-recordings permission check to
+ * {@link RoomRecordingsEntryService.validate} and maps the outcome to a
+ * {@link CanActivateFn} return value.
  */
 export const validateRoomRecordingsAccessGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
 	_state: RouterStateSnapshot
 ) => {
-	const roomAccessService = inject(RoomAccessService);
+	const roomRecordingsEntry = inject(RoomRecordingsEntryService);
 	const navigationService = inject(NavigationService);
 
-	const result = await roomAccessService.validateAccess({
-		requireRecordingsPermission: true
-	});
-
-	if (result.allowed) {
+	const outcome = await roomRecordingsEntry.validate();
+	if (outcome.kind === 'ready') {
 		return true;
 	}
-
-	return navigationService.redirectToErrorPage(result.reason!);
+	return navigationService.redirectToErrorPage(outcome.reason);
 };
 
 /**

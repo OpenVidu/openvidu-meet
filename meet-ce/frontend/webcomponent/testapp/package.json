@@ -1,5 +1,5 @@
 {
-  "name": "@openvidu-meet/webcomponent-new-testapp",
+  "name": "@openvidu-meet/webcomponent-testapp",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -8,7 +8,7 @@
     "start": "pnpm run build:wc && pnpm run sync:wc && ng serve",
     "serve": "pnpm run sync:wc && ng serve",
     "build": "pnpm run sync:wc && ng build",
-    "build:wc": "pnpm --filter @openvidu-meet/webcomponent-new run build:wc:bundle",
+    "build:wc": "pnpm --filter @openvidu-meet/webcomponent run build:wc:bundle",
     "test": "ng test"
   },
   "dependencies": {
