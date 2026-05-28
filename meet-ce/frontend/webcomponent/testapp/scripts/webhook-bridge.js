@@ -4,7 +4,7 @@
  * Tiny Express + Socket.IO server that receives webhook POSTs from the Meet
  * backend and broadcasts them to any browser connected via Socket.IO. The
  * Angular dev server proxies `/webhook` and `/socket.io` to this process (see
- * `proxy.conf.json`), so from the backend's and the browser's perspective
+ * `proxy.conf.js`), so from the backend's and the browser's perspective
  * everything still happens on `MEET_TESTAPP_URL` (default 5080).
  *
  * Pattern is a straight port of the legacy testapp:

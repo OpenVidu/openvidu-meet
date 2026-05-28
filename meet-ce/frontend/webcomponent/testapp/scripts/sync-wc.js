@@ -3,14 +3,18 @@
  *
  * Copies the generated API artifacts from the webcomponent build into the
  * testapp's src/ tree so that Angular's build can process them within the
- * project root. Also copies the WC bundle into public/ for the dev server.
+ * project root.
+ *
+ * NOTE: the WC *bundle* itself is NOT copied here. It is served by the backend
+ * (deployed via webcomponent/scripts/deploy-to-backend.js) and the testapp
+ * loads it from a same-origin path proxied to the backend — see
+ * testapp/src/index.html + proxy.conf.js.
  *
  * Run automatically via:  pnpm run start | serve | build
  * Run manually:           node scripts/sync-wc.js
  *
  * Source:  ../dist/   (produced by `pnpm run build:wc` in webcomponent)
  * Destination:
- *   public/openvidu-meet-wc.js                               ← served as /openvidu-meet-wc.js
  *   src/openvidu-meet/generated/types/openvidu-meet.d.ts
  *   src/openvidu-meet/generated/wrappers/angular/openvidu-meet-angular.ts
  *   src/openvidu-meet/generated/wrappers/angular/index.ts
@@ -23,10 +27,6 @@ const root = path.resolve(__dirname, '..');
 const wcDist = path.resolve(root, '..', 'dist');
 
 const copies = [
-  {
-    from: path.join(wcDist, 'openvidu-meet-wc.js'),
-    to: path.join(root, 'public', 'openvidu-meet-wc.js'),
-  },
   {
     from: path.join(wcDist, 'types', 'openvidu-meet.d.ts'),
     to: path.join(root, 'src', 'openvidu-meet', 'generated', 'types', 'openvidu-meet.d.ts'),

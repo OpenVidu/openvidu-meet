@@ -17,9 +17,9 @@ import { getRoom } from './meet-api.helper';
 // - Imperative commands (endMeeting / leaveRoom / kickParticipant) are
 //   invoked directly on the element via `page.evaluate`.
 //
-// The Angular testapp on `MEET_TESTAPP_URL` is used only as a static file
-// server for the WC bundle (it syncs `openvidu-meet-wc.js` from the WC build
-// output into its public folder).
+// The Angular testapp on `MEET_TESTAPP_URL` is just the host page: it loads
+// the `<openvidu-meet>` bundle from the backend (same-origin `/openvidu-meet.js`,
+// proxied to `<MEET_API_URL>/v1/openvidu-meet.js` by `testapp/proxy.conf.js`).
 // ────────────────────────────────────────────────────────────────────────────
 
 const testappOrigin = (): string => MEET_TESTAPP_URL.replace(/\/$/, '');

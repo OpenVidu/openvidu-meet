@@ -76,6 +76,7 @@ function runPostBuild() {
   const steps = [
     { label: 'concat-wc.js', cmd: 'node', args: [path.join(rootDir, 'scripts', 'concat-wc.js')], cwd: rootDir },
     { label: 'generate-api.js', cmd: 'node', args: [path.join(rootDir, 'scripts', 'generate-api.js')], cwd: rootDir },
+    { label: 'deploy-to-backend.js', cmd: 'node', args: [path.join(rootDir, 'scripts', 'deploy-to-backend.js')], cwd: rootDir },
     { label: 'sync-wc.js', cmd: 'node', args: [path.join(testappDir, 'scripts', 'sync-wc.js')], cwd: testappDir },
   ];
 
@@ -189,7 +190,7 @@ function startBrowserSync() {
         // Prevent the browser from caching the WC bundle (no hash in filename)
         middleware: [
           function noCacheWcBundle(req, res, next) {
-            if (req.url && req.url.includes('openvidu-meet-wc.js')) {
+            if (req.url && req.url.includes('openvidu-meet.js')) {
               res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
               res.setHeader('Pragma', 'no-cache');
               res.setHeader('Expires', '0');
