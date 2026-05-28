@@ -8,6 +8,7 @@ import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_ENV, logEnvVars } from './environment.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
+import { staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
 import { analyticsRouter } from './routes/analytics.routes.js';
 import { aiAssistantRouter } from './routes/ai-assistant.routes.js';
@@ -106,7 +107,9 @@ const createApp = () => {
 	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
 	// Serve OpenVidu Meet webcomponent bundle file
-	appRouter.get('/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
+	appRouter.get('/v1/openvidu-meet.js', staticAssetLimiter, (_req: Request, res: Response) =>
+		res.sendFile(webcomponentBundlePath)
+	);
 	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
 	appRouter.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => {
 		res.type('html').send(getHtmlWithBasePath(frontendHtmlPath));

@@ -8,6 +8,7 @@ import {
 	roomMemberTokenValidator,
 	withAuth
 } from '../middlewares/auth.middleware.js';
+import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	applyRecordingListAccessFilters,
 	authorizeRecordingAccess,
@@ -76,6 +77,7 @@ recordingRouter.get(
 );
 recordingRouter.get(
 	'/:recordingId',
+	apiLimiter,
 	validateGetRecordingReq,
 	setupRecordingAuthentication,
 	authorizeRecordingAccess('canRetrieveRecordings', true),
@@ -101,6 +103,7 @@ recordingRouter.post(
 );
 recordingRouter.get(
 	'/:recordingId/media',
+	apiLimiter,
 	validateGetRecordingMediaReq,
 	setupRecordingAuthentication,
 	authorizeRecordingAccess('canRetrieveRecordings', true),

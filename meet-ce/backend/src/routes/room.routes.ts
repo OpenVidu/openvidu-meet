@@ -28,6 +28,7 @@ import {
 	validateUpdateRoomStatusReq,
 	withValidRoomId
 } from '../middlewares/request-validators/room-validator.middleware.js';
+import { tokenIssuanceLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	authorizeRoomMemberAccess,
 	authorizeRoomMemberTokenGeneration,
@@ -187,10 +188,16 @@ internalRoomRouter.use(bodyParser.json());
 
 internalRoomRouter.post(
 	'/:roomId/members/token',
+	tokenIssuanceLimiter,
 	withValidRoomId,
 	validateCreateRoomMemberTokenReq,
 	setupRoomMemberTokenAuthentication,
 	authorizeRoomMemberTokenGeneration,
 	roomMemberCtrl.generateRoomMemberToken
 );
-internalRoomRouter.post('/:roomId/members/token/refresh', withValidRoomId, roomMemberCtrl.refreshRoomMemberToken);
+internalRoomRouter.post(
+	'/:roomId/members/token/refresh',
+	tokenIssuanceLimiter,
+	withValidRoomId,
+	roomMemberCtrl.refreshRoomMemberToken
+);
