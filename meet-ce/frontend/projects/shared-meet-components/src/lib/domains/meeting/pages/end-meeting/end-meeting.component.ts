@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -18,6 +18,13 @@ import { MeetingWebComponentManagerService } from '../../services/meeting-webcom
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndMeetingComponent implements OnInit {
+	/**
+	 * Optional reason override, used when the component is rendered outside
+	 * the Angular Router (e.g. inside the Web Component, which has no
+	 * routing).
+	 */
+	readonly reason = input<string | undefined>(undefined);
+
 	disconnectedTitle = signal('You Left the Meeting');
 	disconnectReason = signal('You have successfully left the meeting');
 
@@ -39,10 +46,12 @@ export class EndMeetingComponent implements OnInit {
 	}
 
 	/**
-	 * Retrieves the disconnect reason from URL query parameters
+	 * Resolves the disconnect reason from (in order): the `reason` input, the
+	 * `reason` route query parameter. Falls back to the default title/message
+	 * if neither is set.
 	 */
 	private setDisconnectReason() {
-		const reason = this.route.snapshot.queryParams['reason'];
+		const reason = this.reason() ?? this.route.snapshot.queryParams['reason'];
 		if (reason) {
 			const { title, message } = this.mapReasonToTitleAndMessage(reason);
 			this.disconnectedTitle.set(title);
