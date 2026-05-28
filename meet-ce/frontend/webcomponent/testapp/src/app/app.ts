@@ -1,9 +1,9 @@
 import { ChangeDetectionStrategy, Component, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type {
-    OpenViduMeetClosedDetail,
-    OpenViduMeetJoinedDetail,
-    OpenViduMeetLeftDetail,
+  OpenViduMeetClosedDetail,
+  OpenViduMeetJoinedDetail,
+  OpenViduMeetLeftDetail,
 } from '@openvidu-meet-wc';
 import { OpenviduMeetComponent } from '@openvidu-meet-wc';
 
@@ -18,7 +18,7 @@ export class App {
   protected readonly meetRef = viewChild(OpenviduMeetComponent);
 
   // ── Config form (editable inputs) ──────────────────────────────────────
-  protected roomUrlInput = 'http://localhost:6080/meet/room/room-8pfi40iqh3wfish?secret=827bfd3d41';
+  protected roomUrlInput = 'http://localhost:6080/meet/room/room-6vnlh1ltf4ej3mh?secret=1d766d7734';
   protected participantNameInput = 'Test User';
   protected e2eeKeyInput = '';
   protected leaveRedirectUrlInput = '';

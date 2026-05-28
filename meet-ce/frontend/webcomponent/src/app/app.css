@@ -13,7 +13,9 @@
    so that children using height:100% (e.g. .ov-page-container) resolve
    correctly. In the main app the router outlet provides this context; in the
    webcomponent there is no router, so we must set it explicitly here. */
-app-ce-ov-meeting {
+app-ce-ov-meeting,
+ov-view-recording,
+ov-room-recordings {
   display: block;
   height: 100%;
 }

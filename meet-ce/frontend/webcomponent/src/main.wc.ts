@@ -1,6 +1,6 @@
 import { createApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
-import { setAppInjector } from './app/app.module';
+import { registerOpenViduMeetElement } from './app/custom-element/register';
 
 function ensureMaterialAssets(): void {
   if (typeof document === 'undefined') {
@@ -38,7 +38,7 @@ function bootstrapWebComponent(): void {
 
   createApplication(appConfig)
     .then((app) => {
-      setAppInjector(app.injector);
+      registerOpenViduMeetElement(app.injector);
     })
     .catch((err) => console.error(err));
 }

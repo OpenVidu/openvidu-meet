@@ -29,11 +29,24 @@ export interface OpenViduMeetClosedDetail {
 
 }
 
+/** Emitted when the component cannot proceed with the requested mode. Includes pre-flight errors (invalid inputs, access denied) and the auth-required signal for recording playback. Hosts may use `reason` to drive their own recovery flow (e.g. show a login modal on `'auth-required'`). */
+export interface OpenViduMeetErrorDetail {
+  /** Discriminator describing the kind of failure. */
+  reason: 'invalid-config' | 'invalid-room-url' | 'invalid-recording-id' | 'access-denied' | 'auth-required' | 'unknown';
+
+  /** Human-readable message that mirrors the in-component error display. */
+  message: string;
+
+  /** When reason='access-denied', the underlying typed reason from the use case (a `NavigationErrorReason` value). */
+  accessReason?: string;
+}
+
 /** Maps every public event name to its `CustomEvent.detail` type. */
 export interface OpenViduMeetElementPayloadMap {
   'joined': OpenViduMeetJoinedDetail;
   'left': OpenViduMeetLeftDetail;
   'closed': OpenViduMeetClosedDetail;
+  'error': OpenViduMeetErrorDetail;
 }
 
 /** Union of all public event names emitted by `<openvidu-meet>`. */
@@ -91,6 +104,7 @@ export interface OpenViduMeetElement extends HTMLElement, OpenViduMeetProps {
   addEventListener(type: 'joined', listener: (ev: CustomEvent<OpenViduMeetJoinedDetail>) => void, options?: boolean | AddEventListenerOptions): void;
   addEventListener(type: 'left', listener: (ev: CustomEvent<OpenViduMeetLeftDetail>) => void, options?: boolean | AddEventListenerOptions): void;
   addEventListener(type: 'closed', listener: (ev: CustomEvent<OpenViduMeetClosedDetail>) => void, options?: boolean | AddEventListenerOptions): void;
+  addEventListener(type: 'error', listener: (ev: CustomEvent<OpenViduMeetErrorDetail>) => void, options?: boolean | AddEventListenerOptions): void;
   addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
 }
 

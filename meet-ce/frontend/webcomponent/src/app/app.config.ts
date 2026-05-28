@@ -24,7 +24,7 @@ import {
 	type OpenViduComponentsConfig,
 	type ParticipantProperties
 } from '@openvidu-meet/shared-components';
-import { ShadowOverlayContainer } from './shadow-overlay-container.service.js';
+import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
 
 const ovComponentsConfig: OpenViduComponentsConfig = {
 	production: false,

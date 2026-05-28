@@ -1,0 +1,27 @@
+@if (errorMessage()) {
+<div class="ov-meet-error" role="alert">
+	<div class="ov-meet-error-icon" aria-hidden="true">⚠️</div>
+	<div class="ov-meet-error-message">{{ errorMessage() }}</div>
+</div>
+} @else {
+@switch (mode()) {
+	@case ('meeting') {
+		@if (ready()) {
+		<app-ce-ov-meeting></app-ce-ov-meeting>
+		}
+	}
+	@case ('single-recording') {
+		@if (ready()) {
+		<ov-view-recording
+			[recordingId]="recordingIdForView()"
+			[recordingSecret]="recordingSecretForView()"
+		></ov-view-recording>
+		}
+	}
+	@case ('room-recordings') {
+		@if (ready()) {
+		<ov-room-recordings [roomId]="roomIdForRecordings()"></ov-room-recordings>
+		}
+	}
+}
+}

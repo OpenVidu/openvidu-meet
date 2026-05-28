@@ -22,9 +22,36 @@
 							{
 								"glob": "**/*",
 								"input": "public"
+							},
+							{
+								"glob": "sounds/**/*",
+								"input": "../../src/assets",
+								"output": "assets"
+							},
+							{
+								"glob": "backgrounds/**/*",
+								"input": "../../src/assets",
+								"output": "assets"
+							},
+							{
+								"glob": "images/**/*",
+								"input": "../../src/assets",
+								"output": "assets"
+							},
+							{
+								"glob": "layouts/**/*",
+								"input": "../../src/assets",
+								"output": "assets"
+							},
+							{
+								"glob": "livekit-client.e2ee.worker.mjs",
+								"input": "../../../../node_modules/livekit-client/dist/",
+								"output": "assets/livekit/"
 							}
 						],
-						"styles": ["src/styles.css"]
+						"styles": [
+							"src/styles.css"
+						]
 					},
 					"configurations": {
 						"production": {
