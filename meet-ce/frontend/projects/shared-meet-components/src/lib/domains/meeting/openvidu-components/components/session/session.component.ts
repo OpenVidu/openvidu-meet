@@ -34,6 +34,7 @@ import { TemplateRegistryService } from '../../services/template/template-regist
 import { TranslateService } from '../../services/translate/translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
+import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 
 /**
@@ -99,6 +100,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly backgroundService = inject(VirtualBackgroundService);
 
 	private readonly sessionRoomEventsService = inject(SessionRoomEventsService);
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
 	readonly sidenavMenuQuery = viewChild<MatSidenav>('sidenav');
@@ -352,6 +354,11 @@ export class SessionComponent implements OnInit, OnDestroy {
 	}
 
 	private observeContainerWidth(container: MatDrawerContainer): void {
+		// In webcomponent mode keep the sidenav in SIDE mode regardless of container width.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			return;
+		}
+
 		this.sidenavResizeObserver?.disconnect();
 		const el = (container as any)._element?.nativeElement ?? (container as any)._elementRef?.nativeElement;
 		if (!el) return;
