@@ -5,8 +5,10 @@
   "scripts": {
     "ng": "ng",
     "sync:wc": "node scripts/sync-wc.js",
-    "start": "pnpm run build:wc && pnpm run sync:wc && ng serve",
-    "serve": "pnpm run sync:wc && ng serve",
+    "webhook-bridge": "node scripts/webhook-bridge.js",
+    "start": "pnpm run build:wc && pnpm run sync:wc && pnpm run serve:all",
+    "serve": "pnpm run sync:wc && pnpm run serve:all",
+    "serve:all": "concurrently -k --names ng,bridge --prefix-colors cyan,magenta \"ng serve\" \"pnpm run webhook-bridge\"",
     "build": "pnpm run sync:wc && ng build",
     "build:wc": "pnpm --filter @openvidu-meet/webcomponent run build:wc:bundle",
     "test": "ng test"
@@ -26,12 +28,15 @@
     "@angular/cli": "21.2.0",
     "@angular/compiler-cli": "21.2.0",
     "@types/jasmine": "5.1.13",
+    "concurrently": "9.2.1",
+    "express": "5.2.1",
     "jasmine-core": "5.6.0",
     "karma": "6.4.4",
     "karma-chrome-launcher": "3.2.0",
     "karma-coverage": "2.2.1",
     "karma-jasmine": "5.1.0",
     "karma-jasmine-html-reporter": "2.1.0",
+    "socket.io": "4.8.1",
     "typescript": "5.9.2"
   }
 }

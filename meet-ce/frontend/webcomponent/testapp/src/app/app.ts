@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, DestroyRef, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import type {
   OpenViduMeetClosedDetail,
@@ -6,6 +6,19 @@ import type {
   OpenViduMeetLeftDetail,
 } from '@openvidu-meet-wc';
 import { OpenviduMeetComponent } from '@openvidu-meet-wc';
+
+// `socket.io-client` is loaded via a <script> tag in index.html (served by the
+// local webhook-bridge under /socket.io/socket.io.js), so `window.io` is the
+// global factory. Typed loosely to avoid pulling the package into the bundle.
+type SocketLike = { on: (event: string, cb: (payload: any) => void) => void; disconnect: () => void };
+type IOFactory = () => SocketLike;
+
+interface WebhookEventPayload {
+  event?: string;
+  creationDate?: number | string;
+  data?: { roomId?: string } & Record<string, unknown>;
+  [key: string]: unknown;
+}
 
 @Component({
   selector: 'app-root',
@@ -50,6 +63,84 @@ export class App {
 
   // ── on() callback reference stored for paired off() call ────────────────
   private onJoinedHandler: ((detail: OpenViduMeetJoinedDetail) => void) | null = null;
+
+  constructor() {
+    this.connectWebhookSocket();
+  }
+
+  // ── Webhook bridge (Socket.IO) ───────────────────────────────────────────
+  //
+  // Connects to the local webhook-bridge server (proxied through Angular's
+  // dev server at /socket.io). For every webhook the bridge broadcasts, we
+  // append a hidden `<li class="webhook-{eventName}">` marker to document.body
+  // so the e2e suite's `webhookLocator(page, name)` and `expectWebhook` calls
+  // can observe events without needing to wire socket.io into the test fixture.
+
+  private connectWebhookSocket(): void {
+    const io = (window as unknown as { io?: IOFactory }).io;
+
+    if (typeof io !== 'function') {
+      // Bridge is optional during dev; nothing to do if the script never loaded.
+      console.warn('[testapp] window.io not found — webhook bridge inactive');
+      return;
+    }
+
+    const socket = io();
+    socket.on('webhookEvent', (event: WebhookEventPayload) => this.handleWebhookEvent(event));
+
+    inject(DestroyRef).onDestroy(() => socket.disconnect());
+  }
+
+  private handleWebhookEvent(event: WebhookEventPayload): void {
+    const name = event?.event ?? 'unknown';
+    this.appendWebhookMarker(name, event);
+    this.saveWebhookToSessionStorage(event);
+    this.log(`[webhook] ${name}`);
+  }
+
+  // Mirrors the legacy testapp's `webhookEventsByRoom` sessionStorage map so
+  // `getWebhookFromStorage` in the e2e suite keeps working unchanged.
+  private saveWebhookToSessionStorage(event: WebhookEventPayload): void {
+    const roomId = event?.data?.roomId;
+
+    if (typeof roomId !== 'string' || !roomId) return;
+
+    const raw = sessionStorage.getItem('webhookEventsByRoom');
+    const map: Record<string, WebhookEventPayload[]> = raw ? JSON.parse(raw) : {};
+
+    if (!map[roomId]) {
+      map[roomId] = [];
+    }
+
+    map[roomId].push(event);
+    sessionStorage.setItem('webhookEventsByRoom', JSON.stringify(map));
+  }
+
+  private appendWebhookMarker(name: string, event: WebhookEventPayload): void {
+    let log = document.getElementById('__wc-webhook-markers');
+
+    if (!log) {
+      log = document.createElement('ul');
+      log.id = '__wc-webhook-markers';
+      // Positioned off-viewport but with a real box so Playwright's
+      // `toBeVisible()` passes on each child — same convention as the
+      // `event-{name}` markers added by `ensureFixture`.
+      log.style.cssText =
+        'position:fixed;top:-9999px;left:0;width:auto;height:auto;pointer-events:none;margin:0;padding:0;list-style:none;';
+      document.body.appendChild(log);
+    }
+
+    const li = document.createElement('li');
+    li.className = `webhook-${name}`;
+
+    try {
+      li.textContent = JSON.stringify(event);
+    } catch {
+      li.textContent = '';
+    }
+
+    log.appendChild(li);
+  }
 
   // ── Config ───────────────────────────────────────────────────────────────
 

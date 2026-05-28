@@ -11,6 +11,13 @@
       or:        pnpm --filter @openvidu-meet/webcomponent-new run build:wc:bundle
     -->
     <script src="/openvidu-meet-wc.js"></script>
+    <!--
+      Socket.IO client served by the local webhook-bridge (see
+      scripts/webhook-bridge.js). The Angular dev server proxies
+      /socket.io/* to that bridge via proxy.conf.json, so the URL below
+      resolves transparently. `window.io` becomes available globally.
+    -->
+    <script src="/socket.io/socket.io.js"></script>
   </head>
   <body>
     <app-root></app-root>
