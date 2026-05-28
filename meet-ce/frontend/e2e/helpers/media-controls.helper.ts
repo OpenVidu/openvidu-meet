@@ -143,10 +143,15 @@ export const openPrejoinBackgroundsPanel = async (page: Page): Promise<void> => 
 
 /**
  * Closes the virtual-backgrounds panel on the prejoin screen.
+ * Uses the panel's internal close button to avoid toggling issues: if the panel
+ * was briefly auto-closed (e.g. during background-effect processing), clicking
+ * the toggle #backgrounds-button would re-open it instead of leaving it closed.
  */
 export const closePrejoinBackgroundsPanel = async (page: Page): Promise<void> => {
-	await page.locator('#backgrounds-button').click();
-	await expect(page.locator('#background-effects-container')).toHaveCount(0);
+	const panel = page.locator('#background-effects-container');
+	await expect(panel).toBeVisible({ timeout: 5000 });
+	await panel.locator('.panel-close-button').click();
+	await expect(panel).toHaveCount(0, { timeout: 5000 });
 };
 
 /**
