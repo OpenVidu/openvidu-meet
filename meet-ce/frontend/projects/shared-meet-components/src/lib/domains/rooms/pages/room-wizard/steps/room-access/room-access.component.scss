@@ -133,7 +133,7 @@
 	}
 
 	.section-subtitle {
-		margin: 0 0 var(--ov-meet-spacing-md);
+		margin: 0 0 var(--ov-meet-spacing-xs) var(--ov-meet-spacing-xs);
 		font-size: var(--ov-meet-font-size-sm);
 		color: var(--ov-meet-text-secondary);
 		line-height: var(--ov-meet-line-height-normal);
@@ -298,7 +298,7 @@
 		.members-header-text {
 			display: flex;
 			flex-direction: column;
-			gap: 2px;
+			gap: var(--ov-meet-spacing-sm);
 
 			.section-label,
 			.section-subtitle {

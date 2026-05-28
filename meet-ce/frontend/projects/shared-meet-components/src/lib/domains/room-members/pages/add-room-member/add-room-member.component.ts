@@ -90,7 +90,7 @@ export class AddRoomMemberComponent implements OnInit {
 				this.notificationService.showSnackbar('Member added successfully');
 			}
 
-			await this.navigationService.navigateTo(`/rooms/${this.roomId}`);
+			await this.navigationService.navigateTo(`/rooms/${this.roomId}`, { tab: 'members' });
 		} catch (error) {
 			const msg = this.isEditMode() ? 'Failed to update member' : 'Failed to add member';
 			this.notificationService.showSnackbar(msg);
@@ -102,7 +102,7 @@ export class AddRoomMemberComponent implements OnInit {
 	}
 
 	async onCancelled(): Promise<void> {
-		await this.navigationService.navigateTo(`/rooms/${this.roomId}`);
+		await this.navigationService.navigateTo(`/rooms/${this.roomId}`, { tab: 'members' });
 	}
 
 	private buildMemberOptions(member: MeetRoomMember): MeetRoomMemberOptions {

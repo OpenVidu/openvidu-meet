@@ -1,87 +1,130 @@
 <div class="share-room-dialog">
 	<h2 mat-dialog-title class="dialog-title">
 		<mat-icon class="title-icon">share</mat-icon>
-		Share Room
+		Share Room Access Links
 	</h2>
 
 	<mat-dialog-content class="dialog-content ov-theme-transition">
-		<div class="content-section fade-in">
-			<div class="access-type-section">
-				<h3 class="section-label">Access Type</h3>
-				<mat-radio-group
-					[ngModel]="selectedAccessType()"
-					(ngModelChange)="selectedAccessType.set($event); copied.set(false)"
-					class="access-options"
-				>
-					<mat-radio-button value="registered" class="access-option">
-						<div class="option-content">
-							<mat-icon class="option-icon material-symbols-outlined">verified_user</mat-icon>
-							<div class="option-details">
-								<span class="option-title">
-									Registered Users
-									@if (!data.access.registered.enabled) {
-										<span class="access-restricted-badge">Restricted</span>
-									}
-								</span>
-								<span class="option-description">
-									@if (data.access.registered.enabled) {
-										Any registered user can join
-									} @else {
-										For admins and room members only
-									}
-								</span>
-							</div>
-						</div>
-					</mat-radio-button>
-
-					<mat-radio-button
-						value="anonymous-speaker"
-						class="access-option"
-						[disabled]="!data.access.anonymous.speaker.enabled"
+		@if (!roomUrl()) {
+			<div class="content-section fade-in">
+				<div class="access-type-section">
+					<h3 class="section-label">Access Type</h3>
+					<mat-radio-group
+						[ngModel]="selectedAccessType()"
+						(ngModelChange)="onAccessTypeChange($event)"
+						class="access-options"
 					>
-						<div class="option-content">
-							<mat-icon class="option-icon material-symbols-outlined">record_voice_over</mat-icon>
-							<div class="option-details">
-								<span class="option-title">Anonymous Speaker</span>
-								<span class="option-description">
-									@if (data.access.anonymous.speaker.enabled) {
-										Anyone with the link joins as speaker
-									} @else {
-										Anonymous speaker access is disabled
-									}
-								</span>
+						<mat-radio-button value="registered" class="access-option">
+							<div class="option-content">
+								<mat-icon class="option-icon material-symbols-outlined">verified_user</mat-icon>
+								<div class="option-details">
+									<span class="option-title">
+										@if (data.access.registered.enabled) {
+											Registered Users
+										} @else {
+											Registered Members
+										}
+									</span>
+									<span class="option-description">
+										@if (data.access.registered.enabled) {
+											Any registered user can join
+										} @else if (data.canManageRoom) {
+											For registered members only.
+											<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
+											to enable it for all registered users.
+										} @else {
+											For registered members only. Ask the room owner or an admin to enable it for
+											all registered users.
+										}
+									</span>
+								</div>
 							</div>
-						</div>
-					</mat-radio-button>
+						</mat-radio-button>
 
-					<mat-radio-button
-						value="anonymous-moderator"
-						class="access-option"
-						[disabled]="!data.access.anonymous.moderator.enabled"
-					>
-						<div class="option-content">
-							<mat-icon class="option-icon material-symbols-outlined">shield_person</mat-icon>
-							<div class="option-details">
-								<span class="option-title">Anonymous Moderator</span>
-								<span class="option-description">
-									@if (data.access.anonymous.moderator.enabled) {
-										Anyone with the link joins as moderator
-									} @else {
-										Anonymous moderator access is disabled
-									}
-								</span>
+						<mat-radio-button
+							value="anonymous-speaker"
+							class="access-option"
+							[class.access-disabled]="!data.access.anonymous.speaker.enabled"
+							[disabled]="!data.access.anonymous.speaker.enabled"
+						>
+							<div class="option-content">
+								<mat-icon class="option-icon material-symbols-outlined">record_voice_over</mat-icon>
+								<div class="option-details">
+									<span class="option-title">Anonymous Speaker</span>
+									<span class="option-description">
+										@if (data.access.anonymous.speaker.enabled) {
+											Anyone with the link joins as speaker
+										} @else if (data.canManageRoom) {
+											Disabled.
+											<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
+											to enable it.
+										} @else {
+											Disabled. Ask the room owner or an admin to enable it.
+										}
+									</span>
+								</div>
 							</div>
-						</div>
-					</mat-radio-button>
-				</mat-radio-group>
+						</mat-radio-button>
+
+						<mat-radio-button
+							value="anonymous-moderator"
+							class="access-option"
+							[class.access-disabled]="!data.access.anonymous.moderator.enabled"
+							[disabled]="!data.access.anonymous.moderator.enabled"
+						>
+							<div class="option-content">
+								<mat-icon class="option-icon material-symbols-outlined">shield_person</mat-icon>
+								<div class="option-details">
+									<span class="option-title">Anonymous Moderator</span>
+									<span class="option-description">
+										@if (data.access.anonymous.moderator.enabled) {
+											Anyone with the link joins as moderator
+										} @else if (data.canManageRoom) {
+											Disabled.
+											<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
+											to enable it.
+										} @else {
+											Disabled. Ask the room owner or an admin to enable it.
+										}
+									</span>
+								</div>
+							</div>
+						</mat-radio-button>
+					</mat-radio-group>
+				</div>
+
+				@if (data.canManageRoom) {
+					<div class="external-members-info">
+						<mat-icon class="external-members-info-icon">info</mat-icon>
+						<p class="external-members-info-text">
+							To share access with an <strong>external member</strong>, copy their personal link from the
+							<strong>Room Members</strong> tab in the room details page.
+						</p>
+					</div>
+				}
+
+				<div class="generate-section">
+					<button
+						mat-flat-button
+						color="primary"
+						(click)="generateLink()"
+						[disabled]="!isCurrentAccessSelectable()"
+						class="generate-button"
+					>
+						<mat-icon>link</mat-icon>
+						Generate Shareable Link
+					</button>
+				</div>
 			</div>
+		}
 
-			<div class="url-section">
+		@if (roomUrl()) {
+			<div class="url-section fade-in">
 				<h3 class="section-label">Access Link</h3>
 				<div class="url-container">
 					<mat-form-field appearance="outline" class="url-field">
 						<mat-label>Room URL</mat-label>
-						<input matInput [value]="currentUrl()" readonly class="url-input" />
+						<input matInput [value]="roomUrl()" readonly class="url-input" />
 						<mat-icon matPrefix class="url-prefix-icon">link</mat-icon>
 						<button
 							mat-icon-button
@@ -102,8 +145,15 @@
 						</div>
 					}
 				</div>
+
+				<div class="url-actions">
+					<button mat-button class="back-button" (click)="goBack()">
+						<mat-icon>arrow_back</mat-icon>
+						<span>Go back</span>
+					</button>
+				</div>
 			</div>
-		</div>
+		}
 	</mat-dialog-content>
 
 	<mat-dialog-actions class="dialog-actions">

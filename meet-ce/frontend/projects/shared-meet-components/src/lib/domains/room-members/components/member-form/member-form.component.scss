@@ -325,6 +325,7 @@
 	margin-top: var(--ov-meet-spacing-xs);
 
 	.cancel-button {
+		@include design-tokens.ov-button-base;
 		color: var(--ov-meet-text-secondary);
 	}
 

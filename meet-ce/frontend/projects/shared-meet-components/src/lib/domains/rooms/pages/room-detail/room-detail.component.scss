@@ -348,6 +348,18 @@
 		.tab-content {
 			padding: var(--ov-meet-spacing-lg);
 
+			// Drop the empty-state card box-shadow/hover so it blends into the tab.
+			::ng-deep .no-recordings-state,
+			::ng-deep .no-members-state {
+				box-shadow: none;
+
+				&:hover {
+					color: var(--ov-meet-text-hint);
+					background-color: transparent;
+					box-shadow: none;
+				}
+			}
+
 			.no-permission-state {
 				display: flex;
 				flex-direction: column;

@@ -167,6 +167,11 @@ export class RoomDetailComponent implements OnInit {
 
 		await this.loadRoomDetails();
 
+		// Open the Room Members tab directly when requested (e.g. after adding a member)
+		if (this.route.snapshot.queryParamMap.get('tab') === 'members' && this.canManageRoom()) {
+			this.selectedTabIndex.set(1);
+		}
+
 		clearTimeout(delayLoader);
 		this.showInitialLoader.set(false);
 		this.isInitializing.set(false);
@@ -222,7 +227,7 @@ export class RoomDetailComponent implements OnInit {
 		const room = this.room()!;
 		this.dialog.open(RoomShareDialogComponent, {
 			width: '450px',
-			data: { access: room.access },
+			data: { access: room.access, roomId: room.roomId, canManageRoom: this.canManageRoom() },
 			panelClass: 'ov-meet-dialog'
 		});
 	}

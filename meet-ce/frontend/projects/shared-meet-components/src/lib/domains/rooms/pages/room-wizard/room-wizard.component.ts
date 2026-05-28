@@ -75,6 +75,12 @@ export class RoomWizardComponent implements OnInit {
 
 		// Initialize wizard with edit mode and existing data
 		this.wizardService.initializeWizard(editMode, this.existingRoomData);
+
+		// Jump to a specific step if requested via query param
+		const requestedStep = this.route.snapshot.queryParamMap.get('step') as WizardStepId | null;
+		if (requestedStep && Object.values(WizardStepId).includes(requestedStep)) {
+			this.wizardService.goToStepById(requestedStep);
+		}
 	}
 
 	private detectEditMode(): boolean {
