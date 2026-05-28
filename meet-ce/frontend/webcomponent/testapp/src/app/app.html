@@ -13,6 +13,10 @@
 				<input id="roomUrl" [(ngModel)]="roomUrlInput" data-testid="input-roomUrl" />
 			</div>
 			<div class="ta-field">
+				<label for="recordingUrl">recordingUrl</label>
+				<input id="recordingUrl" [(ngModel)]="recordingUrlInput" data-testid="input-recordingUrl" />
+			</div>
+			<div class="ta-field">
 				<label for="participantName">participantName</label>
 				<input id="participantName" [(ngModel)]="participantNameInput" data-testid="input-participantName" />
 			</div>
@@ -44,15 +48,28 @@
 		<!-- Imperative methods -->
 		<section class="ta-section" data-testid="section-imperative">
 			<h2>Imperative API</h2>
-			<button class="ta-btn" (click)="callEndMeeting()" data-testid="btn-end-meeting">endMeeting()</button>
-			<button class="ta-btn" (click)="callLeaveRoom()" data-testid="btn-leave-room">leaveRoom()</button>
+			<!-- The `id` attributes mirror the legacy testapp's IDs so the WC e2e suite
+				 can locate these buttons at the page-level (`page.locator('#leave-room-btn')`)
+				 without going through the testapp helper. -->
+			<button id="end-meeting-btn" class="ta-btn" (click)="callEndMeeting()" data-testid="btn-end-meeting">
+				endMeeting()
+			</button>
+			<button id="leave-room-btn" class="ta-btn" (click)="callLeaveRoom()" data-testid="btn-leave-room">
+				leaveRoom()
+			</button>
 			<div class="ta-row">
 				<input
+					id="participant-identity-input"
 					[(ngModel)]="kickIdentityInput"
 					placeholder="participant identity"
 					data-testid="input-kick-identity"
 				/>
-				<button class="ta-btn" (click)="callKickParticipant()" data-testid="btn-kick-participant">
+				<button
+					id="kick-participant-btn"
+					class="ta-btn"
+					(click)="callKickParticipant()"
+					data-testid="btn-kick-participant"
+				>
 					kickParticipant()
 				</button>
 			</div>
@@ -82,32 +99,35 @@
 
 	<!-- ── WebComponent area ───────────────────────────────────────────────── -->
 	<main class="ta-wc-area" data-testid="wc-area">
-		<openvidu-meet-angular
-			#meetRef
-			[roomUrl]="roomUrl()"
-			[participantName]="participantName()"
-			[e2eeKey]="e2eeKey()"
-			[leaveRedirectUrl]="leaveRedirectUrl()"
-			[showOnlyRecordings]="showOnlyRecordings()"
-			[showRecording]="showRecording()"
-			(joined)="handleJoined($event)"
-			(left)="handleLeft($event)"
-			(closed)="handleClosed($event)"
-			data-testid="openvidu-meet"
-		>
-			<div slot="toolbar" class="ta-slot ta-slot--toolbar" data-testid="slot-toolbar">
-				Custom toolbar (slot=toolbar)
-			</div>
+		@if (wcMounted()) {
+			<openvidu-meet-angular
+				#meetRef
+				[roomUrl]="roomUrl()"
+				[recordingUrl]="recordingUrl()"
+				[participantName]="participantName()"
+				[e2eeKey]="e2eeKey()"
+				[leaveRedirectUrl]="leaveRedirectUrl()"
+				[showOnlyRecordings]="showOnlyRecordings()"
+				[showRecording]="showRecording()"
+				(joined)="handleJoined($event)"
+				(left)="handleLeft($event)"
+				(closed)="handleClosed($event)"
+				data-testid="openvidu-meet"
+			>
+				<!-- <div slot="toolbar" class="ta-slot ta-slot--toolbar" data-testid="slot-toolbar">
+					Custom toolbar (slot=toolbar)
+				</div>
 
-			<div slot="side" class="ta-slot ta-slot--side" data-testid="slot-side">
-				<p>Side panel</p>
-				<small>(slot=side)</small>
-			</div>
+				<div slot="side" class="ta-slot ta-slot--side" data-testid="slot-side">
+					<p>Side panel</p>
+					<small>(slot=side)</small>
+				</div>
 
-			<div slot="layout" class="ta-slot ta-slot--layout" data-testid="slot-layout">
-				<div slot="participant-1" class="ta-participant" data-testid="slot-participant-1">P1 — injected</div>
-				<div slot="participant-2" class="ta-participant" data-testid="slot-participant-2">P2 — injected</div>
-			</div>
-		</openvidu-meet-angular>
+				<div slot="layout" class="ta-slot ta-slot--layout" data-testid="slot-layout">
+					<div slot="participant-1" class="ta-participant" data-testid="slot-participant-1">P1 — injected</div>
+					<div slot="participant-2" class="ta-participant" data-testid="slot-participant-2">P2 — injected</div>
+				</div> -->
+			</openvidu-meet-angular>
+		}
 	</main>
 </div>

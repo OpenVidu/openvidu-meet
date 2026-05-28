@@ -79,6 +79,9 @@
 				},
 				"serve": {
 					"builder": "@angular/build:dev-server",
+					"options": {
+						"port": 5080
+					},
 					"configurations": {
 						"production": {
 							"buildTarget": "openvidu-meet-testapp:build:production"

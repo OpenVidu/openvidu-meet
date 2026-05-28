@@ -1,16 +1,6 @@
 import { WebComponentProperty } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
-import { MEET_TESTAPP_URL, MEET_WEBCOMPONENT_SRC } from '../config';
-import { iframeLocator } from './iframe.helper';
-
-// ─── Custom <openvidu-meet> page setup ──────────────────────────────────────
-//
-// These helpers render the `<openvidu-meet>` web component on a blank page
-// with arbitrary attributes, so tests can exercise individual attributes from
-// `WebComponentProperty` (room-url, recording-url, participant-name, e2ee-key,
-// show-only-recordings, show-recording, leave-redirect-url) without depending
-// on the testapp's fixed room/join flow.
-// ─────────────────────────────────────────────────────────────────────────────
+import { ensureFixture } from './testapp.helper';
 
 /**
  * Attribute map for `<openvidu-meet>`. Keys must be valid `WebComponentProperty`
@@ -18,44 +8,47 @@ import { iframeLocator } from './iframe.helper';
  */
 export type WebComponentAttributes = Partial<Record<WebComponentProperty, string | boolean | number>>;
 
-const renderAttributes = (attributes: WebComponentAttributes): string =>
-	Object.entries(attributes)
-		.filter(([, value]) => value !== undefined && value !== null)
-		.map(([key, value]) => `${key}="${String(value).replace(/"/g, '&quot;')}"`)
-		.join(' ');
+// Map every text-input WebComponentProperty to the testapp's input testId.
+const TEXT_INPUT_TESTIDS: ReadonlyArray<[WebComponentProperty, string]> = [
+	[WebComponentProperty.ROOM_URL, 'input-roomUrl'],
+	[WebComponentProperty.RECORDING_URL, 'input-recordingUrl'],
+	[WebComponentProperty.PARTICIPANT_NAME, 'input-participantName'],
+	[WebComponentProperty.E2EE_KEY, 'input-e2eeKey'],
+	[WebComponentProperty.LEAVE_REDIRECT_URL, 'input-leaveRedirectUrl'],
+	[WebComponentProperty.SHOW_RECORDING, 'input-showRecording']
+];
+
+const toBoolean = (value: string | boolean | number | undefined): boolean => {
+	if (value === undefined || value === null) return false;
+
+	if (typeof value === 'boolean') return value;
+
+	const normalized = String(value).toLowerCase();
+	return normalized !== '' && normalized !== 'false' && normalized !== '0';
+};
 
 /**
- * Renders the `<openvidu-meet>` web component on a blank page hosted on the
- * testapp origin with the given attributes, and waits for the component to be
- * attached.
- *
- * Implementation detail: we first navigate to the testapp URL to establish
- * the correct origin, then replace the document with custom HTML that loads
- * the webcomponent script from {@link MEET_WEBCOMPONENT_SRC}.
+ * Mounts `<openvidu-meet>` on the Angular testapp with the given attributes
+ * by filling the property form and clicking "Apply config". The WC is gated
+ * behind the first apply so the requested attributes are present on the
+ * first render — no live property re-assignment.
  */
-export const openWebcomponentWithAttributes = async (
-	page: Page,
-	attributes: WebComponentAttributes
-): Promise<void> => {
-	await page.goto(MEET_TESTAPP_URL);
+export const openWebcomponentWithAttributes = async (page: Page, attributes: WebComponentAttributes): Promise<void> => {
+	await ensureFixture(page);
 
-	const html = `<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8" />
-		<title>WebComponent Attributes Test</title>
-		<script src="${MEET_WEBCOMPONENT_SRC}"></script>
-		<style>
-			html, body { margin: 0; padding: 0; height: 100%; width: 100%; }
-			openvidu-meet { display: block; height: 100vh; width: 100vw; }
-		</style>
-	</head>
-	<body>
-		<openvidu-meet ${renderAttributes(attributes)}></openvidu-meet>
-	</body>
-</html>`;
+	for (const [property, testId] of TEXT_INPUT_TESTIDS) {
+		const value = attributes[property];
+		const filled = value === undefined || value === null ? '' : String(value);
+		await page.getByTestId(testId).fill(filled);
+	}
 
-	await page.setContent(html, { waitUntil: 'load' });
-	await expect(page.locator('openvidu-meet')).toBeAttached();
-	await expect(iframeLocator(page, 'body')).toBeAttached();
+	const showOnlyRecordingsCheckbox = page.getByTestId('input-showOnlyRecordings');
+	const desired = toBoolean(attributes[WebComponentProperty.SHOW_ONLY_RECORDINGS]);
+
+	if ((await showOnlyRecordingsCheckbox.isChecked()) !== desired) {
+		await showOnlyRecordingsCheckbox.click();
+	}
+
+	await page.getByTestId('btn-apply-config').click();
+	await expect(page.locator('openvidu-meet')).toBeVisible();
 };
