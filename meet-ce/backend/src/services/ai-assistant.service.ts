@@ -23,8 +23,6 @@ export class AiAssistantService {
 	// Defensive TTL on the participant set so a missed cleanup doesn't leak forever.
 	private readonly PARTICIPANT_SET_TTL_MS = ms('24h');
 	// Bounded polling for dispatch visibility when the create lock can't be acquired.
-	private readonly DISPATCH_VISIBILITY_RETRIES = 3;
-	private readonly DISPATCH_VISIBILITY_DELAY_MS = 250;
 
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,

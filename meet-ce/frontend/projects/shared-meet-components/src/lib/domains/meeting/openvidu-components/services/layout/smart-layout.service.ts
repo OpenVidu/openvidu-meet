@@ -159,8 +159,19 @@ export class SmartLayoutService extends BaseLayoutService {
 
 	private updateSpeakerActivityTimers(activeSpeakerIds: Set<string>, now: number): void {
 		for (const id of activeSpeakerIds) {
+			const stopTime = this.speakingStopTimes.get(id);
 			this.speakingStopTimes.delete(id);
-			if (!this.speakingStartTimes.has(id)) this.speakingStartTimes.set(id, now);
+
+			const startTime = this.speakingStartTimes.get(id);
+			if (startTime === undefined) {
+				this.speakingStartTimes.set(id, now);
+			} else if (stopTime !== undefined) {
+				// Resumed after a silent gap. Advance startTime by the gap so that
+				// `endTime - startTime` measures cumulative active time rather than
+				// wall-clock span — otherwise brief sub-threshold peaks scattered
+				// across the 3s grace window can falsely qualify.
+				this.speakingStartTimes.set(id, startTime + (now - stopTime));
+			}
 		}
 
 		for (const id of this.speakingStartTimes.keys()) {

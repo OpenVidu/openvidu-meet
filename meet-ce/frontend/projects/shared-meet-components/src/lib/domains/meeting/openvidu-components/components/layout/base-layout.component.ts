@@ -14,6 +14,7 @@ import {
 	inject,
 	input,
 	OnDestroy,
+	signal,
 	TemplateRef,
 	viewChild,
 	viewChildren,
@@ -50,42 +51,32 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly globalService = inject(GlobalConfigService);
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
+	private readonly destroyRef = inject(DestroyRef);
 
-	/**
-	 * @ignore
-	 */
+	// ── View queries ─────────────────────────────────────────────────────────────
+
+	/** @ignore */
 	readonly streamTemplateQuery = contentChild('stream', { read: TemplateRef });
-
-	/**
-	 * @ignore
-	 */
+	/** @ignore */
 	readonly layoutAdditionalElementsDirectives = contentChildren(LayoutAdditionalElementsDirective);
-
-	/**
-	 * @ignore
-	 */
+	/** @ignore */
 	readonly layoutContainer = viewChild('layout', { read: ViewContainerRef });
-
-	/**
-	 * @ignore
-	 */
+	/** @ignore */
 	readonly defaultStreamTemplate = viewChild<TemplateRef<any>>('defaultStream');
-
-	/**
-	 * @ignore
-	 */
+	/** @ignore */
 	readonly cdkDragQueries = viewChildren(CdkDrag);
-
-	/**
-	 * @ignore
-	 */
+	/** @ignore */
 	readonly localLayoutElementQueries = viewChildren('localLayoutElement', { read: ElementRef });
+
+	// ── Inputs ───────────────────────────────────────────────────────────────────
 
 	/**
 	 * Additional elements passed by a parent orchestrator (e.g. {@link SmartLayoutComponent}).
 	 * Merged with content-projected `*ovLayoutAdditionalElements` directives.
 	 */
 	readonly externalAdditionalElements = input<readonly LayoutAdditionalElementsDirective[]>([]);
+
+	// ── Computed streams ─────────────────────────────────────────────────────────
 
 	readonly streamTemplate = computed(
 		() => this.templateRegistry.stream() ?? this.streamTemplateQuery() ?? this.defaultStreamTemplate()
@@ -113,75 +104,106 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			.filter((d) => d.slot() === 'bottom')
 			.map((d) => d.template)
 	);
+
 	readonly localParticipant = this.participantService.localParticipant;
+
 	readonly remoteParticipants = computed(() => {
 		const directiveParticipants = this.directiveService.layoutRemoteParticipantsSignal();
 		return directiveParticipants !== undefined
 			? directiveParticipants
 			: this.participantService.remoteParticipants();
 	});
-	/**
-	 * Pre-computed stream list injected by a parent (e.g. {@link SmartLayoutComponent}).
-	 * When provided, bypasses the local participant-to-streams derivation.
-	 */
+
+	/** Pre-computed stream list injected by a parent (e.g. {@link SmartLayoutComponent}). */
 	readonly remoteStreamsOverride = input<ParticipantStream[] | undefined>(undefined, { alias: 'ovRemoteStreams' });
 
-	/** Flattened remote stream list. Re-evaluates on track publish/unpublish, pin, mute, or participant list changes. */
-	readonly remoteStreams = computed(() => this.remoteStreamsOverride() ?? this.remoteParticipants().flatMap((p) => p.streams()));
+	readonly remoteStreams = computed(
+		() => this.remoteStreamsOverride() ?? this.remoteParticipants().flatMap((p) => p.streams())
+	);
 
-	/**
-	 * Camera-only remote streams, rendered in a dedicated `@for` loop.
-	 * Keeping cameras and screens in separate loops ensures screen DOM positions
-	 * are never affected by camera additions or removals.
-	 */
 	readonly remoteCameraStreams = computed(() => this.remoteStreams().filter((s) => !s.isScreenStream));
-
-	/**
-	 * Screen-share-only remote streams, rendered in a dedicated `@for` loop.
-	 * Keeping screens and cameras in separate loops ensures camera DOM positions
-	 * are never affected by screen-share start or stop events.
-	 */
 	readonly remoteScreenStreams = computed(() => this.remoteStreams().filter((s) => s.isScreenStream));
 
-	private readonly destroyRef = inject(DestroyRef);
-	private resizeObserver: ResizeObserver | undefined = undefined;
-	private resizeTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
-	private mutationObserver: MutationObserver | undefined = undefined;
-	private mutationTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
-	private videoIsAtRight: boolean = false;
-	private wasLocalMinimized: boolean = false;
-	private lastLayoutWidth: number = 0;
-	private lastLayoutHeight: number = 0;
+	// ── Drag position signal ─────────────────────────────────────────────────────
+
+	/** Tracked drag offset; kept in sync so CD never resets an in-flight or post-drag position. */
+	readonly currentDragPosition = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+
+	// ── Resize constants ─────────────────────────────────────────────────────────
+
+	private readonly ASPECT_RATIO = 218 / 123;
+	private readonly MIN_RESIZE_WIDTH = 160;
+	private readonly DEFAULT_MIN_HEIGHT = 123;
+	private readonly MIN_CORNER_MARGIN = 0;
+
+	// ── Private observer / timeout state ─────────────────────────────────────────
+
+	private resizeObserver: ResizeObserver | undefined;
+	private resizeTimeout: ReturnType<typeof setTimeout> | undefined;
+	private mutationObserver: MutationObserver | undefined;
+	private mutationTimeout: ReturnType<typeof setTimeout> | undefined;
+
+	// ── Drag tracking ─────────────────────────────────────────────────────────────
+
+	private videoIsAtRight = false;
+	private wasLocalMinimized = false;
+	private lastLayoutWidth = 0;
+	private lastLayoutHeight = 0;
+
+	// ── Resize interaction state ─────────────────────────────────────────────────
+
+	private isResizing = false;
+	private resizeDirection = '';
+	private resizeStartClientX = 0;
+	private resizeStartWidth = 0;
+	private resizeDragStartPos = { x: 0, y: 0 };
+	/** Cached CDK drag instance for the duration of a resize gesture (avoids per-event DOM lookup). */
+	private resizingDrag: CdkDrag | undefined;
+
+	private readonly boundResizeMove = this.onResizeMove.bind(this);
+	private readonly boundResizeEnd = this.onResizeEnd.bind(this);
+
+	// ── Reactive effect ───────────────────────────────────────────────────────────
 
 	private readonly reactiveStateEffect = effect(() => {
 		const localParticipant = this.localParticipant();
-		const isLocalMinimized = !!localParticipant?.isMinimized;
+		// Read local streams so this effect re-runs when minimize/pin/mute state changes.
+		const localStreams = localParticipant?.streams() ?? [];
+		const isLocalMinimized = localStreams.some((s) => s.isMinimized);
 
 		if (this.wasLocalMinimized && !isLocalMinimized) {
-			// Restore from minimized: clear drag offset and let layout reposition the stream.
+			// Restore from minimized: clear CSS resize state, reset drag offset, reposition.
 			this.videoIsAtRight = false;
 			queueMicrotask(() => {
+				const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
+				el?.style.removeProperty('--ov-min-w');
+				el?.style.removeProperty('--ov-min-h');
 				this.resetDragPosition();
 				this.layoutService.update();
 			});
+		} else if (!this.wasLocalMinimized && isLocalMinimized) {
+			// Just became minimized: move to bottom-left corner to avoid overlapping the main layout.
+			requestAnimationFrame(() => this.moveStreamToBottomLeft());
 		}
 
 		this.wasLocalMinimized = isLocalMinimized;
-		this.remoteStreams(); // subscribe to track publish/unpublish, pin, mute changes
+		this.remoteStreams(); // subscribe to remote track publish/unpublish, pin, mute changes
 		this.layoutService.update();
 	});
 
-	ngAfterViewInit(): void {
-		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
-		if (!layoutContainer) return;
+	// ── Lifecycle ─────────────────────────────────────────────────────────────────
 
-		this.layoutService.initialize(layoutContainer);
-		const rect = layoutContainer.getBoundingClientRect();
+	ngAfterViewInit(): void {
+		const container = this.layoutContainer()?.element?.nativeElement;
+		if (!container) return;
+
+		this.layoutService.initialize(container);
+		const rect = container.getBoundingClientRect();
 		this.lastLayoutWidth = rect.width;
 		this.lastLayoutHeight = rect.height;
-		this.listenToLayoutDomChanges();
-		this.listenToResizeLayout();
-		this.listenToCdkDrag();
+		this.listenToLayoutDomChanges(container);
+		this.listenToResizeLayout(container);
+		this.listenToCdkDrag(container);
 	}
 
 	ngOnDestroy(): void {
@@ -189,8 +211,12 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.mutationObserver?.disconnect();
 		clearTimeout(this.resizeTimeout);
 		clearTimeout(this.mutationTimeout);
+		document.removeEventListener('pointermove', this.boundResizeMove);
+		document.removeEventListener('pointerup', this.boundResizeEnd);
 		this.layoutService.clear();
 	}
+
+	// ── Public helpers ────────────────────────────────────────────────────────────
 
 	/**
 	 * Track-by function for `@for` loops over {@link ParticipantStream} items.
@@ -201,69 +227,106 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		return `${stream.participant.identity}-${stream.streamId}`;
 	}
 
-	private listenToLayoutDomChanges() {
-		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
-		if (!layoutContainer) return;
+	/** Called from the template when the user presses on a corner resize handle. */
+	onResizeStart(event: PointerEvent, direction: string): void {
+		event.preventDefault();
+		event.stopPropagation();
 
+		this.resizingDrag = this.getActiveLocalDrag();
+		if (!this.resizingDrag) return;
+
+		this.isResizing = true;
+		this.resizeDirection = direction;
+		this.resizeStartClientX = event.clientX;
+		this.resizeStartWidth = this.resizingDrag.element.nativeElement.getBoundingClientRect().width;
+		this.resizeDragStartPos = { ...this.currentDragPosition() };
+
+		document.addEventListener('pointermove', this.boundResizeMove);
+		document.addEventListener('pointerup', this.boundResizeEnd);
+	}
+
+	// ── Private: resize handlers ──────────────────────────────────────────────────
+
+	private onResizeMove(event: PointerEvent): void {
+		if (!this.isResizing || !this.resizingDrag) return;
+
+		const deltaX = event.clientX - this.resizeStartClientX;
+		const container = this.layoutContainer()?.element?.nativeElement;
+		const maxWidth = container ? container.getBoundingClientRect().width * 0.9 : 800;
+
+		const rawWidth =
+			this.resizeDirection === 'se' || this.resizeDirection === 'ne'
+				? this.resizeStartWidth + deltaX
+				: this.resizeStartWidth - deltaX;
+
+		const newWidth = Math.max(this.MIN_RESIZE_WIDTH, Math.min(maxWidth, rawWidth));
+		const newHeight = newWidth / this.ASPECT_RATIO;
+		const widthChange = newWidth - this.resizeStartWidth;
+
+		let newDragX = this.resizeDragStartPos.x;
+		let newDragY = this.resizeDragStartPos.y;
+
+		// Anchor the opposite edge by compensating the drag position.
+		if (this.resizeDirection === 'sw' || this.resizeDirection === 'nw') {
+			newDragX = this.resizeDragStartPos.x - widthChange;
+		}
+		if (this.resizeDirection === 'ne' || this.resizeDirection === 'nw') {
+			newDragY = this.resizeDragStartPos.y - (newHeight - this.resizeStartWidth / this.ASPECT_RATIO);
+		}
+
+		const el = this.resizingDrag.element.nativeElement as HTMLElement;
+		el.style.setProperty('--ov-min-w', `${newWidth}px`);
+		el.style.setProperty('--ov-min-h', `${newHeight}px`);
+		this.setDragPosition({ x: newDragX, y: newDragY }, this.resizingDrag);
+	}
+
+	private onResizeEnd(_event: PointerEvent): void {
+		if (!this.isResizing) return;
+		this.isResizing = false;
+		this.resizingDrag = undefined;
+		document.removeEventListener('pointermove', this.boundResizeMove);
+		document.removeEventListener('pointerup', this.boundResizeEnd);
+	}
+
+	// ── Private: layout observer setup ───────────────────────────────────────────
+
+	private listenToLayoutDomChanges(container: HTMLElement): void {
 		this.mutationObserver = new MutationObserver((mutations) => {
 			const hasStructuralChanges = mutations.some(
-				(mutation) =>
-					mutation.type === 'childList' &&
-					(mutation.addedNodes.length > 0 || mutation.removedNodes.length > 0)
+				(m) => m.type === 'childList' && (m.addedNodes.length > 0 || m.removedNodes.length > 0)
 			);
 			if (!hasStructuralChanges) return;
 
 			clearTimeout(this.mutationTimeout);
-			this.mutationTimeout = setTimeout(() => {
-				this.layoutService.update();
-			}, 0);
+			this.mutationTimeout = setTimeout(() => this.layoutService.update(), 0);
 		});
 
-		this.mutationObserver.observe(layoutContainer, {
-			childList: true,
-			subtree: true
-		});
+		this.mutationObserver.observe(container, { childList: true, subtree: true });
 	}
 
-	private listenToResizeLayout() {
-		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
-		if (!layoutContainer) return;
-
+	private listenToResizeLayout(container: HTMLElement): void {
 		this.resizeObserver = new ResizeObserver((entries) => {
 			const { width: parentWidth, height: parentHeight } = entries[0].contentRect;
 
 			clearTimeout(this.resizeTimeout);
-
 			this.resizeTimeout = setTimeout(() => {
-				const widthDiff = Math.abs(this.lastLayoutWidth - parentWidth);
-				const heightDiff = Math.abs(this.lastLayoutHeight - parentHeight);
-				if (widthDiff > 1 || heightDiff > 1) {
+				if (Math.abs(this.lastLayoutWidth - parentWidth) > 1 || Math.abs(this.lastLayoutHeight - parentHeight) > 1) {
 					this.layoutService.update();
 				}
 
 				if (this.localParticipant()?.isMinimized) {
-					const cdkDrag = this.getActiveLocalDrag();
-					if (!cdkDrag) {
-						this.lastLayoutWidth = parentWidth;
-						this.lastLayoutHeight = parentHeight;
-						return;
-					}
-
-					if (this.panelService.isPanelOpened()) {
-						if (this.lastLayoutWidth < parentWidth) {
-							// Layout grew (e.g. wider panel replaced a narrower one): keep video pinned to the right edge.
-							if (this.videoIsAtRight) {
-								this.moveStreamToRight(parentWidth);
+					const drag = this.getActiveLocalDrag();
+					if (drag) {
+						if (this.panelService.isPanelOpened()) {
+							if (this.lastLayoutWidth < parentWidth) {
+								if (this.videoIsAtRight) this.moveStreamToRight(parentWidth, drag);
+							} else {
+								window.dispatchEvent(new Event('resize'));
+								const { x, width } = drag.element.nativeElement.getBoundingClientRect();
+								this.videoIsAtRight = x + width >= parentWidth;
 							}
-						} else {
-							// Layout shrank: re-evaluate whether the video is still at the right edge.
-							window.dispatchEvent(new Event('resize'));
-							const { x, width } = cdkDrag.element.nativeElement.getBoundingClientRect();
-							this.videoIsAtRight = x + width >= parentWidth;
-						}
-					} else {
-						if (this.videoIsAtRight) {
-							this.moveStreamToRight(parentWidth);
+						} else if (this.videoIsAtRight) {
+							this.moveStreamToRight(parentWidth, drag);
 						}
 					}
 				}
@@ -273,95 +336,118 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			}, 100);
 		});
 
-		this.resizeObserver.observe(layoutContainer);
+		this.resizeObserver.observe(container);
 	}
 
-	private getActiveLocalDrag(): CdkDrag | undefined {
-		const drags = this.cdkDragQueries();
+	private listenToCdkDrag(container: HTMLElement): void {
+		const onRelease = (event: CdkDragRelease<any>): void => {
+			const el = event.source.element.nativeElement as HTMLElement;
+			// Sync signal with the actual post-drag transform so CD never resets it.
+			this.setDragPosition(this.getActualDragPosition(el), event.source);
 
-		const minimizedLocalDrag = drags.find((drag) => {
-			const element = drag.element.nativeElement as HTMLElement;
-			return element.classList.contains('local_participant') && element.classList.contains('OV_minimized');
-		});
-
-		if (minimizedLocalDrag) {
-			return minimizedLocalDrag;
-		}
-
-		return drags.find((drag) => {
-			const element = drag.element.nativeElement as HTMLElement;
-			return element.classList.contains('local_participant') && !element.classList.contains('OV_screen');
-		});
-	}
-
-	private getActiveLocalLayoutElement(): HTMLElement | undefined {
-		const elements = this.localLayoutElementQueries().map((el) => el.nativeElement as HTMLElement);
-
-		const minimizedLocalElement = elements.find(
-			(element) =>
-				element.classList.contains('local_participant') && element.classList.contains('OV_minimized')
-		);
-
-		if (minimizedLocalElement) {
-			return minimizedLocalElement;
-		}
-
-		return elements.find(
-			(element) => element.classList.contains('local_participant') && !element.classList.contains('OV_screen')
-		);
-	}
-
-	private moveStreamToRight(parentWidth: number) {
-		const cdkDrag = this.getActiveLocalDrag();
-		if (!cdkDrag) return;
-
-		const { y, width: elementWidth } = cdkDrag.element.nativeElement.getBoundingClientRect();
-		const margin = 10;
-		const newX = parentWidth - elementWidth - margin;
-		cdkDrag.setFreeDragPosition({ x: newX, y });
-	}
-
-	private resetDragPosition() {
-		this.cdkDragQueries().forEach((drag) => {
-			const element = drag.element.nativeElement as HTMLElement;
-			if (element.classList.contains('local_participant')) {
-				drag.reset();
-				drag.setFreeDragPosition({ x: 0, y: 0 });
-			}
-		});
-	}
-
-	private listenToCdkDrag() {
-		const layoutContainer = this.layoutContainer()?.element?.nativeElement;
-		if (!layoutContainer) return;
-
-		const handler = (event: CdkDragRelease<any>) => {
 			if (!this.panelService.isPanelOpened()) return;
-			const { x, width } = (event.source.element.nativeElement as HTMLElement).getBoundingClientRect();
-			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
-			this.videoIsAtRight = x !== 0 && x + width >= parentWidth;
+			const { x, width } = el.getBoundingClientRect();
+			this.videoIsAtRight = x !== 0 && x + width >= container.getBoundingClientRect().width;
 		};
 
-		this.cdkDragQueries()
-			.filter((drag) => (drag.element.nativeElement as HTMLElement).classList.contains('local_participant'))
-			.forEach((drag) => {
-				drag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(handler);
-			});
+		this.localParticipantDrags().forEach((drag) =>
+			drag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(onRelease)
+		);
 
-		if (this.globalService.isProduction()) return;
+		if (!this.globalService.isProduction()) {
+			this.installDevDragHooks(container);
+		}
+	}
 
-		// Development-only hooks used by E2E tests to simulate drag-and-drop events.
+	// ── Private: drag helpers ─────────────────────────────────────────────────────
+
+	/**
+	 * Returns CDK drag instances for all local participant elements.
+	 */
+	private localParticipantDrags(): CdkDrag[] {
+		return this.cdkDragQueries().filter((drag) =>
+			(drag.element.nativeElement as HTMLElement).classList.contains('local_participant')
+		);
+	}
+
+	/**
+	 * Returns the CdkDrag for the minimized local camera stream, falling back to
+	 * the non-screen local participant when no element is currently minimized.
+	 */
+	private getActiveLocalDrag(): CdkDrag | undefined {
+		const drags = this.cdkDragQueries();
+		const minimized = drags.find((d) => {
+			const el = d.element.nativeElement as HTMLElement;
+			return el.classList.contains('local_participant') && el.classList.contains('OV_minimized');
+		});
+		return (
+			minimized ??
+			drags.find((d) => {
+				const el = d.element.nativeElement as HTMLElement;
+				return el.classList.contains('local_participant') && !el.classList.contains('OV_screen');
+			})
+		);
+	}
+
+	/**
+	 * Updates the CDK drag position imperatively and keeps `currentDragPosition` in sync
+	 * so that Angular's CD binding `[cdkDragFreeDragPosition]="currentDragPosition()"` never
+	 * resets the position to a stale value.
+	 */
+	private setDragPosition(pos: { x: number; y: number }, drag = this.getActiveLocalDrag()): void {
+		drag?.setFreeDragPosition(pos);
+		this.currentDragPosition.set(pos);
+	}
+
+	private moveStreamToRight(parentWidth: number, drag = this.getActiveLocalDrag()): void {
+		if (!drag) return;
+		const { y, width } = drag.element.nativeElement.getBoundingClientRect();
+		this.setDragPosition({ x: parentWidth - width - 10, y }, drag);
+	}
+
+	private moveStreamToBottomLeft(drag = this.getActiveLocalDrag()): void {
+		if (!drag) return;
+		const container = this.layoutContainer()?.element?.nativeElement as HTMLElement | undefined;
+		if (!container) return;
+		// Use the known minimized height (CSS constant) rather than reading the DOM:
+		// at the moment the effect fires the .OV_minimized class may not yet be painted,
+		// so getBoundingClientRect would still report the layout-driven size.
+		const containerHeight = container.getBoundingClientRect().height;
+		this.setDragPosition(
+			{ x: this.MIN_CORNER_MARGIN, y: containerHeight - this.DEFAULT_MIN_HEIGHT - this.MIN_CORNER_MARGIN },
+			drag
+		);
+	}
+
+	private resetDragPosition(): void {
+		for (const drag of this.localParticipantDrags()) {
+			drag.reset();
+			drag.setFreeDragPosition({ x: 0, y: 0 });
+		}
+		this.currentDragPosition.set({ x: 0, y: 0 });
+	}
+
+	/** Reads the actual CDK transform from the element's computed style. */
+	private getActualDragPosition(element: HTMLElement): { x: number; y: number } {
+		const transformStr = window.getComputedStyle(element).transform;
+		if (!transformStr || transformStr === 'none') return { x: 0, y: 0 };
+		const { e, f } = new DOMMatrix(transformStr);
+		return { x: e, y: f };
+	}
+
+	// ── Private: dev-only E2E test hooks ─────────────────────────────────────────
+
+	private installDevDragHooks(container: HTMLElement): void {
 		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', () => {
 			if (!this.panelService.isPanelOpened()) return;
-			const localLayoutElement = this.getActiveLocalLayoutElement();
-			if (!localLayoutElement) return;
-			const { x, width } = localLayoutElement.getBoundingClientRect();
-			const { width: parentWidth } = layoutContainer.getBoundingClientRect();
-			this.videoIsAtRight = x !== 0 && x + width >= parentWidth;
+			const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
+			if (!el) return;
+			const { x, width } = el.getBoundingClientRect();
+			this.videoIsAtRight = x !== 0 && x + width >= container.getBoundingClientRect().width;
 		});
+
 		document.addEventListener('webcomponentTestingEndedDragAndDropRightEvent', (event: any) => {
-			const { x, y } = event.detail;
-			this.getActiveLocalDrag()?.setFreeDragPosition({ x, y });
+			this.setDragPosition(event.detail as { x: number; y: number });
 		});
 	}
 }

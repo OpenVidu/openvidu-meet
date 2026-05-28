@@ -9,9 +9,7 @@
 			@for (stream of participant.streams(); track trackParticipantElement($index, stream)) {
 				<div
 					#localLayoutElement
-					class="local_participant"
-					[class.OV_root]="!stream.isMinimized"
-					[class.OV_publisher]="!stream.isMinimized"
+					class="local_participant OV_root OV_publisher"
 					[class.OV_minimized]="stream.isMinimized"
 					[class.OV_big]="stream.isPinned"
 					[class.OV_screen]="stream.isScreenStream"
@@ -19,9 +17,27 @@
 					cdkDrag
 					cdkDragBoundary=".layout"
 					[cdkDragDisabled]="!stream.isMinimized"
-					[cdkDragFreeDragPosition]="{ x: 0, y: 0 }"
+					[cdkDragFreeDragPosition]="currentDragPosition()"
 				>
 					<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
+					@if (stream.isMinimized) {
+						<div class="resize-handle resize-se"
+							(pointerdown)="onResizeStart($event, 'se')"
+							(mousedown)="$event.stopPropagation()"
+							(touchstart)="$event.stopPropagation(); $event.preventDefault()"></div>
+						<div class="resize-handle resize-sw"
+							(pointerdown)="onResizeStart($event, 'sw')"
+							(mousedown)="$event.stopPropagation()"
+							(touchstart)="$event.stopPropagation(); $event.preventDefault()"></div>
+						<div class="resize-handle resize-ne"
+							(pointerdown)="onResizeStart($event, 'ne')"
+							(mousedown)="$event.stopPropagation()"
+							(touchstart)="$event.stopPropagation(); $event.preventDefault()"></div>
+						<div class="resize-handle resize-nw"
+							(pointerdown)="onResizeStart($event, 'nw')"
+							(mousedown)="$event.stopPropagation()"
+							(touchstart)="$event.stopPropagation(); $event.preventDefault()"></div>
+					}
 				</div>
 			}
 		}

@@ -622,14 +622,23 @@ start() {
     exit 1
   fi
 
+  if [ "$SKIP_BUILD" != true ]; then
+    echo -e "${BLUE}Building backend...${NC}"
+    install_dependencies
+    pnpm run build:typings
+    pnpm run build:backend
+  fi
+
+  # Run from the backend directory so dotenv resolves '.env.test' / '.env.dev'
+  # relative to it (matches the previous 'pnpm --filter ... run start' behavior).
   case "$MODE" in
     prod)
-      echo -e "${BLUE}Building and starting in production mode...${NC}"
-      NODE_ENV=production pnpm --filter @openvidu-meet/backend run start
+      echo -e "${BLUE}Starting in production mode...${NC}"
+      cd meet-ce/backend && NODE_ENV=production node dist/src/server.js
       ;;
     ci)
-      echo -e "${BLUE}Building and starting in CI mode...${NC}"
-      NODE_ENV=ci pnpm --filter @openvidu-meet/backend run start
+      echo -e "${BLUE}Starting in CI mode...${NC}"
+      cd meet-ce/backend && NODE_ENV=ci node dist/src/server.js
       ;;
   esac
 }

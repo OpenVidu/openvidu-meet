@@ -206,7 +206,7 @@ test.describe('Layout E2E Tests', () => {
 					includes: [`remote-A`, `remote-A_SCREEN`, `remote-B`, `remote-C`]
 				});
 
-				expect(await pageA.locator('.OV_stream.remote.screen-source').count()).toBe(1);
+				await expect(pageA.locator('.OV_stream.remote.screen-source')).toHaveCount(1, { timeout: 10_000 });
 			} finally {
 				await removeAllParticipants();
 			}
@@ -634,10 +634,14 @@ test.describe('Layout E2E Tests', () => {
 				const [pageA] = pages;
 
 				try {
-					// Set limit to 1 so the indicator appears in topbar mode initially
+					// Wait for both remotes to be live before adjusting the slider
+					await waitForRemoteStream(pageA, 2, { audioCount: 2});
 
+					// Set limit to 1 so the indicator appears in topbar mode initially
 					await setSmartMosaicSliderValue(pageA, 1);
-					await expectVisible(pageA, '.hidden-participants-container.horizontal');
+					await expect(pageA.locator('.hidden-participants-container.horizontal')).toBeVisible({
+						timeout: 10_000
+					});
 
 					// Close the layout settings panel before interacting with the layout streams
 					await closeSettingsPanel(pageA);
@@ -647,12 +651,16 @@ test.describe('Layout E2E Tests', () => {
 					// → showTopBarHiddenParticipantsIndicator() returns false → indicator moves to OV_last
 					await toggleStreamPin(pageA, '.OV_stream_video.remote');
 					await Promise.all([
-						expectVisible(pageA, '.hidden-participants-container.vertical'),
+						expect(pageA.locator('.hidden-participants-container.vertical')).toBeVisible({
+							timeout: 10_000
+						}),
 						expectHidden(pageA, '.hidden-participants-container.horizontal')
 					]);
 					await toggleStreamPin(pageA, '.OV_stream_video.remote');
 					await Promise.all([
-						expectVisible(pageA, '.hidden-participants-container.horizontal'),
+						expect(pageA.locator('.hidden-participants-container.horizontal')).toBeVisible({
+							timeout: 10_000
+						}),
 						expectHidden(pageA, '.hidden-participants-container.vertical')
 					]);
 				} finally {
