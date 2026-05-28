@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import {
 	AppCeMeetingComponent,
+	EndMeetingComponent,
 	MeetingWebComponentManagerService,
 	RoomRecordingsComponent,
 	RuntimeConfigService,
@@ -56,7 +57,7 @@ export type {
  */
 @Component({
 	selector: 'app-root',
-	imports: [AppCeMeetingComponent, RoomRecordingsComponent, ViewRecordingComponent],
+	imports: [AppCeMeetingComponent, EndMeetingComponent, RoomRecordingsComponent, ViewRecordingComponent],
 	templateUrl: './app.html',
 	styleUrls: ['./app.material.scss', './app.css'],
 	encapsulation: ViewEncapsulation.ShadowDom,
@@ -130,6 +131,16 @@ export class App {
 	readonly roomIdForRecordings = computed<string>(() => {
 		return lastPathSegment(this.roomUrl()) ?? '';
 	});
+
+	/**
+	 * True once the local participant has left the room. The WC has no router,
+	 * so when this flips we swap the meeting view for `<ov-end-meeting>` inline
+	 * rather than navigating to `/disconnected` (the SPA's behaviour).
+	 */
+	readonly hasLeft = computed<boolean>(() => this.wcManager.leftEvent() !== null);
+
+	/** Reason carried by the `left` event, forwarded to `<ov-end-meeting>`. */
+	readonly leftReason = computed<string | undefined>(() => this.wcManager.leftEvent()?.reason);
 
 	constructor() {
 		this.runtimeConfigService.enableWebcomponentMode();

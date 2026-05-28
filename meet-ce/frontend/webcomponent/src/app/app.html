@@ -7,7 +7,18 @@
 @switch (mode()) {
 	@case ('meeting') {
 		@if (ready()) {
-		<app-ce-ov-meeting></app-ce-ov-meeting>
+			@if (hasLeft()) {
+				<!--
+					Post-meeting screen. The SPA navigates to /disconnected after
+					a `left` event; the WC has no router, so we render the same
+					component inline. Its back-button click triggers
+					`wcManager.emitClosedEvent()`, which surfaces as the public
+					`closed` DOM event via `_closedEffect` above.
+				-->
+				<ov-end-meeting [reason]="leftReason()" />
+			} @else {
+				<app-ce-ov-meeting />
+			}
 		}
 	}
 	@case ('single-recording') {
