@@ -392,8 +392,11 @@ test.describe('Stream E2E Tests', () => {
 			const minimizedBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(minimizedBox).not.toBeNull();
 
-			expect(minimizedBox!.x).toBeLessThan(200);
-			expect(minimizedBox!.y).toBeLessThan(150);
+			// Video should be positioned at the bottom-left corner of the layout
+			const layoutBox = await getElementBoundingBox(page, '#layout');
+			expect(layoutBox).not.toBeNull();
+			expect(minimizedBox!.x).toBeLessThan(50);
+			expect(minimizedBox!.y + minimizedBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
 			expect(minimizedBox!.height).toBeGreaterThan(0);
 			expect(minimizedBox!.width).toBeGreaterThan(0);
 
@@ -429,8 +432,8 @@ test.describe('Stream E2E Tests', () => {
 			const restoredBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(restoredBox).not.toBeNull();
 
-			expect(Math.abs(restoredBox!.x - minimizedBox!.x)).toBeGreaterThan(50);
-			expect(Math.abs(restoredBox!.y - minimizedBox!.y)).toBeGreaterThanOrEqual(0);
+			// Restored video should be back at the top of the layout (far from bottom-left minimized position)
+			expect(restoredBox!.y).toBeLessThan(minimizedBox!.y);
 			expect(restoredBox!.width).toBeGreaterThan(minimizedBox!.width);
 			expect(restoredBox!.height).toBeGreaterThan(minimizedBox!.height);
 
@@ -473,10 +476,13 @@ test.describe('Stream E2E Tests', () => {
 			await dragStream(page, '.local_participant', 900, 0);
 			await page.waitForTimeout(500);
 
-			// Verify position after drag
+			// Verify position after drag — video must remain fully visible inside the layout
 			let streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+			const layoutBox = await getElementBoundingBox(page, '#layout');
 			expect(streamBox).not.toBeNull();
-			expect(streamBox!.y).toBeLessThanOrEqual(20);
+			expect(layoutBox).not.toBeNull();
+			expect(streamBox!.y).toBeGreaterThanOrEqual(layoutBox!.y - 1);
+			expect(streamBox!.y + streamBox!.height).toBeLessThanOrEqual(layoutBox!.y + layoutBox!.height + 1);
 
 			// Open chat panel
 			await page.locator('#chat-panel-btn').click();
@@ -629,9 +635,17 @@ test.describe('Stream E2E Tests', () => {
 				// Wait until participant-0 sees the remote stream from participant-1
 				await waitForRemoteStream(pageA);
 
-				// Local video should have been auto-minimized
+				// Local video should have been auto-minimized and placed at bottom-left
 				const localContainer = pageA.locator('.local_participant:has(.OV_stream_video.local)').first();
 				await expect(localContainer).toHaveClass(/OV_minimized/, { timeout: 5_000 });
+				await pageA.waitForTimeout(500);
+
+				const minimizedBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
+				const layoutBox = await getElementBoundingBox(pageA, '#layout');
+				expect(minimizedBox).not.toBeNull();
+				expect(layoutBox).not.toBeNull();
+				expect(minimizedBox!.x).toBeLessThan(50);
+				expect(minimizedBox!.y + minimizedBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
 			} finally {
 				await removeAllParticipants();
 			}
@@ -697,7 +711,7 @@ test.describe('Stream E2E Tests', () => {
 			await minimizeStream(page);
 			await page.waitForTimeout(500);
 
-			// Size should be back to default (~230×130)
+			// Size should be back to default (~218×123)
 			const resetBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
 			expect(resetBox).not.toBeNull();
 			expect(Math.abs(resetBox!.width - defaultBox!.width)).toBeLessThan(20);
