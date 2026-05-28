@@ -131,8 +131,10 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	// ── Resize constants ─────────────────────────────────────────────────────────
 
-	private readonly ASPECT_RATIO = 230 / 130;
+	private readonly ASPECT_RATIO = 218 / 123;
 	private readonly MIN_RESIZE_WIDTH = 160;
+	private readonly DEFAULT_MIN_HEIGHT = 123;
+	private readonly MIN_CORNER_MARGIN = 0;
 
 	// ── Private observer / timeout state ─────────────────────────────────────────
 
@@ -179,6 +181,9 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 				this.resetDragPosition();
 				this.layoutService.update();
 			});
+		} else if (!this.wasLocalMinimized && isLocalMinimized) {
+			// Just became minimized: move to bottom-left corner to avoid overlapping the main layout.
+			requestAnimationFrame(() => this.moveStreamToBottomLeft());
 		}
 
 		this.wasLocalMinimized = isLocalMinimized;
@@ -398,6 +403,20 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		if (!drag) return;
 		const { y, width } = drag.element.nativeElement.getBoundingClientRect();
 		this.setDragPosition({ x: parentWidth - width - 10, y }, drag);
+	}
+
+	private moveStreamToBottomLeft(drag = this.getActiveLocalDrag()): void {
+		if (!drag) return;
+		const container = this.layoutContainer()?.element?.nativeElement as HTMLElement | undefined;
+		if (!container) return;
+		// Use the known minimized height (CSS constant) rather than reading the DOM:
+		// at the moment the effect fires the .OV_minimized class may not yet be painted,
+		// so getBoundingClientRect would still report the layout-driven size.
+		const containerHeight = container.getBoundingClientRect().height;
+		this.setDragPosition(
+			{ x: this.MIN_CORNER_MARGIN, y: containerHeight - this.DEFAULT_MIN_HEIGHT - this.MIN_CORNER_MARGIN },
+			drag
+		);
 	}
 
 	private resetDragPosition(): void {

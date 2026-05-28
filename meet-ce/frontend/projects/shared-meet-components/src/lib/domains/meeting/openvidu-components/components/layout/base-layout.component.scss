@@ -67,8 +67,8 @@
 	// Width/height use CSS custom properties so the resize feature can override them
 	// while !important still beats the layout renderer's inline styles.
 	position: relative;
-	width: var(--ov-min-w, 230px) !important;
-	height: var(--ov-min-h, 130px) !important;
+	width: var(--ov-min-w, 218px) !important;
+	height: var(--ov-min-h, 123px) !important;
 	bottom: 0 !important;
 	right: 0 !important;
 	top: 0 !important;
