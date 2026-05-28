@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, Signal } from '@angular/core';
+import { effect, inject, Injectable, signal, Signal } from '@angular/core';
 import {
 	BackgroundProcessor,
 	BackgroundProcessorWrapper,
@@ -6,13 +6,12 @@ import {
 	supportsModernBackgroundProcessors,
 	SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
+import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
 import { ILogger } from '../../models/logger.model';
 import { OVLocalVideoTrack } from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 
-const MEDIAPIPE_ASSET_PATHS = {
-	modelAssetPath: 'assets/mediapipe/selfie_segmenter_landscape.tflite'
-} as const;
+const MEDIAPIPE_MODEL_PATH = '/assets/mediapipe/selfie_segmenter_landscape.tflite';
 
 /**
  * Manages the lifecycle of the LiveKit background video track processor.
@@ -48,6 +47,18 @@ export class VideoTrackProcessorService {
 	private currentBackgroundOptions: SwitchBackgroundProcessorOptions | null = null;
 
 	private log: ILogger = inject(LoggerService).get('VideoTrackProcessorService');
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
+
+	/**
+	 * Waits until the server URL is ready (immediate in SPA mode, after the
+	 * webcomponent calls setServerUrl() otherwise) before pre-initialising the
+	 * processor. Without this, the relative model path resolves against the host
+	 * page in webcomponent mode and MediaPipe loads HTML instead of the .tflite.
+	 */
+	private readonly initEffect = effect(() => {
+		if (!this.runtimeConfigService.serverUrlReady()) return;
+		this.initialiseProcessor();
+	});
 
 	/**
 	 * @internal
@@ -58,22 +69,33 @@ export class VideoTrackProcessorService {
 			return;
 		}
 
-		// Modern browsers (Chrome, Edge): pre-initialise so the processor is ready before
-		// any camera track is created.
-		if (supportsModernBackgroundProcessors()) {
-			try {
-				this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled', assetPaths: MEDIAPIPE_ASSET_PATHS });
-				this._isBackgroundProcessorSupported.set(true);
-				this.log.d('Background processor initialised at startup (modern processors supported)');
-			} catch (error: any) {
-				this.log.w('Failed to initialise background processor:', error?.message || error);
-				this._isBackgroundProcessorSupported.set(false);
-			}
-		} else {
+		if (!supportsModernBackgroundProcessors()) {
 			// Firefox / non-modern: mark as supported but defer creation until first use.
 			this._isBackgroundProcessorSupported.set(true);
 			this.log.d('Background processors supported but not modern – will initialise on-demand');
 		}
+	}
+
+	private initialiseProcessor(): void {
+		if (this.backgroundProcessor || !supportsModernBackgroundProcessors()) return;
+
+		try {
+			this.backgroundProcessor = BackgroundProcessor({
+				mode: 'disabled',
+				assetPaths: this.getAssetPaths()
+			});
+			this._isBackgroundProcessorSupported.set(true);
+			this.log.d('Background processor initialised at startup (modern processors supported)');
+		} catch (error: any) {
+			this.log.w('Failed to initialise background processor:', error?.message || error);
+			this._isBackgroundProcessorSupported.set(false);
+		}
+	}
+
+	private getAssetPaths() {
+		return {
+			modelAssetPath: this.runtimeConfigService.resolvePath(MEDIAPIPE_MODEL_PATH)
+		};
 	}
 
 	/**
@@ -140,7 +162,10 @@ export class VideoTrackProcessorService {
 			// Firefox: processor is not pre-allocated; create on first use and restore the effect.
 			try {
 				if (!this.backgroundProcessor) {
-					this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled', assetPaths: MEDIAPIPE_ASSET_PATHS });
+					this.backgroundProcessor = BackgroundProcessor({
+						mode: 'disabled',
+						assetPaths: this.getAssetPaths()
+					});
 				}
 				await videoTrack.setProcessor(this.backgroundProcessor);
 				// The transformer options are reset on init for non-modern browsers; re-apply explicitly.
@@ -168,7 +193,10 @@ export class VideoTrackProcessorService {
 			try {
 				if (!this.backgroundProcessor) {
 					this.log.d('Creating background processor on-demand');
-					this.backgroundProcessor = BackgroundProcessor({ mode: 'disabled', assetPaths: MEDIAPIPE_ASSET_PATHS });
+					this.backgroundProcessor = BackgroundProcessor({
+						mode: 'disabled',
+						assetPaths: this.getAssetPaths()
+					});
 				}
 				this.log.d('Attaching processor on effect activation (lazy loading)');
 				await videoTrack.setProcessor(this.backgroundProcessor);
