@@ -16,7 +16,7 @@
 } @else {
 	<!-- Members Toolbar -->
 	<mat-toolbar class="members-toolbar" id="members-toolbar">
-		<!-- Left Section: Search -->
+		<!-- Left Section: Search + filter controls -->
 		<div class="toolbar-left" id="members-toolbar-left">
 			@if (showSearchBox()) {
 				<mat-form-field class="search-field" appearance="outline" id="members-search-field">
@@ -28,6 +28,53 @@
 						id="members-search-input"
 						(keydown.enter)="triggerSearch()"
 					/>
+
+					<!-- Inline clear-X for the search text -->
+					@if (filterState().nameFilter) {
+						<button
+							mat-icon-button
+							matSuffix
+							type="button"
+							class="ov-search-modifier clear-name-btn"
+							(click)="clearNameFilter()"
+							matTooltip="Clear search"
+							matTooltipPosition="above"
+							id="members-clear-name-btn"
+						>
+							<mat-icon>close</mat-icon>
+						</button>
+					}
+
+					<!-- Case-insensitive toggle -->
+					<button
+						mat-icon-button
+						matSuffix
+						type="button"
+						class="ov-search-modifier case-toggle"
+						[class.active]="filterState().nameCaseInsensitive"
+						(click)="toggleCaseInsensitive()"
+						matTooltip="Match case insensitive"
+						matTooltipPosition="above"
+						id="members-case-insensitive-btn"
+					>
+						<span class="modifier-label">Aa</span>
+					</button>
+
+					<!-- Match-mode selector -->
+					<button
+						mat-icon-button
+						matSuffix
+						type="button"
+						class="ov-search-modifier match-mode-trigger"
+						[class.active]="filterState().nameMatchMode !== TextMatchMode.PREFIX"
+						[matMenuTriggerFor]="matchModeMenu"
+						[matTooltip]="'Match mode: ' + currentMatchMode().label"
+						matTooltipPosition="above"
+						id="members-match-mode-btn"
+					>
+						<mat-icon>{{ currentMatchMode().icon }}</mat-icon>
+					</button>
+
 					<button
 						mat-icon-button
 						matSuffix
@@ -40,7 +87,33 @@
 						<mat-icon>search</mat-icon>
 					</button>
 				</mat-form-field>
+
+				<mat-menu #matchModeMenu="matMenu" class="ov-match-mode-menu">
+					@for (option of nameMatchModeOptions; track option.value) {
+						<button
+							mat-menu-item
+							type="button"
+							[class.active]="filterState().nameMatchMode === option.value"
+							(click)="setMatchMode(option.value)"
+							id="members-match-mode-option-{{ option.value }}"
+						>
+							<mat-icon>{{ option.icon }}</mat-icon>
+							<span>{{ option.label }}</span>
+						</button>
+					}
+				</mat-menu>
 			}
+
+			<button
+				mat-icon-button
+				class="refresh-btn"
+				(click)="refreshMembers()"
+				[disabled]="loading()"
+				matTooltip="Refresh members"
+				id="members-refresh-btn"
+			>
+				<mat-icon>refresh</mat-icon>
+			</button>
 		</div>
 
 		<!-- Center Section: Batch Actions (visible when items selected) -->
@@ -63,53 +136,8 @@
 			</div>
 		}
 
-		<!-- Right Section: Actions -->
+		<!-- Right Section: Add Member -->
 		<div class="toolbar-right" id="members-toolbar-right">
-			@if (hasActiveFilters()) {
-				<button
-					mat-icon-button
-					class="clear-btn"
-					(click)="clearFilters()"
-					[disabled]="loading()"
-					matTooltip="Clear all filters"
-					id="members-clear-filters-btn"
-				>
-					<mat-icon>filter_alt_off</mat-icon>
-				</button>
-			}
-
-			<button
-				mat-icon-button
-				class="refresh-btn"
-				(click)="refreshMembers()"
-				[disabled]="loading()"
-				matTooltip="Refresh members"
-				id="members-refresh-btn"
-			>
-				<mat-icon>refresh</mat-icon>
-			</button>
-
-			@if (showFilters()) {
-				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter members">
-					<mat-icon>tune</mat-icon>
-				</button>
-
-				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu">
-					<div class="filter-content" (click)="$event.stopPropagation()">
-						<h4>Member name matching</h4>
-						<mat-form-field appearance="outline">
-							<mat-label>Match mode</mat-label>
-							<mat-select [formControl]="controls.nameMatchMode">
-								@for (option of nameMatchModeOptions; track option.value) {
-									<mat-option [value]="option.value">{{ option.label }}</mat-option>
-								}
-							</mat-select>
-						</mat-form-field>
-						<mat-checkbox [formControl]="controls.nameCaseInsensitive">Case insensitive</mat-checkbox>
-					</div>
-				</mat-menu>
-			}
-
 			<button
 				mat-button
 				class="primary-button"
@@ -290,10 +318,10 @@
 						id="members-actions-cell-{{ member.memberId }}"
 					>
 						<div class="action-buttons" id="member-action-buttons-{{ member.memberId }}">
-							<!-- Copy Access URL -->
+							<!-- Copy Access Link -->
 							<button
 								mat-icon-button
-								matTooltip="Copy access URL"
+								matTooltip="Copy access link"
 								(click)="$event.stopPropagation(); copyMemberLink(member)"
 								[disabled]="loading()"
 								class="copy-link-btn"

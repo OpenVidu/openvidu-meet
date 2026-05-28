@@ -17,13 +17,11 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { MatSelectModule } from '@angular/material/select';
 import { MatSortModule, Sort } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -81,13 +79,11 @@ export interface MemberTableFilter {
 		MatIconModule,
 		MatFormFieldModule,
 		MatInputModule,
-		MatSelectModule,
 		MatMenuModule,
 		MatTooltipModule,
 		MatProgressSpinnerModule,
 		MatToolbarModule,
 		MatBadgeModule,
-		MatDividerModule,
 		MatSortModule,
 		RouterModule,
 		DatePipe
@@ -138,12 +134,33 @@ export class RoomMembersListsComponent implements OnInit {
 		return this.filtersForm.controls;
 	}
 
+	// Pending form snapshot — reflects what's in the input fields right now.
+	// Drives transient UI cues (clear-X visibility, search-modifier active states).
+	protected filterState = signal(this.filtersForm.getRawValue());
+
+	// Applied filter snapshot — reflects what's actually filtering the table.
+	// Updated only when emitFilterChange() fires.
+	protected appliedFilterState = signal(this.filtersForm.getRawValue());
+
+	// Reads the applied snapshot so pending free-text input doesn't count as "active".
+	hasActiveFilters = computed(() => !!this.appliedFilterState().nameFilter);
+
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
-		{ value: TextMatchMode.EXACT, label: 'Exact match' },
-		{ value: TextMatchMode.REGEX, label: 'Regex' }
+		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
+		{ value: TextMatchMode.EXACT, label: 'Exact match', icon: 'format_quote' },
+		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
 	];
+
+	// Currently selected match mode option (drives the search-box trigger button)
+	currentMatchMode = computed(
+		() =>
+			this.nameMatchModeOptions.find((o) => o.value === this.filterState().nameMatchMode) ??
+			this.nameMatchModeOptions[0]
+	);
+
+	// Expose TextMatchMode for template
+	protected readonly TextMatchMode = TextMatchMode;
 
 	// Sort state
 	currentSortField = signal<MeetRoomMemberSortField>('membershipDate');
@@ -190,8 +207,16 @@ export class RoomMembersListsComponent implements OnInit {
 	private setupFilters() {
 		const filters = this.initialFilters();
 		this.filtersForm.patchValue(filters, { emitEvent: false });
+		const initialSnapshot = this.filtersForm.getRawValue();
+		this.filterState.set(initialSnapshot);
+		this.appliedFilterState.set(initialSnapshot);
 		this.currentSortField.set(filters.sortField);
 		this.currentSortOrder.set(filters.sortOrder);
+
+		// Keep the reactive snapshot in sync with any form change
+		this.filtersForm.valueChanges
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.filterState.set(this.filtersForm.getRawValue()));
 
 		const { nameFilter, nameMatchMode, nameCaseInsensitive } = this.controls;
 
@@ -305,6 +330,18 @@ export class RoomMembersListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
+	toggleCaseInsensitive() {
+		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
+	}
+
+	clearNameFilter() {
+		this.controls.nameFilter.setValue('');
+	}
+
+	setMatchMode(mode: TextMatchMode) {
+		this.controls.nameMatchMode.setValue(mode);
+	}
+
 	private buildFilterSnapshot(): MemberTableFilter {
 		return {
 			...this.filtersForm.getRawValue(),
@@ -314,23 +351,22 @@ export class RoomMembersListsComponent implements OnInit {
 	}
 
 	private emitFilterChange() {
-		this.filterChange.emit(this.buildFilterSnapshot());
-	}
-
-	hasActiveFilters(): boolean {
-		const { nameFilter, nameMatchMode, nameCaseInsensitive } = this.filtersForm.getRawValue();
-		return !!(nameFilter || nameMatchMode !== TextMatchMode.PREFIX || nameCaseInsensitive);
+		const snapshot = this.buildFilterSnapshot();
+		this.appliedFilterState.set(snapshot);
+		this.filterChange.emit(snapshot);
 	}
 
 	clearFilters() {
 		this.filtersForm.reset(
 			{
 				nameFilter: '',
-				nameMatchMode: TextMatchMode.PREFIX,
-				nameCaseInsensitive: false
+				// Preserve search modifiers — they are not part of "filters"
+				nameMatchMode: this.controls.nameMatchMode.value,
+				nameCaseInsensitive: this.controls.nameCaseInsensitive.value
 			},
 			{ emitEvent: false }
 		);
+		this.filterState.set(this.filtersForm.getRawValue());
 		this.emitFilterChange();
 	}
 }

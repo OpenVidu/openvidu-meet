@@ -22,32 +22,110 @@
 } @else {
 	<!-- Recordings Toolbar (hidden in mobile) -->
 	<mat-toolbar class="recordings-toolbar" [class.mobile-hidden]="isMobileView()">
-		<!-- Left Section: Search -->
-		@if (!isMobileView()) {
-			<div class="toolbar-left">
-				@if (showSearchBox()) {
-					<mat-form-field class="search-field" appearance="outline">
-						<mat-label>Search recordings</mat-label>
-						<input
-							matInput
-							[formControl]="controls.nameFilter"
-							placeholder="Search by room name"
-							(keydown.enter)="triggerSearch()"
-						/>
+		<!-- Left Section: Search + filter controls -->
+		<div class="toolbar-left">
+			@if (showSearchBox() && !isMobileView()) {
+				<mat-form-field class="search-field" appearance="outline">
+					<mat-label>Search recordings</mat-label>
+					<input
+						matInput
+						[formControl]="controls.nameFilter"
+						placeholder="Search by room name"
+						(keydown.enter)="triggerSearch()"
+					/>
+
+					<!-- Inline clear-X for the search text -->
+					@if (filterState().nameFilter) {
 						<button
 							mat-icon-button
 							matSuffix
-							class="search-btn"
-							(click)="triggerSearch()"
-							[disabled]="loading() || !controls.nameFilter.value"
-							matTooltip="Search"
+							type="button"
+							class="ov-search-modifier clear-name-btn"
+							(click)="clearNameFilter()"
+							matTooltip="Clear search"
+							matTooltipPosition="above"
 						>
-							<mat-icon>search</mat-icon>
+							<mat-icon>close</mat-icon>
 						</button>
-					</mat-form-field>
-				}
-			</div>
-		}
+					}
+
+					<!-- Case-insensitive toggle -->
+					<button
+						mat-icon-button
+						matSuffix
+						type="button"
+						class="ov-search-modifier case-toggle"
+						[class.active]="filterState().nameCaseInsensitive"
+						(click)="toggleCaseInsensitive()"
+						matTooltip="Match case insensitive"
+						matTooltipPosition="above"
+					>
+						<span class="modifier-label">Aa</span>
+					</button>
+
+					<!-- Match-mode selector -->
+					<button
+						mat-icon-button
+						matSuffix
+						type="button"
+						class="ov-search-modifier match-mode-trigger"
+						[class.active]="filterState().nameMatchMode !== TextMatchMode.PREFIX"
+						[matMenuTriggerFor]="matchModeMenu"
+						[matTooltip]="'Match mode: ' + currentMatchMode().label"
+						matTooltipPosition="above"
+					>
+						<mat-icon>{{ currentMatchMode().icon }}</mat-icon>
+					</button>
+
+					<button
+						mat-icon-button
+						matSuffix
+						class="search-btn"
+						(click)="triggerSearch()"
+						[disabled]="loading() || !controls.nameFilter.value"
+						matTooltip="Search"
+					>
+						<mat-icon>search</mat-icon>
+					</button>
+				</mat-form-field>
+
+				<mat-menu #matchModeMenu="matMenu" class="ov-match-mode-menu">
+					@for (option of nameMatchModeOptions; track option.value) {
+						<button
+							mat-menu-item
+							type="button"
+							[class.active]="filterState().nameMatchMode === option.value"
+							(click)="setMatchMode(option.value)"
+						>
+							<mat-icon>{{ option.icon }}</mat-icon>
+							<span>{{ option.label }}</span>
+						</button>
+					}
+				</mat-menu>
+			}
+
+			@if (showFilters()) {
+				<button
+					mat-icon-button
+					class="ov-filters-trigger"
+					[class.has-filters]="activeFilterChips().length > 0"
+					(click)="toggleFilterPanel()"
+					matTooltip="Filter recordings"
+				>
+					<mat-icon>tune</mat-icon>
+				</button>
+			}
+
+			<button
+				mat-icon-button
+				class="refresh-btn"
+				(click)="refreshRecordings()"
+				[disabled]="loading()"
+				matTooltip="Refresh recordings"
+			>
+				<mat-icon>refresh</mat-icon>
+			</button>
+		</div>
 
 		<!-- Center Section: Bulk Actions (visible when items selected) -->
 		@if (showSelection() && selectedRecordings().size > 0) {
@@ -92,64 +170,42 @@
 				</div>
 			</div>
 		}
-
-		<!-- Right Section: Filters -->
-		<div class="toolbar-right">
-			@if (hasActiveFilters()) {
-				<button
-					mat-icon-button
-					class="clear-btn"
-					(click)="clearFilters()"
-					[disabled]="loading()"
-					matTooltip="Clear all filters"
-				>
-					<mat-icon>filter_alt_off</mat-icon>
-				</button>
-			}
-
-			<button
-				mat-icon-button
-				class="refresh-btn"
-				(click)="refreshRecordings()"
-				[disabled]="loading()"
-				matTooltip="Refresh recordings"
-			>
-				<mat-icon>refresh</mat-icon>
-			</button>
-
-			@if (showFilters()) {
-				<button mat-icon-button [matMenuTriggerFor]="filtersMenu" matTooltip="Filter recordings">
-					<mat-icon>tune</mat-icon>
-				</button>
-
-				<mat-menu #filtersMenu="matMenu" class="ov-filters-menu">
-					<div class="filter-content" (click)="$event.stopPropagation()">
-						<h4>Room name matching</h4>
-						<mat-form-field appearance="outline">
-							<mat-label>Match mode</mat-label>
-							<mat-select [formControl]="controls.nameMatchMode">
-								@for (option of nameMatchModeOptions; track option.value) {
-									<mat-option [value]="option.value">{{ option.label }}</mat-option>
-								}
-							</mat-select>
-						</mat-form-field>
-						<mat-checkbox [formControl]="controls.nameCaseInsensitive">Case insensitive</mat-checkbox>
-
-						<mat-divider />
-						<h4>Filter by Status</h4>
-						<mat-form-field appearance="outline">
-							<mat-label>Status</mat-label>
-							<mat-select [formControl]="controls.statusFilter">
-								@for (option of statusOptions; track option.value) {
-									<mat-option [value]="option.value">{{ option.label }}</mat-option>
-								}
-							</mat-select>
-						</mat-form-field>
-					</div>
-				</mat-menu>
-			}
-		</div>
 	</mat-toolbar>
+
+	<!-- Inline Filter Panel -->
+	@if (showFilters() && showFilterPanel()) {
+		<div class="ov-filter-panel">
+			<div class="filter-group">
+				<h4>Filter by Status</h4>
+				<p class="filter-description">Narrows the result to recordings with the selected status.</p>
+				<mat-form-field appearance="outline">
+					<mat-label>Status</mat-label>
+					<mat-select [formControl]="controls.statusFilter">
+						@for (option of statusOptions; track option.value) {
+							<mat-option [value]="option.value">{{ option.label }}</mat-option>
+						}
+					</mat-select>
+				</mat-form-field>
+			</div>
+		</div>
+	}
+
+	<!-- Active Filter Chips -->
+	@if (activeFilterChips().length > 0) {
+		<div class="ov-active-filters">
+			<span class="active-filters-label">Filters:</span>
+			@for (chip of activeFilterChips(); track chip.key) {
+				<button class="filter-chip" (click)="removeFilter(chip.key)">
+					<span>{{ chip.label }}</span>
+					<mat-icon>close</mat-icon>
+				</button>
+			}
+			<button class="clear-all-chip" (click)="clearFilters()">
+				<mat-icon>filter_alt_off</mat-icon>
+				<span>Clear all</span>
+			</button>
+		</div>
+	}
 
 	<!-- Loading Spinner -->
 	@if (loading()) {

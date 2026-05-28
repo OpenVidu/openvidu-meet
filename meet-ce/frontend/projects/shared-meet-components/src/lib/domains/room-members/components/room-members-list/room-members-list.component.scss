@@ -3,22 +3,8 @@
 .members-toolbar {
 	@extend .ov-data-toolbar;
 
-	.toolbar-left {
-		::ng-deep .search-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
-	}
-
 	.toolbar-right {
 		gap: var(--ov-meet-spacing-sm);
-
-		::ng-deep .refresh-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
-
-		::ng-deep .clear-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
 	}
 }
 
@@ -218,12 +204,6 @@
 	.empty-icon {
 		@include design-tokens.ov-icon(lg);
 		color: var(--ov-meet-text-hint);
-	}
-	box-shadow: none;
-	&:hover {
-		color: var(--ov-meet-text-hint);
-		background-color: transparent;
-		box-shadow: none;
 	}
 }
 
