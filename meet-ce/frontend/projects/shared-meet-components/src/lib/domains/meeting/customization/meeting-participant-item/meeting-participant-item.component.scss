@@ -11,8 +11,14 @@
 	.owner-badge,
 	.admin-badge,
 	.moderator-badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
+
 		mat-icon {
-			vertical-align: bottom;
+			display: block;
+			line-height: 1;
 		}
 	}
 
