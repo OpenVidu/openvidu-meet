@@ -73,7 +73,8 @@
     "PIN": "Fixar",
     "UNPIN": "Desafixar",
     "MINIMIZE": "Minimizar",
-    "MAXIMIZE": "Maximizar"
+    "MAXIMIZE": "Maximizar",
+    "SCREEN_LABEL": "tela"
   },
   "PANEL": {
     "CLOSE": "Fechar",

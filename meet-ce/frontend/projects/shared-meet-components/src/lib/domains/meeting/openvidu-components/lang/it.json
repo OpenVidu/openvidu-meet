@@ -73,7 +73,8 @@
     "PIN": "Fissa",
     "UNPIN": "Sgancia",
     "MINIMIZE": "Minimizza",
-    "MAXIMIZE": "Massimizza"
+    "MAXIMIZE": "Massimizza",
+    "SCREEN_LABEL": "schermo"
   },
   "PANEL": {
     "CLOSE": "Chiudi",

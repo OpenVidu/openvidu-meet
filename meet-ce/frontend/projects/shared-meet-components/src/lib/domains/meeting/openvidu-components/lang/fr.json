@@ -73,7 +73,8 @@
     "PIN": "Épingler",
     "UNPIN": "Détacher",
     "MINIMIZE": "Réduire",
-    "MAXIMIZE": "Agrandir"
+    "MAXIMIZE": "Agrandir",
+    "SCREEN_LABEL": "écran"
   },
   "PANEL": {
     "CLOSE": "Fermer",

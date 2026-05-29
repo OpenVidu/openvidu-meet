@@ -73,7 +73,8 @@
     "PIN": "Pin",
     "UNPIN": "Unpin",
     "MINIMIZE": "Minimize",
-    "MAXIMIZE": "Maximize"
+    "MAXIMIZE": "Maximize",
+    "SCREEN_LABEL": "screen"
   },
   "PANEL": {
     "CLOSE": "Close",

@@ -66,7 +66,7 @@ export const runScreenShareRotationCycles = async (
 	screenOwner: string,
 	cycles = 3
 ): Promise<void> => {
-	const screenTrack = `${screenOwner}_SCREEN`;
+	const screenTrack = `${screenOwner} (screen)`;
 
 	// Both participants start muted; enable speakerA to begin the first cycle.
 	await toggleMicrophone(byName[speakerA]);

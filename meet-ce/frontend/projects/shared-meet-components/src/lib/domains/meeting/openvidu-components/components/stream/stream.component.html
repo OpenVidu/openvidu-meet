@@ -17,7 +17,7 @@
 				<div class="participant-name-container">
 					<span id="participant-name">{{ stream.participant.name }}</span>
 					@if (stream.isScreenStream) {
-						<span id="participant-name">_SCREEN</span>
+						<span class="participant-screen-label"> ({{ 'STREAM.SCREEN_LABEL' | translate }})</span>
 					}
 				</div>
 			</div>

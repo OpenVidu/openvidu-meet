@@ -73,7 +73,8 @@
     "PIN": "ピン",
     "UNPIN": "ピンの解除",
     "MINIMIZE": "最小化",
-    "MAXIMIZE": "最大化"
+    "MAXIMIZE": "最大化",
+    "SCREEN_LABEL": "画面"
   },
   "PANEL": {
     "CLOSE": "閉じる",

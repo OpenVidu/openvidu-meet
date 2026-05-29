@@ -73,7 +73,8 @@
     "PIN": "Vastzetten",
     "UNPIN": "Losmaken",
     "MINIMIZE": "Minimaliseren",
-    "MAXIMIZE": "Maximaliseren"
+    "MAXIMIZE": "Maximaliseren",
+    "SCREEN_LABEL": "scherm"
   },
   "PANEL": {
     "CLOSE": "Sluiten",
