@@ -29,8 +29,8 @@ import type {
 	Room
 } from '../openvidu-components';
 import { ParticipantLeftReason, RoomEvent } from '../openvidu-components';
+import { WebComponentBridgeService } from '../../../shared/services/webcomponent-bridge.service';
 import { MeetingContextService } from './meeting-context.service';
-import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
 
 /**
  * Service that handles all LiveKit/OpenVidu room events.
@@ -44,7 +44,7 @@ export class MeetingEventHandlerService {
 	protected roomFeatureService = inject(RoomFeatureService);
 	protected recordingService = inject(RecordingService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
-	protected wcManagerService = inject(MeetingWebComponentManagerService);
+	protected wcBridge = inject(WebComponentBridgeService);
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
@@ -114,7 +114,7 @@ export class MeetingEventHandlerService {
 	 * @param event Participant model from OpenVidu
 	 */
 	onParticipantConnected = (event: ParticipantModel): void => {
-		this.wcManagerService.emitJoinedEvent({
+		this.wcBridge.emitJoinedEvent({
 			roomId: event.getProperties().room?.name || '',
 			participantIdentity: event.identity
 		});
@@ -138,7 +138,7 @@ export class MeetingEventHandlerService {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
-		this.wcManagerService.emitLeftEvent({
+		this.wcBridge.emitLeftEvent({
 			roomId: event.roomName,
 			participantIdentity: event.participantName,
 			reason: leftReason
