@@ -37,6 +37,9 @@
 	--ov-meet-badge-owner-color: #c98c00; // amber/gold — pairs with the crown icon
 	--ov-meet-badge-admin-color: #6a1b9a; // deep purple — elevated permissions
 	--ov-meet-badge-moderator-color: #0d9488; // teal — protective semantics of the shield_person icon
+
+	// === PARTICIPANT AVATAR LETTER - LIGHT THEME ===
+	--ov-meet-avatar-text-color: #1f2937;
 }
 
 // === DARK THEME ===
@@ -77,4 +80,7 @@
 	--ov-meet-badge-owner-color: #fbbf24; // amber-400
 	--ov-meet-badge-admin-color: #c084fc; // purple-400
 	--ov-meet-badge-moderator-color: #2dd4bf; // teal-400
+
+	// === PARTICIPANT AVATAR LETTER - DARK THEME ===
+	--ov-meet-avatar-text-color: #1f2937;
 }
