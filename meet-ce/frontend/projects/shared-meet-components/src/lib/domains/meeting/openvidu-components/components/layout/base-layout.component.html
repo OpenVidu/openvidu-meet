@@ -17,7 +17,7 @@
 					cdkDrag
 					cdkDragBoundary=".layout"
 					[cdkDragDisabled]="!stream.isMinimized"
-					[cdkDragFreeDragPosition]="currentDragPosition()"
+					[cdkDragFreeDragPosition]="stream.isMinimized ? currentDragPosition() : ZERO_DRAG_POSITION"
 				>
 					<ng-container *ngTemplateOutlet="streamTemplate(); context: { $implicit: stream }" />
 					@if (stream.isMinimized) {

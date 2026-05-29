@@ -623,6 +623,74 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
+		test('should keep the SCREEN SHARE fixed in the layout when minimizing and dragging the LOCAL video', async ({
+			page
+		}) => {
+			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
+			await expectStreamCount(page, 1);
+
+			// Start screen sharing — now the local participant has camera + screen streams
+			await startScreensharing(page);
+			await expect(page.locator('.local_participant.OV_screen')).toBeVisible();
+			await expectStreamCount(page, 2);
+			await expectScreenShareCount(page, 1);
+			await page.waitForTimeout(500);
+
+			const cameraContainer = page.locator('.local_participant:not(.OV_screen)').first();
+			const screenContainer = page.locator('.local_participant.OV_screen').first();
+
+			// Capture initial screen share position (baseline before any minimize)
+			const initialScreenBox = await getElementBoundingBox(page, '.local_participant.OV_screen');
+			expect(initialScreenBox).not.toBeNull();
+
+			// Hover the LOCAL CAMERA (not the screen share) and click its scoped minimize button
+			await cameraContainer.hover();
+			const cameraMinimizeBtn = cameraContainer.locator('#minimize-btn');
+			await expect(cameraMinimizeBtn).toBeVisible();
+			await cameraMinimizeBtn.click();
+			await page.waitForTimeout(1000);
+
+			// Camera should be minimized, screen share should NOT be minimized
+			await expect(cameraContainer).toHaveClass(/OV_minimized/);
+			await expect(screenContainer).not.toHaveClass(/OV_minimized/);
+
+			// Capture screen share position after camera minimize (this is the reference for drag invariance)
+			const screenBoxAfterMinimize = await getElementBoundingBox(page, '.local_participant.OV_screen');
+			expect(screenBoxAfterMinimize).not.toBeNull();
+
+			// Screen share should still be visible and have non-zero dimensions
+			expect(screenBoxAfterMinimize!.width).toBeGreaterThan(0);
+			expect(screenBoxAfterMinimize!.height).toBeGreaterThan(0);
+
+			// Record camera position before dragging
+			const cameraBoxBeforeDrag = await getElementBoundingBox(page, '.local_participant:not(.OV_screen)');
+			expect(cameraBoxBeforeDrag).not.toBeNull();
+
+			// Drag the minimized camera to a new position
+			await dragStream(page, '.local_participant:not(.OV_screen)', 400, 300);
+			await page.waitForTimeout(500);
+
+			// Verify camera was actually moved — otherwise the screen-share invariance is trivial
+			const cameraBoxAfterDrag = await getElementBoundingBox(page, '.local_participant:not(.OV_screen)');
+			expect(cameraBoxAfterDrag).not.toBeNull();
+			expect(Math.abs(cameraBoxAfterDrag!.x - cameraBoxBeforeDrag!.x)).toBeGreaterThan(40);
+			expect(Math.abs(cameraBoxAfterDrag!.y - cameraBoxBeforeDrag!.y)).toBeGreaterThan(40);
+
+			// Screen share position must NOT have changed because of the camera drag
+			const screenBoxAfterDrag = await getElementBoundingBox(page, '.local_participant.OV_screen');
+			expect(screenBoxAfterDrag).not.toBeNull();
+			expect(screenBoxAfterDrag!.x).toBeCloseTo(screenBoxAfterMinimize!.x, 0);
+			expect(screenBoxAfterDrag!.y).toBeCloseTo(screenBoxAfterMinimize!.y, 0);
+			expect(screenBoxAfterDrag!.width).toBeCloseTo(screenBoxAfterMinimize!.width, 0);
+			expect(screenBoxAfterDrag!.height).toBeCloseTo(screenBoxAfterMinimize!.height, 0);
+
+			// Screen share must still NOT be minimized after dragging the local video
+			await expect(screenContainer).not.toHaveClass(/OV_minimized/);
+
+			await stopScreensharing(page);
+			await page.close();
+		});
+
 		test('should AUTO-MINIMIZE the local video when the first remote participant joins', async ({ browser }) => {
 			const { pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,

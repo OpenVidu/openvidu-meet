@@ -1,4 +1,3 @@
-
 import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import {
@@ -126,8 +125,13 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	// ── Drag position signal ─────────────────────────────────────────────────────
 
+	/**
+	 * Constant zero offset bound to non-minimized local streams
+	 */
+	readonly ZERO_DRAG_POSITION = { x: 0, y: 0 } as const;
+
 	/** Tracked drag offset; kept in sync so CD never resets an in-flight or post-drag position. */
-	readonly currentDragPosition = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+	readonly currentDragPosition = signal<{ x: number; y: number }>(this.ZERO_DRAG_POSITION);
 
 	// ── Resize constants ─────────────────────────────────────────────────────────
 
@@ -156,7 +160,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private resizeDirection = '';
 	private resizeStartClientX = 0;
 	private resizeStartWidth = 0;
-	private resizeDragStartPos = { x: 0, y: 0 };
+	private resizeDragStartPos = this.ZERO_DRAG_POSITION;
 	/** Cached CDK drag instance for the duration of a resize gesture (avoids per-event DOM lookup). */
 	private resizingDrag: CdkDrag | undefined;
 
@@ -310,7 +314,10 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 			clearTimeout(this.resizeTimeout);
 			this.resizeTimeout = setTimeout(() => {
-				if (Math.abs(this.lastLayoutWidth - parentWidth) > 1 || Math.abs(this.lastLayoutHeight - parentHeight) > 1) {
+				if (
+					Math.abs(this.lastLayoutWidth - parentWidth) > 1 ||
+					Math.abs(this.lastLayoutHeight - parentHeight) > 1
+				) {
 					this.layoutService.update();
 				}
 
@@ -422,15 +429,15 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private resetDragPosition(): void {
 		for (const drag of this.localParticipantDrags()) {
 			drag.reset();
-			drag.setFreeDragPosition({ x: 0, y: 0 });
+			drag.setFreeDragPosition(this.ZERO_DRAG_POSITION);
 		}
-		this.currentDragPosition.set({ x: 0, y: 0 });
+		this.currentDragPosition.set(this.ZERO_DRAG_POSITION);
 	}
 
 	/** Reads the actual CDK transform from the element's computed style. */
 	private getActualDragPosition(element: HTMLElement): { x: number; y: number } {
 		const transformStr = window.getComputedStyle(element).transform;
-		if (!transformStr || transformStr === 'none') return { x: 0, y: 0 };
+		if (!transformStr || transformStr === 'none') return this.ZERO_DRAG_POSITION;
 		const { e, f } = new DOMMatrix(transformStr);
 		return { x: e, y: f };
 	}
