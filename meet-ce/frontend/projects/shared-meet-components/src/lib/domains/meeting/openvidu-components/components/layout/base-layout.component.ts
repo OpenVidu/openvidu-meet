@@ -160,7 +160,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private resizeDirection = '';
 	private resizeStartClientX = 0;
 	private resizeStartWidth = 0;
-	private resizeDragStartPos = this.ZERO_DRAG_POSITION;
+	private resizeDragStartPos: { x: number; y: number } = this.ZERO_DRAG_POSITION;
 	/** Cached CDK drag instance for the duration of a resize gesture (avoids per-event DOM lookup). */
 	private resizingDrag: CdkDrag | undefined;
 
