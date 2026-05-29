@@ -10,6 +10,7 @@ import {
 	input,
 	output,
 	signal,
+	untracked,
 	ViewEncapsulation
 } from '@angular/core';
 import {
@@ -198,7 +199,9 @@ export class App {
 
 		if (!detail) return;
 
-		if (this._overrideRoomRecordingsId() !== null) {
+		// Read without tracking: writing `null` here would otherwise re-trigger
+		// this effect and the same `detail` would fall through to emit `closed`.
+		if (untracked(this._overrideRoomRecordingsId) !== null) {
 			this._overrideRoomRecordingsId.set(null);
 			return;
 		}
