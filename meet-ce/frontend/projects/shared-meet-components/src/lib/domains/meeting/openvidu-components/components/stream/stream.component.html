@@ -75,7 +75,7 @@
 							<mat-icon id="pinned" fontIcon="push_pin" />
 						}
 					</button>
-					@if (!stream.participant.isLocal) {
+					@if (!stream.participant.isLocal && stream.audioTrack) {
 						<button
 							mat-icon-button
 							id="mute-btn"

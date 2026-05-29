@@ -837,6 +837,36 @@ test.describe('Stream E2E Tests', () => {
 				await removeAllParticipants();
 			}
 		});
+
+		test('should NOT show the SILENCE button on a remote camera stream without an audio track', async ({
+			browser
+		}) => {
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				// participant-1 joins WITHOUT a microphone — `stopMicTrackOnMute: true` means no audio
+				// publication ever reaches participant-0, so the silence button has nothing to mute.
+				participants: [
+					{ name: 'participant-0' },
+					{ name: 'participant-1', headless: true, audioEnabled: false }
+				]
+			});
+			const [pageA] = pages;
+
+			try {
+				const remoteCamera = pageA.locator('.OV_stream.remote.camera-source').first();
+				await expect(remoteCamera).toBeVisible({ timeout: 10_000 });
+				await remoteCamera.hover();
+				await pageA.waitForTimeout(500);
+
+				// PIN button still appears (no audio dependency)…
+				await expect(remoteCamera.locator('#pin-btn')).toBeVisible();
+				// …but the mute button must be hidden when there's no audio track to mute.
+				await expect(remoteCamera.locator('#mute-btn')).toHaveCount(0);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
 	});
 
 	test.describe('Audio detection - Speaking indicator', () => {
