@@ -33,9 +33,9 @@ export class ParticipantService {
 	 * Local participant Signal for reactive programming with Angular signals.
 	 */
 	localParticipant: Signal<ParticipantModel | undefined>;
-	private _localParticipant: WritableSignal<ParticipantModel | undefined> = signal<
-		ParticipantModel | undefined
-	>(undefined);
+	private _localParticipant: WritableSignal<ParticipantModel | undefined> = signal<ParticipantModel | undefined>(
+		undefined
+	);
 	readonly localParticipantNameSignal = computed(() => this._localParticipant()?.name ?? '');
 	readonly localParticipantIdentitySignal = computed(() => this._localParticipant()?.identity ?? '');
 
@@ -290,7 +290,9 @@ export class ParticipantService {
 			if (s.isLocal) {
 				this._localParticipant()?.setSpeaking(true);
 			} else {
-				this.remoteParticipants().find((p) => p.sid === s.sid)?.setSpeaking(true);
+				this.remoteParticipants()
+					.find((p) => p.sid === s.sid)
+					?.setSpeaking(true);
 			}
 		});
 		// Signal propagation is automatic via the _speaking signal in ParticipantModel.
@@ -308,7 +310,9 @@ export class ParticipantService {
 		if (local?.sid === participantSid) {
 			local.setEncryptionError(hasError);
 		} else {
-			this.remoteParticipants().find((p) => p.sid === participantSid)?.setEncryptionError(hasError);
+			this.remoteParticipants()
+				.find((p) => p.sid === participantSid)
+				?.setEncryptionError(hasError);
 		}
 		// Signal propagation is automatic via the _hasEncryptionError signal in ParticipantModel.
 	}
@@ -324,7 +328,9 @@ export class ParticipantService {
 		if (local?.sid === participantSid) {
 			local.setConnectionQuality(quality);
 		} else {
-			this.remoteParticipants().find((p) => p.sid === participantSid)?.setConnectionQuality(quality);
+			this.remoteParticipants()
+				.find((p) => p.sid === participantSid)
+				?.setConnectionQuality(quality);
 		}
 		// Signal propagation is automatic via the _connectionQuality signal in ParticipantModel.
 	}
@@ -576,7 +582,8 @@ export class ParticipantService {
 	 */
 	setScreenTrackPublicationDate(participantSid: string, trackSid: string, createdAt: number) {
 		// setScreenTrackPublicationDate bumps _revision internally.
-		this.remoteParticipants().find((p) => p.sid === participantSid)
+		this.remoteParticipants()
+			.find((p) => p.sid === participantSid)
 			?.setScreenTrackPublicationDate(trackSid, createdAt);
 	}
 
@@ -592,21 +599,27 @@ export class ParticipantService {
 	 */
 	toggleRemoteVideoPinned(sid: string | undefined) {
 		if (sid) {
-			const participant = this.remoteParticipants().find((p) =>
-				p.tracks.some((track) => track.trackSid === sid)
-			);
+			const participant = this.remoteParticipants().find((p) => p.tracks.some((track) => track.trackSid === sid));
 			// toggleVideoPinned calls bump() internally — no array update needed.
 			participant?.toggleVideoPinned(sid);
 		}
 	}
 
 	/**
-	 * Sets the remote participant video track element muted or unmuted .
+	 * Sets the remote participant video track element muted or unmuted.
+	 *
+	 * When {@link source} is provided, only the matching stream (camera or screen-share) is
+	 * affected.
+	 *
+	 * Omit {@link source} to mute the whole participant.
+	 *
 	 * @internal
 	 */
-	setRemoteMutedForcibly(sid: string, value: boolean) {
+	setRemoteMutedForcibly(sid: string, value: boolean, source?: Track.Source) {
 		// setMutedForcibly calls bump() internally — no array update needed.
-		this.remoteParticipants().find((p) => p.sid === sid)?.setMutedForcibly(value);
+		this.remoteParticipants()
+			.find((p) => p.sid === sid)
+			?.setMutedForcibly(value, source);
 	}
 
 	private newParticipant(props: ParticipantProperties): ParticipantModel {

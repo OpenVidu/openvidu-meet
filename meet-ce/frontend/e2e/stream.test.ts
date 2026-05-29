@@ -992,5 +992,65 @@ test.describe('Stream E2E Tests', () => {
 				await removeAllParticipants();
 			}
 		});
+
+		test('should toggle the MUTED icon on a remote SCREEN SHARE stream when clicking its mute button', async ({
+			browser
+		}) => {
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
+
+			try {
+				// B starts screen sharing — A should see it as a remote screen-share stream
+				await startScreensharing(pageB);
+				await expectScreenShareCount(pageA, 1);
+				await expectScreenShareCount(pageB, 1);
+
+				const remoteScreenSelector = '.remote-participant.OV_screen .OV_stream.remote.screen-source';
+				const remoteCameraSelector = '.remote-participant:not(.OV_screen) .OV_stream.remote.camera-source';
+				await expect(pageA.locator(remoteScreenSelector)).toBeVisible({ timeout: 10_000 });
+				await expect(pageA.locator(remoteCameraSelector)).toBeVisible({ timeout: 10_000 });
+
+				const screenMutedIcon = pageA.locator(`${remoteScreenSelector} .status-icons #muted-forcibly`);
+				const cameraMutedIcon = pageA.locator(`${remoteCameraSelector} .status-icons #muted-forcibly`);
+
+				// Initially neither stream shows the muted icon
+				await expect(screenMutedIcon).toHaveCount(0);
+				await expect(cameraMutedIcon).toHaveCount(0);
+
+				// Click mute on B's screen share — only the screen-share stream should show the icon.
+				// The screen share behaves as an independent sub-stream of the participant, so the
+				// camera stream's status must remain untouched.
+				await muteRemoteParticipant(pageA, remoteScreenSelector);
+				await pageA.waitForTimeout(500);
+				await expect(screenMutedIcon).toHaveCount(1);
+				await expect(screenMutedIcon).toBeVisible();
+				await expect(cameraMutedIcon).toHaveCount(0);
+
+				// Click mute again (unmute) — screen-share icon should disappear, camera still untouched
+				await unmuteRemoteParticipant(pageA, remoteScreenSelector);
+				await pageA.waitForTimeout(500);
+				await expect(screenMutedIcon).toHaveCount(0);
+				await expect(cameraMutedIcon).toHaveCount(0);
+
+				// Now mute B's CAMERA stream — only the camera should show the icon
+				await muteRemoteParticipant(pageA, remoteCameraSelector);
+				await pageA.waitForTimeout(500);
+				await expect(cameraMutedIcon).toHaveCount(1);
+				await expect(cameraMutedIcon).toBeVisible();
+				await expect(screenMutedIcon).toHaveCount(0);
+
+				// Unmute the camera — both icons should now be absent
+				await unmuteRemoteParticipant(pageA, remoteCameraSelector);
+				await pageA.waitForTimeout(500);
+				await expect(cameraMutedIcon).toHaveCount(0);
+				await expect(screenMutedIcon).toHaveCount(0);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
 	});
 });

@@ -124,7 +124,11 @@ export class StreamComponent implements OnDestroy {
 	toggleMuteForcibly() {
 		const stream = this.stream();
 		if (stream?.participant) {
-			this.participantService.setRemoteMutedForcibly(stream.participant.sid, !stream.isMutedForcibly);
+			this.participantService.setRemoteMutedForcibly(
+				stream.participant.sid,
+				!stream.isMutedForcibly,
+				stream.source
+			);
 		}
 	}
 

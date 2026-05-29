@@ -331,7 +331,7 @@ export class ParticipantModel {
 				streamId: screenVideoTrack?.trackSid ?? `screen-${this.identity}`,
 				isPinned: screenVideoTrack?.isPinned ?? false,
 				isMinimized: false,
-				isMutedForcibly: false
+				isMutedForcibly: (screenAudioTrack ?? screenVideoTrack)?.isMutedForcibly ?? false
 			});
 		}
 
@@ -622,10 +622,24 @@ export class ParticipantModel {
 	}
 
 	/**
+	 * Forcibly mutes (or un-mutes) this participant's tracks.
+	 *
+	 * Calling without {@link source} mutes every track on the participant
+	 *
 	 * @internal
 	 */
-	setMutedForcibly(muted: boolean) {
-		this.augmentedTracks.forEach((track) => (track.isMutedForcibly = muted));
+	setMutedForcibly(muted: boolean, source?: Track.Source) {
+		const matchesScope = (track: AugmentedTrackPublication): boolean => {
+			if (source === Track.Source.Camera) {
+				return track.source === Track.Source.Camera || track.source === Track.Source.Microphone;
+			}
+			if (source === Track.Source.ScreenShare) {
+				return track.source === Track.Source.ScreenShare || track.source === Track.Source.ScreenShareAudio;
+			}
+			return true;
+		};
+
+		this.augmentedTracks.filter(matchesScope).forEach((track) => (track.isMutedForcibly = muted));
 		this.bump();
 	}
 
