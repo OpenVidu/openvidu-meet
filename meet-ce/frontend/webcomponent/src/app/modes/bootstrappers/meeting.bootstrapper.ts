@@ -4,12 +4,6 @@ import { lastPathSegment, queryParam } from '../../utils/url';
 import type { ModeInputs } from '../mode';
 import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
 
-/**
- * Bootstraps `meeting` mode. Translates Web Component inputs into
- * {@link MeetingEntryParams} and delegates to {@link MeetingEntryService} —
- * the same use case that backs the SPA's `extractRoomMeetingParamsGuard` +
- * `validateRoomMeetingAccessGuard` chain.
- */
 @Injectable({ providedIn: 'root' })
 export class MeetingModeBootstrapper implements ModeBootstrapper {
 	private readonly meetingEntryService = inject(MeetingEntryService);
@@ -40,6 +34,7 @@ export class MeetingModeBootstrapper implements ModeBootstrapper {
 
 		try {
 			const outcome = await this.meetingEntryService.attempt(params);
+
 			switch (outcome.kind) {
 				case 'ready':
 				case 'redirect':

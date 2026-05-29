@@ -4,12 +4,6 @@ import { lastPathSegment, queryParam } from '../../utils/url';
 import type { ModeInputs } from '../mode';
 import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
 
-/**
- * Bootstraps `single-recording` mode. The recording id is taken from
- * `recordingUrl`'s last path segment, falling back to the `showRecording`
- * shorthand attribute. The room secret (if any) is forwarded so users with
- * room permissions can resolve access via the room-permission path.
- */
 @Injectable({ providedIn: 'root' })
 export class SingleRecordingModeBootstrapper implements ModeBootstrapper {
 	private readonly recordingEntryService = inject(RecordingEntryService);
@@ -35,13 +29,12 @@ export class SingleRecordingModeBootstrapper implements ModeBootstrapper {
 
 		try {
 			const outcome = await this.recordingEntryService.attempt(params);
+
 			switch (outcome.kind) {
 				case 'ready':
 					return { kind: 'ready' };
 				case 'login-required':
-					// The WC has no in-app login screen — hosts subscribe to the
-					// `error` event with reason `'auth-required'` to drive their
-					// own login dialog or redirect.
+					// WC has no in-app login screen; hosts use the `error` event with reason 'auth-required'.
 					return {
 						kind: 'error',
 						detail: {

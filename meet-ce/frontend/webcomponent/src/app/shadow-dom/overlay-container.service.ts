@@ -2,27 +2,9 @@ import { OverlayContainer } from '@angular/cdk/overlay';
 import { Injectable } from '@angular/core';
 
 /**
- * Extends Angular CDK's OverlayContainer to render overlay panels (tooltips,
- * menus, dialogs, selects, etc.) inside the webcomponent's shadow root instead
- * of appending them to document.body.
- *
- * Why this is necessary:
- * - Angular CDK's default OverlayContainer appends a `.cdk-overlay-container`
- *   div to document.body, outside the shadow root boundary.
- * - CSS custom properties (Material Design tokens like --mat-sys-primary) are
- *   defined on :host inside the shadow root and do NOT cascade to elements
- *   at document.body level.
- * - Without these tokens, overlay content renders without colors, typography,
- *   elevation, etc.
- *
- * By placing the overlay container inside the shadow root, all overlay panels
- * inherit the theme tokens and receive the mirrored Material styles from
- * ShadowStylesService.
- *
- * Usage:
- *   1. Provide this class + { provide: OverlayContainer, useExisting: ... }
- *      in app.config.ts so CDK uses it as the singleton overlay container.
- *   2. Call setShadowRoot() inside afterNextRender() in the root component.
+ * Re-parents the CDK overlay container inside the shadow root so that overlays
+ * (tooltips, menus, dialogs) inherit Material theme tokens defined on :host.
+ * By default CDK appends to document.body, outside the shadow boundary.
  */
 @Injectable()
 export class ShadowOverlayContainer extends OverlayContainer {
@@ -31,8 +13,7 @@ export class ShadowOverlayContainer extends OverlayContainer {
 	setShadowRoot(shadowRoot: ShadowRoot): void {
 		this._shadowRoot = shadowRoot;
 
-		// If the container was already created before the shadow root was set
-		// (edge case: CDK triggered before first render), move it now.
+		// Edge case: CDK may create the container before afterNextRender fires.
 		if (this._containerElement) {
 			shadowRoot.appendChild(this._containerElement);
 		}

@@ -4,10 +4,6 @@ import { lastPathSegment, queryParam } from '../../utils/url';
 import type { ModeInputs } from '../mode';
 import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
 
-/**
- * Bootstraps `room-recordings` mode. Validates that the caller has the
- * `canRetrieveRecordings` permission for the room derived from `roomUrl`.
- */
 @Injectable({ providedIn: 'root' })
 export class RoomRecordingsModeBootstrapper implements ModeBootstrapper {
 	private readonly roomRecordingsEntryService = inject(RoomRecordingsEntryService);
@@ -33,6 +29,7 @@ export class RoomRecordingsModeBootstrapper implements ModeBootstrapper {
 
 		try {
 			const outcome = await this.roomRecordingsEntryService.attempt(params);
+
 			switch (outcome.kind) {
 				case 'ready':
 					return { kind: 'ready' };

@@ -1,12 +1,3 @@
-/**
- * Event detail interfaces — public API of the `<openvidu-meet>` custom element.
- *
- * Mirrors the shapes defined in `contracts/openvidu-meet.contract.js` and
- * generated into `src/webcomponents-types/openvidu-meet.d.ts`. Kept here as
- * concrete TypeScript types so internal modules (App, bootstrappers) can
- * import them without crossing into the auto-generated declarations file.
- */
-
 import type { NavigationErrorReason } from '@openvidu-meet/shared-components';
 
 export interface OpenViduMeetJoinedDetail {
@@ -20,11 +11,7 @@ export interface OpenViduMeetLeftDetail {
 	reason: string;
 }
 
-/**
- * Fired after the WC's post-meeting/post-recording UI has finished and the
- * host can safely unmount the element (or perform the `leave-redirect-url`
- * redirect). Payload is intentionally empty.
- */
+/** Emitted after the post-meeting/post-recording UI completes; host can safely unmount the element. */
 // eslint-disable-next-line @typescript-eslint/no-empty-interface
 export interface OpenViduMeetClosedDetail {}
 

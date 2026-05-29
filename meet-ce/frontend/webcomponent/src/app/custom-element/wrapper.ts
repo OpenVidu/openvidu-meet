@@ -2,36 +2,20 @@ import type { OpenViduMeetElementEventName } from '../../webcomponents-types/ope
 import type { App } from '../app';
 
 /**
- * Builds the custom-element class that backs `<openvidu-meet>`.
- *
- * The base class is the `NgElementConstructor` produced by
- * `@angular/elements`. This wrapper adds three things that Angular Elements
- * doesn't supply out of the box:
- *
- * 1. **Imperative methods** (`endMeeting`, `leaveRoom`, `kickParticipant`)
- *    forwarded to the underlying Angular component instance.
- * 2. **Convenience event subscription API** (`on` / `once` / `off`) matching
- *    the legacy iframe-based WebComponent, with typed event-name autocomplete.
- * 3. **`ready` CustomEvent** dispatched after Angular finishes its first render.
- *
- * Memory: handlers registered via `on()` are tracked and torn down in
- * `disconnectedCallback()` so the element doesn't leak listeners on removal.
+ * Wraps the Angular Elements base class to add: imperative methods
+ * (endMeeting, leaveRoom, kickParticipant), convenience event API (on/once/off),
+ * and a `ready` CustomEvent dispatched after first render.
  */
 export function createOpenViduMeetElementClass(
 	NgElementConstructor: CustomElementConstructor
 ): CustomElementConstructor {
 	return class extends (NgElementConstructor as any) {
-		/** Tracks `on()` handlers so `off()` can remove the exact wrapped listener. */
 		private readonly _handlerMap = new Map<string, Map<Function, EventListener>>();
-
-		// ── Lifecycle ────────────────────────────────────────────────────────
 
 		connectedCallback(): void {
 			super.connectedCallback();
-			// Dispatch `ready` after Angular finishes its first render cycle.
-			// Two microtask ticks wait for Angular Elements to initialize and
-			// render the component tree.
 			const el = this as unknown as HTMLElement;
+			// Two microtask ticks let Angular Elements initialize and complete first render.
 			Promise.resolve().then(() =>
 				Promise.resolve().then(() => {
 					el.dispatchEvent(new CustomEvent('ready', { bubbles: false, composed: true, detail: {} }));
@@ -47,8 +31,6 @@ export function createOpenViduMeetElementClass(
 			});
 			this._handlerMap.clear();
 		}
-
-		// ── Convenience event API ────────────────────────────────────────────
 
 		on(eventName: OpenViduMeetElementEventName, callback: (detail: any) => void): this {
 			const listener: EventListener = (e: Event) => callback((e as CustomEvent).detail);
@@ -95,8 +77,6 @@ export function createOpenViduMeetElementClass(
 			return this;
 		}
 
-		// ── Imperative commands ──────────────────────────────────────────────
-
 		endMeeting(): void {
 			this._getComponentInstance()?.endMeeting();
 		}
@@ -109,9 +89,8 @@ export function createOpenViduMeetElementClass(
 			this._getComponentInstance()?.kickParticipant(participantIdentity);
 		}
 
-		// ── Internal ─────────────────────────────────────────────────────────
-
 		private _getComponentInstance(): App | null {
+			// Accesses Angular Elements internal strategy to reach the component instance.
 			const strategy = (this as any).ngElementStrategy;
 			const instance = strategy?.componentRef?.instance as App | undefined;
 			return instance ?? null;

@@ -1,38 +1,31 @@
 @if (errorMessage()) {
-<div class="ov-meet-error" role="alert">
-	<div class="ov-meet-error-icon" aria-hidden="true">⚠️</div>
-	<div class="ov-meet-error-message">{{ errorMessage() }}</div>
-</div>
+	<div class="ov-meet-error" role="alert">
+		<div class="ov-meet-error-icon" aria-hidden="true">⚠️</div>
+		<div class="ov-meet-error-message">{{ errorMessage() }}</div>
+	</div>
 } @else {
-@switch (mode()) {
-	@case ('meeting') {
-		@if (ready()) {
-			@if (hasLeft()) {
-				<!--
-					Post-meeting screen. The SPA navigates to /disconnected after
-					a `left` event; the WC has no router, so we render the same
-					component inline. Its back-button click triggers
-					`wcManager.emitClosedEvent()`, which surfaces as the public
-					`closed` DOM event via `_closedEffect` above.
-				-->
-				<ov-end-meeting [reason]="leftReason()" />
-			} @else {
-				<app-ce-ov-meeting />
+	@switch (mode()) {
+		@case ('meeting') {
+			@if (ready()) {
+				@if (hasLeft()) {
+					<ov-end-meeting [reason]="leftReason()" />
+				} @else {
+					<app-ce-ov-meeting />
+				}
+			}
+		}
+		@case ('single-recording') {
+			@if (ready()) {
+				<ov-view-recording
+					[recordingId]="recordingIdForView()"
+					[recordingSecret]="recordingSecretForView()"
+				></ov-view-recording>
+			}
+		}
+		@case ('room-recordings') {
+			@if (ready()) {
+				<ov-room-recordings [roomId]="roomIdForRecordings()"></ov-room-recordings>
 			}
 		}
 	}
-	@case ('single-recording') {
-		@if (ready()) {
-		<ov-view-recording
-			[recordingId]="recordingIdForView()"
-			[recordingSecret]="recordingSecretForView()"
-		></ov-view-recording>
-		}
-	}
-	@case ('room-recordings') {
-		@if (ready()) {
-		<ov-room-recordings [roomId]="roomIdForRecordings()"></ov-room-recordings>
-		}
-	}
-}
 }

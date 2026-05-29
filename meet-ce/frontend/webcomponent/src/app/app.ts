@@ -19,7 +19,8 @@ import {
 	RoomRecordingsComponent,
 	RuntimeConfigService,
 	ThemeService,
-	ViewRecordingComponent
+	ViewRecordingComponent,
+	WebComponentBridgeService
 } from '@openvidu-meet/shared-components';
 import type {
 	OpenViduMeetClosedDetail,
@@ -27,14 +28,12 @@ import type {
 	OpenViduMeetJoinedDetail,
 	OpenViduMeetLeftDetail
 } from './api/events';
+import { resolveMode, type Mode, type ModeInputs } from './modes/mode';
 import { ModeCoordinatorService } from './modes/mode-coordinator.service';
-import { resolveMode, type Mode } from './modes/mode';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
 import { ShadowStylesService } from './shadow-dom/styles.service';
 import { computeServerUrl, lastPathSegment, queryParam } from './utils/url';
 
-// Re-export the public event detail types under the App module so existing
-// consumers (and the auto-generated `openvidu-meet.d.ts`) keep their imports.
 export type {
 	OpenViduMeetClosedDetail,
 	OpenViduMeetErrorDetail,
@@ -43,18 +42,6 @@ export type {
 	OpenViduMeetLeftDetail
 } from './api/events';
 
-/**
- * Root component for the OpenVidu Meet Web Component.
- *
- * Acts as a thin presenter:
- * - Declares the public WC API (inputs, outputs, imperative methods).
- * - Resolves the active {@link Mode} from inputs.
- * - Delegates per-mode bootstrap to {@link ModeCoordinatorService}.
- * - Surfaces UI state (`errorMessage`, `ready`) and DOM events to the host.
- *
- * Application logic (mode dispatch, URL parsing, access validation, error
- * mapping) lives in dedicated modules under `modes/`, `utils/`, and `api/`.
- */
 @Component({
 	selector: 'app-root',
 	imports: [AppCeMeetingComponent, EndMeetingComponent, RoomRecordingsComponent, ViewRecordingComponent],
@@ -66,15 +53,14 @@ export type {
 	host: {
 		'[attr.role]': '"application"',
 		'[attr.aria-label]': '"OpenVidu Meet"',
-		// Mirror the document-level theme attribute onto :host so that the
-		// :host([data-theme='dark']) CSS selector in app.material.scss works
-		// inside the shadow root (document[data-theme] cannot pierce the boundary).
+		// :host([data-theme='dark']) in app.material.scss cannot read document[data-theme] across the shadow boundary.
 		'[attr.data-theme]': 'themeService.isDark() ? "dark" : null'
 	}
 })
 export class App {
 	protected readonly themeService = inject(ThemeService);
 	private readonly wcManager = inject(MeetingWebComponentManagerService);
+	private readonly wcBridge = inject(WebComponentBridgeService);
 	private readonly modeCoordinator = inject(ModeCoordinatorService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly _elRef = inject(ElementRef);
@@ -82,7 +68,6 @@ export class App {
 	private readonly _shadowStyles = inject(ShadowStylesService);
 	private readonly _shadowOverlay = inject(ShadowOverlayContainer);
 
-	// ── Web Component API: Properties ──────────────────────────────────────
 	readonly roomUrl = input('');
 	readonly recordingUrl = input('');
 	readonly participantName = input('');
@@ -91,84 +76,60 @@ export class App {
 	readonly showOnlyRecordings = input(false);
 	readonly showRecording = input('');
 
-	// ── Web Component API: Events ──────────────────────────────────────────
 	readonly joined = output<OpenViduMeetJoinedDetail>();
 	readonly left = output<OpenViduMeetLeftDetail>();
 	readonly closed = output<OpenViduMeetClosedDetail>();
 	readonly error = output<OpenViduMeetErrorDetail>();
 
-	// ── UI state ───────────────────────────────────────────────────────────
-	/** Non-null when an error prevents normal rendering. Mirrors the `error` event. */
 	readonly errorMessage = signal<string | null>(null);
-	/** True once the active mode has finished its bootstrap and can render. */
 	readonly ready = signal(false);
 
-	// ── Derived state ──────────────────────────────────────────────────────
-	/** Active virtual route, derived from the current inputs. */
-	readonly mode = computed<Mode>(() =>
-		resolveMode({
-			roomUrl: this.roomUrl(),
-			recordingUrl: this.recordingUrl(),
-			participantName: this.participantName(),
-			e2eeKey: this.e2eeKey(),
-			leaveRedirectUrl: this.leaveRedirectUrl(),
-			showOnlyRecordings: this.showOnlyRecordings(),
-			showRecording: this.showRecording()
-		})
+	// WC has no Angular Router; captures view-swap requests from shared code via WebComponentBridgeService.
+	private readonly _overrideRoomRecordingsId = signal<string | null>(null);
+
+	private readonly inputs = computed<ModeInputs>(() => ({
+		roomUrl: this.roomUrl(),
+		recordingUrl: this.recordingUrl(),
+		participantName: this.participantName(),
+		e2eeKey: this.e2eeKey(),
+		leaveRedirectUrl: this.leaveRedirectUrl(),
+		showOnlyRecordings: this.showOnlyRecordings(),
+		showRecording: this.showRecording()
+	}));
+
+	readonly mode = computed<Mode>(() => {
+		if (this._overrideRoomRecordingsId()) return 'room-recordings';
+
+		return resolveMode(this.inputs());
+	});
+
+	readonly recordingIdForView = computed<string>(
+		() => lastPathSegment(this.recordingUrl()) ?? this.showRecording() ?? ''
 	);
 
-	/** Recording identifier bound into `<ov-view-recording>` in `single-recording` mode. */
-	readonly recordingIdForView = computed<string>(() => {
-		return lastPathSegment(this.recordingUrl()) ?? this.showRecording() ?? '';
-	});
+	readonly recordingSecretForView = computed<string>(() => queryParam(this.recordingUrl(), 'recordingSecret') ?? '');
 
-	/** Recording secret bound into `<ov-view-recording>` in `single-recording` mode. */
-	readonly recordingSecretForView = computed<string>(() => {
-		return queryParam(this.recordingUrl(), 'recordingSecret') ?? '';
-	});
+	readonly roomIdForRecordings = computed<string>(
+		() => this._overrideRoomRecordingsId() ?? lastPathSegment(this.roomUrl()) ?? ''
+	);
 
-	/** Room identifier bound into `<ov-room-recordings>` in `room-recordings` mode. */
-	readonly roomIdForRecordings = computed<string>(() => {
-		return lastPathSegment(this.roomUrl()) ?? '';
-	});
+	readonly hasLeft = computed<boolean>(() => this.wcBridge.leftEvent() !== null);
 
-	/**
-	 * True once the local participant has left the room. The WC has no router,
-	 * so when this flips we swap the meeting view for `<ov-end-meeting>` inline
-	 * rather than navigating to `/disconnected` (the SPA's behaviour).
-	 */
-	readonly hasLeft = computed<boolean>(() => this.wcManager.leftEvent() !== null);
-
-	/** Reason carried by the `left` event, forwarded to `<ov-end-meeting>`. */
-	readonly leftReason = computed<string | undefined>(() => this.wcManager.leftEvent()?.reason);
+	readonly leftReason = computed<string | undefined>(() => this.wcBridge.leftEvent()?.reason);
 
 	constructor() {
-		this.runtimeConfigService.enableWebcomponentMode();
-
-		// Mirror Angular Material styles from document.head into the shadow root.
-		// Material components use ViewEncapsulation.None, so Angular injects their
-		// styles globally — those cannot cross the Shadow DOM boundary on their own.
+		// enableWebcomponentMode() is called in main.wc.ts before element registration
+		// so injected services observe WC mode during their constructor-time effects.
 		afterNextRender(() => {
 			const shadowRoot = (this._elRef.nativeElement as HTMLElement).shadowRoot;
 
 			if (shadowRoot) {
 				this._shadowStyles.reflect(shadowRoot, this._destroyRef);
-				// Place CDK overlay container (tooltips, menus, dialogs) inside the
-				// shadow root so they inherit theme tokens and Material styles.
 				this._shadowOverlay.setShadowRoot(shadowRoot);
 			}
 		});
 	}
 
-	// ── Effects ────────────────────────────────────────────────────────────
-
-	/**
-	 * Propagates the server URL derived from whichever input is present
-	 * (`roomUrl` for meeting / recordings-list modes, `recordingUrl` for
-	 * playback) to {@link RuntimeConfigService}. Without this, all relative
-	 * API and asset paths inside the embedded library would resolve against
-	 * the host page.
-	 */
 	private readonly _serverUrlEffect = effect(() => {
 		const serverUrl =
 			computeServerUrl(this.roomUrl(), '/room/') ?? computeServerUrl(this.recordingUrl(), '/recording/');
@@ -178,15 +139,8 @@ export class App {
 		}
 	});
 
-	/**
-	 * Drives the active-mode bootstrap. Recomputes when {@link mode} changes,
-	 * short-circuits if already ready to avoid re-running preflight on
-	 * unrelated input changes.
-	 */
 	private readonly _bootstrapEffect = effect(() => {
 		const mode = this.mode();
-
-		// Reset transient state so messages/UI for a prior mode don't bleed.
 		this.errorMessage.set(null);
 
 		if (this.ready()) return;
@@ -195,15 +149,7 @@ export class App {
 	});
 
 	private async runBootstrap(mode: Mode): Promise<void> {
-		const result = await this.modeCoordinator.run(mode, {
-			roomUrl: this.roomUrl(),
-			recordingUrl: this.recordingUrl(),
-			participantName: this.participantName(),
-			e2eeKey: this.e2eeKey(),
-			leaveRedirectUrl: this.leaveRedirectUrl(),
-			showOnlyRecordings: this.showOnlyRecordings(),
-			showRecording: this.showRecording()
-		});
+		const result = await this.modeCoordinator.run(mode, this.inputs());
 
 		if (result.kind === 'ready') {
 			this.ready.set(true);
@@ -213,29 +159,16 @@ export class App {
 		}
 	}
 
-	/**
-	 * Emits `joined` when the local participant connects to the room.
-	 * Driven by the webcomponent adapter's `joinedEvent` signal.
-	 */
 	private readonly _joinedEffect = effect(() => {
-		const detail = this.wcManager.joinedEvent();
+		const detail = this.wcBridge.joinedEvent();
 
 		if (!detail) return;
 
-		this.joined.emit({
-			roomId: detail.roomId,
-			participantIdentity: detail.participantIdentity
-		});
+		this.joined.emit({ roomId: detail.roomId, participantIdentity: detail.participantIdentity });
 	});
 
-	/**
-	 * Emits `left` when the local participant disconnects from the room.
-	 * Driven by the adapter's `leftEvent` signal so the host receives the
-	 * precise LeftEventReason (kick, network drop, server shutdown, duplicate
-	 * identity, voluntary leave, etc.).
-	 */
 	private readonly _leftEffect = effect(() => {
-		const detail = this.wcManager.leftEvent();
+		const detail = this.wcBridge.leftEvent();
 
 		if (!detail) return;
 
@@ -246,36 +179,42 @@ export class App {
 		});
 	});
 
-	/**
-	 * Emits `closed` after the WC's post-meeting / post-recording flow is done
-	 * (user dismissed end-meeting/error/recording-view, or the failed lobby).
-	 * Hosts use this to unmount the element or follow `leave-redirect-url`.
-	 */
 	private readonly _closedEffect = effect(() => {
-		if (!this.wcManager.closedEvent()) return;
+		if (!this.wcBridge.closedEvent()) return;
 
 		this.closed.emit({});
 	});
 
-	// ── Web Component API: Imperative methods ──────────────────────────────
+	private readonly _viewRecordingsRequestEffect = effect(() => {
+		const detail = this.wcBridge.viewRecordingsRequest();
 
-	/**
-	 * Ends the meeting for all participants. Requires the local participant
-	 * to hold the `canEndMeeting` permission; otherwise the call is a no-op.
-	 */
+		if (!detail) return;
+
+		this._overrideRoomRecordingsId.set(detail.roomId);
+	});
+
+	private readonly _backToRoomRequestEffect = effect(() => {
+		const detail = this.wcBridge.backToRoomRequest();
+
+		if (!detail) return;
+
+		if (this._overrideRoomRecordingsId() !== null) {
+			this._overrideRoomRecordingsId.set(null);
+			return;
+		}
+
+		// Launched directly in show-only-recordings mode — no meeting to return to.
+		this.wcBridge.emitClosedEvent();
+	});
+
 	endMeeting(): Promise<void> {
 		return this.wcManager.endMeeting();
 	}
 
-	/** Disconnects the local participant from the current room. */
 	leaveRoom(): Promise<void> {
 		return this.wcManager.leaveRoom();
 	}
 
-	/**
-	 * Removes the named participant from the meeting. Requires the local
-	 * participant to hold the `canKickParticipants` permission.
-	 */
 	kickParticipant(participantIdentity: string): Promise<void> {
 		return this.wcManager.kickParticipant(participantIdentity);
 	}
