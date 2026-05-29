@@ -1,5 +1,39 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { hoverStream } from './ui-utils.helper';
+
+/**
+ * Polls the bounding box of {@link locator} until it stops moving / resizing or
+ * the timeout elapses. Used to gate clicks on tiles that are mid-reflow (e.g. the
+ * settings panel just closed, or the smart-layout slider just changed): without
+ * this, the click target keeps reporting "element is not stable" or detaches
+ * from the DOM right when the click is dispatched.
+ */
+const waitForBoundingBoxStable = async (
+	locator: Locator,
+	{ samples = 4, intervalMs = 100, timeoutMs = 5_000 }: { samples?: number; intervalMs?: number; timeoutMs?: number } = {}
+): Promise<void> => {
+	const deadline = Date.now() + timeoutMs;
+	let stableHits = 0;
+	let prev = await locator.boundingBox();
+
+	while (Date.now() < deadline) {
+		await locator.page().waitForTimeout(intervalMs);
+		const next = await locator.boundingBox();
+
+		const matches =
+			!!prev &&
+			!!next &&
+			Math.abs(prev.x - next.x) < 1 &&
+			Math.abs(prev.y - next.y) < 1 &&
+			Math.abs(prev.width - next.width) < 1 &&
+			Math.abs(prev.height - next.height) < 1;
+
+		stableHits = matches ? stableHits + 1 : 0;
+		prev = next;
+
+		if (stableHits >= samples) return;
+	}
+};
 
 // ─── Remote stream waiting ──────────────────────────────────────────────────
 
@@ -227,11 +261,16 @@ export const expectPinnedStreamCount = async (page: Page, count: number): Promis
  * Automatically detects whether the stream is currently pinned and clicks the appropriate button.
  */
 export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 10_000): Promise<void> => {
-	// Hover the stream so the controls render. `hover()` plants the mouse over
-	// the element (instead of just brushing through it like click does), which
-	// makes the 2s HOVER_TIMEOUT in stream.component less likely to hide the
-	// controls before we click the pin button.
 	const target = page.locator(selector).first();
+	await target.waitFor({ state: 'visible', timeout: timeoutMs });
+
+	// Tests routinely call this right after closing the settings panel or moving the
+	// smart-mosaic slider — both of which trigger layout reflows that keep moving the
+	// tile (and re-mounting its inner controls) for a few hundred ms. Without a settle
+	// wait, the click reports "element is not stable" repeatedly and eventually
+	// "element was detached from the DOM".
+	await waitForBoundingBoxStable(target);
+
 	await target.hover();
 
 	// Scope pin/unpin lookup to the target stream — `#pin-btn` is duplicated
@@ -242,11 +281,18 @@ export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 
 
 	await expect(pinButton.or(unpinButton)).toBeVisible({ timeout: timeoutMs });
 
-	if (await pinButton.isVisible()) {
-		await pinButton.click();
+	const willPin = await pinButton.isVisible();
+	const buttonToClick = willPin ? pinButton : unpinButton;
+
+	// Re-hover immediately before the click. Between the visibility check and the
+	// click, the stream-component's HOVER_TIMEOUT (2s) can elapse and hide the
+	// controls — re-hovering keeps the button in the DOM long enough to land the click.
+	await target.hover();
+	await buttonToClick.click();
+
+	if (willPin) {
 		await expect(page.locator('.OV_big .OV_stream').first()).toBeVisible({ timeout: timeoutMs });
 	} else {
-		await unpinButton.click();
 		await expect(page.locator('.OV_big .OV_stream')).toHaveCount(0, { timeout: timeoutMs });
 	}
 };
