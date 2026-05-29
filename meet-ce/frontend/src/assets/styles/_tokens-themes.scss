@@ -32,6 +32,11 @@
 	--ov-meet-border-color: #e0e0e0;
 	--ov-meet-border-color-light: #f0f0f0;
 	--ov-meet-border-color-strong: #bdbdbd;
+
+	// === ROLE BADGE COLORS - LIGHT THEME ===
+	--ov-meet-badge-owner-color: #c98c00; // amber/gold — pairs with the crown icon
+	--ov-meet-badge-admin-color: #6a1b9a; // deep purple — elevated permissions
+	--ov-meet-badge-moderator-color: #0d9488; // teal — protective semantics of the shield_person icon
 }
 
 // === DARK THEME ===
@@ -67,4 +72,9 @@
 	--ov-meet-border-color: #3a3a48;
 	--ov-meet-border-color-light: #2b2b36;
 	--ov-meet-border-color-strong: #5c5c6c;
+
+	// === ROLE BADGE COLORS - DARK THEME ===
+	--ov-meet-badge-owner-color: #fbbf24; // amber-400
+	--ov-meet-badge-admin-color: #c084fc; // purple-400
+	--ov-meet-badge-moderator-color: #2dd4bf; // teal-400
 }
