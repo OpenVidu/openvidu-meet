@@ -28,7 +28,7 @@ import {
 	validateUpdateRoomStatusReq,
 	withValidRoomId
 } from '../middlewares/request-validators/room-validator.middleware.js';
-import { tokenIssuanceLimiter } from '../middlewares/rate-limit.middleware.js';
+import { apiLimiter, tokenIssuanceLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	authorizeRoomMemberAccess,
 	authorizeRoomMemberTokenGeneration,
@@ -44,6 +44,7 @@ import {
 export const roomRouter: Router = Router();
 roomRouter.use(bodyParser.urlencoded({ extended: true }));
 roomRouter.use(bodyParser.json());
+roomRouter.use(apiLimiter);
 
 // Room Routes
 roomRouter.post(

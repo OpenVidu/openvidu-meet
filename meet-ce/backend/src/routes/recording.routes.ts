@@ -32,6 +32,7 @@ import {
 export const recordingRouter: Router = Router();
 recordingRouter.use(bodyParser.urlencoded({ extended: true }));
 recordingRouter.use(bodyParser.json());
+recordingRouter.use(apiLimiter);
 
 // Recording Routes
 recordingRouter.post(
@@ -77,7 +78,6 @@ recordingRouter.get(
 );
 recordingRouter.get(
 	'/:recordingId',
-	apiLimiter,
 	validateGetRecordingReq,
 	setupRecordingAuthentication,
 	authorizeRecordingAccess('canRetrieveRecordings', true),
@@ -103,7 +103,6 @@ recordingRouter.post(
 );
 recordingRouter.get(
 	'/:recordingId/media',
-	apiLimiter,
 	validateGetRecordingMediaReq,
 	setupRecordingAuthentication,
 	authorizeRecordingAccess('canRetrieveRecordings', true),

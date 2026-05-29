@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as globalConfigCtrl from '../controllers/global-config.controller.js';
 import { accessTokenValidator, allowAnonymous, withAuth } from '../middlewares/auth.middleware.js';
+import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	validateTestWebhookReq,
 	validateUpdateRoomsAppearanceConfigReq,
@@ -13,6 +14,7 @@ import {
 export const configRouter: Router = Router();
 configRouter.use(bodyParser.urlencoded({ extended: true }));
 configRouter.use(bodyParser.json());
+configRouter.use(apiLimiter);
 
 // Webhook config
 configRouter.put(
@@ -22,7 +24,7 @@ configRouter.put(
 	globalConfigCtrl.updateWebhookConfig
 );
 configRouter.get('/webhooks', withAuth(accessTokenValidator(MeetUserRole.ADMIN)), globalConfigCtrl.getWebhookConfig);
-configRouter.post('/webhooks/test', validateTestWebhookReq, globalConfigCtrl.testWebhook);
+configRouter.post('/webhooks/test', withAuth(allowAnonymous), validateTestWebhookReq, globalConfigCtrl.testWebhook);
 
 // Security config
 configRouter.put(

@@ -78,7 +78,9 @@ const createApp = () => {
 	appRouter.use(express.static(frontendDirectoryPath, { index: false }));
 
 	// Public API routes
-	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
+	// Public, unauthenticated docs page: cheap single HTML response, so a generous per-IP ceiling
+	// protects against trivial flooding without affecting legitimate use.
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, staticAssetLimiter, (_req: Request, res: Response) =>
 		res.type('html').send(getOpenApiHtmlWithBasePath(publicApiHtmlFilePath, INTERNAL_CONFIG.API_BASE_PATH_V1))
 	);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);

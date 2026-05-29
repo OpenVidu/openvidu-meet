@@ -3,6 +3,7 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as userCtrl from '../controllers/user.controller.js';
 import { accessTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
+import { apiLimiter, sensitiveActionLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	validateBulkDeleteUsersReq,
 	validateChangePasswordReq,
@@ -15,6 +16,7 @@ import {
 export const userRouter: Router = Router();
 userRouter.use(bodyParser.urlencoded({ extended: true }));
 userRouter.use(bodyParser.json());
+userRouter.use(apiLimiter);
 
 // Users Routes
 userRouter.post('/', withAuth(accessTokenValidator(MeetUserRole.ADMIN)), validateCreateUserReq, userCtrl.createUser);
@@ -38,6 +40,7 @@ userRouter.get(
 );
 userRouter.post(
 	'/change-password',
+	sensitiveActionLimiter,
 	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)),
 	validateChangePasswordReq,
 	userCtrl.changePassword
@@ -46,6 +49,7 @@ userRouter.post(
 userRouter.get('/:userId', withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER)), userCtrl.getUser);
 userRouter.put(
 	'/:userId/password',
+	sensitiveActionLimiter,
 	withAuth(accessTokenValidator(MeetUserRole.ADMIN)),
 	validateResetUserPasswordReq,
 	userCtrl.resetUserPassword
