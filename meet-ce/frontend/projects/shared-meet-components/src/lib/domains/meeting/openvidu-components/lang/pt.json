@@ -109,7 +109,8 @@
         "POOR": "Fraca",
         "LOST": "Perdida"
       },
-      "SHARING_SCREEN": "Compartilhando tela"
+      "SHARING_SCREEN": "Compartilhando tela",
+      "MIC_OFF": "Microfone desligado"
     },
     "SETTINGS": {
       "TITLE": "Configurações",

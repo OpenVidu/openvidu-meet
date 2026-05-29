@@ -109,7 +109,8 @@
         "POOR": "Schlecht",
         "LOST": "Verloren"
       },
-      "SHARING_SCREEN": "Bildschirm wird geteilt"
+      "SHARING_SCREEN": "Bildschirm wird geteilt",
+      "MIC_OFF": "Mikrofon aus"
     },
     "SETTINGS": {
       "TITLE": "Einstellungen",

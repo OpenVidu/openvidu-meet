@@ -10,7 +10,6 @@ import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { TemplateRegistryService } from '../../../../services/template/template-registry.service';
-import { TranslateService } from '../../../../services/translate/translate.service';
 import { ConnectionQualityIndicatorComponent } from '../../../connection-quality-indicator/connection-quality-indicator.component';
 import { ParticipantAvatarComponent } from '../../../participant-avatar/participant-avatar.component';
 
@@ -33,7 +32,6 @@ export class ParticipantPanelItemComponent {
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
-	private readonly translateService = inject(TranslateService);
 
 	/**
 	 * @ignore
@@ -55,39 +53,11 @@ export class ParticipantPanelItemComponent {
 	readonly isLocalParticipant = computed(() => this.participantInput()?.isLocal || false);
 	readonly participantDisplayName = computed(() => this.participantInput()?.name || '');
 	readonly hasExternalElements = computed(() => !!this.participantPanelItemElementsTemplate());
-
-	/**
-	 * Reactive equivalent of the legacy `tracksPublishedTypes` pipe. Reading
-	 * `isCameraEnabled`/`isScreenShareEnabled`/`isMicrophoneEnabled` through the participant
-	 * getters registers the model's `_revision` signal as a dependency, so this computed
-	 * re-evaluates whenever the participant publishes or unpublishes a track — even while the
-	 * panel is already open and the participant reference itself hasn't changed.
-	 *
-	 * The pipe was pure and only re-ran on input-reference changes, which left the label
-	 * stale during a session.
-	 */
-	readonly tracksDescription = computed(() => {
-		const participant = this.participantInput();
-		if (!participant) return '';
-
-		const types: string[] = [];
-		if (participant.isCameraEnabled) {
-			types.push(this.translateService.translate('PANEL.PARTICIPANTS.CAMERA'));
-		}
-		if (participant.isScreenShareEnabled) {
-			types.push(this.translateService.translate('PANEL.PARTICIPANTS.SCREEN'));
-		}
-		if (participant.isMicrophoneEnabled) {
-			types.push(this.translateService.translate('PANEL.PARTICIPANTS.MICROPHONE'));
-		}
-		if (types.length === 0) {
-			return `(${this.translateService.translate('PANEL.PARTICIPANTS.NO_STREAMS')})`;
-		}
-		return `(${types.join(', ')})`;
-	});
-
-	/** Reactive flag tied to the participant's `_revision`, used to toggle the screen-share badge. */
 	readonly isScreenSharing = computed(() => !!this.participantInput()?.isScreenShareEnabled);
+	readonly isMicrophoneOff = computed(() => {
+		const participant = this.participantInput();
+		return !!participant && !participant.isMicrophoneEnabled;
+	});
 
 	get _participant(): ParticipantModel | undefined {
 		return this.participantInput();

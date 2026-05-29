@@ -109,7 +109,8 @@
         "POOR": "Médiocre",
         "LOST": "Perdue"
       },
-      "SHARING_SCREEN": "Partage d'écran en cours"
+      "SHARING_SCREEN": "Partage d'écran en cours",
+      "MIC_OFF": "Microphone désactivé"
     },
     "SETTINGS": {
       "TITLE": "Paramètres",

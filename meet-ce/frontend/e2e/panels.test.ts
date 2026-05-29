@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test';
-import { startScreensharing, stopScreensharing } from './helpers/media-controls.helper';
+import { startScreensharing, stopScreensharing, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
@@ -126,7 +126,7 @@ test.describe('Panels E2E Tests', () => {
 			await expect(roleBadge).toHaveClass(/owner-badge|admin-badge|moderator-badge/);
 		});
 
-		test('should reactively show the screen-share indicator and update the track description while the panel is open', async ({
+		test('should reactively toggle screen-share and mic-off indicators while the panel is open', async ({
 			browser
 		}) => {
 			const { pages, removeAllParticipants } = await joinParticipants(browser, {
@@ -137,30 +137,36 @@ test.describe('Panels E2E Tests', () => {
 			const [pageA, pageB] = pages;
 
 			try {
-				// A opens the participants panel BEFORE B starts screen sharing.
+				// A opens the participants panel BEFORE B's state changes — the panel must react in place.
 				await toggleParticipantsPanel(pageA);
 				await expect(pageA.locator('.local-participant-container')).toBeVisible({ timeout: 5_000 });
 				const remoteItem = pageA.locator('#remote-participant-item ov-participant-panel-item').first();
 				await expect(remoteItem).toBeVisible({ timeout: 5_000 });
-				const remoteSubtitle = remoteItem.locator('.participant-subtitle .status-indicator');
-				const remoteScreenIcon = remoteItem.locator('#screen-share-indicator');
+				const screenIcon = remoteItem.locator('#screen-share-indicator');
+				const micOffIcon = remoteItem.locator('#mic-off-indicator');
 
-				// Before screen sharing: no screen-share icon, subtitle should mention CAMERA + MICROPHONE
-				// (B joined with both camera and audio enabled).
-				await expect(remoteScreenIcon).toHaveCount(0);
-				await expect(remoteSubtitle).toHaveText(/CAMERA/i);
-				await expect(remoteSubtitle).not.toHaveText(/SCREEN/i);
+				// Initially: no screen sharing, mic on → neither indicator visible.
+				await expect(screenIcon).toHaveCount(0);
+				await expect(micOffIcon).toHaveCount(0);
 
-				// B starts screen sharing — panel is already open. A's panel must update reactively.
+				// B starts screen sharing → screen-share icon appears.
 				await startScreensharing(pageB);
-				await expect(remoteScreenIcon).toHaveCount(1, { timeout: 10_000 });
-				await expect(remoteScreenIcon).toBeVisible();
-				await expect(remoteSubtitle).toHaveText(/SCREEN/i, { timeout: 5_000 });
+				await expect(screenIcon).toHaveCount(1, { timeout: 10_000 });
+				await expect(screenIcon).toBeVisible();
 
-				// B stops screen sharing — icon must disappear and the description revert.
+				// B mutes their mic → mic-off icon appears (screen-share icon still visible).
+				await toggleMicrophone(pageB);
+				await expect(micOffIcon).toHaveCount(1, { timeout: 5_000 });
+				await expect(micOffIcon).toBeVisible();
+				await expect(screenIcon).toHaveCount(1);
+
+				// B un-mutes → mic-off icon disappears.
+				await toggleMicrophone(pageB);
+				await expect(micOffIcon).toHaveCount(0, { timeout: 5_000 });
+
+				// B stops screen sharing → screen-share icon disappears.
 				await stopScreensharing(pageB);
-				await expect(remoteScreenIcon).toHaveCount(0, { timeout: 10_000 });
-				await expect(remoteSubtitle).not.toHaveText(/SCREEN/i, { timeout: 5_000 });
+				await expect(screenIcon).toHaveCount(0, { timeout: 10_000 });
 			} finally {
 				await removeAllParticipants();
 			}

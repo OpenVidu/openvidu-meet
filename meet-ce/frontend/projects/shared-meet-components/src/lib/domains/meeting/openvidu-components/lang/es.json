@@ -109,7 +109,8 @@
         "GOOD": "Buena",
         "POOR": "Deficiente",
         "LOST": "Perdida"
-      }
+      },
+      "MIC_OFF": "Micrófono apagado"
     },
     "SETTINGS": {
       "TITLE": "Configuración",

@@ -109,7 +109,8 @@
         "POOR": "较差",
         "LOST": "丢失"
       },
-      "SHARING_SCREEN": "正在共享屏幕"
+      "SHARING_SCREEN": "正在共享屏幕",
+      "MIC_OFF": "麦克风已关闭"
     },
     "SETTINGS": {
       "TITLE": "设置",

@@ -106,7 +106,8 @@
         "GOOD": "Good",
         "POOR": "Poor",
         "LOST": "Lost"
-      }
+      },
+      "MIC_OFF": "Microphone off"
     },
     "ACTIVITIES": {
       "TITLE": "Activities"
