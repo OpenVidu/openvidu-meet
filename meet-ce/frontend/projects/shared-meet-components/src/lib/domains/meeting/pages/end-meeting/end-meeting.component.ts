@@ -8,7 +8,6 @@ import { LeftEventReason } from '@openvidu-meet/typings';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { AuthService } from '../../../auth/services/auth.service';
-import { MeetingWebComponentManagerService } from '../../services/meeting-webcomponent-manager.service';
 
 @Component({
 	selector: 'ov-end-meeting',
@@ -32,7 +31,6 @@ export class EndMeetingComponent implements OnInit {
 	backButtonText = signal('Back');
 
 	protected readonly runtimeConfigService = inject(RuntimeConfigService);
-	protected readonly wcManager = inject(MeetingWebComponentManagerService);
 
 	constructor(
 		private route: ActivatedRoute,
@@ -124,29 +122,10 @@ export class EndMeetingComponent implements OnInit {
 	}
 
 	/**
-	 * Back-button handler:
-	 * - In webcomponent mode, emit `closed` so the host can unmount / follow
-	 *   the configured `leave-redirect-url`. No SPA-router navigation (the WC
-	 *   has no router).
-	 * - In standalone mode, redirect to `leaveRedirectUrl` if set, otherwise
-	 *   navigate to /rooms.
+	 * Back-button handler. Defers WC-vs-SPA branching to
+	 * {@link NavigationService.goBackFromMeeting}.
 	 */
 	async goBack() {
-		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.wcManager.emitClosedEvent();
-			return;
-		}
-
-		const redirectTo = this.navService.getLeaveRedirectURL();
-		if (redirectTo) {
-			// Navigate to the specified redirect URL
-			await this.navService.redirectToLeaveUrl();
-			return;
-		}
-
-		if (!this.runtimeConfigService.isWebcomponentMode()) {
-			// Navigate to the rooms page
-			await this.navService.navigateTo('/rooms', undefined, true);
-		}
+		await this.navService.goBackFromMeeting('/rooms', true);
 	}
 }

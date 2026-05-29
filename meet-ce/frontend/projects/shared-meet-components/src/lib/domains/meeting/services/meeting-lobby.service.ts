@@ -11,7 +11,6 @@ import { RoomService } from '../../rooms/services/room.service';
 import { LoggerService } from '../openvidu-components';
 import { MeetingAccessLinkService } from './meeting-access-link.service';
 import { MeetingContextService } from './meeting-context.service';
-import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
 
 /**
  * Service that manages the meeting lobby phase state and operations.
@@ -27,7 +26,6 @@ export class MeetingLobbyService {
 	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected navigationService = inject(NavigationService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
-	protected wcManager = inject(MeetingWebComponentManagerService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingLobbyService');
 
@@ -215,42 +213,26 @@ export class MeetingLobbyService {
 	}
 
 	/**
-	 * Back-button handler:
-	 * - In webcomponent mode, emit `closed` so the host can unmount / follow
-	 *   the configured `leave-redirect-url`. No SPA-router navigation.
-	 * - In standalone mode, redirect to `leaveRedirectUrl` if set, otherwise
-	 *   navigate to /rooms.
+	 * Back-button handler. Defers WC-vs-SPA branching to
+	 * {@link NavigationService.goBackFromMeeting}.
 	 */
 	async goBack() {
 		try {
-			if (this.runtimeConfigService.isWebcomponentMode()) {
-				this.wcManager.emitClosedEvent();
-				return;
-			}
-
-			const redirectTo = this.navigationService.getLeaveRedirectURL();
-			if (redirectTo) {
-				// Navigate to the specified redirect URL
-				await this.navigationService.redirectToLeaveUrl();
-				return;
-			}
-
-			if (!this.runtimeConfigService.isWebcomponentMode()) {
-				// Navigate to rooms page
-				await this.navigationService.navigateTo('/rooms');
-			}
+			await this.navigationService.goBackFromMeeting();
 		} catch (error) {
 			this.log.e('Error handling back navigation:', error);
 		}
 	}
 
 	/**
-	 * Navigates to recordings page
+	 * Navigates to the room-recordings view. Defers WC-vs-SPA branching to
+	 * {@link NavigationService.goToRoomRecordings}.
 	 */
 	async goToRecordings(): Promise<void> {
 		try {
 			const roomId = this._roomId();
-			await this.navigationService.navigateTo(`/room/${roomId}/recordings`);
+			if (!roomId) return;
+			await this.navigationService.goToRoomRecordings(roomId);
 		} catch (error) {
 			this.log.e('Error navigating to recordings:', error);
 		}

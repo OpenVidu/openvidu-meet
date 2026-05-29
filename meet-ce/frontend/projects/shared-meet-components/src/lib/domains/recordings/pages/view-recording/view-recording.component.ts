@@ -14,7 +14,6 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { AuthService } from '../../../auth/services/auth.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { ViewportService } from '../../../meeting/openvidu-components';
-import { MeetingWebComponentManagerService } from '../../../meeting/services/meeting-webcomponent-manager.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
 import { RecordingService } from '../../services/recording.service';
@@ -42,7 +41,6 @@ export class ViewRecordingComponent implements OnInit {
 	protected readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly runtimeConfigService = inject(RuntimeConfigService);
-	protected readonly wcManager = inject(MeetingWebComponentManagerService);
 	protected readonly roomMemberContextService = inject(RoomMemberContextService);
 	protected readonly route = inject(ActivatedRoute);
 	protected readonly authService = inject(AuthService);
@@ -120,8 +118,8 @@ export class ViewRecordingComponent implements OnInit {
 				await this.recordingService.deleteRecording(this.recordingId);
 				this.notificationService.showSnackbar('Recording deleted successfully');
 
-				// After deletion, navigate back to the room recordings page
-				await this.navigationService.navigateTo(`/room/${recording.roomId}/recordings`);
+				// After deletion, go back to the room-recordings view.
+				await this.navigationService.goToRoomRecordings(recording.roomId);
 			} catch (error) {
 				console.error('Error deleting recording:', error);
 				this.notificationService.showSnackbar('Failed to delete recording');
@@ -160,26 +158,11 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	/**
-	 * Back-button handler:
-	 * - If the user can list recordings, navigate to the room recordings page.
-	 * - Else in webcomponent mode, emit `closed` so the host unmounts / follows
-	 *   the configured `leave-redirect-url`.
-	 * - Else in standalone mode, redirect to `leaveRedirectUrl` if set.
+	 * Back-button handler. Defers WC-vs-SPA branching to
+	 * {@link NavigationService.goBackFromRecording}.
 	 */
 	async goBack(): Promise<void> {
 		const recording = this.recording();
-		if (this.canRetrieveRecordings() && recording?.roomId) {
-			await this.navigationService.navigateTo(`/room/${recording.roomId}/recordings`);
-			return;
-		}
-
-		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.wcManager.emitClosedEvent();
-			return;
-		}
-
-		if (this.navigationService.getLeaveRedirectURL()) {
-			await this.navigationService.redirectToLeaveUrl();
-		}
+		await this.navigationService.goBackFromRecording(recording?.roomId, this.canRetrieveRecordings());
 	}
 }

@@ -96,7 +96,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async goBackToRoom() {
 		try {
-			await this.navigationService.navigateTo(`/room/${this.roomId}`);
+			await this.navigationService.goBackToRoom(this.roomId);
 		} catch (error) {
 			this.log.e('Error navigating back to room:', error);
 		}
