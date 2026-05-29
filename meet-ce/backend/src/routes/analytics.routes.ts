@@ -3,10 +3,12 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as analyticsCtrl from '../controllers/analytics.controller.js';
 import { accessTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
+import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 
 export const analyticsRouter: Router = Router();
 analyticsRouter.use(bodyParser.urlencoded({ extended: true }));
 analyticsRouter.use(bodyParser.json());
+analyticsRouter.use(apiLimiter);
 
 // Analytics Routes
 analyticsRouter.get('/', withAuth(accessTokenValidator(MeetUserRole.ADMIN)), analyticsCtrl.getAnalytics);
