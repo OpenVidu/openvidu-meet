@@ -108,7 +108,8 @@
         "GOOD": "良好",
         "POOR": "较差",
         "LOST": "丢失"
-      }
+      },
+      "SHARING_SCREEN": "正在共享屏幕"
     },
     "SETTINGS": {
       "TITLE": "设置",

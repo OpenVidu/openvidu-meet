@@ -108,7 +108,8 @@
         "GOOD": "Goed",
         "POOR": "Slecht",
         "LOST": "Verloren"
-      }
+      },
+      "SHARING_SCREEN": "Scherm delen"
     },
     "SETTINGS": {
       "TITLE": "Instellingen",

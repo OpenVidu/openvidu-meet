@@ -155,6 +155,17 @@
 		margin-left: auto;
 	}
 
+	// Screen-share indicator — sits in the action-buttons row, next to connection quality
+	.screen-share-indicator {
+		color: var(--ov-text-surface-color);
+		font-size: 18px;
+		width: 18px;
+		height: 18px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
 	// Mute button styling
 	#mute-btn {
 		width: 32px;

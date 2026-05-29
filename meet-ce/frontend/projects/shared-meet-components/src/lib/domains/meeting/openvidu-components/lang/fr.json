@@ -108,7 +108,8 @@
         "GOOD": "Bonne",
         "POOR": "Médiocre",
         "LOST": "Perdue"
-      }
+      },
+      "SHARING_SCREEN": "Partage d'écran en cours"
     },
     "SETTINGS": {
       "TITLE": "Paramètres",

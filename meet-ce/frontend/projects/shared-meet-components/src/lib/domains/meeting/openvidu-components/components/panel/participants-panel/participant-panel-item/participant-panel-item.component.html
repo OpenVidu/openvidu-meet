@@ -38,7 +38,7 @@
 					@if (!_participant.hasEncryptionError) {
 						<div class="participant-subtitle">
 							<span class="status-indicator">
-								{{ _participant | tracksPublishedTypes }}
+								{{ tracksDescription() }}
 							</span>
 						</div>
 					}
@@ -48,6 +48,17 @@
 				@if (!_participant.hasEncryptionError) {
 					<div class="participant-action-buttons">
 						<ov-connection-quality-indicator [participant]="_participant!" [transparent]="true" [forceVisible]="true" />
+
+						<!-- Screen-share indicator — visible while the participant is sharing -->
+						@if (isScreenSharing()) {
+							<mat-icon
+								id="screen-share-indicator"
+								class="screen-share-indicator"
+								fontIcon="screen_share"
+								[attr.aria-label]="('PANEL.PARTICIPANTS.SHARING_SCREEN' | translate) + ' ' + participantDisplayName()"
+								[matTooltip]="'PANEL.PARTICIPANTS.SHARING_SCREEN' | translate"
+							/>
+						}
 
 						<!-- Mute/Unmute button for remote participants -->
 						@if (!isLocalParticipant() && showMuteButton()) {

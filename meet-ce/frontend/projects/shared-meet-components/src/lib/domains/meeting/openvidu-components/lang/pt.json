@@ -108,7 +108,8 @@
         "GOOD": "Boa",
         "POOR": "Fraca",
         "LOST": "Perdida"
-      }
+      },
+      "SHARING_SCREEN": "Compartilhando tela"
     },
     "SETTINGS": {
       "TITLE": "Configurações",

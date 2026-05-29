@@ -108,7 +108,8 @@
         "GOOD": "良好",
         "POOR": "不良",
         "LOST": "失われた"
-      }
+      },
+      "SHARING_SCREEN": "画面を共有中"
     },
     "SETTINGS": {
       "TITLE": "設定",

@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { startScreensharing, stopScreensharing } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
@@ -8,6 +9,7 @@ import {
 	toggleChatPanel,
 	toggleParticipantsPanel
 } from './helpers/panels.helper';
+import { joinParticipants } from './helpers/participant-management.helper';
 import { expectCopiedUrl, expectHidden, expectVisible, installClipboardCapture } from './helpers/ui-utils.helper';
 
 test.describe('Panels E2E Tests', () => {
@@ -122,6 +124,46 @@ test.describe('Panels E2E Tests', () => {
 			const roleBadge = page.locator('[id^="participant-badge-"]').first();
 			await expect(roleBadge).toBeVisible();
 			await expect(roleBadge).toHaveClass(/owner-badge|admin-badge|moderator-badge/);
+		});
+
+		test('should reactively show the screen-share indicator and update the track description while the panel is open', async ({
+			browser
+		}) => {
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA, pageB] = pages;
+
+			try {
+				// A opens the participants panel BEFORE B starts screen sharing.
+				await toggleParticipantsPanel(pageA);
+				await expect(pageA.locator('.local-participant-container')).toBeVisible({ timeout: 5_000 });
+				const remoteItem = pageA.locator('#remote-participant-item ov-participant-panel-item').first();
+				await expect(remoteItem).toBeVisible({ timeout: 5_000 });
+				const remoteSubtitle = remoteItem.locator('.participant-subtitle .status-indicator');
+				const remoteScreenIcon = remoteItem.locator('#screen-share-indicator');
+
+				// Before screen sharing: no screen-share icon, subtitle should mention CAMERA + MICROPHONE
+				// (B joined with both camera and audio enabled).
+				await expect(remoteScreenIcon).toHaveCount(0);
+				await expect(remoteSubtitle).toHaveText(/CAMERA/i);
+				await expect(remoteSubtitle).not.toHaveText(/SCREEN/i);
+
+				// B starts screen sharing — panel is already open. A's panel must update reactively.
+				await startScreensharing(pageB);
+				await expect(remoteScreenIcon).toHaveCount(1, { timeout: 10_000 });
+				await expect(remoteScreenIcon).toBeVisible();
+				await expect(remoteSubtitle).toHaveText(/SCREEN/i, { timeout: 5_000 });
+
+				// B stops screen sharing — icon must disappear and the description revert.
+				await stopScreensharing(pageB);
+				await expect(remoteScreenIcon).toHaveCount(0, { timeout: 10_000 });
+				await expect(remoteSubtitle).not.toHaveText(/SCREEN/i, { timeout: 5_000 });
+			} finally {
+				await removeAllParticipants();
+			}
 		});
 
 		test('should copy meeting url from participant panel copy button', async ({ page }) => {
