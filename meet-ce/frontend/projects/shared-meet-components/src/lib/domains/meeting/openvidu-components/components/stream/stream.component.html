@@ -124,7 +124,7 @@
 							}
 						</button>
 					}
-					@if (stream.participant.isLocal) {
+					@if (stream.participant.isLocal && stream.isCameraStream) {
 						<button
 							mat-icon-button
 							id="minimize-btn"
