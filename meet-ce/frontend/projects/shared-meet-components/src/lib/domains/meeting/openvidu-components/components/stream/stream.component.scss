@@ -40,7 +40,8 @@
 	.flex-container {
 		display: flex;
 		justify-content: center;
-		gap: 2px;
+		align-items: center;
+		gap: 4px;
 		flex-wrap: nowrap;
 		button {
 			margin: 0;
@@ -55,6 +56,30 @@
 				height: 18px;
 			}
 		}
+	}
+
+	// Buttons that operate on the same feature (e.g. zoom) are wrapped in a
+	// control group with a subtle background so they read as one cluster,
+	// distinct from the independent actions (pin, mute, minimize).
+	.control-group {
+		display: flex;
+		align-items: center;
+		gap: 2px;
+
+		&.zoom-group {
+			background-color: rgba(255, 255, 255, 0.22);
+			border-radius: var(--ov-video-radius);
+			padding: 0 2px;
+		}
+	}
+
+	.zoom-level {
+		color: var(--ov-text-primary-color);
+		font-size: 12px;
+		font-weight: 500;
+		min-width: 36px;
+		text-align: center;
+		user-select: none;
 	}
 
 	.muted-btn {

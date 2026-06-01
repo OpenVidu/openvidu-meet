@@ -41,6 +41,7 @@
 			[isLocal]="stream.participant.isLocal"
 			[hasEncryptionError]="stream.participant.hasEncryptionError"
 			[isSpeaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
+			[zoomState]="stream.zoom"
 		/>
 
 		@if (
@@ -61,8 +62,41 @@
 		}
 
 		@if (showVideoControls() && mouseHovering() && !stream.participant.hasEncryptionError) {
-			<div class="stream-video-controls">
+			<div class="stream-video-controls" (mouseenter)="keepControlsVisible()" (mouseleave)="releaseControls()">
 				<div class="flex-container">
+					@if (stream.isScreenStream && stream.zoom; as zoom) {
+						<div class="control-group" [class.zoom-group]="zoom.isZoomed">
+							@if (zoom.isZoomed) {
+								<button
+									mat-icon-button
+									id="reset-zoom-btn"
+									(click)="zoom.reset()"
+									[matTooltip]="'STREAM.RESET_ZOOM' | translate"
+								>
+									<mat-icon fontIcon="zoom_out_map" />
+								</button>
+								<button
+									mat-icon-button
+									id="zoom-out-btn"
+									(click)="zoom.zoomOut()"
+									[disabled]="!zoom.canZoomOut"
+									[matTooltip]="'STREAM.ZOOM_OUT' | translate"
+								>
+									<mat-icon fontIcon="zoom_out" />
+								</button>
+								<span id="zoom-level" class="zoom-level">{{ zoom.level() * 100 }}%</span>
+							}
+							<button
+								mat-icon-button
+								id="zoom-in-btn"
+								(click)="zoom.zoomIn()"
+								[disabled]="!zoom.canZoomIn"
+								[matTooltip]="'STREAM.ZOOM_IN' | translate"
+							>
+								<mat-icon fontIcon="zoom_in" />
+							</button>
+						</div>
+					}
 					<button
 						mat-icon-button
 						[id]="stream.isPinned ? 'unpin-btn' : 'pin-btn'"

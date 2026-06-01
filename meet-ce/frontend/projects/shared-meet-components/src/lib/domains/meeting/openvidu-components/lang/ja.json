@@ -69,6 +69,7 @@
     "UNMUTE_SOUND": "サウンドを有効にする",
     "ZOOM_IN": "拡大する",
     "ZOOM_OUT": "縮小する",
+    "RESET_ZOOM": "ズームをリセット",
     "REPLACE_SCREEN": "スクリーンを入れ替える",
     "PIN": "ピン",
     "UNPIN": "ピンの解除",

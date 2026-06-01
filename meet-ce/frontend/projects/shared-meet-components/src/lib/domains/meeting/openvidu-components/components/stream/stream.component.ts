@@ -61,6 +61,8 @@ export class StreamComponent implements OnDestroy {
 	 */
 	hoveringTimeout: ReturnType<typeof setTimeout> | undefined;
 	private showVideoTimeout: ReturnType<typeof setTimeout> | undefined;
+	/** True while the pointer is over the video controls; suppresses the auto-hide timer. */
+	private isOverControls = false;
 
 	/**
 	 * @ignore
@@ -134,13 +136,47 @@ export class StreamComponent implements OnDestroy {
 
 	/**
 	 * @ignore
+	 * Reveals the controls on pointer movement over the stream and (re)arms the auto-hide timer.
 	 */
 	mouseHover(event: MouseEvent) {
 		event.preventDefault();
-		clearTimeout(this.hoveringTimeout);
+		this.revealControls();
+	}
+
+	/**
+	 * @ignore
+	 * Pins the controls open while the pointer rests on them (clicking, hovering), so they don't
+	 * vanish mid-interaction. The auto-hide timer stays disarmed until {@link releaseControls}.
+	 */
+	keepControlsVisible() {
+		this.isOverControls = true;
+		this.revealControls();
+	}
+
+	/**
+	 * @ignore
+	 * Re-arms the auto-hide timer once the pointer leaves the controls.
+	 */
+	releaseControls() {
+		this.isOverControls = false;
+		this.scheduleAutoHideControls();
+	}
+
+	/** Shows the controls and (re)arms the auto-hide timer, unless the pointer is parked on them. */
+	private revealControls() {
 		this.mouseHovering.set(true);
-		this.hoveringTimeout = setTimeout(() => {
-			this.mouseHovering.set(false);
-		}, this.HOVER_TIMEOUT);
+		this.scheduleAutoHideControls();
+	}
+
+	/**
+	 * Arms the auto-hide timer, replacing any pending one. No-ops while the pointer rests on the
+	 * controls so they remain visible until the pointer leaves.
+	 */
+	private scheduleAutoHideControls() {
+		clearTimeout(this.hoveringTimeout);
+		if (this.isOverControls) {
+			return;
+		}
+		this.hoveringTimeout = setTimeout(() => this.mouseHovering.set(false), this.HOVER_TIMEOUT);
 	}
 }

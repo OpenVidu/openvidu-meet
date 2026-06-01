@@ -13,6 +13,7 @@ import {
 	VideoCaptureOptions
 } from '../services/livekit-adapter';
 import { DeviceType } from './device.model';
+import { ScreenZoomState } from './screen-zoom.model';
 
 type AugmentedTrackPublication = OVTrackPublication & {
 	participant: ParticipantModel;
@@ -76,6 +77,12 @@ export interface ParticipantStream {
 	isMinimized: boolean;
 	/** Mirrors the audioTrack isMutedForcibly state. */
 	isMutedForcibly: boolean;
+	/**
+	 * Per-viewer zoom/pan state for screen-share streams. Only present on screen streams;
+	 * the same instance is reused across stream recomputations so the zoom persists for the
+	 * lifetime of the underlying screen track.
+	 */
+	zoom?: ScreenZoomState;
 }
 
 /**
@@ -144,6 +151,13 @@ export class ParticipantModel {
 	 * computed that calls it — so streams, isMinimized, isPinned, etc. all react automatically.
 	 */
 	private readonly _revision = signal(0);
+
+	/**
+	 * Per-viewer screen-share zoom state, keyed by screen stream id. Kept outside the stream
+	 * snapshots (which are rebuilt on every revision) so a participant's zoom survives unrelated
+	 * track/state changes and only resets when the screen track itself changes.
+	 */
+	private readonly screenZoomStates = new Map<string, ScreenZoomState>();
 
 	constructor(props: ParticipantProperties) {
 		this.participant = props.participant;
@@ -321,6 +335,7 @@ export class ParticipantModel {
 
 		// Screen share stream — only when screen sharing is active
 		if (screenVideoTrack || screenAudioTrack) {
+			const screenStreamId = screenVideoTrack?.trackSid ?? `screen-${this.identity}`;
 			result.push({
 				participant: this,
 				source: Track.Source.ScreenShare,
@@ -328,15 +343,35 @@ export class ParticipantModel {
 				audioTrack: screenAudioTrack,
 				isCameraStream: false,
 				isScreenStream: true,
-				streamId: screenVideoTrack?.trackSid ?? `screen-${this.identity}`,
+				streamId: screenStreamId,
 				isPinned: screenVideoTrack?.isPinned ?? false,
 				isMinimized: false,
-				isMutedForcibly: (screenAudioTrack ?? screenVideoTrack)?.isMutedForcibly ?? false
+				isMutedForcibly: (screenAudioTrack ?? screenVideoTrack)?.isMutedForcibly ?? false,
+				zoom: this.resolveScreenZoom(screenStreamId)
 			});
 		}
 
 		return result;
 	});
+
+	/**
+	 * Returns the persistent {@link ScreenZoomState} for the given screen stream, creating it on
+	 * first use and discarding state for any screen track that is no longer present. This keeps the
+	 * zoom stable across stream recomputations while resetting it when a new screen share starts.
+	 */
+	private resolveScreenZoom(streamId: string): ScreenZoomState {
+		for (const key of this.screenZoomStates.keys()) {
+			if (key !== streamId) {
+				this.screenZoomStates.delete(key);
+			}
+		}
+		let state = this.screenZoomStates.get(streamId);
+		if (!state) {
+			state = new ScreenZoomState();
+			this.screenZoomStates.set(streamId, state);
+		}
+		return state;
+	}
 
 	/**
 	 * Returns if the participant is local.

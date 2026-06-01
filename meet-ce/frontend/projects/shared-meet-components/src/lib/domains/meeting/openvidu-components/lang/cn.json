@@ -69,6 +69,7 @@
     "UNMUTE_SOUND": "取消静音",
     "ZOOM_IN": "放大",
     "ZOOM_OUT": "缩小",
+    "RESET_ZOOM": "重置缩放",
     "REPLACE_SCREEN": "更换屏幕",
     "PIN": "固定",
     "UNPIN": "取消固定",

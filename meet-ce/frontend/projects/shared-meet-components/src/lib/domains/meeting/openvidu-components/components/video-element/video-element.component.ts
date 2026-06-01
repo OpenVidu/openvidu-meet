@@ -1,4 +1,15 @@
-import { ChangeDetectionStrategy, Component, effect, ElementRef, input, OnDestroy, viewChild } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	effect,
+	ElementRef,
+	input,
+	OnDestroy,
+	signal,
+	viewChild
+} from '@angular/core';
+import { ScreenZoomState } from '../../models/screen-zoom.model';
 import { Track } from '../../services/livekit-adapter';
 import { ParticipantAvatarComponent } from '../participant-avatar/participant-avatar.component';
 
@@ -28,7 +39,20 @@ import { ParticipantAvatarComponent } from '../participant-avatar/participant-av
 			[hasEncryptionError]="hasEncryptionError()"
 		/>
 		@if (videoTrack()) {
-			<video #videoElement class="OV_media-element OV_video-element" [class.ov-video-ready]="!showAvatar()" [attr.id]="videoTrack()!.sid"></video>
+			<video
+				#videoElement
+				class="OV_media-element OV_video-element"
+				[class.ov-video-ready]="!showAvatar()"
+				[class.zoomable]="isZoomable()"
+				[class.panning]="isPanning()"
+				[style.transform]="videoTransform()"
+				[style.transform-origin]="'center center'"
+				(pointerdown)="onPointerDown($event)"
+				(pointermove)="onPointerMove($event)"
+				(pointerup)="onPointerUp($event)"
+				(pointercancel)="onPointerUp($event)"
+				[attr.id]="videoTrack()!.sid"
+			></video>
 		}
 	`,
 	styleUrl: './video-element.component.scss',
@@ -43,10 +67,47 @@ export class VideoElementComponent implements OnDestroy {
 	readonly isLocal = input(false);
 	readonly hasEncryptionError = input(false);
 	readonly isSpeaking = input(false);
+	/**
+	 * Zoom/pan state for screen-share videos, owned by the participant model. Undefined for camera
+	 * streams (and ignored there). The view only maps this state to pixels — it holds no zoom state itself.
+	 */
+	readonly zoomState = input<ScreenZoomState | undefined>(undefined);
 	readonly videoElement = viewChild<ElementRef<HTMLVideoElement>>('videoElement');
 
 	private previousVideoTrack: Track | null = null;
 	private previousVideoElement: HTMLVideoElement | null = null;
+
+	readonly isPanning = signal(false);
+	private dragOrigin = { pointerX: 0, pointerY: 0, panX: 0, panY: 0 };
+
+	private readonly isScreenShare = computed(() => this.videoTrack()?.source === Track.Source.ScreenShare);
+
+	/** Whether the video can currently be panned by dragging (screen share zoomed past 1x). */
+	readonly isZoomable = computed(() => this.isScreenShare() && (this.zoomState()?.isZoomed ?? false));
+
+	/**
+	 * Composes the CSS transform for the video element. Screen shares get pan + zoom (mapping the
+	 * model's normalized pan to pixels); local cameras stay mirrored; everything else is untransformed.
+	 */
+	readonly videoTransform = computed(() => {
+		const track = this.videoTrack();
+		if (!track) {
+			return 'none';
+		}
+		if (track.source === Track.Source.ScreenShare) {
+			const state = this.zoomState();
+			if (!state) {
+				return 'none';
+			}
+			const level = state.level();
+			const { x, y } = this.toPixelPan(state.pan(), level);
+			return `translate(${x}px, ${y}px) scale(${level})`;
+		}
+		if (track.source === Track.Source.Camera && this.isLocal()) {
+			return 'scaleX(-1)';
+		}
+		return 'none';
+	});
 
 	private attachVideoTrackEffect = effect(() => {
 		const newVideoTrack = this.videoTrack();
@@ -75,7 +136,7 @@ export class VideoElementComponent implements OnDestroy {
 		}
 	}
 
-	private updateVideoStyles(track: Track, video: HTMLVideoElement, isLocal: boolean) {
+	private updateVideoStyles(track: Track, video: HTMLVideoElement, _isLocal: boolean) {
 		const isScreen = track.source === Track.Source.ScreenShare;
 		const isCamera = track.source === Track.Source.Camera;
 
@@ -84,7 +145,70 @@ export class VideoElementComponent implements OnDestroy {
 
 		// Screen shares should use 'contain' to avoid cropping, while camera streams use 'cover' to fill the area.
 		video.style.objectFit = isScreen ? 'contain' : 'cover';
-		// Mirror camera if it's a local participant, but never mirror screen shares.
-		video.style.transform = isCamera && isLocal ? 'scaleX(-1)' : '';
+		// The element transform (camera mirror + screen-share pan/zoom) is driven reactively by `videoTransform`.
+	}
+
+	/**
+	 * @ignore
+	 * Starts a pan drag when the screen share is zoomed in.
+	 */
+	onPointerDown(event: PointerEvent) {
+		const state = this.zoomState();
+		if (!this.isZoomable() || !state) {
+			return;
+		}
+		event.preventDefault();
+		const { x, y } = state.pan();
+		this.dragOrigin = { pointerX: event.clientX, pointerY: event.clientY, panX: x, panY: y };
+		this.isPanning.set(true);
+		(event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+	}
+
+	/**
+	 * @ignore
+	 * Translates the pointer delta into a normalized pan delta and pushes it to the zoom state,
+	 * which clamps it. Working in normalized units keeps the pan valid across zoom changes and resizes.
+	 */
+	onPointerMove(event: PointerEvent) {
+		const state = this.zoomState();
+		if (!this.isPanning() || !state) {
+			return;
+		}
+		const { maxX, maxY } = this.maxPixelPan(state.level());
+		const dx = maxX ? (event.clientX - this.dragOrigin.pointerX) / maxX : 0;
+		const dy = maxY ? (event.clientY - this.dragOrigin.pointerY) / maxY : 0;
+		state.setPan(this.dragOrigin.panX + dx, this.dragOrigin.panY + dy);
+	}
+
+	/**
+	 * @ignore
+	 */
+	onPointerUp(event: PointerEvent) {
+		if (!this.isPanning()) {
+			return;
+		}
+		this.isPanning.set(false);
+		(event.target as HTMLElement).releasePointerCapture?.(event.pointerId);
+	}
+
+	/** Maps a normalized pan offset ([-1, 1] per axis) to a pixel translation for the current zoom. */
+	private toPixelPan(pan: { x: number; y: number }, level: number): { x: number; y: number } {
+		const { maxX, maxY } = this.maxPixelPan(level);
+		return { x: pan.x * maxX, y: pan.y * maxY };
+	}
+
+	/**
+	 * Maximum pixel translation on each axis that still keeps the scaled video covering its
+	 * container. Zero when not zoomed or before the element has been laid out.
+	 */
+	private maxPixelPan(level: number): { maxX: number; maxY: number } {
+		const video = this.videoElement()?.nativeElement;
+		if (!video || level <= 1) {
+			return { maxX: 0, maxY: 0 };
+		}
+		return {
+			maxX: (video.clientWidth * (level - 1)) / 2,
+			maxY: (video.clientHeight * (level - 1)) / 2
+		};
 	}
 }

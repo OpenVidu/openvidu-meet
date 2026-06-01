@@ -402,6 +402,106 @@ export const resizeStream = async (page: Page, handleClass: string, deltaX: numb
 	await page.mouse.up();
 };
 
+// ─── Screen-share zoom controls ─────────────────────────────────────────────
+
+/**
+ * Locator for the local screen-share stream container.
+ */
+export const screenShareStream = (page: Page): Locator => page.locator('.local_participant.OV_screen').first();
+
+/**
+ * Hovers the local screen-share stream so its overlay controls (pin + the zoom
+ * feature group) become visible, and returns the screen-share container locator.
+ *
+ * Sharing your own screen pops the "share this link" panel and reflows the
+ * layout, so a single `.hover()` can land while the tile is still moving and
+ * never trigger the overlay. Retrying the hover until `.stream-video-controls`
+ * is actually visible makes the helper robust against that reflow.
+ */
+export const hoverScreenShareStream = async (page: Page): Promise<Locator> => {
+	const container = screenShareStream(page);
+	await expect(container).toBeVisible({ timeout: 10_000 });
+
+	const controls = container.locator('.stream-video-controls');
+	await expect(async () => {
+		await container.hover();
+		await expect(controls).toBeVisible({ timeout: 1_000 });
+	}).toPass({ timeout: 15_000 });
+
+	return container;
+};
+
+/**
+ * Reads the screen-share zoom percentage from the `#zoom-level` label. Returns
+ * 100 when no label is present (i.e. the stream is at its 1x base, where the
+ * label is intentionally hidden).
+ */
+export const readZoomPercent = async (page: Page): Promise<number> => {
+	const label = screenShareStream(page).locator('#zoom-level');
+
+	if ((await label.count()) === 0) {
+		return 100;
+	}
+
+	const text = (await label.textContent())?.trim() ?? '';
+	const value = Number.parseInt(text.replace('%', ''), 10);
+	return Number.isNaN(value) ? 100 : value;
+};
+
+/**
+ * Clicks the screen-share zoom-in button {@link times} times, verifying the
+ * displayed percentage strictly increases on each step. Re-hovers and retries
+ * each click because the button shifts position as the reset/zoom-out buttons
+ * and the percentage label appear on the first zoom step, which can otherwise
+ * race a click against the re-render.
+ */
+export const zoomInScreenShare = async (page: Page, times = 1): Promise<void> => {
+	const container = await hoverScreenShareStream(page);
+	const zoomIn = container.locator('#zoom-in-btn');
+
+	// Thread the last confirmed percentage forward instead of re-reading a fresh
+	// baseline each iteration: a fresh read can momentarily see the label detached
+	// (returning 100) and let a no-op click "pass", silently dropping a step.
+	let confirmed = await readZoomPercent(page);
+
+	for (let i = 0; i < times; i += 1) {
+		const previous = confirmed;
+
+		await expect(async () => {
+			await container.hover();
+			await expect(zoomIn).toBeVisible({ timeout: 1_000 });
+			await zoomIn.click();
+			// The percentage is driven by a signal; give Angular a tick to flush the text.
+			await expect.poll(() => readZoomPercent(page), { timeout: 1_000 }).toBeGreaterThan(previous);
+		}).toPass({ timeout: 10_000 });
+
+		confirmed = await readZoomPercent(page);
+	}
+};
+
+/**
+ * Clicks a scoped zoom control (e.g. `#zoom-out-btn`, `#reset-zoom-btn`) on the
+ * screen-share stream, re-hovering first so the auto-hide timer can't remove it.
+ */
+export const clickZoomControl = async (page: Page, buttonId: string): Promise<void> => {
+	const container = await hoverScreenShareStream(page);
+	const button = container.locator(`#${buttonId}`);
+	await expect(button).toBeVisible({ timeout: 5_000 });
+	await button.click();
+};
+
+/**
+ * Returns the ordered ids of the elements inside the screen-share zoom control
+ * group, e.g. `['reset-zoom-btn', 'zoom-out-btn', 'zoom-level', 'zoom-in-btn']`.
+ */
+export const getZoomControlOrder = async (page: Page): Promise<string[]> => {
+	const container = await hoverScreenShareStream(page);
+
+	return await container
+		.locator('.stream-video-controls .control-group > *')
+		.evaluateAll((elements) => elements.map((element) => element.id).filter((id) => id.length > 0));
+};
+
 /**
  * Drags a stream element to a new viewport position.
  */
