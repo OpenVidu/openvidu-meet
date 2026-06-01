@@ -75,7 +75,8 @@
     "UNPIN": "Loslösen",
     "FLOAT": "Abdocken",
     "DOCK": "Andocken",
-    "SCREEN_LABEL": "Bildschirm"
+    "SCREEN_LABEL": "Bildschirm",
+    "YOUR_SCREEN_LABEL": "Ihr Bildschirm"
   },
   "PANEL": {
     "CLOSE": "Schließen",

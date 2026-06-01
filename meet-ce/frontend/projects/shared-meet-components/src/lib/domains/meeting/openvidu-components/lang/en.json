@@ -75,7 +75,8 @@
     "UNPIN": "Unpin",
     "FLOAT": "Float",
     "DOCK": "Dock",
-    "SCREEN_LABEL": "screen"
+    "SCREEN_LABEL": "screen",
+    "YOUR_SCREEN_LABEL": "your screen"
   },
   "PANEL": {
     "CLOSE": "Close",

@@ -75,7 +75,8 @@
     "UNPIN": "अनपिन करें",
     "FLOAT": "फ़्लोट करें",
     "DOCK": "डॉक करें",
-    "SCREEN_LABEL": "स्क्रीन"
+    "SCREEN_LABEL": "स्क्रीन",
+    "YOUR_SCREEN_LABEL": "आपकी स्क्रीन"
   },
   "PANEL": {
     "CLOSE": "बंद करें",

@@ -25,6 +25,7 @@ import {
 	resizeStream,
 	screenShareStream,
 	waitForRemoteStream,
+	waitForVisibleRemoteParticipants,
 	zoomInScreenShare
 } from './helpers/stream.helper';
 import { getElementBoundingBox, hoverStream } from './helpers/ui-utils.helper';
@@ -398,6 +399,28 @@ test.describe('Stream E2E Tests', () => {
 			await expect(cameraContainer.locator('#float-btn')).toBeVisible();
 
 			await stopScreensharing(page);
+			await page.close();
+		});
+
+		test('should label the LOCAL screen-share tile as "(your screen)" while remote viewers see "(screen)"', async ({
+			page
+		}) => {
+			await openMeeting(page, accessUrl, { name: 'sharer', videoEnabled: true, audioEnabled: true });
+			await startScreensharing(page);
+			await expectScreenShareCount(page, 1);
+
+			// The local screen-share tile is labelled "(your screen)", not "(screen)".
+			const localScreen = screenShareStream(page);
+			await expect(localScreen).toBeVisible({ timeout: 10_000 });
+			await expect(localScreen.locator('.participant-screen-label')).toHaveText('(your screen)');
+
+			// A remote viewer still sees the sharer's screen labelled "(screen)".
+			const pageB = await page.context().newPage();
+			await openMeeting(pageB, accessUrl, { name: 'viewer' });
+			await waitForVisibleRemoteParticipants(pageB, { includes: ['sharer (screen)'] });
+
+			await stopScreensharing(page);
+			await pageB.close();
 			await page.close();
 		});
 

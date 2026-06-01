@@ -75,7 +75,8 @@
     "UNPIN": "Détacher",
     "FLOAT": "Détacher",
     "DOCK": "Ancrer",
-    "SCREEN_LABEL": "écran"
+    "SCREEN_LABEL": "écran",
+    "YOUR_SCREEN_LABEL": "votre écran"
   },
   "PANEL": {
     "CLOSE": "Fermer",

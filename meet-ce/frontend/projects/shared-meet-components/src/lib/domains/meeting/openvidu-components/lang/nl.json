@@ -75,7 +75,8 @@
     "UNPIN": "Losmaken",
     "FLOAT": "Losmaken",
     "DOCK": "Vastzetten",
-    "SCREEN_LABEL": "scherm"
+    "SCREEN_LABEL": "scherm",
+    "YOUR_SCREEN_LABEL": "jouw scherm"
   },
   "PANEL": {
     "CLOSE": "Sluiten",

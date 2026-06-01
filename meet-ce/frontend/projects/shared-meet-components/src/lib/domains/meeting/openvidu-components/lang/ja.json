@@ -75,7 +75,8 @@
     "UNPIN": "ピンの解除",
     "FLOAT": "フロート",
     "DOCK": "ドッキング",
-    "SCREEN_LABEL": "画面"
+    "SCREEN_LABEL": "画面",
+    "YOUR_SCREEN_LABEL": "あなたの画面"
   },
   "PANEL": {
     "CLOSE": "閉じる",

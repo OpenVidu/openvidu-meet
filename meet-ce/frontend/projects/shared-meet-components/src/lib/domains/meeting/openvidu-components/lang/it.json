@@ -75,7 +75,8 @@
     "UNPIN": "Sgancia",
     "FLOAT": "Stacca",
     "DOCK": "Aggancia",
-    "SCREEN_LABEL": "schermo"
+    "SCREEN_LABEL": "schermo",
+    "YOUR_SCREEN_LABEL": "il tuo schermo"
   },
   "PANEL": {
     "CLOSE": "Chiudi",

@@ -75,7 +75,8 @@
     "UNPIN": "取消固定",
     "FLOAT": "浮动",
     "DOCK": "停靠",
-    "SCREEN_LABEL": "屏幕"
+    "SCREEN_LABEL": "屏幕",
+    "YOUR_SCREEN_LABEL": "您的屏幕"
   },
   "PANEL": {
     "CLOSE": "关闭",

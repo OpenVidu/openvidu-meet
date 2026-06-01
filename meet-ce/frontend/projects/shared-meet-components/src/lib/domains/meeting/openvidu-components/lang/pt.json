@@ -75,7 +75,8 @@
     "UNPIN": "Desafixar",
     "FLOAT": "Flutuar",
     "DOCK": "Encaixar",
-    "SCREEN_LABEL": "tela"
+    "SCREEN_LABEL": "tela",
+    "YOUR_SCREEN_LABEL": "sua tela"
   },
   "PANEL": {
     "CLOSE": "Fechar",
