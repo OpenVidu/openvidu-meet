@@ -2,4 +2,4 @@ description: Successfully retrieved authenticated user info
 content:
     application/json:
         schema:
-            $ref: '../../schemas/internal/meet-user.yaml'
+            $ref: '../../schemas/meet-user.yaml'

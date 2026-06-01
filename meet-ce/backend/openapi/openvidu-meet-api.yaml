@@ -9,6 +9,14 @@ tags:
 webhooks:
     $ref: './webhooks/webhooks.yaml'
 paths:
+    /users:
+        $ref: './paths/users.yaml#/~1users'
+    /users/{userId}:
+        $ref: './paths/users.yaml#/~1users~1{userId}'
+    /users/{userId}/password:
+        $ref: './paths/users.yaml#/~1users~1{userId}~1password'
+    /users/{userId}/role:
+        $ref: './paths/users.yaml#/~1users~1{userId}~1role'
     /rooms:
         $ref: './paths/rooms.yaml#/~1rooms'
     /rooms/{roomId}:
@@ -41,6 +49,8 @@ components:
     securitySchemes:
         $ref: './components/security.yaml'
     schemas:
+        MeetUser:
+            $ref: components/schemas/meet-user.yaml
         MeetRoom:
             $ref: components/schemas/meet-room.yaml
         MeetRoomConfig:

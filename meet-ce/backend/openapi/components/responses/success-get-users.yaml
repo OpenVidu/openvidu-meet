@@ -7,9 +7,9 @@ content:
                 users:
                     type: array
                     items:
-                        $ref: '../../schemas/internal/meet-user.yaml'
+                        $ref: '../schemas/meet-user.yaml'
                 pagination:
-                    $ref: '../../schemas/meet-pagination.yaml'
+                    $ref: '../schemas/meet-pagination.yaml'
         examples:
             multiple_users:
                 summary: Response with multiple users

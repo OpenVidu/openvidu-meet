@@ -25,7 +25,8 @@ import {
 import { setupRoomMember, setupSingleRoom, setupTestUsers, setupUser } from '../../../helpers/test-scenarios.js';
 import { TestUsers, UserData } from '../../../interfaces/scenarios.js';
 
-const USERS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`);
+const INTERNAL_USERS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`);
+const USERS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`);
 const ROOMS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`);
 
 describe('Token Validation Tests', () => {
@@ -53,14 +54,14 @@ describe('Token Validation Tests', () => {
 	describe('Access Token Tests', () => {
 		it('should succeed when providing valid access token', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when providing valid access token through query param without bearer prefix', async () => {
 			const accessTokenQuery = testUsers.user.accessToken.replace('Bearer ', '');
-			const response = await request(app).get(`${USERS_PATH}/me`).query({ accessToken: accessTokenQuery });
+			const response = await request(app).get(`${INTERNAL_USERS_PATH}/me`).query({ accessToken: accessTokenQuery });
 			expect(response.status).toBe(200);
 		});
 
@@ -72,7 +73,7 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when access token is missing', async () => {
-			const response = await request(app).get(`${USERS_PATH}/me`);
+			const response = await request(app).get(`${INTERNAL_USERS_PATH}/me`);
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Unauthorized');
@@ -80,7 +81,7 @@ describe('Token Validation Tests', () => {
 
 		it('should fail when access token is invalid', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, 'Bearer invalidtoken');
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
@@ -106,7 +107,7 @@ describe('Token Validation Tests', () => {
 			MEET_ENV.ACCESS_TOKEN_EXPIRATION = initialTokenExpiration;
 
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken);
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
@@ -127,7 +128,7 @@ describe('Token Validation Tests', () => {
 			expect(roleUpdateResponse.status).toBe(200);
 
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken);
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
@@ -136,7 +137,7 @@ describe('Token Validation Tests', () => {
 
 		it('should fail when using room member token instead of access token', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomMemberToken);
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
@@ -145,7 +146,7 @@ describe('Token Validation Tests', () => {
 
 		it('should fail when using refresh token instead of access token', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.refreshToken);
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
@@ -165,7 +166,7 @@ describe('Token Validation Tests', () => {
 
 			// Attempt to use the token
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken);
 			expect(response.status).toBe(403);
 			expect(response.body).toHaveProperty('message');
@@ -209,14 +210,14 @@ describe('Token Validation Tests', () => {
 
 			it('should succeed when accessing /me endpoint with mustChangePassword', async () => {
 				const response = await request(app)
-					.get(`${USERS_PATH}/me`)
+					.get(`${INTERNAL_USERS_PATH}/me`)
 					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken);
 				expect(response.status).toBe(200);
 			});
 
 			it('should succeed when accessing /change-password endpoint with mustChangePassword', async () => {
 				const response = await request(app)
-					.post(`${USERS_PATH}/change-password`)
+					.post(`${INTERNAL_USERS_PATH}/change-password`)
 					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken)
 					.send({
 						currentPassword: resetPassword,
@@ -260,14 +261,14 @@ describe('Token Validation Tests', () => {
 
 			it('should succeed when accessing /me endpoint with temporary token', async () => {
 				const response = await request(app)
-					.get(`${USERS_PATH}/me`)
+					.get(`${INTERNAL_USERS_PATH}/me`)
 					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessTokenTmp);
 				expect(response.status).toBe(200);
 			});
 
 			it('should succeed when accessing /change-password endpoint with temporary token', async () => {
 				const response = await request(app)
-					.post(`${USERS_PATH}/change-password`)
+					.post(`${INTERNAL_USERS_PATH}/change-password`)
 					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessTokenTmp)
 					.send({
 						currentPassword: 'InitialPassword1!',

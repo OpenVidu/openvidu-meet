@@ -19,7 +19,7 @@ import { livekitWebhookRouter } from './routes/livekit.routes.js';
 import { internalMeetingRouter } from './routes/meeting.routes.js';
 import { recordingRouter } from './routes/recording.routes.js';
 import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
-import { userRouter } from './routes/user.routes.js';
+import { internalUserRouter, userRouter } from './routes/user.routes.js';
 import { getBasePath, getHtmlWithBasePath, getOpenApiHtmlWithBasePath } from './utils/html-dynamic-base-path.utils.js';
 import {
 	frontendDirectoryPath,
@@ -83,6 +83,7 @@ const createApp = () => {
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, staticAssetLimiter, (_req: Request, res: Response) =>
 		res.type('html').send(getOpenApiHtmlWithBasePath(publicApiHtmlFilePath, INTERNAL_CONFIG.API_BASE_PATH_V1))
 	);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`, userRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 
@@ -98,7 +99,7 @@ const createApp = () => {
 
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`, authRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`, apiKeyRouter);
-	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, userRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, internalUserRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`, internalMeetingRouter);
 	// appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);

@@ -1,3 +1,5 @@
+- name: OpenVidu Meet - Users
+  description: Operations related to managing users in OpenVidu Meet
 - name: OpenVidu Meet - Rooms
   description: Operations related to managing OpenVidu Meet rooms
 - name: OpenVidu Meet - Room Members
