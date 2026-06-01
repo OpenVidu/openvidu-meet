@@ -63,7 +63,7 @@
 				<!-- Action buttons section -->
 				@if (!_participant.hasEncryptionError) {
 					<div class="participant-action-buttons">
-						<ov-connection-quality-indicator [participant]="_participant!" [transparent]="true" [forceVisible]="true" />
+						<ov-connection-quality-indicator [participant]="_participant!" [transparent]="true" />
 
 						<!-- Mute/Unmute button for remote participants -->
 						@if (!isLocalParticipant() && showMuteButton()) {
