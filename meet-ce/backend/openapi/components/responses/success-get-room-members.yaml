@@ -17,6 +17,7 @@ content:
                 value:
                     members:
                         - memberId: 'alice_smith'
+                          type: 'registered'
                           name: 'Alice Smith'
                           membershipDate: 1620000000000
                           accessUrl: 'https://example.com/room/room-123'
@@ -39,6 +40,7 @@ content:
                               canWriteChat: true
                               canChangeVirtualBackground: true
                         - memberId: 'ext-abc123'
+                          type: 'external'
                           name: 'Bob'
                           membershipDate: 1620003600000
                           accessUrl: 'https://example.com/room/room-123?secret=ext-abc123'

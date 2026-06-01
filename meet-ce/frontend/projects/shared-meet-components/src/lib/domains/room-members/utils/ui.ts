@@ -1,4 +1,4 @@
-import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberType, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 
 /**
  * Utility functions for RoomMember-related UI operations.
@@ -96,10 +96,9 @@ export class RoomMemberUiUtils {
 
 	/**
 	 * Checks whether a member is a registered (non-external) member.
-	 * External members have IDs prefixed with 'ext-'.
 	 */
 	static isRegisteredMember(member: MeetRoomMember): boolean {
-		return !member.memberId.startsWith('ext-');
+		return member.type === MeetRoomMemberType.REGISTERED;
 	}
 
 	/**

@@ -1,5 +1,5 @@
 import type { MeetRoomMember } from '@openvidu-meet/typings';
-import { MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetRoomMemberType } from '@openvidu-meet/typings';
 import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import type { DocumentOnlyField } from '../database.model.js';
@@ -78,6 +78,11 @@ const MeetRoomMemberSchema = new Schema<MeetRoomMemberDocument>(
 		},
 		roomId: {
 			type: String,
+			required: true
+		},
+		type: {
+			type: String,
+			enum: Object.values(MeetRoomMemberType),
 			required: true
 		},
 		name: {

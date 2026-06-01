@@ -31,6 +31,7 @@ export const MEET_ROOM_MEMBER_PERMISSIONS_FIELDS = [
 export const MEET_ROOM_MEMBER_FIELDS = [
 	'memberId',
 	'roomId',
+	'type',
 	'name',
 	'membershipDate',
 	'accessUrl',

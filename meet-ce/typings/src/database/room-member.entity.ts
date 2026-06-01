@@ -9,6 +9,8 @@ export interface MeetRoomMember {
 	memberId: string;
 	/** ID of the room the member belongs to */
 	roomId: string;
+	/** Type of the member (registered Meet user or external user). See {@link MeetRoomMemberType} for details. */
+	type: MeetRoomMemberType;
 	/** Name of the member (either registered or external user name) */
 	name: string;
 	/** Timestamp when the member was added to the room (milliseconds since epoch) */
@@ -31,4 +33,14 @@ export interface MeetRoomMember {
 export enum MeetRoomMemberRole {
 	MODERATOR = 'moderator',
 	SPEAKER = 'speaker'
+}
+
+/**
+ * Represents the type of a member in a room.
+ */
+export enum MeetRoomMemberType {
+	/** A registered Meet user, linked to a Meet user account. */
+	REGISTERED = 'registered',
+	/** An external user, not linked to any Meet user account. */
+	EXTERNAL = 'external'
 }

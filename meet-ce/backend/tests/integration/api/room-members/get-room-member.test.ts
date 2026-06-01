@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberRole, MeetRoomRoles, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetRoomMemberType, MeetRoomRoles, MeetUserRole } from '@openvidu-meet/typings';
 import {
 	createRoom,
 	createRoomMember,
@@ -50,6 +50,7 @@ describe('Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('memberId', memberId);
 			expect(response.body.memberId).toBe(userId);
 			expect(response.body).toHaveProperty('roomId', roomId);
+			expect(response.body).toHaveProperty('type', MeetRoomMemberType.REGISTERED);
 			expect(response.body).toHaveProperty('name', userName);
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
 			expect(response.body).toHaveProperty('membershipDate');
@@ -73,6 +74,7 @@ describe('Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('memberId', memberId);
 			expect(memberId).toMatch(/^ext-/);
 			expect(response.body).toHaveProperty('roomId', roomId);
+			expect(response.body).toHaveProperty('type', MeetRoomMemberType.EXTERNAL);
 			expect(response.body).toHaveProperty('name', memberName);
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
 			expect(response.body).toHaveProperty('membershipDate');
