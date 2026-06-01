@@ -137,8 +137,9 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private readonly ASPECT_RATIO = 218 / 123;
 	private readonly MIN_RESIZE_WIDTH = 160;
-	private readonly DEFAULT_MIN_HEIGHT = 123;
 	private readonly MIN_CORNER_MARGIN = 0;
+	/** Gap kept between the floating tile and the right edge of the layout. */
+	private readonly RIGHT_EDGE_MARGIN = 5;
 
 	// ── Private observer / timeout state ─────────────────────────────────────────
 
@@ -186,8 +187,14 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 				this.layoutService.update();
 			});
 		} else if (!this.wasLocalFloating && isLocalFloating) {
-			// Just became floating: move to bottom-left corner to avoid overlapping the main layout.
-			requestAnimationFrame(() => this.moveStreamToBottomLeft());
+			// Just became floating: move to the bottom-right corner to avoid overlapping the main layout.
+			// Mark it right-anchored so layout/panel resizes keep it pinned to the right edge.
+			this.videoIsAtRight = true;
+			// Place immediately, then re-correct after the float resize transition (0.1s) settles:
+			// the container's content height collapses for a frame as the tile leaves the grid, which
+			// would otherwise leave the tile hovering above the bottom edge.
+			requestAnimationFrame(() => this.moveStreamToBottomRight());
+			setTimeout(() => this.moveStreamToBottomRight(), 150);
 		}
 
 		this.wasLocalFloating = isLocalFloating;
@@ -409,19 +416,24 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private moveStreamToRight(parentWidth: number, drag = this.getActiveLocalDrag()): void {
 		if (!drag) return;
 		const { y, width } = drag.element.nativeElement.getBoundingClientRect();
-		this.setDragPosition({ x: parentWidth - width - 10, y }, drag);
+		this.setDragPosition({ x: parentWidth - width - this.RIGHT_EDGE_MARGIN, y }, drag);
 	}
 
-	private moveStreamToBottomLeft(drag = this.getActiveLocalDrag()): void {
+	private moveStreamToBottomRight(drag = this.getActiveLocalDrag()): void {
 		if (!drag) return;
 		const container = this.layoutContainer()?.element?.nativeElement as HTMLElement | undefined;
 		if (!container) return;
-		// Use the known floating height (CSS constant) rather than reading the DOM:
+		// Use the known minimum floating size (CSS constants) rather than reading the DOM:
 		// at the moment the effect fires the .OV_floating class may not yet be painted,
 		// so getBoundingClientRect would still report the layout-driven size.
-		const containerHeight = container.getBoundingClientRect().height;
+		const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
+		const floatingWidth = this.MIN_RESIZE_WIDTH;
+		const floatingHeight = this.MIN_RESIZE_WIDTH / this.ASPECT_RATIO;
 		this.setDragPosition(
-			{ x: this.MIN_CORNER_MARGIN, y: containerHeight - this.DEFAULT_MIN_HEIGHT - this.MIN_CORNER_MARGIN },
+			{
+				x: containerWidth - floatingWidth - this.RIGHT_EDGE_MARGIN,
+				y: containerHeight - floatingHeight - this.MIN_CORNER_MARGIN
+			},
 			drag
 		);
 	}

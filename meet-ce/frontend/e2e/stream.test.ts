@@ -418,13 +418,16 @@ test.describe('Stream E2E Tests', () => {
 			const floatingBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(floatingBox).not.toBeNull();
 
-			// Video should be positioned at the bottom-left corner of the layout
+			// Video should be positioned at the bottom-right corner of the layout
 			const layoutBox = await getElementBoundingBox(page, '#layout');
 			expect(layoutBox).not.toBeNull();
-			expect(floatingBox!.x).toBeLessThan(50);
+			// Flush to the right edge (within the 10px margin) and the bottom, not the left.
+			expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 10, -1);
+			expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
 			expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
+			// Floats at the minimum allowed size (~160px wide).
+			expect(floatingBox!.width).toBeCloseTo(160, -1);
 			expect(floatingBox!.height).toBeGreaterThan(0);
-			expect(floatingBox!.width).toBeGreaterThan(0);
 
 			await page.close();
 		});
@@ -458,7 +461,7 @@ test.describe('Stream E2E Tests', () => {
 			const restoredBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(restoredBox).not.toBeNull();
 
-			// Restored video should be back at the top of the layout (far from bottom-left floating position)
+			// Restored video should be back at the top of the layout (far from bottom-right floating position)
 			expect(restoredBox!.y).toBeLessThan(floatingBox!.y);
 			expect(restoredBox!.width).toBeGreaterThan(floatingBox!.width);
 			expect(restoredBox!.height).toBeGreaterThan(floatingBox!.height);
@@ -627,24 +630,27 @@ test.describe('Stream E2E Tests', () => {
 			await dragStream(page, '.local_participant', 300, 300);
 			await page.waitForTimeout(500);
 
-			// Verify stream was dragged
+			// Verify stream was dragged — while floating it is the small (~160px) PiP tile.
 			let streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(streamBox).not.toBeNull();
-			const xAfterDrag = streamBox!.x;
+			const floatedWidth = streamBox!.width;
 
 			// Dock (restore)
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
 			await dockStream(page);
 			await page.waitForTimeout(1500);
 
-			// Stream should be reset to layout position
+			// Stream should be reset to the layout flow: back to its full in-layout tile size and row,
+			// no longer the floating PiP nor stuck at the dragged float position. (Its x can differ from
+			// the pre-float value because the mosaic re-centers the single tile — only size/row are stable.)
 			streamBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(streamBox).not.toBeNull();
-
-			// Verify video returns to layout flow (y should be small, near top)
-			expect(Math.abs(streamBox!.x - xAfterDrag)).toBeGreaterThan(50);
-			expect(Math.abs(streamBox!.x - initialBox!.x)).toBeCloseTo(0);
-			expect(Math.abs(streamBox!.y - initialBox!.y)).toBeCloseTo(0);
+			await expect(page.locator('.local_participant:has(.OV_stream_video.local)').first()).not.toHaveClass(
+				/OV_floating/
+			);
+			expect(streamBox!.width).toBeGreaterThan(floatedWidth + 50);
+			expect(streamBox!.width).toBeCloseTo(initialBox!.width, -1);
+			expect(streamBox!.y).toBeCloseTo(initialBox!.y, -1);
 
 			await page.close();
 		});
@@ -729,7 +735,7 @@ test.describe('Stream E2E Tests', () => {
 				// Wait until participant-0 sees the remote stream from participant-1
 				await waitForRemoteStream(pageA);
 
-				// Local video should have been auto-floating and placed at bottom-left
+				// Local video should have been auto-floated and placed at the bottom-right
 				const localContainer = pageA.locator('.local_participant:has(.OV_stream_video.local)').first();
 				await expect(localContainer).toHaveClass(/OV_floating/, { timeout: 5_000 });
 				await pageA.waitForTimeout(500);
@@ -738,7 +744,8 @@ test.describe('Stream E2E Tests', () => {
 				const layoutBox = await getElementBoundingBox(pageA, '#layout');
 				expect(floatingBox).not.toBeNull();
 				expect(layoutBox).not.toBeNull();
-				expect(floatingBox!.x).toBeLessThan(50);
+				expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 10, -1);
+				expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
 				expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
 			} finally {
 				await removeAllParticipants();
@@ -805,7 +812,7 @@ test.describe('Stream E2E Tests', () => {
 			await floatStream(page);
 			await page.waitForTimeout(500);
 
-			// Size should be back to default (~218×123)
+			// Size should be back to the default minimum (~160px wide)
 			const resetBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
 			expect(resetBox).not.toBeNull();
 			expect(Math.abs(resetBox!.width - defaultBox!.width)).toBeLessThan(20);
