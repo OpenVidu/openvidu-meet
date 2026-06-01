@@ -49,10 +49,15 @@ export const setupSingleRoom = async (
 	roomName = 'TEST_ROOM',
 	config?: Partial<MeetRoomConfig>
 ): Promise<RoomData> => {
-	const room = await createRoom({
-		roomName,
-		config
-	});
+	const room = await createRoom(
+		{
+			roomName,
+			config
+		},
+		undefined,
+		// Request the 'roles' extra field so consumers can read room.roles (excluded from responses by default)
+		{ xExtraFields: 'roles' }
+	);
 
 	// Extract the room secrets and generate room member tokens
 	const { moderatorSecret, speakerSecret, recordingSecret } = MeetRoomHelper.extractSecretsFromRoom(room.access);

@@ -36,7 +36,7 @@ export type MeetRoomField = (typeof MEET_ROOM_FIELDS)[number];
  * Properties of a {@link MeetRoom} that can be included as extra fields in the API response.
  * These fields are not included by default and must be explicitly requested via extraFields parameter.
  */
-export const MEET_ROOM_EXTRA_FIELDS = ['config'] as const satisfies readonly ExtraFieldKey<MeetRoom>[];
+export const MEET_ROOM_EXTRA_FIELDS = ['config', 'roles'] as const satisfies readonly ExtraFieldKey<MeetRoom>[];
 
 /**
  * Properties of a room that can be requested as extra fields in the API response.

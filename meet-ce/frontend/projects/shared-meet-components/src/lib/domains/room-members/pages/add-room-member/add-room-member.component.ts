@@ -52,7 +52,8 @@ export class AddRoomMemberComponent implements OnInit {
 
 		try {
 			const [{ roles, owner }, member] = await Promise.all([
-				this.roomService.getRoom(roomId, { fields: ['roles', 'owner'] }),
+				// 'roles' is an extra field (excluded by default), so request it explicitly
+				this.roomService.getRoom(roomId, { fields: ['roles', 'owner'], extraFields: ['roles'] }),
 				memberId ? this.roomMemberService.getRoomMember(roomId, memberId) : Promise.resolve(null)
 			]);
 			this.roomRoles.set(roles);

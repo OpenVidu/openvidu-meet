@@ -17,7 +17,7 @@ describe('Room Members API Tests', () => {
 	beforeAll(async () => {
 		await startTestServer();
 
-		const room = await createRoom();
+		const room = await createRoom({}, undefined, { xExtraFields: 'roles' });
 		roomId = room.roomId;
 		roomRoles = room.roles;
 	});

@@ -103,7 +103,8 @@ export class RoomWizardComponent implements OnInit {
 			const { roomName, autoDeletionDate, autoDeletionPolicy, config, access, roles } =
 				await this.roomService.getRoom(this.roomId, {
 					fields: ['roomName', 'autoDeletionDate', 'autoDeletionPolicy', 'config', 'access', 'roles'],
-					extraFields: ['config']
+					// 'config' and 'roles' are extra fields, excluded by default, so request them explicitly
+					extraFields: ['config', 'roles']
 				});
 
 			// Populate existing room options based on fetched data

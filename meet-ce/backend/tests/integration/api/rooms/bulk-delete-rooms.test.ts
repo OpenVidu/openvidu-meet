@@ -372,9 +372,9 @@ describe('Room API Tests', () => {
 			expect(scheduledRoom).toBeDefined();
 			expect(scheduledRoom.room).toBeDefined();
 
-			// Verify extra fields are present
+			// Verify requested extra field is present, while the non-requested 'roles' extra field is excluded
 			expect(scheduledRoom.room.config).toBeDefined();
-			expect(scheduledRoom.room.roles).toBeDefined();
+			expect(scheduledRoom.room.roles).toBeUndefined();
 			// Base fields should still be present (all base fields returned when no fields param)
 			expect(scheduledRoom.room.roomId).toBe(roomWithMeeting.roomId);
 			expect(scheduledRoom.room.roomName).toBeDefined();
