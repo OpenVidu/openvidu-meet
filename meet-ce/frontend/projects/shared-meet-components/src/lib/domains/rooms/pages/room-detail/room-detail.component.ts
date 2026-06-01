@@ -106,6 +106,8 @@ export class RoomDetailComponent implements OnInit {
 		nameFilter: '',
 		nameMatchMode: TextMatchMode.PREFIX,
 		nameCaseInsensitive: false,
+		baseRole: '',
+		type: '',
 		sortField: 'membershipDate',
 		sortOrder: SortOrder.DESC
 	});
@@ -329,6 +331,16 @@ export class RoomDetailComponent implements OnInit {
 				memberFilters.name = filters.nameFilter;
 				memberFilters.nameMatchMode = filters.nameMatchMode;
 				memberFilters.nameCaseInsensitive = filters.nameCaseInsensitive || undefined;
+			}
+
+			// Apply base role filter if provided
+			if (filters.baseRole) {
+				memberFilters.baseRole = filters.baseRole;
+			}
+
+			// Apply member type filter if provided
+			if (filters.type) {
+				memberFilters.type = filters.type;
 			}
 
 			const response = await this.roomMemberService.listRoomMembers(this.roomId(), memberFilters);

@@ -51,6 +51,8 @@
             - $ref: '../components/parameters/room-member-name.yaml'
             - $ref: '../components/parameters/room-member-name-match-mode.yaml'
             - $ref: '../components/parameters/room-member-name-case-insensitive.yaml'
+            - $ref: '../components/parameters/room-member-base-role.yaml'
+            - $ref: '../components/parameters/room-member-type.yaml'
             - $ref: '../components/parameters/room-member-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'

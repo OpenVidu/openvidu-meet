@@ -104,6 +104,19 @@
 				</mat-menu>
 			}
 
+			@if (showFilters()) {
+				<button
+					mat-icon-button
+					class="ov-filters-trigger"
+					[class.has-filters]="activeFilterChips().length > 0"
+					(click)="toggleFilterPanel()"
+					matTooltip="Filter members"
+					id="members-filters-btn"
+				>
+					<mat-icon>tune</mat-icon>
+				</button>
+			}
+
 			<button
 				mat-icon-button
 				class="refresh-btn"
@@ -150,6 +163,58 @@
 			</button>
 		</div>
 	</mat-toolbar>
+
+	<!-- Inline Filter Panel -->
+	@if (showFilters() && showFilterPanel()) {
+		<div class="ov-filter-panel" id="members-filters-panel">
+			<div class="filter-group">
+				<h4>Filter by Role</h4>
+				<p class="filter-description">Narrows the result to members with the selected base role.</p>
+				<mat-form-field appearance="outline" id="members-base-role-filter-field">
+					<mat-label>Role</mat-label>
+					<mat-select [formControl]="controls.baseRole" id="members-base-role-filter-select">
+						@for (option of baseRoleOptions; track option.value) {
+							<mat-option [value]="option.value" id="members-base-role-option-{{ option.value }}">{{
+								option.label
+							}}</mat-option>
+						}
+					</mat-select>
+				</mat-form-field>
+			</div>
+
+			<div class="filter-group">
+				<h4>Filter by Type</h4>
+				<p class="filter-description">Narrows the result to members of the selected type.</p>
+				<mat-form-field appearance="outline" id="members-type-filter-field">
+					<mat-label>Type</mat-label>
+					<mat-select [formControl]="controls.type" id="members-type-filter-select">
+						@for (option of typeOptions; track option.value) {
+							<mat-option [value]="option.value" id="members-type-option-{{ option.value }}">{{
+								option.label
+							}}</mat-option>
+						}
+					</mat-select>
+				</mat-form-field>
+			</div>
+		</div>
+	}
+
+	<!-- Active Filter Chips -->
+	@if (activeFilterChips().length > 0) {
+		<div class="ov-active-filters" id="members-active-filters">
+			<span class="active-filters-label">Filters:</span>
+			@for (chip of activeFilterChips(); track chip.key) {
+				<button class="filter-chip" (click)="removeFilter(chip.key)" id="members-filter-chip-{{ chip.key }}">
+					<span>{{ chip.label }}</span>
+					<mat-icon>close</mat-icon>
+				</button>
+			}
+			<button class="clear-all-chip" (click)="clearFilters()" id="members-clear-all-chip">
+				<mat-icon>filter_alt_off</mat-icon>
+				<span>Clear all</span>
+			</button>
+		</div>
+	}
 
 	<!-- Loading Spinner -->
 	@if (loading()) {

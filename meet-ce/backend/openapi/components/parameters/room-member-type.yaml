@@ -1,0 +1,9 @@
+name: type
+in: query
+required: false
+description: Filter members by their type (registered or external).
+schema:
+    type: string
+    enum:
+        - registered
+        - external

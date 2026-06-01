@@ -9,6 +9,7 @@ import {
 	MEET_ROOM_MEMBER_FIELDS,
 	MEET_ROOM_MEMBER_SORT_FIELDS,
 	MeetRoomMemberRole,
+	MeetRoomMemberType,
 	MeetRoomMemberUIBadge,
 	SortOrder,
 	TextMatchMode
@@ -111,6 +112,8 @@ export const RoomMemberFiltersSchema = z
 
 			return arg;
 		}, z.boolean().optional().default(false)),
+		baseRole: z.nativeEnum(MeetRoomMemberRole).optional(),
+		type: z.nativeEnum(MeetRoomMemberType).optional(),
 		fields: fieldsSchema,
 		maxItems: z.coerce
 			.number()

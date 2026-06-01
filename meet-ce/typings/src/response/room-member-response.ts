@@ -1,5 +1,5 @@
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
-import { MeetRoomMember } from '../database/room-member.entity.js';
+import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberType } from '../database/room-member.entity.js';
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 import { TextMatchMode } from './text-match.js';
 
@@ -75,6 +75,10 @@ export interface MeetRoomMemberFilters extends SortAndPagination<MeetRoomMemberS
 	 * Defaults to false.
 	 */
 	nameCaseInsensitive?: boolean;
+	/** Filter members by their base role. */
+	baseRole?: MeetRoomMemberRole;
+	/** Filter members by their type (registered or external). */
+	type?: MeetRoomMemberType;
 	/** Array of fields to include in the response */
 	fields?: MeetRoomMemberField[];
 }
