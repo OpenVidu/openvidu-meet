@@ -120,7 +120,7 @@ describe('Users API Tests', () => {
 			expect(loginResponse.body).toHaveProperty('mustChangePassword', true);
 		});
 
-		it.skip('should fail when trying to reset own password', async () => {
+		it('should fail when trying to reset own password', async () => {
 			const response = await resetUserPassword(
 				testUsers.admin.user.userId,
 				'newpassword123',

@@ -262,30 +262,27 @@ export const refreshTokenReq = async (refreshToken: string) => {
 export const createUser = async (options: MeetUserOptions) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(options);
 };
 
 export const getUsers = async (query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 };
 
 export const getUser = async (userId: string) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
 	return await request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users/${userId}`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
 };
 
