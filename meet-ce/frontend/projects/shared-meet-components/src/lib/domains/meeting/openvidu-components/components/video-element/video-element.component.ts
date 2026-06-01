@@ -9,6 +9,7 @@ import {
 	signal,
 	viewChild
 } from '@angular/core';
+import { AvatarView, DEFAULT_AVATAR_VIEW } from '../../models/avatar-view.model';
 import { ScreenZoomState } from '../../models/screen-zoom.model';
 import { Track } from '../../services/livekit-adapter';
 import { ParticipantAvatarComponent } from '../participant-avatar/participant-avatar.component';
@@ -32,17 +33,17 @@ import { ParticipantAvatarComponent } from '../participant-avatar/participant-av
 	template: `
 		<ov-participant-avatar
 			variant="poster"
-			[showAvatar]="showAvatar()"
-			[nickname]="avatarName()"
-			[color]="avatarColor()"
-			[isSpeaking]="isSpeaking()"
-			[hasEncryptionError]="hasEncryptionError()"
+			[showAvatar]="avatar().show"
+			[nickname]="avatar().name"
+			[color]="avatar().color"
+			[isSpeaking]="avatar().isSpeaking"
+			[hasEncryptionError]="avatar().hasEncryptionError"
 		/>
 		@if (videoTrack()) {
 			<video
 				#videoElement
 				class="OV_media-element OV_video-element"
-				[class.ov-video-ready]="!showAvatar()"
+				[class.ov-video-ready]="!avatar().show"
 				[class.zoomable]="isZoomable()"
 				[class.panning]="isPanning()"
 				[style.transform]="videoTransform()"
@@ -61,12 +62,13 @@ import { ParticipantAvatarComponent } from '../participant-avatar/participant-av
 })
 export class VideoElementComponent implements OnDestroy {
 	readonly videoTrack = input<Track | undefined>(undefined);
-	readonly showAvatar = input(false);
-	readonly avatarColor = input('#000000');
-	readonly avatarName = input('User');
 	readonly isLocal = input(false);
-	readonly hasEncryptionError = input(false);
-	readonly isSpeaking = input(false);
+	/**
+	 * Avatar poster descriptor (shown when there is no playable video). Grouped into a single
+	 * view-model so this presentational component stays decoupled from the participant/stream
+	 * domain model — callers build a plain {@link AvatarView} literal.
+	 */
+	readonly avatar = input<AvatarView>(DEFAULT_AVATAR_VIEW);
 	/**
 	 * Zoom/pan state for screen-share videos, owned by the participant model. Undefined for camera
 	 * streams (and ignored there). The view only maps this state to pixels — it holds no zoom state itself.

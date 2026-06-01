@@ -35,12 +35,8 @@
 
 		<ov-video-element
 			[videoTrack]="stream.videoTrack?.track"
-			[showAvatar]="stream.isCameraStream && (!stream.videoTrack?.track || !stream.participant.isCameraEnabled)"
-			[avatarColor]="stream.participant.colorProfile"
-			[avatarName]="stream.participant.name ?? ''"
 			[isLocal]="stream.participant.isLocal"
-			[hasEncryptionError]="stream.participant.hasEncryptionError"
-			[isSpeaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
+			[avatar]="avatarView()"
 			[zoomState]="stream.zoom"
 		/>
 

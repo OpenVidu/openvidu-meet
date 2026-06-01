@@ -1,6 +1,7 @@
 import {
 	ChangeDetectionStrategy,
 	Component,
+	computed,
 	effect,
 	inject,
 	input,
@@ -13,6 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AvatarView } from '../../models/avatar-view.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
@@ -87,6 +89,18 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	audioTrack: LocalTrack | undefined;
 	readonly isVideoEnabled = signal(false);
 	readonly hasVideoDevices = signal(true);
+
+	/**
+	 * Avatar poster descriptor for the local preview. There is no participant stream during
+	 * pre-join, so the view-model is built straight from the local form state.
+	 */
+	readonly avatarView = computed<AvatarView>(() => ({
+		show: !this.isVideoEnabled(),
+		name: this.participantName(),
+		color: 'hsl(48, 100%, 50%)',
+		isSpeaking: false,
+		hasEncryptionError: false
+	}));
 	private tracks: LocalTrack[] = [];
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly openviduService = inject(OpenViduService);

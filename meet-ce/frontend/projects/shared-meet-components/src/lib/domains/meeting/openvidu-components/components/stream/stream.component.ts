@@ -1,6 +1,7 @@
 import {
 	ChangeDetectionStrategy,
 	Component,
+	computed,
 	effect,
 	ElementRef,
 	inject,
@@ -12,6 +13,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AvatarView, DEFAULT_AVATAR_VIEW } from '../../models/avatar-view.model';
 import { ParticipantStream } from '../../models/participant.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
@@ -55,6 +57,27 @@ export class StreamComponent implements OnDestroy {
 	readonly showVideo = signal(false);
 	readonly isFullscreen = signal(false);
 	readonly mouseHovering = signal(false);
+
+	/**
+	 * Avatar poster descriptor for {@link VideoElementComponent}, derived from the participant
+	 * stream. Computed (rather than an inline template literal) so its reference stays stable
+	 * across change-detection cycles and only changes when the underlying state does.
+	 */
+	readonly avatarView = computed<AvatarView>(() => {
+		const stream = this.stream();
+
+		if (!stream) {
+			return DEFAULT_AVATAR_VIEW;
+		}
+
+		return {
+			show: stream.isCameraStream && (!stream.videoTrack?.track || !stream.participant.isCameraEnabled),
+			name: stream.participant.name ?? '',
+			color: stream.participant.colorProfile,
+			isSpeaking: this.showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream,
+			hasEncryptionError: stream.participant.hasEncryptionError
+		};
+	});
 
 	/**
 	 * @ignore
