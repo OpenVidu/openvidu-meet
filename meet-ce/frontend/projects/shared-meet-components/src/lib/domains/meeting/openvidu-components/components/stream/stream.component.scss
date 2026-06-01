@@ -51,16 +51,16 @@
 			padding: 4px;
 
 			mat-icon {
-				font-size: 18px;
-				width: 18px;
-				height: 18px;
+				font-size: 20px;
+				width: 20px;
+				height: 20px;
 			}
 		}
 	}
 
 	// Buttons that operate on the same feature (e.g. zoom) are wrapped in a
 	// control group with a subtle background so they read as one cluster,
-	// distinct from the independent actions (pin, mute, minimize).
+	// distinct from the independent actions (pin, mute, float).
 	.control-group {
 		display: flex;
 		align-items: center;

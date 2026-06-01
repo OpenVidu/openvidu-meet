@@ -13,14 +13,14 @@ import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helper
 import {
 	clickZoomControl,
 	countMutedRemoteAudios,
+	dockStream,
 	dragStream,
 	expectLocalStreamCount,
 	expectScreenShareCount,
 	expectStreamCount,
+	floatStream,
 	getZoomControlOrder,
 	hoverScreenShareStream,
-	maximizeStream,
-	minimizeStream,
 	readZoomPercent,
 	resizeStream,
 	screenShareStream,
@@ -356,32 +356,52 @@ test.describe('Stream E2E Tests', () => {
 		});
 	});
 
-	test.describe('Stream UI controls - Minimize and maximize', () => {
-		test('should show the MINIMIZE button ONLY over the LOCAL video', async ({ page }) => {
+	test.describe('Stream UI controls - Float and dock', () => {
+		test('should show the FLOAT button ONLY over the LOCAL video', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 			await expectStreamCount(page, 1);
 
-			// Hover over local stream - minimize button should appear
+			// Hover over local stream - float button should appear
 			await hoverStream(page, '.OV_publisher .OV_stream_video.local');
-			await expect(page.locator('#minimize-btn')).toBeVisible();
+			await expect(page.locator('#float-btn')).toBeVisible();
 
-			// Create second participant to verify minimize button doesn't appear on remote
+			// Create second participant to verify float button doesn't appear on remote
 			const pageB = await page.context().newPage();
 			await openMeeting(pageB, accessUrl);
 			await waitForRemoteStream(pageB);
 
-			// Hover over remote stream - minimize button should NOT appear
+			// Hover over remote stream - float button should NOT appear
 			await hoverStream(pageB, '.OV_stream_video.remote');
-			await expect(pageB.locator('#minimize-btn')).toHaveCount(0);
+			await expect(pageB.locator('#float-btn')).toHaveCount(0);
 
-			// Hover over local stream - minimize button should appear
+			// Hover over local stream - float button should appear
 			await hoverStream(pageB, '.OV_stream_video.local');
-			await expect(pageB.locator('#minimize-btn')).toBeVisible();
+			await expect(pageB.locator('#float-btn')).toBeVisible();
 
 			await pageB.close();
 		});
 
-		test('should minimize the LOCAL video', async ({ page }) => {
+		test('should NOT show the FLOAT button on the local SCREEN SHARE tile', async ({ page }) => {
+			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
+			await startScreensharing(page);
+			await expectScreenShareCount(page, 1);
+
+			// The local screen-share tile must not offer float/dock — that's a camera self-view affordance.
+			const screenContainer = page.locator('.local_participant.OV_screen').first();
+			await expect(screenContainer).toBeVisible({ timeout: 10_000 });
+			await screenContainer.hover();
+			await expect(screenContainer.locator('#float-btn')).toHaveCount(0);
+
+			// …but the local CAMERA tile still shows it.
+			const cameraContainer = page.locator('.local_participant:not(.OV_screen)').first();
+			await cameraContainer.hover();
+			await expect(cameraContainer.locator('#float-btn')).toBeVisible();
+
+			await stopScreensharing(page);
+			await page.close();
+		});
+
+		test('should float the LOCAL video', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
 			// Get initial stream dimensions
@@ -389,27 +409,27 @@ test.describe('Stream E2E Tests', () => {
 			const initialBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(initialBox).not.toBeNull();
 
-			// Hover and click minimize
-			await minimizeStream(page);
+			// Hover and click float
+			await floatStream(page);
 			await page.waitForTimeout(1000);
 
-			// Verify stream is minimized
-			await expect(localContainer).toHaveClass(/OV_minimized/);
-			const minimizedBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(minimizedBox).not.toBeNull();
+			// Verify stream is floating
+			await expect(localContainer).toHaveClass(/OV_floating/);
+			const floatingBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(floatingBox).not.toBeNull();
 
 			// Video should be positioned at the bottom-left corner of the layout
 			const layoutBox = await getElementBoundingBox(page, '#layout');
 			expect(layoutBox).not.toBeNull();
-			expect(minimizedBox!.x).toBeLessThan(50);
-			expect(minimizedBox!.y + minimizedBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
-			expect(minimizedBox!.height).toBeGreaterThan(0);
-			expect(minimizedBox!.width).toBeGreaterThan(0);
+			expect(floatingBox!.x).toBeLessThan(50);
+			expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
+			expect(floatingBox!.height).toBeGreaterThan(0);
+			expect(floatingBox!.width).toBeGreaterThan(0);
 
 			await page.close();
 		});
 
-		test('should MAXIMIZE the local video (restore to layout)', async ({ page }) => {
+		test('should DOCK the local video (restore to layout)', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
 			const localContainer = page.locator('.local_participant:has(.OV_stream_video.local)').first();
@@ -418,40 +438,40 @@ test.describe('Stream E2E Tests', () => {
 			const initialBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(initialBox).not.toBeNull();
 
-			// Minimize the stream
+			// Float the stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(800);
-			await expect(localContainer).toHaveClass(/OV_minimized/);
+			await expect(localContainer).toHaveClass(/OV_floating/);
 
-			// Verify minimized
-			const minimizedBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(minimizedBox).not.toBeNull();
+			// Verify floating
+			const floatingBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+			expect(floatingBox).not.toBeNull();
 
-			// Maximize (restore) the stream
+			// Dock (restore) the stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await maximizeStream(page);
+			await dockStream(page);
 			await page.waitForTimeout(1500);
-			await expect(localContainer).not.toHaveClass(/OV_minimized/);
+			await expect(localContainer).not.toHaveClass(/OV_floating/);
 
 			// Verify stream is restored to layout
 			const restoredBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(restoredBox).not.toBeNull();
 
-			// Restored video should be back at the top of the layout (far from bottom-left minimized position)
-			expect(restoredBox!.y).toBeLessThan(minimizedBox!.y);
-			expect(restoredBox!.width).toBeGreaterThan(minimizedBox!.width);
-			expect(restoredBox!.height).toBeGreaterThan(minimizedBox!.height);
+			// Restored video should be back at the top of the layout (far from bottom-left floating position)
+			expect(restoredBox!.y).toBeLessThan(floatingBox!.y);
+			expect(restoredBox!.width).toBeGreaterThan(floatingBox!.width);
+			expect(restoredBox!.height).toBeGreaterThan(floatingBox!.height);
 
 			await page.close();
 		});
 
-		test('should be able to drag the minimized LOCAL video', async ({ page }) => {
+		test('should be able to drag the floating LOCAL video', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
-			// Minimize stream
+			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(500);
 
 			const beforeDragBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
@@ -470,12 +490,12 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
-		test('should be the MINIMIZED video ALWAYS VISIBLE when toggling panels', async ({ page }) => {
+		test('should be the FLOATING video ALWAYS VISIBLE when toggling panels', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
-			// Minimize stream
+			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(500);
 
 			// Drag to right
@@ -512,16 +532,16 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
-		test('should be the MINIMIZED video go to the right when panel closes', async ({ page }) => {
+		test('should be the FLOATING video go to the right when panel closes', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
 			// Open chat panel first
 			await page.locator('#chat-panel-btn').click();
 			await page.waitForTimeout(1000);
 
-			// Minimize stream
+			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(1000);
 
 			// Drag to right
@@ -545,14 +565,14 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
-		test('should be the MINIMIZED video ALWAYS VISIBLE when toggling from small to bigger panel', async ({
+		test('should be the FLOATING video ALWAYS VISIBLE when toggling from small to bigger panel', async ({
 			page
 		}) => {
 			await openMeeting(page, accessUrl);
 
-			// Minimize stream
+			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(500);
 
 			// Drag to right
@@ -590,7 +610,7 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
-		test('should MAXIMIZE the local video after drag (reset position to layout)', async ({ page }) => {
+		test('should DOCK the local video after drag (reset position to layout)', async ({ page }) => {
 			await openMeeting(page, accessUrl);
 
 			await page.waitForTimeout(1000);
@@ -598,9 +618,9 @@ test.describe('Stream E2E Tests', () => {
 			const initialBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
 			expect(initialBox).not.toBeNull();
 
-			// Minimize stream
+			// Float stream
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(500);
 
 			// Drag to right
@@ -612,9 +632,9 @@ test.describe('Stream E2E Tests', () => {
 			expect(streamBox).not.toBeNull();
 			const xAfterDrag = streamBox!.x;
 
-			// Maximize (restore)
+			// Dock (restore)
 			await hoverStream(page, '.local_participant .OV_stream_video.local');
-			await maximizeStream(page);
+			await dockStream(page);
 			await page.waitForTimeout(1500);
 
 			// Stream should be reset to layout position
@@ -629,7 +649,7 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
-		test('should keep the SCREEN SHARE fixed in the layout when minimizing and dragging the LOCAL video', async ({
+		test('should keep the SCREEN SHARE fixed in the layout when floating and dragging the LOCAL video', async ({
 			page
 		}) => {
 			await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
@@ -645,34 +665,34 @@ test.describe('Stream E2E Tests', () => {
 			const cameraContainer = page.locator('.local_participant:not(.OV_screen)').first();
 			const screenContainer = page.locator('.local_participant.OV_screen').first();
 
-			// Capture initial screen share position (baseline before any minimize)
+			// Capture initial screen share position (baseline before any float)
 			const initialScreenBox = await getElementBoundingBox(page, '.local_participant.OV_screen');
 			expect(initialScreenBox).not.toBeNull();
 
-			// Hover the LOCAL CAMERA (not the screen share) and click its scoped minimize button
+			// Hover the LOCAL CAMERA (not the screen share) and click its scoped float button
 			await cameraContainer.hover();
-			const cameraMinimizeBtn = cameraContainer.locator('#minimize-btn');
-			await expect(cameraMinimizeBtn).toBeVisible();
-			await cameraMinimizeBtn.click();
+			const cameraFloatBtn = cameraContainer.locator('#float-btn');
+			await expect(cameraFloatBtn).toBeVisible();
+			await cameraFloatBtn.click();
 			await page.waitForTimeout(1000);
 
-			// Camera should be minimized, screen share should NOT be minimized
-			await expect(cameraContainer).toHaveClass(/OV_minimized/);
-			await expect(screenContainer).not.toHaveClass(/OV_minimized/);
+			// Camera should be floating, screen share should NOT be floating
+			await expect(cameraContainer).toHaveClass(/OV_floating/);
+			await expect(screenContainer).not.toHaveClass(/OV_floating/);
 
-			// Capture screen share position after camera minimize (this is the reference for drag invariance)
-			const screenBoxAfterMinimize = await getElementBoundingBox(page, '.local_participant.OV_screen');
-			expect(screenBoxAfterMinimize).not.toBeNull();
+			// Capture screen share position after camera float (this is the reference for drag invariance)
+			const screenBoxAfterFloat = await getElementBoundingBox(page, '.local_participant.OV_screen');
+			expect(screenBoxAfterFloat).not.toBeNull();
 
 			// Screen share should still be visible and have non-zero dimensions
-			expect(screenBoxAfterMinimize!.width).toBeGreaterThan(0);
-			expect(screenBoxAfterMinimize!.height).toBeGreaterThan(0);
+			expect(screenBoxAfterFloat!.width).toBeGreaterThan(0);
+			expect(screenBoxAfterFloat!.height).toBeGreaterThan(0);
 
 			// Record camera position before dragging
 			const cameraBoxBeforeDrag = await getElementBoundingBox(page, '.local_participant:not(.OV_screen)');
 			expect(cameraBoxBeforeDrag).not.toBeNull();
 
-			// Drag the minimized camera to a new position
+			// Drag the floating camera to a new position
 			await dragStream(page, '.local_participant:not(.OV_screen)', 400, 300);
 			await page.waitForTimeout(500);
 
@@ -685,19 +705,19 @@ test.describe('Stream E2E Tests', () => {
 			// Screen share position must NOT have changed because of the camera drag
 			const screenBoxAfterDrag = await getElementBoundingBox(page, '.local_participant.OV_screen');
 			expect(screenBoxAfterDrag).not.toBeNull();
-			expect(screenBoxAfterDrag!.x).toBeCloseTo(screenBoxAfterMinimize!.x, 0);
-			expect(screenBoxAfterDrag!.y).toBeCloseTo(screenBoxAfterMinimize!.y, 0);
-			expect(screenBoxAfterDrag!.width).toBeCloseTo(screenBoxAfterMinimize!.width, 0);
-			expect(screenBoxAfterDrag!.height).toBeCloseTo(screenBoxAfterMinimize!.height, 0);
+			expect(screenBoxAfterDrag!.x).toBeCloseTo(screenBoxAfterFloat!.x, 0);
+			expect(screenBoxAfterDrag!.y).toBeCloseTo(screenBoxAfterFloat!.y, 0);
+			expect(screenBoxAfterDrag!.width).toBeCloseTo(screenBoxAfterFloat!.width, 0);
+			expect(screenBoxAfterDrag!.height).toBeCloseTo(screenBoxAfterFloat!.height, 0);
 
-			// Screen share must still NOT be minimized after dragging the local video
-			await expect(screenContainer).not.toHaveClass(/OV_minimized/);
+			// Screen share must still NOT be floating after dragging the local video
+			await expect(screenContainer).not.toHaveClass(/OV_floating/);
 
 			await stopScreensharing(page);
 			await page.close();
 		});
 
-		test('should AUTO-MINIMIZE the local video when the first remote participant joins', async ({ browser }) => {
+		test('should AUTO-FLOAT the local video when the first remote participant joins', async ({ browser }) => {
 			const { pages, removeAllParticipants } = await joinParticipants(browser, {
 				roomId,
 				accessUrl,
@@ -709,25 +729,25 @@ test.describe('Stream E2E Tests', () => {
 				// Wait until participant-0 sees the remote stream from participant-1
 				await waitForRemoteStream(pageA);
 
-				// Local video should have been auto-minimized and placed at bottom-left
+				// Local video should have been auto-floating and placed at bottom-left
 				const localContainer = pageA.locator('.local_participant:has(.OV_stream_video.local)').first();
-				await expect(localContainer).toHaveClass(/OV_minimized/, { timeout: 5_000 });
+				await expect(localContainer).toHaveClass(/OV_floating/, { timeout: 5_000 });
 				await pageA.waitForTimeout(500);
 
-				const minimizedBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
+				const floatingBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
 				const layoutBox = await getElementBoundingBox(pageA, '#layout');
-				expect(minimizedBox).not.toBeNull();
+				expect(floatingBox).not.toBeNull();
 				expect(layoutBox).not.toBeNull();
-				expect(minimizedBox!.x).toBeLessThan(50);
-				expect(minimizedBox!.y + minimizedBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
+				expect(floatingBox!.x).toBeLessThan(50);
+				expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
 			} finally {
 				await removeAllParticipants();
 			}
 		});
 
-		test('should resize the minimized LOCAL video using the SE corner handle', async ({ page }) => {
+		test('should resize the floating LOCAL video using the SE corner handle', async ({ page }) => {
 			await openMeeting(page, accessUrl);
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(500);
 
 			const beforeBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
@@ -744,9 +764,9 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
-		test('should maintain the 16:9 aspect ratio after resizing the minimized video', async ({ page }) => {
+		test('should maintain the 16:9 aspect ratio after resizing the floating video', async ({ page }) => {
 			await openMeeting(page, accessUrl);
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(500);
 
 			await resizeStream(page, 'resize-se', 100, 0);
@@ -763,12 +783,12 @@ test.describe('Stream E2E Tests', () => {
 			await page.close();
 		});
 
-		test('should RESET the minimized video size to default after maximize and re-minimize', async ({ page }) => {
+		test('should RESET the floating video size to default after dock and re-float', async ({ page }) => {
 			await openMeeting(page, accessUrl);
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(500);
 
-			// Record the default minimized size
+			// Record the default floating size
 			const defaultBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
 			expect(defaultBox).not.toBeNull();
 
@@ -779,10 +799,10 @@ test.describe('Stream E2E Tests', () => {
 			const resizedBox = await page.locator('.local_participant:has(.OV_stream_video.local)').first().boundingBox();
 			expect(resizedBox!.width).toBeGreaterThan(defaultBox!.width + 50);
 
-			// Maximize then re-minimize
-			await maximizeStream(page);
+			// Dock then re-float
+			await dockStream(page);
 			await page.waitForTimeout(800);
-			await minimizeStream(page);
+			await floatStream(page);
 			await page.waitForTimeout(500);
 
 			// Size should be back to default (~218×123)

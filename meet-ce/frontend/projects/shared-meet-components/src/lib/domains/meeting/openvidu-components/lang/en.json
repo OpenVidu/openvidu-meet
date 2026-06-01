@@ -73,8 +73,8 @@
     "REPLACE_SCREEN": "Replace screen",
     "PIN": "Pin",
     "UNPIN": "Unpin",
-    "MINIMIZE": "Minimize",
-    "MAXIMIZE": "Maximize",
+    "FLOAT": "Float",
+    "DOCK": "Dock",
     "SCREEN_LABEL": "screen"
   },
   "PANEL": {

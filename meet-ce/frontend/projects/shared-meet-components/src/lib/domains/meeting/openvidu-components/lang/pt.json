@@ -73,8 +73,8 @@
     "REPLACE_SCREEN": "Trocar tela",
     "PIN": "Fixar",
     "UNPIN": "Desafixar",
-    "MINIMIZE": "Minimizar",
-    "MAXIMIZE": "Maximizar",
+    "FLOAT": "Flutuar",
+    "DOCK": "Encaixar",
     "SCREEN_LABEL": "tela"
   },
   "PANEL": {

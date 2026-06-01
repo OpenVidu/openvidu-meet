@@ -123,8 +123,8 @@ export class StreamComponent implements OnDestroy {
 		const sid = stream?.videoTrack?.trackSid;
 		if (stream?.participant) {
 			if (stream.participant.isLocal) {
-				if (stream.participant.isMinimized) {
-					this.participantService.toggleLocalVideoMinimized(sid);
+				if (stream.participant.isFloating) {
+					this.participantService.toggleLocalVideoFloating(sid);
 				}
 				this.participantService.toggleMyVideoPinned(sid);
 			} else {
@@ -137,11 +137,11 @@ export class StreamComponent implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	toggleMinimize() {
+	toggleFloat() {
 		const stream = this.stream();
 		const sid = stream?.videoTrack?.trackSid;
 		if (stream?.participant && stream.participant.isLocal) {
-			this.participantService.toggleLocalVideoMinimized(sid);
+			this.participantService.toggleLocalVideoFloating(sid);
 			this.layoutService.update();
 		}
 	}

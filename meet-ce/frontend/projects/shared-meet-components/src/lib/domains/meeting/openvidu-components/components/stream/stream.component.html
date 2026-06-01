@@ -5,7 +5,12 @@
 		[class.no-size]="!showVideo()"
 		[class.local]="stream.participant.isLocal"
 		[class.remote]="!stream.participant.isLocal"
-		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream && stream.participant.isCameraEnabled"
+		[class.speaking]="
+			showAudioDetection() &&
+			stream.participant.isSpeaking &&
+			stream.isCameraStream &&
+			stream.participant.isCameraEnabled
+		"
 		[class.screen-source]="stream.isScreenStream"
 		[class.camera-source]="stream.isCameraStream"
 		[id]="'stream-' + stream.source + '-' + stream.streamId"
@@ -27,7 +32,12 @@
 			<ov-connection-quality-indicator [participant]="stream.participant" />
 		}
 
-		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream && stream.participant.isCameraEnabled) {
+		@if (
+			showAudioDetection() &&
+			stream.participant.isSpeaking &&
+			stream.isCameraStream &&
+			stream.participant.isCameraEnabled
+		) {
 			<div id="audio-wave-container">
 				<ov-audio-wave />
 			</div>
@@ -78,7 +88,7 @@
 									[disabled]="!zoom.canZoomOut"
 									[matTooltip]="'STREAM.ZOOM_OUT' | translate"
 								>
-									<mat-icon fontIcon="zoom_out" />
+									<mat-icon fontIcon="remove" />
 								</button>
 								<span id="zoom-level" class="zoom-level">{{ zoom.level() * 100 }}%</span>
 							}
@@ -89,7 +99,7 @@
 								[disabled]="!zoom.canZoomIn"
 								[matTooltip]="'STREAM.ZOOM_IN' | translate"
 							>
-								<mat-icon fontIcon="zoom_in" />
+								<mat-icon [fontIcon]="zoom.isZoomed ? 'add' : 'zoom_in'" />
 							</button>
 						</div>
 					}
@@ -127,17 +137,17 @@
 					@if (stream.participant.isLocal && stream.isCameraStream) {
 						<button
 							mat-icon-button
-							id="minimize-btn"
+							id="float-btn"
 							[disabled]="stream.isPinned"
-							(click)="toggleMinimize()"
+							(click)="toggleFloat()"
 							[matTooltip]="
-								stream.isMinimized ? ('STREAM.MAXIMIZE' | translate) : ('STREAM.MINIMIZE' | translate)
+								stream.isFloating ? ('STREAM.DOCK' | translate) : ('STREAM.FLOAT' | translate)
 							"
 						>
-							@if (stream.isMinimized) {
-								<mat-icon id="minimize">open_in_full</mat-icon>
+							@if (stream.isFloating) {
+								<mat-icon id="dock-icon" fontSet="material-symbols-outlined">grid_view</mat-icon>
 							} @else {
-								<mat-icon>close_fullscreen</mat-icon>
+								<mat-icon id="float-icon" fontSet="material-symbols-outlined">pip</mat-icon>
 							}
 						</button>
 					}

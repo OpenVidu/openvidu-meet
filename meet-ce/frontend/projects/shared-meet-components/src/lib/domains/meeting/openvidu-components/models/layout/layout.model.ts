@@ -107,7 +107,7 @@ export class OpenViduLayout {
 		if (containerWidth <= 0 || containerHeight <= 0) return;
 
 		const extendedOpts: ExtendedLayoutOptions = { ...this.opts, containerWidth, containerHeight };
-		const selector = `#${this.layoutContainer.id}>*:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.MINIMIZED_ELEMENT})`;
+		const selector = `#${this.layoutContainer.id}>*:not(.${LayoutClass.IGNORED_ELEMENT}):not(.${LayoutClass.FLOATING_ELEMENT})`;
 		const children = Array.from(this.layoutContainer.querySelectorAll<HTMLElement>(selector));
 		const elements = children.map((element) => this.describeElement(element));
 

@@ -18,7 +18,7 @@ import { ScreenZoomState } from './screen-zoom.model';
 type AugmentedTrackPublication = OVTrackPublication & {
 	participant: ParticipantModel;
 	isPinned: boolean;
-	isMinimized: boolean;
+	isFloating: boolean;
 	isCameraTrack: boolean;
 	isScreenTrack: boolean;
 	isAudioTrack: boolean;
@@ -73,8 +73,8 @@ export interface ParticipantStream {
 	streamId: string;
 	/** Mirrors the videoTrack isPinned state. */
 	isPinned: boolean;
-	/** Mirrors the videoTrack isMinimized state. */
-	isMinimized: boolean;
+	/** Mirrors the videoTrack isFloating state. */
+	isFloating: boolean;
 	/** Mirrors the audioTrack isMutedForcibly state. */
 	isMutedForcibly: boolean;
 	/**
@@ -146,9 +146,9 @@ export class ParticipantModel {
 	/**
 	 * Revision counter — bumped via bump() whenever the underlying LiveKit participant object is
 	 * mutated in-place (track published/unpublished, isCameraEnabled changes, etc.) or when
-	 * augmented-track properties (isPinned, isMinimized, isMutedForcibly) are written.
+	 * augmented-track properties (isPinned, isFloating, isMutedForcibly) are written.
 	 * Reading _revision() inside augmentedTracks propagates the dependency to every getter and
-	 * computed that calls it — so streams, isMinimized, isPinned, etc. all react automatically.
+	 * computed that calls it — so streams, isFloating, isPinned, etc. all react automatically.
 	 */
 	private readonly _revision = signal(0);
 
@@ -172,7 +172,7 @@ export class ParticipantModel {
 			trackSid: ParticipantModel.CUSTOM_VIDEO_SID,
 			source: Track.Source.Camera,
 			isPinned: false,
-			isMinimized: false,
+			isFloating: false,
 			isMutedForcibly: false,
 			isCameraTrack: true,
 			isScreenTrack: false,
@@ -329,7 +329,7 @@ export class ParticipantModel {
 			isScreenStream: false,
 			streamId: cameraVideoTrack?.trackSid ?? `camera-${this.identity}`,
 			isPinned: cameraVideoTrack?.isPinned ?? false,
-			isMinimized: cameraVideoTrack?.isMinimized ?? false,
+			isFloating: cameraVideoTrack?.isFloating ?? false,
 			isMutedForcibly: micAudioTrack?.isMutedForcibly ?? false
 		});
 
@@ -345,7 +345,7 @@ export class ParticipantModel {
 				isScreenStream: true,
 				streamId: screenStreamId,
 				isPinned: screenVideoTrack?.isPinned ?? false,
-				isMinimized: false,
+				isFloating: false,
 				isMutedForcibly: (screenAudioTrack ?? screenVideoTrack)?.isMutedForcibly ?? false,
 				zoom: this.resolveScreenZoom(screenStreamId)
 			});
@@ -389,11 +389,11 @@ export class ParticipantModel {
 	}
 
 	/**
-	 * Returns if the participant has any track minimized
+	 * Returns if the participant has any track floating
 	 * @internal
 	 */
-	get isMinimized(): boolean {
-		return this.augmentedTracks.some((track) => track.isMinimized);
+	get isFloating(): boolean {
+		return this.augmentedTracks.some((track) => track.isFloating);
 	}
 
 	/**
@@ -628,15 +628,15 @@ export class ParticipantModel {
 	}
 
 	/**
-	 * Toggle the minimized status of a video track element
+	 * Toggle the floating status of a video track element
 	 * @param trackSid
 	 * @returns
 	 * @internal
 	 */
-	toggleVideoMinimized(trackSid: string): void {
+	toggleVideoFloating(trackSid: string): void {
 		const track = this.augmentedTracks.find((track) => track.trackSid === trackSid);
 		if (track) {
-			track.isMinimized = !track.isMinimized;
+			track.isFloating = !track.isFloating;
 			this.bump();
 		}
 	}
@@ -723,7 +723,7 @@ export class ParticipantModel {
 
 	/**
 	 * Bumps the internal revision signal, causing `streams` and all reactive getters
-	 * (isCameraEnabled, isMinimized, isPinned, etc.) to re-evaluate in templates and effects.
+	 * (isCameraEnabled, isFloating, isPinned, etc.) to re-evaluate in templates and effects.
 	 * Call this after any operation that mutates the underlying LiveKit participant in-place
 	 * (e.g. after setCameraEnabled, setMicrophoneEnabled, publishTrack).
 	 * @internal

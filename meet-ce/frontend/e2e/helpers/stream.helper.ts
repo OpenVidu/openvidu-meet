@@ -362,33 +362,33 @@ export const getScreenSourceTracks = async (
 	});
 };
 
-// ─── Stream layout (minimize / maximize / drag) ─────────────────────────────
+// ─── Stream layout (float / dock / drag) ─────────────────────────────
 
 /**
- * Minimizes the local stream by hovering and clicking the minimize button.
+ * Floats the local stream by hovering and clicking the float button.
  */
-export const minimizeStream = async (page: Page): Promise<void> => {
+export const floatStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.OV_publisher .OV_stream_video.local');
-	await expect(page.locator('#minimize-btn')).toBeVisible();
-	await page.locator('#minimize-btn').click();
+	await expect(page.locator('#float-btn')).toBeVisible();
+	await page.locator('#float-btn').click();
 };
 
 /**
- * Maximizes (restores) the local stream by hovering and clicking the
- * minimize/maximize toggle button.
+ * Docks (restores) the local stream by hovering and clicking the
+ * float/dock toggle button.
  */
-export const maximizeStream = async (page: Page): Promise<void> => {
+export const dockStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.local_participant .OV_stream_video.local');
-	await expect(page.locator('#minimize-btn')).toBeVisible();
-	await page.locator('#minimize-btn').click();
+	await expect(page.locator('#float-btn')).toBeVisible();
+	await page.locator('#float-btn').click();
 };
 
 /**
- * Drags a resize handle on the minimized local video by the given pixel delta.
+ * Drags a resize handle on the floating local video by the given pixel delta.
  * {@link handleClass} should be one of: resize-se, resize-sw, resize-ne, resize-nw.
  */
 export const resizeStream = async (page: Page, handleClass: string, deltaX: number, deltaY: number): Promise<void> => {
-	const handle = page.locator(`.OV_minimized .resize-handle.${handleClass}`).first();
+	const handle = page.locator(`.OV_floating .resize-handle.${handleClass}`).first();
 	await expect(handle).toBeVisible({ timeout: 5_000 });
 	const box = await handle.boundingBox();
 

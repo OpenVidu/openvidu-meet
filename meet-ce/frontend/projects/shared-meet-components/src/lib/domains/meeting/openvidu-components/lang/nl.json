@@ -73,8 +73,8 @@
     "REPLACE_SCREEN": "Vervang scherm",
     "PIN": "Vastzetten",
     "UNPIN": "Losmaken",
-    "MINIMIZE": "Minimaliseren",
-    "MAXIMIZE": "Maximaliseren",
+    "FLOAT": "Losmaken",
+    "DOCK": "Vastzetten",
     "SCREEN_LABEL": "scherm"
   },
   "PANEL": {

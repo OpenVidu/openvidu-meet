@@ -73,8 +73,8 @@
     "REPLACE_SCREEN": "Sostituisci lo schermo",
     "PIN": "Fissa",
     "UNPIN": "Sgancia",
-    "MINIMIZE": "Minimizza",
-    "MAXIMIZE": "Massimizza",
+    "FLOAT": "Stacca",
+    "DOCK": "Aggancia",
     "SCREEN_LABEL": "schermo"
   },
   "PANEL": {

@@ -73,8 +73,8 @@
     "REPLACE_SCREEN": "Reemplazar pantalla",
     "PIN": "Fijar",
     "UNPIN": "Desfijar",
-    "MINIMIZE": "Minimizar",
-    "MAXIMIZE": "Maximizar",
+    "FLOAT": "Flotar",
+    "DOCK": "Acoplar",
     "SCREEN_LABEL": "pantalla"
   },
   "PANEL": {

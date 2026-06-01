@@ -73,8 +73,8 @@
     "REPLACE_SCREEN": "Bildschirm austauschen",
     "PIN": "Anheften",
     "UNPIN": "Loslösen",
-    "MINIMIZE": "Minimieren",
-    "MAXIMIZE": "Maximieren",
+    "FLOAT": "Abdocken",
+    "DOCK": "Andocken",
     "SCREEN_LABEL": "Bildschirm"
   },
   "PANEL": {

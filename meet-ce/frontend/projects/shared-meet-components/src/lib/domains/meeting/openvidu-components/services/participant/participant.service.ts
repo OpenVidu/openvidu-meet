@@ -118,7 +118,7 @@ export class ParticipantService {
 			this.addRemoteParticipant(p);
 		});
 		if (this._remoteParticipants().length > 0) {
-			this.minimizeLocalCameraVideo();
+			this.floatLocalCameraVideo();
 		}
 	}
 
@@ -358,34 +358,34 @@ export class ParticipantService {
 	/**
 	 * @internal
 	 */
-	toggleLocalVideoMinimized(sid: string | undefined) {
+	toggleLocalVideoFloating(sid: string | undefined) {
 		const local = this._localParticipant();
-		if (sid && local) local.toggleVideoMinimized(sid);
-		// toggleVideoMinimized calls bump() internally — no explicit update needed.
+		if (sid && local) local.toggleVideoFloating(sid);
+		// toggleVideoFloating calls bump() internally — no explicit update needed.
 	}
 
 	/**
-	 * Minimizes the local camera video if it is not already minimized.
+	 * Floats the local camera video if it is not already floating.
 	 * Called automatically when the first remote participant joins the room.
 	 * @internal
 	 */
-	minimizeLocalCameraVideo(): void {
+	floatLocalCameraVideo(): void {
 		const local = this._localParticipant();
-		if (!local || local.isMinimized) return;
+		if (!local || local.isFloating) return;
 		const cameraStream = local.streams().find((s) => s.isCameraStream);
-		if (cameraStream) local.toggleVideoMinimized(cameraStream.streamId);
+		if (cameraStream) local.toggleVideoFloating(cameraStream.streamId);
 	}
 
 	/**
-	 * Restores the local camera video to the layout if it is currently minimized.
+	 * Restores the local camera video to the layout if it is currently floating.
 	 * Called automatically when the last remote participant leaves the room.
 	 * @internal
 	 */
-	maximizeLocalCameraVideo(): void {
+	dockLocalCameraVideo(): void {
 		const local = this._localParticipant();
-		if (!local || !local.isMinimized) return;
+		if (!local || !local.isFloating) return;
 		const cameraStream = local.streams().find((s) => s.isCameraStream);
-		if (cameraStream) local.toggleVideoMinimized(cameraStream.streamId);
+		if (cameraStream) local.toggleVideoFloating(cameraStream.streamId);
 	}
 
 	/**

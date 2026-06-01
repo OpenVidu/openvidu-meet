@@ -73,8 +73,8 @@
     "REPLACE_SCREEN": "更换屏幕",
     "PIN": "固定",
     "UNPIN": "取消固定",
-    "MINIMIZE": "最小化",
-    "MAXIMIZE": "最大化",
+    "FLOAT": "浮动",
+    "DOCK": "停靠",
     "SCREEN_LABEL": "屏幕"
   },
   "PANEL": {

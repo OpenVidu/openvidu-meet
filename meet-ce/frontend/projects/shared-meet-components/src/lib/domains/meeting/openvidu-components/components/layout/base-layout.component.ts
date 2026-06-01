@@ -126,7 +126,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	// ── Drag position signal ─────────────────────────────────────────────────────
 
 	/**
-	 * Constant zero offset bound to non-minimized local streams
+	 * Constant zero offset bound to non-floating local streams
 	 */
 	readonly ZERO_DRAG_POSITION = { x: 0, y: 0 } as const;
 
@@ -150,7 +150,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	// ── Drag tracking ─────────────────────────────────────────────────────────────
 
 	private videoIsAtRight = false;
-	private wasLocalMinimized = false;
+	private wasLocalFloating = false;
 	private lastLayoutWidth = 0;
 	private lastLayoutHeight = 0;
 
@@ -171,12 +171,12 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private readonly reactiveStateEffect = effect(() => {
 		const localParticipant = this.localParticipant();
-		// Read local streams so this effect re-runs when minimize/pin/mute state changes.
+		// Read local streams so this effect re-runs when float/pin/mute state changes.
 		const localStreams = localParticipant?.streams() ?? [];
-		const isLocalMinimized = localStreams.some((s) => s.isMinimized);
+		const isLocalFloating = localStreams.some((s) => s.isFloating);
 
-		if (this.wasLocalMinimized && !isLocalMinimized) {
-			// Restore from minimized: clear CSS resize state, reset drag offset, reposition.
+		if (this.wasLocalFloating && !isLocalFloating) {
+			// Restore from floating: clear CSS resize state, reset drag offset, reposition.
 			this.videoIsAtRight = false;
 			queueMicrotask(() => {
 				const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
@@ -185,12 +185,12 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 				this.resetDragPosition();
 				this.layoutService.update();
 			});
-		} else if (!this.wasLocalMinimized && isLocalMinimized) {
-			// Just became minimized: move to bottom-left corner to avoid overlapping the main layout.
+		} else if (!this.wasLocalFloating && isLocalFloating) {
+			// Just became floating: move to bottom-left corner to avoid overlapping the main layout.
 			requestAnimationFrame(() => this.moveStreamToBottomLeft());
 		}
 
-		this.wasLocalMinimized = isLocalMinimized;
+		this.wasLocalFloating = isLocalFloating;
 		this.remoteStreams(); // subscribe to remote track publish/unpublish, pin, mute changes
 		this.layoutService.update();
 	});
@@ -321,7 +321,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 					this.layoutService.update();
 				}
 
-				if (this.localParticipant()?.isMinimized) {
+				if (this.localParticipant()?.isFloating) {
 					const drag = this.getActiveLocalDrag();
 					if (drag) {
 						if (this.panelService.isPanelOpened()) {
@@ -378,17 +378,17 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	}
 
 	/**
-	 * Returns the CdkDrag for the minimized local camera stream, falling back to
-	 * the non-screen local participant when no element is currently minimized.
+	 * Returns the CdkDrag for the floating local camera stream, falling back to
+	 * the non-screen local participant when no element is currently floating.
 	 */
 	private getActiveLocalDrag(): CdkDrag | undefined {
 		const drags = this.cdkDragQueries();
-		const minimized = drags.find((d) => {
+		const floating = drags.find((d) => {
 			const el = d.element.nativeElement as HTMLElement;
-			return el.classList.contains('local_participant') && el.classList.contains('OV_minimized');
+			return el.classList.contains('local_participant') && el.classList.contains('OV_floating');
 		});
 		return (
-			minimized ??
+			floating ??
 			drags.find((d) => {
 				const el = d.element.nativeElement as HTMLElement;
 				return el.classList.contains('local_participant') && !el.classList.contains('OV_screen');
@@ -416,8 +416,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		if (!drag) return;
 		const container = this.layoutContainer()?.element?.nativeElement as HTMLElement | undefined;
 		if (!container) return;
-		// Use the known minimized height (CSS constant) rather than reading the DOM:
-		// at the moment the effect fires the .OV_minimized class may not yet be painted,
+		// Use the known floating height (CSS constant) rather than reading the DOM:
+		// at the moment the effect fires the .OV_floating class may not yet be painted,
 		// so getBoundingClientRect would still report the layout-driven size.
 		const containerHeight = container.getBoundingClientRect().height;
 		this.setDragPosition(
