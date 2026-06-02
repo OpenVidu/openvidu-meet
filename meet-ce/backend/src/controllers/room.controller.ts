@@ -31,9 +31,7 @@ export const createRoom = async (req: Request, res: Response) => {
 	try {
 		logger.verbose(`Creating room with options '${JSON.stringify(options)}'`);
 
-		// Pass response options to service for consistent handling
 		let room = await roomService.createMeetRoom(options);
-
 		room = MeetRoomHelper.applyFieldFilters(room, fields, extraFields);
 		room = MeetRoomHelper.addResponseMetadata(room);
 

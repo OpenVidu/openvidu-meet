@@ -8,12 +8,45 @@ content:
                     type: array
                     items:
                         $ref: '../schemas/meet-room-member.yaml'
+                _extraFields:
+                    type: array
+                    description: >
+                        List of extra fields that can be included in the response based on the `X-ExtraFields` header or `extraFields` query parameter.
+                    items:
+                        type: string
+                        example: effectivePermissions
                 pagination:
                     $ref: '../schemas/meet-pagination.yaml'
 
         examples:
-            complete_member_details:
-                summary: Full room member details response with multiple members
+            default_member_details:
+                summary: Member details without extra fields (effectivePermissions excluded by default)
+                value:
+                    members:
+                        - memberId: 'alice_smith'
+                          type: 'registered'
+                          name: 'Alice Smith'
+                          membershipDate: 1620000000000
+                          accessUrl: 'https://example.com/room/room-123'
+                          baseRole: 'moderator'
+                          customPermissions:
+                              canEndMeeting: false
+                        - memberId: 'ext-abc123'
+                          type: 'external'
+                          name: 'Bob'
+                          membershipDate: 1620003600000
+                          accessUrl: 'https://example.com/room/room-123?secret=ext-abc123'
+                          baseRole: 'speaker'
+                          customPermissions:
+                              canShareScreen: false
+                              canRecord: true
+                    _extraFields:
+                        - effectivePermissions
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10
+            extraFields=effectivePermissions:
+                summary: Full room member details including effectivePermissions
                 value:
                     members:
                         - memberId: 'alice_smith'
@@ -63,7 +96,8 @@ content:
                               canReadChat: true
                               canWriteChat: true
                               canChangeVirtualBackground: true
-                          currentParticipantIdentity: 'bob-5678'
+                    _extraFields:
+                        - effectivePermissions
                     pagination:
                         isTruncated: false
                         maxItems: 10
@@ -75,6 +109,8 @@ content:
                           baseRole: 'moderator'
                         - accessUrl: 'https://example.com/room/room-123?secret=ext-abc123'
                           baseRole: 'speaker'
+                    _extraFields:
+                        - effectivePermissions
                     pagination:
                         isTruncated: false
                         maxItems: 10

@@ -97,19 +97,33 @@ describe('Room Members API Tests', () => {
 			expect(response.body.pagination).toHaveProperty('isTruncated', false);
 		});
 
-		it('should return members with all required fields', async () => {
+		it('should return members with all required fields (effectivePermissions excluded by default)', async () => {
 			const response = await getRoomMembers(roomId);
 			expect(response.status).toBe(200);
 
 			const member = response.body.members[0];
 			expect(member).toHaveProperty('memberId');
 			expect(member).toHaveProperty('roomId', roomId);
+			expect(member).toHaveProperty('type');
 			expect(member).toHaveProperty('name');
 			expect(member).toHaveProperty('membershipDate');
 			expect(member).toHaveProperty('accessUrl');
 			expect(member).toHaveProperty('baseRole');
-			expect(member).toHaveProperty('effectivePermissions');
 			expect(member).toHaveProperty('permissionsUpdatedAt');
+			// effectivePermissions is an extra field, excluded by default
+			expect(member).not.toHaveProperty('effectivePermissions');
+			// _extraFields metadata is returned at the response root
+			expect(response.body._extraFields).toContain('effectivePermissions');
+		});
+
+		it('should include effectivePermissions when requested via extraFields', async () => {
+			const response = await getRoomMembers(roomId, { extraFields: 'effectivePermissions' });
+			expect(response.status).toBe(200);
+
+			const member = response.body.members[0];
+			expect(member).toHaveProperty('effectivePermissions');
+			expect(member.effectivePermissions).toBeDefined();
+			expect(response.body._extraFields).toContain('effectivePermissions');
 		});
 
 		it('should return members with only specified fields', async () => {

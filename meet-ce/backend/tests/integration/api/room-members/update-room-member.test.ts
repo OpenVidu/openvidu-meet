@@ -79,6 +79,40 @@ describe('Room Members API Tests', () => {
 			expect(response.body.effectivePermissions).toEqual(roomRoles.speaker.permissions);
 		});
 
+		it('should exclude effectivePermissions by default and include it when requested via extraFields', async () => {
+			// Create a member to update
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Extra Fields Member',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			const memberId = createResponse.body.memberId;
+
+			// Without extraFields, effectivePermissions must be excluded
+			const defaultResponse = await updateRoomMember(
+				roomId,
+				memberId,
+				{ baseRole: MeetRoomMemberRole.MODERATOR },
+				'' // do not request any extra field
+			);
+			expect(defaultResponse.status).toBe(200);
+			expect(defaultResponse.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
+			expect(defaultResponse.body).not.toHaveProperty('effectivePermissions');
+			expect(defaultResponse.body._extraFields).toContain('effectivePermissions');
+
+			// With extraFields=effectivePermissions, it must be included
+			const withExtraResponse = await updateRoomMember(
+				roomId,
+				memberId,
+				{ baseRole: MeetRoomMemberRole.SPEAKER },
+				'effectivePermissions'
+			);
+			expect(withExtraResponse.status).toBe(200);
+			expect(withExtraResponse.body).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
+			expect(withExtraResponse.body).toHaveProperty('effectivePermissions');
+			expect(withExtraResponse.body.effectivePermissions).toEqual(roomRoles.speaker.permissions);
+			expect(withExtraResponse.body._extraFields).toContain('effectivePermissions');
+		});
+
 		it('should successfully update customPermissions', async () => {
 			// Create a member without custom permissions
 			const createResponse = await createRoomMember(roomId, {

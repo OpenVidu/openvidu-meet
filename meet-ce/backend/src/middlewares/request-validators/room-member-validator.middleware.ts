@@ -3,8 +3,10 @@ import type { NextFunction, Request, Response } from 'express';
 import { rejectUnprocessableRequest } from '../../models/error.model.js';
 import {
 	BulkDeleteRoomMembersReqSchema,
+	mergeMemberHeaderFieldsIntoQuery,
 	RoomMemberFiltersSchema,
 	RoomMemberOptionsSchema,
+	RoomMemberQueryFieldsSchema,
 	RoomMemberTokenMetadataSchema,
 	RoomMemberTokenOptionsSchema,
 	UpdateRoomMemberReqSchema
@@ -18,11 +20,26 @@ export const validateCreateRoomMemberReq = (req: Request, res: Response, next: N
 	}
 
 	req.body = data;
+
+	// Merge X-Fields and X-ExtraFields headers into query params before validating field selection
+	const query = req.query;
+	mergeMemberHeaderFieldsIntoQuery(req.headers, query);
+	const fieldsResult = RoomMemberQueryFieldsSchema.safeParse(query);
+
+	if (!fieldsResult.success) {
+		return rejectUnprocessableRequest(res, fieldsResult.error);
+	}
+
+	res.locals.validatedQuery = fieldsResult.data;
 	next();
 };
 
 export const validateGetRoomMembersReq = (req: Request, res: Response, next: NextFunction) => {
-	const { success, error, data } = RoomMemberFiltersSchema.safeParse(req.query);
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	const query = req.query;
+	mergeMemberHeaderFieldsIntoQuery(req.headers, query);
+
+	const { success, error, data } = RoomMemberFiltersSchema.safeParse(query);
 
 	if (!success) {
 		return rejectUnprocessableRequest(res, error);
@@ -32,6 +49,21 @@ export const validateGetRoomMembersReq = (req: Request, res: Response, next: Nex
 		...data,
 		maxItems: data.maxItems?.toString()
 	};
+	next();
+};
+
+export const validateGetRoomMemberReq = (req: Request, res: Response, next: NextFunction) => {
+	// Merge X-Fields and X-ExtraFields headers into query params before validation
+	const query = req.query;
+	mergeMemberHeaderFieldsIntoQuery(req.headers, query);
+
+	const { success, error, data } = RoomMemberQueryFieldsSchema.safeParse(query);
+
+	if (!success) {
+		return rejectUnprocessableRequest(res, error);
+	}
+
+	res.locals.validatedQuery = data;
 	next();
 };
 
@@ -54,6 +86,17 @@ export const validateUpdateRoomMemberReq = (req: Request, res: Response, next: N
 	}
 
 	req.body = data;
+
+	// Merge X-Fields and X-ExtraFields headers into query params before validating field selection
+	const query = req.query;
+	mergeMemberHeaderFieldsIntoQuery(req.headers, query);
+	const fieldsResult = RoomMemberQueryFieldsSchema.safeParse(query);
+
+	if (!fieldsResult.success) {
+		return rejectUnprocessableRequest(res, fieldsResult.error);
+	}
+
+	res.locals.validatedQuery = fieldsResult.data;
 	next();
 };
 

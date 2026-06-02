@@ -13,6 +13,7 @@ import {
 	validateBulkDeleteRoomMembersReq,
 	validateCreateRoomMemberReq,
 	validateCreateRoomMemberTokenReq,
+	validateGetRoomMemberReq,
 	validateGetRoomMembersReq,
 	validateUpdateRoomMemberReq
 } from '../middlewares/request-validators/room-member-validator.middleware.js';
@@ -163,6 +164,7 @@ roomRouter.get(
 	'/:roomId/members/:memberId',
 	withAuth(apiKeyValidator, roomMemberTokenValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
 	withValidRoomId,
+	validateGetRoomMemberReq,
 	authorizeRoomMemberAccess,
 	roomMemberCtrl.getRoomMember
 );

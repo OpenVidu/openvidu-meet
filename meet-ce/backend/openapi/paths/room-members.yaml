@@ -16,6 +16,8 @@
             - accessTokenHeader: []
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
+            - $ref: '../components/parameters/room-member-x-fields-header.yaml'
+            - $ref: '../components/parameters/room-member-x-extra-fields-header.yaml'
         requestBody:
             $ref: '../components/requestBodies/add-room-member-request.yaml'
         responses:
@@ -54,6 +56,7 @@
             - $ref: '../components/parameters/room-member-base-role.yaml'
             - $ref: '../components/parameters/room-member-type.yaml'
             - $ref: '../components/parameters/room-member-fields.yaml'
+            - $ref: '../components/parameters/room-member-extra-fields.yaml'
             - $ref: '../components/parameters/max-items.yaml'
             - $ref: '../components/parameters/next-page-token.yaml'
             - $ref: '../components/parameters/room-member-sort-field.yaml'
@@ -114,6 +117,8 @@
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-member-id.yaml'
+            - $ref: '../components/parameters/room-member-fields.yaml'
+            - $ref: '../components/parameters/room-member-extra-fields.yaml'
         responses:
             '200':
                 $ref: '../components/responses/success-get-room-member.yaml'
@@ -143,6 +148,8 @@
         parameters:
             - $ref: '../components/parameters/room-id-path.yaml'
             - $ref: '../components/parameters/room-member-id.yaml'
+            - $ref: '../components/parameters/room-member-x-fields-header.yaml'
+            - $ref: '../components/parameters/room-member-x-extra-fields-header.yaml'
         requestBody:
             $ref: '../components/requestBodies/update-room-member-request.yaml'
         responses:

@@ -63,9 +63,15 @@ properties:
             Each property is a permission name with a boolean value indicating whether the permission is granted or denied.
     effectivePermissions:
         $ref: meet-permissions.yaml
-        description: >
+        description: |
             The complete set of effective permissions for this member. This object is calculated by applying the customPermissions
             overrides to the base role defaults, resulting in the final permissions that will be enforced.
+            <br/><br/>
+
+            **Excluded from responses by default to reduce payload size.**
+            To include it in the response:
+            - **POST/PUT requests:** use the `X-ExtraFields: effectivePermissions` header
+            - **Other requests:** use either the `extraFields=effectivePermissions` query parameter or the `X-ExtraFields: effectivePermissions` header
     currentParticipantIdentity:
         type: string
         example: 'alice_smith-1234'

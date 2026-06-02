@@ -1,5 +1,6 @@
 import { MeetRoomMemberPermissions } from '../database/room-member-permissions.js';
 import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberType } from '../database/room-member.entity.js';
+import { ExtraFieldKey } from './extra-field.js';
 import { SortAndPagination, SortableFieldKey } from './sort-pagination.js';
 import { TextMatchMode } from './text-match.js';
 
@@ -47,6 +48,19 @@ export const MEET_ROOM_MEMBER_FIELDS = [
 export type MeetRoomMemberField = (typeof MEET_ROOM_MEMBER_FIELDS)[number];
 
 /**
+ * Properties of a {@link MeetRoomMember} that can be included as extra fields in the API response.
+ * These fields are not included by default and must be explicitly requested via extraFields parameter.
+ */
+export const MEET_ROOM_MEMBER_EXTRA_FIELDS = [
+	'effectivePermissions'
+] as const satisfies readonly ExtraFieldKey<MeetRoomMember>[];
+
+/**
+ * Properties of a room member that can be requested as extra fields in the API response.
+ */
+export type MeetRoomMemberExtraField = (typeof MEET_ROOM_MEMBER_EXTRA_FIELDS)[number];
+
+/**
  * Room member fields that are allowed for sorting in room member list queries.
  */
 export const MEET_ROOM_MEMBER_SORT_FIELDS = [
@@ -81,6 +95,8 @@ export interface MeetRoomMemberFilters extends SortAndPagination<MeetRoomMemberS
 	type?: MeetRoomMemberType;
 	/** Array of fields to include in the response */
 	fields?: MeetRoomMemberField[];
+	/** Extra fields to include in the response (fields not included by default) */
+	extraFields?: MeetRoomMemberExtraField[];
 }
 
 /**
