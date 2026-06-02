@@ -94,12 +94,4 @@ export class AudioDevicesComponent implements OnInit {
 			this.microphoneStatusChanging = false;
 		}
 	}
-
-	/**
-	 * @internal
-	 * Compare two devices to check if they are the same. Used by the mat-select
-	 */
-	compareObjectDevices(o1: CustomDevice, o2: CustomDevice): boolean {
-		return o1.label === o2.label;
-	}
 }

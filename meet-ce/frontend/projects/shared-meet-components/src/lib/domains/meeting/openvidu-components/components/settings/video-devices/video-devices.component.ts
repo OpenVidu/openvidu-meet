@@ -26,7 +26,6 @@ export class VideoDevicesComponent implements OnInit {
 	readonly compact = input(false);
 	readonly onVideoDeviceChanged = output<CustomDevice>();
 	readonly onVideoEnabledChanged = output<boolean>();
-	readonly onVideoDevicesLoaded = output<CustomDevice[]>();
 
 	cameraStatusChanging: boolean = false;
 	isCameraEnabled: boolean = false;
@@ -64,8 +63,6 @@ export class VideoDevicesComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		// Emit initial device list (reactively)
-		this.onVideoDevicesLoaded.emit(this.cameras());
 		this.isCameraEnabled = this.participantService.isMyCameraEnabled();
 	}
 
@@ -98,13 +95,5 @@ export class VideoDevicesComponent implements OnInit {
 		} finally {
 			this.cameraStatusChanging = false;
 		}
-	}
-
-	/**
-	 * @internal
-	 * Compare two devices to check if they are the same. Used by the mat-select
-	 */
-	compareObjectDevices(o1: CustomDevice, o2: CustomDevice): boolean {
-		return o1.label === o2.label;
 	}
 }
