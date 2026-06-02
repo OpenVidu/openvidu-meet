@@ -8,25 +8,16 @@ import { PlatformService } from '../platform/platform.service';
 import { StorageService } from '../storage/storage.service';
 
 /**
- * Device availability state for each media type
- */
-interface DeviceAvailabilityState {
-	hasDevices: boolean;
-	isEnabled: boolean;
-	permissionGranted: boolean;
-	error?: string;
-}
-
-/**
- * Device service with improved performance and independent audio/video handling.
+ * Device service with reactive state and independent audio/video handling.
  *
- * Key improvements:
- * - Smart permission requests (single prompt when possible, fallback to separate)
+ * Design:
+ * - Enumeration-only: this service never calls getUserMedia itself. Media permission is obtained
+ *   when the real local tracks are created (prejoin / connect), so there is no throwaway probe
+ *   that would acquire and immediately release the camera/microphone. Device labels — and hence a
+ *   populated device list — only become available once that permission has been granted.
  * - Angular Signals for reactive state management (cameras, microphones as signals)
- * - Live device detection - automatically updates when devices are connected/disconnected
- * - Better error handling with specific error types per device
- * - Performance optimizations with caching
- * - LiveKit client integration for modern track management
+ * - Live device detection - automatically refreshes the list when devices are connected/disconnected
+ * - LiveKit client integration for modern device enumeration
  *
  * @internal
  */
@@ -46,51 +37,25 @@ export class DeviceService implements OnDestroy {
 	readonly cameraSelected = signal<CustomDevice | undefined>(undefined);
 	readonly microphoneSelected = signal<CustomDevice | undefined>(undefined);
 
-	// Reactive state management with Signals
-	private readonly videoState = signal<DeviceAvailabilityState>({
-		hasDevices: false,
-		isEnabled: true,
-		permissionGranted: false
-	});
-
-	private readonly audioState = signal<DeviceAvailabilityState>({
-		hasDevices: false,
-		isEnabled: true,
-		permissionGranted: false
-	});
-
-	// Computed signals for common checks
-	readonly hasVideoDevices = computed(() =>
-		this.videoState().hasDevices && this.cameras().length > 0
-	);
-
-	readonly hasAudioDevices = computed(() =>
-		this.audioState().hasDevices && this.microphones().length > 0
-	);
-
-	readonly hasVideoPermission = computed(() =>
-		this.videoState().permissionGranted
-	);
-
-	readonly hasAudioPermission = computed(() =>
-		this.audioState().permissionGranted
-	);
-
-	readonly allPermissionsGranted = computed(() =>
-		this.videoState().permissionGranted && this.audioState().permissionGranted
-	);
-
-	// Constants
-	private readonly CACHE_DURATION = 5000; // 5 seconds
+	// Computed availability/permission, derived directly from the device lists. A device only
+	// appears in these lists once it carries a label, which the browser exposes only after media
+	// permission has been granted — so "has devices" and "permission granted" collapse to the same
+	// check, and there is no separate state to keep in sync.
+	readonly hasVideoDevices = computed(() => this.cameras().length > 0);
+	readonly hasAudioDevices = computed(() => this.microphones().length > 0);
+	// Permission is inferred from device presence, so these are plain aliases of the availability
+	// signals — no extra computed node needed.
+	readonly hasVideoPermission = this.hasVideoDevices;
+	readonly hasAudioPermission = this.hasAudioDevices;
+	readonly allPermissionsGranted = computed(() => this.hasVideoPermission() && this.hasAudioPermission());
 
 	// Internal state
-	private devicesCache: {
-		timestamp: number;
-		devices: MediaDeviceInfo[];
-	} | null = null;
 	private log: ILogger;
 	private initializationPromise: Promise<void> | null = null;
 	private deviceChangeHandler: (() => void) | null = null;
+	private deviceChangeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+	// Browsers commonly fire several `devicechange` events for a single hotplug; coalesce them.
+	private readonly DEVICE_CHANGE_DEBOUNCE_MS = 300;
 
 	constructor() {
 		this.log = this.loggerSrv.get('DeviceService');
@@ -100,6 +65,12 @@ export class DeviceService implements OnDestroy {
 	 * Cleanup when service is destroyed
 	 */
 	ngOnDestroy(): void {
+		// Cancel any pending debounced refresh
+		if (this.deviceChangeDebounceTimer) {
+			clearTimeout(this.deviceChangeDebounceTimer);
+			this.deviceChangeDebounceTimer = null;
+		}
+
 		// Remove device change listener
 		if (this.deviceChangeHandler && navigator.mediaDevices?.removeEventListener) {
 			navigator.mediaDevices.removeEventListener('devicechange', this.deviceChangeHandler);
@@ -109,8 +80,12 @@ export class DeviceService implements OnDestroy {
 	}
 
 	/**
-	 * Initialize media devices with parallel audio/video handling
-	 * Returns a promise that resolves when initialization is complete
+	 * Enumerate media devices and populate the reactive lists.
+	 * Returns a promise that resolves when enumeration is complete.
+	 *
+	 * This does NOT request media permission. On first visit (before any track has been created)
+	 * the lists will be empty; callers create the local tracks — which grants permission — and then
+	 * call this again to populate the now-labelled device list.
 	 */
 	async initializeDevices(): Promise<void> {
 		// Prevent multiple simultaneous initializations
@@ -131,13 +106,7 @@ export class DeviceService implements OnDestroy {
 		this.clear();
 
 		try {
-			// Try to get devices with parallel audio/video permission requests
-			const devices = await this.getLocalDevicesOptimized();
-
-			if (devices.length === 0) {
-				this.log.w('No media devices found or permissions denied');
-				return;
-			}
+			const devices = await this.enumerateDevices();
 
 			this.processDevices(devices);
 			this.updateSelectedDevices();
@@ -145,10 +114,14 @@ export class DeviceService implements OnDestroy {
 			// Setup live device detection
 			this.setupDeviceChangeDetection();
 
-			this.log.d('Media devices initialized', {
-				cameras: this.cameras().length,
-				microphones: this.microphones().length
-			});
+			if (devices.length === 0) {
+				this.log.w('No media devices found yet (permission may not have been granted)');
+			} else {
+				this.log.d('Media devices initialized', {
+					cameras: this.cameras().length,
+					microphones: this.microphones().length
+				});
+			}
 		} catch (error) {
 			this.log.e('Error initializing devices', error);
 			throw error;
@@ -156,201 +129,18 @@ export class DeviceService implements OnDestroy {
 	}
 
 	/**
-	 * Optimized device retrieval with independent audio/video handling
-	 * This solves the critical bug where audio device failure affects video device detection
-	 */
-	private async getLocalDevicesOptimized(): Promise<MediaDeviceInfo[]> {
-		// Check cache first
-		if (this.devicesCache && Date.now() - this.devicesCache.timestamp < this.CACHE_DURATION) {
-			this.log.d('Using cached devices');
-			return this.devicesCache.devices;
-		}
-
-		try {
-			// Try parallel permission requests for better performance
-			const results = await this.requestPermissionsParallel();
-
-			// Get devices after permissions are granted
-			const devices = await this.enumerateDevices();
-
-			// Update cache
-			this.devicesCache = {
-				timestamp: Date.now(),
-				devices
-			};
-
-			// Update state based on results
-			this.updateDeviceStates(results);
-
-			return devices;
-		} catch (error) {
-			this.log.e('Error getting devices', error);
-
-			// Fallback: try to enumerate devices without permissions
-			return await this.fallbackDeviceEnumeration();
-		}
-	}
-
-	/**
-	 * Smart permission request strategy:
-	 * 1. Try both together (single prompt - better UX)
-	 * 2. If fails, try individually (fallback for granular permissions)
+	 * Enumerate devices using LiveKit's Room API or the browser API.
 	 *
-	 * This minimizes user friction while maintaining independence
-	 */
-	private async requestPermissionsParallel(): Promise<{
-		video: { success: boolean; error?: any };
-		audio: { success: boolean; error?: any };
-	}> {
-		const results = {
-			video: { success: false, error: undefined as any },
-			audio: { success: false, error: undefined as any }
-		};
-
-		// Strategy 1: Try requesting both together (single prompt)
-		try {
-			this.log.d('Requesting both audio and video permissions together');
-			const tracks = await this.livekitAdapter.createLocalTracks({ audio: true, video: true });
-
-			// Check which tracks we got
-			const videoTrack = tracks.find(t => t.kind === Track.Kind.Video);
-			const audioTrack = tracks.find(t => t.kind === Track.Kind.Audio);
-
-			if (videoTrack) {
-				results.video.success = true;
-				this.log.d('Video permission granted');
-			}
-
-			if (audioTrack) {
-				results.audio.success = true;
-				this.log.d('Audio permission granted');
-			}
-
-			// Stop tracks immediately after getting permission
-			tracks.forEach(t => t.stop());
-
-			// If both succeeded, return early (best case - single prompt!)
-			if (results.video.success && results.audio.success) {
-				this.log.d('Both permissions granted with single prompt');
-				return results;
-			}
-		} catch (error: any) {
-			this.log.w('Combined permission request failed, trying individually', error);
-			// Continue to fallback strategy
-		}
-
-		// Strategy 2: Fallback - request individually if combined request failed
-		// This handles cases where user denied one but might allow the other
-		const promises: Promise<void>[] = [];
-
-		// Try video if not already granted
-		if (!results.video.success) {
-			promises.push(
-				this.requestVideoPermission().then(
-					(tracks) => {
-						results.video.success = true;
-						tracks.forEach(t => t.stop());
-						this.log.d('Video permission granted individually');
-					},
-					(error) => {
-						results.video.error = error;
-						this.log.w('Video permission denied', error);
-					}
-				)
-			);
-		}
-
-		// Try audio if not already granted
-		if (!results.audio.success) {
-			promises.push(
-				this.requestAudioPermission().then(
-					(tracks) => {
-						results.audio.success = true;
-						tracks.forEach(t => t.stop());
-						this.log.d('Audio permission granted individually');
-					},
-					(error) => {
-						results.audio.error = error;
-						this.log.w('Audio permission denied', error);
-					}
-				)
-			);
-		}
-
-		// Wait for fallback requests to complete
-		if (promises.length > 0) {
-			await Promise.allSettled(promises);
-		}
-
-		return results;
-	}
-
-	/**
-	 * Request video permission independently
-	 */
-	private async requestVideoPermission(): Promise<OVLocalTrack[]> {
-		try {
-			return await this.livekitAdapter.createLocalTracks({ audio: false, video: true });
-		} catch (error: any) {
-			this.videoState.update(state => ({
-				...state,
-				permissionGranted: false,
-				error: error.name || 'Unknown error'
-			}));
-			throw error;
-		}
-	}
-
-	/**
-	 * Request audio permission independently
-	 */
-	private async requestAudioPermission(): Promise<OVLocalTrack[]> {
-		try {
-			return await this.livekitAdapter.createLocalTracks({ audio: true, video: false });
-		} catch (error: any) {
-			this.audioState.update(state => ({
-				...state,
-				permissionGranted: false,
-				error: error.name || 'Unknown error'
-			}));
-			throw error;
-		}
-	}
-
-	/**
-	 * Enumerate devices using LiveKit's Room API or browser API
+	 * Only devices that already expose a label are kept (see {@link filterValidDevices}); labels are
+	 * exposed by the browser once media permission has been granted.
 	 */
 	private async enumerateDevices(): Promise<MediaDeviceInfo[]> {
 		try {
-			// Use LiveKit's Room.getLocalDevices if available, otherwise fallback to browser API
+			// Prefer LiveKit's enumeration (handles some cross-browser quirks).
 			const devices = await this.livekitAdapter.getLocalDevices();
 			return this.filterValidDevices(devices);
 		} catch (error) {
-			this.log.w('LiveKit device enumeration failed, using browser API', error);
-
-			// Firefox compatibility
-			if (this.platformSrv.isFirefox()) {
-				return await this.getDevicesFirefox();
-			}
-
-			const devices = await navigator.mediaDevices.enumerateDevices();
-			return this.filterValidDevices(devices);
-		}
-	}
-
-	/**
-	 * Firefox-specific device enumeration
-	 */
-	private async getDevicesFirefox(): Promise<MediaDeviceInfo[]> {
-		try {
-			// Firefox may need explicit getUserMedia call
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-			stream.getTracks().forEach(track => track.stop());
-
-			const devices = await navigator.mediaDevices.enumerateDevices();
-			return this.filterValidDevices(devices);
-		} catch (error) {
-			this.log.w('Firefox getUserMedia failed, trying enumerate directly', error);
+			this.log.w('LiveKit device enumeration failed, falling back to browser API', error);
 			const devices = await navigator.mediaDevices.enumerateDevices();
 			return this.filterValidDevices(devices);
 		}
@@ -363,44 +153,6 @@ export class DeviceService implements OnDestroy {
 		return devices.filter(
 			(d) => d.label && d.deviceId && d.deviceId !== 'default'
 		);
-	}
-
-	/**
-	 * Fallback device enumeration without permissions
-	 */
-	private async fallbackDeviceEnumeration(): Promise<MediaDeviceInfo[]> {
-		try {
-			this.log.d('Attempting device enumeration without permissions');
-			const devices = await navigator.mediaDevices.enumerateDevices();
-
-			// Filter devices that have IDs but may not have labels
-			return devices.filter(d => d.deviceId && d.deviceId !== 'default');
-		} catch (error) {
-			this.log.e('Fallback device enumeration failed', error);
-			return [];
-		}
-	}
-
-	/**
-	 * Update device states based on permission results
-	 */
-	private updateDeviceStates(results: {
-		video: { success: boolean; error?: any };
-		audio: { success: boolean; error?: any };
-	}): void {
-		// Update video state
-		this.videoState.update(state => ({
-			...state,
-			permissionGranted: results.video.success,
-			error: results.video.error?.name
-		}));
-
-		// Update audio state
-		this.audioState.update(state => ({
-			...state,
-			permissionGranted: results.audio.success,
-			error: results.audio.error?.name
-		}));
 	}
 
 	/**
@@ -420,12 +172,9 @@ export class DeviceService implements OnDestroy {
 		// Detect camera types (front/back)
 		this.detectCameraTypes(camerasArray);
 
-		// Update signals
+		// Update signals (availability/permission computeds derive from these)
 		this.cameras.set(camerasArray);
 		this.microphones.set(microphonesArray);
-
-		// Update availability states
-		this.updateDeviceAvailability(camerasArray.length, microphonesArray.length);
 	}
 
 	/**
@@ -445,21 +194,6 @@ export class DeviceService implements OnDestroy {
 			// On desktop, first camera is typically front-facing
 			cameras[0].type = CameraType.FRONT;
 		}
-	}
-
-	/**
-	 * Update device availability states
-	 */
-	private updateDeviceAvailability(cameraCount: number, microphoneCount: number): void {
-		this.videoState.update(state => ({
-			...state,
-			hasDevices: cameraCount > 0
-		}));
-
-		this.audioState.update(state => ({
-			...state,
-			hasDevices: microphoneCount > 0
-		}));
 	}
 
 	/**
@@ -507,13 +241,56 @@ export class DeviceService implements OnDestroy {
 	}
 
 	/**
-	 * Refresh devices (e.g., when a device is plugged/unplugged)
+	 * Align the selected camera/microphone with the devices actually backing the given local tracks.
+	 *
+	 * Called right after the initial track creation so the device selectors reflect the hardware the
+	 * browser really opened (e.g. the default device picked on first visit) rather than a guess made
+	 * before enumeration. A stored preference, when the matching device exists, has already been
+	 * honoured by the track creation, so this is a no-op in that common case.
+	 */
+	private syncSelectedFromTracks(tracks: OVLocalTrack[]): void {
+		for (const track of tracks) {
+			const deviceId = track?.mediaStreamTrack?.getSettings?.().deviceId;
+			if (!deviceId) continue;
+
+			if (track.kind === Track.Kind.Video) {
+				const match = this.cameras().find((c) => c.device === deviceId);
+				if (match) this.cameraSelected.set(match);
+			} else if (track.kind === Track.Kind.Audio) {
+				const match = this.microphones().find((m) => m.device === deviceId);
+				if (match) this.microphoneSelected.set(match);
+			}
+		}
+	}
+
+	/**
+	 * Populate the device list right after the initial local tracks were created — the call that
+	 * grants media permission on first visit — then align the current selection with the devices the
+	 * browser actually opened.
+	 *
+	 * Re-enumeration is skipped when the list is already populated (returning users enumerate up
+	 * front), and the whole operation is best-effort: an enumeration failure is logged, never thrown,
+	 * so it can neither block joining nor cause the caller to re-acquire the tracks.
+	 */
+	async syncDevicesAfterTrackCreation(tracks: OVLocalTrack[]): Promise<void> {
+		try {
+			if (this.cameras().length === 0 && this.microphones().length === 0) {
+				await this.initializeDevices();
+			}
+			this.syncSelectedFromTracks(tracks);
+		} catch (error) {
+			this.log.w('Failed to enumerate devices after track creation', error);
+		}
+	}
+
+	/**
+	 * Refresh devices (e.g., when a device is plugged/unplugged).
+	 *
+	 * Re-enumerates only — it does not request permission, so it is cheap to call from the
+	 * `devicechange` handler.
 	 */
 	async refreshDevices(): Promise<void> {
-		// Invalidate cache
-		this.devicesCache = null;
-
-		const devices = await this.getLocalDevicesOptimized();
+		const devices = await this.enumerateDevices();
 		this.processDevices(devices);
 		this.updateSelectedDevices();
 
@@ -538,10 +315,16 @@ export class DeviceService implements OnDestroy {
 			navigator.mediaDevices.removeEventListener('devicechange', this.deviceChangeHandler);
 		}
 
-		// Create new handler
-		this.deviceChangeHandler = async () => {
-			this.log.d('Device change detected, refreshing device list');
-			await this.refreshDevices();
+		// Create new handler: debounce so a burst of `devicechange` events triggers a single refresh
+		this.deviceChangeHandler = () => {
+			if (this.deviceChangeDebounceTimer) {
+				clearTimeout(this.deviceChangeDebounceTimer);
+			}
+			this.deviceChangeDebounceTimer = setTimeout(() => {
+				this.deviceChangeDebounceTimer = null;
+				this.log.d('Device change detected, refreshing device list');
+				void this.refreshDevices();
+			}, this.DEVICE_CHANGE_DEBOUNCE_MS);
 		};
 
 		// Register listener
@@ -703,18 +486,5 @@ export class DeviceService implements OnDestroy {
 		this.microphones.set([]);
 		this.cameraSelected.set(undefined);
 		this.microphoneSelected.set(undefined);
-		this.devicesCache = null;
-
-		this.videoState.set({
-			hasDevices: false,
-			isEnabled: true,
-			permissionGranted: false
-		});
-
-		this.audioState.set({
-			hasDevices: false,
-			isEnabled: true,
-			permissionGranted: false
-		});
 	}
 }

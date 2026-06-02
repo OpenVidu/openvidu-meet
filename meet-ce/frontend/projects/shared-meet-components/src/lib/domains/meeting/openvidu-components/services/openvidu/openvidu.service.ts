@@ -294,9 +294,11 @@ export class OpenViduService {
 		audioDeviceId: string | boolean | undefined = undefined,
 		allowPartialCreation: boolean = true
 	): Promise<OVLocalTrack[]> {
-		// Default values: true if device is enabled, false otherwise
-		videoDeviceId ??= this.deviceService.isCameraEnabled();
-		audioDeviceId ??= this.deviceService.isMicrophoneEnabled();
+		// Default to the user's stored preference (availability-independent). Whether a device is
+		// actually opened — and which one — is resolved by the per-kind logic below; on first visit
+		// the device list is still empty, so a default-device request is issued to obtain permission.
+		videoDeviceId ??= this.storageService.isCameraEnabled();
+		audioDeviceId ??= this.storageService.isMicrophoneEnabled();
 
 		const options: OVCreateLocalTracksOptions = {
 			audio: { echoCancellation: true, noiseSuppression: true },
@@ -308,7 +310,12 @@ export class OpenViduService {
 			if (this.deviceService.hasVideoDeviceAvailable()) {
 				const selectedCamera = this.deviceService.getCameraSelected();
 				options.video = { deviceId: this.toDeviceConstraint(selectedCamera?.device) } as VideoCaptureOptions;
+			} else if (!this.deviceService.hasVideoPermissionGranted()) {
+				// Permission not granted yet (e.g. first visit): request the default camera so this
+				// call obtains permission. The caller enumerates devices afterwards.
+				options.video = {} as VideoCaptureOptions;
 			} else {
+				// Permission granted but no camera present.
 				options.video = false;
 			}
 		} else if (videoDeviceId === false) {
@@ -322,7 +329,11 @@ export class OpenViduService {
 			if (this.deviceService.hasAudioDeviceAvailable()) {
 				const selectedMic = this.deviceService.getMicrophoneSelected();
 				(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(selectedMic?.device);
+			} else if (!this.deviceService.hasAudioPermissionGranted()) {
+				// Permission not granted yet: keep the default-device audio request (set above) so
+				// this call can obtain permission. The caller enumerates devices afterwards.
 			} else {
+				// Permission granted but no microphone present.
 				options.audio = false;
 			}
 		} else if (audioDeviceId === false) {
@@ -349,11 +360,12 @@ export class OpenViduService {
 				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
 			}
 
-			// Mute tracks if devices are disabled
-			if (!this.deviceService.isCameraEnabled()) {
+			// Mute tracks when the user's stored preference is "off". This is availability-independent
+			// so a freshly created track isn't muted before devices have been enumerated.
+			if (!this.storageService.isCameraEnabled()) {
 				newLocalTracks.find((t) => t.kind === Track.Kind.Video)?.mute();
 			}
-			if (!this.deviceService.isMicrophoneEnabled()) {
+			if (!this.storageService.isMicrophoneEnabled()) {
 				newLocalTracks.find((t) => t.kind === Track.Kind.Audio)?.mute();
 			}
 		}

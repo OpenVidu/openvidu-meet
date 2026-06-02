@@ -278,6 +278,11 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			try {
 				this.tracks = await this.openviduService.createLocalTracks();
 				this.openviduService.setLocalTracks(this.tracks);
+
+				// Creating the tracks above is what grants media permission on first visit; only then
+				// are device labels available. Populate the list and align the selection accordingly.
+				await this.deviceSrv.syncDevicesAfterTrackCreation(this.tracks);
+
 				this.videoTrack = this.tracks.find((track) => track.kind === Track.Kind.Video);
 				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
 				this.isVideoEnabled.set(this.openviduService.isVideoTrackEnabled());
