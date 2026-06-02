@@ -73,7 +73,7 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 			expect(updateResponse.body).toHaveProperty('message');
 
-			const getResponse = await getRoom(createdRoom.roomId, 'roles');
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.roles).toMatchObject(updatedRoles);
 		});
@@ -101,7 +101,7 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 			expect(updateResponse.body).toHaveProperty('message');
 
-			const getResponse = await getRoom(createdRoom.roomId, 'roles');
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.roles).toMatchObject(updatedRoles);
 		});
@@ -135,7 +135,7 @@ describe('Room API Tests', () => {
 			const updateResponse = await updateRoomRoles(createdRoom.roomId, partialRoles);
 			expect(updateResponse.status).toBe(200);
 
-			const getResponse = await getRoom(createdRoom.roomId, 'roles');
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.roles.speaker.permissions).toMatchObject(partialRoles.speaker.permissions);
 			expect(getResponse.body.roles.moderator.permissions).toMatchObject(
@@ -159,7 +159,7 @@ describe('Room API Tests', () => {
 			const updateResponse = await updateRoomRoles(createdRoom.roomId, partialRoles);
 			expect(updateResponse.status).toBe(200);
 
-			const getResponse = await getRoom(createdRoom.roomId, 'roles');
+			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.roles.speaker.permissions.canWriteChat).toBe(false);
 			expect(getResponse.body.roles.moderator.permissions).toMatchObject(

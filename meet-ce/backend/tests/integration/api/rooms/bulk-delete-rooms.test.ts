@@ -470,6 +470,7 @@ describe('Room API Tests', () => {
 			expect(deletedRoom.room).toBeUndefined();
 			expect(deletedRoom.successCode).toBe(MeetRoomDeletionSuccessCode.ROOM_DELETED);
 		});
+
 		it('should return partial room properties based on fields and extraFields headers when some rooms fail due to active meetings', async () => {
 			// This test will verify that when some rooms fail to delete due to active meetings, the response includes the room details with the correct fields based on the fields and extraFields headers.
 
@@ -508,7 +509,7 @@ describe('Room API Tests', () => {
 			);
 
 			// Verify only requested base fields are present
-			expect(Object.keys(scheduledRoom.room)).toHaveLength(4); // roomId, roomName, config and _extraFields
+			expect(Object.keys(scheduledRoom.room)).toHaveLength(5); // roomId, roomName, config, roles and _extraFields
 			expect(scheduledRoom.room.roomId).toBe(roomWithMeeting.roomId);
 			expect(scheduledRoom.room.roomName).toBeDefined();
 
