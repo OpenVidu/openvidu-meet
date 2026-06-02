@@ -48,6 +48,11 @@ MeetRoomTheme:
             description: Secondary color in hex format
             pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
             example: "#00FF00"
+        accentColor:
+            type: string
+            description: Accent color in hex format
+            pattern: '^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$'
+            example: "#0000FF"
         surfaceColor:
             type: string
             description: Surface color in hex format

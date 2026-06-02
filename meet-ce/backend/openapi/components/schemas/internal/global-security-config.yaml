@@ -7,10 +7,6 @@ properties:
 AuthenticationConfig:
     type: object
     properties:
-        allowUserCreation:
-            type: boolean
-            description: Allow admins to create new user accounts.
-            example: true
         oauthProviders:
             type: array
             description: Optional list of allowed OAuth providers for user registration.

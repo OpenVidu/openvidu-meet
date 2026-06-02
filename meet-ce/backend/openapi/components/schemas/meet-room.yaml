@@ -180,6 +180,12 @@ properties:
             - `open`: The room is open and available to host a meeting.
             - `active_meeting`: There is an active meeting in progress in the room.
             - `closed`: The room is closed to hosting new meetings.
+    rolesUpdatedAt:
+        type: number
+        example: 1620000000000
+        description: >
+            Timestamp (in milliseconds since the Unix epoch) of the last time the room's role permissions
+            or access configuration were updated.
     meetingEndAction:
         type: string
         enum:

@@ -85,6 +85,7 @@ content:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: closed
+                              rolesUpdatedAt: 1620000000000
                               meetingEndAction: none
                               _extraFields:
                                   - config
@@ -116,6 +117,7 @@ content:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: active_meeting
+                              rolesUpdatedAt: 1620000000000
                               meetingEndAction: delete
                               _extraFields:
                                   - config
@@ -147,6 +149,7 @@ content:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: active_meeting
+                              rolesUpdatedAt: 1620000000000
                               meetingEndAction: close
                               _extraFields:
                                   - config
@@ -178,6 +181,7 @@ content:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: active_meeting
+                              rolesUpdatedAt: 1620000000000
                               meetingEndAction: delete
                               _extraFields:
                                   - config
@@ -209,6 +213,7 @@ content:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: active_meeting
+                              rolesUpdatedAt: 1620000000000
                               meetingEndAction: close
                               _extraFields:
                                   - config

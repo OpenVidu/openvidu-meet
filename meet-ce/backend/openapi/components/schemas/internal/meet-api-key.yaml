@@ -1,6 +1,6 @@
 type: object
 properties:
-    apiKey:
+    key:
         type: string
         description: The API key that was created.
         example: 'ovmeet-1234567890abcdef1234567890abcdef'

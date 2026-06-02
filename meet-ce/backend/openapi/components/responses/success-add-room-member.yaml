@@ -18,6 +18,7 @@ content:
                 summary: Room member added successfully without extra fields
                 value:
                     memberId: 'ext-abc123'
+                    roomId: 'room-123'
                     type: 'external'
                     name: 'Charlie'
                     membershipDate: 1620007200000
@@ -26,6 +27,7 @@ content:
                     customPermissions:
                         canShareScreen: true
                         canRecord: false
+                    permissionsUpdatedAt: 1620007200000
                     _extraFields: ['effectivePermissions']
 headers:
     Location:

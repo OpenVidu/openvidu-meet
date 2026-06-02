@@ -8,6 +8,11 @@ properties:
 
             - For registered Meet users: This is set to the userId of the linked Meet user account.
             - For external users: This is an automatically generated unique identifier starting from 'ext-'.
+    roomId:
+        type: string
+        example: 'room-123'
+        description: >
+            The unique identifier of the room this member belongs to.
     type:
         type: string
         enum:
@@ -72,9 +77,8 @@ properties:
             To include it in the response:
             - **POST/PUT requests:** use the `X-ExtraFields: effectivePermissions` header
             - **Other requests:** use either the `extraFields=effectivePermissions` query parameter or the `X-ExtraFields: effectivePermissions` header
-    currentParticipantIdentity:
-        type: string
-        example: 'alice_smith-1234'
-        description: |
-            The identity of the currently connected participant in the meeting associated with this room member.
-            This value is undefined if the member is not currently connected.
+    permissionsUpdatedAt:
+        type: number
+        example: 1620000000000
+        description: >
+            Timestamp (in milliseconds since the Unix epoch) of the last time this member's effective permissions were updated.
