@@ -1,10 +1,21 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, contentChild, effect, inject, OnInit, signal } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	contentChild,
+	effect,
+	inject,
+	OnInit,
+	signal
+} from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
@@ -39,6 +50,8 @@ export class MeetingComponent implements OnInit {
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly dialog = inject(MatDialog);
 
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
@@ -77,7 +90,6 @@ export class MeetingComponent implements OnInit {
 				this.ovThemeService.resetThemeVariables();
 			}
 		});
-
 	}
 
 	async ngOnInit() {
@@ -119,15 +131,17 @@ export class MeetingComponent implements OnInit {
 		this.eventHandlerService.setupRoomListeners(lkRoom);
 	}
 
-	async onViewRecordingsClicked() {
+	async onViewRecordingsClicked(): Promise<void> {
 		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
 			return;
 		}
 
-		let recordingsUrl = `/room/${roomId}/recordings`;
-		recordingsUrl = this.navigationService.addBasePath(recordingsUrl);
-		window.open(recordingsUrl, '_blank');
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			await this.openRecordingsDialog(roomId);
+		} else {
+			this.openRecordingsInNewTab(roomId);
+		}
 	}
 
 	onParticipantConnected(event: any): void {
@@ -142,5 +156,30 @@ export class MeetingComponent implements OnInit {
 	onParticipantLeft(event: any): void {
 		this.isMeetingLeft.set(true);
 		this.eventHandlerService.onParticipantLeft(event);
+	}
+
+	/**
+	 * Web component mode: show the room recordings in a dialog overlaid on the
+	 * live meeting. Lazy-loaded so the SPA bundle, which never takes this path,
+	 * doesn't pull the recordings page into the meeting chunk.
+	 */
+	private async openRecordingsDialog(roomId: string): Promise<void> {
+		const { RoomRecordingsDialogComponent } = await import(
+			'../../../recordings/pages/room-recordings/room-recordings-dialog.component'
+		);
+
+		this.dialog.open(RoomRecordingsDialogComponent, {
+			data: { roomId },
+			panelClass: 'ov-meet-dialog',
+			autoFocus: false,
+			width: '90vw',
+			maxWidth: '1200px',
+			height: '85vh'
+		});
+	}
+
+	private openRecordingsInNewTab(roomId: string): void {
+		const url = this.navigationService.addBasePath(`/room/${roomId}/recordings`);
+		window.open(url, '_blank');
 	}
 }

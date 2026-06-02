@@ -21,7 +21,10 @@ import { RecordingService } from '../../services/recording.service';
 	templateUrl: './room-recordings.component.html',
 	styleUrls: ['./room-recordings.component.scss'],
 	imports: [MatToolbarModule, MatButtonModule, RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	host: {
+		'[class.ov-recordings-embedded]': 'webcomponentMode()'
+	}
 })
 export class RoomRecordingsComponent implements OnInit {
 	protected readonly loggerService = inject(LoggerService);
@@ -42,6 +45,13 @@ export class RoomRecordingsComponent implements OnInit {
 	 * falls back to the route snapshot.
 	 */
 	readonly roomIdInput = input<string>('', { alias: 'roomId' });
+
+	/**
+	 * Presentation mode. When `false` (default) the component renders as a
+	 * standalone.
+	 * When `true` it renders in an embedded style.
+	 */
+	readonly webcomponentMode = input<boolean>(false);
 
 	recordings = signal<MeetRecordingInfo[]>([]);
 	roomId = '';
