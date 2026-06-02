@@ -58,7 +58,11 @@ export class LivekitSdkService {
 	}
 
 	async getLocalDevices(): Promise<MediaDeviceInfo[]> {
-		return Room.getLocalDevices();
+		// requestPermissions=false: never let enumeration fire a throwaway getUserMedia({audio,video})
+		// just to reveal device labels. Media permission is obtained by the real track creation
+		// (prejoin / connect); labels become available on the subsequent enumeration. Probing here
+		// would re-acquire the camera/microphone redundantly at startup.
+		return Room.getLocalDevices(undefined, false);
 	}
 }
 

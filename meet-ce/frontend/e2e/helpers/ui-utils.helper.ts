@@ -205,3 +205,55 @@ export const getElementBoundingBox = async (
 		height: box.height
 	};
 };
+
+// ─── getUserMedia instrumentation ────────────────────────────────────────────
+
+/**
+ * Wraps `navigator.mediaDevices.getUserMedia` *before any application code runs* so its
+ * invocations can be counted. Must be called before navigating to the app — it registers an init
+ * script that re-installs the wrapper on every navigation. Read the tally with
+ * {@link getGetUserMediaCallCount}.
+ */
+export const installGetUserMediaCounter = async (page: Page): Promise<void> => {
+	await page.addInitScript(() => {
+		const w = window as Window & { __ovGumCalls?: Array<{ audio: boolean; video: boolean }> };
+		w.__ovGumCalls = [];
+
+		const mediaDevices = navigator.mediaDevices;
+
+		if (!mediaDevices?.getUserMedia) {
+			return;
+		}
+
+		const original = mediaDevices.getUserMedia.bind(mediaDevices);
+
+		mediaDevices.getUserMedia = (constraints?: MediaStreamConstraints) => {
+			// Record only whether each kind was requested — enough to tell a per-kind acquisition
+			// apart from a combined {audio,video} permission probe, and trivially serialisable.
+			w.__ovGumCalls?.push({
+				audio: Boolean(constraints?.audio),
+				video: Boolean(constraints?.video)
+			});
+			return original(constraints as MediaStreamConstraints);
+		};
+	});
+};
+
+/**
+ * Returns how many times `navigator.mediaDevices.getUserMedia` has been called since
+ * {@link installGetUserMediaCounter} was installed for the current page load.
+ */
+export const getGetUserMediaCallCount = async (page: Page): Promise<number> => {
+	return (await getGetUserMediaCalls(page)).length;
+};
+
+/**
+ * Returns one entry per `navigator.mediaDevices.getUserMedia` call since
+ * {@link installGetUserMediaCounter} was installed, each flagging whether audio/video was requested.
+ * A combined `{ audio: true, video: true }` entry is the signature of the old permission probe.
+ */
+export const getGetUserMediaCalls = async (page: Page): Promise<Array<{ audio: boolean; video: boolean }>> => {
+	return await page.evaluate(
+		() => (window as Window & { __ovGumCalls?: Array<{ audio: boolean; video: boolean }> }).__ovGumCalls ?? []
+	);
+};

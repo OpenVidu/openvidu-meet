@@ -325,6 +325,20 @@ export const getFirstVideoTrackLabel = async (page: Page): Promise<string | null
 };
 
 /**
+ * Returns the `deviceId` actually backing the first video track on the page, or `null` if none
+ * exists. Unlike the track label, the deviceId is a stable identifier for the underlying camera and
+ * is what device-selection comparisons should key on.
+ */
+export const getFirstVideoTrackDeviceId = async (page: Page): Promise<string | null> => {
+	return await page.evaluate(() => {
+		const video = document.querySelector('video') as HTMLVideoElement | null;
+		const stream = video?.srcObject as MediaStream | null;
+		const track = stream?.getVideoTracks()?.[0];
+		return track?.getSettings?.().deviceId ?? null;
+	});
+};
+
+/**
  * Returns the label of the screen-share video track, or `null` if none exists.
  */
 export const getScreenTrackLabel = async (page: Page): Promise<string | null> => {
