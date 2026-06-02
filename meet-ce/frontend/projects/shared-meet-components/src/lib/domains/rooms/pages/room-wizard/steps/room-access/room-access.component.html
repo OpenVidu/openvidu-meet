@@ -13,6 +13,10 @@
 			<!-- ── Access Settings Section ── -->
 			<section class="access-section">
 				<p class="section-label">ACCESS POLICY</p>
+				<p class="section-subtitle">
+					Members can always access this room. The options below let you grant additional access to
+					non-members.
+				</p>
 
 				<!-- Anonymous Moderator Access -->
 				<div class="access-row">
@@ -49,8 +53,10 @@
 					<div class="access-info">
 						<mat-icon class="access-icon material-symbols-outlined">verified_user</mat-icon>
 						<div class="access-text">
-							<span class="access-label">Registered Users</span>
-							<span class="access-description"> Allow any registered user to access the room </span>
+							<span class="access-label">All Registered Users</span>
+							<span class="access-description">
+								Allow any registered user to access the room
+							</span>
 						</div>
 					</div>
 					<mat-slide-toggle formControlName="registeredEnabled" color="primary" class="access-toggle" />
@@ -163,7 +169,7 @@
 							Add specific members to this room and assign them custom permissions.
 						</p>
 					</div>
-					<button mat-stroked-button color="primary" type="button" (click)="openAddMemberDialog()">
+					<button mat-button class="primary-button" type="button" (click)="openAddMemberDialog()">
 						<mat-icon>person_add</mat-icon>
 						Add Member
 					</button>

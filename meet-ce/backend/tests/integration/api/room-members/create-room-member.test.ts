@@ -1,5 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberOptions, MeetRoomMemberRole, MeetRoomRoles, MeetUserRole } from '@openvidu-meet/typings';
+import {
+	MeetRoomMemberOptions,
+	MeetRoomMemberRole,
+	MeetRoomMemberType,
+	MeetRoomRoles,
+	MeetUserRole
+} from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
@@ -22,7 +28,7 @@ describe('Room Members API Tests', () => {
 		await startTestServer();
 		testUsers = await setupTestUsers();
 
-		const room = await createRoom();
+		const room = await createRoom({}, undefined, { xExtraFields: 'roles' });
 		roomId = room.roomId;
 		roomRoles = room.roles;
 	});
@@ -51,6 +57,7 @@ describe('Room Members API Tests', () => {
 			expect(response.status).toBe(201);
 			expect(response.body).toHaveProperty('memberId', userId);
 			expect(response.body).toHaveProperty('roomId', roomId);
+			expect(response.body).toHaveProperty('type', MeetRoomMemberType.REGISTERED);
 			expect(response.body).toHaveProperty('name', 'Test User');
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
 			expect(response.body).toHaveProperty('membershipDate');
@@ -75,6 +82,7 @@ describe('Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('memberId');
 			expect(response.body.memberId).toMatch(/^ext-/); // External users have memberId starting with 'ext-'
 			expect(response.body).toHaveProperty('roomId', roomId);
+			expect(response.body).toHaveProperty('type', MeetRoomMemberType.EXTERNAL);
 			expect(response.body).toHaveProperty('name', externalUserName);
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
 			expect(response.body).toHaveProperty('membershipDate');

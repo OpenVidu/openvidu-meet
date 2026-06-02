@@ -30,9 +30,7 @@
 							<div class="video-frame">
 								<ov-video-element
 									[videoTrack]="videoTrack"
-									[showAvatar]="!isVideoEnabled()"
-									[avatarName]="participantName()"
-									[avatarColor]="'hsl(48, 100%, 50%)'"
+									[avatar]="avatarView()"
 									[isLocal]="true"
 									class="video-element"
 									[id]="videoTrack?.id || 'no-video'"
@@ -67,7 +65,7 @@
 									</div>
 
 									<!-- Virtual Background Button -->
-									@if (backgroundEffectEnabled && hasVideoDevices()) {
+									@if (showBackgroundsButton() && hasVideoDevices()) {
 										<div class="background-control">
 											<button
 												mat-flat-button

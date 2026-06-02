@@ -54,6 +54,7 @@ content:
                         meetingEndAction: delete
                         _extraFields:
                             - config
+                            - roles
             room_with_active_meeting_and_recordings_scheduled_to_be_deleted:
                 value:
                     successCode: room_with_active_meeting_and_recordings_scheduled_to_be_deleted
@@ -81,6 +82,7 @@ content:
                         meetingEndAction: delete
                         _extraFields:
                             - config
+                            - roles
             room_with_active_meeting_scheduled_to_be_closed:
                 value:
                     successCode: room_with_active_meeting_scheduled_to_be_closed
@@ -108,3 +110,4 @@ content:
                         meetingEndAction: close
                         _extraFields:
                             - config
+                            - roles

@@ -177,6 +177,33 @@ export class RoomsListsComponent implements OnInit {
 		return this.filtersForm.controls;
 	}
 
+	// Pending form snapshot — reflects what's in the input fields right now.
+	// Drives transient UI cues (clear-X visibility, search-modifier active states).
+	protected filterState = signal(this.filtersForm.getRawValue());
+
+	// Applied filter snapshot — reflects what's actually filtering the table.
+	// Updated only when emitFilterChange() fires, so free-text fields that
+	// require Enter/click don't make chips appear before the search is applied.
+	protected appliedFilterState = signal(this.filtersForm.getRawValue());
+
+	// Match mode and case-insensitivity are search modifiers, not counted as active filters.
+	// Reads the applied snapshot so pending free-text input doesn't count as "active".
+	hasActiveFilters = computed(() => {
+		const f = this.appliedFilterState();
+		return !!(
+			f.nameFilter ||
+			f.statusFilter ||
+			f.ownerFilter ||
+			f.memberFilter ||
+			f.showOwnedRooms ||
+			f.showMemberRooms ||
+			f.showRegisteredAccessRooms
+		);
+	});
+
+	// Whether the inline filter panel is expanded
+	showFilterPanel = signal(false);
+
 	// Sort state
 	currentSortField = signal<MeetRoomSortField>('creationDate');
 	currentSortOrder = signal<SortOrder>(SortOrder.DESC);
@@ -204,11 +231,37 @@ export class RoomsListsComponent implements OnInit {
 
 	// Room name match mode options
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
-		{ value: TextMatchMode.EXACT, label: 'Exact' },
-		{ value: TextMatchMode.REGEX, label: 'Regex' }
+		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
+		{ value: TextMatchMode.EXACT, label: 'Exact', icon: 'format_quote' },
+		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
 	];
+
+	// Currently selected match mode option (drives the search-box trigger button)
+	currentMatchMode = computed(
+		() =>
+			this.nameMatchModeOptions.find((o) => o.value === this.filterState().nameMatchMode) ??
+			this.nameMatchModeOptions[0]
+	);
+
+	// Active filters shown as removable chips (excludes search text and match-mode/case modifiers).
+	// Reads the applied snapshot so chips only appear once the filter is actually in effect.
+	activeFilterChips = computed(() => {
+		const f = this.appliedFilterState();
+		const chips: { key: string; label: string }[] = [];
+		if (f.statusFilter) {
+			const opt = this.statusOptions.find((o) => o.value === f.statusFilter);
+			chips.push({ key: 'statusFilter', label: `Status: ${opt?.label ?? f.statusFilter}` });
+		}
+		if (f.ownerFilter) chips.push({ key: 'ownerFilter', label: `Owner: ${f.ownerFilter}` });
+		if (f.memberFilter) chips.push({ key: 'memberFilter', label: `Member: ${f.memberFilter}` });
+		if (f.showOwnedRooms) chips.push({ key: 'showOwnedRooms', label: 'Created by me' });
+		if (f.showMemberRooms) chips.push({ key: 'showMemberRooms', label: "I'm a member of" });
+		if (f.showRegisteredAccessRooms) {
+			chips.push({ key: 'showRegisteredAccessRooms', label: 'Open to all registered users' });
+		}
+		return chips;
+	});
 
 	// Expose TextMatchMode for template
 	protected readonly TextMatchMode = TextMatchMode;
@@ -247,8 +300,16 @@ export class RoomsListsComponent implements OnInit {
 	private setupFilters() {
 		const initial = this.initialFilters();
 		this.filtersForm.patchValue(initial, { emitEvent: false });
+		const initialSnapshot = this.filtersForm.getRawValue();
+		this.filterState.set(initialSnapshot);
+		this.appliedFilterState.set(initialSnapshot);
 		this.currentSortField.set(initial.sortField);
 		this.currentSortOrder.set(initial.sortOrder);
+
+		// Keep the reactive snapshot in sync with any form change
+		this.filtersForm.valueChanges
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.filterState.set(this.filtersForm.getRawValue()));
 
 		const {
 			nameFilter,
@@ -393,6 +454,28 @@ export class RoomsListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
+	toggleFilterPanel() {
+		this.showFilterPanel.update((open) => !open);
+	}
+
+	toggleCaseInsensitive() {
+		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
+	}
+
+	clearNameFilter() {
+		this.controls.nameFilter.setValue('');
+	}
+
+	setMatchMode(mode: TextMatchMode) {
+		this.controls.nameMatchMode.setValue(mode);
+	}
+
+	removeFilter(key: string) {
+		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
+		if (!control) return;
+		control.setValue(typeof control.value === 'boolean' ? false : '');
+	}
+
 	private buildFilterSnapshot(): RoomTableFilter {
 		return {
 			...this.filtersForm.getRawValue(),
@@ -402,40 +485,18 @@ export class RoomsListsComponent implements OnInit {
 	}
 
 	private emitFilterChange() {
-		this.filterChange.emit(this.buildFilterSnapshot());
-	}
-
-	hasActiveFilters(): boolean {
-		const {
-			nameFilter,
-			nameMatchMode,
-			nameCaseInsensitive,
-			statusFilter,
-			ownerFilter,
-			memberFilter,
-			showOwnedRooms,
-			showMemberRooms,
-			showRegisteredAccessRooms
-		} = this.filtersForm.getRawValue();
-		return !!(
-			nameFilter ||
-			nameMatchMode !== TextMatchMode.PREFIX ||
-			nameCaseInsensitive ||
-			statusFilter ||
-			ownerFilter ||
-			memberFilter ||
-			showOwnedRooms ||
-			showMemberRooms ||
-			showRegisteredAccessRooms
-		);
+		const snapshot = this.buildFilterSnapshot();
+		this.appliedFilterState.set(snapshot);
+		this.filterChange.emit(snapshot);
 	}
 
 	clearFilters() {
 		this.filtersForm.reset(
 			{
 				nameFilter: '',
-				nameMatchMode: TextMatchMode.PREFIX,
-				nameCaseInsensitive: false,
+				// Preserve search modifiers — they are not part of "filters"
+				nameMatchMode: this.controls.nameMatchMode.value,
+				nameCaseInsensitive: this.controls.nameCaseInsensitive.value,
 				statusFilter: '',
 				ownerFilter: '',
 				memberFilter: '',
@@ -445,6 +506,7 @@ export class RoomsListsComponent implements OnInit {
 			},
 			{ emitEvent: false }
 		);
+		this.filterState.set(this.filtersForm.getRawValue());
 		this.emitFilterChange();
 	}
 }

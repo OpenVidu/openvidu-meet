@@ -8,4 +8,4 @@ content:
                     type: string
                     example: Role for user 'alice_smith' updated successfully to 'admin'
                 user:
-                    $ref: '../../schemas/internal/meet-user.yaml'
+                    $ref: '../schemas/meet-user.yaml'

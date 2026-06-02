@@ -11,6 +11,7 @@ import type {
 import {
 	MeetParticipantModerationAction,
 	MeetRoomMemberRole,
+	MeetRoomMemberType,
 	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
 	MeetUserRole,
@@ -99,6 +100,7 @@ export class RoomMemberService {
 
 		let memberId: string;
 		let memberName: string;
+		let memberType: MeetRoomMemberType;
 		let accessUrl = `/room/${roomId}`;
 
 		if (userId) {
@@ -126,11 +128,13 @@ export class RoomMemberService {
 			// Use userId as memberId and user's name
 			memberId = userId;
 			memberName = user.name;
+			memberType = MeetRoomMemberType.REGISTERED;
 		} else if (name) {
 			// External user
 			// Generate memberId and use provided name
 			memberId = `ext-${secureUid(10)}`;
 			memberName = name;
+			memberType = MeetRoomMemberType.EXTERNAL;
 			accessUrl += `?secret=${memberId}`;
 		} else {
 			throw new Error('Either userId or name must be provided');
@@ -144,6 +148,7 @@ export class RoomMemberService {
 		const roomMember = {
 			memberId,
 			roomId,
+			type: memberType,
 			name: memberName,
 			membershipDate: now,
 			accessUrl,

@@ -136,12 +136,50 @@ export class RecordingListsComponent implements OnInit {
 		return this.filtersForm.controls;
 	}
 
+	// Pending form snapshot — reflects what's in the input fields right now.
+	// Drives transient UI cues (clear-X visibility, search-modifier active states).
+	protected filterState = signal(this.filtersForm.getRawValue());
+
+	// Applied filter snapshot — reflects what's actually filtering the table.
+	// Updated only when emitFilterChange() fires.
+	protected appliedFilterState = signal(this.filtersForm.getRawValue());
+
+	// Reads the applied snapshot so pending free-text input doesn't count as "active".
+	hasActiveFilters = computed(() => {
+		const f = this.appliedFilterState();
+		return !!(f.nameFilter || f.statusFilter);
+	});
+
+	// Whether the inline filter panel is expanded
+	showFilterPanel = signal(false);
+
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
-		{ value: TextMatchMode.EXACT, label: 'Exact match' },
-		{ value: TextMatchMode.REGEX, label: 'Regex' }
+		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
+		{ value: TextMatchMode.EXACT, label: 'Exact match', icon: 'format_quote' },
+		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
 	];
+
+	// Currently selected match mode option (drives the search-box trigger button)
+	currentMatchMode = computed(
+		() =>
+			this.nameMatchModeOptions.find((o) => o.value === this.filterState().nameMatchMode) ??
+			this.nameMatchModeOptions[0]
+	);
+
+	// Active filters shown as removable chips. Reads the applied snapshot.
+	activeFilterChips = computed(() => {
+		const f = this.appliedFilterState();
+		const chips: { key: string; label: string }[] = [];
+		if (f.statusFilter) {
+			const opt = this.statusOptions.find((o) => o.value === f.statusFilter);
+			chips.push({ key: 'statusFilter', label: `Status: ${opt?.label ?? f.statusFilter}` });
+		}
+		return chips;
+	});
+
+	// Expose TextMatchMode for template
+	protected readonly TextMatchMode = TextMatchMode;
 
 	// Sort state
 	currentSortField = signal<MeetRecordingSortField>('startDate');
@@ -231,8 +269,16 @@ export class RecordingListsComponent implements OnInit {
 	private setupFilters() {
 		const filters = this.initialFilters();
 		this.filtersForm.patchValue(filters, { emitEvent: false });
+		const initialSnapshot = this.filtersForm.getRawValue();
+		this.filterState.set(initialSnapshot);
+		this.appliedFilterState.set(initialSnapshot);
 		this.currentSortField.set(filters.sortField);
 		this.currentSortOrder.set(filters.sortOrder);
+
+		// Keep the reactive snapshot in sync with any form change
+		this.filtersForm.valueChanges
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.filterState.set(this.filtersForm.getRawValue()));
 
 		const { nameFilter, nameMatchMode, nameCaseInsensitive, statusFilter } = this.controls;
 
@@ -361,6 +407,28 @@ export class RecordingListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
+	toggleFilterPanel() {
+		this.showFilterPanel.update((open) => !open);
+	}
+
+	toggleCaseInsensitive() {
+		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
+	}
+
+	clearNameFilter() {
+		this.controls.nameFilter.setValue('');
+	}
+
+	setMatchMode(mode: TextMatchMode) {
+		this.controls.nameMatchMode.setValue(mode);
+	}
+
+	removeFilter(key: string) {
+		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
+		if (!control) return;
+		control.setValue(typeof control.value === 'boolean' ? false : '');
+	}
+
 	private buildFilterSnapshot(): RecordingTableFilter {
 		return {
 			...this.filtersForm.getRawValue(),
@@ -370,24 +438,23 @@ export class RecordingListsComponent implements OnInit {
 	}
 
 	private emitFilterChange() {
-		this.filterChange.emit(this.buildFilterSnapshot());
-	}
-
-	hasActiveFilters(): boolean {
-		const { nameFilter, nameMatchMode, nameCaseInsensitive, statusFilter } = this.filtersForm.getRawValue();
-		return !!(nameFilter || nameMatchMode !== TextMatchMode.PREFIX || nameCaseInsensitive || statusFilter);
+		const snapshot = this.buildFilterSnapshot();
+		this.appliedFilterState.set(snapshot);
+		this.filterChange.emit(snapshot);
 	}
 
 	clearFilters() {
 		this.filtersForm.reset(
 			{
 				nameFilter: '',
-				nameMatchMode: TextMatchMode.PREFIX,
-				nameCaseInsensitive: false,
+				// Preserve search modifiers — they are not part of "filters"
+				nameMatchMode: this.controls.nameMatchMode.value,
+				nameCaseInsensitive: this.controls.nameCaseInsensitive.value,
 				statusFilter: ''
 			},
 			{ emitEvent: false }
 		);
+		this.filterState.set(this.filtersForm.getRawValue());
 		this.emitFilterChange();
 	}
 }

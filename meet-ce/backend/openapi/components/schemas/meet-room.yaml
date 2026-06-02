@@ -79,8 +79,14 @@ properties:
     #         The maximum number of participants allowed in the room. If the number of participants exceeds
     #         this limit, new participants will not be allowed to join.
     roles:
-        description: >
+        description: |
             Roles for the room. Defines the complete permissions for moderator and speaker roles.
+            <br/><br/>
+
+            **Excluded from responses by default to reduce payload size.**
+            To include it in the response:
+            - **POST requests:** use the `X-ExtraFields: roles` header
+            - **Other requests:** use either the `extraFields=roles` query parameter or the `X-ExtraFields: roles` header
         type: object
         properties:
             moderator:

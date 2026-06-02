@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMember, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRoomMember, MeetRoomMemberRole, MeetRoomMemberType, MeetUserRole } from '@openvidu-meet/typings';
 import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import {
 	createRoom,
@@ -174,6 +174,69 @@ describe('Room Members API Tests', () => {
 			expect(response.body.pagination.isTruncated).toBe(false);
 		});
 
+		it('should filter members by baseRole moderator', async () => {
+			const response = await getRoomMembers(roomId, { baseRole: MeetRoomMemberRole.MODERATOR });
+			expect(response.status).toBe(200);
+			// Alice and Diana are moderators
+			expect(response.body.members.length).toBe(2);
+			expect(
+				response.body.members.every((m: MeetRoomMember) => m.baseRole === MeetRoomMemberRole.MODERATOR)
+			).toBe(true);
+		});
+
+		it('should filter members by baseRole speaker', async () => {
+			const response = await getRoomMembers(roomId, { baseRole: MeetRoomMemberRole.SPEAKER });
+			expect(response.status).toBe(200);
+			// Bob, Charlie and Eve are speakers
+			expect(response.body.members.length).toBe(3);
+			expect(response.body.members.every((m: MeetRoomMember) => m.baseRole === MeetRoomMemberRole.SPEAKER)).toBe(
+				true
+			);
+		});
+
+		it('should filter members by type registered', async () => {
+			const response = await getRoomMembers(roomId, { type: MeetRoomMemberType.REGISTERED });
+			expect(response.status).toBe(200);
+			// Alice, Charlie and Eve are registered members
+			expect(response.body.members.length).toBe(3);
+			expect(response.body.members.every((m: MeetRoomMember) => m.type === MeetRoomMemberType.REGISTERED)).toBe(
+				true
+			);
+		});
+
+		it('should filter members by type external', async () => {
+			const response = await getRoomMembers(roomId, { type: MeetRoomMemberType.EXTERNAL });
+			expect(response.status).toBe(200);
+			// Bob and Diana are external members
+			expect(response.body.members.length).toBe(2);
+			expect(response.body.members.every((m: MeetRoomMember) => m.type === MeetRoomMemberType.EXTERNAL)).toBe(
+				true
+			);
+		});
+
+		it('should combine baseRole and type filters', async () => {
+			const response = await getRoomMembers(roomId, {
+				baseRole: MeetRoomMemberRole.MODERATOR,
+				type: MeetRoomMemberType.EXTERNAL
+			});
+			expect(response.status).toBe(200);
+			// Only Diana is an external moderator
+			expect(response.body.members.length).toBe(1);
+			expect(response.body.members[0].name).toBe('Diana Prince');
+			expect(response.body.members[0].baseRole).toBe(MeetRoomMemberRole.MODERATOR);
+			expect(response.body.members[0].type).toBe(MeetRoomMemberType.EXTERNAL);
+		});
+
+		it('should return empty array when baseRole/type filters match no members', async () => {
+			const response = await getRoomMembers(roomId, {
+				baseRole: MeetRoomMemberRole.MODERATOR,
+				type: MeetRoomMemberType.REGISTERED,
+				name: 'Bob Johnson'
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.members.length).toBe(0);
+		});
+
 		it('should paginate results with maxItems', async () => {
 			const response = await getRoomMembers(roomId, { maxItems: 2 });
 			expect(response.status).toBe(200);
@@ -332,6 +395,16 @@ describe('Room Members API Tests', () => {
 		it('should fail when sortOrder is invalid', async () => {
 			const response = await getRoomMembers(roomId, { sortOrder: 'invalid' });
 			expectValidationError(response, 'sortOrder', 'Invalid enum value');
+		});
+
+		it('should fail when baseRole is invalid', async () => {
+			const response = await getRoomMembers(roomId, { baseRole: 'invalid' });
+			expectValidationError(response, 'baseRole', 'Invalid enum value');
+		});
+
+		it('should fail when type is invalid', async () => {
+			const response = await getRoomMembers(roomId, { type: 'invalid' });
+			expectValidationError(response, 'type', 'Invalid enum value');
 		});
 	});
 });

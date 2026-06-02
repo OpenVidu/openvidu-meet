@@ -1,4 +1,3 @@
-
 import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
 import { CommonModule } from '@angular/common';
 import {
@@ -126,15 +125,21 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	// ── Drag position signal ─────────────────────────────────────────────────────
 
+	/**
+	 * Constant zero offset bound to non-floating local streams
+	 */
+	readonly ZERO_DRAG_POSITION = { x: 0, y: 0 } as const;
+
 	/** Tracked drag offset; kept in sync so CD never resets an in-flight or post-drag position. */
-	readonly currentDragPosition = signal<{ x: number; y: number }>({ x: 0, y: 0 });
+	readonly currentDragPosition = signal<{ x: number; y: number }>(this.ZERO_DRAG_POSITION);
 
 	// ── Resize constants ─────────────────────────────────────────────────────────
 
 	private readonly ASPECT_RATIO = 218 / 123;
 	private readonly MIN_RESIZE_WIDTH = 160;
-	private readonly DEFAULT_MIN_HEIGHT = 123;
 	private readonly MIN_CORNER_MARGIN = 0;
+	/** Gap kept between the floating tile and the right edge of the layout. */
+	private readonly RIGHT_EDGE_MARGIN = 5;
 
 	// ── Private observer / timeout state ─────────────────────────────────────────
 
@@ -146,7 +151,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	// ── Drag tracking ─────────────────────────────────────────────────────────────
 
 	private videoIsAtRight = false;
-	private wasLocalMinimized = false;
+	private wasLocalFloating = false;
 	private lastLayoutWidth = 0;
 	private lastLayoutHeight = 0;
 
@@ -156,7 +161,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private resizeDirection = '';
 	private resizeStartClientX = 0;
 	private resizeStartWidth = 0;
-	private resizeDragStartPos = { x: 0, y: 0 };
+	private resizeDragStartPos: { x: number; y: number } = this.ZERO_DRAG_POSITION;
 	/** Cached CDK drag instance for the duration of a resize gesture (avoids per-event DOM lookup). */
 	private resizingDrag: CdkDrag | undefined;
 
@@ -167,12 +172,12 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private readonly reactiveStateEffect = effect(() => {
 		const localParticipant = this.localParticipant();
-		// Read local streams so this effect re-runs when minimize/pin/mute state changes.
+		// Read local streams so this effect re-runs when float/pin/mute state changes.
 		const localStreams = localParticipant?.streams() ?? [];
-		const isLocalMinimized = localStreams.some((s) => s.isMinimized);
+		const isLocalFloating = localStreams.some((s) => s.isFloating);
 
-		if (this.wasLocalMinimized && !isLocalMinimized) {
-			// Restore from minimized: clear CSS resize state, reset drag offset, reposition.
+		if (this.wasLocalFloating && !isLocalFloating) {
+			// Restore from floating: clear CSS resize state, reset drag offset, reposition.
 			this.videoIsAtRight = false;
 			queueMicrotask(() => {
 				const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
@@ -181,12 +186,18 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 				this.resetDragPosition();
 				this.layoutService.update();
 			});
-		} else if (!this.wasLocalMinimized && isLocalMinimized) {
-			// Just became minimized: move to bottom-left corner to avoid overlapping the main layout.
-			requestAnimationFrame(() => this.moveStreamToBottomLeft());
+		} else if (!this.wasLocalFloating && isLocalFloating) {
+			// Just became floating: move to the bottom-right corner to avoid overlapping the main layout.
+			// Mark it right-anchored so layout/panel resizes keep it pinned to the right edge.
+			this.videoIsAtRight = true;
+			// Place immediately, then re-correct after the float resize transition (0.1s) settles:
+			// the container's content height collapses for a frame as the tile leaves the grid, which
+			// would otherwise leave the tile hovering above the bottom edge.
+			requestAnimationFrame(() => this.moveStreamToBottomRight());
+			setTimeout(() => this.moveStreamToBottomRight(), 150);
 		}
 
-		this.wasLocalMinimized = isLocalMinimized;
+		this.wasLocalFloating = isLocalFloating;
 		this.remoteStreams(); // subscribe to remote track publish/unpublish, pin, mute changes
 		this.layoutService.update();
 	});
@@ -310,11 +321,14 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 			clearTimeout(this.resizeTimeout);
 			this.resizeTimeout = setTimeout(() => {
-				if (Math.abs(this.lastLayoutWidth - parentWidth) > 1 || Math.abs(this.lastLayoutHeight - parentHeight) > 1) {
+				if (
+					Math.abs(this.lastLayoutWidth - parentWidth) > 1 ||
+					Math.abs(this.lastLayoutHeight - parentHeight) > 1
+				) {
 					this.layoutService.update();
 				}
 
-				if (this.localParticipant()?.isMinimized) {
+				if (this.localParticipant()?.isFloating) {
 					const drag = this.getActiveLocalDrag();
 					if (drag) {
 						if (this.panelService.isPanelOpened()) {
@@ -371,17 +385,17 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	}
 
 	/**
-	 * Returns the CdkDrag for the minimized local camera stream, falling back to
-	 * the non-screen local participant when no element is currently minimized.
+	 * Returns the CdkDrag for the floating local camera stream, falling back to
+	 * the non-screen local participant when no element is currently floating.
 	 */
 	private getActiveLocalDrag(): CdkDrag | undefined {
 		const drags = this.cdkDragQueries();
-		const minimized = drags.find((d) => {
+		const floating = drags.find((d) => {
 			const el = d.element.nativeElement as HTMLElement;
-			return el.classList.contains('local_participant') && el.classList.contains('OV_minimized');
+			return el.classList.contains('local_participant') && el.classList.contains('OV_floating');
 		});
 		return (
-			minimized ??
+			floating ??
 			drags.find((d) => {
 				const el = d.element.nativeElement as HTMLElement;
 				return el.classList.contains('local_participant') && !el.classList.contains('OV_screen');
@@ -402,19 +416,24 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private moveStreamToRight(parentWidth: number, drag = this.getActiveLocalDrag()): void {
 		if (!drag) return;
 		const { y, width } = drag.element.nativeElement.getBoundingClientRect();
-		this.setDragPosition({ x: parentWidth - width - 10, y }, drag);
+		this.setDragPosition({ x: parentWidth - width - this.RIGHT_EDGE_MARGIN, y }, drag);
 	}
 
-	private moveStreamToBottomLeft(drag = this.getActiveLocalDrag()): void {
+	private moveStreamToBottomRight(drag = this.getActiveLocalDrag()): void {
 		if (!drag) return;
 		const container = this.layoutContainer()?.element?.nativeElement as HTMLElement | undefined;
 		if (!container) return;
-		// Use the known minimized height (CSS constant) rather than reading the DOM:
-		// at the moment the effect fires the .OV_minimized class may not yet be painted,
+		// Use the known minimum floating size (CSS constants) rather than reading the DOM:
+		// at the moment the effect fires the .OV_floating class may not yet be painted,
 		// so getBoundingClientRect would still report the layout-driven size.
-		const containerHeight = container.getBoundingClientRect().height;
+		const { width: containerWidth, height: containerHeight } = container.getBoundingClientRect();
+		const floatingWidth = this.MIN_RESIZE_WIDTH;
+		const floatingHeight = this.MIN_RESIZE_WIDTH / this.ASPECT_RATIO;
 		this.setDragPosition(
-			{ x: this.MIN_CORNER_MARGIN, y: containerHeight - this.DEFAULT_MIN_HEIGHT - this.MIN_CORNER_MARGIN },
+			{
+				x: containerWidth - floatingWidth - this.RIGHT_EDGE_MARGIN,
+				y: containerHeight - floatingHeight - this.MIN_CORNER_MARGIN
+			},
 			drag
 		);
 	}
@@ -422,15 +441,15 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private resetDragPosition(): void {
 		for (const drag of this.localParticipantDrags()) {
 			drag.reset();
-			drag.setFreeDragPosition({ x: 0, y: 0 });
+			drag.setFreeDragPosition(this.ZERO_DRAG_POSITION);
 		}
-		this.currentDragPosition.set({ x: 0, y: 0 });
+		this.currentDragPosition.set(this.ZERO_DRAG_POSITION);
 	}
 
 	/** Reads the actual CDK transform from the element's computed style. */
 	private getActualDragPosition(element: HTMLElement): { x: number; y: number } {
 		const transformStr = window.getComputedStyle(element).transform;
-		if (!transformStr || transformStr === 'none') return { x: 0, y: 0 };
+		if (!transformStr || transformStr === 'none') return this.ZERO_DRAG_POSITION;
 		const { e, f } = new DOMMatrix(transformStr);
 		return { x: e, y: f };
 	}

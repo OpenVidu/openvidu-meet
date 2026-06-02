@@ -17,7 +17,6 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -29,7 +28,14 @@ import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
-import { MeetRoomMember, MeetRoomMemberSortField, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
+import {
+	MeetRoomMember,
+	MeetRoomMemberRole,
+	MeetRoomMemberSortField,
+	MeetRoomMemberType,
+	SortOrder,
+	TextMatchMode
+} from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomMemberUiUtils } from '../../utils/ui';
@@ -43,6 +49,8 @@ export interface MemberTableFilter {
 	nameFilter: string;
 	nameMatchMode: TextMatchMode;
 	nameCaseInsensitive: boolean;
+	baseRole: MeetRoomMemberRole | '';
+	type: MeetRoomMemberType | '';
 	sortField: MeetRoomMemberSortField;
 	sortOrder: SortOrder;
 }
@@ -87,7 +95,6 @@ export interface MemberTableFilter {
 		MatProgressSpinnerModule,
 		MatToolbarModule,
 		MatBadgeModule,
-		MatDividerModule,
 		MatSortModule,
 		RouterModule,
 		DatePipe
@@ -113,6 +120,8 @@ export class RoomMembersListsComponent implements OnInit {
 		nameFilter: '',
 		nameMatchMode: TextMatchMode.PREFIX,
 		nameCaseInsensitive: false,
+		baseRole: '',
+		type: '',
 		sortField: 'membershipDate',
 		sortOrder: SortOrder.DESC
 	});
@@ -131,19 +140,80 @@ export class RoomMembersListsComponent implements OnInit {
 	filtersForm = new FormGroup({
 		nameFilter: new FormControl<string>('', { nonNullable: true }),
 		nameMatchMode: new FormControl<TextMatchMode>(TextMatchMode.PREFIX, { nonNullable: true }),
-		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true })
+		nameCaseInsensitive: new FormControl<boolean>(false, { nonNullable: true }),
+		baseRole: new FormControl<MeetRoomMemberRole | ''>('', { nonNullable: true }),
+		type: new FormControl<MeetRoomMemberType | ''>('', { nonNullable: true })
 	});
 
 	get controls() {
 		return this.filtersForm.controls;
 	}
 
+	// Pending form snapshot — reflects what's in the input fields right now.
+	// Drives transient UI cues (clear-X visibility, search-modifier active states).
+	protected filterState = signal(this.filtersForm.getRawValue());
+
+	// Applied filter snapshot — reflects what's actually filtering the table.
+	// Updated only when emitFilterChange() fires.
+	protected appliedFilterState = signal(this.filtersForm.getRawValue());
+
+	// Reads the applied snapshot so pending free-text input doesn't count as "active".
+	hasActiveFilters = computed(() => {
+		const f = this.appliedFilterState();
+		return !!(f.nameFilter || f.baseRole || f.type);
+	});
+
+	// Whether the inline filter panel is expanded
+	showFilterPanel = signal(false);
+
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
-		{ value: TextMatchMode.EXACT, label: 'Exact match' },
-		{ value: TextMatchMode.REGEX, label: 'Regex' }
+		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
+		{ value: TextMatchMode.EXACT, label: 'Exact match', icon: 'format_quote' },
+		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
 	];
+
+	// Base role filter options ('' means no filter)
+	baseRoleOptions: { value: MeetRoomMemberRole | ''; label: string }[] = [
+		{ value: '', label: 'All roles' },
+		{ value: MeetRoomMemberRole.MODERATOR, label: 'Moderator' },
+		{ value: MeetRoomMemberRole.SPEAKER, label: 'Speaker' }
+	];
+
+	// Member type filter options ('' means no filter)
+	typeOptions: { value: MeetRoomMemberType | ''; label: string }[] = [
+		{ value: '', label: 'All types' },
+		{ value: MeetRoomMemberType.REGISTERED, label: 'Registered' },
+		{ value: MeetRoomMemberType.EXTERNAL, label: 'External' }
+	];
+
+	// Active filters shown as removable chips. Reads the applied snapshot.
+	activeFilterChips = computed(() => {
+		const f = this.appliedFilterState();
+		const chips: { key: string; label: string }[] = [];
+
+		if (f.baseRole) {
+			const opt = this.baseRoleOptions.find((o) => o.value === f.baseRole);
+			chips.push({ key: 'baseRole', label: `Role: ${opt?.label ?? f.baseRole}` });
+		}
+
+		if (f.type) {
+			const opt = this.typeOptions.find((o) => o.value === f.type);
+			chips.push({ key: 'type', label: `Type: ${opt?.label ?? f.type}` });
+		}
+
+		return chips;
+	});
+
+	// Currently selected match mode option (drives the search-box trigger button)
+	currentMatchMode = computed(
+		() =>
+			this.nameMatchModeOptions.find((o) => o.value === this.filterState().nameMatchMode) ??
+			this.nameMatchModeOptions[0]
+	);
+
+	// Expose TextMatchMode for template
+	protected readonly TextMatchMode = TextMatchMode;
 
 	// Sort state
 	currentSortField = signal<MeetRoomMemberSortField>('membershipDate');
@@ -190,10 +260,18 @@ export class RoomMembersListsComponent implements OnInit {
 	private setupFilters() {
 		const filters = this.initialFilters();
 		this.filtersForm.patchValue(filters, { emitEvent: false });
+		const initialSnapshot = this.filtersForm.getRawValue();
+		this.filterState.set(initialSnapshot);
+		this.appliedFilterState.set(initialSnapshot);
 		this.currentSortField.set(filters.sortField);
 		this.currentSortOrder.set(filters.sortOrder);
 
-		const { nameFilter, nameMatchMode, nameCaseInsensitive } = this.controls;
+		// Keep the reactive snapshot in sync with any form change
+		this.filtersForm.valueChanges
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.filterState.set(this.filtersForm.getRawValue()));
+
+		const { nameFilter, nameMatchMode, nameCaseInsensitive, baseRole, type } = this.controls;
 
 		// Emit only when text field is cleared
 		nameFilter.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
@@ -201,7 +279,7 @@ export class RoomMembersListsComponent implements OnInit {
 		});
 
 		// Emit immediately on any option change
-		merge(nameMatchMode.valueChanges, nameCaseInsensitive.valueChanges)
+		merge(nameMatchMode.valueChanges, nameCaseInsensitive.valueChanges, baseRole.valueChanges, type.valueChanges)
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe(() => this.emitFilterChange());
 	}
@@ -305,6 +383,28 @@ export class RoomMembersListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
+	toggleFilterPanel() {
+		this.showFilterPanel.update((open) => !open);
+	}
+
+	removeFilter(key: string) {
+		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
+		if (!control) return;
+		control.setValue(typeof control.value === 'boolean' ? false : '');
+	}
+
+	toggleCaseInsensitive() {
+		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
+	}
+
+	clearNameFilter() {
+		this.controls.nameFilter.setValue('');
+	}
+
+	setMatchMode(mode: TextMatchMode) {
+		this.controls.nameMatchMode.setValue(mode);
+	}
+
 	private buildFilterSnapshot(): MemberTableFilter {
 		return {
 			...this.filtersForm.getRawValue(),
@@ -314,23 +414,24 @@ export class RoomMembersListsComponent implements OnInit {
 	}
 
 	private emitFilterChange() {
-		this.filterChange.emit(this.buildFilterSnapshot());
-	}
-
-	hasActiveFilters(): boolean {
-		const { nameFilter, nameMatchMode, nameCaseInsensitive } = this.filtersForm.getRawValue();
-		return !!(nameFilter || nameMatchMode !== TextMatchMode.PREFIX || nameCaseInsensitive);
+		const snapshot = this.buildFilterSnapshot();
+		this.appliedFilterState.set(snapshot);
+		this.filterChange.emit(snapshot);
 	}
 
 	clearFilters() {
 		this.filtersForm.reset(
 			{
 				nameFilter: '',
-				nameMatchMode: TextMatchMode.PREFIX,
-				nameCaseInsensitive: false
+				// Preserve search modifiers — they are not part of "filters"
+				nameMatchMode: this.controls.nameMatchMode.value,
+				nameCaseInsensitive: this.controls.nameCaseInsensitive.value,
+				baseRole: '',
+				type: ''
 			},
 			{ emitEvent: false }
 		);
+		this.filterState.set(this.filtersForm.getRawValue());
 		this.emitFilterChange();
 	}
 }

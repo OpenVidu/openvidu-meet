@@ -81,7 +81,7 @@
 					padding: var(--ov-meet-spacing-md);
 					background: var(--ov-meet-surface-color);
 
-					&:hover {
+					&:hover:not(.access-disabled) {
 						background: var(--ov-meet-surface-hover);
 						border-color: var(--ov-meet-color-primary);
 					}
@@ -89,6 +89,21 @@
 					&.mat-mdc-radio-button-checked {
 						border-color: var(--ov-meet-color-primary);
 						background: rgba(var(--ov-meet-color-primary), 0.05);
+					}
+
+					&.access-disabled {
+						background: var(--ov-meet-surface-variant);
+						border-style: dashed;
+
+						.option-content {
+							.option-icon {
+								color: var(--ov-meet-text-disabled);
+							}
+
+							.option-details .option-title {
+								color: var(--ov-meet-text-disabled);
+							}
+						}
 					}
 
 					.option-content {
@@ -100,6 +115,7 @@
 						.option-icon {
 							@include design-tokens.ov-icon(md);
 							color: var(--ov-meet-text-secondary);
+							flex-shrink: 0;
 						}
 
 						.option-details {

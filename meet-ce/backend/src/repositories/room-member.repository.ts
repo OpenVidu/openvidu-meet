@@ -174,6 +174,8 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param options.name - Optional member name to filter by
 	 * @param options.nameMatchMode - Match mode for name filtering (default: 'exact')
 	 * @param options.nameCaseInsensitive - Whether name filtering should ignore case (default: false)
+	 * @param options.baseRole - Optional base role to filter members by
+	 * @param options.type - Optional member type (registered or external) to filter members by
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination
@@ -201,6 +203,8 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 			name,
 			nameMatchMode = TextMatchMode.EXACT,
 			nameCaseInsensitive = false,
+			baseRole,
+			type,
 			fields,
 			maxItems = 100,
 			nextPageToken,
@@ -213,6 +217,14 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 
 		if (name) {
 			filter.name = buildStringMatchFilter(name, nameMatchMode, nameCaseInsensitive);
+		}
+
+		if (baseRole) {
+			filter.baseRole = baseRole;
+		}
+
+		if (type) {
+			filter.type = type;
 		}
 
 		// Use base repository's pagination method

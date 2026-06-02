@@ -69,11 +69,14 @@
     "UNMUTE_SOUND": "サウンドを有効にする",
     "ZOOM_IN": "拡大する",
     "ZOOM_OUT": "縮小する",
+    "RESET_ZOOM": "ズームをリセット",
     "REPLACE_SCREEN": "スクリーンを入れ替える",
     "PIN": "ピン",
     "UNPIN": "ピンの解除",
-    "MINIMIZE": "最小化",
-    "MAXIMIZE": "最大化"
+    "FLOAT": "フロート",
+    "DOCK": "ドッキング",
+    "SCREEN_LABEL": "画面",
+    "YOUR_SCREEN_LABEL": "あなたの画面"
   },
   "PANEL": {
     "CLOSE": "閉じる",
@@ -108,7 +111,9 @@
         "GOOD": "良好",
         "POOR": "不良",
         "LOST": "失われた"
-      }
+      },
+      "SHARING_SCREEN": "画面を共有中",
+      "MIC_OFF": "マイクオフ"
     },
     "SETTINGS": {
       "TITLE": "設定",

@@ -41,6 +41,7 @@ export * from './models/logger.model';
 export * from './models/panel.model';
 export * from './models/participant.model';
 export * from './models/recording.model';
+export * from './models/screen-zoom.model';
 export * from './models/theme.model';
 export * from './models/toolbar.model';
 export * from './models/viewport.model';

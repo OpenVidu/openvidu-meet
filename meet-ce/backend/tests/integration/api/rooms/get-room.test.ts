@@ -38,6 +38,25 @@ describe('Room API Tests', () => {
 			expectExtraFieldsInResponse(response.body);
 		});
 
+		it('should not include roles by default and include them when requested via extraFields', async () => {
+			const createdRoom = await createRoom({ roomName: 'roles-extra-field' });
+
+			// Without extraFields, roles should be excluded
+			const defaultResponse = await getRoom(createdRoom.roomId);
+			expect(defaultResponse.status).toBe(200);
+			expect(defaultResponse.body.roles).toBeUndefined();
+			expectExtraFieldsInResponse(defaultResponse.body);
+
+			// With extraFields=roles, roles should be included
+			const withRolesResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
+			expect(withRolesResponse.status).toBe(200);
+			expect(withRolesResponse.body.roles).toBeDefined();
+			expect(withRolesResponse.body.roles.moderator.permissions).toBeDefined();
+			expect(withRolesResponse.body.roles.speaker.permissions).toBeDefined();
+			// config remains excluded since it was not requested
+			expect(withRolesResponse.body.config).toBeUndefined();
+		});
+
 		it('should retrieve a room with custom config', async () => {
 			const payload = {
 				roomName: 'custom-config',

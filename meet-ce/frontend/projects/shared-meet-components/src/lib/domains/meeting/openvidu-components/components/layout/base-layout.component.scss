@@ -63,12 +63,14 @@
 	height: 0px !important;
 }
 
-.OV_minimized {
+.OV_floating {
 	// Width/height use CSS custom properties so the resize feature can override them
 	// while !important still beats the layout renderer's inline styles.
+	// The fallbacks are the minimum allowed size (160px wide), so a freshly floated
+	// tile starts as small as possible until the user resizes it.
 	position: relative;
-	width: var(--ov-min-w, 218px) !important;
-	height: var(--ov-min-h, 123px) !important;
+	width: var(--ov-min-w, 160px) !important;
+	height: var(--ov-min-h, calc(160px * 123 / 218)) !important;
 	bottom: 0 !important;
 	right: 0 !important;
 	top: 0 !important;

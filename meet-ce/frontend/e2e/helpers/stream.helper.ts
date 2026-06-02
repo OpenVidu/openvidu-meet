@@ -1,5 +1,39 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { hoverStream } from './ui-utils.helper';
+
+/**
+ * Polls the bounding box of {@link locator} until it stops moving / resizing or
+ * the timeout elapses. Used to gate clicks on tiles that are mid-reflow (e.g. the
+ * settings panel just closed, or the smart-layout slider just changed): without
+ * this, the click target keeps reporting "element is not stable" or detaches
+ * from the DOM right when the click is dispatched.
+ */
+const waitForBoundingBoxStable = async (
+	locator: Locator,
+	{ samples = 4, intervalMs = 100, timeoutMs = 5_000 }: { samples?: number; intervalMs?: number; timeoutMs?: number } = {}
+): Promise<void> => {
+	const deadline = Date.now() + timeoutMs;
+	let stableHits = 0;
+	let prev = await locator.boundingBox();
+
+	while (Date.now() < deadline) {
+		await locator.page().waitForTimeout(intervalMs);
+		const next = await locator.boundingBox();
+
+		const matches =
+			!!prev &&
+			!!next &&
+			Math.abs(prev.x - next.x) < 1 &&
+			Math.abs(prev.y - next.y) < 1 &&
+			Math.abs(prev.width - next.width) < 1 &&
+			Math.abs(prev.height - next.height) < 1;
+
+		stableHits = matches ? stableHits + 1 : 0;
+		prev = next;
+
+		if (stableHits >= samples) return;
+	}
+};
 
 // ─── Remote stream waiting ──────────────────────────────────────────────────
 
@@ -227,11 +261,16 @@ export const expectPinnedStreamCount = async (page: Page, count: number): Promis
  * Automatically detects whether the stream is currently pinned and clicks the appropriate button.
  */
 export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 10_000): Promise<void> => {
-	// Hover the stream so the controls render. `hover()` plants the mouse over
-	// the element (instead of just brushing through it like click does), which
-	// makes the 2s HOVER_TIMEOUT in stream.component less likely to hide the
-	// controls before we click the pin button.
 	const target = page.locator(selector).first();
+	await target.waitFor({ state: 'visible', timeout: timeoutMs });
+
+	// Tests routinely call this right after closing the settings panel or moving the
+	// smart-mosaic slider — both of which trigger layout reflows that keep moving the
+	// tile (and re-mounting its inner controls) for a few hundred ms. Without a settle
+	// wait, the click reports "element is not stable" repeatedly and eventually
+	// "element was detached from the DOM".
+	await waitForBoundingBoxStable(target);
+
 	await target.hover();
 
 	// Scope pin/unpin lookup to the target stream — `#pin-btn` is duplicated
@@ -242,11 +281,18 @@ export const toggleStreamPin = async (page: Page, selector: string, timeoutMs = 
 
 	await expect(pinButton.or(unpinButton)).toBeVisible({ timeout: timeoutMs });
 
-	if (await pinButton.isVisible()) {
-		await pinButton.click();
+	const willPin = await pinButton.isVisible();
+	const buttonToClick = willPin ? pinButton : unpinButton;
+
+	// Re-hover immediately before the click. Between the visibility check and the
+	// click, the stream-component's HOVER_TIMEOUT (2s) can elapse and hide the
+	// controls — re-hovering keeps the button in the DOM long enough to land the click.
+	await target.hover();
+	await buttonToClick.click();
+
+	if (willPin) {
 		await expect(page.locator('.OV_big .OV_stream').first()).toBeVisible({ timeout: timeoutMs });
 	} else {
-		await unpinButton.click();
 		await expect(page.locator('.OV_big .OV_stream')).toHaveCount(0, { timeout: timeoutMs });
 	}
 };
@@ -316,33 +362,33 @@ export const getScreenSourceTracks = async (
 	});
 };
 
-// ─── Stream layout (minimize / maximize / drag) ─────────────────────────────
+// ─── Stream layout (float / dock / drag) ─────────────────────────────
 
 /**
- * Minimizes the local stream by hovering and clicking the minimize button.
+ * Floats the local stream by hovering and clicking the float button.
  */
-export const minimizeStream = async (page: Page): Promise<void> => {
+export const floatStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.OV_publisher .OV_stream_video.local');
-	await expect(page.locator('#minimize-btn')).toBeVisible();
-	await page.locator('#minimize-btn').click();
+	await expect(page.locator('#float-btn')).toBeVisible();
+	await page.locator('#float-btn').click();
 };
 
 /**
- * Maximizes (restores) the local stream by hovering and clicking the
- * minimize/maximize toggle button.
+ * Docks (restores) the local stream by hovering and clicking the
+ * float/dock toggle button.
  */
-export const maximizeStream = async (page: Page): Promise<void> => {
+export const dockStream = async (page: Page): Promise<void> => {
 	await hoverStream(page, '.local_participant .OV_stream_video.local');
-	await expect(page.locator('#minimize-btn')).toBeVisible();
-	await page.locator('#minimize-btn').click();
+	await expect(page.locator('#float-btn')).toBeVisible();
+	await page.locator('#float-btn').click();
 };
 
 /**
- * Drags a resize handle on the minimized local video by the given pixel delta.
+ * Drags a resize handle on the floating local video by the given pixel delta.
  * {@link handleClass} should be one of: resize-se, resize-sw, resize-ne, resize-nw.
  */
 export const resizeStream = async (page: Page, handleClass: string, deltaX: number, deltaY: number): Promise<void> => {
-	const handle = page.locator(`.OV_minimized .resize-handle.${handleClass}`).first();
+	const handle = page.locator(`.OV_floating .resize-handle.${handleClass}`).first();
 	await expect(handle).toBeVisible({ timeout: 5_000 });
 	const box = await handle.boundingBox();
 
@@ -354,6 +400,106 @@ export const resizeStream = async (page: Page, handleClass: string, deltaX: numb
 	await page.mouse.down();
 	await page.mouse.move(startX + deltaX, startY + deltaY, { steps: 10 });
 	await page.mouse.up();
+};
+
+// ─── Screen-share zoom controls ─────────────────────────────────────────────
+
+/**
+ * Locator for the local screen-share stream container.
+ */
+export const screenShareStream = (page: Page): Locator => page.locator('.local_participant.OV_screen').first();
+
+/**
+ * Hovers the local screen-share stream so its overlay controls (pin + the zoom
+ * feature group) become visible, and returns the screen-share container locator.
+ *
+ * Sharing your own screen pops the "share this link" panel and reflows the
+ * layout, so a single `.hover()` can land while the tile is still moving and
+ * never trigger the overlay. Retrying the hover until `.stream-video-controls`
+ * is actually visible makes the helper robust against that reflow.
+ */
+export const hoverScreenShareStream = async (page: Page): Promise<Locator> => {
+	const container = screenShareStream(page);
+	await expect(container).toBeVisible({ timeout: 10_000 });
+
+	const controls = container.locator('.stream-video-controls');
+	await expect(async () => {
+		await container.hover();
+		await expect(controls).toBeVisible({ timeout: 1_000 });
+	}).toPass({ timeout: 15_000 });
+
+	return container;
+};
+
+/**
+ * Reads the screen-share zoom percentage from the `#zoom-level` label. Returns
+ * 100 when no label is present (i.e. the stream is at its 1x base, where the
+ * label is intentionally hidden).
+ */
+export const readZoomPercent = async (page: Page): Promise<number> => {
+	const label = screenShareStream(page).locator('#zoom-level');
+
+	if ((await label.count()) === 0) {
+		return 100;
+	}
+
+	const text = (await label.textContent())?.trim() ?? '';
+	const value = Number.parseInt(text.replace('%', ''), 10);
+	return Number.isNaN(value) ? 100 : value;
+};
+
+/**
+ * Clicks the screen-share zoom-in button {@link times} times, verifying the
+ * displayed percentage strictly increases on each step. Re-hovers and retries
+ * each click because the button shifts position as the reset/zoom-out buttons
+ * and the percentage label appear on the first zoom step, which can otherwise
+ * race a click against the re-render.
+ */
+export const zoomInScreenShare = async (page: Page, times = 1): Promise<void> => {
+	const container = await hoverScreenShareStream(page);
+	const zoomIn = container.locator('#zoom-in-btn');
+
+	// Thread the last confirmed percentage forward instead of re-reading a fresh
+	// baseline each iteration: a fresh read can momentarily see the label detached
+	// (returning 100) and let a no-op click "pass", silently dropping a step.
+	let confirmed = await readZoomPercent(page);
+
+	for (let i = 0; i < times; i += 1) {
+		const previous = confirmed;
+
+		await expect(async () => {
+			await container.hover();
+			await expect(zoomIn).toBeVisible({ timeout: 1_000 });
+			await zoomIn.click();
+			// The percentage is driven by a signal; give Angular a tick to flush the text.
+			await expect.poll(() => readZoomPercent(page), { timeout: 1_000 }).toBeGreaterThan(previous);
+		}).toPass({ timeout: 10_000 });
+
+		confirmed = await readZoomPercent(page);
+	}
+};
+
+/**
+ * Clicks a scoped zoom control (e.g. `#zoom-out-btn`, `#reset-zoom-btn`) on the
+ * screen-share stream, re-hovering first so the auto-hide timer can't remove it.
+ */
+export const clickZoomControl = async (page: Page, buttonId: string): Promise<void> => {
+	const container = await hoverScreenShareStream(page);
+	const button = container.locator(`#${buttonId}`);
+	await expect(button).toBeVisible({ timeout: 5_000 });
+	await button.click();
+};
+
+/**
+ * Returns the ordered ids of the elements inside the screen-share zoom control
+ * group, e.g. `['reset-zoom-btn', 'zoom-out-btn', 'zoom-level', 'zoom-in-btn']`.
+ */
+export const getZoomControlOrder = async (page: Page): Promise<string[]> => {
+	const container = await hoverScreenShareStream(page);
+
+	return await container
+		.locator('.stream-video-controls .control-group > *')
+		.evaluateAll((elements) => elements.map((element) => element.id).filter((id) => id.length > 0));
 };
 
 /**

@@ -25,39 +25,6 @@ content:
                     autoDeletionPolicy:
                         withMeeting: when_meeting_ends
                         withRecordings: close
-                    roles:
-                        moderator:
-                            permissions:
-                                canRecord: true
-                                canRetrieveRecordings: true
-                                canDeleteRecordings: true
-                                canJoinMeeting: true
-                                canShareAccessLinks: true
-                                canMakeModerator: true
-                                canKickParticipants: true
-                                canEndMeeting: true
-                                canPublishVideo: true
-                                canPublishAudio: true
-                                canShareScreen: true
-                                canReadChat: true
-                                canWriteChat: true
-                                canChangeVirtualBackground: true
-                        speaker:
-                            permissions:
-                                canRecord: false
-                                canRetrieveRecordings: true
-                                canDeleteRecordings: false
-                                canJoinMeeting: true
-                                canShareAccessLinks: false
-                                canMakeModerator: false
-                                canKickParticipants: false
-                                canEndMeeting: false
-                                canPublishVideo: true
-                                canPublishAudio: true
-                                canShareScreen: true
-                                canReadChat: true
-                                canWriteChat: true
-                                canChangeVirtualBackground: true
                     access:
                         anonymous:
                             moderator:
@@ -76,6 +43,7 @@ content:
                     meetingEndAction: none
                     _extraFields:
                         - config
+                        - roles
 
             fields=roomId,roomName,creationDate,autoDeletionDate,config:
                 summary: Room details with roomId, roomName, creationDate, autoDeletionDate, and config
@@ -99,9 +67,10 @@ content:
                             enabled: true
                     _extraFields:
                         - config
+                        - roles
 
-            extraFields=config:
-                summary: Room details with expanded config
+            extraFields=config,roles:
+                summary: Room details with expanded config and roles
                 value:
                     roomId: 'room-123'
                     roomName: 'room'
@@ -175,6 +144,7 @@ content:
                     meetingEndAction: none
                     _extraFields:
                         - config
+                        - roles
             fields=access:
                 summary: Response containing only access configuration
                 value:
@@ -194,3 +164,4 @@ content:
                             url: 'https://example.com/room/room-123'
                     _extraFields:
                         - config
+                        - roles

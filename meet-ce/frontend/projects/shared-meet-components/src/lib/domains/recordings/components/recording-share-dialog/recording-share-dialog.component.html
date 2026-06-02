@@ -25,6 +25,7 @@
 							<mat-radio-button
 								value="public"
 								class="access-option"
+								[class.access-disabled]="!canGeneratePublicUrls()"
 								[disabled]="!canGeneratePublicUrls()"
 							>
 								<div class="option-content">

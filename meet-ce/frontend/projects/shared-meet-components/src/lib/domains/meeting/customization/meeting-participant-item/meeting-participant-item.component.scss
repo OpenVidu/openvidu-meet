@@ -8,12 +8,30 @@
 		padding: 2px 10px !important;
 	}
 
+	.owner-badge,
+	.admin-badge,
 	.moderator-badge {
-		color: var(--ov-meet-color-warning);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		line-height: 1;
 
 		mat-icon {
-			vertical-align: bottom;
+			display: block;
+			line-height: 1;
 		}
+	}
+
+	.owner-badge {
+		color: var(--ov-meet-badge-owner-color);
+	}
+
+	.admin-badge {
+		color: var(--ov-meet-badge-admin-color);
+	}
+
+	.moderator-badge {
+		color: var(--ov-meet-badge-moderator-color);
 	}
 }
 

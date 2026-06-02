@@ -6,7 +6,8 @@ import { HttpService } from '../../../shared/services/http.service';
 	providedIn: 'root'
 })
 export class UserService {
-	protected readonly USERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/users`;
+	protected readonly USERS_API = `${HttpService.API_PATH_PREFIX}/users`;
+	protected readonly INTERNAL_USERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/users`;
 
 	constructor(protected httpService: HttpService) {}
 
@@ -72,7 +73,7 @@ export class UserService {
 	 * @returns A promise that resolves to the MeetUserDTO of the authenticated user
 	 */
 	async getMe(): Promise<MeetUserDTO> {
-		return this.httpService.getRequest(`${this.USERS_API}/me`);
+		return this.httpService.getRequest(`${this.INTERNAL_USERS_API}/me`);
 	}
 
 	/**
@@ -102,7 +103,7 @@ export class UserService {
 		accessToken?: string;
 		refreshToken?: string;
 	}> {
-		const path = `${this.USERS_API}/change-password`;
+		const path = `${this.INTERNAL_USERS_API}/change-password`;
 		return this.httpService.postRequest(path, { currentPassword, newPassword });
 	}
 

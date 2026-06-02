@@ -69,11 +69,14 @@
     "UNMUTE_SOUND": "Stummschaltung aufheben",
     "ZOOM_IN": "Vergrößern",
     "ZOOM_OUT": "Herauszoomen",
+    "RESET_ZOOM": "Zoom zurücksetzen",
     "REPLACE_SCREEN": "Bildschirm austauschen",
     "PIN": "Anheften",
     "UNPIN": "Loslösen",
-    "MINIMIZE": "Minimieren",
-    "MAXIMIZE": "Maximieren"
+    "FLOAT": "Abdocken",
+    "DOCK": "Andocken",
+    "SCREEN_LABEL": "Bildschirm",
+    "YOUR_SCREEN_LABEL": "Ihr Bildschirm"
   },
   "PANEL": {
     "CLOSE": "Schließen",
@@ -108,7 +111,9 @@
         "GOOD": "Gut",
         "POOR": "Schlecht",
         "LOST": "Verloren"
-      }
+      },
+      "SHARING_SCREEN": "Bildschirm wird geteilt",
+      "MIC_OFF": "Mikrofon aus"
     },
     "SETTINGS": {
       "TITLE": "Einstellungen",

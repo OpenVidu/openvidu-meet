@@ -106,6 +106,8 @@ export class RoomDetailComponent implements OnInit {
 		nameFilter: '',
 		nameMatchMode: TextMatchMode.PREFIX,
 		nameCaseInsensitive: false,
+		baseRole: '',
+		type: '',
 		sortField: 'membershipDate',
 		sortOrder: SortOrder.DESC
 	});
@@ -167,6 +169,11 @@ export class RoomDetailComponent implements OnInit {
 
 		await this.loadRoomDetails();
 
+		// Open the Room Members tab directly when requested (e.g. after adding a member)
+		if (this.route.snapshot.queryParamMap.get('tab') === 'members' && this.canManageRoom()) {
+			this.selectedTabIndex.set(1);
+		}
+
 		clearTimeout(delayLoader);
 		this.showInitialLoader.set(false);
 		this.isInitializing.set(false);
@@ -222,7 +229,7 @@ export class RoomDetailComponent implements OnInit {
 		const room = this.room()!;
 		this.dialog.open(RoomShareDialogComponent, {
 			width: '450px',
-			data: { access: room.access },
+			data: { access: room.access, roomId: room.roomId, canManageRoom: this.canManageRoom() },
 			panelClass: 'ov-meet-dialog'
 		});
 	}
@@ -324,6 +331,16 @@ export class RoomDetailComponent implements OnInit {
 				memberFilters.name = filters.nameFilter;
 				memberFilters.nameMatchMode = filters.nameMatchMode;
 				memberFilters.nameCaseInsensitive = filters.nameCaseInsensitive || undefined;
+			}
+
+			// Apply base role filter if provided
+			if (filters.baseRole) {
+				memberFilters.baseRole = filters.baseRole;
+			}
+
+			// Apply member type filter if provided
+			if (filters.type) {
+				memberFilters.type = filters.type;
 			}
 
 			const response = await this.roomMemberService.listRoomMembers(this.roomId(), memberFilters);

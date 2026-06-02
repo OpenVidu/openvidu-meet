@@ -2,7 +2,7 @@ description: User created successfully
 content:
     application/json:
         schema:
-            $ref: '../../schemas/internal/meet-user.yaml'
+            $ref: '../schemas/meet-user.yaml'
 headers:
     Location:
         description: URL of the newly created user

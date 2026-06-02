@@ -107,7 +107,9 @@ describe('Room API Tests', () => {
 		});
 
 		it('should allow fully updating all permissions for a single role', async () => {
-			const createdRoom = await createRoom({ roomName: 'partial-roles-update-test' });
+			const createdRoom = await createRoom({ roomName: 'partial-roles-update-test' }, undefined, {
+				xExtraFields: 'roles'
+			});
 
 			const partialRoles = {
 				speaker: {
@@ -142,7 +144,9 @@ describe('Room API Tests', () => {
 		});
 
 		it('should allow partially updating permissions for a single role while preserving other permissions', async () => {
-			const createdRoom = await createRoom({ roomName: 'partial-roles-update-test' });
+			const createdRoom = await createRoom({ roomName: 'partial-roles-update-test' }, undefined, {
+				xExtraFields: 'roles'
+			});
 
 			const partialRoles = {
 				speaker: {

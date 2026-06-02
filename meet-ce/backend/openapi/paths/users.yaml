@@ -1,0 +1,199 @@
+/users:
+    post:
+        operationId: createUser
+        summary: Create a new user
+        description: |
+            Creates a new user account in the system.
+
+            The userId must be unique. If a user with the specified userId already exists,
+            the request will fail with a conflict error.
+        tags:
+            - OpenVidu Meet - Users
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        requestBody:
+            $ref: '../components/requestBodies/create-user-request.yaml'
+        responses:
+            '201':
+                $ref: '../components/responses/success-create-user.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '409':
+                $ref: '../components/responses/error-userId-already-exists.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    get:
+        operationId: getUsers
+        summary: Get all users
+        description: |
+            Retrieves a paginated list of all users in the system.
+
+            By default, the users are sorted by registration date in descending order (newest first).
+        tags:
+            - OpenVidu Meet - Users
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/user-id-query.yaml'
+            - $ref: '../components/parameters/user-name.yaml'
+            - $ref: '../components/parameters/user-name-match-mode.yaml'
+            - $ref: '../components/parameters/user-name-case-insensitive.yaml'
+            - $ref: '../components/parameters/user-role.yaml'
+            - $ref: '../components/parameters/max-items.yaml'
+            - $ref: '../components/parameters/next-page-token.yaml'
+            - $ref: '../components/parameters/user-sort-field.yaml'
+            - $ref: '../components/parameters/sort-order.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-users.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    delete:
+        operationId: bulkDeleteUsers
+        summary: Bulk delete users
+        description: |
+            Deletes multiple users at once by their userIds.
+        tags:
+            - OpenVidu Meet - Users
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/user-ids.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-bulk-delete-users.yaml'
+            '400':
+                $ref: '../components/responses/error-bulk-delete-users.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/users/{userId}:
+    get:
+        operationId: getUser
+        summary: Get a user
+        description: >
+            Retrieves the details of a specific user by their userId.
+        tags:
+            - OpenVidu Meet - Users
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/user-id-path.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-get-user.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-user-not-found.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+    delete:
+        operationId: deleteUser
+        summary: Delete a user
+        description: |
+            Deletes a user from the system.
+
+            This operation will remove the user account and may affect rooms and resources
+            associated with this user.
+
+            > **Note:** Cannot delete your own user account or the root admin user.
+        tags:
+            - OpenVidu Meet - Users
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/user-id-path.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-delete-user.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-user-not-found.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/users/{userId}/password:
+    put:
+        operationId: resetUserPassword
+        summary: Reset user password
+        description: |
+            Allows an admin to reset the password of a specific user.
+
+            > **Note:** Cannot reset your own password using this endpoint. Use the `change-password` endpoint instead.
+        tags:
+            - OpenVidu Meet - Users
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/user-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/reset-password-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-reset-password.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-user-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'
+/users/{userId}/role:
+    put:
+        operationId: updateUserRole
+        summary: Update user role
+        description: |
+            Allows an admin to change the role of a specific user.
+
+            > **Note:** Cannot change your own role or the role of the root admin user.
+        tags:
+            - OpenVidu Meet - Users
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: '../components/parameters/user-id-path.yaml'
+        requestBody:
+            $ref: '../components/requestBodies/update-user-role-request.yaml'
+        responses:
+            '200':
+                $ref: '../components/responses/success-update-user-role.yaml'
+            '401':
+                $ref: '../components/responses/unauthorized-error.yaml'
+            '403':
+                $ref: '../components/responses/forbidden-error.yaml'
+            '404':
+                $ref: '../components/responses/error-user-not-found.yaml'
+            '422':
+                $ref: '../components/responses/validation-error.yaml'
+            '500':
+                $ref: '../components/responses/internal-server-error.yaml'

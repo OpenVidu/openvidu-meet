@@ -4,22 +4,8 @@
 .users-toolbar {
 	@extend .ov-data-toolbar;
 
-	.toolbar-left {
-		::ng-deep .search-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
-	}
-
 	.toolbar-right {
 		gap: var(--ov-meet-spacing-sm);
-
-		::ng-deep .refresh-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
-
-		::ng-deep .clear-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
 	}
 }
 

@@ -5,7 +5,12 @@
 		[class.no-size]="!showVideo()"
 		[class.local]="stream.participant.isLocal"
 		[class.remote]="!stream.participant.isLocal"
-		[class.speaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream && stream.participant.isCameraEnabled"
+		[class.speaking]="
+			showAudioDetection() &&
+			stream.participant.isSpeaking &&
+			stream.isCameraStream &&
+			stream.participant.isCameraEnabled
+		"
 		[class.screen-source]="stream.isScreenStream"
 		[class.camera-source]="stream.isCameraStream"
 		[id]="'stream-' + stream.source + '-' + stream.streamId"
@@ -17,7 +22,7 @@
 				<div class="participant-name-container">
 					<span id="participant-name">{{ stream.participant.name }}</span>
 					@if (stream.isScreenStream) {
-						<span id="participant-name">_SCREEN</span>
+						<span class="participant-screen-label"> ({{ (stream.participant.isLocal ? 'STREAM.YOUR_SCREEN_LABEL' : 'STREAM.SCREEN_LABEL') | translate }})</span>
 					}
 				</div>
 			</div>
@@ -27,7 +32,12 @@
 			<ov-connection-quality-indicator [participant]="stream.participant" />
 		}
 
-		@if (showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream && stream.participant.isCameraEnabled) {
+		@if (
+			showAudioDetection() &&
+			stream.participant.isSpeaking &&
+			stream.isCameraStream &&
+			stream.participant.isCameraEnabled
+		) {
 			<div id="audio-wave-container">
 				<ov-audio-wave />
 			</div>
@@ -35,12 +45,9 @@
 
 		<ov-video-element
 			[videoTrack]="stream.videoTrack?.track"
-			[showAvatar]="stream.isCameraStream && (!stream.videoTrack?.track || !stream.participant.isCameraEnabled)"
-			[avatarColor]="stream.participant.colorProfile"
-			[avatarName]="stream.participant.name ?? ''"
 			[isLocal]="stream.participant.isLocal"
-			[hasEncryptionError]="stream.participant.hasEncryptionError"
-			[isSpeaking]="showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream"
+			[avatar]="avatarView()"
+			[zoomState]="stream.zoom"
 		/>
 
 		@if (
@@ -61,8 +68,41 @@
 		}
 
 		@if (showVideoControls() && mouseHovering() && !stream.participant.hasEncryptionError) {
-			<div class="stream-video-controls">
+			<div class="stream-video-controls" (mouseenter)="keepControlsVisible()" (mouseleave)="releaseControls()">
 				<div class="flex-container">
+					@if (stream.isScreenStream && stream.zoom; as zoom) {
+						<div class="control-group" [class.zoom-group]="zoom.isZoomed">
+							@if (zoom.isZoomed) {
+								<button
+									mat-icon-button
+									id="reset-zoom-btn"
+									(click)="zoom.reset()"
+									[matTooltip]="'STREAM.RESET_ZOOM' | translate"
+								>
+									<mat-icon fontIcon="zoom_out_map" />
+								</button>
+								<button
+									mat-icon-button
+									id="zoom-out-btn"
+									(click)="zoom.zoomOut()"
+									[disabled]="!zoom.canZoomOut"
+									[matTooltip]="'STREAM.ZOOM_OUT' | translate"
+								>
+									<mat-icon fontIcon="remove" />
+								</button>
+								<span id="zoom-level" class="zoom-level">{{ zoom.level() * 100 }}%</span>
+							}
+							<button
+								mat-icon-button
+								id="zoom-in-btn"
+								(click)="zoom.zoomIn()"
+								[disabled]="!zoom.canZoomIn"
+								[matTooltip]="'STREAM.ZOOM_IN' | translate"
+							>
+								<mat-icon [fontIcon]="zoom.isZoomed ? 'add' : 'zoom_in'" />
+							</button>
+						</div>
+					}
 					<button
 						mat-icon-button
 						[id]="stream.isPinned ? 'unpin-btn' : 'pin-btn'"
@@ -75,7 +115,7 @@
 							<mat-icon id="pinned" fontIcon="push_pin" />
 						}
 					</button>
-					@if (!stream.participant.isLocal) {
+					@if (!stream.participant.isLocal && stream.audioTrack) {
 						<button
 							mat-icon-button
 							id="mute-btn"
@@ -94,20 +134,20 @@
 							}
 						</button>
 					}
-					@if (stream.participant.isLocal) {
+					@if (stream.participant.isLocal && stream.isCameraStream) {
 						<button
 							mat-icon-button
-							id="minimize-btn"
+							id="float-btn"
 							[disabled]="stream.isPinned"
-							(click)="toggleMinimize()"
+							(click)="toggleFloat()"
 							[matTooltip]="
-								stream.isMinimized ? ('STREAM.MAXIMIZE' | translate) : ('STREAM.MINIMIZE' | translate)
+								stream.isFloating ? ('STREAM.DOCK' | translate) : ('STREAM.FLOAT' | translate)
 							"
 						>
-							@if (stream.isMinimized) {
-								<mat-icon id="minimize">open_in_full</mat-icon>
+							@if (stream.isFloating) {
+								<mat-icon id="dock-icon" fontSet="material-symbols-outlined">grid_view</mat-icon>
 							} @else {
-								<mat-icon>close_fullscreen</mat-icon>
+								<mat-icon id="float-icon" fontSet="material-symbols-outlined">pip</mat-icon>
 							}
 						</button>
 					}

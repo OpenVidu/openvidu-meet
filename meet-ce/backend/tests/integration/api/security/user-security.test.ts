@@ -15,7 +15,8 @@ import {
 import { setupTestUsers } from '../../../helpers/test-scenarios.js';
 import { TestUsers } from '../../../interfaces/scenarios.js';
 
-const USERS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`);
+const USERS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`);
+const INTERNAL_USERS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`);
 
 describe('User API Security Tests', () => {
 	let app: Express;
@@ -43,12 +44,12 @@ describe('User API Security Tests', () => {
 			};
 		};
 
-		it('should fail when using API key', async () => {
+		it('should succeed when using API key', async () => {
 			const response = await request(app)
 				.post(USERS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send(getNewUserData());
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(201);
 		});
 
 		it('should succeed when user is authenticated as root admin', async () => {
@@ -90,11 +91,11 @@ describe('User API Security Tests', () => {
 	});
 
 	describe('Get Users Tests', () => {
-		it('should fail when using API key', async () => {
+		it('should succeed when using API key', async () => {
 			const response = await request(app)
 				.get(USERS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as root admin', async () => {
@@ -145,11 +146,11 @@ describe('User API Security Tests', () => {
 			userId = response.body.userId;
 		});
 
-		it('should fail when using API key', async () => {
+		it('should succeed when using API key', async () => {
 			const response = await request(app)
 				.get(`${USERS_PATH}/${userId}`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as root admin', async () => {
@@ -201,12 +202,12 @@ describe('User API Security Tests', () => {
 			userId = response.body.userId;
 		});
 
-		it('should fail when using API key', async () => {
+		it('should succeed when using API key', async () => {
 			const response = await request(app)
 				.put(`${USERS_PATH}/${userId}/password`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send({ newPassword });
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as root admin', async () => {
@@ -261,12 +262,12 @@ describe('User API Security Tests', () => {
 			userId = response.body.userId;
 		});
 
-		it('should fail when using API key', async () => {
+		it('should succeed when using API key', async () => {
 			const response = await request(app)
 				.put(`${USERS_PATH}/${userId}/role`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send({ role: MeetUserRole.ADMIN });
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as root admin', async () => {
@@ -322,11 +323,11 @@ describe('User API Security Tests', () => {
 			userId = response.body.userId;
 		});
 
-		it('should fail when using API key', async () => {
+		it('should succeed when using API key', async () => {
 			const response = await request(app)
 				.delete(`${USERS_PATH}/${userId}`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as root admin', async () => {
@@ -378,12 +379,12 @@ describe('User API Security Tests', () => {
 			userId = response.body.userId;
 		});
 
-		it('should fail when using API key', async () => {
+		it('should succeed when using API key', async () => {
 			const response = await request(app)
 				.delete(USERS_PATH)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.query({ userIds: userId });
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as root admin', async () => {
@@ -427,34 +428,34 @@ describe('User API Security Tests', () => {
 	describe('Profile Tests', () => {
 		it('should succeed when user is authenticated as root admin', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken);
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken);
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as USER', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when user is authenticated as ROOM_MEMBER', async () => {
 			const response = await request(app)
-				.get(`${USERS_PATH}/me`)
+				.get(`${INTERNAL_USERS_PATH}/me`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(200);
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).get(`${USERS_PATH}/me`);
+			const response = await request(app).get(`${INTERNAL_USERS_PATH}/me`);
 			expect(response.status).toBe(401);
 		});
 	});
@@ -464,7 +465,7 @@ describe('User API Security Tests', () => {
 
 		it('should succeed when user is authenticated as root admin', async () => {
 			const response = await request(app)
-				.post(`${USERS_PATH}/change-password`)
+				.post(`${INTERNAL_USERS_PATH}/change-password`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, rootAdminAccessToken)
 				.send({
 					currentPassword: MEET_ENV.INITIAL_ADMIN_PASSWORD,
@@ -478,7 +479,7 @@ describe('User API Security Tests', () => {
 
 		it('should succeed when user is authenticated as ADMIN', async () => {
 			const response = await request(app)
-				.post(`${USERS_PATH}/change-password`)
+				.post(`${INTERNAL_USERS_PATH}/change-password`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.admin.accessToken)
 				.send({
 					currentPassword: testUsers.admin.password,
@@ -492,7 +493,7 @@ describe('User API Security Tests', () => {
 
 		it('should succeed when user is authenticated as USER', async () => {
 			const response = await request(app)
-				.post(`${USERS_PATH}/change-password`)
+				.post(`${INTERNAL_USERS_PATH}/change-password`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
 				.send({
 					currentPassword: testUsers.user.password,
@@ -506,7 +507,7 @@ describe('User API Security Tests', () => {
 
 		it('should succeed when user is authenticated as ROOM_MEMBER', async () => {
 			const response = await request(app)
-				.post(`${USERS_PATH}/change-password`)
+				.post(`${INTERNAL_USERS_PATH}/change-password`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken)
 				.send({
 					currentPassword: testUsers.roomMember.password,
@@ -519,7 +520,7 @@ describe('User API Security Tests', () => {
 		});
 
 		it('should fail when user is not authenticated', async () => {
-			const response = await request(app).post(`${USERS_PATH}/change-password`).send({
+			const response = await request(app).post(`${INTERNAL_USERS_PATH}/change-password`).send({
 				currentPassword: MEET_ENV.INITIAL_ADMIN_PASSWORD,
 				newPassword
 			});

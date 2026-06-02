@@ -197,6 +197,7 @@
 		align-items: center;
 		flex: 1;
 		min-width: 0;
+		gap: var(--ov-meet-spacing-sm);
 	}
 
 	.toolbar-center {
@@ -631,6 +632,209 @@
 					display: none;
 				}
 			}
+		}
+	}
+}
+
+// Inline search modifiers
+.ov-search-modifier {
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	width: 30px !important;
+	height: 30px !important;
+	padding: 0 !important;
+	line-height: 1 !important;
+	color: var(--ov-meet-text-secondary);
+	@include layout.ov-theme-transition;
+
+	.mat-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 18px;
+		width: 18px;
+		height: 18px;
+		line-height: 18px;
+		margin: 0;
+	}
+
+	.modifier-label {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-bold);
+		line-height: 1;
+	}
+
+	&:hover {
+		color: var(--ov-meet-text-primary);
+		background-color: var(--ov-meet-surface-hover);
+	}
+
+	&.active {
+		color: var(--ov-meet-color-primary);
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 16%, transparent);
+	}
+}
+
+// Center matSuffix buttons and the search input row within the shared search field
+.ov-search-field {
+	::ng-deep {
+		.mat-mdc-form-field-icon-suffix {
+			display: inline-flex;
+			align-items: center;
+			gap: 2px;
+		}
+
+		.mat-mdc-form-field-flex {
+			align-items: center;
+		}
+	}
+}
+
+// Keep icon buttons next to the search field vertically centered with it
+.ov-data-toolbar .toolbar-left .mat-mdc-icon-button {
+	align-self: center;
+}
+
+// Material's default mat-icon-button renders the glyph slightly off-center; adding
+// padding restores proper centering. Apply this uniformly to icon-buttons in the
+// toolbar's left section and the inline filter panel. The .ov-search-modifier
+// buttons opt out since they have their own explicit sizing.
+.ov-data-toolbar .toolbar-left .mat-mdc-icon-button:not(.ov-search-modifier),
+.ov-filter-panel .mat-mdc-icon-button:not(.ov-search-modifier) {
+	padding: var(--ov-meet-spacing-sm);
+}
+
+// Match-mode selection menu
+.ov-match-mode-menu {
+	.mat-mdc-menu-item.active {
+		color: var(--ov-meet-color-primary);
+		font-weight: var(--ov-meet-font-weight-semibold);
+	}
+}
+
+// Filters trigger button - active highlight when filters are applied
+.ov-filters-trigger.has-filters {
+	color: var(--ov-meet-color-primary);
+	background-color: color-mix(in srgb, var(--ov-meet-color-primary) 12%, transparent);
+}
+
+// Inline filter panel
+.ov-filter-panel {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	gap: var(--ov-meet-spacing-md) var(--ov-meet-spacing-xl);
+	padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+	margin-bottom: var(--ov-meet-spacing-md);
+	background-color: var(--ov-meet-surface-elevated);
+	border: 1px solid var(--ov-meet-border-light);
+	border-radius: var(--ov-meet-radius-md);
+
+	.filter-group {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-sm);
+		min-width: 220px;
+
+		h4 {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-xs);
+			font-weight: var(--ov-meet-font-weight-semibold);
+			color: var(--ov-meet-text-secondary);
+			text-transform: uppercase;
+			letter-spacing: 0.5px;
+		}
+
+		.filter-description {
+			margin: 0;
+			font-size: var(--ov-meet-font-size-xs);
+			color: var(--ov-meet-text-secondary);
+			line-height: 1.4;
+			max-width: 320px;
+		}
+
+		mat-form-field {
+			width: 100%;
+
+			::ng-deep .mat-mdc-form-field-subscript-wrapper {
+				display: none;
+			}
+		}
+
+		.filter-checkboxes {
+			display: flex;
+			flex-direction: column;
+			gap: var(--ov-meet-spacing-xs);
+		}
+	}
+}
+
+// Active filter chips
+.ov-active-filters {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: var(--ov-meet-spacing-sm);
+	margin-bottom: var(--ov-meet-spacing-md);
+
+	.active-filters-label {
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-medium);
+		color: var(--ov-meet-text-secondary);
+	}
+
+	.filter-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+		border: 1px solid var(--ov-meet-color-primary);
+		border-radius: 16px;
+		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 10%, transparent);
+		color: var(--ov-meet-color-primary);
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-medium);
+		cursor: pointer;
+		@include layout.ov-theme-transition;
+
+		&:hover {
+			background-color: color-mix(in srgb, var(--ov-meet-color-primary) 18%, transparent);
+		}
+
+		.mat-icon {
+			font-size: 16px;
+			width: 16px;
+			height: 16px;
+			line-height: 16px;
+		}
+	}
+
+	.clear-all-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-xs);
+		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
+		background: none;
+		border: none;
+		color: var(--ov-meet-text-secondary);
+		font-size: var(--ov-meet-font-size-xs);
+		font-weight: var(--ov-meet-font-weight-medium);
+		text-decoration: underline;
+		cursor: pointer;
+
+		.mat-icon {
+			font-size: 16px;
+			width: 16px;
+			height: 16px;
+			line-height: 16px;
+		}
+
+		&:hover {
+			color: var(--ov-meet-color-primary);
 		}
 	}
 }

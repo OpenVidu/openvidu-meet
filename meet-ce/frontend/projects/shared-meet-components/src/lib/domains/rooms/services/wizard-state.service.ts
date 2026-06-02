@@ -431,6 +431,17 @@ export class RoomWizardStateService {
 		return false;
 	}
 
+	/**
+	 * Navigates to a step identified by its WizardStepId, if visible.
+	 * @param stepId - The ID of the step to navigate to
+	 * @returns true if navigation succeeded, false otherwise
+	 */
+	goToStepById(stepId: WizardStepId): boolean {
+		const targetIndex = this._visibleSteps().findIndex((step) => step.id === stepId);
+		if (targetIndex === -1) return false;
+		return this.goToStep(targetIndex);
+	}
+
 	getNavigationConfig(): WizardNavigationConfig {
 		const currentIndex = this._currentStepIndex();
 		const visibleSteps = this._visibleSteps();

@@ -8,6 +8,7 @@ import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { MEET_ENV, logEnvVars } from './environment.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
+import { staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
 import { analyticsRouter } from './routes/analytics.routes.js';
 import { aiAssistantRouter } from './routes/ai-assistant.routes.js';
@@ -18,7 +19,7 @@ import { livekitWebhookRouter } from './routes/livekit.routes.js';
 import { internalMeetingRouter } from './routes/meeting.routes.js';
 import { recordingRouter } from './routes/recording.routes.js';
 import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
-import { userRouter } from './routes/user.routes.js';
+import { internalUserRouter, userRouter } from './routes/user.routes.js';
 import { getBasePath, getHtmlWithBasePath, getOpenApiHtmlWithBasePath } from './utils/html-dynamic-base-path.utils.js';
 import {
 	frontendDirectoryPath,
@@ -77,9 +78,12 @@ const createApp = () => {
 	appRouter.use(express.static(frontendDirectoryPath, { index: false }));
 
 	// Public API routes
-	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, (_req: Request, res: Response) =>
+	// Public, unauthenticated docs page: cheap single HTML response, so a generous per-IP ceiling
+	// protects against trivial flooding without affecting legitimate use.
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/docs`, staticAssetLimiter, (_req: Request, res: Response) =>
 		res.type('html').send(getOpenApiHtmlWithBasePath(publicApiHtmlFilePath, INTERNAL_CONFIG.API_BASE_PATH_V1))
 	);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`, userRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 
@@ -95,7 +99,7 @@ const createApp = () => {
 
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/auth`, authRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`, apiKeyRouter);
-	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, userRouter);
+	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, internalUserRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`, internalMeetingRouter);
 	// appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
@@ -106,7 +110,9 @@ const createApp = () => {
 	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
 	// Serve OpenVidu Meet webcomponent bundle file
-	appRouter.get('/v1/openvidu-meet.js', (_req: Request, res: Response) => res.sendFile(webcomponentBundlePath));
+	appRouter.get('/v1/openvidu-meet.js', staticAssetLimiter, (_req: Request, res: Response) =>
+		res.sendFile(webcomponentBundlePath)
+	);
 	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
 	appRouter.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => {
 		res.type('html').send(getHtmlWithBasePath(frontendHtmlPath));

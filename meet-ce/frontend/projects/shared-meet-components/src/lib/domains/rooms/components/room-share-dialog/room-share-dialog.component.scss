@@ -61,7 +61,7 @@
 					padding: var(--ov-meet-spacing-md);
 					background: var(--ov-meet-surface-color);
 
-					&:hover:not(.mat-mdc-radio-button-disabled) {
+					&:hover:not(.access-disabled) {
 						background: var(--ov-meet-surface-hover);
 						border-color: var(--ov-meet-color-primary);
 					}
@@ -71,9 +71,19 @@
 						background: rgba(var(--ov-meet-color-primary), 0.05);
 					}
 
-					&.mat-mdc-radio-button-disabled {
-						opacity: 0.5;
-						cursor: not-allowed;
+					&.access-disabled {
+						background: var(--ov-meet-surface-variant);
+						border-style: dashed;
+
+						.option-content {
+							.option-icon {
+								color: var(--ov-meet-text-disabled);
+							}
+
+							.option-details .option-title {
+								color: var(--ov-meet-text-disabled);
+							}
+						}
 					}
 
 					.option-content {
@@ -85,6 +95,7 @@
 						.option-icon {
 							@include design-tokens.ov-icon(md);
 							color: var(--ov-meet-text-secondary);
+							flex-shrink: 0;
 						}
 
 						.option-details {
@@ -99,25 +110,24 @@
 								font-size: var(--ov-meet-font-size-md);
 								font-weight: var(--ov-meet-font-weight-medium);
 								color: var(--ov-meet-text-primary);
-
-								.access-restricted-badge {
-									display: inline-flex;
-									align-items: center;
-									padding: 1px var(--ov-meet-spacing-xs);
-									border-radius: var(--ov-meet-radius-xs, 4px);
-									font-size: var(--ov-meet-font-size-xs);
-									font-weight: var(--ov-meet-font-weight-semibold);
-									color: var(--ov-meet-color-warning, #b45309);
-									background: rgba(var(--ov-meet-color-warning-rgb, 180, 83, 9), 0.12);
-									border: 1px solid rgba(var(--ov-meet-color-warning-rgb, 180, 83, 9), 0.3);
-									line-height: 1.4;
-									white-space: nowrap;
-								}
 							}
 
 							.option-description {
 								font-size: var(--ov-meet-font-size-sm);
 								color: var(--ov-meet-text-secondary);
+
+								.enable-link {
+									// Keep the link interactive even inside a disabled radio option
+									pointer-events: auto;
+									color: var(--ov-meet-color-primary);
+									font-weight: var(--ov-meet-font-weight-medium);
+									cursor: pointer;
+									text-decoration: underline;
+
+									&:hover {
+										color: var(--ov-meet-color-primary-dark);
+									}
+								}
 							}
 						}
 					}
@@ -125,10 +135,49 @@
 			}
 		}
 
+		.external-members-info {
+			display: flex;
+			align-items: flex-start;
+			gap: var(--ov-meet-spacing-sm);
+			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+			background: color-mix(in srgb, var(--ov-meet-color-primary) 8%, transparent);
+			border-left: 3px solid var(--ov-meet-color-primary);
+			border-radius: var(--ov-meet-radius-sm);
+
+			.external-members-info-icon {
+				@include design-tokens.ov-icon(sm);
+				color: var(--ov-meet-color-primary);
+				flex-shrink: 0;
+				margin-top: 2px;
+			}
+
+			.external-members-info-text {
+				margin: 0;
+				font-size: var(--ov-meet-font-size-sm);
+				color: var(--ov-meet-text-secondary);
+				line-height: var(--ov-meet-line-height-normal);
+			}
+		}
+
+		.generate-section {
+			@include design-tokens.ov-flex-center;
+			justify-content: center;
+
+			.generate-button {
+				@include design-tokens.ov-button-base;
+				@include design-tokens.ov-flex-center;
+				gap: var(--ov-meet-spacing-sm);
+
+				mat-icon {
+					@include design-tokens.ov-icon(sm);
+				}
+			}
+		}
+
 		.url-section {
 			display: flex;
 			flex-direction: column;
-			gap: var(--ov-meet-spacing-sm);
+			gap: var(--ov-meet-spacing-md);
 
 			.url-container {
 				position: relative;
@@ -184,6 +233,27 @@
 					color: var(--ov-meet-color-success);
 					font-size: var(--ov-meet-font-size-sm);
 					font-weight: var(--ov-meet-font-weight-medium);
+
+					mat-icon {
+						@include design-tokens.ov-icon(sm);
+					}
+				}
+			}
+
+			.url-actions {
+				@include design-tokens.ov-flex-center;
+				justify-content: center;
+				margin-top: var(--ov-meet-spacing-md);
+
+				.back-button {
+					@include design-tokens.ov-flex-center;
+					gap: var(--ov-meet-spacing-xs);
+					color: var(--ov-meet-text-secondary);
+
+					&:hover {
+						color: var(--ov-meet-text-primary);
+						background-color: var(--ov-meet-surface-hover);
+					}
 
 					mat-icon {
 						@include design-tokens.ov-icon(sm);

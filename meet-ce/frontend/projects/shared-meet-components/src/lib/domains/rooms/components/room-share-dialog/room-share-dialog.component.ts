@@ -7,6 +7,7 @@ import {
 	MatDialogActions,
 	MatDialogClose,
 	MatDialogContent,
+	MatDialogRef,
 	MatDialogTitle
 } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,8 +16,16 @@ import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRoomAccess } from '@openvidu-meet/typings';
+import { NavigationService } from '../../../../shared/services/navigation.service';
+import { WizardStepId } from '../../models/wizard.model';
 
 export type RoomAccessType = 'anonymous-moderator' | 'anonymous-speaker' | 'registered';
+
+export interface RoomShareDialogData {
+	access: MeetRoomAccess;
+	roomId?: string;
+	canManageRoom?: boolean;
+}
 
 @Component({
 	selector: 'ov-share-room-dialog',
@@ -38,12 +47,17 @@ export type RoomAccessType = 'anonymous-moderator' | 'anonymous-speaker' | 'regi
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomShareDialogComponent {
-	readonly data = inject<{ access: MeetRoomAccess }>(MAT_DIALOG_DATA);
+	readonly data = inject<RoomShareDialogData>(MAT_DIALOG_DATA);
 
 	private readonly clipboard = inject(Clipboard);
+	private readonly navigationService = inject(NavigationService);
+	private readonly dialogRef = inject(MatDialogRef<RoomShareDialogComponent>);
+
 	copied = signal(false);
+	roomUrl = signal<string | undefined>(undefined);
 
 	selectedAccessType = signal<RoomAccessType>('registered');
+
 	currentUrl = computed(() => {
 		const access = this.data.access;
 		switch (this.selectedAccessType()) {
@@ -56,12 +70,53 @@ export class RoomShareDialogComponent {
 		}
 	});
 
+	isCurrentAccessSelectable = computed(() => this.isAccessEnabled(this.selectedAccessType()));
+
+	isAccessEnabled(accessType: RoomAccessType): boolean {
+		const access = this.data.access;
+		switch (accessType) {
+			case 'anonymous-moderator':
+				return access.anonymous.moderator.enabled;
+			case 'anonymous-speaker':
+				return access.anonymous.speaker.enabled;
+			case 'registered':
+				// Registered access link always works for admins and room members,
+				// even when general registered access is "restricted" (disabled).
+				return true;
+		}
+	}
+
+	onAccessTypeChange(accessType: RoomAccessType) {
+		this.selectedAccessType.set(accessType);
+		this.roomUrl.set(undefined);
+		this.copied.set(false);
+	}
+
+	generateLink() {
+		if (!this.isCurrentAccessSelectable()) return;
+		this.roomUrl.set(this.currentUrl());
+	}
+
 	copyToClipboard() {
-		this.clipboard.copy(this.currentUrl());
+		const url = this.roomUrl();
+		if (!url) return;
+
+		this.clipboard.copy(url);
 		this.copied.set(true);
 
 		setTimeout(() => {
 			this.copied.set(false);
 		}, 2000);
+	}
+
+	goBack() {
+		this.roomUrl.set(undefined);
+		this.copied.set(false);
+	}
+
+	async editRoomAccess() {
+		if (!this.data.canManageRoom || !this.data.roomId) return;
+		this.dialogRef.close();
+		await this.navigationService.navigateTo(`/rooms/${this.data.roomId}/edit`, { step: WizardStepId.ROOM_ACCESS });
 	}
 }

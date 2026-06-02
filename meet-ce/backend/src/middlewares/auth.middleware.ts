@@ -1,7 +1,5 @@
 import type { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
-import rateLimit from 'express-rate-limit';
-import ms from 'ms';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import {
@@ -339,25 +337,4 @@ const setAuthenticatedUserIfPresent = async (req: Request): Promise<void> => {
 		const logger = container.get(LoggerService);
 		logger.debug('Token found but invalid:' + error);
 	}
-};
-
-// Limit login attempts to avoid brute force attacks
-const loginLimiter = rateLimit({
-	windowMs: ms('5m'),
-	limit: 5,
-	skipSuccessfulRequests: true,
-	message: 'Too many login attempts, please try again later',
-	// Use standard draft-7 headers for better proxy compatibility
-	standardHeaders: 'draft-7',
-	// Disable legacy headers
-	legacyHeaders: false
-});
-
-export const withLoginLimiter = (req: Request, res: Response, next: NextFunction) => {
-	// Bypass rate limiting in test environment
-	if (process.env.NODE_ENV === 'test') {
-		return next();
-	}
-
-	return loginLimiter(req, res, next);
 };

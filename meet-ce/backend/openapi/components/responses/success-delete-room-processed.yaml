@@ -79,6 +79,7 @@ content:
                         meetingEndAction: none
                         _extraFields:
                             - config
+                            - roles
             room_with_active_meeting_and_recordings_deleted:
                 value:
                     successCode: room_with_active_meeting_and_recordings_deleted
@@ -110,3 +111,4 @@ content:
                         meetingEndAction: close
                         _extraFields:
                             - config
+                            - roles

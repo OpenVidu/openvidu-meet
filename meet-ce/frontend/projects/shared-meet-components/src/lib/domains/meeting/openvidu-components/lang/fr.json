@@ -69,11 +69,14 @@
     "UNMUTE_SOUND": "Désactiver le son",
     "ZOOM_IN": "Zoom avant",
     "ZOOM_OUT": "Zoom arrière",
+    "RESET_ZOOM": "Réinitialiser le zoom",
     "REPLACE_SCREEN": "Remplacer l'écran",
     "PIN": "Épingler",
     "UNPIN": "Détacher",
-    "MINIMIZE": "Réduire",
-    "MAXIMIZE": "Agrandir"
+    "FLOAT": "Détacher",
+    "DOCK": "Ancrer",
+    "SCREEN_LABEL": "écran",
+    "YOUR_SCREEN_LABEL": "votre écran"
   },
   "PANEL": {
     "CLOSE": "Fermer",
@@ -108,7 +111,9 @@
         "GOOD": "Bonne",
         "POOR": "Médiocre",
         "LOST": "Perdue"
-      }
+      },
+      "SHARING_SCREEN": "Partage d'écran en cours",
+      "MIC_OFF": "Microphone désactivé"
     },
     "SETTINGS": {
       "TITLE": "Paramètres",

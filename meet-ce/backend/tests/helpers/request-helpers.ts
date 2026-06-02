@@ -262,30 +262,27 @@ export const refreshTokenReq = async (refreshToken: string) => {
 export const createUser = async (options: MeetUserOptions) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
 	return await request(app)
-		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send(options);
 };
 
 export const getUsers = async (query: Record<string, unknown> = {}) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
 	return await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.query(query);
 };
 
 export const getUser = async (userId: string) => {
 	checkAppIsRunning();
 
-	const { accessToken } = await loginRootAdmin();
 	return await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users/${userId}`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 		.send();
 };
 
@@ -337,7 +334,7 @@ export const resetUserPassword = async (userId: string, newPassword: string, acc
 
 	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
-		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/password`))
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users/${userId}/password`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send({ newPassword });
 };
@@ -347,7 +344,7 @@ export const updateUserRole = async (userId: string, role: string, accessToken?:
 
 	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
-		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}/role`))
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users/${userId}/role`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send({ role });
 };
@@ -357,7 +354,7 @@ export const deleteUser = async (userId: string, accessToken?: string) => {
 
 	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
-		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users/${userId}`))
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users/${userId}`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.send();
 };
@@ -367,7 +364,7 @@ export const bulkDeleteUsers = async (userIds: string[], accessToken?: string) =
 
 	const { accessToken: rootAdminAccessToken } = await loginRootAdmin();
 	return await request(app)
-		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`))
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken ?? rootAdminAccessToken)
 		.query({ userIds: userIds.join(',') });
 };

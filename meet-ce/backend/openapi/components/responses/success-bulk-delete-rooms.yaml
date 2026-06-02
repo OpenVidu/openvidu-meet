@@ -88,6 +88,7 @@ content:
                               meetingEndAction: none
                               _extraFields:
                                   - config
+                                  - roles
             room_with_active_meeting_scheduled_to_be_deleted:
                 summary: Room with active meeting scheduled to be deleted
                 value:
@@ -118,6 +119,7 @@ content:
                               meetingEndAction: delete
                               _extraFields:
                                   - config
+                                  - roles
             room_with_active_meeting_closed:
                 summary: Room with active meeting closed
                 value:
@@ -148,6 +150,7 @@ content:
                               meetingEndAction: close
                               _extraFields:
                                   - config
+                                  - roles
             room_with_active_meeting_and_recordings_scheduled_to_be_deleted:
                 summary: Room with active meeting and recordings scheduled to be deleted
                 value:
@@ -178,6 +181,7 @@ content:
                               meetingEndAction: delete
                               _extraFields:
                                   - config
+                                  - roles
             room_with_active_meeting_scheduled_to_be_closed:
                 summary: Room with active meeting scheduled to be closed
                 value:
@@ -208,6 +212,7 @@ content:
                               meetingEndAction: close
                               _extraFields:
                                   - config
+                                  - roles
 
             room_deleted:
                 summary: Room deleted successfully

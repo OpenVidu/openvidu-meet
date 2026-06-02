@@ -17,7 +17,6 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDividerModule } from '@angular/material/divider';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -89,7 +88,6 @@ export interface UserTableFilter {
 		MatProgressSpinnerModule,
 		MatToolbarModule,
 		MatBadgeModule,
-		MatDividerModule,
 		MatSortModule,
 		DatePipe
 	],
@@ -142,12 +140,50 @@ export class UsersListsComponent implements OnInit {
 		return this.filtersForm.controls;
 	}
 
+	// Pending form snapshot — reflects what's in the input fields right now.
+	// Drives transient UI cues (clear-X visibility, search-modifier active states).
+	protected filterState = signal(this.filtersForm.getRawValue());
+
+	// Applied filter snapshot — reflects what's actually filtering the table.
+	// Updated only when emitFilterChange() fires.
+	protected appliedFilterState = signal(this.filtersForm.getRawValue());
+
+	// Reads the applied snapshot so pending free-text input doesn't count as "active".
+	hasActiveFilters = computed(() => {
+		const f = this.appliedFilterState();
+		return !!(f.nameFilter || f.roleFilter);
+	});
+
+	// Whether the inline filter panel is expanded
+	showFilterPanel = signal(false);
+
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains' },
-		{ value: TextMatchMode.EXACT, label: 'Exact match' },
-		{ value: TextMatchMode.REGEX, label: 'Regex' }
+		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
+		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
+		{ value: TextMatchMode.EXACT, label: 'Exact match', icon: 'format_quote' },
+		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
 	];
+
+	// Currently selected match mode option (drives the search-box trigger button)
+	currentMatchMode = computed(
+		() =>
+			this.nameMatchModeOptions.find((o) => o.value === this.filterState().nameMatchMode) ??
+			this.nameMatchModeOptions[0]
+	);
+
+	// Active filters shown as removable chips. Reads the applied snapshot.
+	activeFilterChips = computed(() => {
+		const f = this.appliedFilterState();
+		const chips: { key: string; label: string }[] = [];
+		if (f.roleFilter) {
+			const opt = this.roleOptions.find((o) => o.value === f.roleFilter);
+			chips.push({ key: 'roleFilter', label: `Role: ${opt?.label ?? f.roleFilter}` });
+		}
+		return chips;
+	});
+
+	// Expose TextMatchMode for template
+	protected readonly TextMatchMode = TextMatchMode;
 
 	// Sort state
 	currentSortField = signal<MeetUserSortField>('registrationDate');
@@ -205,8 +241,16 @@ export class UsersListsComponent implements OnInit {
 	private setupFilters() {
 		const filters = this.initialFilters();
 		this.filtersForm.patchValue(filters, { emitEvent: false });
+		const initialSnapshot = this.filtersForm.getRawValue();
+		this.filterState.set(initialSnapshot);
+		this.appliedFilterState.set(initialSnapshot);
 		this.currentSortField.set(filters.sortField);
 		this.currentSortOrder.set(filters.sortOrder);
+
+		// Keep the reactive snapshot in sync with any form change
+		this.filtersForm.valueChanges
+			.pipe(takeUntilDestroyed(this.destroyRef))
+			.subscribe(() => this.filterState.set(this.filtersForm.getRawValue()));
 
 		const { nameFilter, nameMatchMode, nameCaseInsensitive, roleFilter } = this.controls;
 
@@ -320,6 +364,28 @@ export class UsersListsComponent implements OnInit {
 		this.emitFilterChange();
 	}
 
+	toggleFilterPanel() {
+		this.showFilterPanel.update((open) => !open);
+	}
+
+	toggleCaseInsensitive() {
+		this.controls.nameCaseInsensitive.setValue(!this.controls.nameCaseInsensitive.value);
+	}
+
+	clearNameFilter() {
+		this.controls.nameFilter.setValue('');
+	}
+
+	setMatchMode(mode: TextMatchMode) {
+		this.controls.nameMatchMode.setValue(mode);
+	}
+
+	removeFilter(key: string) {
+		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
+		if (!control) return;
+		control.setValue(typeof control.value === 'boolean' ? false : '');
+	}
+
 	private buildFilterSnapshot(): UserTableFilter {
 		return {
 			...this.filtersForm.getRawValue(),
@@ -329,24 +395,23 @@ export class UsersListsComponent implements OnInit {
 	}
 
 	private emitFilterChange() {
-		this.filterChange.emit(this.buildFilterSnapshot());
-	}
-
-	hasActiveFilters(): boolean {
-		const { nameFilter, nameMatchMode, nameCaseInsensitive, roleFilter } = this.filtersForm.getRawValue();
-		return !!(nameFilter || nameMatchMode !== TextMatchMode.PREFIX || nameCaseInsensitive || roleFilter);
+		const snapshot = this.buildFilterSnapshot();
+		this.appliedFilterState.set(snapshot);
+		this.filterChange.emit(snapshot);
 	}
 
 	clearFilters() {
 		this.filtersForm.reset(
 			{
 				nameFilter: '',
-				nameMatchMode: TextMatchMode.PREFIX,
-				nameCaseInsensitive: false,
+				// Preserve search modifiers — they are not part of "filters"
+				nameMatchMode: this.controls.nameMatchMode.value,
+				nameCaseInsensitive: this.controls.nameCaseInsensitive.value,
 				roleFilter: ''
 			},
 			{ emitEvent: false }
 		);
+		this.filterState.set(this.filtersForm.getRawValue());
 		this.emitFilterChange();
 	}
 }

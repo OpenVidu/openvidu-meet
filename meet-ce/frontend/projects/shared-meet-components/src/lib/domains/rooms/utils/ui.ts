@@ -250,7 +250,7 @@ export class RoomUiUtils {
 	 */
 	static getShareAccessLinksTooltip(room: MeetRoom): string {
 		if (!RoomUiUtils.canShareAccessLinks(room)) {
-			return 'Room is closed. Reopen the room to allow sharing the access links';
+			return 'Room is closed. Reopen the room to allow sharing access links';
 		}
 
 		return 'Share access links';

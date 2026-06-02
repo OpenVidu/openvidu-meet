@@ -116,6 +116,7 @@ export const expectSuccessRoomConfigResponse = (response: Response, config: Meet
 export const expectExtraFieldsInResponse = (room: MeetRoom) => {
 	expect((room as any)._extraFields).toBeDefined();
 	expect((room as any)._extraFields).toContain('config');
+	expect((room as any)._extraFields).toContain('roles');
 };
 
 export const expectValidRoom = (
@@ -167,8 +168,6 @@ export const expectValidRoom = (
 	}
 
 	expect(room.owner).toBeDefined();
-	expect(room.roles).toBeDefined();
-
 	expect(room.access).toBeDefined();
 	expect(room.access.anonymous.moderator).toBeDefined();
 	expect(room.access.anonymous.speaker).toBeDefined();

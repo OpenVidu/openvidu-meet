@@ -8,6 +8,16 @@ properties:
 
             - For registered Meet users: This is set to the userId of the linked Meet user account.
             - For external users: This is an automatically generated unique identifier starting from 'ext-'.
+    type:
+        type: string
+        enum:
+            - registered
+            - external
+        example: 'registered'
+        description: |
+            The type of the room member. Options are:
+            - registered: A registered Meet user, linked to a Meet user account.
+            - external: An external user, not linked to any Meet user account.
     name:
         type: string
         example: 'Alice Smith'

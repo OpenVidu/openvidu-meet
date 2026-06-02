@@ -75,6 +75,12 @@ export class RoomWizardComponent implements OnInit {
 
 		// Initialize wizard with edit mode and existing data
 		this.wizardService.initializeWizard(editMode, this.existingRoomData);
+
+		// Jump to a specific step if requested via query param
+		const requestedStep = this.route.snapshot.queryParamMap.get('step') as WizardStepId | null;
+		if (requestedStep && Object.values(WizardStepId).includes(requestedStep)) {
+			this.wizardService.goToStepById(requestedStep);
+		}
 	}
 
 	private detectEditMode(): boolean {
@@ -97,7 +103,8 @@ export class RoomWizardComponent implements OnInit {
 			const { roomName, autoDeletionDate, autoDeletionPolicy, config, access, roles } =
 				await this.roomService.getRoom(this.roomId, {
 					fields: ['roomName', 'autoDeletionDate', 'autoDeletionPolicy', 'config', 'access', 'roles'],
-					extraFields: ['config']
+					// 'config' and 'roles' are extra fields, excluded by default, so request them explicitly
+					extraFields: ['config', 'roles']
 				});
 
 			// Populate existing room options based on fetched data

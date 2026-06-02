@@ -69,11 +69,14 @@
     "UNMUTE_SOUND": "取消静音",
     "ZOOM_IN": "放大",
     "ZOOM_OUT": "缩小",
+    "RESET_ZOOM": "重置缩放",
     "REPLACE_SCREEN": "更换屏幕",
     "PIN": "固定",
     "UNPIN": "取消固定",
-    "MINIMIZE": "最小化",
-    "MAXIMIZE": "最大化"
+    "FLOAT": "浮动",
+    "DOCK": "停靠",
+    "SCREEN_LABEL": "屏幕",
+    "YOUR_SCREEN_LABEL": "您的屏幕"
   },
   "PANEL": {
     "CLOSE": "关闭",
@@ -108,7 +111,9 @@
         "GOOD": "良好",
         "POOR": "较差",
         "LOST": "丢失"
-      }
+      },
+      "SHARING_SCREEN": "正在共享屏幕",
+      "MIC_OFF": "麦克风已关闭"
     },
     "SETTINGS": {
       "TITLE": "设置",

@@ -69,11 +69,14 @@
     "UNMUTE_SOUND": "Activar sonido",
     "ZOOM_IN": "Aumentar tamaño",
     "ZOOM_OUT": "Disminuir tamaño",
+    "RESET_ZOOM": "Restablecer zoom",
     "REPLACE_SCREEN": "Reemplazar pantalla",
     "PIN": "Fijar",
     "UNPIN": "Desfijar",
-    "MINIMIZE": "Minimizar",
-    "MAXIMIZE": "Maximizar"
+    "FLOAT": "Flotar",
+    "DOCK": "Acoplar",
+    "SCREEN_LABEL": "pantalla",
+    "YOUR_SCREEN_LABEL": "tu pantalla"
   },
   "PANEL": {
     "CLOSE": "Cerrar",
@@ -102,13 +105,15 @@
       "YOU": "Tú",
       "MUTE": "Silenciar",
       "UNMUTE": "Activar audio",
+      "SHARING_SCREEN": "Compartiendo pantalla",
       "CONNECTION_QUALITY": {
         "LABEL": "Calidad de conexión",
         "EXCELLENT": "Excelente",
         "GOOD": "Buena",
         "POOR": "Deficiente",
         "LOST": "Perdida"
-      }
+      },
+      "MIC_OFF": "Micrófono apagado"
     },
     "SETTINGS": {
       "TITLE": "Configuración",

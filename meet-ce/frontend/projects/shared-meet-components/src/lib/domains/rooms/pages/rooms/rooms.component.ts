@@ -41,6 +41,7 @@ import {
 } from '../../components/rooms-lists/rooms-lists.component';
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
+import { RoomUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-rooms',
@@ -257,10 +258,11 @@ export class RoomsComponent implements OnInit {
 		}
 	}
 
-	private shareLink({ access }: MeetRoom) {
+	private shareLink(room: MeetRoom) {
+		const canManageRoom = RoomUiUtils.canManageRoom(room, this.currentUserId(), this.currentUserRole());
 		this.dialog.open(RoomShareDialogComponent, {
 			width: '450px',
-			data: { access },
+			data: { access: room.access, roomId: room.roomId, canManageRoom },
 			panelClass: 'ov-meet-dialog'
 		});
 	}

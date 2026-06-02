@@ -7,7 +7,7 @@ export enum LayoutClass {
 	SMALL_ELEMENT = 'OV_small',
 	TOP_BAR_ELEMENT = 'OV_top-bar',
 	IGNORED_ELEMENT = 'OV_ignored',
-	MINIMIZED_ELEMENT = 'OV_minimized',
+	FLOATING_ELEMENT = 'OV_floating',
 	NO_SIZE_ELEMENT = 'no-size',
 	CLASS_NAME = 'layout'
 }

@@ -4,23 +4,15 @@
 .rooms-toolbar {
 	@extend .ov-data-toolbar;
 
-	.toolbar-left {
-		::ng-deep .search-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
-	}
-
 	.toolbar-right {
 		gap: var(--ov-meet-spacing-sm);
-
-		::ng-deep .refresh-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
-
-		::ng-deep .clear-btn {
-			padding: var(--ov-meet-spacing-sm);
-		}
 	}
+}
+
+#owner-filter-field,
+#member-filter-field {
+	width: 100%;
+	max-width: 250px;
 }
 
 // Use utility classes

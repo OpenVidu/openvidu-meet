@@ -6,7 +6,6 @@ import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
-import { TrackPublishedTypesPipe } from '../../../../pipes/participant.pipe';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
@@ -21,7 +20,7 @@ import { ParticipantAvatarComponent } from '../../../participant-avatar/particip
  */
 @Component({
 	selector: 'ov-participant-panel-item',
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, TrackPublishedTypesPipe, ParticipantAvatarComponent, ConnectionQualityIndicatorComponent],
+	imports: [CommonModule, MatButtonModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, ParticipantAvatarComponent, ConnectionQualityIndicatorComponent],
 	templateUrl: './participant-panel-item.component.html',
 	styleUrls: ['./participant-panel-item.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -54,6 +53,11 @@ export class ParticipantPanelItemComponent {
 	readonly isLocalParticipant = computed(() => this.participantInput()?.isLocal || false);
 	readonly participantDisplayName = computed(() => this.participantInput()?.name || '');
 	readonly hasExternalElements = computed(() => !!this.participantPanelItemElementsTemplate());
+	readonly isScreenSharing = computed(() => !!this.participantInput()?.isScreenShareEnabled);
+	readonly isMicrophoneOff = computed(() => {
+		const participant = this.participantInput();
+		return !!participant && !participant.isMicrophoneEnabled;
+	});
 
 	get _participant(): ParticipantModel | undefined {
 		return this.participantInput();

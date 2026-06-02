@@ -8,6 +8,7 @@ import {
 	roomMemberTokenValidator,
 	withAuth
 } from '../middlewares/auth.middleware.js';
+import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import {
 	applyRecordingListAccessFilters,
 	authorizeRecordingAccess,
@@ -31,6 +32,7 @@ import {
 export const recordingRouter: Router = Router();
 recordingRouter.use(bodyParser.urlencoded({ extended: true }));
 recordingRouter.use(bodyParser.json());
+recordingRouter.use(apiLimiter);
 
 // Recording Routes
 recordingRouter.post(

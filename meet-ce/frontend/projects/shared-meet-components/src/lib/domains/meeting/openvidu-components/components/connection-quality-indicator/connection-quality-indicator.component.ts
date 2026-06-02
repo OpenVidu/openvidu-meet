@@ -16,15 +16,11 @@ import { TranslateService } from '../../services/translate/translate.service';
 export class ConnectionQualityIndicatorComponent implements OnDestroy {
 	readonly participant = input.required<ParticipantModel>();
 	readonly transparent = input(false);
-	readonly forceVisible = input(false);
 	readonly connectionQuality = computed(() => this.participant().connectionQuality);
 	readonly participantKey = computed(() => this.participant().sid);
 	private readonly translateService = inject(TranslateService);
 
-	readonly showBadge = computed(() => {
-		const qualityKnown = this.connectionQuality() !== ConnectionQuality.Unknown;
-		return this.forceVisible() ? qualityKnown : qualityKnown && this.isVisible();
-	});
+	readonly showBadge = computed(() => this.connectionQuality() !== ConnectionQuality.Unknown && this.isVisible());
 
 	readonly tooltipText = computed(() => {
 		const label = this.translateService.translate('PANEL.PARTICIPANTS.CONNECTION_QUALITY.LABEL');
@@ -67,7 +63,6 @@ export class ConnectionQualityIndicatorComponent implements OnDestroy {
 			return;
 		}
 
-		const previousQuality = this.previousConnectionQuality;
 		this.previousConnectionQuality = quality;
 
 		if (quality === ConnectionQuality.Unknown) {
@@ -83,14 +78,12 @@ export class ConnectionQualityIndicatorComponent implements OnDestroy {
 		}
 
 		if (quality === ConnectionQuality.Good || quality === ConnectionQuality.Excellent) {
-			if (previousQuality !== undefined) {
-				this.isVisible.set(true);
-				this.clearVisibilityTimeout();
-				this.visibilityTimeout = setTimeout(() => {
-					this.isVisible.set(false);
-				}, this.BADGE_TIMEOUT);
-				return;
-			}
+			this.isVisible.set(true);
+			this.clearVisibilityTimeout();
+			this.visibilityTimeout = setTimeout(() => {
+				this.isVisible.set(false);
+			}, this.BADGE_TIMEOUT);
+			return;
 		}
 
 		this.clearVisibilityTimeout();

@@ -35,11 +35,27 @@
 						</div>
 					</div>
 
-					@if (!_participant.hasEncryptionError) {
+					<!-- Status indicators row — sits where the track-types description used to be. -->
+					@if (!_participant.hasEncryptionError && (isMicrophoneOff() || isScreenSharing())) {
 						<div class="participant-subtitle">
-							<span class="status-indicator">
-								{{ _participant | tracksPublishedTypes }}
-							</span>
+							@if (isMicrophoneOff()) {
+								<mat-icon
+									id="mic-off-indicator"
+									class="mic-off-indicator"
+									fontIcon="mic_off"
+									[attr.aria-label]="('PANEL.PARTICIPANTS.MIC_OFF' | translate) + ' ' + participantDisplayName()"
+									[matTooltip]="'PANEL.PARTICIPANTS.MIC_OFF' | translate"
+								/>
+							}
+							@if (isScreenSharing()) {
+								<mat-icon
+									id="screen-share-indicator"
+									class="screen-share-indicator"
+									fontIcon="screen_share"
+									[attr.aria-label]="('PANEL.PARTICIPANTS.SHARING_SCREEN' | translate) + ' ' + participantDisplayName()"
+									[matTooltip]="'PANEL.PARTICIPANTS.SHARING_SCREEN' | translate"
+								/>
+							}
 						</div>
 					}
 				</div>
@@ -47,7 +63,7 @@
 				<!-- Action buttons section -->
 				@if (!_participant.hasEncryptionError) {
 					<div class="participant-action-buttons">
-						<ov-connection-quality-indicator [participant]="_participant!" [transparent]="true" [forceVisible]="true" />
+						<ov-connection-quality-indicator [participant]="_participant!" [transparent]="true" />
 
 						<!-- Mute/Unmute button for remote participants -->
 						@if (!isLocalParticipant() && showMuteButton()) {

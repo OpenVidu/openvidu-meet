@@ -175,17 +175,19 @@ describe('Room API Tests', () => {
 			);
 		});
 
-		it('should not include config property by default (extraFields not specified)', async () => {
+		it('should not include config nor roles properties by default (extraFields not specified)', async () => {
 			const room = await createRoom({
 				roomName: 'Default Room'
 			});
 
-			// Config should not be in the response by default
+			// config and roles should not be in the response by default
 			expect(room.config).toBeUndefined();
-			// But _extraFields metadata should be present
+			expect(room.roles).toBeUndefined();
+			// But _extraFields metadata should be present and list both extra fields
 			expect((room as any)._extraFields).toBeDefined();
 			expect((room as any)._extraFields).toContain('config');
-			expect((room as any)._extraFields.length).toBe(1);
+			expect((room as any)._extraFields).toContain('roles');
+			expect((room as any)._extraFields.length).toBe(2);
 		});
 
 		it('should include extra fields when X-ExtraFields header is provided', async () => {
@@ -194,14 +196,33 @@ describe('Room API Tests', () => {
 					roomName: 'Extra Fields Room'
 				},
 				undefined,
-				{ xExtraFields: 'config' }
+				{ xExtraFields: 'config,roles' }
 			);
 
-			// Config should be present when requested via extraFields
+			// config and roles should be present when requested via extraFields
 			expect(room.config).toBeDefined();
 			expect(room.config.recording.layout).toBe(DEFAULT_RECORDING_LAYOUT);
+			expect(room.roles).toBeDefined();
+			expect(room.roles.moderator.permissions).toBeDefined();
+			expect(room.roles.speaker.permissions).toBeDefined();
 			expect((room as any)._extraFields).toContain('config');
-			expect((room as any)._extraFields.length).toBe(1);
+			expect((room as any)._extraFields).toContain('roles');
+			expect((room as any)._extraFields.length).toBe(2);
+		});
+
+		it('should include only the requested extra field (roles) when X-ExtraFields=roles', async () => {
+			const room = await createRoom(
+				{
+					roomName: 'Roles Only Room'
+				},
+				undefined,
+				{ xExtraFields: 'roles' }
+			);
+
+			// Only roles should be present; config remains excluded
+			expect(room.roles).toBeDefined();
+			expect(room.config).toBeUndefined();
+			expect((room as any)._extraFields).toContain('roles');
 		});
 
 		it('should filter fields when x-Fields header is provided', async () => {
@@ -222,7 +243,8 @@ describe('Room API Tests', () => {
 			expect(room.roomId).toBeDefined();
 			expect(room.config).toBeDefined();
 			expect((room as any)._extraFields).toContain('config');
-			expect((room as any)._extraFields.length).toBe(1);
+			expect((room as any)._extraFields).toContain('roles');
+			expect((room as any)._extraFields.length).toBe(2);
 		});
 
 		it('should not include config if filter fields are provided without config but should include it with extraFields', async () => {

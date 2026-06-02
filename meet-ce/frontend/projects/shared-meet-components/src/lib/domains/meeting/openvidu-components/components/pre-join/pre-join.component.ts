@@ -1,6 +1,7 @@
 import {
 	ChangeDetectionStrategy,
 	Component,
+	computed,
 	effect,
 	inject,
 	input,
@@ -13,6 +14,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AvatarView } from '../../models/avatar-view.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { ILogger } from '../../models/logger.model';
@@ -78,16 +80,27 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	 */
 	readonly showCameraButton = this.libService.cameraButtonSignal;
 	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
+	readonly showBackgroundsButton = this.libService.backgroundEffectsButtonSignal;
 	readonly showLogo = this.libService.displayLogoSignal;
 
-	// Future feature preparation
-	backgroundEffectEnabled: boolean = true; // Enable virtual backgrounds by default
 	readonly showBackgroundPanel = signal(false);
 
 	videoTrack: LocalTrack | undefined;
 	audioTrack: LocalTrack | undefined;
 	readonly isVideoEnabled = signal(false);
 	readonly hasVideoDevices = signal(true);
+
+	/**
+	 * Avatar poster descriptor for the local preview. There is no participant stream during
+	 * pre-join, so the view-model is built straight from the local form state.
+	 */
+	readonly avatarView = computed<AvatarView>(() => ({
+		show: !this.isVideoEnabled(),
+		name: this.participantName(),
+		color: 'hsl(48, 100%, 50%)',
+		isSpeaking: false,
+		hasEncryptionError: false
+	}));
 	private tracks: LocalTrack[] = [];
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly openviduService = inject(OpenViduService);
@@ -272,11 +285,14 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 				this.isVideoEnabled.set(this.openviduService.isVideoTrackEnabled());
 
 				// Restore previously selected virtual background in prejoin when possible.
+				// Skip restore when the user is not allowed to use virtual backgrounds.
 				// Keep prejoin usable even if restore fails.
-				try {
-					await this.virtualBackgroundService.applyBackgroundFromStorage();
-				} catch (error) {
-					this.log.w('Failed to restore virtual background from storage in prejoin:', error);
+				if (this.showBackgroundsButton()) {
+					try {
+						await this.virtualBackgroundService.applyBackgroundFromStorage();
+					} catch (error) {
+						this.log.w('Failed to restore virtual background from storage in prejoin:', error);
+					}
 				}
 
 				return; // Success, exit retry loop

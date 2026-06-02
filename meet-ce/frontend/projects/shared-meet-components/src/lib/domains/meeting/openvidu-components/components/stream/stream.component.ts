@@ -1,6 +1,7 @@
 import {
 	ChangeDetectionStrategy,
 	Component,
+	computed,
 	effect,
 	ElementRef,
 	inject,
@@ -12,6 +13,7 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AvatarView, DEFAULT_AVATAR_VIEW } from '../../models/avatar-view.model';
 import { ParticipantStream } from '../../models/participant.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
@@ -57,10 +59,33 @@ export class StreamComponent implements OnDestroy {
 	readonly mouseHovering = signal(false);
 
 	/**
+	 * Avatar poster descriptor for {@link VideoElementComponent}, derived from the participant
+	 * stream. Computed (rather than an inline template literal) so its reference stays stable
+	 * across change-detection cycles and only changes when the underlying state does.
+	 */
+	readonly avatarView = computed<AvatarView>(() => {
+		const stream = this.stream();
+
+		if (!stream) {
+			return DEFAULT_AVATAR_VIEW;
+		}
+
+		return {
+			show: stream.isCameraStream && (!stream.videoTrack?.track || !stream.participant.isCameraEnabled),
+			name: stream.participant.name ?? '',
+			color: stream.participant.colorProfile,
+			isSpeaking: this.showAudioDetection() && stream.participant.isSpeaking && stream.isCameraStream,
+			hasEncryptionError: stream.participant.hasEncryptionError
+		};
+	});
+
+	/**
 	 * @ignore
 	 */
 	hoveringTimeout: ReturnType<typeof setTimeout> | undefined;
 	private showVideoTimeout: ReturnType<typeof setTimeout> | undefined;
+	/** True while the pointer is over the video controls; suppresses the auto-hide timer. */
+	private isOverControls = false;
 
 	/**
 	 * @ignore
@@ -98,8 +123,8 @@ export class StreamComponent implements OnDestroy {
 		const sid = stream?.videoTrack?.trackSid;
 		if (stream?.participant) {
 			if (stream.participant.isLocal) {
-				if (stream.participant.isMinimized) {
-					this.participantService.toggleLocalVideoMinimized(sid);
+				if (stream.participant.isFloating) {
+					this.participantService.toggleLocalVideoFloating(sid);
 				}
 				this.participantService.toggleMyVideoPinned(sid);
 			} else {
@@ -112,11 +137,11 @@ export class StreamComponent implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	toggleMinimize() {
+	toggleFloat() {
 		const stream = this.stream();
 		const sid = stream?.videoTrack?.trackSid;
 		if (stream?.participant && stream.participant.isLocal) {
-			this.participantService.toggleLocalVideoMinimized(sid);
+			this.participantService.toggleLocalVideoFloating(sid);
 			this.layoutService.update();
 		}
 	}
@@ -124,19 +149,57 @@ export class StreamComponent implements OnDestroy {
 	toggleMuteForcibly() {
 		const stream = this.stream();
 		if (stream?.participant) {
-			this.participantService.setRemoteMutedForcibly(stream.participant.sid, !stream.isMutedForcibly);
+			this.participantService.setRemoteMutedForcibly(
+				stream.participant.sid,
+				!stream.isMutedForcibly,
+				stream.source
+			);
 		}
 	}
 
 	/**
 	 * @ignore
+	 * Reveals the controls on pointer movement over the stream and (re)arms the auto-hide timer.
 	 */
 	mouseHover(event: MouseEvent) {
 		event.preventDefault();
-		clearTimeout(this.hoveringTimeout);
+		this.revealControls();
+	}
+
+	/**
+	 * @ignore
+	 * Pins the controls open while the pointer rests on them (clicking, hovering), so they don't
+	 * vanish mid-interaction. The auto-hide timer stays disarmed until {@link releaseControls}.
+	 */
+	keepControlsVisible() {
+		this.isOverControls = true;
+		this.revealControls();
+	}
+
+	/**
+	 * @ignore
+	 * Re-arms the auto-hide timer once the pointer leaves the controls.
+	 */
+	releaseControls() {
+		this.isOverControls = false;
+		this.scheduleAutoHideControls();
+	}
+
+	/** Shows the controls and (re)arms the auto-hide timer, unless the pointer is parked on them. */
+	private revealControls() {
 		this.mouseHovering.set(true);
-		this.hoveringTimeout = setTimeout(() => {
-			this.mouseHovering.set(false);
-		}, this.HOVER_TIMEOUT);
+		this.scheduleAutoHideControls();
+	}
+
+	/**
+	 * Arms the auto-hide timer, replacing any pending one. No-ops while the pointer rests on the
+	 * controls so they remain visible until the pointer leaves.
+	 */
+	private scheduleAutoHideControls() {
+		clearTimeout(this.hoveringTimeout);
+		if (this.isOverControls) {
+			return;
+		}
+		this.hoveringTimeout = setTimeout(() => this.mouseHovering.set(false), this.HOVER_TIMEOUT);
 	}
 }

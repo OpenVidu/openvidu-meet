@@ -142,7 +142,7 @@ test.describe('Layout E2E Tests', () => {
 				await waitForVisibleRemoteParticipants(
 					pageA,
 					{
-						includes: ['sharer', 'sharer_SCREEN', 'remote-b']
+						includes: ['sharer', 'sharer (screen)', 'remote-b']
 					},
 					20_000
 				);
@@ -181,13 +181,13 @@ test.describe('Layout E2E Tests', () => {
 				// All 3 remotes + 3 screen shares should be visible
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3 + 2, // 3 remotes + 2 screen shares
-					includes: [`remote-A`, `remote-A_SCREEN`, `remote-B`, `remote-B_SCREEN`, `remote-C`]
+					includes: [`remote-A`, `remote-A (screen)`, `remote-B`, `remote-B (screen)`, `remote-C`]
 				});
 
 				await selectSmartMosaicLayout(pageA);
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3 + 2, // 3 remotes + 2 screen shares (never hide screen shares in smart mosaic)
-					includes: [`remote-A_SCREEN`, `remote-B_SCREEN`]
+					includes: [`remote-A (screen)`, `remote-B (screen)`]
 				});
 
 				await selectMosaicLayout(pageA);
@@ -195,7 +195,7 @@ test.describe('Layout E2E Tests', () => {
 				// All 3 remotes + 3 screen shares should be visible
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3 + 2,
-					includes: [`remote-A`, `remote-A_SCREEN`, `remote-B`, `remote-B_SCREEN`, `remote-C`]
+					includes: [`remote-A`, `remote-A (screen)`, `remote-B`, `remote-B (screen)`, `remote-C`]
 				});
 				// B stops screen sharing — DOM indices shift for later participants.
 				// All remaining participants must stay visible.
@@ -203,7 +203,7 @@ test.describe('Layout E2E Tests', () => {
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3 + 1, // 3 remotes + 1 screen share
-					includes: [`remote-A`, `remote-A_SCREEN`, `remote-B`, `remote-C`]
+					includes: [`remote-A`, `remote-A (screen)`, `remote-B`, `remote-C`]
 				});
 
 				await expect(pageA.locator('.OV_stream.remote.screen-source')).toHaveCount(1, { timeout: 10_000 });
@@ -388,7 +388,7 @@ test.describe('Layout E2E Tests', () => {
 						pageA,
 						{
 							count: 2,
-							includes: ['remote-screen', 'remote-screen_SCREEN']
+							includes: ['remote-screen', 'remote-screen (screen)']
 						},
 						20_000
 					);
@@ -405,7 +405,7 @@ test.describe('Layout E2E Tests', () => {
 						pageA,
 						{
 							count: 2,
-							includes: ['remote-speaker', 'remote-screen_SCREEN'],
+							includes: ['remote-speaker', 'remote-screen (screen)'],
 							excludes: ['remote-screen']
 						},
 						20_000
@@ -450,7 +450,7 @@ test.describe('Layout E2E Tests', () => {
 						pageA,
 						{
 							count: 4,
-							includes: ['remote-a', 'remote-b', 'remote-screen', 'remote-screen_SCREEN']
+							includes: ['remote-a', 'remote-b', 'remote-screen', 'remote-screen (screen)']
 						},
 						20_000
 					);
@@ -460,7 +460,7 @@ test.describe('Layout E2E Tests', () => {
 						pageA,
 						{
 							count: 2,
-							includes: ['remote-b', 'remote-screen_SCREEN']
+							includes: ['remote-b', 'remote-screen (screen)']
 						},
 						20_000
 					);
@@ -491,10 +491,10 @@ test.describe('Layout E2E Tests', () => {
 							count: 5,
 							includes: [
 								'remote-a',
-								'remote-a_SCREEN',
+								'remote-a (screen)',
 								'remote-b',
 								'remote-screen',
-								'remote-screen_SCREEN'
+								'remote-screen (screen)'
 							]
 						},
 						20_000
@@ -505,7 +505,7 @@ test.describe('Layout E2E Tests', () => {
 						pageA,
 						{
 							count: 3,
-							includes: ['remote-b', 'remote-a_SCREEN', 'remote-screen_SCREEN']
+							includes: ['remote-b', 'remote-a (screen)', 'remote-screen (screen)']
 						},
 						20_000
 					);
@@ -545,7 +545,7 @@ test.describe('Layout E2E Tests', () => {
 						pageA,
 						{
 							count: 3,
-							includes: ['remote-b', 'remote-c', 'remote-screen_SCREEN'],
+							includes: ['remote-b', 'remote-c', 'remote-screen (screen)'],
 							excludes: ['remote-screen']
 						},
 						20_000
@@ -1419,7 +1419,7 @@ test.describe('Layout E2E Tests', () => {
 					await waitForVisibleRemoteParticipants(
 						pageA,
 						{
-							includes: ['sharer', 'sharer_SCREEN', 'remote-b']
+							includes: ['sharer', 'sharer (screen)', 'remote-b']
 						},
 						20_000
 					);
@@ -1524,7 +1524,7 @@ test.describe('Layout E2E Tests', () => {
 
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3,
-					includes: ['remote-a', 'remote-b', 'remote-a_SCREEN']
+					includes: ['remote-a', 'remote-b', 'remote-a (screen)']
 				});
 
 				// Switch to mosaic and verify the same participants are visible
@@ -1532,7 +1532,7 @@ test.describe('Layout E2E Tests', () => {
 				await pageA.waitForTimeout(1_000);
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3,
-					includes: ['remote-a', 'remote-b', 'remote-a_SCREEN']
+					includes: ['remote-a', 'remote-b', 'remote-a (screen)']
 				});
 
 				// Switch back to smart mosaic and verify the same participants are visible
@@ -1540,7 +1540,7 @@ test.describe('Layout E2E Tests', () => {
 				await pageA.waitForTimeout(1_000);
 				await waitForVisibleRemoteParticipants(pageA, {
 					count: 3,
-					includes: ['remote-a', 'remote-b', 'remote-a_SCREEN']
+					includes: ['remote-a', 'remote-b', 'remote-a (screen)']
 				});
 			} finally {
 				await removeAllParticipants();

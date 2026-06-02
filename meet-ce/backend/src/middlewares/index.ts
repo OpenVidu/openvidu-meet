@@ -2,6 +2,7 @@
 export * from './auth.middleware.js';
 export * from './base-url.middleware.js';
 export * from './content-type.middleware.js';
+export * from './rate-limit.middleware.js';
 export * from './recording.middleware.js';
 export * from './request-context.middleware.js';
 export * from './room-member.middleware.js';

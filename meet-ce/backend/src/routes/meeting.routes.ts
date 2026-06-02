@@ -2,6 +2,7 @@ import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
 import { roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
+import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import { validateUpdateParticipantRoleReq } from '../middlewares/request-validators/meeting-validator.middleware.js';
 import { withValidRoomId } from '../middlewares/request-validators/room-validator.middleware.js';
 import { withRoomMemberPermission } from '../middlewares/room-member.middleware.js';
@@ -9,6 +10,7 @@ import { withRoomMemberPermission } from '../middlewares/room-member.middleware.
 export const internalMeetingRouter: Router = Router();
 internalMeetingRouter.use(bodyParser.urlencoded({ extended: true }));
 internalMeetingRouter.use(bodyParser.json());
+internalMeetingRouter.use(apiLimiter);
 
 // Internal Meetings Routes
 internalMeetingRouter.delete(
