@@ -1,5 +1,0 @@
-description: Successfully retrieved security config
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/global-security-config.yaml'

@@ -1,5 +1,0 @@
-description: Successfully retrieved authenticated user info
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/meet-user.yaml'

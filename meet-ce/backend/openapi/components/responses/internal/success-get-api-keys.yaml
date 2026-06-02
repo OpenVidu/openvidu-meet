@@ -1,7 +1,0 @@
-description: Successfully retrieved API keys
-content:
-    application/json:
-        schema:
-            type: array
-            items:
-                $ref: '../../schemas/internal/meet-api-key.yaml'

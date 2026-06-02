@@ -1,5 +1,0 @@
-description: Successfully created or reused AI assistant activation
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/ai-assistant-create-response.yaml'

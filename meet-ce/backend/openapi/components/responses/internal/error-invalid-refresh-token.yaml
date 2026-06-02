@@ -1,8 +1,0 @@
-description: Bad Request — The refresh token is missing or invalid
-content:
-    application/json:
-        schema:
-            $ref: ../../schemas/error.yaml
-        example:
-            error: Refresh Token Error
-            message: 'No refresh token provided'

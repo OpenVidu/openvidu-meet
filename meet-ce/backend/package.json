@@ -31,6 +31,7 @@
 		"build:watch": "tsc -p tsconfig.prod.json --watch",
 		"doc:api": "mkdir -p public/openapi && cd openapi && openapi-generate-html -i openvidu-meet-api.yaml --ui=stoplight --theme=light --title 'OpenVidu Meet REST API' --description 'OpenVidu Meet REST API' -o ../public/openapi/public.html",
 		"doc:internal-api": "mkdir -p public/openapi && cd openapi && openapi-generate-html -i openvidu-meet-internal-api.yaml --ui=stoplight --theme=dark --title 'OpenVidu Meet Internal REST API' --description 'OpenVidu Meet Internal REST API' -o ../public/openapi/internal.html",
+		"lint:api": "cd openapi && redocly lint",
 		"start": "node dist/src/server.js",
 		"start:dev": "NODE_ENV=development concurrently -k -n server,typecheck -c cyan,yellow \"pnpm tsx watch --clear-screen=false --ignore public --include src ./src/server.ts\" \"pnpm run dev:typecheck\"",
 		"dev:typecheck": "node ../../scripts/dev/backend-type-checker.mjs",
@@ -84,6 +85,7 @@
 		"zod": "3.25.76"
 	},
 	"devDependencies": {
+		"@redocly/cli": "2.31.5",
 		"@types/archiver": "6.0.4",
 		"@types/bcrypt": "5.0.2",
 		"@types/cookie-parser": "1.4.9",

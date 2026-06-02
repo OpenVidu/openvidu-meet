@@ -1,0 +1,8 @@
+description: Conflict — The recording is not streamable
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Recording Error'
+            message: 'Recording "room-123--EG_XYZ--XX445" is not streamable'

@@ -1,0 +1,69 @@
+description: Successfully retrieved the recording list
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                recordings:
+                    type: array
+                    items:
+                        $ref: '../../schemas/meet-recording.yaml'
+                pagination:
+                    $ref: '../../../shared/schemas/meet-pagination.yaml'
+        examples:
+            successful_recording_retrieval:
+                summary: Full recording details response with multiple recordings
+                value:
+                    recordings:
+                        - recordingId: 'room-123--EG_XYZ--XX445'
+                          roomId: 'room-123'
+                          roomName: 'room'
+                          status: 'active'
+                          layout: 'grid'
+                          encoding: 'H264_720P_30'
+                          filename: 'room-123--XX445.mp4'
+                          startDate: 1620000000000
+                          endDate: 1620000003600
+                          duration: 3.6
+                          size: 1024
+                          details: 'Stopped using API'
+                        - recordingId: 'room-456--EG_ZYX--XX678'
+                          roomId: 'room-456'
+                          roomName: 'room'
+                          status: 'complete'
+                          layout: 'grid'
+                          encoding: 'H264_720P_30'
+                          filename: 'room-456--XX678.mp4'
+                          startDate: 1625000000000
+                          endDate: 1625000007200
+                          duration: 7.2
+                          size: 2048
+                          details: 'Recording completed successfully'
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10
+
+            fields=recordingId:
+                summary: Response with only recordingId for each recording
+                value:
+                    recordings:
+                        - recordingId: 'room-123--EG_XYZ--XX445'
+                        - recordingId: 'room-456--EG_ZYX--XX678'
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10
+            fields=recordingId,roomId,status,size:
+                summary: Recording details including recordingId, roomId, status, and size
+                value:
+                    recordings:
+                        - recordingId: 'room-123--EG_XYZ--XX445'
+                          roomId: 'room-123'
+                          status: 'active'
+                          size: 1024
+                        - recordingId: 'room-456--EG_ZYX--XX678'
+                          roomId: 'room-456'
+                          status: 'complete'
+                          size: 2048
+                    pagination:
+                        isTruncated: false
+                        maxItems: 10

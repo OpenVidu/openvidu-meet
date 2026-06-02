@@ -1,6 +1,0 @@
-description: Create AI assistant activation request
-required: true
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/ai-assistant-create-request.yaml'
