@@ -29,7 +29,7 @@ import type {
 	OpenViduMeetJoinedDetail,
 	OpenViduMeetLeftDetail
 } from './api/events';
-import { resolveMode, type Mode, type ModeInputs } from './modes/mode';
+import { computeMode, type Mode, type ModeInputs } from './modes/mode';
 import { ModeCoordinatorService } from './modes/mode-coordinator.service';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
 import { ShadowStylesService } from './shadow-dom/styles.service';
@@ -85,7 +85,9 @@ export class App {
 	readonly errorMessage = signal<string | null>(null);
 	readonly ready = signal(false);
 
-	// WC has no Angular Router; captures view-swap requests from shared code via WebComponentBridgeService.
+	// WC has no Angular Router; captures in-WC view swaps requested by shared code
+	// via WebComponentBridgeService. Holds the roomId of the recordings view being
+	// shown, or null when no such swap is active.
 	private readonly _overrideRoomRecordingsId = signal<string | null>(null);
 
 	private readonly inputs = computed<ModeInputs>(() => ({
@@ -95,14 +97,14 @@ export class App {
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),
-		showRecording: this.showRecording()
+		showRecording: this.showRecording() // esto es interno?
 	}));
 
-	readonly mode = computed<Mode>(() => {
-		if (this._overrideRoomRecordingsId()) return 'room-recordings';
-
-		return resolveMode(this.inputs());
-	});
+	// An active in-WC view swap (see `_overrideRoomRecordingsId`) wins over the
+	// attribute-derived mode; it mirrors a router navigation the WC can't perform.
+	readonly mode = computed<Mode>(() =>
+		this._overrideRoomRecordingsId() !== null ? 'room-recordings' : computeMode(this.inputs())
+	);
 
 	readonly recordingIdForView = computed<string>(
 		() => lastPathSegment(this.recordingUrl()) ?? this.showRecording() ?? ''
@@ -122,7 +124,7 @@ export class App {
 		// enableWebcomponentMode() is called in main.wc.ts before element registration
 		// so injected services observe WC mode during their constructor-time effects.
 		afterNextRender(() => {
-			const shadowRoot = (this._elRef.nativeElement as HTMLElement).shadowRoot;
+			const { shadowRoot } = this._elRef.nativeElement as HTMLElement;
 
 			if (shadowRoot) {
 				this._shadowStyles.reflect(shadowRoot, this._destroyRef);
@@ -161,43 +163,45 @@ export class App {
 	}
 
 	private readonly _joinedEffect = effect(() => {
-		const detail = this.wcBridge.joinedEvent();
+		const event = this.wcBridge.joinedEvent();
 
-		if (!detail) return;
+		if (!event) return;
 
-		this.joined.emit({ roomId: detail.roomId, participantIdentity: detail.participantIdentity });
+		this.joined.emit({ roomId: event.roomId, participantIdentity: event.participantIdentity });
 	});
 
 	private readonly _leftEffect = effect(() => {
-		const detail = this.wcBridge.leftEvent();
+		const event = this.wcBridge.leftEvent();
 
-		if (!detail) return;
+		if (!event) return;
 
 		this.left.emit({
-			roomId: detail.roomId,
-			participantIdentity: detail.participantIdentity,
-			reason: detail.reason
+			roomId: event.roomId,
+			participantIdentity: event.participantIdentity,
+			reason: event.reason
 		});
 	});
 
 	private readonly _closedEffect = effect(() => {
-		if (!this.wcBridge.closedEvent()) return;
+		const event = this.wcBridge.closedEvent();
+
+		if (!event) return;
 
 		this.closed.emit({});
 	});
 
 	private readonly _viewRecordingsRequestEffect = effect(() => {
-		const detail = this.wcBridge.viewRecordingsRequest();
+		const request = this.wcBridge.viewRecordingsRequest();
 
-		if (!detail) return;
+		if (!request) return;
 
-		this._overrideRoomRecordingsId.set(detail.roomId);
+		this._overrideRoomRecordingsId.set(request.roomId);
 	});
 
 	private readonly _backToRoomRequestEffect = effect(() => {
-		const detail = this.wcBridge.backToRoomRequest();
+		const request = this.wcBridge.backToRoomRequest();
 
-		if (!detail) return;
+		if (!request) return;
 
 		// Read without tracking: writing `null` here would otherwise re-trigger
 		// this effect and the same `detail` would fall through to emit `closed`.

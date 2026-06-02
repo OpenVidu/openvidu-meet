@@ -39,8 +39,7 @@ function bootstrapWebComponent(): void {
 
 	createApplication(appConfig)
 		.then((app) => {
-			// Flip RuntimeConfigService into webcomponent mode BEFORE the custom
-			// element is registered.
+			// Flip RuntimeConfigService into webcomponent mode BEFORE the custom element is registered.
 			app.injector.get(RuntimeConfigService).enableWebcomponentMode();
 			registerOpenViduMeetElement(app.injector);
 		})

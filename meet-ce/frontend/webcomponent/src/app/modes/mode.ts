@@ -10,12 +10,15 @@ export interface ModeInputs {
 	showRecording: string;
 }
 
-export function resolveMode(inputs: ModeInputs): Mode {
-	if (inputs.recordingUrl || inputs.showRecording) return 'single-recording';
+/**
+ * Maps the public webcomponent attributes to the view the shell should render.
+ */
+export function computeMode(inputs: ModeInputs): Mode {
+	const { roomUrl, recordingUrl, showRecording, showOnlyRecordings } = inputs;
 
-	if (inputs.roomUrl && inputs.showOnlyRecordings) return 'room-recordings';
+	if (recordingUrl || showRecording) return 'single-recording';
 
-	if (inputs.roomUrl) return 'meeting';
+	if (roomUrl) return showOnlyRecordings ? 'room-recordings' : 'meeting';
 
 	return 'invalid';
 }
