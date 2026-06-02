@@ -6,7 +6,6 @@ import { CdkOverlayContainer } from './config/custom-cdk-overlay';
 import { OPENVIDU_COMPONENTS_CONFIG, OpenViduComponentsConfig } from './config/openvidu-components-angular.config';
 import { ActionService } from './services/action/action.service';
 import { ChatService } from './services/chat/chat.service';
-import { DeviceService } from './services/device/device.service';
 import { DocumentService } from './services/document/document.service';
 import { LoggerService } from './services/logger/logger.service';
 import { OpenViduService } from './services/openvidu/openvidu.service';
@@ -37,7 +36,6 @@ export class OpenViduComponentsModule {
 			CdkOverlayContainer,
 			{ provide: OverlayContainer, useExisting: CdkOverlayContainer },
 			ChatService,
-			DeviceService,
 			DocumentService,
 			// LayoutService,
 			LoggerService,
