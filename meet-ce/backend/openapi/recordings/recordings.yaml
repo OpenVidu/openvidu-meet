@@ -1,0 +1,363 @@
+/recordings:
+    post:
+        operationId: startRecording
+        summary: Start a recording
+        description: >
+            Start a new recording for an OpenVidu Meet room with the specified room ID.
+
+
+            By default, the recording will use the configuration defined in the room's settings.
+            However, you can optionally provide a configuration override in the request body to customize
+            the recording settings (e.g., layout) for this specific recording session.
+
+
+            If a configuration override is provided, those values will take precedence over the room's configuration.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-x-fields-header.yaml'
+        requestBody:
+            $ref: './requests/start-recording.yaml'
+        responses:
+            '201':
+                $ref: './responses/success/start-recording.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden-not-allowed.yaml'
+            '404':
+                $ref: '../rooms/responses/errors/room-not-found.yaml'
+            '409':
+                $ref: './responses/errors/recording-conflict.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+            '503':
+                $ref: '../shared/responses/errors/service-unavailable.yaml'
+
+    get:
+        operationId: getRecordings
+        summary: Get all recordings
+        description: |
+            Retrieves a paginated list of recordings available in the system.
+            You can apply filters to narrow down the results based on specific criteria.
+
+            By default, the recordings are sorted by start date in descending order (newest first).
+
+            > **Note:**
+            > - When using `accessTokenHeader` authentication: Only recordings the authenticated user has access to will be returned.
+            > - When using `roomMemberTokenHeader` authentication: The `roomId` filter is ignored and only recordings associated with the room included in the token will be returned.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-x-fields-header.yaml'
+            - $ref: '../rooms/parameters/room-id-query.yaml'
+            - $ref: '../rooms/parameters/room-name.yaml'
+            - $ref: '../rooms/parameters/room-name-match-mode.yaml'
+            - $ref: '../rooms/parameters/room-name-case-insensitive.yaml'
+            - $ref: './parameters/recording-status.yaml'
+            - $ref: './parameters/recording-fields.yaml'
+            - $ref: '../shared/parameters/max-items.yaml'
+            - $ref: '../shared/parameters/next-page-token.yaml'
+            - $ref: './parameters/recording-sort-field.yaml'
+            - $ref: '../shared/parameters/sort-order.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/get-recordings.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+
+    delete:
+        operationId: bulkDeleteRecordings
+        summary: Bulk delete recordings
+        description: |
+            Deletes multiple recordings at once with the specified recording IDs.
+
+            > **Note:**
+            > - When using `accessTokenHeader` authentication: Only deletes recordings the authenticated user has access to.
+            > - When using `roomMemberTokenHeader` authentication: Only deletes recordings associated with the room included in the token.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-ids.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/bulk-delete-recordings.yaml'
+            '400':
+                $ref: './responses/errors/bulk-delete-recordings.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+
+/recordings/download:
+    get:
+        operationId: downloadRecordings
+        summary: Download recordings
+        description: |
+            Downloads multiple recordings as a ZIP file with the specified recording IDs.
+            The ZIP file will contain all recordings in MP4 format.
+
+            > **Note:**
+            > - When using `accessTokenHeader` authentication: Only includes recordings the authenticated user has access to.
+            > - When using `roomMemberTokenHeader` authentication: Only includes recordings associated with the room included in the token.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-ids.yaml'
+        responses:
+            '200':
+                description: Successfully created a ZIP file containing the requested recordings
+                headers:
+                    Content-Disposition:
+                        description: >
+                            Indicates that the response is a file download.
+                            The filename will be `recordings.zip`.
+                        schema:
+                            type: string
+                            example: attachment; filename="recordings.zip"
+                content:
+                    application/zip:
+                        schema:
+                            type: string
+                            format: binary
+            '400':
+                $ref: './responses/errors/recordings-zip-empty.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+
+/recordings/{recordingId}:
+    get:
+        operationId: getRecording
+        summary: Get a recording
+        description: >
+            Retrieves the details of a recording with the specified recording ID.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-id.yaml'
+            - $ref: './parameters/recording-secret.yaml'
+            - $ref: './parameters/recording-x-fields-header.yaml'
+            - $ref: './parameters/recording-fields.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/get-recording.yaml'
+            '400':
+                $ref: './responses/errors/invalid-recording-secret.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/recording-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+    delete:
+        operationId: deleteRecording
+        summary: Delete a recording
+        description: |
+            Deletes a recording with the specified recording ID.
+
+            > ⚠️ **Note:** The recording will only be deleted if it exists and is not in progress
+            > (i.e., not in a state such as `active`, `starting`, or `ending`).
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-id.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/delete-recording.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/recording-not-found.yaml'
+            '409':
+                $ref: './responses/errors/recording-in-progress.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+/recordings/{recordingId}/media:
+    get:
+        operationId: getRecordingMedia
+        summary: Get recording media
+        description: |
+            Retrieves the media of a recording with the specified recording ID.
+            The media is returned in a binary format suitable for video playback.
+
+            This endpoint supports range requests, allowing partial content retrieval
+            for video playback without downloading the entire file.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-id.yaml'
+            - $ref: './parameters/recording-secret.yaml'
+            - $ref: './parameters/recording-range.yaml'
+        responses:
+            '200':
+                description: Successfully retrieved the full recording media
+                headers:
+                    Accept-Ranges:
+                        $ref: './headers/accept-ranges.yaml'
+                    Content-Length:
+                        $ref: './headers/content-length.yaml'
+                    Cache-Control:
+                        $ref: './headers/cache-control.yaml'
+                content:
+                    video/mp4:
+                        schema:
+                            type: string
+                            format: binary
+            '206':
+                description: Successfully retrieved a partial range of the recording media
+                headers:
+                    Accept-Ranges:
+                        $ref: './headers/accept-ranges.yaml'
+                    Content-Length:
+                        $ref: './headers/content-length.yaml'
+                    Cache-Control:
+                        $ref: './headers/cache-control.yaml'
+                    Content-Range:
+                        $ref: './headers/content-range.yaml'
+                content:
+                    video/mp4:
+                        schema:
+                            type: string
+                            format: binary
+            '400':
+                $ref: './responses/errors/invalid-recording-secret.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/recording-not-found.yaml'
+            '409':
+                $ref: './responses/errors/recording-not-streamable.yaml'
+            '416':
+                description: Requested range not satisfiable
+                content:
+                    application/json:
+                        schema:
+                            $ref: '../shared/schemas/error.yaml'
+                        example:
+                            error: Recording Error
+                            message: 'Recording "room-123--EG_XYZ--XX445" range not satisfiable. File size: 123456789'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+/recordings/{recordingId}/stop:
+    post:
+        operationId: stopRecording
+        summary: Stop a recording
+        description: |
+            Stops a recording with the specified recording ID.
+
+            > **Note:** The recording must be in an `active` state; otherwise, a 409 error is returned.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-id.yaml'
+            - $ref: './parameters/recording-x-fields-header.yaml'
+        responses:
+            '202':
+                $ref: './responses/success/stop-recording.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/recording-not-found.yaml'
+            '409':
+                $ref: './responses/errors/recording-not-active.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+/recordings/{recordingId}/url:
+    get:
+        operationId: getRecordingUrl
+        summary: Get recording URL
+        description: |
+            Retrieves the URL of a recording with the specified recording ID.
+            This URL is intended to be shared with people who do not have direct access to the recording.
+
+            It can be configured to be accessible by anyone (public access) or restricted to authenticated users only,
+            depending on the `privateAccess` query parameter.
+
+            > **Note:** If `privateAccess=false`, public URL generation requires `access.anonymous.recording.enabled=true` in the room configuration.
+            > Otherswise, a 403 error is returned.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-id.yaml'
+            - $ref: './parameters/private-access.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/get-recording-url.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: './responses/errors/forbidden-anonymous-recording-disabled.yaml'
+            '404':
+                $ref: './responses/errors/recording-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'

@@ -7,8 +7,8 @@ recordingStarted:
             > The recording can be in the `starting` status for a few seconds before it becomes `active`.
         operationId: recordingStartedWebhook
         parameters:
-            - $ref: ../components/parameters/x-timestamp.yaml
-            - $ref: ../components/parameters/x-signature.yaml
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
         requestBody:
             required: true
             content:
@@ -16,21 +16,21 @@ recordingStarted:
                     schema:
                         type: object
                         allOf:
-                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - $ref: ./schemas/webhook-base-event.yaml
                             - properties:
                                   event:
                                       example: recordingStarted
                                   data:
                                       type: object
                                       allOf:
-                                          - $ref: ../components/schemas/recording-base.yaml
+                                          - $ref: ../recordings/schemas/recording-base.yaml
                                           - properties:
                                                 status:
                                                     enum: [starting, active]
                                                     example: starting
         responses:
             '200':
-                $ref: ../components/responses/webhook-success.yaml
+                $ref: ./responses/success/webhook-success.yaml
 
 recordingUpdated:
     post:
@@ -41,8 +41,8 @@ recordingUpdated:
             > This update can be due to a change in the recording status (e.g., from `starting` to `active`).
         operationId: recordingUpdatedWebhook
         parameters:
-            - $ref: ../components/parameters/x-timestamp.yaml
-            - $ref: ../components/parameters/x-signature.yaml
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
         requestBody:
             required: true
             content:
@@ -50,21 +50,21 @@ recordingUpdated:
                     schema:
                         type: object
                         allOf:
-                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - $ref: ./schemas/webhook-base-event.yaml
                             - properties:
                                   event:
                                       example: recordingUpdated
                                   data:
                                       type: object
                                       allOf:
-                                          - $ref: ../components/schemas/recording-base.yaml
+                                          - $ref: ../recordings/schemas/recording-base.yaml
                                           - properties:
                                                 status:
                                                     enum: [active, ending]
                                                     example: active
         responses:
             '200':
-                $ref: ../components/responses/webhook-success.yaml
+                $ref: ./responses/success/webhook-success.yaml
 
 recordingEnded:
     post:
@@ -76,8 +76,8 @@ recordingEnded:
             > or the recording reaching its maximum duration.
         operationId: recordingEndedWebhook
         parameters:
-            - $ref: ../components/parameters/x-timestamp.yaml
-            - $ref: ../components/parameters/x-signature.yaml
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
         requestBody:
             required: true
             content:
@@ -85,7 +85,7 @@ recordingEnded:
                     schema:
                         type: object
                         allOf:
-                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - $ref: ./schemas/webhook-base-event.yaml
                             - properties:
                                   event:
                                       example: recordingEnded
@@ -97,7 +97,7 @@ recordingEnded:
                                           - size
                                           - details
                                       allOf:
-                                          - $ref: ../components/schemas/recording-base.yaml
+                                          - $ref: ../recordings/schemas/recording-base.yaml
                                           - properties:
                                                 status:
                                                     enum: [complete, failed, aborted, limit_reached]
@@ -120,7 +120,7 @@ recordingEnded:
                                                     example: Stopped using API
         responses:
             '200':
-                $ref: ../components/responses/webhook-success.yaml
+                $ref: ./responses/success/webhook-success.yaml
 
 meetingStarted:
     post:
@@ -129,8 +129,8 @@ meetingStarted:
             This webhook is triggered when a meeting starts.
         operationId: meetingStartedWebhook
         parameters:
-            - $ref: ../components/parameters/x-timestamp.yaml
-            - $ref: ../components/parameters/x-signature.yaml
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
         requestBody:
             required: true
             content:
@@ -138,15 +138,15 @@ meetingStarted:
                     schema:
                         type: object
                         allOf:
-                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - $ref: ./schemas/webhook-base-event.yaml
                             - properties:
                                   event:
                                       example: meetingStarted
                                   data:
-                                      $ref: ../components/schemas/meet-room.yaml
+                                      $ref: ../rooms/schemas/meet-room.yaml
         responses:
             '200':
-                $ref: ../components/responses/webhook-success.yaml
+                $ref: ./responses/success/webhook-success.yaml
 
 meetingEnded:
     post:
@@ -155,8 +155,8 @@ meetingEnded:
             This webhook is triggered when a meeting ends.
         operationId: meetingEndedWebhook
         parameters:
-            - $ref: ../components/parameters/x-timestamp.yaml
-            - $ref: ../components/parameters/x-signature.yaml
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
         requestBody:
             required: true
             content:
@@ -164,12 +164,12 @@ meetingEnded:
                     schema:
                         type: object
                         allOf:
-                            - $ref: ../components/schemas/webhook-base-event.yaml
+                            - $ref: ./schemas/webhook-base-event.yaml
                             - properties:
                                   event:
                                       example: meetingEnded
                                   data:
-                                      $ref: ../components/schemas/meet-room.yaml
+                                      $ref: ../rooms/schemas/meet-room.yaml
         responses:
             '200':
-                $ref: ../components/responses/webhook-success.yaml
+                $ref: ./responses/success/webhook-success.yaml

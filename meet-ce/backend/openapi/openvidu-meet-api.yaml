@@ -1,67 +1,67 @@
 openapi: 3.1.0
 info:
-    $ref: './info/info.yaml'
+    $ref: './shared/info.yaml'
 servers:
     - url: meet/api/v1
       description: OpenVidu Meet API
 tags:
-    $ref: './tags/tags.yaml'
+    $ref: './shared/tags.yaml'
 webhooks:
     $ref: './webhooks/webhooks.yaml'
 paths:
     /users:
-        $ref: './paths/users.yaml#/~1users'
+        $ref: './users/users.yaml#/~1users'
     /users/{userId}:
-        $ref: './paths/users.yaml#/~1users~1{userId}'
+        $ref: './users/users.yaml#/~1users~1{userId}'
     /users/{userId}/password:
-        $ref: './paths/users.yaml#/~1users~1{userId}~1password'
+        $ref: './users/users.yaml#/~1users~1{userId}~1password'
     /users/{userId}/role:
-        $ref: './paths/users.yaml#/~1users~1{userId}~1role'
+        $ref: './users/users.yaml#/~1users~1{userId}~1role'
     /rooms:
-        $ref: './paths/rooms.yaml#/~1rooms'
+        $ref: './rooms/rooms.yaml#/~1rooms'
     /rooms/{roomId}:
-        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}'
+        $ref: './rooms/rooms.yaml#/~1rooms~1{roomId}'
     /rooms/{roomId}/config:
-        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1config'
+        $ref: './rooms/rooms.yaml#/~1rooms~1{roomId}~1config'
     /rooms/{roomId}/roles:
-        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1roles'
+        $ref: './rooms/rooms.yaml#/~1rooms~1{roomId}~1roles'
     /rooms/{roomId}/access:
-        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1access'
+        $ref: './rooms/rooms.yaml#/~1rooms~1{roomId}~1access'
     /rooms/{roomId}/status:
-        $ref: './paths/rooms.yaml#/~1rooms~1{roomId}~1status'
+        $ref: './rooms/rooms.yaml#/~1rooms~1{roomId}~1status'
     /rooms/{roomId}/members:
-        $ref: './paths/room-members.yaml#/~1rooms~1{roomId}~1members'
+        $ref: './room-members/room-members.yaml#/~1rooms~1{roomId}~1members'
     /rooms/{roomId}/members/{memberId}:
-        $ref: './paths/room-members.yaml#/~1rooms~1{roomId}~1members~1{memberId}'
+        $ref: './room-members/room-members.yaml#/~1rooms~1{roomId}~1members~1{memberId}'
     /recordings:
-        $ref: './paths/recordings.yaml#/~1recordings'
+        $ref: './recordings/recordings.yaml#/~1recordings'
     /recordings/download:
-        $ref: './paths/recordings.yaml#/~1recordings~1download'
+        $ref: './recordings/recordings.yaml#/~1recordings~1download'
     /recordings/{recordingId}:
-        $ref: './paths/recordings.yaml#/~1recordings~1{recordingId}'
+        $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}'
     /recordings/{recordingId}/media:
-        $ref: './paths/recordings.yaml#/~1recordings~1{recordingId}~1media'
+        $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1media'
     /recordings/{recordingId}/url:
-        $ref: './paths/recordings.yaml#/~1recordings~1{recordingId}~1url'
+        $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1url'
     /recordings/{recordingId}/stop:
-        $ref: './paths/recordings.yaml#/~1recordings~1{recordingId}~1stop'
+        $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1stop'
 components:
     securitySchemes:
-        $ref: './components/security.yaml'
+        $ref: './shared/security.yaml'
     schemas:
         MeetUser:
-            $ref: components/schemas/meet-user.yaml
+            $ref: ./users/schemas/meet-user.yaml
         MeetRoom:
-            $ref: components/schemas/meet-room.yaml
+            $ref: ./rooms/schemas/meet-room.yaml
         MeetRoomConfig:
-            $ref: './components/schemas/meet-room-config.yaml#/MeetRoomConfig'
+            $ref: './rooms/schemas/meet-room-config.yaml#/MeetRoomConfig'
         MeetRoomMember:
-            $ref: components/schemas/meet-room-member.yaml
+            $ref: ./room-members/schemas/meet-room-member.yaml
         MeetPermissions:
-            $ref: components/schemas/meet-permissions.yaml
+            $ref: ./rooms/schemas/meet-permissions.yaml
         MeetRecording:
-            $ref: components/schemas/meet-recording.yaml
+            $ref: ./recordings/schemas/meet-recording.yaml
         MeetWebhookEvent:
-            $ref: components/schemas/meet-webhook.yaml#/MeetWebhookEvent
+            $ref: ./webhooks/schemas/meet-webhook.yaml#/MeetWebhookEvent
         Error:
-            $ref: components/schemas/error.yaml
+            $ref: ./shared/schemas/error.yaml

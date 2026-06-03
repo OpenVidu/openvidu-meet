@@ -1,8 +1,0 @@
-description: Recordings not available for ZIP download
-content:
-    application/json:
-        schema:
-            $ref: ../schemas/error.yaml
-        example:
-            error: 'Recording Error'
-            message: 'None of the provided recordings are available for ZIP download'

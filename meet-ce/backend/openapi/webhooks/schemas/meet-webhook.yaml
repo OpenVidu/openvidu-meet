@@ -1,0 +1,35 @@
+MeetWebhookEvent:
+    type: object
+    properties:
+        creationDate:
+            type: number
+            description: The date when the event was created (milliseconds since the Unix epoch).
+            example: 1620000000000
+        event:
+            type: string
+            description: Event type identifier.
+            enum:
+                - recordingStarted
+                - recordingUpdated
+                - recordingEnded
+                - meetingStarted
+                - meetingEnded
+            example: recordingStarted
+        data:
+            oneOf:
+                - allOf:
+                      - title: Recording Event Data
+                      - description: Data for recording-related events (started, updated, ended)
+                      - $ref: '../../recordings/schemas/meet-recording.yaml'
+                - allOf:
+                      - title: Room Event Data
+                      - description: Data for room-related events (meeting started, meeting ended)
+                      - $ref: '../../rooms/schemas/meet-room.yaml'
+            discriminator:
+                propertyName: eventType
+                mapping:
+                    recordingStarted: '../../recordings/schemas/meet-recording.yaml'
+                    recordingUpdated: '../../recordings/schemas/meet-recording.yaml'
+                    recordingEnded: '../../recordings/schemas/meet-recording.yaml'
+                    meetingStarted: '../../rooms/schemas/meet-room.yaml'
+                    meetingEnded: '../../rooms/schemas/meet-room.yaml'

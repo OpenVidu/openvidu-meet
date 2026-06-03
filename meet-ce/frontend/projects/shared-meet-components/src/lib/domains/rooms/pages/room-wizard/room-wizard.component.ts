@@ -248,7 +248,7 @@ export class RoomWizardComponent implements OnInit {
 		if (failed.length > 0) {
 			const failedIds = members
 				.filter((_, i) => results[i].status === 'rejected')
-				.map((m) => m.userId)
+				.map((m) => m.userId || m.name)
 				.join(', ');
 			this.notificationService.showSnackbar(
 				`Room created, but failed to add ${failed.length} member(s): ${failedIds}`

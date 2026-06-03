@@ -1,5 +1,0 @@
-description: Successfully created a new API key
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/meet-api-key.yaml'

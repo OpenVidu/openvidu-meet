@@ -188,3 +188,45 @@ export const applyBackgroundEffect = async (page: Page, effectId: string, timeou
 export const assertHasVideoDeviceOption = async (page: Page): Promise<void> => {
 	await expect(page.locator('[id^="option-"]').first()).toBeVisible();
 };
+
+/**
+ * Opens the video device dropdown (prejoin compact selector or settings panel) and returns each
+ * device option's `label` and whether it is currently `selected`. The selected flag comes from the
+ * menu item's `selected` class, which the component keys on the device id — the correct identity to
+ * reason about, since a device's display label and its track label/deviceId need not match.
+ *
+ * Returns `[]` when the dropdown is not openable (e.g. disabled).
+ */
+export const getVideoDeviceOptions = async (page: Page): Promise<Array<{ label: string; selected: boolean }>> => {
+	const dropdown = page.locator('#video-dropdown');
+	await expect(dropdown).toBeVisible({ timeout: 10_000 });
+
+	if (await dropdown.isDisabled()) {
+		return [];
+	}
+
+	await dropdown.click();
+	const options = page.locator('[id^="option-"]');
+	await expect(options.first()).toBeVisible({ timeout: 10_000 });
+	return options.evaluateAll((elements) =>
+		elements.map((el) => ({
+			label: el.id.replace(/^option-/, ''),
+			selected: el.classList.contains('selected')
+		}))
+	);
+};
+
+/**
+ * Selects a video device option by its label, opening the dropdown first when the option is not
+ * already visible.
+ */
+export const selectVideoDevice = async (page: Page, label: string): Promise<void> => {
+	const option = page.locator(`#option-${label}`);
+
+	if (!(await option.isVisible())) {
+		await clickControlButton(page, '#video-dropdown');
+	}
+
+	await expect(option).toBeVisible({ timeout: 10_000 });
+	await option.click();
+};

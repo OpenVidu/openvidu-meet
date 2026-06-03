@@ -1,0 +1,47 @@
+/auth/login:
+    post:
+        operationId: loginUser
+        summary: Login to OpenVidu Meet
+        description: >
+            Authenticates a user and returns an access and refresh token.
+        tags:
+            - Internal API - Authentication
+        requestBody:
+            $ref: './requests/login.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/user-login.yaml'
+            '404':
+                $ref: './responses/errors/invalid-credentials.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+/auth/logout:
+    post:
+        operationId: logoutUser
+        summary: Logout from OpenVidu Meet
+        description: >
+            Logs out the user.
+        tags:
+            - Internal API - Authentication
+        responses:
+            '200':
+                $ref: './responses/success/user-logout.yaml'
+/auth/refresh:
+    post:
+        operationId: refreshAccessToken
+        summary: Refresh access token
+        description: >
+            Refreshes the access token using the refresh token.
+        tags:
+            - Internal API - Authentication
+        security:
+            - refreshTokenHeader: []
+        responses:
+            '200':
+                $ref: './responses/success/refresh-token.yaml'
+            '400':
+                $ref: './responses/errors/invalid-refresh-token.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'

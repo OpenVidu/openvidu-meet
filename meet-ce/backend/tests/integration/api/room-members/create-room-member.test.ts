@@ -92,6 +92,29 @@ describe('Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('permissionsUpdatedAt');
 		});
 
+		it('should exclude effectivePermissions by default and include it when requested via extraFields', async () => {
+			// Without extraFields, effectivePermissions must be excluded
+			const defaultResponse = await createRoomMember(
+				roomId,
+				{ name: 'No Extra Fields User', baseRole: MeetRoomMemberRole.SPEAKER },
+				'' // do not request any extra field
+			);
+			expect(defaultResponse.status).toBe(201);
+			expect(defaultResponse.body).not.toHaveProperty('effectivePermissions');
+			expect(defaultResponse.body._extraFields).toContain('effectivePermissions');
+
+			// With extraFields=effectivePermissions, it must be included
+			const withExtraResponse = await createRoomMember(
+				roomId,
+				{ name: 'Extra Fields User', baseRole: MeetRoomMemberRole.SPEAKER },
+				'effectivePermissions'
+			);
+			expect(withExtraResponse.status).toBe(201);
+			expect(withExtraResponse.body).toHaveProperty('effectivePermissions');
+			expect(withExtraResponse.body.effectivePermissions).toEqual(roomRoles.speaker.permissions);
+			expect(withExtraResponse.body._extraFields).toContain('effectivePermissions');
+		});
+
 		it('should successfully create room member with MODERATOR role', async () => {
 			const response = await createRoomMember(roomId, {
 				name: 'Mod User',

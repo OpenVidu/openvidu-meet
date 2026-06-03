@@ -1,8 +1,0 @@
-description: Recording not found
-content:
-    application/json:
-        schema:
-            $ref: '../schemas/error.yaml'
-        example:
-            error: 'Recording Error'
-            message: 'Recording "room-123--EG_XYZ--XX445" not found'

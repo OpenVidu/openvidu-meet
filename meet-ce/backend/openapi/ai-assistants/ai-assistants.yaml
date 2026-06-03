@@ -1,0 +1,62 @@
+/ai/assistants:
+    post:
+        operationId: createAiAssistant
+        summary: Create AI assistant
+        description: |
+            Activates AI assistance.
+
+            > Currently only meeting AI Assistand and `live_captions` capability is supported.
+        tags:
+            - Internal API - AI Assistants
+        security:
+            - roomMemberTokenHeader: []
+        requestBody:
+            $ref: './requests/create-ai-assistant.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/create-ai-assistant.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '409':
+                $ref: './responses/errors/ai-assistant-starting.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+
+/ai/assistants/{assistantId}:
+    delete:
+        operationId: cancelAiAssistant
+        summary: Cancel AI assistant
+        description: |
+            Cancels AI assistant.
+
+            The assistant process (live_captions) is stopped only when the last participant cancels it.
+        tags:
+            - Internal API - AI Assistants
+        security:
+            - roomMemberTokenHeader: []
+        parameters:
+            - in: path
+              name: assistantId
+              required: true
+              schema:
+                  type: string
+                  minLength: 1
+              description: Identifier of the assistant activation returned by create operation.
+              example: asst_123
+        responses:
+            '204':
+                description: AI assistant canceled successfully.
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '409':
+                $ref: './responses/errors/ai-assistant-cannot-be-stopped.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'

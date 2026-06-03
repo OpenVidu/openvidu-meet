@@ -1,6 +1,0 @@
-description: New security config
-required: true
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/global-security-config.yaml'

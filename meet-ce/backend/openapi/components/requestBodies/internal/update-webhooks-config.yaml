@@ -1,6 +1,0 @@
-description: New webhooks config
-required: true
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/webhooks-config.yaml'

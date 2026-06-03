@@ -1,0 +1,17 @@
+/analytics:
+    get:
+        operationId: getAnalytics
+        summary: Get usage analytics
+        description: >
+            Retrieves usage analytics for OpenVidu Meet, including metrics for rooms and recordings.
+        tags:
+            - Internal API - Analytics
+        security:
+            - accessTokenHeader: []
+        responses:
+            '200':
+                $ref: './responses/success/get-analytics.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'

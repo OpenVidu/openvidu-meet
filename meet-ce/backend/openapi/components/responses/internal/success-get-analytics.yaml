@@ -1,5 +1,0 @@
-description: Analytics data retrieved successfully
-content:
-    application/json:
-        schema:
-            $ref: '../../schemas/internal/meet-analytics.yaml'

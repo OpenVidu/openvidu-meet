@@ -212,6 +212,12 @@ export class RoomMemberService {
 		roomId: string,
 		memberId: string,
 		fields?: readonly MeetRoomMemberField[]
+	): Promise<MeetRoomMember | Partial<MeetRoomMember> | null>;
+
+	async getRoomMember(
+		roomId: string,
+		memberId: string,
+		fields?: readonly MeetRoomMemberField[]
 	): Promise<MeetRoomMember | Partial<MeetRoomMember> | null> {
 		return this.roomMemberRepository.findByRoomAndMemberId(roomId, memberId, fields);
 	}

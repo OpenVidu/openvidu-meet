@@ -23,10 +23,11 @@ allowBuilds:
   esbuild: false
   lmdb: false
   msgpackr-extract: false
+  protobufjs: false
 
 overrides:
   livekit-client: 2.16.1
-  
+
 strictPeerDependencies: false
 autoInstallPeers: true
 shamefullyHoist: true

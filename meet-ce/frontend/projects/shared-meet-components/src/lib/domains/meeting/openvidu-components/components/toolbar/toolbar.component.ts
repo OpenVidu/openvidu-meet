@@ -182,11 +182,11 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	/**
 	 * @ignore
 	 */
-	readonly hasVideoDevices = signal(true);
+	readonly hasVideoDevices = this.deviceService.hasVideoDevices;
 	/**
 	 * @ignore
 	 */
-	readonly hasAudioDevices = signal(true);
+	readonly hasAudioDevices = this.deviceService.hasAudioDevices;
 	/**
 	 * @ignore
 	 */
@@ -434,9 +434,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	async ngOnInit() {
 		const roomValue = this.openviduService.getRoom();
 		this.room.set(roomValue);
-
-		this.hasVideoDevices.set(this.deviceService.hasVideoDeviceAvailable());
-		this.hasAudioDevices.set(this.deviceService.hasAudioDeviceAvailable());
 
 		this.subscribeToReconnection();
 	}

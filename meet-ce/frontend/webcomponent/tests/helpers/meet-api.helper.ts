@@ -38,7 +38,7 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
  * Fetches a room's details from the Meet API.
  */
 export const getRoom = async (roomId: string): Promise<MeetRoom> => {
-	const response = await fetch(withApiPath(`/rooms/${roomId}?extraFields=config`), {
+	const response = await fetch(withApiPath(`/rooms/${roomId}?extraFields=config,roles`), {
 		method: 'GET',
 		headers: {
 			'Content-Type': 'application/json',

@@ -13,6 +13,7 @@ import type {
 	OVScreenShareCaptureOptions,
 	OVVideoCaptureOptions
 } from '../livekit-adapter';
+import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track, VideoPresets } from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
@@ -26,6 +27,7 @@ export class ParticipantService {
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly storageSrv = inject(StorageService);
+	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
 	private readonly log = inject(LoggerService).get('ParticipantService');
 
@@ -85,12 +87,23 @@ export class ParticipantService {
 	 * @internal
 	 */
 	async connect(): Promise<void> {
-		let isCameraEnabled: boolean = this.isMyCameraEnabled();
-		let isMicrophoneEnabled: boolean = this.isMyMicrophoneEnabled();
 		let prejoinTracks = this.openviduService.getLocalTracks();
 
-		if (prejoinTracks.length === 0 && (isCameraEnabled || isMicrophoneEnabled)) {
-			prejoinTracks = await this.openviduService.createLocalTracks(isCameraEnabled, isMicrophoneEnabled);
+		if (prejoinTracks.length === 0) {
+			// No prejoin page ran, so the local tracks have not been created yet. Decide what to open
+			// from the user's stored preferences (availability-independent: on first visit the device
+			// list is empty until permission is granted by this very call). This is the single
+			// getUserMedia of the no-prejoin path.
+			const wantCamera = this.directiveService.isVideoEnabled() && this.storageSrv.isCameraEnabled();
+			const wantMicrophone = this.directiveService.isAudioEnabled() && this.storageSrv.isMicrophoneEnabled();
+
+			if (wantCamera || wantMicrophone) {
+				prejoinTracks = await this.openviduService.createLocalTracks(wantCamera, wantMicrophone);
+
+				// Permission may have just been granted → populate the device list and align the
+				// selection with the opened devices so the in-room selectors work.
+				await this.deviceSrv.syncDevicesAfterTrackCreation(prejoinTracks);
+			}
 		}
 
 		await this.openviduService.connectRoom();

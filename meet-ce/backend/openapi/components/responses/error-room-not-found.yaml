@@ -1,8 +1,0 @@
-description: Room not found
-content:
-    application/json:
-        schema:
-            $ref: '../schemas/error.yaml'
-        example:
-            error: 'Room Error'
-            message: 'Room "room_123" does not exist'

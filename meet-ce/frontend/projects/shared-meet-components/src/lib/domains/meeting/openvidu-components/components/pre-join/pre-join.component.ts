@@ -21,6 +21,7 @@ import { ILogger } from '../../models/logger.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { DeviceService } from '../../services/device/device.service';
 import { LocalTrack, Track } from '../../services/livekit-adapter';
 import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
@@ -69,6 +70,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	readonly onLangChanged = output<LangOption>();
 	readonly onReadyToJoin = output<void>();
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly deviceSrv = inject(DeviceService);
 
 	readonly errorMessage = signal<string | undefined>(undefined);
 	windowSize!: number;
@@ -88,7 +90,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	videoTrack: LocalTrack | undefined;
 	audioTrack: LocalTrack | undefined;
 	readonly isVideoEnabled = signal(false);
-	readonly hasVideoDevices = signal(true);
+	readonly hasVideoDevices = this.deviceSrv.hasVideoDevices;
 
 	/**
 	 * Avatar poster descriptor for the local preview. There is no participant stream during
@@ -204,10 +206,6 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	onVideoDevicesLoaded(devices: CustomDevice[]) {
-		this.hasVideoDevices.set(devices.length > 0);
-	}
-
 	audioDeviceChanged(device: CustomDevice) {
 		try {
 			this.log.d('Audio device changed to:', device);
@@ -280,6 +278,11 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			try {
 				this.tracks = await this.openviduService.createLocalTracks();
 				this.openviduService.setLocalTracks(this.tracks);
+
+				// Creating the tracks above is what grants media permission on first visit; only then
+				// are device labels available. Populate the list and align the selection accordingly.
+				await this.deviceSrv.syncDevicesAfterTrackCreation(this.tracks);
+
 				this.videoTrack = this.tracks.find((track) => track.kind === Track.Kind.Video);
 				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
 				this.isVideoEnabled.set(this.openviduService.isVideoTrackEnabled());

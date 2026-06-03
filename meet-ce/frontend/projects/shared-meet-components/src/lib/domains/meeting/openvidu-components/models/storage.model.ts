@@ -10,25 +10,23 @@ export enum StorageKeys {
 	LANG = 'lang',
 	CAPTION_LANG = 'captionLang',
 	BACKGROUND = 'virtualBg',
-	THEME = 'theme',
-	TAB_ID = 'tabId',
-	ACTIVE_TABS = 'activeTabs'
+	THEME = 'theme'
 }
 
-export const SESSION_KEYS: StorageKeys[] = [StorageKeys.TAB_ID];
-
-export const TAB_MANAGEMENT_KEYS: StorageKeys[] = [StorageKeys.TAB_ID, StorageKeys.ACTIVE_TABS];
-
-// Data that should be unique per tab (stored in localStorage with tabId prefix)
-export const TAB_SPECIFIC_KEYS: StorageKeys[] = [StorageKeys.PARTICIPANT_NAME, StorageKeys.MICROPHONE_ENABLED, StorageKeys.CAMERA_ENABLED];
-
-// Data that should be truly persistent and shared between tabs
-export const SHARED_PERSISTENT_KEYS: StorageKeys[] = [
-	StorageKeys.VIDEO_DEVICE,
-	StorageKeys.AUDIO_DEVICE,
-	StorageKeys.LANG,
-	StorageKeys.CAPTION_LANG,
-	StorageKeys.BACKGROUND
+/**
+ * @internal
+ *
+ * Keys whose value is scoped to a single browser tab.
+ *
+ * They are persisted in `sessionStorage`, which is isolated per tab and cleared automatically
+ * by the browser when the tab is closed. This lets several tabs join with independent settings
+ * (name, camera/microphone state) without leaking state between them. Every other key is stored
+ * in `localStorage` and therefore shared across all tabs of the same origin.
+ */
+export const TAB_SPECIFIC_KEYS: StorageKeys[] = [
+	StorageKeys.PARTICIPANT_NAME,
+	StorageKeys.MICROPHONE_ENABLED,
+	StorageKeys.CAMERA_ENABLED
 ];
 
 export const STORAGE_PREFIX = 'ovComponents-';

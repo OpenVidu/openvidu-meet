@@ -1,73 +1,73 @@
 openapi: 3.1.0
 info:
-    $ref: './info/info.yaml'
+    $ref: './shared/info.yaml'
 servers:
-    - url: /internal-api/v1
+    - url: meet/internal-api/v1
       description: OpenVidu Meet Internal API
 tags:
-    $ref: './tags/tags.yaml'
+    $ref: './shared/tags.yaml'
 
 paths:
     /auth/login:
-        $ref: './paths/internal/auth.yaml#/~1auth~1login'
+        $ref: './auth/auth.yaml#/~1auth~1login'
     /auth/logout:
-        $ref: './paths/internal/auth.yaml#/~1auth~1logout'
+        $ref: './auth/auth.yaml#/~1auth~1logout'
     /auth/refresh:
-        $ref: './paths/internal/auth.yaml#/~1auth~1refresh'
+        $ref: './auth/auth.yaml#/~1auth~1refresh'
     /api-keys:
-        $ref: './paths/internal/api-keys.yaml#/~1auth~1api-keys'
+        $ref: './api-keys/api-keys.yaml#/~1auth~1api-keys'
     /users/me:
-        $ref: './paths/internal/users.yaml#/~1users~1me'
+        $ref: './users/internal/users.yaml#/~1users~1me'
     /users/change-password:
-        $ref: './paths/internal/users.yaml#/~1users~1change-password'
+        $ref: './users/internal/users.yaml#/~1users~1change-password'
     /config/webhooks:
-        $ref: './paths/internal/meet-global-config.yaml#/~1config~1webhooks'
+        $ref: './config/config.yaml#/~1config~1webhooks'
     /config/webhooks/test:
-        $ref: './paths/internal/meet-global-config.yaml#/~1config~1webhooks~1test'
+        $ref: './config/config.yaml#/~1config~1webhooks~1test'
     /config/security:
-        $ref: './paths/internal/meet-global-config.yaml#/~1config~1security'
+        $ref: './config/config.yaml#/~1config~1security'
     /config/rooms/appearance:
-        $ref: './paths/internal/meet-global-config.yaml#/~1config~1rooms~1appearance'
+        $ref: './config/config.yaml#/~1config~1rooms~1appearance'
     /config/captions:
-        $ref: './paths/internal/meet-global-config.yaml#/~1config~1captions'
+        $ref: './config/config.yaml#/~1config~1captions'
     /rooms/{roomId}/members/token:
-        $ref: './paths/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
+        $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token'
     /rooms/{roomId}/members/token/refresh:
-        $ref: './paths/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token~1refresh'
+        $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token~1refresh'
     /meetings/{roomId}:
-        $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}'
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}'
     /meetings/{roomId}/participants/{participantIdentity}:
-        $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
     /meetings/{roomId}/participants/{participantIdentity}/role:
-        $ref: './paths/internal/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role'
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role'
     /ai/assistants:
-        $ref: './paths/internal/ai-assistant.yaml#/~1ai~1assistants'
+        $ref: './ai-assistants/ai-assistants.yaml#/~1ai~1assistants'
     /ai/assistants/{assistantId}:
-        $ref: './paths/internal/ai-assistant.yaml#/~1ai~1assistants~1{assistantId}'
+        $ref: './ai-assistants/ai-assistants.yaml#/~1ai~1assistants~1{assistantId}'
     /analytics:
-        $ref: './paths/internal/analytics.yaml#/~1analytics'
+        $ref: './analytics/analytics.yaml#/~1analytics'
 
 components:
     securitySchemes:
-        $ref: components/security.yaml
+        $ref: ./shared/security.yaml
     schemas:
         MeetApiKey:
-            $ref: components/schemas/internal/meet-api-key.yaml
+            $ref: ./api-keys/schemas/meet-api-key.yaml
         MeetUser:
-            $ref: components/schemas/meet-user.yaml
+            $ref: ./users/schemas/meet-user.yaml
         WebhooksConfig:
-            $ref: components/schemas/internal/webhooks-config.yaml
+            $ref: ./config/schemas/webhooks-config.yaml
         SecurityConfig:
-            $ref: components/schemas/internal/global-security-config.yaml
+            $ref: ./config/schemas/global-security-config.yaml
         RoomsAppearanceConfig:
-            $ref: components/schemas/internal/rooms-appearance-config.yaml
+            $ref: ./config/schemas/rooms-appearance-config.yaml
         MeetRoom:
-            $ref: components/schemas/meet-room.yaml
+            $ref: ./rooms/schemas/meet-room.yaml
         MeetAnalytics:
-            $ref: components/schemas/internal/meet-analytics.yaml
+            $ref: ./analytics/schemas/meet-analytics.yaml
         AiAssistantCreateRequest:
-            $ref: components/schemas/internal/ai-assistant-create-request.yaml
+            $ref: ./ai-assistants/schemas/ai-assistant-create-request.yaml
         AiAssistantCreateResponse:
-            $ref: components/schemas/internal/ai-assistant-create-response.yaml
+            $ref: ./ai-assistants/schemas/ai-assistant-create-response.yaml
         Error:
-            $ref: components/schemas/error.yaml
+            $ref: ./shared/schemas/error.yaml

@@ -698,13 +698,23 @@ export const executeRoomStatusValidationGC = async () => {
 
 // ROOM MEMBER HELPERS
 
-export const createRoomMember = async (roomId: string, memberOptions: MeetRoomMemberOptions) => {
+export const createRoomMember = async (
+	roomId: string,
+	memberOptions: MeetRoomMemberOptions,
+	// 'effectivePermissions' is an extra field (excluded by default); request it by default so tests can assert on it
+	extraFields = 'effectivePermissions'
+) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.send(memberOptions);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+
+	if (extraFields) {
+		req.set('x-extrafields', extraFields);
+	}
+
+	return await req.send(memberOptions);
 };
 
 export const getRoomMembers = async (roomId: string, query: Record<string, unknown> = {}) => {
@@ -716,21 +726,44 @@ export const getRoomMembers = async (roomId: string, query: Record<string, unkno
 		.query(query);
 };
 
-export const getRoomMember = async (roomId: string, memberId: string) => {
+export const getRoomMember = async (
+	roomId: string,
+	memberId: string,
+	// 'effectivePermissions' is an extra field (excluded by default); request it by default so tests can assert on it
+	extraFields = 'effectivePermissions'
+) => {
 	checkAppIsRunning();
+
+	const queryParams: Record<string, string> = {};
+
+	if (extraFields) {
+		queryParams.extraFields = extraFields;
+	}
 
 	return await request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.query(queryParams);
 };
 
-export const updateRoomMember = async (roomId: string, memberId: string, updates: Record<string, unknown>) => {
+export const updateRoomMember = async (
+	roomId: string,
+	memberId: string,
+	updates: Record<string, unknown>,
+	// 'effectivePermissions' is an extra field (excluded by default); request it by default so tests can assert on it
+	extraFields = 'effectivePermissions'
+) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const req = request(app)
 		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.send(updates);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+
+	if (extraFields) {
+		req.set('x-extrafields', extraFields);
+	}
+
+	return await req.send(updates);
 };
 
 export const deleteRoomMember = async (roomId: string, memberId: string) => {

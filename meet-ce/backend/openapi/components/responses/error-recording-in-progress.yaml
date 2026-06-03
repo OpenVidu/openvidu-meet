@@ -1,8 +1,0 @@
-description: Conflict — The recording is in progress
-content:
-    application/json:
-        schema:
-            $ref: '../schemas/error.yaml'
-        example:
-            error: 'Recording Error'
-            message: 'Recording "room-123--EG_XYZ--XX445" is not stopped yet'
