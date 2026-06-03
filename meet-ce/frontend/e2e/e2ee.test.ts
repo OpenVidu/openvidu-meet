@@ -103,6 +103,10 @@ test.describe('E2EE E2E Tests', () => {
 				// P1 and P2 each see one encryption error poster for the other
 				await expect(page.locator('.encryption-error-poster')).toHaveCount(1);
 				await expect(page2.locator('.encryption-error-poster')).toHaveCount(1);
+				// The undecryptable remote tile renders ONLY the poster: its <video> is removed from
+				// the DOM (not merely hidden). Neither viewer has a remote video element mounted.
+				await expect(page.locator('.OV_stream.remote .OV_video-element')).toHaveCount(0);
+				await expect(page2.locator('.OV_stream.remote .OV_video-element')).toHaveCount(0);
 
 				// P3 joins with key1 (same as P1)
 				await openMeeting(page3, accessUrl, { e2eeKey: key1 });
@@ -118,6 +122,12 @@ test.describe('E2EE E2E Tests', () => {
 
 				// P2 sees errors for both P1 and P3
 				await expect(page2.locator('.encryption-error-poster')).toHaveCount(2);
+
+				// Remote <video> elements exist only for correctly-keyed remotes: P1 sees P3 (1, P2 has
+				// none), P3 sees P1 (1, P2 has none), P2 (wrong key) can decrypt neither (0).
+				await expect(page.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
+				await expect(page3.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
+				await expect(page2.locator('.OV_stream.remote .OV_video-element')).toHaveCount(0);
 			} finally {
 				await Promise.all([page2.close(), page3.close()]);
 			}
@@ -193,6 +203,17 @@ test.describe('E2EE E2E Tests', () => {
 					waitForRemoteStream(page2, 2, { videoCount: 1 }),
 					waitForRemoteStream(page3, 2, { videoCount: 0 })
 				]);
+
+				// P3 (wrong key) cannot decrypt either remote: both remote tiles show the encryption
+				// poster and no remote <video> is mounted.
+				await expect(page3.locator('.encryption-error-poster')).toHaveCount(2);
+				await expect(page3.locator('.OV_stream.remote .OV_video-element')).toHaveCount(0);
+				// P1 and P2 (correct key) each see one error poster (for P3) and keep the other
+				// correctly-keyed remote's video.
+				await expect(page.locator('.encryption-error-poster')).toHaveCount(1);
+				await expect(page2.locator('.encryption-error-poster')).toHaveCount(1);
+				await expect(page.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
+				await expect(page2.locator('.OV_stream.remote .OV_video-element')).toHaveCount(1);
 
 				// P3 sees masked names for P1 and P2 in video grid
 				const nameElements3 = page3.locator('.participant-name-container #participant-name');

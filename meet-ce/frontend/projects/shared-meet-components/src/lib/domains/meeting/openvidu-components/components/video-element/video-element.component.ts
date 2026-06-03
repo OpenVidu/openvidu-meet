@@ -26,6 +26,10 @@ import { ParticipantAvatarComponent } from '../participant-avatar/participant-av
  * Modes:
  * - **Video mode** (videoTrack defined): renders a `<video>` with the video track attached.
  * - **Avatar-only mode**: renders the avatar poster — no media element is mounted.
+ * - **Encryption-error mode** (avatar.hasEncryptionError): the frames only decode to black and
+ *   the error never clears for the session, so the `<video>` is intentionally NOT rendered — the
+ *   avatar's encryption-error poster stands in its place and {@link attachVideoTrackEffect}
+ *   detaches the track when the element is removed.
  */
 @Component({
 	selector: 'ov-video-element',
@@ -39,7 +43,7 @@ import { ParticipantAvatarComponent } from '../participant-avatar/participant-av
 			[isSpeaking]="avatar().isSpeaking"
 			[hasEncryptionError]="avatar().hasEncryptionError"
 		/>
-		@if (videoTrack()) {
+		@if (videoTrack() && !avatar().hasEncryptionError) {
 			<video
 				#videoElement
 				class="OV_media-element OV_video-element"
