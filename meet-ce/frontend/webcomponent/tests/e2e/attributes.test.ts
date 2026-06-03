@@ -68,6 +68,27 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(iframeLocator(page, '#participant-e2eekey-input')).toHaveCount(0);
 				await expect(iframeLocator(page, '.encryption-badge')).toBeVisible();
 			});
+
+			test('e2ee-key + participant-name: join button stays enabled when both are pre-filled', async ({
+				page
+			}) => {
+				// Regression: providing BOTH participant-name and e2ee-key disables both lobby
+				// form controls. A FormGroup whose every control is disabled has status DISABLED,
+				// so `valid` is false even though the form is complete — which previously left the
+				// join button permanently disabled. The button must remain clickable here.
+				await openWebcomponentWithAttributes(page, {
+					[WebComponentProperty.ROOM_URL]: accessUrl,
+					[WebComponentProperty.PARTICIPANT_NAME]: 'Alice',
+					[WebComponentProperty.E2EE_KEY]: 'super-secret-key-123'
+				});
+
+				const nameInput = iframeLocator(page, '#participant-name-input');
+				await expect(nameInput).toBeVisible();
+				await expect(nameInput).toBeDisabled();
+				await expect(iframeLocator(page, '#participant-e2eekey-input')).toHaveCount(0);
+
+				await expect(iframeLocator(page, '#participant-name-submit')).toBeEnabled();
+			});
 		});
 
 		test.describe('with recording', () => {

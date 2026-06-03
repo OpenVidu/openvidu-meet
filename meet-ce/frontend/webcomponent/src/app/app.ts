@@ -97,7 +97,7 @@ export class App {
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),
-		showRecording: this.showRecording() // esto es interno?
+		showRecording: this.showRecording()
 	}));
 
 	// An active in-WC view swap (see `_overrideRoomRecordingsId`) wins over the

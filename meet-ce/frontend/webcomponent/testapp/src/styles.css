@@ -19,3 +19,98 @@ app-root {
   width: 100vw;
   height: 100vh;
 }
+
+/* ── Shared UI primitives ─────────────────────────────────────────────────────
+   Reusable building blocks for the controls panel. Kept global (not scoped to a
+   single component) so panel sections like <app-event-log> can reuse them. */
+
+.ta-section {
+  padding: 10px 14px;
+  border-bottom: 1px solid #2d3047;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ta-section h2 {
+  margin: 0 0 4px;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #7c88a3;
+}
+
+/* Form fields */
+
+.ta-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ta-field label {
+  font-size: 10px;
+  color: #7c88a3;
+}
+
+.ta-field input,
+.ta-row input {
+  background: #0f1117;
+  border: 1px solid #2d3047;
+  color: #e2e8f0;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  outline: none;
+  width: 100%;
+}
+
+.ta-field input:focus,
+.ta-row input:focus {
+  border-color: #a78bfa;
+}
+
+.ta-field--checkbox {
+  flex-direction: row;
+  align-items: center;
+}
+
+.ta-field--checkbox label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.ta-row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+/* Buttons */
+
+.ta-btn {
+  background: #312e7a;
+  color: #c4b5fd;
+  border: 1px solid #4c3caf;
+  padding: 5px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.1s;
+}
+
+.ta-btn:hover {
+  background: #3d3a8a;
+}
+
+.ta-btn--sm {
+  padding: 2px 8px;
+  font-size: 11px;
+}

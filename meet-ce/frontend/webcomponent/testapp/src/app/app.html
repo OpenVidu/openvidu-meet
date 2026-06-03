@@ -84,17 +84,7 @@
 		</section>
 
 		<!-- Event log -->
-		<section class="ta-section ta-section--log" data-testid="section-event-log">
-			<div class="ta-log-header">
-				<h2>Event log</h2>
-				<button class="ta-btn ta-btn--sm" (click)="clearLog()" data-testid="btn-clear-log">Clear</button>
-			</div>
-			<ul class="ta-log" data-testid="event-log">
-				@for (entry of eventLog(); track entry) {
-				<li class="ta-log-entry" data-testid="event-log-entry">{{ entry }}</li>
-				}
-			</ul>
-		</section>
+		<app-event-log [entries]="log.entries()" (clear)="log.clear()" />
 	</aside>
 
 	<!-- ── WebComponent area ───────────────────────────────────────────────── -->
@@ -111,7 +101,7 @@
 				[showRecording]="showRecording()"
 				(joined)="handleJoined($event)"
 				(left)="handleLeft($event)"
-				(closed)="handleClosed($event)"
+				(closed)="handleClosed()"
 				data-testid="openvidu-meet"
 			>
 				<!-- <div slot="toolbar" class="ta-slot ta-slot--toolbar" data-testid="slot-toolbar">

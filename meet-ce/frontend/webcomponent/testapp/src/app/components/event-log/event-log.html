@@ -1,0 +1,11 @@
+<section class="ta-section ta-section--log" data-testid="section-event-log">
+	<div class="ta-log-header">
+		<h2>Event log</h2>
+		<button class="ta-btn ta-btn--sm" (click)="clear.emit()" data-testid="btn-clear-log">Clear</button>
+	</div>
+	<ul class="ta-log" data-testid="event-log">
+		@for (entry of entries(); track entry) {
+		<li class="ta-log-entry" data-testid="event-log-entry">{{ entry }}</li>
+		}
+	</ul>
+</section>

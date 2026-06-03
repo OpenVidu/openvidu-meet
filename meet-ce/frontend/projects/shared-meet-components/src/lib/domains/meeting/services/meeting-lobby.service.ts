@@ -115,7 +115,7 @@ export class MeetingLobbyService {
 	readonly participantName = computed(() => {
 		const form = this._participantForm();
 		const rawValue = form.getRawValue();
-		if (!form.valid || !rawValue.name?.trim()) {
+		if (form.invalid || !rawValue.name?.trim()) {
 			return '';
 		}
 		return rawValue.name.trim();
@@ -135,7 +135,7 @@ export class MeetingLobbyService {
 	readonly e2eeKeyValue = computed(() => {
 		const form = this._participantForm();
 		const rawValue = form.getRawValue();
-		if (!form.valid || !rawValue.e2eeKey?.trim()) {
+		if (form.invalid || !rawValue.e2eeKey?.trim()) {
 			return '';
 		}
 		return rawValue.e2eeKey.trim();
