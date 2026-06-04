@@ -265,17 +265,25 @@ export class MeetingLobbyService {
 	 */
 	protected async setBackButtonText(): Promise<void> {
 		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
+
+		// In webcomponent mode the lobby is embedded by the host app, so there is
+		// no in-app destination to navigate back to. Hide the quick actions.
+		if (!isStandaloneMode) {
+			this._showBackButton.set(false);
+			return;
+		}
+
 		const redirection = this.navigationService.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
 		// If in standalone mode without redirection and user is not authenticated,
 		// hide back button (user has no where to go back to)
-		if (isStandaloneMode && !redirection && !isAuthenticated) {
+		if (!redirection && !isAuthenticated) {
 			this._showBackButton.set(false);
 			return;
 		}
 
-		const backButtonText = isStandaloneMode && !redirection && isAuthenticated ? 'Back to Rooms' : 'Back';
+		const backButtonText = !redirection && isAuthenticated ? 'Back to Rooms' : 'Back';
 		this._showBackButton.set(true);
 		this._backButtonText.set(backButtonText);
 	}
