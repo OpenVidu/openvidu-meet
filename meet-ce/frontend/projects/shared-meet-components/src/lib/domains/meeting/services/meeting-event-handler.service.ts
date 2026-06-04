@@ -13,7 +13,6 @@ import {
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
-import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../shared/services/sound.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -29,6 +28,7 @@ import type {
 	Room
 } from '../openvidu-components';
 import { ParticipantLeftReason, RoomEvent } from '../openvidu-components';
+import { WebComponentEventType } from '../../../shared/models/webcomponent-bridge.model';
 import { WebComponentBridgeService } from '../../../shared/services/webcomponent-bridge.service';
 import { MeetingContextService } from './meeting-context.service';
 
@@ -48,7 +48,6 @@ export class MeetingEventHandlerService {
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
-	protected runtimeConfigService = inject(RuntimeConfigService);
 
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
@@ -107,27 +106,19 @@ export class MeetingEventHandlerService {
 		);
 	}
 
-	/**
-	 * Handles participant connected event by forwarding it to the
-	 * webcomponent adapter so the host receives a `joined` DOM event.
-	 *
-	 * @param event Participant model from OpenVidu
-	 */
+	/** Forwards the participant-connected event to the host as a `joined` DOM event. */
 	onParticipantConnected = (event: ParticipantModel): void => {
-		this.wcBridge.emitJoinedEvent({
+		this.wcBridge.emitWebComponentEvent({
+			type: WebComponentEventType.JOINED,
 			roomId: event.getProperties().room?.name || '',
 			participantIdentity: event.identity
 		});
 	};
 
 	/**
-	 * Handles participant left event:
-	 * - Maps technical reason to a user-friendly {@link LeftEventReason}.
-	 * - Emits a `left` event to the webcomponent host via the adapter.
-	 * - Clears room member and meeting context state.
-	 * - In standalone mode, navigates to the `/disconnected` page.
-	 *
-	 * @param event Participant left event from OpenVidu
+	 * Maps the technical leave reason to a {@link LeftEventReason}, clears context,
+	 * and delegates the post-leave transition (WC `left` event / SPA `/disconnected`)
+	 * to {@link NavigationService.goToDisconnected}.
 	 */
 	onParticipantLeft = async (event: ParticipantLeftEvent): Promise<void> => {
 		let leftReason = this.mapLeftReason(event.reason);
@@ -138,23 +129,14 @@ export class MeetingEventHandlerService {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
-		this.wcBridge.emitLeftEvent({
+		this.roomMemberContextService.clearContext();
+		this.meetingContext.clearContext();
+
+		await this.navigationService.goToDisconnected({
 			roomId: event.roomName,
 			participantIdentity: event.participantName,
 			reason: leftReason
 		});
-
-		// Clear room member and meeting context
-		this.roomMemberContextService.clearContext();
-		this.meetingContext.clearContext();
-
-		// In webcomponent mode the host page owns routing; the LEFT event above
-		// is the integration point. The standalone app navigates to the disconnected page.
-		if (this.runtimeConfigService.isWebcomponentMode()) {
-			return;
-		}
-
-		await this.navigationService.navigateTo('/disconnected', { reason: leftReason }, true);
 	};
 
 	/**

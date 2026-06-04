@@ -3,6 +3,12 @@ import { Params, Router, UrlTree } from '@angular/router';
 import { NavigationErrorReason } from '../models/navigation.model';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
+import {
+	WebComponentLeftEvent,
+	WcNavigationRequest,
+	WebComponentEventType,
+	WebComponentNavigationType
+} from '../models/webcomponent-bridge.model';
 import { WebComponentBridgeService } from './webcomponent-bridge.service';
 
 @Injectable({
@@ -275,36 +281,6 @@ export class NavigationService {
 	}
 
 	/**
-	 * Checks if the current URL contains a specific route
-	 *
-	 * @param route - The route to check against the current URL
-	 * @returns True if the current URL contains the route, false otherwise
-	 */
-	containsRoute(route: string): boolean {
-		const currentUrl = this.router.url.split('?')[0]; // Remove query params for comparison
-		return currentUrl.includes(route);
-	}
-
-	/**
-	 * Updates the query parameters in the URL by merging existing parameters with new ones.
-	 *
-	 * @param oldParams - The existing query parameters
-	 * @param newParams - The new query parameters to merge with the existing ones
-	 */
-	async updateQueryParamsFromUrl(oldParams: Params, newParams: Params): Promise<void> {
-		const queryParams = {
-			...oldParams,
-			...newParams
-		};
-
-		await this.router.navigate([], {
-			queryParams,
-			replaceUrl: true,
-			queryParamsHandling: 'merge'
-		});
-	}
-
-	/**
 	 * Removes a specific query parameter from the URL
 	 *
 	 * @param queryParams - The current query parameters
@@ -338,52 +314,29 @@ export class NavigationService {
 		});
 	}
 
-	// ── High-level intent methods ─────────────────────────────────────────
+	// ── High-level navigation intents ─────────────────────────────────────
 	//
-	// These centralize the WC-vs-SPA branching for navigation flows that
-	// exist in both modes. The SPA uses Angular Router; the WC has none and
-	// asks the shell to swap views via WebComponentBridgeService signals.
-	// Callers should use these methods instead of branching on
-	// `runtimeConfigService.isWebcomponentMode()` themselves.
+	// Each centralizes the WC-vs-SPA branch once (SPA: Angular Router; WC: a
+	// bridge navigation request, or `closed` to end a flow), so callers never
+	// branch on mode or touch the bridge. Add an intent by delegating to one of
+	// the two private helpers below.
 
-	/**
-	 * Open the room-recordings view for the given room. SPA route equivalent:
-	 * `/room/<roomId>/recordings`.
-	 */
-	async goToRoomRecordings(roomId: string): Promise<void> {
+	/** WC: emit the navigation request so the shell swaps view. SPA: navigate to `spaRoute`. */
+	private async navigateOrRequest(spaRoute: string, wcRequest: WcNavigationRequest): Promise<void> {
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.wcBridge.emitViewRecordingsRequest(roomId);
+			this.wcBridge.emitNavigationRequest(wcRequest);
 			return;
 		}
-		await this.navigateTo(`/room/${roomId}/recordings`);
+		await this.navigateTo(spaRoute);
 	}
 
 	/**
-	 * Return to the room from the recordings view. SPA route equivalent:
-	 * `/room/<roomId>` (which renders the lobby/meeting).
+	 * End the current flow: WC emits `closed`; SPA follows the leave-redirect URL,
+	 * else navigates to `fallbackRoute` if given (no-op without).
 	 */
-	async goBackToRoom(roomId: string): Promise<void> {
+	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.wcBridge.emitBackToRoomRequest(roomId);
-			return;
-		}
-		await this.navigateTo(`/room/${roomId}`);
-	}
-
-	/**
-	 * Back-navigation from the meeting lobby / end-meeting / disconnected
-	 * screens. In the SPA, this redirects to a configured leave URL when
-	 * present, otherwise navigates to `/rooms`. In WC mode, it emits the
-	 * `closed` event so the host can unmount or follow `leave-redirect-url`.
-	 *
-	 * @param fallbackRoute Route to navigate to in the SPA when no
-	 *   leave-redirect URL is configured. Defaults to `/rooms`.
-	 * @param replaceUrl Whether to replace the current history entry when
-	 *   navigating to the fallback route.
-	 */
-	async goBackFromMeeting(fallbackRoute = '/rooms', replaceUrl = false): Promise<void> {
-		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.wcBridge.emitClosedEvent();
+			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
 			return;
 		}
 
@@ -392,18 +345,50 @@ export class NavigationService {
 			return;
 		}
 
-		await this.navigateTo(fallbackRoute, undefined, replaceUrl);
+		if (fallbackRoute) {
+			await this.navigateTo(fallbackRoute, undefined, replaceUrl);
+		}
 	}
 
 	/**
-	 * Back-navigation from a single-recording view. If the user has
-	 * permission to list this room's recordings AND a roomId is known,
-	 * go to the room-recordings view (SPA: navigate; WC: emit signal).
-	 * Otherwise behave like {@link goBackFromMeeting} (SPA: leave-redirect
-	 * URL or noop; WC: emit `closed`).
+	 * Open the room-recordings view for the given room. SPA route equivalent:
+	 * `/room/<roomId>/recordings`.
+	 */
+	async goToRoomRecordings(roomId: string): Promise<void> {
+		await this.navigateOrRequest(`/room/${roomId}/recordings`, {
+			type: WebComponentNavigationType.VIEW_RECORDINGS,
+			roomId
+		});
+	}
+
+	/**
+	 * Return from the room-recordings view to the room. WC: clear the recordings
+	 * override so the shell falls back to its attribute-derived view (the
+	 * meeting/lobby). SPA: navigate to `/room/<roomId>`.
+	 */
+	async goBackToRoom(roomId: string): Promise<void> {
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.clearNavigationRequest();
+			return;
+		}
+
+		await this.navigateTo(`/room/${roomId}`);
+	}
+
+	/**
+	 * Back-navigation from the meeting lobby / end-meeting / disconnected screens.
 	 *
-	 * @param roomId Optional roomId of the recording's room.
-	 * @param canRetrieveRecordings Whether the user can list recordings for that room.
+	 * @param fallbackRoute SPA route when no leave-redirect URL is set. Defaults to `/rooms`.
+	 * @param replaceUrl Replace the current history entry when navigating to it.
+	 */
+	async goBackFromMeeting(fallbackRoute = '/rooms', replaceUrl = false): Promise<void> {
+		await this.closeOrLeave(fallbackRoute, replaceUrl);
+	}
+
+	/**
+	 * Back-navigation from a single-recording view: go to room-recordings when the
+	 * user can list them and a roomId is known; otherwise end like
+	 * {@link goBackFromMeeting} with no SPA fallback route.
 	 */
 	async goBackFromRecording(roomId: string | undefined, canRetrieveRecordings: boolean): Promise<void> {
 		if (canRetrieveRecordings && roomId) {
@@ -411,13 +396,20 @@ export class NavigationService {
 			return;
 		}
 
+		await this.closeOrLeave();
+	}
+
+	/**
+	 * Transition to the post-leave state. SPA navigates to the `/disconnected`
+	 * screen; WC emits the `left` host event, which drives the end-meeting view and
+	 * notifies the host. The `left` event is WC-only — nothing consumes it in the SPA.
+	 */
+	async goToDisconnected(detail: Omit<WebComponentLeftEvent, 'type'>): Promise<void> {
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.wcBridge.emitClosedEvent();
+			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.LEFT, ...detail });
 			return;
 		}
 
-		if (this.getLeaveRedirectURL()) {
-			await this.redirectToLeaveUrl();
-		}
+		await this.navigateTo('/disconnected', { reason: detail.reason }, true);
 	}
 }

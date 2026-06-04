@@ -4,16 +4,16 @@ import { LoggerService, OpenViduService } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingService } from './meeting.service';
 
-// Re-exported here for backward compatibility with existing import sites; the
-// canonical declarations live alongside the bridge service that owns the
-// signals these payloads describe.
+// Re-exported for meeting-domain consumers; canonical declarations live in shared/models.
+export { WebComponentEventType, WebComponentNavigationType } from '../../../shared/models/webcomponent-bridge.model';
 export type {
-	BackToRoomRequestDetail,
-	MeetingClosedEventDetail,
-	MeetingJoinedEventDetail,
-	MeetingLeftEventDetail,
-	ViewRecordingsRequestDetail
-} from '../../../shared/services/webcomponent-bridge.service';
+	WebComponentClosedEvent,
+	WebComponentJoinedEvent,
+	WebComponentLeftEvent,
+	ViewRecordingsRequest,
+	WcEvent,
+	WcNavigationRequest
+} from '../../../shared/models/webcomponent-bridge.model';
 
 /**
  * Meeting-domain command bridge exposed to the Angular Elements
@@ -24,10 +24,8 @@ export type {
  * then delegates to the appropriate meeting-domain service after checking
  * permissions and room context.
  *
- * The signal-based event bus that lets shared code request WC-shell-level
- * actions lives separately on
- * {@link import('../../../shared/services/webcomponent-bridge.service').WebComponentBridgeService},
- * which is in `shared/` and has no meeting-domain dependencies.
+ * The signal-based bridge for shell-level actions lives separately on
+ * `WebComponentBridgeService` (in `shared/`, no meeting-domain deps).
  */
 @Injectable({
 	providedIn: 'root'

@@ -27,7 +27,7 @@ export interface RoomRecordingsDialogData {
 		<button mat-icon-button class="recordings-dialog-close" aria-label="Close recordings" (click)="close()">
 			<mat-icon>close</mat-icon>
 		</button>
-		<ov-room-recordings [roomId]="data.roomId" [webcomponentMode]="true" />
+		<ov-room-recordings [roomId]="data.roomId" [webcomponentMode]="true" [showBackButton]="false" />
 	`,
 	styles: `
 		:host {

@@ -53,6 +53,11 @@ export class RoomRecordingsComponent implements OnInit {
 	 */
 	readonly webcomponentMode = input<boolean>(false);
 
+	/**
+	 * Whether to show the "Back to Room" button.
+	 */
+	readonly showBackButton = input<boolean>(true);
+
 	recordings = signal<MeetRecordingInfo[]>([]);
 	roomId = '';
 	roomName = signal('');

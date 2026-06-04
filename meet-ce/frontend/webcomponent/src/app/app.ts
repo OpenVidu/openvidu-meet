@@ -10,18 +10,20 @@ import {
 	input,
 	output,
 	signal,
-	untracked,
 	ViewEncapsulation
 } from '@angular/core';
 import {
 	AppCeMeetingComponent,
 	EndMeetingComponent,
+	type WebComponentLeftEvent,
 	MeetingWebComponentManagerService,
 	RoomRecordingsComponent,
 	RuntimeConfigService,
 	ThemeService,
 	ViewRecordingComponent,
-	WebComponentBridgeService
+	type WcEvent,
+	WebComponentBridgeService,
+	WebComponentEventType
 } from '@openvidu-meet/shared-components';
 import type {
 	OpenViduMeetClosedDetail,
@@ -85,10 +87,8 @@ export class App {
 	readonly errorMessage = signal<string | null>(null);
 	readonly ready = signal(false);
 
-	// WC has no Angular Router; captures in-WC view swaps requested by shared code
-	// via WebComponentBridgeService. Holds the roomId of the recordings view being
-	// shown, or null when no such swap is active.
-	private readonly _overrideRoomRecordingsId = signal<string | null>(null);
+	// Set once a `left` event arrives and never cleared, so the end-meeting screen stays up.
+	private readonly _leftDetail = signal<WebComponentLeftEvent | null>(null);
 
 	private readonly inputs = computed<ModeInputs>(() => ({
 		roomUrl: this.roomUrl(),
@@ -100,10 +100,9 @@ export class App {
 		showRecording: this.showRecording()
 	}));
 
-	// An active in-WC view swap (see `_overrideRoomRecordingsId`) wins over the
-	// attribute-derived mode; it mirrors a router navigation the WC can't perform.
+	// An active recordings navigation request overrides the attribute-derived mode.
 	readonly mode = computed<Mode>(() =>
-		this._overrideRoomRecordingsId() !== null ? 'room-recordings' : computeMode(this.inputs())
+		this.wcBridge.navigationRequest() ? 'room-recordings' : computeMode(this.inputs())
 	);
 
 	readonly recordingIdForView = computed<string>(
@@ -113,12 +112,16 @@ export class App {
 	readonly recordingSecretForView = computed<string>(() => queryParam(this.recordingUrl(), 'recordingSecret') ?? '');
 
 	readonly roomIdForRecordings = computed<string>(
-		() => this._overrideRoomRecordingsId() ?? lastPathSegment(this.roomUrl()) ?? ''
+		() => this.wcBridge.navigationRequest()?.roomId ?? lastPathSegment(this.roomUrl()) ?? ''
 	);
 
-	readonly hasLeft = computed<boolean>(() => this.wcBridge.leftEvent() !== null);
+	// True when recordings overlay a meeting/lobby (a VIEW_RECORDINGS request is active),
+	// i.e. there is a room to go back to — drives the recordings view's back button.
+	readonly isRecordingsOverride = computed<boolean>(() => this.wcBridge.navigationRequest() !== null);
 
-	readonly leftReason = computed<string | undefined>(() => this.wcBridge.leftEvent()?.reason);
+	readonly hasLeft = computed<boolean>(() => this._leftDetail() !== null);
+
+	readonly leftReason = computed<string | undefined>(() => this._leftDetail()?.reason);
 
 	constructor() {
 		// enableWebcomponentMode() is called in main.wc.ts before element registration
@@ -162,57 +165,33 @@ export class App {
 		}
 	}
 
-	private readonly _joinedEffect = effect(() => {
-		const event = this.wcBridge.joinedEvent();
+	// Drain and process every queued host event in order (queue → no same-tick loss).
+	private readonly _hostEventEffect = effect(() => {
+		if (this.wcBridge.wcEvents().length === 0) return;
 
-		if (!event) return;
-
-		this.joined.emit({ roomId: event.roomId, participantIdentity: event.participantIdentity });
-	});
-
-	private readonly _leftEffect = effect(() => {
-		const event = this.wcBridge.leftEvent();
-
-		if (!event) return;
-
-		this.left.emit({
-			roomId: event.roomId,
-			participantIdentity: event.participantIdentity,
-			reason: event.reason
-		});
-	});
-
-	private readonly _closedEffect = effect(() => {
-		const event = this.wcBridge.closedEvent();
-
-		if (!event) return;
-
-		this.closed.emit({});
-	});
-
-	private readonly _viewRecordingsRequestEffect = effect(() => {
-		const request = this.wcBridge.viewRecordingsRequest();
-
-		if (!request) return;
-
-		this._overrideRoomRecordingsId.set(request.roomId);
-	});
-
-	private readonly _backToRoomRequestEffect = effect(() => {
-		const request = this.wcBridge.backToRoomRequest();
-
-		if (!request) return;
-
-		// Read without tracking: writing `null` here would otherwise re-trigger
-		// this effect and the same `detail` would fall through to emit `closed`.
-		if (untracked(this._overrideRoomRecordingsId) !== null) {
-			this._overrideRoomRecordingsId.set(null);
-			return;
+		for (const event of this.wcBridge.drainWebComponentEvents()) {
+			this.handleWebComponentEvent(event);
 		}
-
-		// Launched directly in show-only-recordings mode — no meeting to return to.
-		this.wcBridge.emitClosedEvent();
 	});
+
+	private handleWebComponentEvent(event: WcEvent): void {
+		switch (event.type) {
+			case WebComponentEventType.JOINED:
+				this.joined.emit({ roomId: event.roomId, participantIdentity: event.participantIdentity });
+				break;
+			case WebComponentEventType.LEFT:
+				this._leftDetail.set(event);
+				this.left.emit({
+					roomId: event.roomId,
+					participantIdentity: event.participantIdentity,
+					reason: event.reason
+				});
+				break;
+			case WebComponentEventType.CLOSED:
+				this.closed.emit({});
+				break;
+		}
+	}
 
 	endMeeting(): Promise<void> {
 		return this.wcManager.endMeeting();
