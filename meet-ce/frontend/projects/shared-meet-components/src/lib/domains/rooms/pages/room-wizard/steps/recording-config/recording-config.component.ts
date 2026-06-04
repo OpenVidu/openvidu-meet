@@ -165,4 +165,9 @@ export class RecordingConfigComponent {
 	get isRecordingEnabled(): boolean {
 		return this.selectedValue === 'enabled';
 	}
+
+	get isE2EEEnabled(): boolean {
+		const configStep = this.wizardService.getStepById(WizardStepId.ROOM_CONFIG);
+		return configStep?.formGroup.controls.e2eeEnabled.value ?? false;
+	}
 }

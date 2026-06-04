@@ -11,6 +11,22 @@
 	<!-- Form Section -->
 	<main class="step-content">
 		<form [formGroup]="recordingForm" class="recording-form">
+			<!-- E2EE Conflict Warning -->
+			@if (isE2EEEnabled) {
+				<div class="e2ee-info-section fade-in">
+					<div class="warning-card">
+						<mat-icon class="warning-icon">warning</mat-icon>
+						<div class="warning-content">
+							<p class="warning-title">Restrictions</p>
+							<p class="warning-text">
+								Recording is <b>unavailable</b> while end-to-end encryption is enabled. If you
+								allow recording, encryption will be automatically disabled for this room.
+							</p>
+						</div>
+					</div>
+				</div>
+			}
+
 			<!-- Options Cards -->
 			<div class="options-grid">
 				@for (option of recordingOptions; track option.id) {
