@@ -11,5 +11,6 @@ export enum NavigationErrorReason {
 	FORBIDDEN_ROOM_RECORDINGS_ACCESS = 'forbidden-room-recordings-access',
 	FORBIDDEN_RECORDING_ACCESS = 'forbidden-recording-access',
 	ROOM_ACCESS_REVOKED = 'room-access-revoked',
+	TOO_MANY_REQUESTS = 'too-many-requests',
 	INTERNAL_ERROR = 'internal-error'
 }

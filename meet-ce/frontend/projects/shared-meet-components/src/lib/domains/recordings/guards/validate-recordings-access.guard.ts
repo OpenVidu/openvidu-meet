@@ -83,6 +83,9 @@ export const validateRecordingAccessGuard: CanActivateFn = async (
 			case 404:
 				// Recording not found
 				return navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_RECORDING);
+			case 429:
+				// Too many requests (rate limited)
+				return navigationService.redirectToErrorPage(NavigationErrorReason.TOO_MANY_REQUESTS);
 			default:
 				// Internal error
 				return navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR);

@@ -104,6 +104,10 @@ export class ErrorComponent implements OnInit {
 				message:
 					'Your permissions in this room have been changed, and you no longer have access (nor its recordings). Please contact a moderator for more information'
 			},
+			[NavigationErrorReason.TOO_MANY_REQUESTS]: {
+				title: 'Too many requests',
+				message: 'You have made too many requests in a short period of time. Please wait a moment and try again'
+			},
 			[NavigationErrorReason.INTERNAL_ERROR]: {
 				title: 'Internal error',
 				message: 'An unexpected error occurred, please try again later'
