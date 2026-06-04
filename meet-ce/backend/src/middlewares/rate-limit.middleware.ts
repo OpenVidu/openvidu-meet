@@ -14,6 +14,8 @@ const withTestBypass = (options: Partial<Options>): RequestHandler => {
 		standardHeaders: 'draft-7',
 		// Disable legacy headers
 		legacyHeaders: false,
+		// Disable check for trust proxy setting set to true
+		validate: { trustProxy: false },
 		...options
 	});
 
