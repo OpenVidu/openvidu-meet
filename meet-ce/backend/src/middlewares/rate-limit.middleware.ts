@@ -28,8 +28,8 @@ const withTestBypass = (options: Partial<Options>): RequestHandler => {
 	});
 
 	return (req: Request, res: Response, next: NextFunction) => {
-		// Bypass rate limiting in test environment
-		if (process.env.NODE_ENV === 'test') {
+		// Bypass rate limiting in test or CI environment
+		if (process.env.NODE_ENV === 'test' || process.env.NODE_ENV === 'ci') {
 			return next();
 		}
 
