@@ -16,11 +16,16 @@
 	}
 
 	.activity-icon {
-		display: inherit;
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		background-color: var(--ov-secondary-action-color);
 		border-radius: var(--ov-surface-radius);
 		margin: 10px 0px !important;
 		padding: 10px;
+		box-sizing: border-box;
+		width: 44px;
+		height: 44px;
 	}
 
 	.activity-title,
@@ -91,6 +96,14 @@
 
 	::ng-deep .mat-expansion-indicator svg {
 		fill: var(--ov-text-surface-color) !important;
+	}
+
+	// Material constrains .mdc-list-item__start to --mdc-list-list-item-leading-icon-size (24px).
+	// In the shadow DOM that token resolves with box-sizing:border-box, which causes padding
+	// on .activity-icon to crush the mat-icon to 4px. Override to match the padded icon size.
+	::ng-deep .mdc-list-item--with-leading-icon .mdc-list-item__start {
+		width: 44px !important;
+		height: 44px !important;
 	}
 
 	::ng-deep
