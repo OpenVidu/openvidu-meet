@@ -4,6 +4,14 @@ import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 
 /**
+ * Builds the JSON body returned on a 429 response so that rate-limited requests share the same
+ * `{ error, message }` shape as every other API error (see OpenViduMeetError). express-rate-limit
+ * sends a string `message` as plain text, which would break clients that always parse JSON, so we
+ * always hand it a structured object instead.
+ */
+const tooManyRequestsMessage = (message: string) => ({ error: 'Too Many Requests', message });
+
+/**
  * Wraps an express-rate-limit instance so that rate limiting is bypassed in the test environment.
  * This keeps integration tests fast and deterministic while still protecting production endpoints
  * from denial-of-service via request flooding.
@@ -49,7 +57,7 @@ export const loginLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('5m'),
 	limit: 5,
 	skipSuccessfulRequests: true,
-	message: 'Too many login attempts, please try again later'
+	message: tooManyRequestsMessage('Too many login attempts, please try again later')
 });
 
 /**
@@ -61,7 +69,7 @@ export const loginLimiter: RequestHandler = withTestBypass({
 export const sensitiveActionLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('5m'),
 	limit: 20,
-	message: 'Too many requests for this operation, please try again later'
+	message: tooManyRequestsMessage('Too many requests for this operation, please try again later')
 });
 
 /**
@@ -71,7 +79,7 @@ export const sensitiveActionLimiter: RequestHandler = withTestBypass({
 export const authLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('1m'),
 	limit: 30,
-	message: 'Too many authentication requests, please try again later'
+	message: tooManyRequestsMessage('Too many authentication requests, please try again later')
 });
 
 /**
@@ -82,7 +90,7 @@ export const authLimiter: RequestHandler = withTestBypass({
 export const tokenIssuanceLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('1m'),
 	limit: 60,
-	message: 'Too many token requests, please try again later'
+	message: tooManyRequestsMessage('Too many token requests, please try again later')
 });
 
 /**
@@ -96,7 +104,7 @@ export const apiLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('1m'),
 	limit: 120,
 	skip: skipApiKeyRequests,
-	message: 'Too many requests, please try again later'
+	message: tooManyRequestsMessage('Too many requests, please try again later')
 });
 
 /**
@@ -106,5 +114,5 @@ export const apiLimiter: RequestHandler = withTestBypass({
 export const staticAssetLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('1m'),
 	limit: 300,
-	message: 'Too many requests, please try again later'
+	message: tooManyRequestsMessage('Too many requests, please try again later')
 });
