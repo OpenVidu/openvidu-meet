@@ -23,6 +23,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     get:
@@ -63,6 +65,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
@@ -101,6 +105,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /rooms/{roomId}:
@@ -133,6 +139,8 @@
                 $ref: './responses/errors/room-not-found.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
@@ -173,6 +181,8 @@
                 $ref: './responses/errors/room-process-deletion.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /rooms/{roomId}/config:
@@ -200,6 +210,8 @@
                 $ref: './responses/errors/room-not-found.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     put:
@@ -229,6 +241,8 @@
                 $ref: './responses/errors/room-active-meeting.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /rooms/{roomId}/status:
@@ -262,6 +276,8 @@
                 $ref: './responses/errors/room-not-found.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /rooms/{roomId}/roles:
@@ -295,6 +311,8 @@
                 $ref: './responses/errors/room-active-meeting.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /rooms/{roomId}/access:
@@ -328,5 +346,7 @@
                 $ref: './responses/errors/room-active-meeting.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'

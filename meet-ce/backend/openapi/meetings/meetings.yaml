@@ -21,6 +21,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: '../rooms/responses/errors/room-not-found.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /meetings/{roomId}/participants/{participantIdentity}:
@@ -44,6 +46,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /meetings/{roomId}/participants/{participantIdentity}/role:
@@ -74,5 +78,7 @@
                 $ref: './responses/errors/participant-role-conflict.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'

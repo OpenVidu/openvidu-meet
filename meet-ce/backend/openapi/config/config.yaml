@@ -15,6 +15,8 @@
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
                 $ref: '../shared/responses/errors/forbidden.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     put:
@@ -37,6 +39,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 
@@ -57,6 +61,8 @@
                 $ref: './responses/errors/webhook-url-unreachable.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 
@@ -71,6 +77,8 @@
         responses:
             '200':
                 $ref: './responses/success/get-security-config.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     put:
@@ -93,6 +101,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 
@@ -113,6 +123,8 @@
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':
                 $ref: '../shared/responses/errors/forbidden.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     put:
@@ -135,6 +147,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 
@@ -152,5 +166,7 @@
                 $ref: './responses/success/get-captions-config.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'

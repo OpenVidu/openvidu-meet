@@ -15,6 +15,8 @@
                 $ref: './responses/errors/invalid-credentials.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /auth/logout:
@@ -28,6 +30,8 @@
         responses:
             '200':
                 $ref: './responses/success/user-logout.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
 /auth/refresh:
     post:
         operationId: refreshAccessToken
@@ -43,5 +47,7 @@
                 $ref: './responses/success/refresh-token.yaml'
             '400':
                 $ref: './responses/errors/invalid-refresh-token.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'

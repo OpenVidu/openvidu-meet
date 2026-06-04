@@ -34,6 +34,8 @@
                 $ref: './responses/errors/recording-conflict.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
             '503':
@@ -78,6 +80,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 
@@ -109,6 +113,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 
@@ -155,6 +161,8 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 
@@ -188,6 +196,8 @@
                 $ref: './responses/errors/recording-not-found.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
     delete:
@@ -219,6 +229,8 @@
                 $ref: './responses/errors/recording-in-progress.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /recordings/{recordingId}/media:
@@ -293,6 +305,8 @@
                             message: 'Recording "room-123--EG_XYZ--XX445" range not satisfiable. File size: 123456789'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /recordings/{recordingId}/stop:
@@ -324,6 +338,8 @@
                 $ref: './responses/errors/recording-not-active.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /recordings/{recordingId}/url:
@@ -359,5 +375,7 @@
                 $ref: './responses/errors/recording-not-found.yaml'
             '422':
                 $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'

@@ -13,5 +13,7 @@
                 $ref: './responses/success/get-analytics.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
