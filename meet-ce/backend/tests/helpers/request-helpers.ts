@@ -537,13 +537,26 @@ export const updateRoomConfig = async (roomId: string, config: Partial<MeetRoomC
 		.send({ config });
 };
 
-export const updateRoomStatus = async (roomId: string, status: MeetRoomStatus) => {
+export const updateRoomStatus = async (
+	roomId: string,
+	status: MeetRoomStatus,
+	headers?: { xFields?: string; xExtraFields?: string }
+) => {
 	checkAppIsRunning();
 
-	return await request(app)
+	const req = request(app)
 		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/status`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
-		.send({ status });
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+
+	if (headers?.xFields) {
+		req.set('x-fields', headers.xFields);
+	}
+
+	if (headers?.xExtraFields) {
+		req.set('x-extrafields', headers.xExtraFields);
+	}
+
+	return await req.send({ status });
 };
 
 export const updateRoomRoles = async (roomId: string, rolesConfig: MeetRoomRolesConfig) => {

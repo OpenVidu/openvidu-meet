@@ -1,10 +1,5 @@
-description: Success response for updating room roles configuration
+description: Success response for updating room roles configuration. Returns the updated roles.
 content:
     application/json:
         schema:
-            type: object
-            properties:
-                message:
-                    type: string
-        example:
-            message: Roles permissions for room 'room-123' updated successfully
+            $ref: '../../schemas/meet-room-roles.yaml'

@@ -278,7 +278,7 @@ export class RoomsComponent implements OnInit {
 
 	private async reopenRoom(room: MeetRoom) {
 		try {
-			const { room: updatedRoom } = await this.roomService.updateRoomStatus(room.roomId, MeetRoomStatus.OPEN);
+			const updatedRoom = await this.roomService.updateRoomStatus(room.roomId, MeetRoomStatus.OPEN);
 
 			// Update room in the list
 			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
@@ -291,14 +291,18 @@ export class RoomsComponent implements OnInit {
 
 	private async closeRoom(room: MeetRoom) {
 		try {
-			const { message, room: updatedRoom } = await this.roomService.updateRoomStatus(
-				room.roomId,
-				MeetRoomStatus.CLOSED
-			);
+			const updatedRoom = await this.roomService.updateRoomStatus(room.roomId, MeetRoomStatus.CLOSED);
 
 			// Update room in the list
 			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
-			this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));
+
+			// The close is applied immediately unless a meeting is still active, in which case
+			// it is scheduled to take effect when the meeting ends.
+			const message =
+				updatedRoom.status === MeetRoomStatus.CLOSED
+					? 'Room closed successfully'
+					: 'Room scheduled to be closed when the meeting ends';
+			this.notificationService.showSnackbar(message);
 		} catch (error) {
 			this.notificationService.showSnackbar('Failed to close room');
 			this.log.e('Error closing room:', error);
@@ -341,23 +345,23 @@ export class RoomsComponent implements OnInit {
 		const bulkDeleteCallback = async () => {
 			try {
 				const roomIds = rooms.map((r) => r.roomId);
-				const { message, successful } = await this.roomService.bulkDeleteRooms(
+				const { message, deleted } = await this.roomService.bulkDeleteRooms(
 					roomIds,
 					MeetRoomDeletionPolicyWithMeeting.FAIL,
 					MeetRoomDeletionPolicyWithRecordings.FAIL
 				);
 
-				this.handleSuccessfulBulkDeletion(successful);
+				this.handleSuccessfulBulkDeletion(deleted);
 				this.notificationService.showSnackbar(message);
 				await this.autoLoadIfEmpty();
 			} catch (error: any) {
 				// Check if it's a structured error with failed rooms
 				const failed = error.error?.failed as { roomId: string; error: string; message: string }[];
-				const successful = error.error?.successful;
+				const deleted = error.error?.deleted;
 				const errorMessage = error.error?.message;
 
 				if (failed) {
-					this.handleSuccessfulBulkDeletion(successful);
+					this.handleSuccessfulBulkDeletion(deleted);
 					await this.autoLoadIfEmpty();
 
 					const hasRoomDeletionError = failed.some((result) =>
@@ -434,13 +438,13 @@ export class RoomsComponent implements OnInit {
 			recordingPolicy: MeetRoomDeletionPolicyWithRecordings
 		) => {
 			try {
-				const { message, successful } = await this.roomService.bulkDeleteRooms(
+				const { message, deleted } = await this.roomService.bulkDeleteRooms(
 					roomIds,
 					meetingPolicy,
 					recordingPolicy
 				);
 
-				this.handleSuccessfulBulkDeletion(successful);
+				this.handleSuccessfulBulkDeletion(deleted);
 				this.notificationService.showSnackbar(message);
 				await this.autoLoadIfEmpty();
 			} catch (error: any) {
@@ -448,11 +452,11 @@ export class RoomsComponent implements OnInit {
 
 				// Check if it fails again with structured error
 				const failed = error.error?.failed;
-				const successful = error.error?.successful;
+				const deleted = error.error?.deleted;
 				const message = error.error?.message;
 
-				if (failed && successful) {
-					this.handleSuccessfulBulkDeletion(successful);
+				if (failed && deleted) {
+					this.handleSuccessfulBulkDeletion(deleted);
 					this.notificationService.showSnackbar(message);
 					await this.autoLoadIfEmpty();
 				} else {

@@ -251,7 +251,7 @@ export class RoomDetailComponent implements OnInit {
 
 	private async reopenRoom() {
 		try {
-			const { room: updatedRoom } = await this.roomService.updateRoomStatus(this.roomId(), MeetRoomStatus.OPEN);
+			const updatedRoom = await this.roomService.updateRoomStatus(this.roomId(), MeetRoomStatus.OPEN);
 			this.room.set(updatedRoom);
 			this.notificationService.showSnackbar('Room reopened successfully');
 		} catch (error) {
@@ -262,12 +262,16 @@ export class RoomDetailComponent implements OnInit {
 
 	private async closeRoom() {
 		try {
-			const { message, room: updatedRoom } = await this.roomService.updateRoomStatus(
-				this.roomId(),
-				MeetRoomStatus.CLOSED
-			);
+			const updatedRoom = await this.roomService.updateRoomStatus(this.roomId(), MeetRoomStatus.CLOSED);
 			this.room.set(updatedRoom);
-			this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));
+
+			// The close is applied immediately unless a meeting is still active, in which case
+			// it is scheduled to take effect when the meeting ends.
+			const message =
+				updatedRoom.status === MeetRoomStatus.CLOSED
+					? 'Room closed successfully'
+					: 'Room scheduled to be closed when the meeting ends';
+			this.notificationService.showSnackbar(message);
 		} catch (error) {
 			this.notificationService.showSnackbar('Failed to close room');
 			this.log.e('Error closing room:', error);

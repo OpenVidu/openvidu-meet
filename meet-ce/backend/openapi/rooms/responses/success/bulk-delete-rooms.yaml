@@ -7,7 +7,7 @@ content:
                   properties:
                       message:
                           type: string
-                      successful:
+                      deleted:
                           type: array
                           items:
                               type: object
@@ -37,11 +37,25 @@ content:
                                                         type: string
                                                         example: config
                           description: List of rooms that were successfully processed for deletion
+                      failed:
+                          type: array
+                          description: Always present; empty when all rooms were processed successfully.
+                          items:
+                              type: object
+                              properties:
+                                  roomId:
+                                      type: string
+                                  error:
+                                      type: string
+                                      description: Name of the error
+                                  message:
+                                      type: string
+                                      description: Description of the error
                 - type: object
                   properties:
                       message:
                           type: string
-                      successful:
+                      deleted:
                           type: array
                           items:
                               type: object
@@ -57,12 +71,26 @@ content:
                                   message:
                                       type: string
                                       description: A message providing additional context about the success
+                      failed:
+                          type: array
+                          description: Always present; empty when all rooms were processed successfully.
+                          items:
+                              type: object
+                              properties:
+                                  roomId:
+                                      type: string
+                                  error:
+                                      type: string
+                                      description: Name of the error
+                                  message:
+                                      type: string
+                                      description: Description of the error
         examples:
             room_closed:
                 summary: Room closed successfully
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_closed
                           message: Room 'room-123' has been closed instead of deleted because it has recordings
                           room:
@@ -90,11 +118,12 @@ content:
                               _extraFields:
                                   - config
                                   - roles
+                    failed: []
             room_with_active_meeting_scheduled_to_be_deleted:
                 summary: Room with active meeting scheduled to be deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_with_active_meeting_scheduled_to_be_deleted
                           message: Room 'room-123' with active meeting scheduled to be deleted when the meeting ends
                           room:
@@ -122,11 +151,12 @@ content:
                               _extraFields:
                                   - config
                                   - roles
+                    failed: []
             room_with_active_meeting_closed:
                 summary: Room with active meeting closed
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_with_active_meeting_closed
                           message: Room 'room-123' with active meeting has been closed instead of deleted because it has recordings
                           room:
@@ -154,11 +184,12 @@ content:
                               _extraFields:
                                   - config
                                   - roles
+                    failed: []
             room_with_active_meeting_and_recordings_scheduled_to_be_deleted:
                 summary: Room with active meeting and recordings scheduled to be deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_with_active_meeting_and_recordings_scheduled_to_be_deleted
                           message: Room 'room-123' with active meeting and its recordings scheduled to be deleted when the meeting ends
                           room:
@@ -186,11 +217,12 @@ content:
                               _extraFields:
                                   - config
                                   - roles
+                    failed: []
             room_with_active_meeting_scheduled_to_be_closed:
                 summary: Room with active meeting scheduled to be closed
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_with_active_meeting_scheduled_to_be_closed
                           message: Room 'room-123' with active meeting scheduled to be closed when the meeting ends because it has recordings
                           room:
@@ -218,32 +250,37 @@ content:
                               _extraFields:
                                   - config
                                   - roles
+                    failed: []
 
             room_deleted:
                 summary: Room deleted successfully
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_deleted
                           message: Room 'room-123' deleted successfully
+                    failed: []
             room_with_active_meeting_deleted:
                 summary: Room with active meeting deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_with_active_meeting_deleted
                           message: Room 'room-123' with active meeting deleted successfully
+                    failed: []
             room_and_recordings_deleted:
                 summary: Room and recordings deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_and_recordings_deleted
                           message: Room 'room-123' and its recordings deleted successfully
+                    failed: []
             room_with_active_meeting_and_recordings_deleted:
                 summary: Room with active meeting and recordings deleted
                 value:
                     message: 'Bulk deletion request processed successfully'
-                    successful:
+                    deleted:
                         - successCode: room_with_active_meeting_and_recordings_deleted
                           message: Room 'room-123' with active meeting and its recordings deleted successfully
+                    failed: []

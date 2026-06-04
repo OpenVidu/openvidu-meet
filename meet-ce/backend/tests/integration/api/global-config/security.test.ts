@@ -27,7 +27,7 @@ describe('Security Config API Tests', () => {
 			let response = await updateSecurityConfig(validConfig);
 
 			expect(response.status).toBe(200);
-			expect(response.body.message).toBe('Security config updated successfully');
+			expect(response.body).toEqual(validConfig);
 
 			response = await getSecurityConfig();
 			expect(response.status).toBe(200);

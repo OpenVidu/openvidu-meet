@@ -161,10 +161,7 @@ export const updateUserRole = async (req: Request, res: Response) => {
 		const userService = container.get(UserService);
 		const user = await userService.changeUserRole(userId, role);
 
-		return res.status(200).json({
-			message: `Role for user '${userId}' updated successfully to '${role}'`,
-			user: userService.convertToDTO(user)
-		});
+		return res.status(200).json(userService.convertToDTO(user));
 	} catch (error) {
 		handleError(res, error, 'updating user role');
 	}
@@ -196,8 +193,8 @@ export const bulkDeleteUsers = async (req: Request, res: Response) => {
 		const { deleted, failed } = await userService.bulkDeleteUsers(userIds);
 
 		// All users were successfully deleted
-		if (deleted.length > 0 && failed.length === 0) {
-			return res.status(200).json({ message: 'All users deleted successfully', deleted });
+		if (failed.length === 0) {
+			return res.status(200).json({ message: 'All users deleted successfully', deleted, failed: [] });
 		}
 
 		// Some or all users could not be deleted

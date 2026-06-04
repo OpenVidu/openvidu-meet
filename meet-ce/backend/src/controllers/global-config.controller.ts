@@ -15,8 +15,8 @@ export const updateWebhookConfig = async (req: Request, res: Response) => {
 	const webhookConfig = req.body as WebhookConfig;
 
 	try {
-		await configService.updateWebhookConfig(webhookConfig);
-		return res.status(200).json({ message: 'Webhooks config updated successfully' });
+		const updatedConfig = await configService.updateWebhookConfig(webhookConfig);
+		return res.status(200).json(updatedConfig);
 	} catch (error) {
 		handleError(res, error, 'updating webhooks config');
 	}
@@ -60,8 +60,8 @@ export const updateSecurityConfig = async (req: Request, res: Response) => {
 	const securityConfig = req.body as SecurityConfig;
 
 	try {
-		await configService.updateSecurityConfig(securityConfig);
-		return res.status(200).json({ message: 'Security config updated successfully' });
+		const updatedConfig = await configService.updateSecurityConfig(securityConfig);
+		return res.status(200).json(updatedConfig);
 	} catch (error) {
 		handleError(res, error, 'updating security config');
 	}
@@ -89,8 +89,8 @@ export const updateRoomsAppearanceConfig = async (req: Request, res: Response) =
 	const appearanceConfig = req.body as { appearance: MeetAppearanceConfig };
 
 	try {
-		await configService.updateRoomsAppearanceConfig(appearanceConfig);
-		return res.status(200).json({ message: 'Rooms appearance config updated successfully' });
+		const updatedConfig = await configService.updateRoomsAppearanceConfig(appearanceConfig);
+		return res.status(200).json(updatedConfig);
 	} catch (error) {
 		handleError(res, error, 'updating rooms appearance config');
 	}

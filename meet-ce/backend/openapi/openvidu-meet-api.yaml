@@ -55,6 +55,10 @@ components:
             $ref: ./rooms/schemas/meet-room.yaml
         MeetRoomConfig:
             $ref: './rooms/schemas/meet-room-config.yaml#/MeetRoomConfig'
+        MeetRoomRoles:
+            $ref: './rooms/schemas/meet-room-roles.yaml'
+        MeetRoomAccess:
+            $ref: './rooms/schemas/meet-room-access.yaml'
         MeetRoomMember:
             $ref: ./room-members/schemas/meet-room-member.yaml
         MeetPermissions:

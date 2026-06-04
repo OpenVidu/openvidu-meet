@@ -138,6 +138,17 @@ export const validateUpdateRoomStatusReq = (req: Request, res: Response, next: N
 	}
 
 	req.body = data;
+
+	// Merge X-Fields and X-ExtraFields headers into query params before validation.
+	const query = req.query;
+	mergeHeaderFieldsIntoQuery(req.headers, query);
+	const fieldsResult = RoomQueryFieldsSchema.safeParse(query);
+
+	if (!fieldsResult.success) {
+		return rejectUnprocessableRequest(res, fieldsResult.error);
+	}
+
+	res.locals.validatedQuery = fieldsResult.data;
 	next();
 };
 

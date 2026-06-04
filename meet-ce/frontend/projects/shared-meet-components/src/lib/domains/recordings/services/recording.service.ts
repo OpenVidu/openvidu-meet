@@ -181,6 +181,7 @@ export class RecordingService {
 	async bulkDeleteRecordings(recordingIds: string[]): Promise<{
 		message: string;
 		deleted: string[];
+		failed: { recordingId: string; error: string; message: string }[];
 	}> {
 		if (recordingIds.length === 0) {
 			throw new Error('No recording IDs provided for bulk deletion');

@@ -1,0 +1,10 @@
+description: AI assistant canceled successfully.
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+        example:
+            message: "Assistant 'asst_123' canceled successfully"

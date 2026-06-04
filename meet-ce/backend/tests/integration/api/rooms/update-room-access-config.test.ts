@@ -39,7 +39,7 @@ describe('Room API Tests', () => {
 
 			const updateResponse = await updateRoomAccessConfig(createdRoom.roomId, updatedAccessConfig);
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body).toHaveProperty('message');
+			expect(updateResponse.body).toMatchObject(updatedAccessConfig);
 
 			const getResponse = await getRoom(createdRoom.roomId, 'access');
 			expect(getResponse.status).toBe(200);

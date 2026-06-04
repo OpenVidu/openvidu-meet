@@ -704,7 +704,7 @@ export const expectValidRoomMemberTokenResponse = (
 
 /** Assert a well-formed 200 response from createAssistant */
 export const expectValidAssistantResponse = (response: Response, expectedId = 'dispatch-test-001') => {
-	expect(response.status).toBe(200);
+	expect(response.status).toBe(201);
 	expect(response.body).toMatchObject({ id: expectedId, status: 'active' });
 	expect((response.body.id as string).trim().length).toBeGreaterThan(0);
 };

@@ -55,9 +55,12 @@ describe('Room API Tests', () => {
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, updatedConfig);
 
-			// Verify update response
+			// Verify update response returns the updated config
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body).toHaveProperty('message');
+			expect(updateResponse.body).toEqual({
+				...updatedConfig,
+				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
+			});
 
 			// Verify with a get request
 			const getResponse = await getRoom(createdRoom.roomId, 'config', 'config');
@@ -92,9 +95,9 @@ describe('Room API Tests', () => {
 			};
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, partialConfig);
 
-			// Verify update response
+			// Verify update response returns the updated config
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body).toHaveProperty('message');
+			expect(updateResponse.body.recording.enabled).toBe(false);
 
 			// Verify with a get request
 			const getResponse = await getRoom(createdRoom.roomId, undefined, 'config');

@@ -245,6 +245,8 @@
             - accessTokenHeader: []
         parameters:
             - $ref: './parameters/room-id-path.yaml'
+            - $ref: './parameters/room-x-fields-header.yaml'
+            - $ref: './parameters/room-x-extra-fields-header.yaml'
         requestBody:
             $ref: './requests/update-room-status.yaml'
         responses:

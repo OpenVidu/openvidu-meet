@@ -65,9 +65,7 @@ components:
             $ref: ./rooms/schemas/meet-room.yaml
         MeetAnalytics:
             $ref: ./analytics/schemas/meet-analytics.yaml
-        AiAssistantCreateRequest:
-            $ref: ./ai-assistants/schemas/ai-assistant-create-request.yaml
-        AiAssistantCreateResponse:
-            $ref: ./ai-assistants/schemas/ai-assistant-create-response.yaml
+        AiAssistant:
+            $ref: ./ai-assistants/schemas/ai-assistant.yaml
         Error:
             $ref: ./shared/schemas/error.yaml

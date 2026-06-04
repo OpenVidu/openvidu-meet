@@ -132,6 +132,7 @@ export class RoomMemberService {
 	): Promise<{
 		message: string;
 		deleted: string[];
+		failed: { memberId: string; error: string; message: string }[];
 	}> {
 		if (memberIds.length === 0) {
 			throw new Error('No room member IDs provided for bulk deletion');

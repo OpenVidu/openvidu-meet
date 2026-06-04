@@ -55,6 +55,8 @@ describe('Bulk Delete Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('deleted');
 			expect(response.body.deleted).toHaveLength(2);
 			expect(response.body.deleted).toEqual(expect.arrayContaining(memberIds));
+			expect(response.body).toHaveProperty('failed');
+			expect(response.body.failed).toHaveLength(0);
 
 			// Verify all members no longer exist
 			for (const memberId of memberIds) {
@@ -93,6 +95,8 @@ describe('Bulk Delete Room Members API Tests', () => {
 			expect(response.body).toHaveProperty('deleted');
 			expect(response.body.deleted).toHaveLength(2);
 			expect(response.body.deleted).toEqual(expect.arrayContaining(memberIds));
+			expect(response.body).toHaveProperty('failed');
+			expect(response.body.failed).toHaveLength(0);
 
 			// Check that users still exist
 			for (const userId of [userId1, userId2]) {

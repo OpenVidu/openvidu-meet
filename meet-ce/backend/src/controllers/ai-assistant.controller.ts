@@ -23,7 +23,7 @@ export const createAssistant = async (req: Request, res: Response) => {
 	try {
 		logger.verbose(`Creating assistant for participant '${participantIdentity}' in room '${roomId}'`);
 		const assistant = await aiAssistantService.createLiveCaptionsAssistant(roomId, participantIdentity);
-		return res.status(200).json(assistant);
+		return res.status(201).json(assistant);
 	} catch (error) {
 		handleError(res, error, `creating assistant in room '${roomId}'`);
 	}
@@ -49,7 +49,7 @@ export const cancelAssistant = async (req: Request, res: Response) => {
 			`Canceling assistant '${assistantId}' for participant '${participantIdentity}' in room '${roomId}'`
 		);
 		await aiAssistantService.cancelAssistant(assistantId, roomId, participantIdentity);
-		return res.status(204).send();
+		return res.status(200).json({ message: `Assistant '${assistantId}' canceled successfully` });
 	} catch (error) {
 		handleError(res, error, `canceling assistant '${assistantId}' in room '${roomId}'`);
 	}
