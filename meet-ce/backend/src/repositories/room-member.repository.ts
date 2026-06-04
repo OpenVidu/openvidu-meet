@@ -1,4 +1,9 @@
-import type { MeetRoomMember, MeetRoomMemberField, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import type {
+	MeetRoomMember,
+	MeetRoomMemberField,
+	MeetRoomMemberPermissions,
+	ProjectedMeetRoomMember
+} from '@openvidu-meet/typings';
 import { SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { QueryFilter } from 'mongoose';
@@ -14,7 +19,6 @@ import {
 import { LoggerService } from '../services/logger.service.js';
 import type {
 	MeetRoomMemberPage,
-	ProjectedMeetRoomMember,
 	RoomMemberQuery,
 	RoomMemberQueryWithFields,
 	RoomMemberQueryWithProjection
@@ -297,7 +301,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * Normalizes room member data for storage by removing the base URL from access URL.
 	 * This ensures only the path is stored in the database.
 	 * NOTE: Only normalizes accessUrl when it is present in a partial payload.
-	 * 
+	 *
 	 * @param member - The room member data to normalize
 	 * @returns The normalized room member with access URL stripped to path
 	 */
@@ -311,7 +315,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 
 	/**
 	 * Enriches room member data by adding the base URL to access URL when present.
-	 * 
+	 *
 	 * @param member - The room member data to enrich
 	 * @returns The enriched room member with complete access URL
 	 */

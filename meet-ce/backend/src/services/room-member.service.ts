@@ -6,7 +6,8 @@ import type {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
-	MeetRoomRoles
+	MeetRoomRoles,
+	ProjectedMeetRoomMember
 } from '@openvidu-meet/typings';
 import {
 	MeetParticipantModerationAction,
@@ -44,7 +45,6 @@ import {
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import type {
 	MeetRoomMemberPage,
-	ProjectedMeetRoomMember,
 	RoomMemberQuery,
 	RoomMemberQueryWithFields,
 	RoomMemberQueryWithProjection

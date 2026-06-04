@@ -1,11 +1,15 @@
 import { Injectable } from '@angular/core';
 import {
 	MeetRoomMember,
+	MeetRoomMemberField,
 	MeetRoomMemberFilters,
 	MeetRoomMemberOptions,
-	MeetRoomMemberTokenOptions
+	MeetRoomMemberTokenOptions,
+	ProjectedMeetRoomMember
 } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
+import type { MeetRoomMemberClientResponseOptions } from '../models/room-member-request';
+import type { MeetRoomMemberQueryOptionsWithFields } from '../types/room-member-projection.types';
 
 @Injectable({
 	providedIn: 'root'
@@ -34,9 +38,25 @@ export class RoomMemberService {
 	 * @param options - The options for creating the room member
 	 * @returns A promise that resolves to the created MeetRoomMember object
 	 */
-	async createRoomMember(roomId: string, options: MeetRoomMemberOptions): Promise<MeetRoomMember> {
+	async createRoomMember(roomId: string, options: MeetRoomMemberOptions): Promise<MeetRoomMember>;
+
+	async createRoomMember<const TFields extends readonly [MeetRoomMemberField, ...MeetRoomMemberField[]]>(
+		roomId: string,
+		options: MeetRoomMemberOptions,
+		responseOptions: MeetRoomMemberQueryOptionsWithFields<TFields>
+	): Promise<ProjectedMeetRoomMember<TFields>>;
+
+	async createRoomMember(
+		roomId: string,
+		options: MeetRoomMemberOptions,
+		responseOptions?: MeetRoomMemberClientResponseOptions
+	): Promise<MeetRoomMember | Partial<MeetRoomMember>> {
+		const headers: Record<string, string> = {
+			'X-Fields': responseOptions?.fields ? responseOptions.fields.join(',') : '',
+			'X-ExtraFields': responseOptions?.extraFields ? responseOptions.extraFields.join(',') : ''
+		};
 		const path = this.getRoomMemberApiPath(roomId);
-		return this.httpService.postRequest(path, options);
+		return this.httpService.postRequest(path, options, headers);
 	}
 
 	/**
@@ -85,8 +105,29 @@ export class RoomMemberService {
 	 * @param memberId - The unique identifier of the room member
 	 * @returns A promise that resolves to the MeetRoomMember object
 	 */
-	async getRoomMember(roomId: string, memberId: string): Promise<MeetRoomMember> {
-		const path = `${this.getRoomMemberApiPath(roomId)}/${memberId}`;
+	async getRoomMember(roomId: string, memberId: string): Promise<MeetRoomMember>;
+
+	async getRoomMember<const TFields extends readonly [MeetRoomMemberField, ...MeetRoomMemberField[]]>(
+		roomId: string,
+		memberId: string,
+		responseOptions: MeetRoomMemberQueryOptionsWithFields<TFields>
+	): Promise<ProjectedMeetRoomMember<TFields>>;
+
+	async getRoomMember(
+		roomId: string,
+		memberId: string,
+		responseOptions?: MeetRoomMemberClientResponseOptions
+	): Promise<MeetRoomMember | Partial<MeetRoomMember>> {
+		const queryParams = new URLSearchParams();
+		if (responseOptions?.fields) {
+			queryParams.set('fields', responseOptions.fields.join(','));
+		}
+		if (responseOptions?.extraFields) {
+			queryParams.set('extraFields', responseOptions.extraFields.join(','));
+		}
+		const queryString = queryParams.toString();
+		const path = `${this.getRoomMemberApiPath(roomId)}/${memberId}${queryString ? `?${queryString}` : ''}`;
+
 		return this.httpService.getRequest(path);
 	}
 
@@ -102,9 +143,27 @@ export class RoomMemberService {
 		roomId: string,
 		memberId: string,
 		updates: Partial<MeetRoomMemberOptions>
-	): Promise<MeetRoomMember> {
+	): Promise<MeetRoomMember>;
+
+	async updateRoomMember<const TFields extends readonly [MeetRoomMemberField, ...MeetRoomMemberField[]]>(
+		roomId: string,
+		memberId: string,
+		updates: Partial<MeetRoomMemberOptions>,
+		responseOptions: MeetRoomMemberQueryOptionsWithFields<TFields>
+	): Promise<ProjectedMeetRoomMember<TFields>>;
+
+	async updateRoomMember(
+		roomId: string,
+		memberId: string,
+		updates: Partial<MeetRoomMemberOptions>,
+		responseOptions?: MeetRoomMemberClientResponseOptions
+	): Promise<MeetRoomMember | Partial<MeetRoomMember>> {
+		const headers: Record<string, string> = {
+			'X-Fields': responseOptions?.fields ? responseOptions.fields.join(',') : '',
+			'X-ExtraFields': responseOptions?.extraFields ? responseOptions.extraFields.join(',') : ''
+		};
 		const path = `${this.getRoomMemberApiPath(roomId)}/${memberId}`;
-		return this.httpService.putRequest(path, updates);
+		return this.httpService.putRequest(path, updates, headers);
 	}
 
 	/**

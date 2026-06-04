@@ -178,9 +178,25 @@ export class RoomService {
 	 * @param status - The new status to be set
 	 * @return A promise that resolves to the updated room
 	 */
-	async updateRoomStatus(roomId: string, status: MeetRoomStatus): Promise<MeetRoom> {
+	async updateRoomStatus(roomId: string, status: MeetRoomStatus): Promise<MeetRoom>;
+
+	async updateRoomStatus<const TFields extends readonly [MeetRoomField, ...MeetRoomField[]]>(
+		roomId: string,
+		status: MeetRoomStatus,
+		responseOptions: MeetRoomQueryOptionsWithFields<TFields>
+	): Promise<ProjectedMeetRoom<TFields>>;
+
+	async updateRoomStatus(
+		roomId: string,
+		status: MeetRoomStatus,
+		responseOptions?: MeetRoomClientResponseOptions
+	): Promise<MeetRoom | Partial<MeetRoom>> {
+		const headers: Record<string, string> = {
+			'X-Fields': responseOptions?.fields ? responseOptions.fields.join(',') : '',
+			'X-ExtraFields': responseOptions?.extraFields ? responseOptions.extraFields.join(',') : ''
+		};
 		const path = `${this.ROOMS_API}/${roomId}/status`;
-		return this.httpService.putRequest(path, { status });
+		return this.httpService.putRequest(path, { status }, headers);
 	}
 
 	/**
