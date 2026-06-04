@@ -28,9 +28,6 @@ export class App {
 	protected kickIdentityInput = 'test-participant-1';
 
 	// ── Applied signals (bound to the WC via Angular wrapper inputs) ────────
-	// Use `undefined` for empty values so the WC's mode resolution doesn't see
-	// empty strings as set attributes (e.g. an empty roomUrl alongside a real
-	// recordingUrl would otherwise confuse `resolveMode`).
 	protected readonly roomUrl = signal<string | undefined>(undefined);
 	protected readonly recordingUrl = signal<string | undefined>(undefined);
 	protected readonly participantName = signal<string | undefined>(undefined);
@@ -38,31 +35,35 @@ export class App {
 	protected readonly leaveRedirectUrl = signal<string | undefined>(undefined);
 	protected readonly showRecording = signal<string | undefined>(undefined);
 	protected readonly showOnlyRecordings = signal<boolean | undefined>(undefined);
-
-	// The WC is gated behind `applyConfig()` so tests (and dev usage) can set
-	// attributes before the element first mounts — letting the WC pick up the
-	// correct mode/attributes from the very first render rather than going
-	// through a property-reassignment path that the WC may not fully react to.
 	protected readonly wcMounted = signal(false);
 
-	// ── on() callback reference stored for paired off() call ────────────────
 	private onJoinedHandler: ((detail: OpenViduMeetJoinedDetail) => void) | null = null;
 
 	// ── Config ───────────────────────────────────────────────────────────────
 
 	protected applyConfig(): void {
-		this.roomUrl.set(this.roomUrlInput || undefined);
-		this.recordingUrl.set(this.recordingUrlInput || undefined);
-		this.participantName.set(this.participantNameInput || undefined);
-		this.e2eeKey.set(this.e2eeKeyInput || undefined);
-		this.leaveRedirectUrl.set(this.leaveRedirectUrlInput || undefined);
-		this.showRecording.set(this.showRecordingInput || undefined);
-		this.showOnlyRecordings.set(this.showOnlyRecordingsInput);
-		this.wcMounted.set(true);
-		this.log.log('Config applied');
-	}
+		this.log.clear();
 
-	// ── Angular output bindings ───────────────────────────────────────────────
+		const apply = () => {
+			this.roomUrl.set(this.roomUrlInput || undefined);
+			this.recordingUrl.set(this.recordingUrlInput || undefined);
+			this.participantName.set(this.participantNameInput || undefined);
+			this.e2eeKey.set(this.e2eeKeyInput || undefined);
+			this.leaveRedirectUrl.set(this.leaveRedirectUrlInput || undefined);
+			this.showRecording.set(this.showRecordingInput || undefined);
+			this.showOnlyRecordings.set(this.showOnlyRecordingsInput);
+			this.wcMounted.set(true);
+			this.log.log('Config applied');
+		};
+
+		if (this.wcMounted()) {
+			this.wcMounted.set(false);
+			setTimeout(apply);
+			return;
+		}
+
+		apply();
+	}
 
 	protected handleJoined(event: CustomEvent<OpenViduMeetJoinedDetail>): void {
 		this.log.log(`[output] joined — room: ${event.detail.roomId}, identity: ${event.detail.participantIdentity}`);
