@@ -2,4 +2,4 @@ description: Successfully created or reused AI assistant activation
 content:
     application/json:
         schema:
-            $ref: '../../schemas/ai-assistant-create-response.yaml'
+            $ref: '../../schemas/ai-assistant.yaml'

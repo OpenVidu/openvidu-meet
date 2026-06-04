@@ -77,10 +77,7 @@ export class UpdateRoleDialogComponent {
 		const delayLoader = setTimeout(() => this.isSaving.set(true), 200);
 
 		try {
-			const { user: updatedUser } = await this.userService.updateUserRole(
-				this.data.user.userId,
-				this.selectedRole()
-			);
+			const updatedUser = await this.userService.updateUserRole(this.data.user.userId, this.selectedRole());
 			this.notificationService.showSnackbar(
 				`Role for ${updatedUser.name} updated to ${UsersUiUtils.getRoleLabel(updatedUser.role)}`
 			);

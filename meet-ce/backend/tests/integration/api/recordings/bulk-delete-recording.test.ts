@@ -79,7 +79,8 @@ describe('Recording API Tests', () => {
 			expect(deleteResponse.status).toBe(200);
 			expect(deleteResponse.body).toEqual({
 				message: expect.stringContaining('All recordings deleted successfully'),
-				deleted: expect.arrayContaining([activeRecordingId])
+				deleted: expect.arrayContaining([activeRecordingId]),
+				failed: []
 			});
 		});
 

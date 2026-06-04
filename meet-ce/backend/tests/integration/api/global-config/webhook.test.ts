@@ -29,7 +29,7 @@ describe('Webhook Config API Tests', () => {
 			let response = await updateWebhookConfig(validConfig);
 
 			expect(response.status).toBe(200);
-			expect(response.body.message).toBe('Webhooks config updated successfully');
+			expect(response.body).toEqual(validConfig);
 
 			response = await getWebhookConfig();
 			expect(response.status).toBe(200);
@@ -47,7 +47,8 @@ describe('Webhook Config API Tests', () => {
 			});
 
 			expect(response.status).toBe(200);
-			expect(response.body.message).toBe('Webhooks config updated successfully');
+			expect(response.body.enabled).toBe(false);
+			expect(response.body.url).toBe(oldWebhookConfig.body.url);
 
 			response = await getWebhookConfig();
 			expect(response.status).toBe(200);
@@ -63,7 +64,7 @@ describe('Webhook Config API Tests', () => {
 			const response = await updateWebhookConfig(config);
 
 			expect(response.status).toBe(200);
-			expect(response.body.message).toBe('Webhooks config updated successfully');
+			expect(response.body).toEqual(config);
 
 			const configResponse = await getWebhookConfig();
 			expect(configResponse.status).toBe(200);

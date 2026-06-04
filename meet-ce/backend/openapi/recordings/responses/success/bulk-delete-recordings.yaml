@@ -11,8 +11,23 @@ content:
                     items:
                         type: string
                     description: List of recordings that were deleted successfully.
+                failed:
+                    type: array
+                    description: Always present; empty when all recordings were deleted successfully.
+                    items:
+                        type: object
+                        properties:
+                            recordingId:
+                                type: string
+                            error:
+                                type: string
+                                description: Name of the error
+                            message:
+                                type: string
+                                description: Description of the error
         example:
             message: "All recordings deleted successfully"
             deleted:
                 - 'room-123--EG_XYZ--XX445'
                 - 'room-123--EG_ZYX--XX446'
+            failed: []

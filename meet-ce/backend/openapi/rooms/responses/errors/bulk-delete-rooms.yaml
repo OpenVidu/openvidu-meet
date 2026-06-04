@@ -7,7 +7,7 @@ content:
             properties:
                 message:
                     type: string
-                successful:
+                deleted:
                     type: array
                     items:
                         type: object
@@ -50,7 +50,7 @@ content:
                 summary: Some rooms were successfully processed for deletion, others failed
                 value:
                     message: '2 room(s) failed to process while deleting'
-                    successful:
+                    deleted:
                         - roomId: room-123
                           successCode: room_deleted
                           message: Room 'room-123' deleted successfully
@@ -68,7 +68,7 @@ content:
                 summary: No rooms were successfully processed for deletion
                 value:
                     message: '2 room(s) failed to process for deletion'
-                    successful: []
+                    deleted: []
                     failed:
                         - roomId: room-123
                           error: Room Error

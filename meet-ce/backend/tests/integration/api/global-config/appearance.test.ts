@@ -38,7 +38,7 @@ describe('Rooms Appearance Config API Tests', () => {
 
 			let response = await updateRoomsAppearanceConfig(validConfig);
 			expect(response.status).toBe(200);
-			expect(response.body.message).toBe('Rooms appearance config updated successfully');
+			expect(response.body).toEqual(validConfig);
 
 			response = await getRoomsAppearanceConfig();
 			expect(response.status).toBe(200);
@@ -60,7 +60,7 @@ describe('Rooms Appearance Config API Tests', () => {
 
 			let response = await updateRoomsAppearanceConfig(validConfig);
 			expect(response.status).toBe(200);
-			expect(response.body.message).toBe('Rooms appearance config updated successfully');
+			expect(response.body).toEqual(validConfig);
 
 			response = await getRoomsAppearanceConfig();
 			expect(response.status).toBe(200);

@@ -3,9 +3,9 @@
 rooms/responses/errors/bulk-delete-rooms.yaml:
   no-invalid-media-type-examples:
     - >-
-      #/content/application~1json/examples/partial_deletion_with_errors/value/successful/0/roomId
+      #/content/application~1json/examples/partial_deletion_with_errors/value/deleted/0/roomId
     - >-
-      #/content/application~1json/examples/partial_deletion_with_errors/value/successful/1/roomId
+      #/content/application~1json/examples/partial_deletion_with_errors/value/deleted/1/roomId
 shared/security.yaml:
   no-unused-components:
     - '#/refreshTokenHeader'

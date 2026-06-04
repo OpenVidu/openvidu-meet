@@ -70,6 +70,8 @@ describe('Users API Tests', () => {
 			expect(response.body.deleted).toContain(user1.userId);
 			expect(response.body.deleted).toContain(user2.userId);
 			expect(response.body.deleted).toContain(user3.userId);
+			expect(response.body).toHaveProperty('failed');
+			expect(response.body.failed).toHaveLength(0);
 
 			// Verify users no longer exist
 			const getUser1Response = await getUser(user1.userId);

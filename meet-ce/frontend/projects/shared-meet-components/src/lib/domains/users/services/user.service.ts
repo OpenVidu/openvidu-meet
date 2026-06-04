@@ -114,7 +114,7 @@ export class UserService {
 	 * @param role - The new role to assign to the user
 	 * @returns A promise that resolves to the updated MeetUserDTO object
 	 */
-	async updateUserRole(userId: string, role: MeetUserRole): Promise<{ message: string; user: MeetUserDTO }> {
+	async updateUserRole(userId: string, role: MeetUserRole): Promise<MeetUserDTO> {
 		const path = `${this.USERS_API}/${userId}/role`;
 		return this.httpService.putRequest(path, { role });
 	}
@@ -149,6 +149,7 @@ export class UserService {
 	async bulkDeleteUsers(userIds: string[]): Promise<{
 		message: string;
 		deleted: string[];
+		failed: { userId: string; error: string; message: string }[];
 	}> {
 		if (userIds.length === 0) {
 			throw new Error('No user IDs provided for bulk deletion');

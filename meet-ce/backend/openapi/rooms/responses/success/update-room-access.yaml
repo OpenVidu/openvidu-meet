@@ -1,10 +1,5 @@
-description: Success response for updating room access configuration
+description: Success response for updating room access configuration. Returns the updated access configuration.
 content:
     application/json:
         schema:
-            type: object
-            properties:
-                message:
-                    type: string
-        example:
-            message: Access config for room 'room-123' updated successfully
+            $ref: '../../schemas/meet-room-access.yaml'

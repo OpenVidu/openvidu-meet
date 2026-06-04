@@ -270,7 +270,7 @@ describe('Room Header Fields Tests', () => {
 			);
 
 			expect(response.status).toBe(200);
-			const successItem = response.body.successful.find((s: { room?: MeetRoom }) => s.room !== undefined);
+			const successItem = response.body.deleted.find((s: { room?: MeetRoom }) => s.room !== undefined);
 			expect(successItem).toBeDefined();
 			expectValidRoomWithFields(successItem.room, ['roomId', 'status']);
 		});
@@ -288,7 +288,7 @@ describe('Room Header Fields Tests', () => {
 			);
 
 			expect(response.status).toBe(200);
-			const successItem = response.body.successful.find((s: { room?: MeetRoom }) => s.room !== undefined);
+			const successItem = response.body.deleted.find((s: { room?: MeetRoom }) => s.room !== undefined);
 			expect(successItem).toBeDefined();
 			expect(successItem.room.config).toBeDefined();
 		});
@@ -306,7 +306,7 @@ describe('Room Header Fields Tests', () => {
 			);
 
 			// room1 gets deleted (no room in response), room2 gets scheduled (room in response)
-			const successWithRoom = response.body.successful.find((s: { room?: MeetRoom }) => s.room !== undefined);
+			const successWithRoom = response.body.deleted.find((s: { room?: MeetRoom }) => s.room !== undefined);
 
 			if (successWithRoom) {
 				expectValidRoomWithFields(successWithRoom.room, ['roomId', 'roomName', 'config']);
@@ -321,8 +321,8 @@ describe('Room Header Fields Tests', () => {
 			});
 
 			expect(response.status).toBe(200);
-			expect(response.body.successful[0]).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_DELETED);
-			expect(response.body.successful[0]).not.toHaveProperty('room');
+			expect(response.body.deleted[0]).toHaveProperty('successCode', MeetRoomDeletionSuccessCode.ROOM_DELETED);
+			expect(response.body.deleted[0]).not.toHaveProperty('room');
 		});
 	});
 

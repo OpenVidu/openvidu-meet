@@ -211,12 +211,14 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 
 		if (allFailed.length === 0) {
 			// All rooms were successfully processed
-			return res.status(200).json({ message: 'All rooms successfully processed for deletion', successful });
+			return res
+				.status(200)
+				.json({ message: 'All rooms successfully processed for deletion', deleted: successful, failed: [] });
 		} else {
 			// Some rooms failed to process
 			const response = {
 				message: `${allFailed.length} room(s) failed to process while deleting`,
-				successful,
+				deleted: successful,
 				failed: allFailed
 			};
 			return res.status(400).json(response);
@@ -250,8 +252,8 @@ export const updateRoomConfig = async (req: Request, res: Response) => {
 	logger.verbose(`Updating room config for room '${roomId}'`);
 
 	try {
-		await roomService.updateMeetRoomConfig(roomId, config);
-		return res.status(200).json({ message: `Room config for room '${roomId}' updated successfully` });
+		const updatedRoom = await roomService.updateMeetRoomConfig(roomId, config);
+		return res.status(200).json(updatedRoom.config);
 	} catch (error) {
 		handleError(res, error, `updating room config for room '${roomId}'`);
 	}
@@ -262,20 +264,22 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 	const roomService = container.get(RoomService);
 	const { status } = req.body;
 	const { roomId } = req.params as Record<string, string>;
+	const { fields, extraFields } = res.locals.validatedQuery as {
+		fields?: MeetRoomField[];
+		extraFields?: MeetRoomExtraField[];
+	};
 
 	logger.verbose(`Updating room status for room '${roomId}' to '${status}'`);
 
 	try {
 		const { room, updated } = await roomService.updateMeetRoomStatus(roomId, status);
-		let message: string;
 
-		if (updated) {
-			message = `Room '${roomId}' ${status} successfully`;
-		} else {
-			message = `Room '${roomId}' scheduled to be closed when the meeting ends`;
-		}
+		let responseRoom = MeetRoomHelper.applyFieldFilters(room, fields, extraFields);
+		responseRoom = MeetRoomHelper.addResponseMetadata(responseRoom);
 
-		return res.status(updated ? 200 : 202).json({ message, room });
+		// 200 when the status change is applied immediately, 202 when it is scheduled
+		// to take effect after the active meeting ends.
+		return res.status(updated ? 200 : 202).json(responseRoom);
 	} catch (error) {
 		handleError(res, error, `updating room status for room '${roomId}'`);
 	}
@@ -290,8 +294,8 @@ export const updateRoomRoles = async (req: Request, res: Response) => {
 	logger.verbose(`Updating roles permissions for room '${roomId}'`);
 
 	try {
-		await roomService.updateMeetRoomRoles(roomId, roles);
-		return res.status(200).json({ message: `Roles permissions for room '${roomId}' updated successfully` });
+		const updatedRoom = await roomService.updateMeetRoomRoles(roomId, roles);
+		return res.status(200).json(updatedRoom.roles);
 	} catch (error) {
 		handleError(res, error, `updating roles permissions for room '${roomId}'`);
 	}
@@ -306,8 +310,8 @@ export const updateRoomAccess = async (req: Request, res: Response) => {
 	logger.verbose(`Updating access config for room '${roomId}'`);
 
 	try {
-		await roomService.updateMeetRoomAccess(roomId, access);
-		return res.status(200).json({ message: `Access config for room '${roomId}' updated successfully` });
+		const updatedRoom = await roomService.updateMeetRoomAccess(roomId, access);
+		return res.status(200).json(updatedRoom.access);
 	} catch (error) {
 		handleError(res, error, `updating access config for room '${roomId}'`);
 	}

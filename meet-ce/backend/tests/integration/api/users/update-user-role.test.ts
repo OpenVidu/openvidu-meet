@@ -50,14 +50,9 @@ describe('Users API Tests', () => {
 			const response = await updateUserRole(testUsers.user.user.userId, MeetUserRole.ADMIN);
 			expect(response.status).toBe(200);
 
-			expect(response.body).toHaveProperty('message');
-			expect(response.body.message).toContain('updated successfully');
-			expect(response.body.message).toContain(MeetUserRole.ADMIN);
-
-			expect(response.body).toHaveProperty('user');
-			expect(response.body.user).toHaveProperty('userId', testUsers.user.user.userId);
-			expect(response.body.user).toHaveProperty('role', MeetUserRole.ADMIN);
-			expect(response.body.user).toHaveProperty('roleUpdatedAt');
+			expect(response.body).toHaveProperty('userId', testUsers.user.user.userId);
+			expect(response.body).toHaveProperty('role', MeetUserRole.ADMIN);
+			expect(response.body).toHaveProperty('roleUpdatedAt');
 		});
 
 		it('should successfully update user role to USER', async () => {
@@ -73,8 +68,7 @@ describe('Users API Tests', () => {
 			// Update role to USER
 			const response = await updateUserRole(userId, MeetUserRole.USER);
 			expect(response.status).toBe(200);
-			expect(response.body).toHaveProperty('user');
-			expect(response.body.user).toHaveProperty('role', MeetUserRole.USER);
+			expect(response.body).toHaveProperty('role', MeetUserRole.USER);
 		});
 
 		it('should successfully update user role to ROOM_MEMBER', async () => {
@@ -90,8 +84,7 @@ describe('Users API Tests', () => {
 			// Update role to ROOM_MEMBER
 			const response = await updateUserRole(userId, MeetUserRole.ROOM_MEMBER);
 			expect(response.status).toBe(200);
-			expect(response.body).toHaveProperty('user');
-			expect(response.body.user).toHaveProperty('role', MeetUserRole.ROOM_MEMBER);
+			expect(response.body).toHaveProperty('role', MeetUserRole.ROOM_MEMBER);
 		});
 
 		it('should persist role change after update', async () => {
@@ -107,27 +100,27 @@ describe('Users API Tests', () => {
 			// Update role to ADMIN
 			const updateResponse = await updateUserRole(userId, MeetUserRole.ADMIN);
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body.user).toHaveProperty('roleUpdatedAt');
+			expect(updateResponse.body).toHaveProperty('roleUpdatedAt');
 
 			// Verify role persisted by getting user
 			const getUserResponse = await getUser(userId);
 			expect(getUserResponse.status).toBe(200);
 			expect(getUserResponse.body).toHaveProperty('role', MeetUserRole.ADMIN);
 			expect(getUserResponse.body).toHaveProperty('roleUpdatedAt');
-			expect(getUserResponse.body.roleUpdatedAt).toBe(updateResponse.body.user.roleUpdatedAt);
+			expect(getUserResponse.body.roleUpdatedAt).toBe(updateResponse.body.roleUpdatedAt);
 			expect(getUserResponse.body.roleUpdatedAt).toBeGreaterThanOrEqual(getUserResponse.body.registrationDate);
 		});
 
 		it('should not expose sensitive fields in response', async () => {
 			const response = await updateUserRole(testUsers.user.user.userId, MeetUserRole.ADMIN);
 			expect(response.status).toBe(200);
-			expect(response.body.user).not.toHaveProperty('passwordHash');
-			expect(response.body.user).not.toHaveProperty('mustChangePassword');
-			expect(response.body.user).toHaveProperty('userId');
-			expect(response.body.user).toHaveProperty('name');
-			expect(response.body.user).toHaveProperty('role');
-			expect(response.body.user).toHaveProperty('registrationDate');
-			expect(response.body.user).toHaveProperty('roleUpdatedAt');
+			expect(response.body).not.toHaveProperty('passwordHash');
+			expect(response.body).not.toHaveProperty('mustChangePassword');
+			expect(response.body).toHaveProperty('userId');
+			expect(response.body).toHaveProperty('name');
+			expect(response.body).toHaveProperty('role');
+			expect(response.body).toHaveProperty('registrationDate');
+			expect(response.body).toHaveProperty('roleUpdatedAt');
 		});
 
 		it('should fail when trying to update own role', async () => {
@@ -182,7 +175,7 @@ describe('Users API Tests', () => {
 			// Update role to ROOM_MEMBER
 			const result = await updateUserRole(userId, MeetUserRole.ROOM_MEMBER);
 			expect(result.status).toBe(200);
-			expect(result.body.user.role).toBe(MeetUserRole.ROOM_MEMBER);
+			expect(result.body.role).toBe(MeetUserRole.ROOM_MEMBER);
 
 			// Verify the room ownership has been transferred to root admin
 			const updatedRoomResponse = await getRoom(room.roomId);
@@ -244,7 +237,7 @@ describe('Users API Tests', () => {
 			// Update role to ADMIN
 			const result = await updateUserRole(userId, MeetUserRole.ADMIN);
 			expect(result.status).toBe(200);
-			expect(result.body.user.role).toBe(MeetUserRole.ADMIN);
+			expect(result.body.role).toBe(MeetUserRole.ADMIN);
 
 			// Verify the user is no longer a member of the room
 			const getMemberAfterResponse = await getRoomMember(room.roomId, userId);

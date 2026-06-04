@@ -121,6 +121,8 @@ export class RecordingEntryService {
 					return { kind: 'error', reason: NavigationErrorReason.ANONYMOUS_RECORDING_ACCESS_DISABLED };
 				case 404:
 					return { kind: 'error', reason: NavigationErrorReason.INVALID_RECORDING };
+				case 429:
+					return { kind: 'error', reason: NavigationErrorReason.TOO_MANY_REQUESTS };
 				default:
 					return { kind: 'error', reason: NavigationErrorReason.INTERNAL_ERROR };
 			}

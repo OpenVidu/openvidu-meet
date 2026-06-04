@@ -1,9 +1,5 @@
-description: Successfully updated security config
+description: Successfully updated security config. Returns the updated security configuration.
 content:
     application/json:
         schema:
-            type: object
-            properties:
-                message:
-                    type: string
-                    example: 'Security config updated successfully'
+            $ref: '../../schemas/global-security-config.yaml'

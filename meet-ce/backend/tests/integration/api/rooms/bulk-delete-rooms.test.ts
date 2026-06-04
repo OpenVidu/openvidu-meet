@@ -41,13 +41,14 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({
 				message: 'All rooms successfully processed for deletion',
-				successful: expect.arrayContaining([
+				deleted: expect.arrayContaining([
 					{
 						roomId,
 						successCode: MeetRoomDeletionSuccessCode.ROOM_DELETED,
 						message: expect.any(String)
 					}
-				])
+				]),
+				failed: []
 			});
 		});
 
@@ -60,7 +61,7 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(400);
 			expect(response.body).toEqual({
 				message: '1 room(s) failed to process while deleting',
-				successful: expect.arrayContaining([
+				deleted: expect.arrayContaining([
 					{
 						roomId: room1.roomId,
 						successCode: MeetRoomDeletionSuccessCode.ROOM_DELETED,
@@ -84,7 +85,7 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(400);
 			expect(response.body).toEqual({
 				message: '1 room(s) failed to process while deleting',
-				successful: [],
+				deleted: [],
 				failed: expect.arrayContaining([
 					{
 						roomId: room.roomId,
@@ -103,13 +104,14 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({
 				message: 'All rooms successfully processed for deletion',
-				successful: expect.arrayContaining([
+				deleted: expect.arrayContaining([
 					{
 						roomId,
 						successCode: MeetRoomDeletionSuccessCode.ROOM_DELETED,
 						message: expect.any(String)
 					}
-				])
+				]),
+				failed: []
 			});
 		});
 
@@ -121,13 +123,14 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({
 				message: 'All rooms successfully processed for deletion',
-				successful: expect.arrayContaining([
+				deleted: expect.arrayContaining([
 					{
 						roomId,
 						successCode: MeetRoomDeletionSuccessCode.ROOM_DELETED,
 						message: expect.any(String)
 					}
-				])
+				]),
+				failed: []
 			});
 		});
 
@@ -141,13 +144,14 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(200);
 			expect(response.body).toEqual({
 				message: 'All rooms successfully processed for deletion',
-				successful: expect.arrayContaining(
+				deleted: expect.arrayContaining(
 					rooms.map((room) => ({
 						roomId: room.roomId,
 						successCode: MeetRoomDeletionSuccessCode.ROOM_DELETED,
 						message: expect.any(String)
 					}))
-				)
+				),
+				failed: []
 			});
 
 			// Verify all rooms are deleted
@@ -180,7 +184,7 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(400);
 			expect(response.body).toEqual({
 				message: '1 room(s) failed to process while deleting',
-				successful: expect.arrayContaining([
+				deleted: expect.arrayContaining([
 					{
 						roomId: room1.roomId,
 						successCode: MeetRoomDeletionSuccessCode.ROOM_DELETED,
@@ -215,7 +219,7 @@ describe('Room API Tests', () => {
 			});
 
 			// Check successful rooms properties
-			const successfulRoom2 = response.body.successful.find(
+			const successfulRoom2 = response.body.deleted.find(
 				(s: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }) =>
 					s.room?.roomId === room2.roomId
 			);
@@ -230,7 +234,7 @@ describe('Room API Tests', () => {
 				MeetingEndAction.DELETE
 			);
 			expectExtraFieldsInResponse(successfulRoom2.room);
-			const successfulRoom3 = response.body.successful.find(
+			const successfulRoom3 = response.body.deleted.find(
 				(r: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }) =>
 					r.room?.roomId === room3.roomId
 			);
@@ -246,7 +250,7 @@ describe('Room API Tests', () => {
 			);
 			expectExtraFieldsInResponse(successfulRoom3.room);
 
-			const successfulRoom4 = response.body.successful.find(
+			const successfulRoom4 = response.body.deleted.find(
 				(r: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }) =>
 					r.room?.roomId === room4.roomId
 			);
@@ -285,10 +289,10 @@ describe('Room API Tests', () => {
 			);
 
 			expect(response.status).toBe(200);
-			expect(response.body.successful).toHaveLength(2);
+			expect(response.body.deleted).toHaveLength(2);
 
 			// Find the room with meeting (should have room object in response)
-			const scheduledRoom = response.body.successful.find(
+			const scheduledRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithMeeting.roomId
 			);
 
@@ -304,7 +308,7 @@ describe('Room API Tests', () => {
 			expect(scheduledRoom.room.roomName).toBeDefined();
 
 			// Find the room without meeting (should NOT have room object)
-			const deletedRoom = response.body.successful.find(
+			const deletedRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithoutMeeting.roomId
 			);
 
@@ -330,10 +334,10 @@ describe('Room API Tests', () => {
 			);
 
 			expect(response.status).toBe(200);
-			expect(response.body.successful).toHaveLength(2);
+			expect(response.body.deleted).toHaveLength(2);
 
 			// Find the room with meeting (should have room object in response)
-			const scheduledRoom = response.body.successful.find(
+			const scheduledRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithMeeting.roomId
 			);
 
@@ -362,10 +366,10 @@ describe('Room API Tests', () => {
 			);
 
 			expect(response.status).toBe(200);
-			expect(response.body.successful).toHaveLength(2);
+			expect(response.body.deleted).toHaveLength(2);
 
 			// Find the room with meeting (should have room object in response)
-			const scheduledRoom = response.body.successful.find(
+			const scheduledRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithMeeting.roomId
 			);
 
@@ -399,10 +403,10 @@ describe('Room API Tests', () => {
 			);
 
 			expect(response.status).toBe(200);
-			expect(response.body.successful).toHaveLength(2);
+			expect(response.body.deleted).toHaveLength(2);
 
 			// Find the room with meeting (should have room object in response)
-			const scheduledRoom = response.body.successful.find(
+			const scheduledRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithMeeting.roomId
 			);
 
@@ -437,10 +441,10 @@ describe('Room API Tests', () => {
 			);
 
 			expect(response.status).toBe(200);
-			expect(response.body.successful).toHaveLength(2);
+			expect(response.body.deleted).toHaveLength(2);
 
 			// Find the room with meeting (should have room object in response)
-			const scheduledRoom = response.body.successful.find(
+			const scheduledRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithMeeting.roomId
 			);
 
@@ -462,7 +466,7 @@ describe('Room API Tests', () => {
 			expectExtraFieldsInResponse(scheduledRoom.room);
 
 			// Find the room without meeting (should NOT have room object)
-			const deletedRoom = response.body.successful.find(
+			const deletedRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithoutMeeting.roomId
 			);
 
@@ -494,10 +498,10 @@ describe('Room API Tests', () => {
 			);
 
 			expect(response.status).toBe(200);
-			expect(response.body.successful).toHaveLength(2);
+			expect(response.body.deleted).toHaveLength(2);
 
 			// Find the room with meeting (should have room object in response)
-			const scheduledRoom = response.body.successful.find(
+			const scheduledRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithMeeting.roomId
 			);
 
@@ -519,7 +523,7 @@ describe('Room API Tests', () => {
 			expectExtraFieldsInResponse(scheduledRoom.room);
 
 			// Find the room without meeting (should NOT have room object)
-			const deletedRoom = response.body.successful.find(
+			const deletedRoom = response.body.deleted.find(
 				(s: { roomId: string; room?: MeetRoom }) => s.roomId === roomWithoutMeeting.roomId
 			);
 

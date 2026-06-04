@@ -1,9 +1,5 @@
-description: Successfully updated webhooks config
+description: Successfully updated webhooks config. Returns the updated webhooks configuration.
 content:
     application/json:
         schema:
-            type: object
-            properties:
-                message:
-                    type: string
-                    example: 'Webhooks config updated successfully'
+            $ref: '../../schemas/webhooks-config.yaml'

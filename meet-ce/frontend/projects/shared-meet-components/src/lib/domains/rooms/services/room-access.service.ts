@@ -73,6 +73,8 @@ export class RoomAccessService {
 						return { allowed: false, reason: NavigationErrorReason.INVALID_MEMBER };
 					}
 					return { allowed: false, reason: NavigationErrorReason.INVALID_ROOM };
+				case 429:
+					return { allowed: false, reason: NavigationErrorReason.TOO_MANY_REQUESTS };
 				default:
 					return { allowed: false, reason: NavigationErrorReason.INTERNAL_ERROR };
 			}

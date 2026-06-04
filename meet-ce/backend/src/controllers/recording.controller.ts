@@ -97,8 +97,8 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 		const allFailed = [...preFailed, ...failed];
 
 		// All recordings were successfully deleted
-		if (deleted.length > 0 && allFailed.length === 0) {
-			return res.status(200).json({ message: 'All recordings deleted successfully', deleted });
+		if (allFailed.length === 0) {
+			return res.status(200).json({ message: 'All recordings deleted successfully', deleted, failed: [] });
 		}
 
 		// Some or all recordings could not be deleted

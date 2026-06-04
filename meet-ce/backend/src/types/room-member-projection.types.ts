@@ -1,9 +1,4 @@
-import type {
-	MeetRoomMember,
-	MeetRoomMemberField,
-	MeetRoomMemberFilters,
-	ProjectedEntityByFields
-} from '@openvidu-meet/typings';
+import type { MeetRoomMemberField, MeetRoomMemberFilters } from '@openvidu-meet/typings';
 
 /** Base query inputs without the fields selector. */
 type RoomMemberQueryBase = Omit<MeetRoomMemberFilters, 'fields'>;
@@ -20,12 +15,6 @@ export type RoomMemberQueryWithProjection<TFields extends readonly MeetRoomMembe
 export type RoomMemberQueryWithFields = RoomMemberQueryBase & {
 	fields?: readonly MeetRoomMemberField[];
 };
-
-/** Room member entity projected to the requested fields tuple. */
-export type ProjectedMeetRoomMember<TFields extends readonly MeetRoomMemberField[]> = ProjectedEntityByFields<
-	MeetRoomMember,
-	TFields
->;
 
 /** Paginated response returned by room member list methods. */
 export type MeetRoomMemberPage<TItem> = {

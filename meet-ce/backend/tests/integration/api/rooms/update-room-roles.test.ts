@@ -71,7 +71,7 @@ describe('Room API Tests', () => {
 
 			const updateResponse = await updateRoomRoles(createdRoom.roomId, updatedRoles);
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body).toHaveProperty('message');
+			expect(updateResponse.body).toMatchObject(updatedRoles);
 
 			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.status).toBe(200);
@@ -99,7 +99,7 @@ describe('Room API Tests', () => {
 
 			const updateResponse = await updateRoomRoles(createdRoom.roomId, updatedRoles);
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body).toHaveProperty('message');
+			expect(updateResponse.body).toMatchObject(updatedRoles);
 
 			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.status).toBe(200);

@@ -415,6 +415,10 @@ export class MeetingLobbyService {
 					// Room is closed
 					await this.navigationService.redirectToErrorPage(NavigationErrorReason.CLOSED_ROOM, true);
 					break;
+				case 429:
+					// Too many requests (rate limited)
+					await this.navigationService.redirectToErrorPage(NavigationErrorReason.TOO_MANY_REQUESTS, true);
+					break;
 				default:
 					await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
 			}

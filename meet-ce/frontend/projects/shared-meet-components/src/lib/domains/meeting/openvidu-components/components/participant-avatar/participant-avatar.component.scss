@@ -29,7 +29,7 @@
 	text-align: center;
 	padding: 1.5rem;
 	max-width: 280px;
-	color: var(--ov-meet-text-primary, #ffffff);
+	color: #ffffff;
 
 	svg {
 		color: var(--ov-meet-color-error, #ef4444);
@@ -42,16 +42,15 @@
 		font-size: 0.95rem;
 		font-weight: 600;
 		margin: 0 0 0.4rem 0;
-		color: var(--ov-meet-text-primary, #ffffff);
+		color: #ffffff;
 		letter-spacing: 0.02em;
 	}
 
 	p {
 		font-size: 0.8rem;
 		margin: 0;
-		opacity: 0.7;
 		line-height: 1.5;
-		color: var(--ov-meet-text-secondary, #a1a1aa);
+		color: rgba(255, 255, 255, 0.75);
 	}
 }
 

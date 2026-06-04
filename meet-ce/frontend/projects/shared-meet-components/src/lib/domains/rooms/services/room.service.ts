@@ -1,17 +1,19 @@
 import { inject, Injectable } from '@angular/core';
 import {
-    MeetRoom,
-    MeetRoomAccessConfig,
-    MeetRoomConfig,
-    MeetRoomDeletionPolicyWithMeeting,
-    MeetRoomDeletionPolicyWithRecordings,
-    MeetRoomDeletionSuccessCode,
-    MeetRoomField,
-    MeetRoomFilters,
-    MeetRoomOptions,
-    MeetRoomRolesConfig,
-    MeetRoomStatus,
-    ProjectedMeetRoom
+	MeetRoom,
+	MeetRoomAccess,
+	MeetRoomAccessConfig,
+	MeetRoomConfig,
+	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomDeletionPolicyWithRecordings,
+	MeetRoomDeletionSuccessCode,
+	MeetRoomField,
+	MeetRoomFilters,
+	MeetRoomOptions,
+	MeetRoomRoles,
+	MeetRoomRolesConfig,
+	MeetRoomStatus,
+	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 import { ILogger, LoggerService } from '../../meeting/openvidu-components';
@@ -163,10 +165,10 @@ export class RoomService {
 	 * @param config - The room config to be saved.
 	 * @returns A promise that resolves when the config have been saved.
 	 */
-	async updateRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<void> {
+	async updateRoomConfig(roomId: string, config: Partial<MeetRoomConfig>): Promise<MeetRoomConfig> {
 		this.log.d('Saving room config', config);
 		const path = `${this.ROOMS_API}/${roomId}/config`;
-		await this.httpService.putRequest(path, { config });
+		return this.httpService.putRequest(path, { config });
 	}
 
 	/**
@@ -174,11 +176,27 @@ export class RoomService {
 	 *
 	 * @param roomId - The unique identifier of the room
 	 * @param status - The new status to be set
-	 * @return A promise that resolves to an object containing the updated room and a status code
+	 * @return A promise that resolves to the updated room
 	 */
-	async updateRoomStatus(roomId: string, status: MeetRoomStatus): Promise<{ message: string; room: MeetRoom }> {
+	async updateRoomStatus(roomId: string, status: MeetRoomStatus): Promise<MeetRoom>;
+
+	async updateRoomStatus<const TFields extends readonly [MeetRoomField, ...MeetRoomField[]]>(
+		roomId: string,
+		status: MeetRoomStatus,
+		responseOptions: MeetRoomQueryOptionsWithFields<TFields>
+	): Promise<ProjectedMeetRoom<TFields>>;
+
+	async updateRoomStatus(
+		roomId: string,
+		status: MeetRoomStatus,
+		responseOptions?: MeetRoomClientResponseOptions
+	): Promise<MeetRoom | Partial<MeetRoom>> {
+		const headers: Record<string, string> = {
+			'X-Fields': responseOptions?.fields ? responseOptions.fields.join(',') : '',
+			'X-ExtraFields': responseOptions?.extraFields ? responseOptions.extraFields.join(',') : ''
+		};
 		const path = `${this.ROOMS_API}/${roomId}/status`;
-		return this.httpService.putRequest(path, { status });
+		return this.httpService.putRequest(path, { status }, headers);
 	}
 
 	/**
@@ -188,7 +206,7 @@ export class RoomService {
 	 * @param rolesConfig - The new roles configuration to be set
 	 * @returns A promise that resolves when the roles configuration has been updated
 	 */
-	async updateRoomRoles(roomId: string, rolesConfig: MeetRoomRolesConfig): Promise<void> {
+	async updateRoomRoles(roomId: string, rolesConfig: MeetRoomRolesConfig): Promise<MeetRoomRoles> {
 		const path = `${this.ROOMS_API}/${roomId}/roles`;
 		return this.httpService.putRequest(path, { roles: rolesConfig });
 	}
@@ -200,7 +218,7 @@ export class RoomService {
 	 * @param accessConfig - The new access configuration to be set
 	 * @returns A promise that resolves when the access configuration has been updated
 	 */
-	async updateRoomAccess(roomId: string, accessConfig: MeetRoomAccessConfig): Promise<void> {
+	async updateRoomAccess(roomId: string, accessConfig: MeetRoomAccessConfig): Promise<MeetRoomAccess> {
 		const path = `${this.ROOMS_API}/${roomId}/access`;
 		return this.httpService.putRequest(path, { access: accessConfig });
 	}
@@ -240,7 +258,8 @@ export class RoomService {
 		withRecordings: MeetRoomDeletionPolicyWithRecordings = MeetRoomDeletionPolicyWithRecordings.FAIL
 	): Promise<{
 		message: string;
-		successful: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }[];
+		deleted: { roomId: string; successCode: MeetRoomDeletionSuccessCode; message: string; room?: MeetRoom }[];
+		failed: { roomId: string; error: string; message: string }[];
 	}> {
 		if (roomIds.length === 0) {
 			throw new Error('No room IDs provided for bulk deletion');

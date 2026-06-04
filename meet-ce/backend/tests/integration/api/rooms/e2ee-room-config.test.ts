@@ -188,7 +188,7 @@ describe('E2EE Room Configuration Tests', () => {
 
 			expect(room.config.e2ee.enabled).toBe(false);
 
-			const { status, body } = await updateRoomConfig(room.roomId, {
+			const { status, body: config } = await updateRoomConfig(room.roomId, {
 				recording: {
 					enabled: false
 				},
@@ -199,11 +199,6 @@ describe('E2EE Room Configuration Tests', () => {
 			});
 
 			expect(status).toBe(200);
-			expect(body.message).toBeDefined();
-
-			// Fetch the updated room to verify changes
-			const { body: config } = await getRoomConfig(room.roomId);
-
 			expect(config.e2ee.enabled).toBe(true);
 			expect(config.recording.enabled).toBe(false);
 		});

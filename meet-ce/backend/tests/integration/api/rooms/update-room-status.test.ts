@@ -31,7 +31,8 @@ describe('Room API Tests', () => {
 			// Update the room status
 			const response = await updateRoomStatus(createdRoom.roomId, MeetRoomStatus.OPEN);
 			expect(response.status).toBe(200);
-			expect(response.body).toHaveProperty('message');
+			expect(response.body.roomId).toBe(createdRoom.roomId);
+			expect(response.body.status).toEqual('open');
 
 			// Verify with a get request
 			const getResponse = await getRoom(createdRoom.roomId);
@@ -47,7 +48,8 @@ describe('Room API Tests', () => {
 			// Update the room status
 			const response = await updateRoomStatus(createdRoom.roomId, MeetRoomStatus.CLOSED);
 			expect(response.status).toBe(200);
-			expect(response.body).toHaveProperty('message');
+			expect(response.body.roomId).toBe(createdRoom.roomId);
+			expect(response.body.status).toEqual('closed');
 
 			// Verify with a get request
 			const getResponse = await getRoom(createdRoom.roomId);
@@ -61,7 +63,8 @@ describe('Room API Tests', () => {
 			// Update the room status
 			const response = await updateRoomStatus(roomData.room.roomId, MeetRoomStatus.CLOSED);
 			expect(response.status).toBe(202);
-			expect(response.body).toHaveProperty('message');
+			expect(response.body.status).toEqual('active_meeting');
+			expect(response.body.meetingEndAction).toEqual('close');
 
 			// Verify with a get request
 			let getResponse = await getRoom(roomData.room.roomId);
@@ -85,6 +88,46 @@ describe('Room API Tests', () => {
 
 			expect(response.status).toBe(404);
 			expect(response.body.message).toContain(`'${nonExistentRoomId}' does not exist`);
+		});
+	});
+
+	describe('Update Room Status Field Filtering Tests', () => {
+		it('should exclude config and roles by default and advertise them in _extraFields', async () => {
+			const createdRoom = await createRoom({ roomName: 'status-fields-default' });
+
+			const response = await updateRoomStatus(createdRoom.roomId, MeetRoomStatus.CLOSED);
+
+			expect(response.status).toBe(200);
+			expect(response.body).toHaveProperty('roomId', createdRoom.roomId);
+			expect(response.body).toHaveProperty('status', 'closed');
+			expect(response.body).not.toHaveProperty('config');
+			expect(response.body).not.toHaveProperty('roles');
+			expect(response.body._extraFields).toEqual(expect.arrayContaining(['config', 'roles']));
+		});
+
+		it('should return only the requested fields via the X-Fields header', async () => {
+			const createdRoom = await createRoom({ roomName: 'status-fields-header' });
+
+			const response = await updateRoomStatus(createdRoom.roomId, MeetRoomStatus.CLOSED, {
+				xFields: 'roomId,status'
+			});
+
+			expect(response.status).toBe(200);
+			expect(response.body).toHaveProperty('roomId', createdRoom.roomId);
+			expect(response.body).toHaveProperty('status', 'closed');
+			expect(response.body).not.toHaveProperty('roomName');
+		});
+
+		it('should include config and roles when requested via the X-ExtraFields header', async () => {
+			const createdRoom = await createRoom({ roomName: 'status-extrafields-header' });
+
+			const response = await updateRoomStatus(createdRoom.roomId, MeetRoomStatus.CLOSED, {
+				xExtraFields: 'config,roles'
+			});
+
+			expect(response.status).toBe(200);
+			expect(response.body).toHaveProperty('config');
+			expect(response.body).toHaveProperty('roles');
 		});
 	});
 

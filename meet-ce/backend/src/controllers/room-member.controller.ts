@@ -146,8 +146,8 @@ export const bulkDeleteRoomMembers = async (req: Request, res: Response) => {
 		const { deleted, failed } = await roomMemberService.bulkDeleteRoomMembers(roomId, memberIds);
 
 		// All room members were successfully deleted
-		if (deleted.length > 0 && failed.length === 0) {
-			return res.status(200).json({ message: 'All room members deleted successfully', deleted });
+		if (failed.length === 0) {
+			return res.status(200).json({ message: 'All room members deleted successfully', deleted, failed: [] });
 		}
 
 		// Some or all room members could not be deleted
