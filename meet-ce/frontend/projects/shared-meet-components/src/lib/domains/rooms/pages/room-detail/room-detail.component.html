@@ -18,7 +18,7 @@
 }
 
 @if (!isInitializing() && room()) {
-	<div class="ov-page-container ov-mb-xxl">
+	<div class="ov-page-container ov-mb-xxl" [ovScrollPersist]="scrollToRestore">
 		<!-- Room Detail Header -->
 		<div class="page-header">
 			<div class="header-top">

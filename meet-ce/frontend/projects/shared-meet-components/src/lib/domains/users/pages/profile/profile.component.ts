@@ -222,6 +222,8 @@ export class ProfileComponent implements OnInit {
 		}
 
 		this.targetUser.set(updatedUser);
+		// Role is shown in the users list — invalidate it so the change is reflected on return
+		this.navigationService.invalidateCachedRoute('users');
 	}
 
 	async onResetPassword() {
@@ -245,7 +247,7 @@ export class ProfileComponent implements OnInit {
 				try {
 					await this.userService.deleteUser(user.userId);
 					this.notificationService.showSnackbar(`User "${user.name}" deleted successfully`);
-					await this.navigationService.navigateTo('/users', {}, true);
+					await this.navigationService.navigateToAndInvalidate('/users', 'users', {}, true);
 				} catch (error) {
 					console.error('Error deleting user:', error);
 					this.notificationService.showSnackbar('Failed to delete user');

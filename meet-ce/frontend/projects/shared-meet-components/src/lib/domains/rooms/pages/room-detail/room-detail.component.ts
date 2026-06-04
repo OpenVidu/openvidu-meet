@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -23,7 +23,9 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
+import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { decodeToken } from '../../../../shared/utils/token.utils';
@@ -43,6 +45,23 @@ import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
 import { RoomUiUtils } from '../../utils/ui';
 
+/** Cached UI state for the room detail page (both tabs), restored on return. */
+interface RoomDetailCachedState {
+	room: MeetRoom;
+	canViewRecordings: boolean;
+	canDeleteRecordings: boolean;
+	selectedTabIndex: number;
+	members: MeetRoomMember[];
+	nextMembersPageToken?: string;
+	hasMoreMembers: boolean;
+	memberFilters: MemberTableFilter;
+	recordings: MeetRecordingInfo[];
+	nextRecordingsPageToken?: string;
+	hasMoreRecordings: boolean;
+	recordingFilters: RecordingTableFilter;
+	scrollTop: number;
+}
+
 @Component({
 	selector: 'ov-room-detail',
 	imports: [
@@ -57,14 +76,20 @@ import { RoomUiUtils } from '../../utils/ui';
 		RouterModule,
 		BreadcrumbComponent,
 		RecordingListsComponent,
-		RoomMembersListsComponent
+		RoomMembersListsComponent,
+		ScrollPersistDirective
 	],
 	templateUrl: './room-detail.component.html',
 	styleUrl: './room-detail.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RoomDetailComponent implements OnInit {
+export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly route = inject(ActivatedRoute);
+	private readonly listStateCache = inject(ListStateCacheService);
+
+	private readonly scroller = viewChild(ScrollPersistDirective);
+	/** Scroll position to restore on the page container (set when restoring cached state). */
+	protected scrollToRestore = 0;
 	private readonly authService = inject(AuthService);
 	private readonly roomService = inject(RoomService);
 	private readonly roomDeletionService = inject(RoomDeletionService);
@@ -140,6 +165,9 @@ export class RoomDetailComponent implements OnInit {
 	protected readonly RoomUiUtils = RoomUiUtils;
 
 	async ngOnInit() {
+		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
+		const isBackNavigation = this.navigationService.isPopStateNavigation();
+
 		const roomId = this.route.snapshot.paramMap.get('room-id');
 		if (!roomId) {
 			await this.navigationService.navigateTo('/rooms');
@@ -163,6 +191,34 @@ export class RoomDetailComponent implements OnInit {
 		this.currentUserId.set(userId ?? '');
 		this.currentUserRole.set(role);
 
+		// Restore cached state only when navigating *back* (browser back/forward), e.g.
+		// from a member edit page. Opening this room afresh (clicking it) loads fresh data.
+		const cached = this.listStateCache.get<RoomDetailCachedState>(this.cacheKey());
+		if (cached && isBackNavigation) {
+			this.room.set(cached.room);
+			this.canViewRecordings.set(cached.canViewRecordings);
+			this.canDeleteRecordings.set(cached.canDeleteRecordings);
+			this.roomMembers.set(cached.members);
+			this.nextMembersPageToken = cached.nextMembersPageToken;
+			this.hasMoreMembers.set(cached.hasMoreMembers);
+			this.currentMemberFilters = cached.memberFilters;
+			this.initialMemberFilters.set(cached.memberFilters);
+			this.recordings.set(cached.recordings);
+			this.nextRecordingsPageToken = cached.nextRecordingsPageToken;
+			this.hasMoreRecordings.set(cached.hasMoreRecordings);
+			this.currentRecordingFilters = cached.recordingFilters;
+			this.initialRecordingFilters.set(cached.recordingFilters);
+			// An explicit ?tab=members request wins over the cached tab.
+			if (this.route.snapshot.queryParamMap.get('tab') === 'members' && this.canManageRoom()) {
+				this.selectedTabIndex.set(1);
+			} else {
+				this.selectedTabIndex.set(cached.selectedTabIndex);
+			}
+			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
+			this.isInitializing.set(false);
+			return;
+		}
+
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader.set(true);
 		}, 200);
@@ -177,6 +233,32 @@ export class RoomDetailComponent implements OnInit {
 		clearTimeout(delayLoader);
 		this.showInitialLoader.set(false);
 		this.isInitializing.set(false);
+	}
+
+	ngOnDestroy() {
+		const room = this.room();
+		// Only cache once the room has loaded; nothing useful to restore otherwise.
+		if (!room) return;
+
+		this.listStateCache.set<RoomDetailCachedState>(this.cacheKey(), {
+			room,
+			canViewRecordings: this.canViewRecordings(),
+			canDeleteRecordings: this.canDeleteRecordings(),
+			selectedTabIndex: this.selectedTabIndex(),
+			members: this.roomMembers(),
+			nextMembersPageToken: this.nextMembersPageToken,
+			hasMoreMembers: this.hasMoreMembers(),
+			memberFilters: this.currentMemberFilters,
+			recordings: this.recordings(),
+			nextRecordingsPageToken: this.nextRecordingsPageToken,
+			hasMoreRecordings: this.hasMoreRecordings(),
+			recordingFilters: this.currentRecordingFilters,
+			scrollTop: this.scroller()?.scrollTop ?? 0
+		});
+	}
+
+	private cacheKey(): string {
+		return `rooms/${this.roomId()}`;
 	}
 
 	// --- Room management ---
@@ -301,8 +383,8 @@ export class RoomDetailComponent implements OnInit {
 
 			this.room.set(updatedRoom);
 		} else {
-			// Room was deleted, navigate back to the rooms list
-			await this.navigationService.navigateTo('/rooms');
+			// Room was deleted, navigate back to the rooms list (refreshed so the deleted room is gone)
+			await this.navigationService.navigateToAndInvalidate('/rooms', 'rooms');
 		}
 
 		this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));

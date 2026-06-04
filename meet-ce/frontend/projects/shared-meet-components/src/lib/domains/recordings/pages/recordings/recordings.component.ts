@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
@@ -10,7 +10,9 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
+import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -20,15 +22,32 @@ import { RecordingListsComponent } from '../../components/recording-lists/record
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingService } from '../../services/recording.service';
 
+/** Cached UI state for the recordings list, restored when navigating back to it. */
+interface RecordingsListCachedState {
+	recordings: MeetRecordingInfo[];
+	nextPageToken?: string;
+	hasMore: boolean;
+	filters: RecordingTableFilter;
+	deletableRoomIds: string[];
+	scrollTop: number;
+}
+
 @Component({
 	selector: 'ov-recordings',
-	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule],
+	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule, ScrollPersistDirective],
 	templateUrl: './recordings.component.html',
 	styleUrl: './recordings.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RecordingsComponent implements OnInit {
+export class RecordingsComponent implements OnInit, OnDestroy {
+	private static readonly STATE_KEY = 'recordings';
+
+	private readonly scroller = viewChild(ScrollPersistDirective);
+	/** Scroll position to restore on the page container (set when restoring cached state). */
+	protected scrollToRestore = 0;
+
 	protected loggerService: LoggerService = inject(LoggerService);
+	private listStateCache = inject(ListStateCacheService);
 	private authService: AuthService = inject(AuthService);
 	private recordingService: RecordingService = inject(RecordingService);
 	private roomMemberService: RoomMemberService = inject(RoomMemberService);
@@ -69,8 +88,26 @@ export class RecordingsComponent implements OnInit {
 	private currentFilters: RecordingTableFilter = this.initialFilters();
 
 	async ngOnInit() {
+		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
+		const isBackNavigation = this.navigationService.isPopStateNavigation();
+
 		const role = await this.authService.getUserRole();
 		this.currentUserRole.set(role);
+
+		// Restore cached state only when navigating *back* (browser back/forward); an
+		// explicit navigation to this page loads fresh data so others' changes show.
+		const cached = this.listStateCache.get<RecordingsListCachedState>(RecordingsComponent.STATE_KEY);
+		if (cached && isBackNavigation) {
+			this.recordings.set(cached.recordings);
+			this.nextPageToken = cached.nextPageToken;
+			this.hasMoreRecordings.set(cached.hasMore);
+			this.currentFilters = cached.filters;
+			this.initialFilters.set(cached.filters);
+			this.deletableRoomIds.set(new Set(cached.deletableRoomIds));
+			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
+			this.isInitializing.set(false);
+			return;
+		}
 
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader.set(true);
@@ -81,6 +118,17 @@ export class RecordingsComponent implements OnInit {
 		clearTimeout(delayLoader);
 		this.showInitialLoader.set(false);
 		this.isInitializing.set(false);
+	}
+
+	ngOnDestroy() {
+		this.listStateCache.set<RecordingsListCachedState>(RecordingsComponent.STATE_KEY, {
+			recordings: this.recordings(),
+			nextPageToken: this.nextPageToken,
+			hasMore: this.hasMoreRecordings(),
+			filters: this.currentFilters,
+			deletableRoomIds: [...this.deletableRoomIds()],
+			scrollTop: this.scroller()?.scrollTop ?? 0
+		});
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {

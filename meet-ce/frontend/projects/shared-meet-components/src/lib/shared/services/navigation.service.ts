@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Params, Router, UrlTree } from '@angular/router';
+import { NavigationStart, Params, Router, UrlTree } from '@angular/router';
 import { NavigationErrorReason } from '../models/navigation.model';
 import { AppContextService } from './app-context.service';
+import { ListStateCacheService } from './list-state-cache.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
 
@@ -11,12 +12,24 @@ import { SessionStorageService } from './session-storage.service';
 export class NavigationService {
 	protected leaveRedirectUrl?: string;
 
+	/** Trigger of the most recently started navigation (tracked from NavigationStart). */
+	private lastNavigationTrigger: 'imperative' | 'popstate' | 'hashchange' = 'imperative';
+
 	constructor(
 		private router: Router,
 		private sessionStorageService: SessionStorageService,
 		private appCtxService: AppContextService,
-		private runtimeConfigService: RuntimeConfigService
-	) {}
+		private runtimeConfigService: RuntimeConfigService,
+		private listStateCacheService: ListStateCacheService
+	) {
+		// getCurrentNavigation() is null by the time a lazy component's ngOnInit runs,
+		// so capture the trigger when each navigation starts instead.
+		this.router.events.subscribe((event) => {
+			if (event instanceof NavigationStart) {
+				this.lastNavigationTrigger = event.navigationTrigger ?? 'imperative';
+			}
+		});
+	}
 
 	private getBasePathPrefix(): string {
 		const basePath = this.runtimeConfigService.basePath;
@@ -202,6 +215,58 @@ export class NavigationService {
 		} catch (error) {
 			console.error('Error navigating to route:', error);
 		}
+	}
+
+	/**
+	 * Invalidates a cached reusable route so it reloads fresh on next attach, then
+	 * navigates to a route. Used after mutations (create/edit/delete) performed from
+	 * a detail or wizard page so the affected list reflects the change on return.
+	 *
+	 * @param route - The route to navigate to
+	 * @param pathToInvalidate - The cached route key to invalidate (e.g. 'rooms', 'rooms/<roomId>')
+	 * @param queryParams - Optional query parameters to include in the navigation
+	 * @param replaceUrl - If true, replaces the current URL in the browser history
+	 */
+	async navigateToAndInvalidate(
+		route: string,
+		pathToInvalidate: string,
+		queryParams?: Params,
+		replaceUrl: boolean = false
+	): Promise<void> {
+		this.listStateCacheService.invalidate(pathToInvalidate);
+		await this.navigateTo(route, queryParams, replaceUrl);
+	}
+
+	/**
+	 * Invalidates a cached reusable route (and any routes nested under it) so it
+	 * reloads fresh on next attach. Use when a mutation succeeds but navigation does
+	 * not go straight to the affected list (e.g. redirecting into a meeting).
+	 *
+	 * @param path - The cached route key to invalidate (e.g. 'rooms', 'rooms/<roomId>')
+	 */
+	invalidateCachedRoute(path: string): void {
+		this.listStateCacheService.invalidate(path);
+	}
+
+	/**
+	 * Clears all cached reusable route instances. Call on logout so a different user
+	 * never sees the previous user's cached lists and detached components are destroyed.
+	 */
+	clearCachedRoutes(): void {
+		this.listStateCacheService.clearAll();
+	}
+
+	/**
+	 * Whether the in-progress navigation was triggered by the browser back/forward
+	 * gesture (popstate) rather than an explicit in-app navigation (clicking a link,
+	 * menu item or row). Used so list pages restore their cached state only when the
+	 * user navigates *back* to them, and load fresh data when they navigate *to* them.
+	 *
+	 * Read it synchronously at the start of a component's `ngOnInit` (before any
+	 * `await`), so a later navigation cannot overwrite the value first.
+	 */
+	isPopStateNavigation(): boolean {
+		return this.lastNavigationTrigger === 'popstate';
 	}
 
 	/**

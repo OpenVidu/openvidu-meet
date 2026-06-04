@@ -7,6 +7,7 @@ export * from './global-config.service';
 export * from './http-error-notifier.service';
 export * from './http-header-provider.service';
 export * from './http.service';
+export * from './list-state-cache.service';
 export * from './navigation.service';
 export * from './notification.service';
 export * from './runtime-config.service';

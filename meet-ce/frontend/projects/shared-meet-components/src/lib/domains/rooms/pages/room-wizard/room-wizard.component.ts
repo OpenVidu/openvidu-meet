@@ -167,6 +167,9 @@ export class RoomWizardComponent implements OnInit {
 			// Create room with basic config
 			const { access } = await this.roomService.createRoom({ roomName }, { fields: ['access'] });
 
+			// Refresh the rooms list so the new room appears when the user returns to it
+			this.navigationService.invalidateCachedRoute('rooms');
+
 			// Extract the path from the access URL and navigate to it
 			const url = new URL(access.registered.url);
 			const path = url.pathname;
@@ -205,8 +208,14 @@ export class RoomWizardComponent implements OnInit {
 					await this.roomService.updateRoomRoles(this.roomId, roomOptions.roles);
 				}
 
-				// Navigate to the room detail page after update
-				await this.navigationService.navigateTo(`/rooms/${this.roomId}`, undefined, true);
+				// Navigate to the room detail page after update, refreshing the rooms list
+				// and this room's detail so the changes are reflected
+				await this.navigationService.navigateToAndInvalidate(
+					`/rooms/${this.roomId}`,
+					'rooms',
+					undefined,
+					true
+				);
 				this.notificationService.showSnackbar('Room updated successfully');
 			} else {
 				// Create new room
@@ -220,6 +229,9 @@ export class RoomWizardComponent implements OnInit {
 					await this.createPendingMembers(roomId, pendingMembers);
 				}
 
+				// Refresh the rooms list so the new room appears when the user returns to it
+				this.navigationService.invalidateCachedRoute('rooms');
+
 				// Extract the path from the access URL and navigate to it
 				const url = new URL(access.registered.url);
 				const path = url.pathname;
@@ -230,8 +242,9 @@ export class RoomWizardComponent implements OnInit {
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
 
+			// A partial update may have been applied — invalidate so the list/detail reload fresh
 			const destination = this.editMode() && this.roomId ? `/rooms/${this.roomId}` : '/rooms';
-			await this.navigationService.navigateTo(destination, undefined, true);
+			await this.navigationService.navigateToAndInvalidate(destination, 'rooms', undefined, true);
 		} finally {
 			this.wizardService.resetWizard();
 			// Deactivate loading state

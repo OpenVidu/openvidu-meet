@@ -91,7 +91,12 @@ export class AddRoomMemberComponent implements OnInit {
 				this.notificationService.showSnackbar('Member added successfully');
 			}
 
-			await this.navigationService.navigateTo(`/rooms/${this.roomId}`, { tab: 'members' });
+			// Invalidate the room detail so its members tab reloads with the new/updated member
+			await this.navigationService.navigateToAndInvalidate(
+				`/rooms/${this.roomId}`,
+				`rooms/${this.roomId}`,
+				{ tab: 'members' }
+			);
 		} catch (error) {
 			const msg = this.isEditMode() ? 'Failed to update member' : 'Failed to add member';
 			this.notificationService.showSnackbar(msg);
