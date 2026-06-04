@@ -113,7 +113,8 @@
         "POOR": "Deficiente",
         "LOST": "Perdida"
       },
-      "MIC_OFF": "Micrófono apagado"
+      "MIC_OFF": "Micrófono apagado",
+      "CAM_OFF": "Cámara apagada"
     },
     "SETTINGS": {
       "TITLE": "Configuración",

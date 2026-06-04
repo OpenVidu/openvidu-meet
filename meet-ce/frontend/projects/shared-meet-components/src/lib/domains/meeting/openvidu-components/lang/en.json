@@ -110,7 +110,8 @@
         "POOR": "Poor",
         "LOST": "Lost"
       },
-      "MIC_OFF": "Microphone off"
+      "MIC_OFF": "Microphone off",
+      "CAM_OFF": "Camera off"
     },
     "ACTIVITIES": {
       "TITLE": "Activities"

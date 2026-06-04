@@ -36,8 +36,17 @@
 					</div>
 
 					<!-- Status indicators row — sits where the track-types description used to be. -->
-					@if (!_participant.hasEncryptionError && (isMicrophoneOff() || isScreenSharing())) {
+					@if (!_participant.hasEncryptionError && (isCameraOff() || isMicrophoneOff() || isScreenSharing())) {
 						<div class="participant-subtitle">
+							@if (isCameraOff()) {
+								<mat-icon
+									id="camera-off-indicator"
+									class="camera-off-indicator"
+									fontIcon="videocam_off"
+									[attr.aria-label]="('PANEL.PARTICIPANTS.CAM_OFF' | translate) + ' ' + participantDisplayName()"
+									[matTooltip]="'PANEL.PARTICIPANTS.CAM_OFF' | translate"
+								/>
+							}
 							@if (isMicrophoneOff()) {
 								<mat-icon
 									id="mic-off-indicator"

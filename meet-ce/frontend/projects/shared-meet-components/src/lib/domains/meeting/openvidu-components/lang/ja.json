@@ -113,7 +113,8 @@
         "LOST": "失われた"
       },
       "SHARING_SCREEN": "画面を共有中",
-      "MIC_OFF": "マイクオフ"
+      "MIC_OFF": "マイクオフ",
+      "CAM_OFF": "カメラオフ"
     },
     "SETTINGS": {
       "TITLE": "設定",

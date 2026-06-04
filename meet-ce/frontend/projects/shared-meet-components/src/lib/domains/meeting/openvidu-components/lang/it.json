@@ -113,7 +113,8 @@
         "LOST": "Persa"
       },
       "SHARING_SCREEN": "Sta condividendo lo schermo",
-      "MIC_OFF": "Microfono spento"
+      "MIC_OFF": "Microfono spento",
+      "CAM_OFF": "Videocamera spenta"
     },
     "SETTINGS": {
       "TITLE": "Impostazioni",

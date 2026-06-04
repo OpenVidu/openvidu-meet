@@ -155,8 +155,9 @@
 		margin-left: auto;
 	}
 
-	// Status indicators (screen share / mic off) — rendered in the subtitle row beneath the name
+	// Status indicators (screen share / camera off / mic off) — rendered in the subtitle row beneath the name
 	.screen-share-indicator,
+	.camera-off-indicator,
 	.mic-off-indicator {
 		font-size: 16px;
 		width: 16px;
@@ -164,16 +165,12 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		color: var(--ov-error-color, #d32f2f);
 	}
 
 	.screen-share-indicator {
 		color: var(--ov-text-surface-color);
 	}
-
-	.mic-off-indicator {
-		color: var(--ov-error-color, #d32f2f);
-	}
-
 	// Mute button styling
 	#mute-btn {
 		width: 32px;

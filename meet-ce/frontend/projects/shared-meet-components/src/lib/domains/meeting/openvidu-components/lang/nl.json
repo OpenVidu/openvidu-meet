@@ -113,7 +113,8 @@
         "LOST": "Verloren"
       },
       "SHARING_SCREEN": "Scherm delen",
-      "MIC_OFF": "Microfoon uit"
+      "MIC_OFF": "Microfoon uit",
+      "CAM_OFF": "Camera uit"
     },
     "SETTINGS": {
       "TITLE": "Instellingen",

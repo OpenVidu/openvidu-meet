@@ -113,7 +113,8 @@
         "LOST": "Perdue"
       },
       "SHARING_SCREEN": "Partage d'écran en cours",
-      "MIC_OFF": "Microphone désactivé"
+      "MIC_OFF": "Microphone désactivé",
+      "CAM_OFF": "Caméra désactivée"
     },
     "SETTINGS": {
       "TITLE": "Paramètres",

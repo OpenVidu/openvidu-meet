@@ -113,7 +113,8 @@
         "LOST": "Perdida"
       },
       "SHARING_SCREEN": "Compartilhando tela",
-      "MIC_OFF": "Microfone desligado"
+      "MIC_OFF": "Microfone desligado",
+      "CAM_OFF": "Câmera desligada"
     },
     "SETTINGS": {
       "TITLE": "Configurações",

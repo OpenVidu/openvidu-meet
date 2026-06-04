@@ -58,6 +58,10 @@ export class ParticipantPanelItemComponent {
 		const participant = this.participantInput();
 		return !!participant && !participant.isMicrophoneEnabled;
 	});
+	readonly isCameraOff = computed(() => {
+		const participant = this.participantInput();
+		return !!participant && !participant.isCameraEnabled;
+	});
 
 	get _participant(): ParticipantModel | undefined {
 		return this.participantInput();
