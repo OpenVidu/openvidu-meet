@@ -109,6 +109,9 @@ export class AuthService {
 			this.tokenStorageService.clearAccessAndRefreshTokens();
 			this.sessionStorageService.removeMustChangePasswordRequired();
 
+			// Drop any cached list-page instances so the next user starts clean
+			this.navigationService.clearCachedRoutes();
+
 			// Redirect to login page with a query parameter if provided
 			// to redirect to the original page after login
 			this.navigationService.redirectToLoginPage(redirectToAfterLogin, true);

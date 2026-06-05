@@ -113,7 +113,8 @@
         "LOST": "丢失"
       },
       "SHARING_SCREEN": "正在共享屏幕",
-      "MIC_OFF": "麦克风已关闭"
+      "MIC_OFF": "麦克风已关闭",
+      "CAM_OFF": "摄像头已关闭"
     },
     "SETTINGS": {
       "TITLE": "设置",

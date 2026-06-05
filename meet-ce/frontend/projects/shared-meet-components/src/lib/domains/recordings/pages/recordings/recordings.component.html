@@ -18,7 +18,7 @@
 }
 
 @if (!isInitializing()) {
-	<div class="ov-page-container ov-mb-xxl">
+	<div class="ov-page-container ov-mb-xxl" [ovScrollPersist]="scrollToRestore">
 		<!-- Recordings Header -->
 		<div class="page-header">
 			<div class="title">

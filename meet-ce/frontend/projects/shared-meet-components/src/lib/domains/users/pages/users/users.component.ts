@@ -1,11 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
+import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -19,15 +21,31 @@ import {
 } from '../../components/users-lists/users-lists.component';
 import { UserService } from '../../services/user.service';
 
+/** Cached UI state for the users list, restored when navigating back to it. */
+interface UsersListCachedState {
+	users: MeetUserDTO[];
+	nextPageToken?: string;
+	hasMore: boolean;
+	filters: UserTableFilter;
+	scrollTop: number;
+}
+
 @Component({
 	selector: 'ov-users',
-	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, UsersListsComponent],
+	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, UsersListsComponent, ScrollPersistDirective],
 	templateUrl: './users.component.html',
 	styleUrl: './users.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class UsersComponent implements OnInit {
+export class UsersComponent implements OnInit, OnDestroy {
+	private static readonly STATE_KEY = 'users';
+
+	private readonly scroller = viewChild(ScrollPersistDirective);
+	/** Scroll position to restore on the page container (set when restoring cached state). */
+	protected scrollToRestore = 0;
+
 	private userService = inject(UserService);
+	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	private dialogPresetsService = inject(DialogPresetsService);
@@ -62,20 +80,47 @@ export class UsersComponent implements OnInit {
 	private currentFilters: UserTableFilter = this.initialFilters();
 
 	async ngOnInit() {
-		const delayLoader = setTimeout(() => {
-			this.showInitialLoader.set(true);
-		}, 200);
+		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
+		const isBackNavigation = this.navigationService.isPopStateNavigation();
 
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
 
 		const rootAdmin = await this.userService.getRootAdmin();
 		if (rootAdmin) this.rootAdminId.set(rootAdmin.userId);
 
+		// Restore cached state only when navigating *back* (browser back/forward); an
+		// explicit navigation to this page loads fresh data so others' changes show.
+		const cached = this.listStateCache.get<UsersListCachedState>(UsersComponent.STATE_KEY);
+		if (cached && isBackNavigation) {
+			this.users.set(cached.users);
+			this.nextPageToken = cached.nextPageToken;
+			this.hasMoreUsers.set(cached.hasMore);
+			this.currentFilters = cached.filters;
+			this.initialFilters.set(cached.filters);
+			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
+			this.isInitializing.set(false);
+			return;
+		}
+
+		const delayLoader = setTimeout(() => {
+			this.showInitialLoader.set(true);
+		}, 200);
+
 		await this.loadUsers(this.initialFilters());
 
 		clearTimeout(delayLoader);
 		this.showInitialLoader.set(false);
 		this.isInitializing.set(false);
+	}
+
+	ngOnDestroy() {
+		this.listStateCache.set<UsersListCachedState>(UsersComponent.STATE_KEY, {
+			users: this.users(),
+			nextPageToken: this.nextPageToken,
+			hasMore: this.hasMoreUsers(),
+			filters: this.currentFilters,
+			scrollTop: this.scroller()?.scrollTop ?? 0
+		});
 	}
 
 	private async autoLoadIfEmpty() {

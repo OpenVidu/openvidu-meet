@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -25,7 +25,9 @@ import {
 	SortOrder,
 	TextMatchMode
 } from '@openvidu-meet/typings';
+import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -42,6 +44,15 @@ import {
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
 import { RoomUiUtils } from '../../utils/ui';
+
+/** Cached UI state for the rooms list, restored when navigating back to it. */
+interface RoomsListCachedState {
+	rooms: MeetRoom[];
+	nextPageToken?: string;
+	hasMore: boolean;
+	filters: RoomTableFilter;
+	scrollTop: number;
+}
 
 @Component({
 	selector: 'ov-rooms',
@@ -60,14 +71,22 @@ import { RoomUiUtils } from '../../utils/ui';
 		MatProgressSpinnerModule,
 		MatFormFieldModule,
 		MatInputModule,
-		RoomsListsComponent
+		RoomsListsComponent,
+		ScrollPersistDirective
 	],
 	templateUrl: './rooms.component.html',
 	styleUrl: './rooms.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class RoomsComponent implements OnInit {
+export class RoomsComponent implements OnInit, OnDestroy {
+	private static readonly STATE_KEY = 'rooms';
+
+	private readonly scroller = viewChild(ScrollPersistDirective);
+	/** Scroll position to restore on the page container (set when restoring cached state). */
+	protected scrollToRestore = 0;
+
 	private roomService = inject(RoomService);
+	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	private dialogPresetsService = inject(DialogPresetsService);
@@ -109,9 +128,27 @@ export class RoomsComponent implements OnInit {
 	private currentFilters: RoomTableFilter = this.initialFilters();
 
 	async ngOnInit() {
+		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
+		const isBackNavigation = this.navigationService.isPopStateNavigation();
+
 		const [userId, role] = await Promise.all([this.authService.getUserId(), this.authService.getUserRole()]);
 		this.currentUserId.set(userId ?? '');
 		this.currentUserRole.set(role);
+
+		// Restore previously cached state (filters, sort, loaded pages, scroll) only when
+		// navigating *back* (browser back/forward). An explicit navigation to this page
+		// (clicking the menu/link) loads fresh data so changes by others are reflected.
+		const cached = this.listStateCache.get<RoomsListCachedState>(RoomsComponent.STATE_KEY);
+		if (cached && isBackNavigation) {
+			this.rooms.set(cached.rooms);
+			this.nextPageToken = cached.nextPageToken;
+			this.hasMoreRooms.set(cached.hasMore);
+			this.currentFilters = cached.filters;
+			this.initialFilters.set(cached.filters); // seeds the child filter form via setupFilters()
+			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
+			this.isInitializing.set(false);
+			return;
+		}
 
 		const delayLoader = setTimeout(() => {
 			this.showInitialLoader.set(true);
@@ -122,6 +159,16 @@ export class RoomsComponent implements OnInit {
 		clearTimeout(delayLoader);
 		this.showInitialLoader.set(false);
 		this.isInitializing.set(false);
+	}
+
+	ngOnDestroy() {
+		this.listStateCache.set<RoomsListCachedState>(RoomsComponent.STATE_KEY, {
+			rooms: this.rooms(),
+			nextPageToken: this.nextPageToken,
+			hasMore: this.hasMoreRooms(),
+			filters: this.currentFilters,
+			scrollTop: this.scroller()?.scrollTop ?? 0
+		});
 	}
 
 	async onRoomAction(action: RoomTableAction) {

@@ -154,8 +154,8 @@ export class RecordingDetailComponent implements OnInit {
 				await this.recordingService.deleteRecording(this.recordingId());
 				this.notificationService.showSnackbar('Recording deleted successfully');
 
-				// After deletion, navigate back to recordings page
-				await this.navigationService.navigateTo('/recordings');
+				// After deletion, navigate back to the recordings page (refreshed so the deleted recording is gone)
+				await this.navigationService.navigateToAndInvalidate('/recordings', 'recordings');
 			} catch (error) {
 				console.error('Error deleting recording:', error);
 				this.notificationService.showSnackbar('Failed to delete recording');

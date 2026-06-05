@@ -18,7 +18,7 @@
 }
 
 @if (!isInitializing()) {
-	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container">
+	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container" [ovScrollPersist]="scrollToRestore">
 		<!-- Rooms Header -->
 		<div class="page-header" id="rooms-page-header">
 			<div class="title" id="rooms-title">
