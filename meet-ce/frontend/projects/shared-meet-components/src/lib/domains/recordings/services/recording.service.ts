@@ -3,6 +3,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
+import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { LoggerService } from '../../meeting/openvidu-components';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -20,6 +21,7 @@ export class RecordingService {
 		protected loggerService: LoggerService,
 		private httpService: HttpService,
 		private navigationService: NavigationService,
+		private runtimeConfigService: RuntimeConfigService,
 		protected tokenStorageService: TokenStorageService,
 		protected roomMemberContextService: RoomMemberContextService,
 		protected dialog: MatDialog
@@ -146,7 +148,9 @@ export class RecordingService {
 
 		const now = Date.now();
 		params.append('t', now.toString());
-		return `${this.RECORDINGS_API}/${recordingId}/media?${params.toString()}`;
+		return this.runtimeConfigService.resolvePath(
+			`${this.RECORDINGS_API}/${recordingId}/media?${params.toString()}`
+		);
 	}
 
 	/**
@@ -197,8 +201,11 @@ export class RecordingService {
 	 * @param recordingId - The ID of the recording to play
 	 */
 	async playRecording(recordingId: string) {
-		let recordingUrl = `/recording/${recordingId}`;
-		recordingUrl = this.navigationService.addBasePath(recordingUrl);
+		const path = `/recording/${recordingId}`;
+		const recordingUrl = this.runtimeConfigService.isWebcomponentMode()
+			? this.runtimeConfigService.resolvePath(path)
+			: this.navigationService.addBasePath(path);
+
 		window.open(recordingUrl, '_blank');
 	}
 
@@ -208,12 +215,55 @@ export class RecordingService {
 	 * @param recording - The recording information containing the ID and filename
 	 * @param recordingSecret - Optional recording secret for accessing the recording
 	 */
-	downloadRecording(recording: MeetRecordingInfo, recordingSecret?: string) {
+	downloadRecording(recording: MeetRecordingInfo, recordingSecret?: string): void {
 		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId, recordingSecret);
+		const filename = recording.filename || `${recording.recordingId}.mp4`;
+
+		void this.triggerDownload(recordingUrl, filename).catch((error) => {
+			this.log.e('Error downloading recording:', error);
+		});
+	}
+
+	/**
+	 * Triggers a browser download for the given URL.
+	 *
+	 * The `<a download>` attribute is honored only for same-origin URLs. When the
+	 * element is embedded as a webcomponent the recording media lives on the
+	 * (cross-origin) Meet server and the `/media` endpoint streams it inline, so the
+	 * browser would ignore `download` and navigate to the video instead. In that
+	 * case fetch the file and download it through a same-origin object URL.
+	 */
+	private async triggerDownload(url: string, filename: string): Promise<void> {
+		if (!this.isCrossOriginUrl(url)) {
+			this.clickDownloadLink(url, filename);
+			return;
+		}
+
+		const response = await fetch(url);
+		if (!response.ok) {
+			throw new Error(`Download request failed with status ${response.status}`);
+		}
+
+		const objectUrl = URL.createObjectURL(await response.blob());
+		this.clickDownloadLink(objectUrl, filename);
+
+		// Defer revocation so the browser has captured the blob for the download.
+		setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+	}
+
+	private clickDownloadLink(href: string, filename: string): void {
 		const link = document.createElement('a');
-		link.href = recordingUrl;
-		link.download = recording.filename || `${recording.recordingId}.mp4`;
+		link.href = href;
+		link.download = filename;
 		link.click();
+	}
+
+	private isCrossOriginUrl(url: string): boolean {
+		try {
+			return new URL(url, window.location.href).origin !== window.location.origin;
+		} catch {
+			return false;
+		}
 	}
 
 	/**
@@ -240,7 +290,10 @@ export class RecordingService {
 			params.append('roomMemberToken', roomMemberToken);
 		}
 
-		const downloadUrl = `${this.RECORDINGS_API}/download?${params.toString()}`;
+		// Resolve against the Meet server URL for webcomponent embedding (no-op in the SPA).
+		const downloadUrl = this.runtimeConfigService.resolvePath(
+			`${this.RECORDINGS_API}/download?${params.toString()}`
+		);
 		const link = document.createElement('a');
 		link.href = downloadUrl;
 		link.download = 'recordings.zip';
