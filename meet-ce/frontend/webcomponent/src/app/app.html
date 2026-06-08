@@ -4,7 +4,7 @@
 		<div class="ov-meet-error-message">{{ errorMessage() }}</div>
 	</div>
 } @else {
-	@switch (mode()) {
+	@switch (view()) {
 		@case ('meeting') {
 			@if (ready()) {
 				@if (hasLeft()) {
@@ -26,6 +26,12 @@
 			@if (ready()) {
 				<ov-room-recordings [roomId]="roomIdForRecordings()"></ov-room-recordings>
 			}
+		}
+		@case ('login') {
+			<ov-login></ov-login>
+		}
+		@case ('change-password') {
+			<ov-change-password-required></ov-change-password-required>
 		}
 	}
 }

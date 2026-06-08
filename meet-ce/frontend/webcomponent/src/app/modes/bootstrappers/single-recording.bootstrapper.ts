@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { RecordingEntryService, type RecordingEntryParams } from '@openvidu-meet/shared-components';
+import { NavigationService, RecordingEntryService, type RecordingEntryParams } from '@openvidu-meet/shared-components';
 import { lastPathSegment, queryParam } from '../../utils/url';
 import type { ModeInputs } from '../mode';
 import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
@@ -7,6 +7,7 @@ import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
 @Injectable({ providedIn: 'root' })
 export class SingleRecordingModeBootstrapper implements ModeBootstrapper {
 	private readonly recordingEntryService = inject(RecordingEntryService);
+	private readonly navigationService = inject(NavigationService);
 
 	async bootstrap(inputs: ModeInputs): Promise<ModeBootstrapResult> {
 		const recordingId = lastPathSegment(inputs.recordingUrl) ?? inputs.showRecording ?? '';
@@ -34,13 +35,16 @@ export class SingleRecordingModeBootstrapper implements ModeBootstrapper {
 				case 'ready':
 					return { kind: 'ready' };
 				case 'login-required':
-					// WC has no in-app login screen; hosts use the `error` event with reason 'auth-required'.
+					// Show the login view in-shell, like the meeting flow (the SPA guard
+					// equivalent calls `redirectToLoginPage`). The returned error is
+					// suppressed by the shell while the login request is active; once the
+					// user signs in, the recording bootstrap is retried.
+					await this.navigationService.redirectToLoginPage();
 					return {
 						kind: 'error',
 						detail: {
 							reason: 'auth-required',
-							message:
-								'Authentication is required to view this recording. Please open the recording link in a signed-in session.'
+							message: 'Authentication is required to view this recording.'
 						}
 					};
 				case 'error':

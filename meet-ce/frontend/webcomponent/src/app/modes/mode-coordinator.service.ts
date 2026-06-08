@@ -7,6 +7,8 @@ import type { Mode, ModeInputs } from './mode';
 
 @Injectable({ providedIn: 'root' })
 export class ModeCoordinatorService {
+	// Only attribute-derived primary views are bootstrapped. Request-driven views
+	// (login, change-password) render directly in the shell and need no entry.
 	private readonly registry = new Map<Mode, ModeBootstrapper>([
 		['meeting', inject(MeetingModeBootstrapper)],
 		['single-recording', inject(SingleRecordingModeBootstrapper)],

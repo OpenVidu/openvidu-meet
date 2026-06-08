@@ -14,8 +14,11 @@ import {
 } from '@angular/core';
 import {
 	AppCeMeetingComponent,
+	ChangePasswordRequiredComponent,
+	describeNavigationError,
 	EndMeetingComponent,
 	type WebComponentLeftEvent,
+	LoginComponent,
 	MeetingWebComponentManagerService,
 	RoomRecordingsComponent,
 	RuntimeConfigService,
@@ -23,7 +26,8 @@ import {
 	ViewRecordingComponent,
 	type WcEvent,
 	WebComponentBridgeService,
-	WebComponentEventType
+	WebComponentEventType,
+	WebComponentNavigationType
 } from '@openvidu-meet/shared-components';
 import type {
 	OpenViduMeetClosedDetail,
@@ -31,7 +35,7 @@ import type {
 	OpenViduMeetJoinedDetail,
 	OpenViduMeetLeftDetail
 } from './api/events';
-import { computeMode, type Mode, type ModeInputs } from './modes/mode';
+import { modeFromAttributes, modeFromRequest, type Mode, type ModeInputs } from './modes/mode';
 import { ModeCoordinatorService } from './modes/mode-coordinator.service';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
 import { ShadowStylesService } from './shadow-dom/styles.service';
@@ -47,7 +51,14 @@ export type {
 
 @Component({
 	selector: 'app-root',
-	imports: [AppCeMeetingComponent, EndMeetingComponent, RoomRecordingsComponent, ViewRecordingComponent],
+	imports: [
+		AppCeMeetingComponent,
+		ChangePasswordRequiredComponent,
+		EndMeetingComponent,
+		LoginComponent,
+		RoomRecordingsComponent,
+		ViewRecordingComponent
+	],
 	templateUrl: './app.html',
 	styleUrls: ['./app.material.scss', './app.css'],
 	encapsulation: ViewEncapsulation.ShadowDom,
@@ -85,7 +96,12 @@ export class App {
 	readonly error = output<OpenViduMeetErrorDetail>();
 
 	readonly errorMessage = signal<string | null>(null);
-	readonly ready = signal(false);
+
+	// The primary (attribute-derived) view that has been successfully bootstrapped,
+	// or null. Tracked per-mode rather than as a global boolean so readiness follows
+	// the current `bootstrapMode` and the primary view re-bootstraps after an
+	// interrupting flow (e.g. login) clears.
+	private readonly _preparedMode = signal<Mode | null>(null);
 
 	// Set once a `left` event arrives and never cleared, so the end-meeting screen stays up.
 	private readonly _leftDetail = signal<WebComponentLeftEvent | null>(null);
@@ -100,10 +116,15 @@ export class App {
 		showRecording: this.showRecording()
 	}));
 
-	// An active recordings navigation request overrides the attribute-derived mode.
-	readonly mode = computed<Mode>(() =>
-		this.wcBridge.navigationRequest() ? 'room-recordings' : computeMode(this.inputs())
-	);
+	// The primary view derived from attributes. Only this gets bootstrapped.
+	private readonly bootstrapMode = computed<Mode>(() => modeFromAttributes(this.inputs()));
+
+	// What the shell renders: a runtime navigation request overrides the primary
+	// view, otherwise the primary (bootstrap) view is shown.
+	readonly view = computed<Mode>(() => modeFromRequest(this.wcBridge.navigationRequest()) ?? this.bootstrapMode());
+
+	// Whether the current primary view has been bootstrapped and is safe to render.
+	readonly ready = computed<boolean>(() => this._preparedMode() === this.bootstrapMode());
 
 	readonly recordingIdForView = computed<string>(
 		() => lastPathSegment(this.recordingUrl()) ?? this.showRecording() ?? ''
@@ -111,13 +132,13 @@ export class App {
 
 	readonly recordingSecretForView = computed<string>(() => queryParam(this.recordingUrl(), 'recordingSecret') ?? '');
 
-	readonly roomIdForRecordings = computed<string>(
-		() => this.wcBridge.navigationRequest()?.roomId ?? lastPathSegment(this.roomUrl()) ?? ''
-	);
+	readonly roomIdForRecordings = computed<string>(() => {
+		const req = this.wcBridge.navigationRequest();
 
-	// True when recordings overlay a meeting/lobby (a VIEW_RECORDINGS request is active),
-	// i.e. there is a room to go back to — drives the recordings view's back button.
-	readonly isRecordingsOverride = computed<boolean>(() => this.wcBridge.navigationRequest() !== null);
+		if (req?.type === WebComponentNavigationType.VIEW_RECORDINGS) return req.roomId;
+
+		return lastPathSegment(this.roomUrl()) ?? '';
+	});
 
 	readonly hasLeft = computed<boolean>(() => this._leftDetail() !== null);
 
@@ -146,11 +167,17 @@ export class App {
 	});
 
 	private readonly _bootstrapEffect = effect(() => {
-		const mode = this.mode();
+		const mode = this.bootstrapMode();
+
+		// While a navigation request overlays an interrupt view (login, recordings…),
+		// leave the primary view alone. When the request clears, this effect re-runs:
+		// if the primary view still isn't prepared (e.g. its bootstrap failed because
+		// auth was required), retry it now that the interrupt has been resolved.
+		if (this.wcBridge.navigationRequest() !== null) return;
+
+		if (this._preparedMode() === mode) return;
+
 		this.errorMessage.set(null);
-
-		if (this.ready()) return;
-
 		void this.runBootstrap(mode);
 	});
 
@@ -158,11 +185,17 @@ export class App {
 		const result = await this.modeCoordinator.run(mode, this.inputs());
 
 		if (result.kind === 'ready') {
-			this.ready.set(true);
-		} else {
-			this.errorMessage.set(result.detail.message);
-			this.error.emit(result.detail);
+			this._preparedMode.set(mode);
+			return;
 		}
+
+		// A navigation request raised during bootstrap (e.g. an auth redirect to
+		// login) supersedes the primary view: its failure is being handled in-shell,
+		// so don't surface it to the user or emit a misleading `error` to the host.
+		if (this.wcBridge.navigationRequest() !== null) return;
+
+		this.errorMessage.set(result.detail.message);
+		this.error.emit(result.detail);
 	}
 
 	// Drain and process every queued host event in order (queue → no same-tick loss).
@@ -190,6 +223,17 @@ export class App {
 			case WebComponentEventType.CLOSED:
 				this.closed.emit({});
 				break;
+
+			case WebComponentEventType.ERROR: {
+				// No `/error` route in the WC: show the error in-shell and notify the
+				// host. `accessReason` carries the precise cause; `reason` is the coarse
+				// bucket the host contract exposes (mirrors the bootstrap error path).
+				const { message } = describeNavigationError(event.reason);
+				this.errorMessage.set(message);
+				this.error.emit({ reason: 'access-denied', message, accessReason: event.reason });
+
+				break;
+			}
 		}
 	}
 
