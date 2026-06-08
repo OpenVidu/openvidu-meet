@@ -10,9 +10,9 @@ import {
 	signal
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { RoomRecordingsOverlayComponent } from '../../../recordings/pages/room-recordings/room-recordings-overlay.component';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
@@ -36,7 +36,8 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		ReactiveFormsModule,
 		MatIconModule,
 		MatProgressSpinnerModule,
-		MeetingLobbyComponent
+		MeetingLobbyComponent,
+		RoomRecordingsOverlayComponent
 	],
 	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService],
 	changeDetection: ChangeDetectionStrategy.OnPush
@@ -51,7 +52,13 @@ export class MeetingComponent implements OnInit {
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
-	private readonly dialog = inject(MatDialog);
+
+	/**
+	 * Room whose recordings are shown in the in-meeting overlay (webcomponent mode),
+	 * or `null` when the overlay is closed. Rendered inside this component's own DOM
+	 * (shadow root) rather than a viewport overlay.
+	 */
+	readonly recordingsRoomId = signal<string | null>(null);
 
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
@@ -138,10 +145,15 @@ export class MeetingComponent implements OnInit {
 		}
 
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			await this.openRecordingsDialog(roomId);
+			this.recordingsRoomId.set(roomId);
 		} else {
 			this.openRecordingsInNewTab(roomId);
 		}
+	}
+
+	/** Closes the in-meeting recordings overlay (webcomponent mode). */
+	closeRecordings(): void {
+		this.recordingsRoomId.set(null);
 	}
 
 	onParticipantConnected(event: any): void {
@@ -156,26 +168,6 @@ export class MeetingComponent implements OnInit {
 	onParticipantLeft(event: any): void {
 		this.isMeetingLeft.set(true);
 		this.eventHandlerService.onParticipantLeft(event);
-	}
-
-	/**
-	 * Web component mode: show the room recordings in a dialog overlaid on the
-	 * live meeting. Lazy-loaded so the SPA bundle, which never takes this path,
-	 * doesn't pull the recordings page into the meeting chunk.
-	 */
-	private async openRecordingsDialog(roomId: string): Promise<void> {
-		const { RoomRecordingsDialogComponent } = await import(
-			'../../../recordings/pages/room-recordings/room-recordings-dialog.component'
-		);
-
-		this.dialog.open(RoomRecordingsDialogComponent, {
-			data: { roomId },
-			panelClass: 'ov-meet-dialog',
-			autoFocus: false,
-			width: '90vw',
-			maxWidth: '1200px',
-			height: '85vh'
-		});
 	}
 
 	private openRecordingsInNewTab(roomId: string): void {

@@ -87,3 +87,14 @@
 		</ng-container>
 	</ov-videoconference>
 }
+
+<!-- Recordings overlay (webcomponent mode) -->
+@if (recordingsRoomId(); as roomId) {
+	@defer (on immediate) {
+		<ov-room-recordings-overlay [roomId]="roomId" (closed)="closeRecordings()" />
+	} @placeholder {
+		<div class="recordings-overlay-loading">
+			<mat-spinner diameter="40" />
+		</div>
+	}
+}

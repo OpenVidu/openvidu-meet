@@ -7,6 +7,20 @@
 :host {
 	display: block;
 	height: 100%;
+	// Positioned ancestor for the in-meeting recordings overlay (ov-room-recordings-overlay)
+	// and its loading placeholder, so they cover exactly the meeting area.
+	position: relative;
+}
+
+// Placeholder shown while the recordings overlay chunk is being loaded (@defer).
+.recordings-overlay-loading {
+	position: absolute;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.6);
 }
 
 .prejoin-loading-container,
