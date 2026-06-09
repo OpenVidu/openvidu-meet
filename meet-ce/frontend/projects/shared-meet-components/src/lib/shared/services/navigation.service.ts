@@ -492,17 +492,20 @@ export class NavigationService {
 	}
 
 	/**
-	 * End the current flow: WC emits `closed`; SPA follows the leave-redirect URL,
-	 * else navigates to `fallbackRoute` if given (no-op without).
+	 * End the current flow. A configured leave-redirect URL takes precedence in
+	 * both modes (navigate the page to it). Otherwise: WC emits `closed`; SPA
+	 * navigates to `fallbackRoute` if given (no-op without).
 	 */
 	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
-		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
+		if (this.getLeaveRedirectURL()) {
+			await this.redirectToLeaveUrl();
 			return;
 		}
 
-		if (this.getLeaveRedirectURL()) {
-			await this.redirectToLeaveUrl();
+		// No redirect configured: in the WC, signal the host via `closed` so it can
+		// tear down the element; in the SPA, fall back to an internal route.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
 			return;
 		}
 
