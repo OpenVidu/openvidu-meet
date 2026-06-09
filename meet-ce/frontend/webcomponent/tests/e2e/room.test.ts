@@ -21,7 +21,7 @@ test.describe('Room Features E2E Tests', () => {
 	});
 
 	test.describe('Component Rendering', () => {
-		test('should load the web component with proper iframe', async ({ page }) => {
+		test('should load the web component and attach its iframe', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 
 			await expect(page.locator('openvidu-meet')).toBeVisible();
@@ -47,7 +47,7 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
-		test('should be able to share and stop screen sharing', async ({ page }) => {
+		test('should share and stop screen sharing', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 			await expect(iframeLocator(page, '#toolbar')).toBeVisible();
 
@@ -105,7 +105,7 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
-		test('should show and interact with chat panel', async ({ page }) => {
+		test('should open the chat panel and send a message', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
 			await iframeLocator(page, '#chat-panel-btn').click();

@@ -33,7 +33,6 @@
 		"files.exclude": {
 			"**/meet-ce": true,
 			"**/meet-pro": true,
-			"**/frontend/webcomponent": true,
 			"**/webhooks-snippets": false,
 			"**/testapp": true,
 			"**/.angular": true,
@@ -45,10 +44,9 @@
 		"jest.disabledWorkspaceFolders": [
 			"openvidu-meet (root)",
 			"shared-meet-components",
-			"meet-testapp"
+			"meet-testapp",
+			"meet-webcomponent"
 		],
-		"mochaExplorer.files": "tests/e2e/**/*.test.ts",
-		"mochaExplorer.require": ".mocharc.js",
 		"files.watcherExclude": {
 			"**/node_modules/**": true,
 			"**/dist/**": true
@@ -103,29 +101,6 @@
 					"NODE_ENV": "test"
 				},
 				"cwd": "${workspaceFolder:openvidu-meet (PRO)}/backend"
-			},
-			{
-				"name": "Debug Jest Test (Webcomponent)",
-				"type": "node",
-				"request": "launch",
-				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
-				"args": [
-					"--config",
-					"${workspaceFolder:meet-webcomponent}/jest.config.mjs",
-					"--runInBand",
-					"--no-cache",
-					"${file}"
-				],
-				"console": "integratedTerminal",
-				"internalConsoleOptions": "neverOpen",
-				"windows": {
-					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
-				},
-				"runtimeArgs": ["--experimental-vm-modules"],
-				"env": {
-					"NODE_ENV": "test"
-				},
-				"cwd": "${workspaceFolder:meet-webcomponent}"
 			},
 			{
 				"name": "Debug Current Jest Test (CE Backend)",

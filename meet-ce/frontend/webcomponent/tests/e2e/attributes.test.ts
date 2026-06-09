@@ -32,7 +32,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			accessUrl = room.access.anonymous.moderator.url;
 		});
 
-		test('participant-name: pre-fills the participant name input and disables it', async ({ page }) => {
+		test('should pre-fill and disable the participant name input when participant-name is set', async ({ page }) => {
 			const participantName = 'Alice';
 
 			await openWebcomponentWithAttributes(page, {
@@ -53,7 +53,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				accessUrl = room.access.anonymous.moderator.url;
 			});
 
-			test('e2ee-key: pre-fills the E2EE key input and hides it', async ({ page }) => {
+			test('should hide the E2EE key input and show the encryption badge when e2ee-key is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
 					[WebComponentProperty.ROOM_URL]: accessUrl,
 					[WebComponentProperty.E2EE_KEY]: 'super-secret-key-123'
@@ -69,7 +69,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(iframeLocator(page, '.encryption-badge')).toBeVisible();
 			});
 
-			test('e2ee-key + participant-name: join button stays enabled when both are pre-filled', async ({
+			test('should keep the join button enabled when both participant-name and e2ee-key are set', async ({
 				page
 			}) => {
 				// Regression: providing BOTH participant-name and e2ee-key disables both lobby
@@ -117,7 +117,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				recordingId = recordings[0].recordingId;
 			});
 
-			test('show-only-recordings: redirects to the room recordings page', async ({ page }) => {
+			test('should redirect to the room recordings page when show-only-recordings is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
 					[WebComponentProperty.ROOM_URL]: accessUrl,
 					[WebComponentProperty.SHOW_ONLY_RECORDINGS]: 'true'
@@ -129,7 +129,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(iframeLocator(page, '#participant-name-input')).toHaveCount(0);
 			});
 
-			test('show-recording: redirects to the specified recording', async ({ page }) => {
+			test('should redirect to the specified recording when show-recording is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
 					[WebComponentProperty.ROOM_URL]: accessUrl,
 					[WebComponentProperty.SHOW_RECORDING]: recordingId
@@ -166,7 +166,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			recordingId = recordings[0].recordingId;
 		});
 
-		test('redirects to the specified recording', async ({ page }) => {
+		test('should redirect to the specified recording', async ({ page }) => {
 			const recordingUrl = await getRecordingUrl(recordingId);
 
 			await openWebcomponentWithAttributes(page, {
@@ -186,7 +186,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			accessUrl = room.access.anonymous.moderator.url;
 		});
 
-		test('redirects from the lobby back button', async ({ page }) => {
+		test('should redirect to the configured URL from the lobby back button', async ({ page }) => {
 			await openWebcomponentWithAttributes(page, {
 				[WebComponentProperty.ROOM_URL]: accessUrl,
 				[WebComponentProperty.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL
@@ -198,7 +198,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			await waitForPageRedirect(page, REDIRECT_TARGET_URL);
 		});
 
-		test('redirects from the disconnected page back button', async ({ page }) => {
+		test('should redirect to the configured URL from the disconnected page back button', async ({ page }) => {
 			// First, open a meeting so it can be ended (which lands on the disconnected page).
 			await openWebcomponentWithAttributes(page, {
 				[WebComponentProperty.ROOM_URL]: accessUrl,

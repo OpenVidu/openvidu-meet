@@ -76,22 +76,6 @@ export default defineConfig({
 					]
 				}
 			}
-		},
-		{
-			name: 'webcomponent',
-			testDir: './webcomponent/tests/e2e',
-			use: {
-				viewport: { width: 1024, height: 1024 },
-				video: 'retain-on-failure',
-				launchOptions: {
-					args: [
-						...commonArgs,
-						'--allow-file-access-from-files',
-						'--no-sandbox',
-						'--disable-dev-shm-usage'
-					]
-				}
-			}
 		}
 	]
 });

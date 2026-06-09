@@ -18,7 +18,7 @@ test.describe('Webhooks E2E Tests', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test('should successfully receive meetingStarted and meetingEnded webhooks', async ({ page }) => {
+	test('should receive meetingStarted and meetingEnded webhooks', async ({ page }) => {
 		await openMeeting(page, roomId, { role: 'moderator' });
 
 		await expectWebhook(page, MeetWebhookEventType.MEETING_STARTED);
@@ -37,7 +37,7 @@ test.describe('Webhooks E2E Tests', () => {
 		expect(meetingEndedWebhook.data).toMatchObject(actualRoom as any);
 	});
 
-	test('should successfully receive recordingStarted, recordingUpdated and recordingEnded webhooks', async ({
+	test('should receive recordingStarted, recordingUpdated and recordingEnded webhooks', async ({
 		page
 	}) => {
 		await openMeeting(page, roomId, { role: 'moderator' });

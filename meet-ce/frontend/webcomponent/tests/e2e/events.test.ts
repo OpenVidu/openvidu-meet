@@ -183,14 +183,14 @@ test.describe('WebComponent Events E2E Tests', () => {
 	});
 
 	test.describe('Event Error Handling', () => {
-		test('should handle joining and immediately leaving', async ({ page }) => {
+		test('should emit a left event when leaving immediately after joining', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 
 			await leaveRoomCommand(page);
 			await expectEvent(page, WebComponentEvent.LEFT);
 		});
 
-		test('should not emit duplicate events on rapid actions', async ({ page }) => {
+		test('should not emit duplicate left events on repeated leave clicks', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 			await expectEvent(page, WebComponentEvent.JOINED);
 

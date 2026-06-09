@@ -17,7 +17,7 @@
 		"build:wc:bundle": "pnpm run build:wc:angular && pnpm run build:wc:post",
 		"dev": "node scripts/dev.js",
 		"test:unit": "ng test",
-		"test:e2e": "playwright test --config=../playwright.config.ts --project=webcomponent"
+		"test:e2e": "playwright test --project=webcomponent"
 	},
 	"dependencies": {
 		"@angular/animations": "21.2.0",
