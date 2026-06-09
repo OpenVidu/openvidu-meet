@@ -4,7 +4,7 @@ import { applyBackgroundEffect, startScreensharing, stopScreensharing } from '..
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
 import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
-import { expectSignificantImageDifference, screenshotIframeElement } from '../helpers/stream.helper';
+import { expectSignificantImageDifferenceEventually, screenshotIframeElement } from '../helpers/stream.helper';
 import { leaveMeeting, openMeeting } from '../helpers/testapp.helper';
 
 test.describe('Room Features E2E Tests', () => {
@@ -74,9 +74,11 @@ test.describe('Room Features E2E Tests', () => {
 
 			const before = await screenshotIframeElement(page, '.OV_video-element');
 			await applyBackgroundEffect(page, '2');
-			const after = await screenshotIframeElement(page, '.OV_video-element');
 
-			expectSignificantImageDifference(before, after, { threshold: 0.4, minDiffPixels: 500 });
+			await expectSignificantImageDifferenceEventually(page, '.OV_video-element', before, {
+				threshold: 0.4,
+				minDiffPixels: 500
+			});
 
 			await leaveMeeting(page);
 		});

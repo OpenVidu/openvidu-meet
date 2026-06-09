@@ -25,15 +25,10 @@ export const screenshotIframeElement = async (
 };
 
 /**
- * Asserts that two PNG buffers differ by at least `minDiffPixels` pixels using
- * pixelmatch with the given `threshold`.
+ * Counts the pixels that differ between two PNG buffers using pixelmatch.
+ * Throws if the two images have different dimensions.
  */
-export const expectSignificantImageDifference = (
-	before: Buffer,
-	after: Buffer,
-	options: { threshold?: number; minDiffPixels?: number } = {}
-): void => {
-	const { threshold = 0.4, minDiffPixels = 500 } = options;
+const imageDiffPixels = (before: Buffer, after: Buffer, threshold: number): number => {
 	const img1 = PNG.sync.read(before);
 	const img2 = PNG.sync.read(after);
 	const { width, height } = img1;
@@ -43,6 +38,42 @@ export const expectSignificantImageDifference = (
 	}
 
 	const diff = new PNG({ width, height });
-	const numDiffPixels = pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold });
-	expect(numDiffPixels).toBeGreaterThan(minDiffPixels);
+	return pixelmatch(img1.data, img2.data, diff.data, width, height, { threshold });
+};
+
+/**
+ * Asserts that two PNG buffers differ by at least `minDiffPixels` pixels using
+ * pixelmatch with the given `threshold`.
+ */
+export const expectSignificantImageDifference = (
+	before: Buffer,
+	after: Buffer,
+	options: { threshold?: number; minDiffPixels?: number } = {}
+): void => {
+	const { threshold = 0.4, minDiffPixels = 500 } = options;
+	expect(imageDiffPixels(before, after, threshold)).toBeGreaterThan(minDiffPixels);
+};
+
+/**
+ * Re-screenshots `selector` inside the web component until it differs from the
+ * `before` baseline by more than `minDiffPixels` (or until `timeout` elapses).
+ *
+ * Use for GPU/canvas effects like virtual backgrounds that have no DOM "applied"
+ * signal and render after a variable number of frames: a single snapshot taken
+ * at a fixed delay races the renderer and yields false negatives under load.
+ * Polling lets the assertion pass as soon as the effect actually paints, while
+ * still failing (after the timeout) if the effect never produces a change.
+ */
+export const expectSignificantImageDifferenceEventually = async (
+	page: Page,
+	selector: string,
+	before: Buffer,
+	options: { threshold?: number; minDiffPixels?: number; timeout?: number } = {}
+): Promise<void> => {
+	const { threshold = 0.4, minDiffPixels = 500, timeout = 15_000 } = options;
+
+	await expect(async () => {
+		const after = await iframeLocator(page, selector).screenshot();
+		expect(imageDiffPixels(before, after, threshold)).toBeGreaterThan(minDiffPixels);
+	}).toPass({ timeout });
 };
