@@ -5,18 +5,6 @@
 	overflow: auto;
 }
 
-// When embedded in another container (e.g. a dialog), fill the host instead of
-// the viewport so the list scrolls within that container rather than overflowing
-// and clipping its tail.
-:host(.ov-recordings-embedded) {
-	display: block;
-	height: 100%;
-
-	.ov-page-container {
-		height: 100%;
-	}
-}
-
 .recordings-page-header {
 	@include design-tokens.ov-container;
 	@include design-tokens.ov-page-content;

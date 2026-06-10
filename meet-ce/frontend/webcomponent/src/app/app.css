@@ -97,26 +97,3 @@ slot[name='toolbar'],
 slot[name='main'] {
   display: contents;
 }
-
-/* ── In-meeting recordings overlay (web component) ────────────────────────── */
-/* Slimmer scrollbars inside the recordings overlay. Authored here (shadow-root
-   global) rather than in the component so it also reaches nested components'
-   scroll areas, which emulated component styles can't. */
-.ov-recordings-overlay,
-.ov-recordings-overlay * {
-  scrollbar-width: thin;
-}
-
-.ov-recordings-overlay *::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-
-.ov-recordings-overlay *::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.5);
-  border-radius: 3px;
-}
-
-.ov-recordings-overlay *::-webkit-scrollbar-track {
-  background: transparent;
-}
