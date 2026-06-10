@@ -1,7 +1,7 @@
 import { expect, Page } from '@playwright/test';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
-import { iframeLocator } from './iframe.helper';
+import { wcLocator } from './webcomponent.helper';
 
 // ─── Screenshot capture & pixel-diff helpers ────────────────────────────────
 //
@@ -11,15 +11,15 @@ import { iframeLocator } from './iframe.helper';
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Captures a screenshot of an element inside the iframe and returns the PNG
- * buffer. Auto-waits for visibility before capture.
+ * Captures a screenshot of an element inside the web component and returns the
+ * PNG buffer. Auto-waits for visibility before capture.
  */
-export const screenshotIframeElement = async (
+export const screenshotWcElement = async (
 	page: Page,
 	selector: string,
 	options: { timeout?: number } = {}
 ): Promise<Buffer> => {
-	const locator = iframeLocator(page, selector);
+	const locator = wcLocator(page, selector);
 	await expect(locator).toBeVisible({ timeout: options.timeout });
 	return await locator.screenshot();
 };
@@ -73,7 +73,7 @@ export const expectSignificantImageDifferenceEventually = async (
 	const { threshold = 0.4, minDiffPixels = 500, timeout = 15_000 } = options;
 
 	await expect(async () => {
-		const after = await iframeLocator(page, selector).screenshot();
+		const after = await wcLocator(page, selector).screenshot();
 		expect(imageDiffPixels(before, after, threshold)).toBeGreaterThan(minDiffPixels);
 	}).toPass({ timeout });
 };

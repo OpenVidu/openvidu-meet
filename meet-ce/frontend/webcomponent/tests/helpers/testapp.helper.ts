@@ -1,7 +1,7 @@
 import { MeetWebhookEventType, WebComponentEvent } from '@openvidu-meet/typings';
 import { expect, Locator, Page } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../config';
-import { iframeLocator } from './iframe.helper';
+import { wcLocator } from './webcomponent.helper';
 import { getRoom } from './meet-api.helper';
 
 // ─── Headless WC harness ────────────────────────────────────────────────────
@@ -129,7 +129,7 @@ export const openMeeting = async (
 	// pre-filled and disabled — only the submit click is required to advance.
 	// Use `waitFor`, not `isVisible()` — the latter is a single-shot check
 	// and races the Angular bootstrap.
-	const nameInput = iframeLocator(page, '#participant-name-input');
+	const nameInput = wcLocator(page, '#participant-name-input');
 
 	try {
 		await nameInput.waitFor({ state: 'visible', timeout: 10_000 });
@@ -138,14 +138,14 @@ export const openMeeting = async (
 			await nameInput.fill(participantName);
 		}
 
-		await iframeLocator(page, '#participant-name-submit').click();
+		await wcLocator(page, '#participant-name-submit').click();
 	} catch {
 		// Name screen skipped — proceed directly.
 	}
 
-	await expect(iframeLocator(page, 'ov-pre-join')).toBeVisible({ timeout: 15_000 });
-	await iframeLocator(page, '#join-button').click();
-	await expect(iframeLocator(page, 'ov-session')).toBeVisible({ timeout: 15_000 });
+	await expect(wcLocator(page, 'ov-pre-join')).toBeVisible({ timeout: 15_000 });
+	await wcLocator(page, '#join-button').click();
+	await expect(wcLocator(page, 'ov-session')).toBeVisible({ timeout: 15_000 });
 };
 
 /**
@@ -160,16 +160,16 @@ export const openMeeting = async (
  * speaker may surface it depending on permissions.
  */
 export const leaveMeeting = async (page: Page, _options?: { role?: 'moderator' | 'speaker' }): Promise<void> => {
-	const panelCloseButton = iframeLocator(page, '.panel-close-button').first();
+	const panelCloseButton = wcLocator(page, '.panel-close-button').first();
 
 	if (await panelCloseButton.isVisible().catch(() => false)) {
 		await panelCloseButton.click();
-		await expect(iframeLocator(page, '.sidenav-menu')).not.toBeVisible({ timeout: 5_000 });
+		await expect(wcLocator(page, '.sidenav-menu')).not.toBeVisible({ timeout: 5_000 });
 	}
 
-	await iframeLocator(page, '#leave-btn').click();
+	await wcLocator(page, '#leave-btn').click();
 
-	const leaveOption = iframeLocator(page, '#leave-option');
+	const leaveOption = wcLocator(page, '#leave-option');
 	const leaveDropdownVisible = await leaveOption
 		.waitFor({ state: 'visible', timeout: 3_000 })
 		.then(() => true)
