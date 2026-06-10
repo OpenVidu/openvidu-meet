@@ -41,7 +41,7 @@ pnpm-debug.log*
 
 **/*/coverage
 **/**/test-results
-**/**/openvidu-meet.**.js
+**/**/openvidu-meet.bundle.min.js
 
 **/**/docs/webcomponent-attributes.md
 **/**/docs/webcomponent-commands.md

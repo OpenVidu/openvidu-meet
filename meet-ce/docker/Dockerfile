@@ -62,8 +62,7 @@ RUN rm -rf node_modules \
     meet-ce/backend/src \
     meet-ce/backend/openapi \
     meet-ce/backend/index.ts \
-    meet-ce/typings/src \
-    testapp
+    meet-ce/typings/src
 
 # ====================================================
 # Stage 2: production

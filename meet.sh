@@ -104,7 +104,7 @@ show_help() {
   echo "    Build only the webcomponent package"
   echo
   echo -e "  ${BLUE}build-testapp${NC}"
-  echo "    Build the testapp"
+  echo "    Build the webcomponent testapp"
   echo
   echo -e "  ${BLUE}test-unit-webcomponent${NC}"
   echo "    Run unit tests for the webcomponent project"
@@ -124,9 +124,8 @@ show_help() {
   echo
   echo -e "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
-  echo -e "    ${YELLOW}Options:${NC} --testapp            Include legacy (Express + Mustache) testapp watcher"
+  echo -e "    ${YELLOW}Options:${NC} --testapp            Include webcomponent testapp + webhook bridge (:5080/:5081)"
   echo -e "             ${NC} --webcomponent       Include webcomponent watcher"
-  echo -e "             ${NC} --wc-testapp         Include new webcomponent testapp + webhook bridge"
   echo
   echo -e "  ${BLUE}start${NC}"
   echo "    Start OpenVidu Meet in production or CI mode"
@@ -134,9 +133,6 @@ show_help() {
   echo -e "            ${NC} --ci      Start in CI mode"
   echo
   echo -e "  ${BLUE}start-testapp${NC}"
-  echo "    Start the legacy testapp (Express + Mustache + Socket.IO)"
-  echo
-  echo -e "  ${BLUE}start-wc-testapp${NC}"
   echo "    Start the webcomponent testapp (Angular UI + webhook bridge on :5080/:5081)"
   echo "    Required by the webcomponent Playwright e2e suite in CI workflows"
   echo
@@ -425,12 +421,11 @@ add_common_dev_commands() {
 add_optional_commands() {
   local include_testapp="$1"
   local include_webcomponent="$2"
-  local include_wc_testapp="$3"
 
-  # Testapp (legacy Express + Mustache testapp at /testapp)
+  # Webcomponent testapp (Angular UI + webhook bridge on :5080/:5081)
   if [ "$include_testapp" = true ]; then
     CMD_NAMES+=("testapp")
-    CMD_COLORS+=("blue")
+    CMD_COLORS+=("bgMagenta.white")
     CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:testapp'")
   fi
 
@@ -439,13 +434,6 @@ add_optional_commands() {
     CMD_NAMES+=("webcomponent")
     CMD_COLORS+=("bgBlue.white")
     CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:webcomponent'")
-  fi
-
-  # webcomponent testapp
-  if [ "$include_wc_testapp" = true ]; then
-    CMD_NAMES+=("wc-testapp")
-    CMD_COLORS+=("bgMagenta.white")
-    CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:wc-testapp'")
   fi
 }
 
@@ -562,7 +550,6 @@ launch_dev_watchers() {
 dev() {
   local include_testapp=false
   local include_webcomponent=false
-  local include_wc_testapp=false
 
   for arg in "$@"; do
     case "$arg" in
@@ -571,9 +558,6 @@ dev() {
         ;;
       --webcomponent)
         include_webcomponent=true
-        ;;
-      --wc-testapp)
-        include_wc_testapp=true
         ;;
     esac
   done
@@ -602,8 +586,8 @@ dev() {
   # Add common commands (typings, shared-meet-components)
   add_common_dev_commands
 
-  # Add optional commands (testapp, webcomponent, wc-testapp)
-  add_optional_commands "$include_testapp" "$include_webcomponent" "$include_wc_testapp"
+  # Add optional commands (testapp, webcomponent)
+  add_optional_commands "$include_testapp" "$include_webcomponent"
 
   # Add edition-specific commands and set paths
   if [ "$edition" = "pro" ]; then
@@ -660,20 +644,8 @@ start() {
   esac
 }
 
-# Start testapp
-start_testapp() {
-  echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Starting TestApp${NC}"
-  echo -e "${BLUE}=====================================${NC}"
-  echo
-
-  install_dependencies
-  echo -e "${GREEN}Starting testapp...${NC}"
-  pnpm run start:testapp
-}
-
 # Start the webcomponent testapp
-start_wc_testapp() {
+start_testapp() {
   echo -e "${BLUE}=====================================${NC}"
   echo -e "${BLUE}   Starting Webcomponent TestApp${NC}"
   echo -e "${BLUE}=====================================${NC}"
@@ -681,7 +653,7 @@ start_wc_testapp() {
 
   install_dependencies
   echo -e "${GREEN}Starting webcomponent testapp (ng serve + webhook bridge)...${NC}"
-  pnpm run start:wc-testapp
+  pnpm run start:testapp
 }
 
 # Build webcomponent documentation
@@ -951,9 +923,6 @@ main() {
       ;;
     start-testapp)
       start_testapp
-      ;;
-    start-wc-testapp)
-      start_wc_testapp
       ;;
     build-webcomponent-doc)
       build_webcomponent_doc "$1"
