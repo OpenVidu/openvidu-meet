@@ -6,6 +6,10 @@ import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
+
+function categoryPrefix(category: BackgroundCategory): string {
+	return category.toLowerCase().replace('_', '-');
+}
 /**
  * @internal
  */
@@ -28,27 +32,34 @@ export class VirtualBackgroundService {
 	}
 
 	/**
-	 * Number of images per category. Files must be named {category-prefix}-{n}.webp,
-	 * e.g. professional-1.webp, home-office-2.webp, creative-3.webp.
-	 * To add an image: drop the next numbered file and increment the count.
-	 * To remove the last image: delete the file and decrement.
+	 * Background images available per category. Each id maps directly to the asset files:
+	 *   src/assets/backgrounds/<category>/<id>.webp            (full image)
+	 *   src/assets/backgrounds/<category>/thumbnails/<id>.webp (thumbnail)
+	 * The order here is the order shown within each category.
+	 *
+	 * To add an image: drop the two files and add its id here.
+	 * To remove one: delete the two files and remove its id here.
 	 */
-	private readonly imageCategoryMap: Record<BackgroundCategory, number> = {
-		[BackgroundCategory.PROFESSIONAL]: 4,
-		[BackgroundCategory.HOME_OFFICE]: 5,
-		[BackgroundCategory.CREATIVE]: 9
+	private readonly imageBackgrounds: Record<BackgroundCategory, string[]> = {
+		[BackgroundCategory.PROFESSIONAL]: ['professional-1', 'professional-2', 'professional-3', 'professional-4'],
+		[BackgroundCategory.HOME_OFFICE]: ['home-office-1', 'home-office-2', 'home-office-3', 'home-office-4'],
+		[BackgroundCategory.CREATIVE]: [
+			'creative-1',
+			'creative-2',
+			'creative-3',
+			'creative-4',
+			'creative-5',
+			'creative-6',
+			'creative-7'
+		]
 	};
 
-	private categoryPrefix(category: BackgroundCategory): string {
-		return category.toLowerCase().replace('_', '-');
-	}
-
-	private createImageBackground(n: number, category: BackgroundCategory): BackgroundEffect {
-		const prefix = this.categoryPrefix(category);
-		const fileName = `${prefix}-${n}.webp`;
+	private createImageBackground(id: string, category: BackgroundCategory): BackgroundEffect {
+		const prefix = categoryPrefix(category);
+		const fileName = `${id}.webp`;
 
 		return {
-			id: `${prefix}-${n}`,
+			id,
 			type: EffectType.IMAGE,
 			thumbnail: this.buildBackgroundPath(`${prefix}/thumbnails/${fileName}`),
 			src: this.buildBackgroundPath(`${prefix}/${fileName}`),
@@ -57,10 +68,8 @@ export class VirtualBackgroundService {
 	}
 
 	private createImageBackgrounds(): BackgroundEffect[] {
-		return Object.entries(this.imageCategoryMap).flatMap(([category, count]) =>
-			Array.from({ length: count }, (_, i) =>
-				this.createImageBackground(i + 1, category as BackgroundCategory)
-			)
+		return Object.entries(this.imageBackgrounds).flatMap(([category, ids]) =>
+			ids.map((id) => this.createImageBackground(id, category as BackgroundCategory))
 		);
 	}
 
