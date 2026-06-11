@@ -133,7 +133,9 @@
       "BLURRED_SECTION": "Geen effecten en onscherpe achtergrond",
       "NO_EFFECTS": "Geen achtergrondeffect",
       "BLURRED_EFFECT": "Onscherpe achtergrond",
-      "IMAGES_SECTION": "Achtergrondafbeeldingen",
+      "CATEGORY_PROFESSIONAL": "Professioneel",
+      "CATEGORY_HOME_OFFICE": "Thuiskantoor",
+      "CATEGORY_CREATIVE": "Creatief",
       "NOT_SUPPORTED": "Virtuele achtergronden worden niet ondersteund in deze browser",
       "NOT_SUPPORTED_DESCRIPTION": "Uw browser ondersteunt geen achtergrondeffecten. Deze functie vereist GPU-versnelling die mogelijk uitgeschakeld of niet beschikbaar is."
     },

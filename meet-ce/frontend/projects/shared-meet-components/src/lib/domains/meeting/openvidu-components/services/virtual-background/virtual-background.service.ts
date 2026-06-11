@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
-import { BackgroundEffect, EffectType } from '../../models/background-effect.model';
+import { BackgroundCategory, BackgroundEffect, EffectType } from '../../models/background-effect.model';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
@@ -27,22 +27,48 @@ export class VirtualBackgroundService {
 		return this.runtimeConfigService.resolvePath(`${this.backgroundsBasePath}/${path}`);
 	}
 
-	private createImageBackground(id: number): BackgroundEffect {
-		const fileName = `bg-${id}.webp`;
+	/**
+	 * Number of images per category. Files must be named {category-prefix}-{n}.webp,
+	 * e.g. professional-1.webp, home-office-2.webp, creative-3.webp.
+	 * To add an image: drop the next numbered file and increment the count.
+	 * To remove the last image: delete the file and decrement.
+	 */
+	private readonly imageCategoryMap: Record<BackgroundCategory, number> = {
+		[BackgroundCategory.PROFESSIONAL]: 4,
+		[BackgroundCategory.HOME_OFFICE]: 5,
+		[BackgroundCategory.CREATIVE]: 9
+	};
+
+	private categoryPrefix(category: BackgroundCategory): string {
+		return category.toLowerCase().replace('_', '-');
+	}
+
+	private createImageBackground(n: number, category: BackgroundCategory): BackgroundEffect {
+		const prefix = this.categoryPrefix(category);
+		const fileName = `${prefix}-${n}.webp`;
 
 		return {
-			id: id.toString(),
+			id: `${prefix}-${n}`,
 			type: EffectType.IMAGE,
-			thumbnail: this.buildBackgroundPath(`thumbnails/${fileName}`),
-			src: this.buildBackgroundPath(fileName)
+			thumbnail: this.buildBackgroundPath(`${prefix}/thumbnails/${fileName}`),
+			src: this.buildBackgroundPath(`${prefix}/${fileName}`),
+			category
 		};
+	}
+
+	private createImageBackgrounds(): BackgroundEffect[] {
+		return Object.entries(this.imageCategoryMap).flatMap(([category, count]) =>
+			Array.from({ length: count }, (_, i) =>
+				this.createImageBackground(i + 1, category as BackgroundCategory)
+			)
+		);
 	}
 
 	backgrounds: BackgroundEffect[] = [
 		{ id: 'no_effect', type: EffectType.NONE, thumbnail: 'block' },
 		{ id: 'soft_blur', type: EffectType.BLUR, thumbnail: 'blur_on' },
 		{ id: 'hard_blur', type: EffectType.BLUR, thumbnail: 'blur_on' },
-		...Array.from({ length: 19 }, (_, index) => this.createImageBackground(index + 1))
+		...this.createImageBackgrounds()
 	];
 
 	private SOFT_BLUR_INTENSITY = 20;

@@ -85,29 +85,28 @@
 						</div>
 					</div>
 
-					@if (showBackgroundPanel()) {
-						<div class="vb-container">
-							<ov-background-effects-panel [mode]="'prejoin'" (onClose)="closeBackgroundPanel()" />
-						</div>
-					} @else {
-						<!-- Configuration Section -->
-						<div class="configuration-section">
-							<!-- Error Message -->
-							@if (!!errorMessage()) {
-								<div class="error-message" id="token-error">
-									<mat-icon class="error-icon">error_outline</mat-icon>
-									<span class="error-text">{{ errorMessage() }}</span>
-								</div>
-							}
-
-							<!-- Join Button -->
-							<div class="join-section">
-								<button mat-flat-button (click)="join()" class="join-button" id="join-button">
-									{{ 'PREJOIN.JOIN' | translate }}
-								</button>
+					<!-- Always in DOM — collapses smoothly when background panel opens -->
+					<div class="configuration-section" [class.collapsed]="showBackgroundPanel()">
+						<!-- Error Message -->
+						@if (!!errorMessage()) {
+							<div class="error-message" id="token-error">
+								<mat-icon class="error-icon">error_outline</mat-icon>
+								<span class="error-text">{{ errorMessage() }}</span>
 							</div>
+						}
+
+						<!-- Join Button -->
+						<div class="join-section">
+							<button mat-flat-button (click)="join()" class="join-button" id="join-button">
+								{{ 'PREJOIN.JOIN' | translate }}
+							</button>
 						</div>
-					}
+					</div>
+
+					<!-- Always in DOM — expands smoothly in sync with the config section -->
+					<div class="vb-container" [class.expanded]="showBackgroundPanel()">
+						<ov-background-effects-panel [mode]="'prejoin'" (onClose)="closeBackgroundPanel()" />
+					</div>
 				</div>
 			</div>
 		}

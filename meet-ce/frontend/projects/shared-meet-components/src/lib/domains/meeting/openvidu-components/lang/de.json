@@ -133,7 +133,9 @@
       "BLURRED_SECTION": "Keine Effekte und unscharfer Hintergrund",
       "NO_EFFECTS": "Kein Hintergrundeffekt",
       "BLURRED_EFFECT": "Unscharfer Hintergrund",
-      "IMAGES_SECTION": "Hintergrundbilder",
+      "CATEGORY_PROFESSIONAL": "Professionell",
+      "CATEGORY_HOME_OFFICE": "Homeoffice",
+      "CATEGORY_CREATIVE": "Kreativ",
       "NOT_SUPPORTED": "Virtuelle Hintergründe werden in diesem Browser nicht unterstützt",
       "NOT_SUPPORTED_DESCRIPTION": "Ihr Browser unterstützt keine Hintergrundeffekte. Diese Funktion erfordert GPU-Beschleunigung, die möglicherweise deaktiviert oder nicht verfügbar ist."
     },
