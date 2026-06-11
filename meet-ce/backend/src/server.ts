@@ -28,6 +28,11 @@ import {
 	publicApiHtmlFilePath,
 	webcomponentBundlePath
 } from './utils/path.utils.js';
+import {
+	getWebcomponentBundleEtag,
+	matchesIfNoneMatch,
+	WEBCOMPONENT_BUNDLE_CACHE_CONTROL
+} from './utils/webcomponent-bundle.utils.js';
 
 const createApp = () => {
 	const app: Express = express();
@@ -109,10 +114,29 @@ const createApp = () => {
 
 	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
-	// Serve OpenVidu Meet webcomponent bundle file
-	appRouter.get('/v1/openvidu-meet.js', staticAssetLimiter, (_req: Request, res: Response) =>
-		res.sendFile(webcomponentBundlePath)
-	);
+	// Serve OpenVidu Meet webcomponent bundle file.
+	// Host apps embed this from a STABLE url and must auto-update to a freshly
+	// deployed WebComponent version without redeploying themselves. `no-cache`
+	// makes the browser revalidate BEFORE using the cached copy, so every load
+	// runs the current version (no stale window vs. the backend); the content-hash
+	// ETag keeps it cheap — a 304 with no body while unchanged, a 200 with the new
+	// bundle on the first load after a redeploy. See webcomponent-bundle.utils.
+	appRouter.get('/v1/openvidu-meet.js', staticAssetLimiter, (req: Request, res: Response) => {
+		const etag = getWebcomponentBundleEtag();
+
+		res.set('Cache-Control', WEBCOMPONENT_BUNDLE_CACHE_CONTROL);
+
+		if (etag) {
+			res.set('ETag', etag);
+
+			if (matchesIfNoneMatch(req.headers['if-none-match'], etag)) {
+				res.status(304).end();
+				return;
+			}
+		}
+
+		res.sendFile(webcomponentBundlePath, { etag: false, cacheControl: false, lastModified: false });
+	});
 	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
 	appRouter.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => {
 		res.type('html').send(getHtmlWithBasePath(frontendHtmlPath));
