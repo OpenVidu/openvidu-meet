@@ -16,6 +16,19 @@
 			"default": "./styles/*"
 		}
 	},
+	"peerDependencies": {
+		"@angular/cdk": "21.2.0",
+		"@angular/common": "21.2.0",
+		"@angular/core": "21.2.0",
+		"@angular/forms": "21.2.0",
+		"@angular/material": "21.2.0",
+		"@angular/platform-browser": "21.2.0",
+		"@angular/router": "21.2.0",
+		"@livekit/track-processors": "0.7.2",
+		"jwt-decode": "4.0.0",
+		"livekit-client": "2.16.1",
+		"rxjs": "7.8.2"
+	},
 	"dependencies": {
 		"tslib": "^2.3.0"
 	},
