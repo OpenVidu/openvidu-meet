@@ -79,7 +79,7 @@ test.describe('Virtual Background E2E Tests', () => {
 
 		const before = await captureVideoElementScreenshot(page);
 		await openPrejoinBackgroundsPanel(page);
-		await applyBackgroundEffect(page, '1');
+		await applyBackgroundEffect(page, 'professional-1');
 		await closePrejoinBackgroundsPanel(page);
 		const after = await captureVideoElementScreenshot(page);
 
@@ -116,7 +116,7 @@ test.describe('Virtual Background E2E Tests', () => {
 
 		const before = await captureVideoElementScreenshot(page);
 		await openRoomBackgroundsPanel(page);
-		await applyBackgroundEffect(page, '1');
+		await applyBackgroundEffect(page, 'professional-1');
 		await closeRoomBackgroundsPanel(page);
 		const after = await captureVideoElementScreenshot(page);
 
