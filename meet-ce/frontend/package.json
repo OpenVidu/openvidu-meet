@@ -34,7 +34,6 @@
     "@livekit/track-processors": "0.7.2",
     "@openvidu-meet/shared-components": "workspace:*",
     "@openvidu-meet/typings": "workspace:*",
-    "autolinker": "4.1.5",
     "core-js": "3.47.0",
     "jwt-decode": "4.0.0",
     "livekit-client": "2.16.1",
