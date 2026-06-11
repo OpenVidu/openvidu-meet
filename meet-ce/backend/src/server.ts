@@ -1,4 +1,5 @@
 import chalk from 'chalk';
+import compression from 'compression';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import type { Express, Request, Response, Router } from 'express';
@@ -37,6 +38,10 @@ import {
 const createApp = () => {
 	const app: Express = express();
 	const basePath = getBasePath();
+
+	// Compress responses. Also shrinks API JSON, the served HTML and the SPA's static chunks.
+	// Already-compressed payloads (e.g. recording zip downloads, application/zip) are skipped automatically.
+	app.use(compression());
 
 	// Enable CORS support
 	if (MEET_ENV.SERVER_CORS_ORIGIN) {
