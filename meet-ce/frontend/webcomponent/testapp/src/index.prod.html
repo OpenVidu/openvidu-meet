@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenVidu Meet — Testapp</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Production / static-serve variant of index.html.
+      Uses absolute URLs so no dev-server proxy is needed.
+      Override ports via env vars before building, or patch after build.
+
+      MEET_API_URL      default http://localhost:6080/meet
+      TESTAPP_WEBHOOK_BRIDGE_PORT  default 5081
+    -->
+    <script src="http://localhost:6080/meet/v1/openvidu-meet.js"></script>
+    <!--
+      Tell the Angular WebhookBridgeService where the bridge lives.
+      In dev mode (ng serve) this is not needed because the proxy forwards
+      /socket.io/* to the bridge transparently.
+    -->
+    <script>window.__WEBHOOK_BRIDGE_URL = 'http://localhost:5081';</script>
+    <script src="http://localhost:5081/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>

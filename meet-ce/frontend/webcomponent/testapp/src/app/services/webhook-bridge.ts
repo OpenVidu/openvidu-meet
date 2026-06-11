@@ -38,7 +38,8 @@ export class WebhookBridgeService {
 			return;
 		}
 
-		const socket = io();
+		const bridgeUrl = (window as unknown as { __WEBHOOK_BRIDGE_URL?: string }).__WEBHOOK_BRIDGE_URL;
+		const socket = bridgeUrl ? io(bridgeUrl) : io();
 		socket.on('webhookEvent', (event: WebhookEventPayload) => this.handleWebhookEvent(event));
 
 		this.destroyRef.onDestroy(() => socket.disconnect());

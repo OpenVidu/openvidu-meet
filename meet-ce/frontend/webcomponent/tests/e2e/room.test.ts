@@ -75,7 +75,7 @@ test.describe('Room Features E2E Tests', () => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
 			const before = await screenshotWcElement(page, '.OV_video-element');
-			await applyBackgroundEffect(page, '2');
+			await applyBackgroundEffect(page, 'professional-1');
 
 			await expectSignificantImageDifferenceEventually(page, '.OV_video-element', before, {
 				threshold: 0.4,

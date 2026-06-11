@@ -17,4 +17,4 @@ export type SocketLike = {
 };
 
 /** Factory installed on `window.io` by the Socket.IO client script. */
-export type IOFactory = () => SocketLike;
+export type IOFactory = (url?: string) => SocketLike;
