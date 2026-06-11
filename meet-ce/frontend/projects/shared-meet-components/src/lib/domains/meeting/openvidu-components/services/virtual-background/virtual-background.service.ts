@@ -28,7 +28,7 @@ export class VirtualBackgroundService {
 	}
 
 	private createImageBackground(id: number): BackgroundEffect {
-		const fileName = `bg-${id}.jpg`;
+		const fileName = `bg-${id}.webp`;
 
 		return {
 			id: id.toString(),
