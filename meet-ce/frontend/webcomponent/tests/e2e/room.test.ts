@@ -142,6 +142,23 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
+		test('should show the waiting panel instead of the invite panel in the participants panel', async ({
+			page
+		}) => {
+			// Join as moderator: in SPA this role would see the share/copy link panel,
+			// so it is the strongest check that webcomponent mode replaces it.
+			await openMeeting(page, roomId, { role: 'moderator' });
+
+			await wcLocator(page, '#participants-panel-btn').click();
+			await expect(wcLocator(page, 'ov-participants-panel')).toBeVisible();
+
+			// Webcomponent mode replaces the share/copy link panel with the waiting panel
+			await expect(wcLocator(page, '#waiting-panel')).toBeVisible();
+			await expect(wcLocator(page, '#invite-panel')).toHaveCount(0);
+
+			await leaveMeeting(page, { role: 'moderator' });
+		});
+
 		test('should show settings panel', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
