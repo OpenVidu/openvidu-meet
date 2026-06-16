@@ -62,6 +62,11 @@ export class MeetingComponent implements OnInit {
 	/** Controls whether to show the videoconference component */
 	isMeetingLeft = signal(false);
 
+	/**
+	 * Whether the app runs embedded as a webcomponent.
+	 */
+	isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode;
+
 	// Signals for meeting context data
 	roomName = this.lobbyService.roomName;
 	roomMemberToken = this.lobbyService.roomMemberToken;
