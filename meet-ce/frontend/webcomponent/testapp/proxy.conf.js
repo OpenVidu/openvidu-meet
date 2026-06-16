@@ -16,7 +16,7 @@ const backend = new URL(meetApiUrl);
 const backendOrigin = backend.origin; // e.g. http://localhost:6080
 const backendBasePath = backend.pathname.replace(/\/+$/, ''); // '' or '/meet'
 
-const bridge = process.env.MEET_WEBHOOK_BRIDGE_URL || 'http://localhost:8080';
+const bridge = process.env.MEET_WEBHOOK_BRIDGE_URL || 'http://localhost:5081';
 
 module.exports = {
 	// The WebComponent bundle is served by the backend at

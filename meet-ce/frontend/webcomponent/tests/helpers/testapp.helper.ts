@@ -208,9 +208,9 @@ export const kickParticipantCommand = async (page: Page, participantIdentity: st
 // ─── Event & webhook DOM markers ────────────────────────────────────────────
 //
 // The fixture above writes a `.event-{name}` `<li>` for every public WC event.
-// Webhook markers (`.webhook-{name}`) require a socket.io listener tied to the
-// backend; they are not wired by the fixture yet, so `expectWebhook` will
-// only succeed once a webhook bridge is added.
+// Webhook markers (`.webhook-{name}`) are written by the testapp's
+// WebhookBridgeService, which mirrors webhooks broadcast over socket.io by the
+// local webhook-bridge server (`testapp/scripts/webhook-bridge.js`).
 // ────────────────────────────────────────────────────────────────────────────
 
 /** Locator for a `.event-{name}` DOM marker. */
