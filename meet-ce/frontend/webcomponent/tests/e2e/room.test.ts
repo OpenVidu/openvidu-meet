@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
-import { wcLocator } from '../helpers/webcomponent.helper';
 import { applyBackgroundEffect, startScreensharing, stopScreensharing } from '../helpers/media-controls.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
 import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { expectSignificantImageDifferenceEventually, screenshotWcElement } from '../helpers/stream.helper';
 import { leaveMeeting, openMeeting } from '../helpers/testapp.helper';
+import { wcLocator } from '../helpers/webcomponent.helper';
 
 test.describe('Room Features E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -107,6 +107,17 @@ test.describe('Room Features E2E Tests', () => {
 			await expect(wcLocator(page, '#mic-btn')).toBeVisible();
 
 			await leaveMeeting(page);
+		});
+
+		test('should not show the copy link toolbar button', async ({ page }) => {
+			// Join as moderator: in SPA this role shows the copy meeting link button,
+			// so it is the strongest check that webcomponent mode hides it.
+			await openMeeting(page, roomId, { role: 'moderator' });
+
+			await expect(wcLocator(page, '#toolbar')).toBeVisible();
+			await expect(wcLocator(page, '#copy-speaker-link')).toHaveCount(0);
+
+			await leaveMeeting(page, { role: 'moderator' });
 		});
 
 		test('should open the chat panel and send a message', async ({ page }) => {
