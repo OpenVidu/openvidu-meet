@@ -32,13 +32,14 @@ test.describe('Share Link E2E Tests', () => {
 		await expect(shareOverlay.locator('.main-share-meeting-link')).toBeVisible();
 		await expect(shareOverlay.locator('.copy-url-btn')).toBeVisible();
 
+		// The webcomponent-only waiting overlay must not be present in SPA mode
+		await expect(page.locator('#waiting-overlay')).toHaveCount(0);
+
 		await shareOverlay.locator('.copy-url-btn').click();
 		await expectCopiedUrl(page);
 	});
 
-	test('should render the invite panel (share link) in the participants panel', async ({
-		page
-	}) => {
+	test('should render the invite panel (share link) in the participants panel', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
 		await toggleParticipantsPanel(page);

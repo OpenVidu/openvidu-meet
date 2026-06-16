@@ -170,6 +170,17 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page, { role: 'moderator' });
 		});
 
+		test('should show the waiting overlay instead of the share link overlay when alone', async ({ page }) => {
+			// Moderator alone: in SPA this shows the share link overlay, so it is the
+			// strongest check that webcomponent mode shows the waiting overlay instead.
+			await openMeeting(page, roomId, { role: 'moderator' });
+
+			await expect(wcLocator(page, '#waiting-overlay')).toBeVisible();
+			await expect(wcLocator(page, '#share-link-overlay')).toHaveCount(0);
+
+			await leaveMeeting(page, { role: 'moderator' });
+		});
+
 		test('should show settings panel', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
