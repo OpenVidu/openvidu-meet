@@ -62,6 +62,8 @@ export class MeetingContextService {
 		const remotes = this._remoteParticipants();
 		return local ? [local, ...remotes] : remotes;
 	});
+	/** Computed signal for whether the local participant is alone (no remote participants yet) */
+	readonly isAlone = computed(() => this._remoteParticipants().length === 0);
 
 	/** Readonly signal for meeting features */
 	readonly meetingUI = this.roomFeatureService.features;

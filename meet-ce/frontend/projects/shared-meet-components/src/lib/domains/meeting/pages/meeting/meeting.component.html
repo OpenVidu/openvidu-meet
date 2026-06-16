@@ -64,14 +64,16 @@
 			<ng-content select="ov-meeting-toolbar-more-options-menu" />
 		</ng-container>
 
-		<!-- Panel After Local Participant -->
+		<!-- Panel After Local Participant (only while alone) -->
 		<div *ovParticipantPanelAfterLocalParticipant>
-			@if (isWebcomponentMode()) {
-				<!-- Webcomponent mode: link sharing is handled by the host app -->
-				<ng-content select="ov-meeting-waiting-panel" />
-			} @else {
-				<!-- SPA mode: show the share/copy meeting link panel -->
-				<ng-content select="ov-meeting-invite-panel" />
+			@if (isAlone()) {
+				@if (isWebcomponentMode()) {
+					<!-- Webcomponent mode: link sharing is handled by the host app -->
+					<ng-content select="ov-meeting-waiting-panel" />
+				} @else {
+					<!-- SPA mode: show the share/copy meeting link panel -->
+					<ng-content select="ov-meeting-invite-panel" />
+				}
 			}
 		</div>
 

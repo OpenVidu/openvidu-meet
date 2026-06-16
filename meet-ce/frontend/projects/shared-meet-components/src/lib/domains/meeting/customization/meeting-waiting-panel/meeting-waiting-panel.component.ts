@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
- * Panel shown inside the participants panel while the local participant is
- * alone in the meeting.
+ * Panel shown while the local participant is alone in the meeting.
  *
- * Used in webcomponent mode in place of the share/copy link panel
- * (MeetingInvitePanelComponent), where sharing the meeting link is handled by
- * the host application rather than by Meet itself.
+ * Used in webcomponent mode in place of the share/copy link UI
+ * (MeetingInvitePanelComponent / share link overlay), where sharing the meeting
+ * link is handled by the host application rather than by Meet itself. The copy
+ * is configurable so it can be tailored per context (participants panel list vs.
+ * the main layout overlay).
  */
 @Component({
 	selector: 'ov-meeting-waiting-panel',
@@ -15,6 +16,6 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingWaitingPanelComponent {
-	title = 'Waiting for others to join';
-	subtitle = 'Participants will appear here as soon as they join the meeting.';
+	title = input<string>('Waiting for others to join');
+	subtitle = input<string>('Participants will appear here as soon as they join the meeting.');
 }

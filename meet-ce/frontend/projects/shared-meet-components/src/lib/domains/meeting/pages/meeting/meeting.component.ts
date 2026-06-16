@@ -67,6 +67,13 @@ export class MeetingComponent implements OnInit {
 	 */
 	isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode;
 
+	/**
+	 * Whether the local participant is alone (no remote participants yet).
+	 * The panel after the local participant — the share/copy link panel (SPA) or
+	 * the waiting panel (webcomponent) — is only shown while alone.
+	 */
+	isAlone = this.meetingContextService.isAlone;
+
 	// Signals for meeting context data
 	roomName = this.lobbyService.roomName;
 	roomMemberToken = this.lobbyService.roomMemberToken;
