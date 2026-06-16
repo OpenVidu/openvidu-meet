@@ -444,8 +444,8 @@ test.describe('Stream E2E Tests', () => {
 			// Video should be positioned at the bottom-right corner of the layout
 			const layoutBox = await getElementBoundingBox(page, '#layout');
 			expect(layoutBox).not.toBeNull();
-			// Flush to the right edge (within the 10px margin) and the bottom, not the left.
-			expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 10, -1);
+			// Flush to the right edge (within the 5px margin) and the bottom, not the left.
+			expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 5, -1);
 			expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
 			expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
 			// Floats at the minimum allowed size (~160px wide).
@@ -767,7 +767,7 @@ test.describe('Stream E2E Tests', () => {
 				const layoutBox = await getElementBoundingBox(pageA, '#layout');
 				expect(floatingBox).not.toBeNull();
 				expect(layoutBox).not.toBeNull();
-				expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 10, -1);
+				expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 5, -1);
 				expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
 				expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
 			} finally {

@@ -11,7 +11,7 @@ import { ILogger } from '../../models/logger.model';
 import { OVLocalVideoTrack } from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 
-const MEDIAPIPE_MODEL_PATH = '/assets/mediapipe/selfie_segmenter_landscape.tflite';
+const MEDIAPIPE_MODEL_PATH = 'assets/mediapipe/selfie_segmenter_landscape.tflite';
 
 /**
  * Manages the lifecycle of the LiveKit background video track processor.

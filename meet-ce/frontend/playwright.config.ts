@@ -41,7 +41,11 @@ const resolveFakeAudioPath = (): string => {
 const fakeAudioPath = resolveFakeAudioPath();
 const isCI = process.env['RUN_MODE'] === 'CI';
 
-const commonArgs = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'];
+const commonArgs = [
+	'--use-fake-ui-for-media-stream',
+	'--use-fake-device-for-media-stream',
+	'--enable-gpu'
+];
 
 export default defineConfig({
 	tsconfig: './tsconfig.test.json',
@@ -52,7 +56,7 @@ export default defineConfig({
 	outputDir: 'test-results/output',
 	timeout: 60000,
 	use: {
-		headless: isCI,
+		headless: true, //isCI,
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
 		ignoreHTTPSErrors: true,

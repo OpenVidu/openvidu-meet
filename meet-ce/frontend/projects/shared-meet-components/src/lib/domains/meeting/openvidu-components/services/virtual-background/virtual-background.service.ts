@@ -25,7 +25,7 @@ export class VirtualBackgroundService {
 	private readonly backgroundIdSelectedWritable = signal<string>('');
 	readonly backgroundIdSelected = this.backgroundIdSelectedWritable.asReadonly();
 
-	private readonly backgroundsBasePath = '/assets/backgrounds';
+	private readonly backgroundsBasePath = 'assets/backgrounds';
 
 	private buildBackgroundPath(path: string): string {
 		return this.runtimeConfigService.resolvePath(`${this.backgroundsBasePath}/${path}`);
