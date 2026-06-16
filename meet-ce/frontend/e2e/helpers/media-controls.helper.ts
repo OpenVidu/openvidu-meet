@@ -151,7 +151,10 @@ export const closePrejoinBackgroundsPanel = async (page: Page): Promise<void> =>
 	const panel = page.locator('#background-effects-container');
 	await expect(panel).toBeVisible({ timeout: 5000 });
 	await panel.locator('.panel-close-button').click();
-	await expect(panel).toHaveCount(0, { timeout: 5000 });
+	// Prejoin keeps the panel mounted and collapses its wrapper via CSS
+	// (`.vb-container` loses `.expanded` → max-height:0), so assert the wrapper is
+	// hidden rather than removed from the DOM.
+	await expect(page.locator('.vb-container')).not.toBeVisible({ timeout: 5000 });
 };
 
 /**

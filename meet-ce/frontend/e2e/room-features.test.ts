@@ -103,7 +103,7 @@ test.describe('Room UI Features E2E Tests', () => {
 
 			await openMeeting(page, accessUrl1);
 			await openRoomBackgroundsPanel(page);
-			await applyBackgroundEffect(page, '2');
+			await applyBackgroundEffect(page, 'professional-1');
 			await leaveMeeting(page);
 
 			// Step 2: Join a room with VB disabled and verify the saved preference is not applied
