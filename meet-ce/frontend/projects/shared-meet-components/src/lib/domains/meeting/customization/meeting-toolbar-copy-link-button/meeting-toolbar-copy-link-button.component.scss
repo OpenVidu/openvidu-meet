@@ -1,0 +1,5 @@
+// The host should be transparent in the layout so the button behaves as a
+// direct child of the toolbar's additional buttons slot (and of the mobile menu).
+:host {
+	display: contents;
+}

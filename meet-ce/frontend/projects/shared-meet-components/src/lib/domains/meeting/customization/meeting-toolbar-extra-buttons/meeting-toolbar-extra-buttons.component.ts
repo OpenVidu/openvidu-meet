@@ -4,33 +4,46 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { LoggerService } from '../../openvidu-components';
-import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
+import { MeetingToolbarCopyLinkButtonComponent } from '../meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-button.component';
 
 /**
- * Component for extra toolbar buttons (like copy meeting link).
+ * Component for extra toolbar buttons (like captions and copy meeting link).
  * These buttons can appear inside the "More Options" menu on mobile.
  */
 @Component({
 	selector: 'ov-meeting-toolbar-extra-buttons',
 	templateUrl: './meeting-toolbar-extra-buttons.component.html',
 	styleUrls: ['./meeting-toolbar-extra-buttons.component.scss'],
-	imports: [NgClass, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
+	imports: [
+		NgClass,
+		MatButtonModule,
+		MatIconModule,
+		MatMenuModule,
+		MatTooltipModule,
+		MeetingToolbarCopyLinkButtonComponent
+	],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarExtraButtonsComponent {
 	protected meetingContextService = inject(MeetingContextService);
-	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
 	protected captionService = inject(MeetingCaptionsService);
+	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarExtraButtons');
 
-	/** Whether to show the copy link button (only for moderators) */
-	showCopyLinkButton = computed(() => this.meetingContextService.meetingUI().showShareAccessLinks);
-	copyLinkTooltip = 'Copy the meeting link';
-	copyLinkText = 'Copy meeting link';
+	/**
+	 * Whether to show the copy link button: only for moderators (when share access
+	 * links are enabled) and never in webcomponent mode.
+	 */
+	showCopyLinkButton = computed(
+		() =>
+			this.meetingContextService.meetingUI().showShareAccessLinks &&
+			!this.runtimeConfigService.isWebcomponentMode()
+	);
 
 	/** Whether to show the captions button (visible when not HIDDEN) */
 	showCaptionsButton = computed(() => this.meetingContextService.meetingUI().showCaptionsControls);
@@ -46,10 +59,6 @@ export class MeetingToolbarExtraButtonsComponent {
 
 	/** Whether the device is mobile (affects button style) */
 	isMobile = this.meetingContextService.isMobile;
-
-	onCopyLinkClick(): void {
-		void this.meetingAccessLinkService.copyMeetingSpeakerLink();
-	}
 
 	async onCaptionsClick(): Promise<void> {
 		if (this.isCaptionsTogglePending()) {
