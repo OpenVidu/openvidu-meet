@@ -365,7 +365,7 @@ test_e2e_frontend() {
   ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
   echo -e "${GREEN}Running frontend E2E tests...${NC}"
-  pnpm run test:e2e-frontend-components
+  pnpm --filter @openvidu-meet/frontend run e2e:playwright:spa
 }
 
 # Helper: Prompt user to select edition (CE or PRO)
