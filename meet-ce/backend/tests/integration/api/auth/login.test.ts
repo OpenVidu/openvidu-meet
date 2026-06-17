@@ -49,10 +49,10 @@ describe('Authentication API Tests', () => {
 			expect(response.body.mustChangePassword).toBeUndefined();
 		});
 
-		it('should succeed with valid USER user credentials', async () => {
+		it('should succeed with valid ROOM_MANAGER user credentials', async () => {
 			const response = await loginReq({
-				userId: testUsers.user.user.userId,
-				password: testUsers.user.password
+				userId: testUsers.roomManager.user.userId,
+				password: testUsers.roomManager.password
 			});
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('message');
@@ -87,7 +87,7 @@ describe('Authentication API Tests', () => {
 				userId,
 				name: 'User',
 				password,
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Attempt login
@@ -108,7 +108,7 @@ describe('Authentication API Tests', () => {
 		it('should fail with 404 when user ID does not exist', async () => {
 			const response = await loginReq({
 				userId: 'nonexistent_user',
-				password: testUsers.user.password
+				password: testUsers.roomManager.password
 			});
 			expect(response.status).toBe(404);
 			expect(response.body).toHaveProperty('message');
@@ -117,7 +117,7 @@ describe('Authentication API Tests', () => {
 
 		it('should fail with 404 when password is incorrect', async () => {
 			const response = await loginReq({
-				userId: testUsers.user.user.userId,
+				userId: testUsers.roomManager.user.userId,
 				password: 'wrongpassword'
 			});
 			expect(response.status).toBe(404);

@@ -19,7 +19,7 @@ content:
                 value:
                     memberId: 'alice_smith'
                     roomId: 'room-123'
-                    type: 'registered'
+                    type: 'user'
                     name: 'Alice Smith'
                     membershipDate: 1620000000000
                     accessUrl: 'https://example.com/room/room-123'
@@ -33,7 +33,7 @@ content:
                 value:
                     memberId: 'alice_smith'
                     roomId: 'room-123'
-                    type: 'registered'
+                    type: 'user'
                     name: 'Alice Smith'
                     membershipDate: 1620000000000
                     accessUrl: 'https://example.com/room/room-123'

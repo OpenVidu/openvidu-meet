@@ -109,7 +109,7 @@ content:
                                       recording:
                                           enabled: true
                                           url: 'https://example.com/room/room-123/recordings?secret=987654'
-                                  registered:
+                                  user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: closed
@@ -142,7 +142,7 @@ content:
                                       recording:
                                           enabled: true
                                           url: 'https://example.com/room/room-123/recordings?secret=987654'
-                                  registered:
+                                  user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: active_meeting
@@ -175,7 +175,7 @@ content:
                                       recording:
                                           enabled: true
                                           url: 'https://example.com/room/room-123/recordings?secret=987654'
-                                  registered:
+                                  user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: active_meeting
@@ -208,7 +208,7 @@ content:
                                       recording:
                                           enabled: true
                                           url: 'https://example.com/room/room-123/recordings?secret=987654'
-                                  registered:
+                                  user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: active_meeting
@@ -241,7 +241,7 @@ content:
                                       recording:
                                           enabled: true
                                           url: 'https://example.com/room/room-123/recordings?secret=987654'
-                                  registered:
+                                  user:
                                       enabled: false
                                       url: 'https://example.com/room/room-123'
                               status: active_meeting

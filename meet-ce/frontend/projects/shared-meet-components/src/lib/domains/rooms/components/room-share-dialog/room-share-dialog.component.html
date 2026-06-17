@@ -14,27 +14,27 @@
 						(ngModelChange)="onAccessTypeChange($event)"
 						class="access-options"
 					>
-						<mat-radio-button value="registered" class="access-option">
+						<mat-radio-button value="user" class="access-option">
 							<div class="option-content">
 								<mat-icon class="option-icon material-symbols-outlined">verified_user</mat-icon>
 								<div class="option-details">
 									<span class="option-title">
-										@if (data.access.registered.enabled) {
-											Registered Users
+										@if (data.access.user.enabled) {
+											Users
 										} @else {
-											Registered Members
+											Members
 										}
 									</span>
 									<span class="option-description">
-										@if (data.access.registered.enabled) {
-											Any registered user can join
+										@if (data.access.user.enabled) {
+											Any user can join
 										} @else if (data.canManageRoom) {
-											For registered members only.
+											For members only.
 											<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
-											to enable it for all registered users.
+											to enable it for all users.
 										} @else {
-											For registered members only. Ask the room owner or an admin to enable it for
-											all registered users.
+											For members only. Ask the room owner or an admin to enable it for
+											all users.
 										}
 									</span>
 								</div>
@@ -94,10 +94,10 @@
 				</div>
 
 				@if (data.canManageRoom) {
-					<div class="external-members-info">
-						<mat-icon class="external-members-info-icon">info</mat-icon>
-						<p class="external-members-info-text">
-							To share access with an <strong>external member</strong>, copy their personal link from the
+					<div class="guest-members-info">
+						<mat-icon class="guest-members-info-icon">info</mat-icon>
+						<p class="guest-members-info-text">
+							To share access with an <strong>identified guest</strong>, copy their personal link from the
 							<strong>Room Members</strong> tab in the room details page.
 						</p>
 					</div>

@@ -68,7 +68,7 @@ export class MeetingAccessLinkService {
 	 * The public link is shown in the UI while the speaker link is used for copy action.
 	 */
 	private setSpeakerLinksFromRoomAccess(access: MeetRoomAccess): void {
-		const publicLink = this.getPublicLinkFromAccessUrl(access.registered.url);
+		const publicLink = this.getPublicLinkFromAccessUrl(access.user.url);
 		this._speakerPublicLink.set(publicLink);
 		this._speakerCopyLink.set(access.anonymous.speaker.url);
 	}

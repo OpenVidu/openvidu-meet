@@ -39,14 +39,14 @@ describe('Room Members API Tests', () => {
 	});
 
 	describe('Create Room Member Tests', () => {
-		it('should successfully create room member with userId (registered user)', async () => {
+		it('should successfully create room member with userId (user)', async () => {
 			// Create a new user to be added as room member
 			const userId = `user_${Date.now()}`;
 			await createUser({
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			const response = await createRoomMember(roomId, {
@@ -57,7 +57,7 @@ describe('Room Members API Tests', () => {
 			expect(response.status).toBe(201);
 			expect(response.body).toHaveProperty('memberId', userId);
 			expect(response.body).toHaveProperty('roomId', roomId);
-			expect(response.body).toHaveProperty('type', MeetRoomMemberType.REGISTERED);
+			expect(response.body).toHaveProperty('type', MeetRoomMemberType.USER);
 			expect(response.body).toHaveProperty('name', 'Test User');
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.SPEAKER);
 			expect(response.body).toHaveProperty('membershipDate');
@@ -71,19 +71,19 @@ describe('Room Members API Tests', () => {
 			expect(response.headers.location).toContain(`/rooms/${roomId}/members/${userId}`);
 		});
 
-		it('should successfully create room member with name (external user)', async () => {
-			const externalUserName = 'External User';
+		it('should successfully create room member with name (identified guest)', async () => {
+			const guestName = 'Identified Guest';
 			const response = await createRoomMember(roomId, {
-				name: externalUserName,
+				name: guestName,
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 
 			expect(response.status).toBe(201);
 			expect(response.body).toHaveProperty('memberId');
-			expect(response.body.memberId).toMatch(/^ext-/); // External users have memberId starting with 'ext-'
+			expect(response.body.memberId).toMatch(/^guest-/); // Identified guests have memberId starting with 'guest-'
 			expect(response.body).toHaveProperty('roomId', roomId);
-			expect(response.body).toHaveProperty('type', MeetRoomMemberType.EXTERNAL);
-			expect(response.body).toHaveProperty('name', externalUserName);
+			expect(response.body).toHaveProperty('type', MeetRoomMemberType.IDENTIFIED_GUEST);
+			expect(response.body).toHaveProperty('name', guestName);
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
 			expect(response.body).toHaveProperty('membershipDate');
 			expect(response.body).toHaveProperty('accessUrl');
@@ -175,7 +175,7 @@ describe('Room Members API Tests', () => {
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Create member first time
@@ -218,10 +218,10 @@ describe('Room Members API Tests', () => {
 		});
 
 		it('should fail when trying to add room owner as member', async () => {
-			const room = await createRoom(undefined, testUsers.user.accessToken);
+			const room = await createRoom(undefined, testUsers.roomManager.accessToken);
 
 			const response = await createRoomMember(room.roomId, {
-				userId: testUsers.user.user.userId,
+				userId: testUsers.roomManager.user.userId,
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 
@@ -267,8 +267,8 @@ describe('Room Members API Tests', () => {
 
 		it('should fail when both userId and name are provided', async () => {
 			const response = await createRoomMember(roomId, {
-				userId: testUsers.user.user.userId,
-				name: 'External User',
+				userId: testUsers.roomManager.user.userId,
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			expectValidationError(response, 'userId', 'Either userId or name must be provided, but not both');

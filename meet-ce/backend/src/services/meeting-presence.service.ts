@@ -26,7 +26,7 @@ export class MeetingPresenceService {
 	 * The mapping is written in both directions (user->room and room->user)
 	 * to enable efficient cleanup by either key.
 	 *
-	 * @param userId Registered user identifier.
+	 * @param userId User identifier.
 	 * @param roomId Room identifier.
 	 * @param participantIdentity LiveKit participant identity for this user in the room.
 	 */
@@ -43,7 +43,7 @@ export class MeetingPresenceService {
 	/**
 	 * Removes the presence mapping for a specific user-room pair in both directions.
 	 *
-	 * @param userId Registered user identifier.
+	 * @param userId User identifier.
 	 * @param roomId Room identifier.
 	 */
 	async removeUserFromRoom(userId: string, roomId: string): Promise<void> {
@@ -55,7 +55,7 @@ export class MeetingPresenceService {
 	/**
 	 * Retrieves all active room mappings for a user.
 	 *
-	 * @param userId Registered user identifier.
+	 * @param userId User identifier.
 	 * @returns List of active room-presence entries for the user.
 	 */
 	async getUserMeetings(userId: string): Promise<ActiveMeetingPresence[]> {
@@ -111,7 +111,7 @@ export class MeetingPresenceService {
 	 *
 	 * This is typically called during account cleanup/deletion.
 	 *
-	 * @param userId Registered user identifier.
+	 * @param userId User identifier.
 	 */
 	async removeUserFromAllRooms(userId: string): Promise<void> {
 		const userPattern = `${RedisKeyName.USER_ACTIVE_MEETING}${userId}:*`;
@@ -132,7 +132,7 @@ export class MeetingPresenceService {
 	/**
 	 * Builds the user-to-room presence key.
 	 *
-	 * @param userId Registered user identifier.
+	 * @param userId User identifier.
 	 * @param roomId Room identifier.
 	 * @returns Redis key for user->room presence.
 	 */
@@ -144,7 +144,7 @@ export class MeetingPresenceService {
 	 * Builds the room-to-user presence key.
 	 *
 	 * @param roomId Room identifier.
-	 * @param userId Registered user identifier.
+	 * @param userId User identifier.
 	 * @returns Redis key for room->user presence.
 	 */
 	private getRoomUserKey(roomId: string, userId: string): string {

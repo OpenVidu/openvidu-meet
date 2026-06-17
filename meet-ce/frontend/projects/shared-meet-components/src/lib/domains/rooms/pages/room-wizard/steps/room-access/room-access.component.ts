@@ -92,7 +92,7 @@ export class RoomAccessComponent implements OnInit {
 			.pipe(take(1))
 			.subscribe((result) => {
 				if (!result) return;
-				// Deduplicate by userId for registered members
+				// Deduplicate by userId for users
 				const isDuplicate = result.userId
 					? this.pendingMembers().some((m) => m.userId === result.userId)
 					: false;
@@ -140,7 +140,7 @@ export class RoomAccessComponent implements OnInit {
 					moderator: { enabled: formValue.anonymousModeratorEnabled ?? false },
 					speaker: { enabled: formValue.anonymousSpeakerEnabled ?? false }
 				},
-				registered: { enabled: formValue.registeredEnabled ?? false }
+				user: { enabled: formValue.userEnabled ?? false }
 			},
 			roles: {
 				moderator: { permissions: formValue.moderator ?? {} },

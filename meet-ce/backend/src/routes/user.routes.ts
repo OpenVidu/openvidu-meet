@@ -28,7 +28,7 @@ userRouter.post(
 );
 userRouter.get(
 	'/',
-	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
+	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER)),
 	validateGetUsersReq,
 	userCtrl.getUsers
 );
@@ -41,7 +41,7 @@ userRouter.delete(
 
 userRouter.get(
 	'/:userId',
-	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER)),
+	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER)),
 	userCtrl.getUser
 );
 userRouter.put(
@@ -67,13 +67,13 @@ internalUserRouter.use(apiLimiter);
 
 internalUserRouter.get(
 	'/me',
-	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)),
+	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)),
 	userCtrl.getMe
 );
 internalUserRouter.post(
 	'/change-password',
 	sensitiveActionLimiter,
-	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)),
+	withAuth(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)),
 	validateChangePasswordReq,
 	userCtrl.changePassword
 );

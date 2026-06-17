@@ -57,7 +57,7 @@ describe('Users API Tests', () => {
 
 	describe('Bulk Delete Users Tests', () => {
 		it('should successfully delete multiple users with different roles', async () => {
-			const { user: user1 } = await createUserWithRole(MeetUserRole.USER);
+			const { user: user1 } = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const { user: user2 } = await createUserWithRole(MeetUserRole.ADMIN);
 			const { user: user3 } = await createUserWithRole(MeetUserRole.ROOM_MEMBER);
 
@@ -129,8 +129,8 @@ describe('Users API Tests', () => {
 		});
 
 		it('should handle mixed success and failure results', async () => {
-			const { user: user1 } = await createUserWithRole(MeetUserRole.USER);
-			const { user: user2 } = await createUserWithRole(MeetUserRole.USER);
+			const { user: user1 } = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
+			const { user: user2 } = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const nonexistentId = 'nonexistent_user_123';
 
 			const response = await bulkDeleteUsers([
@@ -165,7 +165,7 @@ describe('Users API Tests', () => {
 
 		it('should transfer ownership of multiple rooms from multiple users', async () => {
 			const user1Data = await createUserWithRole(MeetUserRole.ADMIN);
-			const user2Data = await createUserWithRole(MeetUserRole.USER);
+			const user2Data = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 
 			// Create rooms owned by each user
 			const room1 = await createRoom(undefined, user1Data.accessToken);
@@ -190,7 +190,7 @@ describe('Users API Tests', () => {
 
 		it('should update recording roomOwner when ownership is transferred by bulk delete', async () => {
 			// Create user who will own a room
-			const userData = await createUserWithRole(MeetUserRole.USER);
+			const userData = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 
 			// Create a room owned by this user and a recording for that room
 			const room = await createRoom(undefined, userData.accessToken);
@@ -212,7 +212,7 @@ describe('Users API Tests', () => {
 		});
 
 		it('should remove memberships from multiple rooms for multiple users', async () => {
-			const user1Data = await createUserWithRole(MeetUserRole.USER);
+			const user1Data = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const user2Data = await createUserWithRole(MeetUserRole.ROOM_MEMBER);
 
 			// Create rooms
@@ -334,7 +334,7 @@ describe('Users API Tests', () => {
 		it('should handle complex cleanup with multiple users having mixed roles', async () => {
 			// Create users with different room relationships
 			const owner1Data = await createUserWithRole(MeetUserRole.ADMIN);
-			const owner2Data = await createUserWithRole(MeetUserRole.USER);
+			const owner2Data = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const memberData = await createUserWithRole(MeetUserRole.ROOM_MEMBER);
 
 			// Create rooms with various ownership

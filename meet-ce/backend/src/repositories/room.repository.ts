@@ -136,12 +136,12 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
-	 * Finds room IDs where registered access is enabled.
+	 * Finds room IDs where user access is enabled.
 	 *
 	 * @returns Array of rooms including only roomId
 	 */
-	async findRoomIdsWithRegisteredAccessEnabled(): Promise<string[]> {
-		const rooms = await this.findAll({ 'access.registered.enabled': true }, ['roomId']);
+	async findRoomIdsWithUserAccessEnabled(): Promise<string[]> {
+		const rooms = await this.findAll({ 'access.user.enabled': true }, ['roomId']);
 		return rooms.map((room) => room.roomId);
 	}
 
@@ -159,7 +159,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @param options.status - Optional room status to filter by
 	 * @param options.owner - Optional owner userId to filter by
 	 * @param options.member - Optional member userId to filter rooms where user is a member
-	 * @param options.registeredAccess - If true, includes rooms with registered access enabled
+	 * @param options.userAccess - If true, includes rooms with user access enabled
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination (encoded cursor with last sortField value and _id)
@@ -183,7 +183,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 			status,
 			owner,
 			member,
-			registeredAccess,
+			userAccess,
 			fields,
 			maxItems = 100,
 			nextPageToken,
@@ -205,8 +205,8 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
 		}
 
-		if (registeredAccess) {
-			accessScopeOrFilters.push({ 'access.registered.enabled': true });
+		if (userAccess) {
+			accessScopeOrFilters.push({ 'access.user.enabled': true });
 		}
 
 		// Combine access scope filters with $or if there are multiple, or merge directly if only one
@@ -347,13 +347,13 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @returns Normalized partial room data
 	 */
 	private normalizeRoomForStorage(room: Partial<MeetRoom>): Partial<MeetRoom> {
-		const registeredUrl = room.access?.registered.url;
+		const userUrl = room.access?.user.url;
 		const moderatorUrl = room.access?.anonymous.moderator.url;
 		const speakerUrl = room.access?.anonymous.speaker.url;
 		const recordingUrl = room.access?.anonymous.recording.url;
 
-		if (registeredUrl) {
-			room.access!.registered.url = extractPathFromUrl(registeredUrl);
+		if (userUrl) {
+			room.access!.user.url = extractPathFromUrl(userUrl);
 		}
 
 		if (moderatorUrl) {
@@ -379,13 +379,13 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	 * @returns Room data with complete URLs
 	 */
 	private enrichRoomWithBaseUrls(room: MeetRoom): MeetRoom {
-		const registeredUrl = room.access?.registered.url;
+		const userUrl = room.access?.user.url;
 		const moderatorUrl = room.access?.anonymous.moderator.url;
 		const speakerUrl = room.access?.anonymous.speaker.url;
 		const recordingUrl = room.access?.anonymous.recording.url;
 
-		if (registeredUrl) {
-			room.access!.registered.url = addBaseUrlToPath(registeredUrl);
+		if (userUrl) {
+			room.access!.user.url = addBaseUrlToPath(userUrl);
 		}
 
 		if (moderatorUrl) {

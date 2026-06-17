@@ -36,7 +36,7 @@ content:
                             recording:
                                 enabled: true
                                 url: 'https://example.com/room/room-123/recordings?secret=987654'
-                        registered:
+                        user:
                             enabled: false
                             url: 'https://example.com/room/room-123'
                     status: open
@@ -138,7 +138,7 @@ content:
                             recording:
                                 enabled: true
                                 url: 'https://example.com/room/room-123/recordings?secret=987654'
-                        registered:
+                        user:
                             enabled: false
                             url: 'https://example.com/room/room-123'
                     status: open
@@ -161,7 +161,7 @@ content:
                             recording:
                                 enabled: true
                                 url: 'https://example.com/room/room-123/recordings?secret=987654'
-                        registered:
+                        user:
                             enabled: false
                             url: 'https://example.com/room/room-123'
                     _extraFields:

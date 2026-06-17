@@ -167,11 +167,11 @@ describe('Room API Tests', () => {
 			);
 		});
 
-		it('should update recording roomRegisteredAccess when speaker canRetrieveRecordings permission changes', async () => {
-			// Create room with registered access enabled and canRetrieveRecordings permission enabled for speakers
+		it('should update recording roomUserAccess when speaker canRetrieveRecordings permission changes', async () => {
+			// Create room with user access enabled and canRetrieveRecordings permission enabled for speakers
 			const room = await createRoom({
 				access: {
-					registered: {
+					user: {
 						enabled: true
 					}
 				},
@@ -187,10 +187,10 @@ describe('Room API Tests', () => {
 			// Create a recording for that room
 			const recordingId = await createRecordingForRoom(room.roomId);
 
-			// Verify initial recording roomRegisteredAccess is true
-			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomRegisteredAccess').lean().exec();
+			// Verify initial recording roomUserAccess is true
+			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomUserAccess').lean().exec();
 			expect(recording).toBeTruthy();
-			expect(recording?.roomRegisteredAccess).toBe(true);
+			expect(recording?.roomUserAccess).toBe(true);
 
 			// Update canRetrieveRecordings permission for speakers to false
 			const updateResponse = await updateRoomRoles(room.roomId, {
@@ -202,17 +202,17 @@ describe('Room API Tests', () => {
 			});
 			expect(updateResponse.status).toBe(200);
 
-			// Verify the recording's roomRegisteredAccess has been updated to false
-			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomRegisteredAccess').lean().exec();
+			// Verify the recording's roomUserAccess has been updated to false
+			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomUserAccess').lean().exec();
 			expect(recording).toBeTruthy();
-			expect(recording?.roomRegisteredAccess).toBe(false);
+			expect(recording?.roomUserAccess).toBe(false);
 		});
 
-		it('should not update recording roomRegisteredAccess when canRetrieveRecordings permission changes but registered access is disabled', async () => {
-			// Create room with registered access disabled and canRetrieveRecordings permission disabled for speakers
+		it('should not update recording roomUserAccess when canRetrieveRecordings permission changes but user access is disabled', async () => {
+			// Create room with user access disabled and canRetrieveRecordings permission disabled for speakers
 			const room = await createRoom({
 				access: {
-					registered: {
+					user: {
 						enabled: false
 					}
 				},
@@ -228,10 +228,10 @@ describe('Room API Tests', () => {
 			// Create a recording for that room
 			const recordingId = await createRecordingForRoom(room.roomId);
 
-			// Verify initial recording roomRegisteredAccess is false
-			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomRegisteredAccess').lean().exec();
+			// Verify initial recording roomUserAccess is false
+			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomUserAccess').lean().exec();
 			expect(recording).toBeTruthy();
-			expect(recording?.roomRegisteredAccess).toBe(false);
+			expect(recording?.roomUserAccess).toBe(false);
 
 			// Update canRetrieveRecordings permission for speakers to true
 			const updateResponse = await updateRoomRoles(room.roomId, {
@@ -243,10 +243,10 @@ describe('Room API Tests', () => {
 			});
 			expect(updateResponse.status).toBe(200);
 
-			// Verify the recording's roomRegisteredAccess has not been updated (remains false)
-			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomRegisteredAccess').lean().exec();
+			// Verify the recording's roomUserAccess has not been updated (remains false)
+			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomUserAccess').lean().exec();
 			expect(recording).toBeTruthy();
-			expect(recording?.roomRegisteredAccess).toBe(false);
+			expect(recording?.roomUserAccess).toBe(false);
 		});
 
 		it('should update speaker members effectivePermissions when speaker base role changes', async () => {

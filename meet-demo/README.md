@@ -13,8 +13,8 @@
 1. Download repository
 
 ```bash
-git clone https://github.com/OpenVidu/openvidu-meet-tutorials.git
-cd openvidu-meet-tutorials/meet-demo
+git clone https://github.com/OpenVidu/openvidu-meet.git
+cd openvidu-meet/meet-demo
 ```
 
 2. Install dependencies

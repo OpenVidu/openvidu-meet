@@ -319,7 +319,7 @@ const RoomAccessConfigSchema: z.ZodType<MeetRoomAccessConfig> = z.object({
 				.optional()
 		})
 		.optional(),
-	registered: z
+	user: z
 		.object({
 			enabled: z.boolean()
 		})
@@ -382,7 +382,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 			speaker: { enabled: true },
 			recording: { enabled: true }
 		},
-		registered: { enabled: false }
+		user: { enabled: false }
 	})
 	// maxParticipants: z
 	// 	.number()
@@ -455,7 +455,7 @@ export const RoomFiltersSchema = z
 		}, z.boolean().optional().default(false)),
 		owner: z.string().min(1, 'owner cannot be empty').optional(),
 		member: z.string().min(1, 'member cannot be empty').optional(),
-		registeredAccess: z.preprocess((arg) => {
+		userAccess: z.preprocess((arg) => {
 			if (typeof arg === 'string') {
 				if (arg.toLowerCase() === 'true') return true;
 

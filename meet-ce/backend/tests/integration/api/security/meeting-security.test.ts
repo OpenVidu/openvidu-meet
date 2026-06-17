@@ -48,7 +48,7 @@ describe('Meeting API Security Tests', () => {
 		roomData = await setupSingleRoom(true);
 		roomId = roomData.room.roomId;
 		roomMember = await setupRoomMember(roomId, {
-			name: 'External Member',
+			name: 'Identified Guest',
 			baseRole: MeetRoomMemberRole.MODERATOR
 		});
 	});

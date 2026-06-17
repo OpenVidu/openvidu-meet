@@ -16,7 +16,7 @@ const recordingMigrationV1ToV2Transform: SchemaTransform<MeetRecordingDocument> 
 
 const recordingMigrationV2ToV3Transform: SchemaTransform<MeetRecordingDocument> = (recording) => {
 	recording.roomOwner = MEET_ENV.INITIAL_ADMIN_USER;
-	recording.roomRegisteredAccess = false;
+	recording.roomUserAccess = false;
 	return recording;
 };
 

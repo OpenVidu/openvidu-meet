@@ -43,7 +43,7 @@ import { RoomUiUtils } from '../../utils/ui';
 
 export interface RoomTableAction {
 	rooms: MeetRoom[];
-	action: 'create' | 'join' | 'edit' | 'shareLink' | 'reopen' | 'close' | 'delete' | 'bulkDelete';
+	action: 'create' | 'access' | 'edit' | 'shareLink' | 'reopen' | 'close' | 'delete' | 'bulkDelete';
 }
 
 export interface RoomTableFilter {
@@ -59,12 +59,12 @@ export interface RoomTableFilter {
 	ownerFilter: string;
 	/** ADMIN only: filter by member userId */
 	memberFilter: string;
-	/** USER only: include only owned rooms in results */
+	/** ROOM_MANAGER only: include only owned rooms in results */
 	showOwnedRooms: boolean;
-	/** USER/ROOM_MEMBER: include only rooms the user is a member of */
+	/** ROOM_MANAGER/ROOM_MEMBER: include only rooms the user is a member of */
 	showMemberRooms: boolean;
-	/** All roles: include rooms accessible to all registered users */
-	showRegisteredAccessRooms: boolean;
+	/** All roles: include rooms accessible to all users */
+	showUserAccessRooms: boolean;
 }
 
 /**
@@ -147,7 +147,7 @@ export class RoomsListsComponent implements OnInit {
 		memberFilter: '',
 		showOwnedRooms: false,
 		showMemberRooms: false,
-		showRegisteredAccessRooms: false
+		showUserAccessRooms: false
 	});
 
 	// Host binding state for styling when rooms are selected
@@ -170,7 +170,7 @@ export class RoomsListsComponent implements OnInit {
 		memberFilter: new FormControl<string>('', { nonNullable: true }),
 		showOwnedRooms: new FormControl<boolean>(false, { nonNullable: true }),
 		showMemberRooms: new FormControl<boolean>(false, { nonNullable: true }),
-		showRegisteredAccessRooms: new FormControl<boolean>(false, { nonNullable: true })
+		showUserAccessRooms: new FormControl<boolean>(false, { nonNullable: true })
 	});
 
 	get controls() {
@@ -197,7 +197,7 @@ export class RoomsListsComponent implements OnInit {
 			f.memberFilter ||
 			f.showOwnedRooms ||
 			f.showMemberRooms ||
-			f.showRegisteredAccessRooms
+			f.showUserAccessRooms
 		);
 	});
 
@@ -257,8 +257,8 @@ export class RoomsListsComponent implements OnInit {
 		if (f.memberFilter) chips.push({ key: 'memberFilter', label: `Member: ${f.memberFilter}` });
 		if (f.showOwnedRooms) chips.push({ key: 'showOwnedRooms', label: 'Created by me' });
 		if (f.showMemberRooms) chips.push({ key: 'showMemberRooms', label: "I'm a member of" });
-		if (f.showRegisteredAccessRooms) {
-			chips.push({ key: 'showRegisteredAccessRooms', label: 'Open to all registered users' });
+		if (f.showUserAccessRooms) {
+			chips.push({ key: 'showUserAccessRooms', label: 'Open to all users' });
 		}
 		return chips;
 	});
@@ -320,7 +320,7 @@ export class RoomsListsComponent implements OnInit {
 			memberFilter,
 			showOwnedRooms,
 			showMemberRooms,
-			showRegisteredAccessRooms
+			showUserAccessRooms
 		} = this.filtersForm.controls;
 
 		// Emit only when text field is cleared
@@ -337,7 +337,7 @@ export class RoomsListsComponent implements OnInit {
 			statusFilter.valueChanges,
 			showOwnedRooms.valueChanges,
 			showMemberRooms.valueChanges,
-			showRegisteredAccessRooms.valueChanges
+			showUserAccessRooms.valueChanges
 		)
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe(() => this.emitFilterChange());
@@ -399,8 +399,8 @@ export class RoomsListsComponent implements OnInit {
 		this.roomAction.emit({ rooms: [], action: 'create' });
 	}
 
-	joinRoom(room: MeetRoom) {
-		this.roomAction.emit({ rooms: [room], action: 'join' });
+	accessRoom(room: MeetRoom) {
+		this.roomAction.emit({ rooms: [room], action: 'access' });
 	}
 
 	onRoomClick(room: MeetRoom) {
@@ -502,7 +502,7 @@ export class RoomsListsComponent implements OnInit {
 				memberFilter: '',
 				showOwnedRooms: false,
 				showMemberRooms: false,
-				showRegisteredAccessRooms: false
+				showUserAccessRooms: false
 			},
 			{ emitEvent: false }
 		);

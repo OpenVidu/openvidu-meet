@@ -48,7 +48,7 @@ recordingRouter.get(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingsReq,
 	applyRecordingListAccessFilters,
@@ -59,7 +59,7 @@ recordingRouter.delete(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
 	validateBulkDeleteRecordingsAccess,
@@ -70,7 +70,7 @@ recordingRouter.get(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateBulkDeleteRecordingsReq,
 	validateDownloadRecordingsAccess,
@@ -88,7 +88,7 @@ recordingRouter.delete(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 	),
 	withValidRecordingId,
 	authorizeRecordingAccess('canDeleteRecordings'),
@@ -113,7 +113,7 @@ recordingRouter.get(
 	withAuth(
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingUrlReq,
 	authorizeRecordingAccess('canRetrieveRecordings'),

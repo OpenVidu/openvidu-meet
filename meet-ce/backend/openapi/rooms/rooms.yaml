@@ -48,7 +48,7 @@
             - $ref: './parameters/room-name-case-insensitive.yaml'
             - $ref: './parameters/room-owner.yaml'
             - $ref: './parameters/room-member.yaml'
-            - $ref: './parameters/room-registered-access.yaml'
+            - $ref: './parameters/room-user-access.yaml'
             - $ref: './parameters/room-status.yaml'
             - $ref: './parameters/room-fields.yaml'
             - $ref: './parameters/room-extra-fields.yaml'
@@ -322,8 +322,8 @@
         description: |
             Updates the access configuration for the specified room.
 
-            This allows you to enable or disable access for registered users and anonymous roles
-            (moderator/speaker/recording).
+            This allows you to enable or disable access for users and/or
+            for anonymous guests using a predefined role (moderator/speaker/recording).
         tags:
             - OpenVidu Meet - Rooms
         security:

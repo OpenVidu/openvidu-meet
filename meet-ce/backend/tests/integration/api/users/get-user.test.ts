@@ -37,9 +37,9 @@ describe('Users API Tests', () => {
 		});
 
 		it('should get user with different roles', async () => {
-			const userResponse = await getUser(testUsers.user.user.userId);
+			const userResponse = await getUser(testUsers.roomManager.user.userId);
 			expect(userResponse.status).toBe(200);
-			expect(userResponse.body).toHaveProperty('role', MeetUserRole.USER);
+			expect(userResponse.body).toHaveProperty('role', MeetUserRole.ROOM_MANAGER);
 
 			const roomMemberResponse = await getUser(testUsers.roomMember.user.userId);
 			expect(roomMemberResponse.status).toBe(200);

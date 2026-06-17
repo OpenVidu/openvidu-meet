@@ -135,7 +135,7 @@
 			}
 		}
 
-		.external-members-info {
+		.guest-members-info {
 			display: flex;
 			align-items: flex-start;
 			gap: var(--ov-meet-spacing-sm);
@@ -144,14 +144,14 @@
 			border-left: 3px solid var(--ov-meet-color-primary);
 			border-radius: var(--ov-meet-radius-sm);
 
-			.external-members-info-icon {
+			.guest-members-info-icon {
 				@include design-tokens.ov-icon(sm);
 				color: var(--ov-meet-color-primary);
 				flex-shrink: 0;
 				margin-top: 2px;
 			}
 
-			.external-members-info-text {
+			.guest-members-info-text {
 				margin: 0;
 				font-size: var(--ov-meet-font-size-sm);
 				color: var(--ov-meet-text-secondary);

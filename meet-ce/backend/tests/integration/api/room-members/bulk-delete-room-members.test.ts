@@ -35,14 +35,14 @@ describe('Bulk Delete Room Members API Tests', () => {
 	});
 
 	describe('Bulk Delete Room Members Tests', () => {
-		it('should successfully delete multiple external members', async () => {
-			// Create multiple external members
+		it('should successfully delete multiple identified guests', async () => {
+			// Create multiple identified guests
 			const member1 = await createRoomMember(roomId, {
-				name: 'External Member 1',
+				name: 'Identified Guest 1',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 			const member2 = await createRoomMember(roomId, {
-				name: 'External Member 2',
+				name: 'Identified Guest 2',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 
@@ -65,21 +65,21 @@ describe('Bulk Delete Room Members API Tests', () => {
 			}
 		});
 
-		it('should successfully delete multiple registered user members', async () => {
-			// Create registered users
+		it('should successfully delete multiple user members', async () => {
+			// Create users
 			const userId1 = `user1_${Date.now()}`;
 			const userId2 = `user2_${Date.now()}`;
 			await createUser({
 				userId: userId1,
 				name: 'User 1',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			await createUser({
 				userId: userId2,
 				name: 'User 2',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Add as room members
@@ -105,21 +105,21 @@ describe('Bulk Delete Room Members API Tests', () => {
 			}
 		});
 
-		it('should delete mix of registered and external members', async () => {
-			// Create a registered user
+		it('should delete mix of users and identified guests', async () => {
+			// Create a user
 			const userId = `user_${Date.now()}`;
-			await createUser({ userId, name: 'Registered User', password: 'password123', role: MeetUserRole.USER });
+			await createUser({ userId, name: 'User', password: 'password123', role: MeetUserRole.ROOM_MANAGER });
 
 			// Add as room member
 			await createRoomMember(roomId, { userId, baseRole: MeetRoomMemberRole.SPEAKER });
 
-			// Create external members
-			const external = await createRoomMember(roomId, {
-				name: 'External 1',
+			// Create identified guests
+			const guest = await createRoomMember(roomId, {
+				name: 'Guest 1',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 
-			const memberIds = [userId, external.body.memberId];
+			const memberIds = [userId, guest.body.memberId];
 
 			// Delete all members
 			const response = await bulkDeleteRoomMembers(roomId, memberIds);

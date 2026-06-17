@@ -40,7 +40,7 @@ describe('User API Security Tests', () => {
 				userId: `usr_${timestamp}`,
 				name: 'Test User',
 				password: 'testpass123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			};
 		};
 
@@ -68,10 +68,10 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(201);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.post(USERS_PATH)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send(getNewUserData());
 			expect(response.status).toBe(403);
 		});
@@ -112,10 +112,10 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as USER', async () => {
+		it('should succeed when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.get(USERS_PATH)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
@@ -140,7 +140,7 @@ describe('User API Security Tests', () => {
 				userId: `usr_${Date.now()}`,
 				name: 'Test User',
 				password: 'testpass123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expect(response.status).toBe(201);
 			userId = response.body.userId;
@@ -167,10 +167,10 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as USER', async () => {
+		it('should succeed when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.get(`${USERS_PATH}/${userId}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
@@ -196,7 +196,7 @@ describe('User API Security Tests', () => {
 				userId: `usr_${Date.now()}`,
 				name: 'Test User',
 				password: 'testpass123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expect(response.status).toBe(201);
 			userId = response.body.userId;
@@ -226,10 +226,10 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.put(`${USERS_PATH}/${userId}/password`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send({ newPassword });
 			expect(response.status).toBe(403);
 		});
@@ -256,7 +256,7 @@ describe('User API Security Tests', () => {
 				userId: `usr_${Date.now()}`,
 				name: 'Test User',
 				password: 'testpass123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expect(response.status).toBe(201);
 			userId = response.body.userId;
@@ -286,10 +286,10 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.put(`${USERS_PATH}/${userId}/role`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send({ role: MeetUserRole.ADMIN });
 			expect(response.status).toBe(403);
 		});
@@ -317,7 +317,7 @@ describe('User API Security Tests', () => {
 				userId: `usr_${Date.now()}`,
 				name: 'Test User',
 				password: 'testpass123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expect(response.status).toBe(201);
 			userId = response.body.userId;
@@ -344,10 +344,10 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.delete(`${USERS_PATH}/${userId}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(403);
 		});
 
@@ -373,7 +373,7 @@ describe('User API Security Tests', () => {
 				userId: `usr_${Date.now()}`,
 				name: 'Test User',
 				password: 'testpass123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expect(response.status).toBe(201);
 			userId = response.body.userId;
@@ -403,10 +403,10 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.delete(USERS_PATH)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.query({ userIds: userId });
 			expect(response.status).toBe(403);
 		});
@@ -440,10 +440,10 @@ describe('User API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should succeed when user is authenticated as USER', async () => {
+		it('should succeed when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.get(`${INTERNAL_USERS_PATH}/me`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
@@ -491,18 +491,18 @@ describe('User API Security Tests', () => {
 			await changePassword(newPassword, testUsers.admin.password, testUsers.admin.accessToken);
 		});
 
-		it('should succeed when user is authenticated as USER', async () => {
+		it('should succeed when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.post(`${INTERNAL_USERS_PATH}/change-password`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send({
-					currentPassword: testUsers.user.password,
+					currentPassword: testUsers.roomManager.password,
 					newPassword
 				});
 			expect(response.status).toBe(200);
 
 			// Reset old password
-			await changePassword(newPassword, testUsers.user.password, testUsers.user.accessToken);
+			await changePassword(newPassword, testUsers.roomManager.password, testUsers.roomManager.accessToken);
 		});
 
 		it('should succeed when user is authenticated as ROOM_MEMBER', async () => {

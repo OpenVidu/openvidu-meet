@@ -104,7 +104,7 @@ export class RoomMemberService {
 		let accessUrl = `/room/${roomId}`;
 
 		if (userId) {
-			// Registered user
+			// User
 			const user = await this.userService.getUser(userId, ['userId', 'name', 'role']);
 
 			if (!user) {
@@ -128,13 +128,13 @@ export class RoomMemberService {
 			// Use userId as memberId and user's name
 			memberId = userId;
 			memberName = user.name;
-			memberType = MeetRoomMemberType.REGISTERED;
+			memberType = MeetRoomMemberType.USER;
 		} else if (name) {
-			// External user
+			// Identified guest
 			// Generate memberId and use provided name
-			memberId = `ext-${secureUid(10)}`;
+			memberId = `guest-${secureUid(10)}`;
 			memberName = name;
-			memberType = MeetRoomMemberType.EXTERNAL;
+			memberType = MeetRoomMemberType.IDENTIFIED_GUEST;
 			accessUrl += `?secret=${memberId}`;
 		} else {
 			throw new Error('Either userId or name must be provided');
@@ -178,7 +178,7 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Checks if a user (registered or external) is a member of a room.
+	 * Checks if a user or identified guest is a member of a room.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param memberId - The ID of the member
@@ -558,8 +558,8 @@ export class RoomMemberService {
 
 			if (tokenMetadata.memberId || tokenMetadata.userId) {
 				// Use memberId as participant identity for identified members
-				// (registered users or external members with a record in the database)
-				// Use userId as participant identity for registered users without a member record
+				// (users or identified guests with a record in the database)
+				// Use userId as participant identity for users without a member record
 				participantIdentity = tokenMetadata.memberId || tokenMetadata.userId;
 			} else {
 				// For anonymous users, create a unique participant identity based on the provided participant name
@@ -691,25 +691,25 @@ export class RoomMemberService {
 	}
 
 	/**
-	 * Resolves permission source from a room secret, which can be either an external member secret or an anonymous access secret.
+	 * Resolves permission source from a room secret, which can be either an identified guest member secret or an anonymous access secret.
 	 *
-	 * - If the secret starts with 'ext-', it is treated as an external member ID and looks up the corresponding member record in the database.
-	 * - If the secret does not start with 'ext-', it is treated as an anonymous access secret
+	 * - If the secret starts with 'guest-', it is treated as an identified guest member ID and looks up the corresponding member record in the database.
+	 * - If the secret does not start with 'guest-', it is treated as an anonymous access secret
 	 * and resolves permissions based on matching it to the room's anonymous access secrets for moderator, speaker, or recording roles.
 	 *
 	 * @param roomId - The ID of the room
 	 * @param secret - The secret provided for access
 	 * @returns The resolved permission source for the secret
-	 * @throws Error if the secret is invalid, if no member is found for an external member secret,
+	 * @throws Error if the secret is invalid, if no member is found for an identified guest member secret,
 	 * or if anonymous access for the corresponding role is disabled
 	 */
 	protected async resolvePermissionSourceFromSecret(
 		roomId: string,
 		secret: string
 	): Promise<ResolvedPermissionSource> {
-		const isExternalMemberId = secret.startsWith('ext-');
+		const isIdentifiedGuestMemberId = secret.startsWith('guest-');
 
-		if (isExternalMemberId) {
+		if (isIdentifiedGuestMemberId) {
 			const member = await this.getRoomMember(roomId, secret, ['memberId', 'name', 'effectivePermissions']);
 
 			if (!member) {
@@ -771,7 +771,7 @@ export class RoomMemberService {
 
 	/**
 	 * Resolves permission source for an authenticated user by checking their role, room ownership, and membership.
-	 * Registered users without a member record may still get permissions based on registered access settings.
+	 * Users without a member record may still get permissions based on user access settings.
 	 *
 	 * @param roomId - The ID of the room
 	 * @returns The resolved permission source for the authenticated user, or undefined if no access
@@ -809,11 +809,11 @@ export class RoomMemberService {
 			};
 		}
 
-		// If user is not a member, they may still have access if registered access is enabled,
-		// granting them the speaker role permissions as a default for registered users without a member record.
+		// If user is not a member, they may still have access if user access is enabled,
+		// granting them the speaker role permissions as a default for users without a member record.
 		const { access, roles } = await this.roomService.getMeetRoom(roomId, ['access', 'roles']);
 
-		if (!access.registered.enabled) {
+		if (!access.user.enabled) {
 			return undefined;
 		}
 

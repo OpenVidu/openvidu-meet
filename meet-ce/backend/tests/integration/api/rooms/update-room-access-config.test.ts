@@ -34,7 +34,7 @@ describe('Room API Tests', () => {
 					speaker: { enabled: false },
 					recording: { enabled: false }
 				},
-				registered: { enabled: true }
+				user: { enabled: true }
 			};
 
 			const updateResponse = await updateRoomAccessConfig(createdRoom.roomId, updatedAccessConfig);
@@ -46,7 +46,7 @@ describe('Room API Tests', () => {
 			expect(getResponse.body.access.anonymous.moderator.enabled).toBe(false);
 			expect(getResponse.body.access.anonymous.speaker.enabled).toBe(false);
 			expect(getResponse.body.access.anonymous.recording.enabled).toBe(false);
-			expect(getResponse.body.access.registered.enabled).toBe(true);
+			expect(getResponse.body.access.user.enabled).toBe(true);
 		});
 
 		it('should allow partial access updates while preserving other values', async () => {
@@ -58,7 +58,7 @@ describe('Room API Tests', () => {
 						speaker: { enabled: true },
 						recording: { enabled: true }
 					},
-					registered: { enabled: true }
+					user: { enabled: true }
 				}
 			});
 
@@ -74,14 +74,14 @@ describe('Room API Tests', () => {
 			expect(getResponse.body.access.anonymous.moderator.enabled).toBe(false);
 			expect(getResponse.body.access.anonymous.speaker.enabled).toBe(false);
 			expect(getResponse.body.access.anonymous.recording.enabled).toBe(true);
-			expect(getResponse.body.access.registered.enabled).toBe(true);
+			expect(getResponse.body.access.user.enabled).toBe(true);
 		});
 
-		it('should update recording roomRegisteredAccess when registered access changes', async () => {
-			// Create room with registered access disabled and canRetrieveRecordings permission enabled for speakers
+		it('should update recording roomUserAccess when user access changes', async () => {
+			// Create room with user access disabled and canRetrieveRecordings permission enabled for speakers
 			const room = await createRoom({
 				access: {
-					registered: {
+					user: {
 						enabled: false
 					}
 				},
@@ -97,30 +97,30 @@ describe('Room API Tests', () => {
 			// Create a recording for that room
 			const recordingId = await createRecordingForRoom(room.roomId);
 
-			// Verify initial recording roomRegisteredAccess is false
-			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomRegisteredAccess').lean().exec();
+			// Verify initial recording roomUserAccess is false
+			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomUserAccess').lean().exec();
 			expect(recording).toBeTruthy();
-			expect(recording?.roomRegisteredAccess).toBe(false);
+			expect(recording?.roomUserAccess).toBe(false);
 
-			// Update room access config to enable registered access
+			// Update room access config to enable user access
 			const updateResponse = await updateRoomAccessConfig(room.roomId, {
-				registered: {
+				user: {
 					enabled: true
 				}
 			});
 			expect(updateResponse.status).toBe(200);
 
-			// Verify the recording's roomRegisteredAccess has been updated to true
-			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomRegisteredAccess').lean().exec();
+			// Verify the recording's roomUserAccess has been updated to true
+			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomUserAccess').lean().exec();
 			expect(recording).toBeTruthy();
-			expect(recording?.roomRegisteredAccess).toBe(true);
+			expect(recording?.roomUserAccess).toBe(true);
 		});
 
-		it('should not update recording roomRegisteredAccess when registered access changes but canRetrieveRecordings permission is false', async () => {
-			// Create room with registered access disabled and canRetrieveRecordings permission disabled for speakers
+		it('should not update recording roomUserAccess when user access changes but canRetrieveRecordings permission is false', async () => {
+			// Create room with user access disabled and canRetrieveRecordings permission disabled for speakers
 			const room = await createRoom({
 				access: {
-					registered: {
+					user: {
 						enabled: false
 					}
 				},
@@ -136,30 +136,30 @@ describe('Room API Tests', () => {
 			// Create a recording for that room
 			const recordingId = await createRecordingForRoom(room.roomId);
 
-			// Verify initial recording roomRegisteredAccess is false
-			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomRegisteredAccess').lean().exec();
+			// Verify initial recording roomUserAccess is false
+			let recording = await MeetRecordingModel.findOne({ recordingId }, 'roomUserAccess').lean().exec();
 			expect(recording).toBeTruthy();
-			expect(recording?.roomRegisteredAccess).toBe(false);
+			expect(recording?.roomUserAccess).toBe(false);
 
-			// Update room access config to enable registered access
+			// Update room access config to enable user access
 			const updateResponse = await updateRoomAccessConfig(room.roomId, {
-				registered: {
+				user: {
 					enabled: true
 				}
 			});
 			expect(updateResponse.status).toBe(200);
 
-			// Verify the recording's roomRegisteredAccess has NOT been updated and remains false
-			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomRegisteredAccess').lean().exec();
+			// Verify the recording's roomUserAccess has NOT been updated and remains false
+			recording = await MeetRecordingModel.findOne({ recordingId }, 'roomUserAccess').lean().exec();
 			expect(recording).toBeTruthy();
-			expect(recording?.roomRegisteredAccess).toBe(false);
+			expect(recording?.roomUserAccess).toBe(false);
 		});
 
 		it('should reject room access config update when there is an active meeting', async () => {
 			const roomData = await setupSingleRoom(true);
 
 			const response = await updateRoomAccessConfig(roomData.room.roomId, {
-				registered: { enabled: true }
+				user: { enabled: true }
 			});
 
 			expect(response.status).toBe(409);
@@ -171,7 +171,7 @@ describe('Room API Tests', () => {
 			const nonExistentRoomId = 'non-existent-room';
 
 			const response = await updateRoomAccessConfig(nonExistentRoomId, {
-				registered: { enabled: true }
+				user: { enabled: true }
 			});
 
 			expect(response.status).toBe(404);
@@ -184,7 +184,7 @@ describe('Room API Tests', () => {
 			const createdRoom = await createRoom({ roomName: 'invalid-access-types' });
 
 			const invalidAccessConfig = {
-				registered: {
+				user: {
 					enabled: 'true'
 				}
 			};
@@ -193,7 +193,7 @@ describe('Room API Tests', () => {
 				createdRoom.roomId,
 				invalidAccessConfig as unknown as MeetRoomAccessConfig
 			);
-			expectValidationError(response, 'access.registered.enabled', 'Expected boolean');
+			expectValidationError(response, 'access.user.enabled', 'Expected boolean');
 		});
 
 		it('should fail when access object is missing', async () => {

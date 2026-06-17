@@ -41,8 +41,8 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	}
 
 	protected toDomain(dbObject: MeetRecordingDocument): MeetRecordingInfo {
-		const { schemaVersion, roomOwner, roomRegisteredAccess, accessSecrets, ...recording } = dbObject;
-		(void schemaVersion, roomOwner, roomRegisteredAccess, accessSecrets);
+		const { schemaVersion, roomOwner, roomUserAccess, accessSecrets, ...recording } = dbObject;
+		(void schemaVersion, roomOwner, roomUserAccess, accessSecrets);
 		return recording as MeetRecordingInfo;
 	}
 
@@ -74,8 +74,8 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		const document: MeetRecordingDocument = {
 			...recording,
 			roomOwner: room.owner,
-			roomRegisteredAccess:
-				room.access.registered.enabled && room.roles.speaker.permissions.canRetrieveRecordings,
+			roomUserAccess:
+				room.access.user.enabled && room.roles.speaker.permissions.canRetrieveRecordings,
 			accessSecrets: {
 				public: secureUid(10),
 				private: secureUid(10)
@@ -116,16 +116,16 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 */
 	async updateAccessScopeMetadataByRoomId(
 		roomId: string,
-		updates: { roomOwner?: string; roomRegisteredAccess?: boolean }
+		updates: { roomOwner?: string; roomUserAccess?: boolean }
 	): Promise<void> {
-		const $set: { roomOwner?: string; roomRegisteredAccess?: boolean } = {};
+		const $set: { roomOwner?: string; roomUserAccess?: boolean } = {};
 
 		if (updates.roomOwner !== undefined) {
 			$set.roomOwner = updates.roomOwner;
 		}
 
-		if (updates.roomRegisteredAccess !== undefined) {
-			$set.roomRegisteredAccess = updates.roomRegisteredAccess;
+		if (updates.roomUserAccess !== undefined) {
+			$set.roomUserAccess = updates.roomUserAccess;
 		}
 
 		if (Object.keys($set).length === 0) {
@@ -180,7 +180,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param options.roomNameCaseInsensitive - Optional room name case-insensitive flag (default: false)
 	 * @param options.roomOwner - Optional room owner ID for access control filtering
 	 * @param options.roomMember - Optional room member ID for access control filtering (requires 'canRetrieveRecordings' permission)
-	 * @param options.roomRegisteredAccess - Optional flag to include recordings from rooms with registered access enabled
+	 * @param options.roomUserAccess - Optional flag to include recordings from rooms with user access enabled
 	 * @param options.status - Optional recording status to filter by
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 10)
@@ -209,7 +209,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 			roomNameCaseInsensitive = false,
 			roomOwner,
 			roomMember,
-			roomRegisteredAccess,
+			roomUserAccess,
 			status,
 			fields,
 			maxItems = 10,
@@ -235,8 +235,8 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
 		}
 
-		if (roomRegisteredAccess) {
-			accessScopeOrFilters.push({ roomRegisteredAccess: true });
+		if (roomUserAccess) {
+			accessScopeOrFilters.push({ roomUserAccess: true });
 		}
 
 		// Combine access scope filters with $or if multiple, or directly if only one

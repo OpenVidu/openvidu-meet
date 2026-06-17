@@ -242,7 +242,7 @@ export class MeetingLobbyService {
 	async submitAccess(): Promise<void> {
 		const name = this.participantName();
 		if (!name) {
-			this.log.e('Participant form is invalid. Cannot access meeting.');
+			this.log.e('Participant form is invalid. Cannot join meeting.');
 			throw new Error('Participant form is invalid');
 		}
 

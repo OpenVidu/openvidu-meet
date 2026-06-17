@@ -206,7 +206,7 @@ export class UsersListsComponent implements OnInit {
 	roleOptions = [
 		{ value: '', label: 'All roles' },
 		{ value: MeetUserRole.ADMIN, label: 'Admin' },
-		{ value: MeetUserRole.USER, label: 'User' },
+		{ value: MeetUserRole.ROOM_MANAGER, label: 'Room Manager' },
 		{ value: MeetUserRole.ROOM_MEMBER, label: 'Room Member' }
 	];
 	protected readonly UsersUiUtils = UsersUiUtils;

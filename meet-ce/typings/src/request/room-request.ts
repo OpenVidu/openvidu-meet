@@ -61,7 +61,7 @@ export interface MeetRoomAccessConfig {
 			enabled: boolean;
 		};
 	};
-	registered?: {
+	user?: {
 		enabled: boolean;
 	};
 }

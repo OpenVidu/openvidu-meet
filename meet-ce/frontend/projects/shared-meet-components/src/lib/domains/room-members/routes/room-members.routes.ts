@@ -19,7 +19,7 @@ export const roomMembersConsoleRoutes: DomainRouteConfig[] = [
 			loadComponent: () =>
 				import('../pages/add-room-member/add-room-member.component').then((m) => m.AddRoomMemberComponent),
 			canActivate: [
-				runGuardsSerially(checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.USER]), checkRoomManageGuard)
+				runGuardsSerially(checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER]), checkRoomManageGuard)
 			]
 		}
 	},
@@ -29,7 +29,7 @@ export const roomMembersConsoleRoutes: DomainRouteConfig[] = [
 			loadComponent: () =>
 				import('../pages/add-room-member/add-room-member.component').then((m) => m.AddRoomMemberComponent),
 			canActivate: [
-				runGuardsSerially(checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.USER]), checkRoomManageGuard)
+				runGuardsSerially(checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER]), checkRoomManageGuard)
 			]
 		}
 	}

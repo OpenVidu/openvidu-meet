@@ -214,21 +214,21 @@ export class RoomUiUtils {
 	// ===== PERMISSION/CAPABILITY UTILITIES =====
 
 	/**
-	 * Checks if a room can be joined
+	 * Checks if a room can be accessed
 	 */
-	static canJoinRoom(room: MeetRoom): boolean {
+	static canAccessRoom(room: MeetRoom): boolean {
 		return !RoomUiUtils.isClosed(room);
 	}
 
 	/**
-	 * Gets the tooltip text for the join room action
+	 * Gets the tooltip text for the access room action
 	 */
-	static getJoinRoomTooltip(room: MeetRoom): string {
-		if (!RoomUiUtils.canJoinRoom(room)) {
+	static getAccessRoomTooltip(room: MeetRoom): string {
+		if (!RoomUiUtils.canAccessRoom(room)) {
 			return 'Room is closed. Reopen the room to allow participants to join';
 		}
 
-		return 'Join room';
+		return 'Access room';
 	}
 
 	/**

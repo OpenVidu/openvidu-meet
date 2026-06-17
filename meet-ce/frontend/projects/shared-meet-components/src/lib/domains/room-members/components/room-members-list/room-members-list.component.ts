@@ -183,8 +183,8 @@ export class RoomMembersListsComponent implements OnInit {
 	// Member type filter options ('' means no filter)
 	typeOptions: { value: MeetRoomMemberType | ''; label: string }[] = [
 		{ value: '', label: 'All types' },
-		{ value: MeetRoomMemberType.REGISTERED, label: 'Registered' },
-		{ value: MeetRoomMemberType.EXTERNAL, label: 'External' }
+		{ value: MeetRoomMemberType.USER, label: 'User' },
+		{ value: MeetRoomMemberType.IDENTIFIED_GUEST, label: 'Identified guest' }
 	];
 
 	// Active filters shown as removable chips. Reads the applied snapshot.

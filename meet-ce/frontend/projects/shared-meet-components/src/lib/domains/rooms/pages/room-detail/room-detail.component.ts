@@ -302,9 +302,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	async joinRoom() {
+	async accessRoom() {
 		const room = this.room()!;
-		window.open(room.access.registered.url, '_blank');
+		window.open(room.access.user.url, '_blank');
 	}
 
 	shareLink() {

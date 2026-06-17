@@ -28,7 +28,7 @@ export const checkRoomAccessGuard: CanActivateFn = async (route) => {
 
 /**
  * Guard that checks the authenticated user can manage a room (create/edit members, edit room config).
- * ADMIN users always pass. USER users pass only if they own the room.
+ * ADMIN users always pass. ROOM_MANAGER users pass only if they own the room.
  * Redirects to /rooms if the check fails.
  */
 export const checkRoomManageGuard: CanActivateFn = async (route) => {
@@ -47,13 +47,13 @@ export const checkRoomManageGuard: CanActivateFn = async (route) => {
 		return true;
 	}
 
-	// If user is not USER or ADMIN, deny access
-	if (role !== MeetUserRole.USER) {
+	// If user is not ROOM_MANAGER or ADMIN, deny access
+	if (role !== MeetUserRole.ROOM_MANAGER) {
 		return navigationService.createRedirectionTo('/rooms');
 	}
 
 	try {
-		// For USER role, check if they are the owner of the room
+		// For ROOM_MANAGER role, check if they are the owner of the room
 		const userId = await authService.getUserId();
 		const { owner } = await roomService.getRoom(roomId, { fields: ['owner'] });
 		if (owner === userId) {

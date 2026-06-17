@@ -320,9 +320,9 @@ describe('Room API Tests', () => {
 			expectValidationError(response, 'member', 'member cannot be empty');
 		});
 
-		it('should fail when registeredAccess is not a boolean', async () => {
-			const response = await getRooms({ registeredAccess: 'not-a-boolean' });
-			expectValidationError(response, 'registeredAccess', 'Expected boolean, received string');
+		it('should fail when userAccess is not a boolean', async () => {
+			const response = await getRooms({ userAccess: 'not-a-boolean' });
+			expectValidationError(response, 'userAccess', 'Expected boolean, received string');
 		});
 
 		it('should fail when status is invalid', async () => {
@@ -371,13 +371,13 @@ describe('Room API Tests', () => {
 			// Create room with ADMIN as owner
 			const adminRoom = await createRoom(undefined, testUsers.admin.accessToken);
 
-			// Create room with USER as owner
-			const userRoom = await createRoom(undefined, testUsers.user.accessToken);
+			// Create room with ROOM_MANAGER as owner
+			const userRoom = await createRoom(undefined, testUsers.roomManager.accessToken);
 
-			// Create room with USER and ROOM_MEMBER as members
+			// Create room with ROOM_MANAGER and ROOM_MEMBER as members
 			const membersRoom = await createRoom();
 			await createRoomMember(membersRoom.roomId, {
-				userId: testUsers.user.user.userId,
+				userId: testUsers.roomManager.user.userId,
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			await createRoomMember(membersRoom.roomId, {
@@ -385,8 +385,8 @@ describe('Room API Tests', () => {
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 
-			// Create room with registered access enabled
-			const openRoom = await createRoom({ access: { registered: { enabled: true } } });
+			// Create room with user access enabled
+			const openRoom = await createRoom({ access: { user: { enabled: true } } });
 
 			testRooms = {
 				adminRoom: adminRoom.roomId,
@@ -420,8 +420,8 @@ describe('Room API Tests', () => {
 			]);
 		});
 
-		it('should return only accessible rooms for USER room owner', async () => {
-			const response = await getRooms(undefined, undefined, testUsers.user.accessToken);
+		it('should return only accessible rooms for ROOM_MANAGER room owner', async () => {
+			const response = await getRooms(undefined, undefined, testUsers.roomManager.accessToken);
 			expectRoomsToContainOnly(response, [testRooms.userRoom, testRooms.membersRoom, testRooms.openRoom]);
 		});
 
@@ -480,29 +480,29 @@ describe('Room API Tests', () => {
 			expectRoomsToContainOnly(response, [testRooms.adminRoom]);
 		});
 
-		it('should filter rooms by USER owner for ADMIN user', async () => {
+		it('should filter rooms by ROOM_MANAGER owner for ADMIN user', async () => {
 			const response = await getRooms(
-				{ owner: testUsers.user.user.userId },
+				{ owner: testUsers.roomManager.user.userId },
 				undefined,
 				testUsers.admin.accessToken
 			);
 			expectRoomsToContainOnly(response, [testRooms.userRoom]);
 		});
 
-		it('should filter rooms by owner for USER room owner', async () => {
+		it('should filter rooms by owner for ROOM_MANAGER room owner', async () => {
 			const response = await getRooms(
-				{ owner: testUsers.user.user.userId },
+				{ owner: testUsers.roomManager.user.userId },
 				undefined,
-				testUsers.user.accessToken
+				testUsers.roomManager.accessToken
 			);
 			expectRoomsToContainOnly(response, [testRooms.userRoom]);
 		});
 
-		it('should fail filtering rooms by owner different from the user for USER room owner', async () => {
+		it('should fail filtering rooms by owner different from the user for ROOM_MANAGER room owner', async () => {
 			const response = await getRooms(
 				{ owner: testUsers.admin.user.userId },
 				undefined,
-				testUsers.user.accessToken
+				testUsers.roomManager.accessToken
 			);
 			expect(response.status).toBe(403);
 		});
@@ -516,29 +516,29 @@ describe('Room API Tests', () => {
 			expectRoomsToContainOnly(response, []);
 		});
 
-		it('should filter rooms by USER member for ADMIN user', async () => {
+		it('should filter rooms by ROOM_MANAGER member for ADMIN user', async () => {
 			const response = await getRooms(
-				{ member: testUsers.user.user.userId },
+				{ member: testUsers.roomManager.user.userId },
 				undefined,
 				testUsers.admin.accessToken
 			);
 			expectRoomsToContainOnly(response, [testRooms.membersRoom]);
 		});
 
-		it('should filter rooms by member for USER member', async () => {
+		it('should filter rooms by member for ROOM_MANAGER member', async () => {
 			const response = await getRooms(
-				{ member: testUsers.user.user.userId },
+				{ member: testUsers.roomManager.user.userId },
 				undefined,
-				testUsers.user.accessToken
+				testUsers.roomManager.accessToken
 			);
 			expectRoomsToContainOnly(response, [testRooms.membersRoom]);
 		});
 
-		it('should fail filtering rooms by member different from the user for USER member', async () => {
+		it('should fail filtering rooms by member different from the user for ROOM_MANAGER member', async () => {
 			const response = await getRooms(
 				{ member: testUsers.roomMember.user.userId },
 				undefined,
-				testUsers.user.accessToken
+				testUsers.roomManager.accessToken
 			);
 			expect(response.status).toBe(403);
 		});
@@ -554,40 +554,40 @@ describe('Room API Tests', () => {
 
 		it('should fail filtering rooms by member different from the user for ROOM_MEMBER member', async () => {
 			const response = await getRooms(
-				{ member: testUsers.user.user.userId },
+				{ member: testUsers.roomManager.user.userId },
 				undefined,
 				testUsers.roomMember.accessToken
 			);
 			expect(response.status).toBe(403);
 		});
 
-		it('should filter rooms by registeredAccess for ADMIN user', async () => {
-			const response = await getRooms({ registeredAccess: true }, undefined, testUsers.admin.accessToken);
+		it('should filter rooms by userAccess for ADMIN user', async () => {
+			const response = await getRooms({ userAccess: true }, undefined, testUsers.admin.accessToken);
 			expectRoomsToContainOnly(response, [testRooms.openRoom]);
 		});
 
-		it('should filter rooms by registeredAccess for USER room owner', async () => {
-			const response = await getRooms({ registeredAccess: true }, undefined, testUsers.user.accessToken);
+		it('should filter rooms by userAccess for ROOM_MANAGER room owner', async () => {
+			const response = await getRooms({ userAccess: true }, undefined, testUsers.roomManager.accessToken);
 			expectRoomsToContainOnly(response, [testRooms.openRoom]);
 		});
 
-		it('should filter rooms by registeredAccess for ROOM_MEMBER member', async () => {
-			const response = await getRooms({ registeredAccess: true }, undefined, testUsers.roomMember.accessToken);
+		it('should filter rooms by userAccess for ROOM_MEMBER member', async () => {
+			const response = await getRooms({ userAccess: true }, undefined, testUsers.roomMember.accessToken);
 			expectRoomsToContainOnly(response, [testRooms.openRoom]);
 		});
 
-		it('should filter rooms by combination of owner and member for USER member', async () => {
+		it('should filter rooms by combination of owner and member for ROOM_MANAGER member', async () => {
 			const response = await getRooms(
-				{ owner: testUsers.user.user.userId, member: testUsers.user.user.userId },
+				{ owner: testUsers.roomManager.user.userId, member: testUsers.roomManager.user.userId },
 				undefined,
-				testUsers.user.accessToken
+				testUsers.roomManager.accessToken
 			);
 			expectRoomsToContainOnly(response, [testRooms.userRoom, testRooms.membersRoom]);
 		});
 
-		it('should filter rooms by combination of member and registeredAccess for ROOM_MEMBER member', async () => {
+		it('should filter rooms by combination of member and userAccess for ROOM_MEMBER member', async () => {
 			const response = await getRooms(
-				{ member: testUsers.roomMember.user.userId, registeredAccess: true },
+				{ member: testUsers.roomMember.user.userId, userAccess: true },
 				undefined,
 				testUsers.roomMember.accessToken
 			);

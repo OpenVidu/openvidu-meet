@@ -47,15 +47,15 @@ describe('Users API Tests', () => {
 
 	describe('Update User Role Tests', () => {
 		it('should successfully update user role to ADMIN', async () => {
-			const response = await updateUserRole(testUsers.user.user.userId, MeetUserRole.ADMIN);
+			const response = await updateUserRole(testUsers.roomManager.user.userId, MeetUserRole.ADMIN);
 			expect(response.status).toBe(200);
 
-			expect(response.body).toHaveProperty('userId', testUsers.user.user.userId);
+			expect(response.body).toHaveProperty('userId', testUsers.roomManager.user.userId);
 			expect(response.body).toHaveProperty('role', MeetUserRole.ADMIN);
 			expect(response.body).toHaveProperty('roleUpdatedAt');
 		});
 
-		it('should successfully update user role to USER', async () => {
+		it('should successfully update user role to ROOM_MANAGER', async () => {
 			// Create user with ADMIN role first
 			const userId = `user_${Date.now()}`;
 			await createUser({
@@ -65,20 +65,20 @@ describe('Users API Tests', () => {
 				role: MeetUserRole.ADMIN
 			});
 
-			// Update role to USER
-			const response = await updateUserRole(userId, MeetUserRole.USER);
+			// Update role to ROOM_MANAGER
+			const response = await updateUserRole(userId, MeetUserRole.ROOM_MANAGER);
 			expect(response.status).toBe(200);
-			expect(response.body).toHaveProperty('role', MeetUserRole.USER);
+			expect(response.body).toHaveProperty('role', MeetUserRole.ROOM_MANAGER);
 		});
 
 		it('should successfully update user role to ROOM_MEMBER', async () => {
-			// Create user with USER role first
+			// Create user with ROOM_MANAGER role first
 			const userId = `user_${Date.now()}`;
 			await createUser({
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Update role to ROOM_MEMBER
@@ -88,13 +88,13 @@ describe('Users API Tests', () => {
 		});
 
 		it('should persist role change after update', async () => {
-			// Create user with USER role first
+			// Create user with ROOM_MANAGER role first
 			const userId = `user_${Date.now()}`;
 			await createUser({
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Update role to ADMIN
@@ -112,7 +112,7 @@ describe('Users API Tests', () => {
 		});
 
 		it('should not expose sensitive fields in response', async () => {
-			const response = await updateUserRole(testUsers.user.user.userId, MeetUserRole.ADMIN);
+			const response = await updateUserRole(testUsers.roomManager.user.userId, MeetUserRole.ADMIN);
 			expect(response.status).toBe(200);
 			expect(response.body).not.toHaveProperty('passwordHash');
 			expect(response.body).not.toHaveProperty('mustChangePassword');
@@ -126,7 +126,7 @@ describe('Users API Tests', () => {
 		it('should fail when trying to update own role', async () => {
 			const response = await updateUserRole(
 				testUsers.admin.user.userId,
-				MeetUserRole.USER,
+				MeetUserRole.ROOM_MANAGER,
 				testUsers.admin.accessToken
 			);
 			expect(response.status).toBe(403);
@@ -135,7 +135,7 @@ describe('Users API Tests', () => {
 		});
 
 		it('should fail when root admin tries to update own role', async () => {
-			const response = await updateUserRole(MEET_ENV.INITIAL_ADMIN_USER, MeetUserRole.USER);
+			const response = await updateUserRole(MEET_ENV.INITIAL_ADMIN_USER, MeetUserRole.ROOM_MANAGER);
 			expect(response.status).toBe(403);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Cannot change the role of the root admin user');
@@ -144,7 +144,7 @@ describe('Users API Tests', () => {
 		it('should fail when trying to update root admin role', async () => {
 			const response = await updateUserRole(
 				MEET_ENV.INITIAL_ADMIN_USER,
-				MeetUserRole.USER,
+				MeetUserRole.ROOM_MANAGER,
 				testUsers.admin.accessToken
 			);
 			expect(response.status).toBe(403);
@@ -159,14 +159,14 @@ describe('Users API Tests', () => {
 			expect(response.body.message).toContain('not found');
 		});
 
-		it('should transfer owned rooms to root admin when USER is changed to ROOM_MEMBER', async () => {
-			// Create user with USER role first
+		it('should transfer owned rooms to root admin when ROOM_MANAGER is changed to ROOM_MEMBER', async () => {
+			// Create user with ROOM_MANAGER role first
 			const userId = `user_${Date.now()}`;
 			const userData = await setupUser({
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Create a room owned by this user
@@ -184,13 +184,13 @@ describe('Users API Tests', () => {
 		});
 
 		it('should update recording roomOwner when ownership is transferred by role change', async () => {
-			// Create user with USER role first
+			// Create user with ROOM_MANAGER role first
 			const userId = `user_${Date.now()}`;
 			const userData = await setupUser({
 				userId,
 				name: 'Owner With Recording',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Create a room owned by this user and a recording for that room
@@ -212,14 +212,14 @@ describe('Users API Tests', () => {
 			expect(recording?.roomOwner).toBe(MEET_ENV.INITIAL_ADMIN_USER);
 		});
 
-		it('should remove memberships when USER is changed to ADMIN', async () => {
-			// Create user with USER role first
+		it('should remove memberships when ROOM_MANAGER is changed to ADMIN', async () => {
+			// Create user with ROOM_MANAGER role first
 			const userId = `user_${Date.now()}`;
 			await createUser({
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Create a room and add the user as a member
@@ -287,8 +287,8 @@ describe('Users API Tests', () => {
 			const frontendEventService = container.get(FrontendEventService);
 			const sendSignalSpy = jest.spyOn(frontendEventService as any, 'sendSignal');
 
-			// Update role to USER
-			const response = await updateUserRole(userId, MeetUserRole.USER);
+			// Update role to ROOM_MANAGER
+			const response = await updateUserRole(userId, MeetUserRole.ROOM_MANAGER);
 			expect(response.status).toBe(200);
 
 			expect(sendSignalSpy).toHaveBeenCalledWith(
@@ -308,12 +308,12 @@ describe('Users API Tests', () => {
 
 	describe('Update User Role Validation Tests', () => {
 		it('should fail when role is missing', async () => {
-			const response = await updateUserRole(testUsers.user.user.userId, undefined as unknown as MeetUserRole);
+			const response = await updateUserRole(testUsers.roomManager.user.userId, undefined as unknown as MeetUserRole);
 			expectValidationError(response, 'role', 'Required');
 		});
 
 		it('should fail when role is invalid', async () => {
-			const response = await updateUserRole(testUsers.user.user.userId, 'INVALID_ROLE' as MeetUserRole);
+			const response = await updateUserRole(testUsers.roomManager.user.userId, 'INVALID_ROLE' as MeetUserRole);
 			expectValidationError(response, 'role', 'Invalid enum value');
 		});
 	});

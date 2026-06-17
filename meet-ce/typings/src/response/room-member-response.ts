@@ -98,7 +98,7 @@ export interface MeetRoomMemberFilters extends SortAndPagination<MeetRoomMemberS
 	nameCaseInsensitive?: boolean;
 	/** Filter members by their base role. */
 	baseRole?: MeetRoomMemberRole;
-	/** Filter members by their type (registered or external). */
+	/** Filter members by their type (user or identified guest). */
 	type?: MeetRoomMemberType;
 	/** Array of fields to include in the response */
 	fields?: MeetRoomMemberField[];

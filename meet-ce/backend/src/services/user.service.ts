@@ -216,8 +216,8 @@ export class UserService {
 			return user;
 		}
 
-		// If ADMIN or USER becomes ROOM_MEMBER, transfer owned rooms to root admin.
-		if ((oldRole === MeetUserRole.ADMIN || oldRole === MeetUserRole.USER) && newRole === MeetUserRole.ROOM_MEMBER) {
+		// If ADMIN or ROOM_MANAGER becomes ROOM_MEMBER, transfer owned rooms to root admin.
+		if ((oldRole === MeetUserRole.ADMIN || oldRole === MeetUserRole.ROOM_MANAGER) && newRole === MeetUserRole.ROOM_MEMBER) {
 			const ownedRooms = await this.roomRepository.findByOwner(userId, ['roomId']);
 
 			if (ownedRooms.length > 0) {
@@ -240,8 +240,8 @@ export class UserService {
 			}
 		}
 
-		// If USER or ROOM_MEMBER becomes ADMIN, remove room memberships.
-		if ((oldRole === MeetUserRole.USER || oldRole === MeetUserRole.ROOM_MEMBER) && newRole === MeetUserRole.ADMIN) {
+		// If ROOM_MANAGER or ROOM_MEMBER becomes ADMIN, remove room memberships.
+		if ((oldRole === MeetUserRole.ROOM_MANAGER || oldRole === MeetUserRole.ROOM_MEMBER) && newRole === MeetUserRole.ADMIN) {
 			await this.roomMemberRepository.deleteAllByMemberId(userId);
 			this.logger.info(
 				`Removed room memberships for user '${userId}' due to role change to '${MeetUserRole.ADMIN}'`

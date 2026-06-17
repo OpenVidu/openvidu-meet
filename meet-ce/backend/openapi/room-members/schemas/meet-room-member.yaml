@@ -6,8 +6,8 @@ properties:
         description: |
             The unique identifier of the room member.
 
-            - For registered Meet users: This is set to the userId of the linked Meet user account.
-            - For external users: This is an automatically generated unique identifier starting from 'ext-'.
+            - For users: This is set to the userId of the linked Meet user account.
+            - For identified guests: This is an automatically generated unique identifier starting from 'guest-'.
     roomId:
         type: string
         example: 'room-123'
@@ -16,21 +16,21 @@ properties:
     type:
         type: string
         enum:
-            - registered
-            - external
-        example: 'registered'
+            - user
+            - identified_guest
+        example: 'user'
         description: |
             The type of the room member. Options are:
-            - registered: A registered Meet user, linked to a Meet user account.
-            - external: An external user, not linked to any Meet user account.
+            - user: A user, linked to a Meet user account.
+            - identified_guest: An identified guest, not linked to any Meet user account.
     name:
         type: string
         example: 'Alice Smith'
         description: |
             The display name for the participant when joining the meeting with this member access.
 
-            - For registered Meet users, this is their profile name.
-            - For external users, this is the assigned name.
+            - For users, this is their profile name.
+            - For identified guests, this is the assigned name.
     membershipDate:
         type: number
         example: 1620000000000
@@ -41,8 +41,8 @@ properties:
         format: uri
         example: 'http://localhost:6080/room/room-123'
         description: >
-            The unique URL for this member to access the room. This URL is different from the moderator and speaker URLs
-            and provides access with the specific permissions assigned to this member.
+            The URL for this member to access the room. Identified guests receives a unique access URL, while users use the shared user access URL.
+            This URL provides access with the specific permissions assigned to this member.
     baseRole:
         type: string
         enum:

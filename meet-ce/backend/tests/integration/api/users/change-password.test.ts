@@ -87,7 +87,7 @@ describe('Users API Tests', () => {
 				userId,
 				name: 'Test User',
 				password: initialPassword,
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expect(createResponse.status).toBe(201);
 
@@ -118,7 +118,7 @@ describe('Users API Tests', () => {
 				userId: `user_${Date.now()}`,
 				name: 'Regular User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Change password

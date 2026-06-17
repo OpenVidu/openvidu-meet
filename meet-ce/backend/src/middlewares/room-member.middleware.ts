@@ -20,7 +20,7 @@ import { accessTokenValidator, allowAnonymous, withAuth } from './auth.middlewar
  * Middleware to authorize access to specific room member information.
  *
  * - If the user is authenticated via room member token, checks if they are accessing their own info.
- * - If the user is a registered user, checks if they have management permissions (admin or owner),
+ * - If authenticated as a user (Meet account holder), checks if they have management permissions (admin or owner),
  *  or if they are accessing their own member info.
  */
 export const authorizeRoomMemberAccess = async (req: Request, res: Response, next: NextFunction) => {
@@ -61,7 +61,7 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
 		return next();
 	}
 
-	// Registered User
+	// Authenticated user
 	if (user) {
 		// Allow if user is admin
 		if (user.role === MeetUserRole.ADMIN) {
@@ -92,7 +92,7 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
  * Middleware to configure authentication for generating room member tokens.
  *
  * - If a secret is provided in the request body, anonymous access is allowed.
- * - If no secret is provided, the user must be authenticated as ADMIN, USER, or ROOM_MEMBER.
+ * - If no secret is provided, the user must be authenticated as ADMIN, ROOM_MANAGER, or ROOM_MEMBER.
  */
 export const setupRoomMemberTokenAuthentication = async (req: Request, res: Response, next: NextFunction) => {
 	const { secret } = req.body as MeetRoomMemberTokenOptions;
@@ -101,7 +101,7 @@ export const setupRoomMemberTokenAuthentication = async (req: Request, res: Resp
 	if (secret) {
 		authValidators.push(allowAnonymous);
 	} else {
-		authValidators.push(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER));
+		authValidators.push(accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER));
 	}
 
 	return withAuth(...authValidators)(req, res, next);
@@ -134,9 +134,9 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 	// Scenario 1: Secret provided (Anonymous access or Member ID)
 	if (secret) {
 		try {
-			const isExternalMemberId = secret.startsWith('ext-');
+			const isIdentifiedGuestMemberId = secret.startsWith('guest-');
 
-			if (isExternalMemberId) {
+			if (isIdentifiedGuestMemberId) {
 				// Check if secret is a memberId
 				const roomMemberService = container.get(RoomMemberService);
 				const isMember = await roomMemberService.isRoomMember(roomId, secret);

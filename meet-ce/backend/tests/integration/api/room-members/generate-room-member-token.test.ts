@@ -273,7 +273,7 @@ describe('Room Members API Tests', () => {
 			expect(response.status).toBe(400);
 		});
 
-		it('should generate token for registered ADMIN user', async () => {
+		it('should generate token for ADMIN user', async () => {
 			// Generate token without specifying secret (should use ADMIN privileges)
 			const response = await generateRoomMemberTokenRequest(roomId, {}, testUsers.admin.accessToken);
 			expectValidRoomMemberTokenResponse(response, {
@@ -286,34 +286,34 @@ describe('Room Members API Tests', () => {
 
 		it('should generate token for room owner', async () => {
 			// Create room with the user as owner
-			const roomWithOwner = await createRoom({}, testUsers.user.accessToken);
+			const roomWithOwner = await createRoom({}, testUsers.roomManager.accessToken);
 
 			// Generate token for the room owner
-			const response = await generateRoomMemberTokenRequest(roomWithOwner.roomId, {}, testUsers.user.accessToken);
+			const response = await generateRoomMemberTokenRequest(roomWithOwner.roomId, {}, testUsers.roomManager.accessToken);
 			expectValidRoomMemberTokenResponse(response, {
 				roomId: roomWithOwner.roomId,
-				userId: testUsers.user.user.userId,
+				userId: testUsers.roomManager.user.userId,
 				badge: MeetRoomMemberUIBadge.OWNER,
 				permissions: allPermissions // Room owner should have all permissions
 			});
 		});
 
-		it('should generate token for registered user room member', async () => {
+		it('should generate token for user room member', async () => {
 			// Generate token without specifying secret
-			const response = await generateRoomMemberTokenRequest(roomId, {}, roomUsers.userMember.accessToken);
+			const response = await generateRoomMemberTokenRequest(roomId, {}, roomUsers.roomManagerMember.accessToken);
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				userId: roomUsers.userMember.user.userId,
-				memberId: roomUsers.userMember.user.userId,
+				userId: roomUsers.roomManagerMember.user.userId,
+				memberId: roomUsers.roomManagerMember.user.userId,
 				badge: MeetRoomMemberUIBadge.MODERATOR,
 				permissions: roomRoles.moderator.permissions
 			});
 		});
 
-		it('should generate token for registered user non-member when registered access is enabled', async () => {
-			// Enable registered access for the room
+		it('should generate token for user non-member when user access is enabled', async () => {
+			// Enable user access for the room
 			await updateRoomAccessConfig(roomId, {
-				registered: {
+				user: {
 					enabled: true
 				}
 			});
@@ -327,23 +327,23 @@ describe('Room Members API Tests', () => {
 			});
 			expect(response.body.memberId).toBeUndefined();
 
-			// Disable registered access after test
+			// Disable user access after test
 			await updateRoomAccessConfig(roomId, {
-				registered: {
+				user: {
 					enabled: false
 				}
 			});
 		});
 
-		it('should generate token for external room member', async () => {
-			// Create external room member
+		it('should generate token for identified guest room member', async () => {
+			// Create identified guest room member
 			const createResponse = await createRoomMember(roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			const memberId = createResponse.body.memberId;
 
-			// Generate token using external memberId as secret
+			// Generate token using identified guestId as secret
 			const response = await generateRoomMemberTokenRequest(roomId, {
 				secret: memberId
 			});
@@ -402,25 +402,25 @@ describe('Room Members API Tests', () => {
 			});
 		});
 
-		it('should combine permissions when using ADMIN access token and external member secret', async () => {
+		it('should combine permissions when using ADMIN access token and identified guest secret', async () => {
 			const createResponse = await createRoomMember(roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
 					canKickParticipants: true,
 					canDeleteRecordings: true
 				}
 			});
-			const externalMemberId = createResponse.body.memberId as string;
+			const guestMemberId = createResponse.body.memberId as string;
 
 			const response = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: externalMemberId },
+				{ secret: guestMemberId },
 				testUsers.admin.accessToken
 			);
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				memberId: externalMemberId,
+				memberId: guestMemberId,
 				userId: testUsers.admin.user.userId,
 				badge: MeetRoomMemberUIBadge.ADMIN,
 				permissions: allPermissions
@@ -432,7 +432,7 @@ describe('Room Members API Tests', () => {
 				userId: `usr_${Date.now()}`,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			const createResponse = await createRoomMember(roomId, {
@@ -468,15 +468,15 @@ describe('Room Members API Tests', () => {
 			});
 		});
 
-		it('should combine permissions when using room member access token and external member secret', async () => {
+		it('should combine permissions when using room member access token and identified guest secret', async () => {
 			const userData = await setupUser({
 				userId: `usr_${Date.now()}`,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
-			const createUserMemberResponse = await createRoomMember(roomId, {
+			const createRoomManagerMemberResponse = await createRoomMember(roomId, {
 				userId: userData.user.userId,
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
@@ -488,29 +488,29 @@ describe('Room Members API Tests', () => {
 					canEndMeeting: true
 				}
 			});
-			const userMemberPermissions = createUserMemberResponse.body
+			const roomManagerMemberPermissions = createRoomManagerMemberResponse.body
 				.effectivePermissions as MeetRoomMemberPermissions;
 
-			const createExternalResponse = await createRoomMember(roomId, {
-				name: 'External Merge Source',
+			const createGuestResponse = await createRoomMember(roomId, {
+				name: 'Guest Merge Source',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
 					canRecord: true,
 					canPublishAudio: false
 				}
 			});
-			const externalMemberId = createExternalResponse.body.memberId as string;
-			const externalPermissions = createExternalResponse.body.effectivePermissions as MeetRoomMemberPermissions;
-			const expectedPermissions = mergePermissions(userMemberPermissions, externalPermissions);
+			const guestMemberId = createGuestResponse.body.memberId as string;
+			const guestPermissions = createGuestResponse.body.effectivePermissions as MeetRoomMemberPermissions;
+			const expectedPermissions = mergePermissions(roomManagerMemberPermissions, guestPermissions);
 
 			const response = await generateRoomMemberTokenRequest(
 				roomId,
-				{ secret: externalMemberId },
+				{ secret: guestMemberId },
 				userData.accessToken
 			);
 			expectValidRoomMemberTokenResponse(response, {
 				roomId,
-				memberId: externalMemberId,
+				memberId: guestMemberId,
 				userId: userData.user.userId,
 				// Should get moderator badge because they will have all permissions of a moderator
 				// due to the custom permissions set when creating the user member
@@ -802,7 +802,7 @@ describe('Room Members API Tests', () => {
 				userId: `usr_${Date.now()}`,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			await createRoomMember(roomId, {
 				userId: userData.user.userId,

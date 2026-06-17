@@ -17,12 +17,12 @@ content:
             default_member_added:
                 summary: Room member added successfully without extra fields
                 value:
-                    memberId: 'ext-abc123'
+                    memberId: 'guest-abc123'
                     roomId: 'room-123'
-                    type: 'external'
+                    type: 'identified_guest'
                     name: 'Charlie'
                     membershipDate: 1620007200000
-                    accessUrl: 'https://example.com/room/room-123?secret=ext-abc123'
+                    accessUrl: 'https://example.com/room/room-123?secret=guest-abc123'
                     baseRole: 'speaker'
                     customPermissions:
                         canShareScreen: true
@@ -35,4 +35,4 @@ headers:
         schema:
             type: string
             format: uri
-        example: https://your-api.com/api/v1/rooms/room-123/members/abc123
+        example: https://example.com/api/v1/rooms/room-123/members/abc123

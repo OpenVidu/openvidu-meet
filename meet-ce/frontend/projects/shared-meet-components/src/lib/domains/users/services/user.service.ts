@@ -131,7 +131,7 @@ export class UserService {
 	}
 
 	/**
-	 * Gets the root admin user, identified as the first registered user in the database.
+	 * Gets the root admin user, identified as the first user in the database.
 	 *
 	 * @returns A promise that resolves to the root admin MeetUserDTO, or null if no users exist
 	 */

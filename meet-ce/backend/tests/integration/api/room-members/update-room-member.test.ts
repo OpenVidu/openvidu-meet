@@ -234,14 +234,14 @@ describe('Room Members API Tests', () => {
 			expect(updateResponse.body.permissionsUpdatedAt).toBeGreaterThan(originalTimestamp);
 		});
 
-		it('should successfully update registered user room member', async () => {
-			// Create a registered user
+		it('should successfully update user room member', async () => {
+			// Create a user
 			const userId = `user_${Date.now()}`;
 			await createUser({
 				userId,
-				name: 'Registered Member',
+				name: 'User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Add as room member

@@ -58,7 +58,7 @@ describe('Recording API Security Tests', () => {
 			roomData = await setupSingleRoom(true);
 			roomId = roomData.room.roomId;
 			roomMember = await setupRoomMember(roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 		});
@@ -125,7 +125,7 @@ describe('Recording API Security Tests', () => {
 			roomData = await setupSingleRoomWithRecording();
 			recordingId = roomData.recordingId!;
 			roomMember = await setupRoomMember(roomData.room.roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 		});
@@ -213,7 +213,7 @@ describe('Recording API Security Tests', () => {
 			recordingId = roomData.recordingId!;
 
 			roomMember = await setupRoomMember(roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 		});
@@ -235,50 +235,50 @@ describe('Recording API Security Tests', () => {
 				expect(response.body.recordings.length).toBe(1);
 			});
 
-			it('should succeed when user is authenticated as USER and is room owner', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room owner', async () => {
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerOwner.accessToken);
 				expect(response.status).toBe(200);
 				expect(response.body.recordings.length).toBe(1);
 			});
 
-			it('should succeed when user is authenticated as USER and is room member with canRetrieveRecordings permission', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room member with canRetrieveRecordings permission', async () => {
 				// Update room member to have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: true },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(200);
 				expect(response.body.recordings.length).toBe(1);
 			});
 
-			it('should not return recordings when user is authenticated as USER and is room member without canRetrieveRecordings permission', async () => {
+			it('should not return recordings when user is authenticated as ROOM_MANAGER and is room member without canRetrieveRecordings permission', async () => {
 				// Update room member to not have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: false },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(200);
 				expect(response.body.recordings.length).toBe(0);
 			});
 
-			it('should not return recordings when user is authenticated as USER without access to the room', async () => {
+			it('should not return recordings when user is authenticated as ROOM_MANAGER without access to the room', async () => {
 				const response = await request(app)
 					.get(RECORDINGS_PATH)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 				expect(response.status).toBe(200);
 				expect(response.body.recordings.length).toBe(0);
 			});
@@ -375,47 +375,47 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when user is authenticated as USER and is room owner', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room owner', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerOwner.accessToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when user is authenticated as USER and is room member with canRetrieveRecordings permission', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room member with canRetrieveRecordings permission', async () => {
 				// Update room member to have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: true },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when user is authenticated as USER and is room member without canRetrieveRecordings permission', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER and is room member without canRetrieveRecordings permission', async () => {
 				// Update room member to not have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: false },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should fail when user is authenticated as USER without access to the room', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 				expect(response.status).toBe(403);
 			});
 
@@ -515,7 +515,7 @@ describe('Recording API Security Tests', () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}`)
 					.query({ recordingSecret: secret })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 				expect(response.status).toBe(200);
 			});
 
@@ -548,54 +548,54 @@ describe('Recording API Security Tests', () => {
 				recordingId = await setupCompletedRecording(roomData);
 			});
 
-			it('should succeed when user is authenticated as USER and is room owner', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room owner', async () => {
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerOwner.accessToken);
 				expect(response.status).toBe(200);
 
 				// Recreate recording for next tests since it was deleted
 				recordingId = await setupCompletedRecording(roomData);
 			});
 
-			it('should succeed when user is authenticated as USER and is room member with canDeleteRecordings permission', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room member with canDeleteRecordings permission', async () => {
 				// Update room member to have canDeleteRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canDeleteRecordings: true },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(200);
 
 				// Recreate recording for next tests since it was deleted
 				recordingId = await setupCompletedRecording(roomData);
 			});
 
-			it('should fail when user is authenticated as USER and is room member without canDeleteRecordings permission', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER and is room member without canDeleteRecordings permission', async () => {
 				// Update room member to not have canDeleteRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canDeleteRecordings: false },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(403);
 				// No need to recreate - recording was not deleted
 			});
 
-			it('should fail when user is authenticated as USER without access to the room', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
 				const response = await request(app)
 					.delete(`${RECORDINGS_PATH}/${recordingId}`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 				expect(response.status).toBe(403);
 				// No need to recreate - recording was not deleted
 			});
@@ -719,58 +719,58 @@ describe('Recording API Security Tests', () => {
 				recordingId = await setupCompletedRecording(roomData);
 			});
 
-			it('should succeed when user is authenticated as USER and is room owner', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room owner', async () => {
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerOwner.accessToken);
 				expect(response.status).toBe(200);
 
 				// Recreate recording for next tests since it was deleted
 				recordingId = await setupCompletedRecording(roomData);
 			});
 
-			it('should succeed when user is authenticated as USER and is room member with canDeleteRecordings permission', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room member with canDeleteRecordings permission', async () => {
 				// Update room member to have canDeleteRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canDeleteRecordings: true },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(200);
 
 				// Recreate recording for next tests since it was deleted
 				recordingId = await setupCompletedRecording(roomData);
 			});
 
-			it('should fail when user is authenticated as USER and is room member without canDeleteRecordings permission', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER and is room member without canDeleteRecordings permission', async () => {
 				// Update room member to not have canDeleteRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canDeleteRecordings: false },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(400);
 				// No need to recreate - recording was not deleted
 			});
 
-			it('should fail when user is authenticated as USER without access to the room', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
 				const response = await request(app)
 					.delete(RECORDINGS_PATH)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 				expect(response.status).toBe(400);
 				// No need to recreate - recording was not deleted
 			});
@@ -892,47 +892,47 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when user is authenticated as USER and is room owner', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room owner', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerOwner.accessToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when user is authenticated as USER and is room member with canRetrieveRecordings permission', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room member with canRetrieveRecordings permission', async () => {
 				// Update room member to have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: true },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when user is authenticated as USER and is room member without canRetrieveRecordings permission', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER and is room member without canRetrieveRecordings permission', async () => {
 				// Update room member to not have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: false },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should fail when user is authenticated as USER without access to the room', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 				expect(response.status).toBe(403);
 			});
 
@@ -1059,47 +1059,47 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when user is authenticated as USER and is room owner', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room owner', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerOwner.accessToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when user is authenticated as USER and is room member with canRetrieveRecordings permission', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room member with canRetrieveRecordings permission', async () => {
 				// Update room member to have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: true },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when user is authenticated as USER and is room member without canRetrieveRecordings permission', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER and is room member without canRetrieveRecordings permission', async () => {
 				// Update room member to not have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: false },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(403);
 			});
 
-			it('should fail when user is authenticated as USER without access to the room', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 				expect(response.status).toBe(403);
 			});
 
@@ -1204,51 +1204,51 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when user is authenticated as USER and is room owner', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room owner', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userOwner.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerOwner.accessToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should succeed when user is authenticated as USER and is room member with canRetrieveRecordings permission', async () => {
+			it('should succeed when user is authenticated as ROOM_MANAGER and is room member with canRetrieveRecordings permission', async () => {
 				// Update room member to have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: true },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(200);
 			});
 
-			it('should fail when user is authenticated as USER and is room member without canRetrieveRecordings permission', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER and is room member without canRetrieveRecordings permission', async () => {
 				// Update room member to not have canRetrieveRecordings permission
-				roomUsers.userMemberDetails = await updateRoomMemberPermissions(
+				roomUsers.roomManagerMemberDetails = await updateRoomMemberPermissions(
 					roomId,
-					roomUsers.userMemberDetails.member.memberId,
+					roomUsers.roomManagerMemberDetails.member.memberId,
 					{ canRetrieveRecordings: false },
-					roomUsers.userMember.accessToken
+					roomUsers.roomManagerMember.accessToken
 				);
 
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.userMember.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, roomUsers.roomManagerMember.accessToken);
 				expect(response.status).toBe(400);
 			});
 
-			it('should fail when user is authenticated as USER without access to the room', async () => {
+			it('should fail when user is authenticated as ROOM_MANAGER without access to the room', async () => {
 				const response = await request(app)
 					.get(`${RECORDINGS_PATH}/download`)
 					.query({ recordingIds: recordingId })
-					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 				expect(response.status).toBe(400);
 			});
 
@@ -1344,7 +1344,7 @@ describe('Recording API Security Tests', () => {
 		});
 	});
 
-	describe('Registered Access Recording Resource Operations', () => {
+	describe('User Access Recording Resource Operations', () => {
 		let roomData: RoomData;
 		let roomId: string;
 		let recordingId: string;
@@ -1361,24 +1361,24 @@ describe('Recording API Security Tests', () => {
 			await disconnectFakeParticipants();
 			await endMeeting(roomId, roomData.moderatorToken);
 
-			// Enable registered access for the room
+			// Enable user access for the room
 			await updateRoomAccessConfig(roomId, {
-				registered: {
+				user: {
 					enabled: true
 				}
 			});
 		});
 
-		it('should return recordings for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should return recordings for ROOM_MANAGER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(RECORDINGS_PATH)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 			expect(response.body.recordings.length).toBe(1);
 			expect(response.body.recordings[0].recordingId).toBe(recordingId);
 		});
 
-		it('should return recordings for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should return recordings for ROOM_MEMBER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(RECORDINGS_PATH)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
@@ -1387,29 +1387,29 @@ describe('Recording API Security Tests', () => {
 			expect(response.body.recordings[0].recordingId).toBe(recordingId);
 		});
 
-		it('should retrieve recording for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should retrieve recording for ROOM_MANAGER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should retrieve recording for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should retrieve recording for ROOM_MEMBER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail bulk delete for USER when registered access is enabled (speaker role does not have canDeleteRecordings permission)', async () => {
+		it('should fail bulk delete for ROOM_MANAGER when user access is enabled (speaker role does not have canDeleteRecordings permission)', async () => {
 			const response = await request(app)
 				.delete(RECORDINGS_PATH)
 				.query({ recordingIds: recordingId })
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(400);
 		});
 
-		it('should fail bulk delete for ROOM_MEMBER when registered access is enabled (speaker role does not have canDeleteRecordings permission)', async () => {
+		it('should fail bulk delete for ROOM_MEMBER when user access is enabled (speaker role does not have canDeleteRecordings permission)', async () => {
 			const response = await request(app)
 				.delete(RECORDINGS_PATH)
 				.query({ recordingIds: recordingId })
@@ -1417,43 +1417,43 @@ describe('Recording API Security Tests', () => {
 			expect(response.status).toBe(400);
 		});
 
-		it('should get recording media for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should get recording media for ROOM_MANAGER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should get recording media for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should get recording media for ROOM_MEMBER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}/media`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should get recording URL for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should get recording URL for ROOM_MANAGER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should get recording URL for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should get recording URL for ROOM_MEMBER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/${recordingId}/url`)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should download recordings ZIP for USER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should download recordings ZIP for ROOM_MANAGER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/download`)
 				.query({ recordingIds: recordingId })
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
-		it('should download recordings ZIP for ROOM_MEMBER when registered access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
+		it('should download recordings ZIP for ROOM_MEMBER when user access is enabled (speaker role has canRetrieveRecordings permission)', async () => {
 			const response = await request(app)
 				.get(`${RECORDINGS_PATH}/download`)
 				.query({ recordingIds: recordingId })

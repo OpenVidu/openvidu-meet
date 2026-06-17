@@ -18,7 +18,7 @@ export interface TestContext {
 }
 
 /**
- * Represents a registered user with their access token for testing purposes.
+ * Represents a user with their access token for testing purposes.
  */
 export interface UserData {
 	user: MeetUser;
@@ -40,23 +40,23 @@ export interface RoomMemberData {
  */
 export interface TestUsers {
 	admin: UserData;
-	user: UserData;
+	roomManager: UserData;
 	roomMember: UserData;
 }
 
 /**
  * Collection of test users specific to a room scenario.
- * Includes the room owner, a regular member, and a room member.
+ * Includes the room owner, a room-manager member, and a room member.
  */
 export interface RoomTestUsers {
-	/** User with USER role who is the owner of the room */
-	userOwner: UserData;
+	/** User with ROOM_MANAGER role who is the owner of the room */
+	roomManagerOwner: UserData;
 
-	/** User with USER role who is a member of the room (not owner) */
-	userMember: UserData;
+	/** User with ROOM_MANAGER role who is a member of the room (not owner) */
+	roomManagerMember: UserData;
 
-	/** Room member details for userMember */
-	userMemberDetails: RoomMemberData;
+	/** Room member details for roomManagerMember */
+	roomManagerMemberDetails: RoomMemberData;
 
 	/** User with ROOM_MEMBER role who is a member of the room */
 	roomMember: UserData;

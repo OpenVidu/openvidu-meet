@@ -24,8 +24,8 @@ export interface MeetUser {
 export enum MeetUserRole {
 	/** Represents a user with administrative privileges (can manage all rooms and users) */
 	ADMIN = 'admin',
-	/** Represents a regular user (can manage own rooms and access rooms where they are members) */
-	USER = 'user',
+	/** Represents a room manager (can manage own rooms and access rooms where they are members) */
+	ROOM_MANAGER = 'room_manager',
 	/** Represents a user with permissions limited to specific rooms (can only access rooms where they are members) */
 	ROOM_MEMBER = 'room_member'
 }

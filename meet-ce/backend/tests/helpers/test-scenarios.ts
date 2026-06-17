@@ -284,7 +284,7 @@ export const stopWebhookServer = async (): Promise<void> => {
 };
 
 /**
- * Creates a registered user with the specified role and returns UserData.
+ * Creates a user with the specified role and returns UserData.
  *
  * @param userOptions Options for creating the user
  * @returns UserData with user info and access token
@@ -318,7 +318,7 @@ export const setupUser = async (userOptions: MeetUserOptions): Promise<UserData>
 export const setupTestUsers = async (): Promise<TestUsers> => {
 	const timestamp = String(Date.now()).slice(-6); // Use last 6 digits to keep userId under 20 chars
 
-	const [admin, user, roomMember] = await Promise.all([
+	const [admin, roomManager, roomMember] = await Promise.all([
 		// Create admin user
 		setupUser({
 			userId: `adm_${timestamp}`,
@@ -326,12 +326,12 @@ export const setupTestUsers = async (): Promise<TestUsers> => {
 			password: 'admin_pass',
 			role: MeetUserRole.ADMIN
 		}),
-		// Create regular user
+		// Create room manager user
 		setupUser({
 			userId: `usr_${timestamp}`,
-			name: 'User',
-			password: 'user_pass',
-			role: MeetUserRole.USER
+			name: 'Room Manager',
+			password: 'room_manager_pass',
+			role: MeetUserRole.ROOM_MANAGER
 		}),
 		// Create room member user
 		setupUser({
@@ -344,7 +344,7 @@ export const setupTestUsers = async (): Promise<TestUsers> => {
 
 	return {
 		admin,
-		user,
+		roomManager,
 		roomMember
 	};
 };
@@ -367,7 +367,7 @@ export const setupRoomMember = async (
 	const member = createResponse.body as MeetRoomMember;
 
 	// Generate room member token for this member
-	const secret = member.memberId.startsWith('ext-') ? member.memberId : undefined;
+	const secret = member.memberId.startsWith('guest-') ? member.memberId : undefined;
 	const memberToken = await generateRoomMemberToken(
 		roomId,
 		{
@@ -395,7 +395,7 @@ export const updateRoomMemberPermissions = async (
 	const member = updateResponse.body as MeetRoomMember;
 
 	// Generate room member token for this member
-	const secret = member.memberId.startsWith('ext-') ? member.memberId : undefined;
+	const secret = member.memberId.startsWith('guest-') ? member.memberId : undefined;
 	const memberToken = await generateRoomMemberToken(
 		roomId,
 		{
@@ -420,20 +420,20 @@ export const updateRoomMemberPermissions = async (
 export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomData> => {
 	const timestamp = String(Date.now()).slice(-6); // Use last 6 digits to keep userId under 20 chars
 
-	const [userOwner, userMember, roomMember] = await Promise.all([
+	const [roomManagerOwner, roomManagerMember, roomMember] = await Promise.all([
 		// Create user who is the owner of the room
 		setupUser({
 			userId: `usr_own_${timestamp}`,
 			name: 'User Owner',
 			password: 'owner_pass',
-			role: MeetUserRole.USER
+			role: MeetUserRole.ROOM_MANAGER
 		}),
 		// Create user who is a member of the room
 		setupUser({
 			userId: `usr_mem_${timestamp}`,
 			name: 'User Member',
 			password: 'member_pass',
-			role: MeetUserRole.USER
+			role: MeetUserRole.ROOM_MANAGER
 		}),
 		// Create room member user who is a member of the room
 		setupUser({
@@ -444,24 +444,24 @@ export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomDat
 		})
 	]);
 
-	// Change room ownership to userOwner
+	// Change room ownership to roomManagerOwner
 	const roomRepository = container.get(RoomRepository);
 	const recordingRepository = container.get(RecordingRepository);
-	const updatedRoom = await roomRepository.updatePartial(roomData.room.roomId, { owner: userOwner.user.userId });
+	const updatedRoom = await roomRepository.updatePartial(roomData.room.roomId, { owner: roomManagerOwner.user.userId });
 	await recordingRepository.updateAccessScopeMetadataByRoomId(roomData.room.roomId, {
-		roomOwner: userOwner.user.userId
+		roomOwner: roomManagerOwner.user.userId
 	});
 	roomData.room = updatedRoom;
 
-	// Add userMember and roomMember as room members
-	const [userMemberDetails, roomMemberDetails] = await Promise.all([
+	// Add roomManagerMember and roomMember as room members
+	const [roomManagerMemberDetails, roomMemberDetails] = await Promise.all([
 		setupRoomMember(
 			roomData.room.roomId,
 			{
-				userId: userMember.user.userId,
+				userId: roomManagerMember.user.userId,
 				baseRole: MeetRoomMemberRole.MODERATOR
 			},
-			userMember.accessToken
+			roomManagerMember.accessToken
 		),
 		setupRoomMember(
 			roomData.room.roomId,
@@ -473,9 +473,9 @@ export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomDat
 		)
 	]);
 	const testUsers: RoomTestUsers = {
-		userOwner,
-		userMember,
-		userMemberDetails,
+		roomManagerOwner,
+		roomManagerMember,
+		roomManagerMemberDetails,
 		roomMember,
 		roomMemberDetails
 	};

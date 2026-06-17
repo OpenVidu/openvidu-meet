@@ -29,7 +29,7 @@ export class AddRoomMemberComponent implements OnInit {
 	isSaving = signal(false);
 	isEditMode = signal(false);
 	memberInitData = signal<MeetRoomMemberOptions | undefined>(undefined);
-	memberType = signal<MemberFormMemberType>('registered');
+	memberType = signal<MemberFormMemberType>('user');
 
 	roomRoles = signal<MeetRoomRoles | undefined>(undefined);
 	roomOwner = signal<string>('');
@@ -62,7 +62,7 @@ export class AddRoomMemberComponent implements OnInit {
 			if (member) {
 				const options = this.buildMemberOptions(member);
 				this.memberInitData.set(options);
-				this.memberType.set(options.userId ? 'registered' : 'external');
+				this.memberType.set(options.userId ? 'user' : 'identified_guest');
 			}
 		} catch (error) {
 			console.error(error);
@@ -112,9 +112,9 @@ export class AddRoomMemberComponent implements OnInit {
 	}
 
 	private buildMemberOptions(member: MeetRoomMember): MeetRoomMemberOptions {
-		const isRegistered = RoomMemberUiUtils.isRegisteredMember(member);
+		const isUser = RoomMemberUiUtils.isUserMember(member);
 		return {
-			...(isRegistered ? { userId: member.memberId } : { name: member.name }),
+			...(isUser ? { userId: member.memberId } : { name: member.name }),
 			baseRole: member.baseRole,
 			customPermissions: member.customPermissions
 		};

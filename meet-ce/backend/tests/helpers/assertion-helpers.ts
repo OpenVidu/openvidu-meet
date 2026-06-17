@@ -172,19 +172,19 @@ export const expectValidRoom = (
 	expect(room.access.anonymous.moderator).toBeDefined();
 	expect(room.access.anonymous.speaker).toBeDefined();
 	expect(room.access.anonymous.recording).toBeDefined();
-	expect(room.access.registered).toBeDefined();
+	expect(room.access.user).toBeDefined();
 	expect(room.access.anonymous.moderator.enabled).toBeDefined();
 	expect(room.access.anonymous.speaker.enabled).toBeDefined();
 	expect(room.access.anonymous.recording.enabled).toBeDefined();
-	expect(room.access.registered.enabled).toBeDefined();
+	expect(room.access.user.enabled).toBeDefined();
 	expect(room.access.anonymous.moderator.url).toBeDefined();
 	expect(room.access.anonymous.speaker.url).toBeDefined();
 	expect(room.access.anonymous.recording.url).toBeDefined();
-	expect(room.access.registered.url).toBeDefined();
+	expect(room.access.user.url).toBeDefined();
 	expect(room.access.anonymous.moderator.url).toContain(room.roomId);
 	expect(room.access.anonymous.speaker.url).toContain(room.roomId);
 	expect(room.access.anonymous.recording.url).toContain(room.roomId);
-	expect(room.access.registered.url).toContain(room.roomId);
+	expect(room.access.user.url).toContain(room.roomId);
 
 	expect(room.status).toBeDefined();
 	expect(room.status).toEqual(status || MeetRoomStatus.OPEN);

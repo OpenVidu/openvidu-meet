@@ -12,7 +12,7 @@ import type { SchemaMigratableDocument } from '../migration.model.js';
  */
 export interface MeetRecordingDocument extends MeetRecordingInfo, SchemaMigratableDocument {
 	roomOwner: string;
-	roomRegisteredAccess: boolean;
+	roomUserAccess: boolean;
 	accessSecrets: {
 		public: string;
 		private: string;
@@ -31,7 +31,7 @@ export type MeetRecordingDocumentOnlyField = DocumentOnlyField<MeetRecordingDocu
 export const MEET_RECORDING_DOCUMENT_ONLY_FIELDS = [
 	'schemaVersion',
 	'roomOwner',
-	'roomRegisteredAccess',
+	'roomUserAccess',
 	'accessSecrets'
 ] as const satisfies readonly MeetRecordingDocumentOnlyField[];
 
@@ -62,7 +62,7 @@ const MeetRecordingSchema = new Schema<MeetRecordingDocument>(
 			type: String,
 			required: true
 		},
-		roomRegisteredAccess: {
+		roomUserAccess: {
 			type: Boolean,
 			required: true
 		},
@@ -134,7 +134,7 @@ MeetRecordingSchema.index({ startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomId: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomName: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ roomOwner: 1, startDate: -1, _id: -1 });
-MeetRecordingSchema.index({ roomRegisteredAccess: 1, startDate: -1, _id: -1 });
+MeetRecordingSchema.index({ roomUserAccess: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ status: 1, startDate: -1, _id: -1 });
 MeetRecordingSchema.index({ duration: -1, _id: -1 });
 MeetRecordingSchema.index({ size: -1, _id: -1 });

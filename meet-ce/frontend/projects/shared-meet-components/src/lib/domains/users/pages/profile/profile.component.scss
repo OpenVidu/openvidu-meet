@@ -153,7 +153,7 @@
 		color: var(--ov-meet-color-primary);
 	}
 
-	&.role-user {
+	&.role-room_manager {
 		background-color: color-mix(in srgb, var(--ov-meet-color-success), transparent 85%);
 		color: var(--ov-meet-color-success);
 	}

@@ -25,7 +25,7 @@ export const roomsConsoleRoutes: DomainRouteConfig[] = [
 			icon: 'video_chat',
 			iconClass: 'ov-room-icon',
 			order: 2,
-			allowedRoles: [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER]
+			allowedRoles: [MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER]
 		}
 	},
 	{
@@ -33,7 +33,7 @@ export const roomsConsoleRoutes: DomainRouteConfig[] = [
 			path: 'rooms/new',
 			loadComponent: () =>
 				import('../pages/room-wizard/room-wizard.component').then((m) => m.RoomWizardComponent),
-			canActivate: [checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.USER])]
+			canActivate: [checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER])]
 		}
 	},
 	{
@@ -43,7 +43,7 @@ export const roomsConsoleRoutes: DomainRouteConfig[] = [
 				import('../pages/room-wizard/room-wizard.component').then((m) => m.RoomWizardComponent),
 			canActivate: [
 				runGuardsSerially(
-					checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.USER]),
+					checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER]),
 					checkRoomManageGuard,
 					checkEditableRoomGuard
 				)

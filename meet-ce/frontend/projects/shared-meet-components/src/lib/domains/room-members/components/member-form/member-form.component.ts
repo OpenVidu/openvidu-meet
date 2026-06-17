@@ -69,13 +69,13 @@ export class MemberFormComponent implements OnInit {
 	readonly permissionGroups = PERMISSION_GROUPS;
 	protected readonly RoomMemberUiUtils = RoomMemberUiUtils;
 
-	isRegisteredMode = signal(true);
+	isUserMode = signal(true);
 	isLoadingUsers = signal(false);
 	filteredUsers = signal<MeetUserDTO[]>([]);
 
 	// ── Form ──────────────────────────────────────────────────────────────────
 	form = new FormGroup({
-		memberType: new FormControl<MemberFormMemberType>('registered', { nonNullable: true }),
+		memberType: new FormControl<MemberFormMemberType>('user', { nonNullable: true }),
 		userId: new FormControl<string>('', [Validators.required, Validators.pattern(/^[a-z0-9_]+$/)]),
 		memberName: new FormControl<string>({ value: '', disabled: true }, [
 			Validators.required,
@@ -91,10 +91,10 @@ export class MemberFormComponent implements OnInit {
 			.get('memberType')!
 			.valueChanges.pipe(takeUntilDestroyed())
 			.subscribe((type) => {
-				const isRegistered = type === 'registered';
-				this.isRegisteredMode.set(isRegistered);
+				const isUser = type === 'user';
+				this.isUserMode.set(isUser);
 				this.memberTypeChanged.emit(type);
-				if (isRegistered) {
+				if (isUser) {
 					this.form.get('userId')!.enable();
 					this.form.get('memberName')!.disable();
 					this.form.get('memberName')!.reset('');
@@ -116,7 +116,7 @@ export class MemberFormComponent implements OnInit {
 				}
 			});
 
-		// Autocomplete search for registered users
+		// Autocomplete search for users
 		this.form
 			.get('userId')!
 			.valueChanges.pipe(debounceTime(500), distinctUntilChanged(), takeUntilDestroyed())
@@ -208,7 +208,7 @@ export class MemberFormComponent implements OnInit {
 		}
 
 		const options: MeetRoomMemberOptions = {
-			...(memberType === 'registered' ? { userId: userId! } : { name: memberName! }),
+			...(memberType === 'user' ? { userId: userId! } : { name: memberName! }),
 			baseRole: role!,
 			customPermissions
 		};
@@ -236,7 +236,7 @@ export class MemberFormComponent implements OnInit {
 
 	private applyInitialData(options: MeetRoomMemberOptions): void {
 		const role = options.baseRole;
-		const memberType: MemberFormMemberType = options.userId ? 'registered' : 'external';
+		const memberType: MemberFormMemberType = options.userId ? 'user' : 'identified_guest';
 		const lockIdentity = this.lockIdentity();
 
 		// Set role without emitting (prevents premature permission reset)
@@ -249,7 +249,7 @@ export class MemberFormComponent implements OnInit {
 			this.form.get('memberType')!.disable();
 		}
 
-		if (memberType === 'registered') {
+		if (memberType === 'user') {
 			this.form.get('userId')!.setValue(options.userId ?? '');
 			if (lockIdentity) {
 				this.form.get('userId')!.disable();

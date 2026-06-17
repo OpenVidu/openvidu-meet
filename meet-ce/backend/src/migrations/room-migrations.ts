@@ -81,7 +81,7 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 				url: `/room/${room.roomId}/recordings?secret=${secureUid(10)}`
 			}
 		},
-		registered: {
+		user: {
 			enabled: false,
 			url: `/room/${room.roomId}`
 		}

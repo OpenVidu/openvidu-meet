@@ -19,7 +19,7 @@ import { MeetRoomAccess } from '@openvidu-meet/typings';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { WizardStepId } from '../../models/wizard.model';
 
-export type RoomAccessType = 'anonymous-moderator' | 'anonymous-speaker' | 'registered';
+export type RoomAccessType = 'anonymous-moderator' | 'anonymous-speaker' | 'user';
 
 export interface RoomShareDialogData {
 	access: MeetRoomAccess;
@@ -56,7 +56,7 @@ export class RoomShareDialogComponent {
 	copied = signal(false);
 	roomUrl = signal<string | undefined>(undefined);
 
-	selectedAccessType = signal<RoomAccessType>('registered');
+	selectedAccessType = signal<RoomAccessType>('user');
 
 	currentUrl = computed(() => {
 		const access = this.data.access;
@@ -65,8 +65,8 @@ export class RoomShareDialogComponent {
 				return access.anonymous.moderator.url;
 			case 'anonymous-speaker':
 				return access.anonymous.speaker.url;
-			case 'registered':
-				return access.registered.url;
+			case 'user':
+				return access.user.url;
 		}
 	});
 
@@ -79,9 +79,9 @@ export class RoomShareDialogComponent {
 				return access.anonymous.moderator.enabled;
 			case 'anonymous-speaker':
 				return access.anonymous.speaker.enabled;
-			case 'registered':
-				// Registered access link always works for admins and room members,
-				// even when general registered access is "restricted" (disabled).
+			case 'user':
+				// User access link always works for admins and room members,
+				// even when general user access is "restricted" (disabled).
 				return true;
 		}
 	}

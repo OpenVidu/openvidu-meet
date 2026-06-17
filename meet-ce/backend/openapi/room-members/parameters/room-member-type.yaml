@@ -1,9 +1,9 @@
 name: type
 in: query
 required: false
-description: Filter members by their type (registered or external).
+description: Filter members by their type (user or identified guest).
 schema:
     type: string
     enum:
-        - registered
-        - external
+        - user
+        - identified_guest
