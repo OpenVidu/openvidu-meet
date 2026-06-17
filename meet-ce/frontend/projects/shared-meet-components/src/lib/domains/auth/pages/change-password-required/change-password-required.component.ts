@@ -138,7 +138,7 @@ export class ChangePasswordRequiredComponent implements OnInit {
 			if (redirectTo && !redirectTo.includes('/change-password-required')) {
 				await this.navigationService.redirectTo(redirectTo, true);
 			} else {
-				await this.navigationService.navigateTo('/', {}, true);
+				await this.navigationService.redirectTo('/', true);
 			}
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 400) {

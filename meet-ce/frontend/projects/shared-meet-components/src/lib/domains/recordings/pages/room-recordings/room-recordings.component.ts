@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -35,6 +35,14 @@ export class RoomRecordingsComponent implements OnInit {
 	protected readonly route = inject(ActivatedRoute);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomRecordingsComponent');
 
+	/**
+	 * Optional input that takes precedence over `ActivatedRoute.snapshot.params`.
+	 * Populated when this component is rendered outside the Angular Router
+	 * (e.g. the Angular Elements Web Component); the SPA leaves it empty and
+	 * falls back to the route snapshot.
+	 */
+	readonly roomIdInput = input<string>('', { alias: 'roomId' });
+
 	recordings = signal<MeetRecordingInfo[]>([]);
 	roomId = '';
 	roomName = signal('');
@@ -62,7 +70,7 @@ export class RoomRecordingsComponent implements OnInit {
 	private currentFilters: RecordingTableFilter = this.initialFilters();
 
 	async ngOnInit() {
-		this.roomId = this.route.snapshot.paramMap.get('room-id')!;
+		this.roomId = this.roomIdInput() || this.route.snapshot.paramMap.get('room-id')!;
 		this.canDeleteRecordings.set(this.roomMemberContextService.hasPermission('canDeleteRecordings'));
 
 		// Load recordings
@@ -88,7 +96,7 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async goBackToRoom() {
 		try {
-			await this.navigationService.navigateTo(`/room/${this.roomId}`);
+			await this.navigationService.goBackToRoom(this.roomId);
 		} catch (error) {
 			this.log.e('Error navigating back to room:', error);
 		}

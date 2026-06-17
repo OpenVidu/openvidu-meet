@@ -12,7 +12,9 @@ let hasTypeErrors = false;
 function startTypeChecker() {
 	console.log('🔍 Starting type checker in watch mode...', backendDir);
 
-	tscProcess = spawn('pnpm', ['tsc', '--noEmit', '--watch', '--preserveWatchOutput'], {
+	// Use tsconfig.prod.json: it carries the Express v5 type pin (`paths`) that the base tsconfig.json
+	// intentionally omits so tsx can resolve `express` at runtime. See meet-ce/backend/tsconfig.prod.json.
+	tscProcess = spawn('pnpm', ['tsc', '--noEmit', '--watch', '--preserveWatchOutput', '-p', 'tsconfig.prod.json'], {
 		cwd: backendDir,
 		stdio: 'pipe',
 		shell: true

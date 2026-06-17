@@ -43,12 +43,12 @@
 				}
 			</div>
 		</div>
-		<hr />
+		@for (group of imageCategories; track group.category) {
 		<div>
-			<h4 class="background-title">{{ 'PANEL.BACKGROUND.IMAGES_SECTION' | translate }}</h4>
+			<h4 class="background-title">{{ group.titleKey | translate }}</h4>
 
 			<div class="grid">
-				@for (effect of backgroundImages; track effect.id) {
+				@for (effect of group.images; track effect.id) {
 				<div
 					class="effect-button"
 					[id]="'effect-' + effect.id"
@@ -61,5 +61,6 @@
 				}
 			</div>
 		</div>
+		}
 	</div>
 </div>

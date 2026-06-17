@@ -1,94 +1,52 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn, RouterStateSnapshot } from '@angular/router';
-import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
-import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services';
-import { RoomAccessService } from '../../rooms/services/room-access.service';
-import { RecordingService } from '../services';
+import { RecordingEntryService } from '../services/recording-entry.service';
+import { RoomRecordingsEntryService } from '../services/room-recordings-entry.service';
 
 /**
- * Guard to validate the access to recordings of a room by generating a room member token and checking permissions.
+ * Adapter guard: delegates the room-recordings permission check to
+ * {@link RoomRecordingsEntryService.validate} and maps the outcome to a
+ * {@link CanActivateFn} return value.
  */
 export const validateRoomRecordingsAccessGuard: CanActivateFn = async (
 	_route: ActivatedRouteSnapshot,
 	_state: RouterStateSnapshot
 ) => {
-	const roomAccessService = inject(RoomAccessService);
+	const roomRecordingsEntry = inject(RoomRecordingsEntryService);
 	const navigationService = inject(NavigationService);
 
-	const result = await roomAccessService.validateAccess({
-		requireRecordingsPermission: true
-	});
-
-	if (result.allowed) {
+	const outcome = await roomRecordingsEntry.validate();
+	if (outcome.kind === 'ready') {
 		return true;
 	}
-
-	return navigationService.redirectToErrorPage(result.reason!);
+	return navigationService.redirectToErrorPage(outcome.reason);
 };
 
 /**
- * Guard to validate access to a recording by checking the recording secret and room access permissions.
- * The guard first attempts to validate access by generating a room member token with the required permissions.
- * If that fails and a recording secret is provided, it falls back to validating the recording secret directly.
- * This allows supporting access to recordings for users who may not have permissions to access the room but have a valid recording secret.
+ * Adapter guard: delegates the two-mode access check (room permission OR
+ * recording-secret fallback) to {@link RecordingEntryService.validate}, then
+ * maps the outcome to a {@link CanActivateFn} return value. The login redirect
+ * carries the current URL so the user is returned here after authenticating.
  */
 export const validateRecordingAccessGuard: CanActivateFn = async (
 	route: ActivatedRouteSnapshot,
 	state: RouterStateSnapshot
 ) => {
-	const recordingService = inject(RecordingService);
+	const recordingEntry = inject(RecordingEntryService);
 	const navigationService = inject(NavigationService);
-	const roomAccessService = inject(RoomAccessService);
 
 	const recordingId = route.params['recording-id'] as string;
 	const recordingSecret = route.queryParams['recordingSecret'] as string | undefined;
 
-	const roomAccessResult = await roomAccessService.validateAccess({
-		requireRecordingsPermission: true,
-		skipAuthRecoveryOn401: !!recordingSecret
-	});
+	const outcome = await recordingEntry.validate({ recordingId, recordingSecret });
 
-	// If the user has access to the room and no recording secret is provided, allow access
-	// This covers the case of users with permissions accessing the recording through the room
-	if (roomAccessResult.allowed && !recordingSecret) {
-		return true;
-	}
-
-	// If the user doesn't have access to the room and no recording secret is provided, deny access
-	// This covers the case of users without permissions trying to access the recording without a secret
-	if (!roomAccessResult.allowed && !recordingSecret) {
-		return navigationService.redirectToErrorPage(roomAccessResult.reason!);
-	}
-
-	try {
-		// If a recording secret is provided, attempt to validate it directly by fetching the recording with the secret.
-		// This covers the case of users without permissions but with a valid recording secret trying to access the recording.
-		const headers = { [HTTP_HEADERS.SKIP_AUTH_RECOVERY]: 'true' };
-		await recordingService.getRecording(recordingId, recordingSecret, headers);
-		return true;
-	} catch (error: any) {
-		console.error('Error checking recording access:', error);
-		switch (error.status) {
-			case 400:
-				// Invalid secret
-				return navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_RECORDING_SECRET);
-			case 401:
-				// Unauthorized access
-				// Redirect to the login page with query param to redirect back to the recording
-				return navigationService.redirectToLoginPage(state.url);
-			case 403:
-				// Anonymous access disabled
-				return navigationService.redirectToErrorPage(NavigationErrorReason.ANONYMOUS_RECORDING_ACCESS_DISABLED);
-			case 404:
-				// Recording not found
-				return navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_RECORDING);
-			case 429:
-				// Too many requests (rate limited)
-				return navigationService.redirectToErrorPage(NavigationErrorReason.TOO_MANY_REQUESTS);
-			default:
-				// Internal error
-				return navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR);
-		}
+	switch (outcome.kind) {
+		case 'ready':
+			return true;
+		case 'login-required':
+			return navigationService.redirectToLoginPage(state.url);
+		case 'error':
+			return navigationService.redirectToErrorPage(outcome.reason);
 	}
 };

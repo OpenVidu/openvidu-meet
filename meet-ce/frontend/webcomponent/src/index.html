@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenVidu Meet – WebComponent Dev</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      html, body { margin: 0; height: 100%; }
+      openvidu-meet { display: block; width: 100%; height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <!--
+      Development harness for the openvidu-meet custom element.
+      After running `npm start`, the Angular dev server serves this page.
+
+      Usage examples:
+
+      Basic room:
+        <openvidu-meet room-url="https://your-server.com/room/my-room"></openvidu-meet>
+
+      With custom slots:
+        <openvidu-meet room-url="https://your-server.com/room/my-room">
+          <nav slot="side">Custom sidebar</nav>
+          <section slot="main">Custom main content</section>
+        </openvidu-meet>
+    -->
+    <openvidu-meet room-url="https://demo.openvidu.io/room/dev-room">
+      <!-- Example: inject custom slot content for development -->
+    </openvidu-meet>
+  </body>
+</html>

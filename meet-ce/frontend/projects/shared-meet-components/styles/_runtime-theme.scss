@@ -1,0 +1,60 @@
+// Import Angular Material Sass helpers so the shared mixin can emit theme CSS.
+@use '@angular/material' as mat;
+// Import the project Material theme definitions reused by SPA and webcomponent.
+@use './openvidu-theme.scss';
+// Import the reusable core token emitter extracted from the global token file.
+@use './_tokens-core.scss';
+// Import the reusable light/dark token emitters extracted from theme tokens.
+@use './_tokens-themes.scss';
+
+// Emit the runtime theme for any root selector, allowing the same Sass to target
+// either the regular document root or the webcomponent shadow host.
+@mixin emit-runtime-theme($root-selector, $dark-selector, $is-shadow-root: false) {
+	// Emit Material elevation utility classes once so both runtimes share them.
+	@include mat.elevation-classes();
+
+	// Recreate the Material app background helper class in a selector-neutral place.
+	.mat-app-background {
+		// Resolve the surface background using Material tokens with a safe fallback.
+		background-color: var(--mat-app-background-color, var(--mat-sys-surface, transparent));
+		// Resolve foreground text color from Material tokens with a safe fallback.
+		color: var(--mat-app-text-color, var(--mat-sys-on-surface, inherit));
+	}
+
+	// Emit the light/default theme on the consumer-provided root selector.
+	#{$root-selector} {
+		// Publish all shared OpenVidu design tokens on the chosen root.
+		@include tokens-core.emit-core-token-values;
+		// Publish the light-theme token overrides on the same root.
+		@include tokens-themes.emit-light-theme-token-values;
+		// Keep typography inheritance consistent between SPA and shadow host.
+		font-family: var(--ov-meet-font-family);
+
+		// Branch between document and shadow-root behavior for Material background helpers.
+		@if $is-shadow-root {
+			// mat.app-background() emits html selectors that do not match inside the shadow root.
+			// Seed the core foreground token manually because html-scoped Material CSS cannot cross the boundary.
+			--mat-sys-on-surface: initial;
+		} @else {
+			// In the normal document, let Angular Material emit its standard helper selectors.
+			@include mat.app-background();
+		}
+
+		// Emit Material structural base styles once for all components in the light theme.
+		@include mat.all-component-bases(openvidu-theme.$light-theme);
+		// Emit Material light color tokens and component color rules.
+		@include mat.all-component-colors(openvidu-theme.$light-theme);
+		// Emit Material typography rules so components render consistently.
+		@include mat.all-component-typographies(openvidu-theme.$light-theme);
+		// Emit Material density rules so spacing stays aligned across runtimes.
+		@include mat.all-component-densities(openvidu-theme.$light-theme);
+	}
+
+	// Emit dark-mode token overrides and Material colors on the consumer dark selector.
+	#{$dark-selector} {
+		// Publish the dark OpenVidu token overrides without duplicating their source of truth.
+		@include tokens-themes.emit-dark-theme-token-values;
+		// Emit only Material dark colors because the rest of the runtime CSS is unchanged.
+		@include mat.all-component-colors(openvidu-theme.$dark-theme);
+	}
+}

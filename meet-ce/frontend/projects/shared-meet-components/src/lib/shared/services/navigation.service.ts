@@ -1,27 +1,32 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { NavigationStart, Params, Router, UrlTree } from '@angular/router';
 import { NavigationErrorReason } from '../models/navigation.model';
-import { AppContextService } from './app-context.service';
+import {
+	WcNavigationRequest,
+	WebComponentEventType,
+	WebComponentLeftEvent,
+	WebComponentNavigationType
+} from '../models/webcomponent-bridge.model';
 import { ListStateCacheService } from './list-state-cache.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
+import { WebComponentBridgeService } from './webcomponent-bridge.service';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class NavigationService {
+	private readonly wcBridge = inject(WebComponentBridgeService);
+	private readonly router = inject(Router);
+	private readonly sessionStorageService = inject(SessionStorageService);
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly listStateCacheService = inject(ListStateCacheService);
 	protected leaveRedirectUrl?: string;
 
 	/** Trigger of the most recently started navigation (tracked from NavigationStart). */
 	private lastNavigationTrigger: 'imperative' | 'popstate' | 'hashchange' = 'imperative';
 
-	constructor(
-		private router: Router,
-		private sessionStorageService: SessionStorageService,
-		private appCtxService: AppContextService,
-		private runtimeConfigService: RuntimeConfigService,
-		private listStateCacheService: ListStateCacheService
-	) {
+	constructor() {
 		// getCurrentNavigation() is null by the time a lazy component's ngOnInit runs,
 		// so capture the trigger when each navigation starts instead.
 		this.router.events.subscribe((event) => {
@@ -29,15 +34,6 @@ export class NavigationService {
 				this.lastNavigationTrigger = event.navigationTrigger ?? 'imperative';
 			}
 		});
-	}
-
-	private getBasePathPrefix(): string {
-		const basePath = this.runtimeConfigService.basePath;
-		if (!basePath || basePath === '/') {
-			return '';
-		}
-
-		return basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
 	}
 
 	/**
@@ -77,16 +73,6 @@ export class NavigationService {
 	}
 
 	/**
-	 * Sets the leave redirect URL and stores it in session storage for persistence across page reloads.
-	 *
-	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
-	 */
-	protected setLeaveRedirectUrl(leaveRedirectUrl: string): void {
-		this.leaveRedirectUrl = leaveRedirectUrl;
-		this.sessionStorageService.setRedirectUrl(leaveRedirectUrl);
-	}
-
-	/**
 	 * Retrieves the leave redirect URL, checking both the service property and session storage.
 	 *
 	 * @returns The leave redirect URL if set, otherwise undefined
@@ -106,7 +92,7 @@ export class NavigationService {
 	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
 	 */
 	handleLeaveRedirectUrl(leaveRedirectUrl: string | undefined) {
-		const isEmbeddedMode = this.appCtxService.isEmbeddedMode();
+		const isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode();
 
 		// Explicit valid URL provided - use as is
 		if (leaveRedirectUrl && this.isValidUrl(leaveRedirectUrl)) {
@@ -114,63 +100,21 @@ export class NavigationService {
 			return;
 		}
 
-		// Absolute path provided in embedded mode - construct full URL based on parent origin
-		if (isEmbeddedMode && leaveRedirectUrl?.startsWith('/')) {
-			const parentUrl = document.referrer;
-			const parentOrigin = new URL(parentUrl).origin;
-			this.setLeaveRedirectUrl(parentOrigin + leaveRedirectUrl);
+		// Relative path provided while embedded as a webcomponent — resolve it
+		// against the host page's origin. The Angular Elements element runs in
+		// the host's window, so `window.location.origin` IS the host origin
+		// (in the legacy iframe model this was reconstructed via document.referrer).
+		if (isWebcomponentMode && leaveRedirectUrl?.startsWith('/')) {
+			this.setLeaveRedirectUrl(window.location.origin + leaveRedirectUrl);
 			return;
 		}
 
-		// Auto-detect from referrer (only if no explicit URL provided and not embedded)
-		if (!leaveRedirectUrl && !isEmbeddedMode) {
+		// Auto-detect from referrer (only when running standalone and no explicit URL provided)
+		if (!leaveRedirectUrl && !isWebcomponentMode) {
 			const autoRedirectUrl = this.getAutoRedirectUrl();
 			if (autoRedirectUrl) {
 				this.setLeaveRedirectUrl(autoRedirectUrl);
 			}
-		}
-	}
-
-	/**
-	 * Automatically detects if user came from another domain and returns appropriate redirect URL
-	 */
-	protected getAutoRedirectUrl(): string | null {
-		try {
-			const referrer = document.referrer;
-
-			// No referrer means user typed URL directly or came from bookmark
-			if (!referrer) {
-				return null;
-			}
-
-			const referrerUrl = new URL(referrer);
-			const currentUrl = new URL(window.location.href);
-
-			// Check if referrer is from a different domain
-			if (referrerUrl.origin !== currentUrl.origin) {
-				console.log(`Auto-configuring leave redirect to referrer: ${referrer}`);
-				return referrer;
-			}
-
-			return null;
-		} catch (error) {
-			console.warn('Error detecting auto redirect URL:', error);
-			return null;
-		}
-	}
-
-	/**
-	 * Validates if a given string is a well-formed URL
-	 *
-	 * @param url - The URL string to validate
-	 * @returns True if the URL is valid, false otherwise
-	 */
-	protected isValidUrl(url: string): boolean {
-		try {
-			new URL(url);
-			return true;
-		} catch (error) {
-			return false;
 		}
 	}
 
@@ -190,13 +134,10 @@ export class NavigationService {
 			return;
 		}
 
-		const isEmbeddedMode = this.appCtxService.isEmbeddedMode();
-		if (isEmbeddedMode) {
-			// Change the top window location if in embedded mode
-			window.top!.location.href = url;
-		} else {
-			window.location.href = url;
-		}
+		// The Angular Elements webcomponent runs in the host's window, so
+		// `window` already refers to the top-level document. No iframe-era
+		// `window.top` indirection needed.
+		window.location.href = url;
 	}
 
 	/**
@@ -207,6 +148,14 @@ export class NavigationService {
 	 * @param replaceUrl - If true, replaces the current URL in the browser history
 	 */
 	async navigateTo(route: string, queryParams?: Params, replaceUrl: boolean = false): Promise<void> {
+		// The WC has no router: arbitrary route navigation isn't supported here (in-WC
+		// view changes go through the high-level intents / navigation requests). Guard
+		// against hitting the empty router, which would only log a NavigationError.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			console.warn(`navigateTo('${route}') ignored in webcomponent mode`);
+			return;
+		}
+
 		try {
 			await this.router.navigate([route], {
 				queryParams,
@@ -276,6 +225,17 @@ export class NavigationService {
 	 * @param replaceUrl - If true, replaces the current URL in the browser history
 	 */
 	async redirectTo(url: string, replaceUrl: boolean = true): Promise<void> {
+		// In the WC, `redirectTo` is only reached when an interrupt flow finishes
+		// (login / change-password). There is no router and no destination route to
+		// honor — the destination is always the shell's primary attribute-derived
+		// view — so we just clear the navigation request, which makes the shell fall
+		// back to that primary view and re-bootstrap it. The `url` is intentionally
+		// ignored.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.clearNavigationRequest();
+			return;
+		}
+
 		try {
 			// Strip basePath prefix if present, since Angular router operates relative to <base href>
 			url = this.stripBasePath(url);
@@ -308,6 +268,13 @@ export class NavigationService {
 	async redirectToErrorPage(reason: NavigationErrorReason, navigate = false): Promise<UrlTree> {
 		const urlTree = this.createRedirectionTo('/error', { reason });
 
+		// The WC has no `/error` route: surface the error through the bridge instead.
+		// The shell re-emits it on the host `error` event and shows its own error view.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.ERROR, reason });
+			return urlTree;
+		}
+
 		if (navigate) {
 			try {
 				await this.router.navigateByUrl(urlTree);
@@ -327,48 +294,24 @@ export class NavigationService {
 	 * @returns The UrlTree for the login page
 	 */
 	async redirectToLoginPage(redirectTo?: string, navigate = false): Promise<UrlTree> {
-		const queryParams = redirectTo ? { redirectTo } : undefined;
-		const urlTree = this.createRedirectionTo('/login', queryParams);
-
-		if (navigate) {
-			try {
-				await this.router.navigateByUrl(urlTree);
-			} catch (error) {
-				console.error('Error redirecting to login page:', error);
-			}
-		}
-
-		return urlTree;
+		return this.redirectToAuthPage('/login', { type: WebComponentNavigationType.LOGIN }, redirectTo, navigate);
 	}
 
 	/**
-	 * Checks if the current URL contains a specific route
+	 * Creates a UrlTree for the mandatory password change page with a `redirectTo`
+	 * query parameter and optionally navigates to it.
 	 *
-	 * @param route - The route to check against the current URL
-	 * @returns True if the current URL contains the route, false otherwise
+	 * @param redirectTo - The URL to redirect to after the password change
+	 * @param navigate - If true, navigates to the generated UrlTree
+	 * @returns The UrlTree for the change-password page
 	 */
-	containsRoute(route: string): boolean {
-		const currentUrl = this.router.url.split('?')[0]; // Remove query params for comparison
-		return currentUrl.includes(route);
-	}
-
-	/**
-	 * Updates the query parameters in the URL by merging existing parameters with new ones.
-	 *
-	 * @param oldParams - The existing query parameters
-	 * @param newParams - The new query parameters to merge with the existing ones
-	 */
-	async updateQueryParamsFromUrl(oldParams: Params, newParams: Params): Promise<void> {
-		const queryParams = {
-			...oldParams,
-			...newParams
-		};
-
-		await this.router.navigate([], {
-			queryParams,
-			replaceUrl: true,
-			queryParamsHandling: 'merge'
-		});
+	async redirectToChangePasswordPage(redirectTo?: string, navigate = false): Promise<UrlTree> {
+		return this.redirectToAuthPage(
+			'/change-password-required',
+			{ type: WebComponentNavigationType.CHANGE_PASSWORD },
+			redirectTo,
+			navigate
+		);
 	}
 
 	/**
@@ -403,5 +346,211 @@ export class NavigationService {
 			replaceUrl: true,
 			queryParamsHandling: 'replace'
 		});
+	}
+
+	/**
+	 * Open the room-recordings view for the given room. SPA route equivalent:
+	 * `/room/<roomId>/recordings`.
+	 */
+	async goToRoomRecordings(roomId: string): Promise<void> {
+		await this.navigateOrRequest(`/room/${roomId}/recordings`, {
+			type: WebComponentNavigationType.VIEW_RECORDINGS,
+			roomId
+		});
+	}
+
+	/**
+	 * Return from the room-recordings view to the room. WC: clear the recordings
+	 * override so the shell falls back to its attribute-derived view (the
+	 * meeting/lobby). SPA: navigate to `/room/<roomId>`.
+	 */
+	async goBackToRoom(roomId: string): Promise<void> {
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.clearNavigationRequest();
+			return;
+		}
+
+		await this.navigateTo(`/room/${roomId}`);
+	}
+
+	/**
+	 * Back-navigation from the meeting lobby / end-meeting / disconnected screens.
+	 *
+	 * @param fallbackRoute SPA route when no leave-redirect URL is set. Defaults to `/rooms`.
+	 * @param replaceUrl Replace the current history entry when navigating to it.
+	 */
+	async goBackFromMeeting(fallbackRoute = '/rooms', replaceUrl = false): Promise<void> {
+		await this.closeOrLeave(fallbackRoute, replaceUrl);
+	}
+
+	/**
+	 * Back-navigation from a single-recording view: go to room-recordings when the
+	 * user can list them and a roomId is known; otherwise end like
+	 * {@link goBackFromMeeting} with no SPA fallback route.
+	 */
+	async goBackFromRecording(roomId: string | undefined, canRetrieveRecordings: boolean): Promise<void> {
+		if (canRetrieveRecordings && roomId) {
+			await this.goToRoomRecordings(roomId);
+			return;
+		}
+
+		await this.closeOrLeave();
+	}
+
+	/**
+	 * Transition to the post-leave state. SPA navigates to the `/disconnected`
+	 * screen; WC emits the `left` host event, which drives the end-meeting view and
+	 * notifies the host. The `left` event is WC-only — nothing consumes it in the SPA.
+	 */
+	async goToDisconnected(detail: Omit<WebComponentLeftEvent, 'type'>): Promise<void> {
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.LEFT, ...detail });
+			return;
+		}
+
+		await this.navigateTo('/disconnected', { reason: detail.reason }, true);
+	}
+
+	// PRIVATE HELPERS
+
+	private getBasePathPrefix(): string {
+		const basePath = this.runtimeConfigService.basePath;
+		if (!basePath || basePath === '/') {
+			return '';
+		}
+
+		return basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
+	}
+
+	/**
+	 * Automatically detects if user came from another domain and returns appropriate redirect URL
+	 */
+	protected getAutoRedirectUrl(): string | null {
+		try {
+			const referrer = document.referrer;
+
+			// No referrer means user typed URL directly or came from bookmark
+			if (!referrer) {
+				return null;
+			}
+
+			const referrerUrl = new URL(referrer);
+			const currentUrl = new URL(window.location.href);
+
+			// Check if referrer is from a different domain
+			if (referrerUrl.origin !== currentUrl.origin) {
+				console.log(`Auto-configuring leave redirect to referrer: ${referrer}`);
+				return referrer;
+			}
+
+			return null;
+		} catch (error) {
+			console.warn('Error detecting auto redirect URL:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Sets the leave redirect URL and stores it in session storage for persistence across page reloads.
+	 *
+	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
+	 */
+	protected setLeaveRedirectUrl(leaveRedirectUrl: string): void {
+		this.leaveRedirectUrl = leaveRedirectUrl;
+		this.sessionStorageService.setRedirectUrl(leaveRedirectUrl);
+	}
+
+	/**
+	 * Validates if a given string is a well-formed URL
+	 *
+	 * @param url - The URL string to validate
+	 * @returns True if the URL is valid, false otherwise
+	 */
+	protected isValidUrl(url: string): boolean {
+		try {
+			new URL(url);
+			return true;
+		} catch (error) {
+			return false;
+		}
+	}
+
+	// ── High-level navigation intents ─────────────────────────────────────
+	//
+	// Each centralizes the WC-vs-SPA branch once (SPA: Angular Router; WC: a
+	// bridge navigation request, or `closed` to end a flow), so callers never
+	// branch on mode or touch the bridge. Add an intent by delegating to one of
+	// the two private helpers below.
+
+	/** WC: emit the navigation request so the shell swaps view. SPA: navigate to `spaRoute`. */
+	private async navigateOrRequest(spaRoute: string, wcRequest: WcNavigationRequest): Promise<void> {
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.emitNavigationRequest(wcRequest);
+			return;
+		}
+		await this.navigateTo(spaRoute);
+	}
+
+	/**
+	 * End the current flow. A configured leave-redirect URL takes precedence in
+	 * both modes (navigate the page to it). Otherwise: WC emits `closed`; SPA
+	 * navigates to `fallbackRoute` if given (no-op without).
+	 */
+	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
+		if (this.getLeaveRedirectURL()) {
+			await this.redirectToLeaveUrl();
+			return;
+		}
+
+		// No redirect configured: in the WC, signal the host via `closed` so it can
+		// tear down the element; in the SPA, fall back to an internal route.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
+			return;
+		}
+
+		if (fallbackRoute) {
+			await this.navigateTo(fallbackRoute, undefined, replaceUrl);
+		}
+	}
+
+	/**
+	 * Shared implementation for the auth pages (`/login`, `/change-password-required`).
+	 *
+	 * In SPA mode these are router routes carrying an optional `redirectTo` query
+	 * param. In webcomponent mode no such route exists, so the page is shown by
+	 * emitting `wcRequest` and letting the shell swap views; the router navigation
+	 * is skipped to avoid a no-op, and the returned UrlTree is unused by callers
+	 * (route guards never run inside the webcomponent).
+	 *
+	 * @param route - The SPA route for the page
+	 * @param wcRequest - The navigation request to emit in webcomponent mode
+	 * @param redirectTo - The URL to redirect to after the auth step completes
+	 * @param navigate - If true, navigates to the generated UrlTree (SPA mode only)
+	 * @returns The UrlTree for the page (consumed by SPA route guards; unused in webcomponent mode)
+	 */
+	private async redirectToAuthPage(
+		route: string,
+		wcRequest: WcNavigationRequest,
+		redirectTo?: string,
+		navigate = false
+	): Promise<UrlTree> {
+		const queryParams = redirectTo ? { redirectTo } : undefined;
+		const urlTree = this.createRedirectionTo(route, queryParams);
+
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.wcBridge.emitNavigationRequest(wcRequest);
+			return urlTree;
+		}
+
+		if (navigate) {
+			try {
+				await this.router.navigateByUrl(urlTree);
+			} catch (error) {
+				console.error(`Error redirecting to ${route}:`, error);
+			}
+		}
+
+		return urlTree;
 	}
 }

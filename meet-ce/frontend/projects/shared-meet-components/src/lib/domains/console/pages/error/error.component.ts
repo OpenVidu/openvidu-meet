@@ -1,14 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
-import { NavigationErrorReason } from '../../../../shared/models/navigation.model';
-import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
+import { describeNavigationError } from '../../../../shared/utils/navigation-error.util';
 import { AuthService } from '../../../auth/services/auth.service';
-import { MeetingWebComponentManagerService } from '../../../meeting/services/meeting-webcomponent-manager.service';
 
 @Component({
 	selector: 'ov-error',
@@ -24,12 +23,12 @@ export class ErrorComponent implements OnInit {
 	showBackButton = signal(true);
 	backButtonText = signal('Back');
 
+	protected readonly runtimeConfigService = inject(RuntimeConfigService);
+
 	constructor(
 		private route: ActivatedRoute,
 		protected authService: AuthService,
-		protected navService: NavigationService,
-		protected appCtxService: AppContextService,
-		protected wcManagerService: MeetingWebComponentManagerService
+		protected navService: NavigationService
 	) {}
 
 	ngOnInit() {
@@ -43,88 +42,17 @@ export class ErrorComponent implements OnInit {
 	private setErrorReason() {
 		const reason = this.route.snapshot.queryParams['reason'];
 		if (reason) {
-			const { title, message } = this.mapReasonToNameAndMessage(reason);
+			const { title, message } = describeNavigationError(reason);
 			this.errorName.set(title);
 			this.message.set(message);
 		}
 	}
 
 	/**
-	 * Maps technical error reasons to user-friendly names and messages
-	 */
-	private mapReasonToNameAndMessage(reason: string): { title: string; message: string } {
-		const reasonMap: { [key in NavigationErrorReason]: { title: string; message: string } } = {
-			[NavigationErrorReason.CLOSED_ROOM]: {
-				title: 'Closed room',
-				message: 'Meetings in this room are not available while it is closed'
-			},
-			[NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED]: {
-				title: 'Anonymous access disabled',
-				message: 'The anonymous access for your role has been disabled in this room (and its recordings)'
-			},
-			[NavigationErrorReason.ANONYMOUS_RECORDING_ACCESS_DISABLED]: {
-				title: 'Anonymous access disabled',
-				message: 'The anonymous access for this recording has been disabled'
-			},
-			[NavigationErrorReason.INVALID_ROOM_SECRET]: {
-				title: 'Invalid link',
-				message:
-					'The link you used to access this room (or its recordings) is not valid. Please ask a moderator to share the correct link using the available share buttons'
-			},
-			[NavigationErrorReason.INVALID_RECORDING_SECRET]: {
-				title: 'Invalid link',
-				message: 'The link you used to access this recording is not valid'
-			},
-			[NavigationErrorReason.INVALID_ROOM]: {
-				title: 'Invalid room',
-				message: 'The room (or its recordings) you are trying to access does not exist or has been deleted'
-			},
-			[NavigationErrorReason.INVALID_RECORDING]: {
-				title: 'Invalid recording',
-				message: 'The recording you are trying to access does not exist or has been deleted'
-			},
-			[NavigationErrorReason.INVALID_MEMBER]: {
-				title: 'Invalid member',
-				message: 'You are no longer a member of this room or the member information is incorrect'
-			},
-			[NavigationErrorReason.FORBIDDEN_ROOM_ACCESS]: {
-				title: 'Forbidden room access',
-				message: 'You are not authorized to access this room (nor its recordings)'
-			},
-			[NavigationErrorReason.FORBIDDEN_ROOM_RECORDINGS_ACCESS]: {
-				title: 'Forbidden recordings access',
-				message: 'You are not authorized to access the recordings in this room'
-			},
-			[NavigationErrorReason.FORBIDDEN_RECORDING_ACCESS]: {
-				title: 'Forbidden recording access',
-				message: 'You are not authorized to access this recording'
-			},
-			[NavigationErrorReason.ROOM_ACCESS_REVOKED]: {
-				title: 'Room access revoked',
-				message:
-					'Your permissions in this room have been changed, and you no longer have access (nor its recordings). Please contact a moderator for more information'
-			},
-			[NavigationErrorReason.TOO_MANY_REQUESTS]: {
-				title: 'Too many requests',
-				message: 'You have made too many requests in a short period of time. Please wait a moment and try again'
-			},
-			[NavigationErrorReason.INTERNAL_ERROR]: {
-				title: 'Internal error',
-				message: 'An unexpected error occurred, please try again later'
-			}
-		};
-
-		const normalizedReason = Object.values(NavigationErrorReason).find((enumValue) => enumValue === reason) as
-			| NavigationErrorReason
-			| undefined;
-		return reasonMap[normalizedReason ?? NavigationErrorReason.INTERNAL_ERROR];
-	}
-
-	/**
 	 * Sets the back button text based on the application mode and user authentication
 	 */
 	async setBackButtonText() {
-		const isStandaloneMode = this.appCtxService.isStandaloneMode();
+		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
 		const redirection = this.navService.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
@@ -140,26 +68,11 @@ export class ErrorComponent implements OnInit {
 	}
 
 	/**
-	 * Handles the back button click event and navigates accordingly
-	 * If in embedded mode, it closes the WebComponentManagerService
-	 * If the redirect URL is set, it navigates to that URL
-	 * If in standalone mode without a redirect URL, it navigates to the console
+	 * Back-button handler. Defers WC-vs-SPA branching to
+	 * {@link NavigationService.goBackFromMeeting} (which falls back to the
+	 * console route in SPA mode).
 	 */
 	async goBack() {
-		if (this.appCtxService.isEmbeddedMode()) {
-			this.wcManagerService.close();
-		}
-
-		const redirectTo = this.navService.getLeaveRedirectURL();
-		if (redirectTo) {
-			// Navigate to the specified redirect URL
-			await this.navService.redirectToLeaveUrl();
-			return;
-		}
-
-		if (this.appCtxService.isStandaloneMode()) {
-			// Navigate to the console
-			await this.navService.navigateTo('/', undefined, true);
-		}
+		await this.navService.goBackFromMeeting('/', true);
 	}
 }

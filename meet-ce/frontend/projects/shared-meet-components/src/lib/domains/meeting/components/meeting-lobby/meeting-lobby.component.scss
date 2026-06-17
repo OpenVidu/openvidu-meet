@@ -1,4 +1,11 @@
-@use '../../../../../../../../src/assets/styles/design-tokens';
+@use '_design-tokens.scss';
+
+// Ensure the host element fills its parent so that .ov-page-container
+// can use height:100% successfully inside the shadow DOM (no router outlet).
+:host {
+	display: block;
+	height: 100%;
+}
 
 // Room Access Container - Main layout using design tokens
 .room-access-container {

@@ -193,12 +193,21 @@
 			}
 		}
 
+		// Background panel — expands/collapses with the same timing as the
+		// config section so the card height changes in one smooth motion.
+		// Inner panel keeps a fixed height (see --vb-panel-height) so its
+		// thumbnail grid never reflows during the transition.
 		.vb-container {
-			height: fit-content;
+			--vb-panel-height: 300px;
+			max-height: 0;
+			opacity: 0;
 			overflow: hidden;
+			transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+						opacity 0.3s ease;
 
-			&.slide-in {
-				animation: slideIn 300ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+			&.expanded {
+				max-height: var(--vb-panel-height);
+				opacity: 1;
 			}
 		}
 
@@ -208,6 +217,18 @@
 			padding: 24px;
 			gap: 10px;
 			flex-flow: column;
+			max-height: 200px;
+			overflow: hidden;
+			transition: max-height 0.45s cubic-bezier(0.4, 0, 0.2, 1),
+						opacity 0.3s ease,
+						padding 0.45s cubic-bezier(0.4, 0, 0.2, 1);
+
+			&.collapsed {
+				max-height: 0;
+				opacity: 0;
+				padding-top: 0;
+				padding-bottom: 0;
+			}
 
 			.input-section {
 				::ng-deep .name-input {
@@ -364,11 +385,8 @@
 				}
 
 				.vb-container {
-					// Virtual background panel - also adapts to content
+					--vb-panel-height: 55vh;
 					flex: 0 0 auto;
-					max-height: 60vh;
-					overflow-y: auto;
-					background: var(--ov-surface-color, #ffffff);
 				}
 			}
 		}

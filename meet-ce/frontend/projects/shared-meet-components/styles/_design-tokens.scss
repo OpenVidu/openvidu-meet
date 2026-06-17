@@ -1,0 +1,24 @@
+// Design Tokens - Centralized design variable system for OpenVidu Meet
+// This file forwards all modular design system files to maintain the same public API
+// while organizing the code in a more maintainable structure
+
+// Core tokens (colors, spacing, typography, etc.)
+@forward './_tokens-core.scss';
+
+// Theme-specific variables (light/dark themes)
+@forward './_tokens-themes.scss';
+
+// Layout-related mixins (containers, grids, positioning)
+@forward './_mixins-layout.scss';
+
+// Component-specific mixins (cards, buttons, headers)
+@forward './_mixins-components.scss';
+
+// Responsive design utilities
+@forward './_mixins-responsive.scss';
+
+// Animation keyframes and classes
+@forward './_animations.scss';
+
+// Utility classes
+@forward './_utilities.scss';

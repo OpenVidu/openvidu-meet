@@ -10,7 +10,7 @@ import {
 	MeetRoomMemberPermissions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
-import merge from 'lodash.merge';
+import { deepMerge } from '../../../shared/utils/object.utils';
 import { WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
@@ -104,7 +104,7 @@ export class RoomWizardStateService {
 	private _currentStepIndex = signal<number>(0);
 	private _isInitialized = signal<boolean>(false);
 	private _editMode = signal<boolean>(false);
-	private _roomOptions = signal<MeetRoomOptions>(merge({}, DEFAULT_ROOM_OPTIONS));
+	private _roomOptions = signal<MeetRoomOptions>(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 	private _pendingMembers = signal<MeetRoomMemberOptions[]>([]);
 	private _recordingStateBeforeE2EE = signal<RecordingEnabledOption | undefined>(undefined);
 	private _e2eeStateBeforeRecording = signal<boolean | undefined>(undefined);
@@ -137,7 +137,7 @@ export class RoomWizardStateService {
 
 		// Initialize room options with defaults merged with existing data
 		const currentOptions = this._roomOptions();
-		const initialRoomOptions: MeetRoomOptions = merge(currentOptions, existingData ?? {});
+		const initialRoomOptions: MeetRoomOptions = deepMerge(currentOptions, existingData ?? {});
 
 		this._roomOptions.set(initialRoomOptions);
 		this._pendingMembers.set([]);
@@ -323,7 +323,7 @@ export class RoomWizardStateService {
 	 */
 	updateStepData(stepData: Partial<MeetRoomOptions>): void {
 		const currentOptions = this._roomOptions();
-		const updatedOptions = merge(currentOptions, stepData);
+		const updatedOptions = deepMerge(currentOptions, stepData);
 
 		this._roomOptions.set(updatedOptions);
 		this.updateStepsVisibility();
@@ -537,7 +537,7 @@ export class RoomWizardStateService {
 		this._editMode.set(false);
 		this._recordingStateBeforeE2EE.set(undefined);
 		this._e2eeStateBeforeRecording.set(undefined);
-		this._roomOptions.set(merge({}, DEFAULT_ROOM_OPTIONS));
+		this._roomOptions.set(deepMerge({}, DEFAULT_ROOM_OPTIONS));
 		this._steps.set([]);
 		this._currentStepIndex.set(0);
 		this._pendingMembers.set([]);

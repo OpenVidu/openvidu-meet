@@ -39,12 +39,16 @@ const resolveFakeAudioPath = (): string => {
 };
 
 const fakeAudioPath = resolveFakeAudioPath();
+const isCI = process.env['RUN_MODE'] === 'CI';
+
+const commonArgs = [
+	'--use-fake-ui-for-media-stream',
+	'--use-fake-device-for-media-stream',
+	'--enable-gpu'
+];
 
 export default defineConfig({
-	testDir: './e2e',
 	tsconfig: './tsconfig.test.json',
-	testMatch: ['**/*.test.ts'],
-	testIgnore: ['**/selenium/**'],
 	fullyParallel: false,
 	retries: 0,
 	workers: 1,
@@ -52,22 +56,25 @@ export default defineConfig({
 	outputDir: 'test-results/output',
 	timeout: 60000,
 	use: {
-		headless: process.env['RUN_MODE'] === 'CI',
-		viewport: { width: 1366, height: 900 },
+		headless: true, //isCI,
 		trace: 'on-first-retry',
-		video: 'off',
-		screenshot: 'only-on-failure'
+		screenshot: 'only-on-failure',
+		ignoreHTTPSErrors: true,
+		permissions: ['camera', 'microphone']
 	},
 	projects: [
 		{
-			name: 'chromium',
+			name: 'spa',
+			testDir: './e2e',
+			testMatch: ['**/*.test.ts'],
+			testIgnore: ['**/selenium/**'],
 			use: {
 				...devices['Desktop Chrome'],
-				permissions: ['microphone', 'camera'],
+				viewport: { width: 1366, height: 900 },
+				video: 'off',
 				launchOptions: {
 					args: [
-						'--use-fake-ui-for-media-stream',
-						'--use-fake-device-for-media-stream',
+						...commonArgs,
 						`--use-file-for-fake-audio-capture=${fakeAudioPath}`,
 						'--window-size=1366,900'
 					]

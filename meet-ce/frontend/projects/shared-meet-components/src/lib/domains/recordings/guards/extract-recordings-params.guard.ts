@@ -1,48 +1,44 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
-import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { extractParams } from '../../../shared/utils/url-params.utils';
-import { MeetingContextService } from '../../meeting/services/meeting-context.service';
+import { RecordingEntryService } from '../services/recording-entry.service';
+import { RoomRecordingsEntryService } from '../services/room-recordings-entry.service';
 
+/**
+ * Adapter guard: extracts room recordings params from the route + session
+ * storage fallback and delegates context-seeding to
+ * {@link RoomRecordingsEntryService.prepare}.
+ */
 export const extractRoomRecordingsParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-	const meetingContextService = inject(MeetingContextService);
+	const roomRecordingsEntry = inject(RoomRecordingsEntryService);
 	const sessionStorageService = inject(SessionStorageService);
 
 	const { roomId, secret: querySecret } = extractParams(route);
-	const secret = querySecret || sessionStorageService.getRoomSecret();
+	const secret = querySecret || sessionStorageService.getRoomSecret() || undefined;
 
-	// Save parameters in the meeting context service
-	meetingContextService.setRoomId(roomId);
-	if (secret) {
-		meetingContextService.setRoomSecret(secret, true);
-	}
-
+	roomRecordingsEntry.prepare({ roomId, secret });
 	return true;
 };
 
+/**
+ * Adapter guard: extracts recording params from the route + session storage
+ * fallback and delegates the actual context-seeding to
+ * {@link RecordingEntryService.prepare}.
+ */
 export const extractRecordingParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
-	const meetingContextService = inject(MeetingContextService);
-	const sessionStorageService = inject(SessionStorageService);
+	const recordingEntry = inject(RecordingEntryService);
 	const navigationService = inject(NavigationService);
+	const sessionStorageService = inject(SessionStorageService);
 
 	const recordingId = route.params['recording-id'] as string;
-	const [roomId] = recordingId.split('--');
-
-	// Invalid recording ID format
-	if (!roomId) {
-		console.error('Cannot validate recording access: invalid recording ID format');
-		return navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_RECORDING);
-	}
-
 	const { secret: querySecret } = extractParams(route);
-	const secret = querySecret || sessionStorageService.getRoomSecret();
+	const roomSecret = querySecret || sessionStorageService.getRoomSecret() || undefined;
 
-	// Save parameters in the meeting context service
-	meetingContextService.setRoomId(roomId);
-	if (secret) {
-		meetingContextService.setRoomSecret(secret, true);
+	const decision = recordingEntry.prepare({ recordingId, roomSecret });
+	if (decision.kind === 'error') {
+		return navigationService.redirectToErrorPage(decision.reason);
 	}
 
 	return true;

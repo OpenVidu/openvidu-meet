@@ -1,15 +1,36 @@
 {
-	"compilerOptions": {
-	  "target": "ES6",
-	  "module": "ESNext",
-	  "declaration": true,
-	  "outDir": "./dist",
-	  "strict": true,
-	  "esModuleInterop": true,
-	  "moduleResolution": "node",
-	  "skipLibCheck": true,
-	  "forceConsistentCasingInFileNames": true
-	},
-	"include": ["src"],
-	"exclude": ["node_modules", "tests"]
-  }
+  "compileOnSave": false,
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "isolatedModules": true,
+    "moduleResolution": "bundler",
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "target": "ES2022",
+    "module": "preserve",
+    "paths": {
+      "@openvidu-meet/shared-components": ["../projects/shared-meet-components/src/public-api.ts"],
+      "projects/shared-meet-components/src/*": ["../projects/shared-meet-components/src/*"]
+    }
+  },
+  "angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "strictTemplates": true
+  },
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.spec.json"
+    }
+  ]
+}

@@ -1,15 +1,19 @@
 import { expect, test } from '@playwright/test';
-import {
-	expectBadgeQuality,
-	mockLocalConnectionQuality,
-	panelQualityBadge,
-	videoTileQualityBadge
-} from './helpers/connection-quality.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';
-import { expectVisible } from './helpers/ui-utils.helper';
 
+/**
+ * The connection-quality badge is surfaced only transiently: when LiveKit reports a
+ * quality for the local participant — under e2e's fake media this is consistently
+ * "excellent" — the badge appears and then auto-hides after a short delay (the
+ * component's BADGE_TIMEOUT, 3s).
+ *
+ * These tests just assert that appear → auto-hide cycle in the two places the indicator
+ * is rendered: the local video tile (stream component) and the participants panel. They
+ * don't force any specific quality value, so they need no dev-only debug API and no
+ * app-side test hooks — they run against the production build CI serves.
+ */
 test.describe('Connection Quality Indicator E2E Tests', () => {
 	const createdRoomIds: string[] = [];
 
@@ -25,52 +29,20 @@ test.describe('Connection Quality Indicator E2E Tests', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test('should show a PINNED poor-quality badge on the video tile AND in the participants panel', async ({
-		page
-	}) => {
+	test('shows the badge on the local video tile, then auto-hides it', async ({ page }) => {
 		await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 
-		await mockLocalConnectionQuality(page, 'poor');
+		const badge = page.locator('.OV_stream.local #connection-quality-badge');
+		await expect(badge).toBeVisible({ timeout: 15_000 });
+		await expect(badge).toBeHidden({ timeout: 10_000 });
+	});
 
-		// Video tile badge.
-		await expectBadgeQuality(videoTileQualityBadge(page), 'poor');
-
-		// Same model drives the participants-panel badge (rendered with `transparent`).
+	test('shows the badge in the participants panel, then auto-hides it', async ({ page }) => {
+		await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
 		await toggleParticipantsPanel(page);
-		await expectVisible(page, '.local-participant-container');
-		const panelBadge = panelQualityBadge(page);
-		await expectBadgeQuality(panelBadge, 'poor');
-		await expect(panelBadge).toHaveClass(/\btransparent\b/);
-	});
 
-	test('should render the offline icon for LOST connection quality', async ({ page }) => {
-		await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-
-		await mockLocalConnectionQuality(page, 'lost');
-
-		const badge = videoTileQualityBadge(page);
-		await expectBadgeQuality(badge, 'lost');
-		await expect(badge.locator('mat-icon')).toHaveAttribute('data-mat-icon-name', 'signal_wifi_off');
-	});
-
-	test('should NOT show the badge while connection quality is UNKNOWN', async ({ page }) => {
-		await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-
-		await mockLocalConnectionQuality(page, 'unknown');
-
-		await expect(videoTileQualityBadge(page)).toHaveCount(0);
-	});
-
-	test('should show the EXCELLENT badge briefly, then auto-hide it after 3s', async ({ page }) => {
-		await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
-
-		await mockLocalConnectionQuality(page, 'excellent');
-
-		// Good/excellent quality is only surfaced transiently.
-		const badge = videoTileQualityBadge(page);
-		await expectBadgeQuality(badge, 'excellent');
-
-		// The component hides good/excellent badges after BADGE_TIMEOUT (3000ms).
-		await expect(badge).toBeHidden({ timeout: 6_000 });
+		const badge = page.locator('.local-participant-container #connection-quality-badge');
+		await expect(badge).toBeVisible({ timeout: 15_000 });
+		await expect(badge).toBeHidden({ timeout: 10_000 });
 	});
 });

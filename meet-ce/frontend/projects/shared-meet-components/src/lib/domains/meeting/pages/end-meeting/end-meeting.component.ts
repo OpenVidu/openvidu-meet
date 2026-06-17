@@ -1,14 +1,13 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { LeftEventReason } from '@openvidu-meet/typings';
-import { AppContextService } from '../../../../shared/services/app-context.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { AuthService } from '../../../auth/services/auth.service';
-import { MeetingWebComponentManagerService } from '../../services/meeting-webcomponent-manager.service';
 
 @Component({
 	selector: 'ov-end-meeting',
@@ -18,18 +17,25 @@ import { MeetingWebComponentManagerService } from '../../services/meeting-webcom
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndMeetingComponent implements OnInit {
+	/**
+	 * Optional reason override, used when the component is rendered outside
+	 * the Angular Router (e.g. inside the Web Component, which has no
+	 * routing).
+	 */
+	readonly reason = input<string | undefined>(undefined);
+
 	disconnectedTitle = signal('You Left the Meeting');
 	disconnectReason = signal('You have successfully left the meeting');
 
 	showBackButton = signal(true);
 	backButtonText = signal('Back');
 
+	protected readonly runtimeConfigService = inject(RuntimeConfigService);
+
 	constructor(
 		private route: ActivatedRoute,
 		protected authService: AuthService,
-		protected navService: NavigationService,
-		protected appCtxService: AppContextService,
-		protected wcManagerService: MeetingWebComponentManagerService
+		protected navService: NavigationService
 	) {}
 
 	ngOnInit() {
@@ -38,10 +44,12 @@ export class EndMeetingComponent implements OnInit {
 	}
 
 	/**
-	 * Retrieves the disconnect reason from URL query parameters
+	 * Resolves the disconnect reason from (in order): the `reason` input, the
+	 * `reason` route query parameter. Falls back to the default title/message
+	 * if neither is set.
 	 */
 	private setDisconnectReason() {
-		const reason = this.route.snapshot.queryParams['reason'];
+		const reason = this.reason() ?? this.route.snapshot.queryParams['reason'];
 		if (reason) {
 			const { title, message } = this.mapReasonToTitleAndMessage(reason);
 			this.disconnectedTitle.set(title);
@@ -98,7 +106,7 @@ export class EndMeetingComponent implements OnInit {
 	 * Sets the back button text based on the application mode and user authentication
 	 */
 	private async setBackButtonText() {
-		const isStandaloneMode = this.appCtxService.isStandaloneMode();
+		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
 		const redirection = this.navService.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
@@ -114,26 +122,10 @@ export class EndMeetingComponent implements OnInit {
 	}
 
 	/**
-	 * Handles the back button click event and navigates accordingly
-	 * If in embedded mode, it closes the WebComponentManagerService
-	 * If the redirect URL is set, it navigates to that URL
-	 * If in standalone mode without a redirect URL, it navigates to the rooms page
+	 * Back-button handler. Defers WC-vs-SPA branching to
+	 * {@link NavigationService.goBackFromMeeting}.
 	 */
 	async goBack() {
-		if (this.appCtxService.isEmbeddedMode()) {
-			this.wcManagerService.close();
-		}
-
-		const redirectTo = this.navService.getLeaveRedirectURL();
-		if (redirectTo) {
-			// Navigate to the specified redirect URL
-			await this.navService.redirectToLeaveUrl();
-			return;
-		}
-
-		if (this.appCtxService.isStandaloneMode()) {
-			// Navigate to the rooms page
-			await this.navService.navigateTo('/rooms', undefined, true);
-		}
+		await this.navService.goBackFromMeeting('/rooms', true);
 	}
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { computed, Injectable, signal } from '@angular/core';
 
 declare global {
 	interface Window {
@@ -17,36 +17,109 @@ declare global {
 	providedIn: 'root'
 })
 export class RuntimeConfigService {
-	private _basePath: string;
+	/**
+	 * Deployment base path under which Meet is mounted (e.g. `/meet`), or `/` when
+	 * served from the root. Resolved once at construction from the injected config,
+	 * the document `<base href>`, or `/` as a last resort.
+	 */
+	private _deploymentBasePath: string;
+
+	/**
+	 * Base URL of the OpenVidu Meet backend server, already including the deployment
+	 * base path (e.g. `https://host/meet`). Empty string means “same origin” (relative
+	 * requests). Set reactively via `setServerBaseUrl()` when embedded as a
+	 * webcomponent; stays empty in a regular SPA context.
+	 */
+	private readonly _serverBaseUrl = signal<string>('');
+
+	/**
+	 * True once the service is in webcomponent mode (i.e. `enableWebcomponentMode()`
+	 * or `setServerBaseUrl()` has been called at least once). In a regular SPA context
+	 * this never becomes true, which means `isReadyForRequests` is immediately true.
+	 */
+	private readonly _webcomponentMode = signal(false);
+
+	/**
+	 * Emits true when it is safe to make API requests:
+	 * - Regular SPA: immediately true (not in webcomponent mode).
+	 * - Webcomponent: true once `setServerBaseUrl()` has been called (which enables mode and sets the URL).
+	 */
+	readonly isReadyForRequests = computed(() => {
+		// In SPA mode (not webcomponent), always ready
+		if (!this._webcomponentMode()) return true;
+
+		// In webcomponent mode, only ready once the server base URL is set
+		return !!this._serverBaseUrl();
+	});
+
+	readonly serverBaseUrl = this._serverBaseUrl.asReadonly();
+	readonly isWebcomponentMode = this._webcomponentMode.asReadonly();
 
 	constructor() {
 		// Read from injected config, fallback to document base element, then to '/'
-		this._basePath = window.__OPENVIDU_MEET_CONFIG__?.basePath || this.getBasePathFromDocument() || '/';
+		this._deploymentBasePath = window.__OPENVIDU_MEET_CONFIG__?.basePath || this.readBaseHrefFromDocument() || '/';
 	}
 
-	/**
-	 * Gets the configured base path (e.g., '/', '/meet/', '/app/path/')
-	 */
 	get basePath(): string {
-		return this._basePath;
+		return this._deploymentBasePath;
 	}
 
 	/**
-	 * Resolves an asset path relative to the base path.
-	 * Use this for assets that need absolute paths (e.g., Audio elements).
-	 *
-	 * @param assetPath The asset path starting with 'assets/' (no leading slash)
-	 * @returns The full path including the base path (e.g., '/meet/assets/sounds/file.mp3')
+	 * Enables webcomponent mode. Once enabled, `isReadyForRequests` will only be true
+	 * once `setServerBaseUrl()` has been called with a value.
+	 * Should be called by the webcomponent as early as possible.
 	 */
-	resolveAssetPath(assetPath: string): string {
-		// Remove leading slash if present
-		const cleanPath = assetPath.startsWith('/') ? assetPath.slice(1) : assetPath;
-
-		// Combine with base path
-		return `${this._basePath}${cleanPath}`;
+	enableWebcomponentMode(): void {
+		this._webcomponentMode.set(true);
 	}
 
-	private getBasePathFromDocument(): string | null {
+	/**
+	 * Overrides the server base URL at runtime and enables webcomponent mode.
+	 * Called by the webcomponent when the server URL is determined.
+	 */
+	setServerBaseUrl(url: string): void {
+		this._webcomponentMode.set(true);
+		this._serverBaseUrl.set(url.endsWith('/') ? url.slice(0, -1) : url);
+	}
+
+	/**
+	 * Resolves an app-relative path to a URL that respects the deployment base path
+	 * (e.g. `/meet`) and, when embedded as a webcomponent, the remote Meet server origin.
+	 *
+	 * - Fully-qualified URLs (http/https) are returned unchanged.
+	 * - Webcomponent mode: prefixed with the server base URL, which already carries the
+	 *   base path (derived from the room URL, e.g. `https://host/meet`).
+	 * - SPA mode: prefixed with the configured base path. Without this, absolute inputs
+	 *   like `/assets/...` bypass `<base href>` and 404 when Meet is mounted under a subpath.
+	 *
+	 * @example resolveUrl('/assets/sounds/x.mp3') // SPA at /meet → '/meet/assets/sounds/x.mp3'
+	 * @example resolveUrl('assets/sounds/x.mp3')  // WC → 'https://host/meet/assets/sounds/x.mp3'
+	 */
+	resolveUrl(path: string): string {
+		if (path.startsWith('http://') || path.startsWith('https://')) {
+			return path;
+		}
+
+		// In webcomponent mode the server base URL already includes the deployment base path;
+		// in SPA mode it is empty, so fall back to the configured base path.
+		const prefix = this.serverBaseUrl() || this.normalizedBasePath();
+		const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+		return `${prefix}${cleanPath}`;
+	}
+
+	/** Configured deployment base path without a trailing slash; '' when mounted at root ('/'). */
+	private normalizedBasePath(): string {
+		if (!this._deploymentBasePath || this._deploymentBasePath === '/') {
+			return '';
+		}
+
+		return this._deploymentBasePath.endsWith('/')
+			? this._deploymentBasePath.slice(0, -1)
+			: this._deploymentBasePath;
+	}
+
+	private readBaseHrefFromDocument(): string | null {
 		try {
 			const baseElement = document.querySelector('base');
 			if (baseElement) {

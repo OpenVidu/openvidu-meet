@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>OpenVidu Meet — Testapp</title>
+    <base href="/" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!--
+      Load the OpenVidu Meet WebComponent bundle before the testapp boots.
+      The bundle is ALWAYS provided by the backend at <basePath>/v1/openvidu-meet.js
+      (real apps import it as e.g. http://localhost:9080/meet/v1/openvidu-meet.js).
+      The testapp uses a same-origin path so the host page never hardcodes a
+      backend port; proxy.conf.js forwards `/openvidu-meet.js` to the backend
+      resolved from MEET_API_URL (default http://localhost:6080/meet).
+    -->
+    <script src="/openvidu-meet.js"></script>
+    <!--
+      Socket.IO client served by the local webhook-bridge (see
+      scripts/webhook-bridge.js). The Angular dev server proxies
+      /socket.io/* to that bridge via proxy.conf.js, so the URL below
+      resolves transparently. `window.io` becomes available globally.
+    -->
+    <script src="/socket.io/socket.io.js"></script>
+  </head>
+  <body>
+    <app-root></app-root>
+  </body>
+</html>

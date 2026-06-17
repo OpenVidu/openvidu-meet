@@ -1,16 +1,15 @@
 import { inject, Injectable, signal } from '@angular/core';
-import * as cn from '../../lang/cn.json';
-import * as de from '../../lang/de.json';
 import * as en from '../../lang/en.json';
-import * as es from '../../lang/es.json';
-import * as fr from '../../lang/fr.json';
-import * as hi from '../../lang/hi.json';
-import * as it from '../../lang/it.json';
-import * as ja from '../../lang/ja.json';
-import * as nl from '../../lang/nl.json';
-import * as pt from '../../lang/pt.json';
 import { AdditionalTranslationsType, AvailableLangs, LangOption } from '../../models/lang.model';
 import { StorageService } from '../storage/storage.service';
+
+/** Locale codes shipped with the library. */
+type BuiltInLang = 'en' | 'es' | 'de' | 'fr' | 'cn' | 'hi' | 'it' | 'ja' | 'nl' | 'pt';
+
+/** Unwraps an ESM/JSON module to its plain translation object (handles `default` export interop). */
+function unwrapTranslations(mod: unknown): Record<string, any> {
+	return (mod as { default?: Record<string, any> })?.default ?? (mod as Record<string, any>) ?? {};
+}
 
 /**
  * Service responsible for managing translations for the application.
@@ -24,8 +23,22 @@ import { StorageService } from '../storage/storage.service';
 export class TranslateService {
 	private readonly storageService = inject(StorageService);
 
-	// Maps language codes to their respective translations
-	private translationsByLanguage: Record<AvailableLangs, any> = { en, es, de, fr, cn, hi, it, ja, nl, pt };
+	// Built-in locale loaders. English is bundled eagerly so the default UI renders
+	// without an extra request; every other locale is lazy-loaded on first use,
+	// keeping ~90 KB of translation JSON out of the initial download. Dynamic imports
+	// are memoised by the bundler/browser, so each locale is fetched at most once.
+	private readonly builtInLanguageLoaders: Record<BuiltInLang, () => Promise<Record<string, any>>> = {
+		en: () => Promise.resolve(unwrapTranslations(en)),
+		es: () => import('../../lang/es.json').then(unwrapTranslations),
+		de: () => import('../../lang/de.json').then(unwrapTranslations),
+		fr: () => import('../../lang/fr.json').then(unwrapTranslations),
+		cn: () => import('../../lang/cn.json').then(unwrapTranslations),
+		hi: () => import('../../lang/hi.json').then(unwrapTranslations),
+		it: () => import('../../lang/it.json').then(unwrapTranslations),
+		ja: () => import('../../lang/ja.json').then(unwrapTranslations),
+		nl: () => import('../../lang/nl.json').then(unwrapTranslations),
+		pt: () => import('../../lang/pt.json').then(unwrapTranslations)
+	};
 
 	// Stores additional translations provided by the application
 	private additionalTranslations: Partial<Record<AvailableLangs, any>> = {};
@@ -177,18 +190,25 @@ export class TranslateService {
 	 * @returns The language data associated with the provided language code.
 	 */
 	private async fetchLanguageData(lang: AvailableLangs): Promise<any> {
-		if (!(lang in this.translationsByLanguage)) {
-			// Language not found in default languages options
-			// Try to find it in the assets/lang directory
+		const loadBuiltInLanguage = this.builtInLanguageLoaders[lang as BuiltInLang];
+
+		if (loadBuiltInLanguage) {
 			try {
-				const response = await fetch(`assets/lang/${lang}.json`);
-				return await response.json();
+				return await loadBuiltInLanguage();
 			} catch (error) {
-				console.error(`Not found ${lang}.json in assets/lang`, error);
+				console.error(`Failed to load built-in language "${lang}"`, error);
 				return {};
 			}
-		} else {
-			return this.translationsByLanguage[lang];
+		}
+
+		// Language not found in the built-in locales: try the assets/lang directory
+		// (custom translations provided by the host application).
+		try {
+			const response = await fetch(`assets/lang/${lang}.json`);
+			return await response.json();
+		} catch (error) {
+			console.error(`Not found ${lang}.json in assets/lang`, error);
+			return {};
 		}
 	}
 }

@@ -104,7 +104,7 @@ show_help() {
   echo "    Build only the webcomponent package"
   echo
   echo -e "  ${BLUE}build-testapp${NC}"
-  echo "    Build the testapp"
+  echo "    Build the webcomponent testapp"
   echo
   echo -e "  ${BLUE}test-unit-webcomponent${NC}"
   echo "    Run unit tests for the webcomponent project"
@@ -113,19 +113,19 @@ show_help() {
   echo "    Run unit tests for the backend project"
   echo
   echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
-  echo "    Run end-to-end tests for the webcomponent project"
+  echo "    Run end-to-end tests for the webcomponent project (Playwright '--project=webcomponent')"
   echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
   echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
   echo
   echo -e "  ${BLUE}test-e2e-frontend${NC}"
-  echo "    Run migrated OpenVidu Components end-to-end tests in frontend project"
+  echo "    Run end-to-end tests for the frontend project (Playwright, both 'spa' and 'webcomponent' projects)"
   echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
   echo -e "             ${NC} --skip-install-browsers     Skip Playwright browsers installation"
   echo
   echo -e "  ${BLUE}dev${NC}"
   echo "    Start development mode with watchers"
-  echo -e "    ${YELLOW}Options:${NC} --testapp        Include testapp watcher"
-  echo -e "             ${NC} --webcomponent   Include webcomponent watcher"
+  echo -e "    ${YELLOW}Options:${NC} --testapp            Include webcomponent testapp + webhook bridge (:5080/:5081)"
+  echo -e "             ${NC} --webcomponent       Include webcomponent watcher"
   echo
   echo -e "  ${BLUE}start${NC}"
   echo "    Start OpenVidu Meet in production or CI mode"
@@ -133,7 +133,8 @@ show_help() {
   echo -e "            ${NC} --ci      Start in CI mode"
   echo
   echo -e "  ${BLUE}start-testapp${NC}"
-  echo "    Start the testapp"
+  echo "    Start the webcomponent testapp (Angular UI + webhook bridge on :5080/:5081)"
+  echo "    Required by the webcomponent Playwright e2e suite in CI workflows"
   echo
   echo -e "  ${BLUE}build-webcomponent-doc${NC} [output_dir]"
   echo "    Generate webcomponent documentation"
@@ -309,7 +310,7 @@ ensure_playwright_chromium() {
   echo "playwright_version=$PLAYWRIGHT_VER" >> "$MARKER_FILE" || true
 }
 
-# Run e2e tests for webcomponent
+# Run e2e tests for the webcomponent
 test_e2e_webcomponent() {
   echo -e "${BLUE}=====================================${NC}"
   echo -e "${BLUE}   Running Webcomponent E2E Tests${NC}"
@@ -335,7 +336,7 @@ test_e2e_webcomponent() {
   ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
   echo -e "${GREEN}Running webcomponent E2E tests...${NC}"
-  pnpm run test:e2e-webcomponent
+  pnpm --filter @openvidu-meet/frontend run e2e:playwright:wc
 }
 
 # Run migrated e2e tests for frontend
@@ -364,7 +365,7 @@ test_e2e_frontend() {
   ensure_playwright_chromium "$FORCE_INSTALL" "$SKIP_INSTALL_BROWSERS"
 
   echo -e "${GREEN}Running frontend E2E tests...${NC}"
-  pnpm run test:e2e-frontend-components
+  pnpm --filter @openvidu-meet/frontend run e2e:playwright:spa
 }
 
 # Helper: Prompt user to select edition (CE or PRO)
@@ -421,17 +422,17 @@ add_optional_commands() {
   local include_testapp="$1"
   local include_webcomponent="$2"
 
-  # Testapp
+  # Webcomponent testapp (Angular UI + webhook bridge on :5080/:5081)
   if [ "$include_testapp" = true ]; then
     CMD_NAMES+=("testapp")
-    CMD_COLORS+=("blue")
+    CMD_COLORS+=("bgMagenta.white")
     CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:testapp'")
   fi
 
   # Webcomponent bundle watcher
   if [ "$include_webcomponent" = true ]; then
     CMD_NAMES+=("webcomponent")
-    CMD_COLORS+=("bgMagenta.black")
+    CMD_COLORS+=("bgBlue.white")
     CMD_COMMANDS+=("node ./scripts/dev/watch-with-typings-guard.mjs 'pnpm run dev:webcomponent'")
   fi
 }
@@ -643,15 +644,15 @@ start() {
   esac
 }
 
-# Start testapp
+# Start the webcomponent testapp
 start_testapp() {
   echo -e "${BLUE}=====================================${NC}"
-  echo -e "${BLUE}   Starting TestApp${NC}"
+  echo -e "${BLUE}   Starting Webcomponent TestApp${NC}"
   echo -e "${BLUE}=====================================${NC}"
   echo
 
   install_dependencies
-  echo -e "${GREEN}Starting testapp...${NC}"
+  echo -e "${GREEN}Starting webcomponent testapp (ng serve + webhook bridge)...${NC}"
   pnpm run start:testapp
 }
 

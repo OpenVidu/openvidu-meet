@@ -48,7 +48,8 @@ test.describe('Virtual Background E2E Tests', () => {
 		await expectVisible(page, '.participant-avatar > .poster');
 		await expect(backgroundsButton).toBeVisible();
 		await expect(backgroundsButton).toBeDisabled();
-		await expect(page.locator('#background-effects-container')).toHaveCount(0);
+		// Panel stays mounted in prejoin; disabling video collapses its wrapper.
+		await expect(page.locator('.vb-container')).not.toBeVisible();
 	});
 
 	test('should not show BACKGROUNDS on prejoin page when VIDEO is disabled', async ({ page }) => {
@@ -63,7 +64,8 @@ test.describe('Virtual Background E2E Tests', () => {
 		await expectVisible(page, '.participant-avatar > .poster');
 		await expect(backgroundsButton).toBeVisible();
 		await expect(backgroundsButton).toBeDisabled();
-		await expect(page.locator('#background-effects-container')).toHaveCount(0);
+		// Panel stays mounted in prejoin; with video disabled its wrapper is collapsed.
+		await expect(page.locator('.vb-container')).not.toBeVisible();
 	});
 
 	test('should open and close BACKGROUNDS panel on prejoin page', async ({ page }) => {
@@ -79,7 +81,7 @@ test.describe('Virtual Background E2E Tests', () => {
 
 		const before = await captureVideoElementScreenshot(page);
 		await openPrejoinBackgroundsPanel(page);
-		await applyBackgroundEffect(page, '1');
+		await applyBackgroundEffect(page, 'professional-1');
 		await closePrejoinBackgroundsPanel(page);
 		const after = await captureVideoElementScreenshot(page);
 
@@ -116,7 +118,7 @@ test.describe('Virtual Background E2E Tests', () => {
 
 		const before = await captureVideoElementScreenshot(page);
 		await openRoomBackgroundsPanel(page);
-		await applyBackgroundEffect(page, '1');
+		await applyBackgroundEffect(page, 'professional-1');
 		await closeRoomBackgroundsPanel(page);
 		const after = await captureVideoElementScreenshot(page);
 

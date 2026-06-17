@@ -1,6 +1,6 @@
 import { LeftEventReason, MeetWebhookEventType, WebComponentEvent } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { iframeLocator } from '../helpers/iframe.helper';
+import { wcLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
 import {
 	endMeetingCommand,
@@ -56,13 +56,13 @@ test.describe('WebComponent Commands E2E Tests', () => {
 			await openMeeting(speakerPage, roomId, { role: 'speaker' });
 			await expectEvent(speakerPage, WebComponentEvent.JOINED);
 
-			await expect(iframeLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
+			await expect(wcLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
 			await leaveRoomCommand(page);
 			await expectEvent(page, WebComponentEvent.LEFT);
 
 			// Speaker should still be in the meeting
-			await expect(iframeLocator(speakerPage, 'ov-session')).toBeVisible();
+			await expect(wcLocator(speakerPage, 'ov-session')).toBeVisible();
 			await expect(eventLocator(speakerPage, WebComponentEvent.LEFT)).toHaveCount(0);
 
 			await leaveMeeting(speakerPage);
@@ -90,7 +90,7 @@ test.describe('WebComponent Commands E2E Tests', () => {
 			await openMeeting(speakerPage, roomId, { role: 'speaker' });
 			await expectEvent(speakerPage, WebComponentEvent.JOINED);
 
-			await expect(iframeLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
+			await expect(wcLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
 			await endMeetingCommand(page);
 
@@ -128,7 +128,7 @@ test.describe('WebComponent Commands E2E Tests', () => {
 			const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
 			const speakerIdentity = match?.[1] ?? speakerName;
 
-			await expect(iframeLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
+			await expect(wcLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
 			await kickParticipantCommand(page, speakerIdentity);
 
@@ -152,14 +152,14 @@ test.describe('WebComponent Commands E2E Tests', () => {
 			const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
 			const speakerIdentity = match?.[1] ?? speakerName;
 
-			await expect(iframeLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
+			await expect(wcLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
 			await kickParticipantCommand(page, speakerIdentity);
 
 			await expectEvent(speakerPage, WebComponentEvent.LEFT);
 
 			// Moderator should still be in the meeting
-			await expect(iframeLocator(page, 'ov-session')).toBeVisible();
+			await expect(wcLocator(page, 'ov-session')).toBeVisible();
 			await expect(eventLocator(page, WebComponentEvent.LEFT)).toHaveCount(0);
 
 			await leaveMeeting(page, { role: 'moderator' });
@@ -184,7 +184,7 @@ test.describe('WebComponent Commands E2E Tests', () => {
 			const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
 			const speakerIdentity = match?.[1] ?? speakerName;
 
-			await expect(iframeLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
+			await expect(wcLocator(page, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
 			await kickParticipantCommand(page, speakerIdentity);
 

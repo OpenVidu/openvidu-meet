@@ -1,5 +1,5 @@
 import { expect, Page } from '@playwright/test';
-import { iframeLocator } from './iframe.helper';
+import { wcLocator } from './webcomponent.helper';
 
 // ─── Screen sharing ─────────────────────────────────────────────────────────
 
@@ -7,15 +7,15 @@ import { iframeLocator } from './iframe.helper';
  * Starts screen sharing via the toolbar button.
  */
 export const startScreensharing = async (page: Page): Promise<void> => {
-	await iframeLocator(page, '#screenshare-btn').click();
+	await wcLocator(page, '#screenshare-btn').click();
 };
 
 /**
  * Stops screen sharing via the toolbar button and the disable-screen submenu.
  */
 export const stopScreensharing = async (page: Page): Promise<void> => {
-	await iframeLocator(page, '#screenshare-btn').click();
-	await iframeLocator(page, '#disable-screen-button').click();
+	await wcLocator(page, '#screenshare-btn').click();
+	await wcLocator(page, '#disable-screen-button').click();
 };
 
 // ─── Virtual backgrounds ────────────────────────────────────────────────────
@@ -27,23 +27,23 @@ export const stopScreensharing = async (page: Page): Promise<void> => {
  * @param backgroundId - The ID suffix of the effect button (e.g. `'2'`).
  */
 export const applyBackgroundEffect = async (page: Page, backgroundId: string): Promise<void> => {
-	await iframeLocator(page, '#more-options-btn').click();
-	await iframeLocator(page, '#virtual-bg-btn').click();
-	await expect(iframeLocator(page, 'ov-background-effects-panel')).toBeVisible();
-	await iframeLocator(page, `#effect-${backgroundId}`).click();
+	await wcLocator(page, '#more-options-btn').click();
+	await wcLocator(page, '#virtual-bg-btn').click();
+	await expect(wcLocator(page, 'ov-background-effects-panel')).toBeVisible();
+	await wcLocator(page, `#effect-${backgroundId}`).click();
 
 	// Virtual-background processing is a GPU/canvas operation with no DOM signal.
 	// Allow a brief settle window before screenshots/assertions.
 	await page.waitForTimeout(1_500);
-	await iframeLocator(page, '.panel-close-button').click();
-	await expect(iframeLocator(page, 'ov-background-effects-panel')).toBeHidden();
+	await wcLocator(page, '.panel-close-button').click();
+	await expect(wcLocator(page, 'ov-background-effects-panel')).toBeHidden();
 };
 
 /**
  * Removes any active virtual background.
  */
 export const removeBackgroundEffect = async (page: Page): Promise<void> => {
-	await iframeLocator(page, '#more-options-btn').click();
-	await iframeLocator(page, '#virtual-bg-btn').click();
-	await iframeLocator(page, '#no_effect-btn').click();
+	await wcLocator(page, '#more-options-btn').click();
+	await wcLocator(page, '#virtual-bg-btn').click();
+	await wcLocator(page, '#no_effect-btn').click();
 };

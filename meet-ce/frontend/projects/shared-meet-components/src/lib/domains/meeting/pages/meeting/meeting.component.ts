@@ -1,11 +1,26 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, contentChild, effect, inject, OnInit, signal } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	computed,
+	contentChild,
+	effect,
+	inject,
+	OnInit,
+	signal
+} from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import {
+	ACCESS_TOKEN_QUERY_PARAM,
+	REFRESH_TOKEN_QUERY_PARAM
+} from '../../../../shared/guards/store-tokens-from-query-params.guard';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
+import { TokenStorageService } from '../../../../shared/services/token-storage.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
 import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from '../../openvidu-components';
@@ -39,6 +54,8 @@ export class MeetingComponent implements OnInit {
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly tokenStorageService = inject(TokenStorageService);
 
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
@@ -50,6 +67,18 @@ export class MeetingComponent implements OnInit {
 
 	/** Controls whether to show the videoconference component */
 	isMeetingLeft = signal(false);
+
+	/**
+	 * Whether the app runs embedded as a webcomponent.
+	 */
+	isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode;
+
+	/**
+	 * Whether the local participant is alone (no remote participants yet).
+	 * The panel after the local participant — the share/copy link panel (SPA) or
+	 * the waiting panel (webcomponent) — is only shown while alone.
+	 */
+	isAlone = this.meetingContextService.isAlone;
 
 	// Signals for meeting context data
 	roomName = this.lobbyService.roomName;
@@ -77,7 +106,6 @@ export class MeetingComponent implements OnInit {
 				this.ovThemeService.resetThemeVariables();
 			}
 		});
-
 	}
 
 	async ngOnInit() {
@@ -119,15 +147,13 @@ export class MeetingComponent implements OnInit {
 		this.eventHandlerService.setupRoomListeners(lkRoom);
 	}
 
-	async onViewRecordingsClicked() {
+	onViewRecordingsClicked(): void {
 		const roomId = this.meetingContextService.roomId();
 		if (!roomId) {
 			return;
 		}
 
-		let recordingsUrl = `/room/${roomId}/recordings`;
-		recordingsUrl = this.navigationService.addBasePath(recordingsUrl);
-		window.open(recordingsUrl, '_blank');
+		this.openRecordingsInNewTab(roomId);
 	}
 
 	onParticipantConnected(event: any): void {
@@ -142,5 +168,44 @@ export class MeetingComponent implements OnInit {
 	onParticipantLeft(event: any): void {
 		this.isMeetingLeft.set(true);
 		this.eventHandlerService.onParticipantLeft(event);
+	}
+
+	private openRecordingsInNewTab(roomId: string): void {
+		// Prefix the configured app base path, just like the SPA.
+		let path = this.navigationService.addBasePath(`/room/${roomId}/recordings`);
+		let url = path;
+		const isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode();
+
+		if (isWebcomponentMode) {
+			// In webcomponent mode the recordings tab is served by the Meet server on a
+			// different origin than the embedding page, so it shares no storage/context
+			// with the meeting.
+			// To allow the recordings page to authenticate the user, we forward the
+			// room secret and any access/refresh tokens as query params.
+			const queryParams = new URLSearchParams();
+
+			const secret = this.meetingContextService.roomSecret();
+			if (secret) {
+				queryParams.set('secret', secret);
+			}
+
+			const accessToken = this.tokenStorageService.getAccessToken();
+			if (accessToken) {
+				queryParams.set(ACCESS_TOKEN_QUERY_PARAM, accessToken);
+			}
+
+			const refreshToken = this.tokenStorageService.getRefreshToken();
+			if (refreshToken) {
+				queryParams.set(REFRESH_TOKEN_QUERY_PARAM, refreshToken);
+			}
+
+			const queryString = queryParams.toString();
+			if (queryString) {
+				path += `?${queryString}`;
+			}
+			url = this.runtimeConfigService.resolveUrl(path);
+		}
+
+		window.open(url, '_blank');
 	}
 }

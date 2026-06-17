@@ -1,0 +1,106 @@
+{
+	"$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+	"version": 1,
+	"cli": {
+		"packageManager": "pnpm"
+	},
+	"newProjectRoot": "projects",
+	"projects": {
+		"openvidu-meet-testapp": {
+			"projectType": "application",
+			"schematics": {},
+			"root": "",
+			"sourceRoot": "src",
+			"prefix": "app",
+			"architect": {
+				"build": {
+					"builder": "@angular/build:application",
+					"options": {
+						"browser": "src/main.ts",
+						"tsConfig": "tsconfig.app.json",
+						"assets": [
+							{
+								"glob": "**/*",
+								"input": "public"
+							},
+							{
+								"glob": "sounds/**/*",
+								"input": "../../src/assets",
+								"output": "assets"
+							},
+							{
+								"glob": "backgrounds/**/*",
+								"input": "../../src/assets",
+								"output": "assets"
+							},
+							{
+								"glob": "images/**/*",
+								"input": "../../src/assets",
+								"output": "assets"
+							},
+							{
+								"glob": "layouts/**/*",
+								"input": "../../src/assets",
+								"output": "assets"
+							},
+							{
+								"glob": "livekit-client.e2ee.worker.mjs",
+								"input": "../../../../node_modules/livekit-client/dist/",
+								"output": "assets/livekit/"
+							}
+						],
+						"styles": [
+							"src/styles.css"
+						]
+					},
+					"configurations": {
+						"production": {
+							"index": {
+								"input": "src/index.prod.html",
+								"output": "index.html"
+							},
+							"budgets": [
+								{
+									"type": "initial",
+									"maximumWarning": "2MB",
+									"maximumError": "4MB"
+								},
+								{
+									"type": "anyComponentStyle",
+									"maximumWarning": "4kB",
+									"maximumError": "8kB"
+								}
+							],
+							"outputHashing": "all"
+						},
+						"development": {
+							"optimization": false,
+							"extractLicenses": false,
+							"sourceMap": true
+						}
+					},
+					"defaultConfiguration": "development"
+				},
+				"serve": {
+					"builder": "@angular/build:dev-server",
+					"options": {
+						"port": 5080,
+						"proxyConfig": "proxy.conf.js"
+					},
+					"configurations": {
+						"production": {
+							"buildTarget": "openvidu-meet-testapp:build:production"
+						},
+						"development": {
+							"buildTarget": "openvidu-meet-testapp:build:development"
+						}
+					},
+					"defaultConfiguration": "development"
+				},
+				"test": {
+					"builder": "@angular/build:unit-test"
+				}
+			}
+		}
+	}
+}

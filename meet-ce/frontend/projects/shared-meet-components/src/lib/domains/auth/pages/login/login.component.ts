@@ -59,12 +59,7 @@ export class LoginComponent implements OnInit {
 
 			// Redirect to dedicated mandatory password page after first login or password reset
 			if (mustChangePassword) {
-				const redirectTo = this.redirectTo();
-				await this.navigationService.navigateTo(
-					'/change-password-required',
-					redirectTo ? { redirectTo } : undefined,
-					true
-				);
+				await this.navigationService.redirectToChangePasswordPage(this.redirectTo(), true);
 				return;
 			}
 

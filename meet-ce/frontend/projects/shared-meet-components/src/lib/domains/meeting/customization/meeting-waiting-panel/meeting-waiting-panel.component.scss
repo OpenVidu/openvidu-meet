@@ -1,0 +1,21 @@
+@use '_design-tokens.scss';
+
+.waiting-panel {
+	@include design-tokens.ov-flex-center;
+	flex-direction: column;
+	gap: var(--ov-meet-spacing-sm);
+	padding: var(--ov-meet-spacing-lg) var(--ov-meet-spacing-md);
+	text-align: center;
+	color: var(--ov-text-surface-color); // Use ov-components variable
+
+	.waiting-panel-title {
+		font-size: var(--ov-meet-font-size-md);
+		font-weight: var(--ov-meet-font-weight-semibold);
+	}
+
+	.waiting-panel-subtitle {
+		font-size: var(--ov-meet-font-size-sm);
+		font-weight: var(--ov-meet-font-weight-light);
+		opacity: 0.8;
+	}
+}

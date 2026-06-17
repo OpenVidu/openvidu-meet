@@ -1,0 +1,11 @@
+# Dependencies
+node_modules/
+
+# Angular build output
+dist/
+out-tsc/
+.angular/
+
+# Synced WC artifacts (populated by `pnpm run sync:wc`)
+src/openvidu-meet/
+public/openvidu-meet-wc.js

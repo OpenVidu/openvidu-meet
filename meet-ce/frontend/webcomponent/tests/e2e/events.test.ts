@@ -1,6 +1,6 @@
 import { LeftEventReason, WebComponentEvent } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { iframeLocator } from '../helpers/iframe.helper';
+import { wcLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
 import {
 	endMeetingCommand,
@@ -106,7 +106,7 @@ test.describe('WebComponent Events E2E Tests', () => {
 			await leaveRoomCommand(page);
 			await expectEvent(page, WebComponentEvent.LEFT);
 
-			await iframeLocator(page, '#back-btn').click();
+			await wcLocator(page, '#back-btn').click();
 			await expect(eventLocator(page, WebComponentEvent.CLOSED).first()).toBeVisible({ timeout: 5_000 });
 		});
 
@@ -117,7 +117,7 @@ test.describe('WebComponent Events E2E Tests', () => {
 			await endMeetingCommand(page);
 			await expectEvent(page, WebComponentEvent.LEFT);
 
-			await iframeLocator(page, '#back-btn').click();
+			await wcLocator(page, '#back-btn').click();
 			await expect(eventLocator(page, WebComponentEvent.CLOSED).first()).toBeVisible({ timeout: 5_000 });
 		});
 	});
@@ -183,14 +183,14 @@ test.describe('WebComponent Events E2E Tests', () => {
 	});
 
 	test.describe('Event Error Handling', () => {
-		test('should handle joining and immediately leaving', async ({ page }) => {
+		test('should emit a left event when leaving immediately after joining', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 
 			await leaveRoomCommand(page);
 			await expectEvent(page, WebComponentEvent.LEFT);
 		});
 
-		test('should not emit duplicate events on rapid actions', async ({ page }) => {
+		test('should not emit duplicate left events on repeated leave clicks', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'moderator' });
 			await expectEvent(page, WebComponentEvent.JOINED);
 

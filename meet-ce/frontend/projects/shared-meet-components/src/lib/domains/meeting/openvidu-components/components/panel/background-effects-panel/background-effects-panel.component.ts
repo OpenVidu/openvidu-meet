@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, ou
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { BackgroundEffect, EffectType } from '../../../models/background-effect.model';
+import { BackgroundCategory, BackgroundEffect, EffectType } from '../../../models/background-effect.model';
 import { PanelType } from '../../../models/panel.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { PanelService } from '../../../services/panel/panel.service';
@@ -34,9 +34,19 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 
 	readonly backgroundSelectedId = this.backgroundService.backgroundIdSelected;
 	effectType = EffectType;
-	backgroundImages: BackgroundEffect[] = [];
 	noEffectAndBlurredBackground: BackgroundEffect[] = [];
+	/**
+	 * Background images grouped by category, in the order they are displayed in the panel.
+	 * Categories with no images are filtered out.
+	 */
+	imageCategories: { category: BackgroundCategory; titleKey: string; images: BackgroundEffect[] }[] = [];
 	private backgrounds: BackgroundEffect[] = [];
+
+	private readonly categoryTitleKeys: Record<BackgroundCategory, string> = {
+		[BackgroundCategory.PROFESSIONAL]: 'PANEL.BACKGROUND.CATEGORY_PROFESSIONAL',
+		[BackgroundCategory.HOME_OFFICE]: 'PANEL.BACKGROUND.CATEGORY_HOME_OFFICE',
+		[BackgroundCategory.CREATIVE]: 'PANEL.BACKGROUND.CATEGORY_CREATIVE'
+	};
 
 	/**
 	 * Computed signal that reactively tracks if virtual background is supported.
@@ -49,7 +59,15 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 	ngOnInit(): void {
 		this.backgrounds = this.backgroundService.getBackgrounds();
 		this.noEffectAndBlurredBackground = this.backgrounds.filter((f) => f.type === EffectType.BLUR || f.type === EffectType.NONE);
-		this.backgroundImages = this.backgrounds.filter((f) => f.type === EffectType.IMAGE);
+
+		const images = this.backgrounds.filter((f) => f.type === EffectType.IMAGE);
+		this.imageCategories = (Object.keys(this.categoryTitleKeys) as BackgroundCategory[])
+			.map((category) => ({
+				category,
+				titleKey: this.categoryTitleKeys[category],
+				images: images.filter((img) => img.category === category)
+			}))
+			.filter((group) => group.images.length > 0);
 	}
 
 	close() {

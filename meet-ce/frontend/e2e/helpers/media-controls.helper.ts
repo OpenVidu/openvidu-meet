@@ -151,7 +151,10 @@ export const closePrejoinBackgroundsPanel = async (page: Page): Promise<void> =>
 	const panel = page.locator('#background-effects-container');
 	await expect(panel).toBeVisible({ timeout: 5000 });
 	await panel.locator('.panel-close-button').click();
-	await expect(panel).toHaveCount(0, { timeout: 5000 });
+	// Prejoin keeps the panel mounted and collapses its wrapper via CSS
+	// (`.vb-container` loses `.expanded` → max-height:0), so assert the wrapper is
+	// hidden rather than removed from the DOM.
+	await expect(page.locator('.vb-container')).not.toBeVisible({ timeout: 5000 });
 };
 
 /**
@@ -178,6 +181,10 @@ export const closeRoomBackgroundsPanel = async (page: Page): Promise<void> => {
 export const applyBackgroundEffect = async (page: Page, effectId: string, timeoutMs = 10_000): Promise<void> => {
 	await expect(page.locator('.OV_media-element.camera-source')).toBeVisible({ timeout: timeoutMs });
 	await page.locator(`#effect-${effectId}`).click();
+	// Wait until the async VB processor finishes and marks this effect active.
+	// backgroundIdSelectedWritable.set() (which drives active-effect-btn) is called only
+	// after switchBackgroundMode resolves, so this guards against screenshot race conditions.
+	await expect(page.locator(`#effect-${effectId}`)).toHaveClass(/active-effect-btn/, { timeout: timeoutMs });
 };
 
 // ─── Device selector ─────────────────────────────────────────────────────────

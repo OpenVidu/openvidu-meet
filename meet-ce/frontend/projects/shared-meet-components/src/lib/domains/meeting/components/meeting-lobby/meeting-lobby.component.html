@@ -18,8 +18,7 @@
 		<div class="action-cards-grid">
 			<!-- Join Meeting Card -->
 			<mat-card
-				class="action-card primary-card fade-in"
-				[ngClass]="{ 'room-closed-card': roomClosed() || !canJoinMeeting() }"
+				[class]="'action-card primary-card fade-in' + (roomClosed() || !canJoinMeeting() ? ' room-closed-card' : '')"
 			>
 				<mat-card-header class="card-header">
 					<mat-icon class="ov-room-icon card-icon">{{
@@ -84,7 +83,7 @@
 								id="participant-name-submit"
 								type="submit"
 								class="join-button"
-								[disabled]="!participantForm().valid"
+								[disabled]="participantForm().invalid"
 							>
 								<span>Join Meeting</span>
 							</button>

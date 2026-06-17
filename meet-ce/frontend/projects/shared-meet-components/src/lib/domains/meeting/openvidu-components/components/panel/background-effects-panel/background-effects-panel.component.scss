@@ -1,7 +1,10 @@
 .prejoin-mode {
-	margin: 0 10px 0px 10px;
-	max-height: 100%;
-	min-height: 100%;
+	// Fixed height (provided by the host .vb-container via --vb-panel-height)
+	// keeps the inner layout stable while the container animates open/closed.
+	height: var(--vb-panel-height, 300px);
+	max-height: var(--vb-panel-height, 300px);
+	min-height: unset;
+	margin: 0 10px;
 
 	.panel-close-button {
 		margin: 0;
@@ -9,8 +12,20 @@
 }
 .background-title {
 	color: var(--ov-text-surface-color);
-	margin: 10px 0;
+	margin: 10px 0 6px;
 	font-weight: 300;
+	align-items: center;
+	gap: 8px;
+
+	&::after {
+		content: '';
+		display: block;
+		height: 1px;
+		width: 50%;
+		background: var(--ov-secondary-action-color);
+		opacity: 0.7;
+		flex-shrink: 0;
+	}
 }
 
 .not-supported-message {
@@ -37,6 +52,8 @@
 	overflow-y: auto;
 	overflow-x: hidden;
 	padding: 10px;
+	flex: 1 1 0;
+	min-height: 0;
 }
 
 .effect-button {

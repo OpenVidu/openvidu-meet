@@ -1,7 +1,8 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
-import { LoggerService } from '../../meeting/openvidu-components';
+import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
+import { ILogger, LoggerService } from '../../meeting/openvidu-components';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from '../utils/features.utils';
@@ -42,9 +43,10 @@ const DEFAULT_FEATURES: RoomFeatures = {
 	providedIn: 'root'
 })
 export class RoomFeatureService {
-	protected log;
+	protected log: ILogger = inject(LoggerService).get('OpenVidu Meet - RoomFeatureService');
 	protected globalConfigService = inject(GlobalConfigService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
@@ -60,10 +62,15 @@ export class RoomFeatureService {
 		)
 	);
 
-	constructor(protected loggerService: LoggerService) {
-		this.log = this.loggerService.get('OpenVidu Meet - RoomFeatureService');
-		void this.loadGlobalFeatureConfigs();
-	}
+	/**
+	 * Loads global feature configuration once the service is ready for requests.
+	 * This ensures HTTP requests don't fire with an empty URL (race condition in webcomponent mode).
+	 */
+	private readonly loadConfigEffect = effect(() => {
+		if (this.runtimeConfigService.isReadyForRequests()) {
+			void this.loadGlobalFeatureConfigs();
+		}
+	});
 
 	/**
 	 * Updates room config

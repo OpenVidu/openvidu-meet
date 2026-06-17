@@ -44,24 +44,7 @@
 	}
 }
 
-<!-- Copy Link Button -->
+<!-- Copy Link Button (only for moderators, hidden in webcomponent mode) -->
 @if (showCopyLinkButton()) {
-	@if (isMobile()) {
-		<!-- It will appear inside of a menu on mobile view -->
-		<button id="copy-speaker-link" mat-menu-item (click)="onCopyLinkClick()" [disableRipple]="true">
-			<mat-icon>link</mat-icon>
-			<span class="button-text">{{ copyLinkText }}</span>
-		</button>
-	} @else {
-		<!-- It will appear as an icon button on desktop view -->
-		<button
-			id="copy-speaker-link"
-			mat-icon-button
-			(click)="onCopyLinkClick()"
-			[disableRipple]="true"
-			[matTooltip]="copyLinkTooltip"
-		>
-			<mat-icon>link</mat-icon>
-		</button>
-	}
+	<ov-meeting-toolbar-copy-link-button [isMobile]="isMobile()" />
 }

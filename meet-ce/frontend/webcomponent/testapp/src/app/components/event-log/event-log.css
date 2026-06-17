@@ -1,0 +1,38 @@
+/* Log-specific styles. Shared primitives (.ta-section, .ta-btn, h2) live in
+   the global styles.css so this encapsulated component can reuse them. */
+
+.ta-section--log {
+  flex: 1;
+  min-height: 120px;
+}
+
+.ta-log-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ta-log-header h2 {
+  margin-bottom: 0;
+}
+
+.ta-log {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  font-size: 10px;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  overflow-y: auto;
+  max-height: 200px;
+}
+
+.ta-log-entry {
+  padding: 2px 0;
+  border-bottom: 1px solid #1e2130;
+  color: #94a3b8;
+  word-break: break-all;
+}
+
+.ta-log-entry:first-child {
+  color: #c4b5fd;
+}

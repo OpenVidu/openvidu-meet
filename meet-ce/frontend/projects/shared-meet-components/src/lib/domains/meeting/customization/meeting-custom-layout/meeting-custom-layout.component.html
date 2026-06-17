@@ -2,7 +2,7 @@
 	<div class="main-container" [ngClass]="{ withFooter: areCaptionsEnabledByUser() }">
 		<ov-smart-layout
 			[ovSmartLayoutAllowed]="showLayoutSelector()"
-			[ovShowHiddenParticipantsIndicator]="!shouldShowLinkOverlay()"
+			[ovShowHiddenParticipantsIndicator]="!shouldShowOverlay()"
 			[ngClass]="{ withFooter: areCaptionsEnabledByUser() }"
 			(hiddenParticipantsIndicatorClicked)="toggleParticipantsPanel()"
 		>
@@ -17,6 +17,13 @@
 							[titleWeight]="linkOverlayConfig.titleWeight"
 							[meetingUrl]="meetingUrl() ?? ''"
 							(copyClicked)="onCopyMeetingLinkClicked()"
+						/>
+					</div>
+				} @else if (shouldShowWaitingOverlay()) {
+					<div id="waiting-overlay" class="main-share-meeting-link-container fade-in-delayed OV_big">
+						<ov-meeting-waiting-panel
+							class="main-share-meeting-link"
+							subtitle="You're the only one here right now."
 						/>
 					</div>
 				}

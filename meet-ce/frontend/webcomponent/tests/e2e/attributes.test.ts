@@ -1,10 +1,10 @@
 import { WebComponentProperty } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { iframeLocator, waitForPageRedirect } from '../helpers/iframe.helper';
 import { createRoom, deleteRooms, getRecordingUrl, listRecordingsByRoomId } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { endMeetingCommand, openMeeting } from '../helpers/testapp.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
+import { waitForPageRedirect, wcLocator } from '../helpers/webcomponent.helper';
 
 // ─── WebComponent attribute coverage ────────────────────────────────────────
 //
@@ -32,7 +32,9 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			accessUrl = room.access.anonymous.moderator.url;
 		});
 
-		test('participant-name: pre-fills the participant name input and disables it', async ({ page }) => {
+		test('should pre-fill and disable the participant name input when participant-name is set', async ({
+			page
+		}) => {
 			const participantName = 'Alice';
 
 			await openWebcomponentWithAttributes(page, {
@@ -40,7 +42,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				[WebComponentProperty.PARTICIPANT_NAME]: participantName
 			});
 
-			const nameInput = iframeLocator(page, '#participant-name-input');
+			const nameInput = wcLocator(page, '#participant-name-input');
 			await expect(nameInput).toBeVisible();
 			await expect(nameInput).toHaveValue(participantName);
 			await expect(nameInput).toBeDisabled();
@@ -53,20 +55,43 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				accessUrl = room.access.anonymous.moderator.url;
 			});
 
-			test('e2ee-key: pre-fills the E2EE key input and hides it', async ({ page }) => {
+			test('should hide the E2EE key input and show the encryption badge when e2ee-key is set', async ({
+				page
+			}) => {
 				await openWebcomponentWithAttributes(page, {
 					[WebComponentProperty.ROOM_URL]: accessUrl,
 					[WebComponentProperty.E2EE_KEY]: 'super-secret-key-123'
 				});
 
 				// Wait for the lobby to render so the E2EE control evaluation is complete.
-				await expect(iframeLocator(page, '#participant-name-input')).toBeVisible();
+				await expect(wcLocator(page, '#participant-name-input')).toBeVisible();
 
 				// When `e2ee-key` is provided via the URL/attribute, the lobby disables the
 				// e2eeKey form control. The hidden state and the E2EE message confirms the
 				// `e2ee-key` attribute was accepted by the web component.
-				await expect(iframeLocator(page, '#participant-e2eekey-input')).toHaveCount(0);
-				await expect(iframeLocator(page, '.encryption-badge')).toBeVisible();
+				await expect(wcLocator(page, '#participant-e2eekey-input')).toHaveCount(0);
+				await expect(wcLocator(page, '.encryption-badge')).toBeVisible();
+			});
+
+			test('should keep the join button enabled when both participant-name and e2ee-key are set', async ({
+				page
+			}) => {
+				// Regression: providing BOTH participant-name and e2ee-key disables both lobby
+				// form controls. A FormGroup whose every control is disabled has status DISABLED,
+				// so `valid` is false even though the form is complete — which previously left the
+				// join button permanently disabled. The button must remain clickable here.
+				await openWebcomponentWithAttributes(page, {
+					[WebComponentProperty.ROOM_URL]: accessUrl,
+					[WebComponentProperty.PARTICIPANT_NAME]: 'Alice',
+					[WebComponentProperty.E2EE_KEY]: 'super-secret-key-123'
+				});
+
+				const nameInput = wcLocator(page, '#participant-name-input');
+				await expect(nameInput).toBeVisible();
+				await expect(nameInput).toBeDisabled();
+				await expect(wcLocator(page, '#participant-e2eekey-input')).toHaveCount(0);
+
+				await expect(wcLocator(page, '#participant-name-submit')).toBeEnabled();
 			});
 		});
 
@@ -96,26 +121,26 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				recordingId = recordings[0].recordingId;
 			});
 
-			test('show-only-recordings: redirects to the room recordings page', async ({ page }) => {
+			test('should redirect to the room recordings page when show-only-recordings is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
 					[WebComponentProperty.ROOM_URL]: accessUrl,
 					[WebComponentProperty.SHOW_ONLY_RECORDINGS]: 'true'
 				});
 
-				await expect(iframeLocator(page, 'ov-recording-lists, .recordings-list')).toBeVisible({
+				await expect(wcLocator(page, 'ov-recording-lists, .recordings-list')).toBeVisible({
 					timeout: 15_000
 				});
-				await expect(iframeLocator(page, '#participant-name-input')).toHaveCount(0);
+				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
 			});
 
-			test('show-recording: redirects to the specified recording', async ({ page }) => {
+			test('should redirect to the specified recording when show-recording is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
 					[WebComponentProperty.ROOM_URL]: accessUrl,
 					[WebComponentProperty.SHOW_RECORDING]: recordingId
 				});
 
-				await expect(iframeLocator(page, '.recording-page-content')).toBeVisible({ timeout: 15_000 });
-				await expect(iframeLocator(page, '#participant-name-input')).toHaveCount(0);
+				await expect(wcLocator(page, '.recording-page-content')).toBeVisible({ timeout: 15_000 });
+				await expect(wcLocator(page, '#participant-name-input')).toHaveCount(0);
 			});
 		});
 	});
@@ -145,14 +170,14 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			recordingId = recordings[0].recordingId;
 		});
 
-		test('redirects to the specified recording', async ({ page }) => {
+		test('should redirect to the specified recording', async ({ page }) => {
 			const recordingUrl = await getRecordingUrl(recordingId);
 
 			await openWebcomponentWithAttributes(page, {
 				[WebComponentProperty.RECORDING_URL]: recordingUrl
 			});
 
-			await expect(iframeLocator(page, '.recording-page-content')).toBeVisible({ timeout: 15_000 });
+			await expect(wcLocator(page, '.recording-page-content')).toBeVisible({ timeout: 15_000 });
 		});
 	});
 
@@ -165,19 +190,19 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			accessUrl = room.access.anonymous.moderator.url;
 		});
 
-		test('redirects from the lobby back button', async ({ page }) => {
+		test('should redirect to the configured URL from the lobby back button', async ({ page }) => {
 			await openWebcomponentWithAttributes(page, {
 				[WebComponentProperty.ROOM_URL]: accessUrl,
 				[WebComponentProperty.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL
 			});
 
-			await expect(iframeLocator(page, '#participant-name-input')).toBeVisible();
+			await expect(wcLocator(page, '#participant-name-input')).toBeVisible();
 
-			await iframeLocator(page, '.quick-action-button').first().click();
+			await wcLocator(page, '.quick-action-button').first().click();
 			await waitForPageRedirect(page, REDIRECT_TARGET_URL);
 		});
 
-		test('redirects from the disconnected page back button', async ({ page }) => {
+		test('should redirect to the configured URL from the disconnected page back button', async ({ page }) => {
 			// First, open a meeting so it can be ended (which lands on the disconnected page).
 			await openWebcomponentWithAttributes(page, {
 				[WebComponentProperty.ROOM_URL]: accessUrl,
@@ -185,20 +210,20 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				[WebComponentProperty.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL
 			});
 
-			await expect(iframeLocator(page, '#participant-name-submit')).toBeVisible();
-			await iframeLocator(page, '#participant-name-submit').click();
+			await expect(wcLocator(page, '#participant-name-submit')).toBeVisible();
+			await wcLocator(page, '#participant-name-submit').click();
 
-			await expect(iframeLocator(page, 'ov-pre-join')).toBeVisible({ timeout: 15_000 });
-			await iframeLocator(page, '#join-button').click();
-			await expect(iframeLocator(page, 'ov-session')).toBeVisible({ timeout: 15_000 });
+			await expect(wcLocator(page, 'ov-pre-join')).toBeVisible({ timeout: 15_000 });
+			await wcLocator(page, '#join-button').click();
+			await expect(wcLocator(page, 'ov-session')).toBeVisible({ timeout: 15_000 });
 
 			// Leave to reach the disconnected page (moderator leave-option menu is shown).
-			await iframeLocator(page, '#leave-btn').click();
-			await iframeLocator(page, '#leave-option').click();
+			await wcLocator(page, '#leave-btn').click();
+			await wcLocator(page, '#leave-option').click();
 
-			await expect(iframeLocator(page, '#disconnect-title')).toBeVisible({ timeout: 15_000 });
-			await expect(iframeLocator(page, '#back-btn')).toBeVisible();
-			await iframeLocator(page, '#back-btn').click();
+			await expect(wcLocator(page, '#disconnect-title')).toBeVisible({ timeout: 15_000 });
+			await expect(wcLocator(page, '#back-btn')).toBeVisible();
+			await wcLocator(page, '#back-btn').click();
 
 			await waitForPageRedirect(page, REDIRECT_TARGET_URL);
 		});

@@ -6,6 +6,7 @@ import {
 	HttpHeaderProviderService
 } from '../../../shared/services/http-header-provider.service';
 import { RoomMemberContextService } from '../services/room-member-context.service';
+import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 
 /**
  * Provider for room member token headers.
@@ -17,6 +18,7 @@ import { RoomMemberContextService } from '../services/room-member-context.servic
 export class RoomMemberHeaderProviderService implements HttpHeaderProvider {
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly headerProviderService = inject(HttpHeaderProviderService);
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
 	/**
 	 * Registers this provider with the header provider service
@@ -29,13 +31,14 @@ export class RoomMemberHeaderProviderService implements HttpHeaderProvider {
 	 * Determines if this provider should add headers for the given context
 	 */
 	canProvide(context: HttpHeaderContext): boolean {
-		// Only provide if:
-		// 1. Room member token exists
-		// 2. Current page is a room page (starts with /room/) or a recording page (starts with /recording/)
-		return (
-			!!this.roomMemberContextService.roomMemberToken() &&
-			(context.pageUrl.startsWith('/room/') || context.pageUrl.startsWith('/recording/'))
-		);
+		if (!this.roomMemberContextService.roomMemberToken()) {
+			return false;
+		}
+		// In webcomponent mode all requests are meeting-related — skip URL check
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			return true;
+		}
+		return context.pageUrl.startsWith('/room/') || context.pageUrl.startsWith('/recording/');
 	}
 
 	/**
