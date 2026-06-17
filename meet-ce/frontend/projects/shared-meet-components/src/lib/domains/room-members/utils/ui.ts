@@ -95,24 +95,24 @@ export class RoomMemberUiUtils {
 	// ===== MEMBER UTILITIES =====
 
 	/**
-	 * Checks whether a member is a registered (non-external) member.
+	 * Checks whether a member is a user (not an identified guest).
 	 */
-	static isRegisteredMember(member: MeetRoomMember): boolean {
-		return member.type === MeetRoomMemberType.REGISTERED;
+	static isUserMember(member: MeetRoomMember): boolean {
+		return member.type === MeetRoomMemberType.USER;
 	}
 
 	/**
-	 * Gets the human-readable label for the member type (Registered or External).
+	 * Gets the human-readable label for the member type (User or Identified guest).
 	 */
 	static getMemberTypeLabel(member: MeetRoomMember): string {
-		return RoomMemberUiUtils.isRegisteredMember(member) ? 'Registered' : 'External';
+		return RoomMemberUiUtils.isUserMember(member) ? 'User' : 'Identified guest';
 	}
 
 	/**
 	 * Gets the Material icon name for the member type.
 	 */
 	static getMemberTypeIcon(member: MeetRoomMember): string {
-		return RoomMemberUiUtils.isRegisteredMember(member) ? 'verified_user' : 'person';
+		return RoomMemberUiUtils.isUserMember(member) ? 'verified_user' : 'person';
 	}
 
 	/**

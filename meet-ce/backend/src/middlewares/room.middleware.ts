@@ -19,8 +19,8 @@ import { runConcurrently } from '../utils/concurrency.utils.js';
  * Middleware to apply room list access filters to validated query options.
  *
  * - ADMIN: can list all rooms (no extra filters)
- * - USER: can list rooms they own or where they are members (and rooms with registered access enabled)
- * - ROOM_MEMBER: can list only rooms where they are members (and rooms with registered access enabled)
+ * - ROOM_MANAGER: can list rooms they own or where they are members (and rooms with user access enabled)
+ * - ROOM_MEMBER: can list only rooms where they are members (and rooms with user access enabled)
  */
 export const applyRoomListAccessFilters = async (_req: Request, res: Response, next: NextFunction) => {
 	const requestSessionService = container.get(RequestSessionService);
@@ -38,7 +38,7 @@ export const applyRoomListAccessFilters = async (_req: Request, res: Response, n
 	}
 
 	const queryOptions = res.locals.validatedQuery as RoomQueryWithFields;
-	const hasScopeFilters = !!queryOptions.owner || !!queryOptions.member || queryOptions.registeredAccess;
+	const hasScopeFilters = !!queryOptions.owner || !!queryOptions.member || queryOptions.userAccess;
 
 	// Non-admin users can only scope owner/member filters to their own userId.
 	if (queryOptions.owner && queryOptions.owner !== user.userId) {
@@ -52,15 +52,15 @@ export const applyRoomListAccessFilters = async (_req: Request, res: Response, n
 	}
 
 	// Default behavior when client does not provide explicit scope filters:
-	// USER => owned OR member OR registered access
-	// ROOM_MEMBER => member OR registered access
+	// ROOM_MANAGER => owned OR member OR user access
+	// ROOM_MEMBER => member OR user access
 	if (!hasScopeFilters) {
-		if (user.role === MeetUserRole.USER) {
+		if (user.role === MeetUserRole.ROOM_MANAGER) {
 			queryOptions.owner = user.userId;
 		}
 
 		queryOptions.member = user.userId;
-		queryOptions.registeredAccess = true;
+		queryOptions.userAccess = true;
 	}
 
 	res.locals.validatedQuery = queryOptions;
@@ -71,7 +71,7 @@ export const applyRoomListAccessFilters = async (_req: Request, res: Response, n
  * Middleware to authorize access to a room.
  *
  * - If a Room Member Token is used, it checks that the token's roomId matches the requested roomId.
- * - If a registered user is authenticated, it checks their role and whether they are the owner or a member of the room.
+ * - If a user is authenticated, it checks their role and whether they are the owner or a member of the room.
  * - If neither a valid token nor an authenticated user is present, it rejects the request.
  */
 export const authorizeRoomAccess = async (req: Request, res: Response, next: NextFunction) => {
@@ -102,7 +102,7 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
 		return next();
 	}
 
-	// Registered User
+	// Authenticated user
 	if (user) {
 		try {
 			const canAccess = await roomService.canUserAccessRoom(roomId, user);

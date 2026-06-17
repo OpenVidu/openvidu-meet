@@ -1,6 +1,6 @@
 import { MeetRoomMemberOptions, MeetRoomRoles } from '@openvidu-meet/typings';
 
-export type MemberFormMemberType = 'registered' | 'external';
+export type MemberFormMemberType = 'user' | 'identified_guest';
 
 /**
  * Data injected via MAT_DIALOG_DATA into MemberFormDialogComponent.

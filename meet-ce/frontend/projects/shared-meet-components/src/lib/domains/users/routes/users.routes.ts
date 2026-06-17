@@ -38,7 +38,7 @@ export const usersConsoleRoutes: DomainRouteConfig[] = [
 		route: {
 			path: 'users/:user-id',
 			loadComponent: () => import('../pages/profile/profile.component').then((m) => m.ProfileComponent),
-			canActivate: [checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.USER])]
+			canActivate: [checkRoleGuard([MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER])]
 		}
 	},
 	// Profile page is not shown in the main navigation, but we want it to be a child route of the console shell

@@ -117,7 +117,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		memberFilter: '',
 		showOwnedRooms: false,
 		showMemberRooms: false,
-		showRegisteredAccessRooms: false
+		showUserAccessRooms: false
 	});
 
 	// Pagination
@@ -176,8 +176,8 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			case 'create':
 				await this.createRoom();
 				break;
-			case 'join':
-				this.joinRoom(action.rooms[0]);
+			case 'access':
+				this.accessRoom(action.rooms[0]);
 				break;
 			case 'edit':
 				await this.editRoomConfig(action.rooms[0]);
@@ -240,12 +240,12 @@ export class RoomsComponent implements OnInit, OnDestroy {
 				// For ADMIN: direct filter pass-through — results are narrowed to rooms matching any selected criterion
 				if (filters.ownerFilter) roomFilters.owner = filters.ownerFilter;
 				if (filters.memberFilter) roomFilters.member = filters.memberFilter;
-				if (filters.showRegisteredAccessRooms) roomFilters.registeredAccess = true;
+				if (filters.showUserAccessRooms) roomFilters.userAccess = true;
 			} else if (userId) {
-				// For USER/ROOM_MEMBER: scope selectors bound to the current user's identity
+				// For ROOM_MANAGER/ROOM_MEMBER: scope selectors bound to the current user's identity
 				if (filters.showOwnedRooms) roomFilters.owner = userId;
 				if (filters.showMemberRooms) roomFilters.member = userId;
-				if (filters.showRegisteredAccessRooms) roomFilters.registeredAccess = true;
+				if (filters.showUserAccessRooms) roomFilters.userAccess = true;
 			}
 
 			const response = await this.roomService.listRooms(roomFilters);
@@ -292,8 +292,8 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	private joinRoom({ access }: MeetRoom) {
-		window.open(access.registered.url, '_blank');
+	private accessRoom({ access }: MeetRoom) {
+		window.open(access.user.url, '_blank');
 	}
 
 	private async editRoomConfig(room: MeetRoom) {

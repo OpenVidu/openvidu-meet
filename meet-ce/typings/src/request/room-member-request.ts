@@ -5,9 +5,9 @@ import { MeetRoomMemberRole } from '../database/room-member.entity.js';
  * Options for adding a member to a room.
  */
 export interface MeetRoomMemberOptions {
-	/** Unique identifier for a registered Meet user (mutually exclusive with name) */
+	/** Unique identifier for a user (mutually exclusive with name) */
 	userId?: string;
-	/** Name for an external user (mutually exclusive with userId) */
+	/** Name for an identified guest (mutually exclusive with userId) */
 	name?: string;
 	/** The base role assigned to the member. See {@link MeetRoomMemberRole} for details. */
 	baseRole: MeetRoomMemberRole;

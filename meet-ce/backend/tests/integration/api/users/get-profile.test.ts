@@ -45,8 +45,8 @@ describe('Users API Tests', () => {
 			expect(response.body).not.toHaveProperty('mustChangePassword');
 		});
 
-		it('should return USER user profile', async () => {
-			const user = testUsers.user;
+		it('should return ROOM_MANAGER user profile', async () => {
+			const user = testUsers.roomManager;
 			const response = await getMe(user.accessToken);
 			expect(response.status).toBe(200);
 			expect(response.body).toHaveProperty('userId', user.user.userId);

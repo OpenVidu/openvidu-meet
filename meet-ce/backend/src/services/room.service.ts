@@ -157,8 +157,8 @@ export class RoomService {
 					url: `/room/${roomId}/recordings?secret=${secureUid(10)}`
 				}
 			},
-			registered: {
-				enabled: access?.registered?.enabled ?? false,
+			user: {
+				enabled: access?.user?.enabled ?? false,
 				url: `/room/${roomId}`
 			}
 		};
@@ -302,7 +302,7 @@ export class RoomService {
 
 		if (updatedSpeakerCanRetrieveRecordings !== previousSpeakerCanRetrieveRecordings) {
 			await this.recordingService.updateRoomRecordingsAccessScopeMetadata(roomId, {
-				roomRegisteredAccess: updatedRoom.access.registered.enabled && updatedSpeakerCanRetrieveRecordings
+				roomUserAccess: updatedRoom.access.user.enabled && updatedSpeakerCanRetrieveRecordings
 			});
 		}
 
@@ -330,14 +330,14 @@ export class RoomService {
 			rolesUpdatedAt: Date.now()
 		});
 
-		// If registered access enabled/disabled, update recordings access scope metadata
-		const previousRegisteredAccessEnabled = room.access.registered.enabled;
-		const updatedRegisteredAccessEnabled = updatedRoom.access.registered.enabled;
+		// If user access enabled/disabled, update recordings access scope metadata
+		const previousUserAccessEnabled = room.access.user.enabled;
+		const updatedUserAccessEnabled = updatedRoom.access.user.enabled;
 
-		if (updatedRegisteredAccessEnabled !== previousRegisteredAccessEnabled) {
+		if (updatedUserAccessEnabled !== previousUserAccessEnabled) {
 			await this.recordingService.updateRoomRecordingsAccessScopeMetadata(roomId, {
-				roomRegisteredAccess:
-					updatedRoom.access.registered.enabled && updatedRoom.roles.speaker.permissions.canRetrieveRecordings
+				roomUserAccess:
+					updatedRoom.access.user.enabled && updatedRoom.roles.speaker.permissions.canRetrieveRecordings
 			});
 		}
 
@@ -815,8 +815,8 @@ export class RoomService {
 	 *
 	 * - If the user is authenticated via room member token, their permissions are obtained from the token metadata.
 	 * - If the user is admin or the room owner, they have all permissions.
-	 * - If the user is a registered room member, their permissions are obtained from their room member info.
-	 * - If the user is registered but not a room member, permissions depend on whether registered access is enabled
+	 * - If the user is a room member, their permissions are obtained from their room member info.
+	 * - If the user is authenticated but not a room member, permissions depend on whether user access is enabled
 	 * (speaker permissions if enabled, no permissions if not).
 	 * - If there's no authenticated user nor room member token, returns all permissions.
 	 * This is necessary for methods invoked by system processes (e.g., room auto-deletion).
@@ -838,7 +838,7 @@ export class RoomService {
 			return this.requestSessionService.getRoomMemberPermissions()!;
 		}
 
-		// Registered user
+		// Authenticated user
 		if (user) {
 			const isAdmin = user.role === MeetUserRole.ADMIN;
 			const { owner, access, roles } = await this.getMeetRoom(roomId, ['owner', 'access', 'roles']);
@@ -849,15 +849,15 @@ export class RoomService {
 				return roomMemberService.getAllPermissions();
 			}
 
-			// Get permissions for registered room members
+			// Get permissions for room members
 			const member = await roomMemberService.getRoomMember(roomId, user.userId, ['effectivePermissions']);
 
 			if (member) {
 				return member.effectivePermissions;
 			}
 
-			// If not a room member, check if registered access is enabled to determine if we should return speaker permissions or no permissions
-			if (access.registered.enabled) {
+			// If not a room member, check if user access is enabled to determine if we should return speaker permissions or no permissions
+			if (access.user.enabled) {
 				return roles.speaker.permissions;
 			}
 
@@ -869,7 +869,7 @@ export class RoomService {
 	}
 
 	/**
-	 * Checks if a registered user can access a specific room based on their role.
+	 * Checks if a user can access a specific room based on their role.
 	 *
 	 * @param roomId The ID of the room to check access for.
 	 * @param user The user object containing user details and role.
@@ -885,8 +885,8 @@ export class RoomService {
 			return true;
 		}
 
-		if (access.registered.enabled) {
-			// Users can access rooms with registered access enabled
+		if (access.user.enabled) {
+			// Users can access rooms with user access enabled
 			return true;
 		}
 

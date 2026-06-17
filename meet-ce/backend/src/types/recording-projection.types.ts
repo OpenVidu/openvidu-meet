@@ -12,7 +12,7 @@ type RecordingQueryBase = Omit<MeetRecordingFilters, 'fields'>;
 type RecordingRepositoryQueryBase = RecordingQueryBase & {
 	roomOwner?: string;
 	roomMember?: string;
-	roomRegisteredAccess?: boolean;
+	roomUserAccess?: boolean;
 };
 
 /** Full recordings, no projection. */

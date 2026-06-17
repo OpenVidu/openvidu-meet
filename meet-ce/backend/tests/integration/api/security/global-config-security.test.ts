@@ -52,10 +52,10 @@ describe('Global Config API Security Tests', () => {
 			await restoreDefaultGlobalConfig();
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.put(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send(webhookConfig);
 			expect(response.status).toBe(403);
 		});
@@ -89,10 +89,10 @@ describe('Global Config API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.get(`${CONFIG_PATH}/webhooks`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(403);
 		});
 
@@ -135,10 +135,10 @@ describe('Global Config API Security Tests', () => {
 			await restoreDefaultGlobalConfig();
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.put(`${CONFIG_PATH}/security`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send(securityConfig);
 			expect(response.status).toBe(403);
 		});
@@ -195,10 +195,10 @@ describe('Global Config API Security Tests', () => {
 			await restoreDefaultGlobalConfig();
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.put(`${CONFIG_PATH}/rooms/appearance`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken)
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken)
 				.send(appearanceConfig);
 			expect(response.status).toBe(403);
 		});

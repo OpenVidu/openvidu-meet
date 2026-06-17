@@ -22,56 +22,56 @@ describe('Room Members API Tests', () => {
 		roomId = room.roomId;
 
 		// Create 5 room members sequentially with predictable timestamps
-		// Mix of registered users and external users with different roles
+		// Mix of users and identified guests with different roles
 
 		// Create a timestamp to ensure unique IDs (max 6 digits to fit in 20 char limit)
 		const ts = String(Date.now()).slice(-6);
 
-		// Alice - Registered user, MODERATOR
+		// Alice - User, MODERATOR
 		const aliceUserId = `alice_${ts}`;
 		await createUser({
 			userId: aliceUserId,
 			name: 'Alice Smith',
 			password: 'password123',
-			role: MeetUserRole.USER
+			role: MeetUserRole.ROOM_MANAGER
 		});
 		await createRoomMember(roomId, {
 			userId: aliceUserId,
 			baseRole: MeetRoomMemberRole.MODERATOR
 		});
 
-		// Bob - External user, SPEAKER
+		// Bob - Identified guest, SPEAKER
 		await createRoomMember(roomId, {
 			name: 'Bob Johnson',
 			baseRole: MeetRoomMemberRole.SPEAKER
 		});
 
-		// Charlie - Registered user, SPEAKER
+		// Charlie - User, SPEAKER
 		const charlieUserId = `charlie_${ts}`;
 		await createUser({
 			userId: charlieUserId,
 			name: 'Charlie Brown',
 			password: 'password123',
-			role: MeetUserRole.USER
+			role: MeetUserRole.ROOM_MANAGER
 		});
 		await createRoomMember(roomId, {
 			userId: charlieUserId,
 			baseRole: MeetRoomMemberRole.SPEAKER
 		});
 
-		// Diana - External user, MODERATOR
+		// Diana - Identified guest, MODERATOR
 		await createRoomMember(roomId, {
 			name: 'Diana Prince',
 			baseRole: MeetRoomMemberRole.MODERATOR
 		});
 
-		// Eve - Registered user, SPEAKER
+		// Eve - User, SPEAKER
 		const eveUserId = `eve_${ts}`;
 		await createUser({
 			userId: eveUserId,
 			name: 'Eve Anderson',
 			password: 'password123',
-			role: MeetUserRole.USER
+			role: MeetUserRole.ROOM_MANAGER
 		});
 		await createRoomMember(roomId, {
 			userId: eveUserId,
@@ -208,22 +208,22 @@ describe('Room Members API Tests', () => {
 			);
 		});
 
-		it('should filter members by type registered', async () => {
-			const response = await getRoomMembers(roomId, { type: MeetRoomMemberType.REGISTERED });
+		it('should filter members by type user', async () => {
+			const response = await getRoomMembers(roomId, { type: MeetRoomMemberType.USER });
 			expect(response.status).toBe(200);
-			// Alice, Charlie and Eve are registered members
+			// Alice, Charlie and Eve are users
 			expect(response.body.members.length).toBe(3);
-			expect(response.body.members.every((m: MeetRoomMember) => m.type === MeetRoomMemberType.REGISTERED)).toBe(
+			expect(response.body.members.every((m: MeetRoomMember) => m.type === MeetRoomMemberType.USER)).toBe(
 				true
 			);
 		});
 
-		it('should filter members by type external', async () => {
-			const response = await getRoomMembers(roomId, { type: MeetRoomMemberType.EXTERNAL });
+		it('should filter members by type identified guest', async () => {
+			const response = await getRoomMembers(roomId, { type: MeetRoomMemberType.IDENTIFIED_GUEST });
 			expect(response.status).toBe(200);
-			// Bob and Diana are external members
+			// Bob and Diana are identified guests
 			expect(response.body.members.length).toBe(2);
-			expect(response.body.members.every((m: MeetRoomMember) => m.type === MeetRoomMemberType.EXTERNAL)).toBe(
+			expect(response.body.members.every((m: MeetRoomMember) => m.type === MeetRoomMemberType.IDENTIFIED_GUEST)).toBe(
 				true
 			);
 		});
@@ -231,20 +231,20 @@ describe('Room Members API Tests', () => {
 		it('should combine baseRole and type filters', async () => {
 			const response = await getRoomMembers(roomId, {
 				baseRole: MeetRoomMemberRole.MODERATOR,
-				type: MeetRoomMemberType.EXTERNAL
+				type: MeetRoomMemberType.IDENTIFIED_GUEST
 			});
 			expect(response.status).toBe(200);
-			// Only Diana is an external moderator
+			// Only Diana is an identified guest moderator
 			expect(response.body.members.length).toBe(1);
 			expect(response.body.members[0].name).toBe('Diana Prince');
 			expect(response.body.members[0].baseRole).toBe(MeetRoomMemberRole.MODERATOR);
-			expect(response.body.members[0].type).toBe(MeetRoomMemberType.EXTERNAL);
+			expect(response.body.members[0].type).toBe(MeetRoomMemberType.IDENTIFIED_GUEST);
 		});
 
 		it('should return empty array when baseRole/type filters match no members', async () => {
 			const response = await getRoomMembers(roomId, {
 				baseRole: MeetRoomMemberRole.MODERATOR,
-				type: MeetRoomMemberType.REGISTERED,
+				type: MeetRoomMemberType.USER,
 				name: 'Bob Johnson'
 			});
 			expect(response.status).toBe(200);

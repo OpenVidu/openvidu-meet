@@ -107,7 +107,7 @@
 		background-color: color-mix(in srgb, var(--ov-meet-color-primary) 15%, transparent);
 	}
 
-	&.avatar-role-user {
+	&.avatar-role-room_manager {
 		background-color: color-mix(in srgb, var(--ov-meet-color-success) 15%, transparent);
 	}
 
@@ -124,7 +124,7 @@
 	user-select: none;
 	line-height: 1;
 
-	.avatar-role-user & {
+	.avatar-role-room_manager & {
 		color: var(--ov-meet-color-success);
 	}
 
@@ -174,7 +174,7 @@
 		color: var(--ov-meet-color-primary);
 	}
 
-	&.role-user {
+	&.role-room_manager {
 		background-color: color-mix(in srgb, var(--ov-meet-color-success), transparent 85%);
 		color: var(--ov-meet-color-success);
 	}

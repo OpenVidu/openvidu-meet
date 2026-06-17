@@ -15,7 +15,7 @@ export class UsersUiUtils {
 		UsersUiUtils.DIGIT_CHARSET +
 		UsersUiUtils.SYMBOL_CHARSET;
 
-	static readonly AVAILABLE_ROLES: MeetUserRole[] = [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER];
+	static readonly AVAILABLE_ROLES: MeetUserRole[] = [MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER];
 
 	/**
 	 * Gets the Material icon name for a user role.
@@ -24,7 +24,7 @@ export class UsersUiUtils {
 		switch (role) {
 			case MeetUserRole.ADMIN:
 				return 'manage_accounts';
-			case MeetUserRole.USER:
+			case MeetUserRole.ROOM_MANAGER:
 				return 'person';
 			case MeetUserRole.ROOM_MEMBER:
 				return 'meeting_room';
@@ -43,8 +43,8 @@ export class UsersUiUtils {
 		switch (role) {
 			case MeetUserRole.ADMIN:
 				return 'Admin';
-			case MeetUserRole.USER:
-				return 'User';
+			case MeetUserRole.ROOM_MANAGER:
+				return 'Room Manager';
 			case MeetUserRole.ROOM_MEMBER:
 				return 'Room Member';
 			default:

@@ -17,12 +17,12 @@ properties:
             The registration date of the user in milliseconds since the Unix epoch.
     role:
         type: string
-        enum: ['admin', 'user', 'room_member']
-        example: 'user'
+        enum: ['admin', 'room_manager', 'room_member']
+        example: 'room_manager'
         description: |
             The role assigned to the user. Available roles:
             - admin: Has full control over the entire application (configuration, users, rooms, recordings, etc).
-            - user: Can create and manage their own created rooms and associated recordings. Can also access rooms they are a member of, but without management permissions.
+            - room_manager: Can create and manage their own created rooms and associated recordings. Can also access rooms they are a member of, but without management permissions.
             - room_member: Can only access rooms (and recordings) they are a member of, without ability to create or manage rooms.
     roleUpdatedAt:
         type: number

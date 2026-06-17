@@ -92,7 +92,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 				case recordingSecrets.privateAccessSecret:
 					// Private access secret requires authentication
 					authValidators.push(
-						accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+						accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 					);
 					break;
 				default:
@@ -107,11 +107,11 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 	}
 
 	// If no recording secret is provided, we proceed with the default authentication logic.
-	// This will allow API key, registered user and room member token access.
+	// This will allow API key, user and room member token access.
 	const authValidators = [
 		apiKeyValidator,
 		roomMemberTokenValidator,
-		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER)
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 	];
 	return withAuth(...authValidators)(req, res, next);
 };
@@ -121,8 +121,8 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
  *
  * - Room member token: can list recordings from the associated room when token has canRetrieveRecordings permission.
  * - ADMIN: can list all recordings.
- * - USER: defaults to owner OR member OR registered-access scopes.
- * - ROOM_MEMBER: defaults to member OR registered-access scopes.
+ * - ROOM_MANAGER: defaults to owner OR member OR user-access scopes.
+ * - ROOM_MEMBER: defaults to member OR user-access scopes.
  */
 export const applyRecordingListAccessFilters = async (_req: Request, res: Response, next: NextFunction) => {
 	const requestSessionService = container.get(RequestSessionService);
@@ -143,7 +143,7 @@ export const applyRecordingListAccessFilters = async (_req: Request, res: Respon
 
 		queryOptions.roomId = memberRoomId;
 		queryOptions.roomOwner = undefined;
-		queryOptions.roomRegisteredAccess = undefined;
+		queryOptions.roomUserAccess = undefined;
 		res.locals.validatedQuery = queryOptions;
 		return next();
 	}
@@ -161,12 +161,12 @@ export const applyRecordingListAccessFilters = async (_req: Request, res: Respon
 		return next();
 	}
 
-	if (user.role === MeetUserRole.USER) {
+	if (user.role === MeetUserRole.ROOM_MANAGER) {
 		queryOptions.roomOwner = user.userId;
 	}
 
 	queryOptions.roomMember = user.userId;
-	queryOptions.roomRegisteredAccess = true;
+	queryOptions.roomUserAccess = true;
 	res.locals.validatedQuery = queryOptions;
 	return next();
 };
@@ -177,7 +177,7 @@ export const applyRecordingListAccessFilters = async (_req: Request, res: Respon
  * - If a valid recordingSecret is provided in the query and `allowAccessWithSecret` is true,
  *   access is granted directly for retrieval requests.
  * - If no recordingSecret is provided, the recording's existence and permissions are checked
- *   based on the authenticated context (room member token or registered user).
+ *   based on the authenticated context (room member token or user).
  *
  * @param permission - The permission to check (canRetrieveRecordings or canDeleteRecordings).
  * @param allowAccessWithSecret - Whether to allow access based on a valid secret in the query.

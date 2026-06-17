@@ -34,10 +34,10 @@ describe('Room Members API Tests', () => {
 	});
 
 	describe('Delete Room Member Tests', () => {
-		it('should successfully delete external member', async () => {
-			// Create an external member
+		it('should successfully delete identified guest', async () => {
+			// Create an identified guest
 			const createResponse = await createRoomMember(roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			const memberId = createResponse.body.memberId;
@@ -54,14 +54,14 @@ describe('Room Members API Tests', () => {
 			expect(getResponse.body.message).toContain('not found');
 		});
 
-		it('should successfully delete registered user member', async () => {
-			// Create a registered user
+		it('should successfully delete user member', async () => {
+			// Create a user
 			const userId = `user_${Date.now()}`;
 			await createUser({
 				userId,
-				name: 'Registered Member',
+				name: 'User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Add as room member

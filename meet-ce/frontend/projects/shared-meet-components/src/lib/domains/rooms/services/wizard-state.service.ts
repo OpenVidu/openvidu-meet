@@ -76,7 +76,7 @@ const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
 			speaker: { enabled: true },
 			recording: { enabled: true }
 		},
-		registered: { enabled: false }
+		user: { enabled: false }
 	},
 	roles: {
 		moderator: {
@@ -248,8 +248,8 @@ export class RoomWizardStateService {
 					anonymousSpeakerEnabled: this.formBuilder.nonNullable.control(
 						initialRoomOptions.access!.anonymous!.speaker!.enabled
 					),
-					registeredEnabled: this.formBuilder.nonNullable.control(
-						initialRoomOptions.access!.registered!.enabled
+					userEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.access!.user!.enabled
 					),
 					moderator: this.formBuilder.group({
 						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.moderator!.permissions)

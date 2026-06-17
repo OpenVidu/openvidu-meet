@@ -3,24 +3,24 @@
 	@if (!form.get('memberType')!.disabled) {
 		<div class="member-type-group">
 			<mat-radio-group formControlName="memberType" class="member-type-radio-group">
-				<mat-radio-button value="registered" class="member-type-radio">
+				<mat-radio-button value="user" class="member-type-radio">
 					<div class="radio-label">
 						<mat-icon class="material-symbols-outlined">verified_user</mat-icon>
-						<span>Registered User</span>
+						<span>User</span>
 					</div>
 				</mat-radio-button>
-				<mat-radio-button value="external" class="member-type-radio">
+				<mat-radio-button value="identified_guest" class="member-type-radio">
 					<div class="radio-label">
 						<mat-icon class="material-symbols-outlined">person</mat-icon>
-						<span>External Member</span>
+						<span>Identified Guest</span>
 					</div>
 				</mat-radio-button>
 			</mat-radio-group>
 		</div>
 	}
 
-	<!-- Registered: User ID (Autocomplete) -->
-	@if (isRegisteredMode()) {
+	<!-- User: User ID (Autocomplete) -->
+	@if (isUserMode()) {
 		<mat-form-field subscriptSizing="dynamic" appearance="outline">
 			<mat-label>User ID</mat-label>
 			<mat-icon matPrefix class="field-prefix-icon">badge</mat-icon>
@@ -59,19 +59,19 @@
 				}
 			</mat-autocomplete>
 			@if (!lockIdentity()) {
-				<mat-hint>Start typing to search registered users</mat-hint>
+				<mat-hint>Start typing to search users</mat-hint>
 			}
 			@if (getFieldError('userId')) {
 				<mat-error>{{ getFieldError('userId') }}</mat-error>
 			}
 		</mat-form-field>
 	} @else {
-		<!-- External: info box + name input -->
+		<!-- Identified guest: info box + name input -->
 		@if (!lockIdentity()) {
-			<div class="external-info-box">
-				<mat-icon class="external-info-icon">link</mat-icon>
-				<p class="external-info-text">
-					External members are not registered users. After being added, they will be assigned a
+			<div class="guest-info-box">
+				<mat-icon class="guest-info-icon">link</mat-icon>
+				<p class="guest-info-text">
+					Identified guests are not users. After being added, they will be assigned a
 					<strong>unique access URL</strong> to join this room. You can copy this URL from the member list.
 				</p>
 			</div>
@@ -81,7 +81,7 @@
 			<mat-icon matPrefix class="field-prefix-icon material-symbols-outlined">person</mat-icon>
 			<input matInput formControlName="memberName" placeholder="Enter a display name..." autofocus />
 			@if (!lockIdentity()) {
-				<mat-hint>A display name for the external member</mat-hint>
+				<mat-hint>A display name for the identified guest</mat-hint>
 			}
 			@if (getFieldError('memberName')) {
 				<mat-error>{{ getFieldError('memberName') }}</mat-error>

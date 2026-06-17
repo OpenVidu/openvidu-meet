@@ -5,7 +5,7 @@
         description: |
             Adds a new member to the specified room with custom permissions.
 
-            Each member receives a unique access URL that is different from the moderator and speaker URLs.
+            Identified guests receives a unique access URL, while users use the shared user access URL.
             The member's permissions are based on a base role (moderator or speaker) with optional overrides.
 
             This allows fine-grained control over what each specific participant can do in the meeting.

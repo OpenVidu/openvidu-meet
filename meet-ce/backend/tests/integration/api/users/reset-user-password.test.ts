@@ -28,7 +28,7 @@ describe('Users API Tests', () => {
 		it('should successfully reset user password by admin', async () => {
 			const newPassword = 'newpassword123';
 			const response = await resetUserPassword(
-				testUsers.user.user.userId,
+				testUsers.roomManager.user.userId,
 				newPassword,
 				testUsers.admin.accessToken
 			);
@@ -49,7 +49,7 @@ describe('Users API Tests', () => {
 				userId,
 				name: 'Test User',
 				password: initialPassword,
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Reset password
@@ -69,12 +69,12 @@ describe('Users API Tests', () => {
 
 		it('should set mustChangePassword flag to true after password reset', async () => {
 			const newPassword = 'resetpassword456';
-			const response = await resetUserPassword(testUsers.user.user.userId, newPassword);
+			const response = await resetUserPassword(testUsers.roomManager.user.userId, newPassword);
 			expect(response.status).toBe(200);
 
 			// Login and verify mustChangePassword is true
 			const loginResponse = await loginReq({
-				userId: testUsers.user.user.userId,
+				userId: testUsers.roomManager.user.userId,
 				password: newPassword
 			});
 			expect(loginResponse.status).toBe(200);
@@ -159,12 +159,12 @@ describe('Users API Tests', () => {
 
 	describe('Reset User Password Validation Tests', () => {
 		it('should fail when newPassword is missing', async () => {
-			const response = await resetUserPassword(testUsers.user.user.userId, undefined as unknown as string);
+			const response = await resetUserPassword(testUsers.roomManager.user.userId, undefined as unknown as string);
 			expectValidationError(response, 'newPassword', 'Required');
 		});
 
 		it('should fail when newPassword is too short', async () => {
-			const response = await resetUserPassword(testUsers.user.user.userId, '1234');
+			const response = await resetUserPassword(testUsers.roomManager.user.userId, '1234');
 			expectValidationError(response, 'newPassword', 'at least 5 characters');
 		});
 	});

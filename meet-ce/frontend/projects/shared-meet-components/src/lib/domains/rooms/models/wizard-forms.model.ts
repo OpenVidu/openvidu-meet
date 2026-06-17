@@ -54,7 +54,7 @@ export type RoomAccessRolePermissionsFormGroup = FormGroup<RoomAccessPermissions
 export interface RoomAccessFormValue {
 	anonymousModeratorEnabled: boolean;
 	anonymousSpeakerEnabled: boolean;
-	registeredEnabled: boolean;
+	userEnabled: boolean;
 	moderator: Partial<MeetRoomMemberPermissions>;
 	speaker: Partial<MeetRoomMemberPermissions>;
 }
@@ -62,7 +62,7 @@ export interface RoomAccessFormValue {
 export type RoomAccessFormGroup = FormGroup<{
 	anonymousModeratorEnabled: FormControl<boolean>;
 	anonymousSpeakerEnabled: FormControl<boolean>;
-	registeredEnabled: FormControl<boolean>;
+	userEnabled: FormControl<boolean>;
 	moderator: RoomAccessRolePermissionsFormGroup;
 	speaker: RoomAccessRolePermissionsFormGroup;
 }>;

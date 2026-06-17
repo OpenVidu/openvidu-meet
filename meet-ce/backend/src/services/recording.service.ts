@@ -253,7 +253,7 @@ export class RecordingService {
 	 */
 	updateRoomRecordingsAccessScopeMetadata(
 		roomId: string,
-		updates: { roomOwner?: string; roomRegisteredAccess?: boolean }
+		updates: { roomOwner?: string; roomUserAccess?: boolean }
 	): Promise<void> {
 		return this.recordingRepository.updateAccessScopeMetadataByRoomId(roomId, updates);
 	}
@@ -264,7 +264,7 @@ export class RecordingService {
 	 * If the request is made with a room member token, only recordings for the associated room are returned.
 	 * If the request is made by an authenticated user, access is determined by the user's role and permissions:
 	 * - ADMIN: Can see all recordings
-	 * - USER: Can see recordings from rooms they own OR where they are members with canRetrieveRecordings permission
+	 * - ROOM_MANAGER: Can see recordings from rooms they own OR where they are members with canRetrieveRecordings permission
 	 * - ROOM_MEMBER: Can see recordings from rooms where they are members with canRetrieveRecordings permission
 	 *
 	 * @param filters - Filtering, pagination and sorting options

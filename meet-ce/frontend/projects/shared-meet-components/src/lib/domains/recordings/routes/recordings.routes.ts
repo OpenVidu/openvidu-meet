@@ -63,7 +63,7 @@ export const recordingsConsoleRoutes: DomainRouteConfig[] = [
 			icon: 'video_library',
 			iconClass: 'ov-recording-icon',
 			order: 3,
-			allowedRoles: [MeetUserRole.ADMIN, MeetUserRole.USER, MeetUserRole.ROOM_MEMBER]
+			allowedRoles: [MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER]
 		}
 	},
 	{

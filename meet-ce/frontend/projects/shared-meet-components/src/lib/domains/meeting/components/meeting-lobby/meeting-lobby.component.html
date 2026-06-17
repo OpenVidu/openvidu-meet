@@ -16,7 +16,7 @@
 
 		<!-- Action Cards Grid -->
 		<div class="action-cards-grid">
-			<!-- Join Room Card -->
+			<!-- Join Meeting Card -->
 			<mat-card
 				class="action-card primary-card fade-in"
 				[ngClass]="{ 'room-closed-card': roomClosed() || !canJoinMeeting() }"
@@ -34,7 +34,7 @@
 								? 'This room is not available for meetings'
 								: !canJoinMeeting()
 									? 'You do not have permission to join this meeting'
-									: 'Enter the room and start connecting'
+									: 'Join the meeting and start connecting'
 						}}</mat-card-subtitle>
 					</div>
 				</mat-card-header>

@@ -56,16 +56,16 @@
 
 				<!-- Action Buttons -->
 				<div class="actions">
-					<span [matTooltip]="RoomUiUtils.getJoinRoomTooltip(room()!)">
+					<span [matTooltip]="RoomUiUtils.getAccessRoomTooltip(room()!)">
 						<button
 							mat-flat-button
 							color="primary"
 							class="action-btn primary-btn"
-							(click)="joinRoom()"
-							[disabled]="!RoomUiUtils.canJoinRoom(room()!)"
+							(click)="accessRoom()"
+							[disabled]="!RoomUiUtils.canAccessRoom(room()!)"
 						>
 							<mat-icon>open_in_new</mat-icon>
-							<span>Join Room</span>
+							<span>Access Room</span>
 						</button>
 					</span>
 

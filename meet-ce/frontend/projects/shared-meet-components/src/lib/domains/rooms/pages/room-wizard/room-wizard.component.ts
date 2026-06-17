@@ -115,8 +115,8 @@ export class RoomWizardComponent implements OnInit {
 					speaker: { enabled: access.anonymous.speaker.enabled },
 					recording: { enabled: access.anonymous.recording.enabled }
 				},
-				registered: {
-					enabled: access.registered.enabled
+				user: {
+					enabled: access.user.enabled
 				}
 			};
 
@@ -171,7 +171,7 @@ export class RoomWizardComponent implements OnInit {
 			this.navigationService.invalidateCachedRoute('rooms');
 
 			// Extract the path from the access URL and navigate to it
-			const url = new URL(access.registered.url);
+			const url = new URL(access.user.url);
 			const path = url.pathname;
 			await this.navigationService.redirectTo(path);
 		} catch (error) {
@@ -233,7 +233,7 @@ export class RoomWizardComponent implements OnInit {
 				this.navigationService.invalidateCachedRoute('rooms');
 
 				// Extract the path from the access URL and navigate to it
-				const url = new URL(access.registered.url);
+				const url = new URL(access.user.url);
 				const path = url.pathname;
 				await this.navigationService.redirectTo(path);
 			}

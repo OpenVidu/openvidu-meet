@@ -97,7 +97,7 @@ describe('Authentication API Tests', () => {
 				userId: 'tempuser',
 				name: 'Temporary User',
 				password: 'TempPassword1!',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Delete the user to invalidate the refresh token subject
@@ -116,7 +116,7 @@ describe('Authentication API Tests', () => {
 				userId: 'testuser',
 				name: 'Test User',
 				password: 'TestPassword1!',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Reset user password to force password change

@@ -22,7 +22,7 @@ describe('Users API Tests', () => {
 			userId: `bob_${ts}`,
 			name: 'Bob Brown',
 			password: 'password123',
-			role: MeetUserRole.USER
+			role: MeetUserRole.ROOM_MANAGER
 		});
 		await createUser({
 			userId: `charlie_${ts}`,
@@ -40,7 +40,7 @@ describe('Users API Tests', () => {
 			userId: `eve_${ts}`,
 			name: 'Eve Evans',
 			password: 'password123',
-			role: MeetUserRole.USER
+			role: MeetUserRole.ROOM_MANAGER
 		});
 	});
 

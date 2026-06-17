@@ -55,12 +55,12 @@ describe('Token Validation Tests', () => {
 		it('should succeed when providing valid access token', async () => {
 			const response = await request(app)
 				.get(`${INTERNAL_USERS_PATH}/me`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
 		it('should succeed when providing valid access token through query param without bearer prefix', async () => {
-			const accessTokenQuery = testUsers.user.accessToken.replace('Bearer ', '');
+			const accessTokenQuery = testUsers.roomManager.accessToken.replace('Bearer ', '');
 			const response = await request(app).get(`${INTERNAL_USERS_PATH}/me`).query({ accessToken: accessTokenQuery });
 			expect(response.status).toBe(200);
 		});
@@ -98,7 +98,7 @@ describe('Token Validation Tests', () => {
 				userId: `user_${Date.now()}`,
 				name: 'User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			await sleep('2s'); // Ensure the token is expired
@@ -119,7 +119,7 @@ describe('Token Validation Tests', () => {
 				userId: `user_${Date.now()}`,
 				name: 'User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Update the user's role
@@ -147,7 +147,7 @@ describe('Token Validation Tests', () => {
 		it('should fail when using refresh token instead of access token', async () => {
 			const response = await request(app)
 				.get(`${INTERNAL_USERS_PATH}/me`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.refreshToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.refreshToken);
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
 		});
@@ -158,7 +158,7 @@ describe('Token Validation Tests', () => {
 				userId: `user_${Date.now()}`,
 				name: 'User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			// Delete the user to invalidate the token subject
@@ -173,16 +173,16 @@ describe('Token Validation Tests', () => {
 			expect(response.body.message).toContain('Invalid token subject');
 		});
 
-		it('should fail when USER tries to access ADMIN-only endpoint', async () => {
+		it('should fail when ROOM_MANAGER tries to access ADMIN-only endpoint', async () => {
 			const response = await request(app)
 				.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`))
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(403);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Insufficient permissions');
 		});
 
-		it('should fail when ROOM_MEMBER tries to access ADMIN and USER endpoint', async () => {
+		it('should fail when ROOM_MEMBER tries to access ADMIN and ROOM_MANAGER endpoint', async () => {
 			const response = await request(app)
 				.get(USERS_PATH)
 				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomMember.accessToken);
@@ -201,7 +201,7 @@ describe('Token Validation Tests', () => {
 					userId: `user_${Date.now()}`,
 					name: 'User',
 					password: 'password123',
-					role: MeetUserRole.USER
+					role: MeetUserRole.ROOM_MANAGER
 				});
 
 				// Reset user password to force password change
@@ -230,7 +230,7 @@ describe('Token Validation Tests', () => {
 			});
 
 			it('should fail when accessing other endpoints with mustChangePassword', async () => {
-				// Try to create a room (requires USER role which this user has, but password change blocks it)
+				// Try to create a room (requires ROOM_MANAGER role which this user has, but password change blocks it)
 				const response = await request(app)
 					.post(ROOMS_PATH)
 					.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, userData.accessToken)
@@ -251,7 +251,7 @@ describe('Token Validation Tests', () => {
 					userId: 'temp_user',
 					name: 'Temp User',
 					password: 'InitialPassword1!',
-					role: MeetUserRole.USER
+					role: MeetUserRole.ROOM_MANAGER
 				});
 				userId = response.body.userId;
 
@@ -343,7 +343,7 @@ describe('Token Validation Tests', () => {
 		it('should fail when using access token instead of room member token', async () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}`)
-				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(401);
 			expect(response.body).toHaveProperty('message');
 			expect(response.body.message).toContain('Invalid token');
@@ -353,7 +353,7 @@ describe('Token Validation Tests', () => {
 			const response = await request(app)
 				.get(`${ROOMS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(200);
 		});
 
@@ -386,10 +386,10 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when room member permissions are updated after token issuance', async () => {
-			// Create a room with an external member
+			// Create a room with an identified guest
 			const roomData = await setupSingleRoom();
 			const roomMember = await setupRoomMember(roomData.room.roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 
@@ -415,10 +415,10 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when room member is deleted after token issuance', async () => {
-			// Create a room with an external member
+			// Create a room with an identified guest
 			const roomData = await setupSingleRoom();
 			const roomMember = await setupRoomMember(roomData.room.roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 
@@ -441,10 +441,10 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when room roles permissions are updated after room member token issuance', async () => {
-			// Create a room with an external member
+			// Create a room with an identified guest
 			const roomData = await setupSingleRoom();
 			const roomMember = await setupRoomMember(roomData.room.roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 
@@ -503,10 +503,10 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when room access config is updated after room member token issuance', async () => {
-			// Create a room with an external member
+			// Create a room with an identified guest
 			const roomData = await setupSingleRoom();
 			const roomMember = await setupRoomMember(roomData.room.roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 
@@ -535,14 +535,14 @@ describe('Token Validation Tests', () => {
 			expect(response.body.message).toContain('Invalid token');
 		});
 
-		it('should fail when user role is updated after room member token issuance for registered user member', async () => {
-			// Create a room with a registered user as member
+		it('should fail when user role is updated after room member token issuance for user member', async () => {
+			// Create a room with a user as member
 			const roomData = await setupSingleRoom();
 			const userData = await setupUser({
 				userId: `user_${Date.now()}`,
 				name: 'User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			const roomMember = await setupRoomMember(
@@ -574,14 +574,14 @@ describe('Token Validation Tests', () => {
 			expect(response.body.message).toContain('Invalid token');
 		});
 
-		it('should fail when user is deleted after room member token issuance for registered user member', async () => {
-			// Create a room with a registered user as member
+		it('should fail when user is deleted after room member token issuance for user member', async () => {
+			// Create a room with a user as member
 			const roomData = await setupSingleRoom();
 			const userData = await setupUser({
 				userId: `user_${Date.now()}`,
 				name: 'User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 
 			const roomMember = await setupRoomMember(
@@ -658,10 +658,10 @@ describe('Token Validation Tests', () => {
 		});
 
 		it('should fail when room is deleted after room member token issuance', async () => {
-			// Create a room with an external member
+			// Create a room with an identified guest
 			const roomData = await setupSingleRoom();
 			const roomMember = await setupRoomMember(roomData.room.roomId, {
-				name: 'External Member',
+				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.MODERATOR
 			});
 

@@ -21,4 +21,4 @@ roomMemberTokenHeader:
     name: X-Room-Member-Token
     in: header
     description: >
-        The JWT token to authenticate a room member when accessing room and its resources.
+        The JWT token to authenticate a room member when accessing a room and its resources.

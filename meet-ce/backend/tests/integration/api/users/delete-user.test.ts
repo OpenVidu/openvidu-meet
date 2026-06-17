@@ -55,8 +55,8 @@ describe('Users API Tests', () => {
 	};
 
 	describe('Delete User Tests', () => {
-		it('should successfully delete USER', async () => {
-			const { user } = await createUserWithRole(MeetUserRole.USER);
+		it('should successfully delete ROOM_MANAGER', async () => {
+			const { user } = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 
 			const response = await deleteUser(user.userId);
 			expect(response.status).toBe(200);
@@ -84,7 +84,7 @@ describe('Users API Tests', () => {
 		});
 
 		it('should verify user is actually deleted', async () => {
-			const { user } = await createUserWithRole(MeetUserRole.USER);
+			const { user } = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 
 			// Delete user
 			const deleteResponse = await deleteUser(user.userId);
@@ -172,7 +172,7 @@ describe('Users API Tests', () => {
 
 		it('should transfer ownership of multiple rooms when deleting room owner', async () => {
 			// Create user who will own multiple rooms
-			const userData = await createUserWithRole(MeetUserRole.USER);
+			const userData = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 
 			// Create 3 rooms owned by this user
 			const room1 = await createRoom(undefined, userData.accessToken);
@@ -196,7 +196,7 @@ describe('Users API Tests', () => {
 
 		it('should remove user memberships when deleting a room member', async () => {
 			// Create user who will be a room member
-			const userData = await createUserWithRole(MeetUserRole.USER);
+			const userData = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const userId = userData.user.userId;
 
 			// Create a room
@@ -223,7 +223,7 @@ describe('Users API Tests', () => {
 
 		it('should remove memberships from multiple rooms when deleting a room member', async () => {
 			// Create user who will be a member of multiple rooms
-			const userData = await createUserWithRole(MeetUserRole.USER);
+			const userData = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const userId = userData.user.userId;
 
 			// Create 3 rooms and add user as member to each
@@ -314,7 +314,7 @@ describe('Users API Tests', () => {
 
 		it('should handle both room ownership transfer and membership removal when deleting user', async () => {
 			// Create user who will own some rooms and be member of others
-			const userData = await createUserWithRole(MeetUserRole.USER);
+			const userData = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const userId = userData.user.userId;
 
 			// Create rooms owned by this user
@@ -349,11 +349,11 @@ describe('Users API Tests', () => {
 
 		it('should not affect other room members when deleting a room owner', async () => {
 			// Create owner user
-			const ownerData = await createUserWithRole(MeetUserRole.USER);
+			const ownerData = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const ownerId = ownerData.user.userId;
 
 			// Create another user who will be a member
-			const memberData = await createUserWithRole(MeetUserRole.USER);
+			const memberData = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
 			const memberId = memberData.user.userId;
 
 			// Create room owned by owner

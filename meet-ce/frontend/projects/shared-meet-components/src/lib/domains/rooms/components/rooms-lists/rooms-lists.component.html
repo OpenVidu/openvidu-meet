@@ -261,10 +261,10 @@
 					</mat-form-field>
 					<div class="filter-checkboxes">
 						<mat-checkbox
-							[formControl]="controls.showRegisteredAccessRooms"
-							id="registered-access-checkbox"
+							[formControl]="controls.showUserAccessRooms"
+							id="user-access-checkbox"
 						>
-							Open to all registered users
+							Open to all users
 						</mat-checkbox>
 					</div>
 				</div>
@@ -276,7 +276,7 @@
 						the selected groups.
 					</p>
 					<div class="filter-checkboxes">
-						@if (currentUserRole() === MeetUserRole.USER) {
+						@if (currentUserRole() === MeetUserRole.ROOM_MANAGER) {
 							<mat-checkbox [formControl]="controls.showOwnedRooms" id="owned-rooms-checkbox">
 								Created by me
 							</mat-checkbox>
@@ -285,10 +285,10 @@
 							I'm a member of
 						</mat-checkbox>
 						<mat-checkbox
-							[formControl]="controls.showRegisteredAccessRooms"
-							id="registered-access-checkbox"
+							[formControl]="controls.showUserAccessRooms"
+							id="user-access-checkbox"
 						>
-							Open to all registered users
+							Open to all users
 						</mat-checkbox>
 					</div>
 				</div>
@@ -530,14 +530,14 @@
 					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">Actions</th>
 					<td mat-cell *matCellDef="let room" class="actions-cell" id="actions-cell-{{ room.roomId }}">
 						<div class="action-buttons" id="action-buttons-{{ room.roomId }}">
-							<!-- Join Room Button (always visible) -->
-							<span [matTooltip]="RoomUiUtils.getJoinRoomTooltip(room)">
+							<!-- Access Room Button (always visible) -->
+							<span [matTooltip]="RoomUiUtils.getAccessRoomTooltip(room)">
 								<button
 									mat-icon-button
-									(click)="$event.stopPropagation(); joinRoom(room)"
-									[disabled]="loading() || !RoomUiUtils.canJoinRoom(room)"
+									(click)="$event.stopPropagation(); accessRoom(room)"
+									[disabled]="loading() || !RoomUiUtils.canAccessRoom(room)"
 									class="primary-action"
-									id="join-room-btn-{{ room.roomId }}"
+									id="access-room-btn-{{ room.roomId }}"
 								>
 									<mat-icon>open_in_new</mat-icon>
 								</button>

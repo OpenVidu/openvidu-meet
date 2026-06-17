@@ -14,9 +14,9 @@ properties:
         type: string
         example: 'alice_smith'
         description: |
-            The userId of the registered Meet user who owns this room.
+            The userId of the Meet user who owns this room.
 
-            If the room was created by a registered Meet user, this will be their userId.
+            If the room was created by a Meet user, this will be their userId.
             If the room was created via the REST API using an API key, this will be the userId of the global admin (root user).
     creationDate:
         type: number

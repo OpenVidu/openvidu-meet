@@ -36,10 +36,10 @@ describe('API Keys API Security Tests', () => {
 			expect(response.status).toBe(201);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.post(`${API_KEYS_PATH}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(403);
 		});
 
@@ -64,10 +64,10 @@ describe('API Keys API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.get(`${API_KEYS_PATH}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(403);
 		});
 
@@ -97,10 +97,10 @@ describe('API Keys API Security Tests', () => {
 			expect(response.status).toBe(200);
 		});
 
-		it('should fail when user is authenticated as USER', async () => {
+		it('should fail when user is authenticated as ROOM_MANAGER', async () => {
 			const response = await request(app)
 				.delete(`${API_KEYS_PATH}`)
-				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.user.accessToken);
+				.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, testUsers.roomManager.accessToken);
 			expect(response.status).toBe(403);
 		});
 

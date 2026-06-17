@@ -14,7 +14,7 @@ export interface MeetRoom {
 	 */
 	roomName: string;
 	/**
-	 * User ID of the registered Meet user who owns this room
+	 * User ID of the Meet user who owns this room
 	 */
 	owner: string;
 	/**
@@ -77,23 +77,23 @@ export interface MeetRoomAccess {
 	 */
 	anonymous: MeetRoomAnonymousUsers;
 	/**
-	 * Registered users access configuration for the room. See {@link MeetRoomRegisteredUsers} for details.
+	 * Users access configuration for the room. See {@link MeetRoomUsers} for details.
 	 */
-	registered: MeetRoomRegisteredUsers;
+	user: MeetRoomUsers;
 }
 
 /**
- * Access configuration for registered users in a room.
+ * Access configuration for users in a room.
  */
-export interface MeetRoomRegisteredUsers {
+export interface MeetRoomUsers {
 	/**
-	 * Indicates if all registered users can access the room.
-	 * When enabled, any registered user can join, including non-members.
+	 * Indicates if all users can access the room.
+	 * When enabled, any user can join, including non-members.
 	 * Room owners and administrators always have access regardless of this setting.
 	 */
 	enabled: boolean;
 	/**
-	 * General access URL for registered users with access to the room.
+	 * General access URL for users with access to the room.
 	 */
 	url: string;
 }

@@ -30,7 +30,7 @@ properties:
                         example: true
                         description: |
                             Enables or disables anonymous access for recordings in the room. This also controls whether individual anonymous recording URLs can be generated.
-    registered:
+    user:
         type: object
         properties:
             enabled:
@@ -38,7 +38,7 @@ properties:
                 default: true
                 example: true
                 description: |
-                    Enables or disables access for registered users.
+                    Enables or disables access for users.
                     **Note**: admins, owner and members of the room will always have access regardless of this setting.
 description: |
     Configuration for room access.

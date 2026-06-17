@@ -13,13 +13,13 @@ describe('Users API Tests', () => {
 	});
 
 	describe('Create User Tests', () => {
-		it('should successfully create a USER with all required fields', async () => {
+		it('should successfully create a ROOM_MANAGER with all required fields', async () => {
 			const userId = `user_${Date.now()}`;
 			const userOptions = {
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			};
 
 			const response = await createUser(userOptions);
@@ -27,7 +27,7 @@ describe('Users API Tests', () => {
 			expect(response.status).toBe(201);
 			expect(response.body).toHaveProperty('userId', userId);
 			expect(response.body).toHaveProperty('name', 'Test User');
-			expect(response.body).toHaveProperty('role', MeetUserRole.USER);
+			expect(response.body).toHaveProperty('role', MeetUserRole.ROOM_MANAGER);
 			expect(response.body).toHaveProperty('registrationDate');
 			expect(response.body).toHaveProperty('roleUpdatedAt');
 			expect(response.body.roleUpdatedAt).toBe(response.body.registrationDate);
@@ -78,7 +78,7 @@ describe('Users API Tests', () => {
 				userId,
 				name: 'Test User',
 				password,
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			};
 
 			const createResponse = await createUser(userOptions);
@@ -96,7 +96,7 @@ describe('Users API Tests', () => {
 				userId,
 				name: 'Test User',
 				password,
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			};
 
 			const createResponse = await createUser(userOptions);
@@ -114,7 +114,7 @@ describe('Users API Tests', () => {
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			};
 
 			const createResponse = await createUser(userOptions);
@@ -125,7 +125,7 @@ describe('Users API Tests', () => {
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body).toHaveProperty('userId', userId);
 			expect(getResponse.body).toHaveProperty('name', 'Test User');
-			expect(getResponse.body).toHaveProperty('role', MeetUserRole.USER);
+			expect(getResponse.body).toHaveProperty('role', MeetUserRole.ROOM_MANAGER);
 		});
 
 		it('should fail when trying to create a user with duplicate userId', async () => {
@@ -134,7 +134,7 @@ describe('Users API Tests', () => {
 				userId,
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			};
 
 			// Create user first time
@@ -154,7 +154,7 @@ describe('Users API Tests', () => {
 			const response = await createUser({
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			} as MeetUserOptions);
 			expectValidationError(response, 'userId', 'Required');
 		});
@@ -163,7 +163,7 @@ describe('Users API Tests', () => {
 			const response = await createUser({
 				userId: `user_${Date.now()}`,
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			} as MeetUserOptions);
 			expectValidationError(response, 'name', 'Required');
 		});
@@ -173,7 +173,7 @@ describe('Users API Tests', () => {
 				userId: `user_${Date.now()}`,
 				name: '',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expectValidationError(response, 'name', 'cannot be empty');
 		});
@@ -182,7 +182,7 @@ describe('Users API Tests', () => {
 			const response = await createUser({
 				userId: `user_${Date.now()}`,
 				name: 'Test User',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			} as MeetUserOptions);
 			expectValidationError(response, 'password', 'Required');
 		});
@@ -201,7 +201,7 @@ describe('Users API Tests', () => {
 				userId: 'a'.repeat(21), // Max is 20 characters
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expectValidationError(response, 'userId', 'cannot exceed 20 characters');
 		});
@@ -211,7 +211,7 @@ describe('Users API Tests', () => {
 				userId: 'abcd', // Min is 5 characters
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expectValidationError(response, 'userId', 'at least 5 characters');
 		});
@@ -221,7 +221,7 @@ describe('Users API Tests', () => {
 				userId: 'User123',
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expectValidationError(response, 'userId', 'lowercase letters, numbers, and underscores');
 		});
@@ -231,7 +231,7 @@ describe('Users API Tests', () => {
 				userId: 'user-123',
 				name: 'Test User',
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expectValidationError(response, 'userId', 'lowercase letters, numbers, and underscores');
 		});
@@ -241,7 +241,7 @@ describe('Users API Tests', () => {
 				userId: `user_${Date.now()}`,
 				name: 'a'.repeat(51), // Max is 50 characters
 				password: 'password123',
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expectValidationError(response, 'name', 'cannot exceed 50 characters');
 		});
@@ -251,7 +251,7 @@ describe('Users API Tests', () => {
 				userId: `user_${Date.now()}`,
 				name: 'Test User',
 				password: '1234', // Min is 5 characters
-				role: MeetUserRole.USER
+				role: MeetUserRole.ROOM_MANAGER
 			});
 			expectValidationError(response, 'password', 'at least 5 characters');
 		});

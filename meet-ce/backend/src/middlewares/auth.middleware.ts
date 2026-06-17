@@ -228,7 +228,7 @@ export const roomMemberTokenValidator: AuthValidator = {
 				}
 			}
 
-			// If the token is associated with a registered user, validate user role wasn't updated after token issuance
+			// If the token is associated with a user, validate user role wasn't updated after token issuance
 			if (userId) {
 				const userService = container.get(UserService);
 				const user = await userService.getUser(userId, ['roleUpdatedAt']);

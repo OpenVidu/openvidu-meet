@@ -87,8 +87,8 @@ export class MeetRoomHelper {
 						enabled: room.access.anonymous.recording.enabled
 					}
 				},
-				registered: {
-					enabled: room.access.registered.enabled
+				user: {
+					enabled: room.access.user.enabled
 				}
 			}
 			// maxParticipants: room.maxParticipants

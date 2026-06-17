@@ -179,7 +179,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	 * @param options.nameMatchMode - Match mode for name filtering (default: 'exact')
 	 * @param options.nameCaseInsensitive - Whether name filtering should ignore case (default: false)
 	 * @param options.baseRole - Optional base role to filter members by
-	 * @param options.type - Optional member type (registered or external) to filter members by
+	 * @param options.type - Optional member type (user or identified guest) to filter members by
 	 * @param options.fields - Array of field names to include in the result
 	 * @param options.maxItems - Maximum number of results to return (default: 100)
 	 * @param options.nextPageToken - Token for pagination

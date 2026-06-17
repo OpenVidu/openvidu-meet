@@ -75,7 +75,7 @@ const expectMigratedRecordingToCurrentVersion = (migratedRecording: Record<strin
 		layout: MeetRecordingLayout.GRID,
 		encoding: MeetRecordingEncodingPreset.H264_720P_30,
 		roomOwner: MEET_ENV.INITIAL_ADMIN_USER,
-		roomRegisteredAccess: false,
+		roomUserAccess: false,
 		accessSecrets: {
 			public: 'public-secret',
 			private: 'private-secret'
@@ -165,7 +165,7 @@ describe('Recording Schema Migrations', () => {
 				layout: MeetRecordingLayout.GRID,
 				encoding: MeetRecordingEncodingPreset.H264_720P_30,
 				roomOwner: MEET_ENV.INITIAL_ADMIN_USER,
-				roomRegisteredAccess: false,
+				roomUserAccess: false,
 				accessSecrets: {
 					public: 'public-secret',
 					private: 'private-secret'

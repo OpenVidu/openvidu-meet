@@ -9,7 +9,7 @@
 			@if (isEditMode()) {
 				Update permissions for this room member.
 			} @else {
-				Assign a registered user or an external member to this room.
+				Assign a user or an identified guest to this room.
 			}
 		</p>
 	</div>
@@ -24,16 +24,16 @@
 				<mat-card-title>Member Configuration</mat-card-title>
 				<mat-card-subtitle>
 					@if (isEditMode()) {
-						@if (memberType() === 'registered') {
-							Update registered user's permissions in this room
+						@if (memberType() === 'user') {
+							Update user's permissions in this room
 						} @else {
-							Update external member's permissions in this room
+							Update identified guest's permissions in this room
 						}
 					} @else {
-						@if (memberType() === 'registered') {
-							Select a registered user and configure their permissions
+						@if (memberType() === 'user') {
+							Select a user and configure their permissions
 						} @else {
-							Add an external member and configure their permissions
+							Add an identified guest and configure their permissions
 						}
 					}
 				</mat-card-subtitle>

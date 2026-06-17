@@ -23,7 +23,7 @@ content:
                         - userId: 'alice_smith'
                           name: 'Alice Smith'
                           registrationDate: 1620050000000
-                          role: 'user'
+                          role: 'room_manager'
                           roleUpdatedAt: 1620050000000
                         - userId: 'bob_jones'
                           name: 'Bob Jones'

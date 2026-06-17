@@ -18,4 +18,4 @@ headers:
         schema:
             type: string
             format: uri
-        example: https://your-api.com/internal-api/v1/recordings/room-123--EG_XYZ--XX445
+        example: https://example.com/api/v1/recordings/room-123--EG_XYZ--XX445

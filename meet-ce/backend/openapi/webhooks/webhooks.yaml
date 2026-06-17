@@ -72,7 +72,7 @@ recordingEnded:
         description: |
             This webhook is triggered when a recording ends.
 
-            > The recording can end due to various reasons, such as the user stopping the recording
+            > The recording can end due to various reasons, such as a participant stopping the recording
             > or the recording reaching its maximum duration.
         operationId: recordingEndedWebhook
         parameters:

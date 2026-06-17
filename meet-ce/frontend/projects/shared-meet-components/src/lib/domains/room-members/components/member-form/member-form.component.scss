@@ -66,9 +66,9 @@
 	}
 }
 
-// ─── External Member Info Box ─────────────────────────────────────────────────
+// ─── Identified Guest Info Box ─────────────────────────────────────────────────
 
-.external-info-box {
+.guest-info-box {
 	display: flex;
 	align-items: flex-start;
 	gap: var(--ov-meet-spacing-sm);
@@ -77,14 +77,14 @@
 	border-left: 3px solid var(--ov-meet-color-primary);
 	border-radius: var(--ov-meet-radius-sm);
 
-	.external-info-icon {
+	.guest-info-icon {
 		@include design-tokens.ov-icon(md);
 		color: var(--ov-meet-color-primary);
 		flex-shrink: 0;
 		margin-top: 1px;
 	}
 
-	.external-info-text {
+	.guest-info-text {
 		margin: 0;
 		font-size: var(--ov-meet-font-size-sm);
 		color: var(--ov-meet-text-secondary);
