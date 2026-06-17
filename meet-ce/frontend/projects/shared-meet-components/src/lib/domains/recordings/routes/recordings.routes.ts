@@ -1,6 +1,11 @@
 import { MeetUserRole } from '@openvidu-meet/typings';
 import { removeQueryParamsGuard } from '../../../shared/guards/remove-query-params.guard';
 import { runGuardsSerially } from '../../../shared/guards/run-serially.guard';
+import {
+	ACCESS_TOKEN_QUERY_PARAM,
+	REFRESH_TOKEN_QUERY_PARAM,
+	storeTokensFromQueryParamsGuard
+} from '../../../shared/guards/store-tokens-from-query-params.guard';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
 import {
 	extractRecordingParamsGuard,
@@ -25,9 +30,10 @@ export const recordingsDomainRoutes: DomainRouteConfig[] = [
 				),
 			canActivate: [
 				runGuardsSerially(
+					storeTokensFromQueryParamsGuard,
 					extractRoomRecordingsParamsGuard,
 					validateRoomRecordingsAccessGuard,
-					removeQueryParamsGuard(['secret'])
+					removeQueryParamsGuard(['secret', ACCESS_TOKEN_QUERY_PARAM, REFRESH_TOKEN_QUERY_PARAM])
 				)
 			]
 		}

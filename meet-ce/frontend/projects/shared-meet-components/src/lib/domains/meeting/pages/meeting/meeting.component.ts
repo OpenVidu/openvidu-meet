@@ -12,10 +12,15 @@ import {
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import {
+	ACCESS_TOKEN_QUERY_PARAM,
+	REFRESH_TOKEN_QUERY_PARAM
+} from '../../../../shared/guards/store-tokens-from-query-params.guard';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../../shared/services/sound.service';
+import { TokenStorageService } from '../../../../shared/services/token-storage.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
 import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from '../../openvidu-components';
@@ -50,6 +55,7 @@ export class MeetingComponent implements OnInit {
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly tokenStorageService = inject(TokenStorageService);
 
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
@@ -166,10 +172,40 @@ export class MeetingComponent implements OnInit {
 
 	private openRecordingsInNewTab(roomId: string): void {
 		// Prefix the configured app base path, just like the SPA.
-		const path = this.navigationService.addBasePath(`/room/${roomId}/recordings`);
-		// In webcomponent mode the recordings page is served by the Meet server, so
-		// resolve the base-path-prefixed URL against the server origin.
-		const url = this.runtimeConfigService.isWebcomponentMode() ? this.runtimeConfigService.resolvePath(path) : path;
+		let path = this.navigationService.addBasePath(`/room/${roomId}/recordings`);
+		let url = path;
+		const isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode();
+
+		if (isWebcomponentMode) {
+			// In webcomponent mode the recordings tab is served by the Meet server on a
+			// different origin than the embedding page, so it shares no storage/context
+			// with the meeting.
+			// To allow the recordings page to authenticate the user, we forward the
+			// room secret and any access/refresh tokens as query params.
+			const queryParams = new URLSearchParams();
+
+			const secret = this.meetingContextService.roomSecret();
+			if (secret) {
+				queryParams.set('secret', secret);
+			}
+
+			const accessToken = this.tokenStorageService.getAccessToken();
+			if (accessToken) {
+				queryParams.set(ACCESS_TOKEN_QUERY_PARAM, accessToken);
+			}
+
+			const refreshToken = this.tokenStorageService.getRefreshToken();
+			if (refreshToken) {
+				queryParams.set(REFRESH_TOKEN_QUERY_PARAM, refreshToken);
+			}
+
+			const queryString = queryParams.toString();
+			if (queryString) {
+				path += `?${queryString}`;
+			}
+			url = this.runtimeConfigService.resolveUrl(path);
+		}
+
 		window.open(url, '_blank');
 	}
 }
