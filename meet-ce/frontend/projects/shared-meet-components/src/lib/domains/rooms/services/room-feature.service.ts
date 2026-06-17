@@ -63,11 +63,11 @@ export class RoomFeatureService {
 	);
 
 	/**
-	 * Loads global feature configuration once the server URL is ready.
+	 * Loads global feature configuration once the service is ready for requests.
 	 * This ensures HTTP requests don't fire with an empty URL (race condition in webcomponent mode).
 	 */
 	private readonly loadConfigEffect = effect(() => {
-		if (this.runtimeConfigService.serverUrlReady()) {
+		if (this.runtimeConfigService.isReadyForRequests()) {
 			void this.loadGlobalFeatureConfigs();
 		}
 	});

@@ -17,49 +17,56 @@ declare global {
 	providedIn: 'root'
 })
 export class RuntimeConfigService {
-	private _basePath: string;
 	/**
-	 * Base URL of the OpenVidu Meet backend server.
-	 * Empty string means “same origin” (relative requests). Derived from the
-	 * `room-url` attribute of the `<openvidu-meet>` element at construction time,
-	 * then updated reactively via `setServerUrl()` when the input changes.
+	 * Deployment base path under which Meet is mounted (e.g. `/meet`), or `/` when
+	 * served from the root. Resolved once at construction from the injected config,
+	 * the document `<base href>`, or `/` as a last resort.
 	 */
-	private readonly _serverUrl = signal<string>('');
+	private _deploymentBasePath: string;
+
 	/**
-	 * True once the service is in webcomponent mode (i.e. setServerUrl() has been
-	 * called at least once). In a regular SPA context this never becomes true,
-	 * which means serverUrlReady is immediately true.
+	 * Base URL of the OpenVidu Meet backend server, already including the deployment
+	 * base path (e.g. `https://host/meet`). Empty string means “same origin” (relative
+	 * requests). Set reactively via `setServerBaseUrl()` when embedded as a
+	 * webcomponent; stays empty in a regular SPA context.
+	 */
+	private readonly _serverBaseUrl = signal<string>('');
+
+	/**
+	 * True once the service is in webcomponent mode (i.e. `enableWebcomponentMode()`
+	 * or `setServerBaseUrl()` has been called at least once). In a regular SPA context
+	 * this never becomes true, which means `isReadyForRequests` is immediately true.
 	 */
 	private readonly _webcomponentMode = signal(false);
 
 	/**
 	 * Emits true when it is safe to make API requests:
 	 * - Regular SPA: immediately true (not in webcomponent mode).
-	 * - Webcomponent: true once setServerUrl() has been called (which enables mode and sets URL).
+	 * - Webcomponent: true once `setServerBaseUrl()` has been called (which enables mode and sets the URL).
 	 */
-	readonly serverUrlReady = computed(() => {
+	readonly isReadyForRequests = computed(() => {
 		// In SPA mode (not webcomponent), always ready
 		if (!this._webcomponentMode()) return true;
 
-		// In webcomponent mode, only ready once serverUrl is set
-		return !!this._serverUrl();
+		// In webcomponent mode, only ready once the server base URL is set
+		return !!this._serverBaseUrl();
 	});
 
-	readonly serverUrl = this._serverUrl.asReadonly();
+	readonly serverBaseUrl = this._serverBaseUrl.asReadonly();
 	readonly isWebcomponentMode = this._webcomponentMode.asReadonly();
 
 	constructor() {
 		// Read from injected config, fallback to document base element, then to '/'
-		this._basePath = window.__OPENVIDU_MEET_CONFIG__?.basePath || this.getBasePathFromDocument() || '/';
+		this._deploymentBasePath = window.__OPENVIDU_MEET_CONFIG__?.basePath || this.readBaseHrefFromDocument() || '/';
 	}
 
 	get basePath(): string {
-		return this._basePath;
+		return this._deploymentBasePath;
 	}
 
 	/**
-	 * Enables webcomponent mode. Once enabled, serverUrlReady will only be true
-	 * once setServerUrl() has been called with a value.
+	 * Enables webcomponent mode. Once enabled, `isReadyForRequests` will only be true
+	 * once `setServerBaseUrl()` has been called with a value.
 	 * Should be called by the webcomponent as early as possible.
 	 */
 	enableWebcomponentMode(): void {
@@ -67,29 +74,52 @@ export class RuntimeConfigService {
 	}
 
 	/**
-	 * Overrides the server URL at runtime and enables webcomponent mode.
+	 * Overrides the server base URL at runtime and enables webcomponent mode.
 	 * Called by the webcomponent when the server URL is determined.
 	 */
-	setServerUrl(url: string): void {
+	setServerBaseUrl(url: string): void {
 		this._webcomponentMode.set(true);
-		this._serverUrl.set(url.endsWith('/') ? url.slice(0, -1) : url);
+		this._serverBaseUrl.set(url.endsWith('/') ? url.slice(0, -1) : url);
 	}
 
 	/**
-	 * Resolves path relative to the base path.
+	 * Resolves an app-relative path to a URL that respects the deployment base path
+	 * (e.g. `/meet`) and, when embedded as a webcomponent, the remote Meet server origin.
 	 *
-	 * @param path
-	 * @returns The full path including the base path (e.g., '/meet/assets/sounds/file.mp3')
+	 * - Fully-qualified URLs (http/https) are returned unchanged.
+	 * - Webcomponent mode: prefixed with the server base URL, which already carries the
+	 *   base path (derived from the room URL, e.g. `https://host/meet`).
+	 * - SPA mode: prefixed with the configured base path. Without this, absolute inputs
+	 *   like `/assets/...` bypass `<base href>` and 404 when Meet is mounted under a subpath.
+	 *
+	 * @example resolveUrl('/assets/sounds/x.mp3') // SPA at /meet → '/meet/assets/sounds/x.mp3'
+	 * @example resolveUrl('assets/sounds/x.mp3')  // WC → 'https://host/meet/assets/sounds/x.mp3'
 	 */
-	resolvePath(path: string): string {
-		const serverUrl = this.serverUrl();
-		if (!serverUrl || path.startsWith('http://') || path.startsWith('https://')) {
+	resolveUrl(path: string): string {
+		if (path.startsWith('http://') || path.startsWith('https://')) {
 			return path;
 		}
-		return `${serverUrl}/${path.startsWith('/') ? path.slice(1) : path}`;
+
+		// In webcomponent mode the server base URL already includes the deployment base path;
+		// in SPA mode it is empty, so fall back to the configured base path.
+		const prefix = this.serverBaseUrl() || this.normalizedBasePath();
+		const cleanPath = path.startsWith('/') ? path : `/${path}`;
+
+		return `${prefix}${cleanPath}`;
 	}
 
-	private getBasePathFromDocument(): string | null {
+	/** Configured deployment base path without a trailing slash; '' when mounted at root ('/'). */
+	private normalizedBasePath(): string {
+		if (!this._deploymentBasePath || this._deploymentBasePath === '/') {
+			return '';
+		}
+
+		return this._deploymentBasePath.endsWith('/')
+			? this._deploymentBasePath.slice(0, -1)
+			: this._deploymentBasePath;
+	}
+
+	private readBaseHrefFromDocument(): string | null {
 		try {
 			const baseElement = document.querySelector('base');
 			if (baseElement) {

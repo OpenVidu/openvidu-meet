@@ -28,7 +28,7 @@ export class VirtualBackgroundService {
 	private readonly backgroundsBasePath = 'assets/backgrounds';
 
 	private buildBackgroundPath(path: string): string {
-		return this.runtimeConfigService.resolvePath(`${this.backgroundsBasePath}/${path}`);
+		return this.runtimeConfigService.resolveUrl(`${this.backgroundsBasePath}/${path}`);
 	}
 
 	/**

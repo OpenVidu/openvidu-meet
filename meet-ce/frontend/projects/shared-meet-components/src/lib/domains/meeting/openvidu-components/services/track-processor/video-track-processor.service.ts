@@ -50,13 +50,13 @@ export class VideoTrackProcessorService {
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
 	/**
-	 * Waits until the server URL is ready (immediate in SPA mode, after the
-	 * webcomponent calls setServerUrl() otherwise) before pre-initialising the
+	 * Waits until the service is ready for requests (immediate in SPA mode, after the
+	 * webcomponent calls setServerBaseUrl() otherwise) before pre-initialising the
 	 * processor. Without this, the relative model path resolves against the host
 	 * page in webcomponent mode and MediaPipe loads HTML instead of the .tflite.
 	 */
 	private readonly initEffect = effect(() => {
-		if (!this.runtimeConfigService.serverUrlReady()) return;
+		if (!this.runtimeConfigService.isReadyForRequests()) return;
 		this.initialiseProcessor();
 	});
 
@@ -94,7 +94,7 @@ export class VideoTrackProcessorService {
 
 	private getAssetPaths() {
 		return {
-			modelAssetPath: this.runtimeConfigService.resolvePath(MEDIAPIPE_MODEL_PATH)
+			modelAssetPath: this.runtimeConfigService.resolveUrl(MEDIAPIPE_MODEL_PATH)
 		};
 	}
 

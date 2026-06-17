@@ -162,7 +162,7 @@ export class App {
 			computeServerUrl(this.roomUrl(), '/room/') ?? computeServerUrl(this.recordingUrl(), '/recording/');
 
 		if (serverUrl) {
-			this.runtimeConfigService.setServerUrl(serverUrl);
+			this.runtimeConfigService.setServerBaseUrl(serverUrl);
 		}
 	});
 

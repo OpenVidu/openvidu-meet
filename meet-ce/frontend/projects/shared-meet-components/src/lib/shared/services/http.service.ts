@@ -16,26 +16,26 @@ export class HttpService {
 
 	async getRequest<T>(path: string, headers?: Record<string, string>): Promise<T> {
 		const options = headers ? { headers: new HttpHeaders(headers) } : {};
-		return lastValueFrom(this.http.get<T>(this.runtimeConfig.resolvePath(path), options));
+		return lastValueFrom(this.http.get<T>(this.runtimeConfig.resolveUrl(path), options));
 	}
 
 	async postRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
 		const options = headers ? { headers: new HttpHeaders(headers) } : {};
-		return lastValueFrom(this.http.post<T>(this.runtimeConfig.resolvePath(path), body, options));
+		return lastValueFrom(this.http.post<T>(this.runtimeConfig.resolveUrl(path), body, options));
 	}
 
 	async putRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
 		const options = headers ? { headers: new HttpHeaders(headers) } : {};
-		return lastValueFrom(this.http.put<T>(this.runtimeConfig.resolvePath(path), body, options));
+		return lastValueFrom(this.http.put<T>(this.runtimeConfig.resolveUrl(path), body, options));
 	}
 
 	async patchRequest<T>(path: string, body: any = {}, headers?: Record<string, string>): Promise<T> {
 		const options = headers ? { headers: new HttpHeaders(headers) } : {};
-		return lastValueFrom(this.http.patch<T>(this.runtimeConfig.resolvePath(path), body, options));
+		return lastValueFrom(this.http.patch<T>(this.runtimeConfig.resolveUrl(path), body, options));
 	}
 
 	async deleteRequest<T>(path: string, headers?: Record<string, string>): Promise<T> {
 		const options = headers ? { headers: new HttpHeaders(headers) } : {};
-		return lastValueFrom(this.http.delete<T>(this.runtimeConfig.resolvePath(path), options));
+		return lastValueFrom(this.http.delete<T>(this.runtimeConfig.resolveUrl(path), options));
 	}
 }

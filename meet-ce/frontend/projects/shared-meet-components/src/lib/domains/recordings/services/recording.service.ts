@@ -148,7 +148,7 @@ export class RecordingService {
 
 		const now = Date.now();
 		params.append('t', now.toString());
-		return this.runtimeConfigService.resolvePath(
+		return this.runtimeConfigService.resolveUrl(
 			`${this.RECORDINGS_API}/${recordingId}/media?${params.toString()}`
 		);
 	}
@@ -203,7 +203,7 @@ export class RecordingService {
 	async playRecording(recordingId: string) {
 		const path = `/recording/${recordingId}`;
 		const recordingUrl = this.runtimeConfigService.isWebcomponentMode()
-			? this.runtimeConfigService.resolvePath(path)
+			? this.runtimeConfigService.resolveUrl(path)
 			: this.navigationService.addBasePath(path);
 
 		window.open(recordingUrl, '_blank');
@@ -291,7 +291,7 @@ export class RecordingService {
 		}
 
 		// Resolve against the Meet server URL for webcomponent embedding (no-op in the SPA).
-		const downloadUrl = this.runtimeConfigService.resolvePath(
+		const downloadUrl = this.runtimeConfigService.resolveUrl(
 			`${this.RECORDINGS_API}/download?${params.toString()}`
 		);
 		const link = document.createElement('a');
