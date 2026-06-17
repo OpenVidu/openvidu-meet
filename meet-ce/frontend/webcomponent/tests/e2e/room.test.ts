@@ -1,3 +1,4 @@
+import { WebComponentProperty } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { applyBackgroundEffect, startScreensharing, stopScreensharing } from '../helpers/media-controls.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
@@ -5,6 +6,7 @@ import { openMoreOptionsMenu } from '../helpers/panels.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { expectSignificantImageDifferenceEventually, screenshotWcElement } from '../helpers/stream.helper';
 import { leaveMeeting, openMeeting } from '../helpers/testapp.helper';
+import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
 import { wcLocator } from '../helpers/webcomponent.helper';
 
 test.describe('Room Features E2E Tests', () => {
@@ -118,6 +120,18 @@ test.describe('Room Features E2E Tests', () => {
 			await expect(wcLocator(page, '#copy-speaker-link')).toHaveCount(0);
 
 			await leaveMeeting(page, { role: 'moderator' });
+		});
+
+		test('should not render the share-meeting-link component in the lobby', async ({ page }) => {
+			const room = await createRoom({ config: { e2ee: { enabled: true } } });
+			const accessUrl = room.access.anonymous.moderator.url;
+
+			await openWebcomponentWithAttributes(page, {
+				[WebComponentProperty.ROOM_URL]: accessUrl
+			});
+
+			await expect(wcLocator(page, '#participant-name-input')).toBeVisible();
+			await expect(wcLocator(page, 'ov-share-meeting-link')).toHaveCount(0);
 		});
 
 		test('should open the chat panel and send a message', async ({ page }) => {

@@ -78,6 +78,7 @@ export class MeetingLobbyService {
 	readonly showShareLink = computed(() => {
 		return (
 			!this.roomClosed() &&
+			!this.runtimeConfigService.isWebcomponentMode() &&
 			!!this.accessLinkService.speakerPublicLink() &&
 			this.meetingContextService.meetingUI().showShareAccessLinks
 		);

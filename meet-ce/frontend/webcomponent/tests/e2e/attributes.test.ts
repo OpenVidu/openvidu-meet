@@ -1,10 +1,10 @@
 import { WebComponentProperty } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
-import { wcLocator, waitForPageRedirect } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms, getRecordingUrl, listRecordingsByRoomId } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { endMeetingCommand, openMeeting } from '../helpers/testapp.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
+import { waitForPageRedirect, wcLocator } from '../helpers/webcomponent.helper';
 
 // ─── WebComponent attribute coverage ────────────────────────────────────────
 //
@@ -32,7 +32,9 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			accessUrl = room.access.anonymous.moderator.url;
 		});
 
-		test('should pre-fill and disable the participant name input when participant-name is set', async ({ page }) => {
+		test('should pre-fill and disable the participant name input when participant-name is set', async ({
+			page
+		}) => {
 			const participantName = 'Alice';
 
 			await openWebcomponentWithAttributes(page, {
@@ -53,7 +55,9 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				accessUrl = room.access.anonymous.moderator.url;
 			});
 
-			test('should hide the E2EE key input and show the encryption badge when e2ee-key is set', async ({ page }) => {
+			test('should hide the E2EE key input and show the encryption badge when e2ee-key is set', async ({
+				page
+			}) => {
 				await openWebcomponentWithAttributes(page, {
 					[WebComponentProperty.ROOM_URL]: accessUrl,
 					[WebComponentProperty.E2EE_KEY]: 'super-secret-key-123'
