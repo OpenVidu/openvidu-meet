@@ -4,7 +4,7 @@
 FROM node:24.15.0 AS builder
 
 # Define pnpm version as build argument with default value
-ARG PNPM_VERSION=11.0.8
+ARG PNPM_VERSION=11.8.0
 
 # Install pnpm
 RUN corepack enable && corepack prepare pnpm@${PNPM_VERSION} --activate
@@ -70,7 +70,7 @@ RUN rm -rf node_modules \
 FROM node:24.15.0-alpine AS production
 
 # Define pnpm version as build argument with default value
-ARG PNPM_VERSION=11.0.8
+ARG PNPM_VERSION=11.8.0
 
 # Set pnpm version as environment variable (available at runtime)
 ENV PNPM_VERSION=${PNPM_VERSION}
