@@ -33,7 +33,7 @@ const completeLobby = async (page: Page, options?: { name?: string; e2eeKey?: st
 /**
  * Clicks the join button in the prejoin screen after it becomes visible.
  */
-const clickJoinRoom = async (page: Page): Promise<void> => {
+const clickJoinMeeting = async (page: Page): Promise<void> => {
 	const joinButton = page.locator('#join-button');
 	await expect(joinButton).toBeVisible({ timeout: 10_000 });
 	await click(joinButton, 10_000);
@@ -78,7 +78,7 @@ export const openMeeting = async (
 		await ensurePrejoinAudioState(page, audioEnabled);
 	}
 
-	await clickJoinRoom(page);
+	await clickJoinMeeting(page);
 
 	await expect(page.locator('#layout-container')).toBeVisible({ timeout: timeoutMs });
 	await expect(page.locator('#media-buttons-container')).toBeVisible({ timeout: timeoutMs });
