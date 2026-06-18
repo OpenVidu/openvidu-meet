@@ -1,15 +1,15 @@
 {
 	"folders": [
 		{
-			"name": "openvidu-meet (root)",
+			"name": "meet-root",
 			"path": "."
 		},
 		{
-			"name": "openvidu-meet (CE)",
+			"name": "meet-CE",
 			"path": "meet-ce"
 		},
 		{
-			"name": "openvidu-meet (PRO)",
+			"name": "meet-PRO",
 			"path": "meet-pro"
 		},
 		{
@@ -17,13 +17,13 @@
 			"path": "meet-ce/frontend/projects/shared-meet-components"
 		},
 		{
-			"name": "meet-testapp",
-			"path": "testapp"
-		},
-		{
 			"name": "meet-webcomponent",
 			"path": "meet-ce/frontend/webcomponent"
-		}
+		},
+		{
+			"name": "meet-testapp",
+			"path": "meet-ce/frontend/webcomponent/testapp"
+		},
 	],
 	"settings": {
 		"editor.codeActionsOnSave": {
@@ -33,8 +33,6 @@
 		"files.exclude": {
 			"**/meet-ce": true,
 			"**/meet-pro": true,
-			"**/webhooks-snippets": false,
-			"**/testapp": true,
 			"**/.angular": true,
 			"**/public": false,
 			"**/dist": false,
@@ -42,10 +40,10 @@
 			"**/test-results": true
 		},
 		"jest.disabledWorkspaceFolders": [
-			"openvidu-meet (root)",
+			"meet-root",
 			"shared-meet-components",
-			"meet-testapp",
-			"meet-webcomponent"
+			"meet-webcomponent",
+			"meet-testapp"
 		],
 		"files.watcherExclude": {
 			"**/node_modules/**": true,
@@ -60,10 +58,10 @@
 				"name": "Debug Jest Test (CE Backend)",
 				"type": "node",
 				"request": "launch",
-				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"program": "${workspaceFolder:meet-root}/node_modules/.bin/jest",
 				"args": [
 					"--config",
-					"${workspaceFolder:openvidu-meet (CE)}/backend/jest.config.mjs",
+					"${workspaceFolder:meet-CE}/backend/jest.config.mjs",
 					"--runInBand",
 					"--no-cache",
 					"${file}"
@@ -71,22 +69,22 @@
 				"console": "integratedTerminal",
 				"internalConsoleOptions": "neverOpen",
 				"windows": {
-					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
+					"program": "${workspaceFolder:meet-root}/node_modules/.bin/jest.cmd"
 				},
 				"runtimeArgs": ["--experimental-vm-modules"],
 				"env": {
 					"NODE_ENV": "test"
 				},
-				"cwd": "${workspaceFolder:openvidu-meet (CE)}/backend"
+				"cwd": "${workspaceFolder:meet-CE}/backend"
 			},
 			{
 				"name": "Debug Jest Test (PRO Backend)",
 				"type": "node",
 				"request": "launch",
-				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"program": "${workspaceFolder:meet-root}/node_modules/.bin/jest",
 				"args": [
 					"--config",
-					"${workspaceFolder:openvidu-meet (PRO)}/backend/jest.config.mjs",
+					"${workspaceFolder:meet-PRO}/backend/jest.config.mjs",
 					"--runInBand",
 					"--no-cache",
 					"${file}"
@@ -94,22 +92,22 @@
 				"console": "integratedTerminal",
 				"internalConsoleOptions": "neverOpen",
 				"windows": {
-					"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest.cmd"
+					"program": "${workspaceFolder:meet-root}/node_modules/.bin/jest.cmd"
 				},
 				"runtimeArgs": ["--experimental-vm-modules"],
 				"env": {
 					"NODE_ENV": "test"
 				},
-				"cwd": "${workspaceFolder:openvidu-meet (PRO)}/backend"
+				"cwd": "${workspaceFolder:meet-PRO}/backend"
 			},
 			{
 				"name": "Debug Current Jest Test (CE Backend)",
 				"type": "node",
 				"request": "launch",
-				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"program": "${workspaceFolder:meet-root}/node_modules/.bin/jest",
 				"args": [
 					"--config",
-					"${workspaceFolder:openvidu-meet (CE)}/backend/jest.config.mjs",
+					"${workspaceFolder:meet-CE}/backend/jest.config.mjs",
 					"--runInBand",
 					"--testNamePattern",
 					"${input:testName}",
@@ -121,16 +119,16 @@
 				"env": {
 					"NODE_ENV": "test"
 				},
-				"cwd": "${workspaceFolder:openvidu-meet (CE)}/backend"
+				"cwd": "${workspaceFolder:meet-CE}/backend"
 			},
 			{
 				"name": "Debug Current Jest Test (PRO Backend)",
 				"type": "node",
 				"request": "launch",
-				"program": "${workspaceFolder:openvidu-meet (root)}/node_modules/.bin/jest",
+				"program": "${workspaceFolder:meet-root}/node_modules/.bin/jest",
 				"args": [
 					"--config",
-					"${workspaceFolder:openvidu-meet (PRO)}/backend/jest.config.mjs",
+					"${workspaceFolder:meet-PRO}/backend/jest.config.mjs",
 					"--runInBand",
 					"--testNamePattern",
 					"${input:testName}",
@@ -142,7 +140,7 @@
 				"env": {
 					"NODE_ENV": "test"
 				},
-				"cwd": "${workspaceFolder:openvidu-meet (PRO)}/backend"
+				"cwd": "${workspaceFolder:meet-PRO}/backend"
 			}
 		],
 		"inputs": [
