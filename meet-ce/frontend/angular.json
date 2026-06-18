@@ -29,12 +29,7 @@
 						},
 						"assets": [
 							"src/favicon.ico",
-							"src/assets",
-							{
-								"glob": "livekit-client.e2ee.worker.mjs",
-								"input": "../../node_modules/livekit-client/dist/",
-								"output": "assets/livekit/"
-							}
+							"src/assets"
 						],
 						"styles": ["src/styles.scss"],
 						"scripts": [],

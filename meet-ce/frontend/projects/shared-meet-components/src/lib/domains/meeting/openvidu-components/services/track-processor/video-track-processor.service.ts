@@ -10,8 +10,16 @@ import { RuntimeConfigService } from '../../../../../shared/services/runtime-con
 import { ILogger } from '../../models/logger.model';
 import { OVLocalVideoTrack } from '../livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
+import { PlatformService } from '../platform/platform.service';
 
-const MEDIAPIPE_MODEL_PATH = 'assets/mediapipe/selfie_segmenter_landscape.tflite';
+// Selfie-segmenter models. Landscape (256x144) is tuned for wide desktop video;
+// the general/square model (256x256) segments portrait mobile capture better, so
+// physical mobile devices use it (the landscape model would distort a portrait frame).
+const SELFIE_SEGMENTER_LANDSCAPE = 'assets/mediapipe/selfie_segmenter_landscape.tflite';
+const SELFIE_SEGMENTER_GENERAL = 'assets/mediapipe/selfie_segmenter.tflite';
+// Directory holding the MediaPipe tasks-vision WASM runtime, self-hosted from the
+// Meet server instead of the default jsdelivr CDN (offline-capable, no 3rd party).
+const MEDIAPIPE_WASM_PATH = 'assets/mediapipe/wasm';
 
 /**
  * Manages the lifecycle of the LiveKit background video track processor.
@@ -48,6 +56,7 @@ export class VideoTrackProcessorService {
 
 	private log: ILogger = inject(LoggerService).get('VideoTrackProcessorService');
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly platformService = inject(PlatformService);
 
 	/**
 	 * Waits until the service is ready for requests (immediate in SPA mode, after the
@@ -93,8 +102,14 @@ export class VideoTrackProcessorService {
 	}
 
 	private getAssetPaths() {
+		// On physical mobile devices (typically portrait capture) the general/square
+		// model segments better than the landscape one. Chosen at processor init.
+		const modelPath = this.platformService.isPhysicalMobileDevice()
+			? SELFIE_SEGMENTER_GENERAL
+			: SELFIE_SEGMENTER_LANDSCAPE;
 		return {
-			modelAssetPath: this.runtimeConfigService.resolveUrl(MEDIAPIPE_MODEL_PATH)
+			modelAssetPath: this.runtimeConfigService.resolveUrl(modelPath),
+			tasksVisionFileSet: this.runtimeConfigService.resolveUrl(MEDIAPIPE_WASM_PATH)
 		};
 	}
 
