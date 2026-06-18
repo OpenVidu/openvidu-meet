@@ -3,8 +3,10 @@
   "version": "3.7.0",
   "scripts": {
     "clean": "rm -rf node_modules dist test-results .angular",
-    "dev": "pnpm exec ng build --configuration development --watch",
-    "build": "func() { pnpm exec ng build --configuration production --base-href=\"${1:-/}\"; }; func",
+    "assets:livekit": "node scripts/copy-livekit-assets.mjs",
+    "postinstall": "node scripts/copy-livekit-assets.mjs",
+    "dev": "pnpm run assets:livekit && pnpm exec ng build --configuration development --watch",
+    "build": "func() { pnpm run assets:livekit && pnpm exec ng build --configuration production --base-href=\"${1:-/}\"; }; func",
     "lib:serve": "ng build shared-meet-components --watch",
     "lib:build": "ng build shared-meet-components --configuration production",
     "lib:pack": "cd dist/shared-meet-components && pnpm pack",

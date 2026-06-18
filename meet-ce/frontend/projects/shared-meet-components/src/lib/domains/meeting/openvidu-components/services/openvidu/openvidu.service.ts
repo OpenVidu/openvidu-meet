@@ -22,6 +22,7 @@ import { LivekitAdapterFactory } from '../livekit-adapter/livekit-adapter.factor
 import { LoggerService } from '../logger/logger.service';
 import { StorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
+import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -33,6 +34,7 @@ export class OpenViduService {
 	private readonly livekitAdapterFactory = inject(LivekitAdapterFactory);
 	private readonly livekitAdapter: LivekitAdapterInterface = this.livekitAdapterFactory.createLiveKitAdapter();
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
 	private room: OVRoom | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
@@ -107,7 +109,6 @@ export class OpenViduService {
 
 		// Configure E2EE if key is provided and keyProvider exists
 		if (needsE2EEConfig) {
-			// Create worker using the copied livekit-client e2ee worker from assets
 			roomOptions.encryption = this.buildE2EEOptions();
 		}
 
@@ -118,11 +119,33 @@ export class OpenViduService {
 	private buildE2EEOptions(): OVE2EEOptions {
 		this.log.d('Configuring E2EE with provided key');
 		this.keyProvider = new ExternalE2EEKeyProvider();
-		// Create worker using the copied livekit-client e2ee worker from assets
 		return {
 			keyProvider: this.keyProvider,
-			worker: new Worker('./assets/livekit/livekit-client.e2ee.worker.mjs', { type: 'module' })
+			worker: this.createE2EEWorker()
 		};
+	}
+
+	/**
+	 * Loads the livekit-client E2EE worker, which is served from the Meet server's
+	 * assets. `resolveUrl` points it at that server — in webcomponent mode that may
+	 * be a remote, cross-origin origin. A module Worker cannot be constructed
+	 * directly from a cross-origin script URL, so in that case it is wrapped in a
+	 * same-origin blob that imports the real worker (the backend serves assets with
+	 * CORS). Same-origin (SPA / same-origin embed) loads the URL directly.
+	 */
+	private createE2EEWorker(): Worker {
+		const url = new URL(
+			this.runtimeConfigService.resolveUrl('assets/livekit/livekit-client.e2ee.worker.mjs'),
+			window.location.href
+		);
+
+		if (url.origin === window.location.origin) {
+			return new Worker(url.href, { type: 'module' });
+		}
+
+		const bootstrap = `import ${JSON.stringify(url.href)};`;
+		const blobUrl = URL.createObjectURL(new Blob([bootstrap], { type: 'text/javascript' }));
+		return new Worker(blobUrl, { type: 'module' });
 	}
 
 	/**
