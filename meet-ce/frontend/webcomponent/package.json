@@ -16,7 +16,7 @@
 		"deploy:backend": "node scripts/deploy-to-backend.js",
 		"build:wc:bundle": "pnpm run build:wc:angular && pnpm run build:wc:post",
 		"dev": "node scripts/dev.js",
-		"test:unit": "ng test",
+		"test:unit": "jest --forceExit --testPathPattern \"tests/unit\" --ci",
 		"test:e2e": "playwright test --project=webcomponent"
 	},
 	"dependencies": {
@@ -45,9 +45,12 @@
 		"@angular/compiler-cli": "21.2.0",
 		"@playwright/test": "1.60.0",
 		"@types/jasmine": "5.1.13",
+		"@types/jest": "29.5.14",
 		"@types/pixelmatch": "5.2.6",
 		"@types/pngjs": "6.0.5",
 		"jasmine-core": "5.6.0",
+		"jest": "29.7.0",
+		"jest-environment-jsdom": "29.7.0",
 		"karma": "6.4.4",
 		"karma-chrome-launcher": "3.2.0",
 		"karma-coverage": "2.2.1",
@@ -55,6 +58,8 @@
 		"karma-jasmine-html-reporter": "2.1.0",
 		"pixelmatch": "5.3.0",
 		"pngjs": "7.0.0",
+		"ts-jest": "29.2.6",
+		"ts-jest-resolver": "2.0.1",
 		"typescript": "5.9.2"
 	}
 }

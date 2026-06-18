@@ -13,9 +13,9 @@
 
 ## Overview
 
-This document provides a comprehensive overview of the test suite for the OpenVidu Meet Web Component, a reusable custom HTML element that embeds the full OpenVidu Meet application in any web page. The test suite includes both end-to-end (E2E) and unit tests to ensure the reliability and correctness of the web component's functionality, attributes, commands, and events.
+This document provides a comprehensive overview of the test suite for the OpenVidu Meet Web Component, a reusable custom HTML element that embeds the full OpenVidu Meet application in any web page. The web component is built with **Angular Elements** (`@angular/elements`): the published `<openvidu-meet>` element is a custom element whose Angular `App` component renders the full app inside a shadow root. The test suite includes both end-to-end (E2E) and unit tests to ensure the reliability and correctness of the web component's functionality, attributes, commands, and events.
 
-The test suite covers **12 test files** containing **121 test cases**, organized into E2E tests (8 files, 74 test cases) and unit tests (4 files, 47 test cases).
+The unit tests cover the framework-agnostic logic of the element — the custom-element wrapper's public API (`on`/`once`/`off`, `ready`, imperative commands), URL helpers, and attribute→view mode derivation. Integrated behavior of the Angular `App` shell (rendering, bootstrap flows, service wiring) is exercised by the E2E suite rather than by unit tests, since it would otherwise require a full Angular TestBed setup.
 
 ---
 
@@ -81,17 +81,16 @@ The test suite provides comprehensive coverage across all major web component fe
 | **E2E - E2EE UI** | 1 | 7 | End-to-end encryption UI elements, key input, encrypted badge, room restrictions |
 | **E2E - Recording Access** | 1 | 6 | Recording visibility, access control (admin/moderator/speaker), playback permissions |
 | **E2E - Custom Layout** | 1 | 19 | Layout customization, branding, logo injection, theme colors, hide toolbar elements |
-| **Unit - Attributes** | 1 | 24 | Web component attributes, iframe configuration, URL handling, token management |
-| **Unit - Commands** | 1 | 11 | Command messaging system, origin validation, initialize/leave/mute commands |
-| **Unit - Events** | 1 | 7 | Event subscription (on/once/off), event emission, custom event handling |
-| **Unit - Lifecycle** | 1 | 5 | Component lifecycle, DOM connection/disconnection, error states, cleanup |
+| **Unit - URL utils** | 1 | 12 | `lastPathSegment`, `queryParam`, `computeServerUrl` parsing of room/recording URLs |
+| **Unit - Mode derivation** | 1 | 10 | `modeFromAttributes` / `modeFromRequest` view selection from attributes and navigation requests |
+| **Unit - Element wrapper** | 1 | 12 | Custom element `on`/`once`/`off`, `ready` event, listener cleanup, `endMeeting`/`leaveRoom`/`kickParticipant` delegation |
 
 ### Total Coverage
 
 - **Total Test Files**: 12
 - **Total Test Cases**: 121
 - **E2E Tests**: 8 files / 74 test cases
-- **Unit Tests**: 4 files / 47 test cases
+- **Unit Tests**: 3 files / 34 test cases
 
 ---
 
@@ -186,56 +185,36 @@ Appearance customization:
 - CSS variable injection
 - Default values when customization not provided
 
-### 2. Unit Tests (47 test cases)
+### 2. Unit Tests (34 test cases)
 
-Unit tests validate individual web component features in isolation using jsdom.
+Unit tests validate the framework-agnostic logic of the web component in isolation
+using jsdom. They run with plain `ts-jest` (no Angular TestBed): each test targets a
+pure module or the custom-element wrapper, so they stay fast and require no Angular
+runtime. The heavy `@openvidu-meet/shared-components` barrel is replaced by a minimal
+mock (`tests/__mocks__/shared-components.ts`) that re-exports only the enums the units
+under test reference.
 
 #### Coverage:
 
-##### **Attributes Tests** (`unit/attributes.test.ts` - 24 tests)
-Web component HTML attributes:
-- Iframe setup with correct media permissions
-- Required attributes validation (`room-url` or `recording-url`)
-- URL attribute handling and iframe src assignment
-- Attribute priority (room-url over recording-url)
-- Target origin extraction from URLs
-- Tokens attribute parsing and forwarding
-- Token types (room member token, recording token)
-- Minimal attributes configuration
-- Attribute change detection and iframe updates
-- Invalid attribute handling
+##### **URL Utils Tests** (`unit/url.test.ts` - 12 tests)
+Pure URL parsing helpers (`src/app/utils/url.ts`):
+- `lastPathSegment` extracts the room/recording id (handles trailing slashes, empty paths, invalid URLs)
+- `queryParam` reads a query parameter (returns `null` when absent or for invalid URLs)
+- `computeServerUrl` derives the server base URL up to the `/room/` or `/recording/` marker
 
-##### **Commands Tests** (`unit/commands.test.ts` - 11 tests)
-Command messaging system:
-- Target origin configuration
-- Initialize command sending
-- Event subscription (on/once/off)
-- Event unsubscription
-- Unsupported event filtering
-- Leave room command
-- Toggle camera command
-- Toggle microphone command
-- Command message structure and payload
-- Cross-origin communication validation
+##### **Mode Derivation Tests** (`unit/mode.test.ts` - 10 tests)
+View selection logic (`src/app/modes/mode.ts`):
+- `modeFromAttributes` maps the public attributes to a primary view (`meeting`, `room-recordings`, `single-recording`, `invalid`)
+- Precedence rules (recording over room; `show-only-recordings` switching room → recordings)
+- `modeFromRequest` maps an internal navigation request to its overlay view (`room-recordings`, `login`, `change-password`) and returns `null` when there is no request
 
-##### **Events Tests** (`unit/events.test.ts` - 7 tests)
-Event handling system:
-- READY event handling
-- Custom event dispatching
-- Event payload forwarding
-- Multi-event handling
-- Origin validation for security
-- Event bubbling and composition
-- Target origin configuration
-
-##### **Lifecycle Tests** (`unit/lifecycle.test.ts` - 5 tests)
-Component lifecycle management:
-- Component initialization
-- DOM connection callback
-- DOM disconnection callback
-- Resource cleanup on removal
-- Error state handling
-- Load timeout management
+##### **Element Wrapper Tests** (`unit/wrapper.test.ts` - 12 tests)
+Custom-element public API added on top of Angular Elements (`src/app/custom-element/wrapper.ts`),
+exercised against a stub base class so no Angular runtime is needed:
+- `on` / `once` / `off` event subscription semantics and chaining
+- `ready` CustomEvent dispatched after connection (non-bubbling, composed)
+- Listener cleanup on `disconnectedCallback`
+- `endMeeting` / `leaveRoom` / `kickParticipant` delegation to the Angular component instance, and safe no-ops before it exists
 
 ---
 
@@ -247,7 +226,8 @@ tests/
 ├── config.ts                          # Test configuration (API URLs, credentials)
 ├── playwright.config.ts               # Playwright E2E configuration
 ├── __mocks__/
-│   └── styleMock.js                   # CSS module mock for unit tests
+│   ├── styleMock.js                   # CSS module mock for unit tests
+│   └── shared-components.ts           # Minimal mock of @openvidu-meet/shared-components for unit tests
 ├── assets/
 │   └── audio/
 │       └── generate-test-audio.sh     # Audio file generation for tests
@@ -261,11 +241,10 @@ tests/
 │   ├── e2ee-ui.test.ts                # E2EE interface (7 tests)
 │   ├── recording-access.test.ts       # Recording permissions (6 tests)
 │   └── custom-layout.test.ts          # Layout customization (19 tests)
-├── unit/                              # Unit tests (4 files, 47 tests)
-│   ├── attributes.test.ts             # HTML attributes (24 tests)
-│   ├── commands.test.ts               # Command system (11 tests)
-│   ├── events.test.ts                 # Event system (7 tests)
-│   └── lifecycle.test.ts              # Component lifecycle (5 tests)
+├── unit/                              # Unit tests (3 files, 34 tests)
+│   ├── url.test.ts                    # URL parsing helpers (12 tests)
+│   ├── mode.test.ts                   # Attribute/request → view derivation (10 tests)
+│   └── wrapper.test.ts                # Custom-element wrapper API (12 tests)
 ├── helpers/
 │   ├── function-helpers.ts            # E2E test utilities (750+ lines)
 │   └── participant.helper.ts          # Participant management utilities
