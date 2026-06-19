@@ -24,7 +24,9 @@ const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const wcDist = path.resolve(root, '..', 'dist');
+// The testapp lives at the repo root; the WC build artifacts stay under
+// meet-ce/frontend/webcomponent/dist.
+const wcDist = path.resolve(root, '..', 'meet-ce', 'frontend', 'webcomponent', 'dist');
 
 const copies = [
   {

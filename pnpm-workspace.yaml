@@ -8,7 +8,7 @@ packages:
   - meet-ce/typings
   - meet-ce/frontend
   - meet-ce/frontend/webcomponent
-  - meet-ce/frontend/webcomponent/testapp
+  - testapp
   - meet-ce/frontend/projects/shared-meet-components
   - meet-ce/backend
   - meet-pro/frontend

@@ -17,13 +17,13 @@
 			"path": "meet-ce/frontend/projects/shared-meet-components"
 		},
 		{
-			"name": "meet-webcomponent",
-			"path": "meet-ce/frontend/webcomponent"
+			"name": "meet-testapp",
+			"path": "testapp"
 		},
 		{
-			"name": "meet-testapp",
-			"path": "meet-ce/frontend/webcomponent/testapp"
-		},
+			"name": "meet-webcomponent",
+			"path": "meet-ce/frontend/webcomponent"
+		}
 	],
 	"settings": {
 		"editor.codeActionsOnSave": {

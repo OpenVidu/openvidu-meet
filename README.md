@@ -36,7 +36,7 @@ The OpenVidu Meet application is a monorepo managed with **pnpm workspaces** and
 
 - **Webcomponent** (`frontend/webcomponent/`): Standalone web component version of OpenVidu Meet
 
-- **TestApp** (`frontend/webcomponent/testapp/`): Angular application for testing and validating the web component
+- **TestApp** (`testapp/`): Angular application for testing and validating the embedding integrations (web component and iframe)
 
 ## Prerequisites
 
