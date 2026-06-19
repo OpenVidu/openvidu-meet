@@ -7,7 +7,7 @@ import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { expectSignificantImageDifferenceEventually, screenshotWcElement } from '../helpers/stream.helper';
 import { leaveMeeting, openMeeting } from '../helpers/testapp.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
-import { wcLocator } from '../helpers/webcomponent.helper';
+import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
 
 test.describe('Room Features E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -111,29 +111,6 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
-		test('should not show the copy link toolbar button', async ({ page }) => {
-			// Join as moderator: in SPA this role shows the copy meeting link button,
-			// so it is the strongest check that webcomponent mode hides it.
-			await openMeeting(page, roomId, { role: 'moderator' });
-
-			await expect(wcLocator(page, '#toolbar')).toBeVisible();
-			await expect(wcLocator(page, '#copy-speaker-link')).toHaveCount(0);
-
-			await leaveMeeting(page, { role: 'moderator' });
-		});
-
-		test('should not render the share-meeting-link component in the lobby', async ({ page }) => {
-			const room = await createRoom({ config: { e2ee: { enabled: true } } });
-			const accessUrl = room.access.anonymous.moderator.url;
-
-			await openWebcomponentWithAttributes(page, {
-				[WebComponentProperty.ROOM_URL]: accessUrl
-			});
-
-			await expect(wcLocator(page, '#participant-name-input')).toBeVisible();
-			await expect(wcLocator(page, 'ov-share-meeting-link')).toHaveCount(0);
-		});
-
 		test('should open the chat panel and send a message', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
@@ -167,34 +144,6 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 
-		test('should show the waiting panel instead of the invite panel in the participants panel', async ({
-			page
-		}) => {
-			// Join as moderator: in SPA this role would see the share/copy link panel,
-			// so it is the strongest check that webcomponent mode replaces it.
-			await openMeeting(page, roomId, { role: 'moderator' });
-
-			await wcLocator(page, '#participants-panel-btn').click();
-			await expect(wcLocator(page, 'ov-participants-panel')).toBeVisible();
-
-			// Webcomponent mode replaces the share/copy link panel with the waiting panel
-			await expect(wcLocator(page, '#waiting-panel')).toBeVisible();
-			await expect(wcLocator(page, '#invite-panel')).toHaveCount(0);
-
-			await leaveMeeting(page, { role: 'moderator' });
-		});
-
-		test('should show the waiting overlay instead of the share link overlay when alone', async ({ page }) => {
-			// Moderator alone: in SPA this shows the share link overlay, so it is the
-			// strongest check that webcomponent mode shows the waiting overlay instead.
-			await openMeeting(page, roomId, { role: 'moderator' });
-
-			await expect(wcLocator(page, '#waiting-overlay')).toBeVisible();
-			await expect(wcLocator(page, '#share-link-overlay')).toHaveCount(0);
-
-			await leaveMeeting(page, { role: 'moderator' });
-		});
-
 		test('should show settings panel', async ({ page }) => {
 			await openMeeting(page, roomId, { role: 'speaker' });
 
@@ -206,4 +155,65 @@ test.describe('Room Features E2E Tests', () => {
 			await leaveMeeting(page);
 		});
 	});
+
+	// Share-access-link affordances are owned by the host application in BOTH
+	// embedded transports, so Meet hides them when running as a webcomponent OR
+	// inside an iframe and shows the waiting panel/overlay in their place. The
+	// rest of this file is webcomponent-only by design; these parity checks run
+	// against each integration.
+	for (const integration of INTEGRATIONS) {
+		test.describe(`Embedded share-link affordances hidden [${integration}]`, () => {
+			test('does not show the copy link toolbar button', async ({ page }) => {
+				// Join as moderator: in SPA this role shows the copy meeting link button,
+				// so it is the strongest check that the embedded mode hides it.
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+
+				await expect(meetLocator(page, integration, '#toolbar')).toBeVisible();
+				await expect(meetLocator(page, integration, '#copy-speaker-link')).toHaveCount(0);
+
+				await leaveMeeting(page, { integration, role: 'moderator' });
+			});
+
+			test('does not render the share-meeting-link component in the lobby', async ({ page }) => {
+				const room = await createRoom({ config: { e2ee: { enabled: true } } });
+				createdRoomIds.push(room.roomId);
+				const accessUrl = room.access.anonymous.moderator.url;
+
+				await openWebcomponentWithAttributes(
+					page,
+					{ [WebComponentProperty.ROOM_URL]: accessUrl },
+					{ integration }
+				);
+
+				await expect(meetLocator(page, integration, '#participant-name-input')).toBeVisible();
+				await expect(meetLocator(page, integration, 'ov-share-meeting-link')).toHaveCount(0);
+			});
+
+			test('shows the waiting panel instead of the invite panel in the participants panel', async ({ page }) => {
+				// Join as moderator: in SPA this role would see the share/copy link panel,
+				// so it is the strongest check that the embedded mode replaces it.
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+
+				await meetLocator(page, integration, '#participants-panel-btn').click();
+				await expect(meetLocator(page, integration, 'ov-participants-panel')).toBeVisible();
+
+				// Embedded mode replaces the share/copy link panel with the waiting panel
+				await expect(meetLocator(page, integration, '#waiting-panel')).toBeVisible();
+				await expect(meetLocator(page, integration, '#invite-panel')).toHaveCount(0);
+
+				await leaveMeeting(page, { integration, role: 'moderator' });
+			});
+
+			test('shows the waiting overlay instead of the share link overlay when alone', async ({ page }) => {
+				// Moderator alone: in SPA this shows the share link overlay, so it is the
+				// strongest check that the embedded mode shows the waiting overlay instead.
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+
+				await expect(meetLocator(page, integration, '#waiting-overlay')).toBeVisible();
+				await expect(meetLocator(page, integration, '#share-link-overlay')).toHaveCount(0);
+
+				await leaveMeeting(page, { integration, role: 'moderator' });
+			});
+		});
+	}
 });

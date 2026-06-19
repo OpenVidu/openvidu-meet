@@ -1,7 +1,7 @@
 import { MeetWebhookEventType, WebComponentEvent } from '@openvidu-meet/typings';
 import { expect, Locator, Page } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../config';
-import { wcLocator } from './webcomponent.helper';
+import { Integration, meetLocator } from './webcomponent.helper';
 import { getRoom } from './meet-api.helper';
 
 // ─── Headless WC harness ────────────────────────────────────────────────────
@@ -44,9 +44,9 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 	await expect(page.getByTestId('controls-panel')).toBeVisible();
 
 	// Inject hidden `.event-{name}` markers, driven by document-level listeners
-	// that pick up the bubbling CustomEvents the WC dispatches. Listening at
-	// the document avoids any race against when `<openvidu-meet>` is created
-	// inside the Angular wrapper.
+	// that pick up the lifecycle CustomEvents the testapp re-dispatches on its
+	// event sink. Both integrations (webcomponent + iframe) emit through that same
+	// sink, so the markers are transport-agnostic.
 	await page.evaluate(() => {
 		const log = document.createElement('ul');
 		log.id = '__wc-event-markers';
@@ -61,11 +61,11 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 			document.addEventListener(
 				name,
 				(ev) => {
-					// Only react to events from the WC element, not anything else
-					// in the testapp that happens to share these names.
+					// Only react to events the testapp re-dispatches on its event sink,
+					// not anything else that happens to share these names.
 					const target = ev.target as Element | null;
 
-					if (!target || (target.tagName !== 'OPENVIDU-MEET' && !target.closest?.('openvidu-meet'))) return;
+					if (!target || target.getAttribute?.('data-testid') !== 'event-sink') return;
 
 					const li = document.createElement('li');
 					li.className = `event-${name}`;
@@ -100,11 +100,12 @@ export const openMeeting = async (
 	page: Page,
 	roomId: string,
 	options?: {
+		integration?: Integration;
 		role?: 'moderator' | 'speaker';
 		name?: string;
 	}
 ): Promise<void> => {
-	const { role = 'speaker', name } = options ?? {};
+	const { integration = 'webcomponent', role = 'speaker', name } = options ?? {};
 	const participantName = name ?? `pw-${Math.random().toString(36).substring(2, 9)}`;
 
 	await ensureFixture(page);
@@ -116,20 +117,26 @@ export const openMeeting = async (
 		throw new Error(`No anonymous ${role} access URL on room ${roomId}`);
 	}
 
-	// Drive the Angular testapp's UI: fill the properties form and click
-	// "Apply config" to mount the WC with the API-issued URL.
+	// Drive the Angular testapp's UI: pick the integration, fill the properties
+	// form and click "Apply config" to mount the chosen transport with the
+	// API-issued URL.
+	await page.getByTestId('select-integration').selectOption(integration);
 	await page.getByTestId('input-roomUrl').fill(roomUrl);
 	await page.getByTestId('input-participantName').fill(participantName);
 	await page.getByTestId('btn-apply-config').click();
 
-	await expect(page.locator('openvidu-meet')).toBeVisible();
+	// Wait for the chosen transport to mount.
+	const host = integration === 'iframe' ? page.getByTestId('meet-iframe') : page.locator('openvidu-meet');
+	await expect(host).toBeVisible();
 
-	// The WC's lobby screen renders a participant-name input. When the
+	const meet = (selector: string) => meetLocator(page, integration, selector);
+
+	// The lobby screen renders a participant-name input. When the
 	// `participant-name` attribute is supplied via applyConfig, the input is
 	// pre-filled and disabled — only the submit click is required to advance.
 	// Use `waitFor`, not `isVisible()` — the latter is a single-shot check
-	// and races the Angular bootstrap.
-	const nameInput = wcLocator(page, '#participant-name-input');
+	// and races the app bootstrap.
+	const nameInput = meet('#participant-name-input');
 
 	try {
 		await nameInput.waitFor({ state: 'visible', timeout: 10_000 });
@@ -138,14 +145,14 @@ export const openMeeting = async (
 			await nameInput.fill(participantName);
 		}
 
-		await wcLocator(page, '#participant-name-submit').click();
+		await meet('#participant-name-submit').click();
 	} catch {
 		// Name screen skipped — proceed directly.
 	}
 
-	await expect(wcLocator(page, 'ov-pre-join')).toBeVisible({ timeout: 15_000 });
-	await wcLocator(page, '#join-button').click();
-	await expect(wcLocator(page, 'ov-session')).toBeVisible({ timeout: 15_000 });
+	await expect(meet('ov-pre-join')).toBeVisible({ timeout: 15_000 });
+	await meet('#join-button').click();
+	await expect(meet('ov-session')).toBeVisible({ timeout: 15_000 });
 };
 
 /**
@@ -159,17 +166,23 @@ export const openMeeting = async (
  * dynamically rather than driven from the caller, since both moderator and
  * speaker may surface it depending on permissions.
  */
-export const leaveMeeting = async (page: Page, _options?: { role?: 'moderator' | 'speaker' }): Promise<void> => {
-	const panelCloseButton = wcLocator(page, '.panel-close-button').first();
+export const leaveMeeting = async (
+	page: Page,
+	options?: { integration?: Integration; role?: 'moderator' | 'speaker' }
+): Promise<void> => {
+	const integration = options?.integration ?? 'webcomponent';
+	const meet = (selector: string) => meetLocator(page, integration, selector);
+
+	const panelCloseButton = meet('.panel-close-button').first();
 
 	if (await panelCloseButton.isVisible().catch(() => false)) {
 		await panelCloseButton.click();
-		await expect(wcLocator(page, '.sidenav-menu')).not.toBeVisible({ timeout: 5_000 });
+		await expect(meet('.sidenav-menu')).not.toBeVisible({ timeout: 5_000 });
 	}
 
-	await wcLocator(page, '#leave-btn').click();
+	await meet('#leave-btn').click();
 
-	const leaveOption = wcLocator(page, '#leave-option');
+	const leaveOption = meet('#leave-option');
 	const leaveDropdownVisible = await leaveOption
 		.waitFor({ state: 'visible', timeout: 3_000 })
 		.then(() => true)

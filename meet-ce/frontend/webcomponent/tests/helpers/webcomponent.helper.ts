@@ -29,6 +29,29 @@ export const wcHost = (page: Page, componentSelector: string = DEFAULT_COMPONENT
  */
 export const wcLocator = (page: Page, selector: string): Locator => wcHost(page).locator(selector);
 
+// ─── Integration-agnostic locator ───────────────────────────────────────────
+//
+// The testapp embeds Meet through one of two transports; the meeting UI itself
+// is the same SPA either way, only reached differently:
+// - webcomponent: rendered inside the `<openvidu-meet>` open Shadow DOM.
+// - iframe: rendered inside a cross-document `<iframe>`.
+// `meetLocator` hides that difference so the same spec drives both.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type Integration = 'webcomponent' | 'iframe';
+
+/** The integrations the e2e suite runs every command/event spec against. */
+export const INTEGRATIONS: readonly Integration[] = ['webcomponent', 'iframe'];
+
+const IFRAME_SELECTOR = '[data-testid="meet-iframe"]';
+
+/**
+ * Locator for `selector` inside the active meeting view for the given integration:
+ * webcomponent pierces the Shadow DOM; iframe resolves inside the embedded document.
+ */
+export const meetLocator = (page: Page, integration: Integration, selector: string): Locator =>
+	integration === 'iframe' ? page.frameLocator(IFRAME_SELECTOR).locator(selector) : wcLocator(page, selector);
+
 /**
  * Asserts that the targeted element inside the web component becomes visible
  * within `timeout`, then returns the same locator so callers can chain.
@@ -49,10 +72,6 @@ export const expectVisibleInWc = async (
  * the Angular Elements WC runs in the host's window, so the redirect happens
  * on `window.location.href` and the page URL changes directly.
  */
-export const waitForPageRedirect = async (
-	page: Page,
-	expectedUrlPrefix: string,
-	timeout = 10_000
-): Promise<void> => {
+export const waitForPageRedirect = async (page: Page, expectedUrlPrefix: string, timeout = 10_000): Promise<void> => {
 	await page.waitForURL((url) => url.toString().startsWith(expectedUrlPrefix), { timeout });
 };
