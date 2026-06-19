@@ -25,7 +25,7 @@
 						<div class="access-text">
 							<span class="access-label">Anonymous Moderator</span>
 							<span class="access-description">
-								Allow users to join as Moderator without logging in
+								Allow anonymous guests to access the room with Moderator permissions
 							</span>
 						</div>
 					</div>
@@ -42,7 +42,9 @@
 						<mat-icon class="access-icon material-symbols-outlined">record_voice_over</mat-icon>
 						<div class="access-text">
 							<span class="access-label">Anonymous Speaker</span>
-							<span class="access-description"> Allow users to join as Speaker without logging in </span>
+							<span class="access-description">
+								Allow anonymous guests to access the room with Speaker permissions
+							</span>
 						</div>
 					</div>
 					<mat-slide-toggle formControlName="anonymousSpeakerEnabled" color="primary" class="access-toggle" />
@@ -55,7 +57,7 @@
 						<div class="access-text">
 							<span class="access-label">All Users</span>
 							<span class="access-description">
-								Allow any user to access the room
+								Allow any user to access the room. Non-members will get Speaker permissions
 							</span>
 						</div>
 					</div>

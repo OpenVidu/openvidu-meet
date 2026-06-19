@@ -36,7 +36,7 @@
     "AUDIO_DEVICE": "オーディオデバイス",
     "NO_VIDEO_DEVICE": "ビデオデバイスが見つかりません",
     "NO_AUDIO_DEVICE": "オーディオデバイスが見つかりません",
-    "JOIN": "ルームに参加する",
+    "JOIN": "会議に参加する",
     "PREPARING": "ルームの準備中..."
   },
   "TOOLBAR": {
@@ -86,7 +86,7 @@
     "CHAT": {
       "TITLE": "チャット",
       "YOU": "あなた",
-      "SUBTITLE": "メッセージはルーム終了時に削除されます",
+      "SUBTITLE": "メッセージは会議終了時に削除されます",
       "PLACEHOLDER": "メッセージを送信...",
       "SEND": "送信する",
       "MESSAGE_SENT_NOTIFICATION": "メッセージを送信しました",

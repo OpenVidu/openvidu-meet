@@ -36,7 +36,7 @@
     "AUDIO_DEVICE": "音频设备",
     "NO_VIDEO_DEVICE": "未找到视频设备",
     "NO_AUDIO_DEVICE": "未找到音频设备",
-    "JOIN": "加入房间",
+    "JOIN": "加入会议",
     "PREPARING": "筹备会议"
   },
   "TOOLBAR": {

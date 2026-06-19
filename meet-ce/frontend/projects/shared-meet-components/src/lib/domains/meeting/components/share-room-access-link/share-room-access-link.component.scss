@@ -1,8 +1,8 @@
 @use '_design-tokens.scss';
 
-.meeting-url-badge {
+.room-access-url-badge {
 	margin: var(--ov-meet-spacing-sm) auto;
-	.meeting-url-badge-title {
+	.room-access-url-badge-title {
 		text-align: center;
 		font-size: var(--ov-meet-font-size-sm);
 		font-weight: var(--ov-meet-font-weight-light);
@@ -36,13 +36,13 @@
 		}
 	}
 
-	.meeting-url-badge-subtitle {
+	.room-access-url-badge-subtitle {
 		text-align: center;
 		font-size: var(--ov-meet-font-size-md);
 		color: var(--ov-text-surface-color); // Use ov-components variable
 		margin: var(--ov-meet-spacing-sm);
 	}
-	.meeting-url-badge-container {
+	.room-access-url-badge-container {
 		@include design-tokens.ov-flex-center;
 		@include design-tokens.ov-theme-transition;
 		gap: var(--ov-meet-spacing-sm);
@@ -55,7 +55,7 @@
 		margin: auto;
 		cursor: pointer;
 
-		.meeting-url-text {
+		.room-access-url-text {
 			font-family: var(--ov-meet-font-family-mono, 'Roboto Mono', monospace);
 			font-size: var(--ov-meet-font-size-sm);
 			color: var(--ov-text-surface-color); // Use ov-components variable
@@ -96,11 +96,11 @@
 }
 
 @include design-tokens.ov-mobile-down {
-	.meeting-url-badge-container {
+	.room-access-url-badge-container {
 		margin: var(--ov-meet-spacing-md) auto;
 		padding: var(--ov-meet-spacing-xs) var(--ov-meet-spacing-sm);
 
-		.meeting-url-text {
+		.room-access-url-text {
 			font-size: var(--ov-meet-font-size-xs);
 		}
 

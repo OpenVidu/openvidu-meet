@@ -31,7 +31,7 @@
 								<div class="option-content">
 									<mat-icon class="option-icon">public</mat-icon>
 									<div class="option-details">
-										<span class="option-title">Public Access</span>
+										<span class="option-title">Anyone</span>
 										<span class="option-description">
 											@if (canGeneratePublicUrls()) {
 												Anyone with the link can view
@@ -46,9 +46,9 @@
 								<div class="option-content">
 									<mat-icon class="option-icon">lock</mat-icon>
 									<div class="option-details">
-										<span class="option-title">Private Access</span>
+										<span class="option-title">OpenVidu Meet users</span>
 										<span class="option-description">
-											Only users with the link can view
+											Only logged-in OpenVidu Meet users can view
 										</span>
 									</div>
 								</div>
@@ -71,7 +71,7 @@
 								class="generate-button"
 							>
 								<mat-icon>link</mat-icon>
-								Generate Shareable Link
+								Get Link
 							</button>
 						}
 					</div>
@@ -81,10 +81,10 @@
 
 		@if (recordingUrl()) {
 			<div class="url-section fade-in">
-				<h3 class="section-label">Shareable Link</h3>
+				<h3 class="section-label">{{ selectedAccessLabel() }}</h3>
 				<div class="url-container">
 					<mat-form-field appearance="outline" class="url-field">
-						<mat-label>Recording URL</mat-label>
+						<mat-label>Access link</mat-label>
 						<input matInput [value]="recordingUrl()" readonly class="url-input" />
 						<mat-icon matPrefix class="url-prefix-icon">link</mat-icon>
 						<button
@@ -99,12 +99,6 @@
 							<mat-icon>{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
 						</button>
 					</mat-form-field>
-					@if (copied()) {
-						<div class="copy-success-message fade-in">
-							<mat-icon>check_circle</mat-icon>
-							Link copied to clipboard!
-						</div>
-					}
 				</div>
 
 				<div class="url-actions">

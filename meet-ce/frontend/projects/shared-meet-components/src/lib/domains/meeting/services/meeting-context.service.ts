@@ -4,7 +4,7 @@ import { SessionStorageService } from '../../../shared/services/session-storage.
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { CustomParticipantModel } from '../models';
 import { ParticipantService, Room, ViewportService } from '../openvidu-components';
-import { MeetingAccessLinkService } from './meeting-access-link.service';
+import { RoomAccessLinkService } from './room-access-link.service';
 
 /**
  * Central service for managing meeting context and state during the MEETING PHASE.
@@ -20,7 +20,7 @@ export class MeetingContextService {
 	private readonly globalConfigService = inject(GlobalConfigService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
-	private readonly meetingAccessLinkService = inject(MeetingAccessLinkService);
+	private readonly roomAccessLinkService = inject(RoomAccessLinkService);
 
 	private readonly _roomId = signal<string | undefined>(undefined);
 	private readonly _roomSecret = signal<string | undefined>(undefined);
@@ -176,7 +176,7 @@ export class MeetingContextService {
 	 */
 	clearContext(): void {
 		this._roomId.set(undefined);
-		this.meetingAccessLinkService.clear();
+		this.roomAccessLinkService.clear();
 		this._roomSecret.set(undefined);
 		this._e2eeKey.set('');
 		this._isE2eeKeyFromUrl.set(false);

@@ -21,7 +21,7 @@ test.describe('Share Link E2E Tests', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test('should show share-link-overlay with main-share-meeting-link and copy-url-btn when joining', async ({
+	test('should show share-link-overlay with main-share-room-access-link and copy-url-btn when joining', async ({
 		page
 	}) => {
 		await openMeeting(page, accessUrl);
@@ -29,7 +29,7 @@ test.describe('Share Link E2E Tests', () => {
 
 		const shareOverlay = page.locator('#share-link-overlay');
 		await expect(shareOverlay).toBeVisible();
-		await expect(shareOverlay.locator('.main-share-meeting-link')).toBeVisible();
+		await expect(shareOverlay.locator('.main-share-room-access-link')).toBeVisible();
 		await expect(shareOverlay.locator('.copy-url-btn')).toBeVisible();
 
 		// The webcomponent-only waiting overlay must not be present in SPA mode
@@ -44,10 +44,10 @@ test.describe('Share Link E2E Tests', () => {
 
 		await toggleParticipantsPanel(page);
 
-		// In SPA mode the participants panel shows the share/copy meeting link panel
+		// In SPA mode the participants panel shows the share/copy room access link panel
 		const invitePanel = page.locator('#invite-panel');
 		await expect(invitePanel).toBeVisible();
-		await expect(invitePanel.locator('ov-share-meeting-link')).toBeVisible();
+		await expect(invitePanel.locator('ov-share-room-access-link')).toBeVisible();
 
 		// The webcomponent-only waiting panel must not be present
 		await expect(page.locator('#waiting-panel')).toHaveCount(0);

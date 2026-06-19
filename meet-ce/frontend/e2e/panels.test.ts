@@ -177,10 +177,10 @@ test.describe('Panels E2E Tests', () => {
 
 			await toggleParticipantsPanel(page);
 			await expectVisible(page, '.local-participant-container');
-			await expectVisible(page, '.share-meeting-link-container .copy-url-btn');
+			await expectVisible(page, '.share-room-access-link-container .copy-url-btn');
 			await installClipboardCapture(page);
 
-			await page.locator('.share-meeting-link-container .copy-url-btn').first().click();
+			await page.locator('.share-room-access-link-container .copy-url-btn').first().click();
 			await expectCopiedUrl(page);
 		});
 	});

@@ -1,8 +1,9 @@
-name: privateAcess
+name: privateAccess
 in: query
 description: >
-    Specifies if the recording URL should be restricted to private access, 
-    meaning only authenticated users can view or download the recording.
+    Specifies whether the generated recording URL is restricted to OpenVidu Meet users (`true`),
+    meaning only logged-in users can view or download the recording, or accessible by anyone with the
+    link without logging in (`false`).
 required: false
 schema:
     type: boolean

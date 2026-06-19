@@ -1128,7 +1128,7 @@ export class ActivitiesPanelDirective {
  * 		this.remoteParticipantsSubs.unsubscribe();
  * 	}
  *
- * 	// Function called when a participant requests a token to join the room.
+ * 	// Function called when a participant requests a token to join the meeting.
  * 	async onTokenRequested(participantName: string) {
  * 		const { token } = await this.getToken(this.roomName, participantName);
  * 		this.token = token;

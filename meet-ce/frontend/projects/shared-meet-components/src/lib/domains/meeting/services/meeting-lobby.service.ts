@@ -9,7 +9,7 @@ import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
 import { LoggerService } from '../openvidu-components';
-import { MeetingAccessLinkService } from './meeting-access-link.service';
+import { RoomAccessLinkService } from './room-access-link.service';
 import { MeetingContextService } from './meeting-context.service';
 
 /**
@@ -19,7 +19,7 @@ import { MeetingContextService } from './meeting-context.service';
 @Injectable()
 export class MeetingLobbyService {
 	protected roomService = inject(RoomService);
-	protected accessLinkService = inject(MeetingAccessLinkService);
+	protected accessLinkService = inject(RoomAccessLinkService);
 	protected meetingContextService = inject(MeetingContextService);
 	protected recordingService = inject(RecordingService);
 	protected authService = inject(AuthService);
@@ -83,8 +83,8 @@ export class MeetingLobbyService {
 			this.meetingContextService.meetingUI().showShareAccessLinks
 		);
 	});
-	/** Computed signal for meeting URL derived from MeetingContextService */
-	readonly meetingUrl = computed(() => this.accessLinkService.speakerPublicLink() ?? '');
+	/** Computed signal for room access URL derived from MeetingContextService */
+	readonly roomAccessUrl = computed(() => this.accessLinkService.speakerPublicLink() ?? '');
 
 	/** Readonly signal for the room member token */
 	readonly roomMemberToken = this._roomMemberToken.asReadonly();
@@ -207,10 +207,10 @@ export class MeetingLobbyService {
 	}
 
 	/**
-	 * Copies the meeting speaker link to clipboard
+	 * Copies the room access link to clipboard
 	 */
-	copyMeetingSpeakerLink() {
-		this.accessLinkService.copyMeetingSpeakerLink();
+	copyRoomAccessLink() {
+		this.accessLinkService.copyRoomAccessLink();
 	}
 
 	/**

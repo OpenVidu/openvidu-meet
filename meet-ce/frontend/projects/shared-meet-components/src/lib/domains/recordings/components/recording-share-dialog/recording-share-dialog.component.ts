@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -58,6 +58,8 @@ export class RecordingShareDialogComponent implements OnInit {
 	loading = signal(false);
 	erroMessage = signal<string | undefined>(undefined);
 	copied = signal(false);
+
+	selectedAccessLabel = computed(() => (this.accessType() === 'public' ? 'Anyone' : 'OpenVidu Meet users'));
 
 	async ngOnInit() {
 		const hasRecordingAccess = this.data.hasRecordingAccess ?? true;

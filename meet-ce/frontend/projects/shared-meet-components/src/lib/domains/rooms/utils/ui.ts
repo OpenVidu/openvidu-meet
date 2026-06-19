@@ -34,11 +34,11 @@ export class RoomUiUtils {
 	static getStatusTooltip(room: MeetRoom): string {
 		switch (room.status) {
 			case MeetRoomStatus.OPEN:
-				return 'Room is open and ready to accept participants';
+				return 'Room is open and available for members to start a meeting';
 			case MeetRoomStatus.ACTIVE_MEETING:
 				return 'A meeting is currently ongoing in this room';
 			case MeetRoomStatus.CLOSED:
-				return 'Room is closed and not accepting participants';
+				return 'Room is closed and not available for members to start a meeting';
 		}
 	}
 
@@ -201,7 +201,7 @@ export class RoomUiUtils {
 	}
 
 	static getRoomToggleTooltip(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'Close room' : 'Open room to allow participants to join';
+		return room.status !== MeetRoomStatus.CLOSED ? 'Close room' : 'Open room to allow members to start a meeting';
 	}
 
 	/**
@@ -225,7 +225,7 @@ export class RoomUiUtils {
 	 */
 	static getAccessRoomTooltip(room: MeetRoom): string {
 		if (!RoomUiUtils.canAccessRoom(room)) {
-			return 'Room is closed. Reopen the room to allow participants to join';
+			return 'Room is closed. Reopen the room to allow members to access it';
 		}
 
 		return 'Access room';
@@ -275,10 +275,10 @@ export class RoomUiUtils {
 	 */
 	static getEditRoomTooltip(room: MeetRoom): string {
 		if (!RoomUiUtils.canEditRoom(room)) {
-			return 'Room is active. Editing is disabled during an active meeting';
+			return 'Editing the room is disabled during an active meeting';
 		}
 
-		return 'Edit room details';
+		return 'Edit room settings';
 	}
 
 	// ==== OTHER UTILITIES =====

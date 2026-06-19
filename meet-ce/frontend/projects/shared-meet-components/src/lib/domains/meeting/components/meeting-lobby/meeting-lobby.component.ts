@@ -5,7 +5,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
-import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
+import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
 import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 
 /**
@@ -24,7 +24,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MatCardModule,
 		MatButtonModule,
 		MatIconModule,
-		ShareMeetingLinkComponent
+		ShareRoomAccessLinkComponent
 	],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -41,7 +41,7 @@ export class MeetingLobbyComponent {
 
 	protected showRecordingCard = this.lobbyService.showRecordingCard;
 	protected showShareLink = this.lobbyService.showShareLink;
-	protected meetingUrl = this.lobbyService.meetingUrl;
+	protected roomAccessUrl = this.lobbyService.roomAccessUrl;
 	protected showBackButton = this.lobbyService.showBackButton;
 	protected backButtonText = this.lobbyService.backButtonText;
 
@@ -58,6 +58,6 @@ export class MeetingLobbyComponent {
 	}
 
 	onCopyLinkClick(): void {
-		this.lobbyService.copyMeetingSpeakerLink();
+		this.lobbyService.copyRoomAccessLink();
 	}
 }

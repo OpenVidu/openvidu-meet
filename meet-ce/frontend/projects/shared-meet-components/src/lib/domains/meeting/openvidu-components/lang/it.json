@@ -36,7 +36,7 @@
     "AUDIO_DEVICE": "Dispositivo audio",
     "NO_VIDEO_DEVICE": "Dispositivo video non trovato",
     "NO_AUDIO_DEVICE": "Dispositivo audio non trovato",
-    "JOIN": "Unisciti alla stanza",
+    "JOIN": "Partecipa alla riunione",
     "PREPARING": "Preparazione della stanza in corso..."
   },
   "TOOLBAR": {
@@ -86,7 +86,7 @@
     "CHAT": {
       "TITLE": "Chat",
       "YOU": "Tu",
-      "SUBTITLE": "I messaggi verranno rimossi alla fine della stanza",
+      "SUBTITLE": "I messaggi verranno rimossi alla fine della riunione",
       "PLACEHOLDER": "Invia un messaggio...",
       "SEND": "Invia",
       "MESSAGE_SENT_NOTIFICATION": "messaggio inviato",

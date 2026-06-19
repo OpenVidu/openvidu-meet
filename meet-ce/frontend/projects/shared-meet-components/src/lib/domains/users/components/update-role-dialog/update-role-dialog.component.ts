@@ -57,7 +57,7 @@ export class UpdateRoleDialogComponent {
 			case MeetUserRole.ROOM_MEMBER:
 				return 'If this user owns rooms, ownership will be transferred to the root admin.';
 			case MeetUserRole.ADMIN:
-				return 'All room memberships for this user will be removed because admins have direct access to all rooms.';
+				return 'All room memberships of this user will be removed because admins have direct access to all rooms.';
 			default:
 				return '';
 		}

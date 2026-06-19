@@ -71,8 +71,8 @@
 			<div class="guest-info-box">
 				<mat-icon class="guest-info-icon">link</mat-icon>
 				<p class="guest-info-text">
-					Identified guests are not users. After being added, they will be assigned a
-					<strong>unique access URL</strong> to join this room. You can copy this URL from the member list.
+					Identified guests are not OpenVidu Meet users. After being added, they will be assigned a
+					<strong>unique link</strong> to access this room. You can copy this link from the member list.
 				</p>
 			</div>
 		}
@@ -81,7 +81,7 @@
 			<mat-icon matPrefix class="field-prefix-icon material-symbols-outlined">person</mat-icon>
 			<input matInput formControlName="memberName" placeholder="Enter a display name..." autofocus />
 			@if (!lockIdentity()) {
-				<mat-hint>A display name for the identified guest</mat-hint>
+				<mat-hint>A display name for the guest</mat-hint>
 			}
 			@if (getFieldError('memberName')) {
 				<mat-error>{{ getFieldError('memberName') }}</mat-error>

@@ -8,21 +8,21 @@
 		>
 			<ng-container *ovLayoutAdditionalElements>
 				@if (shouldShowLinkOverlay()) {
-					<div id="share-link-overlay" class="main-share-meeting-link-container fade-in-delayed OV_big">
-						<ov-share-meeting-link
-							class="main-share-meeting-link"
+					<div id="share-link-overlay" class="main-share-room-access-link-container fade-in-delayed OV_big">
+						<ov-share-room-access-link
+							class="main-share-room-access-link"
 							[title]="linkOverlayConfig.title"
 							[subtitle]="linkOverlayConfig.subtitle"
 							[titleSize]="linkOverlayConfig.titleSize"
 							[titleWeight]="linkOverlayConfig.titleWeight"
-							[meetingUrl]="meetingUrl() ?? ''"
-							(copyClicked)="onCopyMeetingLinkClicked()"
+							[roomAccessUrl]="roomAccessUrl() ?? ''"
+							(copyClicked)="onCopyRoomAccessLinkClicked()"
 						/>
 					</div>
 				} @else if (shouldShowWaitingOverlay()) {
-					<div id="waiting-overlay" class="main-share-meeting-link-container fade-in-delayed OV_big">
+					<div id="waiting-overlay" class="main-share-room-access-link-container fade-in-delayed OV_big">
 						<ov-meeting-waiting-panel
-							class="main-share-meeting-link"
+							class="main-share-room-access-link"
 							subtitle="You're the only one here right now."
 						/>
 					</div>

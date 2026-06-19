@@ -1,27 +1,27 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
-import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
+import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
+import { RoomAccessLinkService } from '../../services/room-access-link.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 
 /**
- * Reusable component for displaying the share meeting link panel
+ * Reusable component for displaying the share room access link panel
  * inside the participants panel.
  */
 @Component({
 	selector: 'ov-meeting-invite-panel',
 	templateUrl: './meeting-invite-panel.component.html',
 	styleUrls: ['./meeting-invite-panel.component.scss'],
-	imports: [ShareMeetingLinkComponent],
+	imports: [ShareRoomAccessLinkComponent],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingInvitePanelComponent {
 	protected meetingContextService = inject(MeetingContextService);
-	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
+	protected roomAccessLinkService = inject(RoomAccessLinkService);
 
 	showShareLink = computed(() => this.meetingContextService.meetingUI().showShareAccessLinks);
-	meetingUrl = this.meetingAccessLinkService.speakerPublicLink;
+	roomAccessUrl = this.roomAccessLinkService.speakerPublicLink;
 
 	onCopyClicked(): void {
-		this.meetingAccessLinkService.copyMeetingSpeakerLink();
+		this.roomAccessLinkService.copyRoomAccessLink();
 	}
 }

@@ -36,7 +36,7 @@
     "AUDIO_DEVICE": "Audiospeler",
     "NO_VIDEO_DEVICE": "Videoapparaat niet gevonden",
     "NO_AUDIO_DEVICE": "Audioapparaat niet gevonden",
-    "JOIN": "Deelnemen aan kamer",
+    "JOIN": "Deelnemen aan meeting",
     "PREPARING": "Kamer voorbereiden ..."
   },
   "TOOLBAR": {
@@ -86,7 +86,7 @@
     "CHAT": {
       "TITLE": "Chat",
       "YOU": "Jij",
-      "SUBTITLE": "Berichten worden aan het einde van de kamer verwijderd",
+      "SUBTITLE": "Berichten worden aan het einde van de meeting verwijderd",
       "PLACEHOLDER": "Stuur een bericht ...",
       "SEND": "Versturen",
       "MESSAGE_SENT_NOTIFICATION": "bericht verzonden",

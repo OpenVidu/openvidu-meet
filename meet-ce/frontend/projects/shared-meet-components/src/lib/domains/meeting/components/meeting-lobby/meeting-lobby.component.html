@@ -8,7 +8,7 @@
 				@if (isE2EEEnabled()) {
 					<span class="encryption-badge" matTooltip="End-to-end encrypted">
 						<mat-icon class="badge-icon">lock</mat-icon>
-						This meeting is end-to-end encrypted
+						Meetings in this room are end-to-end encrypted
 					</span>
 				}
 			</div>
@@ -18,7 +18,9 @@
 		<div class="action-cards-grid">
 			<!-- Join Meeting Card -->
 			<mat-card
-				[class]="'action-card primary-card fade-in' + (roomClosed() || !canJoinMeeting() ? ' room-closed-card' : '')"
+				[class]="
+					'action-card primary-card fade-in' + (roomClosed() || !canJoinMeeting() ? ' room-closed-card' : '')
+				"
 			>
 				<mat-card-header class="card-header">
 					<mat-icon class="ov-room-icon card-icon">{{
@@ -32,7 +34,7 @@
 							roomClosed()
 								? 'This room is not available for meetings'
 								: !canJoinMeeting()
-									? 'You do not have permission to join this meeting'
+									? 'You do not have permission to join meetings in this room'
 									: 'Join the meeting and start connecting'
 						}}</mat-card-subtitle>
 					</div>
@@ -73,7 +75,7 @@
 									@if (participantForm().get('e2eeKey')?.hasError('required')) {
 										<mat-error> The encryption key is <strong>required</strong> </mat-error>
 									}
-									<mat-hint>This room requires an encryption key to join</mat-hint>
+									<mat-hint>This room requires an encryption key to join the meeting</mat-hint>
 								</mat-form-field>
 							}
 
@@ -92,16 +94,16 @@
 						<div class="room-closed-message">
 							<mat-icon class="warning-icon">warning</mat-icon>
 							<p>
-								Sorry, this room is closed. You cannot join at this time. Please contact the meeting
-								organizer for more information.
+								Sorry, this room is closed. You cannot join the meeting at this time. Please
+								contact a room manager for more information.
 							</p>
 						</div>
 					} @else {
 						<div class="room-closed-message">
 							<mat-icon class="warning-icon">block</mat-icon>
 							<p>
-								Sorry, you have access to this room but do not have permission to join meetings.
-								Please contact the meeting organizer for more information.
+								Sorry, you have access to this room but do not have permission to join meetings. Please
+								contact a room manager for more information.
 							</p>
 						</div>
 					}
@@ -143,7 +145,7 @@
 
 		<!-- Room URL Badge -->
 		@if (!roomClosed() && canJoinMeeting() && showShareLink()) {
-			<ov-share-meeting-link [meetingUrl]="meetingUrl()" (copyClicked)="onCopyLinkClick()" />
+			<ov-share-room-access-link [roomAccessUrl]="roomAccessUrl()" (copyClicked)="onCopyLinkClick()" />
 		}
 
 		<!-- Quick Actions -->

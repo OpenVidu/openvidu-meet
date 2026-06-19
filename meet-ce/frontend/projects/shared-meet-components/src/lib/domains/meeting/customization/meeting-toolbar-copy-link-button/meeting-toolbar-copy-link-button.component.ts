@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
+import { RoomAccessLinkService } from '../../services/room-access-link.service';
 
 /**
  * Toolbar button that copies the meeting speaker (access) link.
@@ -19,15 +19,15 @@ import { MeetingAccessLinkService } from '../../services/meeting-access-link.ser
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarCopyLinkButtonComponent {
-	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
+	protected roomAccessLinkService = inject(RoomAccessLinkService);
 
 	/** Whether the device is mobile (affects button style) */
 	isMobile = input<boolean>(false);
 
-	copyLinkTooltip = 'Copy the meeting link';
-	copyLinkText = 'Copy meeting link';
+	copyLinkTooltip = 'Copy the room access link';
+	copyLinkText = 'Copy room access link';
 
 	onCopyLinkClick(): void {
-		void this.meetingAccessLinkService.copyMeetingSpeakerLink();
+		void this.roomAccessLinkService.copyRoomAccessLink();
 	}
 }

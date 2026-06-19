@@ -11,7 +11,7 @@ import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingToolbarCopyLinkButtonComponent } from '../meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-button.component';
 
 /**
- * Component for extra toolbar buttons (like captions and copy meeting link).
+ * Component for extra toolbar buttons (like captions and copy room access link).
  * These buttons can appear inside the "More Options" menu on mobile.
  */
 @Component({

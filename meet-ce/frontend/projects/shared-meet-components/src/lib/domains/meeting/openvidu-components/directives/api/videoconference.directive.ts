@@ -397,7 +397,7 @@ export class PrejoinDirective implements OnDestroy {
 }
 
 /**
- * The **videoEnabled** directive allows to join the room with camera enabled or disabled.
+ * The **videoEnabled** directive allows to join the meeting with camera enabled or disabled.
  *
  * It is only available for {@link VideoconferenceComponent}.
  *
@@ -468,7 +468,7 @@ export class VideoEnabledDirective implements OnDestroy {
 }
 
 /**
- * The **audioEnabled** directive allows to join the room with microphone enabled or disabled.
+ * The **audioEnabled** directive allows to join the meeting with microphone enabled or disabled.
  *
  * It is only available for {@link VideoconferenceComponent}.
  *

@@ -9,7 +9,7 @@
 			@if (isEditMode()) {
 				Update permissions for this room member.
 			} @else {
-				Assign a user or an identified guest to this room.
+				Grant access to a user or an identified guest for this room.
 			}
 		</p>
 	</div>
@@ -25,15 +25,15 @@
 				<mat-card-subtitle>
 					@if (isEditMode()) {
 						@if (memberType() === 'user') {
-							Update user's permissions in this room
+							Update user's permissions for this room
 						} @else {
-							Update identified guest's permissions in this room
+							Update identified guest's permissions for this room
 						}
 					} @else {
 						@if (memberType() === 'user') {
 							Select a user and configure their permissions
 						} @else {
-							Add an identified guest and configure their permissions
+							Select a name for the guest and configure their permissions
 						}
 					}
 				</mat-card-subtitle>

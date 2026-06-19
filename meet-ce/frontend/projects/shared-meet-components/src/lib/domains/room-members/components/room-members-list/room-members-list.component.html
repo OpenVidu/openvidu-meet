@@ -4,7 +4,7 @@
 		<div class="empty-content">
 			<mat-icon class="empty-icon">group_off</mat-icon>
 			<h3>No members yet</h3>
-			<p>This room doesn't have any members assigned.</p>
+			<p>This room doesn't have any member assigned.</p>
 			<div class="getting-started-actions">
 				<button mat-flat-button color="primary" class="primary-button" (click)="addMember()">
 					<mat-icon>person_add</mat-icon>
@@ -138,7 +138,7 @@
 						color="warn"
 						(click)="bulkDeleteSelected()"
 						[disabled]="loading()"
-						matTooltip="Delete selected members"
+						matTooltip="Remove selected members"
 						id="members-bulk-delete-btn"
 					>
 						<mat-icon [matBadge]="selectedMembers().size" matBadgePosition="below after"

@@ -9,7 +9,7 @@ dotenv.config();
 
 // Configuration
 const SERVER_PORT = process.env.SERVER_PORT || 6080;
-const OV_MEET_SERVER_URL = process.env.OV_MEET_SERVER_URL || 'http://localhost:9080';
+const OV_MEET_SERVER_URL = process.env.OV_MEET_SERVER_URL || 'http://localhost:9080/meet';
 const OV_MEET_API_KEY = process.env.OV_MEET_API_KEY || 'meet-api-key';
 
 const app = express();

@@ -2,18 +2,28 @@
 	<!-- Empty State -->
 	<div class="no-rooms-state">
 		<div class="empty-content">
+			<h3>No rooms available</h3>
 			@if (currentUserRole() === MeetUserRole.ROOM_MEMBER) {
-				<h3>No rooms available</h3>
-				<p>No rooms have been assigned to you yet. Contact an administrator to gain access to a room.</p>
-			} @else {
-				<h3>No rooms created yet</h3>
 				<p>
-					No rooms found. Create your first room to start hosting meetings and manage your video conferences.
+					You are not a member of any room yet. Contact a room manager or administrator to gain access to a
+					room.
 				</p>
+			} @else {
+				@if (currentUserRole() === MeetUserRole.ADMIN) {
+					<p>
+						There are no rooms in OpenVidu Meet yet. Create the first room to start hosting meetings and
+						manage your video conferences.
+					</p>
+				} @else {
+					<p>
+						You don't have access to any room yet. Create your first room to start hosting meetings and
+						manage your video conferences.
+					</p>
+				}
 				<div class="getting-started-actions">
 					<button mat-button (click)="createRoom()" class="create-room-btn primary-button">
 						<mat-icon>add</mat-icon>
-						Create Your First Room
+						Create First Room
 					</button>
 				</div>
 			}
@@ -186,8 +196,8 @@
 				<div class="filter-group">
 					<h4>Include rooms by user or access</h4>
 					<p class="filter-description">
-						Leave empty to include all rooms. Set any field below to limit the result to the union of
-						the selected criteria.
+						Leave empty to include all rooms. Set any field below to limit the result to the union of the
+						selected criteria.
 					</p>
 					<mat-form-field class="ov-search-field" appearance="outline" id="owner-filter-field">
 						<mat-label>Owner (user ID)</mat-label>
@@ -260,10 +270,7 @@
 						</button>
 					</mat-form-field>
 					<div class="filter-checkboxes">
-						<mat-checkbox
-							[formControl]="controls.showUserAccessRooms"
-							id="user-access-checkbox"
-						>
+						<mat-checkbox [formControl]="controls.showUserAccessRooms" id="user-access-checkbox">
 							Open to all users
 						</mat-checkbox>
 					</div>
@@ -272,8 +279,8 @@
 				<div class="filter-group">
 					<h4>Include rooms</h4>
 					<p class="filter-description">
-						Leave empty to show all accessible rooms. Select any to limit the result to the union of
-						the selected groups.
+						Leave empty to show all accessible rooms. Select any to limit the result to the union of the
+						selected groups.
 					</p>
 					<div class="filter-checkboxes">
 						@if (currentUserRole() === MeetUserRole.ROOM_MANAGER) {
@@ -284,10 +291,7 @@
 						<mat-checkbox [formControl]="controls.showMemberRooms" id="member-rooms-checkbox">
 							I'm a member of
 						</mat-checkbox>
-						<mat-checkbox
-							[formControl]="controls.showUserAccessRooms"
-							id="user-access-checkbox"
-						>
+						<mat-checkbox [formControl]="controls.showUserAccessRooms" id="user-access-checkbox">
 							Open to all users
 						</mat-checkbox>
 					</div>

@@ -70,6 +70,17 @@ export class RoomShareDialogComponent {
 		}
 	});
 
+	selectedAccessLabel = computed(() => {
+		switch (this.selectedAccessType()) {
+			case 'anonymous-moderator':
+				return 'Anonymous Moderator';
+			case 'anonymous-speaker':
+				return 'Anonymous Speaker';
+			case 'user':
+				return this.data.access.user.enabled ? 'Users' : 'User Members';
+		}
+	});
+
 	isCurrentAccessSelectable = computed(() => this.isAccessEnabled(this.selectedAccessType()));
 
 	isAccessEnabled(accessType: RoomAccessType): boolean {
@@ -80,8 +91,8 @@ export class RoomShareDialogComponent {
 			case 'anonymous-speaker':
 				return access.anonymous.speaker.enabled;
 			case 'user':
-				// User access link always works for admins and room members,
-				// even when general user access is "restricted" (disabled).
+				// User access link always works for admins and user members,
+				// even when general user access is disabled.
 				return true;
 		}
 	}

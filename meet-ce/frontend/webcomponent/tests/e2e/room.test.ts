@@ -174,7 +174,7 @@ test.describe('Room Features E2E Tests', () => {
 				await leaveMeeting(page, { integration, role: 'moderator' });
 			});
 
-			test('does not render the share-meeting-link component in the lobby', async ({ page }) => {
+			test('does not render the share-room-access-link component in the lobby', async ({ page }) => {
 				const room = await createRoom({ config: { e2ee: { enabled: true } } });
 				createdRoomIds.push(room.roomId);
 				const accessUrl = room.access.anonymous.moderator.url;
@@ -186,7 +186,7 @@ test.describe('Room Features E2E Tests', () => {
 				);
 
 				await expect(meetLocator(page, integration, '#participant-name-input')).toBeVisible();
-				await expect(meetLocator(page, integration, 'ov-share-meeting-link')).toHaveCount(0);
+				await expect(meetLocator(page, integration, 'ov-share-room-access-link')).toHaveCount(0);
 			});
 
 			test('shows the waiting panel instead of the invite panel in the participants panel', async ({ page }) => {

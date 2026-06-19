@@ -350,11 +350,11 @@
             Retrieves the URL of a recording with the specified recording ID.
             This URL is intended to be shared with people who do not have direct access to the recording.
 
-            It can be configured to be accessible by anyone (public access) or restricted to authenticated users only,
+            It can be restricted to OpenVidu Meet users only, or made accessible by anyone with the link,
             depending on the `privateAccess` query parameter.
 
-            > **Note:** If `privateAccess=false`, public URL generation requires `access.anonymous.recording.enabled=true` in the room configuration.
-            > Otherswise, a 403 error is returned.
+            > **Note:** If `privateAccess=false` (accessible by anyone), public URL generation requires `access.anonymous.recording.enabled=true` in the room configuration.
+            > Otherwise, a 403 error is returned.
         tags:
             - OpenVidu Meet - Recordings
         security:

@@ -86,7 +86,7 @@
     "CHAT": {
       "TITLE": "Chat",
       "YOU": "Tú",
-      "SUBTITLE": "Los mensajes se borrarán al salir de la sala",
+      "SUBTITLE": "Los mensajes se borrarán al finalizar la reunión",
       "PLACEHOLDER": "Enviar mensaje...",
       "SEND": "Enviar",
       "MESSAGE_SENT_NOTIFICATION": "mensaje enviado",

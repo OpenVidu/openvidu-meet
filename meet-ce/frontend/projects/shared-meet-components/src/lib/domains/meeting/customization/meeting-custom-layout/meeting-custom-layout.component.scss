@@ -90,7 +90,7 @@
 	// padding: 4px 4px 2px 4px !important;
 }
 
-.main-share-meeting-link-container {
+.main-share-room-access-link-container {
 	background-color: var(--ov-surface-color); // Use ov-components variable
 	display: flex;
 	align-items: center;
@@ -104,7 +104,7 @@
 	pointer-events: none;
 	z-index: 1;
 
-	.main-share-meeting-link {
+	.main-share-room-access-link {
 		pointer-events: all;
 		max-width: 100%;
 	}

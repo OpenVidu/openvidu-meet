@@ -1,0 +1,22 @@
+<div class="room-access-url-badge">
+	@if (title()) {
+		<div class="room-access-url-badge-title" [class]="[titleSize(), titleWeight()]">{{ title() }}</div>
+	}
+
+	@if (subtitle()) {
+		<div class="room-access-url-badge-subtitle">
+			{{ subtitle() }}
+		</div>
+	}
+
+	<div class="room-access-url-badge-container" (click)="copyClicked.emit()">
+		<span class="room-access-url-text">{{ roomAccessUrl() }}</span>
+		<button matIconButton class="copy-url-btn" matTooltip="Copy room access link">
+			<mat-icon>content_copy</mat-icon>
+		</button>
+	</div>
+
+	@if (additionalInfo()) {
+		<div class="room-access-url-badge-additional-info">{{ additionalInfo() }}</div>
+	}
+</div>

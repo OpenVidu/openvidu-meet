@@ -36,7 +36,7 @@
     "AUDIO_DEVICE": "Audiogerät",
     "NO_VIDEO_DEVICE": "Video-Gerät nicht gefunden",
     "NO_AUDIO_DEVICE": "Audio-Gerät nicht gefunden",
-    "JOIN": "Raum beitreten",
+    "JOIN": "Meeting beitreten",
     "PREPARING": "Raum vorbereiten..."
   },
   "TOOLBAR": {
@@ -86,7 +86,7 @@
     "CHAT": {
       "TITLE": "Chat",
       "YOU": "Sie",
-      "SUBTITLE": "Nachrichten werden am Ende der Raum entfernt",
+      "SUBTITLE": "Nachrichten werden am Ende des Meetings entfernt",
       "PLACEHOLDER": "Eine Nachricht senden...",
       "SEND": "Senden",
       "MESSAGE_SENT_NOTIFICATION": "Nachricht gesendet",

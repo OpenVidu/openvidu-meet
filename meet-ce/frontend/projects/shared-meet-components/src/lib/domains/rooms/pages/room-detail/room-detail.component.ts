@@ -491,7 +491,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 	private copyMemberLink(member: MeetRoomMember) {
 		this.clipboard.copy(member.accessUrl);
-		this.notificationService.showSnackbar('Member access URL copied to clipboard');
+		this.notificationService.showSnackbar('Member access link copied to clipboard');
 	}
 
 	private deleteMember(member: MeetRoomMember) {

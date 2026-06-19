@@ -1,11 +1,11 @@
 import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
-import { ShareMeetingLinkComponent } from '../../components/share-meeting-link/share-meeting-link.component';
+import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
 import { OpenViduComponentsUiModule, PanelService, PanelType } from '../../openvidu-components';
 import { SmartLayoutComponent } from '../../openvidu-components/components/layout/smart-layout/smart-layout.component';
 import { SmartLayoutService } from '../../openvidu-components/services/layout/smart-layout.service';
-import { MeetingAccessLinkService } from '../../services/meeting-access-link.service';
+import { RoomAccessLinkService } from '../../services/room-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingLayoutService } from '../../services/meeting-layout.service';
@@ -18,7 +18,7 @@ import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-w
 		NgClass,
 		OpenViduComponentsUiModule,
 		SmartLayoutComponent,
-		ShareMeetingLinkComponent,
+		ShareRoomAccessLinkComponent,
 		MeetingCaptionsComponent,
 		MeetingWaitingPanelComponent
 	],
@@ -29,13 +29,13 @@ import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-w
 })
 export class MeetingCustomLayoutComponent {
 	protected meetingContextService = inject(MeetingContextService);
-	protected meetingAccessLinkService = inject(MeetingAccessLinkService);
+	protected roomAccessLinkService = inject(RoomAccessLinkService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected panelService = inject(PanelService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
 	lkRoom = this.meetingContextService.lkRoom;
-	meetingUrl = this.meetingAccessLinkService.speakerPublicLink;
+	roomAccessUrl = this.roomAccessLinkService.speakerPublicLink;
 	areCaptionsEnabledByUser = this.captionsService.areCaptionsEnabledByUser;
 	captions = this.captionsService.captions;
 	isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode;
@@ -50,7 +50,7 @@ export class MeetingCustomLayoutComponent {
 	 * Share/copy link overlay: standalone SPA only.
 	 */
 	shouldShowLinkOverlay = computed(() => {
-		const hasPublicSpeakerLink = !!this.meetingUrl();
+		const hasPublicSpeakerLink = !!this.roomAccessUrl();
 		return (
 			!this.isEmbeddedMode() &&
 			this.meetingContextService.meetingUI().showShareAccessLinks &&
@@ -70,8 +70,8 @@ export class MeetingCustomLayoutComponent {
 
 	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);
 
-	protected onCopyMeetingLinkClicked(): void {
-		this.meetingAccessLinkService.copyMeetingSpeakerLink();
+	protected onCopyRoomAccessLinkClicked(): void {
+		this.roomAccessLinkService.copyRoomAccessLink();
 	}
 
 	protected toggleParticipantsPanel(): void {

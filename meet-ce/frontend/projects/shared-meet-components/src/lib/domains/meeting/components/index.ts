@@ -1,2 +1,2 @@
 export * from './meeting-lobby/meeting-lobby.component';
-export * from './share-meeting-link/share-meeting-link.component';
+export * from './share-room-access-link/share-room-access-link.component';

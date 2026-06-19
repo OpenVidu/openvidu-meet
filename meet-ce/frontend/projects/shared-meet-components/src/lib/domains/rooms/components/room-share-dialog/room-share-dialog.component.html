@@ -22,19 +22,21 @@
 										@if (data.access.user.enabled) {
 											Users
 										} @else {
-											Members
+											User Members
 										}
 									</span>
 									<span class="option-description">
 										@if (data.access.user.enabled) {
-											Any user can join
-										} @else if (data.canManageRoom) {
-											For members only.
-											<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
-											to enable it for all users.
+											Any user can access the room. Non-members will get Speaker permissions.
 										} @else {
-											For members only. Ask the room owner or an admin to enable it for
-											all users.
+											@if (data.canManageRoom) {
+												Only for users that are members.
+												<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
+												to enable it for all users.
+											} @else {
+												For users that are members only. Ask a room manager to enable it for all
+												users.
+											}
 										}
 									</span>
 								</div>
@@ -53,13 +55,15 @@
 									<span class="option-title">Anonymous Speaker</span>
 									<span class="option-description">
 										@if (data.access.anonymous.speaker.enabled) {
-											Anyone with the link joins as speaker
-										} @else if (data.canManageRoom) {
-											Disabled.
-											<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
-											to enable it.
+											Any guest with the link will access the room with Speaker permissions
 										} @else {
-											Disabled. Ask the room owner or an admin to enable it.
+											@if (data.canManageRoom) {
+												Disabled.
+												<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
+												to enable it.
+											} @else {
+												Disabled. Ask a room manager to enable it.
+											}
 										}
 									</span>
 								</div>
@@ -78,13 +82,13 @@
 									<span class="option-title">Anonymous Moderator</span>
 									<span class="option-description">
 										@if (data.access.anonymous.moderator.enabled) {
-											Anyone with the link joins as moderator
+											Any guest with the link will access the room with Moderator permissions
 										} @else if (data.canManageRoom) {
 											Disabled.
 											<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
 											to enable it.
 										} @else {
-											Disabled. Ask the room owner or an admin to enable it.
+											Disabled. Ask a room manager to enable it.
 										}
 									</span>
 								</div>
@@ -112,7 +116,7 @@
 						class="generate-button"
 					>
 						<mat-icon>link</mat-icon>
-						Generate Shareable Link
+						Get Link
 					</button>
 				</div>
 			</div>
@@ -120,10 +124,10 @@
 
 		@if (roomUrl()) {
 			<div class="url-section fade-in">
-				<h3 class="section-label">Access Link</h3>
+				<h3 class="section-label">{{ selectedAccessLabel() }}</h3>
 				<div class="url-container">
 					<mat-form-field appearance="outline" class="url-field">
-						<mat-label>Room URL</mat-label>
+						<mat-label>Access link</mat-label>
 						<input matInput [value]="roomUrl()" readonly class="url-input" />
 						<mat-icon matPrefix class="url-prefix-icon">link</mat-icon>
 						<button
@@ -138,12 +142,6 @@
 							<mat-icon>{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
 						</button>
 					</mat-form-field>
-					@if (copied()) {
-						<div class="copy-success-message fade-in">
-							<mat-icon>check_circle</mat-icon>
-							Link copied to clipboard!
-						</div>
-					}
 				</div>
 
 				<div class="url-actions">

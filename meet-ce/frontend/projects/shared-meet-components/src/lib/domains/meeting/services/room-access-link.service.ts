@@ -9,13 +9,13 @@ import { LoggerService } from '../openvidu-components';
 @Injectable({
 	providedIn: 'root'
 })
-export class MeetingAccessLinkService {
+export class RoomAccessLinkService {
 	private readonly clipboard = inject(Clipboard);
 	private readonly roomService = inject(RoomService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly loggerService = inject(LoggerService);
-	private readonly log = this.loggerService.get('OpenVidu Meet - MeetingAccessLinkService');
+	private readonly log = this.loggerService.get('OpenVidu Meet - RoomAccessLinkService');
 
 	private readonly _speakerPublicLink = signal<string | undefined>(undefined);
 	private readonly _speakerCopyLink = signal<string | undefined>(undefined);
@@ -91,9 +91,9 @@ export class MeetingAccessLinkService {
 	}
 
 	/**
-	 * Copies the speaker link to the clipboard when available.
+	 * Copies the room access link (shared anonymous speaker link) to the clipboard when available.
 	 */
-	async copyMeetingSpeakerLink(): Promise<void> {
+	async copyRoomAccessLink(): Promise<void> {
 		let speakerLink = this._speakerCopyLink();
 
 		if (!speakerLink) {
@@ -111,7 +111,7 @@ export class MeetingAccessLinkService {
 		}
 
 		this.clipboard.copy(speakerLink);
-		this.notificationService.showSnackbar('Speaker link copied to clipboard');
+		this.notificationService.showSnackbar('Room access link copied to clipboard');
 	}
 
 	clear(): void {

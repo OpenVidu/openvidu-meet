@@ -30,7 +30,7 @@
     "AUDIO_DEVICE": "Audio device",
     "NO_VIDEO_DEVICE": "Video device not found",
     "NO_AUDIO_DEVICE": "Audio device not found",
-    "JOIN": "Join room",
+    "JOIN": "Join meeting",
     "PREPARING": "Preparing room..."
   },
   "ROOM": {
@@ -86,7 +86,7 @@
     "CHAT": {
       "TITLE": "Chat",
       "YOU": "You",
-      "SUBTITLE": "Messages will be removed at the end of the room",
+      "SUBTITLE": "Messages will be removed at the end of the meeting",
       "PLACEHOLDER": "Send a message...",
       "SEND": "Send",
       "MESSAGE_SENT_NOTIFICATION": "message sent",
