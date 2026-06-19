@@ -154,7 +154,12 @@ export class App {
 			if (value) url.searchParams.set(key, value);
 		};
 		set(WebComponentProperty.PARTICIPANT_NAME, this.participantNameInput);
-		set(WebComponentProperty.LEAVE_REDIRECT_URL, this.leaveRedirectUrlInput);
+		// The embedded app runs on the Meet server origin (the iframe `src`), NOT this
+		// host's origin, and cannot reliably reconstruct the host origin from
+		// document.referrer. So resolve a relative leave-redirect path against THIS
+		// window's origin here and hand the iframe an absolute URL it can navigate to
+		// (the webcomponent gets this for free since it runs in the host window).
+		set(WebComponentProperty.LEAVE_REDIRECT_URL, this.resolveLeaveRedirectUrl(this.leaveRedirectUrlInput));
 		set(WebComponentProperty.E2EE_KEY, this.e2eeKeyInput);
 		set(WebComponentProperty.SHOW_RECORDING, this.showRecordingInput);
 		if (this.showOnlyRecordingsInput) {
@@ -162,6 +167,15 @@ export class App {
 		}
 
 		return { src: url.toString(), origin: url.origin };
+	}
+
+	/**
+	 * Resolve a relative leave-redirect path (e.g. `/bye`) against this host page's
+	 * origin so the embedded iframe receives an absolute URL. Absolute URLs and
+	 * empty values are returned unchanged.
+	 */
+	private resolveLeaveRedirectUrl(value: string): string {
+		return value.startsWith('/') ? window.location.origin + value : value;
 	}
 
 	// ── Lifecycle events (unified across integrations) ──────────────────────

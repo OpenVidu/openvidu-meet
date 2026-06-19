@@ -22,7 +22,8 @@ const fs = require('fs');
 const path = require('path');
 
 const rootDir = path.resolve(__dirname, '..');
-const testappDir = path.join(rootDir, 'testapp');
+// The testapp was moved to the repo root (../../../testapp from webcomponent/).
+const testappDir = path.resolve(rootDir, '..', '..', '..', 'testapp');
 const mainJs = path.join(rootDir, 'dist', 'wc', 'browser', 'main.js');
 const wcBundle = path.join(testappDir, 'public', 'openvidu-meet-wc.js');
 
