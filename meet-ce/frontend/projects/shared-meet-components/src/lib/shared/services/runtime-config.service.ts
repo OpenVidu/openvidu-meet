@@ -55,6 +55,20 @@ export class RuntimeConfigService {
 	readonly serverBaseUrl = this._serverBaseUrl.asReadonly();
 	readonly isWebcomponentMode = this._webcomponentMode.asReadonly();
 
+	/** Whether the document is running inside a cross-document `<iframe>`. Resolved once at construction. */
+	private readonly _inIframe = this.detectInIframe();
+
+	/**
+	 * True when Meet runs inside a cross-document `<iframe>`
+	 */
+	readonly isIframeMode = computed(() => this._inIframe && !this._webcomponentMode());
+
+	/**
+	 * True when Meet runs embedded inside a host application — either as the inline
+	 * webcomponent or inside a cross-document `<iframe>`.
+	 */
+	readonly isEmbeddedMode = computed(() => this._webcomponentMode() || this.isIframeMode());
+
 	constructor() {
 		// Read from injected config, fallback to document base element, then to '/'
 		this._deploymentBasePath = window.__OPENVIDU_MEET_CONFIG__?.basePath || this.readBaseHrefFromDocument() || '/';
@@ -117,6 +131,18 @@ export class RuntimeConfigService {
 		return this._deploymentBasePath.endsWith('/')
 			? this._deploymentBasePath.slice(0, -1)
 			: this._deploymentBasePath;
+	}
+
+	/**
+	 * Detects whether the document is running inside an iframe. A cross-origin parent
+	 * makes `window.top` access throw a `SecurityError`, which itself confirms embedding.
+	 */
+	private detectInIframe(): boolean {
+		try {
+			return window.self !== window.top;
+		} catch {
+			return true;
+		}
 	}
 
 	private readBaseHrefFromDocument(): string | null {

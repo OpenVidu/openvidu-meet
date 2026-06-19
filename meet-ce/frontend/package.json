@@ -11,6 +11,7 @@
     "lib:build": "ng build shared-meet-components --configuration production",
     "lib:pack": "cd dist/shared-meet-components && pnpm pack",
     "test:unit": "ng test openvidu-meet --watch=false --code-coverage",
+    "test:unit:lib": "ng test shared-meet-components --watch=false --browsers=ChromeHeadlessCI",
     "e2e:playwright:all": "pnpm run e2e:playwright:spa && pnpm run e2e:playwright:wc",
     "e2e:playwright:spa": "playwright test --project=spa",
     "e2e:playwright:wc": "playwright test --config=webcomponent/playwright.config.ts --project=webcomponent",

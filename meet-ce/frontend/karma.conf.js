@@ -26,6 +26,15 @@ module.exports = function (config) {
 		logLevel: config.LOG_INFO,
 		autoWatch: true,
 		browsers: ['Chrome'],
+		customLaunchers: {
+			// Headless Chrome for CI: no sandbox / shared-memory tweaks so it runs
+			// inside containerized GitHub Actions runners. Select with
+			// `ng test shared-meet-components --browsers=ChromeHeadlessCI`.
+			ChromeHeadlessCI: {
+				base: 'ChromeHeadless',
+				flags: ['--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage']
+			}
+		},
 		singleRun: false,
 		restartOnFileChange: true,
 	});

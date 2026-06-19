@@ -4,7 +4,10 @@
 	"extends": "../../tsconfig.json",
 	"compilerOptions": {
 		"outDir": "../../out-tsc/spec",
-		"types": ["jasmine"]
+		"types": ["jasmine"],
+		/* pnpm hoists @types to the repo-root node_modules; include it so the
+		   "jasmine" types resolve (the inherited typeRoots only covers frontend). */
+		"typeRoots": ["../../node_modules/@types", "../../../../node_modules/@types"]
 	},
 	"include": ["**/*.spec.ts", "**/*.d.ts"]
 }

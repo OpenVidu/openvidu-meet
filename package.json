@@ -31,6 +31,7 @@
 		"test:integration-backend-config-analytics": "pnpm --filter @openvidu-meet/backend run test:integration-config-analytics",
 		"test:integration-backend-recordings": "pnpm --filter @openvidu-meet/backend run test:integration-recordings",
 		"test:unit-backend": "pnpm --filter @openvidu-meet/backend run test:unit",
+		"test:unit-frontend": "pnpm --filter @openvidu-meet/frontend run test:unit:lib",
 		"test:e2e-frontend-components": "pnpm --filter @openvidu-meet/frontend run e2e:playwright:all",
 		"test:unit-webcomponent": "pnpm --filter @openvidu-meet/webcomponent run test:unit"
 	},

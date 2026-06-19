@@ -93,6 +93,7 @@ export class NavigationService {
 	 */
 	handleLeaveRedirectUrl(leaveRedirectUrl: string | undefined) {
 		const isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode();
+		const isIframeMode = this.runtimeConfigService.isIframeMode();
 
 		// Explicit valid URL provided - use as is
 		if (leaveRedirectUrl && this.isValidUrl(leaveRedirectUrl)) {
@@ -100,17 +101,28 @@ export class NavigationService {
 			return;
 		}
 
-		// Relative path provided while embedded as a webcomponent — resolve it
-		// against the host page's origin. The Angular Elements element runs in
-		// the host's window, so `window.location.origin` IS the host origin
-		// (in the legacy iframe model this was reconstructed via document.referrer).
-		if (isWebcomponentMode && leaveRedirectUrl?.startsWith('/')) {
-			this.setLeaveRedirectUrl(window.location.origin + leaveRedirectUrl);
-			return;
+		// Relative path while embedded — resolve it against the HOST page's origin.
+		if (leaveRedirectUrl?.startsWith('/')) {
+			// Webcomponent: the Angular Elements element runs in the host's window,
+			// so `window.location.origin` IS the host origin.
+			if (isWebcomponentMode) {
+				this.setLeaveRedirectUrl(window.location.origin + leaveRedirectUrl);
+				return;
+			}
+
+			// Iframe: the app runs on the Meet server origin, so the host origin is
+			// reconstructed from the referrer (the parent page that loaded the iframe).
+			if (isIframeMode) {
+				const hostOrigin = this.getReferrerOrigin();
+				if (hostOrigin) {
+					this.setLeaveRedirectUrl(hostOrigin + leaveRedirectUrl);
+				}
+				return;
+			}
 		}
 
 		// Auto-detect from referrer (only when running standalone and no explicit URL provided)
-		if (!leaveRedirectUrl && !isWebcomponentMode) {
+		if (!leaveRedirectUrl && !isWebcomponentMode && !isIframeMode) {
 			const autoRedirectUrl = this.getAutoRedirectUrl();
 			if (autoRedirectUrl) {
 				this.setLeaveRedirectUrl(autoRedirectUrl);
@@ -134,10 +146,22 @@ export class NavigationService {
 			return;
 		}
 
-		// The Angular Elements webcomponent runs in the host's window, so
-		// `window` already refers to the top-level document. No iframe-era
-		// `window.top` indirection needed.
-		window.location.href = url;
+		this.redirectWindow(url);
+	}
+
+	/**
+	 * Navigate to `url`. `window.top` is the host window when embedded in an iframe — so the
+	 * whole page redirects, not just the iframe — and is `window` itself in the SPA and
+	 * webcomponent, so a single assignment covers every mode (no iframe check needed). Falls
+	 * back to the current window if a sandboxed iframe blocks top-level navigation.
+	 */
+	private redirectWindow(url: string): void {
+		try {
+			(window.top ?? window).location.href = url;
+		} catch (error) {
+			console.warn('Could not navigate the top window; redirecting within the iframe instead:', error);
+			window.location.href = url;
+		}
 	}
 
 	/**
@@ -398,13 +422,18 @@ export class NavigationService {
 	}
 
 	/**
-	 * Transition to the post-leave state. SPA navigates to the `/disconnected`
-	 * screen; WC emits the `left` host event, which drives the end-meeting view and
-	 * notifies the host. The `left` event is WC-only — nothing consumes it in the SPA.
+	 * Transition to the post-leave state. Both hosted modes (WC and iframe) emit the
+	 * `left` host event so the host is notified; the WC additionally relies on it to
+	 * drive its end-meeting view (it has no router), so it returns early. The SPA and
+	 * the iframe both navigate to the in-app `/disconnected` screen.
 	 */
 	async goToDisconnected(detail: Omit<WebComponentLeftEvent, 'type'>): Promise<void> {
-		if (this.runtimeConfigService.isWebcomponentMode()) {
+		if (this.runtimeConfigService.isEmbeddedMode()) {
 			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.LEFT, ...detail });
+		}
+
+		// The WC has no router: the host `left` event alone drives its end-meeting view.
+		if (this.runtimeConfigService.isWebcomponentMode()) {
 			return;
 		}
 
@@ -446,6 +475,23 @@ export class NavigationService {
 			return null;
 		} catch (error) {
 			console.warn('Error detecting auto redirect URL:', error);
+			return null;
+		}
+	}
+
+	/**
+	 * Origin of the referrer (the host page that loaded the iframe), or null when
+	 * there is no referrer or it cannot be parsed. Used to resolve relative
+	 * `leave-redirect-url` values against the host in the iframe integration.
+	 */
+	protected getReferrerOrigin(): string | null {
+		try {
+			if (!document.referrer) {
+				return null;
+			}
+			return new URL(document.referrer).origin;
+		} catch (error) {
+			console.warn('Could not read referrer origin:', error);
 			return null;
 		}
 	}
@@ -502,9 +548,10 @@ export class NavigationService {
 			return;
 		}
 
-		// No redirect configured: in the WC, signal the host via `closed` so it can
-		// tear down the element; in the SPA, fall back to an internal route.
-		if (this.runtimeConfigService.isWebcomponentMode()) {
+		// No redirect configured: hosted modes (WC and iframe) signal the host via
+		// `closed` so it can tear down the element/iframe; the SPA falls back to an
+		// internal route.
+		if (this.runtimeConfigService.isEmbeddedMode()) {
 			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
 			return;
 		}

@@ -42,7 +42,6 @@
 		"jest.disabledWorkspaceFolders": [
 			"meet-root",
 			"shared-meet-components",
-			"meet-webcomponent",
 			"meet-testapp"
 		],
 		"files.watcherExclude": {

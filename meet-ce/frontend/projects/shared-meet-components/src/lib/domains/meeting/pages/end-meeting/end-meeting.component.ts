@@ -1,5 +1,4 @@
-import { Component, inject, input, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -106,7 +105,7 @@ export class EndMeetingComponent implements OnInit {
 	 * Sets the back button text based on the application mode and user authentication
 	 */
 	private async setBackButtonText() {
-		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
+		const isStandaloneMode = !this.runtimeConfigService.isEmbeddedMode();
 		const redirection = this.navService.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 

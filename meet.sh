@@ -112,6 +112,9 @@ show_help() {
   echo -e "  ${BLUE}test-unit-backend${NC}"
   echo "    Run unit tests for the backend project"
   echo
+  echo -e "  ${BLUE}test-unit-frontend${NC}"
+  echo "    Run unit tests for the frontend shared-meet-components library (Karma, headless Chrome)"
+  echo
   echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
   echo "    Run end-to-end tests for the webcomponent project (Playwright '--project=webcomponent')"
   echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
@@ -252,6 +255,37 @@ test_unit_backend() {
 
   echo -e "${GREEN}Running backend unit tests...${NC}"
   pnpm run test:unit-backend
+}
+
+# Run unit tests for the frontend shared-meet-components library (Karma)
+test_unit_frontend() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Running Frontend Library Unit Tests${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+  # The library imports @openvidu-meet/typings, which is not path-mapped to source,
+  # so its built output must exist before Karma compiles the specs.
+  build_typings
+
+  # Karma needs a Chrome/Chromium binary. Honor an explicit CHROME_BIN or a
+  # system Chrome; otherwise fall back to the Playwright-managed Chromium so the
+  # runner needs nothing preinstalled.
+  if [ -z "$CHROME_BIN" ] \
+    && ! command -v google-chrome >/dev/null 2>&1 \
+    && ! command -v google-chrome-stable >/dev/null 2>&1 \
+    && ! command -v chromium >/dev/null 2>&1 \
+    && ! command -v chromium-browser >/dev/null 2>&1; then
+    ensure_playwright_chromium false false
+    PW_BROWSERS_PATH=${PLAYWRIGHT_BROWSERS_PATH:-/tmp/ms-playwright}
+    CHROME_BIN="$(PLAYWRIGHT_BROWSERS_PATH="$PW_BROWSERS_PATH" node -e 'console.log(require("playwright-core").chromium.executablePath())')"
+    export CHROME_BIN
+    echo -e "${YELLOW}Using Playwright Chromium for Karma: ${CHROME_BIN}${NC}"
+  fi
+
+  echo -e "${GREEN}Running frontend library unit tests...${NC}"
+  pnpm run test:unit-frontend
 }
 
 # Check if meet-pro directory exists and is a valid git repository
@@ -908,6 +942,9 @@ main() {
       ;;
     test-unit-backend)
       test_unit_backend
+      ;;
+    test-unit-frontend)
+      test_unit_frontend
       ;;
     test-e2e-webcomponent)
       test_e2e_webcomponent "$@"

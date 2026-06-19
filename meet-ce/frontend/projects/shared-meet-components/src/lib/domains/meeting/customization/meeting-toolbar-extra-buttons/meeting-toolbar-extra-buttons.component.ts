@@ -37,12 +37,12 @@ export class MeetingToolbarExtraButtonsComponent {
 
 	/**
 	 * Whether to show the copy link button: only for moderators (when share access
-	 * links are enabled) and never in webcomponent mode.
+	 * links are enabled) and never when embedded (webcomponent or iframe)
 	 */
 	showCopyLinkButton = computed(
 		() =>
 			this.meetingContextService.meetingUI().showShareAccessLinks &&
-			!this.runtimeConfigService.isWebcomponentMode()
+			!this.runtimeConfigService.isEmbeddedMode()
 	);
 
 	/** Whether to show the captions button (visible when not HIDDEN) */

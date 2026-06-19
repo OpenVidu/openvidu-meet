@@ -38,7 +38,7 @@ export class MeetingCustomLayoutComponent {
 	meetingUrl = this.meetingAccessLinkService.speakerPublicLink;
 	areCaptionsEnabledByUser = this.captionsService.areCaptionsEnabledByUser;
 	captions = this.captionsService.captions;
-	isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode;
+	isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode;
 	linkOverlayConfig = {
 		title: 'Start collaborating',
 		subtitle: 'Share this link to bring others into the meeting',
@@ -47,12 +47,12 @@ export class MeetingCustomLayoutComponent {
 	};
 
 	/**
-	 * Share/copy link overlay: SPA only.
+	 * Share/copy link overlay: standalone SPA only.
 	 */
 	shouldShowLinkOverlay = computed(() => {
 		const hasPublicSpeakerLink = !!this.meetingUrl();
 		return (
-			!this.isWebcomponentMode() &&
+			!this.isEmbeddedMode() &&
 			this.meetingContextService.meetingUI().showShareAccessLinks &&
 			this.meetingContextService.isAlone() &&
 			hasPublicSpeakerLink
@@ -60,10 +60,10 @@ export class MeetingCustomLayoutComponent {
 	});
 
 	/**
-	 * Waiting overlay: webcomponent mode only, shown while alone in place of the
-	 * share/copy link overlay (link sharing is handled by the host application).
+	 * Waiting overlay: embedded modes (webcomponent or iframe) only, shown while alone
+	 * in place of the share/copy link overlay (link sharing is handled by the host application).
 	 */
-	shouldShowWaitingOverlay = computed(() => this.isWebcomponentMode() && this.meetingContextService.isAlone());
+	shouldShowWaitingOverlay = computed(() => this.isEmbeddedMode() && this.meetingContextService.isAlone());
 
 	/** True when either overlay covers the layout (used to hide the hidden-participants indicator). */
 	shouldShowOverlay = computed(() => this.shouldShowLinkOverlay() || this.shouldShowWaitingOverlay());

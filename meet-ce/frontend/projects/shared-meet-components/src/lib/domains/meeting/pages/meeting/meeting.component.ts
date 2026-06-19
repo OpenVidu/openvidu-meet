@@ -69,14 +69,14 @@ export class MeetingComponent implements OnInit {
 	isMeetingLeft = signal(false);
 
 	/**
-	 * Whether the app runs embedded as a webcomponent.
+	 * Whether the app runs embedded in a host application (webcomponent or iframe).
 	 */
-	isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode;
+	isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode;
 
 	/**
 	 * Whether the local participant is alone (no remote participants yet).
-	 * The panel after the local participant — the share/copy link panel (SPA) or
-	 * the waiting panel (webcomponent) — is only shown while alone.
+	 * The panel after the local participant — the share/copy link panel (standalone SPA)
+	 * or the waiting panel (embedded) — is only shown while alone.
 	 */
 	isAlone = this.meetingContextService.isAlone;
 

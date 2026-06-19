@@ -2,7 +2,7 @@ import type { OnInit } from '@angular/core';
 import { Component, inject } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AppContextService } from '@openvidu-meet/shared-components';
+import { AppContextService, MeetingIframeBridgeService } from '@openvidu-meet/shared-components';
 import packageInfo from '../../package.json';
 
 @Component({
@@ -14,8 +14,11 @@ import packageInfo from '../../package.json';
 })
 export class AppComponent implements OnInit {
 	private readonly appCtxService = inject(AppContextService);
+	private readonly iframeBridge = inject(MeetingIframeBridgeService);
 
 	ngOnInit() {
 		this.appCtxService.setVersion(packageInfo.version);
+		// Starts the postMessage bridge when embedded in an iframe; no-op otherwise.
+		this.iframeBridge.initialize();
 	}
 }
