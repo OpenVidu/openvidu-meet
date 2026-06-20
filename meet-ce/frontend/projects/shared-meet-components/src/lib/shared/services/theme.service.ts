@@ -1,4 +1,4 @@
-import { computed, DOCUMENT, Inject, Injectable, signal } from '@angular/core';
+import { computed, DOCUMENT, inject, Injectable, signal } from '@angular/core';
 import { OpenViduThemeMode, OpenViduThemeService } from '../../domains/meeting/openvidu-components';
 
 export type Theme = 'light' | 'dark';
@@ -7,6 +7,9 @@ export type Theme = 'light' | 'dark';
 	providedIn: 'root'
 })
 export class ThemeService {
+	private document = inject(DOCUMENT);
+	protected ovComponentsThemeService = inject(OpenViduThemeService);
+
 	private readonly THEME_KEY = 'ovMeet-theme';
 	private readonly _currentTheme = signal<Theme>('light');
 
@@ -14,11 +17,6 @@ export class ThemeService {
 	public readonly currentTheme = computed<Theme>(() => this._currentTheme());
 	public readonly isDark = computed(() => this._currentTheme() === 'dark');
 	public readonly isLight = computed(() => this._currentTheme() === 'light');
-
-	constructor(
-		@Inject(DOCUMENT) private document: Document,
-		protected ovComponentsThemeService: OpenViduThemeService
-	) {}
 
 	/**
 	 * Initializes the theme based on:

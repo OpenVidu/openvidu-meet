@@ -1,9 +1,9 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, inject, Injectable, signal } from '@angular/core';
 import {
-    MeetRoomMember,
-    MeetRoomMemberPermissions,
-    MeetRoomMemberTokenOptions,
-    MeetRoomMemberUIBadge
+	MeetRoomMember,
+	MeetRoomMemberPermissions,
+	MeetRoomMemberTokenOptions,
+	MeetRoomMemberUIBadge
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
@@ -16,6 +16,13 @@ import { RoomMemberService } from './room-member.service';
 	providedIn: 'root'
 })
 export class RoomMemberContextService {
+	protected roomMemberService = inject(RoomMemberService);
+	protected navigationService = inject(NavigationService);
+	protected authService = inject(AuthService);
+	protected e2eeService = inject(E2eeService);
+	protected loggerService = inject(LoggerService);
+	protected log = this.loggerService.get('OpenVidu Meet - RoomMemberContextService');
+
 	protected readonly PARTICIPANT_NAME_KEY = 'ovMeet-participantName';
 
 	protected readonly TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
@@ -50,18 +57,6 @@ export class RoomMemberContextService {
 	readonly memberName = computed(() => this._member()?.name);
 	/** Readonly signal for the room member's UI badge */
 	readonly memberBadge = this._memberBadge.asReadonly();
-
-	protected log;
-
-	constructor(
-		protected loggerService: LoggerService,
-		protected roomMemberService: RoomMemberService,
-		protected navigationService: NavigationService,
-		protected authService: AuthService,
-		protected e2eeService: E2eeService
-	) {
-		this.log = this.loggerService.get('OpenVidu Meet - RoomMemberContextService');
-	}
 
 	/**
 	 * Sets the participant's display name.

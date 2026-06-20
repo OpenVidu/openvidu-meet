@@ -35,6 +35,9 @@ import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from 
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ConfigComponent implements OnInit {
+	protected configService = inject(GlobalConfigService);
+	protected notificationService = inject(NotificationService);
+
 	isLoading = signal(true);
 	hasFormChanges = signal(false);
 	hasColorChanges = signal(false);
@@ -105,8 +108,7 @@ export class ConfigComponent implements OnInit {
 
 	private lastBaseThemeValue: MeetRoomThemeMode | null = null;
 	private isUpdatingColors = false; // Flag to prevent infinite loops
-	protected configService: GlobalConfigService = inject(GlobalConfigService);
-	protected notificationService: NotificationService = inject(NotificationService);
+
 	constructor() {
 		// Track form changes
 		this.appearanceForm.valueChanges.subscribe(() => {

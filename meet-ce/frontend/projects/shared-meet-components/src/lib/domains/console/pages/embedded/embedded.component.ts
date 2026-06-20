@@ -35,6 +35,11 @@ import { NotificationService } from '../../../../shared/services/notification.se
 })
 export class EmbeddedComponent implements OnInit {
 	private navigationService = inject(NavigationService);
+	protected apiKeyService = inject(ApiKeyService);
+	protected configService = inject(GlobalConfigService);
+	protected notificationService = inject(NotificationService);
+	protected clipboard = inject(Clipboard);
+
 	restApiDocsUrl = signal<string>('');
 
 	isLoading = signal(true);
@@ -56,12 +61,7 @@ export class EmbeddedComponent implements OnInit {
 
 	private initialWebhookFormValue: any = null;
 
-	constructor(
-		protected apiKeyService: ApiKeyService,
-		protected configService: GlobalConfigService,
-		protected notificationService: NotificationService,
-		protected clipboard: Clipboard
-	) {
+	constructor() {
 		// Disable url field initially and enable/disable based on isEnabled toggle
 		const urlControl = this.webhookForm.get('url');
 		urlControl?.disable();

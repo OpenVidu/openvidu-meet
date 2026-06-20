@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
@@ -13,21 +13,16 @@ import { RecordingShareDialogComponent } from '../components/recording-share-dia
 	providedIn: 'root'
 })
 export class RecordingService {
+	private httpService = inject(HttpService);
+	private navigationService = inject(NavigationService);
+	private runtimeConfigService = inject(RuntimeConfigService);
+	protected tokenStorageService = inject(TokenStorageService);
+	protected roomMemberContextService = inject(RoomMemberContextService);
+	protected dialog = inject(MatDialog);
+	protected loggerService = inject(LoggerService);
+	protected log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
+
 	protected readonly RECORDINGS_API = `${HttpService.API_PATH_PREFIX}/recordings`;
-
-	protected log;
-
-	constructor(
-		protected loggerService: LoggerService,
-		private httpService: HttpService,
-		private navigationService: NavigationService,
-		private runtimeConfigService: RuntimeConfigService,
-		protected tokenStorageService: TokenStorageService,
-		protected roomMemberContextService: RoomMemberContextService,
-		protected dialog: MatDialog
-	) {
-		this.log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
-	}
 
 	/**
 	 * Starts recording for a room
@@ -148,9 +143,7 @@ export class RecordingService {
 
 		const now = Date.now();
 		params.append('t', now.toString());
-		return this.runtimeConfigService.resolveUrl(
-			`${this.RECORDINGS_API}/${recordingId}/media?${params.toString()}`
-		);
+		return this.runtimeConfigService.resolveUrl(`${this.RECORDINGS_API}/${recordingId}/media?${params.toString()}`);
 	}
 
 	/**

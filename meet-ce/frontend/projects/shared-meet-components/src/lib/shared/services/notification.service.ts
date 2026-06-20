@@ -1,6 +1,6 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmDialogComponent } from '../components/dialogs/confirm-dialog/confirm-dialog.component';
@@ -11,13 +11,11 @@ import { DialogOptions } from '../models/notification.model';
 	providedIn: 'root'
 })
 export class NotificationService {
-	private spinnerRef: any;
+	private snackBar = inject(MatSnackBar);
+	private dialog = inject(MatDialog);
+	private overlay = inject(Overlay);
 
-	constructor(
-		private snackBar: MatSnackBar,
-		private dialog: MatDialog,
-		private overlay: Overlay
-	) {}
+	private spinnerRef: any;
 
 	showSpinner() {
 		if (!this.spinnerRef) {

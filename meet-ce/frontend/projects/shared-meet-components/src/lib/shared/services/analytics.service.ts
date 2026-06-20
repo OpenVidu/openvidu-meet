@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { MeetAnalytics } from '@openvidu-meet/typings';
 import { HttpService } from './http.service';
 
@@ -6,9 +6,9 @@ import { HttpService } from './http.service';
 	providedIn: 'root'
 })
 export class AnalyticsService {
-	protected readonly ANALYTICS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/analytics`;
+	protected httpService = inject(HttpService);
 
-	constructor(protected httpService: HttpService) {}
+	protected readonly ANALYTICS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/analytics`;
 
 	/**
 	 * Retrieves usage analytics for OpenVidu Meet.

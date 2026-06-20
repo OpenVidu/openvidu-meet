@@ -29,6 +29,10 @@ import { AuthService } from '../../services/auth.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LoginComponent implements OnInit {
+	private navigationService = inject(NavigationService);
+	private route = inject(ActivatedRoute);
+	private authService = inject(AuthService);
+
 	loginForm = new FormGroup({
 		userId: new FormControl('', [Validators.required]),
 		password: new FormControl('', [Validators.required])
@@ -38,9 +42,6 @@ export class LoginComponent implements OnInit {
 	loginErrorMessage = signal<string | undefined>(undefined);
 
 	redirectTo = signal(''); // By default, redirect to home page
-	private navigationService = inject(NavigationService);
-	private route = inject(ActivatedRoute);
-	private authService = inject(AuthService);
 
 	ngOnInit() {
 		this.route.queryParams.subscribe((params) => {

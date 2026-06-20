@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { MeetApiKey } from '@openvidu-meet/typings';
 import { HttpService } from './http.service';
 
@@ -6,9 +6,9 @@ import { HttpService } from './http.service';
 	providedIn: 'root'
 })
 export class ApiKeyService {
-	protected readonly API_KEYS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/api-keys`;
+	protected httpService = inject(HttpService);
 
-	constructor(protected httpService: HttpService) {}
+	protected readonly API_KEYS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/api-keys`;
 
 	async generateApiKey(): Promise<MeetApiKey> {
 		const path = `${this.API_KEYS_API}`;

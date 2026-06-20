@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
 	MeetAssistantCapabilityName,
 	MeetCreateAssistantRequest,
@@ -10,9 +10,9 @@ import { HttpService } from './http.service';
 	providedIn: 'root'
 })
 export class AiAssistantService {
-	protected readonly AI_ASSISTANT_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/ai/assistants`;
+	protected httpService = inject(HttpService);
 
-	constructor(protected httpService: HttpService) {}
+	protected readonly AI_ASSISTANT_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/ai/assistants`;
 
 	async cancelAssistant(assistantId: string): Promise<void> {
 		const path = `${this.AI_ASSISTANT_API}/${assistantId}`;

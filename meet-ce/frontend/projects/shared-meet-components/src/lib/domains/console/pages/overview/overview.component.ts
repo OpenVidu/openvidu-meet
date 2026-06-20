@@ -15,6 +15,9 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OverviewComponent implements OnInit {
+	private analyticsService: AnalyticsService = inject(AnalyticsService);
+	private navigationService: NavigationService = inject(NavigationService);
+
 	stats = signal<MeetAnalytics>({
 		totalRooms: 0,
 		activeRooms: 0,
@@ -24,9 +27,6 @@ export class OverviewComponent implements OnInit {
 
 	isLoading = signal(true);
 	hasData = signal(false);
-
-	private analyticsService: AnalyticsService = inject(AnalyticsService);
-	private navigationService: NavigationService = inject(NavigationService);
 
 	constructor() {}
 

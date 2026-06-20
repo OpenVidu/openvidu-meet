@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { MeetUserDTO, MeetUserFilters, MeetUserOptions, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 
@@ -6,10 +6,10 @@ import { HttpService } from '../../../shared/services/http.service';
 	providedIn: 'root'
 })
 export class UserService {
+	protected httpService = inject(HttpService);
+
 	protected readonly USERS_API = `${HttpService.API_PATH_PREFIX}/users`;
 	protected readonly INTERNAL_USERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/users`;
-
-	constructor(protected httpService: HttpService) {}
 
 	/**
 	 * Creates a new user with the specified options.

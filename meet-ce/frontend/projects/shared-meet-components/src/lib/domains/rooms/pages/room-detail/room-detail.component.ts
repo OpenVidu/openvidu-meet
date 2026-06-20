@@ -1,6 +1,15 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal, viewChild } from '@angular/core';
+import {
+	ChangeDetectionStrategy,
+	Component,
+	OnDestroy,
+	OnInit,
+	computed,
+	inject,
+	signal,
+	viewChild
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -86,10 +95,6 @@ interface RoomDetailCachedState {
 export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly route = inject(ActivatedRoute);
 	private readonly listStateCache = inject(ListStateCacheService);
-
-	private readonly scroller = viewChild(ScrollPersistDirective);
-	/** Scroll position to restore on the page container (set when restoring cached state). */
-	protected scrollToRestore = 0;
 	private readonly authService = inject(AuthService);
 	private readonly roomService = inject(RoomService);
 	private readonly roomDeletionService = inject(RoomDeletionService);
@@ -102,6 +107,11 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly dialog = inject(MatDialog);
 	private readonly loggerService = inject(LoggerService);
 	protected readonly log: ILogger = this.loggerService.get('OpenVidu Meet - RoomDetailComponent');
+
+	private readonly scroller = viewChild(ScrollPersistDirective);
+	/** Scroll position to restore on the page container (set when restoring cached state). */
+	protected scrollToRestore = 0;
+
 	protected readonly MeetUserRole = MeetUserRole;
 
 	currentUserId = signal<string>('');

@@ -1,5 +1,4 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,19 +16,16 @@ import { AuthService } from '../../../auth/services/auth.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ErrorComponent implements OnInit {
+	private route = inject(ActivatedRoute);
+	protected authService = inject(AuthService);
+	protected navService = inject(NavigationService);
+	protected runtimeConfigService = inject(RuntimeConfigService);
+
 	errorName = signal('Error');
 	message = signal('');
 
 	showBackButton = signal(true);
 	backButtonText = signal('Back');
-
-	protected readonly runtimeConfigService = inject(RuntimeConfigService);
-
-	constructor(
-		private route: ActivatedRoute,
-		protected authService: AuthService,
-		protected navService: NavigationService
-	) {}
 
 	ngOnInit() {
 		this.setErrorReason();

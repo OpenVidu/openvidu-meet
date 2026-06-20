@@ -38,12 +38,6 @@ interface UsersListCachedState {
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class UsersComponent implements OnInit, OnDestroy {
-	private static readonly STATE_KEY = 'users';
-
-	private readonly scroller = viewChild(ScrollPersistDirective);
-	/** Scroll position to restore on the page container (set when restoring cached state). */
-	protected scrollToRestore = 0;
-
 	private userService = inject(UserService);
 	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
@@ -53,6 +47,12 @@ export class UsersComponent implements OnInit, OnDestroy {
 	private dialog = inject(MatDialog);
 	private loggerService = inject(LoggerService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - UsersComponent');
+
+	private static readonly STATE_KEY = 'users';
+
+	private readonly scroller = viewChild(ScrollPersistDirective);
+	/** Scroll position to restore on the page container (set when restoring cached state). */
+	protected scrollToRestore = 0;
 
 	users = signal<MeetUserDTO[]>([]);
 	currentUserId = signal<string>('');

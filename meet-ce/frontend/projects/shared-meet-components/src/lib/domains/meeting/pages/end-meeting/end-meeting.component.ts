@@ -16,6 +16,11 @@ import { AuthService } from '../../../auth/services/auth.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndMeetingComponent implements OnInit {
+	private route = inject(ActivatedRoute);
+	protected authService = inject(AuthService);
+	protected navService = inject(NavigationService);
+	protected runtimeConfigService = inject(RuntimeConfigService);
+
 	/**
 	 * Optional reason override, used when the component is rendered outside
 	 * the Angular Router (e.g. inside the Web Component, which has no
@@ -28,14 +33,6 @@ export class EndMeetingComponent implements OnInit {
 
 	showBackButton = signal(true);
 	backButtonText = signal('Back');
-
-	protected readonly runtimeConfigService = inject(RuntimeConfigService);
-
-	constructor(
-		private route: ActivatedRoute,
-		protected authService: AuthService,
-		protected navService: NavigationService
-	) {}
 
 	ngOnInit() {
 		this.setDisconnectReason();

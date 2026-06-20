@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { HttpService } from '../../../shared/services/http.service';
@@ -12,18 +12,16 @@ import { UserService } from '../../users/services/user.service';
 	providedIn: 'root'
 })
 export class AuthService {
+	protected httpService = inject(HttpService);
+	protected userService = inject(UserService);
+	protected tokenStorageService = inject(TokenStorageService);
+	protected navigationService = inject(NavigationService);
+	protected sessionStorageService = inject(SessionStorageService);
+
 	protected readonly AUTH_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/auth`;
 
 	protected hasCheckAuth = false;
 	protected user: MeetUserDTO | null = null;
-
-	constructor(
-		protected httpService: HttpService,
-		protected userService: UserService,
-		protected tokenStorageService: TokenStorageService,
-		protected navigationService: NavigationService,
-		protected sessionStorageService: SessionStorageService
-	) {}
 
 	/**
 	 * Logs in a user with the provided credentials.

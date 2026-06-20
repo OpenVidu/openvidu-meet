@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import {
 	MeetRoomMember,
 	MeetRoomMemberField,
@@ -15,10 +15,10 @@ import type { MeetRoomMemberQueryOptionsWithFields } from '../types/room-member-
 	providedIn: 'root'
 })
 export class RoomMemberService {
+	protected httpService = inject(HttpService);
+
 	protected readonly ROOM_MEMBERS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
 	protected readonly INTERNAL_ROOM_MEMBERS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
-
-	constructor(protected httpService: HttpService) {}
 
 	/**
 	 * Constructs the API path for room member operations based on the provided room ID.

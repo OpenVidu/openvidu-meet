@@ -79,12 +79,6 @@ interface RoomsListCachedState {
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class RoomsComponent implements OnInit, OnDestroy {
-	private static readonly STATE_KEY = 'rooms';
-
-	private readonly scroller = viewChild(ScrollPersistDirective);
-	/** Scroll position to restore on the page container (set when restoring cached state). */
-	protected scrollToRestore = 0;
-
 	private roomService = inject(RoomService);
 	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
@@ -95,6 +89,12 @@ export class RoomsComponent implements OnInit, OnDestroy {
 	private dialog = inject(MatDialog);
 	protected loggerService = inject(LoggerService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomsComponent');
+
+	private static readonly STATE_KEY = 'rooms';
+
+	private readonly scroller = viewChild(ScrollPersistDirective);
+	/** Scroll position to restore on the page container (set when restoring cached state). */
+	protected scrollToRestore = 0;
 
 	rooms = signal<MeetRoom[]>([]);
 	currentUserId = signal<string>('');

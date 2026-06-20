@@ -25,14 +25,13 @@ import { RoomFeatureService } from './room-feature.service';
 	providedIn: 'root'
 })
 export class RoomService {
+	protected httpService: HttpService = inject(HttpService);
+	protected roomFeatureService: RoomFeatureService = inject(RoomFeatureService);
+	protected loggerService: LoggerService = inject(LoggerService);
+	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomService');
+
 	protected readonly ROOMS_API = `${HttpService.API_PATH_PREFIX}/rooms`;
 	protected readonly INTERNAL_ROOMS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/rooms`;
-
-	protected httpService: HttpService = inject(HttpService);
-	protected loggerService: LoggerService = inject(LoggerService);
-	protected roomFeatureService: RoomFeatureService = inject(RoomFeatureService);
-
-	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RoomService');
 
 	constructor() {}
 
