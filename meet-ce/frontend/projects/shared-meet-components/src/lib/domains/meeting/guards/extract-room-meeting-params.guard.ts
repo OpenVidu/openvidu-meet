@@ -47,10 +47,9 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		return navigation.createRedirectionTo(decision.to);
 	}
 
-	// Storage fallbacks live in the route adapter (not the use case): when the
-	// route did not carry an E2EE key or participant name, try restoring them
-	// from per-tab/per-origin storage. Web Component callers handle this
-	// themselves (or skip it) since they don't share the SPA's storage scope.
+	// Storage fallback (in the adapter, not the use case): restore E2EE key and
+	// participant name from storage when the route didn't carry them. The Web
+	// Component bootstrapper mirrors this in its own storage scope.
 	if (!queryE2eeKey) {
 		meetingContext.loadE2eeKeyFromStorage();
 	}

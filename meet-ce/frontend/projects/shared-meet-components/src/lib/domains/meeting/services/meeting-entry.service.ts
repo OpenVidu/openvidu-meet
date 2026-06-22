@@ -71,10 +71,9 @@ export class MeetingEntryService {
 	 * {@link MeetingEntryParams.showRecording} / {@link MeetingEntryParams.showOnlyRecordings}).
 	 * Performs no network I/O.
 	 *
-	 * Storage fallbacks (e.g. loading a previously-stored participant name) are
-	 * intentionally NOT performed here — callers that want them should pre-resolve
-	 * the value and pass it explicitly. This keeps the use case independent of
-	 * which storage layer the host environment exposes.
+	 * Storage fallbacks (e.g. a previously-stored participant name) are NOT done
+	 * here. Each adapter restores them from its own storage scope before calling
+	 * this — keeping the use case independent of the host's storage layer.
 	 */
 	prepare({
 		leaveRedirectUrl,

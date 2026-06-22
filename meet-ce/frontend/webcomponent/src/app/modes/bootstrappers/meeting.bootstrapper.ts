@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { MeetingEntryService, type MeetingEntryParams } from '@openvidu-meet/shared-components';
+import { MeetingEntryService, RoomMemberContextService, type MeetingEntryParams } from '@openvidu-meet/shared-components';
 import { lastPathSegment, queryParam } from '../../utils/url';
 import type { ModeInputs } from '../mode';
 import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
@@ -7,6 +7,7 @@ import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
 @Injectable({ providedIn: 'root' })
 export class MeetingModeBootstrapper implements ModeBootstrapper {
 	private readonly meetingEntryService = inject(MeetingEntryService);
+	private readonly roomMemberContextService = inject(RoomMemberContextService);
 
 	async bootstrap(inputs: ModeInputs): Promise<ModeBootstrapResult> {
 		const url = inputs.roomUrl;
@@ -31,6 +32,13 @@ export class MeetingModeBootstrapper implements ModeBootstrapper {
 			participantNameFromUrl: inputs.participantName ? true : undefined,
 			leaveRedirectUrl: inputs.leaveRedirectUrl || undefined
 		};
+
+		// Storage fallback (mirrors the SPA route guard): with no name input,
+		// restore a previously-typed one from this origin's storage so the lobby
+		// pre-fills it (editable, since not from URL).
+		if (!inputs.participantName) {
+			this.roomMemberContextService.loadParticipantNameFromStorage();
+		}
 
 		try {
 			const outcome = await this.meetingEntryService.attempt(params);
