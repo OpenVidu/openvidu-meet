@@ -11,9 +11,11 @@ import {
 	MeetSignalType
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { WebComponentEventType } from '../../../shared/models/webcomponent-bridge.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { SoundService } from '../../../shared/services/sound.service';
+import { WebComponentBridgeService } from '../../../shared/services/webcomponent-bridge.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
@@ -28,8 +30,6 @@ import type {
 	Room
 } from '../openvidu-components';
 import { ParticipantLeftReason, RoomEvent } from '../openvidu-components';
-import { WebComponentEventType } from '../../../shared/models/webcomponent-bridge.model';
-import { WebComponentBridgeService } from '../../../shared/services/webcomponent-bridge.service';
 import { MeetingContextService } from './meeting-context.service';
 
 /**
@@ -129,8 +129,7 @@ export class MeetingEventHandlerService {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
-		this.roomMemberContextService.clearContext();
-		this.meetingContext.clearContext();
+		this.meetingContext.clearMeetingContext();
 
 		await this.navigationService.goToDisconnected({
 			roomId: event.roomName,

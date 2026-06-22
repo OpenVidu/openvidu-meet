@@ -18,17 +18,18 @@ import {
 	ChangePasswordRequiredComponent,
 	describeNavigationError,
 	EndMeetingComponent,
-	type WebComponentLeftEvent,
 	LoginComponent,
+	MeetingContextService,
 	MeetingWebComponentManagerService,
 	RoomRecordingsComponent,
 	RuntimeConfigService,
 	ThemeService,
 	ViewRecordingComponent,
-	type WcEvent,
 	WebComponentBridgeService,
 	WebComponentEventType,
-	WebComponentNavigationType
+	WebComponentNavigationType,
+	type WcEvent,
+	type WebComponentLeftEvent
 } from '@openvidu-meet/shared-components';
 import type {
 	OpenViduMeetClosedDetail,
@@ -78,6 +79,7 @@ export class App {
 	private readonly wcBridge = inject(WebComponentBridgeService);
 	private readonly modeCoordinator = inject(ModeCoordinatorService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly meetingContext = inject(MeetingContextService);
 	private readonly assets = inject(AssetsService);
 	private readonly _elRef = inject(ElementRef);
 	private readonly _destroyRef = inject(DestroyRef);
@@ -167,6 +169,9 @@ export class App {
 				this._shadowOverlay.setShadowRoot(shadowRoot);
 			}
 		});
+
+		// Restore WC state when the custom element is removed from the DOM.
+		this._destroyRef.onDestroy(() => this.meetingContext.clearMeetingContext());
 	}
 
 	private readonly _serverUrlEffect = effect(() => {

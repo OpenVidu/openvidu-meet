@@ -115,10 +115,9 @@ export class SessionStorageService {
 	}
 
 	/**
-	 * Clears all session data related to the current meeting session,
-	 * including room secret, redirect URL, and E2EE data.
+	 * Clears all data related to the meeting,including room secret, redirect URL, and E2EE data.
 	 */
-	public clearRoomSessionData(): void {
+	public clearMeetingData(): void {
 		this.removeRoomSecret();
 		this.removeRedirectUrl();
 		this.removeE2EEData();

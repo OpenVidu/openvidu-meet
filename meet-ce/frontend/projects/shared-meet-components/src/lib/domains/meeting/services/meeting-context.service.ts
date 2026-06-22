@@ -1,6 +1,7 @@
 import { computed, effect, inject, Injectable, signal } from '@angular/core';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
+import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { CustomParticipantModel } from '../models';
 import { ParticipantService, Room, ViewportService } from '../openvidu-components';
@@ -21,6 +22,7 @@ export class MeetingContextService {
 	private readonly viewportService = inject(ViewportService);
 	private readonly sessionStorageService = inject(SessionStorageService);
 	private readonly roomAccessLinkService = inject(RoomAccessLinkService);
+	private readonly roomMemberContextService = inject(RoomMemberContextService);
 
 	private readonly _roomId = signal<string | undefined>(undefined);
 	private readonly _roomSecret = signal<string | undefined>(undefined);
@@ -172,9 +174,21 @@ export class MeetingContextService {
 	}
 
 	/**
+	 * Clears all meeting-scoped state:
+	 * - room member context
+	 * - meeting context
+	 * - meeting-related session storage.
+	 */
+	clearMeetingContext(): void {
+		this.roomMemberContextService.clearContext();
+		this.clearContext();
+		this.sessionStorageService.clearMeetingData();
+	}
+
+	/**
 	 * Clears the meeting context
 	 */
-	clearContext(): void {
+	private clearContext(): void {
 		this._roomId.set(undefined);
 		this.roomAccessLinkService.clear();
 		this._roomSecret.set(undefined);

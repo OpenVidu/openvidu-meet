@@ -10,7 +10,7 @@ import { recordingsConsoleRoutes } from '../../recordings/routes/recordings.rout
 import { roomMembersConsoleRoutes } from '../../room-members/routes/room-members.routes';
 import { roomsConsoleRoutes } from '../../rooms/routes/rooms.routes';
 import { usersConsoleRoutes } from '../../users/routes/users.routes';
-import { clearRoomSessionGuard } from '../guards/clear-room-session.guard';
+import { clearMeetingContextGuard } from '../guards/clear-room-session.guard';
 
 /**
  * All console child routes configuration (includes console pages + rooms + recordings)
@@ -78,7 +78,7 @@ export const consoleDomainRoutes: Route[] = [
 	{
 		path: '',
 		loadComponent: () => import('../pages/console/console.component').then((m) => m.ConsoleComponent),
-		canActivate: [checkUserAuthenticatedGuard, checkPasswordChangeNotRequiredGuard, clearRoomSessionGuard],
+		canActivate: [checkUserAuthenticatedGuard, checkPasswordChangeNotRequiredGuard, clearMeetingContextGuard],
 		children: [
 			{
 				path: '',
