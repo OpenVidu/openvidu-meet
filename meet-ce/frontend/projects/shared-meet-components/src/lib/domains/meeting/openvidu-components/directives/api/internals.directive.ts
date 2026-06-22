@@ -1,7 +1,7 @@
 // * Internal directives *
 
 import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, OnInit, inject, input } from '@angular/core';
-import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
+import { AssetsService } from '../../../../../shared/services/assets.service';
 import { ParticipantModel } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
@@ -14,10 +14,9 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 	standalone: true
 })
 export class FallbackLogoDirective implements OnInit {
-	private readonly runtimeConfig = inject(RuntimeConfigService);
-	// Default OpenVidu logo served as a static asset. resolveUrl() yields the
-	// correct URL in both SPA and webcomponent modes.
-	readonly assetsLogo = this.runtimeConfig.resolveUrl('assets/images/logo.webp');
+	private readonly assets = inject(AssetsService);
+	// Default OpenVidu logo served as a static asset (resolves in SPA & WC modes).
+	readonly assetsLogo = this.assets.logo;
 	readonly ovLogo = input<string>('');
 	public elementRef = inject(ElementRef);
 

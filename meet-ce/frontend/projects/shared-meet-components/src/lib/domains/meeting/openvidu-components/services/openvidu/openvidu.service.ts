@@ -22,7 +22,7 @@ import { LivekitAdapterFactory } from '../livekit-adapter/livekit-adapter.factor
 import { LoggerService } from '../logger/logger.service';
 import { StorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
-import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
+import { AssetsService } from '../../../../../shared/services/assets.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -34,7 +34,7 @@ export class OpenViduService {
 	private readonly livekitAdapterFactory = inject(LivekitAdapterFactory);
 	private readonly livekitAdapter: LivekitAdapterInterface = this.livekitAdapterFactory.createLiveKitAdapter();
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
-	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly assets = inject(AssetsService);
 
 	private room: OVRoom | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
@@ -134,10 +134,7 @@ export class OpenViduService {
 	 * CORS). Same-origin (SPA / same-origin embed) loads the URL directly.
 	 */
 	private createE2EEWorker(): Worker {
-		const url = new URL(
-			this.runtimeConfigService.resolveUrl('assets/livekit/livekit-client.e2ee.worker.mjs'),
-			window.location.href
-		);
+		const url = new URL(this.assets.e2eeWorker, window.location.href);
 
 		if (url.origin === window.location.origin) {
 			return new Worker(url.href, { type: 'module' });

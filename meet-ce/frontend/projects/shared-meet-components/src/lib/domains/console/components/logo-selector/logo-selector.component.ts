@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ProFeatureBadgeComponent } from '../../../../shared';
-import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
+import { AssetsService } from '../../../../shared/services/assets.service';
 
 @Component({
     selector: 'ov-logo-selector',
@@ -13,8 +13,8 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class LogoSelectorComponent {
-    private readonly runtimeConfig = inject(RuntimeConfigService);
+    private readonly assets = inject(AssetsService);
 
     /** Default OpenVidu logo served as a static asset (resolves in SPA & WC modes). */
-    protected readonly logoUrl = this.runtimeConfig.resolveUrl('assets/images/logo.webp');
+    protected readonly logoUrl = this.assets.logo;
 }

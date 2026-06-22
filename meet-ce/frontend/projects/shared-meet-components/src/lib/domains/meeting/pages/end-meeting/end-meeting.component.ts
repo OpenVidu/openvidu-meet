@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { LeftEventReason } from '@openvidu-meet/typings';
+import { AssetsService } from '../../../../shared/services/assets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { AuthService } from '../../../auth/services/auth.service';
@@ -20,9 +21,10 @@ export class EndMeetingComponent implements OnInit {
 	protected authService = inject(AuthService);
 	protected navService = inject(NavigationService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
+	private readonly assets = inject(AssetsService);
 
 	/** Default OpenVidu logo served as a static asset (resolves in SPA & WC modes). */
-	protected readonly logoUrl = this.runtimeConfigService.resolveUrl('assets/images/logo.webp');
+	protected readonly logoUrl = this.assets.logo;
 
 	/**
 	 * Optional reason override, used when the component is rendered outside

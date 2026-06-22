@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import {
 	AppCeMeetingComponent,
+	AssetsService,
 	ChangePasswordRequiredComponent,
 	describeNavigationError,
 	EndMeetingComponent,
@@ -77,6 +78,7 @@ export class App {
 	private readonly wcBridge = inject(WebComponentBridgeService);
 	private readonly modeCoordinator = inject(ModeCoordinatorService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly assets = inject(AssetsService);
 	private readonly _elRef = inject(ElementRef);
 	private readonly _destroyRef = inject(DestroyRef);
 	private readonly _shadowStyles = inject(ShadowStylesService);
@@ -100,7 +102,7 @@ export class App {
 	// Default OpenVidu logo for the error screen, served as a static asset. Computed so
 	// it re-resolves once the server base URL is known (the shell is constructed before
 	// `setServerBaseUrl()` runs, so a one-time read would resolve against the wrong base).
-	protected readonly logoUrl = computed(() => this.runtimeConfigService.resolveUrl('assets/images/logo.webp'));
+	protected readonly logoUrl = computed(() => this.assets.logo);
 
 	// Hide the logo if the asset fails to load so the error screen degrades to just the badge.
 	protected onLogoError(event: Event): void {

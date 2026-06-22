@@ -1,6 +1,7 @@
 export * from './ai-assistant.service';
 export * from './analytics.service';
 export * from './api-key.service';
+export * from './assets.service';
 export * from './app-context.service';
 export * from './dialog-presets.service';
 export * from './global-config.service';

@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
-import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
+import { AssetsService } from '../../../../../shared/services/assets.service';
 import { BackgroundCategory, BackgroundEffect, EffectType } from '../../models/background-effect.model';
 import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
@@ -21,14 +21,12 @@ export class VirtualBackgroundService {
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
 	private readonly storageService = inject(StorageService);
 	private readonly log = inject(LoggerService).get('VirtualBackgroundService');
-	private readonly runtimeConfigService = inject(RuntimeConfigService);
+	private readonly assets = inject(AssetsService);
 	private readonly backgroundIdSelectedWritable = signal<string>('');
 	readonly backgroundIdSelected = this.backgroundIdSelectedWritable.asReadonly();
 
-	private readonly backgroundsBasePath = 'assets/backgrounds';
-
 	private buildBackgroundPath(path: string): string {
-		return this.runtimeConfigService.resolveUrl(`${this.backgroundsBasePath}/${path}`);
+		return this.assets.background(path);
 	}
 
 	/**

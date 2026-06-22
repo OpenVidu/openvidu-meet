@@ -17,7 +17,7 @@ import { OpenViduComponentsConfigService } from '../../../../services/config/dir
 import { OpenViduService } from '../../../../services/openvidu/openvidu.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { RecordingService } from '../../../../services/recording/recording.service';
-import { RuntimeConfigService } from '../../../../../../../shared/services/runtime-config.service';
+import { AssetsService } from '../../../../../../../shared/services/assets.service';
 
 /**
  * The **RecordingActivityComponent** is the component that allows showing the recording activity.
@@ -44,10 +44,10 @@ export class RecordingActivityComponent {
 	private readonly recordingService = inject(RecordingService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly openviduService = inject(OpenViduService);
-	private readonly runtimeConfig = inject(RuntimeConfigService);
+	private readonly assets = inject(AssetsService);
 
 	/** Empty-state illustration served as a static asset (resolves in SPA & WC modes). */
-	protected readonly placeholderSrc = this.runtimeConfig.resolveUrl('assets/images/recording-placeholder.webp');
+	protected readonly placeholderSrc = this.assets.recordingPlaceholder;
 
 	/**
 	 * @internal

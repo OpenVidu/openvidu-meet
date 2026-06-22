@@ -10,7 +10,7 @@ import { LoggerService } from '../logger/logger.service';
 import { PanelService } from '../panel/panel.service';
 import { ParticipantService } from '../participant/participant.service';
 import { TranslateService } from '../translate/translate.service';
-import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
+import { AssetsService } from '../../../../../shared/services/assets.service';
 
 /**
  * @internal
@@ -23,15 +23,13 @@ export class ChatService {
 	private readonly panelService = inject(PanelService);
 	private readonly actionService = inject(ActionService);
 	private readonly translateService = inject(TranslateService);
-	private readonly runtimeConfig = inject(RuntimeConfigService);
+	private readonly assets = inject(AssetsService);
 	private log: ILogger = inject(LoggerService).get('ChatService');
 
 	chatMessages = signal<ChatMessage[]>([]);
 	// Chat notification sound served as a static asset (resolves in SPA & WC modes),
 	// matching SoundService instead of inlining the audio as base64.
-	private messageSound: HTMLAudioElement = new Audio(
-		this.runtimeConfig.resolveUrl('assets/sounds/chat-message.mp3')
-	);
+	private messageSound: HTMLAudioElement = new Audio(this.assets.chatMessageSound);
 	private messageList: ChatMessage[] = [];
 	constructor() {
 		this.messageSound.volume = 0.6;
