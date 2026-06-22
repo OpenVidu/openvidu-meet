@@ -85,6 +85,7 @@
 
 			.mat-icon {
 				@include design-tokens.ov-icon(sm);
+				color: var(--ov-text-surface-color);
 			}
 
 			&:hover {
