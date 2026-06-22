@@ -24,7 +24,7 @@ export default defineConfig({
 			name: 'webcomponent',
 			testDir: './tests/e2e',
 			use: {
-				viewport: { width: 1024, height: 1024 },
+				viewport: { width: 1920, height: 1080 },
 				video: 'retain-on-failure',
 				launchOptions: {
 					args: [

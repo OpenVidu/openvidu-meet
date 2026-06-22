@@ -101,9 +101,7 @@ export class App {
 
 	readonly errorMessage = signal<string | null>(null);
 
-	// Default OpenVidu logo for the error screen, served as a static asset. Computed so
-	// it re-resolves once the server base URL is known (the shell is constructed before
-	// `setServerBaseUrl()` runs, so a one-time read would resolve against the wrong base).
+	// Default OpenVidu logo for the error screen
 	protected readonly logoUrl = computed(() => this.assets.logo);
 
 	// Hide the logo if the asset fails to load so the error screen degrades to just the badge.
@@ -242,9 +240,7 @@ export class App {
 				break;
 
 			case WebComponentEventType.ERROR: {
-				// No `/error` route in the WC: show the error in-shell and notify the
-				// host. `accessReason` carries the precise cause; `reason` is the coarse
-				// bucket the host contract exposes (mirrors the bootstrap error path).
+				// No `/error` route in the WC: show the error in-shell and notify the host.
 				const { message } = describeNavigationError(event.reason);
 				this.errorMessage.set(message);
 				this.error.emit({ reason: 'access-denied', message, accessReason: event.reason });

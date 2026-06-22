@@ -1,4 +1,10 @@
-import { MeetRecordingInfo, MeetRoom, MeetRoomOptions } from '@openvidu-meet/typings';
+import {
+	MeetRecordingInfo,
+	MeetRoom,
+	MeetRoomMember,
+	MeetRoomMemberOptions,
+	MeetRoomOptions
+} from '@openvidu-meet/typings';
 import { MEET_API_KEY, MEET_API_URL } from '../config';
 
 // ─── Internal helpers ───────────────────────────────────────────────────────
@@ -71,6 +77,30 @@ export const deleteRooms = async (roomIds: string[]): Promise<void> => {
 
 	const responseText = await response.text();
 	assertOk(response, responseText, `delete rooms ${ids.join(',')}`);
+};
+
+// ─── Room member operations ─────────────────────────────────────────────────
+
+/**
+ * Adds a member to a room via the Meet API. With a `name` (and no `userId`) this
+ * creates an identified guest, whose personal access link is returned (absolute)
+ * in `accessUrl` — suitable to be passed as the `room-url` attribute of the
+ * `<openvidu-meet>` web component.
+ */
+export const createRoomMember = async (roomId: string, options: MeetRoomMemberOptions): Promise<MeetRoomMember> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/members`), {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			'x-api-key': MEET_API_KEY
+		},
+		body: JSON.stringify(options)
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'create room member');
+
+	return JSON.parse(responseText) as MeetRoomMember;
 };
 
 // ─── Recording operations ──────────────────────────────────────────────────────
