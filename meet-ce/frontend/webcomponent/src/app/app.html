@@ -1,7 +1,23 @@
 @if (errorMessage()) {
 	<div class="ov-meet-error" role="alert">
-		<div class="ov-meet-error-icon" aria-hidden="true">⚠️</div>
-		<div class="ov-meet-error-message">{{ errorMessage() }}</div>
+		<div class="ov-meet-error-content">
+			<div class="ov-meet-error-logo-wrap">
+				<img
+					[src]="logoUrl()"
+					(error)="onLogoError($event)"
+					alt="OpenVidu Meet"
+					class="ov-meet-error-logo"
+					aria-hidden="true"
+				/>
+			</div>
+			<div class="ov-meet-error-body">
+				<h2 class="ov-meet-error-title">Something went wrong</h2>
+				<p class="ov-meet-error-message">{{ errorMessage() }}</p>
+			</div>
+			<div class="ov-meet-error-footer">
+				<span>Powered by OpenVidu Meet</span>
+			</div>
+		</div>
 	</div>
 } @else {
 	@switch (view()) {

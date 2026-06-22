@@ -97,6 +97,16 @@ export class App {
 
 	readonly errorMessage = signal<string | null>(null);
 
+	// Default OpenVidu logo for the error screen, served as a static asset. Computed so
+	// it re-resolves once the server base URL is known (the shell is constructed before
+	// `setServerBaseUrl()` runs, so a one-time read would resolve against the wrong base).
+	protected readonly logoUrl = computed(() => this.runtimeConfigService.resolveUrl('assets/images/logo.webp'));
+
+	// Hide the logo if the asset fails to load so the error screen degrades to just the badge.
+	protected onLogoError(event: Event): void {
+		(event.target as HTMLElement).style.display = 'none';
+	}
+
 	// The primary (attribute-derived) view that has been successfully bootstrapped,
 	// or null. Tracked per-mode rather than as a global boolean so readiness follows
 	// the current `bootstrapMode` and the primary view re-bootstraps after an

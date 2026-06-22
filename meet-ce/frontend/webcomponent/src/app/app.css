@@ -30,30 +30,103 @@ ov-room-recordings {
 
 .ov-meet-error {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
   width: 100%;
   height: 100%;
-  background: var(--ov-meet-error-bg, #f8f8f8);
-  border: 1px solid var(--ov-meet-error-border, #e0e0e0);
-  padding: 1.5rem;
+  background: var(--ov-meet-background-color, #fafafa);
+  padding: var(--ov-meet-spacing-md, 16px);
+  box-sizing: border-box;
+  font-family: var(--ov-meet-font-family, 'Roboto', Arial, sans-serif);
+  animation: fadeIn 0.6s ease-out;
+}
+
+.ov-meet-error-content {
+  background: var(--ov-meet-surface-elevated, #ffffff);
+  border-radius: var(--ov-meet-radius-lg, 12px);
+  box-shadow: var(--ov-meet-shadow-lg, 0 8px 16px rgba(0, 0, 0, 0.16), 0 8px 16px rgba(0, 0, 0, 0.23));
+  padding: var(--ov-meet-spacing-xxl, 48px);
+  max-width: 520px;
+  width: 100%;
   text-align: center;
-  font-family: var(--ov-meet-font, Inter, system-ui, Arial, sans-serif);
   box-sizing: border-box;
 }
 
-.ov-meet-error-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+.ov-meet-error-logo-wrap {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-bottom: var(--ov-meet-spacing-xl, 32px);
+  animation: scaleIn 0.8s ease-out 0.2s both;
+}
+
+.ov-meet-error-logo-wrap::before {
+  content: '';
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  background: rgba(244, 67, 54, 0.1);
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.ov-meet-error-logo {
+  width: 50px;
+  height: auto;
+  object-fit: contain;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.ov-meet-error-badge {
+  position: absolute;
+  bottom: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  background: var(--ov-meet-color-error, #f44336);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--ov-meet-surface-elevated, #ffffff);
+  z-index: 2;
+}
+
+.ov-meet-error-badge .material-icons {
+  font-size: 13px;
+  color: #ffffff;
   line-height: 1;
 }
 
+.ov-meet-error-body {
+  margin-bottom: var(--ov-meet-spacing-xl, 32px);
+}
+
+.ov-meet-error-title {
+  font-size: var(--ov-meet-font-size-xxl, 1.5rem);
+  font-weight: var(--ov-meet-font-weight-semibold, 600);
+  color: var(--ov-meet-text-primary, #212121);
+  margin: 0 0 var(--ov-meet-spacing-sm, 8px) 0;
+  line-height: var(--ov-meet-line-height-tight, 1.2);
+}
+
 .ov-meet-error-message {
-  color: var(--ov-meet-error-color, #d32f2f);
-  font-size: 0.9375rem;
-  max-width: 36ch;
-  line-height: 1.5;
+  font-size: var(--ov-meet-font-size-md, 1rem);
+  color: var(--ov-meet-text-secondary, #757575);
+  margin: 0 auto;
+  line-height: var(--ov-meet-line-height-normal, 1.5);
+  max-width: 400px;
+}
+
+.ov-meet-error-footer {
+  padding-top: var(--ov-meet-spacing-lg, 24px);
+  border-top: 1px solid var(--ov-meet-border-color-light, #f0f0f0);
+  font-size: var(--ov-meet-font-size-sm, 0.875rem);
+  color: var(--ov-meet-text-hint, #9e9e9e);
+  font-weight: var(--ov-meet-font-weight-medium, 500);
 }
 
 /* ── Normal layout ───────────────────────────────────────────────────────── */

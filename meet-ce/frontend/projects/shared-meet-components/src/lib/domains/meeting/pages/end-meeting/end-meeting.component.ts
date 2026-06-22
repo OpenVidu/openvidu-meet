@@ -21,6 +21,9 @@ export class EndMeetingComponent implements OnInit {
 	protected navService = inject(NavigationService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 
+	/** Default OpenVidu logo served as a static asset (resolves in SPA & WC modes). */
+	protected readonly logoUrl = this.runtimeConfigService.resolveUrl('assets/images/logo.webp');
+
 	/**
 	 * Optional reason override, used when the component is rendered outside
 	 * the Angular Router (e.g. inside the Web Component, which has no
