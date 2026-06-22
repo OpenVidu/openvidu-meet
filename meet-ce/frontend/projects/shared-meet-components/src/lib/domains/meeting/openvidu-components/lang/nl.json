@@ -1,26 +1,4 @@
 {
-  "ADMIN": {
-    "LOGIN": "Log in",
-    "USERNAME": "Gebruikersnaam",
-    "USERNAME_REQUIRED": "Gebruikersnaam is verplicht",
-    "PASSWORD": "Wachtwoord",
-    "PASSWORD_REQUIRED": "Wachtwoord is vereist",
-    "DASHBOARD_TITLE": "OpenVidu Oproepdashboard",
-    "LOAD_MORE": "Meer laden",
-    "RECORDINGS": {
-      "EMPTY": "Er zijn geen opnames",
-      "SEARCH": "Een opname zoeken",
-      "DATE_START": "Startdatum",
-      "DATE_END": "Einddatum",
-      "DURATION": "Looptijd",
-      "SIZE": "Maat",
-      "STATUS": "Toestand",
-      "NAME": "Naam",
-      "ROOM": "Kamer",
-      "OUTPUT": "Uitgangsmodus"
-    },
-    "POWERED_BY": "Aangedreven door"
-  },
   "ROOM": {
     "JOINING": "De ruimte betreden...",
     "LANDSCAPE_WARNING": "Draai uw apparaat voor een betere ervaring naar portretmodus",
@@ -28,12 +6,7 @@
     "DISCONNECTED_SUBTITLE": "De sessie is beëindigd"
   },
   "PREJOIN": {
-    "NICKNAME_SECTION": "Stel je bijnaam in",
     "NICKNAME": "Bijnaam",
-    "NICKNAME_REQUIRED": "Bijnaam is vereist",
-    "DEVICE_SECTION": "Kies je apparaten",
-    "VIDEO_DEVICE": "Videospeler",
-    "AUDIO_DEVICE": "Audiospeler",
     "NO_VIDEO_DEVICE": "Videoapparaat niet gevonden",
     "NO_AUDIO_DEVICE": "Audioapparaat niet gevonden",
     "JOIN": "Deelnemen aan meeting",
@@ -49,8 +22,6 @@
     "MORE_OPTIONS": "Meer opties",
     "FULLSCREEN": "Volledig scherm",
     "EXIT_FULLSCREEN": "Volledig scherm verlaten",
-    "ENABLE_CAPTIONS": "Ondertiteling inschakelen",
-    "DISABLE_CAPTIONS": "Ondertiteling uitschakelen",
     "BACKGROUND": "Achtergrondeffecten",
     "START_RECORDING": "Start opname",
     "STOP_RECORDING": "Stop opname",
@@ -64,7 +35,6 @@
     "VIEW_RECORDINGS": "Opnames bekijken"
   },
   "STREAM": {
-    "SETTINGS": "Instellingen",
     "MUTE_SOUND": "Geluid dempen",
     "UNMUTE_SOUND": "Geluid niet meer dempen",
     "ZOOM_IN": "Inzoomen",
@@ -80,9 +50,6 @@
   },
   "PANEL": {
     "CLOSE": "Sluiten",
-    "SEE_MORE": "Zie meer",
-    "PRO_FEATURE": "Deze functie is onderdeel van OpenVidu PRO tier",
-    "PAID_FEATURE": "Deze functie maakt deel uit van de commerciële service van OpenVidu. Neem voor meer informatie contact met ons op via commercial@openvidu.io.",
     "CHAT": {
       "TITLE": "Chat",
       "YOU": "Jij",
@@ -122,10 +89,7 @@
       "VIDEO": "Video",
       "AUDIO": "Audio",
       "LANGUAGE": "Taal",
-      "CAPTIONS": "Ondertitels",
-      "DISABLED_AUDIO": "Geen audio",
       "DISABLED_VIDEO": "Geen video",
-      "CAPTIONS_LANG_TEXT": "Selecteer de taal die de deelnemers van de kamer zullen gebruiken. De ondertiteling zal in die taal verschijnen.",
       "THEME": "Thema"
     },
     "BACKGROUND": {
@@ -144,35 +108,14 @@
       "SUBTITLE": "Neem uw vergadering op voor het nageslacht",
       "CONTENT_TITLE": "Neem uw videogesprek op",
       "CONTENT_SUBTITLE": "Als de opname klaar is kunt u deze met gemak downloaden",
-      "VIEW_ONLY_SUBTITLE": "Bekijk en toegang tot kameropnames",
-      "VIEW_ONLY_CONTENT_TITLE": "Videogesprek opnames",
-      "VIEW_ONLY_CONTENT_SUBTITLE": "Hier heeft u toegang tot alle beschikbare opnames",
-      "WATCH": "Bekijken",
       "STARTING": "Beginnen met opnemen",
       "STOPPING": "Opname stoppen",
-      "IN_PROGRESS": "Opname in uitvoering",
-      "PLAY": "Toneelstuk",
       "DELETE": "Verwijderen",
       "CANCEL": "Annuleren",
       "ACCEPT": "Accepteren",
       "DELETE_QUESTION": "Weet je zeker dat je de opname wilt verwijderen?",
-      "DOWNLOAD": "Downloaden",
-      "RECORDINGS": "OPNAME",
-      "NO_MODERATOR": "Alleen de MOEDERATOR kan de opname starten",
       "NO_TRACKS_PUBLISHED": "Deel audio of video om met opnemen te beginnen.",
-      "NO_RECORDINGS_AVAILABLE": "Momenteel zijn er geen opnames beschikbaar",
       "ERROR_STARTING": "Fout bij starten opname"
-    },
-    "STREAMING": {
-      "TITLE": "Streaming",
-      "SUBTITLE": "Stream uw vergadering naar uw publiek",
-      "CONTENT_SUBTITLE": "OpenVidu heeft de url van het streamingplatform nodig.",
-      "START": "Start met streamen",
-      "STOP": "Stop met streamen",
-      "URL": "Voeg uw stream-URL in",
-      "CANCEL": "Annuleren",
-      "REQUIRED_URL": "De stream-URL is vereist",
-      "NO_MODERATOR": "Alleen de MODERATOR kan beginnen met streamen"
     }
   },
   "ERRORS": {
@@ -180,20 +123,13 @@
     "CONNECTION": "Verbinding verloren",
     "RECONNECT": "Proberen opnieuw verbinding te maken met de kamer...",
     "DISCONNECT": "Je bent losgekoppeld",
-    "NETWORK_DISCONNECT": "Je bent losgekoppeld vanwege een netwerkprobleem",
     "SIGNAL_CLOSE": "De verbinding met de server werd onverwacht verbroken",
     "SERVER_SHUTDOWN": "De server is momenteel offline of ondergaat onderhoud",
     "PARTICIPANT_REMOVED": "Je bent uit deze kamer verwijderd",
     "ROOM_DELETED": "Deze kamer is verwijderd",
     "DUPLICATE_IDENTITY": "Je bent losgekoppeld omdat je bijnaam aan een andere deelnemer is toegewezen",
-    "UNKNOWN_DISCONNECT": "Je bent losgekoppeld van de kamer",
     "TOGGLE_CAMERA": "Er is een fout opgetreden bij het overschakelen naar een andere camera",
     "TOGGLE_MICROPHONE": "Er is een fout opgetreden bij het overschakelen naar een microfoon",
-    "SCREEN_SHARING": "Fout bij het delen van het scherm",
-    "SCREEN_SUPPORT": "Uw browser ondersteunt het delen van schermen niet",
-    "MEDIA_ACCESS": "Toegang tot media-apparaten was niet toegestaan.",
-    "DEVICE_NOT_FOUND": "Er zijn geen video- of audioapparaten gevonden. Sluit er alstublieft ten minste één aan.",
-    "SST_CONNECTION": "Verbinding verbroken. Opnieuw verbinden met de spraak-naar-tekstservice...",
     "LOAD_RECORDING_TITLE": "Fout bij het laden van opname",
     "MEDIA_ERR_GENERIC": "Er is een fout opgetreden bij het laden van de video.",
     "MEDIA_ERR_NETWORK": "Een netwerkfout heeft ertoe geleid dat het downloaden van de video halverwege is mislukt.",
