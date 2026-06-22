@@ -75,7 +75,7 @@
 									@if (participantForm().get('e2eeKey')?.hasError('required')) {
 										<mat-error> The encryption key is <strong>required</strong> </mat-error>
 									}
-									<mat-hint>This room requires an encryption key to join the meeting</mat-hint>
+									<mat-hint>This meeting requires an encryption key</mat-hint>
 								</mat-form-field>
 							}
 
@@ -94,8 +94,8 @@
 						<div class="room-closed-message">
 							<mat-icon class="warning-icon">warning</mat-icon>
 							<p>
-								Sorry, this room is closed. You cannot join the meeting at this time. Please
-								contact a room manager for more information.
+								Sorry, this room is closed. You cannot join the meeting at this time. Please contact a
+								room manager for more information.
 							</p>
 						</div>
 					} @else {
