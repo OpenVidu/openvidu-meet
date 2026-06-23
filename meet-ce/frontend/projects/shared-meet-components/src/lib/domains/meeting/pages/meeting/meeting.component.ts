@@ -7,7 +7,8 @@ import {
 	effect,
 	inject,
 	OnInit,
-	signal
+	signal,
+	untracked
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -88,23 +89,30 @@ export class MeetingComponent implements OnInit {
 	hasRecordings = this.meetingContextService.hasRecordings;
 
 	constructor() {
-		// Change theme variables when custom theme is enabled
+		// Change theme variables when custom theme is enabled.
+		// Only `meetingAppearance()` should be a dependency of this effect. The theme service
+		// mutators below both read and write their own internal signals (`currentTheme`,
+		// `currentVariables`); running them inside the reactive context would register those
+		// signals as dependencies and the subsequent writes would re-trigger this effect in an
+		// infinite loop (pegging the main thread). Wrap the side effects in `untracked`.
 		effect(() => {
 			const { themes } = this.meetingContextService.meetingAppearance();
 			const hasTheme = themes.length > 0 && themes[0].enabled;
-			if (hasTheme) {
-				const theme = themes[0];
-				this.ovThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode);
-				this.ovThemeService.updateThemeVariables({
-					'--ov-primary-action-color': theme?.primaryColor,
-					'--ov-secondary-action-color': theme?.secondaryColor,
-					'--ov-accent-action-color': theme?.accentColor,
-					'--ov-background-color': theme?.backgroundColor,
-					'--ov-surface-color': theme?.surfaceColor
-				});
-			} else {
-				this.ovThemeService.resetThemeVariables();
-			}
+			untracked(() => {
+				if (hasTheme) {
+					const theme = themes[0];
+					this.ovThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode);
+					this.ovThemeService.updateThemeVariables({
+						'--ov-primary-action-color': theme?.primaryColor,
+						'--ov-secondary-action-color': theme?.secondaryColor,
+						'--ov-accent-action-color': theme?.accentColor,
+						'--ov-background-color': theme?.backgroundColor,
+						'--ov-surface-color': theme?.surfaceColor
+					});
+				} else {
+					this.ovThemeService.resetThemeVariables();
+				}
+			});
 		});
 	}
 
