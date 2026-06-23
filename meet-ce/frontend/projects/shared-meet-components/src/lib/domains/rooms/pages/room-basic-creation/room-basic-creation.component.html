@@ -3,9 +3,9 @@
 	<header class="page-header">
 		<mat-icon class="ov-room-icon page-icon">video_chat</mat-icon>
 		<div class="page-title-group">
-			<h2 class="page-title">Create Room</h2>
+			<h2 class="page-title">{{ 'ROOMS.BASIC_CREATION.TITLE' | translate }}</h2>
 			<p class="page-description">
-				Create a new room by just providing a name. For advanced options, use the room wizard.
+				{{ 'ROOMS.BASIC_CREATION.DESCRIPTION' | translate }}
 			</p>
 		</div>
 	</header>
@@ -15,12 +15,12 @@
 		<form [formGroup]="roomDetailsForm" class="room-basic-creation-form" (ngSubmit)="onCreateRoom()">
 			<!-- Room Field -->
 			<mat-form-field appearance="outline" class="form-field">
-				<mat-label>Room Name</mat-label>
-				<input matInput formControlName="roomName" placeholder="e.g. Demo Room" />
+				<mat-label>{{ 'ROOMS.BASIC_CREATION.ROOM_NAME' | translate }}</mat-label>
+				<input matInput formControlName="roomName" [placeholder]="'ROOMS.BASIC_CREATION.ROOM_NAME_PLACEHOLDER' | translate" />
 				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
-				<mat-hint>Enter a custom room name, or leave blank to use the default name "Room".</mat-hint>
+				<mat-hint>{{ 'ROOMS.BASIC_CREATION.ROOM_NAME_HINT' | translate }}</mat-hint>
 				@if (roomDetailsForm.get('roomName')?.hasError('maxlength')) {
-					<mat-error>Room name cannot exceed 50 characters</mat-error>
+					<mat-error>{{ 'ROOMS.BASIC_CREATION.ROOM_NAME_MAXLENGTH' | translate }}</mat-error>
 				}
 			</mat-form-field>
 
@@ -35,7 +35,7 @@
 					id="create-room-button"
 				>
 					<mat-icon>add</mat-icon>
-					<span>Create Room</span>
+					<span>{{ 'ROOMS.BASIC_CREATION.CREATE_ROOM' | translate }}</span>
 				</button>
 
 				<button
@@ -43,10 +43,10 @@
 					type="button"
 					(click)="onOpenAdvancedMode()"
 					class="advanced-button"
-					matTooltip="Open room wizard for advanced configuration"
+					[matTooltip]="'ROOMS.BASIC_CREATION.ADVANCED_TOOLTIP' | translate"
 				>
 					<mat-icon>handyman</mat-icon>
-					<span>Advanced Setup</span>
+					<span>{{ 'ROOMS.BASIC_CREATION.ADVANCED_SETUP' | translate }}</span>
 				</button>
 			</div>
 		</form>

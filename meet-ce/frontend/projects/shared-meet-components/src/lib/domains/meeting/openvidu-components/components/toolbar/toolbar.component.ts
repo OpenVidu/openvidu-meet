@@ -46,7 +46,7 @@ import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
 import { StorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
-import { TranslateService } from '../../services/translate/translate.service';
+import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-media-buttons.component';
 import { ToolbarPanelButtonsComponent } from './toolbar-panel-buttons/toolbar-panel-buttons.component';
 
@@ -85,7 +85,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly actionService = inject(ActionService);
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly recordingService = inject(RecordingService);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);
 	private readonly libService = inject(OpenViduComponentsConfigService);

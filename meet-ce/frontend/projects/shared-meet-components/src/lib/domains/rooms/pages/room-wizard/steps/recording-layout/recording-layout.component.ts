@@ -11,6 +11,8 @@ import {
 	SelectableCardOption,
 	SelectionCardEvent
 } from '../../../../../../shared/components/selectable-card/selectable-card.component';
+import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
 import { ThemeService } from '../../../../../../shared/services/theme.service';
 import { RecordingLayoutFormGroup, RecordingLayoutFormValue } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
@@ -24,7 +26,8 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		MatIconModule,
 		MatCardModule,
 		MatRadioModule,
-		SelectableCardComponent
+		SelectableCardComponent,
+		TranslatePipe
 	],
 	templateUrl: './recording-layout.component.html',
 	styleUrl: './recording-layout.component.scss',
@@ -33,6 +36,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 export class RecordingLayoutComponent {
 	private themeService = inject(ThemeService);
 	private wizardService = inject(RoomWizardStateService);
+	private readonly translateService = inject(TranslateService);
 
 	protected theme = this.themeService.currentTheme;
 
@@ -40,14 +44,14 @@ export class RecordingLayoutComponent {
 		return [
 			{
 				id: MeetRecordingLayout.GRID,
-				title: 'Grid Layout',
-				description: 'Display participants in an equal-size grid',
+				title: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.GRID_TITLE'),
+				description: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.GRID_DESC'),
 				imageUrl: `./assets/layouts/grid_${this.theme()}.png`
 			},
 			{
 				id: MeetRecordingLayout.SPEAKER,
-				title: 'Speaker Layout',
-				description: 'Highlight the active speaker with other participants below',
+				title: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.SPEAKER_TITLE'),
+				description: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.SPEAKER_DESC'),
 				imageUrl: `./assets/layouts/speaker_${this.theme()}.png`,
 				isPro: false,
 				disabled: false
@@ -55,8 +59,8 @@ export class RecordingLayoutComponent {
 			},
 			{
 				id: MeetRecordingLayout.SINGLE_SPEAKER,
-				title: 'Single Speaker',
-				description: 'Show only the active speaker in the recording',
+				title: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.SINGLE_SPEAKER_TITLE'),
+				description: this.translateService.translate('ROOMS.WIZARD.RECORDING_LAYOUT.SINGLE_SPEAKER_DESC'),
 				imageUrl: `./assets/layouts/single_speaker_${this.theme()}.png`,
 				isPro: false,
 				disabled: false

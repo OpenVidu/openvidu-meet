@@ -7,10 +7,10 @@
 				class="cancel-btn"
 				id="wizard-cancel-btn"
 				(click)="onCancel()"
-				[attr.aria-label]="'Cancel wizard and return to previous page'"
+				[attr.aria-label]="'ROOMS.WIZARD.CANCEL_ARIA' | translate"
 			>
 				<mat-icon class="leading-icon">close</mat-icon>
-				{{ config().cancelLabel || 'Cancel' }}
+				{{ config().cancelLabel || ('ROOMS.WIZARD.CANCEL' | translate) }}
 			</button>
 		}
 
@@ -21,7 +21,7 @@
 				class="back-btn"
 				id="wizard-back-btn"
 				(click)="onBack()"
-				[attr.aria-label]="'Go back'"
+				[attr.aria-label]="'ROOMS.WIZARD.GO_BACK_ARIA' | translate"
 			>
 				<mat-icon class="leading-icon">arrow_back</mat-icon>
 				{{ backButtonText() }}
@@ -39,10 +39,10 @@
 					class="prev-btn"
 					id="wizard-previous-btn"
 					(click)="onPrevious()"
-					[attr.aria-label]="'Go to previous step'"
+					[attr.aria-label]="'ROOMS.WIZARD.PREVIOUS_ARIA' | translate"
 				>
 					<mat-icon class="leading-icon">chevron_left</mat-icon>
-					{{ config().previousLabel || 'Previous' }}
+					{{ config().previousLabel || ('ROOMS.WIZARD.PREVIOUS' | translate) }}
 				</button>
 			}
 
@@ -54,10 +54,10 @@
 					id="wizard-quick-create-btn"
 					[disabled]="config().disableFinish ?? false"
 					(click)="skipAndFinish()"
-					[attr.aria-label]="'Skip wizard and finish'"
+					[attr.aria-label]="'ROOMS.WIZARD.SKIP_ARIA' | translate"
 				>
 					<mat-icon>bolt</mat-icon>
-					{{ config().skipAndFinishLabel || 'Skip and Finish' }}
+					{{ config().skipAndFinishLabel || ('ROOMS.WIZARD.SKIP_AND_FINISH' | translate) }}
 				</button>
 			}
 
@@ -68,9 +68,9 @@
 					class="next-btn"
 					id="wizard-next-btn"
 					(click)="onNext()"
-					[attr.aria-label]="'Continue to next step'"
+					[attr.aria-label]="'ROOMS.WIZARD.NEXT_ARIA' | translate"
 				>
-					{{ config().nextLabel || 'Next' }}
+					{{ config().nextLabel || ('ROOMS.WIZARD.NEXT' | translate) }}
 					<mat-icon class="trailing-icon">chevron_right</mat-icon>
 				</button>
 			}
@@ -83,10 +83,10 @@
 					id="wizard-finish-btn"
 					[disabled]="config().disableFinish ?? false"
 					(click)="onFinish()"
-					[attr.aria-label]="'Complete wizard and save changes'"
+					[attr.aria-label]="'ROOMS.WIZARD.FINISH_ARIA' | translate"
 				>
 					<mat-icon class="leading-icon">check</mat-icon>
-					{{ config().finishLabel || 'Finish' }}
+					{{ config().finishLabel || ('ROOMS.WIZARD.FINISH' | translate) }}
 				</button>
 			}
 		</div>

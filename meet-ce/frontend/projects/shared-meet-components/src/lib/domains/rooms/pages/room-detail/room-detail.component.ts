@@ -33,6 +33,8 @@ import {
 } from '@openvidu-meet/typings';
 import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/components/breadcrumb/breadcrumb.component';
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -86,7 +88,8 @@ interface RoomDetailCachedState {
 		BreadcrumbComponent,
 		RecordingListsComponent,
 		RoomMembersListsComponent,
-		ScrollPersistDirective
+		ScrollPersistDirective,
+		TranslatePipe
 	],
 	templateUrl: './room-detail.component.html',
 	styleUrl: './room-detail.component.scss',
@@ -102,6 +105,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly recordingService = inject(RecordingService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly dialogPresetsService = inject(DialogPresetsService);
+	private readonly translateService = inject(TranslateService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
 	private readonly dialog = inject(MatDialog);
@@ -189,7 +193,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		// Update breadcrumb items
 		this.breadcrumbItems.set([
 			{
-				label: 'Rooms',
+				label: this.translateService.translate('ROOMS.DETAIL.BREADCRUMB_ROOMS'),
 				action: () => this.navigationService.navigateTo('/rooms')
 			},
 			{
@@ -307,7 +311,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			await Promise.all(tabLoads);
 		} catch (error) {
 			this.log.e('Error loading room details:', error);
-			this.notificationService.showSnackbar('Failed to load room details');
+			this.notificationService.showSnackbar(
+				this.translateService.translate('ROOMS.ERRORS.FAILED_LOAD_ROOM_DETAILS')
+			);
 			await this.navigationService.navigateTo('/rooms');
 		}
 	}
@@ -345,9 +351,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		try {
 			const updatedRoom = await this.roomService.updateRoomStatus(this.roomId(), MeetRoomStatus.OPEN);
 			this.room.set(updatedRoom);
-			this.notificationService.showSnackbar('Room reopened successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.ROOM_REOPENED'));
 		} catch (error) {
-			this.notificationService.showSnackbar('Failed to reopen room');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_REOPEN_ROOM'));
 			this.log.e('Error reopening room:', error);
 		}
 	}
@@ -361,11 +367,11 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			// it is scheduled to take effect when the meeting ends.
 			const message =
 				updatedRoom.status === MeetRoomStatus.CLOSED
-					? 'Room closed successfully'
-					: 'Room scheduled to be closed when the meeting ends';
+					? this.translateService.translate('ROOMS.ERRORS.ROOM_CLOSED')
+					: this.translateService.translate('ROOMS.ERRORS.ROOM_SCHEDULED_CLOSE');
 			this.notificationService.showSnackbar(message);
 		} catch (error) {
-			this.notificationService.showSnackbar('Failed to close room');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_CLOSE_ROOM'));
 			this.log.e('Error closing room:', error);
 		}
 	}
@@ -660,7 +666,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo(`/recordings/${recordingId}`);
 		} catch (error) {
-			this.notificationService.showSnackbar('Error navigating to recording detail');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.NAVIGATING_RECORDING_DETAIL'));
 			this.log.e('Error navigating to recording detail:', error);
 		}
 	}

@@ -3,7 +3,7 @@
 	<div class="layout-section">
 		<div class="section-header">
 			<mat-icon class="section-icon material-symbols-outlined">browse</mat-icon>
-			<h4 class="section-title">Layout settings</h4>
+			<h4 class="section-title">{{ 'LAYOUT_SETTINGS.TITLE' | translate }}</h4>
 		</div>
 
 		<!-- Layout Mode Selection -->
@@ -12,19 +12,19 @@
 				class="layout-radio-group"
 				[ngModel]="layoutMode()"
 				(ngModelChange)="onLayoutModeChange($event)"
-				aria-label="Select layout mode"
+				[attr.aria-label]="'LAYOUT_SETTINGS.MODE_ARIA' | translate"
 			>
 				<mat-radio-button [value]="LayoutMode.MOSAIC" id="layout-mosaic" class="layout-radio-option">
 					<div class="radio-content">
-						<span class="radio-label">Mosaic</span>
-						<span class="radio-description">Shows all participants in a unified grid</span>
+						<span class="radio-label">{{ 'LAYOUT_SETTINGS.MOSAIC' | translate }}</span>
+						<span class="radio-description">{{ 'LAYOUT_SETTINGS.MOSAIC_DESC' | translate }}</span>
 					</div>
 				</mat-radio-button>
 
 				<mat-radio-button [value]="LayoutMode.SMART_MOSAIC" id="layout-smart-mosaic" class="layout-radio-option">
 					<div class="radio-content">
-						<span class="radio-label">Smart Mosaic</span>
-						<span class="radio-description">Shows a limited number of active participants</span>
+						<span class="radio-label">{{ 'LAYOUT_SETTINGS.SMART_MOSAIC' | translate }}</span>
+						<span class="radio-description">{{ 'LAYOUT_SETTINGS.SMART_MOSAIC_DESC' | translate }}</span>
 					</div>
 				</mat-radio-button>
 			</mat-radio-group>
@@ -33,8 +33,8 @@
 		<!-- Participant Count Selection (only visible in smart layout mode) -->
 		@if (isSmartLayoutEnabled()) {
 			<div class="participant-count-container">
-				<mat-label class="input-label">Number of visible participants</mat-label>
-				<p class="helper-text">Choose how many remote participants are shown in the grid</p>
+				<mat-label class="input-label">{{ 'LAYOUT_SETTINGS.COUNT_LABEL' | translate }}</mat-label>
+				<p class="helper-text">{{ 'LAYOUT_SETTINGS.COUNT_HELPER' | translate }}</p>
 				<div class="slider-container">
 					<mat-slider
 						class="participant-slider"
@@ -49,7 +49,7 @@
 							matSliderThumb
 							[value]="participantCount()"
 							(valueChange)="onParticipantCountChange($event)"
-							aria-label="Number of participants to display"
+							[attr.aria-label]="'LAYOUT_SETTINGS.COUNT_ARIA' | translate"
 						/>
 					</mat-slider>
 					<span class="participant-count-value">{{ participantCount() }}</span>

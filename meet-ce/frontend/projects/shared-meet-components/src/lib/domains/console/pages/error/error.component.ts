@@ -3,6 +3,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { describeNavigationError } from '../../../../shared/utils/navigation-error.util';
@@ -10,7 +12,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
 	selector: 'ov-error',
-	imports: [MatCardModule, MatIconModule, MatButtonModule],
+	imports: [MatCardModule, MatIconModule, MatButtonModule, TranslatePipe],
 	templateUrl: './error.component.html',
 	styleUrl: './error.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
@@ -20,14 +22,17 @@ export class ErrorComponent implements OnInit {
 	protected authService = inject(AuthService);
 	protected navService = inject(NavigationService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
+	private readonly translateService = inject(TranslateService);
 
-	errorName = signal('Error');
+	errorName = signal('');
 	message = signal('');
 
 	showBackButton = signal(true);
-	backButtonText = signal('Back');
+	backButtonText = signal('');
 
 	ngOnInit() {
+		this.errorName.set(this.translateService.translate('ERROR.DEFAULT_TITLE'));
+		this.backButtonText.set(this.translateService.translate('ERROR.BACK'));
 		this.setErrorReason();
 		this.setBackButtonText();
 	}
@@ -38,6 +43,8 @@ export class ErrorComponent implements OnInit {
 	private setErrorReason() {
 		const reason = this.route.snapshot.queryParams['reason'];
 		if (reason) {
+			// `describeNavigationError` returns English copy from a shared util; translating it is a
+			// separate cross-cutting task (the util is also used by the web component).
 			const { title, message } = describeNavigationError(reason);
 			this.errorName.set(title);
 			this.message.set(message);
@@ -60,7 +67,11 @@ export class ErrorComponent implements OnInit {
 		}
 
 		this.showBackButton.set(true);
-		this.backButtonText.set(isStandaloneMode && !redirection && isAuthenticated ? 'Back to Console' : 'Accept');
+		this.backButtonText.set(
+			this.translateService.translate(
+				isStandaloneMode && !redirection && isAuthenticated ? 'ERROR.BACK_TO_CONSOLE' : 'ERROR.ACCEPT'
+			)
+		);
 	}
 
 	/**

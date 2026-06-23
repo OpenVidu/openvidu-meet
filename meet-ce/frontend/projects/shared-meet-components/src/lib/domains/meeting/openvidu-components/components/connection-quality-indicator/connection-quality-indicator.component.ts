@@ -3,7 +3,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ParticipantModel } from '../../models/participant.model';
 import { ConnectionQuality } from '../../services/livekit-adapter';
-import { TranslateService } from '../../services/translate/translate.service';
+import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 @Component({
 	selector: 'ov-connection-quality-indicator',
@@ -18,7 +18,7 @@ export class ConnectionQualityIndicatorComponent implements OnDestroy {
 	readonly transparent = input(false);
 	readonly connectionQuality = computed(() => this.participant().connectionQuality);
 	readonly participantKey = computed(() => this.participant().sid);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 
 	readonly showBadge = computed(() => this.connectionQuality() !== ConnectionQuality.Unknown && this.isVisible());
 

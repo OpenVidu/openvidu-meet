@@ -1,4 +1,4 @@
 <div class="waiting-panel">
-	<div class="waiting-panel-title">{{ title() }}</div>
-	<div class="waiting-panel-subtitle">{{ subtitle() }}</div>
+	<div class="waiting-panel-title">{{ title() ?? ('WAITING_PANEL.TITLE' | translate) }}</div>
+	<div class="waiting-panel-subtitle">{{ subtitle() ?? ('WAITING_PANEL.SUBTITLE' | translate) }}</div>
 </div>

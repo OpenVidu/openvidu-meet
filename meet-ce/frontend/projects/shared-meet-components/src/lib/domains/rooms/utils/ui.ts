@@ -8,10 +8,19 @@ export class RoomUiUtils {
 	// ===== STATUS UTILITIES =====
 
 	/**
-	 * Gets the display text for a room status
+	 * Gets the i18n key for a room status label (resolve with the `translate` pipe at render).
 	 */
 	static getStatusLabel(room: MeetRoom): string {
-		return room.status.toUpperCase().replace(/_/g, ' ');
+		switch (room.status) {
+			case MeetRoomStatus.OPEN:
+				return 'ROOMS.UI.STATUS.OPEN';
+			case MeetRoomStatus.ACTIVE_MEETING:
+				return 'ROOMS.UI.STATUS.ACTIVE_MEETING';
+			case MeetRoomStatus.CLOSED:
+				return 'ROOMS.UI.STATUS.CLOSED';
+			default:
+				return room.status;
+		}
 	}
 
 	/**
@@ -34,11 +43,11 @@ export class RoomUiUtils {
 	static getStatusTooltip(room: MeetRoom): string {
 		switch (room.status) {
 			case MeetRoomStatus.OPEN:
-				return 'Room is open and available for members to start a meeting';
+				return 'ROOMS.UI.STATUS_TOOLTIP.OPEN';
 			case MeetRoomStatus.ACTIVE_MEETING:
-				return 'A meeting is currently ongoing in this room';
+				return 'ROOMS.UI.STATUS_TOOLTIP.ACTIVE_MEETING';
 			case MeetRoomStatus.CLOSED:
-				return 'Room is closed and not available for members to start a meeting';
+				return 'ROOMS.UI.STATUS_TOOLTIP.CLOSED';
 		}
 	}
 
@@ -94,9 +103,9 @@ export class RoomUiUtils {
 	static getMeetingEndActionTooltip(room: MeetRoom): string {
 		switch (room.meetingEndAction) {
 			case MeetingEndAction.CLOSE:
-				return 'The room will be closed when the meeting ends';
+				return 'ROOMS.UI.MEETING_END_TOOLTIP.CLOSE';
 			case MeetingEndAction.DELETE:
-				return 'The room and its recordings will be deleted when the meeting ends';
+				return 'ROOMS.UI.MEETING_END_TOOLTIP.DELETE';
 			default:
 				return '';
 		}
@@ -141,10 +150,12 @@ export class RoomUiUtils {
 	 */
 	static getAutoDeletionStatus(room: MeetRoom): string {
 		if (!room.autoDeletionDate) {
-			return 'DISABLED';
+			return 'ROOMS.UI.AUTO_DELETION_STATUS.DISABLED';
 		}
 
-		return RoomUiUtils.isAutoDeletionExpired(room) ? 'EXPIRED' : 'SCHEDULED';
+		return RoomUiUtils.isAutoDeletionExpired(room)
+			? 'ROOMS.UI.AUTO_DELETION_STATUS.EXPIRED'
+			: 'ROOMS.UI.AUTO_DELETION_STATUS.SCHEDULED';
 	}
 
 	/**
@@ -163,14 +174,14 @@ export class RoomUiUtils {
 	 */
 	static getAutoDeletionTooltip(room: MeetRoom): string {
 		if (!room.autoDeletionDate) {
-			return 'No auto-deletion. Room remains until manually deleted';
+			return 'ROOMS.UI.AUTO_DELETION_TOOLTIP.NONE';
 		}
 
 		if (RoomUiUtils.isAutoDeletionExpired(room)) {
-			return 'Auto-deletion date has passed but room was not deleted due to auto-deletion policy';
+			return 'ROOMS.UI.AUTO_DELETION_TOOLTIP.EXPIRED';
 		}
 
-		return 'Auto-deletion scheduled';
+		return 'ROOMS.UI.AUTO_DELETION_TOOLTIP.SCHEDULED';
 	}
 
 	/**
@@ -197,11 +208,13 @@ export class RoomUiUtils {
 	 * Gets the label for toggling room status (open/close)
 	 */
 	static getRoomToggleLabel(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'Close room' : 'Open room';
+		return room.status !== MeetRoomStatus.CLOSED ? 'ROOMS.UI.TOGGLE.CLOSE_LABEL' : 'ROOMS.UI.TOGGLE.OPEN_LABEL';
 	}
 
 	static getRoomToggleTooltip(room: MeetRoom): string {
-		return room.status !== MeetRoomStatus.CLOSED ? 'Close room' : 'Open room to allow members to start a meeting';
+		return room.status !== MeetRoomStatus.CLOSED
+			? 'ROOMS.UI.TOGGLE.CLOSE_TOOLTIP'
+			: 'ROOMS.UI.TOGGLE.OPEN_TOOLTIP';
 	}
 
 	/**
@@ -225,10 +238,10 @@ export class RoomUiUtils {
 	 */
 	static getAccessRoomTooltip(room: MeetRoom): string {
 		if (!RoomUiUtils.canAccessRoom(room)) {
-			return 'Room is closed. Reopen the room to allow members to access it';
+			return 'ROOMS.UI.ACCESS_TOOLTIP.CLOSED';
 		}
 
-		return 'Access room';
+		return 'ROOMS.UI.ACCESS_TOOLTIP.OPEN';
 	}
 
 	/**
@@ -250,10 +263,10 @@ export class RoomUiUtils {
 	 */
 	static getShareAccessLinksTooltip(room: MeetRoom): string {
 		if (!RoomUiUtils.canShareAccessLinks(room)) {
-			return 'Room is closed. Reopen the room to allow sharing access links';
+			return 'ROOMS.UI.SHARE_TOOLTIP.CLOSED';
 		}
 
-		return 'Share access links';
+		return 'ROOMS.UI.SHARE_TOOLTIP.OPEN';
 	}
 
 	/**
@@ -275,10 +288,10 @@ export class RoomUiUtils {
 	 */
 	static getEditRoomTooltip(room: MeetRoom): string {
 		if (!RoomUiUtils.canEditRoom(room)) {
-			return 'Editing the room is disabled during an active meeting';
+			return 'ROOMS.UI.EDIT_TOOLTIP.ACTIVE';
 		}
 
-		return 'Edit room settings';
+		return 'ROOMS.UI.EDIT_TOOLTIP.DEFAULT';
 	}
 
 	// ==== OTHER UTILITIES =====

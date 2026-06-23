@@ -4,7 +4,7 @@
 		id="leave-btn"
 		mat-icon-button
 		[matMenuTriggerFor]="leaveMenu"
-		[matTooltip]="leaveMenuTooltip"
+		[matTooltip]="'LEAVE_BUTTON.MENU_TOOLTIP' | translate"
 		[disableRipple]="true"
 		class="custom-leave-btn"
 		[class.mobile-btn]="isMobile()"
@@ -14,12 +14,12 @@
 	<mat-menu #leaveMenu="matMenu">
 		<button mat-menu-item (click)="onLeaveMeetingClick()" id="leave-option">
 			<mat-icon>logout</mat-icon>
-			<span>{{ leaveOptionText }}</span>
+			<span>{{ 'LEAVE_BUTTON.LEAVE_OPTION' | translate }}</span>
 		</button>
 		<mat-divider />
 		<button mat-menu-item (click)="onEndMeetingClick()" id="end-meeting-option">
 			<mat-icon>no_meeting_room</mat-icon>
-			<span>{{ endMeetingOptionText }}</span>
+			<span>{{ 'LEAVE_BUTTON.END_OPTION' | translate }}</span>
 		</button>
 	</mat-menu>
 }

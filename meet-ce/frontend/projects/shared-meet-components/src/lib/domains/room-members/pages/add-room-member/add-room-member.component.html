@@ -3,13 +3,15 @@
 	<div class="page-header">
 		<div class="title">
 			<mat-icon>{{ isEditMode() ? 'edit' : 'person_add' }}</mat-icon>
-			<h1>{{ isEditMode() ? 'Edit Room Member' : 'Add Room Member' }}</h1>
+			<h1>
+				{{ isEditMode() ? ('ROOM_MEMBERS.ADD.TITLE_EDIT' | translate) : ('ROOM_MEMBERS.ADD.TITLE_ADD' | translate) }}
+			</h1>
 		</div>
 		<p class="subtitle">
 			@if (isEditMode()) {
-				Update permissions for this room member.
+				{{ 'ROOM_MEMBERS.ADD.SUBTITLE_EDIT' | translate }}
 			} @else {
-				Grant access to a user or an identified guest for this room.
+				{{ 'ROOM_MEMBERS.ADD.SUBTITLE_ADD' | translate }}
 			}
 		</p>
 	</div>
@@ -21,19 +23,19 @@
 				<div mat-card-avatar class="section-avatar">
 					<mat-icon class="section-icon">group_add</mat-icon>
 				</div>
-				<mat-card-title>Member Configuration</mat-card-title>
+				<mat-card-title>{{ 'ROOM_MEMBERS.ADD.CARD_TITLE' | translate }}</mat-card-title>
 				<mat-card-subtitle>
 					@if (isEditMode()) {
 						@if (memberType() === 'user') {
-							Update user's permissions for this room
+							{{ 'ROOM_MEMBERS.ADD.CARD_SUBTITLE_EDIT_USER' | translate }}
 						} @else {
-							Update identified guest's permissions for this room
+							{{ 'ROOM_MEMBERS.ADD.CARD_SUBTITLE_EDIT_GUEST' | translate }}
 						}
 					} @else {
 						@if (memberType() === 'user') {
-							Select a user and configure their permissions
+							{{ 'ROOM_MEMBERS.ADD.CARD_SUBTITLE_ADD_USER' | translate }}
 						} @else {
-							Select a name for the guest and configure their permissions
+							{{ 'ROOM_MEMBERS.ADD.CARD_SUBTITLE_ADD_GUEST' | translate }}
 						}
 					}
 				</mat-card-subtitle>

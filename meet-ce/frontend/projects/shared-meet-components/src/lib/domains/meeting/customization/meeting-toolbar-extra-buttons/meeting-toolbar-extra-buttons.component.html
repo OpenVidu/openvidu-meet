@@ -12,9 +12,9 @@
 			<mat-icon class="material-symbols-outlined">subtitles</mat-icon>
 			<span class="button-text">
 				@if (isCaptionsButtonDisabled()) {
-					Live captions (disabled by admin)
+					{{ 'CAPTIONS.DISABLED_BY_ADMIN_TEXT' | translate }}
 				} @else {
-					{{ areCaptionsEnabledByUser() ? 'Disable live captions' : 'Enable live captions' }}
+					{{ areCaptionsEnabledByUser() ? ('CAPTIONS.DISABLE' | translate) : ('CAPTIONS.ENABLE' | translate) }}
 				}
 			</span>
 		</button>
@@ -29,10 +29,10 @@
 			[disableRipple]="true"
 			[matTooltip]="
 				isCaptionsButtonDisabled()
-					? 'Live captions are disabled by admin'
+					? ('CAPTIONS.DISABLED_BY_ADMIN_TOOLTIP' | translate)
 					: areCaptionsEnabledByUser()
-						? 'Disable live captions'
-						: 'Enable live captions'
+						? ('CAPTIONS.DISABLE' | translate)
+						: ('CAPTIONS.ENABLE' | translate)
 			"
 		>
 			@if (isCaptionsButtonDisabled()) {

@@ -5,18 +5,18 @@
 			<div class="page-header">
 				<div class="title">
 					<mat-icon>dashboard</mat-icon>
-					<h1>Overview</h1>
+					<h1>{{ 'OVERVIEW.TITLE' | translate }}</h1>
 				</div>
-				<p class="subtitle">Loading your dashboard...</p>
+				<p class="subtitle">{{ 'OVERVIEW.LOADING_SUBTITLE' | translate }}</p>
 			</div>
 		</div>
 	} @else if (hasData()) {
 		<div class="page-header">
 			<div class="title">
 				<mat-icon>dashboard</mat-icon>
-				<h1>Overview</h1>
+				<h1>{{ 'OVERVIEW.TITLE' | translate }}</h1>
 			</div>
-			<p class="subtitle">Monitor your system status and recent activity</p>
+			<p class="subtitle">{{ 'OVERVIEW.SUBTITLE' | translate }}</p>
 		</div>
 		<!-- Dashboard State -->
 		<div class="dashboard-content">
@@ -29,8 +29,8 @@
 						</div>
 						<div class="stat-content">
 							<div class="stat-number">{{ stats().totalRooms }}</div>
-							<div class="stat-label">Total Rooms</div>
-							<div class="stat-detail">{{ stats().activeRooms }} with active meetings</div>
+							<div class="stat-label">{{ 'OVERVIEW.TOTAL_ROOMS' | translate }}</div>
+							<div class="stat-detail">{{ stats().activeRooms }} {{ 'OVERVIEW.ACTIVE_MEETINGS_SUFFIX' | translate }}</div>
 						</div>
 					</mat-card-content>
 					<mat-card-actions>
@@ -41,10 +41,10 @@
 							id="create-room-button"
 						>
 							<mat-icon>add</mat-icon>
-							Create Room
+							{{ 'OVERVIEW.CREATE_ROOM' | translate }}
 						</button>
 						<button mat-button (click)="navigateTo('rooms')" id="view-all-rooms-button">
-							View all
+							{{ 'OVERVIEW.VIEW_ALL' | translate }}
 							<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
 						</button>
 					</mat-card-actions>
@@ -57,14 +57,14 @@
 						</div>
 						<div class="stat-content">
 							<div class="stat-number">{{ stats().totalRecordings }}</div>
-							<div class="stat-label">Total Recordings</div>
-							<div class="stat-detail">{{ stats().completeRecordings }} available for playback</div>
+							<div class="stat-label">{{ 'OVERVIEW.TOTAL_RECORDINGS' | translate }}</div>
+							<div class="stat-detail">{{ stats().completeRecordings }} {{ 'OVERVIEW.AVAILABLE_PLAYBACK_SUFFIX' | translate }}</div>
 						</div>
 					</mat-card-content>
 					<mat-card-actions>
 						<button mat-button (click)="navigateTo('recordings')" id="view-all-recordings-button">
 							<mat-icon class="ov-navigation-icon">arrow_forward</mat-icon>
-							View all
+							{{ 'OVERVIEW.VIEW_ALL' | translate }}
 						</button>
 					</mat-card-actions>
 				</mat-card>
@@ -73,9 +73,9 @@
 	} @else {
 		<!-- First Time User State -->
 		<div class="get-started-header">
-			<h1>Get started with OpenVidu Meet</h1>
-			<p class="subtitle">Your video conference management dashboard.</p>
-			<p class="subtitle">Get the most out of your app, start with these quick setup actions.</p>
+			<h1>{{ 'OVERVIEW.GET_STARTED_TITLE' | translate }}</h1>
+			<p class="subtitle">{{ 'OVERVIEW.GET_STARTED_SUBTITLE_1' | translate }}</p>
+			<p class="subtitle">{{ 'OVERVIEW.GET_STARTED_SUBTITLE_2' | translate }}</p>
 		</div>
 		<div class="welcome-content">
 			<div class="welcome-card">
@@ -84,18 +84,15 @@
 						<mat-card class="feature-card">
 							<mat-card-content>
 								<mat-icon class="ov-room-icon">video_chat</mat-icon>
-								<h3>Create your first room</h3>
-								<p>
-									Create dedicated spaces for video conferences where participants can connect,
-									collaborate, and communicate seamlessly.
-								</p>
+								<h3>{{ 'OVERVIEW.CREATE_FIRST_ROOM_TITLE' | translate }}</h3>
+								<p>{{ 'OVERVIEW.CREATE_FIRST_ROOM_DESC' | translate }}</p>
 								<button
 									mat-stroked-button
 									(click)="navigateTo('rooms/new')"
 									id="create-first-room-button"
 								>
 									<mat-icon class="ov-action-icon">add</mat-icon>
-									Create Room
+									{{ 'OVERVIEW.CREATE_ROOM' | translate }}
 								</button>
 							</mat-card-content>
 						</mat-card>
@@ -103,17 +100,14 @@
 						<mat-card class="feature-card">
 							<mat-card-content>
 								<mat-icon class="material-symbols-outlined"> palette </mat-icon>
-								<h3>Customize the appearance</h3>
-								<p>
-									Personalize the look and feel of your video conference rooms to align with your
-									brand and style.
-								</p>
+								<h3>{{ 'OVERVIEW.CUSTOMIZE_TITLE' | translate }}</h3>
+								<p>{{ 'OVERVIEW.CUSTOMIZE_DESC' | translate }}</p>
 								<button
 									mat-stroked-button
 									(click)="navigateTo('config')"
 									id="configure-appearance-button"
 								>
-									Go to Configuration
+									{{ 'OVERVIEW.GO_TO_CONFIG' | translate }}
 								</button>
 							</mat-card-content>
 						</mat-card>
@@ -122,13 +116,10 @@
 							<mat-card-content>
 								<mat-icon class="material-symbols-outlined ov-developer-icon"> code_blocks </mat-icon>
 
-								<h3>Embed OpenVidu Meet</h3>
-								<p>
-									Embed OpenVidu Meet into your applications using our comprehensive REST API for
-									programmatic room creation and management.
-								</p>
+								<h3>{{ 'OVERVIEW.EMBED_TITLE' | translate }}</h3>
+								<p>{{ 'OVERVIEW.EMBED_DESC' | translate }}</p>
 								<button mat-stroked-button (click)="navigateTo('embedded')" id="go-to-embedded-button">
-									Go to Embedded
+									{{ 'OVERVIEW.GO_TO_EMBEDDED' | translate }}
 								</button>
 							</mat-card-content>
 						</mat-card>

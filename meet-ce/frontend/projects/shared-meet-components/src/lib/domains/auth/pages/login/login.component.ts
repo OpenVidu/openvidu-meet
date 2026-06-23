@@ -8,7 +8,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AssetsService } from '../../../../shared/services/assets.service';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -23,7 +25,8 @@ import { AuthService } from '../../services/auth.service';
 		MatCardModule,
 		MatIconModule,
 		MatTooltipModule,
-		RouterModule
+		RouterModule,
+		TranslatePipe
 	],
 	templateUrl: './login.component.html',
 	styleUrl: './login.component.scss',
@@ -34,6 +37,7 @@ export class LoginComponent implements OnInit {
 	private route = inject(ActivatedRoute);
 	private authService = inject(AuthService);
 	private readonly assets = inject(AssetsService);
+	private readonly translateService = inject(TranslateService);
 
 	/** OpenVidu Meet brand logo (resolves in SPA & webcomponent modes). */
 	protected readonly logoUrl = this.assets.meetLogo;
@@ -72,9 +76,9 @@ export class LoginComponent implements OnInit {
 			await this.navigationService.redirectTo(this.redirectTo());
 		} catch (error) {
 			if ((error as HttpErrorResponse).status === 429) {
-				this.loginErrorMessage.set('Too many login attempts. Please try again later');
+				this.loginErrorMessage.set(this.translateService.translate('AUTH.LOGIN.ERROR_TOO_MANY_ATTEMPTS'));
 			} else {
-				this.loginErrorMessage.set('Invalid user ID or password');
+				this.loginErrorMessage.set(this.translateService.translate('AUTH.LOGIN.ERROR_INVALID_CREDENTIALS'));
 			}
 		}
 	}

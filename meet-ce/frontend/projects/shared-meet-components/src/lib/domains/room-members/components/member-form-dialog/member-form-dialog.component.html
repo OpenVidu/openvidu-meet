@@ -1,6 +1,10 @@
 <h2 mat-dialog-title class="dialog-title">
 	<mat-icon class="title-icon">{{ data.initialData ? 'edit' : 'person_add' }}</mat-icon>
-	{{ data.initialData ? 'Edit Member' : 'Add Member' }}
+	{{
+		data.initialData
+			? ('ROOM_MEMBERS.FORM_DIALOG.TITLE_EDIT' | translate)
+			: ('ROOM_MEMBERS.FORM_DIALOG.TITLE_ADD' | translate)
+	}}
 </h2>
 
 <mat-dialog-content>

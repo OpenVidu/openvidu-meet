@@ -3,11 +3,12 @@ import { ChangeDetectionStrategy } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { ProFeatureBadgeComponent } from '../../../../shared';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AssetsService } from '../../../../shared/services/assets.service';
 
 @Component({
     selector: 'ov-logo-selector',
-    imports: [MatButtonModule, MatIconModule, ProFeatureBadgeComponent],
+    imports: [MatButtonModule, MatIconModule, ProFeatureBadgeComponent, TranslatePipe],
     templateUrl: './logo-selector.component.html',
     styleUrl: './logo-selector.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

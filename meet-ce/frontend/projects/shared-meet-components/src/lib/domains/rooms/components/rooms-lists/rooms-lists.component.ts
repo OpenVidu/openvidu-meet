@@ -38,6 +38,8 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomUiUtils } from '../../utils/ui';
 
@@ -112,7 +114,8 @@ export interface RoomTableFilter {
 		MatBadgeModule,
 		MatDividerModule,
 		MatSortModule,
-		DatePipe
+		DatePipe,
+		TranslatePipe
 	],
 	templateUrl: './rooms-lists.component.html',
 	styleUrl: './rooms-lists.component.scss',
@@ -123,6 +126,7 @@ export interface RoomTableFilter {
 })
 export class RoomsListsComponent implements OnInit {
 	private destroyRef = inject(DestroyRef);
+	private readonly translateService = inject(TranslateService);
 
 	rooms = input<MeetRoom[]>([]);
 	showSearchBox = input(true);
@@ -223,18 +227,18 @@ export class RoomsListsComponent implements OnInit {
 
 	// Status options
 	statusOptions = [
-		{ value: '', label: 'All statuses' },
-		{ value: MeetRoomStatus.OPEN, label: 'Open' },
-		{ value: MeetRoomStatus.ACTIVE_MEETING, label: 'Active Meeting' },
-		{ value: MeetRoomStatus.CLOSED, label: 'Closed' }
+		{ value: '', label: 'ROOMS.LIST.STATUS_ALL' },
+		{ value: MeetRoomStatus.OPEN, label: 'ROOMS.LIST.STATUS_OPEN' },
+		{ value: MeetRoomStatus.ACTIVE_MEETING, label: 'ROOMS.LIST.STATUS_ACTIVE_MEETING' },
+		{ value: MeetRoomStatus.CLOSED, label: 'ROOMS.LIST.STATUS_CLOSED' }
 	];
 
 	// Room name match mode options
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
-		{ value: TextMatchMode.EXACT, label: 'Exact', icon: 'format_quote' },
-		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
+		{ value: TextMatchMode.PREFIX, label: 'ROOMS.LIST.MATCH_MODE_STARTS_WITH', icon: 'first_page' },
+		{ value: TextMatchMode.PARTIAL, label: 'ROOMS.LIST.MATCH_MODE_CONTAINS', icon: 'more_horiz' },
+		{ value: TextMatchMode.EXACT, label: 'ROOMS.LIST.MATCH_MODE_EXACT', icon: 'format_quote' },
+		{ value: TextMatchMode.REGEX, label: 'ROOMS.LIST.MATCH_MODE_REGEX', icon: 'code' }
 	];
 
 	// Currently selected match mode option (drives the search-box trigger button)
@@ -251,14 +255,31 @@ export class RoomsListsComponent implements OnInit {
 		const chips: { key: string; label: string }[] = [];
 		if (f.statusFilter) {
 			const opt = this.statusOptions.find((o) => o.value === f.statusFilter);
-			chips.push({ key: 'statusFilter', label: `Status: ${opt?.label ?? f.statusFilter}` });
+			const statusLabel = opt ? this.translateService.translate(opt.label) : f.statusFilter;
+			chips.push({
+				key: 'statusFilter',
+				label: `${this.translateService.translate('ROOMS.LIST.CHIP_STATUS_PREFIX')}${statusLabel}`
+			});
 		}
-		if (f.ownerFilter) chips.push({ key: 'ownerFilter', label: `Owner: ${f.ownerFilter}` });
-		if (f.memberFilter) chips.push({ key: 'memberFilter', label: `Member: ${f.memberFilter}` });
-		if (f.showOwnedRooms) chips.push({ key: 'showOwnedRooms', label: 'Created by me' });
-		if (f.showMemberRooms) chips.push({ key: 'showMemberRooms', label: "I'm a member of" });
+		if (f.ownerFilter)
+			chips.push({
+				key: 'ownerFilter',
+				label: `${this.translateService.translate('ROOMS.LIST.CHIP_OWNER_PREFIX')}${f.ownerFilter}`
+			});
+		if (f.memberFilter)
+			chips.push({
+				key: 'memberFilter',
+				label: `${this.translateService.translate('ROOMS.LIST.CHIP_MEMBER_PREFIX')}${f.memberFilter}`
+			});
+		if (f.showOwnedRooms)
+			chips.push({ key: 'showOwnedRooms', label: this.translateService.translate('ROOMS.LIST.CREATED_BY_ME') });
+		if (f.showMemberRooms)
+			chips.push({ key: 'showMemberRooms', label: this.translateService.translate('ROOMS.LIST.IM_A_MEMBER_OF') });
 		if (f.showUserAccessRooms) {
-			chips.push({ key: 'showUserAccessRooms', label: 'Open to all users' });
+			chips.push({
+				key: 'showUserAccessRooms',
+				label: this.translateService.translate('ROOMS.LIST.OPEN_TO_ALL_USERS')
+			});
 		}
 		return chips;
 	});

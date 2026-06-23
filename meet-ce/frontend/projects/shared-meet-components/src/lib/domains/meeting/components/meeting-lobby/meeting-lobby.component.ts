@@ -5,6 +5,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
 import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 
@@ -24,7 +26,9 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MatCardModule,
 		MatButtonModule,
 		MatIconModule,
-		ShareRoomAccessLinkComponent
+		MatTooltipModule,
+		ShareRoomAccessLinkComponent,
+		TranslatePipe
 	],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })

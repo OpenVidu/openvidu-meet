@@ -5,6 +5,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRoomMemberOptions, MeetRoomOptions } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RoomMemberService } from '../../../room-members/services/room-member.service';
@@ -36,7 +38,8 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 		RecordingConfigComponent,
 		RecordingTriggerComponent,
 		RecordingLayoutComponent,
-		RoomConfigComponent
+		RoomConfigComponent,
+		TranslatePipe
 	],
 	templateUrl: './room-wizard.component.html',
 	styleUrl: './room-wizard.component.scss',
@@ -49,6 +52,7 @@ export class RoomWizardComponent implements OnInit {
 	protected notificationService = inject(NotificationService);
 	private navigationService = inject(NavigationService);
 	private route = inject(ActivatedRoute);
+	private readonly translateService = inject(TranslateService);
 
 	roomId?: string;
 	existingRoomData?: MeetRoomOptions; // Edit mode
@@ -175,7 +179,7 @@ export class RoomWizardComponent implements OnInit {
 			const path = url.pathname;
 			await this.navigationService.redirectTo(path);
 		} catch (error) {
-			const errorMessage = `Failed to create room ${roomName}`;
+			const errorMessage = `${this.translateService.translate('ROOMS.ERRORS.FAILED_CREATE_ROOM_NAMED_PREFIX')}${roomName}`;
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
 		} finally {
@@ -216,7 +220,7 @@ export class RoomWizardComponent implements OnInit {
 					undefined,
 					true
 				);
-				this.notificationService.showSnackbar('Room updated successfully');
+				this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.ROOM_UPDATED'));
 			} else {
 				// Create new room
 				const { roomId, access } = await this.roomService.createRoom(roomOptions, {
@@ -238,7 +242,9 @@ export class RoomWizardComponent implements OnInit {
 				await this.navigationService.redirectTo(path);
 			}
 		} catch (error) {
-			const errorMessage = `Failed to ${this.editMode() ? 'update' : 'create'} room`;
+			const errorMessage = this.editMode()
+				? this.translateService.translate('ROOMS.ERRORS.FAILED_UPDATE_ROOM')
+				: this.translateService.translate('ROOMS.ERRORS.FAILED_CREATE_ROOM');
 			this.notificationService.showSnackbar(errorMessage);
 			console.error(errorMessage, error);
 
@@ -264,7 +270,7 @@ export class RoomWizardComponent implements OnInit {
 				.map((m) => m.userId || m.name)
 				.join(', ');
 			this.notificationService.showSnackbar(
-				`Room created, but failed to add ${failed.length} member(s): ${failedIds}`
+				`${this.translateService.translate('ROOMS.ERRORS.ROOM_CREATED_MEMBERS_FAILED_PREFIX')}${failed.length}${this.translateService.translate('ROOMS.ERRORS.ROOM_CREATED_MEMBERS_FAILED_MIDDLE')}${failedIds}`
 			);
 			console.warn('Failed to add members:', failed);
 		}

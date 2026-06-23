@@ -1,0 +1,27 @@
+<button
+	mat-icon-button
+	[matMenuTriggerFor]="langMenu"
+	[matTooltip]="'NAV.LANGUAGE' | translate"
+	aria-label="Select language"
+	id="language-selector-btn"
+	disableRipple
+>
+	<mat-icon>translate</mat-icon>
+</button>
+
+<mat-menu #langMenu="matMenu" class="language-menu">
+	@for (lang of languages(); track lang.lang) {
+		<button
+			mat-menu-item
+			(click)="onLangSelected(lang.lang)"
+			[attr.id]="'lang-opt-' + lang.lang"
+			[class.selected]="selectedLanguage().lang === lang.lang"
+			class="language-option"
+		>
+			@if (selectedLanguage().lang === lang.lang) {
+				<mat-icon class="check-icon">check</mat-icon>
+			}
+			<span class="lang-option-name">{{ lang.name }}</span>
+		</button>
+	}
+</mat-menu>

@@ -24,7 +24,7 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 			canActivate: [checkRoleGuard([MeetUserRole.ADMIN])]
 		},
 		navMetadata: {
-			label: 'Overview',
+			label: 'NAV.OVERVIEW',
 			route: 'overview',
 			icon: 'dashboard',
 			order: 1,
@@ -42,7 +42,7 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 			canActivate: [checkRoleGuard([MeetUserRole.ADMIN])]
 		},
 		navMetadata: {
-			label: 'Embedded',
+			label: 'NAV.EMBEDDED',
 			route: 'embedded',
 			icon: 'code_blocks',
 			iconClass: 'material-symbols-outlined ov-developer-icon',
@@ -57,7 +57,7 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 			canActivate: [checkRoleGuard([MeetUserRole.ADMIN])]
 		},
 		navMetadata: {
-			label: 'Configuration',
+			label: 'NAV.CONFIGURATION',
 			route: 'config',
 			icon: 'settings',
 			iconClass: 'ov-settings-icon',

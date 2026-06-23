@@ -15,6 +15,8 @@ import { PlatformService } from './services/platform/platform.service';
 import { RecordingService } from './services/recording/recording.service';
 import { StorageService } from './services/storage/storage.service';
 
+import { provideTranslations } from '../../../shared/models';
+import { MEETING_TRANSLATIONS } from '../lang/meeting-translations';
 import { OpenViduComponentsUiModule } from './openvidu-components-angular-ui.module';
 import { OpenViduComponentsConfigService } from './services/config/directive-config.service';
 import { GlobalConfigService } from './services/config/global-config.service';
@@ -48,6 +50,7 @@ export class OpenViduComponentsModule {
 			VirtualBackgroundService,
 			ViewportService,
 			E2eeService,
+			provideTranslations(MEETING_TRANSLATIONS),
 			provideHttpClient(withInterceptorsFromDi())
 		];
 

@@ -6,7 +6,9 @@ import { MatSidenav, MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterModule } from '@angular/router';
+import { LanguageSelectorComponent } from '../../../../shared/components/language-selector/language-selector.component';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AppContextService } from '../../../../shared/services/app-context.service';
 import { ThemeService } from '../../../../shared/services/theme.service';
 
@@ -19,7 +21,9 @@ import { ThemeService } from '../../../../shared/services/theme.service';
 		MatIconModule,
 		MatSidenavModule,
 		MatTooltipModule,
-		RouterModule
+		RouterModule,
+		LanguageSelectorComponent,
+		TranslatePipe
 	],
 	templateUrl: './console-nav.component.html',
 	styleUrl: './console-nav.component.scss',

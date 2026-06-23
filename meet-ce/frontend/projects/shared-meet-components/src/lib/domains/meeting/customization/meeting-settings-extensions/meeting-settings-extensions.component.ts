@@ -7,6 +7,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSliderModule } from '@angular/material/slider';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { SmartLayoutMode } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingLayoutService } from '../../services/meeting-layout.service';
@@ -23,7 +24,8 @@ import { MeetingLayoutService } from '../../services/meeting-layout.service';
 		MatSliderModule,
 		MatFormFieldModule,
 		MatSelectModule,
-		FormsModule
+		FormsModule,
+		TranslatePipe
 	],
 	templateUrl: './meeting-settings-extensions.component.html',
 	styleUrl: './meeting-settings-extensions.component.scss',

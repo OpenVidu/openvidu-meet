@@ -3,12 +3,12 @@
 	<div class="no-members-state">
 		<div class="empty-content">
 			<mat-icon class="empty-icon">group_off</mat-icon>
-			<h3>No members yet</h3>
-			<p>This room doesn't have any member assigned.</p>
+			<h3>{{ 'ROOM_MEMBERS.LIST.EMPTY_TITLE' | translate }}</h3>
+			<p>{{ 'ROOM_MEMBERS.LIST.EMPTY_SUBTITLE' | translate }}</p>
 			<div class="getting-started-actions">
 				<button mat-flat-button color="primary" class="primary-button" (click)="addMember()">
 					<mat-icon>person_add</mat-icon>
-					Add Member
+					{{ 'ROOM_MEMBERS.COMMON.ADD_MEMBER' | translate }}
 				</button>
 			</div>
 		</div>
@@ -20,11 +20,11 @@
 		<div class="toolbar-left" id="members-toolbar-left">
 			@if (showSearchBox()) {
 				<mat-form-field class="search-field" appearance="outline" id="members-search-field">
-					<mat-label>Search members</mat-label>
+					<mat-label>{{ 'ROOM_MEMBERS.LIST.SEARCH_MEMBERS' | translate }}</mat-label>
 					<input
 						matInput
 						[formControl]="controls.nameFilter"
-						placeholder="Search by member name"
+						[placeholder]="'ROOM_MEMBERS.LIST.SEARCH_BY_NAME' | translate"
 						id="members-search-input"
 						(keydown.enter)="triggerSearch()"
 					/>
@@ -37,7 +37,7 @@
 							type="button"
 							class="ov-search-modifier clear-name-btn"
 							(click)="clearNameFilter()"
-							matTooltip="Clear search"
+							[matTooltip]="'ROOM_MEMBERS.LIST.CLEAR_SEARCH' | translate"
 							matTooltipPosition="above"
 							id="members-clear-name-btn"
 						>
@@ -53,11 +53,11 @@
 						class="ov-search-modifier case-toggle"
 						[class.active]="filterState().nameCaseInsensitive"
 						(click)="toggleCaseInsensitive()"
-						matTooltip="Match case insensitive"
+						[matTooltip]="'ROOM_MEMBERS.LIST.MATCH_CASE_INSENSITIVE' | translate"
 						matTooltipPosition="above"
 						id="members-case-insensitive-btn"
 					>
-						<span class="modifier-label">Aa</span>
+						<span class="modifier-label">{{ 'ROOM_MEMBERS.LIST.CASE_INSENSITIVE_LABEL' | translate }}</span>
 					</button>
 
 					<!-- Match-mode selector -->
@@ -68,7 +68,7 @@
 						class="ov-search-modifier match-mode-trigger"
 						[class.active]="filterState().nameMatchMode !== TextMatchMode.PREFIX"
 						[matMenuTriggerFor]="matchModeMenu"
-						[matTooltip]="'Match mode: ' + currentMatchMode().label"
+						[matTooltip]="('ROOM_MEMBERS.LIST.MATCH_MODE_PREFIX' | translate) + currentMatchMode().label"
 						matTooltipPosition="above"
 						id="members-match-mode-btn"
 					>
@@ -81,7 +81,7 @@
 						class="search-btn"
 						(click)="triggerSearch()"
 						[disabled]="loading() || !controls.nameFilter.value"
-						matTooltip="Search"
+						[matTooltip]="'ROOM_MEMBERS.COMMON.SEARCH' | translate"
 						id="members-search-btn"
 					>
 						<mat-icon>search</mat-icon>
@@ -110,7 +110,7 @@
 					class="ov-filters-trigger"
 					[class.has-filters]="activeFilterChips().length > 0"
 					(click)="toggleFilterPanel()"
-					matTooltip="Filter members"
+					[matTooltip]="'ROOM_MEMBERS.LIST.FILTER_MEMBERS' | translate"
 					id="members-filters-btn"
 				>
 					<mat-icon>tune</mat-icon>
@@ -122,7 +122,7 @@
 				class="refresh-btn"
 				(click)="refreshMembers()"
 				[disabled]="loading()"
-				matTooltip="Refresh members"
+				[matTooltip]="'ROOM_MEMBERS.LIST.REFRESH_MEMBERS' | translate"
 				id="members-refresh-btn"
 			>
 				<mat-icon>refresh</mat-icon>
@@ -138,7 +138,7 @@
 						color="warn"
 						(click)="bulkDeleteSelected()"
 						[disabled]="loading()"
-						matTooltip="Remove selected members"
+						[matTooltip]="'ROOM_MEMBERS.LIST.REMOVE_SELECTED_MEMBERS' | translate"
 						id="members-bulk-delete-btn"
 					>
 						<mat-icon [matBadge]="selectedMembers().size" matBadgePosition="below after"
@@ -159,7 +159,7 @@
 				id="members-add-member-btn"
 			>
 				<mat-icon>person_add</mat-icon>
-				Add Member
+				{{ 'ROOM_MEMBERS.COMMON.ADD_MEMBER' | translate }}
 			</button>
 		</div>
 	</mat-toolbar>
@@ -168,10 +168,10 @@
 	@if (showFilters() && showFilterPanel()) {
 		<div class="ov-filter-panel" id="members-filters-panel">
 			<div class="filter-group">
-				<h4>Filter by Role</h4>
-				<p class="filter-description">Narrows the result to members with the selected base role.</p>
+				<h4>{{ 'ROOM_MEMBERS.LIST.FILTER_BY_ROLE' | translate }}</h4>
+				<p class="filter-description">{{ 'ROOM_MEMBERS.LIST.FILTER_BY_ROLE_DESCRIPTION' | translate }}</p>
 				<mat-form-field appearance="outline" id="members-base-role-filter-field">
-					<mat-label>Role</mat-label>
+					<mat-label>{{ 'ROOM_MEMBERS.LIST.ROLE' | translate }}</mat-label>
 					<mat-select [formControl]="controls.baseRole" id="members-base-role-filter-select">
 						@for (option of baseRoleOptions; track option.value) {
 							<mat-option [value]="option.value" id="members-base-role-option-{{ option.value }}">{{
@@ -183,10 +183,10 @@
 			</div>
 
 			<div class="filter-group">
-				<h4>Filter by Type</h4>
-				<p class="filter-description">Narrows the result to members of the selected type.</p>
+				<h4>{{ 'ROOM_MEMBERS.LIST.FILTER_BY_TYPE' | translate }}</h4>
+				<p class="filter-description">{{ 'ROOM_MEMBERS.LIST.FILTER_BY_TYPE_DESCRIPTION' | translate }}</p>
 				<mat-form-field appearance="outline" id="members-type-filter-field">
-					<mat-label>Type</mat-label>
+					<mat-label>{{ 'ROOM_MEMBERS.LIST.TYPE' | translate }}</mat-label>
 					<mat-select [formControl]="controls.type" id="members-type-filter-select">
 						@for (option of typeOptions; track option.value) {
 							<mat-option [value]="option.value" id="members-type-option-{{ option.value }}">{{
@@ -202,7 +202,7 @@
 	<!-- Active Filter Chips -->
 	@if (activeFilterChips().length > 0) {
 		<div class="ov-active-filters" id="members-active-filters">
-			<span class="active-filters-label">Filters:</span>
+			<span class="active-filters-label">{{ 'ROOM_MEMBERS.LIST.FILTERS_LABEL' | translate }}</span>
 			@for (chip of activeFilterChips(); track chip.key) {
 				<button class="filter-chip" (click)="removeFilter(chip.key)" id="members-filter-chip-{{ chip.key }}">
 					<span>{{ chip.label }}</span>
@@ -211,7 +211,7 @@
 			}
 			<button class="clear-all-chip" (click)="clearFilters()" id="members-clear-all-chip">
 				<mat-icon>filter_alt_off</mat-icon>
-				<span>Clear all</span>
+				<span>{{ 'ROOM_MEMBERS.LIST.CLEAR_ALL' | translate }}</span>
 			</button>
 		</div>
 	}
@@ -220,18 +220,18 @@
 	@if (loading()) {
 		<div class="loading-container">
 			<mat-spinner diameter="40" />
-			<span>Loading members...</span>
+			<span>{{ 'ROOM_MEMBERS.LIST.LOADING_MEMBERS' | translate }}</span>
 		</div>
 	} @else if (members().length === 0 && showEmptyFilterMessage()) {
 		<!-- No members match the current filters -->
 		<div class="no-members-state">
 			<div class="empty-content">
-				<h3>No members match your search</h3>
-				<p>Try adjusting or clearing your filters to see more members.</p>
+				<h3>{{ 'ROOM_MEMBERS.LIST.EMPTY_FILTER_TITLE' | translate }}</h3>
+				<p>{{ 'ROOM_MEMBERS.LIST.EMPTY_FILTER_SUBTITLE' | translate }}</p>
 				<div class="getting-started-actions">
 					<button mat-button (click)="clearFilters()" class="primary-button">
 						<mat-icon>filter_alt_off</mat-icon>
-						Clear Filters
+						{{ 'ROOM_MEMBERS.LIST.CLEAR_FILTERS' | translate }}
 					</button>
 				</div>
 			</div>
@@ -284,7 +284,7 @@
 						class="member-name-header"
 						id="members-name-header"
 					>
-						Member
+						{{ 'ROOM_MEMBERS.LIST.COLUMN_MEMBER' | translate }}
 					</th>
 					<td
 						mat-cell
@@ -308,7 +308,7 @@
 									<a
 										class="member-id-link"
 										[routerLink]="['/users', member.memberId]"
-										matTooltip="View user profile"
+										[matTooltip]="'ROOM_MEMBERS.LIST.VIEW_USER_PROFILE' | translate"
 										(click)="$event.stopPropagation()"
 										id="member-id-link-{{ member.memberId }}"
 									>
@@ -326,7 +326,9 @@
 
 				<!-- Role Column -->
 				<ng-container matColumnDef="role">
-					<th mat-header-cell *matHeaderCellDef id="members-role-header">Role</th>
+					<th mat-header-cell *matHeaderCellDef id="members-role-header">
+						{{ 'ROOM_MEMBERS.LIST.COLUMN_ROLE' | translate }}
+					</th>
 					<td mat-cell *matCellDef="let member" id="members-role-cell-{{ member.memberId }}">
 						<span
 							class="role-badge"
@@ -336,20 +338,22 @@
 							<mat-icon class="role-badge-icon material-symbols-outlined">{{
 								RoomMemberUiUtils.getRoleIcon(member.baseRole)
 							}}</mat-icon>
-							{{ RoomMemberUiUtils.getRoleLabel(member.baseRole) }}
+							{{ RoomMemberUiUtils.getRoleLabel(member.baseRole) | translate }}
 						</span>
 					</td>
 				</ng-container>
 
 				<!-- Member Type Column -->
 				<ng-container matColumnDef="memberType">
-					<th mat-header-cell *matHeaderCellDef id="members-type-header">Type</th>
+					<th mat-header-cell *matHeaderCellDef id="members-type-header">
+						{{ 'ROOM_MEMBERS.LIST.COLUMN_TYPE' | translate }}
+					</th>
 					<td mat-cell *matCellDef="let member" id="members-type-cell-{{ member.memberId }}">
 						<div class="member-type" id="member-type-{{ member.memberId }}">
 							<mat-icon class="type-icon material-symbols-outlined">{{
 								RoomMemberUiUtils.getMemberTypeIcon(member)
 							}}</mat-icon>
-							<span>{{ RoomMemberUiUtils.getMemberTypeLabel(member) }}</span>
+							<span>{{ RoomMemberUiUtils.getMemberTypeLabel(member) | translate }}</span>
 						</div>
 					</td>
 				</ng-container>
@@ -357,7 +361,7 @@
 				<!-- Membership Date Column -->
 				<ng-container matColumnDef="membershipDate">
 					<th mat-header-cell *matHeaderCellDef mat-sort-header="membershipDate" id="members-date-header">
-						Added
+						{{ 'ROOM_MEMBERS.LIST.COLUMN_ADDED' | translate }}
 					</th>
 					<td mat-cell *matCellDef="let member" id="members-date-cell-{{ member.memberId }}">
 						@if (member.membershipDate) {
@@ -374,7 +378,7 @@
 				<!-- Actions Column -->
 				<ng-container matColumnDef="actions">
 					<th mat-header-cell *matHeaderCellDef class="actions-header" id="members-actions-header">
-						Actions
+						{{ 'ROOM_MEMBERS.LIST.COLUMN_ACTIONS' | translate }}
 					</th>
 					<td
 						mat-cell
@@ -386,7 +390,7 @@
 							<!-- Copy Access Link -->
 							<button
 								mat-icon-button
-								matTooltip="Copy access link"
+								[matTooltip]="'ROOM_MEMBERS.LIST.COPY_ACCESS_LINK' | translate"
 								(click)="$event.stopPropagation(); copyMemberLink(member)"
 								[disabled]="loading()"
 								class="copy-link-btn"
@@ -398,7 +402,7 @@
 							<!-- Edit Member -->
 							<button
 								mat-icon-button
-								matTooltip="Edit member"
+								[matTooltip]="'ROOM_MEMBERS.LIST.EDIT_MEMBER' | translate"
 								(click)="$event.stopPropagation(); editMember(member)"
 								[disabled]="loading()"
 								class="edit-action"
@@ -410,7 +414,7 @@
 							<!-- Remove Member -->
 							<button
 								mat-icon-button
-								matTooltip="Remove member"
+								[matTooltip]="'ROOM_MEMBERS.LIST.REMOVE_MEMBER' | translate"
 								(click)="$event.stopPropagation(); deleteMember(member)"
 								[disabled]="loading()"
 								class="delete-action"
@@ -444,7 +448,7 @@
 					id="members-load-more-btn"
 				>
 					<mat-icon>expand_more</mat-icon>
-					<span>Load more members</span>
+					<span>{{ 'ROOM_MEMBERS.LIST.LOAD_MORE_MEMBERS' | translate }}</span>
 				</button>
 			</div>
 		}

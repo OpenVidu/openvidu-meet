@@ -11,6 +11,8 @@ import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { DialogPresetsService } from 'projects/shared-meet-components/src/lib/shared/services/dialog-presets.service';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { ViewportService } from '../../../meeting/openvidu-components';
@@ -31,7 +33,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 		MatProgressSpinnerModule,
 		MatTooltipModule,
 		MatSnackBarModule,
-		RecordingVideoPlayerComponent
+		RecordingVideoPlayerComponent,
+		TranslatePipe
 	],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -44,6 +47,7 @@ export class ViewRecordingComponent implements OnInit {
 	protected readonly roomMemberContextService = inject(RoomMemberContextService);
 	protected readonly route = inject(ActivatedRoute);
 	protected readonly authService = inject(AuthService);
+	private readonly translateService = inject(TranslateService);
 	public readonly viewportService = inject(ViewportService);
 
 	/**
@@ -64,7 +68,9 @@ export class ViewRecordingComponent implements OnInit {
 	canRetrieveRecordings = computed(() => this.roomMemberContextService.permissions()?.canRetrieveRecordings ?? false);
 	canDeleteRecordings = computed(() => this.roomMemberContextService.permissions()?.canDeleteRecordings ?? false);
 	backButtonText = computed(() =>
-		this.canRetrieveRecordings() && !!this.recording()?.roomId ? 'Back to Recordings' : 'Back'
+		this.canRetrieveRecordings() && !!this.recording()?.roomId
+			? this.translateService.translate('RECORDINGS.VIEW.BACK_TO_RECORDINGS')
+			: this.translateService.translate('RECORDINGS.VIEW.BACK')
 	);
 	canShowRecordingDetailsButton = computed(() => this.isAuthenticated() && this.canRetrieveRecordings());
 
@@ -116,13 +122,13 @@ export class ViewRecordingComponent implements OnInit {
 		const deleteCallback = async () => {
 			try {
 				await this.recordingService.deleteRecording(this.recordingId);
-				this.notificationService.showSnackbar('Recording deleted successfully');
+				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED'));
 
 				// After deletion, go back to the room-recordings view.
 				await this.navigationService.goToRoomRecordings(recording.roomId);
 			} catch (error) {
 				console.error('Error deleting recording:', error);
-				this.notificationService.showSnackbar('Failed to delete recording');
+				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED'));
 			}
 		};
 

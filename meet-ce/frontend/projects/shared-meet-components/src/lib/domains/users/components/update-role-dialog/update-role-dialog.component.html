@@ -1,20 +1,20 @@
 <div class="dialog-container">
 	<h2 mat-dialog-title class="dialog-title">
 		<mat-icon class="dialog-icon">manage_accounts</mat-icon>
-		Update User Role
+		{{ 'USERS.UPDATE_ROLE_DIALOG.TITLE' | translate }}
 	</h2>
 
 	<mat-dialog-content>
 		<p class="dialog-subtitle">
-			Update role for
+			{{ 'USERS.UPDATE_ROLE_DIALOG.SUBTITLE' | translate }}
 			<strong>{{ data.user.name }}</strong>
 			<span class="user-id-hint">({{ data.user.userId }})</span>
 		</p>
 
 		<div class="role-section">
-			<span class="input-label">Role</span>
+			<span class="input-label">{{ 'USERS.UPDATE_ROLE_DIALOG.ROLE' | translate }}</span>
 			<mat-form-field subscriptSizing="dynamic" appearance="outline" class="role-field">
-				<mat-label>Role</mat-label>
+				<mat-label>{{ 'USERS.UPDATE_ROLE_DIALOG.ROLE' | translate }}</mat-label>
 				<mat-icon matPrefix class="field-prefix-icon">{{ UsersUiUtils.getRoleIcon(selectedRole()) }}</mat-icon>
 				<mat-select [ngModel]="selectedRole()" (ngModelChange)="selectedRole.set($event)">
 					<mat-select-trigger>
@@ -42,21 +42,18 @@
 
 			<div class="warning-banner">
 				<mat-icon class="warning-icon">gavel</mat-icon>
-				<p>
-					If the user is currently in a meeting and loses access to the room after this update, they will be
-					kicked from the meeting.
-				</p>
+				<p>{{ 'USERS.UPDATE_ROLE_DIALOG.WARNING_KICK' | translate }}</p>
 			</div>
 		}
 	</mat-dialog-content>
 
 	<mat-dialog-actions class="dialog-actions">
-		<button mat-button class="cancel-button" (click)="cancel()">Cancel</button>
+		<button mat-button class="cancel-button" (click)="cancel()">{{ 'USERS.COMMON.CANCEL' | translate }}</button>
 		<button mat-button class="primary-button" [disabled]="!roleChanged() || isSaving()" (click)="save()">
 			@if (isSaving()) {
 				<mat-spinner diameter="18" />
 			} @else {
-				Save Role
+				{{ 'USERS.UPDATE_ROLE_DIALOG.SAVE_ROLE' | translate }}
 			}
 		</button>
 	</mat-dialog-actions>

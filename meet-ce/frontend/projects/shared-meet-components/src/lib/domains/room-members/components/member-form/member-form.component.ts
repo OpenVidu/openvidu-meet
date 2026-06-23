@@ -25,6 +25,8 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { UserService } from '../../../users/services/user.service';
 import { MemberFormMemberType } from '../../models/member-form.model';
 import { PERMISSION_GROUPS } from '../../models/permissions.model';
@@ -44,7 +46,8 @@ import { RoomMemberUiUtils } from '../../utils/ui';
 		MatSlideToggleModule,
 		MatTooltipModule,
 		MatProgressSpinnerModule,
-		MatRadioModule
+		MatRadioModule,
+		TranslatePipe
 	],
 	templateUrl: './member-form.component.html',
 	styleUrl: './member-form.component.scss',
@@ -52,6 +55,7 @@ import { RoomMemberUiUtils } from '../../utils/ui';
 })
 export class MemberFormComponent implements OnInit {
 	private userService = inject(UserService);
+	private readonly translateService = inject(TranslateService);
 
 	// ── Inputs ────────────────────────────────────────────────────────────────
 	roomRoles = input.required<MeetRoomRoles>();
@@ -161,10 +165,10 @@ export class MemberFormComponent implements OnInit {
 
 	getDisabledReason(user: MeetUserDTO): string | null {
 		if (user.role === MeetUserRole.ADMIN) {
-			return 'Admin users cannot be added as members';
+			return this.translateService.translate('ROOM_MEMBERS.FORM.DISABLED_REASON_ADMIN');
 		}
 		if (user.userId === this.roomOwner()) {
-			return 'The room owner cannot be added as a member';
+			return this.translateService.translate('ROOM_MEMBERS.FORM.DISABLED_REASON_OWNER');
 		}
 		return null;
 	}
@@ -223,11 +227,11 @@ export class MemberFormComponent implements OnInit {
 	getFieldError(field: string): string | null {
 		const control = this.form.get(field);
 		if (!control?.errors || !control.touched) return null;
-		if (control.errors['required']) return 'This field is required';
-		if (control.errors['pattern']) return 'Only lowercase letters, numbers, and underscores are allowed';
+		if (control.errors['required']) return this.translateService.translate('ROOM_MEMBERS.ERRORS.FIELD_REQUIRED');
+		if (control.errors['pattern']) return this.translateService.translate('ROOM_MEMBERS.ERRORS.PATTERN');
 		if (control.errors['maxlength']) {
 			const { requiredLength } = control.errors['maxlength'];
-			return `Cannot exceed ${requiredLength} characters`;
+			return `${this.translateService.translate('ROOM_MEMBERS.ERRORS.MAX_LENGTH_PREFIX')}${requiredLength}${this.translateService.translate('ROOM_MEMBERS.ERRORS.MAX_LENGTH_SUFFIX')}`;
 		}
 		return null;
 	}

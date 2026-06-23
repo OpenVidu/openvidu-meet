@@ -3,7 +3,7 @@
 	<div class="ov-page-container">
 		<div class="loading-container fade-in">
 			<mat-spinner diameter="48" />
-			<p class="loading-text">Loading recording...</p>
+			<p class="loading-text">{{ 'RECORDINGS.VIEW.LOADING_RECORDING' | translate }}</p>
 		</div>
 	</div>
 }
@@ -14,12 +14,12 @@
 		<div class="error-container fade-in">
 			<div class="error-content">
 				<mat-icon class="error-icon">error_outline</mat-icon>
-				<h2 class="error-title">Recording Not Found</h2>
-				<p class="error-message">The recording you're looking for doesn't exist or is no longer available.</p>
+				<h2 class="error-title">{{ 'RECORDINGS.VIEW.NOT_FOUND_TITLE' | translate }}</h2>
+				<p class="error-message">{{ 'RECORDINGS.VIEW.NOT_FOUND_MESSAGE' | translate }}</p>
 				<div class="error-actions">
 					<button mat-raised-button color="primary" (click)="retryLoad()">
 						<mat-icon>refresh</mat-icon>
-						<span>Try Again</span>
+						<span>{{ 'RECORDINGS.VIEW.TRY_AGAIN' | translate }}</span>
 					</button>
 				</div>
 			</div>
@@ -114,7 +114,7 @@
 					<div class="details-link-bar">
 						<button mat-button class="details-link-btn" (click)="goToRecordingDetails()">
 							<mat-icon>arrow_outward</mat-icon>
-							<span>Go to recording details</span>
+							<span>{{ 'RECORDINGS.VIEW.GO_TO_RECORDING_DETAILS' | translate }}</span>
 						</button>
 					</div>
 				}
@@ -189,7 +189,7 @@
 											"
 										>
 											<mat-icon>download</mat-icon>
-											<span>Download</span>
+											<span>{{ 'RECORDINGS.COMMON.DOWNLOAD' | translate }}</span>
 										</button>
 									</span>
 
@@ -203,7 +203,7 @@
 											"
 										>
 											<mat-icon>share</mat-icon>
-											<span>Share</span>
+											<span>{{ 'RECORDINGS.COMMON.SHARE' | translate }}</span>
 										</button>
 									</span>
 

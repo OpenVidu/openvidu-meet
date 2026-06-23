@@ -6,9 +6,9 @@
 			<div class="room-info">
 				<h1 class="room-title">{{ roomName() }}</h1>
 				@if (isE2EEEnabled()) {
-					<span class="encryption-badge" matTooltip="End-to-end encrypted">
+					<span class="encryption-badge" [matTooltip]="'LOBBY.E2EE_BADGE_TOOLTIP' | translate">
 						<mat-icon class="badge-icon">lock</mat-icon>
-						Meetings in this room are end-to-end encrypted
+						{{ 'LOBBY.E2EE_BADGE_TEXT' | translate }}
 					</span>
 				}
 			</div>
@@ -28,14 +28,18 @@
 					}}</mat-icon>
 					<div class="card-title-group">
 						<mat-card-title>{{
-							roomClosed() ? 'Room Closed' : !canJoinMeeting() ? 'Access Restricted' : 'Join Meeting'
+							roomClosed()
+								? ('LOBBY.ROOM_CLOSED_TITLE' | translate)
+								: !canJoinMeeting()
+									? ('LOBBY.ACCESS_RESTRICTED_TITLE' | translate)
+									: ('LOBBY.JOIN_TITLE' | translate)
 						}}</mat-card-title>
 						<mat-card-subtitle>{{
 							roomClosed()
-								? 'This room is not available for meetings'
+								? ('LOBBY.ROOM_CLOSED_SUBTITLE' | translate)
 								: !canJoinMeeting()
-									? 'You do not have permission to join meetings in this room'
-									: 'Join the meeting and start connecting'
+									? ('LOBBY.ACCESS_RESTRICTED_SUBTITLE' | translate)
+									: ('LOBBY.JOIN_SUBTITLE' | translate)
 						}}</mat-card-subtitle>
 					</div>
 				</mat-card-header>
@@ -45,37 +49,43 @@
 						<form [formGroup]="participantForm()" (ngSubmit)="onFormSubmit()" class="join-form">
 							<!-- Participant Name Input -->
 							<mat-form-field appearance="outline" class="name-field">
-								<mat-label>Your display name</mat-label>
+								<mat-label>{{ 'LOBBY.NAME_LABEL' | translate }}</mat-label>
 								<input
 									id="participant-name-input"
 									matInput
-									placeholder="Enter your name"
+									[placeholder]="'LOBBY.NAME_PLACEHOLDER' | translate"
 									formControlName="name"
 									required
 								/>
 								<mat-icon matSuffix class="ov-action-icon">person</mat-icon>
 								@if (participantForm().get('name')?.hasError('required')) {
-									<mat-error> The name is <strong>required</strong> </mat-error>
+									<mat-error
+										>{{ 'LOBBY.NAME_REQUIRED_PREFIX' | translate
+										}}<strong>{{ 'LOBBY.REQUIRED' | translate }}</strong></mat-error
+									>
 								}
 							</mat-form-field>
 
 							<!-- E2EE Key Input (shown when E2EE is enabled and key is not pre-filled from URL) -->
 							@if (showE2EEKeyInput()) {
 								<mat-form-field appearance="outline" class="e2eekey-field fade-in">
-									<mat-label>Encryption Key</mat-label>
+									<mat-label>{{ 'LOBBY.E2EE_KEY_LABEL' | translate }}</mat-label>
 									<input
 										id="participant-e2eekey-input"
 										matInput
 										type="password"
-										placeholder="Enter room encryption key"
+										[placeholder]="'LOBBY.E2EE_KEY_PLACEHOLDER' | translate"
 										formControlName="e2eeKey"
 										required
 									/>
 									<mat-icon matSuffix class="ov-action-icon">vpn_key</mat-icon>
 									@if (participantForm().get('e2eeKey')?.hasError('required')) {
-										<mat-error> The encryption key is <strong>required</strong> </mat-error>
+										<mat-error
+											>{{ 'LOBBY.E2EE_KEY_REQUIRED_PREFIX' | translate
+											}}<strong>{{ 'LOBBY.REQUIRED' | translate }}</strong></mat-error
+										>
 									}
-									<mat-hint>This meeting requires an encryption key</mat-hint>
+									<mat-hint>{{ 'LOBBY.E2EE_KEY_HINT' | translate }}</mat-hint>
 								</mat-form-field>
 							}
 
@@ -87,24 +97,18 @@
 								class="join-button"
 								[disabled]="participantForm().invalid"
 							>
-								<span>Join Meeting</span>
+								<span>{{ 'LOBBY.JOIN_BUTTON' | translate }}</span>
 							</button>
 						</form>
 					} @else if (roomClosed()) {
 						<div class="room-closed-message">
 							<mat-icon class="warning-icon">warning</mat-icon>
-							<p>
-								Sorry, this room is closed. You cannot join the meeting at this time. Please contact a
-								room manager for more information.
-							</p>
+							<p>{{ 'LOBBY.ROOM_CLOSED_MESSAGE' | translate }}</p>
 						</div>
 					} @else {
 						<div class="room-closed-message">
 							<mat-icon class="warning-icon">block</mat-icon>
-							<p>
-								Sorry, you have access to this room but do not have permission to join meetings. Please
-								contact a room manager for more information.
-							</p>
+							<p>{{ 'LOBBY.NO_PERMISSION_MESSAGE' | translate }}</p>
 						</div>
 					}
 				</mat-card-content>
@@ -116,17 +120,14 @@
 					<mat-card-header class="card-header">
 						<mat-icon class="ov-recording-icon card-icon">video_library</mat-icon>
 						<div class="card-title-group">
-							<mat-card-title>View Recordings</mat-card-title>
-							<mat-card-subtitle>Browse and manage past recordings</mat-card-subtitle>
+							<mat-card-title>{{ 'LOBBY.RECORDINGS_TITLE' | translate }}</mat-card-title>
+							<mat-card-subtitle>{{ 'LOBBY.RECORDINGS_SUBTITLE' | translate }}</mat-card-subtitle>
 						</div>
 					</mat-card-header>
 
 					<mat-card-content class="card-content">
 						<div class="recordings-info">
-							<p class="recordings-description">
-								Access previously recorded meetings from this room. You can watch, download, or manage
-								existing recordings.
-							</p>
+							<p class="recordings-description">{{ 'LOBBY.RECORDINGS_DESCRIPTION' | translate }}</p>
 						</div>
 
 						<button
@@ -136,7 +137,7 @@
 							(click)="onViewRecordingsClick()"
 							class="recordings-button"
 						>
-							<span>Browse Recordings</span>
+							<span>{{ 'LOBBY.RECORDINGS_BUTTON' | translate }}</span>
 						</button>
 					</mat-card-content>
 				</mat-card>

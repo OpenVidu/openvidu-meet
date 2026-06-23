@@ -14,7 +14,9 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { UserService } from '../../services/user.service';
 import { UsersUiUtils } from '../../utils/ui';
 
@@ -34,7 +36,8 @@ export interface UpdateRoleDialogData {
 		MatProgressSpinnerModule,
 		MatDialogTitle,
 		MatDialogContent,
-		MatDialogActions
+		MatDialogActions,
+		TranslatePipe
 	],
 	templateUrl: './update-role-dialog.component.html',
 	styleUrl: './update-role-dialog.component.scss',
@@ -46,6 +49,7 @@ export class UpdateRoleDialogComponent {
 
 	private readonly userService = inject(UserService);
 	private readonly notificationService = inject(NotificationService);
+	private readonly translateService = inject(TranslateService);
 
 	readonly selectedRole = signal<MeetUserRole>(this.data.user.role);
 	readonly isSaving = signal(false);
@@ -55,9 +59,9 @@ export class UpdateRoleDialogComponent {
 	readonly roleSpecificWarning = computed(() => {
 		switch (this.selectedRole()) {
 			case MeetUserRole.ROOM_MEMBER:
-				return 'If this user owns rooms, ownership will be transferred to the root admin.';
+				return this.translateService.translate('USERS.UPDATE_ROLE_DIALOG.WARNING_ROOM_MEMBER');
 			case MeetUserRole.ADMIN:
-				return 'All room memberships of this user will be removed because admins have direct access to all rooms.';
+				return this.translateService.translate('USERS.UPDATE_ROLE_DIALOG.WARNING_ADMIN');
 			default:
 				return '';
 		}
@@ -79,12 +83,12 @@ export class UpdateRoleDialogComponent {
 		try {
 			const updatedUser = await this.userService.updateUserRole(this.data.user.userId, this.selectedRole());
 			this.notificationService.showSnackbar(
-				`Role for ${updatedUser.name} updated to ${UsersUiUtils.getRoleLabel(updatedUser.role)}`
+				`${this.translateService.translate('USERS.ERRORS.ROLE_UPDATED_PREFIX')} ${updatedUser.name} ${this.translateService.translate('USERS.ERRORS.ROLE_UPDATED_TO')} ${UsersUiUtils.getRoleLabel(updatedUser.role)}`
 			);
 			this.dialogRef.close(updatedUser);
 		} catch (error) {
 			console.error('Error while updating user role', error);
-			this.notificationService.showSnackbar('Failed to update role');
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.ROLE_UPDATE_FAILED'));
 		} finally {
 			clearTimeout(delayLoader);
 			this.isSaving.set(false);

@@ -11,15 +11,18 @@ import {
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import {
+	AUTH_TRANSLATIONS,
 	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
 	CustomParticipantModel,
 	httpInterceptor,
-	SmartLayoutService,
 	MeetingLayoutService,
 	OpenViduComponentsModule,
+	provideTranslations,
+	RECORDINGS_TRANSLATIONS,
 	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
+	SmartLayoutService,
 	ThemeService,
 	type OpenViduComponentsConfig,
 	type ParticipantProperties
@@ -47,6 +50,8 @@ export const appConfig: ApplicationConfig = {
 		provideHttpClient(withInterceptors([httpInterceptor])),
 		//TODO: Refactor .forRoot() module in openvidu-components to avoid the need to import the entire module here just to set the config.
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsConfig)),
+		provideTranslations(RECORDINGS_TRANSLATIONS),
+		provideTranslations(AUTH_TRANSLATIONS),
 		{ provide: SmartLayoutService, useExisting: MeetingLayoutService },
 		ShadowOverlayContainer,
 		{ provide: OverlayContainer, useExisting: ShadowOverlayContainer }

@@ -6,18 +6,18 @@
 
 	<mat-dialog-content>
 		<div class="dialog-message" [innerHTML]="data.message"></div>
-		<p>Please choose how to handle room deletion errors:</p>
+		<p>{{ 'ROOMS.DELETE_DIALOG.CHOOSE_HANDLING' | translate }}</p>
 
 		<div class="policy-options-container">
 			@if (data.showWithMeetingPolicy) {
 				<div class="policy-section">
-					<h4>With Active Meeting Policy:</h4>
+					<h4>{{ 'ROOMS.DELETE_DIALOG.WITH_ACTIVE_MEETING_POLICY' | translate }}</h4>
 					<mat-radio-group [ngModel]="selectedMeetingPolicy()" (ngModelChange)="selectedMeetingPolicy.set($event)" class="policy-group">
 						@for (option of meetingPolicyOptions; track option.value) {
 							<mat-radio-button [value]="option.value" class="policy-option">
 								<div class="policy-option-content">
-									<span class="policy-label">{{ option.label }}</span>
-									<span class="policy-description">{{ option.description }}</span>
+									<span class="policy-label">{{ option.label | translate }}</span>
+									<span class="policy-description">{{ option.description | translate }}</span>
 								</div>
 							</mat-radio-button>
 						}
@@ -27,13 +27,13 @@
 
 			@if (data.showWithRecordingsPolicy) {
 				<div class="policy-section">
-					<h4>With Recordings Policy:</h4>
+					<h4>{{ 'ROOMS.DELETE_DIALOG.WITH_RECORDINGS_POLICY' | translate }}</h4>
 					<mat-radio-group [ngModel]="selectedRecordingPolicy()" (ngModelChange)="selectedRecordingPolicy.set($event)" class="policy-group">
 						@for (option of recordingPolicyOptions; track option.value) {
 							<mat-radio-button [value]="option.value" class="policy-option">
 								<div class="policy-option-content">
-									<span class="policy-label">{{ option.label }}</span>
-									<span class="policy-description">{{ option.description }}</span>
+									<span class="policy-label">{{ option.label | translate }}</span>
+									<span class="policy-description">{{ option.description | translate }}</span>
 								</div>
 							</mat-radio-button>
 						}
@@ -43,9 +43,9 @@
 		</div>
 	</mat-dialog-content>
 	<mat-dialog-actions class="dialog-action">
-		<button mat-button mat-dialog-close (click)="close('cancel')" class="cancel-button">Cancel</button>
+		<button mat-button mat-dialog-close (click)="close('cancel')" class="cancel-button">{{ 'ROOMS.COMMON.CANCEL' | translate }}</button>
 		<button mat-flat-button mat-dialog-close cdkFocusInitial (click)="close('confirm')" class="confirm-button">
-			{{ data.confirmText ?? 'Confirm' }}
+			{{ data.confirmText ?? ('ROOMS.COMMON.CONFIRM' | translate) }}
 		</button>
 	</mat-dialog-actions>
 </div>

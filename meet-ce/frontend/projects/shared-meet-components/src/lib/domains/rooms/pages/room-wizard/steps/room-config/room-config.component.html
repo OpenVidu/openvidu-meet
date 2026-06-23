@@ -3,8 +3,8 @@
 	<header class="step-header">
 		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
 		<div class="step-title-group">
-			<h3 class="step-title">Room Features</h3>
-			<p class="step-description">Configure additional features and functionality for your room</p>
+			<h3 class="step-title">{{ 'ROOMS.WIZARD.FEATURES.TITLE' | translate }}</h3>
+			<p class="step-description">{{ 'ROOMS.WIZARD.FEATURES.DESCRIPTION' | translate }}</p>
 		</div>
 	</header>
 
@@ -15,7 +15,7 @@
 			<div class="feature-category">
 				<div class="category-header">
 					<mat-icon class="category-icon">security</mat-icon>
-					<span class="category-label">Security</span>
+					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.SECURITY' | translate }}</span>
 				</div>
 				<div class="config-grid">
 					<!-- End-to-End Encryption -->
@@ -24,11 +24,8 @@
 							<div class="feature-info">
 								<mat-icon class="feature-icon">lock</mat-icon>
 								<div class="feature-text">
-									<span class="feature-label">End-to-End Encryption</span>
-									<span class="feature-description">
-										Add an extra layer of security to your meetings. No one outside the meeting, not
-										even anyone with server access, can see or hear the conversation.
-									</span>
+									<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.E2EE' | translate }}</span>
+									<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.E2EE_DESC' | translate }}</span>
 								</div>
 							</div>
 							<mat-slide-toggle
@@ -43,17 +40,11 @@
 								<div class="warning-card">
 									<mat-icon class="warning-icon">warning</mat-icon>
 									<div class="warning-content">
-										<p class="warning-title">Restrictions</p>
+										<p class="warning-title">{{ 'ROOMS.WIZARD.FEATURES.RESTRICTIONS' | translate }}</p>
 										<ul class="restrictions-list">
-											<li>
-												All participants must use the same encryption key to see and hear each
-												other.
-												<span class="restriction-detail">
-													Participants who enter an incorrect key will not receive an error
-													message but will be unable to see or hear others.
-												</span>
+											<li>{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_ALL_PARTICIPANTS' | translate }}<span class="restriction-detail">{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_INCORRECT_KEY' | translate }}</span>
 											</li>
-											<li>Recording is <b>unavailable</b> while encryption is enabled.</li>
+											<li>{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_PREFIX' | translate }}<b>{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_BOLD' | translate }}</b>{{ 'ROOMS.WIZARD.FEATURES.E2EE_RESTRICTION_RECORDING_SUFFIX' | translate }}</li>
 										</ul>
 									</div>
 								</div>
@@ -67,7 +58,7 @@
 			<div class="feature-category">
 				<div class="category-header">
 					<mat-icon class="category-icon">forum</mat-icon>
-					<span class="category-label">Communication</span>
+					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.COMMUNICATION' | translate }}</span>
 				</div>
 				<div class="config-grid">
 					<!-- Captions -->
@@ -75,10 +66,8 @@
 						<div class="feature-info">
 							<mat-icon class="feature-icon">closed_caption</mat-icon>
 							<div class="feature-text">
-								<span class="feature-label">Captions</span>
-								<span class="feature-description">
-									Enable live transcription to display captions during the meeting
-								</span>
+								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.CAPTIONS' | translate }}</span>
+								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.CAPTIONS_DESC' | translate }}</span>
 							</div>
 						</div>
 						<mat-slide-toggle
@@ -94,10 +83,8 @@
 						<div class="feature-info">
 							<mat-icon class="feature-icon">chat</mat-icon>
 							<div class="feature-text">
-								<span class="feature-label">Chat</span>
-								<span class="feature-description">
-									Allow participants to send messages during the meeting
-								</span>
+								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.CHAT' | translate }}</span>
+								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.CHAT_DESC' | translate }}</span>
 							</div>
 						</div>
 						<mat-slide-toggle
@@ -114,7 +101,7 @@
 			<div class="feature-category">
 				<div class="category-header">
 					<mat-icon class="category-icon">auto_awesome</mat-icon>
-					<span class="category-label">Experience</span>
+					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.EXPERIENCE' | translate }}</span>
 				</div>
 				<div class="config-grid">
 					<!-- Virtual Backgrounds -->
@@ -122,10 +109,8 @@
 						<div class="feature-info">
 							<mat-icon class="feature-icon material-symbols-outlined">background_replace</mat-icon>
 							<div class="feature-text">
-								<span class="feature-label">Virtual Backgrounds</span>
-								<span class="feature-description">
-									Enable virtual backgrounds and blur effects for participants
-								</span>
+								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.VIRTUAL_BACKGROUNDS' | translate }}</span>
+								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.VIRTUAL_BACKGROUNDS_DESC' | translate }}</span>
 							</div>
 						</div>
 						<mat-slide-toggle

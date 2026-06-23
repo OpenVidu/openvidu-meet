@@ -2,12 +2,9 @@
 	<div class="page-header">
 		<div class="title">
 			<mat-icon class="material-symbols-outlined ov-settings-icon">settings</mat-icon>
-			<h1>Visual Customization</h1>
+			<h1>{{ 'CONFIG.TITLE' | translate }}</h1>
 		</div>
-		<p class="subtitle">
-			Personalize the visual appearance of your video conference rooms to reflect your organization's brand and
-			style.
-		</p>
+		<p class="subtitle">{{ 'CONFIG.SUBTITLE' | translate }}</p>
 	</div>
 
 	@if (isLoading()) {
@@ -16,9 +13,9 @@
 				<div class="loading-header">
 					<div class="loading-title">
 						<mat-icon class="ov-settings-icon loading-icon">settings</mat-icon>
-						<h1>Loading visual settings</h1>
+						<h1>{{ 'CONFIG.LOADING_TITLE' | translate }}</h1>
 					</div>
-					<p class="loading-subtitle">We're preparing your customization options...</p>
+					<p class="loading-subtitle">{{ 'CONFIG.LOADING_SUBTITLE' | translate }}</p>
 				</div>
 
 				<div class="loading-spinner-container">
@@ -34,24 +31,20 @@
 					<div mat-card-avatar>
 						<mat-icon class="section-icon">palette</mat-icon>
 					</div>
-					<mat-card-title>Visual Theme</mat-card-title>
-					<mat-card-subtitle>Create a custom theme that represents your brand and style</mat-card-subtitle>
+					<mat-card-title>{{ 'CONFIG.VISUAL_THEME' | translate }}</mat-card-title>
+					<mat-card-subtitle>{{ 'CONFIG.VISUAL_THEME_SUBTITLE' | translate }}</mat-card-subtitle>
 				</mat-card-header>
 
 				<mat-card-content class="ov-mt-sm">
 					<form [formGroup]="appearanceForm" class="theme-form">
 						<!-- Enable/Disable Toggle -->
-						<h4 class="section-title">Custom Theme</h4>
+						<h4 class="section-title">{{ 'CONFIG.CUSTOM_THEME' | translate }}</h4>
 						<div class="theme-toggle ov-mt-xs">
-							<span>Use my own visual design</span>
+							<span>{{ 'CONFIG.USE_OWN_DESIGN' | translate }}</span>
 							<mat-slide-toggle
 								formControlName="enabled"
 								(change)="onToggleTheme($event)"
-								[matTooltip]="
-									!isThemeEnabled
-										? 'Enable this option to customize the colors and appearance of your room'
-										: ''
-								"
+								[matTooltip]="!isThemeEnabled ? ('CONFIG.ENABLE_TOOLTIP' | translate) : ''"
 								[matTooltipDisabled]="isThemeEnabled"
 							/>
 						</div>
@@ -60,13 +53,10 @@
 						@if (isThemeEnabled) {
 							<!-- Base theme (light / dark) -->
 							<div class="theme-section">
-								<h4 class="section-title">Background Style</h4>
-								<p class="section-description ov-mt-xs">
-									Choose whether you prefer a light or dark background as the starting point for your
-									customization.
-								</p>
+								<h4 class="section-title">{{ 'CONFIG.BACKGROUND_STYLE' | translate }}</h4>
+								<p class="section-description ov-mt-xs">{{ 'CONFIG.BACKGROUND_STYLE_DESC' | translate }}</p>
 								<mat-form-field appearance="outline" class="full-width">
-									<mat-label>Background style</mat-label>
+									<mat-label>{{ 'CONFIG.BACKGROUND_STYLE_LABEL' | translate }}</mat-label>
 									<mat-select formControlName="baseTheme">
 										@for (theme of baseThemeOptions; track theme) {
 											<mat-option [value]="theme">
@@ -75,25 +65,23 @@
 										}
 									</mat-select>
 									@if (appearanceForm.get('baseTheme')?.hasError('required')) {
-										<mat-error>Please select a background style</mat-error>
+										<mat-error>{{ 'CONFIG.BACKGROUND_STYLE_REQUIRED' | translate }}</mat-error>
 									}
 								</mat-form-field>
 							</div>
 
 							<!-- Color Pickers -->
 							<div class="theme-section">
-								<h4 class="section-title">Color Customization</h4>
-								<p class="section-description ov-mt-xs">
-									Click on any color to change it and adapt it to your brand or preferences.
-								</p>
+								<h4 class="section-title">{{ 'CONFIG.COLOR_CUSTOMIZATION' | translate }}</h4>
+								<p class="section-description ov-mt-xs">{{ 'CONFIG.COLOR_CUSTOMIZATION_DESC' | translate }}</p>
 								<div class="color-picker-grid ov-mt-md">
 									@for (colorConfig of colorFields; track colorConfig.key) {
 										<div class="color-picker-item" (click)="focusColorInput(colorConfig.key)">
 											<div class="color-label-container">
-												<span class="color-label">{{ colorConfig.label }}</span>
+												<span class="color-label">{{ colorConfig.label | translate }}</span>
 												<mat-icon
 													class="info-icon"
-													[matTooltip]="colorConfig.description"
+													[matTooltip]="colorConfig.description | translate"
 													matTooltipPosition="above"
 													matTooltipClass="color-info-tooltip"
 													(click)="$event.stopPropagation()"
@@ -133,11 +121,11 @@
 							[disabled]="appearanceForm.invalid || !hasFormChanges()"
 						>
 							<mat-icon>save</mat-icon>
-							Save Changes
+							{{ 'CONFIG.SAVE_CHANGES' | translate }}
 						</button>
 						<button mat-stroked-button (click)="onResetColors()" [disabled]="!hasColorChanges()">
 							<mat-icon>undo</mat-icon>
-							Reset Colors
+							{{ 'CONFIG.RESET_COLORS' | translate }}
 						</button>
 					</mat-card-actions>
 				}

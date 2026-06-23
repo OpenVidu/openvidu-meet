@@ -29,6 +29,8 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetUserDTO, MeetUserRole, MeetUserSortField, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { UsersUiUtils } from '../../utils/ui';
 
@@ -89,7 +91,8 @@ export interface UserTableFilter {
 		MatToolbarModule,
 		MatBadgeModule,
 		MatSortModule,
-		DatePipe
+		DatePipe,
+		TranslatePipe
 	],
 	templateUrl: './users-lists.component.html',
 	styleUrl: './users-lists.component.scss',
@@ -100,6 +103,7 @@ export interface UserTableFilter {
 })
 export class UsersListsComponent implements OnInit {
 	private destroyRef = inject(DestroyRef);
+	private readonly translateService = inject(TranslateService);
 
 	users = input<MeetUserDTO[]>([]);
 	currentUserId = input('');
@@ -158,10 +162,10 @@ export class UsersListsComponent implements OnInit {
 	showFilterPanel = signal(false);
 
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
-		{ value: TextMatchMode.EXACT, label: 'Exact match', icon: 'format_quote' },
-		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
+		{ value: TextMatchMode.PREFIX, label: this.translateService.translate('USERS.LIST.MATCH_MODE_STARTS_WITH'), icon: 'first_page' },
+		{ value: TextMatchMode.PARTIAL, label: this.translateService.translate('USERS.LIST.MATCH_MODE_CONTAINS'), icon: 'more_horiz' },
+		{ value: TextMatchMode.EXACT, label: this.translateService.translate('USERS.LIST.MATCH_MODE_EXACT'), icon: 'format_quote' },
+		{ value: TextMatchMode.REGEX, label: this.translateService.translate('USERS.LIST.MATCH_MODE_REGEX'), icon: 'code' }
 	];
 
 	// Currently selected match mode option (drives the search-box trigger button)
@@ -177,7 +181,10 @@ export class UsersListsComponent implements OnInit {
 		const chips: { key: string; label: string }[] = [];
 		if (f.roleFilter) {
 			const opt = this.roleOptions.find((o) => o.value === f.roleFilter);
-			chips.push({ key: 'roleFilter', label: `Role: ${opt?.label ?? f.roleFilter}` });
+			chips.push({
+				key: 'roleFilter',
+				label: `${this.translateService.translate('USERS.LIST.ROLE_CHIP_PREFIX')}${opt?.label ?? f.roleFilter}`
+			});
 		}
 		return chips;
 	});
@@ -204,10 +211,10 @@ export class UsersListsComponent implements OnInit {
 
 	// Role options
 	roleOptions = [
-		{ value: '', label: 'All roles' },
-		{ value: MeetUserRole.ADMIN, label: 'Admin' },
-		{ value: MeetUserRole.ROOM_MANAGER, label: 'Room Manager' },
-		{ value: MeetUserRole.ROOM_MEMBER, label: 'Room Member' }
+		{ value: '', label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ALL') },
+		{ value: MeetUserRole.ADMIN, label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ADMIN') },
+		{ value: MeetUserRole.ROOM_MANAGER, label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ROOM_MANAGER') },
+		{ value: MeetUserRole.ROOM_MEMBER, label: this.translateService.translate('USERS.LIST.ROLE_FILTER_ROOM_MEMBER') }
 	];
 	protected readonly UsersUiUtils = UsersUiUtils;
 

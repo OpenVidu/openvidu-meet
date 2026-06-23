@@ -16,6 +16,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { SessionStorageService } from '../../../../shared/services/session-storage.service';
@@ -32,7 +34,8 @@ import { UserService } from '../../../users/services/user.service';
 		MatInputModule,
 		MatFormFieldModule,
 		MatTooltipModule,
-		MatProgressSpinnerModule
+		MatProgressSpinnerModule,
+		TranslatePipe
 	],
 	templateUrl: './change-password-required.component.html',
 	styleUrl: './change-password-required.component.scss',
@@ -45,6 +48,7 @@ export class ChangePasswordRequiredComponent implements OnInit {
 	private readonly notificationService = inject(NotificationService);
 	private readonly navigationService = inject(NavigationService);
 	private readonly route = inject(ActivatedRoute);
+	private readonly translateService = inject(TranslateService);
 
 	readonly showCurrentPassword = signal(false);
 	readonly showNewPassword = signal(false);
@@ -132,7 +136,7 @@ export class ChangePasswordRequiredComponent implements OnInit {
 			}
 
 			this.sessionStorageService.removeMustChangePasswordRequired();
-			this.notificationService.showSnackbar('Password updated successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.UPDATE_SUCCESS'));
 
 			const redirectTo = this.redirectTo();
 			if (redirectTo && !redirectTo.includes('/change-password-required')) {
@@ -145,10 +149,10 @@ export class ChangePasswordRequiredComponent implements OnInit {
 				const control = this.changePasswordForm.get('currentPassword');
 				control?.setErrors({ invalidPassword: true });
 				control?.markAsTouched();
-				this.notificationService.showSnackbar('Current password is incorrect');
+				this.notificationService.showSnackbar(this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.CURRENT_INCORRECT'));
 			} else {
 				console.error('Error changing password:', error);
-				this.notificationService.showSnackbar('Failed to update password');
+				this.notificationService.showSnackbar(this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.UPDATE_FAILED'));
 			}
 		} finally {
 			clearTimeout(delayLoader);
@@ -160,10 +164,10 @@ export class ChangePasswordRequiredComponent implements OnInit {
 		const control = this.changePasswordForm.get('currentPassword');
 		if (control?.errors && control.touched) {
 			if (control.errors['required']) {
-				return 'Current password is required';
+				return this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.CURRENT_REQUIRED');
 			}
 			if (control.errors['invalidPassword']) {
-				return 'Current password is incorrect';
+				return this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.CURRENT_INCORRECT');
 			}
 		}
 		return null;
@@ -174,13 +178,13 @@ export class ChangePasswordRequiredComponent implements OnInit {
 		if (control?.errors && control.touched) {
 			const errors = control.errors;
 			if (errors['required']) {
-				return 'New password is required';
+				return this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.NEW_REQUIRED');
 			}
 			if (errors['minlength']) {
-				return `Password must be at least ${errors['minlength'].requiredLength} characters long`;
+				return `${this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.NEW_MIN_PREFIX')}${errors['minlength'].requiredLength}${this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.NEW_MIN_SUFFIX')}`;
 			}
 			if (errors['samePassword']) {
-				return 'New password must be different from current password';
+				return this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.NEW_SAME');
 			}
 		}
 		return null;
@@ -190,10 +194,10 @@ export class ChangePasswordRequiredComponent implements OnInit {
 		const control = this.changePasswordForm.get('confirmPassword');
 		if (control?.touched && control?.errors) {
 			if (control.errors['required']) {
-				return 'Please confirm your password';
+				return this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.CONFIRM_REQUIRED');
 			}
 			if (control.errors['passwordMismatch']) {
-				return 'Passwords do not match';
+				return this.translateService.translate('AUTH.CHANGE_PASSWORD.ERRORS.CONFIRM_MISMATCH');
 			}
 		}
 		return null;

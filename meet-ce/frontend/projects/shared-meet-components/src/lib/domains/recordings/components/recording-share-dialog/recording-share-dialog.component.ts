@@ -15,6 +15,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RoomService } from '../../../rooms/services/room.service';
 import { RecordingService } from '../../services/recording.service';
@@ -33,7 +35,8 @@ import { RecordingService } from '../../services/recording.service';
 		MatDialogActions,
 		MatDialogClose,
 		MatTooltipModule,
-		MatProgressSpinnerModule
+		MatProgressSpinnerModule,
+		TranslatePipe
 	],
 	templateUrl: './recording-share-dialog.component.html',
 	styleUrl: './recording-share-dialog.component.scss',
@@ -49,6 +52,7 @@ export class RecordingShareDialogComponent implements OnInit {
 	private readonly recordingService = inject(RecordingService);
 	private readonly roomService = inject(RoomService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
+	private readonly translateService = inject(TranslateService);
 
 	accessType = signal<'private' | 'public'>('public');
 	canGenerateUrls = signal(false);
@@ -59,7 +63,11 @@ export class RecordingShareDialogComponent implements OnInit {
 	erroMessage = signal<string | undefined>(undefined);
 	copied = signal(false);
 
-	selectedAccessLabel = computed(() => (this.accessType() === 'public' ? 'Anyone' : 'OpenVidu Meet users'));
+	selectedAccessLabel = computed(() =>
+		this.accessType() === 'public'
+			? this.translateService.translate('RECORDINGS.SHARE_DIALOG.ANYONE')
+			: this.translateService.translate('RECORDINGS.SHARE_DIALOG.OPENVIDU_MEET_USERS')
+	);
 
 	async ngOnInit() {
 		const hasRecordingAccess = this.data.hasRecordingAccess ?? true;
@@ -100,12 +108,12 @@ export class RecordingShareDialogComponent implements OnInit {
 
 	async getRecordingUrl() {
 		if (!this.canGenerateUrls()) {
-			this.erroMessage.set('You do not have permission to generate recording URLs.');
+			this.erroMessage.set(this.translateService.translate('RECORDINGS.ERRORS.PERMISSION_DENIED'));
 			return;
 		}
 
 		if (this.accessType() === 'public' && !this.canGeneratePublicUrls()) {
-			this.erroMessage.set('Public recording URLs are not enabled for this room.');
+			this.erroMessage.set(this.translateService.translate('RECORDINGS.ERRORS.PUBLIC_URLS_NOT_ENABLED'));
 			return;
 		}
 
@@ -117,7 +125,7 @@ export class RecordingShareDialogComponent implements OnInit {
 			const { url } = await this.recordingService.generateRecordingUrl(this.data.recordingId, privateAccess);
 			this.recordingUrl.set(url);
 		} catch (error) {
-			this.erroMessage.set('Failed to generate recording URL. Please try again later.');
+			this.erroMessage.set(this.translateService.translate('RECORDINGS.ERRORS.GENERATE_URL_FAILED'));
 			console.error('Error generating recording URL:', error);
 		} finally {
 			this.loading.set(false);

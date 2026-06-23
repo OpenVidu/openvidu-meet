@@ -1,0 +1,246 @@
+{
+  "PREJOIN": {
+    "NICKNAME": "Nickname",
+    "NO_VIDEO_DEVICE": "Video device not found",
+    "NO_AUDIO_DEVICE": "Audio device not found",
+    "JOIN": "Join meeting",
+    "PREPARING": "Preparing room...",
+    "BACKGROUND": "Background effects"
+  },
+  "ROOM": {
+    "JOINING": "Joining room...",
+    "LANDSCAPE_WARNING": "Please rotate your device to portrait for a better experience",
+    "DISCONNECTED": "You have left the room",
+    "DISCONNECTED_SUBTITLE": "The session has ended"
+  },
+  "TOOLBAR": {
+    "MUTE_AUDIO": "Mute your audio",
+    "UNMUTE_AUDIO": "Unmute your audio",
+    "STOP_VIDEO": "Stop your video",
+    "START_VIDEO": "Start your video",
+    "ENABLE_SCREEN": "Enable screen share",
+    "DISABLE_SCREEN": "Disable screen share",
+    "MORE_OPTIONS": "More options",
+    "FULLSCREEN": "Fullscreen",
+    "EXIT_FULLSCREEN": "Exit fullscreen",
+    "BACKGROUND": "Background effects",
+    "START_RECORDING": "Start recording",
+    "STOP_RECORDING": "Stop recording",
+    "SETTINGS": "Settings",
+    "LEAVE": "Leave the room",
+    "PARTICIPANTS": "Participants",
+    "CHAT": "Chat",
+    "ACTIVITIES": "Activities",
+    "PANELS": "Panels",
+    "NO_TRACKS_PUBLISHED": "Share audio or video to start recording.",
+    "VIEW_RECORDINGS": "View recordings"
+  },
+  "STREAM": {
+    "MUTE_SOUND": "Mute sound",
+    "UNMUTE_SOUND": "Unmute sound",
+    "ZOOM_IN": "Zoom in",
+    "ZOOM_OUT": "Zoom out",
+    "RESET_ZOOM": "Reset zoom",
+    "REPLACE_SCREEN": "Replace screen",
+    "PIN": "Pin",
+    "UNPIN": "Unpin",
+    "FLOAT": "Float",
+    "DOCK": "Dock",
+    "SCREEN_LABEL": "screen",
+    "YOUR_SCREEN_LABEL": "your screen"
+  },
+  "PANEL": {
+    "CLOSE": "Close",
+    "CHAT": {
+      "TITLE": "Chat",
+      "YOU": "You",
+      "SUBTITLE": "Messages will be removed at the end of the meeting",
+      "PLACEHOLDER": "Send a message...",
+      "SEND": "Send",
+      "MESSAGE_SENT_NOTIFICATION": "message sent",
+      "OPEN_CHAT": "OPEN",
+      "ENCRYPTION_KEY_MISMATCH": "There are participants connected with a different encryption key. You will not receive messages from them."
+    },
+    "PARTICIPANTS": {
+      "TITLE": "Participants",
+      "CAMERA": "CAMERA",
+      "MICROPHONE": "MICROPHONE",
+      "SCREEN": "SCREEN",
+      "NO_STREAMS": "NONE",
+      "YOU": "You",
+      "MUTE": "Mute",
+      "UNMUTE": "Unmute",
+      "SHARING_SCREEN": "Sharing screen",
+      "CONNECTION_QUALITY": {
+        "LABEL": "Connection quality",
+        "EXCELLENT": "Excellent",
+        "GOOD": "Good",
+        "POOR": "Poor",
+        "LOST": "Lost"
+      },
+      "MIC_OFF": "Microphone off",
+      "CAM_OFF": "Camera off"
+    },
+    "ACTIVITIES": {
+      "TITLE": "Activities"
+    },
+    "SETTINGS": {
+      "TITLE": "Settings",
+      "GENERAL": "General",
+      "VIDEO": "Video",
+      "AUDIO": "Audio",
+      "LANGUAGE": "Language",
+      "DISABLED_VIDEO": "Video disabled",
+      "THEME": "Theme"
+    },
+    "BACKGROUND": {
+      "TITLE": "Background effects",
+      "BLURRED_SECTION": "No effects and blurred background",
+      "NO_EFFECTS": "No background effect",
+      "BLURRED_EFFECT": "Blurred background",
+      "CATEGORY_PROFESSIONAL": "Professional",
+      "CATEGORY_HOME_OFFICE": "Home Office",
+      "CATEGORY_CREATIVE": "Creative",
+      "NOT_SUPPORTED": "Virtual backgrounds are not supported in this browser",
+      "NOT_SUPPORTED_DESCRIPTION": "Your browser does not support background effects. This feature requires GPU acceleration which may be disabled or unavailable."
+    },
+    "RECORDING": {
+      "TITLE": "Recording",
+      "SUBTITLE": "Record your meeting for posterity",
+      "CONTENT_TITLE": "Record your video call",
+      "CONTENT_SUBTITLE": "When recording has finished you will be able to download it with ease",
+      "VIEW": "View",
+      "STARTING": "Starting recording",
+      "STOPPING": "Stopping recording",
+      "DELETE": "Delete",
+      "CANCEL": "Cancel",
+      "ACCEPT": "Accept",
+      "DELETE_QUESTION": "Are you sure you want to delete the recording?",
+      "NO_TRACKS_PUBLISHED": "Share audio or video to start recording.",
+      "ERROR_STARTING": "Error starting recording"
+    }
+  },
+  "ERRORS": {
+    "SESSION": "There was an error connecting to the room",
+    "CONNECTION": "Connection lost",
+    "RECONNECT": "Oops! Trying to reconnect to the room...",
+    "DISCONNECT": "You have been disconnected",
+    "SIGNAL_CLOSE": "The connection to the server was unexpectedly closed",
+    "SERVER_SHUTDOWN": "The server is currently down or under maintenance",
+    "PARTICIPANT_REMOVED": "You have been removed from this room",
+    "ROOM_DELETED": "This room has been deleted",
+    "DUPLICATE_IDENTITY": "You have been disconnected because your alias was assigned to another participant",
+    "TOGGLE_CAMERA": "There was an error toggling camera",
+    "TOGGLE_MICROPHONE": "There was an error toggling microphone",
+    "LOAD_RECORDING_TITLE": "Error loading recording",
+    "MEDIA_ERR_GENERIC": "An error occurred while loading the video.",
+    "MEDIA_ERR_NETWORK": "A network error caused the video download to fail part-way.",
+    "MEDIA_ERR_DECODE": "The video playback was aborted due to a corruption problem or because the video used features your browser did not support.",
+    "MEDIA_ERR_SRC_NOT_SUPPORTED": "Error streaming recording: S3 could not be reached.",
+    "E2EE_ERROR_TITLE": "Room password error",
+    "E2EE_ERROR_CONTENT": "This participant is using a different encryption key. Video cannot be displayed.",
+    "GENERIC": "An unexpected error occurred. Please try again."
+  },
+  "LOBBY": {
+    "E2EE_BADGE_TOOLTIP": "End-to-end encrypted",
+    "E2EE_BADGE_TEXT": "Meetings in this room are end-to-end encrypted",
+    "JOIN_TITLE": "Join Meeting",
+    "ROOM_CLOSED_TITLE": "Room Closed",
+    "ACCESS_RESTRICTED_TITLE": "Access Restricted",
+    "JOIN_SUBTITLE": "Join the meeting and start connecting",
+    "ROOM_CLOSED_SUBTITLE": "This room is not available for meetings",
+    "ACCESS_RESTRICTED_SUBTITLE": "You do not have permission to join meetings in this room",
+    "NAME_LABEL": "Your display name",
+    "NAME_PLACEHOLDER": "Enter your name",
+    "NAME_REQUIRED_PREFIX": "The name is ",
+    "E2EE_KEY_LABEL": "Encryption Key",
+    "E2EE_KEY_PLACEHOLDER": "Enter room encryption key",
+    "E2EE_KEY_REQUIRED_PREFIX": "The encryption key is ",
+    "REQUIRED": "required",
+    "E2EE_KEY_HINT": "This meeting requires an encryption key",
+    "JOIN_BUTTON": "Join Meeting",
+    "ROOM_CLOSED_MESSAGE": "Sorry, this room is closed. You cannot join the meeting at this time. Please contact a room manager for more information.",
+    "NO_PERMISSION_MESSAGE": "Sorry, you have access to this room but do not have permission to join meetings. Please contact a room manager for more information.",
+    "RECORDINGS_TITLE": "View Recordings",
+    "RECORDINGS_SUBTITLE": "Browse and manage past recordings",
+    "RECORDINGS_DESCRIPTION": "Access previously recorded meetings from this room. You can watch, download, or manage existing recordings.",
+    "RECORDINGS_BUTTON": "Browse Recordings"
+  },
+  "SHARE_ACCESS": {
+    "COPY_TOOLTIP": "Copy room access link",
+    "DEFAULT_TITLE": "Invite others with this room access link"
+  },
+  "SHARE_OVERLAY": {
+    "TITLE": "Start collaborating",
+    "SUBTITLE": "Share this link to bring others into the meeting"
+  },
+  "WAITING_PANEL": {
+    "TITLE": "Waiting for others to join",
+    "SUBTITLE": "Participants will appear here as soon as they join the meeting.",
+    "ALONE_SUBTITLE": "You're the only one here right now."
+  },
+  "CAPTIONS": {
+    "ARIA_FROM": "Caption from ",
+    "DISABLED_BY_ADMIN_TEXT": "Live captions (disabled by admin)",
+    "ENABLE": "Enable live captions",
+    "DISABLE": "Disable live captions",
+    "DISABLED_BY_ADMIN_TOOLTIP": "Live captions are disabled by admin"
+  },
+  "COPY_LINK": {
+    "TOOLTIP": "Copy the room access link",
+    "TEXT": "Copy room access link"
+  },
+  "LEAVE_BUTTON": {
+    "MENU_TOOLTIP": "Leave options",
+    "LEAVE_OPTION": "Leave meeting",
+    "END_OPTION": "End meeting for all"
+  },
+  "MORE_OPTIONS": {
+    "LAYOUT_TOOLTIP": "Configure grid layout",
+    "ADJUST_LAYOUT": "Adjust Layout"
+  },
+  "LAYOUT_SETTINGS": {
+    "TITLE": "Layout settings",
+    "MODE_ARIA": "Select layout mode",
+    "MOSAIC": "Mosaic",
+    "MOSAIC_DESC": "Shows all participants in a unified grid",
+    "SMART_MOSAIC": "Smart Mosaic",
+    "SMART_MOSAIC_DESC": "Shows a limited number of active participants",
+    "COUNT_LABEL": "Number of visible participants",
+    "COUNT_HELPER": "Choose how many remote participants are shown in the grid",
+    "COUNT_ARIA": "Number of participants to display"
+  },
+  "PARTICIPANT_ITEM": {
+    "PROMOTE_TOOLTIP": "Promote to moderator",
+    "DOWNGRADE_TOOLTIP": "Downgrade to original permissions",
+    "KICK_TOOLTIP": "Kick participant",
+    "BADGE_OWNER": "Owner",
+    "BADGE_ADMIN": "Admin",
+    "BADGE_MODERATOR": "Moderator"
+  },
+  "END_MEETING": {
+    "LEFT_TITLE": "You Left the Meeting",
+    "LEFT_MESSAGE": "You have successfully left the meeting",
+    "KICKED_TITLE": "Kicked from Meeting",
+    "KICKED_MESSAGE": "You were kicked from the meeting by a moderator",
+    "ENDED_TITLE": "Meeting Ended",
+    "ENDED_MESSAGE": "The meeting was ended by a moderator",
+    "ENDED_BY_SELF_MESSAGE": "You have successfully ended the meeting",
+    "DISCONNECTED_TITLE": "Disconnected from Meeting",
+    "NETWORK_MESSAGE": "Connection lost due to network connectivity issues",
+    "SERVER_SHUTDOWN_MESSAGE": "Connection lost due to server shutdown",
+    "DUPLICATE_MESSAGE": "This session was closed because you joined the same meeting from another tab or device",
+    "UNKNOWN_MESSAGE": "Some unexpected error occurred, please try again later",
+    "FOOTER": "Thank you for using OpenVidu Meet",
+    "BACK": "Back",
+    "BACK_TO_ROOMS": "Back to Rooms",
+    "ACCEPT": "Accept"
+  },
+  "MEETING_PAGE": {
+    "PREPARING": "Preparing your meeting...",
+    "PREPARE_ERROR": "Unable to prepare your meeting.",
+    "INIT_ERROR_TITLE": "Error",
+    "INIT_ERROR_MESSAGE": "An error occurred while initializing the meeting lobby. Please try again later.",
+    "INIT_ERROR_CONFIRM": "OK"
+  }
+}

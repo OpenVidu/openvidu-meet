@@ -3,7 +3,7 @@
 	<!-- It will appear inside of a menu on mobile view -->
 	<button id="copy-speaker-link" mat-menu-item (click)="onCopyLinkClick()" [disableRipple]="true">
 		<mat-icon>link</mat-icon>
-		<span class="button-text">{{ copyLinkText }}</span>
+		<span class="button-text">{{ 'COPY_LINK.TEXT' | translate }}</span>
 	</button>
 } @else {
 	<!-- It will appear as an icon button on desktop view -->
@@ -12,7 +12,7 @@
 		mat-icon-button
 		(click)="onCopyLinkClick()"
 		[disableRipple]="true"
-		[matTooltip]="copyLinkTooltip"
+		[matTooltip]="'COPY_LINK.TOOLTIP' | translate"
 	>
 		<mat-icon>link</mat-icon>
 	</button>

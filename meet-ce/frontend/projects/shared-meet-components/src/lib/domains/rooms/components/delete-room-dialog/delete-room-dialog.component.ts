@@ -12,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
 import { MeetRoomDeletionPolicyWithMeeting, MeetRoomDeletionPolicyWithRecordings } from '@openvidu-meet/typings';
 import type { DeleteRoomDialogOptions } from '../../../../shared/models';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
 @Component({
 	selector: 'ov-delete-room-dialog',
@@ -22,7 +23,8 @@ import type { DeleteRoomDialogOptions } from '../../../../shared/models';
 		MatRadioModule,
 		MatDialogActions,
 		MatDialogContent,
-		MatDialogTitle
+		MatDialogTitle,
+		TranslatePipe
 	],
 	templateUrl: './delete-room-dialog.component.html',
 	styleUrl: './delete-room-dialog.component.scss',
@@ -35,36 +37,35 @@ export class DeleteRoomDialogComponent {
 	meetingPolicyOptions = [
 		{
 			value: MeetRoomDeletionPolicyWithMeeting.FORCE,
-			label: 'Force',
-			description:
-				'The meeting will be ended immediately, and the room will be deleted without waiting for participants to leave.'
+			label: 'ROOMS.DELETE_DIALOG.MEETING_FORCE_LABEL',
+			description: 'ROOMS.DELETE_DIALOG.MEETING_FORCE_DESC'
 		},
 		{
 			value: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-			label: 'When meeting ends',
-			description: 'The room will be deleted when the meeting ends.'
+			label: 'ROOMS.DELETE_DIALOG.MEETING_WHEN_ENDS_LABEL',
+			description: 'ROOMS.DELETE_DIALOG.MEETING_WHEN_ENDS_DESC'
 		},
 		{
 			value: MeetRoomDeletionPolicyWithMeeting.FAIL,
-			label: 'Fail',
-			description: 'The deletion will fail if there is an active meeting.'
+			label: 'ROOMS.DELETE_DIALOG.MEETING_FAIL_LABEL',
+			description: 'ROOMS.DELETE_DIALOG.MEETING_FAIL_DESC'
 		}
 	];
 	recordingPolicyOptions = [
 		{
 			value: MeetRoomDeletionPolicyWithRecordings.FORCE,
-			label: 'Force',
-			description: 'The room and its recordings will be deleted immediately.'
+			label: 'ROOMS.DELETE_DIALOG.RECORDINGS_FORCE_LABEL',
+			description: 'ROOMS.DELETE_DIALOG.RECORDINGS_FORCE_DESC'
 		},
 		{
 			value: MeetRoomDeletionPolicyWithRecordings.CLOSE,
-			label: 'Close',
-			description: 'The room will be closed instead of deleted, maintaining its recordings.'
+			label: 'ROOMS.DELETE_DIALOG.RECORDINGS_CLOSE_LABEL',
+			description: 'ROOMS.DELETE_DIALOG.RECORDINGS_CLOSE_DESC'
 		},
 		{
 			value: MeetRoomDeletionPolicyWithRecordings.FAIL,
-			label: 'Fail',
-			description: 'The deletion will fail if the room has recordings.'
+			label: 'ROOMS.DELETE_DIALOG.RECORDINGS_FAIL_LABEL',
+			description: 'ROOMS.DELETE_DIALOG.RECORDINGS_FAIL_DESC'
 		}
 	];
 

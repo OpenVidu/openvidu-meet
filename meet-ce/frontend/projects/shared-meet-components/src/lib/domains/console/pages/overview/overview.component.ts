@@ -4,12 +4,13 @@ import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
 import { MatIconModule } from '@angular/material/icon';
 import { MeetAnalytics } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AnalyticsService } from '../../../../shared/services/analytics.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 
 @Component({
 	selector: 'ov-overview',
-	imports: [MatCardModule, MatButtonModule, MatIconModule, MatGridListModule],
+	imports: [MatCardModule, MatButtonModule, MatIconModule, MatGridListModule, TranslatePipe],
 	templateUrl: './overview.component.html',
 	styleUrl: './overview.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush

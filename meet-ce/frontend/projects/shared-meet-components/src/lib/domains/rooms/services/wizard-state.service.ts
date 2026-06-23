@@ -10,6 +10,7 @@ import {
 	MeetRoomMemberPermissions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
+import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { deepMerge } from '../../../shared/utils/object.utils';
 import { WizardNavigationConfig, WizardStepId } from '../models';
 import {
@@ -97,6 +98,7 @@ const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
 })
 export class RoomWizardStateService {
 	private formBuilder = inject(FormBuilder);
+	private readonly translateService = inject(TranslateService);
 
 	// Signals for reactive state management
 	private _steps = signal<AnyWizardStep[]>([]);
@@ -146,7 +148,7 @@ export class RoomWizardStateService {
 		const baseSteps: AnyWizardStep[] = [
 			{
 				id: WizardStepId.ROOM_DETAILS,
-				label: 'Room Details',
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_DETAILS'),
 				isCompleted: editMode, // In edit mode, mark as completed but not editable
 				isActive: !editMode, // Start with roomDetails step active in create mode
 				isVisible: true,
@@ -222,7 +224,7 @@ export class RoomWizardStateService {
 			},
 			{
 				id: WizardStepId.ROOM_CONFIG,
-				label: 'Room Features',
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_FEATURES'),
 				isCompleted: editMode,
 				isActive: editMode, // Start with Room Features step active in edit mode
 				isVisible: true,
@@ -237,7 +239,7 @@ export class RoomWizardStateService {
 			},
 			{
 				id: WizardStepId.ROOM_ACCESS,
-				label: 'Room Access',
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_ACCESS'),
 				isCompleted: editMode,
 				isActive: false,
 				isVisible: true,
@@ -261,7 +263,7 @@ export class RoomWizardStateService {
 			},
 			{
 				id: WizardStepId.RECORDING,
-				label: 'Recording Settings',
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_RECORDING_SETTINGS'),
 				isCompleted: editMode, // In edit mode, all editable steps are completed
 				isActive: false,
 				isVisible: true,
@@ -276,7 +278,7 @@ export class RoomWizardStateService {
 			},
 			{
 				id: WizardStepId.RECORDING_TRIGGER,
-				label: 'Recording Trigger',
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_RECORDING_TRIGGER'),
 				isCompleted: editMode, // In edit mode, all editable steps are completed
 				isActive: false,
 				isVisible: false, // Initially hidden, will be shown based on recording settings
@@ -286,7 +288,7 @@ export class RoomWizardStateService {
 			},
 			{
 				id: WizardStepId.RECORDING_LAYOUT,
-				label: 'Recording Layout',
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_RECORDING_LAYOUT'),
 				isCompleted: editMode, // In edit mode, all editable steps are completed
 				isActive: false,
 				isVisible: false, // Initially hidden, will be shown based on recording settings
@@ -459,9 +461,11 @@ export class RoomWizardStateService {
 			showFinish: isLastStep,
 			showSkipAndFinish: false, // Skip and finish is not used in this wizard
 			disableFinish: isSomeStepInvalid,
-			nextLabel: 'Next',
-			previousLabel: 'Previous',
-			finishLabel: isEditMode ? 'Update Room' : 'Create Room'
+			nextLabel: this.translateService.translate('ROOMS.WIZARD.NEXT'),
+			previousLabel: this.translateService.translate('ROOMS.WIZARD.PREVIOUS'),
+			finishLabel: isEditMode
+				? this.translateService.translate('ROOMS.WIZARD.UPDATE_ROOM')
+				: this.translateService.translate('ROOMS.WIZARD.CREATE_ROOM')
 		};
 	}
 

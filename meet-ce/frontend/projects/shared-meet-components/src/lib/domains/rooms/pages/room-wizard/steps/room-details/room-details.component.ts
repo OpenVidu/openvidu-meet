@@ -15,6 +15,7 @@ import {
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import { RoomDetailsFormGroup, RoomDetailsFormValue } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services';
@@ -30,7 +31,8 @@ import { RoomWizardStateService } from '../../../../services';
 		MatDatepickerModule,
 		MatNativeDateModule,
 		MatSelectModule,
-		MatTooltipModule
+		MatTooltipModule,
+		TranslatePipe
 	],
 	templateUrl: './room-details.component.html',
 	styleUrl: './room-details.component.scss',
@@ -48,26 +50,25 @@ export class RoomWizardRoomDetailsComponent {
 	meetingPolicyOptions = [
 		{
 			value: MeetRoomDeletionPolicyWithMeeting.FORCE,
-			label: 'Force',
-			description:
-				'The meeting will be ended, and the room will be deleted without waiting for participants to leave.'
+			label: 'ROOMS.WIZARD.DETAILS.MEETING_FORCE_LABEL',
+			description: 'ROOMS.WIZARD.DETAILS.MEETING_FORCE_DESC'
 		},
 		{
 			value: MeetRoomDeletionPolicyWithMeeting.WHEN_MEETING_ENDS,
-			label: 'When meeting ends',
-			description: 'The room will be deleted when the meeting ends.'
+			label: 'ROOMS.WIZARD.DETAILS.MEETING_WHEN_ENDS_LABEL',
+			description: 'ROOMS.WIZARD.DETAILS.MEETING_WHEN_ENDS_DESC'
 		}
 	];
 	recordingPolicyOptions = [
 		{
 			value: MeetRoomDeletionPolicyWithRecordings.FORCE,
-			label: 'Force',
-			description: 'The room and its recordings will be deleted.'
+			label: 'ROOMS.WIZARD.DETAILS.RECORDINGS_FORCE_LABEL',
+			description: 'ROOMS.WIZARD.DETAILS.RECORDINGS_FORCE_DESC'
 		},
 		{
 			value: MeetRoomDeletionPolicyWithRecordings.CLOSE,
-			label: 'Close',
-			description: 'The room will be closed instead of deleted, maintaining its recordings.'
+			label: 'ROOMS.WIZARD.DETAILS.RECORDINGS_CLOSE_LABEL',
+			description: 'ROOMS.WIZARD.DETAILS.RECORDINGS_CLOSE_DESC'
 		}
 	];
 

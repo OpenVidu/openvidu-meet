@@ -1,14 +1,14 @@
 <div class="share-room-dialog">
 	<h2 mat-dialog-title class="dialog-title">
 		<mat-icon class="title-icon">share</mat-icon>
-		Share Room Access Links
+		{{ 'ROOMS.SHARE_DIALOG.TITLE' | translate }}
 	</h2>
 
 	<mat-dialog-content class="dialog-content ov-theme-transition">
 		@if (!roomUrl()) {
 			<div class="content-section fade-in">
 				<div class="access-type-section">
-					<h3 class="section-label">Access Type</h3>
+					<h3 class="section-label">{{ 'ROOMS.SHARE_DIALOG.ACCESS_TYPE' | translate }}</h3>
 					<mat-radio-group
 						[ngModel]="selectedAccessType()"
 						(ngModelChange)="onAccessTypeChange($event)"
@@ -20,22 +20,21 @@
 								<div class="option-details">
 									<span class="option-title">
 										@if (data.access.user.enabled) {
-											Users
+											{{ 'ROOMS.SHARE_DIALOG.USERS' | translate }}
 										} @else {
-											User Members
+											{{ 'ROOMS.SHARE_DIALOG.USER_MEMBERS' | translate }}
 										}
 									</span>
 									<span class="option-description">
 										@if (data.access.user.enabled) {
-											Any user can access the room. Non-members will get Speaker permissions.
+											{{ 'ROOMS.SHARE_DIALOG.USERS_ENABLED_DESC' | translate }}
 										} @else {
 											@if (data.canManageRoom) {
-												Only for users that are members.
-												<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
-												to enable it for all users.
+												{{ 'ROOMS.SHARE_DIALOG.USER_MEMBERS_DESC_MANAGE_PREFIX' | translate }}
+												<a class="enable-link" (click)="editRoomAccess()">{{ 'ROOMS.SHARE_DIALOG.EDIT_THE_ROOM' | translate }}</a>
+												{{ 'ROOMS.SHARE_DIALOG.USER_MEMBERS_DESC_MANAGE_SUFFIX' | translate }}
 											} @else {
-												For users that are members only. Ask a room manager to enable it for all
-												users.
+												{{ 'ROOMS.SHARE_DIALOG.USER_MEMBERS_DESC_NO_MANAGE' | translate }}
 											}
 										}
 									</span>
@@ -52,17 +51,17 @@
 							<div class="option-content">
 								<mat-icon class="option-icon material-symbols-outlined">record_voice_over</mat-icon>
 								<div class="option-details">
-									<span class="option-title">Anonymous Speaker</span>
+									<span class="option-title">{{ 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER' | translate }}</span>
 									<span class="option-description">
 										@if (data.access.anonymous.speaker.enabled) {
-											Any guest with the link will access the room with Speaker permissions
+											{{ 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER_ENABLED_DESC' | translate }}
 										} @else {
 											@if (data.canManageRoom) {
-												Disabled.
-												<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
-												to enable it.
+												{{ 'ROOMS.SHARE_DIALOG.DISABLED_MANAGE_PREFIX' | translate }}
+												<a class="enable-link" (click)="editRoomAccess()">{{ 'ROOMS.SHARE_DIALOG.EDIT_THE_ROOM' | translate }}</a>
+												{{ 'ROOMS.SHARE_DIALOG.DISABLED_MANAGE_SUFFIX' | translate }}
 											} @else {
-												Disabled. Ask a room manager to enable it.
+												{{ 'ROOMS.SHARE_DIALOG.DISABLED_NO_MANAGE' | translate }}
 											}
 										}
 									</span>
@@ -79,16 +78,16 @@
 							<div class="option-content">
 								<mat-icon class="option-icon material-symbols-outlined">shield_person</mat-icon>
 								<div class="option-details">
-									<span class="option-title">Anonymous Moderator</span>
+									<span class="option-title">{{ 'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR' | translate }}</span>
 									<span class="option-description">
 										@if (data.access.anonymous.moderator.enabled) {
-											Any guest with the link will access the room with Moderator permissions
+											{{ 'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR_ENABLED_DESC' | translate }}
 										} @else if (data.canManageRoom) {
-											Disabled.
-											<a class="enable-link" (click)="editRoomAccess()">Edit the room</a>
-											to enable it.
+											{{ 'ROOMS.SHARE_DIALOG.DISABLED_MANAGE_PREFIX' | translate }}
+											<a class="enable-link" (click)="editRoomAccess()">{{ 'ROOMS.SHARE_DIALOG.EDIT_THE_ROOM' | translate }}</a>
+											{{ 'ROOMS.SHARE_DIALOG.DISABLED_MANAGE_SUFFIX' | translate }}
 										} @else {
-											Disabled. Ask a room manager to enable it.
+											{{ 'ROOMS.SHARE_DIALOG.DISABLED_NO_MANAGE' | translate }}
 										}
 									</span>
 								</div>
@@ -101,8 +100,7 @@
 					<div class="guest-members-info">
 						<mat-icon class="guest-members-info-icon">info</mat-icon>
 						<p class="guest-members-info-text">
-							To share access with an <strong>identified guest</strong>, copy their personal link from the
-							<strong>Room Members</strong> tab in the room details page.
+							{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_PREFIX' | translate }}<strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_IDENTIFIED_GUEST' | translate }}</strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_MIDDLE' | translate }}<strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_ROOM_MEMBERS' | translate }}</strong>{{ 'ROOMS.SHARE_DIALOG.GUEST_INFO_SUFFIX' | translate }}
 						</p>
 					</div>
 				}
@@ -116,7 +114,7 @@
 						class="generate-button"
 					>
 						<mat-icon>link</mat-icon>
-						Get Link
+						{{ 'ROOMS.SHARE_DIALOG.GET_LINK' | translate }}
 					</button>
 				</div>
 			</div>
@@ -124,17 +122,17 @@
 
 		@if (roomUrl()) {
 			<div class="url-section fade-in">
-				<h3 class="section-label">{{ selectedAccessLabel() }}</h3>
+				<h3 class="section-label">{{ selectedAccessLabel() | translate }}</h3>
 				<div class="url-container">
 					<mat-form-field appearance="outline" class="url-field">
-						<mat-label>Access link</mat-label>
+						<mat-label>{{ 'ROOMS.SHARE_DIALOG.ACCESS_LINK' | translate }}</mat-label>
 						<input matInput [value]="roomUrl()" readonly class="url-input" />
 						<mat-icon matPrefix class="url-prefix-icon">link</mat-icon>
 						<button
 							mat-icon-button
 							matSuffix
 							(click)="copyToClipboard()"
-							[matTooltip]="copied() ? 'Copied!' : 'Copy to clipboard'"
+							[matTooltip]="copied() ? ('ROOMS.SHARE_DIALOG.COPIED' | translate) : ('ROOMS.SHARE_DIALOG.COPY_TO_CLIPBOARD' | translate)"
 							matTooltipPosition="above"
 							class="copy-button"
 							[class.copied]="copied()"
@@ -147,7 +145,7 @@
 				<div class="url-actions">
 					<button mat-button class="back-button" (click)="goBack()">
 						<mat-icon>arrow_back</mat-icon>
-						<span>Go back</span>
+						<span>{{ 'ROOMS.COMMON.GO_BACK' | translate }}</span>
 					</button>
 				</div>
 			</div>
@@ -157,7 +155,7 @@
 	<mat-dialog-actions class="dialog-actions">
 		<button mat-button mat-dialog-close class="close-button">
 			<mat-icon>close</mat-icon>
-			Close
+			{{ 'ROOMS.COMMON.CLOSE' | translate }}
 		</button>
 	</mat-dialog-actions>
 </div>

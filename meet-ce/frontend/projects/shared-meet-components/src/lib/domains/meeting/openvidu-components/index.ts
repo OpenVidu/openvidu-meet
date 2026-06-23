@@ -61,7 +61,7 @@ export * from './services/participant/participant.service';
 export * from './services/storage/storage.service';
 export * from './services/template/template-registry.service';
 export * from './services/theme/theme.service';
-export * from './services/translate/translate.service';
+export * from './services/translate/meeting-translate.service';
 export * from './services/viewport/viewport.service';
 //Modules
 export * from './config/custom-cdk-overlay';

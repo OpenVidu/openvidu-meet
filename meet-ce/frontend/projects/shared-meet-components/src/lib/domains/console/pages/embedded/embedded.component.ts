@@ -11,8 +11,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetApiKey } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 
@@ -27,7 +29,8 @@ import { NotificationService } from '../../../../shared/services/notification.se
 		MatSlideToggleModule,
 		MatTooltipModule,
 		ReactiveFormsModule,
-		MatProgressSpinnerModule
+		MatProgressSpinnerModule,
+		TranslatePipe
 	],
 	templateUrl: './embedded.component.html',
 	styleUrl: './embedded.component.scss',
@@ -39,6 +42,7 @@ export class EmbeddedComponent implements OnInit {
 	protected configService = inject(GlobalConfigService);
 	protected notificationService = inject(NotificationService);
 	protected clipboard = inject(Clipboard);
+	private readonly translateService = inject(TranslateService);
 
 	restApiDocsUrl = signal<string>('');
 
@@ -114,7 +118,7 @@ export class EmbeddedComponent implements OnInit {
 			}
 		} catch (error) {
 			console.error('Error loading API key data:', error);
-			this.notificationService.showSnackbar('Failed to load API Key data');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.LOAD_API_FAILED'));
 			this.apiKeyData.set(undefined);
 		}
 	}
@@ -124,10 +128,10 @@ export class EmbeddedComponent implements OnInit {
 			const newApiKey = await this.apiKeyService.generateApiKey();
 			this.apiKeyData.set(newApiKey);
 			this.showApiKey.set(true);
-			this.notificationService.showSnackbar('API Key generated successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_GENERATED'));
 		} catch (error) {
 			console.error('Error generating API key:', error);
-			this.notificationService.showSnackbar('Failed to generate API Key');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_GENERATE_FAILED'));
 		}
 	}
 
@@ -143,7 +147,7 @@ export class EmbeddedComponent implements OnInit {
 		const apiKey = this.apiKeyData();
 		if (apiKey) {
 			this.clipboard.copy(apiKey.key);
-			this.notificationService.showSnackbar('API Key copied to clipboard');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_COPIED'));
 		}
 	}
 
@@ -160,10 +164,10 @@ export class EmbeddedComponent implements OnInit {
 				await this.saveWebhookConfig();
 			}
 
-			this.notificationService.showSnackbar('API Key revoked successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_REVOKED'));
 		} catch (error) {
 			console.error('Error revoking API key:', error);
-			this.notificationService.showSnackbar('Failed to revoke API Key');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_REVOKE_FAILED'));
 		}
 	}
 
@@ -192,7 +196,7 @@ export class EmbeddedComponent implements OnInit {
 			this.hasWebhookChanges.set(false);
 		} catch (error) {
 			console.error('Error loading webhook configuration:', error);
-			this.notificationService.showSnackbar('Failed to load webhook configuration');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.LOAD_WEBHOOK_FAILED'));
 		}
 	}
 
@@ -225,14 +229,14 @@ export class EmbeddedComponent implements OnInit {
 
 		try {
 			await this.configService.saveWebhookConfig(webhookConfig);
-			this.notificationService.showSnackbar('Webhook configuration saved successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVED'));
 
 			// Update initial values after successful save
 			this.initialWebhookFormValue = this.webhookForm.getRawValue();
 			this.hasWebhookChanges.set(false);
 		} catch (error) {
 			console.error('Error saving webhook configuration:', error);
-			this.notificationService.showSnackbar('Failed to save webhook configuration');
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVE_FAILED'));
 		}
 	}
 
@@ -241,10 +245,10 @@ export class EmbeddedComponent implements OnInit {
 		if (url) {
 			try {
 				await this.configService.testWebhookUrl(url);
-				this.notificationService.showSnackbar('Test webhook sent successfully. Your URL is reachable.');
+				this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.TEST_SENT'));
 			} catch (error: any) {
 				const errorMessage = error.error?.message || error.message || 'Unknown error';
-				this.notificationService.showSnackbar(`Failed to send test webhook. ${errorMessage}`);
+				this.notificationService.showSnackbar(`${this.translateService.translate('EMBEDDED.ERRORS.TEST_FAILED')} ${errorMessage}`);
 				console.error(`Error sending test webhook. ${errorMessage}`);
 			}
 		}

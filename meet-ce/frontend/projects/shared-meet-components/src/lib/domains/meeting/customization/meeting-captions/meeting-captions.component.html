@@ -6,7 +6,7 @@
 				[attr.data-caption-id]="caption.id"
 				role="region"
 				aria-live="polite"
-				[attr.aria-label]="'Caption from ' + caption.participantName"
+				[attr.aria-label]="('CAPTIONS.ARIA_FROM' | translate) + caption.participantName"
 			>
 				<!-- Scrollable container for caption text -->
 				<div class="caption-text-container" #captionTextContainer>

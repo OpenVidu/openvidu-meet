@@ -14,6 +14,8 @@ import { ScrollPersistDirective } from '../../../../shared/directives/scroll-per
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
@@ -34,7 +36,7 @@ interface RecordingsListCachedState {
 
 @Component({
 	selector: 'ov-recordings',
-	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule, ScrollPersistDirective],
+	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule, ScrollPersistDirective, TranslatePipe],
 	templateUrl: './recordings.component.html',
 	styleUrl: './recordings.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
@@ -53,6 +55,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 	private roomMemberService: RoomMemberService = inject(RoomMemberService);
 	private notificationService: NotificationService = inject(NotificationService);
 	private dialogPresetsService = inject(DialogPresetsService);
+	private readonly translateService = inject(TranslateService);
 	protected route: ActivatedRoute = inject(ActivatedRoute);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
@@ -158,7 +161,9 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo(`/recordings/${recordingId}`);
 		} catch (error) {
-			this.notificationService.showSnackbar('Error navigating to recording detail');
+			this.notificationService.showSnackbar(
+				this.translateService.translate('RECORDINGS.ERRORS.NAVIGATE_DETAIL_FAILED')
+			);
 			this.log.e('Error navigating to recording detail:', error);
 		}
 	}
@@ -214,7 +219,9 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 			// Resolve per-room delete permissions for the newly loaded recordings
 			await this.resolveDeletePermissions(recordings);
 		} catch (error) {
-			this.notificationService.showSnackbar('Failed to load recordings');
+			this.notificationService.showSnackbar(
+				this.translateService.translate('RECORDINGS.ERRORS.LOAD_RECORDINGS_FAILED')
+			);
 			this.log.e('Error loading recordings:', error);
 		} finally {
 			clearTimeout(delayLoader);
@@ -284,11 +291,11 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 
 				// Remove from local list
 				this.recordings.set(this.recordings().filter((r) => r.recordingId !== recording.recordingId));
-				this.notificationService.showSnackbar('Recording deleted successfully');
+				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED'));
 				await this.autoLoadIfEmpty();
 			} catch (error) {
 				this.log.e('Error deleting recording:', error);
-				this.notificationService.showSnackbar('Failed to delete recording');
+				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED'));
 			}
 		};
 
@@ -307,7 +314,11 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 				// Remove deleted recordings from the list
 				this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
 				this.notificationService.showSnackbar(
-					`${deleted.length} recording${deleted.length > 1 ? 's' : ''} deleted successfully`
+					`${deleted.length} ${this.translateService.translate(
+						deleted.length > 1
+							? 'RECORDINGS.ERRORS.RECORDINGS_DELETED_SUFFIX_PLURAL'
+							: 'RECORDINGS.ERRORS.RECORDINGS_DELETED_SUFFIX_SINGULAR'
+					)}`
 				);
 				await this.autoLoadIfEmpty();
 			} catch (error: any) {
@@ -325,16 +336,26 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 
 					let msg = '';
 					if (deleted.length > 0) {
-						msg += `${deleted.length} recording${deleted.length > 1 ? 's' : ''} deleted successfully. `;
+						msg += `${deleted.length} ${this.translateService.translate(
+							deleted.length > 1
+								? 'RECORDINGS.ERRORS.RECORDINGS_DELETED_DOT_SUFFIX_PLURAL'
+								: 'RECORDINGS.ERRORS.RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR'
+						)}`;
 					}
 					if (failed.length > 0) {
-						msg += `${failed.length} recording${failed.length > 1 ? 's' : ''} could not be deleted.`;
+						msg += `${failed.length} ${this.translateService.translate(
+							failed.length > 1
+								? 'RECORDINGS.ERRORS.RECORDINGS_FAILED_SUFFIX_PLURAL'
+								: 'RECORDINGS.ERRORS.RECORDINGS_FAILED_SUFFIX_SINGULAR'
+						)}`;
 					}
 
 					this.notificationService.showSnackbar(msg.trim());
 					await this.autoLoadIfEmpty();
 				} else {
-					this.notificationService.showSnackbar('Failed to delete recordings');
+					this.notificationService.showSnackbar(
+						this.translateService.translate('RECORDINGS.ERRORS.DELETE_RECORDINGS_FAILED')
+					);
 				}
 			}
 		};

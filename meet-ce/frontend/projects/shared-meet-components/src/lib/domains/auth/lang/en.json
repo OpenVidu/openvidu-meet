@@ -1,0 +1,45 @@
+{
+  "AUTH": {
+    "COMMON": {
+      "SHOW_PASSWORD": "Show password",
+      "HIDE_PASSWORD": "Hide password"
+    },
+    "LOGIN": {
+      "TITLE": "Sign in",
+      "SUBTITLE": "Enter your credentials to access OpenVidu Meet",
+      "USER_ID": "User ID",
+      "USER_ID_PLACEHOLDER": "Enter your user ID",
+      "PASSWORD": "Password",
+      "PASSWORD_PLACEHOLDER": "Enter your password",
+      "SUBMIT": "Login",
+      "ERROR_TOO_MANY_ATTEMPTS": "Too many login attempts. Please try again later",
+      "ERROR_INVALID_CREDENTIALS": "Invalid user ID or password"
+    },
+    "CHANGE_PASSWORD": {
+      "TITLE": "Update Your Password",
+      "SUBTITLE": "You must update your password before continuing.",
+      "BANNER_TITLE": "Password update required",
+      "BANNER_DESC": "Your password was recently created or reset. Set a new password to continue.",
+      "CURRENT_PASSWORD": "Current Password",
+      "CURRENT_PASSWORD_PLACEHOLDER": "Enter your current password",
+      "NEW_PASSWORD": "New Password",
+      "NEW_PASSWORD_PLACEHOLDER": "Create a strong, secure password",
+      "PASSWORD_MIN_HINT": "Minimum 5 characters",
+      "CONFIRM_PASSWORD": "Confirm New Password",
+      "CONFIRM_PASSWORD_PLACEHOLDER": "Repeat your new password",
+      "SUBMIT": "Update Password",
+      "ERRORS": {
+        "CURRENT_REQUIRED": "Current password is required",
+        "CURRENT_INCORRECT": "Current password is incorrect",
+        "NEW_REQUIRED": "New password is required",
+        "NEW_MIN_PREFIX": "Password must be at least ",
+        "NEW_MIN_SUFFIX": " characters long",
+        "NEW_SAME": "New password must be different from current password",
+        "CONFIRM_REQUIRED": "Please confirm your password",
+        "CONFIRM_MISMATCH": "Passwords do not match",
+        "UPDATE_SUCCESS": "Password updated successfully",
+        "UPDATE_FAILED": "Failed to update password"
+      }
+    }
+  }
+}

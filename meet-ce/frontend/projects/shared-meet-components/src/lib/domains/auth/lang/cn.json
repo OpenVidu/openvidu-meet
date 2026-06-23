@@ -1,0 +1,45 @@
+{
+  "AUTH": {
+    "COMMON": {
+      "SHOW_PASSWORD": "显示密码",
+      "HIDE_PASSWORD": "隐藏密码"
+    },
+    "LOGIN": {
+      "TITLE": "登录",
+      "SUBTITLE": "输入您的凭据以访问 OpenVidu Meet",
+      "USER_ID": "用户 ID",
+      "USER_ID_PLACEHOLDER": "请输入您的用户 ID",
+      "PASSWORD": "密码",
+      "PASSWORD_PLACEHOLDER": "请输入您的密码",
+      "SUBMIT": "登录",
+      "ERROR_TOO_MANY_ATTEMPTS": "登录尝试次数过多。请稍后重试",
+      "ERROR_INVALID_CREDENTIALS": "用户 ID 或密码无效"
+    },
+    "CHANGE_PASSWORD": {
+      "TITLE": "更新您的密码",
+      "SUBTITLE": "继续之前，您必须更新密码。",
+      "BANNER_TITLE": "需要更新密码",
+      "BANNER_DESC": "您的密码最近刚创建或重置。请设置新密码以继续。",
+      "CURRENT_PASSWORD": "当前密码",
+      "CURRENT_PASSWORD_PLACEHOLDER": "请输入您的当前密码",
+      "NEW_PASSWORD": "新密码",
+      "NEW_PASSWORD_PLACEHOLDER": "创建一个强而安全的密码",
+      "PASSWORD_MIN_HINT": "至少 5 个字符",
+      "CONFIRM_PASSWORD": "确认新密码",
+      "CONFIRM_PASSWORD_PLACEHOLDER": "请再次输入您的新密码",
+      "SUBMIT": "更新密码",
+      "ERRORS": {
+        "CURRENT_REQUIRED": "当前密码为必填项",
+        "CURRENT_INCORRECT": "当前密码不正确",
+        "NEW_REQUIRED": "新密码为必填项",
+        "NEW_MIN_PREFIX": "密码至少需要 ",
+        "NEW_MIN_SUFFIX": " 个字符",
+        "NEW_SAME": "新密码必须与当前密码不同",
+        "CONFIRM_REQUIRED": "请确认您的密码",
+        "CONFIRM_MISMATCH": "两次输入的密码不一致",
+        "UPDATE_SUCCESS": "密码已成功更新",
+        "UPDATE_FAILED": "更新密码失败"
+      }
+    }
+  }
+}

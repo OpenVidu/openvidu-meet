@@ -11,8 +11,8 @@
 					<div id="share-link-overlay" class="main-share-room-access-link-container fade-in-delayed OV_big">
 						<ov-share-room-access-link
 							class="main-share-room-access-link"
-							[title]="linkOverlayConfig.title"
-							[subtitle]="linkOverlayConfig.subtitle"
+							[title]="'SHARE_OVERLAY.TITLE' | translate"
+							[subtitle]="'SHARE_OVERLAY.SUBTITLE' | translate"
 							[titleSize]="linkOverlayConfig.titleSize"
 							[titleWeight]="linkOverlayConfig.titleWeight"
 							[roomAccessUrl]="roomAccessUrl() ?? ''"
@@ -23,7 +23,7 @@
 					<div id="waiting-overlay" class="main-share-room-access-link-container fade-in-delayed OV_big">
 						<ov-meeting-waiting-panel
 							class="main-share-room-access-link"
-							subtitle="You're the only one here right now."
+							[subtitle]="'WAITING_PANEL.ALONE_SUBTITLE' | translate"
 						/>
 					</div>
 				}

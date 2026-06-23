@@ -5,9 +5,9 @@
 			<div class="loading-header">
 				<div class="loading-title">
 					<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
-					<h1>Loading Rooms</h1>
+					<h1>{{ 'ROOMS.LIST.LOADING_TITLE' | translate }}</h1>
 				</div>
-				<p class="loading-subtitle">Please wait while we fetch your rooms...</p>
+				<p class="loading-subtitle">{{ 'ROOMS.LIST.LOADING_SUBTITLE' | translate }}</p>
 			</div>
 
 			<div class="loading-spinner-container">
@@ -23,13 +23,13 @@
 		<div class="page-header" id="rooms-page-header">
 			<div class="title" id="rooms-title">
 				<mat-icon class="ov-room-icon" id="rooms-icon">video_chat</mat-icon>
-				<h1 id="rooms-heading">Rooms</h1>
+				<h1 id="rooms-heading">{{ 'ROOMS.LIST.PAGE_TITLE' | translate }}</h1>
 			</div>
 			@if (currentUserRole() === MeetUserRole.ROOM_MEMBER) {
-				<p class="subtitle" id="rooms-subtitle">Browse and access the rooms available to you.</p>
+				<p class="subtitle" id="rooms-subtitle">{{ 'ROOMS.LIST.SUBTITLE_MEMBER' | translate }}</p>
 			} @else {
 				<p class="subtitle" id="rooms-subtitle">
-					Manage your rooms, create new ones, or access the rooms available to you.
+					{{ 'ROOMS.LIST.SUBTITLE_MANAGER' | translate }}
 				</p>
 			}
 		</div>

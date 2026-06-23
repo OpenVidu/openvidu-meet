@@ -6,13 +6,13 @@
 				<mat-radio-button value="user" class="member-type-radio">
 					<div class="radio-label">
 						<mat-icon class="material-symbols-outlined">verified_user</mat-icon>
-						<span>User</span>
+						<span>{{ 'ROOM_MEMBERS.FORM.TYPE_USER' | translate }}</span>
 					</div>
 				</mat-radio-button>
 				<mat-radio-button value="identified_guest" class="member-type-radio">
 					<div class="radio-label">
 						<mat-icon class="material-symbols-outlined">person</mat-icon>
-						<span>Identified Guest</span>
+						<span>{{ 'ROOM_MEMBERS.FORM.TYPE_IDENTIFIED_GUEST' | translate }}</span>
 					</div>
 				</mat-radio-button>
 			</mat-radio-group>
@@ -22,12 +22,12 @@
 	<!-- User: User ID (Autocomplete) -->
 	@if (isUserMode()) {
 		<mat-form-field subscriptSizing="dynamic" appearance="outline">
-			<mat-label>User ID</mat-label>
+			<mat-label>{{ 'ROOM_MEMBERS.FORM.USER_ID_LABEL' | translate }}</mat-label>
 			<mat-icon matPrefix class="field-prefix-icon">badge</mat-icon>
 			<input
 				matInput
 				formControlName="userId"
-				placeholder="Search for a user by name or ID..."
+				[placeholder]="'ROOM_MEMBERS.FORM.USER_ID_PLACEHOLDER' | translate"
 				[matAutocomplete]="userAutocomplete"
 				(focus)="onUserInputFocus()"
 			/>
@@ -54,12 +54,12 @@
 				}
 				@if (!isLoadingUsers() && filteredUsers().length === 0) {
 					<mat-option disabled>
-						<span class="no-results">No users found</span>
+						<span class="no-results">{{ 'ROOM_MEMBERS.FORM.NO_USERS_FOUND' | translate }}</span>
 					</mat-option>
 				}
 			</mat-autocomplete>
 			@if (!lockIdentity()) {
-				<mat-hint>Start typing to search users</mat-hint>
+				<mat-hint>{{ 'ROOM_MEMBERS.FORM.USER_ID_HINT' | translate }}</mat-hint>
 			}
 			@if (getFieldError('userId')) {
 				<mat-error>{{ getFieldError('userId') }}</mat-error>
@@ -70,18 +70,20 @@
 		@if (!lockIdentity()) {
 			<div class="guest-info-box">
 				<mat-icon class="guest-info-icon">link</mat-icon>
-				<p class="guest-info-text">
-					Identified guests are not OpenVidu Meet users. After being added, they will be assigned a
-					<strong>unique link</strong> to access this room. You can copy this link from the member list.
-				</p>
+				<p class="guest-info-text">{{ 'ROOM_MEMBERS.FORM.GUEST_INFO' | translate }}</p>
 			</div>
 		}
 		<mat-form-field subscriptSizing="dynamic" appearance="outline">
-			<mat-label>Member Name</mat-label>
+			<mat-label>{{ 'ROOM_MEMBERS.FORM.MEMBER_NAME_LABEL' | translate }}</mat-label>
 			<mat-icon matPrefix class="field-prefix-icon material-symbols-outlined">person</mat-icon>
-			<input matInput formControlName="memberName" placeholder="Enter a display name..." autofocus />
+			<input
+				matInput
+				formControlName="memberName"
+				[placeholder]="'ROOM_MEMBERS.FORM.MEMBER_NAME_PLACEHOLDER' | translate"
+				autofocus
+			/>
 			@if (!lockIdentity()) {
-				<mat-hint>A display name for the guest</mat-hint>
+				<mat-hint>{{ 'ROOM_MEMBERS.FORM.MEMBER_NAME_HINT' | translate }}</mat-hint>
 			}
 			@if (getFieldError('memberName')) {
 				<mat-error>{{ getFieldError('memberName') }}</mat-error>
@@ -91,13 +93,13 @@
 
 	<!-- Base Role -->
 	<mat-form-field subscriptSizing="dynamic" appearance="outline">
-		<mat-label>Base Role</mat-label>
+		<mat-label>{{ 'ROOM_MEMBERS.FORM.BASE_ROLE_LABEL' | translate }}</mat-label>
 		<mat-icon matPrefix class="field-prefix-icon material-symbols-outlined">{{
 			RoomMemberUiUtils.getRoleIcon(form.get('role')!.value!)
 		}}</mat-icon>
 		<mat-select formControlName="role">
 			<mat-select-trigger>
-				{{ RoomMemberUiUtils.getRoleLabel(form.get('role')!.value!) }}
+				{{ RoomMemberUiUtils.getRoleLabel(form.get('role')!.value!) | translate }}
 			</mat-select-trigger>
 			@for (role of RoomMemberUiUtils.AVAILABLE_ROLES; track role) {
 				<mat-option [value]="role">
@@ -105,12 +107,12 @@
 						<mat-icon class="role-option-icon material-symbols-outlined">{{
 							RoomMemberUiUtils.getRoleIcon(role)
 						}}</mat-icon>
-						<span>{{ RoomMemberUiUtils.getRoleLabel(role) }}</span>
+						<span>{{ RoomMemberUiUtils.getRoleLabel(role) | translate }}</span>
 					</div>
 				</mat-option>
 			}
 		</mat-select>
-		<mat-hint>The base role determines default permissions</mat-hint>
+		<mat-hint>{{ 'ROOM_MEMBERS.FORM.BASE_ROLE_HINT' | translate }}</mat-hint>
 		@if (getFieldError('role')) {
 			<mat-error>{{ getFieldError('role') }}</mat-error>
 		}
@@ -124,24 +126,21 @@
 				<mat-expansion-panel-header>
 					<mat-panel-title class="permissions-panel-title">
 						<mat-icon class="permissions-panel-icon">admin_panel_settings</mat-icon>
-						<span>Custom Permissions</span>
+						<span>{{ 'ROOM_MEMBERS.FORM.CUSTOM_PERMISSIONS_TITLE' | translate }}</span>
 					</mat-panel-title>
 					<mat-panel-description class="permissions-panel-description">
-						Override the default role permissions
+						{{ 'ROOM_MEMBERS.FORM.CUSTOM_PERMISSIONS_DESCRIPTION' | translate }}
 					</mat-panel-description>
 				</mat-expansion-panel-header>
 
 				<div class="permissions-content" [formGroup]="permissionsForm">
-					<p class="permissions-hint">
-						These permissions override the defaults for the selected role. Leave toggles in their default
-						position to inherit role permissions.
-					</p>
+					<p class="permissions-hint">{{ 'ROOM_MEMBERS.FORM.CUSTOM_PERMISSIONS_HINT' | translate }}</p>
 
 					@for (group of permissionGroups; track group.label) {
 						<div class="permission-group">
 							<div class="permission-group-header">
 								<mat-icon class="permission-group-icon">{{ group.icon }}</mat-icon>
-								<span class="permission-group-label">{{ group.label }}</span>
+								<span class="permission-group-label">{{ group.label | translate }}</span>
 							</div>
 
 							@for (permission of group.permissions; track permission.key) {
@@ -151,8 +150,8 @@
 											permission.icon
 										}}</mat-icon>
 										<div class="permission-text">
-											<span class="permission-label">{{ permission.label }}</span>
-											<span class="permission-description">{{ permission.description }}</span>
+											<span class="permission-label">{{ permission.label | translate }}</span>
+											<span class="permission-description">{{ permission.description | translate }}</span>
 										</div>
 									</div>
 									<mat-slide-toggle
@@ -173,7 +172,7 @@
 	<div class="form-actions">
 		<button mat-button class="cancel-button" type="button" (click)="onCancel()" [disabled]="isSaving()">
 			<mat-icon>close</mat-icon>
-			Cancel
+			{{ 'ROOM_MEMBERS.COMMON.CANCEL' | translate }}
 		</button>
 		<button
 			mat-button
@@ -187,7 +186,11 @@
 			} @else {
 				<mat-icon>{{ initialData() ? 'save' : 'person_add' }}</mat-icon>
 			}
-			{{ initialData() ? 'Update Member' : 'Add Member' }}
+			{{
+				initialData()
+					? ('ROOM_MEMBERS.FORM.UPDATE_MEMBER' | translate)
+					: ('ROOM_MEMBERS.FORM.ADD_MEMBER' | translate)
+			}}
 		</button>
 	</div>
 </form>

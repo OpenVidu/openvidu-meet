@@ -31,7 +31,7 @@ import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { SessionRoomEventsService } from '../../services/session/session-room-events.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
-import { TranslateService } from '../../services/translate/translate.service';
+import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
@@ -96,7 +96,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly participantService = inject(ParticipantService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly panelService = inject(PanelService);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 	private readonly backgroundService = inject(VirtualBackgroundService);
 
 	private readonly sessionRoomEventsService = inject(SessionRoomEventsService);

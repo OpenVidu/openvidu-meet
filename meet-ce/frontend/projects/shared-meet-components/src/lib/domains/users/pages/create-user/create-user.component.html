@@ -3,9 +3,9 @@
 	<div class="page-header">
 		<div class="title">
 			<mat-icon>person_add</mat-icon>
-			<h1>Create User</h1>
+			<h1>{{ 'USERS.CREATE.TITLE' | translate }}</h1>
 		</div>
-		<p class="subtitle">Configure the profile and role for the new user.</p>
+		<p class="subtitle">{{ 'USERS.CREATE.SUBTITLE' | translate }}</p>
 	</div>
 
 	<!-- Card -->
@@ -15,18 +15,18 @@
 				<div mat-card-avatar class="section-avatar">
 					<mat-icon class="section-icon">person</mat-icon>
 				</div>
-				<mat-card-title>Account Information</mat-card-title>
-				<mat-card-subtitle>Basic details for the new user</mat-card-subtitle>
+				<mat-card-title>{{ 'USERS.CREATE.ACCOUNT_INFORMATION' | translate }}</mat-card-title>
+				<mat-card-subtitle>{{ 'USERS.CREATE.ACCOUNT_INFORMATION_SUBTITLE' | translate }}</mat-card-subtitle>
 			</mat-card-header>
 
 			<mat-card-content>
 				<form [formGroup]="form" (ngSubmit)="onSubmit()" class="create-form">
 					<!-- User ID -->
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
-						<mat-label>User ID</mat-label>
+						<mat-label>{{ 'USERS.CREATE.USER_ID' | translate }}</mat-label>
 						<mat-icon matPrefix class="field-prefix-icon">badge</mat-icon>
-						<input matInput formControlName="userId" placeholder="e.g. jsmith_123" autofocus />
-						<mat-hint>Lowercase letters, numbers and underscores only</mat-hint>
+						<input matInput formControlName="userId" [placeholder]="'USERS.CREATE.USER_ID_PLACEHOLDER' | translate" autofocus />
+						<mat-hint>{{ 'USERS.CREATE.USER_ID_HINT' | translate }}</mat-hint>
 						@if (getFieldError('userId')) {
 							<mat-error>{{ getFieldError('userId') }}</mat-error>
 						}
@@ -34,9 +34,9 @@
 
 					<!-- Name -->
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
-						<mat-label>Name</mat-label>
+						<mat-label>{{ 'USERS.CREATE.NAME' | translate }}</mat-label>
 						<mat-icon matPrefix class="field-prefix-icon">person_outline</mat-icon>
-						<input matInput formControlName="name" placeholder="Enter user's name" />
+						<input matInput formControlName="name" [placeholder]="'USERS.CREATE.NAME_PLACEHOLDER' | translate" />
 						@if (getFieldError('name')) {
 							<mat-error>{{ getFieldError('name') }}</mat-error>
 						}
@@ -44,7 +44,7 @@
 
 					<!-- Role -->
 					<mat-form-field subscriptSizing="dynamic" appearance="outline">
-						<mat-label>Role</mat-label>
+						<mat-label>{{ 'USERS.CREATE.ROLE' | translate }}</mat-label>
 						<mat-icon matPrefix class="field-prefix-icon">{{
 							UsersUiUtils.getRoleIcon(form.get('role')!.value!)
 						}}</mat-icon>
@@ -71,27 +71,27 @@
 					<!-- Password Section -->
 					<div class="password-section">
 						<div class="label-row">
-							<span class="input-label">Temporary Password</span>
+							<span class="input-label">{{ 'USERS.COMMON.TEMPORARY_PASSWORD' | translate }}</span>
 							<button mat-button class="generate-btn" type="button" (click)="generatePassword()">
 								<mat-icon>autorenew</mat-icon>
-								Auto-generate
+								{{ 'USERS.COMMON.AUTO_GENERATE' | translate }}
 							</button>
 						</div>
 
 						<mat-form-field subscriptSizing="dynamic" appearance="outline" class="password-field">
-							<mat-label>Password</mat-label>
+							<mat-label>{{ 'USERS.CREATE.PASSWORD' | translate }}</mat-label>
 							<input
 								matInput
 								[type]="showPassword() ? 'text' : 'password'"
 								formControlName="password"
-								placeholder="Enter or auto-generate a password"
+								[placeholder]="'USERS.CREATE.PASSWORD_PLACEHOLDER' | translate"
 							/>
 							<div matSuffix class="suffix-btns">
 								<button
 									mat-icon-button
 									type="button"
 									(click)="copyPasswordToClipboard()"
-									[matTooltip]="copied() ? 'Copied!' : 'Copy to clipboard'"
+									[matTooltip]="copied() ? ('USERS.COMMON.COPIED' | translate) : ('USERS.COMMON.COPY_TO_CLIPBOARD' | translate)"
 								>
 									<mat-icon>{{ copied() ? 'check' : 'content_copy' }}</mat-icon>
 								</button>
@@ -99,12 +99,12 @@
 									mat-icon-button
 									type="button"
 									(click)="showPassword.set(!showPassword())"
-									[matTooltip]="showPassword() ? 'Hide password' : 'Show password'"
+									[matTooltip]="showPassword() ? ('USERS.COMMON.HIDE_PASSWORD' | translate) : ('USERS.COMMON.SHOW_PASSWORD' | translate)"
 								>
 									<mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
 								</button>
 							</div>
-							<mat-hint>Minimum 5 characters</mat-hint>
+							<mat-hint>{{ 'USERS.CREATE.PASSWORD_MIN_HINT' | translate }}</mat-hint>
 							@if (getFieldError('password')) {
 								<mat-error>{{ getFieldError('password') }}</mat-error>
 							}
@@ -114,15 +114,12 @@
 					<!-- Footer note -->
 					<div class="info-banner">
 						<mat-icon class="info-icon">info</mat-icon>
-						<p>
-							Once created, you must send the credentials to the user. They will be required to change
-							their password upon their first login.
-						</p>
+						<p>{{ 'USERS.CREATE.INFO_BANNER' | translate }}</p>
 					</div>
 
 					<!-- Actions -->
 					<div class="form-actions">
-						<button mat-button class="cancel-button" type="button" (click)="onCancel()">Cancel</button>
+						<button mat-button class="cancel-button" type="button" (click)="onCancel()">{{ 'USERS.COMMON.CANCEL' | translate }}</button>
 						<button
 							mat-button
 							class="primary-button"
@@ -133,7 +130,7 @@
 							@if (isSaving()) {
 								<mat-spinner diameter="18" />
 							} @else {
-								Create User
+								{{ 'USERS.CREATE.CREATE_USER' | translate }}
 							}
 						</button>
 					</div>

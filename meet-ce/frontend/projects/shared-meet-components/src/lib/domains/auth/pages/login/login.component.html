@@ -3,8 +3,8 @@
 		<!-- Login Header -->
 		<div class="get-started-header">
 			<mat-icon class="ov-about-icon login-icon" aria-hidden="true">login</mat-icon>
-			<h1>Sign in</h1>
-			<p class="subtitle">Enter your credentials to access OpenVidu Meet</p>
+			<h1>{{ 'AUTH.LOGIN.TITLE' | translate }}</h1>
+			<p class="subtitle">{{ 'AUTH.LOGIN.SUBTITLE' | translate }}</p>
 		</div>
 
 		<!-- Login Card -->
@@ -13,23 +13,23 @@
 				<mat-card-content>
 					<form [formGroup]="loginForm" (ngSubmit)="login()" id="login-form">
 						<mat-form-field class="form-input" appearance="outline">
-							<mat-label>User ID</mat-label>
+							<mat-label>{{ 'AUTH.LOGIN.USER_ID' | translate }}</mat-label>
 							<input
 								matInput
 								formControlName="userId"
-								placeholder="Enter your user ID"
+								[placeholder]="'AUTH.LOGIN.USER_ID_PLACEHOLDER' | translate"
 								id="userId-input"
 							/>
 							<mat-icon matPrefix>person</mat-icon>
 						</mat-form-field>
 
 						<mat-form-field class="form-input" appearance="outline">
-							<mat-label>Password</mat-label>
+							<mat-label>{{ 'AUTH.LOGIN.PASSWORD' | translate }}</mat-label>
 							<input
 								matInput
 								[type]="showPassword() ? 'text' : 'password'"
 								formControlName="password"
-								placeholder="Enter your password"
+								[placeholder]="'AUTH.LOGIN.PASSWORD_PLACEHOLDER' | translate"
 								id="password-input"
 							/>
 							<mat-icon matPrefix>lock</mat-icon>
@@ -38,7 +38,7 @@
 								matSuffix
 								type="button"
 								(click)="showPassword.set(!showPassword())"
-								matTooltip="{{ showPassword() ? 'Hide password' : 'Show password' }}"
+								[matTooltip]="(showPassword() ? 'AUTH.COMMON.HIDE_PASSWORD' : 'AUTH.COMMON.SHOW_PASSWORD') | translate"
 							>
 								<mat-icon>{{ showPassword() ? 'visibility_off' : 'visibility' }}</mat-icon>
 							</button>
@@ -57,7 +57,7 @@
 								id="login-button"
 								class="primary-button"
 							>
-								Login
+								{{ 'AUTH.LOGIN.SUBMIT' | translate }}
 							</button>
 						</div>
 					</form>

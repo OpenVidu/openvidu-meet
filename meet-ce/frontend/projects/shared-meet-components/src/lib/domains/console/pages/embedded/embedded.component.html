@@ -2,9 +2,9 @@
 	<div class="page-header">
 		<div class="title">
 			<mat-icon class="material-symbols-outlined ov-developer-icon"> code_blocks </mat-icon>
-			<h1>Embedded</h1>
+			<h1>{{ 'EMBEDDED.TITLE' | translate }}</h1>
 		</div>
-		<p class="subtitle">Everything you need to embed OpenVidu Meet in your applications.</p>
+		<p class="subtitle">{{ 'EMBEDDED.SUBTITLE' | translate }}</p>
 	</div>
 
 	@if (isLoading()) {
@@ -13,9 +13,9 @@
 				<div class="loading-header">
 					<div class="loading-title">
 						<mat-icon class="ov-settings-icon loading-icon">settings</mat-icon>
-						<h1>Loading Settings</h1>
+						<h1>{{ 'EMBEDDED.LOADING_TITLE' | translate }}</h1>
 					</div>
-					<p class="loading-subtitle">Please wait while we fetch your settings...</p>
+					<p class="loading-subtitle">{{ 'EMBEDDED.LOADING_SUBTITLE' | translate }}</p>
 				</div>
 
 				<div class="loading-spinner-container">
@@ -31,19 +31,19 @@
 					<div mat-card-avatar>
 						<mat-icon class="section-icon">vpn_key</mat-icon>
 					</div>
-					<mat-card-title>API KEY</mat-card-title>
+					<mat-card-title>{{ 'EMBEDDED.API_KEY_TITLE' | translate }}</mat-card-title>
 					<mat-card-subtitle>
-						Generate and manage your API key for
+						{{ 'EMBEDDED.API_KEY_SUBTITLE_PREFIX' | translate }}
 						<a
 							href="{{ restApiDocsUrl() }}"
 							target="_blank"
 							rel="noopener noreferrer"
 							class="rest-api-link"
 						>
-							REST API
+							{{ 'EMBEDDED.API_KEY_SUBTITLE_LINK' | translate }}
 							<mat-icon class="external-link-icon">open_in_new</mat-icon>
 						</a>
-						access
+						{{ 'EMBEDDED.API_KEY_SUBTITLE_SUFFIX' | translate }}
 					</mat-card-subtitle>
 				</mat-card-header>
 
@@ -51,7 +51,7 @@
 					@if (apiKeyData()) {
 						<div class="api-key-display">
 							<mat-form-field subscriptSizing="dynamic" appearance="outline" class="api-key-field">
-								<mat-label>API Key</mat-label>
+								<mat-label>{{ 'EMBEDDED.API_KEY_LABEL' | translate }}</mat-label>
 								<input
 									matInput
 									readonly
@@ -62,7 +62,7 @@
 									mat-icon-button
 									matSuffix
 									(click)="toggleApiKeyVisibility()"
-									matTooltip="Toggle visibility"
+									[matTooltip]="'EMBEDDED.TOGGLE_VISIBILITY' | translate"
 									class="toggle-visibility-button"
 								>
 									<mat-icon>{{ showApiKey() ? 'visibility_off' : 'visibility' }}</mat-icon>
@@ -72,7 +72,7 @@
 							<div class="api-key-actions">
 								<button mat-button (click)="copyApiKey()" class="copy-button">
 									<mat-icon>content_copy</mat-icon>
-									Copy
+									{{ 'EMBEDDED.COPY' | translate }}
 								</button>
 							</div>
 						</div>
@@ -89,11 +89,11 @@
 					</div> -->
 					} @else {
 						<div class="no-api-key">
-							<h3>No API Key Generated</h3>
-							<p>Generate an API key to access OpenVidu Meet REST API endpoints.</p>
+							<h3>{{ 'EMBEDDED.NO_API_KEY_TITLE' | translate }}</h3>
+							<p>{{ 'EMBEDDED.NO_API_KEY_DESC' | translate }}</p>
 							<button mat-button class (click)="generateApiKey()" class="primary-button">
 								<mat-icon>vpn_key</mat-icon>
-								Generate API Key
+								{{ 'EMBEDDED.GENERATE_API_KEY' | translate }}
 							</button>
 						</div>
 					}
@@ -103,11 +103,11 @@
 					<mat-card-actions>
 						<button mat-raised-button color="primary" (click)="regenerateApiKey()">
 							<mat-icon>refresh</mat-icon>
-							Regenerate Key
+							{{ 'EMBEDDED.REGENERATE_KEY' | translate }}
 						</button>
 						<button mat-stroked-button id="revoke-key-btn" (click)="revokeApiKey()">
 							<mat-icon>delete</mat-icon>
-							Revoke Key
+							{{ 'EMBEDDED.REVOKE_KEY' | translate }}
 						</button>
 					</mat-card-actions>
 				}
@@ -119,37 +119,35 @@
 					<div mat-card-avatar>
 						<mat-icon class="section-icon">webhook</mat-icon>
 					</div>
-					<mat-card-title>WEBHOOKS</mat-card-title>
-					<mat-card-subtitle>Configure webhook notifications for real-time event updates</mat-card-subtitle>
+					<mat-card-title>{{ 'EMBEDDED.WEBHOOKS_TITLE' | translate }}</mat-card-title>
+					<mat-card-subtitle>{{ 'EMBEDDED.WEBHOOKS_SUBTITLE' | translate }}</mat-card-subtitle>
 				</mat-card-header>
 
 				<mat-card-content class="ov-mt-sm">
 					<form [formGroup]="webhookForm" class="webhook-form">
 						<!-- Enable/Disable Toggle -->
-						<h4 class="webhook-section-title">Webhook Notifications</h4>
+						<h4 class="webhook-section-title">{{ 'EMBEDDED.WEBHOOK_NOTIFICATIONS' | translate }}</h4>
 						<div class="webhook-toggle ov-mt-xs">
-							<span>Enable webhook notifications</span>
+							<span>{{ 'EMBEDDED.ENABLE_WEBHOOKS' | translate }}</span>
 							<mat-slide-toggle
 								formControlName="isEnabled"
-								[matTooltip]="!canEnableWebhooks ? 'API key is required to enable webhooks' : ''"
+								[matTooltip]="!canEnableWebhooks ? ('EMBEDDED.ENABLE_WEBHOOKS_TOOLTIP' | translate) : ''"
 								[matTooltipDisabled]="canEnableWebhooks"
 							/>
 						</div>
 
 						<!-- Webhook URL -->
-						<h4 class="webhook-section-title">Webhook URL</h4>
-						<p class="webhook-description ov-mt-xs">
-							Enter the URL where you want to receive webhook notifications.
-						</p>
+						<h4 class="webhook-section-title">{{ 'EMBEDDED.WEBHOOK_URL' | translate }}</h4>
+						<p class="webhook-description ov-mt-xs">{{ 'EMBEDDED.WEBHOOK_URL_DESC' | translate }}</p>
 						<mat-form-field appearance="outline" class="full-width">
-							<mat-label>Webhook URL</mat-label>
+							<mat-label>{{ 'EMBEDDED.WEBHOOK_URL' | translate }}</mat-label>
 							<input matInput formControlName="url" placeholder="https://your-server.com/webhook" />
 							<mat-icon matSuffix>link</mat-icon>
 							@if (webhookForm.get('url')?.hasError('required')) {
-								<mat-error>Webhook URL is required</mat-error>
+								<mat-error>{{ 'EMBEDDED.WEBHOOK_URL_REQUIRED' | translate }}</mat-error>
 							}
 							@if (webhookForm.get('url')?.hasError('pattern')) {
-								<mat-error>Please enter a valid HTTP(S) URL</mat-error>
+								<mat-error>{{ 'EMBEDDED.WEBHOOK_URL_INVALID' | translate }}</mat-error>
 							}
 						</mat-form-field>
 
@@ -201,7 +199,7 @@
 						class="primary-button"
 					>
 						<mat-icon>save</mat-icon>
-						Save Configuration
+						{{ 'EMBEDDED.SAVE_CONFIG' | translate }}
 					</button>
 					<button
 						mat-stroked-button
@@ -209,7 +207,7 @@
 						[disabled]="webhookForm.get('url')?.disabled || webhookForm.get('url')?.invalid"
 					>
 						<mat-icon>send</mat-icon>
-						Test Webhook
+						{{ 'EMBEDDED.TEST_WEBHOOK' | translate }}
 					</button>
 				</mat-card-actions>
 			</mat-card>

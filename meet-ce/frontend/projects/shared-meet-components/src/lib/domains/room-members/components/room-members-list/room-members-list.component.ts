@@ -37,6 +37,8 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { RoomMemberUiUtils } from '../../utils/ui';
 
@@ -97,7 +99,8 @@ export interface MemberTableFilter {
 		MatBadgeModule,
 		MatSortModule,
 		RouterModule,
-		DatePipe
+		DatePipe,
+		TranslatePipe
 	],
 	templateUrl: './room-members-list.component.html',
 	styleUrl: './room-members-list.component.scss',
@@ -108,6 +111,7 @@ export interface MemberTableFilter {
 })
 export class RoomMembersListsComponent implements OnInit {
 	private destroyRef = inject(DestroyRef);
+	private readonly translateService = inject(TranslateService);
 
 	members = input<MeetRoomMember[]>([]);
 	showSearchBox = input(true);
@@ -167,24 +171,43 @@ export class RoomMembersListsComponent implements OnInit {
 	showFilterPanel = signal(false);
 
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
-		{ value: TextMatchMode.EXACT, label: 'Exact match', icon: 'format_quote' },
-		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
+		{
+			value: TextMatchMode.PREFIX,
+			label: this.translateService.translate('ROOM_MEMBERS.LIST.MATCH_MODE_STARTS_WITH'),
+			icon: 'first_page'
+		},
+		{
+			value: TextMatchMode.PARTIAL,
+			label: this.translateService.translate('ROOM_MEMBERS.LIST.MATCH_MODE_CONTAINS'),
+			icon: 'more_horiz'
+		},
+		{
+			value: TextMatchMode.EXACT,
+			label: this.translateService.translate('ROOM_MEMBERS.LIST.MATCH_MODE_EXACT'),
+			icon: 'format_quote'
+		},
+		{
+			value: TextMatchMode.REGEX,
+			label: this.translateService.translate('ROOM_MEMBERS.LIST.MATCH_MODE_REGEX'),
+			icon: 'code'
+		}
 	];
 
 	// Base role filter options ('' means no filter)
 	baseRoleOptions: { value: MeetRoomMemberRole | ''; label: string }[] = [
-		{ value: '', label: 'All roles' },
-		{ value: MeetRoomMemberRole.MODERATOR, label: 'Moderator' },
-		{ value: MeetRoomMemberRole.SPEAKER, label: 'Speaker' }
+		{ value: '', label: this.translateService.translate('ROOM_MEMBERS.LIST.ROLE_FILTER_ALL') },
+		{ value: MeetRoomMemberRole.MODERATOR, label: this.translateService.translate('ROOM_MEMBERS.COMMON.MODERATOR') },
+		{ value: MeetRoomMemberRole.SPEAKER, label: this.translateService.translate('ROOM_MEMBERS.COMMON.SPEAKER') }
 	];
 
 	// Member type filter options ('' means no filter)
 	typeOptions: { value: MeetRoomMemberType | ''; label: string }[] = [
-		{ value: '', label: 'All types' },
-		{ value: MeetRoomMemberType.USER, label: 'User' },
-		{ value: MeetRoomMemberType.IDENTIFIED_GUEST, label: 'Identified guest' }
+		{ value: '', label: this.translateService.translate('ROOM_MEMBERS.LIST.TYPE_FILTER_ALL') },
+		{ value: MeetRoomMemberType.USER, label: this.translateService.translate('ROOM_MEMBERS.LIST.TYPE_USER') },
+		{
+			value: MeetRoomMemberType.IDENTIFIED_GUEST,
+			label: this.translateService.translate('ROOM_MEMBERS.LIST.TYPE_IDENTIFIED_GUEST')
+		}
 	];
 
 	// Active filters shown as removable chips. Reads the applied snapshot.
@@ -194,12 +217,18 @@ export class RoomMembersListsComponent implements OnInit {
 
 		if (f.baseRole) {
 			const opt = this.baseRoleOptions.find((o) => o.value === f.baseRole);
-			chips.push({ key: 'baseRole', label: `Role: ${opt?.label ?? f.baseRole}` });
+			chips.push({
+				key: 'baseRole',
+				label: `${this.translateService.translate('ROOM_MEMBERS.LIST.ROLE_CHIP_PREFIX')}${opt?.label ?? f.baseRole}`
+			});
 		}
 
 		if (f.type) {
 			const opt = this.typeOptions.find((o) => o.value === f.type);
-			chips.push({ key: 'type', label: `Type: ${opt?.label ?? f.type}` });
+			chips.push({
+				key: 'type',
+				label: `${this.translateService.translate('ROOM_MEMBERS.LIST.TYPE_CHIP_PREFIX')}${opt?.label ?? f.type}`
+			});
 		}
 
 		return chips;

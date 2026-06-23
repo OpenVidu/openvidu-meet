@@ -8,16 +8,23 @@ import { ceRoutes } from '@app/app.routes';
 import { environment } from '@environment/environment';
 import type { OpenViduComponentsConfig, ParticipantProperties } from '@openvidu-meet/shared-components';
 import {
+	AUTH_TRANSLATIONS,
 	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
+	CONSOLE_TRANSLATIONS,
 	CustomParticipantModel,
 	httpInterceptor,
 	MeetingLayoutService,
 	OpenViduComponentsModule,
+	provideTranslations,
+	RECORDINGS_TRANSLATIONS,
+	ROOM_MEMBERS_TRANSLATIONS,
 	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
+	ROOMS_TRANSLATIONS,
 	SmartLayoutService,
-	ThemeService
+	ThemeService,
+	USERS_TRANSLATIONS
 } from '@openvidu-meet/shared-components';
 
 const ovComponentsconfig: OpenViduComponentsConfig = {
@@ -35,6 +42,12 @@ export const appConfig: ApplicationConfig = {
 		provideAppInitializer(() => inject(AuthHeaderProviderService).init()),
 		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
+		provideTranslations(CONSOLE_TRANSLATIONS),
+		provideTranslations(ROOMS_TRANSLATIONS),
+		provideTranslations(USERS_TRANSLATIONS),
+		provideTranslations(RECORDINGS_TRANSLATIONS),
+		provideTranslations(AUTH_TRANSLATIONS),
+		provideTranslations(ROOM_MEMBERS_TRANSLATIONS),
 		{ provide: SmartLayoutService, useExisting: MeetingLayoutService },
 		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(ceRoutes),

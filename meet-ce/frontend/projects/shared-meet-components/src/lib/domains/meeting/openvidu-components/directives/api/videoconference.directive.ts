@@ -3,7 +3,7 @@ import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angula
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { StorageService } from '../../services/storage/storage.service';
-import { TranslateService } from '../../services/translate/translate.service';
+import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 /**
  * The **livekitUrl** directive sets the livekitUrl to grant a participant access to a Room.
@@ -197,7 +197,7 @@ export class LangDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 	private readonly langEffect = effect(() => {
 		this.update(this.lang());
 	});
@@ -266,7 +266,7 @@ export class LangOptionsDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 	private readonly langOptionsEffect = effect(() => {
 		this.update(this.langOptions());
 	});

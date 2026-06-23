@@ -9,7 +9,7 @@ import { ActionService } from '../action/action.service';
 import { LoggerService } from '../logger/logger.service';
 import { PanelService } from '../panel/panel.service';
 import { ParticipantService } from '../participant/participant.service';
-import { TranslateService } from '../translate/translate.service';
+import { MeetingTranslateService } from '../translate/meeting-translate.service';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 
 /**
@@ -22,7 +22,7 @@ export class ChatService {
 	private readonly participantService = inject(ParticipantService);
 	private readonly panelService = inject(PanelService);
 	private readonly actionService = inject(ActionService);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 	private readonly assets = inject(AssetsService);
 	private log: ILogger = inject(LoggerService).get('ChatService');
 

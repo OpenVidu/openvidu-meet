@@ -39,9 +39,9 @@ export class MeetingCustomLayoutComponent {
 	areCaptionsEnabledByUser = this.captionsService.areCaptionsEnabledByUser;
 	captions = this.captionsService.captions;
 	isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode;
+	// Title/subtitle are resolved reactively in the template via the translate pipe (see SHARE_OVERLAY);
+	// only the presentation sizing lives here.
 	linkOverlayConfig = {
-		title: 'Start collaborating',
-		subtitle: 'Share this link to bring others into the meeting',
 		titleSize: 'xl' as const,
 		titleWeight: 'bold' as const
 	};

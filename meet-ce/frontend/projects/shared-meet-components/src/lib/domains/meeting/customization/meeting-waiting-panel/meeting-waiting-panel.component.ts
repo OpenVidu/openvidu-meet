@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
 /**
  * Panel shown while the local participant is alone in the meeting.
@@ -13,9 +14,10 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 	selector: 'ov-meeting-waiting-panel',
 	templateUrl: './meeting-waiting-panel.component.html',
 	styleUrls: ['./meeting-waiting-panel.component.scss'],
+	imports: [TranslatePipe],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingWaitingPanelComponent {
-	title = input<string>('Waiting for others to join');
-	subtitle = input<string>('Participants will appear here as soon as they join the meeting.');
+	title = input<string>();
+	subtitle = input<string>();
 }

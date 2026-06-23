@@ -4,8 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AvailableLangs, LangOption } from '../../../models/lang.model';
-import { StorageService } from '../../../services/storage/storage.service';
-import { TranslateService } from '../../../services/translate/translate.service';
+import { MeetingTranslateService } from '../../../services/translate/meeting-translate.service';
 
 /**
  * @internal
@@ -26,8 +25,7 @@ export class LangSelectorComponent implements OnInit {
 	readonly onLangChanged = output<LangOption>();
 	langSelected: LangOption = { name: 'English', lang: 'en' };
 	languages: LangOption[] = [];
-	private readonly translateService = inject(TranslateService);
-	private readonly storageSrv = inject(StorageService);
+	private readonly translateService = inject(MeetingTranslateService);
 	private readonly langSelectedEffect = effect(() => {
 		const lang = this.translateService.selectedLanguageOption();
 		this.langSelected = lang;
@@ -39,8 +37,8 @@ export class LangSelectorComponent implements OnInit {
 	}
 
 	onLangSelected(lang: AvailableLangs) {
+		// `setCurrentLanguage` persists the choice through the shared language service.
 		this.translateService.setCurrentLanguage(lang);
-		this.storageSrv.setLang(lang);
 	}
 
 }

@@ -18,6 +18,8 @@ import { BreadcrumbComponent, BreadcrumbItem } from '../../../../shared/componen
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
@@ -38,7 +40,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 		DatePipe,
 		RouterModule,
 		BreadcrumbComponent,
-		RecordingVideoPlayerComponent
+		RecordingVideoPlayerComponent,
+		TranslatePipe
 	],
 	templateUrl: './recording-detail.component.html',
 	styleUrl: './recording-detail.component.scss',
@@ -53,6 +56,7 @@ export class RecordingDetailComponent implements OnInit {
 	private readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	private readonly clipboard = inject(Clipboard);
+	private readonly translateService = inject(TranslateService);
 	protected readonly loggerService = inject(LoggerService);
 	protected readonly log: ILogger = this.loggerService.get('OpenVidu Meet - RecordingDetailComponent');
 
@@ -82,7 +86,7 @@ export class RecordingDetailComponent implements OnInit {
 		// Update breadcrumb items
 		this.breadcrumbItems.set([
 			{
-				label: 'Recordings',
+				label: this.translateService.translate('RECORDINGS.DETAIL.BREADCRUMB_RECORDINGS'),
 				action: () => this.navigationService.navigateTo('/recordings')
 			},
 			{
@@ -129,7 +133,7 @@ export class RecordingDetailComponent implements OnInit {
 			}
 		} catch (error) {
 			this.log.e('Error loading recording details:', error);
-			this.notificationService.showSnackbar('Failed to load recording details');
+			this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.LOAD_DETAILS_FAILED'));
 			await this.navigationService.navigateTo('/recordings');
 		}
 	}
@@ -145,20 +149,20 @@ export class RecordingDetailComponent implements OnInit {
 
 	copyRecordingId() {
 		this.clipboard.copy(this.recordingId());
-		this.notificationService.showSnackbar('Recording ID copied to clipboard');
+		this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_ID_COPIED'));
 	}
 
 	async deleteRecording() {
 		const deleteCallback = async () => {
 			try {
 				await this.recordingService.deleteRecording(this.recordingId());
-				this.notificationService.showSnackbar('Recording deleted successfully');
+				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED'));
 
 				// After deletion, navigate back to the recordings page (refreshed so the deleted recording is gone)
 				await this.navigationService.navigateToAndInvalidate('/recordings', 'recordings');
 			} catch (error) {
 				console.error('Error deleting recording:', error);
-				this.notificationService.showSnackbar('Failed to delete recording');
+				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED'));
 			}
 		};
 

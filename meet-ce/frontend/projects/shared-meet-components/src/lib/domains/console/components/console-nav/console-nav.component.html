@@ -13,10 +13,12 @@
 
 	<span class="toolbar-spacer"></span>
 
+	<ov-language-selector />
+
 	<button
 		mat-icon-button
 		(click)="toggleTheme()"
-		[matTooltip]="isDarkMode() ? 'Switch to light mode' : 'Switch to dark mode'"
+		[matTooltip]="(isDarkMode() ? 'NAV.SWITCH_TO_LIGHT' : 'NAV.SWITCH_TO_DARK') | translate"
 		aria-label="Toggle theme mode"
 		id="theme-toggle-btn"
 	>
@@ -26,15 +28,14 @@
 	<span class="icon-division"></span>
 	<button
 		mat-icon-button
-		aria-label="Profile"
 		id="profile-btn"
-		[matTooltip]="'My profile'"
+		[matTooltip]="'NAV.PROFILE' | translate"
 		routerLink="profile"
 		aria-label="Profile"
 	>
 		<mat-icon>account_circle</mat-icon>
 	</button>
-	<button mat-icon-button (click)="onLogoutClicked.emit()" matTooltip="Logout" aria-label="Logout" id="logout-btn">
+	<button mat-icon-button (click)="onLogoutClicked.emit()" [matTooltip]="'NAV.LOGOUT' | translate" aria-label="Logout" id="logout-btn">
 		<mat-icon>logout</mat-icon>
 	</button>
 </mat-toolbar>
@@ -58,7 +59,7 @@
 						routerLinkActive="active-nav-item"
 						[routerLinkActiveOptions]="{ exact: false }"
 						(click)="link.clickHandler ? link.clickHandler() : null"
-						[matTooltip]="isSideMenuCollapsed() ? link.label : ''"
+						[matTooltip]="isSideMenuCollapsed() ? (link.label | translate) : ''"
 						[matTooltipPosition]="'right'"
 						[matTooltipClass]="'nav-tooltip'"
 						[matTooltipDisabled]="!isSideMenuCollapsed()"
@@ -67,7 +68,7 @@
 						<span class="entry" [class.centeredEntry]="isSideMenuCollapsed()">
 							<mat-icon [class]="link.iconClass">{{ link.icon }}</mat-icon>
 							@if (!isSideMenuCollapsed()) {
-								{{ link.label }}
+								{{ link.label | translate }}
 							}
 						</span>
 					</a>

@@ -14,12 +14,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ViewportService } from '../../../meeting/openvidu-components';
 import { RecordingUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-recording-video-player',
-	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule],
+	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './recording-video-player.component.html',
 	styleUrl: './recording-video-player.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush

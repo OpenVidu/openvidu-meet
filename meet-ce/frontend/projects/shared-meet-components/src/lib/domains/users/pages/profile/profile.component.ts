@@ -21,9 +21,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { MeetUserDTO } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
 import { UpdateRoleDialogComponent } from '../../components/update-role-dialog/update-role-dialog.component';
@@ -42,7 +44,8 @@ import { UsersUiUtils } from '../../utils/ui';
 		MatTooltipModule,
 		MatProgressSpinnerModule,
 		MatDividerModule,
-		ReactiveFormsModule
+		ReactiveFormsModule,
+		TranslatePipe
 	],
 	templateUrl: './profile.component.html',
 	styleUrl: './profile.component.scss',
@@ -52,6 +55,7 @@ export class ProfileComponent implements OnInit {
 	private authService = inject(AuthService);
 	private userService = inject(UserService);
 	private notificationService = inject(NotificationService);
+	private readonly translateService = inject(TranslateService);
 	private dialogPresetsService = inject(DialogPresetsService);
 	private route = inject(ActivatedRoute);
 	private navigationService = inject(NavigationService);
@@ -118,7 +122,7 @@ export class ProfileComponent implements OnInit {
 			}
 		} catch (error) {
 			console.error('Error loading profile:', error);
-			this.notificationService.showSnackbar('Failed to load user profile');
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PROFILE_LOAD_FAILED'));
 			await this.navigationService.navigateTo('/users', {}, true);
 		} finally {
 			this.isLoading.set(false);
@@ -182,16 +186,16 @@ export class ProfileComponent implements OnInit {
 			this.showNewPassword.set(false);
 			this.showConfirmPassword.set(false);
 
-			this.notificationService.showSnackbar('Password updated successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_UPDATED_SUCCESS'));
 		} catch (error) {
 			console.error('Error changing password:', error);
 			if ((error as HttpErrorResponse).status === 400) {
 				const control = this.changePasswordForm.get('currentPassword');
 				control?.setErrors({ invalidPassword: true });
 				control?.markAsTouched();
-				this.notificationService.showSnackbar('Current password is incorrect');
+				this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_INCORRECT'));
 			} else {
-				this.notificationService.showSnackbar('Failed to update password');
+				this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_UPDATE_FAILED'));
 			}
 		} finally {
 			clearTimeout(delayLoader);
@@ -246,11 +250,13 @@ export class ProfileComponent implements OnInit {
 			confirmCallback: async () => {
 				try {
 					await this.userService.deleteUser(user.userId);
-					this.notificationService.showSnackbar(`User "${user.name}" deleted successfully`);
+					this.notificationService.showSnackbar(
+						`${this.translateService.translate('USERS.ERRORS.USER_DELETED_PREFIX')}${user.name}${this.translateService.translate('USERS.ERRORS.USER_DELETED_SUFFIX')}`
+					);
 					await this.navigationService.navigateToAndInvalidate('/users', 'users', {}, true);
 				} catch (error) {
 					console.error('Error deleting user:', error);
-					this.notificationService.showSnackbar('Failed to delete user');
+					this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_DELETE_FAILED'));
 				}
 			}
 		});
@@ -261,8 +267,8 @@ export class ProfileComponent implements OnInit {
 	getCurrentPasswordError(): string | null {
 		const control = this.changePasswordForm.get('currentPassword');
 		if (control?.errors && control.touched) {
-			if (control.errors['required']) return 'Current password is required';
-			if (control.errors['invalidPassword']) return 'Current password is incorrect';
+			if (control.errors['required']) return this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_REQUIRED');
+			if (control.errors['invalidPassword']) return this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_INCORRECT');
 		}
 		return null;
 	}
@@ -271,10 +277,10 @@ export class ProfileComponent implements OnInit {
 		const control = this.changePasswordForm.get('newPassword');
 		if (control?.errors && control.touched) {
 			const errors = control.errors;
-			if (errors['required']) return 'New password is required';
+			if (errors['required']) return this.translateService.translate('USERS.ERRORS.NEW_PASSWORD_REQUIRED');
 			if (errors['minlength'])
-				return `Password must be at least ${errors['minlength'].requiredLength} characters long`;
-			if (errors['samePassword']) return 'New password must be different from current password';
+				return `${this.translateService.translate('USERS.ERRORS.NEW_PASSWORD_MIN_LENGTH')} ${errors['minlength'].requiredLength} ${this.translateService.translate('USERS.ERRORS.NEW_PASSWORD_MIN_LENGTH_SUFFIX')}`;
+			if (errors['samePassword']) return this.translateService.translate('USERS.ERRORS.NEW_PASSWORD_SAME');
 		}
 		return null;
 	}
@@ -282,8 +288,8 @@ export class ProfileComponent implements OnInit {
 	getConfirmPasswordError(): string | null {
 		const control = this.changePasswordForm.get('confirmPassword');
 		if (control?.touched && control?.errors) {
-			if (control.errors['required']) return 'Please confirm your password';
-			if (control.errors['passwordMismatch']) return 'Passwords do not match';
+			if (control.errors['required']) return this.translateService.translate('USERS.ERRORS.CONFIRM_PASSWORD_REQUIRED');
+			if (control.errors['passwordMismatch']) return this.translateService.translate('USERS.ERRORS.CONFIRM_PASSWORD_MISMATCH');
 		}
 		return null;
 	}

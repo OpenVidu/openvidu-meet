@@ -10,6 +10,8 @@ import {
 	SelectableCardOption,
 	SelectionCardEvent
 } from '../../../../../../shared//components/selectable-card/selectable-card.component';
+import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
 import { RecordingTriggerFormGroup, RecordingTriggerType } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
@@ -22,7 +24,8 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		MatIconModule,
 		MatCardModule,
 		MatRadioModule,
-		SelectableCardComponent
+		SelectableCardComponent,
+		TranslatePipe
 	],
 	templateUrl: './recording-trigger.component.html',
 	styleUrl: './recording-trigger.component.scss',
@@ -30,28 +33,29 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 })
 export class RecordingTriggerComponent {
 	private wizardService = inject(RoomWizardStateService);
+	private readonly translateService = inject(TranslateService);
 
 	triggerForm: RecordingTriggerFormGroup;
 	triggerOptions: SelectableCardOption[] = [
 		{
 			id: 'manual',
-			title: 'Manual Recording',
-			description: 'Start recording manually when needed',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.MANUAL_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.MANUAL_DESC'),
 			icon: 'touch_app'
 			// recommended: true
 		},
 		{
 			id: 'auto1',
-			title: 'Auto 1 Participant',
-			description: 'Auto-start recording when 1 participant joins',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO1_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO1_DESC'),
 			icon: 'person',
 			isPro: true,
 			disabled: true
 		},
 		{
 			id: 'auto2',
-			title: 'Auto 2 Participants',
-			description: 'Auto-start recording when 2 participants join',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO2_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO2_DESC'),
 			icon: 'people',
 			isPro: true,
 			disabled: true

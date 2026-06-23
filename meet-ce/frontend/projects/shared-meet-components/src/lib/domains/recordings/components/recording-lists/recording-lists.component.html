@@ -2,19 +2,19 @@
 	<!-- Empty State -->
 	<div class="no-recordings-state">
 		<div class="empty-content">
-			<h3>No recordings yet</h3>
+			<h3>{{ 'RECORDINGS.LIST.EMPTY_TITLE' | translate }}</h3>
 			@if (roomName()) {
 				<p>
-					No recordings found for <strong>{{ roomName() }}</strong
-					>. Start a recording in this room to see them listed here.
+					{{ 'RECORDINGS.LIST.EMPTY_FOR_ROOM_PREFIX' | translate }}<strong>{{ roomName() }}</strong
+					>{{ 'RECORDINGS.LIST.EMPTY_FOR_ROOM_SUFFIX' | translate }}
 				</p>
 			} @else {
-				<p>Recordings from your meetings will appear here. Start a recording in any room to see them listed.</p>
+				<p>{{ 'RECORDINGS.LIST.EMPTY_GENERIC' | translate }}</p>
 			}
 			<div class="getting-started-actions">
 				<button mat-button (click)="refreshRecordings()" class="refresh-recordings-btn primary-button">
 					<mat-icon>refresh</mat-icon>
-					Refresh Recordings
+					{{ 'RECORDINGS.LIST.REFRESH_RECORDINGS' | translate }}
 				</button>
 			</div>
 		</div>
@@ -26,11 +26,11 @@
 		<div class="toolbar-left">
 			@if (showSearchBox() && !isMobileView()) {
 				<mat-form-field class="search-field" appearance="outline">
-					<mat-label>Search recordings</mat-label>
+					<mat-label>{{ 'RECORDINGS.LIST.SEARCH_RECORDINGS' | translate }}</mat-label>
 					<input
 						matInput
 						[formControl]="controls.nameFilter"
-						placeholder="Search by room name"
+						[placeholder]="'RECORDINGS.LIST.SEARCH_BY_ROOM_NAME' | translate"
 						(keydown.enter)="triggerSearch()"
 					/>
 
@@ -42,7 +42,7 @@
 							type="button"
 							class="ov-search-modifier clear-name-btn"
 							(click)="clearNameFilter()"
-							matTooltip="Clear search"
+							[matTooltip]="'RECORDINGS.LIST.CLEAR_SEARCH' | translate"
 							matTooltipPosition="above"
 						>
 							<mat-icon>close</mat-icon>
@@ -57,10 +57,10 @@
 						class="ov-search-modifier case-toggle"
 						[class.active]="filterState().nameCaseInsensitive"
 						(click)="toggleCaseInsensitive()"
-						matTooltip="Match case insensitive"
+						[matTooltip]="'RECORDINGS.LIST.MATCH_CASE_INSENSITIVE' | translate"
 						matTooltipPosition="above"
 					>
-						<span class="modifier-label">Aa</span>
+						<span class="modifier-label">{{ 'RECORDINGS.LIST.CASE_INSENSITIVE_LABEL' | translate }}</span>
 					</button>
 
 					<!-- Match-mode selector -->
@@ -71,7 +71,7 @@
 						class="ov-search-modifier match-mode-trigger"
 						[class.active]="filterState().nameMatchMode !== TextMatchMode.PREFIX"
 						[matMenuTriggerFor]="matchModeMenu"
-						[matTooltip]="'Match mode: ' + currentMatchMode().label"
+						[matTooltip]="('RECORDINGS.LIST.MATCH_MODE_PREFIX' | translate) + currentMatchMode().label"
 						matTooltipPosition="above"
 					>
 						<mat-icon>{{ currentMatchMode().icon }}</mat-icon>
@@ -83,7 +83,7 @@
 						class="search-btn"
 						(click)="triggerSearch()"
 						[disabled]="loading() || !controls.nameFilter.value"
-						matTooltip="Search"
+						[matTooltip]="'RECORDINGS.LIST.SEARCH' | translate"
 					>
 						<mat-icon>search</mat-icon>
 					</button>
@@ -110,7 +110,7 @@
 					class="ov-filters-trigger"
 					[class.has-filters]="activeFilterChips().length > 0"
 					(click)="toggleFilterPanel()"
-					matTooltip="Filter recordings"
+					[matTooltip]="'RECORDINGS.LIST.FILTER_RECORDINGS' | translate"
 				>
 					<mat-icon>tune</mat-icon>
 				</button>
@@ -121,7 +121,7 @@
 				class="refresh-btn"
 				(click)="refreshRecordings()"
 				[disabled]="loading()"
-				matTooltip="Refresh recordings"
+				[matTooltip]="'RECORDINGS.LIST.REFRESH_RECORDINGS' | translate"
 			>
 				<mat-icon>refresh</mat-icon>
 			</button>
@@ -138,11 +138,11 @@
 							(click)="bulkDeleteSelected()"
 							[disabled]="loading() || deletableSelected().length === 0"
 							[matTooltip]="
-								'Delete ' +
+								('RECORDINGS.LIST.DELETE_OF_SELECTED_PREFIX' | translate) +
 								deletableSelected().length +
-								' of ' +
+								('RECORDINGS.LIST.DELETE_OF_SELECTED_INFIX' | translate) +
 								selectedRecordings().size +
-								' selected'
+								('RECORDINGS.LIST.DELETE_OF_SELECTED_SUFFIX' | translate)
 							"
 						>
 							<mat-icon [matBadge]="deletableSelected().length" matBadgePosition="below after">
@@ -156,11 +156,11 @@
 						(click)="bulkDownloadSelected()"
 						[disabled]="loading() || downloadableSelected().length === 0"
 						[matTooltip]="
-							'Download ' +
+							('RECORDINGS.LIST.DOWNLOAD_OF_SELECTED_PREFIX' | translate) +
 							downloadableSelected().length +
-							' of ' +
+							('RECORDINGS.LIST.DOWNLOAD_OF_SELECTED_INFIX' | translate) +
 							selectedRecordings().size +
-							' selected'
+							('RECORDINGS.LIST.DOWNLOAD_OF_SELECTED_SUFFIX' | translate)
 						"
 					>
 						<mat-icon [matBadge]="downloadableSelected().length" matBadgePosition="below after">
@@ -176,10 +176,10 @@
 	@if (showFilters() && showFilterPanel()) {
 		<div class="ov-filter-panel">
 			<div class="filter-group">
-				<h4>Filter by Status</h4>
-				<p class="filter-description">Narrows the result to recordings with the selected status.</p>
+				<h4>{{ 'RECORDINGS.LIST.FILTER_BY_STATUS' | translate }}</h4>
+				<p class="filter-description">{{ 'RECORDINGS.LIST.FILTER_BY_STATUS_DESCRIPTION' | translate }}</p>
 				<mat-form-field appearance="outline">
-					<mat-label>Status</mat-label>
+					<mat-label>{{ 'RECORDINGS.COMMON.STATUS' | translate }}</mat-label>
 					<mat-select [formControl]="controls.statusFilter">
 						@for (option of statusOptions; track option.value) {
 							<mat-option [value]="option.value">{{ option.label }}</mat-option>
@@ -193,7 +193,7 @@
 	<!-- Active Filter Chips -->
 	@if (activeFilterChips().length > 0) {
 		<div class="ov-active-filters">
-			<span class="active-filters-label">Filters:</span>
+			<span class="active-filters-label">{{ 'RECORDINGS.LIST.FILTERS_LABEL' | translate }}</span>
 			@for (chip of activeFilterChips(); track chip.key) {
 				<button class="filter-chip" (click)="removeFilter(chip.key)">
 					<span>{{ chip.label }}</span>
@@ -202,7 +202,7 @@
 			}
 			<button class="clear-all-chip" (click)="clearFilters()">
 				<mat-icon>filter_alt_off</mat-icon>
-				<span>Clear all</span>
+				<span>{{ 'RECORDINGS.LIST.CLEAR_ALL' | translate }}</span>
 			</button>
 		</div>
 	}
@@ -211,18 +211,18 @@
 	@if (loading()) {
 		<div class="loading-container">
 			<mat-spinner diameter="40" />
-			<span>Loading recordings...</span>
+			<span>{{ 'RECORDINGS.LIST.LOADING_RECORDINGS' | translate }}</span>
 		</div>
 	} @else if (recordings().length === 0 && showEmptyFilterMessage()) {
 		<!-- No recordings match the current filters -->
 		<div class="no-recordings-state">
 			<div class="empty-content">
-				<h3>No recordings match your search criteria and/or filters</h3>
-				<p>Try adjusting or clearing your filters to see more recordings.</p>
+				<h3>{{ 'RECORDINGS.LIST.EMPTY_FILTER_TITLE' | translate }}</h3>
+				<p>{{ 'RECORDINGS.LIST.EMPTY_FILTER_SUBTITLE' | translate }}</p>
 				<div class="getting-started-actions">
 					<button mat-button (click)="clearFilters()" class="clear-filters-btn primary-button">
 						<mat-icon>filter_alt_off</mat-icon>
-						Clear Filters
+						{{ 'RECORDINGS.LIST.CLEAR_FILTERS' | translate }}
 					</button>
 				</div>
 			</div>
@@ -242,7 +242,7 @@
 										(change)="toggleRecordingSelection(recording)"
 										[disabled]="loading()"
 										class="card-checkbox"
-										[attr.aria-label]="'Select recording ' + recording.recordingId"
+										[attr.aria-label]="('RECORDINGS.LIST.SELECT_RECORDING_PREFIX' | translate) + recording.recordingId"
 									/>
 								}
 
@@ -279,7 +279,7 @@
 								<div class="detail-item">
 									<mat-icon class="detail-icon">schedule</mat-icon>
 									<div class="detail-content">
-										<div class="detail-label">Start Date</div>
+										<div class="detail-label">{{ 'RECORDINGS.LIST.DETAIL_START_DATE' | translate }}</div>
 										@if (recording.startDate) {
 											<div class="detail-row">
 												<span class="detail-value">
@@ -299,7 +299,7 @@
 									<div class="detail-item">
 										<mat-icon class="detail-icon">timer</mat-icon>
 										<div class="detail-content">
-											<div class="detail-label">Duration</div>
+											<div class="detail-label">{{ 'RECORDINGS.COMMON.DURATION' | translate }}</div>
 											<div class="detail-value">
 												{{ RecordingUiUtils.formatDuration(recording.duration) }}
 											</div>
@@ -309,7 +309,7 @@
 									<div class="detail-item">
 										<mat-icon class="detail-icon">storage</mat-icon>
 										<div class="detail-content">
-											<div class="detail-label">Size</div>
+											<div class="detail-label">{{ 'RECORDINGS.COMMON.SIZE' | translate }}</div>
 											<div class="detail-value">
 												{{ RecordingUiUtils.formatFileSize(recording.size) }}
 											</div>
@@ -375,7 +375,7 @@
 									[matMenuTriggerFor]="cardActionsMenu"
 									[disabled]="loading()"
 									class="action-button more-button"
-									matTooltip="More actions"
+									[matTooltip]="'RECORDINGS.COMMON.MORE_ACTIONS' | translate"
 									id="more-actions-btn-{{ recording.recordingId }}"
 								>
 									<mat-icon>more_vert</mat-icon>
@@ -390,7 +390,7 @@
 											id="share-recording-link-{{ recording.recordingId }}"
 										>
 											<mat-icon>share</mat-icon>
-											<span>Share link</span>
+											<span>{{ 'RECORDINGS.COMMON.SHARE_LINK' | translate }}</span>
 										</button>
 									</span>
 									<mat-divider />
@@ -403,7 +403,7 @@
 											id="delete-recording-btn-{{ recording.recordingId }}"
 										>
 											<mat-icon>delete</mat-icon>
-											<span>Delete recording</span>
+											<span>{{ 'RECORDINGS.COMMON.DELETE_RECORDING' | translate }}</span>
 										</button>
 									</span>
 								</mat-menu>
@@ -435,7 +435,11 @@
 									(change)="toggleAllSelection()"
 									(click)="$event.stopPropagation()"
 									[disabled]="loading()"
-									[attr.aria-label]="allSelected() ? 'Deselect all' : 'Select all'"
+									[attr.aria-label]="
+										allSelected()
+											? ('RECORDINGS.LIST.DESELECT_ALL' | translate)
+											: ('RECORDINGS.LIST.SELECT_ALL' | translate)
+									"
 								/>
 							</th>
 							<td mat-cell *matCellDef="let recording" class="select-cell">
@@ -445,7 +449,7 @@
 										(change)="toggleRecordingSelection(recording)"
 										(click)="$event.stopPropagation()"
 										[disabled]="loading()"
-										[attr.aria-label]="'Select recording ' + recording.recordingId"
+										[attr.aria-label]="('RECORDINGS.LIST.SELECT_RECORDING_PREFIX' | translate) + recording.recordingId"
 									/>
 								}
 							</td>
@@ -456,7 +460,7 @@
 					@if (showRoomInfo()) {
 						<ng-container matColumnDef="roomInfo">
 							<th mat-header-cell *matHeaderCellDef mat-sort-header="roomName" class="room-header">
-								Room
+								{{ 'RECORDINGS.LIST.COLUMN_ROOM' | translate }}
 							</th>
 							<td mat-cell *matCellDef="let recording" class="room-cell">
 								<div class="room-info">
@@ -469,7 +473,7 @@
 
 					<!-- Status Column -->
 					<ng-container matColumnDef="status">
-						<th mat-header-cell *matHeaderCellDef>Status</th>
+						<th mat-header-cell *matHeaderCellDef>{{ 'RECORDINGS.COMMON.STATUS' | translate }}</th>
 						<td mat-cell *matCellDef="let recording">
 							<div
 								class="status-badge"
@@ -491,7 +495,7 @@
 
 					<!-- Start Date Column -->
 					<ng-container matColumnDef="startDate">
-						<th mat-header-cell *matHeaderCellDef mat-sort-header="startDate">Start Date</th>
+						<th mat-header-cell *matHeaderCellDef mat-sort-header="startDate">{{ 'RECORDINGS.LIST.COLUMN_START_DATE' | translate }}</th>
 						<td mat-cell *matCellDef="let recording">
 							@if (recording.startDate) {
 								<div class="date-info">
@@ -522,7 +526,7 @@
 
 					<!-- Actions Column -->
 					<ng-container matColumnDef="actions">
-						<th mat-header-cell *matHeaderCellDef class="actions-header">Actions</th>
+						<th mat-header-cell *matHeaderCellDef class="actions-header">{{ 'RECORDINGS.LIST.COLUMN_ACTIONS' | translate }}</th>
 						<td mat-cell *matCellDef="let recording" class="actions-cell">
 							<div class="action-buttons">
 								<!-- Play Button -->
@@ -582,7 +586,7 @@
 										class="action-button more-button"
 										[matMenuTriggerFor]="actionsMenu"
 										(click)="$event.stopPropagation()"
-										matTooltip="More actions"
+										[matTooltip]="'RECORDINGS.COMMON.MORE_ACTIONS' | translate"
 										[disabled]="loading()"
 										id="more-actions-btn-{{ recording.recordingId }}"
 									>
@@ -600,7 +604,7 @@
 												id="share-recording-link-{{ recording.recordingId }}"
 											>
 												<mat-icon>share</mat-icon>
-												<span>Share link</span>
+												<span>{{ 'RECORDINGS.COMMON.SHARE_LINK' | translate }}</span>
 											</button>
 										</span>
 
@@ -616,7 +620,7 @@
 												id="delete-recording-btn-{{ recording.recordingId }}"
 											>
 												<mat-icon>delete</mat-icon>
-												<span>Delete recording</span>
+												<span>{{ 'RECORDINGS.COMMON.DELETE_RECORDING' | translate }}</span>
 											</button>
 										</span>
 									</mat-menu>
@@ -648,7 +652,7 @@
 					id="load-more-btn"
 				>
 					<mat-icon>expand_more</mat-icon>
-					<span>Load more recordings</span>
+					<span>{{ 'RECORDINGS.LIST.LOAD_MORE_RECORDINGS' | translate }}</span>
 				</button>
 			</div>
 		}

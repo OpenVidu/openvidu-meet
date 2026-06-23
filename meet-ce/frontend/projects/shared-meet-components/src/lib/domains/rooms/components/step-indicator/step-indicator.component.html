@@ -12,7 +12,7 @@
 			<mat-step
 				[stepControl]="step.formGroup"
 				[state]="getStepState(step)"
-				errorMessage="Invalid fields"
+				[errorMessage]="'ROOMS.WIZARD.INVALID_FIELDS' | translate"
 				[editable]="true"
 				[label]="step.label"
 				[completed]="step.isCompleted"

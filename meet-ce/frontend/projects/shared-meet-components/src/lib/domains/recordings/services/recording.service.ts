@@ -241,6 +241,7 @@ export class RecordingService {
 		this.clickDownloadLink(objectUrl, filename);
 
 		// Defer revocation so the browser has captured the blob for the download.
+		// FIXME: This may lead to increased memory usage if the user triggers many downloads in a short period of time.
 		setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
 	}
 

@@ -6,7 +6,9 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MeetUserDTO, MeetUserFilters, MeetUserRole, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
 import { firstValueFrom } from 'rxjs';
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -32,7 +34,14 @@ interface UsersListCachedState {
 
 @Component({
 	selector: 'ov-users',
-	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, UsersListsComponent, ScrollPersistDirective],
+	imports: [
+		MatButtonModule,
+		MatIconModule,
+		MatProgressSpinnerModule,
+		UsersListsComponent,
+		ScrollPersistDirective,
+		TranslatePipe
+	],
 	templateUrl: './users.component.html',
 	styleUrl: './users.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
@@ -42,6 +51,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 	private listStateCache = inject(ListStateCacheService);
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
+	private readonly translateService = inject(TranslateService);
 	private dialogPresetsService = inject(DialogPresetsService);
 	private navigationService = inject(NavigationService);
 	private dialog = inject(MatDialog);
@@ -170,7 +180,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 			this.hasMoreUsers.set(response.pagination.isTruncated);
 		} catch (error) {
 			this.log.e('Error loading users:', error);
-			this.notificationService.showSnackbar('Failed to load users');
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USERS_LOAD_FAILED'));
 		} finally {
 			clearTimeout(delayLoader);
 			this.isLoading.set(false);
@@ -252,11 +262,13 @@ export class UsersComponent implements OnInit, OnDestroy {
 
 					// Remove deleted user from the list
 					this.users.set(this.users().filter((u) => u.userId !== user.userId));
-					this.notificationService.showSnackbar(`User "${user.name}" deleted successfully`);
+					this.notificationService.showSnackbar(
+						`${this.translateService.translate('USERS.ERRORS.USER_DELETED_PREFIX')}${user.name}${this.translateService.translate('USERS.ERRORS.USER_DELETED_SUFFIX')}`
+					);
 					await this.autoLoadIfEmpty();
 				} catch (error) {
 					this.log.e('Error deleting user:', error);
-					this.notificationService.showSnackbar('Failed to delete user');
+					this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_DELETE_FAILED'));
 				}
 			}
 		});
@@ -271,7 +283,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 				// Remove deleted users from the list
 				this.users.set(this.users().filter((u) => !deleted.includes(u.userId)));
 				this.notificationService.showSnackbar(
-					`${deleted.length} user${deleted.length > 1 ? 's' : ''} deleted successfully`
+					`${deleted.length} ${this.translateService.translate(deleted.length > 1 ? 'USERS.ERRORS.USERS_DELETED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_DELETED_SUFFIX_SINGULAR')}`
 				);
 				await this.autoLoadIfEmpty();
 			} catch (error: any) {
@@ -288,16 +300,16 @@ export class UsersComponent implements OnInit, OnDestroy {
 
 					let message = '';
 					if (deleted.length > 0) {
-						message += `${deleted.length} user${deleted.length > 1 ? 's' : ''} deleted successfully. `;
+						message += `${deleted.length} ${this.translateService.translate(deleted.length > 1 ? 'USERS.ERRORS.USERS_DELETED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_DELETED_SUFFIX_SINGULAR')} `;
 					}
 					if (failed.length > 0) {
-						message += `${failed.length} user${failed.length > 1 ? 's' : ''} could not be deleted.`;
+						message += `${failed.length} ${this.translateService.translate(failed.length > 1 ? 'USERS.ERRORS.USERS_FAILED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_FAILED_SUFFIX_SINGULAR')}`;
 					}
 
 					this.notificationService.showSnackbar(message.trim());
 					await this.autoLoadIfEmpty();
 				} else {
-					this.notificationService.showSnackbar('Failed to delete users');
+					this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USERS_DELETE_FAILED'));
 				}
 			}
 		};
@@ -313,7 +325,7 @@ export class UsersComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigateToUserProfile(userId);
 		} catch (error) {
-			this.notificationService.showSnackbar('Error navigating to user profile');
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_PROFILE_NAVIGATION_FAILED'));
 			this.log.e('Error navigating to user profile:', error);
 		}
 	}

@@ -18,7 +18,7 @@
 			@if (!isVideoLoaded()) {
 				<div class="video-loading-overlay">
 					<mat-spinner diameter="40" />
-					<span>Loading video...</span>
+					<span>{{ 'RECORDINGS.PLAYER.LOADING_VIDEO' | translate }}</span>
 				</div>
 			}
 		</div>
@@ -28,11 +28,11 @@
 		<div class="video-error-container">
 			<div class="error-content">
 				<mat-icon class="error-icon">error</mat-icon>
-				<h3>Video Playback Error</h3>
-				<p>There was an error loading the video. Please check your connection and try again.</p>
+				<h3>{{ 'RECORDINGS.PLAYER.PLAYBACK_ERROR_TITLE' | translate }}</h3>
+				<p>{{ 'RECORDINGS.PLAYER.PLAYBACK_ERROR_MESSAGE' | translate }}</p>
 				<button mat-raised-button color="primary" (click)="onRetryClick()">
 					<mat-icon>refresh</mat-icon>
-					<span>Retry</span>
+					<span>{{ 'RECORDINGS.COMMON.RETRY' | translate }}</span>
 				</button>
 			</div>
 		</div>
@@ -46,13 +46,13 @@
 				}}</mat-icon>
 				<h3>{{ RecordingUiUtils.getPlayerStatusMessage(this.recordingStatus()) }}</h3>
 				@if (RecordingUiUtils.isInProgress(this.recordingStatus())) {
-					<p>The recording is still being processed. Please check back in a few minutes.</p>
+					<p>{{ 'RECORDINGS.PLAYER.STILL_PROCESSING' | translate }}</p>
 					<button mat-raised-button color="primary" (click)="onRetryClick()">
 						<mat-icon>refresh</mat-icon>
-						<span>Refresh</span>
+						<span>{{ 'RECORDINGS.PLAYER.REFRESH' | translate }}</span>
 					</button>
 				} @else {
-					<p>This recording is not available for playback.</p>
+					<p>{{ 'RECORDINGS.PLAYER.NOT_AVAILABLE' | translate }}</p>
 				}
 			</div>
 		</div>

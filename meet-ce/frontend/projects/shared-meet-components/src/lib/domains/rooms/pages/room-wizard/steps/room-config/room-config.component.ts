@@ -4,13 +4,14 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MeetRoomOptions } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import { RoomConfigFormGroup, RoomConfigFormValue } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services';
 
 @Component({
 	selector: 'ov-room-config',
-	imports: [ReactiveFormsModule, MatIconModule, MatSlideToggleModule],
+	imports: [ReactiveFormsModule, MatIconModule, MatSlideToggleModule, TranslatePipe],
 	templateUrl: './room-config.component.html',
 	styleUrl: './room-config.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush

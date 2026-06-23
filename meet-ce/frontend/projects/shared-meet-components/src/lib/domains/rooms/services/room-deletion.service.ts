@@ -8,6 +8,7 @@ import {
 	MeetRoomDeletionSuccessCode
 } from '@openvidu-meet/typings';
 import { DeleteRoomDialogOptions } from '../../../shared/models/notification.model';
+import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { ILogger } from '../../meeting/openvidu-components';
@@ -35,6 +36,7 @@ export class RoomDeletionService {
 	private notificationService = inject(NotificationService);
 	private dialogPresetsService = inject(DialogPresetsService);
 	private dialog = inject(MatDialog);
+	private readonly translateService = inject(TranslateService);
 
 	deleteRoomWithConfirmation({ roomId, log, onSuccess }: RoomDeletionOptions): void {
 		const deleteCallback = async () => {
@@ -84,7 +86,7 @@ export class RoomDeletionService {
 				const errorMessage = this.removeRoomIdFromMessage(error.error.message);
 				this.showDeletionErrorDialogWithOptions(roomId, errorMessage, log, onSuccess);
 			} else {
-				this.notificationService.showSnackbar('Failed to delete room');
+				this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOM'));
 				log.e('Error deleting room:', error);
 			}
 		}
@@ -108,15 +110,15 @@ export class RoomDeletionService {
 				);
 				await onSuccess({ roomId, successCode, message, room });
 			} catch (error) {
-				this.notificationService.showSnackbar('Failed to delete room');
+				this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOM'));
 				log.e('Error in second deletion attempt:', error);
 			}
 		};
 
 		const dialogOptions: DeleteRoomDialogOptions = {
-			title: 'Error Deleting Room',
+			title: this.translateService.translate('ROOMS.ERRORS.ERROR_DELETING_ROOM'),
 			message: errorMessage,
-			confirmText: 'Delete with Options',
+			confirmText: this.translateService.translate('ROOMS.ERRORS.DELETE_WITH_OPTIONS'),
 			showWithMeetingPolicy: true,
 			showWithRecordingsPolicy: true,
 			confirmCallback: deleteWithPoliciesCallback

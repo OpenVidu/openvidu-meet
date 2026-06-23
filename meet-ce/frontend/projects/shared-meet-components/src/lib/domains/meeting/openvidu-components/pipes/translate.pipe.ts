@@ -1,19 +1,3 @@
-import { Pipe, PipeTransform, inject } from '@angular/core';
-import { TranslateService } from '../services/translate/translate.service';
-
-/**
- * @internal
- */
-@Pipe({
-	name: 'translate',
-	pure: false,
-	standalone: true
-})
-export class TranslatePipe implements PipeTransform {
-	private readonly translateService = inject(TranslateService);
-
-	transform(str: string): string {
-		return this.translateService.translate(str);
-
-	}
-}
+// The meeting now uses the single generic `TranslatePipe` from the shared layer. Re-exported here so
+// the existing openvidu-components import paths (components and the UI module) stay stable.
+export { TranslatePipe } from '../../../../shared/pipes/translate.pipe';

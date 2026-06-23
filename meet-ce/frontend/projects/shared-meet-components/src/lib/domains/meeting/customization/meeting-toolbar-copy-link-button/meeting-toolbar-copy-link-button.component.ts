@@ -3,6 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { RoomAccessLinkService } from '../../services/room-access-link.service';
 
 /**
@@ -15,7 +16,7 @@ import { RoomAccessLinkService } from '../../services/room-access-link.service';
 	selector: 'ov-meeting-toolbar-copy-link-button',
 	templateUrl: './meeting-toolbar-copy-link-button.component.html',
 	styleUrl: './meeting-toolbar-copy-link-button.component.scss',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarCopyLinkButtonComponent {
@@ -23,9 +24,6 @@ export class MeetingToolbarCopyLinkButtonComponent {
 
 	/** Whether the device is mobile (affects button style) */
 	isMobile = input<boolean>(false);
-
-	copyLinkTooltip = 'Copy the room access link';
-	copyLinkText = 'Copy room access link';
 
 	onCopyLinkClick(): void {
 		void this.roomAccessLinkService.copyRoomAccessLink();

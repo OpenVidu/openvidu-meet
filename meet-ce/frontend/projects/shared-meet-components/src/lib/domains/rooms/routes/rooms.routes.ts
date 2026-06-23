@@ -20,7 +20,7 @@ export const roomsConsoleRoutes: DomainRouteConfig[] = [
 			loadComponent: () => import('../pages/rooms/rooms.component').then((m) => m.RoomsComponent)
 		},
 		navMetadata: {
-			label: 'Rooms',
+			label: 'NAV.ROOMS',
 			route: 'rooms',
 			icon: 'video_chat',
 			iconClass: 'ov-room-icon',

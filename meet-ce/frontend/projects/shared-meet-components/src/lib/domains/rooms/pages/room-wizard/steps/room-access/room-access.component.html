@@ -3,8 +3,8 @@
 	<header class="step-header">
 		<mat-icon class="step-icon">lock_open</mat-icon>
 		<div class="step-title-group">
-			<h3 class="step-title">Room Access</h3>
-			<p class="step-description">Define who can access this room and what permissions they have.</p>
+			<h3 class="step-title">{{ 'ROOMS.WIZARD.ACCESS.TITLE' | translate }}</h3>
+			<p class="step-description">{{ 'ROOMS.WIZARD.ACCESS.DESCRIPTION' | translate }}</p>
 		</div>
 	</header>
 
@@ -12,21 +12,16 @@
 		<form [formGroup]="roomAccessForm">
 			<!-- ── Access Settings Section ── -->
 			<section class="access-section">
-				<p class="section-label">ACCESS POLICY</p>
-				<p class="section-subtitle">
-					Members can always access this room. The options below let you grant additional access to
-					non-members.
-				</p>
+				<p class="section-label">{{ 'ROOMS.WIZARD.ACCESS.ACCESS_POLICY' | translate }}</p>
+				<p class="section-subtitle">{{ 'ROOMS.WIZARD.ACCESS.ACCESS_POLICY_SUBTITLE' | translate }}</p>
 
 				<!-- Anonymous Moderator Access -->
 				<div class="access-row">
 					<div class="access-info">
 						<mat-icon class="access-icon material-symbols-outlined">shield_person</mat-icon>
 						<div class="access-text">
-							<span class="access-label">Anonymous Moderator</span>
-							<span class="access-description">
-								Allow anonymous guests to access the room with Moderator permissions
-							</span>
+							<span class="access-label">{{ 'ROOMS.WIZARD.ACCESS.ANONYMOUS_MODERATOR' | translate }}</span>
+							<span class="access-description">{{ 'ROOMS.WIZARD.ACCESS.ANONYMOUS_MODERATOR_DESC' | translate }}</span>
 						</div>
 					</div>
 					<mat-slide-toggle
@@ -41,10 +36,8 @@
 					<div class="access-info">
 						<mat-icon class="access-icon material-symbols-outlined">record_voice_over</mat-icon>
 						<div class="access-text">
-							<span class="access-label">Anonymous Speaker</span>
-							<span class="access-description">
-								Allow anonymous guests to access the room with Speaker permissions
-							</span>
+							<span class="access-label">{{ 'ROOMS.WIZARD.ACCESS.ANONYMOUS_SPEAKER' | translate }}</span>
+							<span class="access-description">{{ 'ROOMS.WIZARD.ACCESS.ANONYMOUS_SPEAKER_DESC' | translate }}</span>
 						</div>
 					</div>
 					<mat-slide-toggle formControlName="anonymousSpeakerEnabled" color="primary" class="access-toggle" />
@@ -55,10 +48,8 @@
 					<div class="access-info">
 						<mat-icon class="access-icon material-symbols-outlined">verified_user</mat-icon>
 						<div class="access-text">
-							<span class="access-label">All Users</span>
-							<span class="access-description">
-								Allow any user to access the room. Non-members will get Speaker permissions
-							</span>
+							<span class="access-label">{{ 'ROOMS.WIZARD.ACCESS.ALL_USERS' | translate }}</span>
+							<span class="access-description">{{ 'ROOMS.WIZARD.ACCESS.ALL_USERS_DESC' | translate }}</span>
 						</div>
 					</div>
 					<mat-slide-toggle formControlName="userEnabled" color="primary" class="access-toggle" />
@@ -67,7 +58,7 @@
 
 			<!-- ── Role Permissions Section ── -->
 			<section class="permissions-section">
-				<p class="section-label">ROLE PERMISSIONS</p>
+				<p class="section-label">{{ 'ROOMS.WIZARD.ACCESS.ROLE_PERMISSIONS' | translate }}</p>
 
 				<mat-accordion class="roles-accordion" multi>
 					<!-- Moderator Permissions -->
@@ -75,11 +66,9 @@
 						<mat-expansion-panel-header>
 							<mat-panel-title class="role-panel-title">
 								<mat-icon class="role-panel-icon material-symbols-outlined">shield_person</mat-icon>
-								<span>Moderator</span>
+								<span>{{ 'ROOMS.WIZARD.ACCESS.MODERATOR' | translate }}</span>
 							</mat-panel-title>
-							<mat-panel-description class="role-panel-description">
-								Configure what moderators can do in this room
-							</mat-panel-description>
+							<mat-panel-description class="role-panel-description">{{ 'ROOMS.WIZARD.ACCESS.MODERATOR_PANEL_DESC' | translate }}</mat-panel-description>
 						</mat-expansion-panel-header>
 
 						<div class="role-permissions-content" [formGroup]="moderatorForm">
@@ -87,7 +76,7 @@
 								<div class="permission-group">
 									<div class="permission-group-header">
 										<mat-icon class="permission-group-icon">{{ group.icon }}</mat-icon>
-										<span class="permission-group-label">{{ group.label }}</span>
+										<span class="permission-group-label">{{ group.label | translate }}</span>
 									</div>
 									@for (permission of group.permissions; track permission.key) {
 										<div class="permission-row">
@@ -96,10 +85,8 @@
 													permission.icon
 												}}</mat-icon>
 												<div class="permission-text">
-													<span class="permission-label">{{ permission.label }}</span>
-													<span class="permission-description">{{
-														permission.description
-													}}</span>
+													<span class="permission-label">{{ permission.label | translate }}</span>
+													<span class="permission-description">{{ permission.description | translate }}</span>
 												</div>
 											</div>
 											<mat-slide-toggle
@@ -119,11 +106,9 @@
 						<mat-expansion-panel-header>
 							<mat-panel-title class="role-panel-title">
 								<mat-icon class="role-panel-icon material-symbols-outlined">record_voice_over</mat-icon>
-								<span>Speaker</span>
+								<span>{{ 'ROOMS.WIZARD.ACCESS.SPEAKER' | translate }}</span>
 							</mat-panel-title>
-							<mat-panel-description class="role-panel-description">
-								Configure what speakers can do in this room
-							</mat-panel-description>
+							<mat-panel-description class="role-panel-description">{{ 'ROOMS.WIZARD.ACCESS.SPEAKER_PANEL_DESC' | translate }}</mat-panel-description>
 						</mat-expansion-panel-header>
 
 						<div class="role-permissions-content" [formGroup]="speakerForm">
@@ -131,7 +116,7 @@
 								<div class="permission-group">
 									<div class="permission-group-header">
 										<mat-icon class="permission-group-icon">{{ group.icon }}</mat-icon>
-										<span class="permission-group-label">{{ group.label }}</span>
+										<span class="permission-group-label">{{ group.label | translate }}</span>
 									</div>
 									@for (permission of group.permissions; track permission.key) {
 										<div class="permission-row">
@@ -140,10 +125,8 @@
 													permission.icon
 												}}</mat-icon>
 												<div class="permission-text">
-													<span class="permission-label">{{ permission.label }}</span>
-													<span class="permission-description">{{
-														permission.description
-													}}</span>
+													<span class="permission-label">{{ permission.label | translate }}</span>
+													<span class="permission-description">{{ permission.description | translate }}</span>
 												</div>
 											</div>
 											<mat-slide-toggle
@@ -166,21 +149,19 @@
 			<section class="members-section">
 				<div class="members-header">
 					<div class="members-header-text">
-						<p class="section-label">MEMBERS</p>
-						<p class="section-subtitle">
-							Add specific members to this room and assign them custom permissions.
-						</p>
+						<p class="section-label">{{ 'ROOMS.WIZARD.ACCESS.MEMBERS' | translate }}</p>
+						<p class="section-subtitle">{{ 'ROOMS.WIZARD.ACCESS.MEMBERS_SUBTITLE' | translate }}</p>
 					</div>
 					<button mat-button class="primary-button" type="button" (click)="openAddMemberDialog()">
 						<mat-icon>person_add</mat-icon>
-						Add Member
+						{{ 'ROOMS.WIZARD.ACCESS.ADD_MEMBER' | translate }}
 					</button>
 				</div>
 
 				<!-- Pending Members List -->
 				@if (pendingMembers().length > 0) {
 					<div class="pending-members-list">
-						<p class="pending-label">Members to add ({{ pendingMembers().length }})</p>
+						<p class="pending-label">{{ 'ROOMS.WIZARD.ACCESS.MEMBERS_TO_ADD_PREFIX' | translate }}{{ pendingMembers().length }}{{ 'ROOMS.WIZARD.ACCESS.MEMBERS_TO_ADD_SUFFIX' | translate }}</p>
 						@for (member of pendingMembers(); track member.userId; let i = $index) {
 							<div class="pending-member-row">
 								<div class="member-info">
@@ -190,7 +171,7 @@
 									<div class="member-text">
 										<span class="member-user-id">{{ member.userId || member.name }}</span>
 										<span class="member-role">{{
-											RoomMemberUiUtils.getRoleLabel(member.baseRole)
+											RoomMemberUiUtils.getRoleLabel(member.baseRole) | translate
 										}}</span>
 									</div>
 								</div>
@@ -199,7 +180,7 @@
 										mat-icon-button
 										class="edit-member-button"
 										(click)="openEditMemberDialog(i)"
-										matTooltip="Edit member"
+										[matTooltip]="'ROOMS.WIZARD.ACCESS.EDIT_MEMBER' | translate"
 										type="button"
 									>
 										<mat-icon>edit</mat-icon>
@@ -208,7 +189,7 @@
 										mat-icon-button
 										class="remove-member-button"
 										(click)="onRemoveMember(i)"
-										matTooltip="Remove member"
+										[matTooltip]="'ROOMS.WIZARD.ACCESS.REMOVE_MEMBER' | translate"
 										type="button"
 									>
 										<mat-icon>close</mat-icon>

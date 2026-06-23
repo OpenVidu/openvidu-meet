@@ -26,6 +26,8 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -72,7 +74,8 @@ interface RoomsListCachedState {
 		MatFormFieldModule,
 		MatInputModule,
 		RoomsListsComponent,
-		ScrollPersistDirective
+		ScrollPersistDirective,
+		TranslatePipe
 	],
 	templateUrl: './rooms.component.html',
 	styleUrl: './rooms.component.scss',
@@ -84,6 +87,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 	private authService = inject(AuthService);
 	private notificationService = inject(NotificationService);
 	private dialogPresetsService = inject(DialogPresetsService);
+	private readonly translateService = inject(TranslateService);
 	protected navigationService = inject(NavigationService);
 	protected roomDeletionService = inject(RoomDeletionService);
 	private dialog = inject(MatDialog);
@@ -264,7 +268,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			this.nextPageToken = response.pagination.nextPageToken;
 			this.hasMoreRooms.set(response.pagination.isTruncated);
 		} catch (error) {
-			this.notificationService.showSnackbar('Error loading rooms');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.LOADING_ROOMS'));
 			this.log.e('Error loading rooms:', error);
 		} finally {
 			clearTimeout(delayLoader);
@@ -286,7 +290,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo('/rooms/new');
 		} catch (error) {
-			this.notificationService.showSnackbar('Error creating room');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.CREATING_ROOM'));
 			this.log.e('Error creating room:', error);
 			return;
 		}
@@ -300,7 +304,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo(`/rooms/${room.roomId}/edit`);
 		} catch (error) {
-			this.notificationService.showSnackbar('Error navigating to room config');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.NAVIGATING_ROOM_CONFIG'));
 			this.log.e('Error navigating to room config:', error);
 		}
 	}
@@ -318,7 +322,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		try {
 			await this.navigationService.navigateTo(`/rooms/${roomId}`);
 		} catch (error) {
-			this.notificationService.showSnackbar('Error navigating to room detail');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.NAVIGATING_ROOM_DETAIL'));
 			this.log.e('Error navigating to room detail:', error);
 		}
 	}
@@ -329,9 +333,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
 			// Update room in the list
 			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
-			this.notificationService.showSnackbar('Room reopened successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.ROOM_REOPENED'));
 		} catch (error) {
-			this.notificationService.showSnackbar('Failed to reopen room');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_REOPEN_ROOM'));
 			this.log.e('Error reopening room:', error);
 		}
 	}
@@ -347,11 +351,11 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			// it is scheduled to take effect when the meeting ends.
 			const message =
 				updatedRoom.status === MeetRoomStatus.CLOSED
-					? 'Room closed successfully'
-					: 'Room scheduled to be closed when the meeting ends';
+					? this.translateService.translate('ROOMS.ERRORS.ROOM_CLOSED')
+					: this.translateService.translate('ROOMS.ERRORS.ROOM_SCHEDULED_CLOSE');
 			this.notificationService.showSnackbar(message);
 		} catch (error) {
-			this.notificationService.showSnackbar('Failed to close room');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_CLOSE_ROOM'));
 			this.log.e('Error closing room:', error);
 		}
 	}
@@ -421,7 +425,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 						this.log.e('Error in bulk delete:', failed);
 					}
 				} else {
-					this.notificationService.showSnackbar('Failed to delete rooms');
+					this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOMS'));
 					this.log.e('Error in bulk delete:', error);
 				}
 			}
@@ -507,16 +511,16 @@ export class RoomsComponent implements OnInit, OnDestroy {
 					this.notificationService.showSnackbar(message);
 					await this.autoLoadIfEmpty();
 				} else {
-					this.notificationService.showSnackbar('Failed to delete rooms');
+					this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOMS'));
 				}
 			}
 		};
 
 		const dialogOptions: DeleteRoomDialogOptions = {
-			title: 'Error Deleting Rooms',
+			title: this.translateService.translate('ROOMS.ERRORS.ERROR_DELETING_ROOMS'),
 			message: `${errorMessage}. They have active meetings and/or recordings:
 			<p>${roomIds.join(', ')}</p>`,
-			confirmText: 'Delete with Options',
+			confirmText: this.translateService.translate('ROOMS.ERRORS.DELETE_WITH_OPTIONS'),
 			showWithMeetingPolicy: true,
 			showWithRecordingsPolicy: true,
 			confirmCallback: bulkDeleteWithPoliciesCallback

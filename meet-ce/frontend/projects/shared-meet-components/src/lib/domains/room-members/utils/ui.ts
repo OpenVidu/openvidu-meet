@@ -10,14 +10,14 @@ export class RoomMemberUiUtils {
 	// ===== ROLE UTILITIES =====
 
 	/**
-	 * Gets the human-readable label for a room member role.
+	 * Gets the i18n key for a room member role label (resolve with the `translate` pipe at render).
 	 */
 	static getRoleLabel(role: MeetRoomMemberRole): string {
 		switch (role) {
 			case MeetRoomMemberRole.MODERATOR:
-				return 'Moderator';
+				return 'ROOM_MEMBERS.ROLE.MODERATOR';
 			case MeetRoomMemberRole.SPEAKER:
-				return 'Speaker';
+				return 'ROOM_MEMBERS.ROLE.SPEAKER';
 			default:
 				return role;
 		}
@@ -66,14 +66,19 @@ export class RoomMemberUiUtils {
 		}
 	}
 
+	/**
+	 * Gets the i18n key for a participant badge tooltip (resolve with the `translate` pipe at render).
+	 * Keys live in the meeting bundle (PARTICIPANT_ITEM) because badges render inside the meeting,
+	 * which the web component ships (the room-members bundle is SPA-only).
+	 */
 	static getParticipantBadgeTooltip(badge: MeetRoomMemberUIBadge): string {
 		switch (badge) {
 			case MeetRoomMemberUIBadge.OWNER:
-				return 'Owner';
+				return 'PARTICIPANT_ITEM.BADGE_OWNER';
 			case MeetRoomMemberUIBadge.ADMIN:
-				return 'Admin';
+				return 'PARTICIPANT_ITEM.BADGE_ADMIN';
 			case MeetRoomMemberUIBadge.MODERATOR:
-				return 'Moderator';
+				return 'PARTICIPANT_ITEM.BADGE_MODERATOR';
 			default:
 				return '';
 		}
@@ -102,10 +107,12 @@ export class RoomMemberUiUtils {
 	}
 
 	/**
-	 * Gets the human-readable label for the member type (User or Identified guest).
+	 * Gets the i18n key for the member type label (resolve with the `translate` pipe at render).
 	 */
 	static getMemberTypeLabel(member: MeetRoomMember): string {
-		return RoomMemberUiUtils.isUserMember(member) ? 'User' : 'Identified guest';
+		return RoomMemberUiUtils.isUserMember(member)
+			? 'ROOM_MEMBERS.MEMBER_TYPE.USER'
+			: 'ROOM_MEMBERS.MEMBER_TYPE.GUEST';
 	}
 
 	/**

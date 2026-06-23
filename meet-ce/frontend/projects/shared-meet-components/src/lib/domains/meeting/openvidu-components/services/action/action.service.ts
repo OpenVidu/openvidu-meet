@@ -5,7 +5,7 @@ import { DeleteDialogComponent } from '../../components/dialogs/delete-recording
 import { DialogTemplateComponent } from '../../components/dialogs/dialog.component';
 import { RecordingDialogComponent } from '../../components/dialogs/recording-dialog.component';
 import { INotificationOptions } from '../../models/notification-options.model';
-import { TranslateService } from '../translate/translate.service';
+import { MeetingTranslateService } from '../translate/meeting-translate.service';
 
 /**
  * @internal
@@ -16,7 +16,7 @@ import { TranslateService } from '../translate/translate.service';
 export class ActionService {
 	private readonly snackBar = inject(MatSnackBar);
 	public readonly dialog = inject(MatDialog);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 
 	private dialogRef:
 		| MatDialogRef<DialogTemplateComponent | RecordingDialogComponent | DeleteDialogComponent>

@@ -5,13 +5,14 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
 import { map } from 'rxjs/operators';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { WizardStep } from '../../models';
 
 type LayoutType = 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact';
 
 @Component({
     selector: 'ov-step-indicator',
-	imports: [MatStepperModule, ReactiveFormsModule],
+	imports: [MatStepperModule, ReactiveFormsModule, TranslatePipe],
     templateUrl: './step-indicator.component.html',
     styleUrl: './step-indicator.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush

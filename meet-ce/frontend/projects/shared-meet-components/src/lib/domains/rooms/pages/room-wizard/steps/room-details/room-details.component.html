@@ -3,8 +3,8 @@
 	<header class="step-header">
 		<mat-icon class="ov-room-icon step-icon">video_chat</mat-icon>
 		<div class="step-title-group">
-			<h3 class="step-title">Room Details</h3>
-			<p class="step-description">Configure your room's details including name and automatic deletion date</p>
+			<h3 class="step-title">{{ 'ROOMS.WIZARD.DETAILS.TITLE' | translate }}</h3>
+			<p class="step-description">{{ 'ROOMS.WIZARD.DETAILS.DESCRIPTION' | translate }}</p>
 		</div>
 	</header>
 
@@ -13,23 +13,23 @@
 		<form [formGroup]="roomDetailsForm" class="room-details-form">
 			<!-- Room Field -->
 			<mat-form-field appearance="outline" class="form-field">
-				<mat-label>Room Name</mat-label>
-				<input matInput formControlName="roomName" placeholder="e.g. Demo Room" />
+				<mat-label>{{ 'ROOMS.WIZARD.DETAILS.ROOM_NAME' | translate }}</mat-label>
+				<input matInput formControlName="roomName" [placeholder]="'ROOMS.WIZARD.DETAILS.ROOM_NAME_PLACEHOLDER' | translate" />
 				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
-				<mat-hint>Enter a custom room name, or leave blank to use the default name "Room".</mat-hint>
+				<mat-hint>{{ 'ROOMS.WIZARD.DETAILS.ROOM_NAME_HINT' | translate }}</mat-hint>
 				@if (roomDetailsForm.get('roomName')?.hasError('maxlength')) {
-					<mat-error>Room name cannot exceed 50 characters</mat-error>
+					<mat-error>{{ 'ROOMS.WIZARD.DETAILS.ROOM_NAME_MAXLENGTH' | translate }}</mat-error>
 				}
 			</mat-form-field>
 
 			<!-- Deletion Date Field -->
 			<mat-form-field appearance="outline" class="form-field">
-				<mat-label>Auto-deletion Date</mat-label>
+				<mat-label>{{ 'ROOMS.WIZARD.DETAILS.AUTO_DELETION_DATE' | translate }}</mat-label>
 				<input
 					matInput
 					[matDatepicker]="deletionPicker"
 					formControlName="autoDeletionDate"
-					placeholder="Select deletion date"
+					[placeholder]="'ROOMS.WIZARD.DETAILS.SELECT_DELETION_DATE' | translate"
 					[min]="minDate"
 					readonly
 					(click)="deletionPicker.open()"
@@ -42,7 +42,7 @@
 						type="button"
 						[disabled]="roomDetailsForm.get('autoDeletionDate')?.disabled"
 						(click)="clearDeletionDate()"
-						matTooltip="Clear date selection"
+						[matTooltip]="'ROOMS.WIZARD.DETAILS.CLEAR_DATE_SELECTION' | translate"
 						class="clear-date-button"
 					>
 						<mat-icon class="ov-settings-icon">clear</mat-icon>
@@ -54,7 +54,7 @@
 				}
 
 				<mat-datepicker #deletionPicker />
-				<mat-hint>Optional. Room will be automatically deleted on this date and time.</mat-hint>
+				<mat-hint>{{ 'ROOMS.WIZARD.DETAILS.AUTO_DELETION_DATE_HINT' | translate }}</mat-hint>
 			</mat-form-field>
 
 			@if (hasDateSelected) {
@@ -62,7 +62,7 @@
 				<div class="time-selection-container">
 					<div class="time-selection-row">
 						<mat-form-field appearance="outline" class="time-field">
-							<mat-label>Hour</mat-label>
+							<mat-label>{{ 'ROOMS.WIZARD.DETAILS.HOUR' | translate }}</mat-label>
 							<mat-select formControlName="autoDeletionHour">
 								@for (hour of hours; track hour.value) {
 									<mat-option [value]="hour.value">
@@ -76,7 +76,7 @@
 						<span class="time-separator">:</span>
 
 						<mat-form-field appearance="outline" class="time-field">
-							<mat-label>Minute</mat-label>
+							<mat-label>{{ 'ROOMS.WIZARD.DETAILS.MINUTE' | translate }}</mat-label>
 							<mat-select formControlName="autoDeletionMinute">
 								@for (minute of minutes; track minute.value) {
 									<mat-option [value]="minute.value">
@@ -91,48 +91,39 @@
 					@if (!roomDetailsForm.hasError('minFutureDateTime')) {
 						<div class="time-hint">
 							<mat-icon class="hint-icon material-symbols-outlined material-icons">auto_delete</mat-icon>
-							<span>Room will be deleted at {{ getFormattedDateTime() }}</span>
+							<span>{{ 'ROOMS.WIZARD.DETAILS.DELETED_AT_PREFIX' | translate }}{{ getFormattedDateTime() }}</span>
 						</div>
 					} @else {
-						<mat-error> Deletion date and time must be at least one hour in the future </mat-error>
+						<mat-error>{{ 'ROOMS.WIZARD.DETAILS.MIN_FUTURE_DATETIME_ERROR' | translate }}</mat-error>
 					}
 
 					<!-- Auto-deletion Policies Section -->
 					<div class="auto-deletion-policies">
 						<h4 class="policies-title">
-							<mat-icon class="policies-icon">policy</mat-icon>
-							Auto-deletion Policies
-						</h4>
-						<p class="policies-description">
-							Configure how the room should be handled during auto-deletion if there are active meetings
-							or recordings.
-						</p>
+							<mat-icon class="policies-icon">policy</mat-icon>{{ 'ROOMS.WIZARD.DETAILS.AUTO_DELETION_POLICIES' | translate }}</h4>
+						<p class="policies-description">{{ 'ROOMS.WIZARD.DETAILS.AUTO_DELETION_POLICIES_DESC' | translate }}</p>
 
 						<div class="policies-row">
 							<mat-form-field appearance="outline" class="policy-field">
-								<mat-label>With Active Meeting Policy</mat-label>
+								<mat-label>{{ 'ROOMS.WIZARD.DETAILS.WITH_ACTIVE_MEETING_POLICY' | translate }}</mat-label>
 								<mat-select formControlName="autoDeletionPolicyWithMeeting">
 									@for (option of meetingPolicyOptions; track option.value) {
-										<mat-option [value]="option.value">
-											{{ option.label }}
-										</mat-option>
+										<mat-option [value]="option.value">{{ option.label | translate }}</mat-option>
 									}
 								</mat-select>
 								<mat-icon matSuffix class="ov-settings-icon">groups</mat-icon>
-								<mat-hint>{{ getMeetingPolicyDescription() }}</mat-hint>
+								<mat-hint>{{ getMeetingPolicyDescription() | translate }}</mat-hint>
 							</mat-form-field>
 
 							<mat-form-field appearance="outline" class="policy-field">
-								<mat-label>With Recordings Policy</mat-label>
+								<mat-label>{{ 'ROOMS.WIZARD.DETAILS.WITH_RECORDINGS_POLICY' | translate }}</mat-label>
 								<mat-select formControlName="autoDeletionPolicyWithRecordings">
 									@for (option of recordingPolicyOptions; track option.value) {
-										<mat-option [value]="option.value">
-											{{ option.label }}
-										</mat-option>
+										<mat-option [value]="option.value">{{ option.label | translate }}</mat-option>
 									}
 								</mat-select>
 								<mat-icon matSuffix class="ov-settings-icon">video_library</mat-icon>
-								<mat-hint>{{ getRecordingPolicyDescription() }}</mat-hint>
+								<mat-hint>{{ getRecordingPolicyDescription() | translate }}</mat-hint>
 							</mat-form-field>
 						</div>
 					</div>

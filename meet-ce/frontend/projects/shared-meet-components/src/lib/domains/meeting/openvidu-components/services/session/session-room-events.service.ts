@@ -29,7 +29,7 @@ import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
-import { TranslateService } from '../translate/translate.service';
+import { MeetingTranslateService } from '../translate/meeting-translate.service';
 
 export interface SessionRoomEventCallbacks {
 	onRoomReconnecting: () => void;
@@ -46,7 +46,7 @@ export class SessionRoomEventsService {
 	private readonly openviduService = inject(OpenViduService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly recordingService = inject(RecordingService);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 	private readonly log = this.loggerSrv.get('SessionRoomEventsService');
 	private readonly _activeSpeakers = signal<Participant[]>([]);
 	readonly activeSpeakers = this._activeSpeakers.asReadonly();

@@ -36,6 +36,8 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { merge } from 'rxjs';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { setsAreEqual } from '../../../../shared/utils/array.utils';
 import { ViewportService } from '../../../meeting/openvidu-components';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
@@ -82,7 +84,8 @@ import { RecordingUiUtils } from '../../utils/ui';
 		MatBadgeModule,
 		MatDividerModule,
 		MatSortModule,
-		DatePipe
+		DatePipe,
+		TranslatePipe
 	],
 	templateUrl: './recording-lists.component.html',
 	styleUrl: './recording-lists.component.scss',
@@ -94,6 +97,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 export class RecordingListsComponent implements OnInit {
 	private viewportService = inject(ViewportService);
 	private destroyRef = inject(DestroyRef);
+	private readonly translateService = inject(TranslateService);
 
 	recordings = input<MeetRecordingInfo[]>([]);
 	canDeleteRecordings = input(false);
@@ -154,10 +158,26 @@ export class RecordingListsComponent implements OnInit {
 	showFilterPanel = signal(false);
 
 	nameMatchModeOptions = [
-		{ value: TextMatchMode.PREFIX, label: 'Starts with', icon: 'first_page' },
-		{ value: TextMatchMode.PARTIAL, label: 'Contains', icon: 'more_horiz' },
-		{ value: TextMatchMode.EXACT, label: 'Exact match', icon: 'format_quote' },
-		{ value: TextMatchMode.REGEX, label: 'Regex', icon: 'code' }
+		{
+			value: TextMatchMode.PREFIX,
+			label: this.translateService.translate('RECORDINGS.LIST.MATCH_MODE_STARTS_WITH'),
+			icon: 'first_page'
+		},
+		{
+			value: TextMatchMode.PARTIAL,
+			label: this.translateService.translate('RECORDINGS.LIST.MATCH_MODE_CONTAINS'),
+			icon: 'more_horiz'
+		},
+		{
+			value: TextMatchMode.EXACT,
+			label: this.translateService.translate('RECORDINGS.LIST.MATCH_MODE_EXACT'),
+			icon: 'format_quote'
+		},
+		{
+			value: TextMatchMode.REGEX,
+			label: this.translateService.translate('RECORDINGS.LIST.MATCH_MODE_REGEX'),
+			icon: 'code'
+		}
 	];
 
 	// Currently selected match mode option (drives the search-box trigger button)
@@ -173,7 +193,10 @@ export class RecordingListsComponent implements OnInit {
 		const chips: { key: string; label: string }[] = [];
 		if (f.statusFilter) {
 			const opt = this.statusOptions.find((o) => o.value === f.statusFilter);
-			chips.push({ key: 'statusFilter', label: `Status: ${opt?.label ?? f.statusFilter}` });
+			chips.push({
+				key: 'statusFilter',
+				label: `${this.translateService.translate('RECORDINGS.LIST.STATUS_FILTER_LABEL_PREFIX')}${opt?.label ?? f.statusFilter}`
+			});
 		}
 		return chips;
 	});
@@ -221,14 +244,17 @@ export class RecordingListsComponent implements OnInit {
 
 	// Status options using enum values
 	statusOptions = [
-		{ value: '', label: 'All statuses' },
-		{ value: MeetRecordingStatus.STARTING, label: 'Starting' },
-		{ value: MeetRecordingStatus.ACTIVE, label: 'Active' },
-		{ value: MeetRecordingStatus.ENDING, label: 'Ending' },
-		{ value: MeetRecordingStatus.COMPLETE, label: 'Complete' },
-		{ value: MeetRecordingStatus.FAILED, label: 'Failed' },
-		{ value: MeetRecordingStatus.ABORTED, label: 'Aborted' },
-		{ value: MeetRecordingStatus.LIMIT_REACHED, label: 'Limit Reached' }
+		{ value: '', label: this.translateService.translate('RECORDINGS.LIST.STATUS_ALL') },
+		{ value: MeetRecordingStatus.STARTING, label: this.translateService.translate('RECORDINGS.LIST.STATUS_STARTING') },
+		{ value: MeetRecordingStatus.ACTIVE, label: this.translateService.translate('RECORDINGS.LIST.STATUS_ACTIVE') },
+		{ value: MeetRecordingStatus.ENDING, label: this.translateService.translate('RECORDINGS.LIST.STATUS_ENDING') },
+		{ value: MeetRecordingStatus.COMPLETE, label: this.translateService.translate('RECORDINGS.LIST.STATUS_COMPLETE') },
+		{ value: MeetRecordingStatus.FAILED, label: this.translateService.translate('RECORDINGS.LIST.STATUS_FAILED') },
+		{ value: MeetRecordingStatus.ABORTED, label: this.translateService.translate('RECORDINGS.LIST.STATUS_ABORTED') },
+		{
+			value: MeetRecordingStatus.LIMIT_REACHED,
+			label: this.translateService.translate('RECORDINGS.LIST.STATUS_LIMIT_REACHED')
+		}
 	];
 
 	protected isMobileView = this.viewportService.isMobileView;

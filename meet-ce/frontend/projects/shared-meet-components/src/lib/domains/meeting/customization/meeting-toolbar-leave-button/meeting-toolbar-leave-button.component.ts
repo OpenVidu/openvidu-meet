@@ -4,6 +4,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { LoggerService, OpenViduService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
@@ -15,7 +16,7 @@ import { MeetingService } from '../../services/meeting.service';
 	selector: 'ov-meeting-toolbar-leave-button',
 	templateUrl: './meeting-toolbar-leave-button.component.html',
 	styleUrls: ['./meeting-toolbar-leave-button.component.scss'],
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDividerModule],
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDividerModule, TranslatePipe],
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingToolbarLeaveButtonComponent {
@@ -27,10 +28,6 @@ export class MeetingToolbarLeaveButtonComponent {
 
 	showLeaveMenu = computed(() => this.meetingContextService.meetingUI().showEndMeeting);
 	isMobile = this.meetingContextService.isMobile;
-
-	leaveMenuTooltip = 'Leave options';
-	leaveOptionText = 'Leave meeting';
-	endMeetingOptionText = 'End meeting for all';
 
 	async onLeaveMeetingClick(): Promise<void> {
 		await this.openviduService.disconnectRoom();

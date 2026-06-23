@@ -16,6 +16,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRoomAccess } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { WizardStepId } from '../../models/wizard.model';
 
@@ -40,7 +41,8 @@ export interface RoomShareDialogData {
 		MatDialogContent,
 		MatDialogActions,
 		MatDialogClose,
-		MatTooltipModule
+		MatTooltipModule,
+		TranslatePipe
 	],
 	templateUrl: './room-share-dialog.component.html',
 	styleUrl: './room-share-dialog.component.scss',
@@ -73,11 +75,13 @@ export class RoomShareDialogComponent {
 	selectedAccessLabel = computed(() => {
 		switch (this.selectedAccessType()) {
 			case 'anonymous-moderator':
-				return 'Anonymous Moderator';
+				return 'ROOMS.SHARE_DIALOG.ANONYMOUS_MODERATOR';
 			case 'anonymous-speaker':
-				return 'Anonymous Speaker';
+				return 'ROOMS.SHARE_DIALOG.ANONYMOUS_SPEAKER';
 			case 'user':
-				return this.data.access.user.enabled ? 'Users' : 'User Members';
+				return this.data.access.user.enabled
+					? 'ROOMS.SHARE_DIALOG.USERS'
+					: 'ROOMS.SHARE_DIALOG.USER_MEMBERS';
 		}
 	});
 

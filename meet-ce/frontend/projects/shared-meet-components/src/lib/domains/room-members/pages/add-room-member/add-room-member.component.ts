@@ -3,6 +3,8 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRoomMember, MeetRoomMemberOptions, MeetRoomRoles } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RoomService } from '../../../rooms/services/room.service';
@@ -13,7 +15,7 @@ import { RoomMemberUiUtils } from '../../utils/ui';
 
 @Component({
 	selector: 'ov-add-room-member',
-	imports: [MatCardModule, MatIconModule, MemberFormComponent],
+	imports: [MatCardModule, MatIconModule, MemberFormComponent, TranslatePipe],
 	templateUrl: './add-room-member.component.html',
 	styleUrl: './add-room-member.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
@@ -24,6 +26,7 @@ export class AddRoomMemberComponent implements OnInit {
 	private roomService = inject(RoomService);
 	private navigationService = inject(NavigationService);
 	private notificationService = inject(NotificationService);
+	private readonly translateService = inject(TranslateService);
 
 	roomId = '';
 	isSaving = signal(false);
@@ -38,7 +41,7 @@ export class AddRoomMemberComponent implements OnInit {
 	async ngOnInit(): Promise<void> {
 		const roomId = this.route.snapshot.paramMap.get('room-id');
 		if (!roomId) {
-			this.notificationService.showSnackbar('Room ID is required');
+			this.notificationService.showSnackbar(this.translateService.translate('ROOM_MEMBERS.ERRORS.ROOM_ID_REQUIRED'));
 			this.navigationService.navigateTo('/rooms');
 			return;
 		}
@@ -66,7 +69,9 @@ export class AddRoomMemberComponent implements OnInit {
 			}
 		} catch (error) {
 			console.error(error);
-			this.notificationService.showSnackbar('Failed to load room data');
+			this.notificationService.showSnackbar(
+				this.translateService.translate('ROOM_MEMBERS.ERRORS.ROOM_DATA_LOAD_FAILED')
+			);
 		}
 	}
 
@@ -84,11 +89,15 @@ export class AddRoomMemberComponent implements OnInit {
 					baseRole: options.baseRole,
 					customPermissions: options.customPermissions ?? {} // Send empty object to clear custom permissions if they were removed in the UI
 				});
-				this.notificationService.showSnackbar('Member updated successfully');
+				this.notificationService.showSnackbar(
+					this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_UPDATED_SUCCESS')
+				);
 			} else {
 				// Add mode: create new member
 				await this.roomMemberService.createRoomMember(this.roomId, options);
-				this.notificationService.showSnackbar('Member added successfully');
+				this.notificationService.showSnackbar(
+					this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_ADDED_SUCCESS')
+				);
 			}
 
 			// Invalidate the room detail so its members tab reloads with the new/updated member
@@ -98,7 +107,9 @@ export class AddRoomMemberComponent implements OnInit {
 				{ tab: 'members' }
 			);
 		} catch (error) {
-			const msg = this.isEditMode() ? 'Failed to update member' : 'Failed to add member';
+			const msg = this.isEditMode()
+				? this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_UPDATE_FAILED')
+				: this.translateService.translate('ROOM_MEMBERS.ERRORS.MEMBER_ADD_FAILED');
 			this.notificationService.showSnackbar(msg);
 			console.error(error);
 		} finally {

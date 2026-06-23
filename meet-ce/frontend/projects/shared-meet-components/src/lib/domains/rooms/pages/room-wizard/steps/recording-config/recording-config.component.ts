@@ -14,6 +14,8 @@ import {
 	SelectableCardOption,
 	SelectionCardEvent
 } from '../../../../../../shared/components/selectable-card/selectable-card.component';
+import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
+import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
 import { RecordingEnabledOption, RecordingFormGroup, RecordingFormValue } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
@@ -29,7 +31,8 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		MatSelectModule,
 		MatFormFieldModule,
 		MatSlideToggleModule,
-		SelectableCardComponent
+		SelectableCardComponent,
+		TranslatePipe
 	],
 	templateUrl: './recording-config.component.html',
 	styleUrl: './recording-config.component.scss',
@@ -37,22 +40,22 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 })
 export class RecordingConfigComponent {
 	private wizardService = inject(RoomWizardStateService);
+	private readonly translateService = inject(TranslateService);
 
 	recordingForm: RecordingFormGroup;
 
 	recordingOptions: SelectableCardOption[] = [
 		{
 			id: 'enabled',
-			title: 'Allow Recording',
-			description:
-				'Enable recording features for this room, allowing authorized participants to start and manage recordings.',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_CONFIG.ALLOW_RECORDING_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_CONFIG.ALLOW_RECORDING_DESC'),
 			icon: 'video_library'
 			// recommended: true
 		},
 		{
 			id: 'disabled',
-			title: 'No Recording',
-			description: 'Room will not be recorded. Participants can join without recording concerns.',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_CONFIG.NO_RECORDING_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_CONFIG.NO_RECORDING_DESC'),
 			icon: 'videocam_off'
 		}
 	];

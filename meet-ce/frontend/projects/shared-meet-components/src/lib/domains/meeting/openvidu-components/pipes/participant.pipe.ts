@@ -1,7 +1,7 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
 import { ParticipantModel, ParticipantStream } from '../models/participant.model';
 import { Track } from '../services/livekit-adapter';
-import { TranslateService } from '../services/translate/translate.service';
+import { MeetingTranslateService } from '../services/translate/meeting-translate.service';
 
 /**
  * The **RemoteParticipantTracksPipe** flattens all remote participants into a single array of
@@ -22,7 +22,7 @@ export class RemoteParticipantTracksPipe implements PipeTransform {
  */
 @Pipe({ name: 'tracksPublishedTypes', standalone: true })
 export class TrackPublishedTypesPipe implements PipeTransform {
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 
 	transform(participant: ParticipantModel): string {
 		const trackTypes = participant?.getTracksPublishedTypes() ?? [];

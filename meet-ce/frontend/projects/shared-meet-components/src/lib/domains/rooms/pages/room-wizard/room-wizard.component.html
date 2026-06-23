@@ -4,8 +4,8 @@
 			<p class="subtitle">
 				{{
 					editMode()
-						? 'Edit your room settings'
-						: 'Create and configure your video room in a few simple steps'
+						? ('ROOMS.WIZARD.SUBTITLE_EDIT' | translate)
+						: ('ROOMS.WIZARD.SUBTITLE_CREATE' | translate)
 				}}
 			</p>
 		</header>
@@ -32,13 +32,13 @@
 								<div class="loading-header">
 									<div class="loading-title">
 										<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
-										<h2>{{ editMode() ? 'Updating Room' : 'Creating Room' }}</h2>
+										<h2>{{ editMode() ? ('ROOMS.WIZARD.UPDATING_ROOM' | translate) : ('ROOMS.WIZARD.CREATING_ROOM' | translate) }}</h2>
 									</div>
 									<p class="loading-subtitle">
 										{{
 											editMode()
-												? 'Please wait while we update your room settings...'
-												: 'Please wait while we set up your video room...'
+												? ('ROOMS.WIZARD.UPDATING_SUBTITLE' | translate)
+												: ('ROOMS.WIZARD.CREATING_SUBTITLE' | translate)
 										}}
 									</p>
 								</div>
@@ -88,7 +88,7 @@
 					<nav class="wizard-navigation">
 						<button mat-stroked-button class="cancel-button" (click)="onCancel()">
 							<mat-icon>close</mat-icon>
-							<span>Cancel</span>
+							<span>{{ 'ROOMS.WIZARD.CANCEL' | translate }}</span>
 						</button>
 					</nav>
 				</div>
@@ -97,7 +97,7 @@
 					class="wizard-nav"
 					[config]="navigationConfig()"
 					[currentStepId]="currentStepIndex()"
-					[backButtonText]="'Back to simple mode'"
+					[backButtonText]="'ROOMS.WIZARD.BACK_TO_SIMPLE_MODE' | translate"
 					(previous)="onPrevious()"
 					(next)="onNext()"
 					(cancel)="onCancel()"

@@ -15,7 +15,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetUserDTO } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { UserService } from '../../services/user.service';
 import { UsersUiUtils } from '../../utils/ui';
 
@@ -35,7 +37,8 @@ export interface ResetPasswordDialogData {
 		MatProgressSpinnerModule,
 		MatDialogTitle,
 		MatDialogContent,
-		MatDialogActions
+		MatDialogActions,
+		TranslatePipe
 	],
 	templateUrl: './reset-password-dialog.component.html',
 	styleUrl: './reset-password-dialog.component.scss',
@@ -48,6 +51,7 @@ export class ResetPasswordDialogComponent {
 	private userService = inject(UserService);
 	private clipboard = inject(Clipboard);
 	private notificationService = inject(NotificationService);
+	private readonly translateService = inject(TranslateService);
 
 	password = signal('');
 	showPassword = signal(false);
@@ -66,7 +70,7 @@ export class ResetPasswordDialogComponent {
 		this.clipboard.copy(password);
 		this.copied.set(true);
 		setTimeout(() => this.copied.set(false), 2000);
-		this.notificationService.showSnackbar('Password copied to clipboard');
+		this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_COPIED'));
 	}
 
 	async confirm() {
@@ -77,11 +81,13 @@ export class ResetPasswordDialogComponent {
 
 		try {
 			await this.userService.resetUserPassword(this.data.user.userId, password);
-			this.notificationService.showSnackbar(`Password reset successfully for ${this.data.user.name}`);
+			this.notificationService.showSnackbar(
+				`${this.translateService.translate('USERS.ERRORS.PASSWORD_RESET_SUCCESS')} ${this.data.user.name}`
+			);
 			this.dialogRef.close(true);
 		} catch (error) {
 			console.error('Error while resetting password', error);
-			this.notificationService.showSnackbar('Failed to reset password');
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_RESET_FAILED'));
 		} finally {
 			clearTimeout(delayLoader);
 			this.isSaving.set(false);

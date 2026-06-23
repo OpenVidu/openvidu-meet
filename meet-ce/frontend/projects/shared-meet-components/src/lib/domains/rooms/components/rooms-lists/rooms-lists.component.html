@@ -2,29 +2,18 @@
 	<!-- Empty State -->
 	<div class="no-rooms-state">
 		<div class="empty-content">
-			<h3>No rooms available</h3>
+			<h3>{{ 'ROOMS.LIST.EMPTY_TITLE' | translate }}</h3>
 			@if (currentUserRole() === MeetUserRole.ROOM_MEMBER) {
-				<p>
-					You are not a member of any room yet. Contact a room manager or administrator to gain access to a
-					room.
-				</p>
+				<p>{{ 'ROOMS.LIST.EMPTY_MEMBER' | translate }}</p>
 			} @else {
 				@if (currentUserRole() === MeetUserRole.ADMIN) {
-					<p>
-						There are no rooms in OpenVidu Meet yet. Create the first room to start hosting meetings and
-						manage your video conferences.
-					</p>
+					<p>{{ 'ROOMS.LIST.EMPTY_ADMIN' | translate }}</p>
 				} @else {
-					<p>
-						You don't have access to any room yet. Create your first room to start hosting meetings and
-						manage your video conferences.
-					</p>
+					<p>{{ 'ROOMS.LIST.EMPTY_MANAGER' | translate }}</p>
 				}
 				<div class="getting-started-actions">
 					<button mat-button (click)="createRoom()" class="create-room-btn primary-button">
-						<mat-icon>add</mat-icon>
-						Create First Room
-					</button>
+						<mat-icon>add</mat-icon>{{ 'ROOMS.LIST.CREATE_FIRST_ROOM' | translate }}</button>
 				</div>
 			}
 		</div>
@@ -36,11 +25,11 @@
 		<div class="toolbar-left" id="toolbar-left">
 			@if (showSearchBox()) {
 				<mat-form-field class="search-field" appearance="outline" id="search-field">
-					<mat-label>Search rooms</mat-label>
+					<mat-label>{{ 'ROOMS.LIST.SEARCH_ROOMS' | translate }}</mat-label>
 					<input
 						matInput
 						[formControl]="controls.nameFilter"
-						placeholder="Search by room name"
+						[placeholder]="'ROOMS.LIST.SEARCH_BY_ROOM_NAME' | translate"
 						id="search-input"
 						(keydown.enter)="triggerSearch()"
 					/>
@@ -53,7 +42,7 @@
 							type="button"
 							class="ov-search-modifier clear-name-btn"
 							(click)="clearNameFilter()"
-							matTooltip="Clear search"
+							[matTooltip]="'ROOMS.LIST.CLEAR_SEARCH' | translate"
 							matTooltipPosition="above"
 							id="clear-name-btn"
 						>
@@ -69,11 +58,11 @@
 						class="ov-search-modifier case-toggle"
 						[class.active]="filterState().nameCaseInsensitive"
 						(click)="toggleCaseInsensitive()"
-						matTooltip="Match case insensitive"
+						[matTooltip]="'ROOMS.LIST.MATCH_CASE_INSENSITIVE' | translate"
 						matTooltipPosition="above"
 						id="case-insensitive-btn"
 					>
-						<span class="modifier-label">Aa</span>
+						<span class="modifier-label">{{ 'ROOMS.LIST.CASE_INSENSITIVE_LABEL' | translate }}</span>
 					</button>
 
 					<!-- Match-mode selector -->
@@ -84,7 +73,7 @@
 						class="ov-search-modifier match-mode-trigger"
 						[class.active]="filterState().nameMatchMode !== TextMatchMode.PREFIX"
 						[matMenuTriggerFor]="matchModeMenu"
-						[matTooltip]="'Match mode: ' + currentMatchMode().label"
+						[matTooltip]="('ROOMS.LIST.MATCH_MODE_PREFIX' | translate) + (currentMatchMode().label | translate)"
 						matTooltipPosition="above"
 						id="match-mode-btn"
 					>
@@ -97,7 +86,7 @@
 						class="search-btn"
 						(click)="triggerSearch()"
 						[disabled]="loading() || !controls.nameFilter.value"
-						matTooltip="Search"
+						[matTooltip]="'ROOMS.COMMON.SEARCH' | translate"
 						id="search-btn"
 					>
 						<mat-icon>search</mat-icon>
@@ -114,7 +103,7 @@
 							id="match-mode-option-{{ option.value }}"
 						>
 							<mat-icon>{{ option.icon }}</mat-icon>
-							<span>{{ option.label }}</span>
+							<span>{{ option.label | translate }}</span>
 						</button>
 					}
 				</mat-menu>
@@ -126,7 +115,7 @@
 					class="ov-filters-trigger"
 					[class.has-filters]="activeFilterChips().length > 0"
 					(click)="toggleFilterPanel()"
-					matTooltip="Filter rooms"
+					[matTooltip]="'ROOMS.LIST.FILTER_ROOMS' | translate"
 					id="filters-btn"
 				>
 					<mat-icon>tune</mat-icon>
@@ -138,7 +127,7 @@
 				class="refresh-btn"
 				(click)="refreshRooms()"
 				[disabled]="loading()"
-				matTooltip="Refresh rooms"
+				[matTooltip]="'ROOMS.COMMON.REFRESH' | translate"
 				id="refresh-btn"
 			>
 				<mat-icon>refresh</mat-icon>
@@ -154,7 +143,7 @@
 						color="warn"
 						(click)="bulkDeleteSelected()"
 						[disabled]="loading()"
-						matTooltip="Delete selected rooms"
+						[matTooltip]="'ROOMS.LIST.DELETE_SELECTED_ROOMS' | translate"
 						id="bulk-delete-btn"
 					>
 						<mat-icon [matBadge]="selectedRooms().size" matBadgePosition="below after"> delete </mat-icon>
@@ -167,9 +156,7 @@
 		<div class="toolbar-right" id="toolbar-right">
 			@if (currentUserRole() !== MeetUserRole.ROOM_MEMBER) {
 				<button mat-button (click)="createRoom()" class="create-room-btn primary-button" id="create-room-btn">
-					<mat-icon>add</mat-icon>
-					Create Room
-				</button>
+					<mat-icon>add</mat-icon>{{ 'ROOMS.LIST.CREATE_ROOM' | translate }}</button>
 			}
 		</div>
 	</mat-toolbar>
@@ -178,15 +165,13 @@
 	@if (showFilters() && showFilterPanel()) {
 		<div class="ov-filter-panel" id="filters-panel">
 			<div class="filter-group">
-				<h4>Filter by status</h4>
-				<p class="filter-description">Narrows the result to rooms with the selected status.</p>
+				<h4>{{ 'ROOMS.LIST.FILTER_BY_STATUS' | translate }}</h4>
+				<p class="filter-description">{{ 'ROOMS.LIST.FILTER_BY_STATUS_DESC' | translate }}</p>
 				<mat-form-field appearance="outline" id="status-filter-field">
-					<mat-label>Status</mat-label>
+					<mat-label>{{ 'ROOMS.LIST.STATUS' | translate }}</mat-label>
 					<mat-select [formControl]="controls.statusFilter" id="status-filter-select">
 						@for (option of statusOptions; track option.value) {
-							<mat-option [value]="option.value" id="status-option-{{ option.value }}">{{
-								option.label
-							}}</mat-option>
+							<mat-option [value]="option.value" id="status-option-{{ option.value }}">{{ option.label | translate }}</mat-option>
 						}
 					</mat-select>
 				</mat-form-field>
@@ -194,17 +179,14 @@
 
 			@if (currentUserRole() === MeetUserRole.ADMIN) {
 				<div class="filter-group">
-					<h4>Include rooms by user or access</h4>
-					<p class="filter-description">
-						Leave empty to include all rooms. Set any field below to limit the result to the union of the
-						selected criteria.
-					</p>
+					<h4>{{ 'ROOMS.LIST.INCLUDE_BY_USER_OR_ACCESS' | translate }}</h4>
+					<p class="filter-description">{{ 'ROOMS.LIST.INCLUDE_BY_USER_OR_ACCESS_DESC' | translate }}</p>
 					<mat-form-field class="ov-search-field" appearance="outline" id="owner-filter-field">
-						<mat-label>Owner (user ID)</mat-label>
+						<mat-label>{{ 'ROOMS.LIST.OWNER_USER_ID' | translate }}</mat-label>
 						<input
 							matInput
 							[formControl]="controls.ownerFilter"
-							placeholder="Owner's user ID"
+							[placeholder]="'ROOMS.LIST.OWNERS_USER_ID' | translate"
 							id="owner-filter-input"
 							(keydown.enter)="triggerSearch()"
 						/>
@@ -215,7 +197,7 @@
 								type="button"
 								class="ov-search-modifier clear-name-btn"
 								(click)="controls.ownerFilter.setValue('')"
-								matTooltip="Clear"
+								[matTooltip]="'ROOMS.COMMON.CLEAR' | translate"
 								matTooltipPosition="above"
 								id="owner-clear-btn"
 							>
@@ -228,18 +210,18 @@
 							class="search-btn"
 							(click)="triggerSearch()"
 							[disabled]="!controls.ownerFilter.value"
-							matTooltip="Search"
+							[matTooltip]="'ROOMS.COMMON.SEARCH' | translate"
 							id="owner-search-btn"
 						>
 							<mat-icon>search</mat-icon>
 						</button>
 					</mat-form-field>
 					<mat-form-field class="ov-search-field" appearance="outline" id="member-filter-field">
-						<mat-label>Member (user ID)</mat-label>
+						<mat-label>{{ 'ROOMS.LIST.MEMBER_USER_ID' | translate }}</mat-label>
 						<input
 							matInput
 							[formControl]="controls.memberFilter"
-							placeholder="Member's user ID"
+							[placeholder]="'ROOMS.LIST.MEMBERS_USER_ID' | translate"
 							id="member-filter-input"
 							(keydown.enter)="triggerSearch()"
 						/>
@@ -250,7 +232,7 @@
 								type="button"
 								class="ov-search-modifier clear-name-btn"
 								(click)="controls.memberFilter.setValue('')"
-								matTooltip="Clear"
+								[matTooltip]="'ROOMS.COMMON.CLEAR' | translate"
 								matTooltipPosition="above"
 								id="member-clear-btn"
 							>
@@ -263,37 +245,26 @@
 							class="search-btn"
 							(click)="triggerSearch()"
 							[disabled]="!controls.memberFilter.value"
-							matTooltip="Search"
+							[matTooltip]="'ROOMS.COMMON.SEARCH' | translate"
 							id="member-search-btn"
 						>
 							<mat-icon>search</mat-icon>
 						</button>
 					</mat-form-field>
 					<div class="filter-checkboxes">
-						<mat-checkbox [formControl]="controls.showUserAccessRooms" id="user-access-checkbox">
-							Open to all users
-						</mat-checkbox>
+						<mat-checkbox [formControl]="controls.showUserAccessRooms" id="user-access-checkbox">{{ 'ROOMS.LIST.OPEN_TO_ALL_USERS' | translate }}</mat-checkbox>
 					</div>
 				</div>
 			} @else {
 				<div class="filter-group">
-					<h4>Include rooms</h4>
-					<p class="filter-description">
-						Leave empty to show all accessible rooms. Select any to limit the result to the union of the
-						selected groups.
-					</p>
+					<h4>{{ 'ROOMS.LIST.INCLUDE_ROOMS' | translate }}</h4>
+					<p class="filter-description">{{ 'ROOMS.LIST.INCLUDE_ROOMS_DESC' | translate }}</p>
 					<div class="filter-checkboxes">
 						@if (currentUserRole() === MeetUserRole.ROOM_MANAGER) {
-							<mat-checkbox [formControl]="controls.showOwnedRooms" id="owned-rooms-checkbox">
-								Created by me
-							</mat-checkbox>
+							<mat-checkbox [formControl]="controls.showOwnedRooms" id="owned-rooms-checkbox">{{ 'ROOMS.LIST.CREATED_BY_ME' | translate }}</mat-checkbox>
 						}
-						<mat-checkbox [formControl]="controls.showMemberRooms" id="member-rooms-checkbox">
-							I'm a member of
-						</mat-checkbox>
-						<mat-checkbox [formControl]="controls.showUserAccessRooms" id="user-access-checkbox">
-							Open to all users
-						</mat-checkbox>
+						<mat-checkbox [formControl]="controls.showMemberRooms" id="member-rooms-checkbox">{{ 'ROOMS.LIST.IM_A_MEMBER_OF' | translate }}</mat-checkbox>
+						<mat-checkbox [formControl]="controls.showUserAccessRooms" id="user-access-checkbox">{{ 'ROOMS.LIST.OPEN_TO_ALL_USERS' | translate }}</mat-checkbox>
 					</div>
 				</div>
 			}
@@ -303,7 +274,7 @@
 	<!-- Active Filter Chips -->
 	@if (activeFilterChips().length > 0) {
 		<div class="ov-active-filters" id="active-filters">
-			<span class="active-filters-label">Filters:</span>
+			<span class="active-filters-label">{{ 'ROOMS.LIST.FILTERS_LABEL' | translate }}</span>
 			@for (chip of activeFilterChips(); track chip.key) {
 				<button class="filter-chip" (click)="removeFilter(chip.key)" id="filter-chip-{{ chip.key }}">
 					<span>{{ chip.label }}</span>
@@ -312,7 +283,7 @@
 			}
 			<button class="clear-all-chip" (click)="clearFilters()" id="clear-all-chip">
 				<mat-icon>filter_alt_off</mat-icon>
-				<span>Clear all</span>
+				<span>{{ 'ROOMS.COMMON.CLEAR_ALL' | translate }}</span>
 			</button>
 		</div>
 	}
@@ -321,19 +292,17 @@
 	@if (loading()) {
 		<div class="loading-container">
 			<mat-spinner diameter="40" />
-			<span>Loading rooms...</span>
+			<span>{{ 'ROOMS.LIST.LOADING_ROOMS' | translate }}</span>
 		</div>
 	} @else if (rooms().length === 0 && showEmptyFilterMessage()) {
 		<!-- No rooms match the current filters -->
 		<div class="no-rooms-state">
 			<div class="empty-content">
-				<h3>No rooms match your search criteria and/or filters</h3>
-				<p>Try adjusting or clearing your filters to see more rooms.</p>
+				<h3>{{ 'ROOMS.LIST.NO_MATCH_TITLE' | translate }}</h3>
+				<p>{{ 'ROOMS.LIST.NO_MATCH_DESC' | translate }}</p>
 				<div class="getting-started-actions">
 					<button mat-button (click)="clearFilters()" class="clear-filters-btn primary-button">
-						<mat-icon>filter_alt_off</mat-icon>
-						Clear Filters
-					</button>
+						<mat-icon>filter_alt_off</mat-icon>{{ 'ROOMS.LIST.CLEAR_FILTERS' | translate }}</button>
 				</div>
 			</div>
 		</div>
@@ -388,9 +357,7 @@
 						mat-sort-header="roomName"
 						class="room-header"
 						id="room-name-header"
-					>
-						Room Name
-					</th>
+					>{{ 'ROOMS.LIST.COLUMN_ROOM_NAME' | translate }}</th>
 					<td mat-cell *matCellDef="let room" class="room-cell" id="room-name-cell-{{ room.roomId }}">
 						<div class="room-info" id="room-info-{{ room.roomId }}">
 							<span class="room-name" id="room-name-{{ room.roomId }}">{{ room.roomName }}</span>
@@ -401,7 +368,7 @@
 
 				<!-- Owner Column -->
 				<ng-container matColumnDef="owner">
-					<th mat-header-cell *matHeaderCellDef class="owner-header" id="owner-header">Owner</th>
+					<th mat-header-cell *matHeaderCellDef class="owner-header" id="owner-header">{{ 'ROOMS.LIST.COLUMN_OWNER' | translate }}</th>
 					<td mat-cell *matCellDef="let room" class="owner-cell" id="owner-cell-{{ room.roomId }}">
 						<div class="owner-info" id="owner-info-{{ room.roomId }}">
 							<div class="owner-avatar" id="owner-avatar-{{ room.roomId }}">
@@ -411,7 +378,7 @@
 								<a
 									class="owner-name-link"
 									[routerLink]="['/users', room.owner]"
-									matTooltip="View user profile"
+									[matTooltip]="'ROOMS.COMMON.VIEW_USER_PROFILE' | translate"
 									id="owner-profile-link-{{ room.roomId }}"
 									(click)="$event.stopPropagation()"
 								>
@@ -421,7 +388,7 @@
 								<span class="owner-name" id="owner-name-{{ room.roomId }}">{{ room.owner }}</span>
 							}
 							@if (room.owner === currentUserId()) {
-								<span class="you-badge" id="you-badge-{{ room.roomId }}">You</span>
+								<span class="you-badge" id="you-badge-{{ room.roomId }}">{{ 'ROOMS.COMMON.YOU' | translate }}</span>
 							}
 						</div>
 					</td>
@@ -429,13 +396,13 @@
 
 				<!-- Status Column -->
 				<ng-container matColumnDef="status">
-					<th mat-header-cell *matHeaderCellDef id="status-header">Status</th>
+					<th mat-header-cell *matHeaderCellDef id="status-header">{{ 'ROOMS.LIST.COLUMN_STATUS' | translate }}</th>
 					<td mat-cell *matCellDef="let room" id="status-cell-{{ room.roomId }}">
 						<div class="status-container" id="status-container-{{ room.roomId }}">
 							<div
 								class="status-badge"
 								[style.color]="RoomUiUtils.getStatusColor(room)"
-								[matTooltip]="RoomUiUtils.getStatusTooltip(room)"
+								[matTooltip]="RoomUiUtils.getStatusTooltip(room) | translate"
 								id="status-badge-{{ room.roomId }}"
 							>
 								<mat-icon
@@ -446,7 +413,7 @@
 									{{ RoomUiUtils.getStatusIcon(room) }}
 								</mat-icon>
 								<span class="status-label" id="status-label-{{ room.roomId }}">{{
-									RoomUiUtils.getStatusLabel(room)
+									RoomUiUtils.getStatusLabel(room) | translate
 								}}</span>
 							</div>
 
@@ -455,7 +422,7 @@
 								<mat-icon
 									class="meeting-end-info-icon"
 									[ngClass]="RoomUiUtils.getMeetingEndActionClass(room)"
-									[matTooltip]="RoomUiUtils.getMeetingEndActionTooltip(room)"
+									[matTooltip]="RoomUiUtils.getMeetingEndActionTooltip(room) | translate"
 									id="meeting-end-info-icon-{{ room.roomId }}"
 								>
 									info_outline
@@ -467,9 +434,7 @@
 
 				<!-- Creation Date Column -->
 				<ng-container matColumnDef="creationDate">
-					<th mat-header-cell *matHeaderCellDef mat-sort-header="creationDate" id="creation-date-header">
-						Created
-					</th>
+					<th mat-header-cell *matHeaderCellDef mat-sort-header="creationDate" id="creation-date-header">{{ 'ROOMS.LIST.COLUMN_CREATED' | translate }}</th>
 					<td mat-cell *matCellDef="let room" id="creation-date-cell-{{ room.roomId }}">
 						@if (room.creationDate) {
 							<div class="date-info" id="date-info-{{ room.roomId }}">
@@ -481,23 +446,21 @@
 								}}</span>
 							</div>
 						} @else {
-							<span class="no-data" id="no-creation-date-{{ room.roomId }}">-</span>
+							<span class="no-data" id="no-creation-date-{{ room.roomId }}">{{ 'ROOMS.LIST.NO_DATA' | translate }}</span>
 						}
 					</td>
 				</ng-container>
 
 				<!-- Auto Deletion Column -->
 				<ng-container matColumnDef="autoDeletionDate">
-					<th mat-header-cell *matHeaderCellDef mat-sort-header="autoDeletionDate" id="auto-deletion-header">
-						Auto Deletion
-					</th>
+					<th mat-header-cell *matHeaderCellDef mat-sort-header="autoDeletionDate" id="auto-deletion-header">{{ 'ROOMS.LIST.COLUMN_AUTO_DELETION' | translate }}</th>
 					<td mat-cell *matCellDef="let room" id="auto-deletion-cell-{{ room.roomId }}">
 						<div class="auto-deletion-content" id="auto-deletion-content-{{ room.roomId }}">
 							<div class="auto-deletion-info" id="auto-deletion-info-{{ room.roomId }}">
 								<div
 									class="deletion-badge"
 									[ngClass]="RoomUiUtils.getAutoDeletionClass(room)"
-									[matTooltip]="RoomUiUtils.getAutoDeletionTooltip(room)"
+									[matTooltip]="RoomUiUtils.getAutoDeletionTooltip(room) | translate"
 									id="deletion-badge-{{ room.roomId }}"
 								>
 									<mat-icon
@@ -506,7 +469,7 @@
 										>{{ RoomUiUtils.getAutoDeletionIcon(room) }}</mat-icon
 									>
 									<span class="deletion-text" id="deletion-text-{{ room.roomId }}">{{
-										RoomUiUtils.getAutoDeletionStatus(room)
+										RoomUiUtils.getAutoDeletionStatus(room) | translate
 									}}</span>
 								</div>
 
@@ -531,11 +494,11 @@
 
 				<!-- Actions Column -->
 				<ng-container matColumnDef="actions">
-					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">Actions</th>
+					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">{{ 'ROOMS.LIST.COLUMN_ACTIONS' | translate }}</th>
 					<td mat-cell *matCellDef="let room" class="actions-cell" id="actions-cell-{{ room.roomId }}">
 						<div class="action-buttons" id="action-buttons-{{ room.roomId }}">
 							<!-- Access Room Button (always visible) -->
-							<span [matTooltip]="RoomUiUtils.getAccessRoomTooltip(room)">
+							<span [matTooltip]="RoomUiUtils.getAccessRoomTooltip(room) | translate">
 								<button
 									mat-icon-button
 									(click)="$event.stopPropagation(); accessRoom(room)"
@@ -549,7 +512,7 @@
 
 							@if (RoomUiUtils.canManageRoom(room, currentUserId(), currentUserRole())) {
 								<!-- Edit Button -->
-								<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room)">
+								<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room) | translate">
 									<button
 										mat-icon-button
 										(click)="$event.stopPropagation(); editRoom(room)"
@@ -564,7 +527,7 @@
 								<button
 									mat-icon-button
 									[matMenuTriggerFor]="actionsMenu"
-									matTooltip="More actions"
+									[matTooltip]="'ROOMS.COMMON.MORE_ACTIONS' | translate"
 									(click)="$event.stopPropagation()"
 									[disabled]="loading()"
 									id="more-actions-btn-{{ room.roomId }}"
@@ -573,7 +536,7 @@
 								</button>
 
 								<mat-menu #actionsMenu="matMenu" id="actions-menu-{{ room.roomId }}">
-									<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room)">
+									<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room) | translate">
 										<button
 											mat-menu-item
 											(click)="$event.stopPropagation(); shareLink(room)"
@@ -581,7 +544,7 @@
 											id="share-link-btn-{{ room.roomId }}"
 										>
 											<mat-icon>share</mat-icon>
-											<span>Share link</span>
+											<span>{{ 'ROOMS.COMMON.SHARE_LINK' | translate }}</span>
 										</button>
 									</span>
 
@@ -594,7 +557,7 @@
 										id="toggle-room-status-btn-{{ room.roomId }}"
 									>
 										<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room) }}</mat-icon>
-										<span>{{ RoomUiUtils.getRoomToggleLabel(room) }}</span>
+										<span>{{ RoomUiUtils.getRoomToggleLabel(room) | translate }}</span>
 									</button>
 									<button
 										mat-menu-item
@@ -603,13 +566,13 @@
 										id="delete-room-btn-{{ room.roomId }}"
 									>
 										<mat-icon>delete</mat-icon>
-										<span>Delete room</span>
+										<span>{{ 'ROOMS.COMMON.DELETE_ROOM' | translate }}</span>
 									</button>
 								</mat-menu>
 							} @else {
 								<!-- Share Link Button (non-managers, only if link is available) -->
 								@if (RoomUiUtils.hasAccessLinks(room)) {
-									<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room)">
+									<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room) | translate">
 										<button
 											mat-icon-button
 											(click)="$event.stopPropagation(); shareLink(room)"
@@ -647,7 +610,7 @@
 					id="load-more-btn"
 				>
 					<mat-icon>expand_more</mat-icon>
-					<span>Load more rooms</span>
+					<span>{{ 'ROOMS.COMMON.LOAD_MORE_ROOMS' | translate }}</span>
 				</button>
 			</div>
 		}

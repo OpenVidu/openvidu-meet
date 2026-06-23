@@ -5,9 +5,9 @@
 			<div class="loading-header">
 				<div class="loading-title">
 					<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
-					<h1>Loading Room Details</h1>
+					<h1>{{ 'ROOMS.DETAIL.LOADING_TITLE' | translate }}</h1>
 				</div>
-				<p class="loading-subtitle">Please wait while we fetch the room information...</p>
+				<p class="loading-subtitle">{{ 'ROOMS.DETAIL.LOADING_SUBTITLE' | translate }}</p>
 			</div>
 
 			<div class="loading-spinner-container">
@@ -35,18 +35,18 @@
 
 					<!-- Status Badge -->
 					<div class="status-badge" [style.color]="RoomUiUtils.getStatusColor(room()!)">
-						<span class="status-main" [matTooltip]="RoomUiUtils.getStatusTooltip(room()!)">
+						<span class="status-main" [matTooltip]="RoomUiUtils.getStatusTooltip(room()!) | translate">
 							<mat-icon class="status-icon" [style.color]="RoomUiUtils.getStatusColor(room()!)">
 								{{ RoomUiUtils.getStatusIcon(room()!) }}
 							</mat-icon>
-							<span class="status-text">{{ RoomUiUtils.getStatusLabel(room()!) }}</span>
+							<span class="status-text">{{ RoomUiUtils.getStatusLabel(room()!) | translate }}</span>
 						</span>
 
 						@if (RoomUiUtils.hasMeetingEndAction(room()!)) {
 							<mat-icon
 								class="meeting-end-info-icon"
 								[class]="RoomUiUtils.getMeetingEndActionClass(room()!)"
-								[matTooltip]="RoomUiUtils.getMeetingEndActionTooltip(room()!)"
+								[matTooltip]="RoomUiUtils.getMeetingEndActionTooltip(room()!) | translate"
 							>
 								info_outline
 							</mat-icon>
@@ -56,7 +56,7 @@
 
 				<!-- Action Buttons -->
 				<div class="actions">
-					<span [matTooltip]="RoomUiUtils.getAccessRoomTooltip(room()!)">
+					<span [matTooltip]="RoomUiUtils.getAccessRoomTooltip(room()!) | translate">
 						<button
 							mat-flat-button
 							color="primary"
@@ -65,12 +65,12 @@
 							[disabled]="!RoomUiUtils.canAccessRoom(room()!)"
 						>
 							<mat-icon>open_in_new</mat-icon>
-							<span>Access Room</span>
+							<span>{{ 'ROOMS.DETAIL.ACCESS_ROOM' | translate }}</span>
 						</button>
 					</span>
 
 					@if (RoomUiUtils.hasAccessLinks(room()!)) {
-						<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room()!)">
+						<span [matTooltip]="RoomUiUtils.getShareAccessLinksTooltip(room()!) | translate">
 							<button
 								mat-stroked-button
 								class="action-btn"
@@ -78,13 +78,13 @@
 								[disabled]="!RoomUiUtils.canShareAccessLinks(room()!)"
 							>
 								<mat-icon>share</mat-icon>
-								<span>Share Link</span>
+								<span>{{ 'ROOMS.DETAIL.SHARE_LINK' | translate }}</span>
 							</button>
 						</span>
 					}
 
 					@if (canManageRoom()) {
-						<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room()!)">
+						<span [matTooltip]="RoomUiUtils.getEditRoomTooltip(room()!) | translate">
 							<button
 								mat-icon-button
 								class="icon-action-btn"
@@ -100,7 +100,7 @@
 							class="icon-action-btn"
 							[class]="RoomUiUtils.getRoomToggleClass(room()!)"
 							(click)="toggleRoomStatus()"
-							[matTooltip]="RoomUiUtils.getRoomToggleTooltip(room()!)"
+							[matTooltip]="RoomUiUtils.getRoomToggleTooltip(room()!) | translate"
 						>
 							<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room()!) }}</mat-icon>
 						</button>
@@ -109,7 +109,7 @@
 							mat-icon-button
 							class="icon-action-btn delete-btn"
 							(click)="deleteRoom()"
-							matTooltip="Delete room"
+							[matTooltip]="'ROOMS.COMMON.DELETE_ROOM' | translate"
 						>
 							<mat-icon>delete</mat-icon>
 						</button>
@@ -126,13 +126,13 @@
 					<div class="info-grid">
 						<!-- Room ID -->
 						<div class="info-item">
-							<p class="info-label">Room ID</p>
+							<p class="info-label">{{ 'ROOMS.DETAIL.INFO_ROOM_ID' | translate }}</p>
 							<p class="info-value monospace">{{ roomId() }}</p>
 						</div>
 
 						<!-- Owner -->
 						<div class="info-item">
-							<p class="info-label">Owner</p>
+							<p class="info-label">{{ 'ROOMS.DETAIL.INFO_OWNER' | translate }}</p>
 							<div class="owner-info">
 								<div class="owner-avatar">
 									<span>{{ RoomUiUtils.getOwnerInitials(room()!) }}</span>
@@ -141,7 +141,7 @@
 									<a
 										class="owner-name-link"
 										[routerLink]="['/users', room()!.owner]"
-										matTooltip="View user profile"
+										[matTooltip]="'ROOMS.COMMON.VIEW_USER_PROFILE' | translate"
 									>
 										{{ room()!.owner }}
 									</a>
@@ -149,14 +149,14 @@
 									<p class="info-value">{{ room()!.owner }}</p>
 								}
 								@if (room()!.owner === currentUserId()) {
-									<span class="you-badge">You</span>
+									<span class="you-badge">{{ 'ROOMS.COMMON.YOU' | translate }}</span>
 								}
 							</div>
 						</div>
 
 						<!-- Creation Date -->
 						<div class="info-item">
-							<p class="info-label">Creation Date</p>
+							<p class="info-label">{{ 'ROOMS.DETAIL.INFO_CREATION_DATE' | translate }}</p>
 							<div class="date-info">
 								<span class="date">{{ room()!.creationDate | date: 'mediumDate' }}</span>
 								<span class="time">{{ room()!.creationDate | date: 'shortTime' }}</span>
@@ -165,17 +165,17 @@
 
 						<!-- Auto-Deletion Status -->
 						<div class="info-item">
-							<p class="info-label">Auto-Deletion</p>
+							<p class="info-label">{{ 'ROOMS.DETAIL.INFO_AUTO_DELETION' | translate }}</p>
 							<div class="auto-deletion-info">
 								<div
 									class="deletion-badge"
 									[class]="RoomUiUtils.getAutoDeletionClass(room()!)"
-									[matTooltip]="RoomUiUtils.getAutoDeletionTooltip(room()!)"
+									[matTooltip]="RoomUiUtils.getAutoDeletionTooltip(room()!) | translate"
 								>
 									<mat-icon class="deletion-icon material-symbols-outlined">{{
 										RoomUiUtils.getAutoDeletionIcon(room()!)
 									}}</mat-icon>
-									<span class="deletion-text">{{ RoomUiUtils.getAutoDeletionStatus(room()!) }}</span>
+									<span class="deletion-text">{{ RoomUiUtils.getAutoDeletionStatus(room()!) | translate }}</span>
 								</div>
 
 								@if (RoomUiUtils.hasAutoDeletion(room()!)) {
@@ -207,7 +207,7 @@
 					<mat-tab>
 						<ng-template mat-tab-label>
 							<mat-icon class="tab-icon ov-recording-icon">video_library</mat-icon>
-							<span>Recordings</span>
+							<span>{{ 'ROOMS.DETAIL.TAB_RECORDINGS' | translate }}</span>
 							<span class="tab-count">{{ recordings().length }}</span>
 						</ng-template>
 
@@ -233,8 +233,8 @@
 							} @else {
 								<div class="no-permission-state">
 									<mat-icon>lock</mat-icon>
-									<h3>No access to recordings</h3>
-									<p>You don't have permission to view recordings for this room.</p>
+									<h3>{{ 'ROOMS.DETAIL.NO_RECORDINGS_ACCESS_TITLE' | translate }}</h3>
+									<p>{{ 'ROOMS.DETAIL.NO_RECORDINGS_ACCESS_DESC' | translate }}</p>
 								</div>
 							}
 						</div>
@@ -245,7 +245,7 @@
 						<mat-tab>
 							<ng-template mat-tab-label>
 								<mat-icon class="tab-icon">people</mat-icon>
-								<span>Room Members</span>
+								<span>{{ 'ROOMS.DETAIL.TAB_ROOM_MEMBERS' | translate }}</span>
 								<span class="tab-count">{{ roomMembers().length }}</span>
 							</ng-template>
 

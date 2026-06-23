@@ -12,7 +12,8 @@ import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/sl
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetAppearanceConfig, MeetRoomTheme, MeetRoomThemeMode } from '@openvidu-meet/typings';
 import { ColorField, ThemeColors } from '../../../../shared/models';
-import { GlobalConfigService, NotificationService } from '../../../../shared/services';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { GlobalConfigService, NotificationService, TranslateService } from '../../../../shared/services';
 import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from '../../../meeting/openvidu-components';
 
 @Component({
@@ -28,7 +29,8 @@ import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from 
 		MatTooltipModule,
 		MatProgressSpinnerModule,
 		MatDividerModule,
-		ReactiveFormsModule
+		ReactiveFormsModule,
+		TranslatePipe
 	],
 	templateUrl: './config.component.html',
 	styleUrl: './config.component.scss',
@@ -37,6 +39,7 @@ import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from 
 export class ConfigComponent implements OnInit {
 	protected configService = inject(GlobalConfigService);
 	protected notificationService = inject(NotificationService);
+	private readonly translateService = inject(TranslateService);
 
 	isLoading = signal(true);
 	hasFormChanges = signal(false);
@@ -58,31 +61,32 @@ export class ConfigComponent implements OnInit {
 	baseThemeOptions: MeetRoomThemeMode[] = [MeetRoomThemeMode.LIGHT, MeetRoomThemeMode.DARK];
 
 	// Color picker configuration
+	// `label`/`description` hold translation keys; the template pipes them through `translate`.
 	colorFields: Array<{ key: ColorField; label: string; description: string }> = [
 		{
 			key: 'backgroundColor',
-			label: 'Meeting background',
-			description: 'Sets the background color of your meeting screen'
+			label: 'CONFIG.COLORS.BACKGROUND_LABEL',
+			description: 'CONFIG.COLORS.BACKGROUND_DESC'
 		},
 		{
 			key: 'primaryColor',
-			label: 'Main controls',
-			description: 'Colors for the main control buttons (mic, camera, etc.)'
+			label: 'CONFIG.COLORS.PRIMARY_LABEL',
+			description: 'CONFIG.COLORS.PRIMARY_DESC'
 		},
 		{
 			key: 'secondaryColor',
-			label: 'Secondary elements',
-			description: 'Colors for logos, icons, borders and subtle details'
+			label: 'CONFIG.COLORS.SECONDARY_LABEL',
+			description: 'CONFIG.COLORS.SECONDARY_DESC'
 		},
 		{
 			key: 'accentColor',
-			label: 'Highlights & accents',
-			description: 'Colors for active states and highlighted items'
+			label: 'CONFIG.COLORS.ACCENT_LABEL',
+			description: 'CONFIG.COLORS.ACCENT_DESC'
 		},
 		{
 			key: 'surfaceColor',
-			label: 'Panels & dialogs',
-			description: 'Background color for side panels and dialog boxes'
+			label: 'CONFIG.COLORS.SURFACE_LABEL',
+			description: 'CONFIG.COLORS.SURFACE_DESC'
 		}
 	];
 
@@ -125,7 +129,7 @@ export class ConfigComponent implements OnInit {
 			await this.loadAppearanceConfig();
 		} catch (error) {
 			console.error('Error during component initialization:', error);
-			this.notificationService.showSnackbar('Failed to load visual settings');
+			this.notificationService.showSnackbar(this.translateService.translate('CONFIG.ERRORS.LOAD_FAILED'));
 		} finally {
 			this.isLoading.set(false);
 		}
@@ -313,7 +317,7 @@ export class ConfigComponent implements OnInit {
 
 	async onSaveAppearanceConfig(): Promise<void> {
 		if (this.appearanceForm.invalid) {
-			this.notificationService.showSnackbar('Please fix the form errors before saving');
+			this.notificationService.showSnackbar(this.translateService.translate('CONFIG.ERRORS.FIX_FORM'));
 			return;
 		}
 
@@ -325,11 +329,11 @@ export class ConfigComponent implements OnInit {
 			};
 
 			await this.configService.saveRoomsAppearanceConfig(appearanceConfig);
-			this.notificationService.showSnackbar('Visual settings saved successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('CONFIG.ERRORS.SAVED'));
 			this.storeInitialValues();
 		} catch (error) {
 			console.error('Error saving appearance config:', error);
-			this.notificationService.showSnackbar('Failed to save visual settings');
+			this.notificationService.showSnackbar(this.translateService.translate('CONFIG.ERRORS.SAVE_FAILED'));
 		}
 	}
 

@@ -25,7 +25,7 @@ import { DeviceService } from '../../services/device/device.service';
 import { LocalTrack, Track } from '../../services/livekit-adapter';
 import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
-import { TranslateService } from '../../services/translate/translate.service';
+import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
@@ -107,7 +107,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly virtualBackgroundService = inject(VirtualBackgroundService);
-	private readonly translateService = inject(TranslateService);
+	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
 	private log: ILogger = inject(LoggerService).get('PreJoinComponent');
 	private shouldRemoveTracksWhenComponentIsDestroyed: boolean = true;

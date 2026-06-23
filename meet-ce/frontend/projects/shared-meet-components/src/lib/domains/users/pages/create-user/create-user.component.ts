@@ -10,8 +10,10 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetUserRole } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { UserService } from '../../services/user.service';
 import { UsersUiUtils } from '../../utils/ui';
 
@@ -26,7 +28,8 @@ import { UsersUiUtils } from '../../utils/ui';
 		MatFormFieldModule,
 		MatSelectModule,
 		MatTooltipModule,
-		MatProgressSpinnerModule
+		MatProgressSpinnerModule,
+		TranslatePipe
 	],
 	templateUrl: './create-user.component.html',
 	styleUrl: './create-user.component.scss',
@@ -36,6 +39,7 @@ export class CreateUserComponent {
 	private userService = inject(UserService);
 	private navigationService = inject(NavigationService);
 	private notificationService = inject(NotificationService);
+	private readonly translateService = inject(TranslateService);
 	private clipboard = inject(Clipboard);
 
 	isSaving = signal(false);
@@ -71,7 +75,7 @@ export class CreateUserComponent {
 		this.clipboard.copy(password);
 		this.copied.set(true);
 		setTimeout(() => this.copied.set(false), 2000);
-		this.notificationService.showSnackbar('Password copied to clipboard');
+		this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_COPIED'));
 	}
 
 	async onSubmit() {
@@ -85,11 +89,11 @@ export class CreateUserComponent {
 
 		try {
 			await this.userService.createUser({ userId: userId!, name: name!, role: role!, password: password! });
-			this.notificationService.showSnackbar('User created successfully');
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_CREATED_SUCCESS'));
 			await this.navigationService.navigateToAndInvalidate('/users', 'users');
 		} catch (error: any) {
 			console.error('Error creating user:', error);
-			this.notificationService.showSnackbar('Failed to create user');
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_CREATE_FAILED'));
 		} finally {
 			clearTimeout(delayLoader);
 			this.isSaving.set(false);
@@ -107,16 +111,16 @@ export class CreateUserComponent {
 		}
 
 		if (control.errors['required']) {
-			return 'This field is required';
+			return this.translateService.translate('USERS.ERRORS.FIELD_REQUIRED');
 		}
 		if (control.errors['minlength']) {
-			return `Minimum ${control.errors['minlength'].requiredLength} characters required`;
+			return `${this.translateService.translate('USERS.ERRORS.MIN_LENGTH')} ${control.errors['minlength'].requiredLength} ${this.translateService.translate('USERS.ERRORS.MIN_LENGTH_SUFFIX')}`;
 		}
 		if (control.errors['pattern']) {
-			return 'Only lowercase letters, numbers and underscores allowed';
+			return this.translateService.translate('USERS.ERRORS.PATTERN');
 		}
 		if (control.errors['maxlength']) {
-			return `Maximum ${control.errors['maxlength'].requiredLength} characters allowed`;
+			return `${this.translateService.translate('USERS.ERRORS.MAX_LENGTH')} ${control.errors['maxlength'].requiredLength} ${this.translateService.translate('USERS.ERRORS.MAX_LENGTH_SUFFIX')}`;
 		}
 
 		return null;

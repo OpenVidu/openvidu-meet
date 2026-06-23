@@ -64,7 +64,7 @@ export const recordingsConsoleRoutes: DomainRouteConfig[] = [
 			loadComponent: () => import('../pages/recordings/recordings.component').then((m) => m.RecordingsComponent)
 		},
 		navMetadata: {
-			label: 'Recordings',
+			label: 'NAV.RECORDINGS',
 			route: 'recordings',
 			icon: 'video_library',
 			iconClass: 'ov-recording-icon',

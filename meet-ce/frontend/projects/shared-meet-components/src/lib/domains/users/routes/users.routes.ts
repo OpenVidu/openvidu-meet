@@ -18,7 +18,7 @@ export const usersConsoleRoutes: DomainRouteConfig[] = [
 			canActivate: [checkRoleGuard([MeetUserRole.ADMIN])]
 		},
 		navMetadata: {
-			label: 'Users',
+			label: 'NAV.USERS',
 			route: 'users',
 			icon: 'group',
 			iconClass: 'ov-users material-symbols-outlined',

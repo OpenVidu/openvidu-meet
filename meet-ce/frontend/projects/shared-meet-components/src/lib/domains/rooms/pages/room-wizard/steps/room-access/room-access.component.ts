@@ -14,6 +14,7 @@ import { MemberFormDialogComponent } from '../../../../../room-members/component
 import { MemberFormDialogData } from '../../../../../room-members/models/member-form.model';
 import { PERMISSION_GROUPS } from '../../../../../room-members/models/permissions.model';
 import { RoomMemberUiUtils } from '../../../../../room-members/utils/ui';
+import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import {
 	RoomAccessFormGroup,
 	RoomAccessFormValue,
@@ -30,7 +31,8 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		MatIconModule,
 		MatSlideToggleModule,
 		MatExpansionModule,
-		MatTooltipModule
+		MatTooltipModule,
+		TranslatePipe
 	],
 	templateUrl: './room-access.component.html',
 	styleUrl: './room-access.component.scss',

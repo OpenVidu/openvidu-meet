@@ -5,19 +5,19 @@
 		</div>
 
 		<div class="disconnect-message">
-			<h1 id="disconnect-title" class="disconnect-title">{{ disconnectedTitle() }}</h1>
+			<h1 id="disconnect-title" class="disconnect-title">{{ disconnectedTitleKey() | translate }}</h1>
 			<p class="disconnect-subtitle">
-				{{ disconnectReason() }}
+				{{ disconnectReasonKey() | translate }}
 			</p>
 		</div>
 
 		<div class="disconnect-footer">
-			<p class="footer-text">Thank you for using OpenVidu Meet</p>
+			<p class="footer-text">{{ 'END_MEETING.FOOTER' | translate }}</p>
 			@if (showBackButton()) {
 				<div class="quick-actions fade-in-delayed-more">
 					<button id="back-btn" mat-button class="quick-action-button" (click)="goBack()">
 						<mat-icon>arrow_back</mat-icon>
-						<span>{{ backButtonText() }}</span>
+						<span>{{ backButtonTextKey() | translate }}</span>
 					</button>
 				</div>
 			}

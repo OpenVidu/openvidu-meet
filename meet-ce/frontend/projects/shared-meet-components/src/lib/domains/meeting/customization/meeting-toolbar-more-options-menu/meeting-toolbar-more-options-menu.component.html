@@ -4,9 +4,9 @@
 		mat-menu-item
 		id="grid-layout-settings-btn"
 		(click)="onOpenSettings()"
-		[matTooltip]="isMobileView() ? '' : 'Configure grid layout'"
+		[matTooltip]="isMobileView() ? '' : ('MORE_OPTIONS.LAYOUT_TOOLTIP' | translate)"
 	>
 		<mat-icon class="material-symbols-outlined">browser</mat-icon>
-		<span>Adjust Layout</span>
+		<span>{{ 'MORE_OPTIONS.ADJUST_LAYOUT' | translate }}</span>
 	</button>
 }

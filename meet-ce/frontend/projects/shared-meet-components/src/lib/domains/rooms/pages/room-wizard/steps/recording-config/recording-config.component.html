@@ -3,8 +3,8 @@
 	<header class="step-header">
 		<mat-icon class="ov-recording-icon step-icon">video_library</mat-icon>
 		<div class="step-title-group">
-			<h3 class="step-title">Recording Configuration</h3>
-			<p class="step-description">Choose whether to enable recording capabilities for this room</p>
+			<h3 class="step-title">{{ 'ROOMS.WIZARD.RECORDING_CONFIG.TITLE' | translate }}</h3>
+			<p class="step-description">{{ 'ROOMS.WIZARD.RECORDING_CONFIG.DESCRIPTION' | translate }}</p>
 		</div>
 	</header>
 
@@ -17,10 +17,9 @@
 					<div class="warning-card">
 						<mat-icon class="warning-icon">warning</mat-icon>
 						<div class="warning-content">
-							<p class="warning-title">Restrictions</p>
+							<p class="warning-title">{{ 'ROOMS.WIZARD.RECORDING_CONFIG.RESTRICTIONS' | translate }}</p>
 							<p class="warning-text">
-								Recording is <b>unavailable</b> while end-to-end encryption is enabled. If you
-								allow recording, encryption will be automatically disabled for this room.
+								{{ 'ROOMS.WIZARD.RECORDING_CONFIG.E2EE_WARNING_PREFIX' | translate }}<b>{{ 'ROOMS.WIZARD.RECORDING_CONFIG.E2EE_WARNING_BOLD' | translate }}</b>{{ 'ROOMS.WIZARD.RECORDING_CONFIG.E2EE_WARNING_SUFFIX' | translate }}
 							</p>
 						</div>
 					</div>
@@ -47,10 +46,10 @@
 					<div class="permission-info">
 						<mat-icon class="permission-icon anonymous-icon">no_accounts</mat-icon>
 						<div class="permission-text">
-							<span class="permission-label">Anonymous Recording Access</span>
-							<span class="permission-description"
-								>Allow anyone with the link to access individual recordings without logging in</span
-							>
+							<span class="permission-label">{{ 'ROOMS.WIZARD.RECORDING_CONFIG.ANONYMOUS_ACCESS_LABEL' | translate }}</span>
+							<span class="permission-description">{{
+								'ROOMS.WIZARD.RECORDING_CONFIG.ANONYMOUS_ACCESS_DESC' | translate
+							}}</span>
 						</div>
 					</div>
 					<mat-slide-toggle

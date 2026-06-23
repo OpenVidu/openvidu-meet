@@ -7,6 +7,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetRoomOptions } from '@openvidu-meet/typings';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { RoomDetailsFormGroup, RoomDetailsFormValue } from '../../models/wizard-forms.model';
 import { WizardStepId } from '../../models/wizard.model';
 import { RoomWizardStateService } from '../../services';
@@ -19,7 +20,8 @@ import { RoomWizardStateService } from '../../services';
 		MatIconModule,
 		MatInputModule,
 		MatFormFieldModule,
-		MatTooltipModule
+		MatTooltipModule,
+		TranslatePipe
 	],
 	templateUrl: './room-basic-creation.component.html',
 	styleUrl: './room-basic-creation.component.scss',

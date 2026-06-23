@@ -4,14 +4,14 @@
 		<div class="quick-actions fade-in-delayed-more">
 			<button mat-button class="quick-action-button" (click)="goBackToRoom()">
 				<mat-icon>arrow_back</mat-icon>
-				<span>Back to Room</span>
+				<span>{{ 'RECORDINGS.ROOM_RECORDINGS.BACK_TO_ROOM' | translate }}</span>
 			</button>
 		</div>
 		<div class="recordings-header">
 			<mat-icon class="ov-recording-icon room-icon">video_library</mat-icon>
 			<div class="room-info">
 				<h1 class="room-title">
-					Recordings for room
+					{{ 'RECORDINGS.ROOM_RECORDINGS.RECORDINGS_FOR_ROOM' | translate }}
 					<span class="room-name">
 						{{ roomName() }}
 					</span>
@@ -25,8 +25,8 @@
 		<div class="recordings-loading-container fade-in">
 			<div class="loading-card">
 				<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
-				<h2 class="loading-title">Loading Recordings</h2>
-				<p class="loading-subtitle">Please wait while we fetch your recordings...</p>
+				<h2 class="loading-title">{{ 'RECORDINGS.ROOM_RECORDINGS.LOADING_TITLE' | translate }}</h2>
+				<p class="loading-subtitle">{{ 'RECORDINGS.ROOM_RECORDINGS.LOADING_SUBTITLE' | translate }}</p>
 				<div class="loading-spinner-container">
 					<mat-spinner diameter="48" />
 				</div>

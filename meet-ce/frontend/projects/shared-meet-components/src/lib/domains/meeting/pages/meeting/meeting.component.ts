@@ -17,6 +17,7 @@ import {
 	ACCESS_TOKEN_QUERY_PARAM,
 	REFRESH_TOKEN_QUERY_PARAM
 } from '../../../../shared/guards/store-tokens-from-query-params.guard';
+import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
@@ -57,6 +58,7 @@ export class MeetingComponent implements OnInit {
 	protected soundService = inject(SoundService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly tokenStorageService = inject(TokenStorageService);
+	private readonly translateService = inject(TranslateService);
 
 	// Template reference for custom participant panel item
 	protected participantItem = contentChild.required(MeetingParticipantItemComponent);
@@ -125,10 +127,10 @@ export class MeetingComponent implements OnInit {
 			console.error('Error initializing lobby state:', error);
 			this.lobbyState.set('error');
 			this.notificationService.showDialog({
-				title: 'Error',
-				message: 'An error occurred while initializing the meeting lobby. Please try again later.',
+				title: this.translateService.translate('MEETING_PAGE.INIT_ERROR_TITLE'),
+				message: this.translateService.translate('MEETING_PAGE.INIT_ERROR_MESSAGE'),
 				showCancelButton: false,
-				confirmText: 'OK'
+				confirmText: this.translateService.translate('MEETING_PAGE.INIT_ERROR_CONFIRM')
 			});
 		}
 	}

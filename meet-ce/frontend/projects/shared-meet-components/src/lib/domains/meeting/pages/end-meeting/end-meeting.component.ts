@@ -7,11 +7,12 @@ import { LeftEventReason } from '@openvidu-meet/typings';
 import { AssetsService } from '../../../../shared/services/assets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
+import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { AuthService } from '../../../auth/services/auth.service';
 
 @Component({
 	selector: 'ov-end-meeting',
-	imports: [MatCardModule, MatButtonModule, MatIconModule],
+	imports: [MatCardModule, MatButtonModule, MatIconModule, TranslatePipe],
 	templateUrl: './end-meeting.component.html',
 	styleUrl: './end-meeting.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush
@@ -33,11 +34,13 @@ export class EndMeetingComponent implements OnInit {
 	 */
 	readonly reason = input<string | undefined>(undefined);
 
-	disconnectedTitle = signal('You Left the Meeting');
-	disconnectReason = signal('You have successfully left the meeting');
+	// Hold translation KEYS (not resolved text) and translate reactively in the template, so the
+	// screen follows the active language even though non-English locales load asynchronously.
+	disconnectedTitleKey = signal('END_MEETING.LEFT_TITLE');
+	disconnectReasonKey = signal('END_MEETING.LEFT_MESSAGE');
 
 	showBackButton = signal(true);
-	backButtonText = signal('Back');
+	backButtonTextKey = signal('END_MEETING.BACK');
 
 	ngOnInit() {
 		this.setDisconnectReason();
@@ -52,48 +55,48 @@ export class EndMeetingComponent implements OnInit {
 	private setDisconnectReason() {
 		const reason = this.reason() ?? this.route.snapshot.queryParams['reason'];
 		if (reason) {
-			const { title, message } = this.mapReasonToTitleAndMessage(reason);
-			this.disconnectedTitle.set(title);
-			this.disconnectReason.set(message);
+			const { titleKey, messageKey } = this.mapReasonToTitleAndMessage(reason);
+			this.disconnectedTitleKey.set(titleKey);
+			this.disconnectReasonKey.set(messageKey);
 		}
 	}
 
 	/**
-	 * Maps technical disconnect reasons to user-friendly titles and messages
+	 * Maps technical disconnect reasons to user-friendly title/message translation keys
 	 */
-	private mapReasonToTitleAndMessage(reason: string): { title: string; message: string } {
-		const reasonMap: { [key in LeftEventReason]: { title: string; message: string } } = {
+	private mapReasonToTitleAndMessage(reason: string): { titleKey: string; messageKey: string } {
+		const reasonMap: { [key in LeftEventReason]: { titleKey: string; messageKey: string } } = {
 			[LeftEventReason.VOLUNTARY_LEAVE]: {
-				title: 'You Left the Meeting',
-				message: 'You have successfully left the meeting'
+				titleKey: 'END_MEETING.LEFT_TITLE',
+				messageKey: 'END_MEETING.LEFT_MESSAGE'
 			},
 			[LeftEventReason.PARTICIPANT_KICKED]: {
-				title: 'Kicked from Meeting',
-				message: 'You were kicked from the meeting by a moderator'
+				titleKey: 'END_MEETING.KICKED_TITLE',
+				messageKey: 'END_MEETING.KICKED_MESSAGE'
 			},
 			[LeftEventReason.MEETING_ENDED]: {
-				title: 'Meeting Ended',
-				message: 'The meeting was ended by a moderator'
+				titleKey: 'END_MEETING.ENDED_TITLE',
+				messageKey: 'END_MEETING.ENDED_MESSAGE'
 			},
 			[LeftEventReason.MEETING_ENDED_BY_SELF]: {
-				title: 'Meeting Ended',
-				message: 'You have successfully ended the meeting'
+				titleKey: 'END_MEETING.ENDED_TITLE',
+				messageKey: 'END_MEETING.ENDED_BY_SELF_MESSAGE'
 			},
 			[LeftEventReason.NETWORK_DISCONNECT]: {
-				title: 'Disconnected from Meeting',
-				message: 'Connection lost due to network connectivity issues'
+				titleKey: 'END_MEETING.DISCONNECTED_TITLE',
+				messageKey: 'END_MEETING.NETWORK_MESSAGE'
 			},
 			[LeftEventReason.SERVER_SHUTDOWN]: {
-				title: 'Disconnected from Meeting',
-				message: 'Connection lost due to server shutdown'
+				titleKey: 'END_MEETING.DISCONNECTED_TITLE',
+				messageKey: 'END_MEETING.SERVER_SHUTDOWN_MESSAGE'
 			},
 			[LeftEventReason.DUPLICATE_IDENTITY]: {
-				title: 'Disconnected from Meeting',
-				message: 'This session was closed because you joined the same meeting from another tab or device'
+				titleKey: 'END_MEETING.DISCONNECTED_TITLE',
+				messageKey: 'END_MEETING.DUPLICATE_MESSAGE'
 			},
 			[LeftEventReason.UNKNOWN]: {
-				title: 'Disconnected from Meeting',
-				message: 'Some unexpected error occurred, please try again later'
+				titleKey: 'END_MEETING.DISCONNECTED_TITLE',
+				messageKey: 'END_MEETING.UNKNOWN_MESSAGE'
 			}
 		};
 
@@ -119,7 +122,9 @@ export class EndMeetingComponent implements OnInit {
 		}
 
 		this.showBackButton.set(true);
-		this.backButtonText.set(isStandaloneMode && !redirection && isAuthenticated ? 'Back to Rooms' : 'Accept');
+		this.backButtonTextKey.set(
+			isStandaloneMode && !redirection && isAuthenticated ? 'END_MEETING.BACK_TO_ROOMS' : 'END_MEETING.ACCEPT'
+		);
 	}
 
 	/**

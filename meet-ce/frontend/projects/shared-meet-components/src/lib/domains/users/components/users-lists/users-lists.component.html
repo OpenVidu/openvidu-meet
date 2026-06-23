@@ -2,13 +2,13 @@
 	<!-- Empty State -->
 	<div class="no-users-state">
 		<div class="empty-content">
-			<h3>No users created yet</h3>
-			<p>No users found. Create your first user to start managing accounts and access control.</p>
+			<h3>{{ 'USERS.LIST.EMPTY_TITLE' | translate }}</h3>
+			<p>{{ 'USERS.LIST.EMPTY_SUBTITLE' | translate }}</p>
 
 			<div class="getting-started-actions">
 				<button mat-button (click)="createUser()" class="create-user-btn primary-button">
 					<mat-icon>person_add</mat-icon>
-					Create Your First User
+					{{ 'USERS.LIST.CREATE_FIRST_USER' | translate }}
 				</button>
 			</div>
 		</div>
@@ -20,11 +20,11 @@
 		<div class="toolbar-left" id="toolbar-left">
 			@if (showSearchBox()) {
 				<mat-form-field class="search-field" appearance="outline" id="search-field">
-					<mat-label>Search users</mat-label>
+					<mat-label>{{ 'USERS.LIST.SEARCH_USERS' | translate }}</mat-label>
 					<input
 						matInput
 						[formControl]="controls.nameFilter"
-						placeholder="Search by name"
+						[placeholder]="'USERS.LIST.SEARCH_BY_NAME' | translate"
 						id="search-input"
 						(keydown.enter)="triggerSearch()"
 					/>
@@ -37,7 +37,7 @@
 							type="button"
 							class="ov-search-modifier clear-name-btn"
 							(click)="clearNameFilter()"
-							matTooltip="Clear search"
+							[matTooltip]="'USERS.COMMON.CLEAR_SEARCH' | translate"
 							matTooltipPosition="above"
 							id="clear-name-btn"
 						>
@@ -53,11 +53,11 @@
 						class="ov-search-modifier case-toggle"
 						[class.active]="filterState().nameCaseInsensitive"
 						(click)="toggleCaseInsensitive()"
-						matTooltip="Match case insensitive"
+						[matTooltip]="'USERS.COMMON.MATCH_CASE_INSENSITIVE' | translate"
 						matTooltipPosition="above"
 						id="case-insensitive-btn"
 					>
-						<span class="modifier-label">Aa</span>
+						<span class="modifier-label">{{ 'USERS.COMMON.CASE_INSENSITIVE_LABEL' | translate }}</span>
 					</button>
 
 					<!-- Match-mode selector -->
@@ -68,7 +68,7 @@
 						class="ov-search-modifier match-mode-trigger"
 						[class.active]="filterState().nameMatchMode !== TextMatchMode.PREFIX"
 						[matMenuTriggerFor]="matchModeMenu"
-						[matTooltip]="'Match mode: ' + currentMatchMode().label"
+						[matTooltip]="('USERS.COMMON.MATCH_MODE_PREFIX' | translate) + currentMatchMode().label"
 						matTooltipPosition="above"
 						id="match-mode-btn"
 					>
@@ -81,7 +81,7 @@
 						class="search-btn"
 						(click)="triggerSearch()"
 						[disabled]="loading() || !controls.nameFilter.value"
-						matTooltip="Search"
+						[matTooltip]="'USERS.COMMON.SEARCH' | translate"
 						id="search-btn"
 					>
 						<mat-icon>search</mat-icon>
@@ -110,7 +110,7 @@
 					class="ov-filters-trigger"
 					[class.has-filters]="activeFilterChips().length > 0"
 					(click)="toggleFilterPanel()"
-					matTooltip="Filter users"
+					[matTooltip]="'USERS.LIST.FILTER_USERS' | translate"
 					id="filters-btn"
 				>
 					<mat-icon>tune</mat-icon>
@@ -122,7 +122,7 @@
 				class="refresh-btn"
 				(click)="refreshUsers()"
 				[disabled]="loading()"
-				matTooltip="Refresh users"
+				[matTooltip]="'USERS.COMMON.REFRESH_USERS' | translate"
 				id="refresh-btn"
 			>
 				<mat-icon>refresh</mat-icon>
@@ -138,7 +138,7 @@
 						color="warn"
 						(click)="bulkDeleteSelected()"
 						[disabled]="loading()"
-						matTooltip="Delete selected users"
+						[matTooltip]="'USERS.LIST.DELETE_SELECTED_USERS' | translate"
 						id="bulk-delete-btn"
 					>
 						<mat-icon [matBadge]="selectedUsers().size" matBadgePosition="below after"> delete </mat-icon>
@@ -151,7 +151,7 @@
 		<div class="toolbar-right" id="toolbar-right">
 			<button mat-button (click)="createUser()" class="create-user-btn primary-button" id="create-user-btn">
 				<mat-icon>person_add</mat-icon>
-				Create User
+				{{ 'USERS.LIST.CREATE_USER' | translate }}
 			</button>
 		</div>
 	</mat-toolbar>
@@ -160,10 +160,10 @@
 	@if (showFilters() && showFilterPanel()) {
 		<div class="ov-filter-panel" id="filters-panel">
 			<div class="filter-group">
-				<h4>Filter by Role</h4>
-				<p class="filter-description">Narrows the result to users with the selected role.</p>
+				<h4>{{ 'USERS.LIST.FILTER_BY_ROLE' | translate }}</h4>
+				<p class="filter-description">{{ 'USERS.LIST.FILTER_BY_ROLE_DESCRIPTION' | translate }}</p>
 				<mat-form-field appearance="outline" id="role-filter-field">
-					<mat-label>Role</mat-label>
+					<mat-label>{{ 'USERS.LIST.ROLE' | translate }}</mat-label>
 					<mat-select [formControl]="controls.roleFilter" id="role-filter-select">
 						@for (option of roleOptions; track option.value) {
 							<mat-option [value]="option.value" id="role-option-{{ option.value }}">{{
@@ -179,7 +179,7 @@
 	<!-- Active Filter Chips -->
 	@if (activeFilterChips().length > 0) {
 		<div class="ov-active-filters" id="active-filters">
-			<span class="active-filters-label">Filters:</span>
+			<span class="active-filters-label">{{ 'USERS.LIST.FILTERS_LABEL' | translate }}</span>
 			@for (chip of activeFilterChips(); track chip.key) {
 				<button class="filter-chip" (click)="removeFilter(chip.key)" id="filter-chip-{{ chip.key }}">
 					<span>{{ chip.label }}</span>
@@ -188,7 +188,7 @@
 			}
 			<button class="clear-all-chip" (click)="clearFilters()" id="clear-all-chip">
 				<mat-icon>filter_alt_off</mat-icon>
-				<span>Clear all</span>
+				<span>{{ 'USERS.COMMON.CLEAR_ALL' | translate }}</span>
 			</button>
 		</div>
 	}
@@ -197,18 +197,18 @@
 	@if (loading()) {
 		<div class="loading-container">
 			<mat-spinner diameter="40" />
-			<span>Loading users...</span>
+			<span>{{ 'USERS.LIST.LOADING_USERS' | translate }}</span>
 		</div>
 	} @else if (users().length === 0 && showEmptyFilterMessage()) {
 		<!-- No users match the current filters -->
 		<div class="no-users-state">
 			<div class="empty-content">
-				<h3>No users match your search criteria and/or filters</h3>
-				<p>Try adjusting or clearing your filters to see more users.</p>
+				<h3>{{ 'USERS.LIST.EMPTY_FILTER_TITLE' | translate }}</h3>
+				<p>{{ 'USERS.LIST.EMPTY_FILTER_SUBTITLE' | translate }}</p>
 				<div class="getting-started-actions">
 					<button mat-button (click)="clearFilters()" class="clear-filters-btn primary-button">
 						<mat-icon>filter_alt_off</mat-icon>
-						Clear Filters
+						{{ 'USERS.LIST.CLEAR_FILTERS' | translate }}
 					</button>
 				</div>
 			</div>
@@ -263,7 +263,7 @@
 						class="user-header"
 						id="user-name-header"
 					>
-						User
+						{{ 'USERS.LIST.COLUMN_USER' | translate }}
 					</th>
 					<td mat-cell *matCellDef="let user" class="user-cell" id="user-name-cell-{{ user.userId }}">
 						<div class="user-info-container" id="user-info-{{ user.userId }}">
@@ -284,14 +284,14 @@
 								@if (UsersUiUtils.isRootAdmin(user, rootAdminId())) {
 									<span
 										class="badge badge-root"
-										matTooltip="Root admin — cannot be modified"
+										[matTooltip]="'USERS.LIST.ROOT_ADMIN_TOOLTIP' | translate"
 										id="badge-root-{{ user.userId }}"
 									>
-										Root
+										{{ 'USERS.COMMON.ROOT' | translate }}
 									</span>
 								}
 								@if (UsersUiUtils.isSelf(user, currentUserId())) {
-									<span class="badge badge-self" id="badge-self-{{ user.userId }}">You</span>
+									<span class="badge badge-self" id="badge-self-{{ user.userId }}">{{ 'USERS.COMMON.YOU' | translate }}</span>
 								}
 							</div>
 						</div>
@@ -300,7 +300,7 @@
 
 				<!-- Role Column -->
 				<ng-container matColumnDef="role">
-					<th mat-header-cell *matHeaderCellDef id="role-header">Role</th>
+					<th mat-header-cell *matHeaderCellDef id="role-header">{{ 'USERS.LIST.COLUMN_ROLE' | translate }}</th>
 					<td mat-cell *matCellDef="let user" id="role-cell-{{ user.userId }}">
 						<span class="role-chip" [ngClass]="'role-' + user.role" id="role-chip-{{ user.userId }}">
 							<mat-icon class="role-chip-icon">{{ UsersUiUtils.getRoleIcon(user.role) }}</mat-icon>
@@ -317,7 +317,7 @@
 						mat-sort-header="registrationDate"
 						id="registration-date-header"
 					>
-						Member Since
+						{{ 'USERS.LIST.COLUMN_MEMBER_SINCE' | translate }}
 					</th>
 					<td mat-cell *matCellDef="let user" id="registration-date-cell-{{ user.userId }}">
 						@if (user.registrationDate) {
@@ -337,7 +337,7 @@
 
 				<!-- Actions Column -->
 				<ng-container matColumnDef="actions">
-					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">Actions</th>
+					<th mat-header-cell *matHeaderCellDef class="actions-header" id="actions-header">{{ 'USERS.LIST.COLUMN_ACTIONS' | translate }}</th>
 					<td mat-cell *matCellDef="let user" class="actions-cell" id="actions-cell-{{ user.userId }}">
 						<div class="action-buttons" id="action-buttons-{{ user.userId }}">
 							<!-- Update Role Button -->
@@ -345,8 +345,8 @@
 								class="action-tooltip-target"
 								[matTooltip]="
 									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
-										? 'Disabled: protected account (root admin or your own account)'
-										: 'Update role'
+										? ('USERS.LIST.PROTECTED_ACCOUNT_TOOLTIP' | translate)
+										: ('USERS.LIST.UPDATE_ROLE' | translate)
 								"
 							>
 								<button
@@ -366,8 +366,8 @@
 								class="action-tooltip-target"
 								[matTooltip]="
 									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
-										? 'Disabled: protected account (root admin or your own account)'
-										: 'Reset password'
+										? ('USERS.LIST.PROTECTED_ACCOUNT_TOOLTIP' | translate)
+										: ('USERS.LIST.RESET_PASSWORD' | translate)
 								"
 							>
 								<button
@@ -387,8 +387,8 @@
 								class="action-tooltip-target"
 								[matTooltip]="
 									UsersUiUtils.isProtectedUser(user, currentUserId(), rootAdminId())
-										? 'Disabled: protected account (root admin or your own account)'
-										: 'Delete user'
+										? ('USERS.LIST.PROTECTED_ACCOUNT_TOOLTIP' | translate)
+										: ('USERS.LIST.DELETE_USER' | translate)
 								"
 							>
 								<button
@@ -431,7 +431,7 @@
 					id="load-more-btn"
 				>
 					<mat-icon>expand_more</mat-icon>
-					<span>Load more users</span>
+					<span>{{ 'USERS.COMMON.LOAD_MORE_USERS' | translate }}</span>
 				</button>
 			</div>
 		}
