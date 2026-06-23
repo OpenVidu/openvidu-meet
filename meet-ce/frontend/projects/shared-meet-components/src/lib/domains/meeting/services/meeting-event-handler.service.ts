@@ -129,7 +129,8 @@ export class MeetingEventHandlerService {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
 
-		this.meetingContext.clearMeetingContext();
+		// Clear meeting context but keep session storage intact
+		this.meetingContext.clearMeetingContext(false);
 
 		await this.navigationService.goToDisconnected({
 			roomId: event.roomName,

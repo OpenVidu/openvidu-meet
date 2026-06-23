@@ -177,12 +177,17 @@ export class MeetingContextService {
 	 * Clears all meeting-scoped state:
 	 * - room member context
 	 * - meeting context
-	 * - meeting-related session storage.
+	 * - meeting-related session storage (optional).
+	 *
+	 * @param clearSessionStorage Whether to also clear meeting data from SessionStorage (default: true)
 	 */
-	clearMeetingContext(): void {
+	clearMeetingContext(clearSessionStorage = true): void {
 		this.roomMemberContextService.clearContext();
 		this.clearContext();
-		this.sessionStorageService.clearMeetingData();
+
+		if (clearSessionStorage) {
+			this.sessionStorageService.clearMeetingData();
+		}
 	}
 
 	/**
