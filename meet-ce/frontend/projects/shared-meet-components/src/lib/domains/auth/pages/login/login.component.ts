@@ -8,6 +8,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterModule } from '@angular/router';
+import { AssetsService } from '../../../../shared/services/assets.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { AuthService } from '../../services/auth.service';
 
@@ -32,6 +33,10 @@ export class LoginComponent implements OnInit {
 	private navigationService = inject(NavigationService);
 	private route = inject(ActivatedRoute);
 	private authService = inject(AuthService);
+	private readonly assets = inject(AssetsService);
+
+	/** OpenVidu Meet brand logo (resolves in SPA & webcomponent modes). */
+	protected readonly logoUrl = this.assets.meetLogo;
 
 	loginForm = new FormGroup({
 		userId: new FormControl('', [Validators.required]),

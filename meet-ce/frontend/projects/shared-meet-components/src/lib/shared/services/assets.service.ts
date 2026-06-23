@@ -29,6 +29,11 @@ export class AssetsService {
 		return this.resolve('assets/images/logo.webp');
 	}
 
+	/** Full OpenVidu Meet brand logo (login page). */
+	get meetLogo(): string {
+		return this.resolve('assets/images/meet_logo.png');
+	}
+
 	/** Recording panel empty-state illustration. */
 	get recordingPlaceholder(): string {
 		return this.resolve('assets/images/recording-placeholder.webp');
