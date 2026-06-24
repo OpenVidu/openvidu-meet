@@ -1,4 +1,4 @@
-import { MeetRoomMemberRole, WebComponentProperty } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRoom, createRoomMember, deleteRooms } from '../helpers/meet-api.helper';
 import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
@@ -42,7 +42,7 @@ test.describe('WebComponent Identified Guest State E2E Tests', () => {
 		// 1. Access via the identified-guest link WITHOUT a participant-name attribute.
 		//    The name field must be pre-filled with the guest's name and disabled.
 		await openWebcomponentWithAttributes(page, {
-			[WebComponentProperty.ROOM_URL]: guestAccessUrl
+			[EmbeddedAttribute.ROOM_URL]: guestAccessUrl
 		});
 
 		const nameInput = wcLocator(page, '#participant-name-input');
@@ -54,7 +54,7 @@ test.describe('WebComponent Identified Guest State E2E Tests', () => {
 		//    config remounts the element (DOM removal → re-add), so the guest state must
 		//    have been cleared on removal.
 		await openWebcomponentWithAttributes(page, {
-			[WebComponentProperty.ROOM_URL]: moderatorAccessUrl
+			[EmbeddedAttribute.ROOM_URL]: moderatorAccessUrl
 		});
 
 		// The name field must no longer hold the guest's name and must be editable.

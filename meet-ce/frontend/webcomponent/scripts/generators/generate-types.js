@@ -97,15 +97,6 @@ function createGlobalTypes() {
     })
     .join('\n\n');
 
-  const props = contract.properties
-    .map((prop) => {
-      return [
-        `  /** ${prop.description} */`,
-        `  ${prop.name}?: ${prop.type};`,
-      ].join('\n');
-    })
-    .join('\n\n');
-
   const methods = contract.methods
     .map((method) => {
       // For rawSignature methods, substitute the generic alias names from the contract
@@ -138,17 +129,16 @@ function createGlobalTypes() {
     ` * Source: contracts/openvidu-meet.contract.js`,
     ' */',
     '',
+    // Public property shape is sourced from the shared typings package instead of
+    // re-declaring it here, so the element interface stays in sync with @openvidu-meet/typings.
+    `import type { EmbeddedPropertyValues } from '@openvidu-meet/typings';`,
+    '',
     eventInterfaces,
     '',
     renderEventPayloadMap(contract),
     '',
-    `/** Public properties accepted by \`${contract.tagName}\`. */`,
-    `export interface ${contract.propsInterfaceName} {`,
-    props,
-    '}',
-    '',
     `/** Public DOM interface for \`<${contract.tagName}>\`. */`,
-    `export interface ${contract.elementInterfaceName} extends HTMLElement, ${contract.propsInterfaceName} {`,
+    `export interface ${contract.elementInterfaceName} extends HTMLElement, EmbeddedPropertyValues {`,
     methods,
     '',
     '  /** Standard DOM listener overloads */',

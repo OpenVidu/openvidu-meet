@@ -1,4 +1,4 @@
-import { LeftEventReason, WebComponentEvent } from '@openvidu-meet/typings';
+import { LeftEventReason, EmbeddedEvent } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
@@ -31,7 +31,7 @@ for (const integration of INTEGRATIONS) {
 			test('should receive joined event when joining as moderator', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
-				const joined = await expectEvent(page, WebComponentEvent.JOINED);
+				const joined = await expectEvent(page, EmbeddedEvent.JOINED);
 				await expect(joined).toContainText('roomId');
 				await expect(joined).toContainText('participantIdentity');
 				await expect(joined).toContainText(roomId);
@@ -40,7 +40,7 @@ for (const integration of INTEGRATIONS) {
 			test('should receive joined event when joining as speaker', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'speaker' });
 
-				const joined = await expectEvent(page, WebComponentEvent.JOINED);
+				const joined = await expectEvent(page, EmbeddedEvent.JOINED);
 				await expect(joined).toContainText('roomId');
 				await expect(joined).toContainText('participantIdentity');
 				await expect(joined).toContainText(roomId);
@@ -48,18 +48,18 @@ for (const integration of INTEGRATIONS) {
 
 			test('should receive only one joined event per join action', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 			});
 		});
 
 		test.describe('LEFT Event', () => {
 			test('should receive left event with voluntary_leave reason when using leave command', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await leaveRoomCommand(page);
 
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(left).toContainText('roomId');
 				await expect(left).toContainText('participantIdentity');
 				await expect(left).toContainText('reason');
@@ -70,11 +70,11 @@ for (const integration of INTEGRATIONS) {
 				page
 			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await leaveMeeting(page, { integration, role: 'moderator' });
 
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(left).toContainText('reason');
 				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
 			});
@@ -83,22 +83,22 @@ for (const integration of INTEGRATIONS) {
 				page
 			}) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await endMeetingCommand(page);
 
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(left).toContainText('reason');
 				await expect(left).toContainText(LeftEventReason.MEETING_ENDED);
 			});
 
 			test('should receive left event when speaker leaves room', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'speaker' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await leaveMeeting(page, { integration });
 
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(left).toContainText('roomId');
 				await expect(left).toContainText('participantIdentity');
 				await expect(left).toContainText('reason');
@@ -108,24 +108,24 @@ for (const integration of INTEGRATIONS) {
 		test.describe('CLOSED Event', () => {
 			test('should receive closed event after leaving as moderator', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await leaveRoomCommand(page);
-				await expectEvent(page, WebComponentEvent.LEFT);
+				await expectEvent(page, EmbeddedEvent.LEFT);
 
 				await meetLocator(page, integration, '#back-btn').click();
-				await expect(eventLocator(page, WebComponentEvent.CLOSED).first()).toBeVisible({ timeout: 5_000 });
+				await expect(eventLocator(page, EmbeddedEvent.CLOSED).first()).toBeVisible({ timeout: 5_000 });
 			});
 
 			test('should receive closed event after ending meeting', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await endMeetingCommand(page);
-				await expectEvent(page, WebComponentEvent.LEFT);
+				await expectEvent(page, EmbeddedEvent.LEFT);
 
 				await meetLocator(page, integration, '#back-btn').click();
-				await expect(eventLocator(page, WebComponentEvent.CLOSED).first()).toBeVisible({ timeout: 5_000 });
+				await expect(eventLocator(page, EmbeddedEvent.CLOSED).first()).toBeVisible({ timeout: 5_000 });
 			});
 		});
 
@@ -133,8 +133,8 @@ for (const integration of INTEGRATIONS) {
 			test('should receive events in correct order: joined -> left', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
-				const joined = eventLocator(page, WebComponentEvent.JOINED);
-				const left = eventLocator(page, WebComponentEvent.LEFT);
+				const joined = eventLocator(page, EmbeddedEvent.JOINED);
+				const left = eventLocator(page, EmbeddedEvent.LEFT);
 				await expect(joined).toHaveCount(1, { timeout: 10_000 });
 				await expect(left).toHaveCount(0);
 
@@ -149,7 +149,7 @@ for (const integration of INTEGRATIONS) {
 			test('should include correct roomId in joined event payload', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
-				const joined = await expectEvent(page, WebComponentEvent.JOINED);
+				const joined = await expectEvent(page, EmbeddedEvent.JOINED);
 				await expect(joined).toContainText(roomId);
 				await expect(joined).toContainText('"roomId"');
 			});
@@ -157,18 +157,18 @@ for (const integration of INTEGRATIONS) {
 			test('should include participantIdentity in joined event payload', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
-				const joined = await expectEvent(page, WebComponentEvent.JOINED);
+				const joined = await expectEvent(page, EmbeddedEvent.JOINED);
 				await expect(joined).toContainText('"participantIdentity"');
 				await expect(joined).toHaveText(/participantIdentity.*:/);
 			});
 
 			test('should include all required fields in left event payload', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await leaveRoomCommand(page);
 
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(left).toContainText('"roomId"');
 				await expect(left).toContainText('"participantIdentity"');
 				await expect(left).toContainText('"reason"');
@@ -177,10 +177,10 @@ for (const integration of INTEGRATIONS) {
 
 			test('should have valid reason in left event payload', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await leaveRoomCommand(page);
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 
 				const eventText = (await left.textContent()) ?? '';
 				const validReasons = Object.values(LeftEventReason);
@@ -194,19 +194,19 @@ for (const integration of INTEGRATIONS) {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 
 				await leaveRoomCommand(page);
-				await expectEvent(page, WebComponentEvent.LEFT);
+				await expectEvent(page, EmbeddedEvent.LEFT);
 			});
 
 			test('should not emit duplicate left events on repeated leave clicks', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				const leaveBtn = page.locator('#leave-room-btn');
 				await leaveBtn.click();
 				await leaveBtn.click().catch(() => {});
 				await leaveBtn.click().catch(() => {});
 
-				await expectEvent(page, WebComponentEvent.LEFT);
+				await expectEvent(page, EmbeddedEvent.LEFT);
 			});
 		});
 	});

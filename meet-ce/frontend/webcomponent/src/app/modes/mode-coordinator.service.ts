@@ -1,9 +1,10 @@
 import { Injectable, inject } from '@angular/core';
+import type { WebComponentPropertyValues } from '@openvidu-meet/typings';
 import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrappers/bootstrapper';
 import { MeetingModeBootstrapper } from './bootstrappers/meeting.bootstrapper';
 import { RoomRecordingsModeBootstrapper } from './bootstrappers/room-recordings.bootstrapper';
 import { SingleRecordingModeBootstrapper } from './bootstrappers/single-recording.bootstrapper';
-import type { Mode, ModeInputs } from './mode';
+import type { Mode } from './mode';
 
 @Injectable({ providedIn: 'root' })
 export class ModeCoordinatorService {
@@ -15,7 +16,7 @@ export class ModeCoordinatorService {
 		['room-recordings', inject(RoomRecordingsModeBootstrapper)]
 	]);
 
-	async run(mode: Mode, inputs: ModeInputs): Promise<ModeBootstrapResult> {
+	async run(mode: Mode, inputs: Required<WebComponentPropertyValues>): Promise<ModeBootstrapResult> {
 		const bootstrapper = this.registry.get(mode);
 
 		if (!bootstrapper) {

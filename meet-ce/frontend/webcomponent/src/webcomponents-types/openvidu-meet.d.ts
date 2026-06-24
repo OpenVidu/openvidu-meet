@@ -3,6 +3,8 @@
  * Source: contracts/openvidu-meet.contract.js
  */
 
+import type { WebComponentPropertyValues } from '@openvidu-meet/typings';
+
 /** Emitted when the local participant successfully joins the room. */
 export interface OpenViduMeetJoinedDetail {
   /** Unique identifier of the room that was joined. */
@@ -52,32 +54,8 @@ export interface OpenViduMeetElementPayloadMap {
 /** Union of all public event names emitted by `<openvidu-meet>`. */
 export type OpenViduMeetElementEventName = keyof OpenViduMeetElementPayloadMap;
 
-/** Public properties accepted by `openvidu-meet`. */
-export interface OpenViduMeetProps {
-  /** The OpenVidu Meet room URL to connect to. Required unless recordingUrl is provided. */
-  roomUrl?: string;
-
-  /** URL of a recording to view. When provided, roomUrl is not required. */
-  recordingUrl?: string;
-
-  /** Display name for the local participant. */
-  participantName?: string;
-
-  /** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
-  e2eeKey?: string;
-
-  /** URL to redirect to after the CLOSED event fires when leaving the meeting. */
-  leaveRedirectUrl?: string;
-
-  /** When true, shows only recordings instead of live meetings. */
-  showOnlyRecordings?: boolean;
-
-  /** Recording identifier to open directly. Redirects the app to /recording/:recordingId. */
-  showRecording?: string;
-}
-
 /** Public DOM interface for `<openvidu-meet>`. */
-export interface OpenViduMeetElement extends HTMLElement, OpenViduMeetProps {
+export interface OpenViduMeetElement extends HTMLElement, WebComponentPropertyValues {
   /** Subscribe to a meeting event with a type-safe payload callback. Returns the element for chaining. */
   on<K extends OpenViduMeetElementEventName>(eventName: K, callback: (detail: OpenViduMeetElementPayloadMap[K]) => void): this;
 

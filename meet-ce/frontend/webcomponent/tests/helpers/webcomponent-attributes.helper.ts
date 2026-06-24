@@ -1,22 +1,22 @@
-import { WebComponentProperty } from '@openvidu-meet/typings';
+import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
 import { ensureFixture } from './testapp.helper';
 import { type Integration } from './webcomponent.helper';
 
 /**
- * Attribute map for `<openvidu-meet>`. Keys must be valid `WebComponentProperty`
+ * Attribute map for `<openvidu-meet>`. Keys must be valid `EmbeddedAttribute`
  * values; values must be serializable as HTML attributes.
  */
-export type WebComponentAttributes = Partial<Record<WebComponentProperty, string | boolean | number>>;
+export type WebComponentAttributes = Partial<Record<EmbeddedAttribute, string | boolean | number>>;
 
-// Map every text-input WebComponentProperty to the testapp's input testId.
-const TEXT_INPUT_TESTIDS: ReadonlyArray<[WebComponentProperty, string]> = [
-	[WebComponentProperty.ROOM_URL, 'input-roomUrl'],
-	[WebComponentProperty.RECORDING_URL, 'input-recordingUrl'],
-	[WebComponentProperty.PARTICIPANT_NAME, 'input-participantName'],
-	[WebComponentProperty.E2EE_KEY, 'input-e2eeKey'],
-	[WebComponentProperty.LEAVE_REDIRECT_URL, 'input-leaveRedirectUrl'],
-	[WebComponentProperty.SHOW_RECORDING, 'input-showRecording']
+// Map every text-input EmbeddedAttribute to the testapp's input testId.
+const TEXT_INPUT_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
+	[EmbeddedAttribute.ROOM_URL, 'input-roomUrl'],
+	[EmbeddedAttribute.RECORDING_URL, 'input-recordingUrl'],
+	[EmbeddedAttribute.PARTICIPANT_NAME, 'input-participantName'],
+	[EmbeddedAttribute.E2EE_KEY, 'input-e2eeKey'],
+	[EmbeddedAttribute.LEAVE_REDIRECT_URL, 'input-leaveRedirectUrl'],
+	[EmbeddedAttribute.SHOW_RECORDING, 'input-showRecording']
 ];
 
 const toBoolean = (value: string | boolean | number | undefined): boolean => {
@@ -54,7 +54,7 @@ export const openWebcomponentWithAttributes = async (
 	}
 
 	const showOnlyRecordingsCheckbox = page.getByTestId('input-showOnlyRecordings');
-	const desired = toBoolean(attributes[WebComponentProperty.SHOW_ONLY_RECORDINGS]);
+	const desired = toBoolean(attributes[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]);
 
 	if ((await showOnlyRecordingsCheckbox.isChecked()) !== desired) {
 		await showOnlyRecordingsCheckbox.click();

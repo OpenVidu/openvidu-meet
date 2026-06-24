@@ -33,25 +33,13 @@ import {
 	type WcEvent,
 	type WebComponentLeftEvent
 } from '@openvidu-meet/shared-components';
-import type {
-	OpenViduMeetClosedDetail,
-	OpenViduMeetErrorDetail,
-	OpenViduMeetJoinedDetail,
-	OpenViduMeetLeftDetail
-} from './api/events';
-import { modeFromAttributes, modeFromRequest, type Mode, type ModeInputs } from './modes/mode';
+import { EmbeddedEvent, type EmbeddedEventPayloads, type WebComponentPropertyValues } from '@openvidu-meet/typings';
+import type { OpenViduMeetErrorDetail } from './api/events';
+import { modeFromAttributes, modeFromRequest, type Mode } from './modes/mode';
 import { ModeCoordinatorService } from './modes/mode-coordinator.service';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
 import { ShadowStylesService } from './shadow-dom/styles.service';
 import { computeServerUrl, lastPathSegment, queryParam } from './utils/url';
-
-export type {
-	OpenViduMeetClosedDetail,
-	OpenViduMeetErrorDetail,
-	OpenViduMeetErrorReason,
-	OpenViduMeetJoinedDetail,
-	OpenViduMeetLeftDetail
-} from './api/events';
 
 /**
  * Root component of the OpenVidu Meet web component. It maps host attributes/properties to a view,
@@ -104,9 +92,9 @@ export class App {
 	readonly showRecording = input('');
 
 	// ── Host outputs (element events) ────────────────────────────────────────
-	readonly joined = output<OpenViduMeetJoinedDetail>();
-	readonly left = output<OpenViduMeetLeftDetail>();
-	readonly closed = output<OpenViduMeetClosedDetail>();
+	readonly joined = output<EmbeddedEventPayloads[EmbeddedEvent.JOINED]>();
+	readonly left = output<EmbeddedEventPayloads[EmbeddedEvent.LEFT]>();
+	readonly closed = output<void>();
 	readonly error = output<OpenViduMeetErrorDetail>();
 
 	// ── Internal state ───────────────────────────────────────────────────────
@@ -122,7 +110,7 @@ export class App {
 	private readonly _leftDetail = signal<WebComponentLeftEvent | null>(null);
 
 	// ── Derived state ────────────────────────────────────────────────────────
-	private readonly inputs = computed<ModeInputs>(() => ({
+	private readonly inputs = computed<Required<WebComponentPropertyValues>>(() => ({
 		roomUrl: this.roomUrl(),
 		recordingUrl: this.recordingUrl(),
 		participantName: this.participantName(),
@@ -132,15 +120,15 @@ export class App {
 		showRecording: this.showRecording()
 	}));
 
-	// The primary view derived from attributes. Only this gets bootstrapped.
-	private readonly bootstrapMode = computed<Mode>(() => modeFromAttributes(this.inputs()));
+	// The primary view derived from attributes.
+	private readonly initialMode = computed<Mode>(() => modeFromAttributes(this.inputs()));
 
 	// What the shell renders: a runtime navigation request overrides the primary view, otherwise the
 	// primary (bootstrap) view is shown.
-	readonly view = computed<Mode>(() => modeFromRequest(this.wcBridge.navigationRequest()) ?? this.bootstrapMode());
+	readonly view = computed<Mode>(() => modeFromRequest(this.wcBridge.navigationRequest()) ?? this.initialMode());
 
 	// Whether the current primary view has been bootstrapped and is safe to render.
-	readonly ready = computed<boolean>(() => this._preparedMode() === this.bootstrapMode());
+	readonly ready = computed<boolean>(() => this._preparedMode() === this.initialMode());
 
 	// Reason passed to `<ov-error>`: the specific access reason when present, otherwise a generic
 	// internal-error reason for config/load failures (whose precise English message still travels to
@@ -188,7 +176,7 @@ export class App {
 
 		// (Re)bootstrap the primary view when it changes and isn't already prepared.
 		effect(() => {
-			const mode = this.bootstrapMode();
+			const mode = this.initialMode();
 
 			// While a navigation request overlays an interrupt view (login, recordings…), leave the
 			// primary view alone. When the request clears this effect re-runs: if the primary view
@@ -271,7 +259,7 @@ export class App {
 				});
 				break;
 			case WebComponentEventType.CLOSED:
-				this.closed.emit({});
+				this.closed.emit();
 				break;
 			case WebComponentEventType.ERROR:
 				// No `/error` route in the WC: surface it in-shell via the shared `<ov-error>` and notify

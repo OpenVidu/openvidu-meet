@@ -1,7 +1,7 @@
 /**
  * All available commands that can be sent to the WebComponent.
  */
-export enum WebComponentCommand {
+export enum EmbeddedCommand {
 	/**
 	 * Initializes the WebComponent with the given configuration.
 	 * This command is sent from the webcomponent to the iframe to intialice the domain.
@@ -26,29 +26,29 @@ export enum WebComponentCommand {
 
 /**
  * Type definitions for command payloads.
- * Each property corresponds to a command in {@link WebComponentCommand}.
+ * Each property corresponds to a command in {@link EmbeddedCommand}.
  * @category Communication
  */
-export interface WebComponentCommandPayloads {
+export interface EmbeddedCommandPayloads {
 	/**
-	 * Payload for the {@link WebComponentCommand.INITIALIZE} command.
+	 * Payload for the {@link EmbeddedCommand.INITIALIZE} command.
 	 * @private
 	 */
-	[WebComponentCommand.INITIALIZE]: {
+	[EmbeddedCommand.INITIALIZE]: {
 		domain: string;
 	};
 	/**
-	 * Payload for the {@link WebComponentCommand.END_MEETING} command.
+	 * Payload for the {@link EmbeddedCommand.END_MEETING} command.
 	 */
-	[WebComponentCommand.END_MEETING]: void;
+	[EmbeddedCommand.END_MEETING]: void;
 	/**
-	 * Payload for the {@link WebComponentCommand.LEAVE_ROOM} command.
+	 * Payload for the {@link EmbeddedCommand.LEAVE_ROOM} command.
 	 */
-	[WebComponentCommand.LEAVE_ROOM]: void;
+	[EmbeddedCommand.LEAVE_ROOM]: void;
 	/**
-	 * Payload for the {@link WebComponentCommand.KICK_PARTICIPANT} command.
+	 * Payload for the {@link EmbeddedCommand.KICK_PARTICIPANT} command.
 	 */
-	[WebComponentCommand.KICK_PARTICIPANT]: {
+	[EmbeddedCommand.KICK_PARTICIPANT]: {
 		participantIdentity: string;
 	};
 }
@@ -59,6 +59,6 @@ export interface WebComponentCommandPayloads {
  * @category Type Helpers
  * @private
  */
-export type WebComponentCommandPayloadFor<T extends WebComponentCommand> = T extends keyof WebComponentCommandPayloads
-	? WebComponentCommandPayloads[T]
+export type EmbeddedCommandPayloadFor<T extends EmbeddedCommand> = T extends keyof EmbeddedCommandPayloads
+	? EmbeddedCommandPayloads[T]
 	: never;

@@ -8,4 +8,4 @@ export * from './webhook.js';
 export * from './database/index.js';
 export * from './request/index.js';
 export * from './response/index.js';
-export * from './webcomponent/index.js';
+export * from './embedded/index.js';

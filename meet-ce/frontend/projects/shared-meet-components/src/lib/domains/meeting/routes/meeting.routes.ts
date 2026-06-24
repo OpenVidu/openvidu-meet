@@ -1,4 +1,4 @@
-import { WebComponentProperty } from '@openvidu-meet/typings';
+import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { removeQueryParamsGuard } from '../../../shared/guards/remove-query-params.guard';
 import { runGuardsSerially } from '../../../shared/guards/run-serially.guard';
 import { DomainRouteConfig } from '../../../shared/models/domain-routes.model';
@@ -17,7 +17,7 @@ export const meetingDomainRoutes: DomainRouteConfig[] = [
 				runGuardsSerially(
 					extractRoomMeetingParamsGuard,
 					validateRoomMeetingAccessGuard,
-					removeQueryParamsGuard(['secret', WebComponentProperty.E2EE_KEY])
+					removeQueryParamsGuard(['secret', EmbeddedAttribute.E2EE_KEY])
 				)
 			]
 		}

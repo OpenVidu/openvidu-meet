@@ -1,24 +1,24 @@
-import { WebComponentCommand, WebComponentCommandPayloadFor } from './commands.js';
-import { WebComponentEvent, WebComponentEventPayloadFor } from './events.js';
+import { EmbeddedCommand, EmbeddedCommandPayloadFor } from './commands.js';
+import { EmbeddedEvent, EmbeddedEventPayloadFor } from './events.js';
 
 /**
  * Represents all possible messages exchanged between the host application and WebComponent.
  * @category Communication
  */
-export type WebComponentMessage =
-	| WebComponentInboundCommandMessage<WebComponentCommand>
-	| WebComponentOutboundEventMessage<WebComponentEvent>;
+export type EmbeddedMessage =
+	| EmbeddedInboundCommandMessage<EmbeddedCommand>
+	| EmbeddedOutboundEventMessage<EmbeddedEvent>;
 
 /**
  * Message sent from the host application to the WebComponent.
  * Contains a command with an optional type-safe payload.
  * @category Communication
  */
-export interface WebComponentInboundCommandMessage<T extends WebComponentCommand = WebComponentCommand> {
+export interface EmbeddedInboundCommandMessage<T extends EmbeddedCommand = EmbeddedCommand> {
 	/** The command to execute in the WebComponent */
 	command: T;
 	/** Optional payload with additional data for the command */
-	payload?: WebComponentCommandPayloadFor<T>;
+	payload?: EmbeddedCommandPayloadFor<T>;
 }
 
 /**
@@ -26,11 +26,11 @@ export interface WebComponentInboundCommandMessage<T extends WebComponentCommand
  * Contains an event type with an optional type-safe payload.
  * @category Communication
  */
-export interface WebComponentOutboundEventMessage<T extends WebComponentEvent = WebComponentEvent> {
+export interface EmbeddedOutboundEventMessage<T extends EmbeddedEvent = EmbeddedEvent> {
 	/** The type of event being emitted */
 	event: T;
 	/** Optional payload with additional data about the event */
-	payload?: WebComponentEventPayloadFor<T>;
+	payload?: EmbeddedEventPayloadFor<T>;
 }
 
 /**
@@ -41,10 +41,10 @@ export interface WebComponentOutboundEventMessage<T extends WebComponentEvent = 
  * @category Utilities
  * @private
  */
-export function createWebComponentCommandMessage<T extends WebComponentCommand>(
+export function createEmbeddedCommandMessage<T extends EmbeddedCommand>(
 	command: T,
-	payload?: WebComponentCommandPayloadFor<T>
-): WebComponentInboundCommandMessage<T> {
+	payload?: EmbeddedCommandPayloadFor<T>
+): EmbeddedInboundCommandMessage<T> {
 	return { command, payload };
 }
 
@@ -56,9 +56,9 @@ export function createWebComponentCommandMessage<T extends WebComponentCommand>(
  * @category Utilities
  * @private
  */
-export function createWebComponentEventMessage<T extends WebComponentEvent>(
+export function createEmbeddedEventMessage<T extends EmbeddedEvent>(
 	event: T,
-	payload?: WebComponentEventPayloadFor<T>
-): WebComponentOutboundEventMessage<T> {
+	payload?: EmbeddedEventPayloadFor<T>
+): EmbeddedOutboundEventMessage<T> {
 	return { event, payload };
 }

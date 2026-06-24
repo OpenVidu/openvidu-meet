@@ -1,4 +1,4 @@
-import { WebComponentProperty } from '@openvidu-meet/typings';
+import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { applyBackgroundEffect, startScreensharing, stopScreensharing } from '../helpers/media-controls.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
@@ -181,7 +181,7 @@ test.describe('Room Features E2E Tests', () => {
 
 				await openWebcomponentWithAttributes(
 					page,
-					{ [WebComponentProperty.ROOM_URL]: accessUrl },
+					{ [EmbeddedAttribute.ROOM_URL]: accessUrl },
 					{ integration }
 				);
 

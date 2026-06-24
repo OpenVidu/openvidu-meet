@@ -1,10 +1,10 @@
 import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import {
-	createWebComponentEventMessage,
-	WebComponentCommand,
-	WebComponentEvent,
-	WebComponentInboundCommandMessage,
-	WebComponentOutboundEventMessage
+	createEmbeddedEventMessage,
+	EmbeddedCommand,
+	EmbeddedEvent,
+	EmbeddedInboundCommandMessage,
+	EmbeddedOutboundEventMessage
 } from '@openvidu-meet/typings';
 import { WcEvent, WebComponentEventType } from '../../../shared/models/webcomponent-bridge.model';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -82,11 +82,11 @@ export class MeetingIframeBridgeService {
 
 		// Announce readiness so the host replies with INITIALIZE (its origin). The
 		// trusted origin is not known yet, so '*' is required for this first message.
-		this.postToParent(createWebComponentEventMessage(WebComponentEvent.READY, {}), '*');
+		this.postToParent(createEmbeddedEventMessage(EmbeddedEvent.READY, {}), '*');
 	}
 
 	private async handleMessage(event: MessageEvent): Promise<void> {
-		const message = event.data as WebComponentInboundCommandMessage | undefined;
+		const message = event.data as EmbeddedInboundCommandMessage | undefined;
 		if (!message || typeof message.command !== 'string') {
 			return;
 		}
@@ -96,7 +96,7 @@ export class MeetingIframeBridgeService {
 		// Handshake: until the host identifies itself with INITIALIZE we accept nothing
 		// else, and we learn which origin to trust from its payload.
 		if (!this.parentDomain()) {
-			if (command === WebComponentCommand.INITIALIZE) {
+			if (command === EmbeddedCommand.INITIALIZE) {
 				const domain = (payload as { domain?: string } | undefined)?.domain;
 				if (!domain) {
 					this.log.e('INITIALIZE received without a domain in the payload');
@@ -133,13 +133,13 @@ export class MeetingIframeBridgeService {
 		}
 
 		switch (command) {
-			case WebComponentCommand.END_MEETING:
+			case EmbeddedCommand.END_MEETING:
 				await this.wcManager.endMeeting();
 				break;
-			case WebComponentCommand.LEAVE_ROOM:
+			case EmbeddedCommand.LEAVE_ROOM:
 				await this.wcManager.leaveRoom();
 				break;
-			case WebComponentCommand.KICK_PARTICIPANT: {
+			case EmbeddedCommand.KICK_PARTICIPANT: {
 				const participantIdentity = (payload as { participantIdentity?: string } | undefined)
 					?.participantIdentity;
 				if (!participantIdentity) {
@@ -162,21 +162,21 @@ export class MeetingIframeBridgeService {
 	}
 
 	/** Maps an internal lifecycle event to its public iframe message, or `null` if it has none. */
-	private toOutboundMessage(event: WcEvent): WebComponentOutboundEventMessage | null {
+	private toOutboundMessage(event: WcEvent): EmbeddedOutboundEventMessage | null {
 		switch (event.type) {
 			case WebComponentEventType.JOINED:
-				return createWebComponentEventMessage(WebComponentEvent.JOINED, {
+				return createEmbeddedEventMessage(EmbeddedEvent.JOINED, {
 					roomId: event.roomId,
 					participantIdentity: event.participantIdentity
 				});
 			case WebComponentEventType.LEFT:
-				return createWebComponentEventMessage(WebComponentEvent.LEFT, {
+				return createEmbeddedEventMessage(EmbeddedEvent.LEFT, {
 					roomId: event.roomId,
 					participantIdentity: event.participantIdentity,
 					reason: event.reason
 				});
 			case WebComponentEventType.CLOSED:
-				return createWebComponentEventMessage(WebComponentEvent.CLOSED);
+				return createEmbeddedEventMessage(EmbeddedEvent.CLOSED);
 			case WebComponentEventType.ERROR:
 				// No public `error` event: the failure surfaces inside the iframe via the
 				// in-app `/error` route, mirroring the v3.7.0 contract.
@@ -184,7 +184,7 @@ export class MeetingIframeBridgeService {
 		}
 	}
 
-	private postToParent(message: WebComponentOutboundEventMessage, targetOrigin: string = this.parentDomain()): void {
+	private postToParent(message: EmbeddedOutboundEventMessage, targetOrigin: string = this.parentDomain()): void {
 		if (!this.initialized || !targetOrigin) {
 			return;
 		}

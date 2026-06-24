@@ -1,6 +1,6 @@
 import { ApplicationRef, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { LeftEventReason, WebComponentCommand, WebComponentEvent } from '@openvidu-meet/typings';
+import { LeftEventReason, EmbeddedCommand, EmbeddedEvent } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { WebComponentEventType } from '../../../shared/models/webcomponent-bridge.model';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -64,7 +64,7 @@ describe('MeetingIframeBridgeService', () => {
 	/** Start the bridge and complete the READY → INITIALIZE handshake. */
 	function initializeAndHandshake(): void {
 		service.initialize();
-		postFromHost({ command: WebComponentCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
+		postFromHost({ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
 	}
 
 	describe('initialize()', () => {
@@ -81,14 +81,14 @@ describe('MeetingIframeBridgeService', () => {
 		it('announces READY to the parent with a wildcard target origin', () => {
 			service.initialize();
 
-			expect(postMessageSpy).toHaveBeenCalledOnceWith({ event: WebComponentEvent.READY, payload: {} }, '*');
+			expect(postMessageSpy).toHaveBeenCalledOnceWith({ event: EmbeddedEvent.READY, payload: {} }, '*');
 		});
 
 		it('is idempotent (announces READY only once)', () => {
 			service.initialize();
 			service.initialize();
 
-			const readyCalls = postMessageSpy.calls.allArgs().filter(([msg]) => msg.event === WebComponentEvent.READY);
+			const readyCalls = postMessageSpy.calls.allArgs().filter(([msg]) => msg.event === EmbeddedEvent.READY);
 			expect(readyCalls.length).toBe(1);
 		});
 	});
@@ -97,7 +97,7 @@ describe('MeetingIframeBridgeService', () => {
 		it('ignores commands received before the INITIALIZE handshake', () => {
 			service.initialize();
 
-			postFromHost({ command: WebComponentCommand.LEAVE_ROOM });
+			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
 
 			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
 		});
@@ -105,8 +105,8 @@ describe('MeetingIframeBridgeService', () => {
 		it('ignores INITIALIZE without a domain, so later commands stay rejected', () => {
 			service.initialize();
 
-			postFromHost({ command: WebComponentCommand.INITIALIZE, payload: {} });
-			postFromHost({ command: WebComponentCommand.LEAVE_ROOM });
+			postFromHost({ command: EmbeddedCommand.INITIALIZE, payload: {} });
+			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
 
 			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
 		});
@@ -114,7 +114,7 @@ describe('MeetingIframeBridgeService', () => {
 		it('ignores messages from an untrusted origin once the parent is known', () => {
 			initializeAndHandshake();
 
-			postFromHost({ command: WebComponentCommand.END_MEETING }, 'https://evil.example.com');
+			postFromHost({ command: EmbeddedCommand.END_MEETING }, 'https://evil.example.com');
 
 			expect(wcManager.endMeeting).not.toHaveBeenCalled();
 		});
@@ -123,7 +123,7 @@ describe('MeetingIframeBridgeService', () => {
 			openviduService.isRoomConnected.and.returnValue(false);
 			initializeAndHandshake();
 
-			postFromHost({ command: WebComponentCommand.END_MEETING });
+			postFromHost({ command: EmbeddedCommand.END_MEETING });
 
 			expect(wcManager.endMeeting).not.toHaveBeenCalled();
 		});
@@ -131,7 +131,7 @@ describe('MeetingIframeBridgeService', () => {
 		it('forwards LEAVE_ROOM to the manager', () => {
 			initializeAndHandshake();
 
-			postFromHost({ command: WebComponentCommand.LEAVE_ROOM });
+			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
 
 			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
 		});
@@ -139,7 +139,7 @@ describe('MeetingIframeBridgeService', () => {
 		it('forwards END_MEETING to the manager', () => {
 			initializeAndHandshake();
 
-			postFromHost({ command: WebComponentCommand.END_MEETING });
+			postFromHost({ command: EmbeddedCommand.END_MEETING });
 
 			expect(wcManager.endMeeting).toHaveBeenCalledTimes(1);
 		});
@@ -148,7 +148,7 @@ describe('MeetingIframeBridgeService', () => {
 			initializeAndHandshake();
 
 			postFromHost({
-				command: WebComponentCommand.KICK_PARTICIPANT,
+				command: EmbeddedCommand.KICK_PARTICIPANT,
 				payload: { participantIdentity: IDENTITY }
 			});
 
@@ -158,7 +158,7 @@ describe('MeetingIframeBridgeService', () => {
 		it('ignores KICK_PARTICIPANT without a participant identity', () => {
 			initializeAndHandshake();
 
-			postFromHost({ command: WebComponentCommand.KICK_PARTICIPANT, payload: {} });
+			postFromHost({ command: EmbeddedCommand.KICK_PARTICIPANT, payload: {} });
 
 			expect(wcManager.kickParticipant).not.toHaveBeenCalled();
 		});
@@ -190,7 +190,7 @@ describe('MeetingIframeBridgeService', () => {
 		it('ignores KICK_PARTICIPANT with an empty participant identity', () => {
 			initializeAndHandshake();
 
-			postFromHost({ command: WebComponentCommand.KICK_PARTICIPANT, payload: { participantIdentity: '' } });
+			postFromHost({ command: EmbeddedCommand.KICK_PARTICIPANT, payload: { participantIdentity: '' } });
 
 			expect(wcManager.kickParticipant).not.toHaveBeenCalled();
 		});
@@ -198,12 +198,12 @@ describe('MeetingIframeBridgeService', () => {
 		it('re-evaluates room connection on every command, not just the first', () => {
 			initializeAndHandshake();
 
-			postFromHost({ command: WebComponentCommand.LEAVE_ROOM });
+			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
 			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
 
 			// Connection dropped after the first command: the next one must be rejected.
 			openviduService.isRoomConnected.and.returnValue(false);
-			postFromHost({ command: WebComponentCommand.END_MEETING });
+			postFromHost({ command: EmbeddedCommand.END_MEETING });
 			expect(wcManager.endMeeting).not.toHaveBeenCalled();
 		});
 	});
@@ -214,22 +214,22 @@ describe('MeetingIframeBridgeService', () => {
 
 			// A rogue frame posts from evil.example.com but claims to be the real host.
 			postFromHost(
-				{ command: WebComponentCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } },
+				{ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } },
 				'https://evil.example.com'
 			);
 
 			// The handshake must NOT have completed: a command — even one purporting to
 			// arrive from the claimed (trusted-looking) origin — is still rejected.
-			postFromHost({ command: WebComponentCommand.LEAVE_ROOM }, PARENT_ORIGIN);
+			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM }, PARENT_ORIGIN);
 			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
 
 			// A genuine handshake (sender origin === claimed domain) still works afterwards,
 			// proving the bridge wasn't left permanently wedged by the spoof attempt.
 			postFromHost(
-				{ command: WebComponentCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } },
+				{ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } },
 				PARENT_ORIGIN
 			);
-			postFromHost({ command: WebComponentCommand.LEAVE_ROOM }, PARENT_ORIGIN);
+			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM }, PARENT_ORIGIN);
 			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
 		});
 
@@ -239,16 +239,16 @@ describe('MeetingIframeBridgeService', () => {
 			// A second INITIALIZE, even delivered from the already-trusted origin, must not
 			// re-point trust to a different domain.
 			postFromHost(
-				{ command: WebComponentCommand.INITIALIZE, payload: { domain: 'https://evil.example.com' } },
+				{ command: EmbeddedCommand.INITIALIZE, payload: { domain: 'https://evil.example.com' } },
 				PARENT_ORIGIN
 			);
 
 			// Commands from the original trusted origin still work...
-			postFromHost({ command: WebComponentCommand.LEAVE_ROOM }, PARENT_ORIGIN);
+			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM }, PARENT_ORIGIN);
 			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
 
 			// ...and commands from the newly-claimed origin remain rejected.
-			postFromHost({ command: WebComponentCommand.END_MEETING }, 'https://evil.example.com');
+			postFromHost({ command: EmbeddedCommand.END_MEETING }, 'https://evil.example.com');
 			expect(wcManager.endMeeting).not.toHaveBeenCalled();
 		});
 	});
@@ -266,7 +266,7 @@ describe('MeetingIframeBridgeService', () => {
 			TestBed.tick();
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				{ event: WebComponentEvent.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
+				{ event: EmbeddedEvent.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
 				PARENT_ORIGIN
 			);
 		});
@@ -285,7 +285,7 @@ describe('MeetingIframeBridgeService', () => {
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
 				{
-					event: WebComponentEvent.LEFT,
+					event: EmbeddedEvent.LEFT,
 					payload: { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE }
 				},
 				PARENT_ORIGIN
@@ -300,7 +300,7 @@ describe('MeetingIframeBridgeService', () => {
 			TestBed.tick();
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				jasmine.objectContaining({ event: WebComponentEvent.CLOSED }),
+				jasmine.objectContaining({ event: EmbeddedEvent.CLOSED }),
 				PARENT_ORIGIN
 			);
 		});
@@ -332,11 +332,11 @@ describe('MeetingIframeBridgeService', () => {
 			expect(postMessageSpy).not.toHaveBeenCalled();
 
 			// Completing the handshake flushes the queued event.
-			postFromHost({ command: WebComponentCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
+			postFromHost({ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
 			TestBed.tick();
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				{ event: WebComponentEvent.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
+				{ event: EmbeddedEvent.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
 				PARENT_ORIGIN
 			);
 		});
@@ -357,7 +357,7 @@ describe('MeetingIframeBridgeService', () => {
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
-			expect(relayed).toEqual([WebComponentEvent.JOINED, WebComponentEvent.CLOSED]);
+			expect(relayed).toEqual([EmbeddedEvent.JOINED, EmbeddedEvent.CLOSED]);
 		});
 
 		it('flushes multiple buffered events in FIFO order once the handshake completes', () => {
@@ -379,11 +379,11 @@ describe('MeetingIframeBridgeService', () => {
 			TestBed.tick();
 			expect(postMessageSpy).not.toHaveBeenCalled();
 
-			postFromHost({ command: WebComponentCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
+			postFromHost({ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
-			expect(relayed).toEqual([WebComponentEvent.JOINED, WebComponentEvent.LEFT]);
+			expect(relayed).toEqual([EmbeddedEvent.JOINED, EmbeddedEvent.LEFT]);
 		});
 	});
 

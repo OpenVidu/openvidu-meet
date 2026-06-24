@@ -1,4 +1,4 @@
-import { WebComponentProperty } from '@openvidu-meet/typings';
+import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRoom, deleteRooms, getRecordingUrl, listRecordingsByRoomId } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
@@ -9,7 +9,7 @@ import { waitForPageRedirect, wcLocator } from '../helpers/webcomponent.helper';
 // ─── WebComponent attribute coverage ────────────────────────────────────────
 //
 // These tests render the <openvidu-meet> web component on a blank page (not
-// the testapp) so we can exercise individual WebComponentProperty attributes
+// the testapp) so we can exercise individual EmbeddedAttribute attributes
 // in isolation: room-url + participant-name / e2ee-key / show-only-recordings
 // / show-recording, recording-url, and leave-redirect-url.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -38,8 +38,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			const participantName = 'Alice';
 
 			await openWebcomponentWithAttributes(page, {
-				[WebComponentProperty.ROOM_URL]: accessUrl,
-				[WebComponentProperty.PARTICIPANT_NAME]: participantName
+				[EmbeddedAttribute.ROOM_URL]: accessUrl,
+				[EmbeddedAttribute.PARTICIPANT_NAME]: participantName
 			});
 
 			const nameInput = wcLocator(page, '#participant-name-input');
@@ -59,8 +59,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				page
 			}) => {
 				await openWebcomponentWithAttributes(page, {
-					[WebComponentProperty.ROOM_URL]: accessUrl,
-					[WebComponentProperty.E2EE_KEY]: 'super-secret-key-123'
+					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.E2EE_KEY]: 'super-secret-key-123'
 				});
 
 				// Wait for the lobby to render so the E2EE control evaluation is complete.
@@ -81,9 +81,9 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				// so `valid` is false even though the form is complete — which previously left the
 				// join button permanently disabled. The button must remain clickable here.
 				await openWebcomponentWithAttributes(page, {
-					[WebComponentProperty.ROOM_URL]: accessUrl,
-					[WebComponentProperty.PARTICIPANT_NAME]: 'Alice',
-					[WebComponentProperty.E2EE_KEY]: 'super-secret-key-123'
+					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
+					[EmbeddedAttribute.E2EE_KEY]: 'super-secret-key-123'
 				});
 
 				const nameInput = wcLocator(page, '#participant-name-input');
@@ -123,8 +123,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 			test('should redirect to the room recordings page when show-only-recordings is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
-					[WebComponentProperty.ROOM_URL]: accessUrl,
-					[WebComponentProperty.SHOW_ONLY_RECORDINGS]: 'true'
+					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true'
 				});
 
 				await expect(wcLocator(page, 'ov-recording-lists, .recordings-list')).toBeVisible({
@@ -135,8 +135,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 			test('should redirect to the specified recording when show-recording is set', async ({ page }) => {
 				await openWebcomponentWithAttributes(page, {
-					[WebComponentProperty.ROOM_URL]: accessUrl,
-					[WebComponentProperty.SHOW_RECORDING]: recordingId
+					[EmbeddedAttribute.ROOM_URL]: accessUrl,
+					[EmbeddedAttribute.SHOW_RECORDING]: recordingId
 				});
 
 				await expect(wcLocator(page, '.recording-page-content')).toBeVisible({ timeout: 15_000 });
@@ -174,7 +174,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			const recordingUrl = await getRecordingUrl(recordingId);
 
 			await openWebcomponentWithAttributes(page, {
-				[WebComponentProperty.RECORDING_URL]: recordingUrl
+				[EmbeddedAttribute.RECORDING_URL]: recordingUrl
 			});
 
 			await expect(wcLocator(page, '.recording-page-content')).toBeVisible({ timeout: 15_000 });
@@ -192,8 +192,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 		test('should redirect to the configured URL from the lobby back button', async ({ page }) => {
 			await openWebcomponentWithAttributes(page, {
-				[WebComponentProperty.ROOM_URL]: accessUrl,
-				[WebComponentProperty.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL
+				[EmbeddedAttribute.ROOM_URL]: accessUrl,
+				[EmbeddedAttribute.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL
 			});
 
 			await expect(wcLocator(page, '#participant-name-input')).toBeVisible();
@@ -205,9 +205,9 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 		test('should redirect to the configured URL from the disconnected page back button', async ({ page }) => {
 			// First, open a meeting so it can be ended (which lands on the disconnected page).
 			await openWebcomponentWithAttributes(page, {
-				[WebComponentProperty.ROOM_URL]: accessUrl,
-				[WebComponentProperty.PARTICIPANT_NAME]: 'Alice',
-				[WebComponentProperty.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL
+				[EmbeddedAttribute.ROOM_URL]: accessUrl,
+				[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
+				[EmbeddedAttribute.LEAVE_REDIRECT_URL]: REDIRECT_TARGET_URL
 			});
 
 			await expect(wcLocator(page, '#participant-name-submit')).toBeVisible();

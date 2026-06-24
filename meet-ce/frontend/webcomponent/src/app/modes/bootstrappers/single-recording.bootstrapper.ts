@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { NavigationService, RecordingEntryService, type RecordingEntryParams } from '@openvidu-meet/shared-components';
+import type { WebComponentPropertyValues } from '@openvidu-meet/typings';
 import { lastPathSegment, queryParam } from '../../utils/url';
-import type { ModeInputs } from '../mode';
 import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
 
 @Injectable({ providedIn: 'root' })
@@ -9,7 +9,7 @@ export class SingleRecordingModeBootstrapper implements ModeBootstrapper {
 	private readonly recordingEntryService = inject(RecordingEntryService);
 	private readonly navigationService = inject(NavigationService);
 
-	async bootstrap(inputs: ModeInputs): Promise<ModeBootstrapResult> {
+	async bootstrap(inputs: Required<WebComponentPropertyValues>): Promise<ModeBootstrapResult> {
 		const recordingId = lastPathSegment(inputs.recordingUrl) ?? inputs.showRecording ?? '';
 
 		if (!recordingId) {

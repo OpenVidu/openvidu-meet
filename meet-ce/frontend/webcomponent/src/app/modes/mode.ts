@@ -1,16 +1,7 @@
 import { type WcNavigationRequest, WebComponentNavigationType } from '@openvidu-meet/shared-components';
+import type { WebComponentPropertyValues } from '@openvidu-meet/typings';
 
 export type Mode = 'meeting' | 'room-recordings' | 'single-recording' | 'login' | 'change-password' | 'invalid';
-
-export interface ModeInputs {
-	roomUrl: string;
-	recordingUrl: string;
-	participantName: string;
-	e2eeKey: string;
-	leaveRedirectUrl: string;
-	showOnlyRecordings: boolean;
-	showRecording: string;
-}
 
 /**
  * The view each navigation request maps to. Exhaustive over
@@ -35,7 +26,7 @@ export function modeFromRequest(request: WcNavigationRequest | null): Mode | nul
  * The primary view derived from the public webcomponent attributes — the one the
  * shell bootstraps and falls back to when no navigation request is active.
  */
-export function modeFromAttributes(inputs: ModeInputs): Mode {
+export function modeFromAttributes(inputs: Required<WebComponentPropertyValues>): Mode {
 	const { roomUrl, recordingUrl, showRecording, showOnlyRecordings } = inputs;
 
 	if (recordingUrl || showRecording) return 'single-recording';

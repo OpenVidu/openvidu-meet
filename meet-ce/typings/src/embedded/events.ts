@@ -2,7 +2,7 @@
  * All available events that can be emitted by the WebComponent.
  * @category Communication
  */
-export enum WebComponentEvent {
+export enum EmbeddedEvent {
 	/**
 	 * Event emitted when application is ready to receive commands.
 	 * @private
@@ -46,26 +46,26 @@ export enum LeftEventReason {
 
 /**
  * Type definitions for event payloads.
- * Each property corresponds to an event in {@link WebComponentEvent}.
+ * Each property corresponds to an event in {@link EmbeddedEvent}.
  * @category Communication
  */
-export interface WebComponentEventPayloads {
+export interface EmbeddedEventPayloads {
 	/**
-	 * Payload for the {@link WebComponentEvent.READY} event.
+	 * Payload for the {@link EmbeddedEvent.READY} event.
 	 * @private
 	 */
-	[WebComponentEvent.READY]: {};
+	[EmbeddedEvent.READY]: {};
 	/**
-	 * Payload for the {@link WebComponentEvent.JOINED} event.
+	 * Payload for the {@link EmbeddedEvent.JOINED} event.
 	 */
-	[WebComponentEvent.JOINED]: {
+	[EmbeddedEvent.JOINED]: {
 		roomId: string;
 		participantIdentity: string;
 	};
 	/**
-	 * Payload for the {@link WebComponentEvent.LEFT} event.
+	 * Payload for the {@link EmbeddedEvent.LEFT} event.
 	 */
-	[WebComponentEvent.LEFT]: {
+	[EmbeddedEvent.LEFT]: {
 		roomId: string;
 		participantIdentity: string;
 		reason: LeftEventReason;
@@ -78,6 +78,6 @@ export interface WebComponentEventPayloads {
  * @category Type Helpers
  * @private
  */
-export type WebComponentEventPayloadFor<T extends WebComponentEvent> = T extends keyof WebComponentEventPayloads
-	? WebComponentEventPayloads[T]
+export type EmbeddedEventPayloadFor<T extends EmbeddedEvent> = T extends keyof EmbeddedEventPayloads
+	? EmbeddedEventPayloads[T]
 	: never;

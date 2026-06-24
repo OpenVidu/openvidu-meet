@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { MeetingEntryService, RoomMemberContextService, type MeetingEntryParams } from '@openvidu-meet/shared-components';
+import type { WebComponentPropertyValues } from '@openvidu-meet/typings';
 import { lastPathSegment, queryParam } from '../../utils/url';
-import type { ModeInputs } from '../mode';
 import type { ModeBootstrapResult, ModeBootstrapper } from './bootstrapper';
 
 @Injectable({ providedIn: 'root' })
@@ -9,7 +9,7 @@ export class MeetingModeBootstrapper implements ModeBootstrapper {
 	private readonly meetingEntryService = inject(MeetingEntryService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 
-	async bootstrap(inputs: ModeInputs): Promise<ModeBootstrapResult> {
+	async bootstrap(inputs: Required<WebComponentPropertyValues>): Promise<ModeBootstrapResult> {
 		const url = inputs.roomUrl;
 		const roomId = lastPathSegment(url);
 

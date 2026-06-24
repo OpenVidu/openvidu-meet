@@ -49,7 +49,6 @@
  * @property {string} tagName Custom element tag name.
  * @property {string} packageName Suggested package name for generated adapters.
  * @property {string} elementInterfaceName Exported interface name for the DOM element.
- * @property {string} propsInterfaceName Exported interface name for props.
  * @property {ContractProperty[]} properties Public properties.
  * @property {ContractMethod[]} methods Public methods.
  * @property {ContractEvent[]} events Public DOM events.
@@ -60,7 +59,6 @@ const openViduMeetContract = {
   tagName: 'openvidu-meet',
   packageName: 'openvidu-meet-webcomponent',
   elementInterfaceName: 'OpenViduMeetElement',
-  propsInterfaceName: 'OpenViduMeetProps',
   properties: [
     {
       name: 'roomUrl',

@@ -1,8 +1,9 @@
 import { describe, expect, it } from '@jest/globals';
 import { WebComponentNavigationType } from '@openvidu-meet/shared-components';
-import { modeFromAttributes, modeFromRequest, type ModeInputs } from '../../src/app/modes/mode';
+import type { WebComponentPropertyValues } from '@openvidu-meet/typings';
+import { modeFromAttributes, modeFromRequest } from '../../src/app/modes/mode';
 
-const BASE_INPUTS: ModeInputs = {
+const BASE_INPUTS: Required<WebComponentPropertyValues> = {
 	roomUrl: '',
 	recordingUrl: '',
 	participantName: '',
@@ -12,7 +13,7 @@ const BASE_INPUTS: ModeInputs = {
 	showRecording: ''
 };
 
-const inputs = (overrides: Partial<ModeInputs>): ModeInputs => ({ ...BASE_INPUTS, ...overrides });
+const inputs = (overrides: Partial<WebComponentPropertyValues>): Required<WebComponentPropertyValues> => ({ ...BASE_INPUTS, ...overrides });
 
 describe('Mode resolution from attributes', () => {
 	it('returns "single-recording" when recording-url is set', () => {

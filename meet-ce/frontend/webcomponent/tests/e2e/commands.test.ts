@@ -1,4 +1,4 @@
-import { LeftEventReason, MeetWebhookEventType, WebComponentEvent } from '@openvidu-meet/typings';
+import { LeftEventReason, MeetWebhookEventType, EmbeddedEvent } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
@@ -35,41 +35,41 @@ for (const integration of INTEGRATIONS) {
 		test.describe('LEAVE_ROOM Command', () => {
 			test('should disconnect moderator from the room', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await leaveRoomCommand(page);
 
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
 			});
 
 			test('should disconnect speaker from the room', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'speaker' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await leaveRoomCommand(page);
 
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
 			});
 
 			test('should not end the meeting when moderator leaves via leaveRoom', async ({ page, browser }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				const speakerContext = await browser.newContext();
 				const speakerPage = await speakerContext.newPage();
 				await openMeeting(speakerPage, roomId, { role: 'speaker' });
-				await expectEvent(speakerPage, WebComponentEvent.JOINED);
+				await expectEvent(speakerPage, EmbeddedEvent.JOINED);
 
 				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
 				await leaveRoomCommand(page);
-				await expectEvent(page, WebComponentEvent.LEFT);
+				await expectEvent(page, EmbeddedEvent.LEFT);
 
 				// Speaker should still be in the meeting
 				await expect(wcLocator(speakerPage, 'ov-session')).toBeVisible();
-				await expect(eventLocator(speakerPage, WebComponentEvent.LEFT)).toHaveCount(0);
+				await expect(eventLocator(speakerPage, EmbeddedEvent.LEFT)).toHaveCount(0);
 
 				await leaveMeeting(speakerPage);
 				await speakerContext.close();
@@ -79,31 +79,31 @@ for (const integration of INTEGRATIONS) {
 		test.describe('END_MEETING Command', () => {
 			test('should end the meeting and emit left event with meeting_ended reason', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				await endMeetingCommand(page);
 
-				const left = await expectEvent(page, WebComponentEvent.LEFT);
+				const left = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(left).toContainText(LeftEventReason.MEETING_ENDED);
 			});
 
 			test('should disconnect all participants when moderator ends the meeting', async ({ page, browser }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				const speakerContext = await browser.newContext();
 				const speakerPage = await speakerContext.newPage();
 				await openMeeting(speakerPage, roomId, { role: 'speaker' });
-				await expectEvent(speakerPage, WebComponentEvent.JOINED);
+				await expectEvent(speakerPage, EmbeddedEvent.JOINED);
 
 				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
 				await endMeetingCommand(page);
 
-				const moderatorLeft = await expectEvent(page, WebComponentEvent.LEFT);
+				const moderatorLeft = await expectEvent(page, EmbeddedEvent.LEFT);
 				await expect(moderatorLeft).toContainText(LeftEventReason.MEETING_ENDED);
 
-				const speakerLeft = await expectEvent(speakerPage, WebComponentEvent.LEFT);
+				const speakerLeft = await expectEvent(speakerPage, EmbeddedEvent.LEFT);
 				await expect(speakerLeft).toContainText(LeftEventReason.MEETING_ENDED);
 
 				await speakerContext.close();
@@ -122,14 +122,14 @@ for (const integration of INTEGRATIONS) {
 		test.describe('KICK_PARTICIPANT Command', () => {
 			test('should kick a speaker from the room', async ({ page, browser }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				const speakerContext = await browser.newContext();
 				const speakerPage = await speakerContext.newPage();
 				const speakerName = 'Speaker';
 				await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
 
-				const speakerJoined = await expectEvent(speakerPage, WebComponentEvent.JOINED);
+				const speakerJoined = await expectEvent(speakerPage, EmbeddedEvent.JOINED);
 				const speakerJoinedText = (await speakerJoined.textContent()) ?? '';
 				const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
 				const speakerIdentity = match?.[1] ?? speakerName;
@@ -138,7 +138,7 @@ for (const integration of INTEGRATIONS) {
 
 				await kickParticipantCommand(page, speakerIdentity);
 
-				const speakerLeft = await expectEvent(speakerPage, WebComponentEvent.LEFT);
+				const speakerLeft = await expectEvent(speakerPage, EmbeddedEvent.LEFT);
 				await expect(speakerLeft).toContainText(LeftEventReason.PARTICIPANT_KICKED);
 
 				await speakerContext.close();
@@ -146,14 +146,14 @@ for (const integration of INTEGRATIONS) {
 
 			test('should not disconnect the moderator who kicks a participant', async ({ page, browser }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				const speakerContext = await browser.newContext();
 				const speakerPage = await speakerContext.newPage();
 				const speakerName = 'Speaker';
 				await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
 
-				const speakerJoined = await expectEvent(speakerPage, WebComponentEvent.JOINED);
+				const speakerJoined = await expectEvent(speakerPage, EmbeddedEvent.JOINED);
 				const speakerJoinedText = (await speakerJoined.textContent()) ?? '';
 				const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
 				const speakerIdentity = match?.[1] ?? speakerName;
@@ -162,11 +162,11 @@ for (const integration of INTEGRATIONS) {
 
 				await kickParticipantCommand(page, speakerIdentity);
 
-				await expectEvent(speakerPage, WebComponentEvent.LEFT);
+				await expectEvent(speakerPage, EmbeddedEvent.LEFT);
 
 				// Moderator should still be in the meeting
 				await expect(meetLocator(page, integration, 'ov-session')).toBeVisible();
-				await expect(eventLocator(page, WebComponentEvent.LEFT)).toHaveCount(0);
+				await expect(eventLocator(page, EmbeddedEvent.LEFT)).toHaveCount(0);
 
 				await leaveMeeting(page, { integration, role: 'moderator' });
 				await speakerContext.close();
@@ -179,13 +179,13 @@ for (const integration of INTEGRATIONS) {
 				const speakerName = 'Speaker';
 
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
-				await expectEvent(page, WebComponentEvent.JOINED);
+				await expectEvent(page, EmbeddedEvent.JOINED);
 
 				const speakerContext = await browser.newContext();
 				const speakerPage = await speakerContext.newPage();
 				await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
 
-				const speakerJoined = await expectEvent(speakerPage, WebComponentEvent.JOINED);
+				const speakerJoined = await expectEvent(speakerPage, EmbeddedEvent.JOINED);
 				const speakerJoinedText = (await speakerJoined.textContent()) ?? '';
 				const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
 				const speakerIdentity = match?.[1] ?? speakerName;
@@ -194,7 +194,7 @@ for (const integration of INTEGRATIONS) {
 
 				await kickParticipantCommand(page, speakerIdentity);
 
-				const speakerLeft = await expectEvent(speakerPage, WebComponentEvent.LEFT);
+				const speakerLeft = await expectEvent(speakerPage, EmbeddedEvent.LEFT);
 				await expect(speakerLeft).toContainText('"reason"');
 				await expect(speakerLeft).toContainText(LeftEventReason.PARTICIPANT_KICKED);
 				await expect(speakerLeft).toContainText('"roomId"');
