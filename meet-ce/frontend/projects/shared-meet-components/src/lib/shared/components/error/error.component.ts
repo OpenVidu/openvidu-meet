@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -22,30 +22,30 @@ export class ErrorComponent implements OnInit {
 	protected navService = inject(NavigationService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 
-	// Signals hold translation KEYS resolved by the `translate` pipe in the template, so the copy
-	// reacts to a live language switch / lazily-loaded locale (resolving imperatively here would
-	// freeze it to the English fallback for non-English users).
-	errorTitleKey = signal('ERROR.DEFAULT_TITLE');
-	errorMessageKey = signal('');
+	/**
+	 * Optional error reason. When set it takes precedence over the `reason` route query param, so the
+	 * component can be embedded directly (e.g. the web component shell, which has no `/error` route)
+	 * the same way it works as the SPA's routed `/error` page.
+	 */
+	readonly reason = input<string>('');
+
+	// Effective reason: explicit input wins, otherwise the SPA route's `?reason=` query param.
+	private readonly effectiveReason = computed(() => this.reason() || this.route.snapshot.queryParams['reason'] || '');
+	private readonly description = computed(() =>
+		this.effectiveReason() ? describeNavigationError(this.effectiveReason()) : null
+	);
+
+	// Translation KEYS resolved by the `translate` pipe in the template, so the copy reacts to a live
+	// language switch / lazily-loaded locale (resolving imperatively would freeze it to the English
+	// fallback for non-English users).
+	readonly errorTitleKey = computed(() => this.description()?.titleKey ?? 'ERROR.DEFAULT_TITLE');
+	readonly errorMessageKey = computed(() => this.description()?.messageKey ?? '');
 
 	showBackButton = signal(true);
 	backButtonTextKey = signal('ERROR.BACK');
 
 	ngOnInit() {
-		this.setErrorReason();
 		this.setBackButtonText();
-	}
-
-	/**
-	 * Retrieves the error reason from URL query parameters
-	 */
-	private setErrorReason() {
-		const reason = this.route.snapshot.queryParams['reason'];
-		if (reason) {
-			const { titleKey, messageKey } = describeNavigationError(reason);
-			this.errorTitleKey.set(titleKey);
-			this.errorMessageKey.set(messageKey);
-		}
 	}
 
 	/**

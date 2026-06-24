@@ -14,16 +14,18 @@ import {
 } from '@angular/core';
 import {
 	AppCeMeetingComponent,
-	AssetsService,
 	ChangePasswordRequiredComponent,
 	describeNavigationError,
 	EndMeetingComponent,
+	ErrorComponent,
 	LoginComponent,
 	MeetingContextService,
 	MeetingWebComponentManagerService,
+	NavigationErrorReason,
 	RoomRecordingsComponent,
 	RuntimeConfigService,
 	ThemeService,
+	TranslateService,
 	ViewRecordingComponent,
 	WebComponentBridgeService,
 	WebComponentEventType,
@@ -51,12 +53,17 @@ export type {
 	OpenViduMeetLeftDetail
 } from './api/events';
 
+/**
+ * Root component of the OpenVidu Meet web component. It maps host attributes/properties to a view,
+ * bootstraps that view, bridges host events both ways, and renders everything inside a shadow root.
+ */
 @Component({
 	selector: 'app-root',
 	imports: [
 		AppCeMeetingComponent,
 		ChangePasswordRequiredComponent,
 		EndMeetingComponent,
+		ErrorComponent,
 		LoginComponent,
 		RoomRecordingsComponent,
 		ViewRecordingComponent
@@ -74,18 +81,20 @@ export type {
 	}
 })
 export class App {
+	// ── Injected dependencies ────────────────────────────────────────────────
 	protected readonly themeService = inject(ThemeService);
 	private readonly wcManager = inject(MeetingWebComponentManagerService);
 	private readonly wcBridge = inject(WebComponentBridgeService);
 	private readonly modeCoordinator = inject(ModeCoordinatorService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly meetingContext = inject(MeetingContextService);
-	private readonly assets = inject(AssetsService);
+	private readonly translateService = inject(TranslateService);
 	private readonly _elRef = inject(ElementRef);
 	private readonly _destroyRef = inject(DestroyRef);
 	private readonly _shadowStyles = inject(ShadowStylesService);
 	private readonly _shadowOverlay = inject(ShadowOverlayContainer);
 
+	// ── Host inputs (element attributes/properties) ──────────────────────────
 	readonly roomUrl = input('');
 	readonly recordingUrl = input('');
 	readonly participantName = input('');
@@ -94,30 +103,25 @@ export class App {
 	readonly showOnlyRecordings = input(false);
 	readonly showRecording = input('');
 
+	// ── Host outputs (element events) ────────────────────────────────────────
 	readonly joined = output<OpenViduMeetJoinedDetail>();
 	readonly left = output<OpenViduMeetLeftDetail>();
 	readonly closed = output<OpenViduMeetClosedDetail>();
 	readonly error = output<OpenViduMeetErrorDetail>();
 
-	readonly errorMessage = signal<string | null>(null);
+	// ── Internal state ───────────────────────────────────────────────────────
+	// The error to surface in-shell (and already emitted to the host), or null.
+	private readonly errorDetail = signal<OpenViduMeetErrorDetail | null>(null);
 
-	// Default OpenVidu logo for the error screen
-	protected readonly logoUrl = computed(() => this.assets.logo);
-
-	// Hide the logo if the asset fails to load so the error screen degrades to just the badge.
-	protected onLogoError(event: Event): void {
-		(event.target as HTMLElement).style.display = 'none';
-	}
-
-	// The primary (attribute-derived) view that has been successfully bootstrapped,
-	// or null. Tracked per-mode rather than as a global boolean so readiness follows
-	// the current `bootstrapMode` and the primary view re-bootstraps after an
-	// interrupting flow (e.g. login) clears.
+	// The primary (attribute-derived) view that has been successfully bootstrapped, or null. Tracked
+	// per-mode rather than as a global boolean so readiness follows the current `bootstrapMode` and the
+	// primary view re-bootstraps after an interrupting flow (e.g. login) clears.
 	private readonly _preparedMode = signal<Mode | null>(null);
 
 	// Set once a `left` event arrives and never cleared, so the end-meeting screen stays up.
 	private readonly _leftDetail = signal<WebComponentLeftEvent | null>(null);
 
+	// ── Derived state ────────────────────────────────────────────────────────
 	private readonly inputs = computed<ModeInputs>(() => ({
 		roomUrl: this.roomUrl(),
 		recordingUrl: this.recordingUrl(),
@@ -131,12 +135,23 @@ export class App {
 	// The primary view derived from attributes. Only this gets bootstrapped.
 	private readonly bootstrapMode = computed<Mode>(() => modeFromAttributes(this.inputs()));
 
-	// What the shell renders: a runtime navigation request overrides the primary
-	// view, otherwise the primary (bootstrap) view is shown.
+	// What the shell renders: a runtime navigation request overrides the primary view, otherwise the
+	// primary (bootstrap) view is shown.
 	readonly view = computed<Mode>(() => modeFromRequest(this.wcBridge.navigationRequest()) ?? this.bootstrapMode());
 
 	// Whether the current primary view has been bootstrapped and is safe to render.
 	readonly ready = computed<boolean>(() => this._preparedMode() === this.bootstrapMode());
+
+	// Reason passed to `<ov-error>`: the specific access reason when present, otherwise a generic
+	// internal-error reason for config/load failures (whose precise English message still travels to
+	// the host via the `error` event). Null hides the error view.
+	protected readonly errorReason = computed<NavigationErrorReason | null>(() => {
+		const detail = this.errorDetail();
+
+		if (!detail) return null;
+
+		return detail.accessReason ?? NavigationErrorReason.INTERNAL_ERROR;
+	});
 
 	readonly recordingIdForView = computed<string>(
 		() => lastPathSegment(this.recordingUrl()) ?? this.showRecording() ?? ''
@@ -157,8 +172,48 @@ export class App {
 	readonly leftReason = computed<string | undefined>(() => this._leftDetail()?.reason);
 
 	constructor() {
-		// enableWebcomponentMode() is called in main.wc.ts before element registration
-		// so injected services observe WC mode during their constructor-time effects.
+		// ── Reactive wiring ──
+		// Effect creation order is significant: the server base URL must be set (first effect) before
+		// the bootstrap effect runs, because the bootstrappers call the API.
+
+		// Publish the server base URL derived from the room/recording URL attributes.
+		effect(() => {
+			const serverUrl =
+				computeServerUrl(this.roomUrl(), '/room/') ?? computeServerUrl(this.recordingUrl(), '/recording/');
+
+			if (serverUrl) {
+				this.runtimeConfigService.setServerBaseUrl(serverUrl);
+			}
+		});
+
+		// (Re)bootstrap the primary view when it changes and isn't already prepared.
+		effect(() => {
+			const mode = this.bootstrapMode();
+
+			// While a navigation request overlays an interrupt view (login, recordings…), leave the
+			// primary view alone. When the request clears this effect re-runs: if the primary view
+			// still isn't prepared (e.g. its bootstrap failed because auth was required), retry it now
+			// that the interrupt has been resolved.
+			if (this.wcBridge.navigationRequest() !== null) return;
+
+			if (this._preparedMode() === mode) return;
+
+			this.errorDetail.set(null);
+			void this.runBootstrap(mode);
+		});
+
+		// Drain and process every queued host event in order (queue → no same-tick loss).
+		effect(() => {
+			if (this.wcBridge.wcEvents().length === 0) return;
+
+			for (const event of this.wcBridge.drainWebComponentEvents()) {
+				this.handleWebComponentEvent(event);
+			}
+		});
+
+		// ── Shadow DOM setup ──
+		// enableWebcomponentMode() is called in main.wc.ts before element registration, so injected
+		// services observe WC mode during their constructor-time effects.
 		afterNextRender(() => {
 			const { shadowRoot } = this._elRef.nativeElement as HTMLElement;
 
@@ -172,30 +227,20 @@ export class App {
 		this._destroyRef.onDestroy(() => this.meetingContext.clearMeetingContext());
 	}
 
-	private readonly _serverUrlEffect = effect(() => {
-		const serverUrl =
-			computeServerUrl(this.roomUrl(), '/room/') ?? computeServerUrl(this.recordingUrl(), '/recording/');
+	// ── Imperative host API ──────────────────────────────────────────────────
+	endMeeting(): Promise<void> {
+		return this.wcManager.endMeeting();
+	}
 
-		if (serverUrl) {
-			this.runtimeConfigService.setServerBaseUrl(serverUrl);
-		}
-	});
+	leaveRoom(): Promise<void> {
+		return this.wcManager.leaveRoom();
+	}
 
-	private readonly _bootstrapEffect = effect(() => {
-		const mode = this.bootstrapMode();
+	kickParticipant(participantIdentity: string): Promise<void> {
+		return this.wcManager.kickParticipant(participantIdentity);
+	}
 
-		// While a navigation request overlays an interrupt view (login, recordings…),
-		// leave the primary view alone. When the request clears, this effect re-runs:
-		// if the primary view still isn't prepared (e.g. its bootstrap failed because
-		// auth was required), retry it now that the interrupt has been resolved.
-		if (this.wcBridge.navigationRequest() !== null) return;
-
-		if (this._preparedMode() === mode) return;
-
-		this.errorMessage.set(null);
-		void this.runBootstrap(mode);
-	});
-
+	// ── Internal ─────────────────────────────────────────────────────────────
 	private async runBootstrap(mode: Mode): Promise<void> {
 		const result = await this.modeCoordinator.run(mode, this.inputs());
 
@@ -204,23 +249,13 @@ export class App {
 			return;
 		}
 
-		// A navigation request raised during bootstrap (e.g. an auth redirect to
-		// login) supersedes the primary view: its failure is being handled in-shell,
-		// so don't surface it to the user or emit a misleading `error` to the host.
+		// A navigation request raised during bootstrap (e.g. an auth redirect to login) supersedes the
+		// primary view: its failure is being handled in-shell, so don't surface it to the user or emit
+		// a misleading `error` to the host.
 		if (this.wcBridge.navigationRequest() !== null) return;
 
-		this.errorMessage.set(result.detail.message);
-		this.error.emit(result.detail);
+		this.surfaceError(result.detail);
 	}
-
-	// Drain and process every queued host event in order (queue → no same-tick loss).
-	private readonly _hostEventEffect = effect(() => {
-		if (this.wcBridge.wcEvents().length === 0) return;
-
-		for (const event of this.wcBridge.drainWebComponentEvents()) {
-			this.handleWebComponentEvent(event);
-		}
-	});
 
 	private handleWebComponentEvent(event: WcEvent): void {
 		switch (event.type) {
@@ -238,27 +273,32 @@ export class App {
 			case WebComponentEventType.CLOSED:
 				this.closed.emit({});
 				break;
-
-			case WebComponentEventType.ERROR: {
-				// No `/error` route in the WC: show the error in-shell and notify the host.
-				const { message } = describeNavigationError(event.reason);
-				this.errorMessage.set(message);
-				this.error.emit({ reason: 'access-denied', message, accessReason: event.reason });
-
+			case WebComponentEventType.ERROR:
+				// No `/error` route in the WC: surface it in-shell via the shared `<ov-error>` and notify
+				// the host.
+				this.surfaceError(this.toAccessDeniedDetail(event.reason));
 				break;
-			}
 		}
 	}
 
-	endMeeting(): Promise<void> {
-		return this.wcManager.endMeeting();
+	/**
+	 * Builds the host `error` detail for a navigation error. The `message` is resolved in ENGLISH (a
+	 * stable, language-independent API value consumers may string-match); the in-shell `<ov-error>`
+	 * localizes its own copy from `accessReason`.
+	 */
+	private toAccessDeniedDetail(reason: NavigationErrorReason): OpenViduMeetErrorDetail {
+		const { messageKey } = describeNavigationError(reason);
+
+		return {
+			reason: 'access-denied',
+			message: this.translateService.translateDefault(messageKey),
+			accessReason: reason
+		};
 	}
 
-	leaveRoom(): Promise<void> {
-		return this.wcManager.leaveRoom();
-	}
-
-	kickParticipant(participantIdentity: string): Promise<void> {
-		return this.wcManager.kickParticipant(participantIdentity);
+	/** Surfaces an error in-shell (rendered by `<ov-error>`) and notifies the host once. */
+	private surfaceError(detail: OpenViduMeetErrorDetail): void {
+		this.errorDetail.set(detail);
+		this.error.emit(detail);
 	}
 }
