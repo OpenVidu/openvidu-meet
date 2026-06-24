@@ -114,14 +114,6 @@
       "TEST_FAILED": "テスト用 Webhook の送信に失敗しました。"
     }
   },
-  "ERROR": {
-    "DEFAULT_TITLE": "エラー",
-    "BACK": "戻る",
-    "BACK_TO_CONSOLE": "コンソールに戻る",
-    "ACCEPT": "OK",
-    "OOPS": "おっと！",
-    "SOMETHING_WRONG": "問題が発生しました"
-  },
   "LOGO_SELECTOR": {
     "TITLE": "ブランドロゴ",
     "DESCRIPTION": "あなたらしく — ブランドのロゴを追加しましょう。",

@@ -22,6 +22,7 @@ import {
 	RECORDINGS_TRANSLATIONS,
 	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
+	SHARED_TRANSLATIONS,
 	SmartLayoutService,
 	ThemeService,
 	type OpenViduComponentsConfig,
@@ -52,6 +53,7 @@ export const appConfig: ApplicationConfig = {
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsConfig)),
 		provideTranslations(RECORDINGS_TRANSLATIONS),
 		provideTranslations(AUTH_TRANSLATIONS),
+		provideTranslations(SHARED_TRANSLATIONS),
 		{ provide: SmartLayoutService, useExisting: MeetingLayoutService },
 		ShadowOverlayContainer,
 		{ provide: OverlayContainer, useExisting: ShadowOverlayContainer }

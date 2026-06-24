@@ -114,14 +114,6 @@
       "TEST_FAILED": "发送测试 webhook 失败。"
     }
   },
-  "ERROR": {
-    "DEFAULT_TITLE": "错误",
-    "BACK": "返回",
-    "BACK_TO_CONSOLE": "返回控制台",
-    "ACCEPT": "接受",
-    "OOPS": "哎呀！",
-    "SOMETHING_WRONG": "出了点问题"
-  },
   "LOGO_SELECTOR": {
     "TITLE": "品牌徽标",
     "DESCRIPTION": "打造专属体验——为您的体验添加品牌徽标。",

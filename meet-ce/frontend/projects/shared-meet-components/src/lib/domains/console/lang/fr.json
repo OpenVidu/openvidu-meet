@@ -114,14 +114,6 @@
       "TEST_FAILED": "Échec de l'envoi du webhook de test."
     }
   },
-  "ERROR": {
-    "DEFAULT_TITLE": "Erreur",
-    "BACK": "Retour",
-    "BACK_TO_CONSOLE": "Retour à la console",
-    "ACCEPT": "Accepter",
-    "OOPS": "Oups !",
-    "SOMETHING_WRONG": "Une erreur s'est produite"
-  },
   "LOGO_SELECTOR": {
     "TITLE": "Logo de la marque",
     "DESCRIPTION": "Faites-en votre marque — ajoutez le logo de votre marque à l'expérience.",

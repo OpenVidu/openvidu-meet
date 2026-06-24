@@ -68,13 +68,9 @@ export const consoleChildRoutes: DomainRouteConfig[] = [
 ];
 
 /**
- * Console domain routes (error page + authenticated console with all child routes)
+ * Console domain routes (authenticated console with all child routes)
  */
 export const consoleDomainRoutes: Route[] = [
-	{
-		path: 'error',
-		loadComponent: () => import('../pages/error/error.component').then((m) => m.ErrorComponent)
-	},
 	{
 		path: '',
 		loadComponent: () => import('../pages/console/console.component').then((m) => m.ConsoleComponent),

@@ -3,12 +3,12 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
-import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { NavigationService } from '../../../../shared/services/navigation.service';
-import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
-import { describeNavigationError } from '../../../../shared/utils/navigation-error.util';
-import { AuthService } from '../../../auth/services/auth.service';
+import { TranslatePipe } from '../../pipes/translate.pipe';
+import { TranslateService } from '../../services/i18n/translate.service';
+import { NavigationService } from '../../services/navigation.service';
+import { RuntimeConfigService } from '../../services/runtime-config.service';
+import { describeNavigationError } from '../../utils/navigation-error.util';
+import { AuthService } from '../../../domains/auth/services/auth.service';
 
 @Component({
 	selector: 'ov-error',

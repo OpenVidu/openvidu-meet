@@ -114,14 +114,6 @@
       "TEST_FAILED": "Error al enviar el webhook de prueba."
     }
   },
-  "ERROR": {
-    "DEFAULT_TITLE": "Error",
-    "BACK": "Atrás",
-    "BACK_TO_CONSOLE": "Volver a la consola",
-    "ACCEPT": "Aceptar",
-    "OOPS": "¡Vaya!",
-    "SOMETHING_WRONG": "Algo ha salido mal"
-  },
   "LOGO_SELECTOR": {
     "TITLE": "Logotipo de marca",
     "DESCRIPTION": "Hazlo tuyo: añade el logotipo de tu marca a la experiencia.",

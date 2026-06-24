@@ -114,14 +114,6 @@
       "TEST_FAILED": "Failed to send test webhook."
     }
   },
-  "ERROR": {
-    "DEFAULT_TITLE": "Error",
-    "BACK": "Back",
-    "BACK_TO_CONSOLE": "Back to Console",
-    "ACCEPT": "Accept",
-    "OOPS": "Oops!",
-    "SOMETHING_WRONG": "Something went wrong"
-  },
   "LOGO_SELECTOR": {
     "TITLE": "Brand Logo",
     "DESCRIPTION": "Make it yours—add your brand's logo to the experience.",

@@ -22,6 +22,13 @@ export const baseRoutes: Routes = [
 	// Users domain public routes
 	...usersDomainRoutes.map((config) => config.route),
 
+	// Shared error page (reachable at `/error` from any domain). Must precede the console
+	// routes below, whose empty-path shell would otherwise greedily match and redirect away.
+	{
+		path: 'error',
+		loadComponent: () => import('../components/error/error.component').then((m) => m.ErrorComponent)
+	},
+
 	// Console domain routes (includes console child routes)
 	...consoleDomainRoutes,
 

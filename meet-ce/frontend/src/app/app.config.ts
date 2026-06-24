@@ -22,6 +22,7 @@ import {
 	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
 	ROOMS_TRANSLATIONS,
+	SHARED_TRANSLATIONS,
 	SmartLayoutService,
 	ThemeService,
 	USERS_TRANSLATIONS
@@ -48,6 +49,7 @@ export const appConfig: ApplicationConfig = {
 		provideTranslations(RECORDINGS_TRANSLATIONS),
 		provideTranslations(AUTH_TRANSLATIONS),
 		provideTranslations(ROOM_MEMBERS_TRANSLATIONS),
+		provideTranslations(SHARED_TRANSLATIONS),
 		{ provide: SmartLayoutService, useExisting: MeetingLayoutService },
 		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(ceRoutes),

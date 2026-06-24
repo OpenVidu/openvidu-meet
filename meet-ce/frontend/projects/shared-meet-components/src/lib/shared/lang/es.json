@@ -1,0 +1,10 @@
+{
+  "ERROR": {
+    "DEFAULT_TITLE": "Error",
+    "BACK": "Atrás",
+    "BACK_TO_CONSOLE": "Volver a la consola",
+    "ACCEPT": "Aceptar",
+    "OOPS": "¡Vaya!",
+    "SOMETHING_WRONG": "Algo ha salido mal"
+  }
+}

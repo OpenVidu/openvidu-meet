@@ -114,14 +114,6 @@
       "TEST_FAILED": "Testwebhook verzenden mislukt."
     }
   },
-  "ERROR": {
-    "DEFAULT_TITLE": "Fout",
-    "BACK": "Terug",
-    "BACK_TO_CONSOLE": "Terug naar console",
-    "ACCEPT": "Accepteren",
-    "OOPS": "Oeps!",
-    "SOMETHING_WRONG": "Er is iets misgegaan"
-  },
   "LOGO_SELECTOR": {
     "TITLE": "Merklogo",
     "DESCRIPTION": "Maak het van uzelf—voeg het logo van uw merk toe aan de ervaring.",

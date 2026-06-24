@@ -1,0 +1,10 @@
+{
+  "ERROR": {
+    "DEFAULT_TITLE": "त्रुटि",
+    "BACK": "वापस",
+    "BACK_TO_CONSOLE": "कंसोल पर वापस जाएं",
+    "ACCEPT": "स्वीकार करें",
+    "OOPS": "ओह!",
+    "SOMETHING_WRONG": "कुछ गलत हो गया"
+  }
+}
