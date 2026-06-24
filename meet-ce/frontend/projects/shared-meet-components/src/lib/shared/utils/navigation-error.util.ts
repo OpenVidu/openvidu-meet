@@ -1,77 +1,80 @@
 import { NavigationErrorReason } from '../models/navigation.model';
 
-/** User-friendly title and message for a technical navigation error reason. */
+/**
+ * Translation keys for the user-friendly title and message of a technical navigation error reason.
+ * Resolve them with the `translate` pipe (or {@link TranslateService}) at the call site; the keys
+ * live in the shared translation bundle under the `NAVIGATION_ERROR` namespace.
+ */
 export interface NavigationErrorDescription {
-	title: string;
-	message: string;
+	titleKey: string;
+	messageKey: string;
 }
 
-const NAVIGATION_ERROR_DESCRIPTIONS: Record<NavigationErrorReason, NavigationErrorDescription> = {
+const NAVIGATION_ERROR_KEYS: Record<NavigationErrorReason, NavigationErrorDescription> = {
 	[NavigationErrorReason.CLOSED_ROOM]: {
-		title: 'Closed room',
-		message: 'Meetings in this room are not available while it is closed'
+		titleKey: 'NAVIGATION_ERROR.CLOSED_ROOM.TITLE',
+		messageKey: 'NAVIGATION_ERROR.CLOSED_ROOM.MESSAGE'
 	},
 	[NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED]: {
-		title: 'Anonymous access disabled',
-		message: 'The anonymous access for your role has been disabled in this room (and its recordings)'
+		titleKey: 'NAVIGATION_ERROR.ANONYMOUS_ACCESS_DISABLED.TITLE',
+		messageKey: 'NAVIGATION_ERROR.ANONYMOUS_ACCESS_DISABLED.MESSAGE'
 	},
 	[NavigationErrorReason.ANONYMOUS_RECORDING_ACCESS_DISABLED]: {
-		title: 'Anonymous access disabled',
-		message: 'The anonymous access for this recording has been disabled'
+		titleKey: 'NAVIGATION_ERROR.ANONYMOUS_RECORDING_ACCESS_DISABLED.TITLE',
+		messageKey: 'NAVIGATION_ERROR.ANONYMOUS_RECORDING_ACCESS_DISABLED.MESSAGE'
 	},
 	[NavigationErrorReason.INVALID_ROOM_SECRET]: {
-		title: 'Invalid link',
-		message:
-			'The link you used to access this room (or its recordings) is not valid. Please ask a moderator to share the correct link using the available share buttons'
+		titleKey: 'NAVIGATION_ERROR.INVALID_ROOM_SECRET.TITLE',
+		messageKey: 'NAVIGATION_ERROR.INVALID_ROOM_SECRET.MESSAGE'
 	},
 	[NavigationErrorReason.INVALID_RECORDING_SECRET]: {
-		title: 'Invalid link',
-		message: 'The link you used to access this recording is not valid'
+		titleKey: 'NAVIGATION_ERROR.INVALID_RECORDING_SECRET.TITLE',
+		messageKey: 'NAVIGATION_ERROR.INVALID_RECORDING_SECRET.MESSAGE'
 	},
 	[NavigationErrorReason.INVALID_ROOM]: {
-		title: 'Invalid room',
-		message: 'The room (or its recordings) you are trying to access does not exist or has been deleted'
+		titleKey: 'NAVIGATION_ERROR.INVALID_ROOM.TITLE',
+		messageKey: 'NAVIGATION_ERROR.INVALID_ROOM.MESSAGE'
 	},
 	[NavigationErrorReason.INVALID_RECORDING]: {
-		title: 'Invalid recording',
-		message: 'The recording you are trying to access does not exist or has been deleted'
+		titleKey: 'NAVIGATION_ERROR.INVALID_RECORDING.TITLE',
+		messageKey: 'NAVIGATION_ERROR.INVALID_RECORDING.MESSAGE'
 	},
 	[NavigationErrorReason.INVALID_MEMBER]: {
-		title: 'Invalid member',
-		message: 'You are no longer a member of this room or the member information is incorrect'
+		titleKey: 'NAVIGATION_ERROR.INVALID_MEMBER.TITLE',
+		messageKey: 'NAVIGATION_ERROR.INVALID_MEMBER.MESSAGE'
 	},
 	[NavigationErrorReason.FORBIDDEN_ROOM_ACCESS]: {
-		title: 'Forbidden room access',
-		message: 'You are not authorized to access this room (nor its recordings)'
+		titleKey: 'NAVIGATION_ERROR.FORBIDDEN_ROOM_ACCESS.TITLE',
+		messageKey: 'NAVIGATION_ERROR.FORBIDDEN_ROOM_ACCESS.MESSAGE'
 	},
 	[NavigationErrorReason.FORBIDDEN_ROOM_RECORDINGS_ACCESS]: {
-		title: 'Forbidden recordings access',
-		message: 'You are not authorized to access the recordings in this room'
+		titleKey: 'NAVIGATION_ERROR.FORBIDDEN_ROOM_RECORDINGS_ACCESS.TITLE',
+		messageKey: 'NAVIGATION_ERROR.FORBIDDEN_ROOM_RECORDINGS_ACCESS.MESSAGE'
 	},
 	[NavigationErrorReason.FORBIDDEN_RECORDING_ACCESS]: {
-		title: 'Forbidden recording access',
-		message: 'You are not authorized to access this recording'
+		titleKey: 'NAVIGATION_ERROR.FORBIDDEN_RECORDING_ACCESS.TITLE',
+		messageKey: 'NAVIGATION_ERROR.FORBIDDEN_RECORDING_ACCESS.MESSAGE'
 	},
 	[NavigationErrorReason.ROOM_ACCESS_REVOKED]: {
-		title: 'Room access revoked',
-		message:
-			'Your permissions in this room have been changed, and you no longer have access (nor its recordings). Please contact a moderator for more information'
+		titleKey: 'NAVIGATION_ERROR.ROOM_ACCESS_REVOKED.TITLE',
+		messageKey: 'NAVIGATION_ERROR.ROOM_ACCESS_REVOKED.MESSAGE'
 	},
 	[NavigationErrorReason.TOO_MANY_REQUESTS]: {
-		title: 'Too many requests',
-		message: 'You have made too many requests in a short period of time. Please wait a moment and try again'
+		titleKey: 'NAVIGATION_ERROR.TOO_MANY_REQUESTS.TITLE',
+		messageKey: 'NAVIGATION_ERROR.TOO_MANY_REQUESTS.MESSAGE'
 	},
 	[NavigationErrorReason.INTERNAL_ERROR]: {
-		title: 'Internal error',
-		message: 'An unexpected error occurred, please try again later'
+		titleKey: 'NAVIGATION_ERROR.INTERNAL_ERROR.TITLE',
+		messageKey: 'NAVIGATION_ERROR.INTERNAL_ERROR.MESSAGE'
 	}
 };
 
 /**
- * Maps a technical navigation error reason to a user-friendly title and message.
- * Unknown/unrecognized reasons fall back to the generic internal-error description.
+ * Maps a technical navigation error reason to the translation keys for its user-friendly title and
+ * message. Unknown/unrecognized reasons fall back to the generic internal-error description. The
+ * returned keys must be resolved through the translation layer at the call site.
  */
 export function describeNavigationError(reason: string | NavigationErrorReason): NavigationErrorDescription {
 	const normalized = Object.values(NavigationErrorReason).find((value) => value === reason);
-	return NAVIGATION_ERROR_DESCRIPTIONS[normalized ?? NavigationErrorReason.INTERNAL_ERROR];
+	return NAVIGATION_ERROR_KEYS[normalized ?? NavigationErrorReason.INTERNAL_ERROR];
 }

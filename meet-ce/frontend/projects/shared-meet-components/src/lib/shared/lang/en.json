@@ -6,5 +6,63 @@
     "ACCEPT": "Accept",
     "OOPS": "Oops!",
     "SOMETHING_WRONG": "Something went wrong"
+  },
+  "NAVIGATION_ERROR": {
+    "CLOSED_ROOM": {
+      "TITLE": "Closed room",
+      "MESSAGE": "Meetings in this room are not available while it is closed"
+    },
+    "ANONYMOUS_ACCESS_DISABLED": {
+      "TITLE": "Anonymous access disabled",
+      "MESSAGE": "The anonymous access for your role has been disabled in this room (and its recordings)"
+    },
+    "ANONYMOUS_RECORDING_ACCESS_DISABLED": {
+      "TITLE": "Anonymous access disabled",
+      "MESSAGE": "The anonymous access for this recording has been disabled"
+    },
+    "INVALID_ROOM_SECRET": {
+      "TITLE": "Invalid link",
+      "MESSAGE": "The link you used to access this room (or its recordings) is not valid. Please ask a moderator to share the correct link using the available share buttons"
+    },
+    "INVALID_RECORDING_SECRET": {
+      "TITLE": "Invalid link",
+      "MESSAGE": "The link you used to access this recording is not valid"
+    },
+    "INVALID_ROOM": {
+      "TITLE": "Invalid room",
+      "MESSAGE": "The room (or its recordings) you are trying to access does not exist or has been deleted"
+    },
+    "INVALID_RECORDING": {
+      "TITLE": "Invalid recording",
+      "MESSAGE": "The recording you are trying to access does not exist or has been deleted"
+    },
+    "INVALID_MEMBER": {
+      "TITLE": "Invalid member",
+      "MESSAGE": "You are no longer a member of this room or the member information is incorrect"
+    },
+    "FORBIDDEN_ROOM_ACCESS": {
+      "TITLE": "Forbidden room access",
+      "MESSAGE": "You are not authorized to access this room (nor its recordings)"
+    },
+    "FORBIDDEN_ROOM_RECORDINGS_ACCESS": {
+      "TITLE": "Forbidden recordings access",
+      "MESSAGE": "You are not authorized to access the recordings in this room"
+    },
+    "FORBIDDEN_RECORDING_ACCESS": {
+      "TITLE": "Forbidden recording access",
+      "MESSAGE": "You are not authorized to access this recording"
+    },
+    "ROOM_ACCESS_REVOKED": {
+      "TITLE": "Room access revoked",
+      "MESSAGE": "Your permissions in this room have been changed, and you no longer have access (nor its recordings). Please contact a moderator for more information"
+    },
+    "TOO_MANY_REQUESTS": {
+      "TITLE": "Too many requests",
+      "MESSAGE": "You have made too many requests in a short period of time. Please wait a moment and try again"
+    },
+    "INTERNAL_ERROR": {
+      "TITLE": "Internal error",
+      "MESSAGE": "An unexpected error occurred, please try again later"
+    }
   }
 }

@@ -6,8 +6,10 @@
 			</div>
 
 			<div class="error-details">
-				<h1 class="error-title">{{ errorName() }}</h1>
-				<p class="error-message">{{ message() }}</p>
+				<h1 class="error-title">{{ errorTitleKey() | translate }}</h1>
+				@if (errorMessageKey()) {
+					<p class="error-message">{{ errorMessageKey() | translate }}</p>
+				}
 			</div>
 
 			<div class="error-actions">
@@ -15,7 +17,7 @@
 					<div class="fade-in-delayed-more">
 						<button mat-button (click)="goBack()">
 							<mat-icon>arrow_back</mat-icon>
-							<span>{{ backButtonText() }}</span>
+							<span>{{ backButtonTextKey() | translate }}</span>
 						</button>
 					</div>
 				}

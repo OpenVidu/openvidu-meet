@@ -6,5 +6,63 @@
     "ACCEPT": "接受",
     "OOPS": "哎呀！",
     "SOMETHING_WRONG": "出了点问题"
+  },
+  "NAVIGATION_ERROR": {
+    "CLOSED_ROOM": {
+      "TITLE": "房间已关闭",
+      "MESSAGE": "此房间已关闭，期间无法在其中进行会议"
+    },
+    "ANONYMOUS_ACCESS_DISABLED": {
+      "TITLE": "匿名访问已禁用",
+      "MESSAGE": "此房间（及其录像）已禁用您所属角色的匿名访问"
+    },
+    "ANONYMOUS_RECORDING_ACCESS_DISABLED": {
+      "TITLE": "匿名访问已禁用",
+      "MESSAGE": "此录像的匿名访问已被禁用"
+    },
+    "INVALID_ROOM_SECRET": {
+      "TITLE": "链接无效",
+      "MESSAGE": "您用于访问此房间（或其录像）的链接无效。请让主持人使用可用的分享按钮分享正确的链接"
+    },
+    "INVALID_RECORDING_SECRET": {
+      "TITLE": "链接无效",
+      "MESSAGE": "您用于访问此录像的链接无效"
+    },
+    "INVALID_ROOM": {
+      "TITLE": "房间无效",
+      "MESSAGE": "您尝试访问的房间（或其录像）不存在或已被删除"
+    },
+    "INVALID_RECORDING": {
+      "TITLE": "录像无效",
+      "MESSAGE": "您尝试访问的录像不存在或已被删除"
+    },
+    "INVALID_MEMBER": {
+      "TITLE": "成员无效",
+      "MESSAGE": "您已不再是此房间的成员，或成员信息有误"
+    },
+    "FORBIDDEN_ROOM_ACCESS": {
+      "TITLE": "禁止访问房间",
+      "MESSAGE": "您无权访问此房间（亦无权访问其录像）"
+    },
+    "FORBIDDEN_ROOM_RECORDINGS_ACCESS": {
+      "TITLE": "禁止访问录像",
+      "MESSAGE": "您无权访问此房间中的录像"
+    },
+    "FORBIDDEN_RECORDING_ACCESS": {
+      "TITLE": "禁止访问录像",
+      "MESSAGE": "您无权访问此录像"
+    },
+    "ROOM_ACCESS_REVOKED": {
+      "TITLE": "房间访问权限已撤销",
+      "MESSAGE": "您在此房间中的权限已变更，您已无权访问（亦无权访问其录像）。如需了解更多信息，请联系主持人"
+    },
+    "TOO_MANY_REQUESTS": {
+      "TITLE": "请求过于频繁",
+      "MESSAGE": "您在短时间内的请求次数过多。请稍候片刻后重试"
+    },
+    "INTERNAL_ERROR": {
+      "TITLE": "内部错误",
+      "MESSAGE": "发生意外错误，请稍后重试"
+    }
   }
 }

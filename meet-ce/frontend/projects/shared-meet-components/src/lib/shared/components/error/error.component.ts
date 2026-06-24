@@ -4,7 +4,6 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { TranslatePipe } from '../../pipes/translate.pipe';
-import { TranslateService } from '../../services/i18n/translate.service';
 import { NavigationService } from '../../services/navigation.service';
 import { RuntimeConfigService } from '../../services/runtime-config.service';
 import { describeNavigationError } from '../../utils/navigation-error.util';
@@ -22,17 +21,17 @@ export class ErrorComponent implements OnInit {
 	protected authService = inject(AuthService);
 	protected navService = inject(NavigationService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
-	private readonly translateService = inject(TranslateService);
 
-	errorName = signal('');
-	message = signal('');
+	// Signals hold translation KEYS resolved by the `translate` pipe in the template, so the copy
+	// reacts to a live language switch / lazily-loaded locale (resolving imperatively here would
+	// freeze it to the English fallback for non-English users).
+	errorTitleKey = signal('ERROR.DEFAULT_TITLE');
+	errorMessageKey = signal('');
 
 	showBackButton = signal(true);
-	backButtonText = signal('');
+	backButtonTextKey = signal('ERROR.BACK');
 
 	ngOnInit() {
-		this.errorName.set(this.translateService.translate('ERROR.DEFAULT_TITLE'));
-		this.backButtonText.set(this.translateService.translate('ERROR.BACK'));
 		this.setErrorReason();
 		this.setBackButtonText();
 	}
@@ -43,11 +42,9 @@ export class ErrorComponent implements OnInit {
 	private setErrorReason() {
 		const reason = this.route.snapshot.queryParams['reason'];
 		if (reason) {
-			// `describeNavigationError` returns English copy from a shared util; translating it is a
-			// separate cross-cutting task (the util is also used by the web component).
-			const { title, message } = describeNavigationError(reason);
-			this.errorName.set(title);
-			this.message.set(message);
+			const { titleKey, messageKey } = describeNavigationError(reason);
+			this.errorTitleKey.set(titleKey);
+			this.errorMessageKey.set(messageKey);
 		}
 	}
 
@@ -67,10 +64,8 @@ export class ErrorComponent implements OnInit {
 		}
 
 		this.showBackButton.set(true);
-		this.backButtonText.set(
-			this.translateService.translate(
-				isStandaloneMode && !redirection && isAuthenticated ? 'ERROR.BACK_TO_CONSOLE' : 'ERROR.ACCEPT'
-			)
+		this.backButtonTextKey.set(
+			isStandaloneMode && !redirection && isAuthenticated ? 'ERROR.BACK_TO_CONSOLE' : 'ERROR.ACCEPT'
 		);
 	}
 

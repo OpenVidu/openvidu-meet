@@ -69,7 +69,30 @@ export class TranslateService {
 
 	/** Translates a dot-separated key into the current language (empty string if missing everywhere). */
 	translate(key: string): string {
-		const translation = this.active.get(key);
+		return this.lookup(this.active, key);
+	}
+
+	/**
+	 * Resolves a key in the DEFAULT locale (English), independent of the selected language. The default
+	 * locale is eagerly seeded into {@link base} at construction, so this is synchronous and always
+	 * available regardless of which (lazily-loaded) language is active.
+	 *
+	 * Use it for language-independent values that must stay stable across UI locales — log lines,
+	 * analytics, and programmatic API payloads such as the web component's host `error` event (whose
+	 * consumers may string-match the message). Human-facing UI should use {@link translate} instead.
+	 */
+	translateDefault(key: string): string {
+		return this.lookup(this.base, key);
+	}
+
+	/**
+	 * Looks up a key in the given map, warning once if missing.
+	 * @param map
+	 * @param key
+	 * @returns
+	 */
+	private lookup(map: Map<string, string>, key: string): string {
+		const translation = map.get(key);
 		if (translation === undefined) {
 			if (isDevMode() && !this.warnedMissingKeys.has(key)) {
 				this.warnedMissingKeys.add(key);
