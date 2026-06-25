@@ -4,11 +4,6 @@
  */
 export enum EmbeddedEvent {
 	/**
-	 * Event emitted when application is ready to receive commands.
-	 * @private
-	 */
-	READY = 'ready',
-	/**
 	 * Event emitted when the local participant joins the room.
 	 */
 	JOINED = 'joined',
@@ -50,11 +45,6 @@ export enum LeftEventReason {
  * @category Communication
  */
 export interface EmbeddedEventPayloads {
-	/**
-	 * Payload for the {@link EmbeddedEvent.READY} event.
-	 * @private
-	 */
-	[EmbeddedEvent.READY]: {};
 	/**
 	 * Payload for the {@link EmbeddedEvent.JOINED} event.
 	 */

@@ -3,12 +3,6 @@
  */
 export enum EmbeddedCommand {
 	/**
-	 * Initializes the WebComponent with the given configuration.
-	 * This command is sent from the webcomponent to the iframe to intialice the domain.
-	 * @private
-	 */
-	INITIALIZE = 'initialize',
-	/**
 	 * Ends the current meeting for all participants.
 	 * @moderator
 	 */
@@ -30,13 +24,6 @@ export enum EmbeddedCommand {
  * @category Communication
  */
 export interface EmbeddedCommandPayloads {
-	/**
-	 * Payload for the {@link EmbeddedCommand.INITIALIZE} command.
-	 * @private
-	 */
-	[EmbeddedCommand.INITIALIZE]: {
-		domain: string;
-	};
 	/**
 	 * Payload for the {@link EmbeddedCommand.END_MEETING} command.
 	 */

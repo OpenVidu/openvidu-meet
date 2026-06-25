@@ -1,4 +1,4 @@
-import { ApplicationRef, signal, WritableSignal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LeftEventReason, EmbeddedCommand, EmbeddedEvent } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
@@ -61,10 +61,15 @@ describe('MeetingIframeBridgeService', () => {
 		service = TestBed.inject(MeetingIframeBridgeService);
 	});
 
-	/** Start the bridge and complete the READY → INITIALIZE handshake. */
-	function initializeAndHandshake(): void {
+	/**
+	 * Start the bridge with a stubbed parent-origin resolution (the real one reads
+	 * `ancestorOrigins`/`referrer`, which the Karma top window does not provide).
+	 */
+	function startBridge(parentOrigin = PARENT_ORIGIN): void {
+		spyOn(service as unknown as { resolveParentOrigin: () => string }, 'resolveParentOrigin').and.returnValue(
+			parentOrigin
+		);
 		service.initialize();
-		postFromHost({ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
 	}
 
 	describe('initialize()', () => {
@@ -74,45 +79,45 @@ describe('MeetingIframeBridgeService', () => {
 
 			service.initialize();
 
-			expect(postMessageSpy).not.toHaveBeenCalled();
 			expect(addSpy).not.toHaveBeenCalledWith('message', jasmine.any(Function));
 		});
 
-		it('announces READY to the parent with a wildcard target origin', () => {
-			service.initialize();
+		it('registers the message listener once the parent origin resolves', () => {
+			const addSpy = spyOn(window, 'addEventListener').and.callThrough();
 
-			expect(postMessageSpy).toHaveBeenCalledOnceWith({ event: EmbeddedEvent.READY, payload: {} }, '*');
+			startBridge();
+
+			const messageListenerCalls = addSpy.calls.allArgs().filter(([type]) => type === 'message');
+			expect(messageListenerCalls.length).toBe(1);
 		});
 
-		it('is idempotent (announces READY only once)', () => {
-			service.initialize();
+		it('does not start the bridge when the parent origin cannot be resolved', () => {
+			const addSpy = spyOn(window, 'addEventListener').and.callThrough();
+
+			startBridge('');
+
+			const messageListenerCalls = addSpy.calls.allArgs().filter(([type]) => type === 'message');
+			expect(messageListenerCalls.length).toBe(0);
+
+			// With the bridge closed, inbound commands are ignored.
+			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
+			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
+		});
+
+		it('is idempotent: starting twice attaches the listener only once', () => {
+			const addSpy = spyOn(window, 'addEventListener').and.callThrough();
+
+			startBridge();
 			service.initialize();
 
-			const readyCalls = postMessageSpy.calls.allArgs().filter(([msg]) => msg.event === EmbeddedEvent.READY);
-			expect(readyCalls.length).toBe(1);
+			const messageListenerCalls = addSpy.calls.allArgs().filter(([type]) => type === 'message');
+			expect(messageListenerCalls.length).toBe(1);
 		});
 	});
 
 	describe('command handling (host → app)', () => {
-		it('ignores commands received before the INITIALIZE handshake', () => {
-			service.initialize();
-
-			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
-
-			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
-		});
-
-		it('ignores INITIALIZE without a domain, so later commands stay rejected', () => {
-			service.initialize();
-
-			postFromHost({ command: EmbeddedCommand.INITIALIZE, payload: {} });
-			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
-
-			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
-		});
-
-		it('ignores messages from an untrusted origin once the parent is known', () => {
-			initializeAndHandshake();
+		it('ignores messages from an untrusted origin', () => {
+			startBridge();
 
 			postFromHost({ command: EmbeddedCommand.END_MEETING }, 'https://evil.example.com');
 
@@ -121,7 +126,7 @@ describe('MeetingIframeBridgeService', () => {
 
 		it('ignores commands while not connected to the room', () => {
 			openviduService.isRoomConnected.and.returnValue(false);
-			initializeAndHandshake();
+			startBridge();
 
 			postFromHost({ command: EmbeddedCommand.END_MEETING });
 
@@ -129,7 +134,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('forwards LEAVE_ROOM to the manager', () => {
-			initializeAndHandshake();
+			startBridge();
 
 			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
 
@@ -137,7 +142,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('forwards END_MEETING to the manager', () => {
-			initializeAndHandshake();
+			startBridge();
 
 			postFromHost({ command: EmbeddedCommand.END_MEETING });
 
@@ -145,7 +150,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('forwards KICK_PARTICIPANT with the participant identity', () => {
-			initializeAndHandshake();
+			startBridge();
 
 			postFromHost({
 				command: EmbeddedCommand.KICK_PARTICIPANT,
@@ -156,7 +161,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('ignores KICK_PARTICIPANT without a participant identity', () => {
-			initializeAndHandshake();
+			startBridge();
 
 			postFromHost({ command: EmbeddedCommand.KICK_PARTICIPANT, payload: {} });
 
@@ -164,7 +169,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('ignores malformed messages (no command)', () => {
-			initializeAndHandshake();
+			startBridge();
 
 			expect(() => postFromHost({ foo: 'bar' })).not.toThrow();
 			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
@@ -172,7 +177,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('ignores non-object / non-string-command messages without throwing', () => {
-			initializeAndHandshake();
+			startBridge();
 
 			// Foreign postMessage traffic (extensions, HMR, libraries) and junk payloads
 			// must never reach the manager or crash the handler.
@@ -188,7 +193,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('ignores KICK_PARTICIPANT with an empty participant identity', () => {
-			initializeAndHandshake();
+			startBridge();
 
 			postFromHost({ command: EmbeddedCommand.KICK_PARTICIPANT, payload: { participantIdentity: '' } });
 
@@ -196,7 +201,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('re-evaluates room connection on every command, not just the first', () => {
-			initializeAndHandshake();
+			startBridge();
 
 			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
 			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
@@ -208,55 +213,9 @@ describe('MeetingIframeBridgeService', () => {
 		});
 	});
 
-	describe('handshake origin security', () => {
-		it('rejects an INITIALIZE whose claimed domain does not match the sender origin', () => {
-			service.initialize();
-
-			// A rogue frame posts from evil.example.com but claims to be the real host.
-			postFromHost(
-				{ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } },
-				'https://evil.example.com'
-			);
-
-			// The handshake must NOT have completed: a command — even one purporting to
-			// arrive from the claimed (trusted-looking) origin — is still rejected.
-			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM }, PARENT_ORIGIN);
-			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
-
-			// A genuine handshake (sender origin === claimed domain) still works afterwards,
-			// proving the bridge wasn't left permanently wedged by the spoof attempt.
-			postFromHost(
-				{ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } },
-				PARENT_ORIGIN
-			);
-			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM }, PARENT_ORIGIN);
-			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
-		});
-
-		it('locks the trusted origin on first handshake; a later INITIALIZE cannot move it', () => {
-			initializeAndHandshake(); // trusts PARENT_ORIGIN
-
-			// A second INITIALIZE, even delivered from the already-trusted origin, must not
-			// re-point trust to a different domain.
-			postFromHost(
-				{ command: EmbeddedCommand.INITIALIZE, payload: { domain: 'https://evil.example.com' } },
-				PARENT_ORIGIN
-			);
-
-			// Commands from the original trusted origin still work...
-			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM }, PARENT_ORIGIN);
-			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
-
-			// ...and commands from the newly-claimed origin remain rejected.
-			postFromHost({ command: EmbeddedCommand.END_MEETING }, 'https://evil.example.com');
-			expect(wcManager.endMeeting).not.toHaveBeenCalled();
-		});
-	});
-
 	describe('event relaying (app → host)', () => {
 		it('relays JOINED to the parent at the trusted origin', () => {
-			initializeAndHandshake();
-			postMessageSpy.calls.reset();
+			startBridge();
 
 			wcBridge.emitWebComponentEvent({
 				type: WebComponentEventType.JOINED,
@@ -272,8 +231,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('relays LEFT including the leave reason', () => {
-			initializeAndHandshake();
-			postMessageSpy.calls.reset();
+			startBridge();
 
 			wcBridge.emitWebComponentEvent({
 				type: WebComponentEventType.LEFT,
@@ -293,8 +251,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('relays CLOSED', () => {
-			initializeAndHandshake();
-			postMessageSpy.calls.reset();
+			startBridge();
 
 			wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
 			TestBed.tick();
@@ -306,8 +263,7 @@ describe('MeetingIframeBridgeService', () => {
 		});
 
 		it('does not relay internal ERROR events (no public iframe event)', () => {
-			initializeAndHandshake();
-			postMessageSpy.calls.reset();
+			startBridge();
 
 			wcBridge.emitWebComponentEvent({
 				type: WebComponentEventType.ERROR,
@@ -318,10 +274,7 @@ describe('MeetingIframeBridgeService', () => {
 			expect(postMessageSpy).not.toHaveBeenCalled();
 		});
 
-		it('buffers events until the handshake completes, then flushes them', () => {
-			service.initialize();
-			postMessageSpy.calls.reset();
-
+		it('buffers events emitted before the bridge starts, then flushes them', () => {
 			// Emitted before the parent origin is known: must stay queued.
 			wcBridge.emitWebComponentEvent({
 				type: WebComponentEventType.JOINED,
@@ -331,8 +284,8 @@ describe('MeetingIframeBridgeService', () => {
 			TestBed.tick();
 			expect(postMessageSpy).not.toHaveBeenCalled();
 
-			// Completing the handshake flushes the queued event.
-			postFromHost({ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
+			// Starting the bridge resolves the parent origin and flushes the queue.
+			startBridge();
 			TestBed.tick();
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
@@ -345,8 +298,7 @@ describe('MeetingIframeBridgeService', () => {
 			// The whole reason the bridge uses a FIFO queue instead of a single signal
 			// slot: two emits in the same tick would otherwise collapse to the latest
 			// value when the effect flushes, silently dropping the first event.
-			initializeAndHandshake();
-			postMessageSpy.calls.reset();
+			startBridge();
 
 			wcBridge.emitWebComponentEvent({
 				type: WebComponentEventType.JOINED,
@@ -360,10 +312,7 @@ describe('MeetingIframeBridgeService', () => {
 			expect(relayed).toEqual([EmbeddedEvent.JOINED, EmbeddedEvent.CLOSED]);
 		});
 
-		it('flushes multiple buffered events in FIFO order once the handshake completes', () => {
-			service.initialize();
-			postMessageSpy.calls.reset();
-
+		it('flushes multiple buffered events in FIFO order once the bridge starts', () => {
 			// Queued before the parent origin is known.
 			wcBridge.emitWebComponentEvent({
 				type: WebComponentEventType.JOINED,
@@ -379,7 +328,7 @@ describe('MeetingIframeBridgeService', () => {
 			TestBed.tick();
 			expect(postMessageSpy).not.toHaveBeenCalled();
 
-			postFromHost({ command: EmbeddedCommand.INITIALIZE, payload: { domain: PARENT_ORIGIN } });
+			startBridge();
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
@@ -389,7 +338,7 @@ describe('MeetingIframeBridgeService', () => {
 
 	describe('teardown', () => {
 		it('detaches the global message listener when the root injector is destroyed', () => {
-			initializeAndHandshake();
+			startBridge();
 			const removeSpy = spyOn(window, 'removeEventListener').and.callThrough();
 
 			// Destroying the testing module tears down the root injector, which fires the

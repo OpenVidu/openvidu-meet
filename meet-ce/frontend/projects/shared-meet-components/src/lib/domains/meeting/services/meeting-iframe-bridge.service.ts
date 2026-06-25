@@ -41,13 +41,13 @@ export class MeetingIframeBridgeService {
 		void this.handleMessage(event);
 	};
 
-	/** Trusted parent origin, learnt from the `INITIALIZE` handshake; empty until then. */
+	/** Trusted parent origin, resolved once when the bridge starts; empty until then. */
 	private readonly parentDomain = signal('');
 
 	/**
-	 * Relays queued lifecycle events to the host. Gated on the handshake: until the
-	 * trusted parent origin is known, events stay queued (only READY is sent before
-	 * it, separately). Setting `parentDomain` re-runs this effect and flushes them.
+	 * Relays queued lifecycle events to the host. Gated on the trusted parent
+	 * origin: until it is resolved (when the bridge starts) events stay queued.
+	 * Setting `parentDomain` re-runs this effect and flushes them.
 	 */
 	private readonly eventRelayEffect = effect(() => {
 		const queued = this.wcBridge.wcEvents();
@@ -69,20 +69,54 @@ export class MeetingIframeBridgeService {
 
 	/**
 	 * Starts the iframe bridge. No-op unless running inside an iframe, so the SPA's
-	 * root component can call it unconditionally.
+	 * root component can call it unconditionally. Resolves the trusted parent origin
+	 * up front (no handshake); if it cannot be determined the bridge stays closed
+	 * rather than falling back to a wildcard.
 	 */
 	initialize(): void {
 		if (this.initialized || !this.runtimeConfig.isIframeMode()) {
 			return;
 		}
 
-		this.log.d('Initializing iframe bridge...');
-		this.initialized = true;
-		window.addEventListener('message', this.boundHandleMessage);
+		const parentOrigin = this.resolveParentOrigin();
+		if (!parentOrigin) {
+			// Without a concrete parent origin we can neither validate inbound commands nor
+			// safely target outbound events, so we refuse to open the bridge instead of
+			// trusting/posting to '*'.
+			this.log.e('Could not determine the parent origin; iframe bridge not started.');
+			return;
+		}
 
-		// Announce readiness so the host replies with INITIALIZE (its origin). The
-		// trusted origin is not known yet, so '*' is required for this first message.
-		this.postToParent(createEmbeddedEventMessage(EmbeddedEvent.READY, {}), '*');
+		this.log.d(`Initializing iframe bridge (trusted parent origin: ${parentOrigin})...`);
+		this.initialized = true;
+		this.parentDomain.set(parentOrigin);
+		window.addEventListener('message', this.boundHandleMessage);
+	}
+
+	/**
+	 * Resolves the trusted parent origin without a handshake. Prefers
+	 * `location.ancestorOrigins` (browser-stamped and unforgeable, available in
+	 * Chromium/WebKit); falls back to the `document.referrer` origin (e.g. Firefox).
+	 * Returns `''` when neither yields a usable origin, leaving the bridge closed.
+	 */
+	private resolveParentOrigin(): string {
+		const ancestors = window.location.ancestorOrigins;
+		const fromAncestors = ancestors && ancestors.length > 0 ? ancestors[0] : '';
+
+		if (fromAncestors && fromAncestors !== 'null') {
+			return fromAncestors;
+		}
+
+		if (document.referrer) {
+			try {
+				const origin = new URL(document.referrer).origin;
+				return origin && origin !== 'null' ? origin : '';
+			} catch {
+				return '';
+			}
+		}
+
+		return '';
 	}
 
 	private async handleMessage(event: MessageEvent): Promise<void> {
@@ -91,40 +125,13 @@ export class MeetingIframeBridgeService {
 			return;
 		}
 
-		const { command, payload } = message;
-
-		// Handshake: until the host identifies itself with INITIALIZE we accept nothing
-		// else, and we learn which origin to trust from its payload.
-		if (!this.parentDomain()) {
-			if (command === EmbeddedCommand.INITIALIZE) {
-				const domain = (payload as { domain?: string } | undefined)?.domain;
-				if (!domain) {
-					this.log.e('INITIALIZE received without a domain in the payload');
-					return;
-				}
-				// The host self-reports its origin in the payload, but an origin allowlist
-				// must be anchored to a value the browser stamps — not one the sender can
-				// forge. Require the claimed domain to match the message's real origin, so a
-				// rogue frame can neither point trust at an origin it doesn't control nor lock
-				// the bridge onto a bogus origin (a permanent, unrecoverable DoS otherwise,
-				// since the trusted origin is set once and never revised).
-				if (event.origin !== domain) {
-					this.log.e(
-						`INITIALIZE domain '${domain}' does not match sender origin '${event.origin}'; ignoring`
-					);
-					return;
-				}
-				this.log.d(`Trusted parent origin set: ${domain}`);
-				this.parentDomain.set(domain);
-			}
-			return;
-		}
-
-		// Reject anything not coming from the trusted parent origin.
+		// Reject anything not coming from the trusted parent origin (resolved at start).
 		if (event.origin !== this.parentDomain()) {
 			this.log.w(`Ignoring message from untrusted origin: ${event.origin}`);
 			return;
 		}
+
+		const { command, payload } = message;
 
 		// Commands only make sense once connected to the room.
 		if (!this.openviduService.isRoomConnected()) {
@@ -184,7 +191,8 @@ export class MeetingIframeBridgeService {
 		}
 	}
 
-	private postToParent(message: EmbeddedOutboundEventMessage, targetOrigin: string = this.parentDomain()): void {
+	private postToParent(message: EmbeddedOutboundEventMessage): void {
+		const targetOrigin = this.parentDomain();
 		if (!this.initialized || !targetOrigin) {
 			return;
 		}

@@ -57,7 +57,7 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 			'position:fixed;top:-9999px;left:0;width:auto;height:auto;pointer-events:none;margin:0;padding:0;list-style:none;';
 		document.body.appendChild(log);
 
-		(['ready', 'joined', 'left', 'closed', 'error'] as const).forEach((name) => {
+		(['joined', 'left', 'closed', 'error'] as const).forEach((name) => {
 			document.addEventListener(
 				name,
 				(ev) => {
