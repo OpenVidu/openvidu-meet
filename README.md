@@ -64,8 +64,6 @@ cd openvidu-meet
 
 Then, the application will be available at [http://localhost:6080](http://localhost:6080).
 
-> **Note:** Livereload is also available at [http://localhost:6081](http://localhost:6081).
-
 ## Development
 
 ### Development Mode
@@ -81,9 +79,8 @@ This command starts concurrent watchers for:
 - **Typings**: Shared type definitions with automatic sync
 - **Shared Meet Components**: Angular library with hot reload
 - **Backend**: Node.js server with auto-restart (ignores public folder)
-- **Frontend**: Angular application with live reload
+- **Frontend**: Angular application (watch build)
 - **REST API Docs**: OpenAPI documentation generation
-- **Browser Sync**: Live reload server
 
 Optional flags:
 - `--testapp`: Include testapp watcher

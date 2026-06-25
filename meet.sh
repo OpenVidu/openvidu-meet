@@ -516,46 +516,6 @@ add_pro_commands() {
   CMD_COMMANDS+=("./scripts/dev/watch-typings.sh pro")
 }
 
-# Helper: Add REST API docs and browser-sync commands
-add_browsersync_commands() {
-  local browsersync_path="$1"
-
-  # Browser-sync for live reload
-  CMD_NAMES+=("browser-sync")
-  CMD_COLORS+=("bgWhite.black")
-  CMD_COMMANDS+=("node --input-type=module -e \"
-    import browserSync from 'browser-sync';
-    import chalk from 'chalk';
-
-    const bs = browserSync.create();
-    const port = 6081;
-
-    bs.init({
-      proxy: 'http://localhost:6080',
-      files: ['${browsersync_path}'],
-      open: false,
-      reloadDelay: 200,
-      port
-    });
-
-    bs.emitter.on('browser:reload', () => {
-      const now = Date.now();
-      const time = new Date().toLocaleTimeString();
-      console.log(chalk.yellowBright('🔁 Browser reloaded at ' + time));
-
-      const urls = bs.getOption('urls');
-      const local = urls?.get('local') ?? 'undefined';
-      const external = urls?.get('external') ?? 'undefined';
-      console.log(chalk.cyanBright('   OpenVidu Meet:    http://localhost:6080'));
-      console.log(chalk.cyanBright('   OpenVidu Meet Testapp:    http://localhost:5080'));
-      console.log(chalk.cyanBright('   Live reload Local:    ' + local));
-      console.log(chalk.cyanBright('   Live reload LAN: ' + external));
-
-      console.log(chalk.gray('---------------------------------------------'));
-    });
-    \"")
-}
-
 # Helper: Launch all development watchers using concurrently
 launch_dev_watchers() {
   local edition="$1"
@@ -610,7 +570,6 @@ dev() {
 
   # Define paths
   local shared_meet_components_path="meet-ce/frontend/projects/shared-meet-components/dist/package.json"
-  local browsersync_path
 
   # Initialize command arrays
   CMD_NAMES=()
@@ -623,17 +582,12 @@ dev() {
   # Add optional commands (testapp, webcomponent)
   add_optional_commands "$include_testapp" "$include_webcomponent"
 
-  # Add edition-specific commands and set paths
+  # Add edition-specific commands
   if [ "$edition" = "pro" ]; then
-    browsersync_path="meet-pro/backend/public/**/*"
     add_pro_commands "$shared_meet_components_path"
   else
-    browsersync_path="meet-ce/backend/public/**/*"
     add_ce_commands "$shared_meet_components_path"
   fi
-
-  # Add browser-sync commands
-  add_browsersync_commands "$browsersync_path"
 
   # Launch all watchers
   launch_dev_watchers "$edition" "$shared_meet_components_path"

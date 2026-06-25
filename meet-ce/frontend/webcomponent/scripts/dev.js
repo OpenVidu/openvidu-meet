@@ -4,17 +4,17 @@
  * Development script that:
  *   1. Starts `ng build --watch --configuration=wc` (Angular WC build in watch mode)
  *   2. Waits for the first successful build (dist/wc/browser/main.js to appear)
- *   3. Runs post-build scripts (concat-wc.js + generate-api.js + sync-wc.js)
- *   4. Starts the testapp on an internal port (4299) via `ng serve`
- *   5. Starts browser-sync as a proxy on port 4200, watching the WC bundle.
- *      After every rebuild browser-sync triggers a full browser reload.
+ *   3. Runs post-build scripts (concat-wc.js + deploy-to-backend.js)
+ *   4. Starts the testapp on port 4200 via `ng serve`
+ *   5. Watches the WC bundle: after every rebuild it re-runs the post-build chain
+ *      so the fresh bundle is deployed into the testapp. The Angular dev server
+ *      reloads the page when the deployed bundle changes.
  *
  * Usage (from webcomponent/):
  *   pnpm run dev
  *
- * URLs:
- *   http://localhost:4200  ← entry point (browser-sync proxy, live reload)
- *   http://localhost:4299  ← ng serve (internal)
+ * URL:
+ *   http://localhost:4200  ← testapp (ng serve)
  */
 
 const { spawn, spawnSync } = require('child_process');
@@ -25,13 +25,11 @@ const rootDir = path.resolve(__dirname, '..');
 // The testapp was moved to the repo root (../../../testapp from webcomponent/).
 const testappDir = path.resolve(rootDir, '..', '..', '..', 'testapp');
 const mainJs = path.join(rootDir, 'dist', 'wc', 'browser', 'main.js');
-const wcBundle = path.join(testappDir, 'public', 'openvidu-meet-wc.js');
 
 // Ports
-const TESTAPP_INTERNAL_PORT = 4299;
-const BS_PORT = 4200;
+const TESTAPP_PORT = 4200;
 
-// ─── Resolve modules / binaries ──────────────────────────────────────────────
+// ─── Resolve binaries ────────────────────────────────────────────────────────
 
 // Resolve a binary by walking up from `startDir` through node_modules/.bin/
 function resolveBin(name, startDir) {
@@ -47,20 +45,6 @@ function resolveBin(name, startDir) {
   }
 }
 
-// Resolve a Node module by walking up from `startDir` through node_modules/
-function resolveModule(name, startDir) {
-  let dir = startDir;
-  while (true) {
-    const candidate = path.join(dir, 'node_modules', name);
-    if (fs.existsSync(candidate)) return candidate;
-    const parent = path.dirname(dir);
-    if (parent === dir) {
-      throw new Error(`[dev] Could not find module '${name}'. Run pnpm install at the workspace root.`);
-    }
-    dir = parent;
-  }
-}
-
 // Resolve Angular CLI binaries (may be hoisted to workspace root by pnpm)
 const ngBin = resolveBin('ng', rootDir);
 const testappNgBin = (() => {
@@ -69,16 +53,12 @@ const testappNgBin = (() => {
 
 // ─── Post-build chain ────────────────────────────────────────────────────────
 
-let bsInstance = null;
-
 function runPostBuild() {
   console.log('\n[dev] Running post-build chain...');
 
   const steps = [
     { label: 'concat-wc.js', cmd: 'node', args: [path.join(rootDir, 'scripts', 'concat-wc.js')], cwd: rootDir },
-    { label: 'generate-api.js', cmd: 'node', args: [path.join(rootDir, 'scripts', 'generate-api.js')], cwd: rootDir },
     { label: 'deploy-to-backend.js', cmd: 'node', args: [path.join(rootDir, 'scripts', 'deploy-to-backend.js')], cwd: rootDir },
-    { label: 'sync-wc.js', cmd: 'node', args: [path.join(testappDir, 'scripts', 'sync-wc.js')], cwd: testappDir },
   ];
 
   for (const step of steps) {
@@ -89,13 +69,7 @@ function runPostBuild() {
     }
   }
 
-  // Trigger full browser reload via browser-sync
-  if (bsInstance) {
-    bsInstance.reload();
-    console.log('[dev] browser-sync: full reload triggered.\n');
-  } else {
-    console.log('[dev] Post-build complete.\n');
-  }
+  console.log('[dev] Post-build complete.\n');
   return true;
 }
 
@@ -147,8 +121,8 @@ function waitForFirstBuild(callback) {
 }
 
 function startTestapp() {
-  console.log(`[dev] Starting testapp on internal port ${TESTAPP_INTERNAL_PORT}...\n`);
-  testappProcess = spawn(testappNgBin, ['serve', '--port', String(TESTAPP_INTERNAL_PORT)], {
+  console.log(`[dev] Starting testapp on http://localhost:${TESTAPP_PORT}...\n`);
+  testappProcess = spawn(testappNgBin, ['serve', '--port', String(TESTAPP_PORT)], {
     cwd: testappDir,
     stdio: 'inherit',
   });
@@ -162,54 +136,6 @@ function startTestapp() {
       console.error(`[dev] testapp ng serve exited with code ${code}`);
     }
   });
-}
-
-// ─── browser-sync proxy ───────────────────────────────────────────────────────
-
-function startBrowserSync() {
-  const bsPath = resolveModule('browser-sync', rootDir);
-  const browserSync = require(bsPath);
-
-  bsInstance = browserSync.create('openvidu-meet-wc-dev');
-
-  // Wait a bit for ng serve to be ready before proxying
-  const initDelay = 8000;
-  console.log(`[dev] browser-sync will start in ${initDelay / 1000}s (waiting for ng serve)...`);
-
-  setTimeout(() => {
-    bsInstance.init(
-      {
-        proxy: `http://localhost:${TESTAPP_INTERNAL_PORT}`,
-        port: BS_PORT,
-        open: false,
-        reloadDelay: 300,
-        reloadDebounce: 500,
-        notify: false,
-        logLevel: 'info',
-        logPrefix: 'browser-sync',
-        ui: false,
-        // Prevent the browser from caching the WC bundle (no hash in filename)
-        middleware: [
-          function noCacheWcBundle(req, res, next) {
-            if (req.url && req.url.includes('openvidu-meet.js')) {
-              res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-              res.setHeader('Pragma', 'no-cache');
-              res.setHeader('Expires', '0');
-            }
-            next();
-          },
-        ],
-      },
-      (err) => {
-        if (err) {
-          console.error('[dev] browser-sync init error:', err);
-          return;
-        }
-        const time = new Date().toLocaleTimeString();
-        console.log(`[dev] browser-sync ready at http://localhost:${BS_PORT} (${time})`);
-      }
-    );
-  }, initDelay);
 }
 
 // ─── Main ────────────────────────────────────────────────────────────────────
@@ -232,7 +158,6 @@ waitForFirstBuild(() => {
     process.exit(1);
   }
   startTestapp();
-  startBrowserSync();
   startWatchingDist();
 });
 
@@ -240,7 +165,6 @@ waitForFirstBuild(() => {
 
 function cleanup() {
   clearTimeout(debounceTimer);
-  if (bsInstance) { try { bsInstance.exit(); } catch (_) {} }
   if (wcBuild) wcBuild.kill('SIGTERM');
   if (testappProcess) testappProcess.kill('SIGTERM');
   process.exit(0);
