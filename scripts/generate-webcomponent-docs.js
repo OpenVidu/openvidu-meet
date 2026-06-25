@@ -6,7 +6,7 @@ const path = require('path');
  */
 class WebComponentDocGenerator {
     constructor() {
-        this.typingsPath = path.join(__dirname, '../meet-ce/typings/src/webcomponent');
+        this.typingsPath = path.join(__dirname, '../meet-ce/typings/src/embedded');
         this.webComponentPath = path.join(__dirname, '../meet-ce/frontend/webcomponent/src/components/OpenViduMeet.ts');
     }
 
@@ -146,7 +146,7 @@ class WebComponentDocGenerator {
                 continue;
             }
 
-            // Parse payload property - looking for patterns like [WebComponentEvent.JOIN]: {
+            // Parse payload property - looking for patterns like [EmbeddedEvent.JOIN]: {
             const propMatch = trimmed.match(/\[\w+\.(\w+)\]:\s*({[\s\S]*?}|[^,;]+)[,;]?/);
             if (propMatch) {
                 const enumValue = propMatch[1];
@@ -210,7 +210,7 @@ class WebComponentDocGenerator {
         const enums = this.parseEnumFile(path.join(this.typingsPath, 'events.ts'));
         const payloads = this.extractPayloads(path.join(this.typingsPath, 'events.ts'));
 
-        const eventEnum = enums.find(e => e.name === 'WebComponentEvent');
+        const eventEnum = enums.find(e => e.name === 'EmbeddedEvent');
         if (!eventEnum) return '';
 
         let markdown = '| Event | Description | Payload |\n';
@@ -236,7 +236,7 @@ class WebComponentDocGenerator {
         const enums = this.parseEnumFile(path.join(this.typingsPath, 'commands.ts'));
         const payloads = this.extractPayloads(path.join(this.typingsPath, 'commands.ts'));
 
-        const commandEnum = enums.find(e => e.name === 'WebComponentCommand');
+        const commandEnum = enums.find(e => e.name === 'EmbeddedCommand');
         if (!commandEnum) return '';
 
         let markdown = '| Method | Command | Description | Parameters | Access Level |\n';
@@ -316,8 +316,8 @@ class WebComponentDocGenerator {
      * Generates markdown table for attributes/properties
      */
     generateAttributesTable() {
-        const propertyEnums = this.parseEnumFile(path.join(this.typingsPath, 'properties.ts'));
-        const propertyEnum = propertyEnums.find(e => e.name === 'WebComponentProperty');
+        const propertyEnums = this.parseEnumFile(path.join(this.typingsPath, 'attributes.ts'));
+        const propertyEnum = propertyEnums.find(e => e.name === 'EmbeddedAttribute');
 
         let markdown = '| Attribute | Description | Required |\n';
         markdown += '|-----------|-------------|----------|\n';

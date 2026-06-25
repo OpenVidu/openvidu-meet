@@ -1,29 +1,20 @@
 OpenVidu Meet Web Component (Angular)
 ======================================
 
-This package provides the `<openvidu-meet>` custom element built with Angular Elements. It renders the meeting UI directly into the host application's DOM — without an iframe — and exposes a rich, type-safe public API.
+This package provides the `<openvidu-meet>` custom element built with Angular Elements. It renders the meeting UI directly into the host application's DOM — without an iframe — and exposes a public API (attributes, events, imperative methods).
 
 ## Architecture
 
 ```
 webcomponent/
-├── contracts/
-│   └── openvidu-meet.contract.js   ← Single source of truth for the public API
 ├── scripts/
-│   ├── generate-api.js             ← Orchestrates all generators
-│   ├── concat-wc.js                ← Concatenates Angular build output
-│   └── generators/
-│       ├── generate-types.js       ← TypeScript declarations
-│       ├── generate-cem.js         ← Custom Elements Manifest
-│       ├── generate-angular-wrapper.js
-│       └── generate-react-wrapper.js
+│   ├── concat-wc.js            ← Bundles the Angular build into a single file
+│   ├── deploy-to-backend.js    ← Copies the bundle into the backend's public dir
+│   └── dev.js                  ← Watch build + testapp (ng serve)
 └── src/
-    ├── main.ts                     ← Dev entry point (full Angular app)
-    ├── main.wc.ts                  ← WC build entry point
-    └── app/
-        ├── app.ts                  ← Root Angular component (exposes WC API)
-        ├── app.module.ts           ← Custom element registration
-        └── components/             ← UI sub-components
+    ├── main.ts                 ← Dev entry point (full Angular app)
+    ├── main.wc.ts              ← WC build entry point
+    └── app/                    ← Root component, custom-element registration, UI
 ```
 
 ## Quick Start
@@ -38,32 +29,17 @@ npm start          # Angular dev server at http://localhost:4200
 ### Build the WebComponent bundle
 
 ```bash
-npm run build:wc:bundle   # compiles Angular → concatenates → generates API artifacts
+npm run build:wc:bundle   # compiles Angular → concatenates → deploys to the backend
 ```
 
 Output:
-- `dist/openvidu-meet-wc.js` — single-file bundle ready to embed
-- `dist/types/openvidu-meet.d.ts` — framework-agnostic TypeScript declarations
-- `dist/types/openvidu-meet-react-jsx.d.ts` — React JSX type augmentations
-- `dist/custom-elements.json` — Custom Elements Manifest
-- `dist/wrappers/angular/` — typed Angular wrapper component
-- `dist/wrappers/react/` — typed React wrapper component
+- `dist/openvidu-meet-wc.js` — single-file bundle ready to embed. The build also
+  deploys it into the backend's public dir, which serves it at
+  `<basePath>/v1/openvidu-meet.js`.
 
-### Regenerate API artifacts only (no Angular build)
-
-```bash
-npm run build:api
-```
-
-## Contract-first API design
-
-All public API artifacts are derived from a single contract file:
-
-```
-contracts/openvidu-meet.contract.js
-```
-
-Edit the contract → run `npm run build:api` to regenerate all integration artifacts.
+The bundle is the only published artifact: host apps embed `<openvidu-meet>` by
+loading this script. (The contract-driven generators, framework wrappers, and
+generated type/manifest artifacts were removed in favor of this single deliverable.)
 
 ## Embedding in host applications
 
@@ -106,15 +82,19 @@ Edit the contract → run `npm run build:api` to regenerate all integration arti
 
 ## TypeScript support
 
+The bundle ships no `.d.ts`. A TypeScript host declares the subset of the element
+API it uses (see `testapp/src/app/openvidu-meet-element.ts` for a working example):
+
 ```typescript
-import type { OpenViduMeetElement, OpenViduMeetJoinedDetail } from 'dist/types/openvidu-meet';
+interface OpenViduMeetElement extends HTMLElement {
+  roomUrl?: string;
+  participantName?: string;
+  endMeeting(): void;
+  leaveRoom(): void;
+  kickParticipant(participantIdentity: string): void;
+}
 
 const meet = document.querySelector<OpenViduMeetElement>('openvidu-meet')!;
-
-meet.addEventListener('joined', (e: CustomEvent<OpenViduMeetJoinedDetail>) => {
-  console.log(e.detail.roomId);
-});
-
+meet.addEventListener('joined', (e) => console.log((e as CustomEvent).detail.roomId));
 meet.roomUrl = 'https://your-server.com/room/my-room';
-meet.participantName = 'Alice';
 ```

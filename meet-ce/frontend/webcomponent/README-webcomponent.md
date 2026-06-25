@@ -3,8 +3,6 @@ OpenVidu Meet — WebComponent Public API Reference
 
 This document describes the public API of the `<openvidu-meet>` custom element.
 
-All artifacts in this section are generated from `contracts/openvidu-meet.contract.js`.
-
 ## HTML Attributes / Properties
 
 | Attribute               | Property            | Type      | Description |
