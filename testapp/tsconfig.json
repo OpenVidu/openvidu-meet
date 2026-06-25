@@ -13,11 +13,7 @@
     "importHelpers": true,
     "target": "ES2022",
     "module": "preserve",
-    "baseUrl": ".",
-    "paths": {
-      "@openvidu-meet-wc": ["src/openvidu-meet/generated/wrappers/angular"],
-      "@openvidu-meet-wc/*": ["src/openvidu-meet/generated/wrappers/angular/*"]
-    }
+    "baseUrl": "."
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

@@ -2,6 +2,7 @@ import {
 	ChangeDetectionStrategy,
 	Component,
 	computed,
+	CUSTOM_ELEMENTS_SCHEMA,
 	effect,
 	ElementRef,
 	inject,
@@ -10,9 +11,8 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { WebComponentEvent, WebComponentProperty } from '@openvidu-meet/typings';
-import type { OpenViduMeetJoinedDetail, OpenViduMeetLeftDetail } from '@openvidu-meet-wc';
-import { OpenviduMeetComponent } from '@openvidu-meet-wc';
+import { EmbeddedEvent, EmbeddedAttribute } from '@openvidu-meet/typings';
+import type { OpenViduMeetElement, OpenViduMeetJoinedDetail, OpenViduMeetLeftDetail } from './openvidu-meet-element';
 import { EventLog } from './components/event-log/event-log';
 import { EventLogService } from './services/event-log';
 import { IframeHostService } from './services/iframe-host';
@@ -22,17 +22,20 @@ export type Integration = 'webcomponent' | 'iframe';
 
 @Component({
 	selector: 'app-root',
-	imports: [OpenviduMeetComponent, FormsModule, EventLog],
+	imports: [FormsModule, EventLog],
 	templateUrl: './app.html',
 	styleUrl: './app.css',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	changeDetection: ChangeDetectionStrategy.OnPush,
+	// The webcomponent integration uses the raw <openvidu-meet> element from the
+	// bundle (loaded via the backend <script>), so allow the custom element + its bindings.
+	schemas: [CUSTOM_ELEMENTS_SCHEMA]
 })
 export class App {
 	protected readonly log = inject(EventLogService);
 	private readonly iframeHost = inject(IframeHostService);
 	private readonly sanitizer = inject(DomSanitizer);
 
-	protected readonly meetRef = viewChild(OpenviduMeetComponent);
+	protected readonly meetRef = viewChild<ElementRef<OpenViduMeetElement>>('meetRef');
 	protected readonly meetIframe = viewChild<ElementRef<HTMLIFrameElement>>('meetIframe');
 	// Stable, integration-agnostic event target: both transports re-dispatch their
 	// lifecycle events here so the e2e suite observes them the same way.
@@ -153,17 +156,17 @@ export class App {
 		const set = (key: string, value: string | undefined) => {
 			if (value) url.searchParams.set(key, value);
 		};
-		set(WebComponentProperty.PARTICIPANT_NAME, this.participantNameInput);
+		set(EmbeddedAttribute.PARTICIPANT_NAME, this.participantNameInput);
 		// The embedded app runs on the Meet server origin (the iframe `src`), NOT this
 		// host's origin, and cannot reliably reconstruct the host origin from
 		// document.referrer. So resolve a relative leave-redirect path against THIS
 		// window's origin here and hand the iframe an absolute URL it can navigate to
 		// (the webcomponent gets this for free since it runs in the host window).
-		set(WebComponentProperty.LEAVE_REDIRECT_URL, this.resolveLeaveRedirectUrl(this.leaveRedirectUrlInput));
-		set(WebComponentProperty.E2EE_KEY, this.e2eeKeyInput);
-		set(WebComponentProperty.SHOW_RECORDING, this.showRecordingInput);
+		set(EmbeddedAttribute.LEAVE_REDIRECT_URL, this.resolveLeaveRedirectUrl(this.leaveRedirectUrlInput));
+		set(EmbeddedAttribute.E2EE_KEY, this.e2eeKeyInput);
+		set(EmbeddedAttribute.SHOW_RECORDING, this.showRecordingInput);
 		if (this.showOnlyRecordingsInput) {
-			url.searchParams.set(WebComponentProperty.SHOW_ONLY_RECORDINGS, 'true');
+			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');
 		}
 
 		return { src: url.toString(), origin: url.origin };
@@ -180,24 +183,24 @@ export class App {
 
 	// ── Lifecycle events (unified across integrations) ──────────────────────
 
-	protected handleJoined(event: CustomEvent<OpenViduMeetJoinedDetail>): void {
-		this.emitLifecycle(WebComponentEvent.JOINED, event.detail);
+	protected handleJoined(event: Event): void {
+		this.emitLifecycle(EmbeddedEvent.JOINED, (event as CustomEvent<OpenViduMeetJoinedDetail>).detail);
 	}
 
-	protected handleLeft(event: CustomEvent<OpenViduMeetLeftDetail>): void {
-		this.emitLifecycle(WebComponentEvent.LEFT, event.detail);
+	protected handleLeft(event: Event): void {
+		this.emitLifecycle(EmbeddedEvent.LEFT, (event as CustomEvent<OpenViduMeetLeftDetail>).detail);
 	}
 
 	protected handleClosed(): void {
-		this.emitLifecycle(WebComponentEvent.CLOSED, {});
+		this.emitLifecycle(EmbeddedEvent.CLOSED, {});
 	}
 
-	private handleIframeEvent(event: WebComponentEvent, payload: unknown): void {
+	private handleIframeEvent(event: EmbeddedEvent, payload: unknown): void {
 		this.emitLifecycle(event, payload ?? {});
 	}
 
 	/** Log the event and re-dispatch it on the integration-agnostic event sink for e2e. */
-	private emitLifecycle(name: WebComponentEvent, detail: unknown): void {
+	private emitLifecycle(name: EmbeddedEvent, detail: unknown): void {
 		this.log.log(`[event] ${name} — ${this.stringify(detail)}`);
 		this.eventSink()?.nativeElement.dispatchEvent(new CustomEvent(name, { detail: detail ?? {}, bubbles: true }));
 	}
@@ -216,7 +219,7 @@ export class App {
 		if (this.integration() === 'iframe') {
 			this.iframeHost.endMeeting();
 		} else {
-			this.meetRef()?.endMeeting();
+			this.meetRef()?.nativeElement.endMeeting();
 		}
 		this.log.log('→ endMeeting()');
 	}
@@ -225,7 +228,7 @@ export class App {
 		if (this.integration() === 'iframe') {
 			this.iframeHost.leaveRoom();
 		} else {
-			this.meetRef()?.leaveRoom();
+			this.meetRef()?.nativeElement.leaveRoom();
 		}
 		this.log.log('→ leaveRoom()');
 	}
@@ -234,7 +237,7 @@ export class App {
 		if (this.integration() === 'iframe') {
 			this.iframeHost.kickParticipant(this.kickIdentityInput);
 		} else {
-			this.meetRef()?.kickParticipant(this.kickIdentityInput);
+			this.meetRef()?.nativeElement.kickParticipant(this.kickIdentityInput);
 		}
 		this.log.log(`→ kickParticipant("${this.kickIdentityInput}")`);
 	}
@@ -242,9 +245,9 @@ export class App {
 	// ── on / once / off API (webcomponent element only) ─────────────────────
 
 	protected callOn(): void {
-		const ref = this.meetRef();
+		const el = this.meetRef()?.nativeElement;
 
-		if (!ref) {
+		if (!el) {
 			this.log.log('⚠ on/once/off is webcomponent-only (no element mounted)');
 			return;
 		}
@@ -255,26 +258,26 @@ export class App {
 		}
 
 		this.onJoinedHandler = (d) => this.log.log(`[on] joined — identity: ${d.participantIdentity}`);
-		ref.on('joined', this.onJoinedHandler);
+		el.on('joined', this.onJoinedHandler);
 		this.log.log('on("joined", handler) registered');
 	}
 
 	protected callOnce(): void {
-		const ref = this.meetRef();
+		const el = this.meetRef()?.nativeElement;
 
-		if (!ref) {
+		if (!el) {
 			this.log.log('⚠ on/once/off is webcomponent-only (no element mounted)');
 			return;
 		}
 
-		ref.once('joined', (d) => this.log.log(`[once] joined — identity: ${d.participantIdentity}`));
+		el.once('joined', (d) => this.log.log(`[once] joined — identity: ${d.participantIdentity}`));
 		this.log.log('once("joined", handler) registered');
 	}
 
 	protected callOff(): void {
-		const ref = this.meetRef();
+		const el = this.meetRef()?.nativeElement;
 
-		if (!ref) {
+		if (!el) {
 			this.log.log('⚠ on/once/off is webcomponent-only (no element mounted)');
 			return;
 		}
@@ -284,7 +287,7 @@ export class App {
 			return;
 		}
 
-		ref.off('joined', this.onJoinedHandler);
+		el.off('joined', this.onJoinedHandler);
 		this.onJoinedHandler = null;
 		this.log.log('off("joined", handler) called');
 	}

@@ -4,12 +4,11 @@
   "private": true,
   "scripts": {
     "ng": "ng",
-    "sync:wc": "node scripts/sync-wc.js",
     "webhook-bridge": "node scripts/webhook-bridge.js",
-    "start": "pnpm run build:wc && pnpm run sync:wc && pnpm run serve:all",
-    "serve": "pnpm run sync:wc && pnpm run serve:all",
+    "start": "pnpm run build:wc && pnpm run serve:all",
+    "serve": "pnpm run serve:all",
     "serve:all": "concurrently -k --names ng,bridge --prefix-colors cyan,magenta \"ng serve\" \"pnpm run webhook-bridge\"",
-    "build": "pnpm run sync:wc && ng build",
+    "build": "ng build",
     "build:wc": "pnpm --filter @openvidu-meet/webcomponent run build:wc:bundle",
     "test": "ng test"
   },

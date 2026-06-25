@@ -107,7 +107,7 @@
 	<!-- ── Meet area (webcomponent OR iframe, per the selected integration) ──── -->
 	<main class="ta-wc-area" data-testid="meet-area">
 		@if (mounted()) { @switch (integration()) { @case ('webcomponent') {
-		<openvidu-meet-angular
+		<openvidu-meet
 			#meetRef
 			[roomUrl]="roomUrl()"
 			[recordingUrl]="recordingUrl()"
@@ -120,7 +120,7 @@
 			(left)="handleLeft($event)"
 			(closed)="handleClosed()"
 			data-testid="openvidu-meet"
-		></openvidu-meet-angular>
+		></openvidu-meet>
 		} @case ('iframe') {
 		<iframe
 			#meetIframe

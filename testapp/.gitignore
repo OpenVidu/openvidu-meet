@@ -6,6 +6,5 @@ dist/
 out-tsc/
 .angular/
 
-# Synced WC artifacts (populated by `pnpm run sync:wc`)
-src/openvidu-meet/
+# Local WC bundle copy (if present; the bundle is normally served by the backend)
 public/openvidu-meet-wc.js
