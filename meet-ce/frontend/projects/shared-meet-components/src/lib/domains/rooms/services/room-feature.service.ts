@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -68,7 +68,9 @@ export class RoomFeatureService {
 	 */
 	private readonly loadConfigEffect = effect(() => {
 		if (this.runtimeConfigService.isReadyForRequests()) {
-			void this.loadGlobalFeatureConfigs();
+			untracked(() => {
+				void this.loadGlobalFeatureConfigs();
+			});
 		}
 	});
 
