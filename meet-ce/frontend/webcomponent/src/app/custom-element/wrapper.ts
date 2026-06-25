@@ -1,5 +1,7 @@
-import type { OpenViduMeetElementEventName } from '../../webcomponents-types/openvidu-meet';
 import type { App } from '../app';
+
+/** Public DOM event names emitted by `<openvidu-meet>`. */
+type OpenViduMeetEventName = 'joined' | 'left' | 'closed' | 'error';
 
 /**
  * Wraps the Angular Elements base class to add: imperative methods
@@ -32,7 +34,7 @@ export function createOpenViduMeetElementClass(
 			this._handlerMap.clear();
 		}
 
-		on(eventName: OpenViduMeetElementEventName, callback: (detail: any) => void): this {
+		on(eventName: OpenViduMeetEventName, callback: (detail: any) => void): this {
 			const listener: EventListener = (e: Event) => callback((e as CustomEvent).detail);
 
 			if (!this._handlerMap.has(eventName)) {
@@ -44,7 +46,7 @@ export function createOpenViduMeetElementClass(
 			return this;
 		}
 
-		once(eventName: OpenViduMeetElementEventName, callback: (detail: any) => void): this {
+		once(eventName: OpenViduMeetEventName, callback: (detail: any) => void): this {
 			const wrapper = (detail: any): void => {
 				this.off(eventName, wrapper);
 				callback(detail);
@@ -53,7 +55,7 @@ export function createOpenViduMeetElementClass(
 			return this.on(eventName, wrapper);
 		}
 
-		off(eventName: OpenViduMeetElementEventName, callback?: (detail: any) => void): this {
+		off(eventName: OpenViduMeetEventName, callback?: (detail: any) => void): this {
 			const handlers = this._handlerMap.get(eventName);
 
 			if (!handlers) return this;

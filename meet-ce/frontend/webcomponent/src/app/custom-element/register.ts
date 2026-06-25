@@ -1,6 +1,5 @@
 import { Injector } from '@angular/core';
 import { createCustomElement } from '@angular/elements';
-import type { OpenViduMeetElement } from '../../webcomponents-types/openvidu-meet';
 import { App } from '../app';
 import { createOpenViduMeetElementClass } from './wrapper';
 
@@ -17,7 +16,7 @@ const TAG_NAME = 'openvidu-meet';
 export function registerOpenViduMeetElement(injector: Injector): void {
 	if (customElements.get(TAG_NAME)) return;
 
-	const NgElementConstructor = createCustomElement<OpenViduMeetElement>(App, { injector });
+	const NgElementConstructor = createCustomElement(App, { injector });
 	const ElementClass = createOpenViduMeetElementClass(NgElementConstructor as CustomElementConstructor);
 	customElements.define(TAG_NAME, ElementClass);
 }
