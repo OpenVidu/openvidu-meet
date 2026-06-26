@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { NavigationStart, Params, Router, UrlTree } from '@angular/router';
 import { NavigationErrorReason } from '../models/navigation.model';
 import {
@@ -22,6 +22,13 @@ export class NavigationService {
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly listStateCacheService = inject(ListStateCacheService);
 	protected leaveRedirectUrl?: string;
+
+	/**
+	 * Last route requested for navigation.
+	 * In SPA mode, this is always the current route.
+	 * In webcomponent mode, this is the last route requested by the SPA, which may not be the current route if the shell has overridden it (e.g. showing a login or change-password view).
+	 */
+	readonly targetRoute = signal<string | null>(null);
 
 	/** Trigger of the most recently started navigation (tracked from NavigationStart). */
 	private lastNavigationTrigger: 'imperative' | 'popstate' | 'hashchange' = 'imperative';
@@ -176,6 +183,7 @@ export class NavigationService {
 		// view changes go through the high-level intents / navigation requests). Guard
 		// against hitting the empty router, which would only log a NavigationError.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.targetRoute.set(route);
 			console.warn(`navigateTo('${route}') ignored in webcomponent mode`);
 			return;
 		}
@@ -256,6 +264,7 @@ export class NavigationService {
 		// back to that primary view and re-bootstrap it. The `url` is intentionally
 		// ignored.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.targetRoute.set(null);
 			this.wcBridge.clearNavigationRequest();
 			return;
 		}
@@ -295,6 +304,7 @@ export class NavigationService {
 		// The WC has no `/error` route: surface the error through the bridge instead.
 		// The shell re-emits it on the host `error` event and shows its own error view.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.targetRoute.set('/error');
 			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.ERROR, reason });
 			return urlTree;
 		}
@@ -390,6 +400,7 @@ export class NavigationService {
 	 */
 	async goBackToRoom(roomId: string): Promise<void> {
 		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.targetRoute.set(null);
 			this.wcBridge.clearNavigationRequest();
 			return;
 		}
@@ -434,6 +445,7 @@ export class NavigationService {
 
 		// The WC has no router: the host `left` event alone drives its end-meeting view.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.targetRoute.set('/disconnected');
 			return;
 		}
 
@@ -531,6 +543,7 @@ export class NavigationService {
 	/** WC: emit the navigation request so the shell swaps view. SPA: navigate to `spaRoute`. */
 	private async navigateOrRequest(spaRoute: string, wcRequest: WcNavigationRequest): Promise<void> {
 		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.targetRoute.set(spaRoute);
 			this.wcBridge.emitNavigationRequest(wcRequest);
 			return;
 		}
@@ -552,6 +565,7 @@ export class NavigationService {
 		// `closed` so it can tear down the element/iframe; the SPA falls back to an
 		// internal route.
 		if (this.runtimeConfigService.isEmbeddedMode()) {
+			this.targetRoute.set(fallbackRoute ?? null);
 			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
 			return;
 		}
@@ -586,6 +600,7 @@ export class NavigationService {
 		const urlTree = this.createRedirectionTo(route, queryParams);
 
 		if (this.runtimeConfigService.isWebcomponentMode()) {
+			this.targetRoute.set(this.router.serializeUrl(urlTree));
 			this.wcBridge.emitNavigationRequest(wcRequest);
 			return urlTree;
 		}
