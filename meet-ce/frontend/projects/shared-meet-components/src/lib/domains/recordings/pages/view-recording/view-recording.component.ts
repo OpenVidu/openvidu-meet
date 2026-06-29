@@ -10,11 +10,11 @@ import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { DialogPresetsService } from 'projects/shared-meet-components/src/lib/shared/services/dialog-presets.service';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
-import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { AuthService } from '../../../auth/services/auth.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
+import { AuthService } from '../../../auth/services/auth.service';
 import { ViewportService } from '../../../meeting/openvidu-components';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
@@ -72,7 +72,9 @@ export class ViewRecordingComponent implements OnInit {
 			? this.translateService.translate('RECORDINGS.VIEW.BACK_TO_RECORDINGS')
 			: this.translateService.translate('RECORDINGS.VIEW.BACK')
 	);
-	canShowRecordingDetailsButton = computed(() => this.isAuthenticated() && this.canRetrieveRecordings());
+	canShowRecordingDetailsButton = computed(
+		() => !this.runtimeConfigService.isEmbeddedMode() && this.isAuthenticated() && this.canRetrieveRecordings()
+	);
 
 	isLoading = signal(true);
 	hasError = signal(false);
@@ -122,13 +124,17 @@ export class ViewRecordingComponent implements OnInit {
 		const deleteCallback = async () => {
 			try {
 				await this.recordingService.deleteRecording(this.recordingId);
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED'));
+				this.notificationService.showSnackbar(
+					this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED')
+				);
 
 				// After deletion, go back to the room-recordings view.
 				await this.navigationService.goToRoomRecordings(recording.roomId);
 			} catch (error) {
 				console.error('Error deleting recording:', error);
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED'));
+				this.notificationService.showSnackbar(
+					this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED')
+				);
 			}
 		};
 
@@ -144,8 +150,7 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	goToRecordingDetails(): void {
-		const url = this.navigationService.addBasePath(`/recordings/${this.recordingId}`);
-		window.open(url, '_blank', 'noopener,noreferrer');
+		this.navigationService.openInNewTab(`/recordings/${this.recordingId}`, undefined, 'noopener,noreferrer');
 	}
 
 	/**

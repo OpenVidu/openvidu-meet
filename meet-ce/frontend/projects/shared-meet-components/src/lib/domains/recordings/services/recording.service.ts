@@ -6,6 +6,7 @@ import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { LoggerService } from '../../meeting/openvidu-components';
+import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
 
@@ -18,6 +19,7 @@ export class RecordingService {
 	private runtimeConfigService = inject(RuntimeConfigService);
 	protected tokenStorageService = inject(TokenStorageService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
+	protected meetingContextService = inject(MeetingContextService);
 	protected dialog = inject(MatDialog);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - RecordingManagerService');
@@ -194,12 +196,7 @@ export class RecordingService {
 	 * @param recordingId - The ID of the recording to play
 	 */
 	async playRecording(recordingId: string) {
-		const path = `/recording/${recordingId}`;
-		const recordingUrl = this.runtimeConfigService.isWebcomponentMode()
-			? this.runtimeConfigService.resolveUrl(path)
-			: this.navigationService.addBasePath(path);
-
-		window.open(recordingUrl, '_blank');
+		this.navigationService.openInNewTab(`/recording/${recordingId}`, this.meetingContextService.roomSecret());
 	}
 
 	/**

@@ -119,7 +119,30 @@ export class RuntimeConfigService {
 		const prefix = this.serverBaseUrl() || this.normalizedBasePath();
 		const cleanPath = path.startsWith('/') ? path : `/${path}`;
 
+		// Idempotent: leave the path untouched when it already carries the prefix, so
+		// resolving an already-resolved path does not duplicate it (e.g. '/meet/meet/...').
+		if (!prefix || cleanPath === prefix || cleanPath.startsWith(`${prefix}/`)) {
+			return cleanPath;
+		}
+
 		return `${prefix}${cleanPath}`;
+	}
+
+	/**
+	 * Removes the configured deployment base path prefix from an internal URL path.
+	 * Inverse of the SPA-mode prefixing done by {@link resolveUrl}; used before
+	 * handing a URL to the Angular router, which operates relative to `<base href>`.
+	 *
+	 * @param url - The internal URL path to strip the base path from
+	 * @return The URL with the base path stripped, if a base path is configured; otherwise, the original URL
+	 */
+	stripBasePath(url: string): string {
+		const basePathPrefix = this.normalizedBasePath();
+		if (!basePathPrefix || !url.startsWith(basePathPrefix)) {
+			return url;
+		}
+
+		return url.slice(basePathPrefix.length) || '/';
 	}
 
 	/** Configured deployment base path without a trailing slash; '' when mounted at root ('/'). */

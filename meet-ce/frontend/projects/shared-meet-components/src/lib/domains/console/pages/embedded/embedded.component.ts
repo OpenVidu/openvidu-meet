@@ -15,8 +15,8 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
 import { GlobalConfigService } from '../../../../shared/services/global-config.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 
 @Component({
 	selector: 'ov-embedded',
@@ -37,7 +37,7 @@ import { NotificationService } from '../../../../shared/services/notification.se
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EmbeddedComponent implements OnInit {
-	private navigationService = inject(NavigationService);
+	private runtimeConfigService = inject(RuntimeConfigService);
 	protected apiKeyService = inject(ApiKeyService);
 	protected configService = inject(GlobalConfigService);
 	protected notificationService = inject(NotificationService);
@@ -95,9 +95,9 @@ export class EmbeddedComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		// Build the REST API documentation URL with base href
+		// Build the REST API documentation URL with the deployment base path
 		const docsPath = '/api/v1/docs/';
-		this.restApiDocsUrl.set(this.navigationService.addBasePath(docsPath));
+		this.restApiDocsUrl.set(this.runtimeConfigService.resolveUrl(docsPath));
 
 		this.isLoading.set(true);
 		await this.loadApiKeyData();

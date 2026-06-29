@@ -1,5 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { NavigationStart, Params, Router, UrlTree } from '@angular/router';
+import { ACCESS_TOKEN_QUERY_PARAM, REFRESH_TOKEN_QUERY_PARAM } from '../guards/store-tokens-from-query-params.guard';
 import { NavigationErrorReason } from '../models/navigation.model';
 import {
 	WcNavigationRequest,
@@ -10,6 +11,7 @@ import {
 import { ListStateCacheService } from './list-state-cache.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
+import { TokenStorageService } from './token-storage.service';
 import { WebComponentBridgeService } from './webcomponent-bridge.service';
 
 @Injectable({
@@ -21,6 +23,8 @@ export class NavigationService {
 	private readonly sessionStorageService = inject(SessionStorageService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly listStateCacheService = inject(ListStateCacheService);
+	private readonly tokenStorageService = inject(TokenStorageService);
+
 	protected leaveRedirectUrl?: string;
 
 	/**
@@ -41,42 +45,6 @@ export class NavigationService {
 				this.lastNavigationTrigger = event.navigationTrigger ?? 'imperative';
 			}
 		});
-	}
-
-	/**
-	 * Adds configured base path to an internal URL path.
-	 *
-	 * @param url - The internal URL path to add the base path to
-	 * @return The URL with the base path prefixed, if a base path is configured; otherwise, returns the original URL
-	 */
-	addBasePath(url: string): string {
-		if (!url) {
-			return this.getBasePathPrefix() || '/';
-		}
-
-		const basePathPrefix = this.getBasePathPrefix();
-		const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
-
-		if (!basePathPrefix || normalizedUrl.startsWith(`${basePathPrefix}/`)) {
-			return normalizedUrl;
-		}
-
-		return `${basePathPrefix}${normalizedUrl}`;
-	}
-
-	/**
-	 * Removes configured base path prefix from an internal URL path.
-	 *
-	 * @param url - The internal URL path to strip the base path from
-	 * @return The URL with the base path stripped, if a base path is configured; otherwise, returns the original URL
-	 */
-	stripBasePath(url: string): string {
-		const basePathPrefix = this.getBasePathPrefix();
-		if (!basePathPrefix || !url.startsWith(basePathPrefix)) {
-			return url;
-		}
-
-		return url.slice(basePathPrefix.length) || '/';
 	}
 
 	/**
@@ -199,6 +167,51 @@ export class NavigationService {
 	}
 
 	/**
+	 * Opens an internal app path in a new browser tab.
+	 *
+	 * In webcomponent mode the new tab is served by the Meet server on a different
+	 * origin than the embedding page, so it shares no storage/context with the
+	 * current view. To let the opened page authenticate the user, the access and
+	 * refresh tokens (and an optional `secret`, e.g. a room secret) are forwarded as
+	 * query params and the path is resolved against the Meet server origin. In SPA
+	 * and iframe mode the path is same-origin, so only the configured base path is
+	 * applied.
+	 *
+	 * @param path - The internal app path to open (e.g. `/recording/<id>`)
+	 * @param secret - Optional secret to forward as a query param in webcomponent mode
+	 * @param features - Optional `window.open` features string (e.g. `noopener,noreferrer`)
+	 */
+	openInNewTab(path: string, secret?: string, features?: string): void {
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			const queryParams = new URLSearchParams();
+
+			if (secret) {
+				queryParams.set('secret', secret);
+			}
+
+			const accessToken = this.tokenStorageService.getAccessToken();
+			if (accessToken) {
+				queryParams.set(ACCESS_TOKEN_QUERY_PARAM, accessToken);
+			}
+
+			const refreshToken = this.tokenStorageService.getRefreshToken();
+			if (refreshToken) {
+				queryParams.set(REFRESH_TOKEN_QUERY_PARAM, refreshToken);
+			}
+
+			const queryString = queryParams.toString();
+			if (queryString) {
+				path += `?${queryString}`;
+			}
+		}
+
+		// resolveUrl applies the deployment base path in SPA mode and the remote Meet
+		// server origin (which already carries the base path) in webcomponent mode.
+		const url = this.runtimeConfigService.resolveUrl(path);
+		window.open(url, '_blank', features);
+	}
+
+	/**
 	 * Invalidates a cached reusable route so it reloads fresh on next attach, then
 	 * navigates to a route. Used after mutations (create/edit/delete) performed from
 	 * a detail or wizard page so the affected list reflects the change on return.
@@ -271,7 +284,7 @@ export class NavigationService {
 
 		try {
 			// Strip basePath prefix if present, since Angular router operates relative to <base href>
-			url = this.stripBasePath(url);
+			url = this.runtimeConfigService.stripBasePath(url);
 
 			let urlTree = this.router.parseUrl(url);
 			await this.router.navigateByUrl(urlTree, { replaceUrl });
@@ -453,15 +466,6 @@ export class NavigationService {
 	}
 
 	// PRIVATE HELPERS
-
-	private getBasePathPrefix(): string {
-		const basePath = this.runtimeConfigService.basePath;
-		if (!basePath || basePath === '/') {
-			return '';
-		}
-
-		return basePath.endsWith('/') ? basePath.slice(0, -1) : basePath;
-	}
 
 	/**
 	 * Automatically detects if user came from another domain and returns appropriate redirect URL

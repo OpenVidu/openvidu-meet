@@ -45,9 +45,10 @@ export const recordingsDomainRoutes: DomainRouteConfig[] = [
 				import('../pages/view-recording/view-recording.component').then((m) => m.ViewRecordingComponent),
 			canActivate: [
 				runGuardsSerially(
+					storeTokensFromQueryParamsGuard,
 					extractRecordingParamsGuard,
 					validateRecordingAccessGuard,
-					removeQueryParamsGuard(['secret'])
+					removeQueryParamsGuard(['secret', ACCESS_TOKEN_QUERY_PARAM, REFRESH_TOKEN_QUERY_PARAM])
 				)
 			]
 		}
