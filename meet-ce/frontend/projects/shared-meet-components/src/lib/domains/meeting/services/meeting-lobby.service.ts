@@ -246,9 +246,9 @@ export class MeetingLobbyService {
 			throw new Error('Participant form is invalid');
 		}
 
-		// For E2EE rooms, validate passkey
+		// For E2EE rooms, validate passkey and set it in MeetingContextService if not already set
 		const hasRoomE2EEEnabled = this.hasRoomE2EEEnabled();
-		if (hasRoomE2EEEnabled) {
+		if (hasRoomE2EEEnabled && !this.meetingContextService.isE2eeKeyFromUrl()) {
 			const e2eeKey = this.e2eeKeyValue();
 			if (!e2eeKey) {
 				this.log.w('E2EE key is required for encrypted rooms.');
