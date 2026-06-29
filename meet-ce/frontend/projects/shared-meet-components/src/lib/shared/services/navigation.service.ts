@@ -409,7 +409,7 @@ export class NavigationService {
 	}
 
 	/**
-	 * Back-navigation from the meeting lobby / end-meeting / disconnected screens.
+	 * Back-navigation from the meeting lobby / disconnected / error screens.
 	 *
 	 * @param fallbackRoute SPA route when no leave-redirect URL is set. Defaults to `/rooms`.
 	 * @param replaceUrl Replace the current history entry when navigating to it.
@@ -551,25 +551,22 @@ export class NavigationService {
 	}
 
 	/**
-	 * End the current flow. A configured leave-redirect URL takes precedence in
-	 * both modes (navigate the page to it). Otherwise: WC emits `closed`; SPA
-	 * navigates to `fallbackRoute` if given (no-op without).
+	 * End the current flow. Embedded modes always emit `closed` first so the host
+	 * can tear down the integration, then redirect if a leave-redirect URL is
+	 * configured. Otherwise, the SPA navigates to `fallbackRoute` if given.
 	 */
 	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
-		if (this.getLeaveRedirectURL()) {
+		if (this.runtimeConfigService.isEmbeddedMode()) {
+			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
+		}
+
+		const leaveRedirectUrl = this.getLeaveRedirectURL();
+		if (leaveRedirectUrl) {
 			await this.redirectToLeaveUrl();
 			return;
 		}
 
-		// No redirect configured: hosted modes (WC and iframe) signal the host via
-		// `closed` so it can tear down the element/iframe; the SPA falls back to an
-		// internal route.
-		if (this.runtimeConfigService.isEmbeddedMode()) {
-			this.targetRoute.set(fallbackRoute ?? null);
-			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
-			return;
-		}
-
+		// No redirect configured: only the SPA falls back to an internal route.
 		if (fallbackRoute) {
 			await this.navigateTo(fallbackRoute, undefined, replaceUrl);
 		}

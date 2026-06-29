@@ -101,6 +101,21 @@ describe('NavigationService - hosted-mode event gates', () => {
 			expect(router.navigate).not.toHaveBeenCalled();
 		});
 
+		it('iframe mode with leave-redirect: emits CLOSED and redirects', async () => {
+			iframeMode = true;
+			spyOn(service, 'getLeaveRedirectURL').and.returnValue('https://host.example.com/done');
+			const redirectSpy = spyOn(
+				service as unknown as { redirectWindow: (url: string) => void },
+				'redirectWindow'
+			);
+
+			await service.goBackFromMeeting('/rooms');
+
+			expect(wcBridge.emitWebComponentEvent).toHaveBeenCalledOnceWith({ type: WebComponentEventType.CLOSED });
+			expect(redirectSpy).toHaveBeenCalledOnceWith('https://host.example.com/done');
+			expect(router.navigate).not.toHaveBeenCalled();
+		});
+
 		it('SPA mode with no leave-redirect: navigates to the fallback route, no host event', async () => {
 			await service.goBackFromMeeting('/rooms');
 
