@@ -151,7 +151,6 @@ export class NavigationService {
 		// view changes go through the high-level intents / navigation requests). Guard
 		// against hitting the empty router, which would only log a NavigationError.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.targetRoute.set(route);
 			console.warn(`navigateTo('${route}') ignored in webcomponent mode`);
 			return;
 		}
@@ -560,7 +559,8 @@ export class NavigationService {
 	 * configured. Otherwise, the SPA navigates to `fallbackRoute` if given.
 	 */
 	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
-		if (this.runtimeConfigService.isEmbeddedMode()) {
+		const isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode();
+		if (isEmbeddedMode) {
 			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
 		}
 
@@ -571,7 +571,7 @@ export class NavigationService {
 		}
 
 		// No redirect configured: only the SPA falls back to an internal route.
-		if (fallbackRoute) {
+		if (fallbackRoute && !isEmbeddedMode) {
 			await this.navigateTo(fallbackRoute, undefined, replaceUrl);
 		}
 	}
