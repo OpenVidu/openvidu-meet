@@ -38,7 +38,7 @@ export class RoomRecordingsModeBootstrapper implements ModeBootstrapper {
 						kind: 'error',
 						detail: {
 							reason: 'access-denied',
-							message: 'Unable to load this room’s recordings. Please check the room URL and try again.',
+							message: "Unable to load this room's recordings. Please check the room URL and try again.",
 							accessReason: outcome.reason
 						}
 					};
@@ -48,7 +48,7 @@ export class RoomRecordingsModeBootstrapper implements ModeBootstrapper {
 				kind: 'error',
 				detail: {
 					reason: 'unknown',
-					message: 'An error occurred while loading the room’s recordings. Please try again later.'
+					message: "An error occurred while loading the room's recordings. Please try again later."
 				}
 			};
 		}

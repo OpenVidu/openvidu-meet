@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
-import { RoomAccessService } from '../../rooms/services/room-access.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { RoomAccessService } from '../../rooms/services/room-access.service';
 import { MeetingContextService } from './meeting-context.service';
 
 /**
@@ -18,14 +18,10 @@ export interface MeetingEntryParams {
 	roomId: string;
 	/** Room access secret (typically from `?secret=` or an equivalent input). */
 	secret?: string;
-	/** Optional E2EE key. Only set in context when defined. */
+	/** Optional E2EE key. */
 	e2eeKey?: string;
-	/** Whether {@link e2eeKey} originated from a URL/input param. */
-	e2eeKeyFromUrl?: boolean;
-	/** Optional participant display name. Only set in context when defined. */
+	/** Optional participant display name. */
 	participantName?: string;
-	/** Whether {@link participantName} originated from a URL/input param. */
-	participantNameFromUrl?: boolean;
 	/** Optional leave-redirect URL passed to {@link NavigationService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -71,9 +67,10 @@ export class MeetingEntryService {
 	 * {@link MeetingEntryParams.showRecording} / {@link MeetingEntryParams.showOnlyRecordings}).
 	 * Performs no network I/O.
 	 *
-	 * Storage fallbacks (e.g. a previously-stored participant name) are NOT done
-	 * here. Each adapter restores them from its own storage scope before calling
-	 * this — keeping the use case independent of the host's storage layer.
+	 * The E2EE key and participant name fall back to previously-stored values when
+	 * the caller didn't supply them. This fallback is identical in every mode
+	 * (SPA/iframe route guard and Web Component), so it lives here in the use case
+	 * rather than being duplicated in each adapter.
 	 */
 	prepare({
 		leaveRedirectUrl,
@@ -82,9 +79,7 @@ export class MeetingEntryService {
 		showRecording,
 		showOnlyRecordings,
 		e2eeKey,
-		e2eeKeyFromUrl,
 		participantName,
-		participantNameFromUrl
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.navigationService.handleLeaveRedirectUrl(leaveRedirectUrl);
 
@@ -100,11 +95,18 @@ export class MeetingEntryService {
 			return { kind: 'redirect', to: `/room/${roomId}/recordings` };
 		}
 
+		// Prefer the caller-supplied value (URL/input); otherwise restore the last one
+		// stored on this origin so the lobby pre-fills it.
 		if (e2eeKey !== undefined) {
-			this.meetingContextService.setE2eeKey(e2eeKey, e2eeKeyFromUrl ?? false);
+			this.meetingContextService.setE2eeKey(e2eeKey, true);
+		} else {
+			this.meetingContextService.loadE2eeKeyFromStorage();
 		}
+
 		if (participantName !== undefined) {
-			this.roomMemberContextService.setParticipantName(participantName, participantNameFromUrl ?? false);
+			this.roomMemberContextService.setParticipantName(participantName, true);
+		} else {
+			this.roomMemberContextService.loadParticipantNameFromStorage();
 		}
 
 		return { kind: 'proceed' };
