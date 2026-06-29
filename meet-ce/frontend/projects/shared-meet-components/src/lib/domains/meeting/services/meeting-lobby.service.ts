@@ -9,8 +9,8 @@ import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
 import { LoggerService } from '../openvidu-components';
-import { RoomAccessLinkService } from './room-access-link.service';
 import { MeetingContextService } from './meeting-context.service';
+import { RoomAccessLinkService } from './room-access-link.service';
 
 /**
  * Service that manages the meeting lobby phase state and operations.
@@ -276,7 +276,8 @@ export class MeetingLobbyService {
 			return;
 		}
 
-		const backButtonText = isStandaloneMode && !redirection && isAuthenticated ? 'Back to Rooms' : 'Back';
+		const backButtonText =
+			isStandaloneMode && !redirection && isAuthenticated ? 'LOBBY.BACK_TO_ROOMS' : 'LOBBY.BACK';
 		this._showBackButton.set(true);
 		this._backButtonText.set(backButtonText);
 	}
@@ -433,7 +434,7 @@ export class MeetingLobbyService {
 		this._roomId.set(undefined);
 		this._showRecordingCard.set(false);
 		this._showBackButton.set(true);
-		this._backButtonText.set('Back');
+		this._backButtonText.set('LOBBY.BACK');
 		this._roomMemberToken.set(undefined);
 		this._participantForm.set(
 			new FormGroup({

@@ -163,7 +163,9 @@
 		"RECORDINGS_TITLE": "Ver grabaciones",
 		"RECORDINGS_SUBTITLE": "Explora y gestiona grabaciones anteriores",
 		"RECORDINGS_DESCRIPTION": "Accede a reuniones grabadas anteriormente en esta sala. Puedes ver, descargar o gestionar las grabaciones existentes.",
-		"RECORDINGS_BUTTON": "Explorar grabaciones"
+		"RECORDINGS_BUTTON": "Explorar grabaciones",
+		"BACK": "Atrás",
+		"BACK_TO_ROOMS": "Volver a las salas"
 	},
 	"SHARE_ACCESS": {
 		"COPY_TOOLTIP": "Copiar enlace de acceso",
