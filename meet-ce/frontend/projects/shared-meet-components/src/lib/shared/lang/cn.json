@@ -8,6 +8,10 @@
     "SOMETHING_WRONG": "出了点问题"
   },
   "NAVIGATION_ERROR": {
+    "EMBEDDED_ERROR": {
+      "TITLE": "无法加载 OpenVidu Meet",
+      "MESSAGE": "无法加载 OpenVidu Meet。请检查嵌入配置。"
+    },
     "CLOSED_ROOM": {
       "TITLE": "房间已关闭",
       "MESSAGE": "此房间已关闭，期间无法在其中进行会议"

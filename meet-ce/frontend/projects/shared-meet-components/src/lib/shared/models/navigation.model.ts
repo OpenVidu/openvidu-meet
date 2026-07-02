@@ -12,5 +12,7 @@ export enum NavigationErrorReason {
 	FORBIDDEN_RECORDING_ACCESS = 'forbidden-recording-access',
 	ROOM_ACCESS_REVOKED = 'room-access-revoked',
 	TOO_MANY_REQUESTS = 'too-many-requests',
+	/** A webcomponent-specific failure (e.g. a missing/invalid `room-url`/`recording-url` attribute). */
+	EMBEDDED_ERROR = 'embedded-error',
 	INTERNAL_ERROR = 'internal-error'
 }

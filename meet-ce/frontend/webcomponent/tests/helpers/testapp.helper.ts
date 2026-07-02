@@ -1,4 +1,4 @@
-import { MeetWebhookEventType, EmbeddedEvent } from '@openvidu-meet/typings';
+import { MeetWebhookEventType, EmbeddedEventName } from '@openvidu-meet/typings';
 import { expect, Locator, Page } from '@playwright/test';
 import { MEET_TESTAPP_URL } from '../config';
 import { Integration, meetLocator } from './webcomponent.helper';
@@ -192,7 +192,7 @@ export const leaveMeeting = async (
 		await leaveOption.click();
 	}
 
-	await expect(eventLocator(page, EmbeddedEvent.LEFT).first()).toBeAttached({ timeout: 10_000 });
+	await expect(eventLocator(page, EmbeddedEventName.LEFT).first()).toBeAttached({ timeout: 10_000 });
 };
 
 // ─── Imperative commands (driven through the testapp's buttons) ─────────────
@@ -227,7 +227,7 @@ export const kickParticipantCommand = async (page: Page, participantIdentity: st
 // ────────────────────────────────────────────────────────────────────────────
 
 /** Locator for a `.event-{name}` DOM marker. */
-export const eventLocator = (page: Page, eventName: EmbeddedEvent): Locator => page.locator(`.event-${eventName}`);
+export const eventLocator = (page: Page, eventName: EmbeddedEventName): Locator => page.locator(`.event-${eventName}`);
 
 /** Locator for a `.webhook-{name}` DOM marker. */
 export const webhookLocator = (page: Page, webhookName: MeetWebhookEventType): Locator =>
@@ -238,7 +238,7 @@ export const webhookLocator = (page: Page, webhookName: MeetWebhookEventType): L
  */
 export const expectEvent = async (
 	page: Page,
-	eventName: EmbeddedEvent,
+	eventName: EmbeddedEventName,
 	options: { count?: number; timeout?: number } = {}
 ): Promise<Locator> => {
 	const { count = 1, timeout = 10_000 } = options;

@@ -19,7 +19,6 @@ const config = {
   },
   moduleNameMapper: {
     '^@openvidu-meet/typings$': '<rootDir>/../../typings/src/index.ts',
-    '^@openvidu-meet/shared-components$': '<rootDir>/tests/__mocks__/shared-components.ts',
     '\\.(css|less|scss|sass)$': '<rootDir>/tests/__mocks__/styleMock.js'
   }
 }

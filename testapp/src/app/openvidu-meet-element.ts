@@ -1,10 +1,4 @@
-import type { EmbeddedEvent, EmbeddedEventPayloads } from '@openvidu-meet/typings';
-
-/** `CustomEvent.detail` payload for the element's `joined` event. */
-export type OpenViduMeetJoinedDetail = EmbeddedEventPayloads[EmbeddedEvent.JOINED];
-
-/** `CustomEvent.detail` payload for the element's `left` event. */
-export type OpenViduMeetLeftDetail = EmbeddedEventPayloads[EmbeddedEvent.LEFT];
+import { EmbeddedEventName, EmbeddedEventPayloadFor } from '@openvidu-meet/typings';
 
 /**
  * Minimal typing for the `<openvidu-meet>` custom element registered by the
@@ -18,10 +12,16 @@ export interface OpenViduMeetElement extends HTMLElement {
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	on(eventName: string, callback: (detail: any) => void): this;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	once(eventName: string, callback: (detail: any) => void): this;
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	off(eventName: string, callback?: (detail: any) => void): this;
+	on(
+		eventName: EmbeddedEventName,
+		callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
+	): this;
+	once(
+		eventName: EmbeddedEventName,
+		callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
+	): this;
+	off(
+		eventName: EmbeddedEventName,
+		callback?: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
+	): this;
 }

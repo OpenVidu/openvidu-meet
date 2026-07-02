@@ -1,14 +1,8 @@
 import { Injectable } from '@angular/core';
-import {
-	createEmbeddedCommandMessage,
-	EmbeddedCommand,
-	EmbeddedEvent,
-	EmbeddedInboundCommandMessage,
-	EmbeddedOutboundEventMessage
-} from '@openvidu-meet/typings';
+import { EmbeddedCommandName, EmbeddedCommand, EmbeddedEvent } from '@openvidu-meet/typings';
 
-/** Receives a lifecycle event posted by the embedded iframe. */
-export type IframeLifecycleHandler = (event: EmbeddedEvent, payload: unknown) => void;
+/** Receives a lifecycle event object posted by the embedded iframe. */
+export type IframeLifecycleHandler = (event: EmbeddedEvent) => void;
 
 /**
  * Host-side `postMessage` controller for the **iframe** integration — the piece a
@@ -66,15 +60,15 @@ export class IframeHostService {
 	}
 
 	endMeeting(): void {
-		this.post(createEmbeddedCommandMessage(EmbeddedCommand.END_MEETING));
+		this.post({ command: EmbeddedCommandName.END_MEETING });
 	}
 
 	leaveRoom(): void {
-		this.post(createEmbeddedCommandMessage(EmbeddedCommand.LEAVE_ROOM));
+		this.post({ command: EmbeddedCommandName.LEAVE_ROOM });
 	}
 
 	kickParticipant(participantIdentity: string): void {
-		this.post(createEmbeddedCommandMessage(EmbeddedCommand.KICK_PARTICIPANT, { participantIdentity }));
+		this.post({ command: EmbeddedCommandName.KICK_PARTICIPANT, payload: { participantIdentity } });
 	}
 
 	private handleMessage(event: MessageEvent): void {
@@ -84,12 +78,12 @@ export class IframeHostService {
 			return;
 		}
 
-		const message = event.data as EmbeddedOutboundEventMessage | undefined;
-		if (!message?.event) {
+		const message = event.data as EmbeddedEvent | undefined;
+		if (!message || typeof message.event !== 'string') {
 			return;
 		}
 
-		this.onEvent?.(message.event, message.payload);
+		this.onEvent?.(message);
 	}
 
 	/** Resolve the iframe's origin, deriving it from `src` when not given explicitly. */
@@ -105,7 +99,7 @@ export class IframeHostService {
 		}
 	}
 
-	private post(message: EmbeddedInboundCommandMessage): void {
+	private post(message: EmbeddedCommand): void {
 		if (!this.targetOrigin) {
 			return;
 		}

@@ -1,16 +1,9 @@
 import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
-import {
-	createEmbeddedEventMessage,
-	EmbeddedCommand,
-	EmbeddedEvent,
-	EmbeddedInboundCommandMessage,
-	EmbeddedOutboundEventMessage
-} from '@openvidu-meet/typings';
-import { WcEvent, WebComponentEventType } from '../../../shared/models/webcomponent-bridge.model';
+import { EmbeddedCommand, EmbeddedCommandName, EmbeddedEvent } from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { WebComponentBridgeService } from '../../../shared/services/webcomponent-bridge.service';
-import { LoggerService, OpenViduService } from '../openvidu-components';
-import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
+import { LoggerService, OpenViduService } from '../../meeting/openvidu-components';
+import { EmbeddedCommandService } from './embedded-command.service';
+import { EmbeddedEventBusService } from './embedded-event-bus.service';
 
 /**
  * `postMessage` transport for the embedded **iframe** integration.
@@ -21,20 +14,20 @@ import { MeetingWebComponentManagerService } from './meeting-webcomponent-manage
  * delegates to the already-centralized API so the iframe exposes the *same* public
  * surface as the webcomponent:
  *
- * - **Commands** (host → app) are forwarded to {@link MeetingWebComponentManagerService}
+ * - **Commands** (host → app) are forwarded to {@link EmbeddedCommandService}
  *   (the shared, permission-checked command bridge).
- * - **Events** (app → host) are drained from {@link WebComponentBridgeService.wcEvents}
+ * - **Events** (app → host) are drained from {@link EmbeddedEventBusService.events}
  *   (the shared lifecycle-event queue) and relayed as `postMessage` events.
  */
 @Injectable({
 	providedIn: 'root'
 })
-export class MeetingIframeBridgeService {
-	private readonly wcManager = inject(MeetingWebComponentManagerService);
-	private readonly wcBridge = inject(WebComponentBridgeService);
+export class IframeBridgeService {
+	private readonly commandService = inject(EmbeddedCommandService);
+	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly runtimeConfig = inject(RuntimeConfigService);
-	private readonly log = inject(LoggerService).get('MeetingIframeBridgeService');
+	private readonly log = inject(LoggerService).get('IframeBridgeService');
 
 	private initialized = false;
 	private readonly boundHandleMessage = (event: MessageEvent): void => {
@@ -50,14 +43,14 @@ export class MeetingIframeBridgeService {
 	 * Setting `parentDomain` re-runs this effect and flushes them.
 	 */
 	private readonly eventRelayEffect = effect(() => {
-		const queued = this.wcBridge.wcEvents();
+		const queued = this.eventBus.events();
 		const target = this.parentDomain();
 
 		if (!this.initialized || !target || queued.length === 0) {
 			return;
 		}
 
-		for (const event of this.wcBridge.drainWebComponentEvents()) {
+		for (const event of this.eventBus.drain()) {
 			this.relayEventToParent(event);
 		}
 	});
@@ -120,7 +113,7 @@ export class MeetingIframeBridgeService {
 	}
 
 	private async handleMessage(event: MessageEvent): Promise<void> {
-		const message = event.data as EmbeddedInboundCommandMessage | undefined;
+		const message = event.data as EmbeddedCommand | undefined;
 		if (!message || typeof message.command !== 'string') {
 			return;
 		}
@@ -131,72 +124,42 @@ export class MeetingIframeBridgeService {
 			return;
 		}
 
-		const { command, payload } = message;
-
 		// Commands only make sense once connected to the room.
 		if (!this.openviduService.isRoomConnected()) {
 			this.log.w('Received command but participant is not connected to the room');
 			return;
 		}
 
-		switch (command) {
-			case EmbeddedCommand.END_MEETING:
-				await this.wcManager.endMeeting();
+		switch (message.command) {
+			case EmbeddedCommandName.END_MEETING:
+				await this.commandService.endMeeting();
 				break;
-			case EmbeddedCommand.LEAVE_ROOM:
-				await this.wcManager.leaveRoom();
+			case EmbeddedCommandName.LEAVE_ROOM:
+				await this.commandService.leaveRoom();
 				break;
-			case EmbeddedCommand.KICK_PARTICIPANT: {
-				const participantIdentity = (payload as { participantIdentity?: string } | undefined)
-					?.participantIdentity;
+			case EmbeddedCommandName.KICK_PARTICIPANT:
+				const participantIdentity = message.payload?.participantIdentity;
 				if (!participantIdentity) {
 					this.log.e('kickParticipant command received without a participantIdentity');
 					return;
 				}
-				await this.wcManager.kickParticipant(participantIdentity);
+
+				await this.commandService.kickParticipant(participantIdentity);
 				break;
-			}
 			default:
 				break;
 		}
 	}
 
-	private relayEventToParent(event: WcEvent): void {
-		const message = this.toOutboundMessage(event);
-		if (message) {
-			this.postToParent(message);
-		}
-	}
-
-	/** Maps an internal lifecycle event to its public iframe message, or `null` if it has none. */
-	private toOutboundMessage(event: WcEvent): EmbeddedOutboundEventMessage | null {
-		switch (event.type) {
-			case WebComponentEventType.JOINED:
-				return createEmbeddedEventMessage(EmbeddedEvent.JOINED, {
-					roomId: event.roomId,
-					participantIdentity: event.participantIdentity
-				});
-			case WebComponentEventType.LEFT:
-				return createEmbeddedEventMessage(EmbeddedEvent.LEFT, {
-					roomId: event.roomId,
-					participantIdentity: event.participantIdentity,
-					reason: event.reason
-				});
-			case WebComponentEventType.CLOSED:
-				return createEmbeddedEventMessage(EmbeddedEvent.CLOSED);
-			case WebComponentEventType.ERROR:
-				// No public `error` event: the failure surfaces inside the iframe via the
-				// in-app `/error` route, mirroring the v3.7.0 contract.
-				return null;
-		}
-	}
-
-	private postToParent(message: EmbeddedOutboundEventMessage): void {
+	/**
+	 * Posts a lifecycle event verbatim to the trusted parent origin.
+	 */
+	private relayEventToParent(event: EmbeddedEvent): void {
 		const targetOrigin = this.parentDomain();
 		if (!this.initialized || !targetOrigin) {
 			return;
 		}
-		this.log.d('Relaying event to parent:', message);
-		window.parent.postMessage(message, targetOrigin);
+		this.log.d('Relaying event to parent:', event);
+		window.parent.postMessage(event, targetOrigin);
 	}
 }

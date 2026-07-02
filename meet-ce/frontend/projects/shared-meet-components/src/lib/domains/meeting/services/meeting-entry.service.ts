@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { NavigationService } from '../../../shared/services/navigation.service';
+import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
 import { MeetingContextService } from './meeting-context.service';
@@ -22,7 +22,7 @@ export interface MeetingEntryParams {
 	e2eeKey?: string;
 	/** Optional participant display name. */
 	participantName?: string;
-	/** Optional leave-redirect URL passed to {@link NavigationService}. */
+	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
 	showRecording?: string;
@@ -59,7 +59,7 @@ export class MeetingEntryService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly roomAccessService = inject(RoomAccessService);
-	private readonly navigationService = inject(NavigationService);
+	private readonly leaveRedirect = inject(LeaveRedirectService);
 
 	/**
 	 * Populates meeting/room-member context from the supplied params and returns
@@ -81,7 +81,7 @@ export class MeetingEntryService {
 		e2eeKey,
 		participantName,
 	}: MeetingEntryParams): MeetingEntryDecision {
-		this.navigationService.handleLeaveRedirectUrl(leaveRedirectUrl);
+		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
 		this.meetingContextService.setRoomId(roomId);
 		if (secret) {

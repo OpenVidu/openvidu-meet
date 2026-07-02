@@ -1,14 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { LeftEventReason } from '@openvidu-meet/typings';
+import { EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { EMPTY } from 'rxjs';
+import { EmbeddedEventBusService } from '../../domains/embedded/services/embedded-event-bus.service';
 import { LoggerService } from '../../domains/meeting/openvidu-components';
-import { WebComponentEventType } from '../models/webcomponent-bridge.model';
+import { LeaveRedirectService } from './leave-redirect.service';
 import { ListStateCacheService } from './list-state-cache.service';
 import { NavigationService } from './navigation.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
-import { WebComponentBridgeService } from './webcomponent-bridge.service';
 
 class LoggerServiceStub {
 	get() {
@@ -16,16 +16,15 @@ class LoggerServiceStub {
 	}
 }
 
-const ROOM_ID = 'room1';
-const IDENTITY = 'participant-1';
-
 /**
- * Covers the host-event emission gates shared by the webcomponent and iframe modes:
- * `goToDisconnected` (LEFT) and `closeOrLeave` (CLOSED). The SPA must NOT emit them.
+ * Covers `closeOrLeave`'s CLOSED host-event emission gating in embedded modes (the SPA must NOT
+ * emit it) and `goToDisconnected`'s view transition. The `left` event is emitted upstream by
+ * MeetingEventHandlerService.onParticipantLeft, so `goToDisconnected` itself must NOT emit.
  */
 describe('NavigationService - hosted-mode event gates', () => {
 	let service: NavigationService;
-	let wcBridge: WebComponentBridgeService;
+	let eventBus: EmbeddedEventBusService;
+	let leaveRedirect: LeaveRedirectService;
 	let router: { navigate: jasmine.Spy; events: typeof EMPTY };
 
 	// Mutable per-test mode flags read by the runtime-config stub.
@@ -51,7 +50,8 @@ describe('NavigationService - hosted-mode event gates', () => {
 		TestBed.configureTestingModule({
 			providers: [
 				NavigationService,
-				WebComponentBridgeService,
+				LeaveRedirectService,
+				EmbeddedEventBusService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: Router, useValue: router as unknown as Router },
 				{ provide: RuntimeConfigService, useValue: runtimeConfigStub as unknown as RuntimeConfigService },
@@ -60,34 +60,20 @@ describe('NavigationService - hosted-mode event gates', () => {
 			]
 		});
 
-		wcBridge = TestBed.inject(WebComponentBridgeService);
-		spyOn(wcBridge, 'emitWebComponentEvent').and.callThrough();
+		eventBus = TestBed.inject(EmbeddedEventBusService);
+		spyOn(eventBus, 'emit').and.callThrough();
 		service = TestBed.inject(NavigationService);
+		leaveRedirect = TestBed.inject(LeaveRedirectService);
 	});
 
 	describe('goToDisconnected()', () => {
-		const detail = { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE };
+		it('navigates to /disconnected', async () => {
+			await service.goToDisconnected(LeftEventReason.VOLUNTARY_LEAVE);
 
-		it('iframe mode: emits LEFT to the host AND navigates to /disconnected', async () => {
-			iframeMode = true;
-
-			await service.goToDisconnected(detail);
-
-			expect(wcBridge.emitWebComponentEvent).toHaveBeenCalledOnceWith({
-				type: WebComponentEventType.LEFT,
-				...detail
-			});
 			expect(router.navigate).toHaveBeenCalledWith(
 				['/disconnected'],
 				jasmine.objectContaining({ queryParams: { reason: LeftEventReason.VOLUNTARY_LEAVE } })
 			);
-		});
-
-		it('SPA mode: navigates to /disconnected WITHOUT emitting a host event', async () => {
-			await service.goToDisconnected(detail);
-
-			expect(wcBridge.emitWebComponentEvent).not.toHaveBeenCalled();
-			expect(router.navigate).toHaveBeenCalledWith(['/disconnected'], jasmine.any(Object));
 		});
 	});
 
@@ -97,13 +83,13 @@ describe('NavigationService - hosted-mode event gates', () => {
 
 			await service.goBackFromMeeting('/rooms');
 
-			expect(wcBridge.emitWebComponentEvent).toHaveBeenCalledOnceWith({ type: WebComponentEventType.CLOSED });
+			expect(eventBus.emit).toHaveBeenCalledOnceWith({ event: EmbeddedEventName.CLOSED });
 			expect(router.navigate).not.toHaveBeenCalled();
 		});
 
 		it('iframe mode with leave-redirect: emits CLOSED and redirects', async () => {
 			iframeMode = true;
-			spyOn(service, 'getLeaveRedirectURL').and.returnValue('https://host.example.com/done');
+			spyOn(leaveRedirect, 'getLeaveRedirectURL').and.returnValue('https://host.example.com/done');
 			const redirectSpy = spyOn(
 				service as unknown as { redirectWindow: (url: string) => void },
 				'redirectWindow'
@@ -111,7 +97,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 
 			await service.goBackFromMeeting('/rooms');
 
-			expect(wcBridge.emitWebComponentEvent).toHaveBeenCalledOnceWith({ type: WebComponentEventType.CLOSED });
+			expect(eventBus.emit).toHaveBeenCalledOnceWith({ event: EmbeddedEventName.CLOSED });
 			expect(redirectSpy).toHaveBeenCalledOnceWith('https://host.example.com/done');
 			expect(router.navigate).not.toHaveBeenCalled();
 		});
@@ -119,7 +105,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 		it('SPA mode with no leave-redirect: navigates to the fallback route, no host event', async () => {
 			await service.goBackFromMeeting('/rooms');
 
-			expect(wcBridge.emitWebComponentEvent).not.toHaveBeenCalled();
+			expect(eventBus.emit).not.toHaveBeenCalled();
 			expect(router.navigate).toHaveBeenCalledWith(['/rooms'], jasmine.any(Object));
 		});
 	});
@@ -129,7 +115,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 		// embedded and to the current window otherwise. Spy the seam to assert navigation
 		// happens (or not) without actually navigating the test runner.
 		it('navigates to a valid external leave-redirect URL', async () => {
-			spyOn(service, 'getLeaveRedirectURL').and.returnValue('https://host.example.com/done');
+			spyOn(leaveRedirect, 'getLeaveRedirectURL').and.returnValue('https://host.example.com/done');
 			const redirectSpy = spyOn(
 				service as unknown as { redirectWindow: (url: string) => void },
 				'redirectWindow'
@@ -141,7 +127,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 		});
 
 		it('does nothing when no leave-redirect URL is configured', async () => {
-			spyOn(service, 'getLeaveRedirectURL').and.returnValue(undefined);
+			spyOn(leaveRedirect, 'getLeaveRedirectURL').and.returnValue(undefined);
 			const redirectSpy = spyOn(
 				service as unknown as { redirectWindow: (url: string) => void },
 				'redirectWindow'
@@ -153,7 +139,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 		});
 
 		it('refuses a non-external (relative) redirect URL', async () => {
-			spyOn(service, 'getLeaveRedirectURL').and.returnValue('/not-absolute');
+			spyOn(leaveRedirect, 'getLeaveRedirectURL').and.returnValue('/not-absolute');
 			const redirectSpy = spyOn(
 				service as unknown as { redirectWindow: (url: string) => void },
 				'redirectWindow'
@@ -165,75 +151,4 @@ describe('NavigationService - hosted-mode event gates', () => {
 		});
 	});
 
-	describe('handleLeaveRedirectUrl() — per-mode resolution', () => {
-		let setSpy: jasmine.Spy;
-
-		beforeEach(() => {
-			// Spy on the (protected) setter so we capture the resolved URL without
-			// touching session storage or the real property.
-			setSpy = spyOn(service as unknown as { setLeaveRedirectUrl: (u: string) => void }, 'setLeaveRedirectUrl');
-		});
-
-		it('uses an absolute URL as-is', () => {
-			service.handleLeaveRedirectUrl('https://app.example.com/done');
-
-			expect(setSpy).toHaveBeenCalledOnceWith('https://app.example.com/done');
-		});
-
-		it('webcomponent mode: resolves a relative path against window.location.origin', () => {
-			webcomponentMode = true;
-
-			service.handleLeaveRedirectUrl('/goodbye');
-
-			expect(setSpy).toHaveBeenCalledOnceWith(`${window.location.origin}/goodbye`);
-		});
-
-		it('iframe mode: resolves a relative path against the referrer (host) origin', () => {
-			iframeMode = true;
-			spyOn(
-				service as unknown as { getReferrerOrigin: () => string | null },
-				'getReferrerOrigin'
-			).and.returnValue('https://host.example.com');
-
-			service.handleLeaveRedirectUrl('/goodbye');
-
-			expect(setSpy).toHaveBeenCalledOnceWith('https://host.example.com/goodbye');
-		});
-
-		it('iframe mode: ignores a relative path when the referrer origin is unknown', () => {
-			iframeMode = true;
-			spyOn(
-				service as unknown as { getReferrerOrigin: () => string | null },
-				'getReferrerOrigin'
-			).and.returnValue(null);
-
-			service.handleLeaveRedirectUrl('/goodbye');
-
-			expect(setSpy).not.toHaveBeenCalled();
-		});
-
-		it('standalone SPA: auto-detects the redirect from the referrer when no URL is given', () => {
-			spyOn(
-				service as unknown as { getAutoRedirectUrl: () => string | null },
-				'getAutoRedirectUrl'
-			).and.returnValue('https://referrer.example.com');
-
-			service.handleLeaveRedirectUrl(undefined);
-
-			expect(setSpy).toHaveBeenCalledOnceWith('https://referrer.example.com');
-		});
-
-		it('iframe mode: does NOT auto-detect when no URL is given', () => {
-			iframeMode = true;
-			const autoSpy = spyOn(
-				service as unknown as { getAutoRedirectUrl: () => string | null },
-				'getAutoRedirectUrl'
-			).and.returnValue('https://referrer.example.com');
-
-			service.handleLeaveRedirectUrl(undefined);
-
-			expect(autoSpy).not.toHaveBeenCalled();
-			expect(setSpy).not.toHaveBeenCalled();
-		});
-	});
 });

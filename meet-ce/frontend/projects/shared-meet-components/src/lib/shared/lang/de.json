@@ -8,6 +8,10 @@
     "SOMETHING_WRONG": "Etwas ist schiefgelaufen"
   },
   "NAVIGATION_ERROR": {
+    "EMBEDDED_ERROR": {
+      "TITLE": "OpenVidu Meet konnte nicht geladen werden",
+      "MESSAGE": "OpenVidu Meet konnte nicht geladen werden. Bitte überprüfe die Einbettungskonfiguration."
+    },
     "CLOSED_ROOM": {
       "TITLE": "Geschlossener Raum",
       "MESSAGE": "Meetings in diesem Raum sind nicht verfügbar, solange er geschlossen ist"

@@ -1,19 +1,8 @@
 import { inject, Injectable } from '@angular/core';
+import { LoggerService, OpenViduService } from '../../meeting/openvidu-components';
+import { MeetingContextService } from '../../meeting/services/meeting-context.service';
+import { MeetingService } from '../../meeting/services/meeting.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
-import { LoggerService, OpenViduService } from '../openvidu-components';
-import { MeetingContextService } from './meeting-context.service';
-import { MeetingService } from './meeting.service';
-
-// Re-exported for meeting-domain consumers; canonical declarations live in shared/models.
-export { WebComponentEventType, WebComponentNavigationType } from '../../../shared/models/webcomponent-bridge.model';
-export type {
-	WebComponentClosedEvent,
-	WebComponentJoinedEvent,
-	WebComponentLeftEvent,
-	ViewRecordingsRequest,
-	WcEvent,
-	WcNavigationRequest
-} from '../../../shared/models/webcomponent-bridge.model';
 
 /**
  * Meeting-domain command bridge exposed to the Angular Elements
@@ -25,17 +14,17 @@ export type {
  * permissions and room context.
  *
  * The signal-based bridge for shell-level actions lives separately on
- * `WebComponentBridgeService` (in `shared/`, no meeting-domain deps).
+ * `EmbeddedEventBusService` (in `shared/`, no meeting-domain deps).
  */
 @Injectable({
 	providedIn: 'root'
 })
-export class MeetingWebComponentManagerService {
+export class EmbeddedCommandService {
 	private readonly meetingService = inject(MeetingService);
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly openviduService = inject(OpenViduService);
-	private readonly log = inject(LoggerService).get('MeetingWebComponentManagerService');
+	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 
 	/**
 	 * Ends the meeting for all participants. Requires the local participant

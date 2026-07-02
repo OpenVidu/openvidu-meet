@@ -5,6 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { LeftEventReason } from '@openvidu-meet/typings';
 import { AssetsService } from '../../../../shared/services/assets.service';
+import { LeaveRedirectService } from '../../../../shared/services/leave-redirect.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -21,6 +22,7 @@ export class EndMeetingComponent implements OnInit {
 	private route = inject(ActivatedRoute);
 	protected authService = inject(AuthService);
 	protected navService = inject(NavigationService);
+	protected leaveRedirect = inject(LeaveRedirectService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	private readonly assets = inject(AssetsService);
 
@@ -111,7 +113,7 @@ export class EndMeetingComponent implements OnInit {
 	 */
 	private async setBackButtonText() {
 		const isStandaloneMode = !this.runtimeConfigService.isEmbeddedMode();
-		const redirection = this.navService.getLeaveRedirectURL();
+		const redirection = this.leaveRedirect.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
 		// If in standalone mode without redirection and user is not authenticated,

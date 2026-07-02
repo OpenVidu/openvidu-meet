@@ -11,9 +11,9 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { EmbeddedEvent, EmbeddedAttribute } from '@openvidu-meet/typings';
-import type { OpenViduMeetElement, OpenViduMeetJoinedDetail, OpenViduMeetLeftDetail } from './openvidu-meet-element';
+import { EmbeddedAttribute, EmbeddedEvent, EmbeddedEventName, EmbeddedEventPayloadFor } from '@openvidu-meet/typings';
 import { EventLog } from './components/event-log/event-log';
+import type { OpenViduMeetElement } from './openvidu-meet-element';
 import { EventLogService } from './services/event-log';
 import { IframeHostService } from './services/iframe-host';
 
@@ -75,7 +75,7 @@ export class App {
 	// Whether the active integration is currently mounted.
 	protected readonly mounted = signal(false);
 
-	private onJoinedHandler: ((detail: OpenViduMeetJoinedDetail) => void) | null = null;
+	private onJoinedHandler: ((eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>) => void) | null = null;
 
 	constructor() {
 		// Wire the iframe host controller to the rendered iframe whenever it (re)mounts
@@ -87,8 +87,8 @@ export class App {
 				return;
 			}
 
-			this.iframeHost.attach(ref.nativeElement, this.iframeTargetOrigin(), (event, payload) =>
-				this.handleIframeEvent(event, payload)
+			this.iframeHost.attach(ref.nativeElement, this.iframeTargetOrigin(), (event) =>
+				this.handleIframeEvent(event)
 			);
 			onCleanup(() => this.iframeHost.detach());
 		});
@@ -184,23 +184,29 @@ export class App {
 	// ── Lifecycle events (unified across integrations) ──────────────────────
 
 	protected handleJoined(event: Event): void {
-		this.emitLifecycle(EmbeddedEvent.JOINED, (event as CustomEvent<OpenViduMeetJoinedDetail>).detail);
+		this.emitEvent(
+			EmbeddedEventName.JOINED,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>).detail
+		);
 	}
 
 	protected handleLeft(event: Event): void {
-		this.emitLifecycle(EmbeddedEvent.LEFT, (event as CustomEvent<OpenViduMeetLeftDetail>).detail);
+		this.emitEvent(
+			EmbeddedEventName.LEFT,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.LEFT>>).detail
+		);
 	}
 
 	protected handleClosed(): void {
-		this.emitLifecycle(EmbeddedEvent.CLOSED, {});
+		this.emitEvent(EmbeddedEventName.CLOSED, {});
 	}
 
-	private handleIframeEvent(event: EmbeddedEvent, payload: unknown): void {
-		this.emitLifecycle(event, payload ?? {});
+	private handleIframeEvent(event: EmbeddedEvent): void {
+		this.emitEvent(event.event, 'payload' in event ? event.payload : {});
 	}
 
 	/** Log the event and re-dispatch it on the integration-agnostic event sink for e2e. */
-	private emitLifecycle(name: EmbeddedEvent, detail: unknown): void {
+	private emitEvent(name: EmbeddedEventName, detail: unknown): void {
 		this.log.log(`[event] ${name} — ${this.stringify(detail)}`);
 		this.eventSink()?.nativeElement.dispatchEvent(new CustomEvent(name, { detail: detail ?? {}, bubbles: true }));
 	}
@@ -257,8 +263,8 @@ export class App {
 			return;
 		}
 
-		this.onJoinedHandler = (d) => this.log.log(`[on] joined — identity: ${d.participantIdentity}`);
-		el.on('joined', this.onJoinedHandler);
+		this.onJoinedHandler = (e) => this.log.log(`[on] joined — identity: ${e.participantIdentity}`);
+		el.on(EmbeddedEventName.JOINED, this.onJoinedHandler);
 		this.log.log('on("joined", handler) registered');
 	}
 
@@ -270,7 +276,7 @@ export class App {
 			return;
 		}
 
-		el.once('joined', (d) => this.log.log(`[once] joined — identity: ${d.participantIdentity}`));
+		el.once(EmbeddedEventName.JOINED, (e) => this.log.log(`[once] joined — identity: ${e.participantIdentity}`));
 		this.log.log('once("joined", handler) registered');
 	}
 
@@ -287,7 +293,7 @@ export class App {
 			return;
 		}
 
-		el.off('joined', this.onJoinedHandler);
+		el.off(EmbeddedEventName.JOINED, this.onJoinedHandler);
 		this.onJoinedHandler = null;
 		this.log.log('off("joined", handler) called');
 	}

@@ -210,7 +210,7 @@ class WebComponentDocGenerator {
         const enums = this.parseEnumFile(path.join(this.typingsPath, 'events.ts'));
         const payloads = this.extractPayloads(path.join(this.typingsPath, 'events.ts'));
 
-        const eventEnum = enums.find(e => e.name === 'EmbeddedEvent');
+        const eventEnum = enums.find(e => e.name === 'EmbeddedEventName');
         if (!eventEnum) return '';
 
         let markdown = '| Event | Description | Payload |\n';
@@ -236,7 +236,7 @@ class WebComponentDocGenerator {
         const enums = this.parseEnumFile(path.join(this.typingsPath, 'commands.ts'));
         const payloads = this.extractPayloads(path.join(this.typingsPath, 'commands.ts'));
 
-        const commandEnum = enums.find(e => e.name === 'EmbeddedCommand');
+        const commandEnum = enums.find(e => e.name === 'EmbeddedCommandName');
         if (!commandEnum) return '';
 
         let markdown = '| Method | Command | Description | Parameters | Access Level |\n';

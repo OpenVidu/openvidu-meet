@@ -2,6 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { FormControl, FormGroup, Validators } from '@angular/forms';
 import { MeetRoom, MeetRoomStatus } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { AuthService } from '../../auth/services/auth.service';
@@ -25,6 +26,7 @@ export class MeetingLobbyService {
 	protected authService = inject(AuthService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected navigationService = inject(NavigationService);
+	protected leaveRedirect = inject(LeaveRedirectService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingLobbyService');
@@ -266,7 +268,7 @@ export class MeetingLobbyService {
 	 */
 	protected async setBackButtonText(): Promise<void> {
 		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
-		const redirection = this.navigationService.getLeaveRedirectURL();
+		const redirection = this.leaveRedirect.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
 		// If in standalone mode without redirection and user is not authenticated,

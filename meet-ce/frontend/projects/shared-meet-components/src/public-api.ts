@@ -8,6 +8,7 @@ export * from './lib/shared';
 // Then export domains (which depend on shared)
 export * from './lib/domains/auth';
 export * from './lib/domains/console';
+export * from './lib/domains/embedded';
 export * from './lib/domains/meeting';
 export * from './lib/domains/recordings';
 export * from './lib/domains/room-members';

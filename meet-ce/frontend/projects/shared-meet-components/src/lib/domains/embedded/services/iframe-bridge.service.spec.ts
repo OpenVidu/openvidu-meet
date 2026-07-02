@@ -1,13 +1,11 @@
 import { signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { LeftEventReason, EmbeddedCommand, EmbeddedEvent } from '@openvidu-meet/typings';
-import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { WebComponentEventType } from '../../../shared/models/webcomponent-bridge.model';
+import { EmbeddedCommandName, EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { WebComponentBridgeService } from '../../../shared/services/webcomponent-bridge.service';
-import { LoggerService, OpenViduService } from '../openvidu-components';
-import { MeetingIframeBridgeService } from './meeting-iframe-bridge.service';
-import { MeetingWebComponentManagerService } from './meeting-webcomponent-manager.service';
+import { LoggerService, OpenViduService } from '../../meeting/openvidu-components';
+import { EmbeddedCommandService } from './embedded-command.service';
+import { EmbeddedEventBusService } from './embedded-event-bus.service';
+import { IframeBridgeService } from './iframe-bridge.service';
 
 class LoggerServiceStub {
 	get() {
@@ -24,32 +22,32 @@ function postFromHost(data: unknown, origin = PARENT_ORIGIN): void {
 	window.dispatchEvent(new MessageEvent('message', { data, origin }));
 }
 
-describe('MeetingIframeBridgeService', () => {
-	let service: MeetingIframeBridgeService;
-	let wcBridge: WebComponentBridgeService;
-	let wcManager: jasmine.SpyObj<MeetingWebComponentManagerService>;
+describe('IframeBridgeService', () => {
+	let service: IframeBridgeService;
+	let eventBus: EmbeddedEventBusService;
+	let commandService: jasmine.SpyObj<EmbeddedCommandService>;
 	let openviduService: { isRoomConnected: jasmine.Spy };
 	let isIframeMode: WritableSignal<boolean>;
 	let postMessageSpy: jasmine.Spy;
 
 	beforeEach(() => {
 		isIframeMode = signal(true);
-		wcManager = jasmine.createSpyObj<MeetingWebComponentManagerService>('MeetingWebComponentManagerService', [
+		commandService = jasmine.createSpyObj<EmbeddedCommandService>('EmbeddedCommandService', [
 			'endMeeting',
 			'leaveRoom',
 			'kickParticipant'
 		]);
-		wcManager.endMeeting.and.resolveTo();
-		wcManager.leaveRoom.and.resolveTo();
-		wcManager.kickParticipant.and.resolveTo();
+		commandService.endMeeting.and.resolveTo();
+		commandService.leaveRoom.and.resolveTo();
+		commandService.kickParticipant.and.resolveTo();
 		openviduService = { isRoomConnected: jasmine.createSpy('isRoomConnected').and.returnValue(true) };
 
 		TestBed.configureTestingModule({
 			providers: [
-				MeetingIframeBridgeService,
-				WebComponentBridgeService,
+				IframeBridgeService,
+				EmbeddedEventBusService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
-				{ provide: MeetingWebComponentManagerService, useValue: wcManager },
+				{ provide: EmbeddedCommandService, useValue: commandService },
 				{ provide: OpenViduService, useValue: openviduService as unknown as OpenViduService },
 				{ provide: RuntimeConfigService, useValue: { isIframeMode } as unknown as RuntimeConfigService }
 			]
@@ -57,8 +55,8 @@ describe('MeetingIframeBridgeService', () => {
 
 		// Spy before the service can post anything; default spy does NOT call through.
 		postMessageSpy = spyOn(window.parent, 'postMessage');
-		wcBridge = TestBed.inject(WebComponentBridgeService);
-		service = TestBed.inject(MeetingIframeBridgeService);
+		eventBus = TestBed.inject(EmbeddedEventBusService);
+		service = TestBed.inject(IframeBridgeService);
 	});
 
 	/**
@@ -100,8 +98,8 @@ describe('MeetingIframeBridgeService', () => {
 			expect(messageListenerCalls.length).toBe(0);
 
 			// With the bridge closed, inbound commands are ignored.
-			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
-			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
+			postFromHost({ command: EmbeddedCommandName.LEAVE_ROOM });
+			expect(commandService.leaveRoom).not.toHaveBeenCalled();
 		});
 
 		it('is idempotent: starting twice attaches the listener only once', () => {
@@ -119,61 +117,58 @@ describe('MeetingIframeBridgeService', () => {
 		it('ignores messages from an untrusted origin', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommand.END_MEETING }, 'https://evil.example.com');
+			postFromHost({ command: EmbeddedCommandName.END_MEETING }, 'https://evil.example.com');
 
-			expect(wcManager.endMeeting).not.toHaveBeenCalled();
+			expect(commandService.endMeeting).not.toHaveBeenCalled();
 		});
 
 		it('ignores commands while not connected to the room', () => {
 			openviduService.isRoomConnected.and.returnValue(false);
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommand.END_MEETING });
+			postFromHost({ command: EmbeddedCommandName.END_MEETING });
 
-			expect(wcManager.endMeeting).not.toHaveBeenCalled();
+			expect(commandService.endMeeting).not.toHaveBeenCalled();
 		});
 
 		it('forwards LEAVE_ROOM to the manager', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
+			postFromHost({ command: EmbeddedCommandName.LEAVE_ROOM });
 
-			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
+			expect(commandService.leaveRoom).toHaveBeenCalledTimes(1);
 		});
 
 		it('forwards END_MEETING to the manager', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommand.END_MEETING });
+			postFromHost({ command: EmbeddedCommandName.END_MEETING });
 
-			expect(wcManager.endMeeting).toHaveBeenCalledTimes(1);
+			expect(commandService.endMeeting).toHaveBeenCalledTimes(1);
 		});
 
 		it('forwards KICK_PARTICIPANT with the participant identity', () => {
 			startBridge();
 
-			postFromHost({
-				command: EmbeddedCommand.KICK_PARTICIPANT,
-				payload: { participantIdentity: IDENTITY }
-			});
+			postFromHost({ command: EmbeddedCommandName.KICK_PARTICIPANT, payload: { participantIdentity: IDENTITY } });
 
-			expect(wcManager.kickParticipant).toHaveBeenCalledOnceWith(IDENTITY);
+			expect(commandService.kickParticipant).toHaveBeenCalledOnceWith(IDENTITY);
 		});
 
 		it('ignores KICK_PARTICIPANT without a participant identity', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommand.KICK_PARTICIPANT, payload: {} });
+			postFromHost({ command: EmbeddedCommandName.KICK_PARTICIPANT });
 
-			expect(wcManager.kickParticipant).not.toHaveBeenCalled();
+			expect(commandService.kickParticipant).not.toHaveBeenCalled();
 		});
 
 		it('ignores malformed messages (no command)', () => {
 			startBridge();
 
 			expect(() => postFromHost({ foo: 'bar' })).not.toThrow();
-			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
-			expect(wcManager.endMeeting).not.toHaveBeenCalled();
+			expect(commandService.leaveRoom).not.toHaveBeenCalled();
+			expect(commandService.endMeeting).not.toHaveBeenCalled();
 		});
 
 		it('ignores non-object / non-string-command messages without throwing', () => {
@@ -187,29 +182,29 @@ describe('MeetingIframeBridgeService', () => {
 			expect(() => postFromHost(42)).not.toThrow();
 			expect(() => postFromHost({ command: 123 })).not.toThrow();
 
-			expect(wcManager.leaveRoom).not.toHaveBeenCalled();
-			expect(wcManager.endMeeting).not.toHaveBeenCalled();
-			expect(wcManager.kickParticipant).not.toHaveBeenCalled();
+			expect(commandService.leaveRoom).not.toHaveBeenCalled();
+			expect(commandService.endMeeting).not.toHaveBeenCalled();
+			expect(commandService.kickParticipant).not.toHaveBeenCalled();
 		});
 
 		it('ignores KICK_PARTICIPANT with an empty participant identity', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommand.KICK_PARTICIPANT, payload: { participantIdentity: '' } });
+			postFromHost({ command: EmbeddedCommandName.KICK_PARTICIPANT, payload: { participantIdentity: '' } });
 
-			expect(wcManager.kickParticipant).not.toHaveBeenCalled();
+			expect(commandService.kickParticipant).not.toHaveBeenCalled();
 		});
 
 		it('re-evaluates room connection on every command, not just the first', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommand.LEAVE_ROOM });
-			expect(wcManager.leaveRoom).toHaveBeenCalledTimes(1);
+			postFromHost({ command: EmbeddedCommandName.LEAVE_ROOM });
+			expect(commandService.leaveRoom).toHaveBeenCalledTimes(1);
 
 			// Connection dropped after the first command: the next one must be rejected.
 			openviduService.isRoomConnected.and.returnValue(false);
-			postFromHost({ command: EmbeddedCommand.END_MEETING });
-			expect(wcManager.endMeeting).not.toHaveBeenCalled();
+			postFromHost({ command: EmbeddedCommandName.END_MEETING });
+			expect(commandService.endMeeting).not.toHaveBeenCalled();
 		});
 	});
 
@@ -217,15 +212,14 @@ describe('MeetingIframeBridgeService', () => {
 		it('relays JOINED to the parent at the trusted origin', () => {
 			startBridge();
 
-			wcBridge.emitWebComponentEvent({
-				type: WebComponentEventType.JOINED,
-				roomId: ROOM_ID,
-				participantIdentity: IDENTITY
+			eventBus.emit({
+				event: EmbeddedEventName.JOINED,
+				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
 			TestBed.tick();
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				{ event: EmbeddedEvent.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
+				{ event: EmbeddedEventName.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
 				PARENT_ORIGIN
 			);
 		});
@@ -233,17 +227,15 @@ describe('MeetingIframeBridgeService', () => {
 		it('relays LEFT including the leave reason', () => {
 			startBridge();
 
-			wcBridge.emitWebComponentEvent({
-				type: WebComponentEventType.LEFT,
-				roomId: ROOM_ID,
-				participantIdentity: IDENTITY,
-				reason: LeftEventReason.VOLUNTARY_LEAVE
+			eventBus.emit({
+				event: EmbeddedEventName.LEFT,
+				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE }
 			});
 			TestBed.tick();
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
 				{
-					event: EmbeddedEvent.LEFT,
+					event: EmbeddedEventName.LEFT,
 					payload: { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE }
 				},
 				PARENT_ORIGIN
@@ -253,33 +245,20 @@ describe('MeetingIframeBridgeService', () => {
 		it('relays CLOSED', () => {
 			startBridge();
 
-			wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
+			eventBus.emit({ event: EmbeddedEventName.CLOSED });
 			TestBed.tick();
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				jasmine.objectContaining({ event: EmbeddedEvent.CLOSED }),
+				jasmine.objectContaining({ event: EmbeddedEventName.CLOSED }),
 				PARENT_ORIGIN
 			);
 		});
 
-		it('does not relay internal ERROR events (no public iframe event)', () => {
-			startBridge();
-
-			wcBridge.emitWebComponentEvent({
-				type: WebComponentEventType.ERROR,
-				reason: NavigationErrorReason.ROOM_ACCESS_REVOKED
-			});
-			TestBed.tick();
-
-			expect(postMessageSpy).not.toHaveBeenCalled();
-		});
-
 		it('buffers events emitted before the bridge starts, then flushes them', () => {
 			// Emitted before the parent origin is known: must stay queued.
-			wcBridge.emitWebComponentEvent({
-				type: WebComponentEventType.JOINED,
-				roomId: ROOM_ID,
-				participantIdentity: IDENTITY
+			eventBus.emit({
+				event: EmbeddedEventName.JOINED,
+				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
 			TestBed.tick();
 			expect(postMessageSpy).not.toHaveBeenCalled();
@@ -289,7 +268,7 @@ describe('MeetingIframeBridgeService', () => {
 			TestBed.tick();
 
 			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				{ event: EmbeddedEvent.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
+				{ event: EmbeddedEventName.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
 				PARENT_ORIGIN
 			);
 		});
@@ -300,30 +279,26 @@ describe('MeetingIframeBridgeService', () => {
 			// value when the effect flushes, silently dropping the first event.
 			startBridge();
 
-			wcBridge.emitWebComponentEvent({
-				type: WebComponentEventType.JOINED,
-				roomId: ROOM_ID,
-				participantIdentity: IDENTITY
+			eventBus.emit({
+				event: EmbeddedEventName.JOINED,
+				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
-			wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
+			eventBus.emit({ event: EmbeddedEventName.CLOSED });
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
-			expect(relayed).toEqual([EmbeddedEvent.JOINED, EmbeddedEvent.CLOSED]);
+			expect(relayed).toEqual([EmbeddedEventName.JOINED, EmbeddedEventName.CLOSED]);
 		});
 
 		it('flushes multiple buffered events in FIFO order once the bridge starts', () => {
 			// Queued before the parent origin is known.
-			wcBridge.emitWebComponentEvent({
-				type: WebComponentEventType.JOINED,
-				roomId: ROOM_ID,
-				participantIdentity: IDENTITY
+			eventBus.emit({
+				event: EmbeddedEventName.JOINED,
+				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
-			wcBridge.emitWebComponentEvent({
-				type: WebComponentEventType.LEFT,
-				roomId: ROOM_ID,
-				participantIdentity: IDENTITY,
-				reason: LeftEventReason.VOLUNTARY_LEAVE
+			eventBus.emit({
+				event: EmbeddedEventName.LEFT,
+				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE }
 			});
 			TestBed.tick();
 			expect(postMessageSpy).not.toHaveBeenCalled();
@@ -332,7 +307,7 @@ describe('MeetingIframeBridgeService', () => {
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
-			expect(relayed).toEqual([EmbeddedEvent.JOINED, EmbeddedEvent.LEFT]);
+			expect(relayed).toEqual([EmbeddedEventName.JOINED, EmbeddedEventName.LEFT]);
 		});
 	});
 

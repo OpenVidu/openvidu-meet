@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
 import {
 	AbstractControl,
 	FormControl,
@@ -54,6 +54,13 @@ export class ChangePasswordRequiredComponent implements OnInit {
 	readonly showNewPassword = signal(false);
 	readonly showConfirmPassword = signal(false);
 	readonly isSavingPassword = signal(false);
+
+	/**
+	 * Where to navigate after a successful password change. Bound directly when rendered outside
+	 * the Angular Router (the webcomponent shell); the SPA leaves it empty and reads `redirectTo`
+	 * from the route query params instead.
+	 */
+	readonly redirectToInput = input<string>('', { alias: 'redirectTo' });
 	readonly redirectTo = signal('');
 
 	readonly changePasswordForm = new FormGroup({
@@ -63,7 +70,8 @@ export class ChangePasswordRequiredComponent implements OnInit {
 	});
 
 	ngOnInit() {
-		const redirectTo = this.route.snapshot.queryParamMap.get('redirectTo');
+		// Webcomponent: the input carries the destination. SPA: fall back to the route query param.
+		const redirectTo = this.redirectToInput() || this.route.snapshot.queryParamMap.get('redirectTo');
 		this.redirectTo.set(redirectTo ?? '');
 
 		this.setupPasswordFormValidationListeners();

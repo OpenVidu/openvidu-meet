@@ -9,6 +9,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingInfo } from '@openvidu-meet/typings';
 import { DialogPresetsService } from 'projects/shared-meet-components/src/lib/shared/services/dialog-presets.service';
+import { LeaveRedirectService } from 'projects/shared-meet-components/src/lib/shared/services/leave-redirect.service';
 import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -43,6 +44,7 @@ export class ViewRecordingComponent implements OnInit {
 	protected readonly notificationService = inject(NotificationService);
 	protected readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
+	protected readonly leaveRedirect = inject(LeaveRedirectService);
 	protected readonly runtimeConfigService = inject(RuntimeConfigService);
 	protected readonly roomMemberContextService = inject(RoomMemberContextService);
 	protected readonly route = inject(ActivatedRoute);
@@ -164,7 +166,7 @@ export class ViewRecordingComponent implements OnInit {
 		return (
 			(this.canRetrieveRecordings() && !!recording?.roomId) ||
 			this.runtimeConfigService.isWebcomponentMode() ||
-			!!this.navigationService.getLeaveRedirectURL()
+			!!this.leaveRedirect.getLeaveRedirectURL()
 		);
 	}
 

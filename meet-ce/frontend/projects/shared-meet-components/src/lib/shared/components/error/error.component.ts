@@ -4,6 +4,7 @@ import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { LeaveRedirectService } from '../../services/leave-redirect.service';
 import { NavigationService } from '../../services/navigation.service';
 import { RuntimeConfigService } from '../../services/runtime-config.service';
 import { describeNavigationError } from '../../utils/navigation-error.util';
@@ -20,6 +21,7 @@ export class ErrorComponent implements OnInit {
 	private route = inject(ActivatedRoute);
 	protected authService = inject(AuthService);
 	protected navService = inject(NavigationService);
+	protected leaveRedirect = inject(LeaveRedirectService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 
 	/**
@@ -53,7 +55,7 @@ export class ErrorComponent implements OnInit {
 	 */
 	async setBackButtonText() {
 		const isStandaloneMode = !this.runtimeConfigService.isWebcomponentMode();
-		const redirection = this.navService.getLeaveRedirectURL();
+		const redirection = this.leaveRedirect.getLeaveRedirectURL();
 		const isAuthenticated = await this.authService.isUserAuthenticated();
 
 		// If in standalone mode without redirection and user is not authenticated,

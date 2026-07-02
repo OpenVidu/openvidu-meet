@@ -8,6 +8,10 @@
     "SOMETHING_WRONG": "問題が発生しました"
   },
   "NAVIGATION_ERROR": {
+    "EMBEDDED_ERROR": {
+      "TITLE": "OpenVidu Meet を読み込めませんでした",
+      "MESSAGE": "OpenVidu Meet を読み込めませんでした。埋め込み設定を確認してください。"
+    },
     "CLOSED_ROOM": {
       "TITLE": "クローズ済みルーム",
       "MESSAGE": "このルームはクローズしているため、会議を利用できません"

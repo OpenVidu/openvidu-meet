@@ -1,8 +1,9 @@
 import { HttpErrorResponse, HttpHandlerFn, HttpInterceptorFn, HttpRequest } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { inject, Injector } from '@angular/core';
 import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
-import { HttpErrorNotifierService, HttpHeaderProviderService } from '../services';
+import { HttpErrorNotifierService, HttpHeaderProviderService, RuntimeConfigService } from '../services';
+import { WcRouterService } from '../../domains/embedded/services/wc-router.service';
 
 /**
  * This interceptor follows the principle of single responsibility and domain separation.
@@ -13,10 +14,17 @@ import { HttpErrorNotifierService, HttpHeaderProviderService } from '../services
  */
 export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, next: HttpHandlerFn) => {
 	const router = inject(Router);
+	const runtimeConfig = inject(RuntimeConfigService);
+	const injector = inject(Injector);
 	const httpErrorNotifier = inject(HttpErrorNotifierService);
 	const httpHeaderProvider = inject(HttpHeaderProviderService);
 
-	const pageUrl = router.currentNavigation()?.finalUrl?.toString() || router.url;
+	// Route the header providers and error handlers act on. In webcomponent mode there is no Angular
+	// Router, so the WcRouterService's current path is the source of truth (resolved lazily so the SPA
+	// never constructs the WC-only router); otherwise read the router.
+	const pageUrl = runtimeConfig.isWebcomponentMode()
+		? (injector.get(WcRouterService).currentPath() ?? '')
+		: (router.currentNavigation()?.finalUrl?.toString() || router.url);
 
 	// Collect headers from all registered providers
 	const headers = httpHeaderProvider.collectHeaders({ request: req, pageUrl });

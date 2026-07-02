@@ -8,6 +8,10 @@
     "SOMETHING_WRONG": "Algo ha salido mal"
   },
   "NAVIGATION_ERROR": {
+    "EMBEDDED_ERROR": {
+      "TITLE": "No se pudo cargar OpenVidu Meet",
+      "MESSAGE": "No se ha podido cargar OpenVidu Meet. Comprueba la configuración de la integración."
+    },
     "CLOSED_ROOM": {
       "TITLE": "Sala cerrada",
       "MESSAGE": "Las reuniones de esta sala no están disponibles mientras está cerrada"

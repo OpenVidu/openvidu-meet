@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -50,9 +50,22 @@ export class LoginComponent implements OnInit {
 	showPassword = signal(false);
 	loginErrorMessage = signal<string | undefined>(undefined);
 
+	/**
+	 * Where to navigate after a successful login. Bound directly when rendered outside the
+	 * Angular Router (the webcomponent shell, which has no route query params); the SPA leaves
+	 * it empty and reads `redirectTo` from the route query params instead.
+	 */
+	readonly redirectToInput = input<string>('', { alias: 'redirectTo' });
+
 	redirectTo = signal(''); // By default, redirect to home page
 
 	ngOnInit() {
+		// Webcomponent: the input carries the destination. SPA: fall back to the route query param.
+		const fromInput = this.redirectToInput();
+		if (fromInput) {
+			this.redirectTo.set(fromInput);
+		}
+
 		this.route.queryParams.subscribe((params) => {
 			if (params['redirectTo']) {
 				this.redirectTo.set(params['redirectTo']);

@@ -1,14 +1,14 @@
 /**
- * All available commands that can be sent to the WebComponent.
+ * All available commands that can be sent to the embedded OpenVidu Meet application.
  */
-export enum EmbeddedCommand {
+export enum EmbeddedCommandName {
 	/**
 	 * Ends the current meeting for all participants.
 	 * @moderator
 	 */
 	END_MEETING = 'endMeeting',
 	/**
-	 * Disconnects the local participant from the current room.
+	 * Disconnects the local participant from the current meeting.
 	 */
 	LEAVE_ROOM = 'leaveRoom',
 	/**
@@ -20,22 +20,22 @@ export enum EmbeddedCommand {
 
 /**
  * Type definitions for command payloads.
- * Each property corresponds to a command in {@link EmbeddedCommand}.
+ * Each property corresponds to a command in {@link EmbeddedCommandName}.
  * @category Communication
  */
 export interface EmbeddedCommandPayloads {
 	/**
-	 * Payload for the {@link EmbeddedCommand.END_MEETING} command.
+	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
 	 */
-	[EmbeddedCommand.END_MEETING]: void;
+	[EmbeddedCommandName.END_MEETING]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommand.LEAVE_ROOM} command.
+	 * Payload for the {@link EmbeddedCommandName.LEAVE_ROOM} command.
 	 */
-	[EmbeddedCommand.LEAVE_ROOM]: void;
+	[EmbeddedCommandName.LEAVE_ROOM]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommand.KICK_PARTICIPANT} command.
+	 * Payload for the {@link EmbeddedCommandName.KICK_PARTICIPANT} command.
 	 */
-	[EmbeddedCommand.KICK_PARTICIPANT]: {
+	[EmbeddedCommandName.KICK_PARTICIPANT]: {
 		participantIdentity: string;
 	};
 }
@@ -46,6 +46,42 @@ export interface EmbeddedCommandPayloads {
  * @category Type Helpers
  * @private
  */
-export type EmbeddedCommandPayloadFor<T extends EmbeddedCommand> = T extends keyof EmbeddedCommandPayloads
+export type EmbeddedCommandPayloadFor<T extends EmbeddedCommandName> = T extends keyof EmbeddedCommandPayloads
 	? EmbeddedCommandPayloads[T]
 	: never;
+
+/**
+ * Command message for {@link EmbeddedCommandName.END_MEETING} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedEndMeetingCommand {
+	command: EmbeddedCommandName.END_MEETING;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.LEAVE_ROOM} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedLeaveRoomCommand {
+	command: EmbeddedCommandName.LEAVE_ROOM;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.KICK_PARTICIPANT}: the command name plus its payload,
+ * derived from {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedKickParticipantCommand {
+	command: EmbeddedCommandName.KICK_PARTICIPANT;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.KICK_PARTICIPANT>;
+}
+
+/**
+ * Discriminated union of every command message the host can send to the embedded app; narrow on
+ * `command`. In the iframe integration this is the object posted verbatim over `postMessage`.
+ * @category Communication
+ */
+export type EmbeddedCommand =
+	| EmbeddedEndMeetingCommand
+	| EmbeddedLeaveRoomCommand
+	| EmbeddedKickParticipantCommand;

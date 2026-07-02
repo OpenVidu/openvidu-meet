@@ -1,34 +1,32 @@
-@if (errorReason()) {
-	<ov-error [reason]="errorReason()!" />
-} @else {
-	@switch (view()) {
-		@case ('meeting') {
-			@if (ready()) {
-				@if (hasLeft()) {
-					<ov-end-meeting [reason]="leftReason()" />
-				} @else {
-					<app-ce-ov-meeting />
-				}
-			}
+@switch (router.currentRoute()?.name) {
+	@case ('meeting') {
+		@if (router.status() === 'ready') {
+			<app-ce-ov-meeting />
 		}
-		@case ('single-recording') {
-			@if (ready()) {
-				<ov-view-recording
-					[recordingId]="recordingIdForView()"
-					[recordingSecret]="recordingSecretForView()"
-				></ov-view-recording>
-			}
+	}
+	@case ('single-recording') {
+		@if (router.status() === 'ready') {
+			<ov-view-recording [recordingId]="recordingId()" [recordingSecret]="recordingSecret()"></ov-view-recording>
 		}
-		@case ('room-recordings') {
-			@if (ready()) {
-				<ov-room-recordings [roomId]="roomIdForRecordings()"></ov-room-recordings>
-			}
+	}
+	@case ('room-recordings') {
+		@if (router.status() === 'ready') {
+			<ov-room-recordings [roomId]="roomId()"></ov-room-recordings>
 		}
-		@case ('login') {
-			<ov-login></ov-login>
-		}
-		@case ('change-password') {
-			<ov-change-password-required></ov-change-password-required>
-		}
+	}
+	@case ('login') {
+		<ov-login [redirectTo]="redirectTo()"></ov-login>
+	}
+	@case ('change-password') {
+		<ov-change-password-required [redirectTo]="redirectTo()"></ov-change-password-required>
+	}
+	@case ('disconnected') {
+		<ov-end-meeting [reason]="disconnectedReason()" />
+	}
+	@case ('error') {
+		<ov-error [reason]="errorReason()!" />
+	}
+	@case ('invalid') {
+		<ov-error [reason]="errorReason()!" />
 	}
 }

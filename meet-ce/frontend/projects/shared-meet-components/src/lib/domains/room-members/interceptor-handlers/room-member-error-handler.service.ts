@@ -10,7 +10,6 @@ import {
 	HttpErrorNotifierService
 } from '../../../shared/services/http-error-notifier.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
-import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../services/room-member-context.service';
 import { RoomMemberHeaderProviderService } from './room-member-header-provider.service';
@@ -29,7 +28,6 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 	private readonly httpErrorNotifier = inject(HttpErrorNotifierService);
 	private readonly roomMemberHeaderProvider = inject(RoomMemberHeaderProviderService);
 	private readonly navigationService = inject(NavigationService);
-	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
 	/**
 	 * Registers this handler with the error notifier service
@@ -65,9 +63,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 		// Only handle errors that occur in room or recording pages,
 		// excluding requests to the profile endpoint and that do not have the skip-auth-recovery header
 		return (
-			(this.runtimeConfigService.isWebcomponentMode() ||
-				pageUrl.startsWith('/room/') ||
-				pageUrl.startsWith('/recording/')) &&
+			(pageUrl.startsWith('/room/') || pageUrl.startsWith('/recording/')) &&
 			!request.url.includes('/users/me') &&
 			request.headers.get(HTTP_HEADERS.SKIP_AUTH_RECOVERY) !== 'true'
 		);

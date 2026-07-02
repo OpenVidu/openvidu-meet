@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import {
+	EmbeddedEventName,
 	LeftEventReason,
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
@@ -11,11 +12,11 @@ import {
 	MeetSignalType
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
-import { WebComponentEventType } from '../../../shared/models/webcomponent-bridge.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../shared/services/sound.service';
-import { WebComponentBridgeService } from '../../../shared/services/webcomponent-bridge.service';
+import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
@@ -44,10 +45,11 @@ export class MeetingEventHandlerService {
 	protected roomFeatureService = inject(RoomFeatureService);
 	protected recordingService = inject(RecordingService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
-	protected wcBridge = inject(WebComponentBridgeService);
+	protected eventBus = inject(EmbeddedEventBusService);
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
+	protected runtimeConfigService = inject(RuntimeConfigService);
 
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
@@ -106,19 +108,25 @@ export class MeetingEventHandlerService {
 		);
 	}
 
-	/** Forwards the participant-connected event to the host as a `joined` DOM event. */
+	/** Forwards the participant-connected event to the host as a `joined` DOM event (embedded modes only). */
 	onParticipantConnected = (event: ParticipantModel): void => {
-		this.wcBridge.emitWebComponentEvent({
-			type: WebComponentEventType.JOINED,
-			roomId: event.getProperties().room?.name || '',
-			participantIdentity: event.identity
+		if (!this.runtimeConfigService.isEmbeddedMode()) {
+			return;
+		}
+
+		this.eventBus.emit({
+			event: EmbeddedEventName.JOINED,
+			payload: {
+				roomId: event.roomName ?? '',
+				participantIdentity: event.identity
+			}
 		});
 	};
 
 	/**
-	 * Maps the technical leave reason to a {@link LeftEventReason}, clears context,
-	 * and delegates the post-leave transition (WC `left` event / SPA `/disconnected`)
-	 * to {@link NavigationService.goToDisconnected}.
+	 * Maps the technical leave reason to a {@link LeftEventReason}, clears context, emits the
+	 * host `left` lifecycle event (paired with the `joined` emit in {@link onParticipantConnected}),
+	 * and delegates the post-leave view transition to {@link NavigationService.goToDisconnected}.
 	 */
 	onParticipantLeft = async (event: ParticipantLeftEvent): Promise<void> => {
 		let leftReason = this.mapLeftReason(event.reason);
@@ -132,11 +140,19 @@ export class MeetingEventHandlerService {
 		// Clear meeting context but keep session storage intact
 		this.meetingContext.clearMeetingContext(false);
 
-		await this.navigationService.goToDisconnected({
-			roomId: event.roomName,
-			participantIdentity: event.participantName,
-			reason: leftReason
-		});
+		// Notify the host that the local participant left (embedded modes only; the bus is drained there).
+		if (this.runtimeConfigService.isEmbeddedMode()) {
+			this.eventBus.emit({
+				event: EmbeddedEventName.LEFT,
+				payload: {
+					roomId: event.roomName,
+					participantIdentity: event.identity,
+					reason: leftReason
+				}
+			});
+		}
+
+		await this.navigationService.goToDisconnected(leftReason);
 	};
 
 	/**

@@ -1,38 +1,31 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { NavigationStart, Params, Router, UrlTree } from '@angular/router';
+import { EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
+import { WcRouteName } from '../../domains/embedded/models/wc-route.model';
+import { wcRouteFromPath } from '../../domains/embedded/utils/wc-route.utils';
+import { EmbeddedEventBusService } from '../../domains/embedded/services/embedded-event-bus.service';
+import { WcRouterGateway } from '../../domains/embedded/services/wc-router-gateway.service';
 import { ACCESS_TOKEN_QUERY_PARAM, REFRESH_TOKEN_QUERY_PARAM } from '../guards/store-tokens-from-query-params.guard';
 import { NavigationErrorReason } from '../models/navigation.model';
-import {
-	WcNavigationRequest,
-	WebComponentEventType,
-	WebComponentLeftEvent,
-	WebComponentNavigationType
-} from '../models/webcomponent-bridge.model';
+import { LeaveRedirectService } from './leave-redirect.service';
 import { ListStateCacheService } from './list-state-cache.service';
 import { RuntimeConfigService } from './runtime-config.service';
-import { SessionStorageService } from './session-storage.service';
 import { TokenStorageService } from './token-storage.service';
-import { WebComponentBridgeService } from './webcomponent-bridge.service';
 
 @Injectable({
 	providedIn: 'root'
 })
 export class NavigationService {
-	private readonly wcBridge = inject(WebComponentBridgeService);
+	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly router = inject(Router);
-	private readonly sessionStorageService = inject(SessionStorageService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 	private readonly listStateCacheService = inject(ListStateCacheService);
 	private readonly tokenStorageService = inject(TokenStorageService);
-
-	protected leaveRedirectUrl?: string;
-
-	/**
-	 * Last route requested for navigation.
-	 * In SPA mode, this is always the current route.
-	 * In webcomponent mode, this is the last route requested by the SPA, which may not be the current route if the shell has overridden it (e.g. showing a login or change-password view).
-	 */
-	readonly targetRoute = signal<string | null>(null);
+	private readonly leaveRedirect = inject(LeaveRedirectService);
+	// Drives the WC mini-router through a leaf gateway rather than injecting WcRouterService directly:
+	// the router's guards pull in entry services that (transitively) inject NavigationService, so a
+	// direct dependency would close a DI cycle. WcRouterService registers itself on the gateway.
+	private readonly wcRouterGateway = inject(WcRouterGateway);
 
 	/** Trigger of the most recently started navigation (tracked from NavigationStart). */
 	private lastNavigationTrigger: 'imperative' | 'popstate' | 'hashchange' = 'imperative';
@@ -48,68 +41,10 @@ export class NavigationService {
 	}
 
 	/**
-	 * Retrieves the leave redirect URL, checking both the service property and session storage.
-	 *
-	 * @returns The leave redirect URL if set, otherwise undefined
-	 */
-	getLeaveRedirectURL(): string | undefined {
-		const storedRedirectUrl = this.sessionStorageService.getRedirectUrl();
-		if (!this.leaveRedirectUrl && storedRedirectUrl) {
-			this.leaveRedirectUrl = storedRedirectUrl;
-		}
-
-		return this.leaveRedirectUrl;
-	}
-
-	/**
-	 * Handles the leave redirect URL logic with automatic referrer detection
-	 *
-	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
-	 */
-	handleLeaveRedirectUrl(leaveRedirectUrl: string | undefined) {
-		const isWebcomponentMode = this.runtimeConfigService.isWebcomponentMode();
-		const isIframeMode = this.runtimeConfigService.isIframeMode();
-
-		// Explicit valid URL provided - use as is
-		if (leaveRedirectUrl && this.isValidUrl(leaveRedirectUrl)) {
-			this.setLeaveRedirectUrl(leaveRedirectUrl);
-			return;
-		}
-
-		// Relative path while embedded — resolve it against the HOST page's origin.
-		if (leaveRedirectUrl?.startsWith('/')) {
-			// Webcomponent: the Angular Elements element runs in the host's window,
-			// so `window.location.origin` IS the host origin.
-			if (isWebcomponentMode) {
-				this.setLeaveRedirectUrl(window.location.origin + leaveRedirectUrl);
-				return;
-			}
-
-			// Iframe: the app runs on the Meet server origin, so the host origin is
-			// reconstructed from the referrer (the parent page that loaded the iframe).
-			if (isIframeMode) {
-				const hostOrigin = this.getReferrerOrigin();
-				if (hostOrigin) {
-					this.setLeaveRedirectUrl(hostOrigin + leaveRedirectUrl);
-				}
-				return;
-			}
-		}
-
-		// Auto-detect from referrer (only when running standalone and no explicit URL provided)
-		if (!leaveRedirectUrl && !isWebcomponentMode && !isIframeMode) {
-			const autoRedirectUrl = this.getAutoRedirectUrl();
-			if (autoRedirectUrl) {
-				this.setLeaveRedirectUrl(autoRedirectUrl);
-			}
-		}
-	}
-
-	/**
 	 * Redirects the user to the leave redirect URL if set and valid.
 	 */
 	async redirectToLeaveUrl() {
-		const url = this.getLeaveRedirectURL();
+		const url = this.leaveRedirect.getLeaveRedirectURL();
 		if (!url) {
 			console.warn('No leave redirect URL set');
 			return;
@@ -269,15 +204,17 @@ export class NavigationService {
 	 * @param replaceUrl - If true, replaces the current URL in the browser history
 	 */
 	async redirectTo(url: string, replaceUrl: boolean = true): Promise<void> {
-		// In the WC, `redirectTo` is only reached when an interrupt flow finishes
-		// (login / change-password). There is no router and no destination route to
-		// honor — the destination is always the shell's primary attribute-derived
-		// view — so we just clear the navigation request, which makes the shell fall
-		// back to that primary view and re-bootstrap it. The `url` is intentionally
-		// ignored.
+		// In the WC, `redirectTo` completes an interrupt flow (login / change-password).
+		// Resolve the destination path back to a route and drive the mini-router there
+		// (re-running its guard now that the user is authenticated). An empty/unparseable
+		// destination falls back to the attribute-derived home view.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.targetRoute.set(null);
-			this.wcBridge.clearNavigationRequest();
+			const route = url ? wcRouteFromPath(url) : null;
+			if (route) {
+				await this.wcRouterGateway.navigate(route);
+			} else {
+				await this.wcRouterGateway.navigateToInitial();
+			}
 			return;
 		}
 
@@ -313,11 +250,10 @@ export class NavigationService {
 	async redirectToErrorPage(reason: NavigationErrorReason, navigate = false): Promise<UrlTree> {
 		const urlTree = this.createRedirectionTo('/error', { reason });
 
-		// The WC has no `/error` route: surface the error through the bridge instead.
-		// The shell re-emits it on the host `error` event and shows its own error view.
+		// The WC has no `/error` route: drive the mini-router to the error view. The shell
+		// emits the host `error` event when it renders the error route.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.targetRoute.set('/error');
-			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.ERROR, reason });
+			await this.wcRouterGateway.navigate({ name: WcRouteName.ERROR, params: { reason } });
 			return urlTree;
 		}
 
@@ -340,7 +276,7 @@ export class NavigationService {
 	 * @returns The UrlTree for the login page
 	 */
 	async redirectToLoginPage(redirectTo?: string, navigate = false): Promise<UrlTree> {
-		return this.redirectToAuthPage('/login', { type: WebComponentNavigationType.LOGIN }, redirectTo, navigate);
+		return this.redirectToAuthPage('/login', WcRouteName.LOGIN, redirectTo, navigate);
 	}
 
 	/**
@@ -352,12 +288,7 @@ export class NavigationService {
 	 * @returns The UrlTree for the change-password page
 	 */
 	async redirectToChangePasswordPage(redirectTo?: string, navigate = false): Promise<UrlTree> {
-		return this.redirectToAuthPage(
-			'/change-password-required',
-			{ type: WebComponentNavigationType.CHANGE_PASSWORD },
-			redirectTo,
-			navigate
-		);
+		return this.redirectToAuthPage('/change-password-required', WcRouteName.CHANGE_PASSWORD, redirectTo, navigate);
 	}
 
 	/**
@@ -399,21 +330,21 @@ export class NavigationService {
 	 * `/room/<roomId>/recordings`.
 	 */
 	async goToRoomRecordings(roomId: string): Promise<void> {
-		await this.navigateOrRequest(`/room/${roomId}/recordings`, {
-			type: WebComponentNavigationType.VIEW_RECORDINGS,
-			roomId
-		});
+		if (this.runtimeConfigService.isWebcomponentMode()) {
+			await this.wcRouterGateway.navigate({ name: WcRouteName.ROOM_RECORDINGS, params: { roomId } });
+			return;
+		}
+
+		await this.navigateTo(`/room/${roomId}/recordings`);
 	}
 
 	/**
-	 * Return from the room-recordings view to the room. WC: clear the recordings
-	 * override so the shell falls back to its attribute-derived view (the
-	 * meeting/lobby). SPA: navigate to `/room/<roomId>`.
+	 * Return from the room-recordings view to the room. WC: re-enter the
+	 * attribute-derived home view (the meeting/lobby). SPA: navigate to `/room/<roomId>`.
 	 */
 	async goBackToRoom(roomId: string): Promise<void> {
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.targetRoute.set(null);
-			this.wcBridge.clearNavigationRequest();
+			await this.wcRouterGateway.navigate({ name: WcRouteName.MEETING, params: { roomId } });
 			return;
 		}
 
@@ -445,113 +376,24 @@ export class NavigationService {
 	}
 
 	/**
-	 * Transition to the post-leave state. Both hosted modes (WC and iframe) emit the
-	 * `left` host event so the host is notified; the WC additionally relies on it to
-	 * drive its end-meeting view (it has no router), so it returns early. The SPA and
-	 * the iframe both navigate to the in-app `/disconnected` screen.
+	 * Transition to the post-leave view: the WC drives its mini-router to the disconnected route
+	 * (it has no Angular Router), while the SPA and iframe navigate to the in-app `/disconnected`
+	 * screen.
 	 */
-	async goToDisconnected(detail: Omit<WebComponentLeftEvent, 'type'>): Promise<void> {
-		if (this.runtimeConfigService.isEmbeddedMode()) {
-			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.LEFT, ...detail });
-		}
-
-		// The WC has no router: the host `left` event alone drives its end-meeting view.
+	async goToDisconnected(reason: LeftEventReason): Promise<void> {
+		// The WC has no router: drive the mini-router to the disconnected view.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.targetRoute.set('/disconnected');
+			await this.wcRouterGateway.navigate({ name: WcRouteName.DISCONNECTED, params: { reason } });
 			return;
 		}
 
-		await this.navigateTo('/disconnected', { reason: detail.reason }, true);
-	}
-
-	// PRIVATE HELPERS
-
-	/**
-	 * Automatically detects if user came from another domain and returns appropriate redirect URL
-	 */
-	protected getAutoRedirectUrl(): string | null {
-		try {
-			const referrer = document.referrer;
-
-			// No referrer means user typed URL directly or came from bookmark
-			if (!referrer) {
-				return null;
-			}
-
-			const referrerUrl = new URL(referrer);
-			const currentUrl = new URL(window.location.href);
-
-			// Check if referrer is from a different domain
-			if (referrerUrl.origin !== currentUrl.origin) {
-				console.log(`Auto-configuring leave redirect to referrer: ${referrer}`);
-				return referrer;
-			}
-
-			return null;
-		} catch (error) {
-			console.warn('Error detecting auto redirect URL:', error);
-			return null;
-		}
-	}
-
-	/**
-	 * Origin of the referrer (the host page that loaded the iframe), or null when
-	 * there is no referrer or it cannot be parsed. Used to resolve relative
-	 * `leave-redirect-url` values against the host in the iframe integration.
-	 */
-	protected getReferrerOrigin(): string | null {
-		try {
-			if (!document.referrer) {
-				return null;
-			}
-			return new URL(document.referrer).origin;
-		} catch (error) {
-			console.warn('Could not read referrer origin:', error);
-			return null;
-		}
-	}
-
-	/**
-	 * Sets the leave redirect URL and stores it in session storage for persistence across page reloads.
-	 *
-	 * @param leaveRedirectUrl - The URL to set as the leave redirect destination
-	 */
-	protected setLeaveRedirectUrl(leaveRedirectUrl: string): void {
-		this.leaveRedirectUrl = leaveRedirectUrl;
-		this.sessionStorageService.setRedirectUrl(leaveRedirectUrl);
-	}
-
-	/**
-	 * Validates if a given string is a well-formed URL
-	 *
-	 * @param url - The URL string to validate
-	 * @returns True if the URL is valid, false otherwise
-	 */
-	protected isValidUrl(url: string): boolean {
-		try {
-			new URL(url);
-			return true;
-		} catch (error) {
-			return false;
-		}
+		await this.navigateTo('/disconnected', { reason }, true);
 	}
 
 	// ── High-level navigation intents ─────────────────────────────────────
 	//
-	// Each centralizes the WC-vs-SPA branch once (SPA: Angular Router; WC: a
-	// bridge navigation request, or `closed` to end a flow), so callers never
-	// branch on mode or touch the bridge. Add an intent by delegating to one of
-	// the two private helpers below.
-
-	/** WC: emit the navigation request so the shell swaps view. SPA: navigate to `spaRoute`. */
-	private async navigateOrRequest(spaRoute: string, wcRequest: WcNavigationRequest): Promise<void> {
-		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.targetRoute.set(spaRoute);
-			this.wcBridge.emitNavigationRequest(wcRequest);
-			return;
-		}
-		await this.navigateTo(spaRoute);
-	}
+	// Each centralizes the WC-vs-SPA branch once (SPA: Angular Router; WC: the
+	// WcRouterService, or `closed` to end a flow), so callers never branch on mode.
 
 	/**
 	 * End the current flow. Embedded modes always emit `closed` first so the host
@@ -561,10 +403,10 @@ export class NavigationService {
 	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
 		const isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode();
 		if (isEmbeddedMode) {
-			this.wcBridge.emitWebComponentEvent({ type: WebComponentEventType.CLOSED });
+			this.eventBus.emit({ event: EmbeddedEventName.CLOSED });
 		}
 
-		const leaveRedirectUrl = this.getLeaveRedirectURL();
+		const leaveRedirectUrl = this.leaveRedirect.getLeaveRedirectURL();
 		if (leaveRedirectUrl) {
 			await this.redirectToLeaveUrl();
 			return;
@@ -579,21 +421,21 @@ export class NavigationService {
 	/**
 	 * Shared implementation for the auth pages (`/login`, `/change-password-required`).
 	 *
-	 * In SPA mode these are router routes carrying an optional `redirectTo` query
-	 * param. In webcomponent mode no such route exists, so the page is shown by
-	 * emitting `wcRequest` and letting the shell swap views; the router navigation
-	 * is skipped to avoid a no-op, and the returned UrlTree is unused by callers
-	 * (route guards never run inside the webcomponent).
+	 * In SPA mode these are router routes carrying an optional `redirectTo` query param.
+	 * In webcomponent mode no such route exists, so the mini-router is driven to the auth
+	 * view, carrying `redirectTo` so a successful login/change-password can resume the
+	 * originating route; the SPA router navigation is skipped and the returned UrlTree is
+	 * unused by callers (route guards never run inside the webcomponent).
 	 *
 	 * @param route - The SPA route for the page
-	 * @param wcRequest - The navigation request to emit in webcomponent mode
+	 * @param wcRouteName - The WC route to navigate to in webcomponent mode
 	 * @param redirectTo - The URL to redirect to after the auth step completes
 	 * @param navigate - If true, navigates to the generated UrlTree (SPA mode only)
 	 * @returns The UrlTree for the page (consumed by SPA route guards; unused in webcomponent mode)
 	 */
 	private async redirectToAuthPage(
 		route: string,
-		wcRequest: WcNavigationRequest,
+		wcRouteName: WcRouteName.LOGIN | WcRouteName.CHANGE_PASSWORD,
 		redirectTo?: string,
 		navigate = false
 	): Promise<UrlTree> {
@@ -601,8 +443,11 @@ export class NavigationService {
 		const urlTree = this.createRedirectionTo(route, queryParams);
 
 		if (this.runtimeConfigService.isWebcomponentMode()) {
-			this.targetRoute.set(this.router.serializeUrl(urlTree));
-			this.wcBridge.emitNavigationRequest(wcRequest);
+			const authRoute =
+				wcRouteName === WcRouteName.LOGIN
+					? { name: WcRouteName.LOGIN as const, params: { redirectTo } }
+					: { name: WcRouteName.CHANGE_PASSWORD as const, params: { redirectTo } };
+			await this.wcRouterGateway.navigate(authRoute);
 			return urlTree;
 		}
 

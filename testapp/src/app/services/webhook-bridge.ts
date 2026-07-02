@@ -1,6 +1,15 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
-import type { IOFactory, WebhookEventPayload } from '../models/webhook-event';
+import type { MeetWebhookEvent } from '@openvidu-meet/typings';
 import { EventLogService } from './event-log';
+
+/** Minimal surface of the Socket.IO client exposed on `window.io`. */
+type SocketLike = {
+	on: (event: string, cb: (payload: any) => void) => void;
+	disconnect: () => void;
+};
+
+/** Factory installed on `window.io` by the Socket.IO client script. */
+type IOFactory = (url?: string) => SocketLike;
 
 /**
  * ⚠️ TEST-HARNESS SCAFFOLDING — NOT a web-component integration example.
@@ -14,7 +23,7 @@ import { EventLogService } from './event-log';
  *      `<ul id="__wc-webhook-markers">` — consumed by `webhookLocator` /
  *      `expectWebhook` in `tests/helpers/testapp.helper.ts`.
  *   2. A `sessionStorage["webhookEventsByRoom"]` map of
- *      `{ [roomId]: WebhookEventPayload[] }` — consumed by
+ *      `{ [roomId]: MeetWebhookEvent[] }` — consumed by
  *      `getWebhookFromStorage` in `tests/helpers/ui-utils.helper.ts`.
  *
  * Keep this isolated from `App` so the integration example stays clean. Changing
@@ -40,25 +49,25 @@ export class WebhookBridgeService {
 
 		const bridgeUrl = (window as unknown as { __WEBHOOK_BRIDGE_URL?: string }).__WEBHOOK_BRIDGE_URL;
 		const socket = bridgeUrl ? io(bridgeUrl) : io();
-		socket.on('webhookEvent', (event: WebhookEventPayload) => this.handleWebhookEvent(event));
+		socket.on('webhookEvent', (event: MeetWebhookEvent) => this.handleWebhookEvent(event));
 
 		this.destroyRef.onDestroy(() => socket.disconnect());
 	}
 
-	private handleWebhookEvent(event: WebhookEventPayload): void {
-		const name = event?.event ?? 'unknown';
+	private handleWebhookEvent(event: MeetWebhookEvent): void {
+		const name = event.event;
 		this.appendWebhookMarker(name, event);
 		this.saveWebhookToSessionStorage(event);
 		this.eventLog.log(`[webhook] ${name}`);
 	}
 
-	private saveWebhookToSessionStorage(event: WebhookEventPayload): void {
-		const roomId = event?.data?.roomId;
+	private saveWebhookToSessionStorage(event: MeetWebhookEvent): void {
+		const roomId = event.data.roomId;
 
-		if (typeof roomId !== 'string' || !roomId) return;
+		if (!roomId) return;
 
 		const raw = sessionStorage.getItem(WebhookBridgeService.STORAGE_KEY);
-		const map: Record<string, WebhookEventPayload[]> = raw ? JSON.parse(raw) : {};
+		const map: Record<string, MeetWebhookEvent[]> = raw ? JSON.parse(raw) : {};
 
 		if (!map[roomId]) {
 			map[roomId] = [];
@@ -68,7 +77,7 @@ export class WebhookBridgeService {
 		sessionStorage.setItem(WebhookBridgeService.STORAGE_KEY, JSON.stringify(map));
 	}
 
-	private appendWebhookMarker(name: string, event: WebhookEventPayload): void {
+	private appendWebhookMarker(name: string, event: MeetWebhookEvent): void {
 		let log = document.getElementById(WebhookBridgeService.MARKERS_ID);
 
 		if (!log) {

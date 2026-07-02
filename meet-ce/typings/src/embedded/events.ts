@@ -1,14 +1,14 @@
 /**
- * All available events that can be emitted by the WebComponent.
+ * All available events that can be emitted by the embedded OpenVidu Meet application.
  * @category Communication
  */
-export enum EmbeddedEvent {
+export enum EmbeddedEventName {
 	/**
-	 * Event emitted when the local participant joins the room.
+	 * Event emitted when the local participant joins the meeting.
 	 */
 	JOINED = 'joined',
 	/**
-	 * Event emitted when the local participant leaves the room.
+	 * Event emitted when the local participant leaves the meeting.
 	 */
 	LEFT = 'left',
 	/**
@@ -41,21 +41,21 @@ export enum LeftEventReason {
 
 /**
  * Type definitions for event payloads.
- * Each property corresponds to an event in {@link EmbeddedEvent}.
+ * Each property corresponds to an event in {@link EmbeddedEventName}.
  * @category Communication
  */
 export interface EmbeddedEventPayloads {
 	/**
-	 * Payload for the {@link EmbeddedEvent.JOINED} event.
+	 * Payload for the {@link EmbeddedEventName.JOINED} event.
 	 */
-	[EmbeddedEvent.JOINED]: {
+	[EmbeddedEventName.JOINED]: {
 		roomId: string;
 		participantIdentity: string;
 	};
 	/**
-	 * Payload for the {@link EmbeddedEvent.LEFT} event.
+	 * Payload for the {@link EmbeddedEventName.LEFT} event.
 	 */
-	[EmbeddedEvent.LEFT]: {
+	[EmbeddedEventName.LEFT]: {
 		roomId: string;
 		participantIdentity: string;
 		reason: LeftEventReason;
@@ -68,6 +68,42 @@ export interface EmbeddedEventPayloads {
  * @category Type Helpers
  * @private
  */
-export type EmbeddedEventPayloadFor<T extends EmbeddedEvent> = T extends keyof EmbeddedEventPayloads
+export type EmbeddedEventPayloadFor<T extends EmbeddedEventName> = T extends keyof EmbeddedEventPayloads
 	? EmbeddedEventPayloads[T]
 	: never;
+
+/**
+ * Event message emitted when the local participant joins the meeting: the event name plus its payload,
+ * derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedJoinedEvent {
+	event: EmbeddedEventName.JOINED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>;
+}
+
+/**
+ * Event message emitted when the local participant leaves the meeting: the event name plus its payload,
+ * derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedLeftEvent {
+	event: EmbeddedEventName.LEFT;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.LEFT>;
+}
+
+/**
+ * Event message emitted when the application closes (no payload).
+ * @category Communication
+ */
+export interface EmbeddedClosedEvent {
+	event: EmbeddedEventName.CLOSED;
+}
+
+/**
+ * Discriminated union of every event message the embedded app emits; narrow on `event`. It is drained
+ * from the app's event queue and either re-emitted as a DOM `CustomEvent` (webcomponent) or posted
+ * verbatim over `postMessage` (iframe integration).
+ * @category Communication
+ */
+export type EmbeddedEvent = EmbeddedJoinedEvent | EmbeddedLeftEvent | EmbeddedClosedEvent;

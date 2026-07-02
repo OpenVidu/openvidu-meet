@@ -2,7 +2,7 @@ import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
-import { extractParams } from '../../../shared/utils/url-params.utils';
+import { extractParams } from '../../../shared/utils/url.utils';
 import { MeetingEntryService } from '../services/meeting-entry.service';
 
 /**
