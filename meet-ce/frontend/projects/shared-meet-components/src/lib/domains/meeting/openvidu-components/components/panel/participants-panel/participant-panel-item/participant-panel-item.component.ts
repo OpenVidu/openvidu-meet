@@ -4,6 +4,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ParticipantPanelItemElementsDirective } from '../../../../directives/template/openvidu-components-angular.directive';
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
@@ -46,8 +47,11 @@ export class ParticipantPanelItemComponent {
 	 * @ignore
 	 */
 	readonly externalParticipantBadge = contentChild(ParticipantPanelParticipantBadgeDirective);
+	readonly externalParticipantPanelItemElements = contentChild(ParticipantPanelItemElementsDirective);
 	readonly participantPanelItemElementsTemplate = computed(
-		() => this.templateRegistry.participantPanelItemElements()
+		() =>
+			this.externalParticipantPanelItemElements()?.template ??
+			this.templateRegistry.participantPanelItemElements()
 	);
 	readonly participantBadgeTemplate = computed(() => this.externalParticipantBadge()?.template);
 	readonly isLocalParticipant = computed(() => this.participantInput()?.isLocal || false);

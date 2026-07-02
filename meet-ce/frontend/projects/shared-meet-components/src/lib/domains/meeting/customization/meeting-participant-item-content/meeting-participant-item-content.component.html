@@ -1,0 +1,71 @@
+@let ctx = displayProperties();
+
+<div class="participant-item-container">
+	<ov-participant-panel-item [participant]="participant()">
+		<!-- Participant Badge -->
+		<ng-container *ovParticipantPanelParticipantBadge>
+			@if (ctx.showBadge) {
+				@let badge = participant().getBadge();
+				<span
+					[class]="RoomMemberUiUtils.getParticipantBadgeClass(badge)"
+					[attr.id]="'participant-badge-' + participant().sid"
+				>
+					<mat-icon
+						[matTooltip]="RoomMemberUiUtils.getParticipantBadgeTooltip(badge) | translate"
+						class="material-symbols-outlined"
+					>
+						{{ RoomMemberUiUtils.getParticipantBadgeIcon(badge) }}
+					</mat-icon>
+				</span>
+			}
+		</ng-container>
+
+		<!-- Moderation Controls -->
+		@if (ctx.showModerationControls) {
+			<div
+				*ovParticipantPanelItemElements
+				class="moderation-controls"
+				[attr.id]="'moderation-controls-' + participant().sid"
+			>
+				<!-- Make Moderator Button -->
+				@if (ctx.showMakeModeratorButton) {
+					<button
+						mat-icon-button
+						(click)="onMakeModeratorClick()"
+						[matTooltip]="'PARTICIPANT_ITEM.PROMOTE_TOOLTIP' | translate"
+						class="make-moderator-btn"
+						[attr.id]="'make-moderator-btn-' + participant().sid"
+					>
+						<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
+					</button>
+				}
+
+				<!-- Unmake Moderator Button -->
+				@if (ctx.showUnmakeModeratorButton) {
+					<button
+						mat-icon-button
+						(click)="onUnmakeModeratorClick()"
+						[matTooltip]="'PARTICIPANT_ITEM.DOWNGRADE_TOOLTIP' | translate"
+						class="remove-moderator-btn"
+						[attr.id]="'remove-moderator-btn-' + participant().sid"
+					>
+						<mat-icon class="material-symbols-outlined">remove_moderator</mat-icon>
+					</button>
+				}
+
+				<!-- Kick Participant Button -->
+				@if (ctx.showKickButton) {
+					<button
+						mat-icon-button
+						(click)="onKickParticipantClick()"
+						[matTooltip]="'PARTICIPANT_ITEM.KICK_TOOLTIP' | translate"
+						class="force-disconnect-btn"
+						[attr.id]="'kick-participant-btn-' + participant().sid"
+					>
+						<mat-icon>call_end</mat-icon>
+					</button>
+				}
+			</div>
+		}
+	</ov-participant-panel-item>
+</div>

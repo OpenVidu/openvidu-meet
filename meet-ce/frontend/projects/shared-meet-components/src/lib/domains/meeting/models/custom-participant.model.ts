@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import { ParticipantModel, ParticipantProperties } from '../openvidu-components/models/participant.model';
 
@@ -14,8 +15,8 @@ export interface ParticipantDisplayProperties {
 
 // Represents a participant in the application.
 export class CustomParticipantModel extends ParticipantModel {
-	private _badge = MeetRoomMemberUIBadge.OTHER;
-	private _isPromotedModerator = false;
+	private readonly _badge = signal(MeetRoomMemberUIBadge.OTHER);
+	private readonly _isPromotedModerator = signal(false);
 
 	constructor(props: ParticipantProperties) {
 		super(props);
@@ -23,17 +24,17 @@ export class CustomParticipantModel extends ParticipantModel {
 	}
 
 	set badge(badge: MeetRoomMemberUIBadge) {
-		this._badge = badge;
+		this._badge.set(badge);
 	}
 
 	set promotedModerator(isPromoted: boolean) {
-		this._isPromotedModerator = isPromoted;
+		this._isPromotedModerator.set(isPromoted);
 	}
 
 	private updateModerationMetadata(metadata: unknown): void {
 		const parsedMetadata = parseParticipantMetadata(metadata);
-		this._badge = parsedMetadata?.badge || MeetRoomMemberUIBadge.OTHER;
-		this._isPromotedModerator = Boolean(parsedMetadata?.isPromotedModerator);
+		this._badge.set(parsedMetadata?.badge || MeetRoomMemberUIBadge.OTHER);
+		this._isPromotedModerator.set(Boolean(parsedMetadata?.isPromotedModerator));
 	}
 
 	/**
@@ -41,7 +42,7 @@ export class CustomParticipantModel extends ParticipantModel {
 	 * @returns The MeetRoomMemberUIBadge representing the participant's badge.
 	 */
 	getBadge(): MeetRoomMemberUIBadge {
-		return this._badge;
+		return this._badge();
 	}
 
 	/**
@@ -49,7 +50,7 @@ export class CustomParticipantModel extends ParticipantModel {
 	 * @returns True if the participant has a badge, false otherwise.
 	 */
 	hasBadge(): boolean {
-		return this._badge !== MeetRoomMemberUIBadge.OTHER;
+		return this._badge() !== MeetRoomMemberUIBadge.OTHER;
 	}
 
 	/**
@@ -57,7 +58,7 @@ export class CustomParticipantModel extends ParticipantModel {
 	 * @returns True if the participant is a promoted moderator, false otherwise.
 	 */
 	isPromotedModerator(): boolean {
-		return this._isPromotedModerator;
+		return this._isPromotedModerator();
 	}
 }
 
