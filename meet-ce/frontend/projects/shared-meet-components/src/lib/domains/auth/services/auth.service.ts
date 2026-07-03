@@ -48,7 +48,9 @@ export class AuthService {
 			}
 
 			const mustChangePassword = response.mustChangePassword ?? false;
-			this.sessionStorageService.setMustChangePasswordRequired(mustChangePassword);
+			if (mustChangePassword) {
+				this.sessionStorageService.setMustChangePasswordRequired(true);
+			}
 
 			await this.getAuthenticatedUser(true);
 			return { mustChangePassword };
