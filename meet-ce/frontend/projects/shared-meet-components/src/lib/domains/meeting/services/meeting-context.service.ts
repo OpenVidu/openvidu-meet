@@ -102,6 +102,17 @@ export class MeetingContextService {
 	}
 
 	/**
+	 * Loads the room secret from session storage into context, if one was
+	 * previously persisted (e.g. by an earlier URL visit carrying `?secret=`).
+	 */
+	loadRoomSecretFromStorage(): void {
+		const secret = this.sessionStorageService.getRoomSecret();
+		if (secret) {
+			this._roomSecret.set(secret);
+		}
+	}
+
+	/**
 	 * Stores the E2EE key in context
 	 * @param key The E2EE key
 	 * @param fromUrl Whether the key came from a URL parameter (default: false)

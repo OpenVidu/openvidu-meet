@@ -1,31 +1,27 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { NavigationService } from '../../../shared/services/navigation.service';
-import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { extractParams } from '../../../shared/utils/url.utils';
 import { MeetingEntryService } from '../services/meeting-entry.service';
 
 /**
- * Adapter guard: extracts meeting params from the route + session/local storage
- * fallbacks and delegates the actual
+ * Adapter guard: extracts meeting params from the route and delegates the actual
  * context-seeding to {@link MeetingEntryService.prepare}. That same use case
  * is reused by non-router callers (the Angular Elements Web Component).
  */
 export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
 	const meetingEntry = inject(MeetingEntryService);
 	const navigation = inject(NavigationService);
-	const sessionStorage = inject(SessionStorageService);
 
 	const {
 		roomId,
-		secret: querySecret,
+		secret,
 		participantName,
 		leaveRedirectUrl,
 		showOnlyRecordings,
 		showRecording,
 		e2eeKey
 	} = extractParams(route);
-	const secret = querySecret || sessionStorage.getRoomSecret() || undefined;
 
 	const decision = meetingEntry.prepare({
 		roomId,

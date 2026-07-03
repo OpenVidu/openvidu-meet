@@ -67,10 +67,10 @@ export class MeetingEntryService {
 	 * {@link MeetingEntryParams.showRecording} / {@link MeetingEntryParams.showOnlyRecordings}).
 	 * Performs no network I/O.
 	 *
-	 * The E2EE key and participant name fall back to previously-stored values when
-	 * the caller didn't supply them. This fallback is identical in every mode
-	 * (SPA/iframe route guard and Web Component), so it lives here in the use case
-	 * rather than being duplicated in each adapter.
+	 * The room secret, E2EE key and participant name fall back to previously-stored
+	 * values when the caller didn't supply them. This fallback is identical in every
+	 * mode (SPA/iframe route guard and Web Component), so it lives here in the use
+	 * case rather than being duplicated in each adapter.
 	 */
 	prepare({
 		leaveRedirectUrl,
@@ -79,13 +79,18 @@ export class MeetingEntryService {
 		showRecording,
 		showOnlyRecordings,
 		e2eeKey,
-		participantName,
+		participantName
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
 		this.meetingContextService.setRoomId(roomId);
+		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
+		// persisted on this origin. Keeping the fallback here means every adapter
+		// (route guard, Web Component) shares it without re-implementing it.
 		if (secret) {
 			this.meetingContextService.setRoomSecret(secret, true);
+		} else {
+			this.meetingContextService.loadRoomSecretFromStorage();
 		}
 
 		if (showRecording) {
@@ -97,13 +102,13 @@ export class MeetingEntryService {
 
 		// Prefer the caller-supplied value (URL/input); otherwise restore the last one
 		// stored on this origin so the lobby pre-fills it.
-		if (e2eeKey !== undefined) {
+		if (e2eeKey) {
 			this.meetingContextService.setE2eeKey(e2eeKey, true);
 		} else {
 			this.meetingContextService.loadE2eeKeyFromStorage();
 		}
 
-		if (participantName !== undefined) {
+		if (participantName) {
 			this.roomMemberContextService.setParticipantName(participantName, true);
 		} else {
 			this.roomMemberContextService.loadParticipantNameFromStorage();
