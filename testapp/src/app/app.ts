@@ -130,7 +130,7 @@ export class App {
 		// Remount to apply fresh config: drop the current view first, then re-add.
 		if (this.mounted()) {
 			this.mounted.set(false);
-			setTimeout(apply);
+			setTimeout(apply, 20);
 			return;
 		}
 
