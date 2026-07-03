@@ -296,13 +296,17 @@ export class RecordingService {
 	 *
 	 * @param recordingId - The ID of the recording to share
 	 * @param hasRecordingAccess - Optional flag indicating the current user is known to have access to this recording
+	 * @param recordingSecret - Optional recording secret used to build a shareable recording-view URL
+	 *   when the current user cannot request a signed URL from the backend (e.g. anonymous access in
+	 *   webcomponent mode, where there are no routes to fall back on)
 	 */
-	openShareRecordingDialog(recordingId: string, hasRecordingAccess = false) {
+	openShareRecordingDialog(recordingId: string, hasRecordingAccess = false, recordingSecret?: string) {
 		this.dialog.open(RecordingShareDialogComponent, {
 			width: '450px',
 			data: {
 				recordingId,
-				hasRecordingAccess
+				hasRecordingAccess,
+				recordingSecret
 			},
 			panelClass: 'ov-meet-dialog'
 		});

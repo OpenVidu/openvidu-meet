@@ -17,6 +17,7 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RoomService } from '../../../rooms/services/room.service';
 import { RecordingService } from '../../services/recording.service';
@@ -46,6 +47,7 @@ export class RecordingShareDialogComponent implements OnInit {
 	readonly data = inject<{
 		recordingId: string;
 		hasRecordingAccess?: boolean;
+		recordingSecret?: string;
 	}>(MAT_DIALOG_DATA);
 
 	private readonly clipboard = inject(Clipboard);
@@ -53,6 +55,7 @@ export class RecordingShareDialogComponent implements OnInit {
 	private readonly roomService = inject(RoomService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly translateService = inject(TranslateService);
+	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
 	accessType = signal<'private' | 'public'>('public');
 	canGenerateUrls = signal(false);
@@ -75,14 +78,39 @@ export class RecordingShareDialogComponent implements OnInit {
 			this.roomMemberContextService.hasPermission('canRetrieveRecordings') || hasRecordingAccess
 		);
 
-		// If the user cannot generate URLs, we can still show the current page URL for sharing,
-		// but we won't attempt to generate a recording-specific URL
+		// If the user cannot generate URLs, we can't request a signed URL from the
+		// backend. Instead build the recording-view URL from the recording id and
+		// secret so the link is shareable in every mode — including the webcomponent,
+		// where there are no routes and window.location points at the host page.
 		if (!this.canGenerateUrls()) {
-			this.recordingUrl.set(window.location.href);
+			this.recordingUrl.set(this.buildRecordingViewUrl());
 			return;
 		}
 
 		await this.loadAnonymousRecordingAccess();
+	}
+
+	/**
+	 * Builds a shareable URL to the recording-view page from the recording id and
+	 * secret. Falls back to the current page URL when no secret is available, which
+	 * is only meaningful in SPA/iframe mode where routes exist and the secret is
+	 * already part of the address bar.
+	 */
+	private buildRecordingViewUrl(): string | undefined {
+		const { recordingId, recordingSecret } = this.data;
+		if (!recordingSecret) {
+			// No secret to build a link with. In the webcomponent there are no routes,
+			// so window.location points at the host page and is not shareable.
+			return this.runtimeConfigService.isWebcomponentMode() ? undefined : window.location.href;
+		}
+
+		const path = `/recording/${recordingId}?recordingSecret=${recordingSecret}`;
+		const resolvedUrl = this.runtimeConfigService.resolveUrl(path);
+
+		// resolveUrl returns an absolute URL in webcomponent mode (remote server origin)
+		// but a base-path-relative path in SPA mode; prepend the current origin so the
+		// shared link is always absolute.
+		return resolvedUrl.startsWith('http') ? resolvedUrl : `${window.location.origin}${resolvedUrl}`;
 	}
 
 	/**

@@ -117,7 +117,7 @@ export class ViewRecordingComponent implements OnInit {
 	}
 
 	openShareDialog() {
-		this.recordingService.openShareRecordingDialog(this.recordingId);
+		this.recordingService.openShareRecordingDialog(this.recordingId, false, this.recordingSecret);
 	}
 
 	deleteRecording() {
