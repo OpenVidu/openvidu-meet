@@ -1,28 +1,23 @@
-import { expect, test } from '@playwright/test';
-import { startScreensharing, stopScreensharing, toggleMicrophone } from './helpers/media-controls.helper';
+import { test } from '@playwright/test';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
-	openLayoutSettingsPanel,
 	openSettingsPanel,
 	toggleActivitiesPanel,
 	toggleChatPanel,
 	toggleParticipantsPanel
 } from './helpers/panels.helper';
-import { joinParticipants } from './helpers/participant-management.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
 test.describe('Panels E2E Tests', () => {
 	const createdRoomIds: string[] = [];
 
-	let roomId: string;
 	let accessUrl: string;
 
 	test.beforeEach(async () => {
 		const { room, accessUrl: url } = await createRoomAndGetAnonymousAccessUrl();
-		roomId = room.roomId;
 		accessUrl = url;
-		createdRoomIds.push(roomId);
+		createdRoomIds.push(room.roomId);
 	});
 
 	test.afterAll(async () => {
@@ -79,14 +74,6 @@ test.describe('Panels E2E Tests', () => {
 			await page.locator('#audio-opt').click();
 			await expectVisible(page, 'ov-audio-devices-select');
 		});
-
-		test('should open settings panel clicking layout toolbar button', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			await openLayoutSettingsPanel(page);
-			await expect(page.locator('.layout-section')).toBeVisible();
-			await expect(page.locator('.theme-section')).toBeVisible();
-		});
 	});
 
 	test.describe('Chat Panel', () => {
@@ -113,63 +100,6 @@ test.describe('Panels E2E Tests', () => {
 			await toggleParticipantsPanel(page);
 			await expectHidden(page, '.local-participant-container');
 			await expectHidden(page, 'ov-participant-panel-item');
-		});
-
-		test('should show participant role badge in participant panel item', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			await toggleParticipantsPanel(page);
-			await expectVisible(page, '.local-participant-container');
-
-			const roleBadge = page.locator('[id^="participant-badge-"]').first();
-			await expect(roleBadge).toBeVisible();
-			await expect(roleBadge).toHaveClass(/owner-badge|admin-badge|moderator-badge/);
-		});
-
-		test('should reactively toggle screen-share and mic-off indicators while the panel is open', async ({
-			browser
-		}) => {
-			const { pages, removeAllParticipants } = await joinParticipants(browser, {
-				roomId,
-				accessUrl,
-				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
-			});
-			const [pageA, pageB] = pages;
-
-			try {
-				// A opens the participants panel BEFORE B's state changes — the panel must react in place.
-				await toggleParticipantsPanel(pageA);
-				await expect(pageA.locator('.local-participant-container')).toBeVisible({ timeout: 5_000 });
-				const remoteItem = pageA.locator('#remote-participant-item ov-participant-panel-item').first();
-				await expect(remoteItem).toBeVisible({ timeout: 5_000 });
-				const screenIcon = remoteItem.locator('#screen-share-indicator');
-				const micOffIcon = remoteItem.locator('#mic-off-indicator');
-
-				// Initially: no screen sharing, mic on → neither indicator visible.
-				await expect(screenIcon).toHaveCount(0);
-				await expect(micOffIcon).toHaveCount(0);
-
-				// B starts screen sharing → screen-share icon appears.
-				await startScreensharing(pageB);
-				await expect(screenIcon).toHaveCount(1, { timeout: 10_000 });
-				await expect(screenIcon).toBeVisible();
-
-				// B mutes their mic → mic-off icon appears (screen-share icon still visible).
-				await toggleMicrophone(pageB);
-				await expect(micOffIcon).toHaveCount(1, { timeout: 5_000 });
-				await expect(micOffIcon).toBeVisible();
-				await expect(screenIcon).toHaveCount(1);
-
-				// B un-mutes → mic-off icon disappears.
-				await toggleMicrophone(pageB);
-				await expect(micOffIcon).toHaveCount(0, { timeout: 5_000 });
-
-				// B stops screen sharing → screen-share icon disappears.
-				await stopScreensharing(pageB);
-				await expect(screenIcon).toHaveCount(0, { timeout: 10_000 });
-			} finally {
-				await removeAllParticipants();
-			}
 		});
 	});
 

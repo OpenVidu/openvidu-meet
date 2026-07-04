@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
+import { openLayoutSettingsPanel } from './helpers/panels.helper';
 
 test.describe('Toolbar Buttons E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -38,5 +39,13 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 
 		await toggleCamera(page);
 		await expect(page.locator('#camera-btn #videocam')).toBeVisible();
+	});
+
+	test('should open settings panel clicking layout toolbar button', async ({ page }) => {
+		await openMeeting(page, accessUrl);
+
+		await openLayoutSettingsPanel(page);
+		await expect(page.locator('.layout-section')).toBeVisible();
+		await expect(page.locator('.theme-section')).toBeVisible();
 	});
 });
