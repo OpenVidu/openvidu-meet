@@ -88,14 +88,14 @@ test.describe('Virtual Background E2E Tests', () => {
 		expectSignificantImageDifference(before, after);
 	});
 
-	test('should open and close BACKGROUNDS panel in the room', async ({ page }) => {
+	test('should open and close BACKGROUNDS panel in the meeting', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
 		await openRoomBackgroundsPanel(page);
 		await closeRoomBackgroundsPanel(page);
 	});
 
-	test('should not show BACKGROUNDS panel in the room when VIDEO is disabled', async ({ page }) => {
+	test('should not show BACKGROUNDS panel in the meeting when VIDEO is disabled', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
 		await toggleCamera(page);
@@ -106,14 +106,14 @@ test.describe('Virtual Background E2E Tests', () => {
 		await expectDisabled(page, '#virtual-bg-btn');
 	});
 
-	test('should close BACKGROUNDS in room when VIDEO is disabled', async ({ page }) => {
+	test('should close BACKGROUNDS in meeting when VIDEO is disabled', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 		await openRoomBackgroundsPanel(page);
 		await toggleCamera(page);
 		await expect(page.locator('#background-effects-container')).toHaveCount(0);
 	});
 
-	test('should apply a background effect in the room', async ({ page }) => {
+	test('should apply a background effect in the meeting', async ({ page }) => {
 		await openMeeting(page, accessUrl);
 
 		const before = await captureVideoElementScreenshot(page);

@@ -152,7 +152,7 @@ test.describe('Media Devices E2E Tests', () => {
 			}
 		});
 
-		test('should camera and microphone buttons be disabled in the room page when permissions are denied', async ({
+		test('should camera and microphone buttons be disabled in the meeting page when permissions are denied', async ({
 			noMediaPage
 		}) => {
 			await openMeeting(noMediaPage, accessUrl, { skipPrejoinMediaCheck: true });

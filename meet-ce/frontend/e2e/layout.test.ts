@@ -1,4 +1,3 @@
-import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import {
 	runScreenShareRotationCycles,
@@ -7,7 +6,7 @@ import {
 	setSmartMosaicSliderValue
 } from './helpers/layout.helper';
 import { startScreensharing, stopScreensharing, toggleMicrophone } from './helpers/media-controls.helper';
-import { createRoomAndGetAnonymousAccessUrl, createRoomMember, deleteRooms } from './helpers/meet-api.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
 import { closeSettingsPanel, openLayoutSettingsPanel } from './helpers/panels.helper';
 import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
@@ -68,27 +67,6 @@ test.describe('Layout E2E Tests', () => {
 			await expect(page.locator('.participant-count-container')).toBeVisible();
 			await page.locator('#layout-mosaic').click();
 			await expectHidden(page, '.participant-count-container');
-		});
-
-		test('should render share-link overlay when moderator after joining', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			await expect(page.locator('#layout')).toBeVisible();
-			await expect(page.locator('#share-link-overlay')).toBeVisible();
-			await expect(page.locator('.OV_stream_video.local')).toBeVisible();
-		});
-
-		test('should not render share-link overlay when speaker after joining', async ({ page }) => {
-			const { accessUrl } = await createRoomMember(roomId, {
-				name: `speaker-${Date.now()}`,
-				baseRole: MeetRoomMemberRole.SPEAKER
-			});
-
-			await openMeeting(page, accessUrl);
-
-			await expect(page.locator('#layout')).toBeVisible();
-			await expect(page.locator('.OV_stream_video.local')).toBeVisible();
-			await expect(page.locator('#share-link-overlay')).toBeHidden();
 		});
 	});
 

@@ -142,6 +142,13 @@ export const expectCopiedUrl = async (page: Page, timeoutMs = 5_000): Promise<vo
 	await expect.poll(async () => await getCopiedText(page), { timeout: timeoutMs }).toMatch(/^https?:\/\//);
 };
 
+/**
+ * Polls until the captured clipboard text exactly matches {@link expectedText}.
+ */
+export const expectCopiedText = async (page: Page, expectedText: string, timeoutMs = 5_000): Promise<void> => {
+	await expect.poll(async () => await getCopiedText(page), { timeout: timeoutMs }).toBe(expectedText);
+};
+
 // ─── Screenshot / image comparison ──────────────────────────────────────────
 
 /**

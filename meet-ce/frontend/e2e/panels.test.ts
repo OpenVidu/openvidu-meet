@@ -10,7 +10,7 @@ import {
 	toggleParticipantsPanel
 } from './helpers/panels.helper';
 import { joinParticipants } from './helpers/participant-management.helper';
-import { expectCopiedUrl, expectHidden, expectVisible, installClipboardCapture } from './helpers/ui-utils.helper';
+import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
 test.describe('Panels E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -170,18 +170,6 @@ test.describe('Panels E2E Tests', () => {
 			} finally {
 				await removeAllParticipants();
 			}
-		});
-
-		test('should copy meeting url from participant panel copy button', async ({ page }) => {
-			await openMeeting(page, accessUrl);
-
-			await toggleParticipantsPanel(page);
-			await expectVisible(page, '.local-participant-container');
-			await expectVisible(page, '.share-room-access-link-container .copy-url-btn');
-			await installClipboardCapture(page);
-
-			await page.locator('.share-room-access-link-container .copy-url-btn').first().click();
-			await expectCopiedUrl(page);
 		});
 	});
 

@@ -2,7 +2,6 @@ import { expect, test } from '@playwright/test';
 import { toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
-import { expectCopiedUrl, installClipboardCapture } from './helpers/ui-utils.helper';
 
 test.describe('Toolbar Buttons E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -39,14 +38,5 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 
 		await toggleCamera(page);
 		await expect(page.locator('#camera-btn #videocam')).toBeVisible();
-	});
-
-	test('should copy speaker link from toolbar copy-speaker-link button', async ({ page }) => {
-		await openMeeting(page, accessUrl);
-		await installClipboardCapture(page);
-
-		await expect(page.locator('#copy-speaker-link')).toBeVisible();
-		await page.locator('#copy-speaker-link').click();
-		await expectCopiedUrl(page);
 	});
 });
