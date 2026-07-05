@@ -3,7 +3,9 @@ import {
 	MeetRoomMember,
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
-	MeetRoomOptions
+	MeetRoomOptions,
+	MeetUserDTO,
+	MeetUserOptions
 } from '@openvidu-meet/typings';
 
 // ---------------------------------------------------------------------------
@@ -24,6 +26,10 @@ const API_KEY = process.env['E2E_API_KEY'] || 'meet-api-key';
 
 const withApiPath = (path: string): string => {
 	return `${API_BASE_URL}${path}`;
+};
+
+const withInternalApiPath = (path: string): string => {
+	return `${INTERNAL_API_BASE_URL}${path}`;
 };
 
 const assertOk = (response: Response, responseText: string, operation: string): void => {
@@ -70,6 +76,26 @@ export const createRoom = async (options: MeetRoomOptions = {}): Promise<MeetRoo
 
 	const responseText = await response.text();
 	assertOk(response, responseText, 'create room');
+
+	return JSON.parse(responseText) as MeetRoom;
+};
+
+/**
+ * Creates a room authenticated as a user (via their access token) instead of the API key, which
+ * makes that user the room owner.
+ */
+export const createRoomAsUser = async (accessToken: string, options: MeetRoomOptions = {}): Promise<MeetRoom> => {
+	const response = await fetch(withApiPath('/rooms'), {
+		method: 'POST',
+		headers: {
+			'content-type': 'application/json',
+			authorization: `Bearer ${accessToken}`
+		},
+		body: JSON.stringify(options)
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'create room as user');
 
 	return JSON.parse(responseText) as MeetRoom;
 };
@@ -158,4 +184,104 @@ export const deleteRooms = async (roomIds: string[]): Promise<void> => {
 
 	const responseText = await response.text();
 	assertOk(response, responseText, `delete rooms ${ids.join(',')}`);
+};
+
+// ---------------------------------------------------------------------------
+// User / authentication helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a user with the given options.
+ */
+export const createUser = async (options: MeetUserOptions): Promise<MeetUserDTO> => {
+	const response = await fetch(withApiPath('/users'), {
+		method: 'POST',
+		headers: {
+			'content-type': 'application/json',
+			'x-api-key': API_KEY
+		},
+		body: JSON.stringify(options)
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'create user');
+
+	return JSON.parse(responseText) as MeetUserDTO;
+};
+
+/**
+ * Deletes the specified users (best-effort; failures — e.g. the protected admin — are ignored).
+ */
+export const deleteUsers = async (userIds: string[]): Promise<void> => {
+	const ids = userIds.filter((userId) => userId.trim().length > 0);
+
+	if (ids.length === 0) {
+		return;
+	}
+
+	const response = await fetch(withApiPath(`/users?userIds=${ids.map(encodeURIComponent).join(',')}`), {
+		method: 'DELETE',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, `delete users ${ids.join(',')}`);
+};
+
+type LoginResult = { accessToken: string; refreshToken?: string; mustChangePassword?: boolean };
+
+/**
+ * Logs in via the REST API, returning the issued tokens and whether a password change is required.
+ */
+export const loginUser = async (userId: string, password: string): Promise<LoginResult> => {
+	const response = await fetch(withInternalApiPath('/auth/login'), {
+		method: 'POST',
+		headers: { 'content-type': 'application/json' },
+		body: JSON.stringify({ userId, password })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'login user');
+
+	return JSON.parse(responseText) as LoginResult;
+};
+
+/**
+ * Changes a user's password via the REST API and returns the fresh (full) access token.
+ */
+export const changeUserPassword = async (
+	accessToken: string,
+	currentPassword: string,
+	newPassword: string
+): Promise<string> => {
+	const response = await fetch(withInternalApiPath('/users/change-password'), {
+		method: 'POST',
+		headers: {
+			'content-type': 'application/json',
+			authorization: `Bearer ${accessToken}`
+		},
+		body: JSON.stringify({ currentPassword, newPassword })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'change password');
+
+	return (JSON.parse(responseText) as { accessToken: string }).accessToken;
+};
+
+/**
+ * Logs a user in and returns a usable (full) access token. Freshly created users must change their
+ * password on first login (the login token is temporary), so this performs the change to
+ * {@link newPassword} when required — after which {@link newPassword} is the user's current password.
+ */
+export const getUserAccessToken = async (userId: string, password: string, newPassword: string): Promise<string> => {
+	const login = await loginUser(userId, password);
+
+	if (login.mustChangePassword) {
+		return changeUserPassword(login.accessToken, password, newPassword);
+	}
+
+	return login.accessToken;
 };

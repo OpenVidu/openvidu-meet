@@ -2,6 +2,71 @@ import { expect, type Page } from '@playwright/test';
 import { ensurePrejoinAudioState, ensurePrejoinVideoState } from './media-controls.helper';
 import { click } from './ui-utils.helper';
 
+// ─── Types ──────────────────────────────────────────────────────────────────
+
+/**
+ * Credentials for logging a registered user into the OpenVidu Meet application.
+ */
+export interface LoginOptions {
+	/** Registered user id. */
+	userId: string;
+	/** Current password. */
+	password: string;
+	/** New password to set when the app forces a password change on the user's first login. */
+	newPassword?: string;
+}
+
+// ─── Internal login steps ────────────────────────────────────────────────────
+
+/**
+ * Changes the password when the app forces a password change (a user's first login). The step is
+ * auto-detected from the change-password form, so this is a no-op when no change is required.
+ */
+const performPasswordChange = async (page: Page, login: LoginOptions): Promise<void> => {
+	const newPasswordInput = page.locator('input[formcontrolname="newPassword"]');
+	const passwordChangeRequired = await newPasswordInput
+		.waitFor({ state: 'visible', timeout: 5_000 })
+		.then(() => true)
+		.catch(() => false);
+
+	if (!passwordChangeRequired) {
+		return;
+	}
+
+	if (!login.newPassword) {
+		throw new Error('The user must change their password on first login, but no `newPassword` was provided');
+	}
+
+	await page.locator('input[formcontrolname="currentPassword"]').fill(login.password);
+	await newPasswordInput.fill(login.newPassword);
+	await page.locator('input[formcontrolname="confirmPassword"]').fill(login.newPassword);
+	await click(page.locator('button[type="submit"].primary-button'), 10_000);
+};
+
+/**
+ * Logs a registered user in when the app requests it. The login form is auto-detected (the app
+ * shows it when authentication is required), so this is a no-op when no login is presented — for
+ * example when the user is already authenticated or the room allows anonymous access. Handles the
+ * forced password-change step of a first login.
+ */
+const performLogin = async (page: Page, login: LoginOptions): Promise<void> => {
+	const loginButton = page.locator('#login-button');
+	const loginRequired = await loginButton
+		.waitFor({ state: 'visible', timeout: 5_000 })
+		.then(() => true)
+		.catch(() => false);
+
+	if (!loginRequired) {
+		return;
+	}
+
+	await page.locator('#userId-input').fill(login.userId);
+	await page.locator('#password-input').fill(login.password);
+	await click(loginButton, 10_000);
+
+	await performPasswordChange(page, login);
+};
+
 // ─── Internal lobby / prejoin steps ─────────────────────────────────────────
 
 /**
@@ -62,6 +127,8 @@ export const openMeeting = async (
 		audioEnabled?: boolean;
 		/** Skip prejoin video/audio state checks (e.g. when media permissions are denied). */
 		skipPrejoinMediaCheck?: boolean;
+		/** Log the given registered user in (as an authenticated user) before accessing the room. */
+		login?: LoginOptions;
 	}
 ): Promise<void> => {
 	const {
@@ -91,26 +158,42 @@ export const openMeeting = async (
  * @param options.name     - Participant display name (auto-generated when omitted).
  * @param options.e2eeKey  - End-to-end encryption passphrase.
  * @param options.timeoutMs - Maximum wait time for each visibility assertion.
+ * @param options.login    - Log the given registered user in (as an authenticated user) before accessing the room.
  */
 export const openPrejoin = async (
 	page: Page,
 	accessUrl: string,
-	options?: { timeoutMs?: number; name?: string; e2eeKey?: string }
+	options?: { timeoutMs?: number; name?: string; e2eeKey?: string; login?: LoginOptions }
 ): Promise<void> => {
 	const timeoutMs = options?.timeoutMs ?? 15_000;
 
-	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+	await openLobby(page, accessUrl, options);
 	await completeLobby(page, options);
 
 	await expect(page.locator('#join-button')).toBeVisible({ timeout: timeoutMs });
 };
 
 /**
- * Navigates to the access URL and waits for the lobby name-input to appear,
- * without filling it or proceeding further.
+ * Navigates to the access URL and waits for the lobby name-input to appear, without filling it or
+ * proceeding further. This is the single entry point that performs the user login: when
+ * `options.login` credentials are given and the app presents the login form (auto-detected), the
+ * user is logged in — including the forced password change on a first login — before the lobby.
  */
-export const openLobby = async (page: Page, accessUrl: string, timeoutMs = 15_000): Promise<void> => {
+export const openLobby = async (
+	page: Page,
+	accessUrl: string,
+	options?: { timeoutMs?: number; login?: LoginOptions }
+): Promise<void> => {
+	const timeoutMs = options?.timeoutMs ?? 15_000;
+
 	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+
+	// Log in only when the app actually presents the login form (auto-detected). Credentials being
+	// supplied is not enough on its own — an already-authenticated or anonymous guest shows no login.
+	if (options?.login) {
+		await performLogin(page, options.login);
+	}
+
 	await expect(page.locator('#participant-name-input')).toBeVisible({ timeout: timeoutMs });
 };
 

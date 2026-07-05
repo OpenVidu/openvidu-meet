@@ -1,4 +1,4 @@
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { openMoreOptionsMenu } from './panels.helper';
 import { clickControlButton, hoverStream } from './ui-utils.helper';
 
@@ -129,6 +129,44 @@ export const unmuteRemoteParticipant = async (
 	remoteStreamSelector = '.OV_stream.remote'
 ): Promise<void> => {
 	await toggleRemoteParticipantMute(page, remoteStreamSelector);
+};
+
+/**
+ * Returns the mute/unmute button for the remote participant named {@link participantName} in the
+ * participants panel.
+ */
+const participantPanelMuteButton = (page: Page, participantName: string): Locator =>
+	page.locator('[data-participant-id]', { hasText: participantName }).first().locator('#mute-btn');
+
+/**
+ * Toggles the mute button of a remote participant in the participants panel. This silences that
+ * participant's audio for the local user only (it does not force-mute them for everyone).
+ *
+ * The muted button runs an infinite `pulse` (scale) animation, so its bounding box never settles.
+ * The click is forced to skip Playwright's stability wait, which would otherwise time out when
+ * toggling an already-muted participant back to unmuted.
+ */
+export const toggleParticipantPanelMute = async (page: Page, participantName: string): Promise<void> => {
+	const muteButton = participantPanelMuteButton(page, participantName);
+	await expect(muteButton).toBeVisible({ timeout: 10_000 });
+	await muteButton.click({ force: true });
+};
+
+/**
+ * Asserts that the given remote participant is muted for the local user (the panel mute button is in
+ * its "muted" warn state).
+ */
+export const expectParticipantPanelMuted = async (page: Page, participantName: string): Promise<void> => {
+	await expect(participantPanelMuteButton(page, participantName)).toHaveClass(/warn-btn/, { timeout: 10_000 });
+};
+
+/**
+ * Asserts that the given remote participant is not muted for the local user.
+ */
+export const expectParticipantPanelUnmuted = async (page: Page, participantName: string): Promise<void> => {
+	const muteButton = participantPanelMuteButton(page, participantName);
+	await expect(muteButton).toBeVisible({ timeout: 10_000 });
+	await expect(muteButton).not.toHaveClass(/warn-btn/);
 };
 
 // ─── Virtual backgrounds ────────────────────────────────────────────────────

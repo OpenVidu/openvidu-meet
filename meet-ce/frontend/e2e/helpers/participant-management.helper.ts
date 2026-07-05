@@ -1,5 +1,5 @@
-import { MeetRoomMemberPermissions, MeetRoomMemberRole } from '@openvidu-meet/typings';
-import { Browser, chromium, type BrowserContext, type Page } from '@playwright/test';
+import { MeetRoomMemberPermissions, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import { Browser, chromium, expect, type BrowserContext, type Page } from '@playwright/test';
 import { existsSync, rmSync } from 'fs';
 import path from 'path';
 import { startScreensharing } from './media-controls.helper';
@@ -365,4 +365,141 @@ export const disconnectAllBrowserFakeParticipants = async (): Promise<void> => {
 	}
 
 	browserFakeParticipants.clear();
+};
+
+// ─── Participants panel: lookup ───────────────────────────────────────────────
+
+/**
+ * Returns the participant SID (`data-participant-id`) for the participant whose
+ * display name matches `participantName`, or an empty string if not found.
+ */
+export const getParticipantIdByName = async (page: Page, participantName: string): Promise<string> => {
+	const container = page.locator('[data-participant-id]', { hasText: participantName }).first();
+	return (await container.getAttribute('data-participant-id', { timeout: 10_000 })) ?? '';
+};
+
+/**
+ * Returns the local participant's SID (`data-participant-id`). The local participant is rendered
+ * inside the `.local-participant-container` wrapper of the participants panel.
+ */
+export const getLocalParticipantId = async (page: Page): Promise<string> => {
+	const container = page.locator('.local-participant-container [data-participant-id]').first();
+	return (await container.getAttribute('data-participant-id', { timeout: 10_000 })) ?? '';
+};
+
+// ─── Participants panel: moderation actions ───────────────────────────────────
+
+/**
+ * Promotes a participant to moderator via the participants panel button.
+ */
+export const makeParticipantModerator = async (page: Page, participantId: string): Promise<void> => {
+	await page.locator(`#make-moderator-btn-${participantId}`).click({ timeout: 10_000 });
+};
+
+/**
+ * Demotes a promoted moderator back to their original role via the participants panel button.
+ */
+export const removeParticipantModerator = async (page: Page, participantId: string): Promise<void> => {
+	await page.locator(`#remove-moderator-btn-${participantId}`).click({ timeout: 10_000 });
+};
+
+/**
+ * Kicks a participant from the meeting via the participants panel button.
+ */
+export const kickParticipant = async (page: Page, participantId: string): Promise<void> => {
+	await page.locator(`#kick-participant-btn-${participantId}`).click({ timeout: 10_000 });
+};
+
+// ─── Participants panel: badge assertions ─────────────────────────────────────
+
+const PARTICIPANT_BADGE_CLASS: Record<MeetRoomMemberUIBadge, string> = {
+	[MeetRoomMemberUIBadge.OWNER]: 'owner-badge',
+	[MeetRoomMemberUIBadge.ADMIN]: 'admin-badge',
+	[MeetRoomMemberUIBadge.MODERATOR]: 'moderator-badge',
+	[MeetRoomMemberUIBadge.OTHER]: ''
+};
+
+/**
+ * Asserts that the given participant shows no role badge. A regular participant (badge OTHER)
+ * renders no badge element at all — the badge is only rendered for owner/admin/moderator.
+ */
+export const expectNoParticipantBadge = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#participant-badge-${participantId}`)).toHaveCount(0, { timeout: 10_000 });
+};
+
+/**
+ * Asserts that the given participant shows the role badge for {@link badge} (owner/admin/moderator).
+ * For {@link MeetRoomMemberUIBadge.OTHER} it asserts no badge is rendered.
+ */
+export const expectParticipantBadge = async (
+	page: Page,
+	participantId: string,
+	badge: MeetRoomMemberUIBadge
+): Promise<void> => {
+	if (badge === MeetRoomMemberUIBadge.OTHER) {
+		await expectNoParticipantBadge(page, participantId);
+		return;
+	}
+
+	const badgeLocator = page.locator(`#participant-badge-${participantId}`);
+	await expect(badgeLocator).toBeVisible({ timeout: 10_000 });
+	await expect(badgeLocator).toHaveClass(new RegExp(PARTICIPANT_BADGE_CLASS[badge]));
+};
+
+// ─── Participants panel: moderation control assertions ────────────────────────
+
+/**
+ * Asserts that the moderation controls container is visible for the given participant.
+ */
+export const expectModerationControls = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#moderation-controls-${participantId}`)).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that no moderation controls are rendered for the given participant.
+ */
+export const expectNoModerationControls = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#moderation-controls-${participantId}`)).toHaveCount(0, { timeout: 10_000 });
+};
+
+/**
+ * Asserts that the "make moderator" (promote) button is available for the given participant.
+ */
+export const expectMakeModeratorButton = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#make-moderator-btn-${participantId}`)).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the "make moderator" (promote) button is not available for the given participant.
+ */
+export const expectNoMakeModeratorButton = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#make-moderator-btn-${participantId}`)).toHaveCount(0, { timeout: 10_000 });
+};
+
+/**
+ * Asserts that the "remove moderator" (demote) button is available for the given participant.
+ */
+export const expectRemoveModeratorButton = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#remove-moderator-btn-${participantId}`)).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the "remove moderator" (demote) button is not available for the given participant.
+ */
+export const expectNoRemoveModeratorButton = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#remove-moderator-btn-${participantId}`)).toHaveCount(0, { timeout: 10_000 });
+};
+
+/**
+ * Asserts that the "kick participant" button is available for the given participant.
+ */
+export const expectKickButton = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#kick-participant-btn-${participantId}`)).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the "kick participant" button is not available for the given participant.
+ */
+export const expectNoKickButton = async (page: Page, participantId: string): Promise<void> => {
+	await expect(page.locator(`#kick-participant-btn-${participantId}`)).toHaveCount(0, { timeout: 10_000 });
 };
