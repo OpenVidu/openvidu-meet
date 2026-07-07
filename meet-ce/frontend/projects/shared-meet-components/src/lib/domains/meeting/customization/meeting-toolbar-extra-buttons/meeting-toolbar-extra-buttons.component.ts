@@ -4,8 +4,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
+import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { LoggerService } from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -42,9 +42,7 @@ export class MeetingToolbarExtraButtonsComponent {
 	 * links are enabled) and never when embedded (webcomponent or iframe)
 	 */
 	showCopyLinkButton = computed(
-		() =>
-			this.meetingContextService.meetingUI().showShareAccessLinks &&
-			!this.runtimeConfigService.isEmbeddedMode()
+		() => this.meetingContextService.meetingUI().showShareAccessLinks && !this.runtimeConfigService.isEmbeddedMode()
 	);
 
 	/** Whether to show the captions button (visible when not HIDDEN) */

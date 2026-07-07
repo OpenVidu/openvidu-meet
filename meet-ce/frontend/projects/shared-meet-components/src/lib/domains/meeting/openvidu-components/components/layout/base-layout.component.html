@@ -15,7 +15,7 @@
 					[class.OV_screen]="stream.isScreenStream"
 					[id]="'participant-' + stream.participant.identity"
 					cdkDrag
-					cdkDragBoundary=".layout"
+					cdkDragBoundary="#layout-container"
 					[cdkDragDisabled]="!stream.isFloating"
 					[cdkDragFreeDragPosition]="stream.isFloating ? currentDragPosition() : ZERO_DRAG_POSITION"
 				>
