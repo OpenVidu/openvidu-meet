@@ -315,6 +315,11 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.mutationObserver.observe(container, { childList: true, subtree: true });
 	}
 
+	/**
+	 * Sets up a ResizeObserver on the layout container to detect size changes and update the layout accordingly.
+	 * Also handles repositioning of the floating local participant stream when the layout size changes.
+	 * The resize handling is debounced to avoid excessive layout updates during rapid size changes.
+	 */
 	private listenToResizeLayout(container: HTMLElement): void {
 		this.resizeObserver = new ResizeObserver((entries) => {
 			const { width: parentWidth, height: parentHeight } = entries[0].contentRect;
@@ -335,9 +340,9 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 							if (this.lastLayoutWidth < parentWidth) {
 								if (this.videoIsAtRight) this.moveStreamToRight(parentWidth, drag);
 							} else {
-								window.dispatchEvent(new Event('resize'));
 								const { x, width } = drag.element.nativeElement.getBoundingClientRect();
 								this.videoIsAtRight = x + width >= parentWidth;
+								if (this.videoIsAtRight) this.moveStreamToRight(parentWidth, drag);
 							}
 						} else if (this.videoIsAtRight) {
 							this.moveStreamToRight(parentWidth, drag);

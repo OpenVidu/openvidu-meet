@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { openFloatingWithCaptions, type LayoutBox } from './helpers/captions.helper';
 import {
 	muteRemoteParticipant,
 	startScreensharing,
@@ -7,7 +8,6 @@ import {
 	toggleMicrophone,
 	unmuteRemoteParticipant
 } from './helpers/media-controls.helper';
-import { openFloatingWithCaptions, type LayoutBox } from './helpers/captions.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { leaveMeeting, openMeeting } from './helpers/meeting-navigation.helper';
 import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
@@ -771,6 +771,47 @@ test.describe('Stream E2E Tests', () => {
 				expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 5, -1);
 				expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
 				expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should reposition the AUTO-FLOATED local video when a panel opens so it is not hidden behind it', async ({
+			browser
+		}) => {
+			const { pages, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				accessUrl,
+				participants: [{ name: 'participant-0' }, { name: 'participant-1', headless: true }]
+			});
+			const [pageA] = pages;
+
+			try {
+				await waitForRemoteStream(pageA);
+
+				// Local video auto-floated to the bottom-right corner.
+				const localContainer = pageA.locator('.local_participant:has(.OV_stream_video.local)').first();
+				await expect(localContainer).toHaveClass(/OV_floating/, { timeout: 5_000 });
+				await pageA.waitForTimeout(1000);
+
+				const beforeBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
+				expect(beforeBox).not.toBeNull();
+
+				// Open a right-side panel WITHOUT dragging the tile first — this is the repro.
+				await pageA.locator('#chat-panel-btn').click();
+				await pageA.waitForTimeout(1500);
+
+				// The panel shrinks the visible layout (#layout) from the right. The floating tile must
+				// have followed that edge instead of being left hidden behind the panel.
+				const layoutBox = await getElementBoundingBox(pageA, '#layout');
+				const afterBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
+				expect(layoutBox).not.toBeNull();
+				expect(afterBox).not.toBeNull();
+
+				// Its right edge stays within the visible (panel-excluded) layout area…
+				expect(afterBox!.x + afterBox!.width).toBeLessThanOrEqual(layoutBox!.x + layoutBox!.width + 5);
+				// …i.e. it actually moved left when the panel opened.
+				expect(afterBox!.x).toBeLessThan(beforeBox!.x - 20);
 			} finally {
 				await removeAllParticipants();
 			}
