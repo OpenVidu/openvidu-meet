@@ -49,3 +49,7 @@ pnpm-debug.log*
 
 **/**/meet-pro
 **/**/test_localstorage_state.json
+
+# meet-screenshots / meet-videos skill output (default --out dirs at repo root)
+/screenshots/
+/videos/
