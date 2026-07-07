@@ -349,6 +349,20 @@ export class ParticipantService {
 	}
 
 	/**
+	 * Returns the current connection quality for a participant (local or remote),
+	 * or `undefined` when no participant with the given SID is tracked.
+	 * @param participantSid - The SID of the participant
+	 * @internal
+	 */
+	getConnectionQuality(participantSid: string): ConnectionQuality | undefined {
+		const local = this._localParticipant();
+		if (local?.sid === participantSid) {
+			return local.connectionQuality;
+		}
+		return this.getRemoteParticipantBySid(participantSid)?.connectionQuality;
+	}
+
+	/**
 	 * Returns the local participant name.
 	 */
 	getMyName(): string | undefined {

@@ -344,8 +344,12 @@ export class SessionRoomEventsService {
 
 	private subscribeToConnectionQualityChanged(room: Room) {
 		room.on(RoomEvent.ConnectionQualityChanged, (quality: ConnectionQuality, participant: Participant) => {
+			const previousQuality = this.participantService.getConnectionQuality(participant.sid);
+			if (previousQuality === quality) {
+				return;
+			}
+
 			this.participantService.setConnectionQuality(participant.sid, quality);
 		});
 	}
-
 }
