@@ -90,6 +90,20 @@ export const expectChatLinkHrefContains = async (
 	await expect(page.locator('.chat-message a').nth(index)).toHaveAttribute('href', new RegExp(expectedHrefPart));
 };
 
+/**
+ * Asserts that the chat panel toolbar button is available (`canReadChat` granted).
+ */
+export const expectChatAvailable = async (page: Page): Promise<void> => {
+	await expect(page.locator('#chat-panel-btn')).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the chat panel toolbar button is absent (`canReadChat` denied).
+ */
+export const expectNoChat = async (page: Page): Promise<void> => {
+	await expect(page.locator('#chat-panel-btn')).toHaveCount(0);
+};
+
 // ─── Participants panel ─────────────────────────────────────────────────────
 
 /**

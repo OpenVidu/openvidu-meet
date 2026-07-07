@@ -1,4 +1,5 @@
 import {
+	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
@@ -284,4 +285,43 @@ export const getUserAccessToken = async (userId: string, password: string, newPa
 	}
 
 	return login.accessToken;
+};
+
+// ---------------------------------------------------------------------------
+// Recording helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Lists the recordings of the given room.
+ */
+export const getRoomRecordings = async (roomId: string): Promise<MeetRecordingInfo[]> => {
+	const response = await fetch(withApiPath(`/recordings?roomId=${encodeURIComponent(roomId)}`), {
+		method: 'GET',
+		headers: { 'x-api-key': API_KEY }
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get room recordings');
+
+	return (JSON.parse(responseText) as { recordings: MeetRecordingInfo[] }).recordings;
+};
+
+/**
+ * Returns a shareable URL for the given recording. `privateAccess` selects the private secret
+ * (only accessible to logged-in Meet users) or the public secret (accessible to anyone, when the
+ * room's anonymous recording access is enabled).
+ */
+export const getRecordingShareUrl = async (recordingId: string, privateAccess: boolean): Promise<string> => {
+	const response = await fetch(
+		withApiPath(`/recordings/${encodeURIComponent(recordingId)}/url?privateAccess=${privateAccess}`),
+		{
+			method: 'GET',
+			headers: { 'x-api-key': API_KEY }
+		}
+	);
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get recording share url');
+
+	return (JSON.parse(responseText) as { url: string }).url;
 };

@@ -1,71 +1,7 @@
 import { expect, type Page } from '@playwright/test';
+import { performLogin, type LoginOptions } from './auth.helper';
 import { ensurePrejoinAudioState, ensurePrejoinVideoState } from './media-controls.helper';
 import { click } from './ui-utils.helper';
-
-// ─── Types ──────────────────────────────────────────────────────────────────
-
-/**
- * Credentials for logging a registered user into the OpenVidu Meet application.
- */
-export interface LoginOptions {
-	/** Registered user id. */
-	userId: string;
-	/** Current password. */
-	password: string;
-	/** New password to set when the app forces a password change on the user's first login. */
-	newPassword?: string;
-}
-
-// ─── Internal login steps ────────────────────────────────────────────────────
-
-/**
- * Changes the password when the app forces a password change (a user's first login). The step is
- * auto-detected from the change-password form, so this is a no-op when no change is required.
- */
-const performPasswordChange = async (page: Page, login: LoginOptions): Promise<void> => {
-	const newPasswordInput = page.locator('input[formcontrolname="newPassword"]');
-	const passwordChangeRequired = await newPasswordInput
-		.waitFor({ state: 'visible', timeout: 5_000 })
-		.then(() => true)
-		.catch(() => false);
-
-	if (!passwordChangeRequired) {
-		return;
-	}
-
-	if (!login.newPassword) {
-		throw new Error('The user must change their password on first login, but no `newPassword` was provided');
-	}
-
-	await page.locator('input[formcontrolname="currentPassword"]').fill(login.password);
-	await newPasswordInput.fill(login.newPassword);
-	await page.locator('input[formcontrolname="confirmPassword"]').fill(login.newPassword);
-	await click(page.locator('button[type="submit"].primary-button'), 10_000);
-};
-
-/**
- * Logs a registered user in when the app requests it. The login form is auto-detected (the app
- * shows it when authentication is required), so this is a no-op when no login is presented — for
- * example when the user is already authenticated or the room allows anonymous access. Handles the
- * forced password-change step of a first login.
- */
-const performLogin = async (page: Page, login: LoginOptions): Promise<void> => {
-	const loginButton = page.locator('#login-button');
-	const loginRequired = await loginButton
-		.waitFor({ state: 'visible', timeout: 5_000 })
-		.then(() => true)
-		.catch(() => false);
-
-	if (!loginRequired) {
-		return;
-	}
-
-	await page.locator('#userId-input').fill(login.userId);
-	await page.locator('#password-input').fill(login.password);
-	await click(loginButton, 10_000);
-
-	await performPasswordChange(page, login);
-};
 
 // ─── Internal lobby / prejoin steps ─────────────────────────────────────────
 
@@ -195,6 +131,40 @@ export const openLobby = async (
 	}
 
 	await expect(page.locator('#participant-name-input')).toBeVisible({ timeout: timeoutMs });
+};
+
+/**
+ * Submits the (already-shown) lobby name and joins the meeting, waiting for the meeting layout.
+ */
+export const joinRoomFromLobby = async (page: Page): Promise<void> => {
+	await page.locator('#participant-name-submit').click();
+	const joinButton = page.locator('#join-button');
+	await expect(joinButton).toBeVisible({ timeout: 15_000 });
+	await joinButton.click();
+	await expect(page.locator('#layout-container')).toBeVisible({ timeout: 15_000 });
+};
+
+// ─── Leave / end-meeting assertions (canEndMeeting) ─────────────────────────────
+
+/**
+ * Asserts that the "end meeting" option is available (the `canEndMeeting` permission is granted):
+ * the leave button opens a menu exposing the end-meeting action. Opens the menu, asserts, then
+ * closes it without ending the meeting.
+ */
+export const expectEndMeetingOption = async (page: Page): Promise<void> => {
+	await page.locator('#leave-btn').click();
+	await expect(page.locator('#end-meeting-option')).toBeVisible({ timeout: 10_000 });
+	await page.keyboard.press('Escape');
+};
+
+/**
+ * Asserts that the "end meeting" option is not available (the `canEndMeeting` permission is denied):
+ * the leave button is the plain variant with no menu, so the leave-menu component is not rendered.
+ * Non-destructive — does not click the leave button (which would leave the meeting directly).
+ */
+export const expectNoEndMeetingOption = async (page: Page): Promise<void> => {
+	await expect(page.locator('#leave-btn')).toBeVisible({ timeout: 10_000 });
+	await expect(page.locator('ov-meeting-toolbar-leave-button #leave-btn')).toHaveCount(0);
 };
 
 /**

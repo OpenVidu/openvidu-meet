@@ -225,6 +225,70 @@ export const applyBackgroundEffect = async (page: Page, effectId: string, timeou
 	await expect(page.locator(`#effect-${effectId}`)).toHaveClass(/active-effect-btn/, { timeout: timeoutMs });
 };
 
+// ─── In-meeting media button availability (permissions) ───────────────────────
+
+/**
+ * Asserts that the in-meeting camera button is available (`canPublishVideo` granted).
+ */
+export const expectCameraButtonAvailable = async (page: Page): Promise<void> => {
+	await expect(page.locator('#camera-btn')).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the in-meeting camera button is absent (`canPublishVideo` denied).
+ */
+export const expectNoCameraButton = async (page: Page): Promise<void> => {
+	await expect(page.locator('#camera-btn')).toHaveCount(0);
+};
+
+/**
+ * Asserts that the in-meeting microphone button is available (`canPublishAudio` granted).
+ */
+export const expectMicButtonAvailable = async (page: Page): Promise<void> => {
+	await expect(page.locator('#mic-btn')).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the in-meeting microphone button is absent (`canPublishAudio` denied).
+ */
+export const expectNoMicButton = async (page: Page): Promise<void> => {
+	await expect(page.locator('#mic-btn')).toHaveCount(0);
+};
+
+/**
+ * Asserts that the screen-share button is available (`canShareScreen` granted).
+ */
+export const expectScreenshareButtonAvailable = async (page: Page): Promise<void> => {
+	await expect(page.locator('#screenshare-btn')).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the screen-share button is absent (`canShareScreen` denied).
+ */
+export const expectNoScreenshareButton = async (page: Page): Promise<void> => {
+	await expect(page.locator('#screenshare-btn')).toHaveCount(0);
+};
+
+/**
+ * Asserts that the virtual-background control is available in the more-options menu
+ * (`canChangeVirtualBackground` granted). Opens and closes the menu.
+ */
+export const expectBackgroundsButtonAvailable = async (page: Page): Promise<void> => {
+	await openMoreOptionsMenu(page);
+	await expect(page.locator('#virtual-bg-btn:visible')).toBeVisible({ timeout: 10_000 });
+	await page.keyboard.press('Escape');
+};
+
+/**
+ * Asserts that the virtual-background control is absent from the more-options menu
+ * (`canChangeVirtualBackground` denied). Opens and closes the menu.
+ */
+export const expectNoBackgroundsButton = async (page: Page): Promise<void> => {
+	await openMoreOptionsMenu(page);
+	await expect(page.locator('#virtual-bg-btn')).toHaveCount(0);
+	await page.keyboard.press('Escape');
+};
+
 // ─── Device selector ─────────────────────────────────────────────────────────
 
 /**

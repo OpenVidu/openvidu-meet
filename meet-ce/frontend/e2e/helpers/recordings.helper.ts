@@ -1,5 +1,8 @@
-import { expect, type Page } from '@playwright/test';
+import { MeetRecordingInfo, MeetRecordingStatus, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { expect, type Browser, type Page } from '@playwright/test';
+import { getRoomRecordings } from './meet-api.helper';
 import { openMoreOptionsMenu, toggleActivitiesPanel } from './panels.helper';
+import { joinParticipants } from './participant-management.helper';
 import { expectVisible } from './ui-utils.helper';
 
 const ACTIVITIES_CONTAINER = '#activities-container';
@@ -211,4 +214,133 @@ export const expectActivitiesPanelOpenedWithRecording = async (page: Page, timeo
 	await expect(page.locator(ACTIVITIES_CONTAINER)).toBeVisible({ timeout: timeoutMs });
 	await expect(page.locator(RECORDING_ACTIVITY)).toBeVisible({ timeout: timeoutMs });
 	await expect(page.locator(RECORDING_STATUS)).toBeVisible({ timeout: timeoutMs });
+};
+
+// ─── Recording creation (UI-driven) ───────────────────────────────────────────
+
+/**
+ * Records the given room end-to-end through the UI and returns the completed recording: a moderator
+ * joins to make the room active, the recording is started and stopped from the activities panel, and
+ * the helper waits until it reaches COMPLETE. The REST API is used only to read back the resulting
+ * {@link MeetRecordingInfo} — never to start/stop the recording. Requires the recording egress
+ * service to be available in the environment.
+ */
+export const recordRoom = async (browser: Browser, roomId: string): Promise<MeetRecordingInfo> => {
+	const { pages, removeAllParticipants } = await joinParticipants(browser, {
+		roomId,
+		participants: [{ name: 'Recorder', baseRole: MeetRoomMemberRole.MODERATOR }]
+	});
+	const [recorderPage] = pages;
+
+	try {
+		await startStopRecordingFromActivitiesPanel(recorderPage, 'start');
+		await waitForRecordingStarted(recorderPage);
+		await stopRecordingIfActive(recorderPage);
+
+		await expect
+			.poll(
+				async () => (await getRoomRecordings(roomId)).some((r) => r.status === MeetRecordingStatus.COMPLETE),
+				{ timeout: 30_000, message: 'Recording did not reach COMPLETE after being stopped' }
+			)
+			.toBeTruthy();
+
+		const recording = (await getRoomRecordings(roomId)).find((r) => r.status === MeetRecordingStatus.COMPLETE);
+
+		if (!recording) {
+			throw new Error(`No completed recording found for room ${roomId}`);
+		}
+
+		return recording;
+	} finally {
+		await removeAllParticipants();
+	}
+};
+
+// ─── Recordings list: view + delete-permission assertions ──────────────────────
+
+/**
+ * Asserts that the room recordings list page is shown (access was granted — the list renders rather
+ * than the error page). Optionally also asserts the given recording is listed.
+ */
+export const expectRoomRecordingsListShown = async (page: Page, recordingId?: string): Promise<void> => {
+	await expect(page.locator('ov-recording-lists')).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator('.error-page')).toHaveCount(0);
+
+	if (recordingId) {
+		await expect(page.locator(`[id="play-recording-btn-${recordingId}"]`).first()).toBeVisible({
+			timeout: 15_000
+		});
+	}
+};
+
+/**
+ * Asserts that the given recording can be deleted from the recordings list — the more-actions menu
+ * exposes the delete action (requires `canDeleteRecordings`).
+ */
+export const expectRecordingDeletable = async (page: Page, recordingId: string): Promise<void> => {
+	const moreActionsButton = page.locator(`[id="more-actions-btn-${recordingId}"]`);
+	await expect(moreActionsButton).toBeVisible({ timeout: 15_000 });
+	await moreActionsButton.click();
+	await expect(page.locator(`[id="delete-recording-btn-${recordingId}"]`)).toBeVisible({ timeout: 10_000 });
+	await page.keyboard.press('Escape');
+};
+
+/**
+ * Asserts that the given recording is listed (share is available) but cannot be deleted — no
+ * more-actions menu / delete action is rendered when `canDeleteRecordings` is false.
+ */
+export const expectRecordingNotDeletable = async (page: Page, recordingId: string): Promise<void> => {
+	await expect(page.locator(`[id="share-recording-link-${recordingId}"]`)).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator(`[id="more-actions-btn-${recordingId}"]`)).toHaveCount(0);
+	await expect(page.locator(`[id="delete-recording-btn-${recordingId}"]`)).toHaveCount(0);
+};
+
+// ─── Individual recording view: view + delete-permission assertions ─────────────
+
+/**
+ * Asserts that the individual recording view is shown (access was granted — the video player
+ * renders rather than the error page).
+ */
+export const expectRecordingViewShown = async (page: Page): Promise<void> => {
+	await expect(page.locator('ov-recording-video-player').first()).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator('.error-page')).toHaveCount(0);
+};
+
+/**
+ * Asserts that the individual recording view is loaded and shows the delete action
+ * (`canDeleteRecordings`).
+ */
+export const expectViewRecordingDeletable = async (page: Page): Promise<void> => {
+	await expect(page.locator('.icon-action-btn.delete-btn').first()).toBeVisible({ timeout: 15_000 });
+};
+
+/**
+ * Asserts that the individual recording view is loaded (the player renders) but the delete action
+ * is absent.
+ */
+export const expectViewRecordingNotDeletable = async (page: Page): Promise<void> => {
+	await expect(page.locator('ov-recording-video-player').first()).toBeVisible({ timeout: 15_000 });
+	await expect(page.locator('.icon-action-btn.delete-btn')).toHaveCount(0);
+};
+
+// ─── Recording control availability (canRecord) ────────────────────────────────
+
+/**
+ * Asserts that the recording control is available in the toolbar's more-options menu
+ * (`canRecord` granted). Leaves the menu open on success is avoided — the menu is closed afterwards.
+ */
+export const expectRecordButtonAvailable = async (page: Page): Promise<void> => {
+	await openMoreOptionsMenu(page);
+	await expect(page.locator(SETTINGS_RECORDING_BUTTON).first()).toBeVisible({ timeout: 10_000 });
+	await page.keyboard.press('Escape');
+};
+
+/**
+ * Asserts that the recording control is not available in the toolbar's more-options menu
+ * (`canRecord` denied).
+ */
+export const expectNoRecordButton = async (page: Page): Promise<void> => {
+	await openMoreOptionsMenu(page);
+	await expect(page.locator(SETTINGS_RECORDING_BUTTON)).toHaveCount(0);
+	await page.keyboard.press('Escape');
 };
