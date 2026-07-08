@@ -7,7 +7,7 @@ import {
 	MeetUserRole
 } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
-import { createRoomAsUser, createRoomMember, createUser, getUserAccessToken } from './meet-api.helper';
+import { createRoomAsUser, createRoomMember, createUser, getUserAccessToken, MEET_BASE_URL } from './meet-api.helper';
 import { click } from './ui-utils.helper';
 
 // Monotonic counter guaranteeing unique user ids even when users are created within the same
@@ -90,6 +90,17 @@ export const performLogin = async (page: Page, login: LoginOptions): Promise<voi
 	await click(loginButton, 10_000);
 
 	await performPasswordChange(page, login);
+};
+
+/**
+ * Establishes an authenticated session by logging in from the OpenVidu Meet home page, which
+ * redirects to the login form when not authenticated.
+ */
+export const authenticate = async (page: Page, login: LoginOptions): Promise<void> => {
+	await page.goto(MEET_BASE_URL, { waitUntil: 'domcontentloaded' });
+	await performLogin(page, login);
+	// Confirm the login succeeded (the login form is gone once authenticated).
+	await expect(page.locator('#login-button')).toHaveCount(0, { timeout: 15_000 });
 };
 
 // ─── Login-page assertions ─────────────────────────────────────────────────────

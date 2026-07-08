@@ -110,17 +110,21 @@ export const openPrejoin = async (
 };
 
 /**
- * Navigates to the access URL and waits for the lobby name-input to appear, without filling it or
- * proceeding further. This is the single entry point that performs the user login: when
- * `options.login` credentials are given and the app presents the login form (auto-detected), the
- * user is logged in — including the forced password change on a first login — before the lobby.
+ * Navigates to the access URL and (by default) waits for the lobby name-input to appear, without
+ * filling it or proceeding further. This is the single entry point that performs the user login:
+ * when `options.login` credentials are given and the app presents the login form (auto-detected),
+ * the user is logged in — including the forced password change on a first login — before the lobby.
+ *
+ * Set `options.checkNameInput` to `false` to skip waiting for the name input — useful to assert an
+ * intermediate state first (e.g. that the login form is shown) before logging in.
  */
 export const openLobby = async (
 	page: Page,
 	accessUrl: string,
-	options?: { timeoutMs?: number; login?: LoginOptions }
+	options?: { timeoutMs?: number; login?: LoginOptions; checkNameInput?: boolean }
 ): Promise<void> => {
 	const timeoutMs = options?.timeoutMs ?? 15_000;
+	const checkNameInput = options?.checkNameInput ?? true;
 
 	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
 
@@ -130,18 +134,9 @@ export const openLobby = async (
 		await performLogin(page, options.login);
 	}
 
-	await expect(page.locator('#participant-name-input')).toBeVisible({ timeout: timeoutMs });
-};
-
-/**
- * Submits the (already-shown) lobby name and joins the meeting, waiting for the meeting layout.
- */
-export const joinRoomFromLobby = async (page: Page): Promise<void> => {
-	await page.locator('#participant-name-submit').click();
-	const joinButton = page.locator('#join-button');
-	await expect(joinButton).toBeVisible({ timeout: 15_000 });
-	await joinButton.click();
-	await expect(page.locator('#layout-container')).toBeVisible({ timeout: 15_000 });
+	if (checkNameInput) {
+		await expect(page.locator('#participant-name-input')).toBeVisible({ timeout: timeoutMs });
+	}
 };
 
 // ─── Leave / end-meeting assertions (canEndMeeting) ─────────────────────────────

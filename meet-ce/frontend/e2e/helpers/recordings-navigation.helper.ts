@@ -2,12 +2,26 @@ import { type Page } from '@playwright/test';
 import { performLogin, type LoginOptions } from './auth.helper';
 
 /**
- * Derives the room recordings page URL (`/room/:roomId/recordings`) from a room meeting access URL,
- * preserving any `?secret=` so the recordings page resolves the same role/permissions.
+ * Derives the room recordings URL from a room access URL by adding the
+ * `show-only-recordings=true` query param. The room route resolves the same access (preserving any
+ * `?secret=`) and then redirects to the recordings list, so recordings inherit the room's access
+ * method and permissions.
  */
 export const toRoomRecordingsUrl = (meetingUrl: string): string => {
 	const url = new URL(meetingUrl);
-	url.pathname = url.pathname.replace(/\/room\/([^/]+)\/?$/, '/room/$1/recordings');
+	url.searchParams.set('show-only-recordings', 'true');
+	return url.toString();
+};
+
+/**
+ * Derives an individual recording URL from a room access URL by adding the
+ * `show-recording=<recordingId>` query param. The room route resolves the same access (preserving
+ * any `?secret=`) and then redirects to the individual recording view, so the recording inherits the
+ * room's access method and permissions.
+ */
+export const toIndividualRecordingUrl = (meetingUrl: string, recordingId: string): string => {
+	const url = new URL(meetingUrl);
+	url.searchParams.set('show-recording', recordingId);
 	return url.toString();
 };
 

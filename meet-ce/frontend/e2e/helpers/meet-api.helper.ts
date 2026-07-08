@@ -20,7 +20,7 @@ const buildDefaultApiBaseUrl = (meetBaseUrl: string, internal = false): string =
 	return base.toString().replace(/\/$/, '');
 };
 
-const MEET_BASE_URL = process.env['E2E_BASE_URL'] || 'http://localhost:6080/meet';
+export const MEET_BASE_URL = process.env['E2E_BASE_URL'] || 'http://localhost:6080/meet';
 const API_BASE_URL = process.env['E2E_API_BASE_URL'] || buildDefaultApiBaseUrl(MEET_BASE_URL);
 const INTERNAL_API_BASE_URL = process.env['E2E_INTERNAL_API_BASE_URL'] || buildDefaultApiBaseUrl(MEET_BASE_URL, true);
 const API_KEY = process.env['E2E_API_KEY'] || 'meet-api-key';

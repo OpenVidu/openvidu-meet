@@ -1,12 +1,8 @@
-import {
-	MeetRecordingInfo,
-	MeetRoom,
-	MeetRoomMember,
-	MeetRoomMemberRole,
-	MeetUserRole
-} from '@openvidu-meet/typings';
+import { MeetRecordingInfo, MeetRoom, MeetRoomMember, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { test, type Page } from '@playwright/test';
+import { expectNameInput, expectRoomAccessDenied } from './helpers/access.helper';
 import {
+	authenticate,
 	createReadyMemberUser,
 	createReadyOwner,
 	createReadyUser,
@@ -15,21 +11,27 @@ import {
 	performLogin,
 	type ReadyUser
 } from './helpers/auth.helper';
-import { expectNameInput, expectRoomAccessDenied } from './helpers/access.helper';
 import { createRoom, createRoomMember, deleteRooms, deleteUsers, getRecordingShareUrl } from './helpers/meet-api.helper';
 import { openLobby } from './helpers/meeting-navigation.helper';
-import { openRecording, openRoomRecordings, toRoomRecordingsUrl } from './helpers/recordings-navigation.helper';
+import {
+	openRecording,
+	openRoomRecordings,
+	toIndividualRecordingUrl,
+	toRoomRecordingsUrl
+} from './helpers/recordings-navigation.helper';
 import { expectRecordingViewShown, expectRoomRecordingsListShown, recordRoom } from './helpers/recordings.helper';
 
 /**
- * Access tests verify only that each individual can *reach* the expected view (room lobby,
- * recordings list, or individual recording) — the view is shown, or the login form is shown when it
- * should be (after which we log in and confirm the view). For the room lobby we also check the
+ * Access tests verify only that each individual can *reach* the expected view — the view is shown,
+ * or the login form is shown when it should be (after which we log in and confirm the view). The
+ * same set of access methods is exercised against all three views (room lobby, recordings list,
+ * individual recording), which are reached through the same room URL: the recordings list and an
+ * individual recording are opened by adding the `show-only-recordings` / `show-recording` query
+ * params, so they inherit the room's access method. For the room lobby we also check the
  * participant-name input (value + editability). Permissions are covered in `permissions.test.ts`.
  */
 test.describe('Access E2E Tests', () => {
 	const SPEAKER_GUEST_NAME = 'Speaker Guest';
-	const INVITED_GUEST_NAME = 'Invited Guest';
 
 	const createdUserIds: string[] = [];
 	const createdRoomIds: string[] = [];
@@ -43,7 +45,6 @@ test.describe('Access E2E Tests', () => {
 	let memberUser: ReadyUser;
 	let memberUserMember: MeetRoomMember;
 	let speakerGuest: MeetRoomMember;
-	let invitedGuest: MeetRoomMember;
 	let recording: MeetRecordingInfo;
 	let publicRecordingUrl: string;
 	let privateRecordingUrl: string;
@@ -62,10 +63,10 @@ test.describe('Access E2E Tests', () => {
 		nonMemberUser = await createReadyUser('Non Member', MeetUserRole.ROOM_MEMBER);
 		createdUserIds.push(adminUser.userId, nonMemberUser.userId);
 
-		[speakerGuest, invitedGuest] = await Promise.all([
-			createRoomMember(room.roomId, { name: SPEAKER_GUEST_NAME, baseRole: MeetRoomMemberRole.SPEAKER }),
-			createRoomMember(room.roomId, { name: INVITED_GUEST_NAME, baseRole: MeetRoomMemberRole.SPEAKER })
-		]);
+		speakerGuest = await createRoomMember(room.roomId, {
+			name: SPEAKER_GUEST_NAME,
+			baseRole: MeetRoomMemberRole.SPEAKER
+		});
 
 		const member = await createReadyMemberUser(room.roomId, {
 			name: 'Member User',
@@ -86,131 +87,163 @@ test.describe('Access E2E Tests', () => {
 		await Promise.all([deleteRooms(createdRoomIds), deleteUsers(createdUserIds)]);
 	});
 
-	/**
-	 * Establishes an authenticated session for a user by logging in through the room user URL (which
-	 * prompts for login for owner/admin/member). Subsequent same-origin navigations then access as
-	 * that authenticated user.
-	 */
-	const authenticate = async (page: Page, user: ReadyUser): Promise<void> => {
-		await openLobby(page, room.access.user.url, { login: { userId: user.userId, password: user.password } });
+	// ── Shared access-method matrix ──────────────────────────────────────────────
+	//
+	// Each scenario is one way an individual reaches a room. It is run against every view; the view
+	// decides how to build the URL, how to navigate, and what "shown" means. Getters are used because
+	// the individuals are only created in `beforeAll` (after the scenarios are declared).
+
+	type NameExpect = { value: string; editable: boolean };
+
+	type AccessScenario = {
+		title: string;
+		/** anonymous → no login; login → login form then log in; preauth → establish a session first. */
+		kind: 'anonymous' | 'login' | 'preauth' | 'denied';
+		getUrl: () => string;
+		getUser?: () => ReadyUser;
+		getName: () => NameExpect;
+	};
+
+	const accessScenarios: AccessScenario[] = [
+		{
+			title: 'admin user must log in first',
+			kind: 'login',
+			getUrl: () => room.access.user.url,
+			getUser: () => adminUser,
+			getName: () => ({ value: adminUser.name, editable: false })
+		},
+		{
+			title: 'owner user must log in first',
+			kind: 'login',
+			getUrl: () => room.access.user.url,
+			getUser: () => ownerUser,
+			getName: () => ({ value: ownerUser.name, editable: false })
+		},
+		{
+			title: 'member user must log in first',
+			kind: 'login',
+			getUrl: () => memberUserMember.accessUrl,
+			getUser: () => memberUser,
+			getName: () => ({ value: memberUser.name, editable: false })
+		},
+		{
+			title: 'non-member user is denied access when room user access is disabled',
+			kind: 'denied',
+			getUrl: () => room.access.user.url,
+			getUser: () => nonMemberUser,
+			getName: () => ({ value: '', editable: false })
+		},
+		{
+			title: 'anonymous moderator guest has access without login',
+			kind: 'anonymous',
+			getUrl: () => room.access.anonymous.moderator.url,
+			getName: () => ({ value: '', editable: true })
+		},
+		{
+			title: 'anonymous speaker guest has access without login',
+			kind: 'anonymous',
+			getUrl: () => room.access.anonymous.speaker.url,
+			getName: () => ({ value: '', editable: true })
+		},
+		{
+			title: 'identified guest has access without login',
+			kind: 'anonymous',
+			getUrl: () => speakerGuest.accessUrl,
+			getName: () => ({ value: SPEAKER_GUEST_NAME, editable: false })
+		},
+		{
+			title: 'non-member user gains access via an anonymous link',
+			kind: 'preauth',
+			getUrl: () => room.access.anonymous.speaker.url,
+			getUser: () => nonMemberUser,
+			getName: () => ({ value: nonMemberUser.name, editable: false })
+		},
+		{
+			title: 'non-member user gains access via an identified guest link',
+			kind: 'preauth',
+			getUrl: () => speakerGuest.accessUrl,
+			getUser: () => nonMemberUser,
+			getName: () => ({ value: SPEAKER_GUEST_NAME, editable: false })
+		},
+		{
+			title: 'member user gains access via an identified guest link',
+			kind: 'preauth',
+			getUrl: () => speakerGuest.accessUrl,
+			getUser: () => memberUser,
+			getName: () => ({ value: SPEAKER_GUEST_NAME, editable: false })
+		}
+	];
+
+	type AccessView = {
+		/** Builds the view URL from a room access URL (identity for the lobby). */
+		buildUrl: (baseUrl: string) => string;
+		/** Navigates without logging in and without waiting for the final view. */
+		navigate: (page: Page, url: string) => Promise<void>;
+		/** Asserts the expected view is shown (the name argument is only used by the lobby). */
+		expectShown: (page: Page, name: NameExpect) => Promise<void>;
+	};
+
+	const lobbyView: AccessView = {
+		buildUrl: (url) => url,
+		navigate: (page, url) => openLobby(page, url, { checkNameInput: false }),
+		expectShown: (page, name) => expectNameInput(page, name)
+	};
+
+	const recordingsView: AccessView = {
+		buildUrl: (url) => toRoomRecordingsUrl(url),
+		navigate: (page, url) => openRoomRecordings(page, url),
+		expectShown: (page) => expectRoomRecordingsListShown(page, recording.recordingId)
+	};
+
+	const individualRecordingView: AccessView = {
+		buildUrl: (url) => toIndividualRecordingUrl(url, recording.recordingId),
+		navigate: (page, url) => openRecording(page, url),
+		expectShown: (page) => expectRecordingViewShown(page)
+	};
+
+	const runAccessScenarios = (view: AccessView): void => {
+		for (const scenario of accessScenarios) {
+			test(scenario.title, async ({ page }) => {
+				const url = view.buildUrl(scenario.getUrl());
+
+				switch (scenario.kind) {
+					case 'denied':
+						await view.navigate(page, url);
+						await performLogin(page, scenario.getUser!());
+						await expectRoomAccessDenied(page);
+						break;
+					case 'login':
+						await view.navigate(page, url);
+						await expectLoginPage(page);
+						await performLogin(page, scenario.getUser!());
+						await view.expectShown(page, scenario.getName());
+						break;
+					case 'preauth':
+						await authenticate(page, scenario.getUser!());
+						await view.navigate(page, url);
+						await expectNoLoginPage(page);
+						await view.expectShown(page, scenario.getName());
+						break;
+					case 'anonymous':
+						await view.navigate(page, url);
+						await expectNoLoginPage(page);
+						await view.expectShown(page, scenario.getName());
+						break;
+				}
+			});
+		}
 	};
 
 	// ── Room lobby access ──────────────────────────────────────────────────────
 
 	test.describe('Room lobby access', () => {
-		test('admin user must log in, then reaches the lobby with their name filled and locked', async ({ page }) => {
-			await openLobby(page, room.access.user.url, {
-				login: { userId: adminUser.userId, password: adminUser.password }
-			});
-
-			await expectNameInput(page, { value: adminUser.name, editable: false });
-		});
-
-		test('owner user must log in, then reaches the lobby with their name filled and locked', async ({ page }) => {
-			await openLobby(page, room.access.user.url, {
-				login: { userId: ownerUser.userId, password: ownerUser.password }
-			});
-
-			await expectNameInput(page, { value: ownerUser.name, editable: false });
-		});
-
-		test('member user must log in, then reaches the lobby with their name filled and locked', async ({ page }) => {
-			await openLobby(page, memberUserMember.accessUrl, {
-				login: { userId: memberUser.userId, password: memberUser.password }
-			});
-
-			await expectNameInput(page, { value: memberUser.name, editable: false });
-		});
-
-		test('non-member user is denied access when the room user access is disabled', async ({ page }) => {
-			await page.goto(room.access.user.url, { waitUntil: 'domcontentloaded' });
-			await performLogin(page, { userId: nonMemberUser.userId, password: nonMemberUser.password });
-
-			await expectRoomAccessDenied(page);
-		});
-
-		for (const role of ['moderator', 'speaker'] as const) {
-			test(`anonymous ${role} guest reaches the lobby without login, name empty and editable`, async ({
-				page
-			}) => {
-				await openLobby(page, room.access.anonymous[role].url);
-
-				await expectNoLoginPage(page);
-				await expectNameInput(page, { value: '', editable: true });
-			});
-		}
-
-		test('identified guest reaches the lobby without login, member name filled and not editable', async ({
-			page
-		}) => {
-			await openLobby(page, speakerGuest.accessUrl);
-
-			await expectNoLoginPage(page);
-			await expectNameInput(page, { value: SPEAKER_GUEST_NAME, editable: false });
-		});
-
-		test('authenticated user via anonymous link skips login and keeps the user name', async ({ page }) => {
-			await authenticate(page, adminUser);
-			await openLobby(page, room.access.anonymous.speaker.url);
-
-			await expectNoLoginPage(page);
-			await expectNameInput(page, { value: adminUser.name, editable: false });
-		});
-
-		test('authenticated user via identified guest link skips login and shows the guest name', async ({ page }) => {
-			await authenticate(page, adminUser);
-			await openLobby(page, speakerGuest.accessUrl);
-
-			await expectNoLoginPage(page);
-			await expectNameInput(page, { value: SPEAKER_GUEST_NAME, editable: false });
-		});
-
-		test('member user via a different identified guest link skips login and shows the guest name', async ({
-			page
-		}) => {
-			await authenticate(page, memberUser);
-			await openLobby(page, invitedGuest.accessUrl);
-
-			await expectNoLoginPage(page);
-			await expectNameInput(page, { value: INVITED_GUEST_NAME, editable: false });
-		});
+		runAccessScenarios(lobbyView);
 	});
 
 	// ── Room recordings list access ──────────────────────────────────────────────
 
 	test.describe('Room recordings list access', () => {
-		test('admin user can access the recordings list', async ({ page }) => {
-			await authenticate(page, adminUser);
-			await openRoomRecordings(page, toRoomRecordingsUrl(room.access.user.url));
-
-			await expectRoomRecordingsListShown(page, recording.recordingId);
-		});
-
-		test('owner user can access the recordings list', async ({ page }) => {
-			await authenticate(page, ownerUser);
-			await openRoomRecordings(page, toRoomRecordingsUrl(room.access.user.url));
-
-			await expectRoomRecordingsListShown(page, recording.recordingId);
-		});
-
-		test('member user can access the recordings list', async ({ page }) => {
-			await authenticate(page, memberUser);
-			await openRoomRecordings(page, toRoomRecordingsUrl(memberUserMember.accessUrl));
-
-			await expectRoomRecordingsListShown(page, recording.recordingId);
-		});
-
-		test('anonymous moderator can access the recordings list', async ({ page }) => {
-			await openRoomRecordings(page, toRoomRecordingsUrl(room.access.anonymous.moderator.url));
-
-			await expectRoomRecordingsListShown(page, recording.recordingId);
-		});
-
-		test('anonymous speaker can access the recordings list', async ({ page }) => {
-			await openRoomRecordings(page, toRoomRecordingsUrl(room.access.anonymous.speaker.url));
-
-			await expectRoomRecordingsListShown(page, recording.recordingId);
-		});
+		runAccessScenarios(recordingsView);
 
 		test('anonymous recording link can access the recordings list', async ({ page }) => {
 			await openRoomRecordings(page, room.access.anonymous.recording.url);
@@ -218,22 +251,14 @@ test.describe('Access E2E Tests', () => {
 			await expectRoomRecordingsListShown(page, recording.recordingId);
 		});
 
-		test('identified guest can access the recordings list', async ({ page }) => {
-			await openRoomRecordings(page, toRoomRecordingsUrl(speakerGuest.accessUrl));
-
-			await expectRoomRecordingsListShown(page, recording.recordingId);
-		});
-
 		test('member without canRetrieveRecordings is denied access to the recordings list', async ({ page }) => {
-			const denied = await createReadyMemberUser(room.roomId, {
+			const deniedMember = await createRoomMember(room.roomId, {
 				name: 'No Retrieve Member',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: { canRetrieveRecordings: false }
 			});
-			createdUserIds.push(denied.user.userId);
 
-			await authenticate(page, denied.user);
-			await openRoomRecordings(page, toRoomRecordingsUrl(denied.member.accessUrl));
+			await openRoomRecordings(page, toRoomRecordingsUrl(deniedMember.accessUrl));
 
 			await expectRoomAccessDenied(page);
 		});
@@ -246,18 +271,19 @@ test.describe('Access E2E Tests', () => {
 			});
 			createdRoomIds.push(gatedRoom.roomId);
 
-			await openLobby(page, gatedRoom.access.user.url, {
-				login: { userId: adminUser.userId, password: adminUser.password }
-			});
+			await authenticate(page, adminUser);
 			await openRoomRecordings(page, toRoomRecordingsUrl(gatedRoom.access.anonymous.speaker.url));
 
 			await expectRoomRecordingsListShown(page);
 		});
 	});
 
-	// ── Individual recording access (shared recording URLs) ─────────────────────────
+	// ── Individual recording access ──────────────────────────────────────────────
 
 	test.describe('Individual recording access', () => {
+		runAccessScenarios(individualRecordingView);
+
+		// Own cases: the per-recording shared links (public / private secrets).
 		test('public shared link opens without login', async ({ page }) => {
 			await openRecording(page, publicRecordingUrl);
 
@@ -271,18 +297,18 @@ test.describe('Access E2E Tests', () => {
 			await expectLoginPage(page);
 		});
 
-		test('private shared link opens after login for a non-member user', async ({ page }) => {
-			await openRecording(page, privateRecordingUrl, {
-				login: { userId: nonMemberUser.userId, password: nonMemberUser.password }
-			});
+		test('private shared link opens for a non-member after login', async ({ page }) => {
+			await openRecording(page, privateRecordingUrl);
+			await expectLoginPage(page);
+			await performLogin(page, nonMemberUser);
 
 			await expectRecordingViewShown(page);
 		});
 
-		test('private shared link opens after login for a member user', async ({ page }) => {
-			await openRecording(page, privateRecordingUrl, {
-				login: { userId: memberUser.userId, password: memberUser.password }
-			});
+		test('private shared link opens for a member after login', async ({ page }) => {
+			await openRecording(page, privateRecordingUrl);
+			await expectLoginPage(page);
+			await performLogin(page, memberUser);
 
 			await expectRecordingViewShown(page);
 		});
