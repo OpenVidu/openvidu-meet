@@ -89,7 +89,7 @@ export class RecordingScheduledTasksService {
 			}
 
 			// Extract all rooms ids from the active locks
-			const lockPrefix = lockPattern.replace('*', '');
+			const lockPrefix = lockPattern.replaceAll('*', '');
 			const roomIds = recordingLocks.map((lock) => lock.resources[0].replace(lockPrefix, ''));
 
 			await runConcurrently(
