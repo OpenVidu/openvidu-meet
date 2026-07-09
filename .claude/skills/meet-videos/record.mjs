@@ -83,11 +83,11 @@ const CREATE_ROOM_NAME = 'Product Demo Room';
 // Distinct sample portraits fed into the fake webcam so every meeting tile shows a different
 // realistic person (mirrors meet-screenshots). Order: [0] is the recorded viewer.
 const SAMPLE_ROSTER = [
-	{ file: 'female_doctor_sample.jpg', name: 'Emma' },
-	{ file: 'guy-sample01.jpg', name: 'David' },
-	{ file: 'girl-sample01.jpg', name: 'Sarah' },
-	{ file: 'guy-sample02.jpg', name: 'James' },
-	{ file: 'girl-sample02.jpg', name: 'Zoe' }
+	{ file: 'girl-01.mp4', name: 'Emma' },
+	{ file: 'guy-01.mp4', name: 'David' },
+	{ file: 'girl-02.mp4', name: 'Sarah' },
+	{ file: 'guy-02.mp4', name: 'James' },
+	{ file: 'girl-03.mp4', name: 'Zoe' }
 ];
 const OVERFLOW_NAMES = ['Nina', 'Lucas', 'Mia', 'Omar'];
 function rosterFor(count) {
@@ -108,7 +108,12 @@ const ALL_FLOWS = [
 	// anon: starts logged OUT (it IS the login) — no reused session, no room seeding.
 	{ id: 'login', kind: 'ui', anon: true, domain: 'auth', drive: driveLogin },
 	{ id: 'create-room', kind: 'ui', domain: 'rooms', drive: driveCreateRoom },
-	{ id: 'console-tour', kind: 'ui', domain: 'console', drive: driveConsoleTour }
+	{ id: 'console-tour', kind: 'ui', domain: 'console', drive: driveConsoleTour },
+	// lifecycle: one continuous authed + fake-camera recording (create -> join -> record) that is
+	// split by timestamp into 3 clips. Needs an EMPTY room list for the "create first room" card.
+	// The host (filmed) publishes hostVideo; a guest joins for the record phase with guestVideo.
+	{ id: 'room-lifecycle', kind: 'lifecycle', domain: 'meeting', segments: ['create', 'join', 'record'],
+		hostVideo: 'girl-03.mp4', guestVideo: 'guy-01.mp4', guestName: 'David', drive: driveRoomLifecycle }
 ];
 
 if (has('list')) {
@@ -165,6 +170,37 @@ async function waitForRoomCount(token, n) {
 		await new Promise((r) => setTimeout(r, 250));
 	}
 }
+// Full room (incl. access.anonymous.{moderator,speaker}.url) — used to let a guest join a room the
+// UI created, since the anonymous URLs aren't returned by the list endpoint.
+async function getRoom(token, id) {
+	const res = await fetch(`${API}/rooms/${encodeURIComponent(id)}`, { headers: { Authorization: `Bearer ${token}` } });
+	if (!res.ok) throw new Error(`getRoom(${id}) failed: ${res.status}`);
+	return await res.json();
+}
+async function listRecordings(token) {
+	const res = await fetch(`${API}/recordings?maxItems=100`, { headers: { Authorization: `Bearer ${token}` } });
+	if (!res.ok) return [];
+	return (await res.json()).recordings ?? [];
+}
+async function deleteRecordings(token, ids) {
+	for (const id of ids) {
+		await fetch(`${API}/recordings/${encodeURIComponent(id)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } }).catch(() => {});
+	}
+}
+// Deletes tool-created rooms + recordings (not in the pre-existing snapshots), polling until the
+// slate is clean. Run before AND after each lifecycle theme so light and dark start identical (no
+// leftover room or recording) — the key to coherent split clips across themes.
+async function cleanToolData(token, preRoomIds, preRecIds) {
+	for (let i = 0; i < 40; i++) {
+		const rooms = (await listRooms(token)).filter((r) => !preRoomIds.has(r.roomId));
+		const recs = (await listRecordings(token)).filter((r) => !preRecIds.has(r.recordingId));
+		if (!rooms.length && !recs.length) return;
+		if (rooms.length) await deleteRooms(token, rooms.map((r) => r.roomId));
+		if (recs.length) await deleteRecordings(token, recs.map((r) => r.recordingId));
+		await new Promise((r) => setTimeout(r, 400));
+	}
+	console.warn('  … clean-slate wait timed out; proceeding');
+}
 
 // ---------- Synthetic cursor (injected into every page via addInitScript) ----------
 // Playwright video records the page compositor, not the OS pointer, so we draw our own arrow
@@ -176,12 +212,19 @@ function installCursor() {
 	const ID = '__ov_demo_cursor__';
 	const build = () => {
 		if (!document.body || document.getElementById(ID)) return;
+		// Angular Material dialogs/menus/selects render in the browser TOP LAYER, which paints above
+		// ALL z-index content — so a plain high-z cursor is hidden behind them. We put the cursor (and
+		// the click ripple) in the top layer too via the Popover API, and re-promote the cursor to the
+		// top of the top layer whenever a new overlay opens. z-index is a fallback where popover is
+		// unsupported.
 		const style = document.createElement('style');
 		style.textContent = [
-			'#' + ID + '{position:fixed;left:0;top:0;z-index:2147483647;pointer-events:none;margin-left:-5px;margin-top:-3px;will-change:transform;}',
+			'#' + ID + '{position:fixed;left:0;top:0;inset:auto;margin:0;padding:0;border:0;background:transparent;overflow:visible;width:26px;height:26px;z-index:2147483647;pointer-events:none;will-change:transform;}',
+			'#' + ID + '::backdrop{background:transparent;display:none;}',
 			'#' + ID + ' svg{display:block;filter:drop-shadow(0 2px 3px rgba(0,0,0,.5));transition:transform .09s ease;}',
 			'#' + ID + '.down svg{transform:scale(.8);}',
-			'.__ov_ripple__{position:fixed;z-index:2147483646;pointer-events:none;border-radius:50%;border:2px solid rgba(96,165,250,.95);transform:translate(-50%,-50%);}',
+			'.__ov_ripple__{position:fixed;inset:auto;margin:0;padding:0;background:transparent;z-index:2147483646;pointer-events:none;border-radius:50%;border:2px solid rgba(96,165,250,.95);transform:translate(-50%,-50%);}',
+			'.__ov_ripple__::backdrop{background:transparent;display:none;}',
 			'@keyframes __ov_ripple_kf{from{width:6px;height:6px;opacity:.85;}to{width:56px;height:56px;opacity:0;}}'
 		].join('');
 		(document.head || document.documentElement).appendChild(style);
@@ -189,10 +232,14 @@ function installCursor() {
 		c.id = ID;
 		c.setAttribute('aria-hidden', 'true');
 		c.innerHTML =
-			'<svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">' +
+			'<svg width="26" height="26" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="margin-left:-5px;margin-top:-3px">' +
 			'<path d="M5 3 L5 20 L9.5 15.8 L12.6 22.4 L15.1 21.2 L12 14.9 L18 14.9 Z" fill="#ffffff" stroke="#111827" stroke-width="1.4" stroke-linejoin="round"/></svg>';
 		c.style.transform = 'translate(-100px,-100px)';
+		const canPopover = typeof c.showPopover === 'function';
+		if (canPopover) c.setAttribute('popover', 'manual');
 		document.body.appendChild(c);
+		const promote = () => { if (!canPopover) return; try { c.hidePopover(); } catch (e) {} try { c.showPopover(); } catch (e) {} };
+		promote();
 		const setPos = (x, y) => { c.style.transform = 'translate(' + x + 'px,' + y + 'px)'; };
 		window.addEventListener('mousemove', (e) => setPos(e.clientX, e.clientY), true);
 		window.addEventListener('mousedown', (e) => {
@@ -202,10 +249,25 @@ function installCursor() {
 			r.style.left = e.clientX + 'px';
 			r.style.top = e.clientY + 'px';
 			r.style.animation = '__ov_ripple_kf .5s ease-out forwards';
+			if (canPopover) r.setAttribute('popover', 'manual');
 			document.body.appendChild(r);
-			setTimeout(() => r.remove(), 520);
+			if (canPopover) { try { r.showPopover(); } catch (e) {} }
+			promote(); // keep the arrow above the ripple
+			setTimeout(() => { try { r.remove(); } catch (e) {} }, 520);
 		}, true);
 		window.addEventListener('mouseup', () => c.classList.remove('down'), true);
+		// Re-promote the cursor above any newly-opened overlay (dialog / menu / select panel / native <dialog>).
+		if (canPopover) {
+			const OVSEL = '.cdk-overlay-pane,.cdk-overlay-backdrop,.cdk-overlay-container,mat-dialog-container,.mat-mdc-dialog-container,.mat-mdc-menu-panel,.mat-mdc-select-panel,dialog';
+			let scheduled = false;
+			const schedule = () => { if (scheduled) return; scheduled = true; requestAnimationFrame(() => { scheduled = false; promote(); }); };
+			const mo = new MutationObserver((muts) => {
+				for (const m of muts) for (const n of m.addedNodes) {
+					if (n.nodeType === 1 && (n.matches?.(OVSEL) || n.querySelector?.(OVSEL))) { schedule(); return; }
+				}
+			});
+			mo.observe(document.documentElement, { childList: true, subtree: true });
+		}
 	};
 	if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', build, { once: true });
 	else build();
@@ -322,15 +384,17 @@ async function launchCamBrowser(file) {
 	return chromium.launch({ headless: !HEADED, args });
 }
 // A meeting participant in its own browser+context. record/cursor turn on video capture + the
-// synthetic cursor for the one participant whose view we film.
-async function newParticipant(theme, file, { record = false, cursor = false } = {}) {
+// synthetic cursor for the one participant whose view we film; authed reuses the logged-in session
+// (for flows that act as an admin AND publish a camera, e.g. the room-lifecycle flow).
+async function newParticipant(theme, file, { record = false, cursor = false, authed = false } = {}) {
 	const browser = await launchCamBrowser(file);
 	const context = await browser.newContext({
 		viewport: { width: WIDTH, height: HEIGHT },
 		deviceScaleFactor: SCALE,
 		colorScheme: theme,
 		permissions: ['camera', 'microphone'],
-		...(record ? { recordVideo: { dir: VIDEO_TMP, size: { width: WIDTH, height: HEIGHT } } } : {})
+		...(record ? { recordVideo: { dir: VIDEO_TMP, size: { width: WIDTH, height: HEIGHT } } } : {}),
+		...(authed && storageState ? { storageState } : {})
 	});
 	await context.addInitScript((t) => { try { localStorage.setItem('ovMeet-theme', t); } catch {} }, theme);
 	if (cursor) await context.addInitScript(installCursor);
@@ -475,6 +539,76 @@ async function driveLiveMeeting(page, url, roster) {
 	await page.waitForTimeout(P(1500));
 }
 
+// Room-lifecycle (authed + own camera): create a room from the empty overview, join it publishing
+// the fake camera, then start recording — one continuous take. mark(name) stamps the elapsed time
+// at each phase boundary so the runner can split the take into three clips. ctx.addParticipant()
+// brings a second person into the meeting for the record phase.
+async function driveRoomLifecycle(page, mark, ctx) {
+	const ROOM_NAME = 'Weekly Team Sync';
+	// ----- Phase 1: create the room from the (empty) overview -----
+	await page.goto(`${APP}/overview`, { waitUntil: 'domcontentloaded' });
+	await page.waitForSelector('#nav-list', { state: 'visible', timeout: TIMEOUT });
+	// Prefer the empty-state "create first room" card; fall back to the populated button.
+	const firstCard = page.locator('#create-first-room-button');
+	const createEntry = (await firstCard.isVisible().catch(() => false)) ? '#create-first-room-button' : '#create-room-button';
+	await parkCursor(page);
+	await page.waitForTimeout(P(1300));
+	await clickSelector(page, createEntry); // -> /rooms/new (basic creation)
+	await page.waitForSelector('.room-basic-creation-form input', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(700));
+	await typeText(page, '.room-basic-creation-form input', ROOM_NAME);
+	await page.waitForTimeout(P(500));
+	await clickSelector(page, '#create-room-button'); // creates + auto-redirects into the room
+	await page.waitForURL((u) => u.pathname.includes('/room/'), { timeout: TIMEOUT }).catch(() => {});
+	// The redirect lands on the prejoin (a name lobby may appear first for some roles).
+	await Promise.race([
+		page.waitForSelector('#participant-name-input', { state: 'visible', timeout: TIMEOUT }).catch(() => {}),
+		page.waitForSelector('#join-button', { state: 'visible', timeout: TIMEOUT }).catch(() => {})
+	]);
+	await page.waitForTimeout(P(1000)); // settle on the created-room prejoin
+	mark('create');
+
+	// ----- Phase 2: join the room (publishing the camera) -----
+	const nameInput = page.locator('#participant-name-input');
+	if (await nameInput.isVisible().catch(() => false)) {
+		if (!(await nameInput.inputValue().catch(() => ''))) await typeText(page, '#participant-name-input', 'Admin');
+		await clickSelector(page, '#participant-name-submit');
+	}
+	await page.waitForSelector('#join-button', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(1100)); // device preview on the prejoin
+	await clickSelector(page, '#join-button');
+	await page.waitForSelector('#layout-container', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForSelector('#media-buttons-container', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(2200)); // settle in the meeting, own camera publishing
+	mark('join');
+
+	// ----- Phase 3: a guest joins, then start recording (more options -> Start recording) -----
+	await ctx.addParticipant(); // second participant joins, publishing another mock video
+	await remoteTiles(page, 1).catch(() => {}); // wait for the guest's tile to appear
+	await page.waitForTimeout(P(1600)); // settle the 2-person layout
+	await clickSelector(page, '#more-options-btn');
+	await page.waitForSelector('.mat-mdc-menu-content', { state: 'visible', timeout: TIMEOUT });
+	await clickSelector(page, '#recording-btn'); // "Start recording" — begins recording directly
+	await page.waitForSelector('ov-recording-activity', { state: 'visible', timeout: TIMEOUT }).catch(() => {});
+	await page.waitForTimeout(P(6000)); // linger on the recording state (STARTING -> RECORDING)
+	mark('record');
+}
+
+// Splits a recorded take into clips by [start, duration] windows (seconds), re-encoding each to the
+// output format. Accurate output-seeking (-ss/-t after -i). end=null runs to the end of the take.
+function splitSegments(webm, segments) {
+	for (const seg of segments) {
+		const outPath = `${OUT}/${seg.file}.${EXT}`;
+		const window = seg.end != null ? ['-t', String(Math.max(0.1, seg.end - seg.start))] : [];
+		const args = ['-y', '-i', webm, '-ss', String(Math.max(0, seg.start)), ...window,
+			'-c:v', 'libx264', '-preset', 'veryfast', '-crf', String(CRF), '-pix_fmt', 'yuv420p',
+			'-r', String(FPS), '-vf', 'scale=trunc(iw/2)*2:trunc(ih/2)*2', '-movflags', '+faststart', '-an', outPath];
+		execFileSync('ffmpeg', args, { stdio: 'ignore' });
+		written.push(`${seg.file}.${EXT}`);
+		console.log(`  ✓ ${seg.file}.${EXT}`);
+	}
+}
+
 // ---------- Runners ----------
 const failures = [];
 const written = [];
@@ -577,6 +711,57 @@ async function runLiveFlow(token, flow, theme) {
 	}
 }
 
+// Records the room-lifecycle take (authed host + own fake camera + a guest for the record phase),
+// then splits it into per-segment clips. Cleans tool data before AND after each theme so light and
+// dark start from an identical empty state (no stored rooms or recordings).
+async function runRoomLifecycle(token, flow, theme, preRoomIds, preRecIds) {
+	const seg = (name) => `${flow.domain}/${flow.id}-${name}-${theme}`;
+	const ATTEMPTS = 2;
+	for (let a = 1; a <= ATTEMPTS; a++) {
+		console.log(`[${theme}] ${flow.id} (create → join → record; split into ${flow.segments.length})${a > 1 ? ` — retry ${a}` : ''}`);
+		await cleanToolData(token, preRoomIds, preRecIds); // identical empty start for every theme
+		const rec = await newParticipant(theme, flow.hostVideo, { record: true, cursor: true, authed: true });
+		const video = rec.page.video();
+		const bgBrowsers = [];
+		const marks = {};
+		const ctx = {
+			// Guest joins the room the host just created (found by id-diff), publishing guestVideo.
+			addParticipant: async () => {
+				const created = (await listRooms(token)).find((r) => !preRoomIds.has(r.roomId));
+				if (!created) throw new Error('created room not found for guest join');
+				const full = await getRoom(token, created.roomId);
+				const url = full.access?.anonymous?.moderator?.url || full.access?.anonymous?.speaker?.url;
+				if (!url) throw new Error('no anonymous access url for guest join');
+				const p = await newParticipant(theme, flow.guestVideo);
+				bgBrowsers.push(p.browser);
+				await joinMeeting(p.page, url, { name: flow.guestName });
+			}
+		};
+		try {
+			cursorPos = { x: Math.round(WIDTH / 2), y: Math.round(HEIGHT / 2) };
+			const t0 = Date.now();
+			await flow.drive(rec.page, (name) => { marks[name] = (Date.now() - t0) / 1000; }, ctx);
+			await rec.context.close(); // finalizes the take
+			splitSegments(await video.path(), [
+				{ file: seg('create'), start: 0, end: marks.create },
+				{ file: seg('join'), start: marks.create, end: marks.join },
+				{ file: seg('record'), start: marks.join, end: null }
+			]);
+			try { unlinkSync(await video.path()); } catch {}
+			break;
+		} catch (e) {
+			await rec.context.close().catch(() => {});
+			const msg = String(e.message || e).split('\n')[0];
+			if (a < ATTEMPTS) console.warn(`  … retry ${flow.id}-${theme} (${msg})`);
+			else { failures.push(`${flow.id}-${theme} (${msg})`); console.warn(`  ✗ ${flow.id}-${theme}: ${msg}`); }
+		} finally {
+			await rec.browser.close().catch(() => {});
+			for (const b of bgBrowsers) await b.close().catch(() => {});
+			await cleanToolData(token, preRoomIds, preRecIds); // leave no trace (room + recordings)
+		}
+	}
+}
+
 // ---------- Main ----------
 const token = await apiLogin();
 const preExistingIds = new Set((await listRooms(token)).map((r) => r.roomId));
@@ -586,9 +771,17 @@ console.log(`Output: ${OUT}  |  ${WIDTH}x${HEIGHT}@${SCALE}x  |  ${FORMAT}  |  t
 
 const uiFlows = FLOWS.filter((f) => f.kind === 'ui');
 const liveFlows = FLOWS.filter((f) => f.kind === 'live');
+const lifecycleFlows = FLOWS.filter((f) => f.kind === 'lifecycle');
 const trackedRoomIds = [];
 
-// UI flows: authed ones need seeded data + a single reused UI login; anon flows (login) need neither.
+// A logged-in session is needed by non-anon UI flows and by lifecycle flows. Capture it once —
+// storageState is portable across browsers, including the per-participant fake-camera browsers.
+if (uiFlows.some((f) => !f.anon) || lifecycleFlows.length) {
+	const authBrowser = await chromium.launch({ headless: !HEADED });
+	try { await bootstrapAuth(authBrowser); } finally { await authBrowser.close(); }
+}
+
+// UI flows in a shared browser; seed populated data for the non-anon ones.
 if (uiFlows.length) {
 	const browser = await chromium.launch({ headless: !HEADED });
 	try {
@@ -597,12 +790,20 @@ if (uiFlows.length) {
 			for (const n of names) trackedRoomIds.push((await createRoom(token, n)).roomId);
 			await waitForRoomCount(token, 3);
 			console.log(`Seeded ${names.length} demo room(s): ${names.join(', ')}`);
-			await bootstrapAuth(browser);
 		}
 		for (const flow of uiFlows) for (const theme of THEMES) await runUiFlow(browser, flow, theme);
 	} finally {
 		await browser.close();
 	}
+}
+
+// Lifecycle flows: own fake-camera browser, split output, self-cleaning. Snapshot the current
+// rooms + recordings as the baseline to protect; the flow creates/removes only its own data so
+// every theme starts from an identical empty state. Needs an empty overview for the first-room card.
+if (lifecycleFlows.length) {
+	const preRoomIds = new Set((await listRooms(token)).map((r) => r.roomId));
+	const preRecIds = new Set((await listRecordings(token)).map((r) => r.recordingId));
+	for (const flow of lifecycleFlows) for (const theme of THEMES) await runRoomLifecycle(token, flow, theme, preRoomIds, preRecIds);
 }
 
 // Live flows: each seeds + deletes its own room.

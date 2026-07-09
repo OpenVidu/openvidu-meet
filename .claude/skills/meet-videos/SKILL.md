@@ -47,9 +47,21 @@ Playwright video capture records the page's compositor output, which does **not*
 pointer — a recording of clicks with no visible cursor is useless for a demo. So `installCursor()`
 is injected via `context.addInitScript` and:
 
-- draws an arrow cursor (`#__ov_demo_cursor__`, `pointer-events:none`, max z-index) that tracks
-  real `mousemove` events, and flashes a **ripple** on `mousedown`;
+- draws an arrow cursor (`#__ov_demo_cursor__`, `pointer-events:none`) that tracks real `mousemove`
+  events, and flashes a **ripple** on `mousedown`;
+- renders in the browser **top layer** via the Popover API (`popover="manual"` + `showPopover()`),
+  and a `MutationObserver` **re-promotes** it whenever a CDK overlay opens (see gotcha below);
 - survives Angular SPA navigation (the `<body>` persists) and is re-installed on full page loads.
+
+> **Gotcha — the cursor must be in the TOP LAYER, not just high z-index.** Angular Material
+> dialogs, menus and `mat-select` panels render in the browser **top layer**, which paints above
+> *all* z-index content — so a `z-index:2147483647` cursor is still hidden behind them (invisible
+> exactly when you click a modal/menu/option). The fix: the cursor and the click ripple are
+> `popover="manual"` elements shown with `showPopover()` (top layer). Because the top-layer stack is
+> ordered by promotion time, a `MutationObserver` watching for added `.cdk-overlay-pane` /
+> `mat-dialog-container` / `.mat-mdc-menu-panel` / `.mat-mdc-select-panel` / `dialog` nodes
+> re-promotes the cursor (`hidePopover()`+`showPopover()`) so it stays on top of the just-opened
+> overlay. z-index is kept as a fallback for engines without popover support.
 
 `moveCursor()` drives it with **eased** (`easeInOutQuad`), distance-scaled motion — many small
 `page.mouse.move` steps so the injected cursor follows smoothly. `clickSelector()` glides to an
@@ -74,6 +86,12 @@ Contexts are created with `recordVideo: { dir, size }`; Playwright finalizes the
 
 Live flows put `recordVideo` + the cursor only on the **filmed** participant; background
 participants run plain. `--pace` scales the timing globally if a clip feels too fast/slow.
+
+**Split flows** (`kind:'lifecycle'`) record one continuous take, but the driver calls `mark(name)`
+at each phase boundary to stamp the elapsed time; after the take, `splitSegments()` re-encodes the
+recording into one clip per segment (accurate output-seeking with ffmpeg `-ss`/`-t`). The
+room-lifecycle flow also needs a logged-in session AND its own camera, so it runs in a
+fake-camera browser with the reused `storageState` applied (`newParticipant({ authed: true })`).
 
 ## Live flows & the sample webcam (shared with meet-screenshots)
 
@@ -111,11 +129,14 @@ just that theme (`--themes dark`).
 ## Output naming — by domain + flow
 
 `<out>/<domain>/<flow-id>-<theme>.<ext>` (folder = frontend domain, file = flow + theme; `<ext>`
-follows `--format`). Default `--out` is `./videos`. A default run produces **10 MP4s** (5 flows × 2 themes):
+follows `--format`). Split flows append the segment name: `<flow-id>-<segment>-<theme>.<ext>`.
+Default `--out` is `./videos`. A default run produces **16 MP4s** (5 single-clip flows × 2 themes +
+the 3-segment room-lifecycle flow × 2 themes):
 
 ```
 auth/      login-{light,dark}
 meeting/   live-meeting-{light,dark} · join-meeting-{light,dark}
+meeting/   room-lifecycle-{create,join,record}-{light,dark}   (one take, split into 3 clips)
 rooms/     create-room-{light,dark}
 console/   console-tour-{light,dark}
 ```
@@ -129,6 +150,7 @@ console/   console-tour-{light,dark}
 | `join-meeting` | live (3 ppl) | meeting | Two participants already in the room; the filmed viewer walks the lobby: types a display name → clicks the name submit → device-preview prejoin → clicks **Join** → lands in the populated room. |
 | `create-room` | ui (admin) | rooms | Rooms list → clicks **Create Room** → basic wizard → clears the default "Room" and types "Product Demo Room" → clicks **Create Room**. |
 | `console-tour` | ui (admin) | console | Overview → clicks each side-nav item (Rooms → Recordings → Users → Configuration) → back to Overview, lingering on each screen. Uses 3 seeded demo rooms so lists are populated. |
+| `room-lifecycle` | lifecycle (admin + own camera) | meeting | **One continuous take, split into 3 clips.** create: empty overview → "create first room" card → wizard → name → **Create Room** (auto-redirects to the prejoin). join: prejoin → **Join**, host publishing `hostVideo`. record: a guest joins publishing `guestVideo` (2-person meeting) → more options → **Start recording** → recording active. Needs an empty room list for the first-room card. `cleanToolData()` removes tool-created rooms **and recordings** before/after each theme, so light & dark start from an identical empty state. |
 
 ## Key selectors (verified against the frontend source)
 
