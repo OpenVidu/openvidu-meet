@@ -10,6 +10,9 @@ import { MEET_ROOM_EXTRA_FIELDS, MEET_ROOM_FIELDS, SENSITIVE_ROOM_FIELDS_ENTRIES
 import { MEET_ENV } from '../environment.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
 
+// Path segments that could walk into the prototype chain instead of a data property.
+const UNSAFE_PATH_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype']);
+
 export class MeetRoomHelper {
 	private constructor() {
 		// Prevent instantiation of this utility class
@@ -246,12 +249,18 @@ export class MeetRoomHelper {
 	 * Deletes a property from an object by path (supports top-level and nested fields).
 	 */
 	private static deleteFieldByPath(entity: Record<string, unknown>, path: string): void {
-		if (!path.includes('.')) {
+		const segments = path.split('.');
+
+		// Reject segments that could walk into the prototype chain instead of a data property.
+		if (segments.some((segment) => UNSAFE_PATH_SEGMENTS.has(segment))) {
+			return;
+		}
+
+		if (segments.length === 1) {
 			delete entity[path];
 			return;
 		}
 
-		const segments = path.split('.');
 		const lastSegment = segments.pop();
 		let current: Record<string, unknown> = entity;
 
