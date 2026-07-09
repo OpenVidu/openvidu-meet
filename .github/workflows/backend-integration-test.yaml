@@ -33,10 +33,16 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.event_name != 'workflow_dispatch' }}
 
+permissions:
+  contents: read
+
 jobs:
   test-api:
     name: ${{ matrix.test-name }}
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
+    permissions:
+      contents: read
+      checks: write # required by mikepenz/action-junit-report to publish the test report
     strategy:
       fail-fast: false
       matrix:
@@ -184,6 +190,9 @@ jobs:
 
   test-recordings:
     name: Recordings API Tests (${{ matrix.storage-provider }})
+    permissions:
+      contents: read
+      checks: write # required by mikepenz/action-junit-report to publish the test report
     needs:
       - start-aws-runner-s3
       - start-aws-runner-abs
