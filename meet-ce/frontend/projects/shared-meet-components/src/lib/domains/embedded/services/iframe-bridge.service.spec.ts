@@ -1,4 +1,4 @@
-import { signal, WritableSignal } from '@angular/core';
+import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { EmbeddedCommandName, EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -44,6 +44,7 @@ describe('IframeBridgeService', () => {
 
 		TestBed.configureTestingModule({
 			providers: [
+				provideZonelessChangeDetection(),
 				IframeBridgeService,
 				EmbeddedEventBusService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },

@@ -1,3 +1,4 @@
+import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { OPENVIDU_COMPONENTS_CONFIG } from '../../../meeting/openvidu-components';
@@ -10,7 +11,7 @@ describe('RecordingVideoPlayerComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [RecordingVideoPlayerComponent],
-      providers: [{ provide: OPENVIDU_COMPONENTS_CONFIG, useValue: {} }]
+      providers: [provideZonelessChangeDetection(), { provide: OPENVIDU_COMPONENTS_CONFIG, useValue: {} }]
     })
     .compileComponents();
 

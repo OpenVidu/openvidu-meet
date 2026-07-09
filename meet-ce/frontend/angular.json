@@ -21,7 +21,7 @@
 						"outputPath": "dist/openvidu-meet",
 						"index": "src/index.html",
 						"browser": "src/main.ts",
-						"polyfills": ["zone.js"],
+						"polyfills": [],
 						"tsConfig": "src/tsconfig.app.json",
 						"inlineStyleLanguage": "scss",
 						"stylePreprocessorOptions": {
@@ -128,7 +128,7 @@
 					"builder": "@angular-devkit/build-angular:karma",
 					"options": {
 						"main": "src/test.ts",
-						"polyfills": ["zone.js"],
+						"polyfills": [],
 						"tsConfig": "src/tsconfig.spec.json",
 						"karmaConfig": "src/karma.conf.js",
 						"codeCoverage": true,
@@ -186,7 +186,7 @@
 					"builder": "@angular-builders/custom-webpack:karma",
 					"options": {
 						"tsConfig": "projects/shared-meet-components/tsconfig.spec.json",
-						"polyfills": ["zone.js", "zone.js/testing"],
+						"polyfills": [],
 						"karmaConfig": "./karma.conf.js",
 						"stylePreprocessorOptions": {
 							"includePaths": ["projects/shared-meet-components/styles"]

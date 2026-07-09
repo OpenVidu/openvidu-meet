@@ -1,7 +1,13 @@
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import type { ApplicationConfig } from '@angular/core';
-import { importProvidersFrom, inject, provideAppInitializer, provideZoneChangeDetection } from '@angular/core';
+import {
+	importProvidersFrom,
+	inject,
+	provideAppInitializer,
+	provideBrowserGlobalErrorListeners,
+	provideZonelessChangeDetection
+} from '@angular/core';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { ceRoutes } from '@app/app.routes';
@@ -35,6 +41,8 @@ const ovComponentsconfig: OpenViduComponentsConfig = {
 
 export const appConfig: ApplicationConfig = {
 	providers: [
+		provideZonelessChangeDetection(),
+		provideBrowserGlobalErrorListeners(),
 		provideAppInitializer(() => inject(ThemeService).init()),
 		provideAppInitializer(() => inject(RoomMemberHeaderProviderService).init()),
 		// Important to register the room member error handler before the auth error handler,
@@ -51,7 +59,6 @@ export const appConfig: ApplicationConfig = {
 		provideTranslations(ROOM_MEMBERS_TRANSLATIONS),
 		provideTranslations(SHARED_TRANSLATIONS),
 		{ provide: SmartLayoutService, useExisting: MeetingLayoutService },
-		provideZoneChangeDetection({ eventCoalescing: true }),
 		provideRouter(ceRoutes),
 		provideAnimationsAsync(),
 		provideHttpClient(withInterceptors([httpInterceptor])),

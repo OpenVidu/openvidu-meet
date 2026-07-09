@@ -1,3 +1,4 @@
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { RuntimeConfigService } from './runtime-config.service';
 
@@ -5,7 +6,7 @@ describe('RuntimeConfigService - isIframeMode', () => {
 	let service: RuntimeConfigService;
 
 	beforeEach(() => {
-		TestBed.configureTestingModule({ providers: [RuntimeConfigService] });
+		TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection(), RuntimeConfigService] });
 		service = TestBed.inject(RuntimeConfigService);
 	});
 

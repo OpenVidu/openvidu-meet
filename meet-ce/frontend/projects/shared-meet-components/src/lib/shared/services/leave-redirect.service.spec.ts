@@ -1,3 +1,4 @@
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { LeaveRedirectService } from './leave-redirect.service';
 import { RuntimeConfigService } from './runtime-config.service';
@@ -27,6 +28,7 @@ describe('LeaveRedirectService', () => {
 
 		TestBed.configureTestingModule({
 			providers: [
+				provideZonelessChangeDetection(),
 				LeaveRedirectService,
 				{ provide: RuntimeConfigService, useValue: runtimeConfigStub as unknown as RuntimeConfigService },
 				{ provide: SessionStorageService, useValue: sessionStorage as unknown as SessionStorageService }

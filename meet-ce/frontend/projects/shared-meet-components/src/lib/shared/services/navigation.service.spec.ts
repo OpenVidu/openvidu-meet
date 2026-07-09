@@ -1,3 +1,4 @@
+import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
@@ -49,6 +50,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 
 		TestBed.configureTestingModule({
 			providers: [
+				provideZonelessChangeDetection(),
 				NavigationService,
 				LeaveRedirectService,
 				EmbeddedEventBusService,
