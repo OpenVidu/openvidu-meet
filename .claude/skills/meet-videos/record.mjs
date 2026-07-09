@@ -105,6 +105,15 @@ const DEMO_ROOM_NAMES = ['Sales Sync', 'Engineering Standup', 'Design Review'];
 const ALL_FLOWS = [
 	{ id: 'live-meeting', kind: 'live', domain: 'meeting', roomName: 'Team Standup', count: 4, drive: driveLiveMeeting },
 	{ id: 'join-meeting', kind: 'live', domain: 'meeting', roomName: 'Weekly Sync', count: 3, drive: driveJoinMeeting },
+	// enable-captions: 2-person meeting where the filmed moderator turns ON live captions and the
+	// remote participant "speaks" — captions stream in word-by-word. Live captions are gated by the
+	// backend (MEET_CAPTIONS_ENABLED), so this flow (a) creates the room with captions enabled,
+	// (b) stubs the captions/AI-assistant endpoints on the filmed page so the button enables and
+	// enable() resolves (mirrors the e2e mockCaptionsBackend helper), and (c) injects caption text
+	// straight into MeetingCaptionsService via the dev-build Angular debug API (window.ng) — no real
+	// speech transcription, which the fake tone-audio camera can't produce.
+	{ id: 'enable-captions', kind: 'live', domain: 'meeting', roomName: 'Live Captions Demo', count: 2,
+		roomConfig: { captions: { enabled: true } }, drive: driveEnableCaptions },
 	// anon: starts logged OUT (it IS the login) — no reused session, no room seeding.
 	{ id: 'login', kind: 'ui', anon: true, domain: 'auth', drive: driveLogin },
 	{ id: 'create-room', kind: 'ui', domain: 'rooms', drive: driveCreateRoom },
@@ -142,11 +151,13 @@ async function listRooms(token) {
 	if (!res.ok) throw new Error(`listRooms failed: ${res.status}`);
 	return (await res.json()).rooms ?? [];
 }
-async function createRoom(token, roomName) {
+async function createRoom(token, roomName, config) {
+	const body = { roomName };
+	if (config) body.config = config; // e.g. { captions: { enabled: true } } for the enable-captions flow
 	const res = await fetch(`${API}/rooms`, {
 		method: 'POST',
 		headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-		body: JSON.stringify({ roomName })
+		body: JSON.stringify(body)
 	});
 	if (!res.ok) throw new Error(`createRoom('${roomName}') failed: ${res.status} ${await res.text()}`);
 	return await res.json();
@@ -414,6 +425,77 @@ async function joinMeeting(page, url, { name } = {}) {
 const remoteTiles = (page, n) =>
 	page.waitForFunction((k) => document.querySelectorAll('.OV_stream_video.remote').length >= k, n, { timeout: TIMEOUT });
 
+// ---------- Live captions helpers (enable-captions flow) ----------
+// Live captions are gated by the backend global flag (MEET_CAPTIONS_ENABLED) and an AI captions
+// assistant. This stubs the three internal-API endpoints on the FILMED page so the captions button
+// renders ENABLED (not DISABLED_WITH_WARNING) and enable() resolves without a real AI backend —
+// exactly the seam the e2e captions.helper.ts uses. MUST run before the page navigates (the global
+// captions config is fetched during app bootstrap).
+async function mockCaptionsBackend(page) {
+	await page.route('**/internal-api/*/config/captions', async (route) => {
+		if (route.request().method() !== 'GET') return route.continue();
+		await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ enabled: true }) });
+	});
+	await page.route('**/internal-api/*/ai/assistants', async (route) => {
+		if (route.request().method() !== 'POST') return route.continue();
+		await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ id: 'demo-captions-assistant', status: 'active' }) });
+	});
+	await page.route('**/internal-api/*/ai/assistants/*', async (route) => {
+		if (route.request().method() !== 'DELETE') return route.continue();
+		await route.fulfill({ status: 200, contentType: 'application/json', body: '{}' });
+	});
+}
+
+// The fake camera publishes a tone, not speech, so no real transcription is ever produced. Instead we
+// push caption entries straight into the singleton MeetingCaptionsService's `_captions` signal via
+// the Angular debug API (window.ng, present because the served bundle is a non-optimized development
+// build with unmangled identifiers). The <ov-meeting-captions> footer renders them for real —
+// including the enter/active animations keyed by caption id.
+async function setCaptions(page, captions) {
+	await page.evaluate((caps) => {
+		const ng = window.ng;
+		if (!ng?.getComponent) return false;
+		let svc = null, comp = null;
+		for (const sel of ['ov-meeting-custom-layout', 'ov-meeting']) {
+			const el = document.querySelector(sel);
+			if (!el) continue;
+			const c = ng.getComponent(el);
+			if (c?.captionsService?._captions) { svc = c.captionsService; comp = c; break; }
+		}
+		if (!svc) return false;
+		svc._captions.set(caps);
+		try { ng.applyChanges(comp); } catch (e) {}
+		return true;
+	}, captions);
+}
+const mkCaption = (id, text, isFinal, name, color) => ({
+	id, participantIdentity: name, participantName: name, participantColor: color,
+	text, isFinal, trackId: 'demo-track', timestamp: 0
+});
+// Plays a scripted monologue as if one participant were speaking: each sentence is revealed
+// word-by-word as an interim caption, then finalized, while the previously finalized sentence stays
+// on screen above it (so at most two captions show, oldest on top — the natural reading order).
+async function playCaptionScript(page, sentences, speakerName, color) {
+	let prevFinal = null;
+	for (let s = 0; s < sentences.length; s++) {
+		const id = `cap-${s}`;
+		const words = sentences[s].split(' ');
+		for (let w = 1; w <= words.length; w++) {
+			const caps = [];
+			if (prevFinal) caps.push(mkCaption(prevFinal.id, prevFinal.text, true, speakerName, color));
+			caps.push(mkCaption(id, words.slice(0, w).join(' '), false, speakerName, color));
+			await setCaptions(page, caps);
+			await page.waitForTimeout(P(150));
+		}
+		const finalCaps = [];
+		if (prevFinal) finalCaps.push(mkCaption(prevFinal.id, prevFinal.text, true, speakerName, color));
+		finalCaps.push(mkCaption(id, sentences[s], true, speakerName, color));
+		await setCaptions(page, finalCaps);
+		await page.waitForTimeout(P(1100));
+		prevFinal = { id, text: sentences[s] };
+	}
+}
+
 // ---------- ffmpeg transcode (WebM -> requested format) ----------
 function transcodeVideo(srcWebm, relNoExt) {
 	const outPath = `${OUT}/${relNoExt}.${EXT}`;
@@ -537,6 +619,41 @@ async function driveLiveMeeting(page, url, roster) {
 	await page.waitForTimeout(P(1500));
 	await clickSelector(page, '#participants-panel-btn');
 	await page.waitForTimeout(P(1500));
+}
+
+// Enable-captions (live, 2 ppl): the filmed moderator turns ON live captions from the toolbar, then
+// the remote participant "speaks" — captions stream in word-by-word at the bottom of the screen.
+async function driveEnableCaptions(page, url, roster) {
+	await mockCaptionsBackend(page); // must precede navigation (captions config is fetched on bootstrap)
+	await joinMeeting(page, url, { name: roster[0].name });
+	await remoteTiles(page, 1); // the single remote participant (the "speaker")
+	await parkCursor(page);
+	await page.waitForTimeout(P(1400));
+	// Turn captions on. The captions button is a direct toolbar button for moderators; on a narrow
+	// layout it can live inside the more-options menu, so fall back to that.
+	const captionsBtn = page.locator('#captions-button').first();
+	if (await captionsBtn.isVisible().catch(() => false)) {
+		await clickSelector(page, '#captions-button');
+	} else {
+		await clickSelector(page, '#more-options-btn');
+		await page.waitForSelector('.mat-mdc-menu-content', { state: 'visible', timeout: TIMEOUT });
+		await clickSelector(page, '#captions-button');
+	}
+	await page.waitForSelector('.captions-container', { state: 'visible', timeout: TIMEOUT });
+	await page.waitForTimeout(P(900));
+	// The remote participant speaks; captions are injected into the captions service (see setCaptions).
+	await playCaptionScript(
+		page,
+		[
+			'Hi everyone, thanks for joining the call today.',
+			'I wanted to show you our new live captions feature.',
+			'Everything I say is transcribed here in real time.',
+			'It makes our meetings far more accessible for everyone.'
+		],
+		roster[1].name,
+		'#7cc4ff'
+	);
+	await page.waitForTimeout(P(1600)); // hold on the final caption
 }
 
 // Room-lifecycle (authed + own camera): create a room from the empty overview, join it publishing
@@ -672,7 +789,7 @@ async function runLiveFlow(token, flow, theme) {
 	const ATTEMPTS = 2; // multi-browser joins are timing-sensitive; one retry absorbs races
 	for (let a = 1; a <= ATTEMPTS; a++) {
 		console.log(`[${theme}] ${flow.id} (live, ${flow.count} participants)${a > 1 ? ` — retry ${a}` : ''}`);
-		const room = await createRoom(token, flow.roomName);
+		const room = await createRoom(token, flow.roomName, flow.roomConfig);
 		const url = room.access.anonymous.moderator.url;
 		const bg = [];
 		let rec = null;
