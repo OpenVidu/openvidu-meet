@@ -1,6 +1,6 @@
 {
   "name": "@openvidu-meet/frontend",
-  "version": "3.7.0",
+  "version": "3.8.0",
   "scripts": {
     "clean": "rm -rf node_modules dist test-results .angular",
     "assets:livekit": "node scripts/copy-livekit-assets.mjs",
