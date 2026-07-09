@@ -1,6 +1,7 @@
 name: Backend Integration Tests
 on:
   push:
+    tags-ignore: ['**']
     paths:
       - 'meet-ce/backend/src/**'
       - 'meet-ce/backend/package.json'
@@ -24,6 +25,13 @@ on:
       market-type:
         description: 'AWS EC2 market type'
         default: 'spot'
+
+# Only auto-cancel superseded PR/branch runs. Never cancel on main, nor on
+# workflow_dispatch runs (event_name guard) so AWS/recording runs that spin up
+# EC2 runners always reach their stop-runner cleanup job and don't orphan instances.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' && github.event_name != 'workflow_dispatch' }}
 
 jobs:
   test-api:
@@ -326,7 +334,7 @@ jobs:
       - start-aws-runner-gcs
       - test-recordings
     runs-on: ${{ vars.LABEL_WORKER_SELFHOSTED }}
-    if: ${{ always() }}
+    if: ${{ always() && inputs.use-aws == 'true' }}
     strategy:
       fail-fast: false
       matrix:

@@ -2,12 +2,17 @@ name: Frontend Unit Tests
 
 on:
   push:
+    tags-ignore: ['**']
     paths:
       - 'meet-ce/frontend/**'
       - 'meet.sh'
       - '.github/workflows/frontend-unit-test.yaml'
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   unit-test:

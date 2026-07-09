@@ -2,6 +2,7 @@ name: Frontend E2E Tests
 
 on:
   push:
+    tags-ignore: ['**']
     paths:
       - 'meet-ce/frontend/**'
       - 'meet-ce/backend/**'
@@ -9,6 +10,10 @@ on:
       - '.github/workflows/frontend-e2e-test.yaml'
   pull_request:
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
   e2e-tests:
