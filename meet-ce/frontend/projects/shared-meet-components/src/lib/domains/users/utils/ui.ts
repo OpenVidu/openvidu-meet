@@ -144,13 +144,31 @@ export class UsersUiUtils {
 	}
 
 	private static pickRandomChar(charset: string): string {
-		return charset[Math.floor(Math.random() * charset.length)];
+		return charset[UsersUiUtils.secureRandomInt(charset.length)];
 	}
 
 	private static shuffle(values: string[]): void {
 		for (let i = values.length - 1; i > 0; i--) {
-			const j = Math.floor(Math.random() * (i + 1));
+			const j = UsersUiUtils.secureRandomInt(i + 1);
 			[values[i], values[j]] = [values[j], values[i]];
 		}
+	}
+
+	/**
+	 * Returns a cryptographically secure random integer in the range [0, maxExclusive).
+	 * Uses rejection sampling over crypto.getRandomValues to avoid modulo bias.
+	 */
+	private static secureRandomInt(maxExclusive: number): number {
+		const uint32Range = 0x100000000; // 2^32, number of values a Uint32 can hold
+		const rejectionThreshold = uint32Range - (uint32Range % maxExclusive);
+		const array = new Uint32Array(1);
+		let value: number;
+
+		do {
+			crypto.getRandomValues(array);
+			value = array[0];
+		} while (value >= rejectionThreshold);
+
+		return value % maxExclusive;
 	}
 }
