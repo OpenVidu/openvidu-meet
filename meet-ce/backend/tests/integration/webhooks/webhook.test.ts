@@ -393,4 +393,108 @@ describe('Webhook Integration Tests', () => {
 			});
 		});
 	});
+
+	// Regression guard for the webhook memory/fd leak: the handler MUST always send an
+	// HTTP response. If any branch returns without responding, the LiveKit server keeps
+	// the connection open forever (it has no delivery timeout), which pins the
+	// request/response/socket graph in memory and leaks a file descriptor per webhook.
+	// The bug: the "event does not belong to OpenVidu Meet" branch returned without a
+	// response, so plain LiveKit-API usage (rooms not created through Meet) leaked.
+	describe('Webhook handler always responds (no hung connections)', () => {
+		const createWebhookEvent = (id: string, roomName: string, belongsToMeet: boolean): WebhookEvent =>
+			({
+				id,
+				event: 'room_started',
+				room: {
+					name: roomName,
+					metadata: belongsToMeet ? '{"openviduMeet": true}' : '{}'
+				}
+			}) as unknown as WebhookEvent;
+
+		const createMockRequest = (event: WebhookEvent): Request =>
+			({
+				body: JSON.stringify(event),
+				get: (header: string) => (header === 'Authorization' ? 'Bearer test' : undefined)
+			}) as unknown as Request;
+
+		const createMockResponse = () => ({
+			status: jest.fn().mockReturnThis(),
+			send: jest.fn().mockReturnThis()
+		});
+
+		const getWebhookReceiver = (service: LivekitWebhookService) =>
+			(
+				service as unknown as {
+					webhookReceiver: { receive: (body: string, auth?: string) => Promise<WebhookEvent> };
+				}
+			).webhookReceiver;
+
+		const expectResponseSent = (res: ReturnType<typeof createMockResponse>) => {
+			// A 200 must be sent so the underlying HTTP connection can be released.
+			expect(res.status).toHaveBeenCalledWith(200);
+			expect(res.send).toHaveBeenCalled();
+		};
+
+		afterEach(() => {
+			jest.restoreAllMocks();
+		});
+
+		it('responds 200 when the event does NOT belong to OpenVidu Meet (leak regression)', async () => {
+			const service = container.get(LivekitWebhookService);
+			const event = createWebhookEvent('external-event', 'external-room', false);
+
+			jest.spyOn(getWebhookReceiver(service), 'receive').mockResolvedValue(event);
+			jest.spyOn(service, 'webhookEventBelongsToOpenViduMeet').mockResolvedValue(false);
+			const handleRoomStartedSpy = jest.spyOn(service, 'handleRoomStarted');
+
+			const res = createMockResponse();
+			await lkWebhookHandler(createMockRequest(event), res as unknown as Response);
+
+			expectResponseSent(res);
+			// Events for rooms Meet does not own must be skipped, but still acknowledged.
+			expect(handleRoomStartedSpy).not.toHaveBeenCalled();
+		});
+
+		it('responds 200 when the event belongs to OpenVidu Meet and is processed', async () => {
+			const service = container.get(LivekitWebhookService);
+			const event = createWebhookEvent('meet-event', 'meet-room', true);
+
+			jest.spyOn(getWebhookReceiver(service), 'receive').mockResolvedValue(event);
+			jest.spyOn(service, 'webhookEventBelongsToOpenViduMeet').mockResolvedValue(true);
+			jest.spyOn(service, 'handleRoomStarted').mockResolvedValue();
+
+			const res = createMockResponse();
+			await lkWebhookHandler(createMockRequest(event), res as unknown as Response);
+
+			expectResponseSent(res);
+		});
+
+		it('responds 200 when webhook signature verification fails', async () => {
+			const service = container.get(LivekitWebhookService);
+
+			jest.spyOn(getWebhookReceiver(service), 'receive').mockRejectedValue(new Error('invalid signature'));
+
+			const res = createMockResponse();
+			await lkWebhookHandler(
+				createMockRequest({ id: 'bad-signature' } as unknown as WebhookEvent),
+				res as unknown as Response
+			);
+
+			expectResponseSent(res);
+		});
+
+		it('responds 200 even when event processing throws', async () => {
+			const service = container.get(LivekitWebhookService);
+			const event = createWebhookEvent('failing-event', 'failing-room', true);
+
+			jest.spyOn(getWebhookReceiver(service), 'receive').mockResolvedValue(event);
+			jest.spyOn(service, 'webhookEventBelongsToOpenViduMeet').mockResolvedValue(true);
+			jest.spyOn(service, 'handleRoomStarted').mockRejectedValue(new Error('processing boom'));
+
+			const res = createMockResponse();
+			await lkWebhookHandler(createMockRequest(event), res as unknown as Response);
+
+			expectResponseSent(res);
+		});
+	});
 });
