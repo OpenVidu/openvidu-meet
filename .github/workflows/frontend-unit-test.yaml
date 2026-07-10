@@ -2,6 +2,7 @@ name: Frontend Unit Tests
 
 on:
   push:
+    branches: ['**']
     tags-ignore: ['**']
     paths:
       - 'meet-ce/frontend/**'

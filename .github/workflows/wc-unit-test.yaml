@@ -1,6 +1,7 @@
 name: WebComponent Unit Tests
 on:
   push:
+    branches: ['**']
     tags-ignore: ['**']
   pull_request:
   workflow_dispatch:

@@ -2,6 +2,7 @@ name: Frontend E2E Tests
 
 on:
   push:
+    branches: ['**']
     tags-ignore: ['**']
     paths:
       - 'meet-ce/frontend/**'
