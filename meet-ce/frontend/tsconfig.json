@@ -2,6 +2,9 @@
 	"compileOnSave": false,
 	"compilerOptions": {
 		"baseUrl": "./",
+		// TypeScript 6.0 deprecates `baseUrl` (removed in 7.0); silence the deprecation
+		// while the `paths` mappings above still rely on it. See https://aka.ms/ts6
+		"ignoreDeprecations": "6.0",
 		"moduleResolution": "bundler",
 		"emitDecoratorMetadata": false,
 		"resolveJsonModule": true,

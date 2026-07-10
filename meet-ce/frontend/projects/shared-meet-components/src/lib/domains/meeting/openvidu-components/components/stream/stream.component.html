@@ -22,7 +22,12 @@
 				<div class="participant-name-container">
 					<span id="participant-name">{{ stream.participant.name }}</span>
 					@if (stream.isScreenStream) {
-						<span class="participant-screen-label"> ({{ (stream.participant.isLocal ? 'STREAM.YOUR_SCREEN_LABEL' : 'STREAM.SCREEN_LABEL') | translate }})</span>
+						<span class="participant-screen-label">
+							({{
+								(stream.participant.isLocal ? 'STREAM.YOUR_SCREEN_LABEL' : 'STREAM.SCREEN_LABEL')
+									| translate
+							}})</span
+						>
 					}
 				</div>
 			</div>
@@ -44,7 +49,7 @@
 		}
 
 		<ov-video-element
-			[videoTrack]="stream.videoTrack?.track"
+			[videoTrack]="$safeNavigationMigration(stream.videoTrack?.track)"
 			[isLocal]="stream.participant.isLocal"
 			[avatar]="avatarView()"
 			[zoomState]="stream.zoom"

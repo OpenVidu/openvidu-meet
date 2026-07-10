@@ -14,7 +14,11 @@
 			<!-- Room Field -->
 			<mat-form-field appearance="outline" class="form-field">
 				<mat-label>{{ 'ROOMS.WIZARD.DETAILS.ROOM_NAME' | translate }}</mat-label>
-				<input matInput formControlName="roomName" [placeholder]="'ROOMS.WIZARD.DETAILS.ROOM_NAME_PLACEHOLDER' | translate" />
+				<input
+					matInput
+					formControlName="roomName"
+					[placeholder]="'ROOMS.WIZARD.DETAILS.ROOM_NAME_PLACEHOLDER' | translate"
+				/>
 				<mat-icon matSuffix class="ov-settings-icon">label</mat-icon>
 				<mat-hint>{{ 'ROOMS.WIZARD.DETAILS.ROOM_NAME_HINT' | translate }}</mat-hint>
 				@if (roomDetailsForm.get('roomName')?.hasError('maxlength')) {
@@ -40,7 +44,7 @@
 						matSuffix
 						mat-icon-button
 						type="button"
-						[disabled]="roomDetailsForm.get('autoDeletionDate')?.disabled"
+						[disabled]="$safeNavigationMigration(roomDetailsForm.get('autoDeletionDate')?.disabled)"
 						(click)="clearDeletionDate()"
 						[matTooltip]="'ROOMS.WIZARD.DETAILS.CLEAR_DATE_SELECTION' | translate"
 						class="clear-date-button"
@@ -91,7 +95,10 @@
 					@if (!roomDetailsForm.hasError('minFutureDateTime')) {
 						<div class="time-hint">
 							<mat-icon class="hint-icon material-symbols-outlined material-icons">auto_delete</mat-icon>
-							<span>{{ 'ROOMS.WIZARD.DETAILS.DELETED_AT_PREFIX' | translate }}{{ getFormattedDateTime() }}</span>
+							<span
+								>{{ 'ROOMS.WIZARD.DETAILS.DELETED_AT_PREFIX' | translate
+								}}{{ getFormattedDateTime() }}</span
+							>
 						</div>
 					} @else {
 						<mat-error>{{ 'ROOMS.WIZARD.DETAILS.MIN_FUTURE_DATETIME_ERROR' | translate }}</mat-error>
@@ -100,12 +107,18 @@
 					<!-- Auto-deletion Policies Section -->
 					<div class="auto-deletion-policies">
 						<h4 class="policies-title">
-							<mat-icon class="policies-icon">policy</mat-icon>{{ 'ROOMS.WIZARD.DETAILS.AUTO_DELETION_POLICIES' | translate }}</h4>
-						<p class="policies-description">{{ 'ROOMS.WIZARD.DETAILS.AUTO_DELETION_POLICIES_DESC' | translate }}</p>
+							<mat-icon class="policies-icon">policy</mat-icon
+							>{{ 'ROOMS.WIZARD.DETAILS.AUTO_DELETION_POLICIES' | translate }}
+						</h4>
+						<p class="policies-description">
+							{{ 'ROOMS.WIZARD.DETAILS.AUTO_DELETION_POLICIES_DESC' | translate }}
+						</p>
 
 						<div class="policies-row">
 							<mat-form-field appearance="outline" class="policy-field">
-								<mat-label>{{ 'ROOMS.WIZARD.DETAILS.WITH_ACTIVE_MEETING_POLICY' | translate }}</mat-label>
+								<mat-label>{{
+									'ROOMS.WIZARD.DETAILS.WITH_ACTIVE_MEETING_POLICY' | translate
+								}}</mat-label>
 								<mat-select formControlName="autoDeletionPolicyWithMeeting">
 									@for (option of meetingPolicyOptions; track option.value) {
 										<mat-option [value]="option.value">{{ option.label | translate }}</mat-option>

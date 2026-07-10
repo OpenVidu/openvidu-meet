@@ -20,7 +20,9 @@
 		<div class="item-menu" [class.compact]="isCompactView()" [class.icons-only]="shouldHideMenuText()">
 			<mat-selection-list
 				#optionList
-				(selectionChange)="onSelectionChanged(optionList.selectedOptions.selected[0]?.value)"
+				(selectionChange)="
+					onSelectionChanged($safeNavigationMigration(optionList.selectedOptions.selected[0]?.value))
+				"
 				[multiple]="false"
 				[hideSingleSelectionIndicator]="true"
 				[disableRipple]="true"

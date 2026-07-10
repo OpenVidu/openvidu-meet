@@ -1,5 +1,5 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
-import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi, withXhr } from '@angular/common/http';
 import { EnvironmentProviders, ModuleWithProviders, NgModule, Provider } from '@angular/core';
 
 import { CdkOverlayContainer } from './config/custom-cdk-overlay';
@@ -51,7 +51,7 @@ export class OpenViduComponentsModule {
 			ViewportService,
 			E2eeService,
 			provideTranslations(MEETING_TRANSLATIONS),
-			provideHttpClient(withInterceptorsFromDi())
+			provideHttpClient(withXhr(), withInterceptorsFromDi())
 		];
 
 		return {

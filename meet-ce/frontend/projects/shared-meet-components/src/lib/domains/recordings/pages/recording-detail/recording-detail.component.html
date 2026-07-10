@@ -135,7 +135,9 @@
 						<mat-icon class="stat-icon">storage</mat-icon>
 						<div class="stat-body">
 							<p class="stat-label">{{ 'RECORDINGS.DETAIL.FILE_SIZE' | translate }}</p>
-							<p class="stat-value">{{ RecordingUiUtils.formatFileSize(recording()?.size) }}</p>
+							<p class="stat-value">
+								{{ RecordingUiUtils.formatFileSize($safeNavigationMigration(recording()?.size)) }}
+							</p>
 						</div>
 					</div>
 				</div>
@@ -205,52 +207,86 @@
 										<div class="encoding-group">
 											<p class="info-label">{{ 'RECORDINGS.DETAIL.VIDEO' | translate }}</p>
 											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.RESOLUTION' | translate }}</span>
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.RESOLUTION' | translate
+												}}</span>
 												<span class="encoding-kv-value monospace"
 													>{{ options.video.width }}x{{ options.video.height }}</span
 												>
 											</p>
 											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.FRAMERATE' | translate }}</span>
-												<span class="encoding-kv-value">{{ options.video.framerate }} {{ 'RECORDINGS.DETAIL.UNIT_FPS' | translate }}</span>
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.FRAMERATE' | translate
+												}}</span>
+												<span class="encoding-kv-value"
+													>{{ options.video.framerate }}
+													{{ 'RECORDINGS.DETAIL.UNIT_FPS' | translate }}</span
+												>
 											</p>
 											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.CODEC' | translate }}</span>
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.CODEC' | translate
+												}}</span>
 												<span class="encoding-kv-value monospace">{{
 													options.video.codec
 												}}</span>
 											</p>
 											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.BITRATE' | translate }}</span>
-												<span class="encoding-kv-value">{{ options.video.bitrate }} {{ 'RECORDINGS.DETAIL.UNIT_KBPS' | translate }}</span>
-											</p>
-											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.KEYFRAME' | translate }}</span>
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.BITRATE' | translate
+												}}</span>
 												<span class="encoding-kv-value"
-													>{{ options.video.keyFrameInterval }} {{ 'RECORDINGS.DETAIL.UNIT_SECONDS' | translate }}</span
+													>{{ options.video.bitrate }}
+													{{ 'RECORDINGS.DETAIL.UNIT_KBPS' | translate }}</span
 												>
 											</p>
 											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.DEPTH' | translate }}</span>
-												<span class="encoding-kv-value">{{ options.video.depth }} {{ 'RECORDINGS.DETAIL.UNIT_BIT' | translate }}</span>
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.KEYFRAME' | translate
+												}}</span>
+												<span class="encoding-kv-value"
+													>{{ options.video.keyFrameInterval }}
+													{{ 'RECORDINGS.DETAIL.UNIT_SECONDS' | translate }}</span
+												>
+											</p>
+											<p class="info-value">
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.DEPTH' | translate
+												}}</span>
+												<span class="encoding-kv-value"
+													>{{ options.video.depth }}
+													{{ 'RECORDINGS.DETAIL.UNIT_BIT' | translate }}</span
+												>
 											</p>
 										</div>
 
 										<div class="encoding-group">
 											<p class="info-label">{{ 'RECORDINGS.DETAIL.AUDIO' | translate }}</p>
 											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.CODEC' | translate }}</span>
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.CODEC' | translate
+												}}</span>
 												<span class="encoding-kv-value monospace">{{
 													options.audio.codec
 												}}</span>
 											</p>
 											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.BITRATE' | translate }}</span>
-												<span class="encoding-kv-value">{{ options.audio.bitrate }} {{ 'RECORDINGS.DETAIL.UNIT_KBPS' | translate }}</span>
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.BITRATE' | translate
+												}}</span>
+												<span class="encoding-kv-value"
+													>{{ options.audio.bitrate }}
+													{{ 'RECORDINGS.DETAIL.UNIT_KBPS' | translate }}</span
+												>
 											</p>
 											<p class="info-value">
-												<span class="encoding-kv-key">{{ 'RECORDINGS.DETAIL.FREQUENCY' | translate }}</span>
-												<span class="encoding-kv-value">{{ options.audio.frequency }} {{ 'RECORDINGS.DETAIL.UNIT_HZ' | translate }}</span>
+												<span class="encoding-kv-key">{{
+													'RECORDINGS.DETAIL.FREQUENCY' | translate
+												}}</span>
+												<span class="encoding-kv-value"
+													>{{ options.audio.frequency }}
+													{{ 'RECORDINGS.DETAIL.UNIT_HZ' | translate }}</span
+												>
 											</p>
 										</div>
 									</div>

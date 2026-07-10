@@ -9,5 +9,13 @@
 		   "jasmine" types resolve (the inherited typeRoots only covers frontend). */
 		"typeRoots": ["../../node_modules/@types", "../../../../node_modules/@types"]
 	},
-	"include": ["**/*.spec.ts", "**/*.d.ts"]
+	"include": ["**/*.spec.ts", "**/*.d.ts"],
+	"angularCompilerOptions": {
+		"extendedDiagnostics": {
+			"checks": {
+				"nullishCoalescingNotNullable": "suppress",
+				"optionalChainNotNullable": "suppress"
+			}
+		}
+	}
 }

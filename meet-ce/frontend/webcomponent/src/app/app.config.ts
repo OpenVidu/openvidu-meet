@@ -1,5 +1,5 @@
 import { OverlayContainer } from '@angular/cdk/overlay';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import {
 	ApplicationConfig,
 	importProvidersFrom,
@@ -48,7 +48,7 @@ export const appConfig: ApplicationConfig = {
 		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
 		provideAppInitializer(() => inject(AuthHeaderProviderService).init()),
 		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
-		provideHttpClient(withInterceptors([httpInterceptor])),
+		provideHttpClient(withXhr(), withInterceptors([httpInterceptor])),
 		//TODO: Refactor .forRoot() module in openvidu-components to avoid the need to import the entire module here just to set the config.
 		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsConfig)),
 		provideTranslations(RECORDINGS_TRANSLATIONS),

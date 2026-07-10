@@ -32,7 +32,13 @@
 								<div class="loading-header">
 									<div class="loading-title">
 										<mat-icon class="ov-room-icon loading-icon">video_chat</mat-icon>
-										<h2>{{ editMode() ? ('ROOMS.WIZARD.UPDATING_ROOM' | translate) : ('ROOMS.WIZARD.CREATING_ROOM' | translate) }}</h2>
+										<h2>
+											{{
+												editMode()
+													? ('ROOMS.WIZARD.UPDATING_ROOM' | translate)
+													: ('ROOMS.WIZARD.CREATING_ROOM' | translate)
+											}}
+										</h2>
 									</div>
 									<p class="loading-subtitle">
 										{{
@@ -56,7 +62,7 @@
 							/>
 						} @else {
 							<!-- Room Wizard Steps -->
-							@switch (currentStep()?.id) {
+							@switch ($safeNavigationMigration(currentStep()?.id)) {
 								@case (WizardStepId.ROOM_DETAILS) {
 									<ov-room-details />
 								}

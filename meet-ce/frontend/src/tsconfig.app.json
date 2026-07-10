@@ -6,5 +6,13 @@
 	},
 	"files": ["main.ts"],
 	"include": ["src/**/*.d.ts"],
-	"exclude": ["**/*.mock.ts", "**/*.spec.ts"]
+	"exclude": ["**/*.mock.ts", "**/*.spec.ts"],
+	"angularCompilerOptions": {
+		"extendedDiagnostics": {
+			"checks": {
+				"nullishCoalescingNotNullable": "suppress",
+				"optionalChainNotNullable": "suppress"
+			}
+		}
+	}
 }

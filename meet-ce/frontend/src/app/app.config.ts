@@ -1,5 +1,5 @@
 import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import type { ApplicationConfig } from '@angular/core';
 import {
 	importProvidersFrom,
@@ -61,7 +61,7 @@ export const appConfig: ApplicationConfig = {
 		{ provide: SmartLayoutService, useExisting: MeetingLayoutService },
 		provideRouter(ceRoutes),
 		provideAnimationsAsync(),
-		provideHttpClient(withInterceptors([httpInterceptor])),
+		provideHttpClient(withXhr(), withInterceptors([httpInterceptor])),
 		{
 			provide: STEPPER_GLOBAL_OPTIONS,
 			useValue: { showError: true } // Show error messages in stepper

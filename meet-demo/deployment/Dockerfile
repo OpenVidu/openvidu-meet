@@ -1,4 +1,4 @@
-FROM node:24.13.1-alpine
+FROM node:24.15.0-alpine
 
 # Install tzdata package for timezone data
 RUN apk add --no-cache tzdata
