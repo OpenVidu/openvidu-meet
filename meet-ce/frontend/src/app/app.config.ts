@@ -2,7 +2,6 @@ import { STEPPER_GLOBAL_OPTIONS } from '@angular/cdk/stepper';
 import { provideHttpClient, withInterceptors, withXhr } from '@angular/common/http';
 import type { ApplicationConfig } from '@angular/core';
 import {
-	importProvidersFrom,
 	inject,
 	provideAppInitializer,
 	provideBrowserGlobalErrorListeners,
@@ -21,7 +20,7 @@ import {
 	CustomParticipantModel,
 	httpInterceptor,
 	MeetingLayoutService,
-	OpenViduComponentsModule,
+	provideOpenViduComponents,
 	provideTranslations,
 	RECORDINGS_TRANSLATIONS,
 	ROOM_MEMBERS_TRANSLATIONS,
@@ -50,7 +49,7 @@ export const appConfig: ApplicationConfig = {
 		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
 		provideAppInitializer(() => inject(AuthHeaderProviderService).init()),
 		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
-		importProvidersFrom(OpenViduComponentsModule.forRoot(ovComponentsconfig)),
+		provideOpenViduComponents(ovComponentsconfig),
 		provideTranslations(CONSOLE_TRANSLATIONS),
 		provideTranslations(ROOMS_TRANSLATIONS),
 		provideTranslations(USERS_TRANSLATIONS),
