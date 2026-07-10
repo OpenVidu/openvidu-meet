@@ -23,7 +23,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 import { ParticipantStream } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
-import { GlobalConfigService } from '../../services/config/global-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -47,7 +46,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly layoutService = inject(SmartLayoutService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly globalService = inject(GlobalConfigService);
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
 	private readonly destroyRef = inject(DestroyRef);
@@ -372,10 +370,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.localParticipantDrags().forEach((drag) =>
 			drag.released.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(onRelease)
 		);
-
-		if (!this.globalService.isProduction()) {
-			this.installDevDragHooks(container);
-		}
 	}
 
 	// ── Private: drag helpers ─────────────────────────────────────────────────────
@@ -457,21 +451,5 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		if (!transformStr || transformStr === 'none') return this.ZERO_DRAG_POSITION;
 		const { e, f } = new DOMMatrix(transformStr);
 		return { x: e, y: f };
-	}
-
-	// ── Private: dev-only E2E test hooks ─────────────────────────────────────────
-
-	private installDevDragHooks(container: HTMLElement): void {
-		document.addEventListener('webcomponentTestingEndedDragAndDropEvent', () => {
-			if (!this.panelService.isPanelOpened()) return;
-			const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
-			if (!el) return;
-			const { x, width } = el.getBoundingClientRect();
-			this.videoIsAtRight = x !== 0 && x + width >= container.getBoundingClientRect().width;
-		});
-
-		document.addEventListener('webcomponentTestingEndedDragAndDropRightEvent', (event: any) => {
-			this.setDragPosition(event.detail as { x: number; y: number });
-		});
 	}
 }
