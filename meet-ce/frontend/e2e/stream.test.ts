@@ -435,23 +435,26 @@ test.describe('Stream E2E Tests', () => {
 
 			// Hover and click float
 			await floatStream(page);
-			await page.waitForTimeout(1000);
 
 			// Verify stream is floating
 			await expect(localContainer).toHaveClass(/OV_floating/);
-			const floatingBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
-			expect(floatingBox).not.toBeNull();
 
-			// Video should be positioned at the bottom-right corner of the layout
-			const layoutBox = await getElementBoundingBox(page, '#layout');
-			expect(layoutBox).not.toBeNull();
-			// Flush to the right edge (within the 5px margin) and the bottom, not the left.
-			expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 5, -1);
-			expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
-			expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
-			// Floats at the minimum allowed size (~160px wide).
-			expect(floatingBox!.width).toBeCloseTo(160, -1);
-			expect(floatingBox!.height).toBeGreaterThan(0);
+			// The bottom-right placement runs asynchronously (rAF + a 150ms re-place after the
+			// 0.1s resize transition, plus layout reflow), so RETRY the position assertions until
+			// they settle instead of measuring once after a fixed delay (which flaked under load).
+			await expect(async () => {
+				const floatingBox = await getElementBoundingBox(page, '.local_participant .OV_stream_video.local');
+				const layoutBox = await getElementBoundingBox(page, '#layout');
+				expect(floatingBox).not.toBeNull();
+				expect(layoutBox).not.toBeNull();
+				// Flush to the right edge (within the 5px margin) and the bottom, not the left.
+				expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 5, -1);
+				expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
+				expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
+				// Floats at the minimum allowed size (~160px wide).
+				expect(floatingBox!.width).toBeCloseTo(160, -1);
+				expect(floatingBox!.height).toBeGreaterThan(0);
+			}).toPass({ timeout: 8_000, intervals: [200, 300, 500, 1000] });
 
 			await page.close();
 		});
@@ -762,15 +765,19 @@ test.describe('Stream E2E Tests', () => {
 				// Local video should have been auto-floated and placed at the bottom-right
 				const localContainer = pageA.locator('.local_participant:has(.OV_stream_video.local)').first();
 				await expect(localContainer).toHaveClass(/OV_floating/, { timeout: 5_000 });
-				await pageA.waitForTimeout(500);
 
-				const floatingBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
-				const layoutBox = await getElementBoundingBox(pageA, '#layout');
-				expect(floatingBox).not.toBeNull();
-				expect(layoutBox).not.toBeNull();
-				expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 5, -1);
-				expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
-				expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
+				// The bottom-right placement runs asynchronously (rAF + a 150ms re-place after the
+				// resize transition, plus layout reflow), so RETRY the position assertions until they
+				// settle instead of measuring once after a fixed delay (which flaked under load).
+				await expect(async () => {
+					const floatingBox = await getElementBoundingBox(pageA, '.local_participant .OV_stream_video.local');
+					const layoutBox = await getElementBoundingBox(pageA, '#layout');
+					expect(floatingBox).not.toBeNull();
+					expect(layoutBox).not.toBeNull();
+					expect(floatingBox!.x + floatingBox!.width).toBeCloseTo(layoutBox!.x + layoutBox!.width - 5, -1);
+					expect(floatingBox!.x).toBeGreaterThan(layoutBox!.x + 100);
+					expect(floatingBox!.y + floatingBox!.height).toBeCloseTo(layoutBox!.y + layoutBox!.height, -1);
+				}).toPass({ timeout: 8_000, intervals: [200, 300, 500, 1000] });
 			} finally {
 				await removeAllParticipants();
 			}
