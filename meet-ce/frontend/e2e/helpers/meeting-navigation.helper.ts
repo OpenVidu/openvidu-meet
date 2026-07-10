@@ -3,6 +3,15 @@ import { performLogin, type LoginOptions } from './auth.helper';
 import { ensurePrejoinAudioState, ensurePrejoinVideoState } from './media-controls.helper';
 import { click } from './ui-utils.helper';
 
+/**
+ * Time allowed for the app to bootstrap and present the lobby after navigation.
+ * Generous on purpose: when a test joins several participants they all boot the app
+ * in parallel, and the resulting resource spike can slow a cold Angular bootstrap.
+ * This gates on "the lobby is shown", distinct from in-app interaction waits which
+ * stay tight to keep catching real regressions.
+ */
+const LOBBY_BOOT_TIMEOUT = 30_000;
+
 // ─── Internal lobby / prejoin steps ─────────────────────────────────────────
 
 /**
@@ -12,8 +21,8 @@ import { click } from './ui-utils.helper';
 const completeLobby = async (page: Page, options?: { name?: string; e2eeKey?: string }): Promise<void> => {
 	const nameSubmit = page.locator('#participant-name-submit');
 	const nameInput = page.locator('#participant-name-input');
-	await expect(nameSubmit).toBeVisible({ timeout: 10_000 });
-	await expect(nameInput).toBeVisible({ timeout: 10_000 });
+	await expect(nameSubmit).toBeVisible({ timeout: LOBBY_BOOT_TIMEOUT });
+	await expect(nameInput).toBeVisible({ timeout: LOBBY_BOOT_TIMEOUT });
 
 	if (options?.name && (await nameInput.isEditable())) {
 		await nameInput.fill(options.name);
@@ -123,7 +132,7 @@ export const openLobby = async (
 	accessUrl: string,
 	options?: { timeoutMs?: number; login?: LoginOptions; checkNameInput?: boolean }
 ): Promise<void> => {
-	const timeoutMs = options?.timeoutMs ?? 15_000;
+	const timeoutMs = options?.timeoutMs ?? LOBBY_BOOT_TIMEOUT;
 	const checkNameInput = options?.checkNameInput ?? true;
 
 	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });

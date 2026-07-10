@@ -50,7 +50,11 @@ const commonArgs = [
 export default defineConfig({
 	tsconfig: './tsconfig.test.json',
 	fullyParallel: false,
-	retries: 0,
+	// These specs drive real browsers + LiveKit + fake media. When a test joins several
+	// participants they all boot the app in parallel, and the resulting resource spike can
+	// push a cold Angular bootstrap past the lobby wait. That flakiness is environmental
+	// (failures recover 100% in isolation), so retry it instead of failing the run.
+	retries: isCI ? 2 : 0,
 	workers: 1,
 	reporter: [['list'], ['json', { outputFile: 'test-results/results.json' }]],
 	outputDir: 'test-results/output',
