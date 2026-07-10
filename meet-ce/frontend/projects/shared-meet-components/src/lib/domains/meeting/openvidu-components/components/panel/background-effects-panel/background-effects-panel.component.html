@@ -13,7 +13,7 @@
 		</button>
 	}
 
-	@if (!isVirtualBackgroundSupported()) {
+	@if (isSupportDetected() && !isVirtualBackgroundSupported()) {
 		<div class="not-supported-message">
 			<p class="warning-title">{{ 'PANEL.BACKGROUND.NOT_SUPPORTED' | translate }}</p>
 			<p class="warning-description">{{ 'PANEL.BACKGROUND.NOT_SUPPORTED_DESCRIPTION' | translate }}</p>

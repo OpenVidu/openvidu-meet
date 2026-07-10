@@ -56,7 +56,17 @@ export class BackgroundEffectsPanelComponent implements OnInit {
 		this.backgroundService.isVirtualBackgroundSupported()
 	);
 
+	/**
+	 * Whether background-processor support detection has finished. Until it has, the panel
+	 * must not show the "not supported" message (the processors module is still loading).
+	 */
+	readonly isSupportDetected: Signal<boolean> = this.backgroundService.isSupportDetected;
+
 	ngOnInit(): void {
+		// Opening the panel is the on-demand trigger to lazily load the background-processors
+		// module (MediaPipe) and detect support.
+		void this.backgroundService.ensureBackgroundSupportReady();
+
 		this.backgrounds = this.backgroundService.getBackgrounds();
 		this.noEffectAndBlurredBackground = this.backgrounds.filter((f) => f.type === EffectType.BLUR || f.type === EffectType.NONE);
 

@@ -216,7 +216,9 @@ export const closeRoomBackgroundsPanel = async (page: Page): Promise<void> => {
 /**
  * Applies a background effect by its id
  */
-export const applyBackgroundEffect = async (page: Page, effectId: string, timeoutMs = 10_000): Promise<void> => {
+// The FIRST background applied in a session lazily loads the @livekit/track-processors +
+// MediaPipe chunk and initialises the WASM runtime, so allow extra time for that one-off cost.
+export const applyBackgroundEffect = async (page: Page, effectId: string, timeoutMs = 15_000): Promise<void> => {
 	await expect(page.locator('.OV_media-element.camera-source')).toBeVisible({ timeout: timeoutMs });
 	await page.locator(`#effect-${effectId}`).click();
 	// Wait until the async VB processor finishes and marks this effect active.

@@ -1,9 +1,6 @@
-import { effect, inject, Injectable, signal, Signal } from '@angular/core';
-import {
-	BackgroundProcessor,
+import { inject, Injectable, signal, Signal } from '@angular/core';
+import type {
 	BackgroundProcessorWrapper,
-	supportsBackgroundProcessors,
-	supportsModernBackgroundProcessors,
 	SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
 import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
@@ -21,14 +18,22 @@ const SELFIE_SEGMENTER_GENERAL = 'assets/mediapipe/selfie_segmenter.tflite';
 // Meet server instead of the default jsdelivr CDN (offline-capable, no 3rd party).
 const MEDIAPIPE_WASM_PATH = 'assets/mediapipe/wasm';
 
+/** The `@livekit/track-processors` module, loaded lazily via dynamic import. */
+type TrackProcessorsModule = typeof import('@livekit/track-processors');
+
 /**
  * Manages the lifecycle of the LiveKit background video track processor.
  *
  * Responsibilities:
- * - Initializing the BackgroundProcessor at startup (modern browsers) or on-demand (Firefox)
- * - Attaching the processor to new video tracks
- * - Switching background modes (blur / virtual background / disabled)
- * - Tracking GPU / processor support state
+ * - Lazily loading `@livekit/track-processors` (which bundles the heavy MediaPipe /
+ *   tasks-vision runtime) only when a background effect is actually needed
+ * - Detecting background-processor support on demand
+ * - Attaching the processor to video tracks and switching background modes
+ *
+ * `@livekit/track-processors` (and its MediaPipe dependency, ~1.3 MB) is imported with a
+ * dynamic `import()` rather than statically, so it lands in its own chunk that is fetched
+ * only when the user opens the background-effects panel or restores a saved background —
+ * not on every meeting join, and never for participants who don't use virtual backgrounds.
  *
  * This service has no dependency on OpenViduService, keeping the processing concern
  * isolated and ready to be extended alongside a future AudioTrackProcessorService.
@@ -41,13 +46,27 @@ const MEDIAPIPE_WASM_PATH = 'assets/mediapipe/wasm';
 export class VideoTrackProcessorService {
 	private backgroundProcessor?: BackgroundProcessorWrapper;
 
+	/** Cached `@livekit/track-processors` module + its in-flight load promise. */
+	private processorsModule?: TrackProcessorsModule;
+	private moduleLoadPromise?: Promise<TrackProcessorsModule>;
+	private supportDetectionPromise?: Promise<void>;
+
 	private _isBackgroundProcessorSupported = signal(false);
+	private _isSupportDetected = signal(false);
 
 	/**
 	 * Readonly signal indicating whether the background processor is available.
-	 * False when the browser has no GPU support or processor initialisation failed.
+	 * False when the browser has no GPU support, initialisation failed, or support has
+	 * not been detected yet (detection runs lazily — see {@link ensureReady}).
 	 */
 	readonly isBackgroundProcessorSupported: Signal<boolean> = this._isBackgroundProcessorSupported.asReadonly();
+
+	/**
+	 * Readonly signal indicating whether support detection has completed. Consumers use it to
+	 * tell "not detected yet" apart from "detected as unsupported" (e.g. to avoid flashing a
+	 * "not supported" message while the processors module is still loading).
+	 */
+	readonly isSupportDetected: Signal<boolean> = this._isSupportDetected.asReadonly();
 
 	/**
 	 * Stores the last applied options so the effect can be restored after a camera switch.
@@ -59,45 +78,41 @@ export class VideoTrackProcessorService {
 	private readonly platformService = inject(PlatformService);
 
 	/**
-	 * Waits until the service is ready for requests (immediate in SPA mode, after the
-	 * webcomponent calls setServerBaseUrl() otherwise) before pre-initialising the
-	 * processor. Without this, the relative model path resolves against the host
-	 * page in webcomponent mode and MediaPipe loads HTML instead of the .tflite.
+	 * Lazily loads the `@livekit/track-processors` module, caching both the resolved module
+	 * and its in-flight promise so concurrent callers share a single dynamic import.
 	 */
-	private readonly initEffect = effect(() => {
-		if (!this.runtimeConfigService.isReadyForRequests()) return;
-		this.initialiseProcessor();
-	});
-
-	/**
-	 * @internal
-	 */
-	constructor() {
-		if (!supportsBackgroundProcessors()) {
-			this.log.w('Background processors not supported in this browser (GPU may be disabled)');
-			return;
-		}
-
-		if (!supportsModernBackgroundProcessors()) {
-			// Firefox / non-modern: mark as supported but defer creation until first use.
-			this._isBackgroundProcessorSupported.set(true);
-			this.log.d('Background processors supported but not modern – will initialise on-demand');
-		}
+	private async loadModule(): Promise<TrackProcessorsModule> {
+		if (this.processorsModule) return this.processorsModule;
+		this.moduleLoadPromise ??= import('@livekit/track-processors');
+		this.processorsModule = await this.moduleLoadPromise;
+		return this.processorsModule;
 	}
 
-	private initialiseProcessor(): void {
-		if (this.backgroundProcessor || !supportsModernBackgroundProcessors()) return;
+	/**
+	 * Ensures the processors module is loaded and background-processor support has been detected.
+	 * Idempotent and safe to call repeatedly (concurrent calls share one detection run). This is
+	 * what triggers the lazy download of the MediaPipe-backed module, so it should be called only
+	 * when the user actually engages with virtual backgrounds (panel opened, effect applied).
+	 */
+	async ensureReady(): Promise<void> {
+		if (this._isSupportDetected()) return;
+		this.supportDetectionPromise ??= this.detectSupport();
+		await this.supportDetectionPromise;
+	}
 
+	private async detectSupport(): Promise<void> {
 		try {
-			this.backgroundProcessor = BackgroundProcessor({
-				mode: 'disabled',
-				assetPaths: this.getAssetPaths()
-			});
-			this._isBackgroundProcessorSupported.set(true);
-			this.log.d('Background processor initialised at startup (modern processors supported)');
+			const tp = await this.loadModule();
+			const supported = tp.supportsBackgroundProcessors();
+			this._isBackgroundProcessorSupported.set(supported);
+			if (!supported) {
+				this.log.w('Background processors not supported in this browser (GPU may be disabled)');
+			}
 		} catch (error: any) {
-			this.log.w('Failed to initialise background processor:', error?.message || error);
+			this.log.w('Failed to load background processors module:', error?.message || error);
 			this._isBackgroundProcessorSupported.set(false);
+		} finally {
+			this._isSupportDetected.set(true);
 		}
 	}
 
@@ -113,29 +128,52 @@ export class VideoTrackProcessorService {
 		};
 	}
 
+	/** Creates the shared background processor on first use (idempotent). */
+	private createProcessorIfNeeded(tp: TrackProcessorsModule): void {
+		if (this.backgroundProcessor) return;
+		this.backgroundProcessor = tp.BackgroundProcessor({
+			mode: 'disabled',
+			assetPaths: this.getAssetPaths()
+		});
+	}
+
 	/**
 	 * Switches the active background mode.
 	 *
-	 * For modern browsers the processor is already attached to the track; only a switchTo call
-	 * is required. For Firefox the processor is lazily attached on first activation using the
-	 * supplied videoTrack reference.
+	 * Loads the processors module on demand, then creates and attaches the processor to the
+	 * given track on first use (previously this happened eagerly at startup). Firefox / non-modern
+	 * browsers keep their lazy attach/detach handling.
 	 *
 	 * @param options - New background mode options
-	 * @param videoTrack - Required for the Firefox lazy-attachment path; ignored on modern browsers
+	 * @param videoTrack - The local video track to attach the processor to
 	 * @internal
 	 */
 	async switchBackgroundMode(
 		options: SwitchBackgroundProcessorOptions,
 		videoTrack?: OVLocalVideoTrack
 	): Promise<void> {
+		await this.ensureReady();
+
 		if (!this.isBackgroundProcessorSupported()) {
 			this.log.w('Background processor not supported (GPU disabled). Virtual background is disabled.');
 			return;
 		}
 
+		const tp = this.processorsModule;
+		if (!tp) return;
+
 		try {
-			if (!supportsModernBackgroundProcessors() && videoTrack) {
-				await this.handleLazyProcessorAttachment(options.mode, videoTrack);
+			if (!tp.supportsModernBackgroundProcessors()) {
+				if (videoTrack) {
+					await this.handleLazyProcessorAttachment(options.mode, videoTrack);
+				}
+			} else {
+				// Modern browsers: create the processor on first use and attach it to the active
+				// track (this used to be pre-done at startup for every meeting).
+				this.createProcessorIfNeeded(tp);
+				if (videoTrack && !videoTrack.getProcessor() && this.backgroundProcessor) {
+					await videoTrack.setProcessor(this.backgroundProcessor);
+				}
 			}
 
 			if (this.backgroundProcessor) {
@@ -151,20 +189,19 @@ export class VideoTrackProcessorService {
 	}
 
 	/**
-	 * Attaches the background processor to a freshly-created video track.
-	 *
-	 * - Modern browsers: pre-attaches the shared processor; `processor.init()` re-reads the
-	 *   transformer's stored options, automatically restoring any previously active effect.
-	 * - Firefox / non-modern: lazily attaches the processor only when an effect was already
-	 *   active, then re-applies the stored options explicitly.
+	 * Re-attaches the active background processor to a freshly-created video track (e.g. after a
+	 * camera switch). No-op when virtual backgrounds have never been engaged — in that case the
+	 * processors module is not even loaded, so a new track incurs no processing cost.
 	 *
 	 * @param videoTrack - The new video track to attach the processor to
 	 * @internal
 	 */
 	async applyToVideoTrack(videoTrack: OVLocalVideoTrack): Promise<void> {
-		if (!this.isBackgroundProcessorSupported()) return;
+		// If the module was never loaded, no background has ever been applied — nothing to restore.
+		const tp = this.processorsModule;
+		if (!tp || !this.isBackgroundProcessorSupported()) return;
 
-		if (supportsModernBackgroundProcessors()) {
+		if (tp.supportsModernBackgroundProcessors()) {
 			if (!this.backgroundProcessor) return;
 			try {
 				await videoTrack.setProcessor(this.backgroundProcessor);
@@ -176,16 +213,13 @@ export class VideoTrackProcessorService {
 		} else if (this.currentBackgroundOptions && this.currentBackgroundOptions.mode !== 'disabled') {
 			// Firefox: processor is not pre-allocated; create on first use and restore the effect.
 			try {
-				if (!this.backgroundProcessor) {
-					this.backgroundProcessor = BackgroundProcessor({
-						mode: 'disabled',
-						assetPaths: this.getAssetPaths()
-					});
+				this.createProcessorIfNeeded(tp);
+				if (this.backgroundProcessor) {
+					await videoTrack.setProcessor(this.backgroundProcessor);
+					// The transformer options are reset on init for non-modern browsers; re-apply explicitly.
+					await this.backgroundProcessor.switchTo(this.currentBackgroundOptions);
+					this.log.d('Background effect restored on new track (non-modern):', this.currentBackgroundOptions);
 				}
-				await videoTrack.setProcessor(this.backgroundProcessor);
-				// The transformer options are reset on init for non-modern browsers; re-apply explicitly.
-				await this.backgroundProcessor.switchTo(this.currentBackgroundOptions);
-				this.log.d('Background effect restored on new track (non-modern):', this.currentBackgroundOptions);
 			} catch (error: any) {
 				this.log.w('Failed to restore background processor (non-modern):', error?.message || error);
 			}
@@ -201,6 +235,9 @@ export class VideoTrackProcessorService {
 		mode: SwitchBackgroundProcessorOptions['mode'],
 		videoTrack: OVLocalVideoTrack
 	): Promise<void> {
+		const tp = this.processorsModule;
+		if (!tp) return;
+
 		const hasProcessor = Boolean(videoTrack.getProcessor());
 		const isDisabled = mode === 'disabled';
 
@@ -208,13 +245,12 @@ export class VideoTrackProcessorService {
 			try {
 				if (!this.backgroundProcessor) {
 					this.log.d('Creating background processor on-demand');
-					this.backgroundProcessor = BackgroundProcessor({
-						mode: 'disabled',
-						assetPaths: this.getAssetPaths()
-					});
+					this.createProcessorIfNeeded(tp);
 				}
 				this.log.d('Attaching processor on effect activation (lazy loading)');
-				await videoTrack.setProcessor(this.backgroundProcessor);
+				if (this.backgroundProcessor) {
+					await videoTrack.setProcessor(this.backgroundProcessor);
+				}
 			} catch (error: any) {
 				this.log.w('Failed to attach background processor (GPU may be disabled):', error?.message || error);
 				this._isBackgroundProcessorSupported.set(false);

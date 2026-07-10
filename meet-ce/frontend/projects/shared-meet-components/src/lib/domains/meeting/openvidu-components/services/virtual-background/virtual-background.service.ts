@@ -1,5 +1,5 @@
 import { computed, inject, Injectable, Signal, signal } from '@angular/core';
-import { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
+import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { BackgroundCategory, BackgroundEffect, EffectType } from '../../models/background-effect.model';
 import { LoggerService } from '../logger/logger.service';
@@ -93,6 +93,20 @@ export class VirtualBackgroundService {
 		this.videoTrackProcessorService.isBackgroundProcessorSupported()
 	);
 
+	/**
+	 * Whether background-processor support detection has completed. Lets the UI distinguish
+	 * "still detecting" (module loading) from "detected as unsupported".
+	 */
+	readonly isSupportDetected: Signal<boolean> = this.videoTrackProcessorService.isSupportDetected;
+
+	/**
+	 * Triggers the lazy load of the background-processors module and support detection.
+	 * Call this when the user opens the background-effects UI so support state is ready.
+	 */
+	async ensureBackgroundSupportReady(): Promise<void> {
+		await this.videoTrackProcessorService.ensureReady();
+	}
+
 	isBackgroundApplied(): boolean {
 		const bgSelected = this.backgroundIdSelected();
 		return !!bgSelected && bgSelected !== 'no_effect';
@@ -114,6 +128,11 @@ export class VirtualBackgroundService {
 	 * The background processor is centralized in OpenViduService for consistency.
 	 */
 	async applyBackground(bg: BackgroundEffect) {
+		// Ensure the (lazily-loaded) processors module is ready and support has been detected
+		// before checking support — this is the on-demand trigger for restoring a saved
+		// background on join and for the first effect the user applies.
+		await this.videoTrackProcessorService.ensureReady();
+
 		// Check if virtual background is supported before proceeding
 		if (!this.isVirtualBackgroundSupported()) {
 			this.log.w('Virtual background not supported (GPU disabled). Skipping background application.');
