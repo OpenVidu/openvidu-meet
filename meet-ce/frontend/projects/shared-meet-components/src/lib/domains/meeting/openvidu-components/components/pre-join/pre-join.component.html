@@ -103,9 +103,13 @@
 						</div>
 					</div>
 
-					<!-- Always in DOM — expands smoothly in sync with the config section -->
+					<!-- Always in DOM — expands smoothly in sync with the config section.
+					     The panel code is lazy-loaded on first open (prefetched on idle so the
+					     expand animation stays smooth). -->
 					<div class="vb-container" [class.expanded]="showBackgroundPanel()">
-						<ov-background-effects-panel [mode]="'prejoin'" (onClose)="closeBackgroundPanel()" />
+						@defer (when showBackgroundPanel(); prefetch on idle) {
+							<ov-background-effects-panel [mode]="'prejoin'" (onClose)="closeBackgroundPanel()" />
+						}
 					</div>
 				</div>
 			</div>

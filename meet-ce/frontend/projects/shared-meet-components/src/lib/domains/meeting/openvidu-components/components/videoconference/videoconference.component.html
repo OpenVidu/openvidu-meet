@@ -74,21 +74,27 @@
 </ng-template>
 
 <ng-template #defaultChatPanel>
-	<ov-chat-panel id="default-chat-panel" />
+	@defer (on immediate) {
+		<ov-chat-panel id="default-chat-panel" />
+	}
 </ng-template>
 
 <ng-template #defaultActivitiesPanel>
-	<ov-activities-panel
-		id="default-activities-panel"
-		(onRecordingStartRequested)="onRecordingStartRequested.emit($event)"
-		(onRecordingStopRequested)="onRecordingStopRequested.emit($event)"
-		(onViewRecordingClicked)="onViewRecordingClicked.emit($event)"
-		(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
-	/>
+	@defer (on immediate) {
+		<ov-activities-panel
+			id="default-activities-panel"
+			(onRecordingStartRequested)="onRecordingStartRequested.emit($event)"
+			(onRecordingStopRequested)="onRecordingStopRequested.emit($event)"
+			(onViewRecordingClicked)="onViewRecordingClicked.emit($event)"
+			(onViewRecordingsClicked)="onViewRecordingsClicked.emit()"
+		/>
+	}
 </ng-template>
 
 <ng-template #defaultParticipantsPanel>
-	<ov-participants-panel id="default-participants-panel" />
+	@defer (on immediate) {
+		<ov-participants-panel id="default-participants-panel" />
+	}
 </ng-template>
 
 <ng-template #defaultParticipantPanelItem let-participant>
@@ -104,20 +110,24 @@
 </ng-template>
 
 <ng-template #defaultBackgroundEffectsPanel>
-	<ov-background-effects-panel id="default-background-effects-panel" />
+	@defer (on immediate) {
+		<ov-background-effects-panel id="default-background-effects-panel" />
+	}
 </ng-template>
 
 <ng-template #defaultSettingsPanel>
-	<ov-settings-panel
-		id="default-settings-panel"
-		(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
-		(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
-		(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
-		(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
-		(onLangChanged)="onLangChanged.emit($event)"
-	>
-		<ng-container *ovSettingsPanelGeneralAdditionalElements>
-			<ng-container *ngTemplateOutlet="templateRegistry.settingsPanelGeneralAdditionalElements() ?? null" />
-		</ng-container>
-	</ov-settings-panel>
+	@defer (on immediate) {
+		<ov-settings-panel
+			id="default-settings-panel"
+			(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
+			(onVideoEnabledChanged)="onVideoEnabledChanged.emit($event)"
+			(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
+			(onAudioEnabledChanged)="onAudioEnabledChanged.emit($event)"
+			(onLangChanged)="onLangChanged.emit($event)"
+		>
+			<ng-container *ovSettingsPanelGeneralAdditionalElements>
+				<ng-container *ngTemplateOutlet="templateRegistry.settingsPanelGeneralAdditionalElements() ?? null" />
+			</ng-container>
+		</ov-settings-panel>
+	}
 </ng-template>
