@@ -2,10 +2,11 @@ import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular
 import { TestBed } from '@angular/core/testing';
 import { EmbeddedCommandName, EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { LoggerService, OpenViduService } from '../../meeting/openvidu-components';
+import { OpenViduService } from '../../meeting/openvidu-components';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
 import { IframeBridgeService } from './iframe-bridge.service';
+import { LoggerService } from '../../../shared/services/logger.service';
 
 class LoggerServiceStub {
 	get() {

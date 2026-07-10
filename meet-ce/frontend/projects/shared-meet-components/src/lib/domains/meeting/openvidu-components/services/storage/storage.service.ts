@@ -1,9 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import { CustomDevice } from '../../models/device.model';
-import { ILogger } from '../../models/logger.model';
 import { STORAGE_PREFIX, StorageKeys, TAB_SPECIFIC_KEYS } from '../../models/storage.model';
 import { OpenViduThemeMode } from '../../models/theme.model';
-import { LoggerService } from '../logger/logger.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * @internal

@@ -17,13 +17,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AvatarView } from '../../models/avatar-view.model';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
-import { ILogger } from '../../models/logger.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalTrack, Track } from '../../services/livekit-adapter';
-import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
@@ -34,6 +32,8 @@ import { BackgroundEffectsPanelComponent } from '../panel/background-effects-pan
 import { AudioDevicesComponent } from '../settings/audio-devices/audio-devices.component';
 import { LangSelectorComponent } from '../settings/lang-selector/lang-selector.component';
 import { VideoDevicesComponent } from '../settings/video-devices/video-devices.component';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * @internal

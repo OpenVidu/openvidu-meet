@@ -1,10 +1,10 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { SmartLayoutMode } from '../../models/layout/smart-layout.model';
 import type { Participant } from '../../services/livekit-adapter';
-import { LoggerService } from '../logger/logger.service';
 import { SessionRoomEventsService } from '../session/session-room-events.service';
 import { ViewportService } from '../viewport/viewport.service';
 import { BaseLayoutService } from './layout.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Injectable({
 	providedIn: 'root'

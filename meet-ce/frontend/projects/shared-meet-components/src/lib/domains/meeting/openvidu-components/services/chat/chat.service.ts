@@ -1,16 +1,16 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { ChatMessage } from '../../models/chat.model';
-import { ILogger } from '../../models/logger.model';
 import { INotificationOptions } from '../../models/notification-options.model';
 
 import { DataTopic } from '../../models/data-topic.model';
 import { PanelType } from '../../models/panel.model';
 import { ActionService } from '../action/action.service';
-import { LoggerService } from '../logger/logger.service';
 import { PanelService } from '../panel/panel.service';
 import { ParticipantService } from '../participant/participant.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
 import { AssetsService } from '../../../../../shared/services/assets.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * @internal

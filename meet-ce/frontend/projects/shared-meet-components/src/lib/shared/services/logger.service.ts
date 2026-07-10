@@ -1,5 +1,5 @@
 import { Injectable, isDevMode } from '@angular/core';
-import { ILogger, ILogService } from '../../models/logger.model';
+import { ILogger, ILogService } from '../models/logger.model';
 
 /**
  * @internal

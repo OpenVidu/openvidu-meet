@@ -5,10 +5,10 @@ import { HttpService } from '../../../shared/services/http.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
-import { LoggerService } from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
+import { LoggerService } from '../../../shared/services/logger.service';
 
 @Injectable({
 	providedIn: 'root'

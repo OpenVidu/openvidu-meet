@@ -5,14 +5,10 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RoomMemberUiUtils } from '../../../room-members/utils/ui';
-import {
-	LoggerService,
-	OpenViduComponentsUiModule,
-	ParticipantDisplayProperties,
-	ParticipantModel
-} from '../../openvidu-components';
+import { OpenViduComponentsUiModule, ParticipantDisplayProperties, ParticipantModel } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
+import { LoggerService } from '../../../../shared/services/logger.service';
 
 /**
  * Renders a single participant panel item — the role badge and the moderation controls

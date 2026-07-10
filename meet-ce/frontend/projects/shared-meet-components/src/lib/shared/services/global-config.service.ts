@@ -1,7 +1,8 @@
 import { inject, Injectable, signal } from '@angular/core';
 import { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
-import { ILogger, LoggerService } from '../../domains/meeting/openvidu-components';
 import { HttpService } from './http.service';
+import { LoggerService } from './logger.service';
+import type { ILogger } from '../models/logger.model';
 
 @Injectable({
 	providedIn: 'root'

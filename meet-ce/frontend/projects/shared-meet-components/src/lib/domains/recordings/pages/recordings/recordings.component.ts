@@ -18,11 +18,12 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
-import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingService } from '../../services/recording.service';
+import { LoggerService } from '../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../shared/models/logger.model';
 
 /** Cached UI state for the recordings list, restored when navigating back to it. */
 interface RecordingsListCachedState {

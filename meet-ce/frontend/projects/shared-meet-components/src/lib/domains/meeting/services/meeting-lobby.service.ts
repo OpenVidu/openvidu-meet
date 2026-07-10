@@ -9,9 +9,9 @@ import { AuthService } from '../../auth/services/auth.service';
 import { RecordingService } from '../../recordings/services/recording.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
-import { LoggerService } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { RoomAccessLinkService } from './room-access-link.service';
+import { LoggerService } from '../../../shared/services/logger.service';
 
 /**
  * Service that manages the meeting lobby phase state and operations.

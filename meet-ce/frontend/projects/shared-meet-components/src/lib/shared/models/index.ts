@@ -8,3 +8,4 @@ export * from './sidenav.model';
 export * from './storage.model';
 export * from './translation-bundle.model';
 
+export * from './logger.model';

@@ -9,8 +9,9 @@ import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { decodeToken } from '../../../shared/utils/token.utils';
 import { AuthService } from '../../auth/services/auth.service';
-import { E2eeService, LoggerService } from '../../meeting/openvidu-components';
+import { E2eeService } from '../../meeting/openvidu-components';
 import { RoomMemberService } from './room-member.service';
+import { LoggerService } from '../../../shared/services/logger.service';
 
 @Injectable({
 	providedIn: 'root'

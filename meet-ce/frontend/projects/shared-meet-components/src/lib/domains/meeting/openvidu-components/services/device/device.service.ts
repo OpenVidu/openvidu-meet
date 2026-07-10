@@ -1,11 +1,11 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { CameraType, CustomDevice, DeviceType } from '../../models/device.model';
-import { ILogger } from '../../models/logger.model';
 import type { OVLocalTrack } from '../livekit-adapter';
 import { LivekitAdapterFactory, LivekitAdapterInterface, Track } from '../livekit-adapter';
-import { LoggerService } from '../logger/logger.service';
 import { PlatformService } from '../platform/platform.service';
 import { StorageService } from '../storage/storage.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * Device service with reactive state and independent audio/video handling.

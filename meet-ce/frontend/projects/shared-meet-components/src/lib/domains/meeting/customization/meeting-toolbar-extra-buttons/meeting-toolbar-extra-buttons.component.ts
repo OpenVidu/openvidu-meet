@@ -6,10 +6,10 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
-import { LoggerService } from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingToolbarCopyLinkButtonComponent } from '../meeting-toolbar-copy-link-button/meeting-toolbar-copy-link-button.component';
+import { LoggerService } from '../../../../shared/services/logger.service';
 
 /**
  * Component for extra toolbar buttons (like captions and copy room access link).

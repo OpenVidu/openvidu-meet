@@ -10,13 +10,14 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
-import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { MeetingContextService } from '../../../meeting/services';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RoomService } from '../../../rooms/services/room.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
 import { RecordingService } from '../../services/recording.service';
+import { LoggerService } from '../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../shared/models/logger.model';
 
 @Component({
 	selector: 'ov-room-recordings',

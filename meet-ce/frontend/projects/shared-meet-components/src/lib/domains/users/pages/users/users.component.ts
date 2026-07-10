@@ -13,7 +13,6 @@ import { ListStateCacheService } from '../../../../shared/services/list-state-ca
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
-import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
 import { UpdateRoleDialogComponent } from '../../components/update-role-dialog/update-role-dialog.component';
 import {
@@ -22,6 +21,8 @@ import {
 	UserTableFilter
 } from '../../components/users-lists/users-lists.component';
 import { UserService } from '../../services/user.service';
+import { LoggerService } from '../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../shared/models/logger.model';
 
 /** Cached UI state for the users list, restored when navigating back to it. */
 interface UsersListCachedState {

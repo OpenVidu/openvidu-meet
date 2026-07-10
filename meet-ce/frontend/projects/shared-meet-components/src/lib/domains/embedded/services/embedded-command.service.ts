@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { LoggerService, OpenViduService } from '../../meeting/openvidu-components';
+import { OpenViduService } from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingService } from '../../meeting/services/meeting.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
+import { LoggerService } from '../../../shared/services/logger.service';
 
 /**
  * Meeting-domain command bridge exposed to the Angular Elements

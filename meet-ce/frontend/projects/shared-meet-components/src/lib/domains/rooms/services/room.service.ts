@@ -16,10 +16,11 @@ import {
 	ProjectedMeetRoom
 } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
-import { ILogger, LoggerService } from '../../meeting/openvidu-components';
 import type { MeetRoomClientResponseOptions } from '../models/room-request';
 import type { MeetRoomQueryOptionsWithFields } from '../types/room-projection.types';
 import { RoomFeatureService } from './room-feature.service';
+import { LoggerService } from '../../../shared/services/logger.service';
+import type { ILogger } from '../../../shared/models/logger.model';
 
 @Injectable({
 	providedIn: 'root'

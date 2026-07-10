@@ -14,9 +14,9 @@ import type {
 } from '../livekit-adapter';
 import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track, VideoPresets } from '../livekit-adapter';
-import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Injectable({
 	providedIn: 'root'

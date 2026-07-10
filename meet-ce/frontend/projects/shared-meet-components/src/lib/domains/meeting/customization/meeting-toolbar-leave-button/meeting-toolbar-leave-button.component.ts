@@ -5,9 +5,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { LoggerService, OpenViduService } from '../../openvidu-components';
+import { OpenViduService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
+import { LoggerService } from '../../../../shared/services/logger.service';
 
 /**
  * Reusable component for meeting toolbar Leave button.

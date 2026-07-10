@@ -2,10 +2,10 @@ import { computed, inject, Injectable, Signal, signal } from '@angular/core';
 import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { BackgroundCategory, BackgroundEffect, EffectType } from '../../models/background-effect.model';
-import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { StorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
 
 function categoryPrefix(category: BackgroundCategory): string {
 	return category.toLowerCase().replace('_', '-');

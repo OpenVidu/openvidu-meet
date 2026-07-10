@@ -1,5 +1,4 @@
 import { inject, Injectable, Signal } from '@angular/core';
-import { ILogger } from '../../models/logger.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { DeviceService } from '../device/device.service';
 import {
@@ -19,10 +18,11 @@ import {
 } from '../livekit-adapter';
 import { LivekitAdapterInterface } from '../livekit-adapter/interfaces/livekit.adapter.interface';
 import { LivekitAdapterFactory } from '../livekit-adapter/livekit-adapter.factory';
-import { LoggerService } from '../logger/logger.service';
 import { StorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { AssetsService } from '../../../../../shared/services/assets.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 @Injectable({
 	providedIn: 'root'

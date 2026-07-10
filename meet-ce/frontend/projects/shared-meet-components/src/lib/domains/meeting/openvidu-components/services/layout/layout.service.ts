@@ -1,8 +1,8 @@
 import { effect, inject, Injectable } from '@angular/core';
 import { LayoutAlignment, LayoutClass, OpenViduLayout, OpenViduLayoutOptions } from '../../models/layout/layout.model';
-import { ILogger } from '../../models/logger.model';
-import { LoggerService } from '../logger/logger.service';
 import { ViewportService } from '../viewport/viewport.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * @internal

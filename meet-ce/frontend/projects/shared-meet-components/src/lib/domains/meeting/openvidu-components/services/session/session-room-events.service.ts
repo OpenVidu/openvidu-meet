@@ -25,11 +25,11 @@ import { safeJsonParse } from '../../utils/utils';
 import { ActionService } from '../action/action.service';
 import { ChatService } from '../chat/chat.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
-import { LoggerService } from '../logger/logger.service';
 import { OpenViduService } from '../openvidu/openvidu.service';
 import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
 
 export interface SessionRoomEventCallbacks {
 	onRoomReconnecting: () => void;

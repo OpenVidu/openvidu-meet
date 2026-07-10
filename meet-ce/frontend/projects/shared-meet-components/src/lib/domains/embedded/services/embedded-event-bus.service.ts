@@ -1,6 +1,6 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { LoggerService } from '../../meeting/openvidu-components';
 import { EmbeddedEvent } from '@openvidu-meet/typings';
+import { LoggerService } from '../../../shared/services/logger.service';
 
 /**
  * Plumbing between the shared library and the Angular Elements `<openvidu-meet>`

@@ -25,7 +25,6 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import type { OVRoom } from '../../services/livekit-adapter';
 import { Room } from '../../services/livekit-adapter';
-import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -36,6 +35,7 @@ import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
+import { LoggerService } from '../../../../../shared/services/logger.service';
 
 /**
  * @internal

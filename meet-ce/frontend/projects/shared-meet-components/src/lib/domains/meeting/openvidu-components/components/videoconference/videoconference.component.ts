@@ -39,7 +39,6 @@ import {
 } from '../../directives/template/openvidu-components-angular.directive';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
-import { ILogger } from '../../models/logger.model';
 import {
 	ActivitiesPanelStatusEvent,
 	ChatPanelStatusEvent,
@@ -57,7 +56,6 @@ import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import type { OVRoom } from '../../services/livekit-adapter';
-import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { StorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
@@ -74,6 +72,8 @@ import { PreJoinComponent } from '../pre-join/pre-join.component';
 import { SessionComponent } from '../session/session.component';
 import { StreamComponent } from '../stream/stream.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * The **VideoconferenceComponent** is the parent of all OpenVidu components.

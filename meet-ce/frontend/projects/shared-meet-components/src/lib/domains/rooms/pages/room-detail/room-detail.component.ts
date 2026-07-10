@@ -41,7 +41,6 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
-import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { RecordingListsComponent } from '../../../recordings/components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../../recordings/models/recording-list.model';
 import { RecordingService } from '../../../recordings/services/recording.service';
@@ -55,6 +54,8 @@ import { RoomShareDialogComponent } from '../../components/room-share-dialog/roo
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
 import { RoomUiUtils } from '../../utils/ui';
+import { LoggerService } from '../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../shared/models/logger.model';
 
 /** Cached UI state for the room detail page (both tabs), restored on return. */
 interface RoomDetailCachedState {

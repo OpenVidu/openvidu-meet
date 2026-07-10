@@ -4,12 +4,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomDevice } from '../../../models/device.model';
-import { ILogger } from '../../../models/logger.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { DeviceService } from '../../../services/device/device.service';
-import { LoggerService } from '../../../services/logger/logger.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { StorageService } from '../../../services/storage/storage.service';
+import { LoggerService } from '../../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../../shared/models/logger.model';
 
 /**
  * @internal

@@ -11,9 +11,9 @@ import { DeleteRoomDialogOptions } from '../../../shared/models/notification.mod
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { DialogPresetsService } from '../../../shared/services/dialog-presets.service';
 import { NotificationService } from '../../../shared/services/notification.service';
-import { ILogger } from '../../meeting/openvidu-components';
 import { DeleteRoomDialogComponent } from '../components/delete-room-dialog/delete-room-dialog.component';
 import { RoomService } from './room.service';
+import type { ILogger } from '../../../shared/models/logger.model';
 
 interface RoomDeletionResult {
 	roomId: string;

@@ -4,7 +4,7 @@ import { MeetRoomAccess } from '@openvidu-meet/typings';
 import { NotificationService } from '../../../shared/services/notification.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomService } from '../../rooms/services/room.service';
-import { LoggerService } from '../openvidu-components';
+import { LoggerService } from '../../../shared/services/logger.service';
 
 @Injectable({
 	providedIn: 'root'

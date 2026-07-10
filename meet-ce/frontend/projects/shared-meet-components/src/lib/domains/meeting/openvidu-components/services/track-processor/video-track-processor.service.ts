@@ -4,10 +4,10 @@ import type {
 	SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
 import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
-import { ILogger } from '../../models/logger.model';
 import { OVLocalVideoTrack } from '../livekit-adapter';
-import { LoggerService } from '../logger/logger.service';
 import { PlatformService } from '../platform/platform.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 // Selfie-segmenter models. Landscape (256x144) is tuned for wide desktop video;
 // the general/square model (256x256) segments portrait mobile capture better, so

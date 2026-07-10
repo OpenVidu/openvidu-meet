@@ -4,12 +4,12 @@ import { Router } from '@angular/router';
 import { EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { EMPTY } from 'rxjs';
 import { EmbeddedEventBusService } from '../../domains/embedded/services/embedded-event-bus.service';
-import { LoggerService } from '../../domains/meeting/openvidu-components';
 import { LeaveRedirectService } from './leave-redirect.service';
 import { ListStateCacheService } from './list-state-cache.service';
 import { NavigationService } from './navigation.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
+import { LoggerService } from './logger.service';
 
 class LoggerServiceStub {
 	get() {

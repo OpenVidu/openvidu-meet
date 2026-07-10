@@ -1,7 +1,7 @@
 import { inject, Injectable, signal } from '@angular/core';
-import { ILogger } from '../../models/logger.model';
 import { PanelSettingsOptions, PanelStatusInfo, PanelType } from '../../models/panel.model';
-import { LoggerService } from '../logger/logger.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 @Injectable({
 	providedIn: 'root'

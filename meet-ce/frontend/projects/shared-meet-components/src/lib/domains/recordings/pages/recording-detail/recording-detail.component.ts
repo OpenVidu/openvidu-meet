@@ -22,11 +22,12 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
-import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { RecordingVideoPlayerComponent } from '../../components/recording-video-player/recording-video-player.component';
 import { RecordingService } from '../../services/recording.service';
 import { RecordingUiUtils } from '../../utils/ui';
+import { LoggerService } from '../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../shared/models/logger.model';
 
 @Component({
 	selector: 'ov-recording-detail',

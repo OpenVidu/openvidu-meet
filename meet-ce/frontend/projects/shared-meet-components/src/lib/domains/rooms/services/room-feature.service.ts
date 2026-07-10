@@ -2,10 +2,11 @@ import { computed, effect, inject, Injectable, signal, untracked } from '@angula
 import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { ILogger, LoggerService } from '../../meeting/openvidu-components';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from '../utils/features.utils';
+import { LoggerService } from '../../../shared/services/logger.service';
+import type { ILogger } from '../../../shared/models/logger.model';
 
 /**
  * Base configuration for features, used as a starting point before applying room-specific and user-specific configurations

@@ -33,7 +33,6 @@ import { ListStateCacheService } from '../../../../shared/services/list-state-ca
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthService } from '../../../auth/services/auth.service';
-import { ILogger, LoggerService } from '../../../meeting/openvidu-components';
 
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
@@ -46,6 +45,8 @@ import {
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
 import { RoomUiUtils } from '../../utils/ui';
+import { LoggerService } from '../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../shared/models/logger.model';
 
 /** Cached UI state for the rooms list, restored when navigating back to it. */
 interface RoomsListCachedState {

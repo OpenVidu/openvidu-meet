@@ -23,7 +23,6 @@ import { fromEvent } from 'rxjs';
 import { FallbackLogoDirective } from '../../directives/api/internals.directive';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../directives/template/internals.directive';
 import { ChatMessage } from '../../models/chat.model';
-import { ILogger } from '../../models/logger.model';
 import { PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
@@ -38,7 +37,6 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 import { DeviceService } from '../../services/device/device.service';
 import { DocumentService } from '../../services/document/document.service';
 import { Room, RoomEvent } from '../../services/livekit-adapter';
-import { LoggerService } from '../../services/logger/logger.service';
 import { OpenViduService } from '../../services/openvidu/openvidu.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -49,6 +47,8 @@ import { TemplateRegistryService } from '../../services/template/template-regist
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-media-buttons.component';
 import { ToolbarPanelButtonsComponent } from './toolbar-panel-buttons/toolbar-panel-buttons.component';
+import { LoggerService } from '../../../../../shared/services/logger.service';
+import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * The **ToolbarComponent** is hosted inside of the {@link VideoconferenceComponent}.
