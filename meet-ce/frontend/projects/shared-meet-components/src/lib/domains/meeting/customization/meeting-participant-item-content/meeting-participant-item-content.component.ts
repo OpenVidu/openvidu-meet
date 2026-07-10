@@ -5,8 +5,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RoomMemberUiUtils } from '../../../room-members/utils/ui';
-import { CustomParticipantModel, ParticipantDisplayProperties } from '../../models/custom-participant.model';
-import { LoggerService, OpenViduComponentsUiModule } from '../../openvidu-components';
+import {
+	LoggerService,
+	OpenViduComponentsUiModule,
+	ParticipantDisplayProperties,
+	ParticipantModel
+} from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingService } from '../../services/meeting.service';
 
@@ -22,7 +26,7 @@ import { MeetingService } from '../../services/meeting.service';
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingParticipantItemContentComponent {
-	readonly participant = input.required<CustomParticipantModel>();
+	readonly participant = input.required<ParticipantModel>();
 
 	protected meetingService = inject(MeetingService);
 	protected meetingContextService = inject(MeetingContextService);

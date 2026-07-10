@@ -1,6 +1,6 @@
 import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { SmartLayoutMode } from '../../models/layout/smart-layout.model';
-import { Participant } from '../../services/livekit-adapter';
+import type { Participant } from '../../services/livekit-adapter';
 import { LoggerService } from '../logger/logger.service';
 import { SessionRoomEventsService } from '../session/session-room-events.service';
 import { ViewportService } from '../viewport/viewport.service';

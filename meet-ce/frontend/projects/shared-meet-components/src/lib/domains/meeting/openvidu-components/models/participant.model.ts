@@ -1,4 +1,5 @@
 import { computed, signal } from '@angular/core';
+import { MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import type { OVLocalParticipant, OVRemoteParticipant, OVRoom, OVTrackPublication } from '../services/livekit-adapter';
 import {
 	AudioCaptureOptions,
@@ -51,6 +52,7 @@ export enum ParticipantLeftReason {
 
 	OTHER = 'other' // The participant was disconnected for an unknown reason
 }
+
 /**
  * Interface that represents a combined audio+video stream for a single visual element.
  * A camera stream groups the camera video track and the microphone audio track.
@@ -114,12 +116,25 @@ export interface ParticipantProperties {
 }
 
 /**
+ * Interface for computed participant display properties
+ */
+export interface ParticipantDisplayProperties {
+	showBadge: boolean;
+	showModerationControls: boolean;
+	showMakeModeratorButton: boolean;
+	showUnmakeModeratorButton: boolean;
+	showKickButton: boolean;
+}
+
+/**
  * Class that represents a participant in the room.
  */
 export class ParticipantModel {
+	// ── Static ────────────────────────────────────────────────────────────────────────────────────
 	/** @internal Synthetic placeholder SID used when no real camera track exists. */
 	private static readonly CUSTOM_VIDEO_SID = 'customVideoTrack';
 
+	// ── Public state ────────────────────────────────────────────────────────────────────────────────
 	/**
 	 * This property allows to know what screen track is the last one published for enlarging it
 	 * Map <trackSid, publicationDate>
@@ -131,14 +146,15 @@ export class ParticipantModel {
 	 * It specifies the visual representation of the participant in the user interface.
 	 */
 	colorProfile: string;
+
+	// ── Private state ─────────────────────────────────────────────────────────────────────────────
 	private participant: OVLocalParticipant | OVRemoteParticipant;
 	private room: OVRoom | undefined;
 	private customVideoTrack: Partial<AugmentedTrackPublication>;
 
-	// ── Reactive state ──────────────────────────────────────────────────────────────────────────
-	// These signals replace plain boolean fields. Getters that read them are automatically tracked
-	// by Angular templates and effects, eliminating the need to clone ParticipantModel or spread
-	// the participants array in ParticipantService every time state changes.
+	// Reactive state. These signals replace plain boolean fields. Getters that read them are
+	// automatically tracked by Angular templates and effects, eliminating the need to clone
+	// ParticipantModel or spread the participants array in ParticipantService every time state changes.
 	private readonly _speaking = signal(false);
 	private readonly _hasEncryptionError = signal(false);
 	private readonly _decryptedName = signal<string | undefined>(undefined);
@@ -151,7 +167,9 @@ export class ParticipantModel {
 	 * computed that calls it — so streams, isFloating, isPinned, etc. all react automatically.
 	 */
 	private readonly _revision = signal(0);
-
+	// Meet moderation / badge state.
+	private readonly _badge = signal(MeetRoomMemberUIBadge.OTHER);
+	private readonly _isPromotedModerator = signal(false);
 	/**
 	 * Per-viewer screen-share zoom state, keyed by screen stream id. Kept outside the stream
 	 * snapshots (which are rebuilt on every revision) so a participant's zoom survives unrelated
@@ -159,131 +177,7 @@ export class ParticipantModel {
 	 */
 	private readonly screenZoomStates = new Map<string, ScreenZoomState>();
 
-	constructor(props: ParticipantProperties) {
-		this.participant = props.participant;
-		this.colorProfile = props.colorProfile ?? `hsl(${Math.random() * 360}, 100%, 80%)`;
-		this.room = props.room;
-		this.screenTrackPublicationDate = props.screenTrackPublicationDate ?? new Map<string, number>();
-
-		this.customVideoTrack = {
-			participant: this,
-			kind: Track.Kind.Video,
-			trackName: ParticipantModel.CUSTOM_VIDEO_SID,
-			trackSid: ParticipantModel.CUSTOM_VIDEO_SID,
-			source: Track.Source.Camera,
-			isPinned: false,
-			isFloating: false,
-			isMutedForcibly: false,
-			isCameraTrack: true,
-			isScreenTrack: false,
-			isAudioTrack: false
-		};
-	}
-
-	/**
-	 * @internal
-	 */
-	get identity() {
-		return this.participant.identity;
-	}
-
-	/**
-	 * Returns the server assigned unique identifier for the participant.
-	 * @returns string
-	 */
-	get sid(): string {
-		return this.participant.sid;
-	}
-
-	/**
-	 * Returns the participant name.
-	 * @returns string
-	 */
-	get name(): string | undefined {
-		return this._decryptedName() ?? this.participant.name;
-	}
-
-	/**
-	 * Returns the room name where the participant is.
-	 * @return string | undefined
-	 * @internal
-	 */
-	get roomName(): string | undefined {
-		return this.room?.name;
-	}
-
-	/**
-	 * Returns if the participant has enabled its camera.
-	 */
-	get isCameraEnabled(): boolean {
-		this._revision(); // reactive: re-evaluates in effects/computed when bump() is called
-		return this.participant.isCameraEnabled;
-	}
-
-	/**
-	 * Returns if the participant has enabled its microphone.
-	 */
-	get isMicrophoneEnabled(): boolean {
-		this._revision();
-		return this.participant.isMicrophoneEnabled;
-	}
-
-	/**
-	 * Returns if the participant has enabled its screen share.
-	 */
-	get isScreenShareEnabled(): boolean {
-		this._revision();
-		return this.participant.isScreenShareEnabled;
-	}
-
-	/**
-	 * Returns if the participant is speaking.
-	 */
-	get isSpeaking(): boolean {
-		// There is a bug when a participant mutes its microphone, it is still considered as speaking
-		// that's why we need to check if the microphone is enabled
-		return this._speaking() && this.isMicrophoneEnabled;
-	}
-
-	/**
-	 * Returns all the participant tracks.
-	 * @internal
-	 */
-	private get augmentedTracks(): AugmentedTrackPublication[] {
-		// Reading _revision() registers it as a reactive dependency for any computed/effect/template
-		// that calls this getter — consumers re-evaluate automatically when bump() is called.
-		this._revision();
-		const defaultTracks = this.participant.getTrackPublications().map((track: OVTrackPublication) => {
-			const augmented = track as AugmentedTrackPublication;
-			augmented.participant = this;
-			augmented.isMutedForcibly = augmented.isMutedForcibly || false;
-			augmented.isCameraTrack = track.source === Track.Source.Camera;
-			augmented.isScreenTrack = track.source === Track.Source.ScreenShare;
-			augmented.isAudioTrack = track.kind === Track.Kind.Audio;
-			return augmented;
-		});
-
-		const hasCameraTrack = defaultTracks.some((track) => track.source === Track.Source.Camera);
-		if (!hasCameraTrack) {
-			/**
-			 * If default tracks does not contain camera track, we add a custom video track with the aim of showing the
-			 * participant's name and avatar. If we don't add this track, the participant's
-			 * name and avatar will not be shown in the video grid and the participant would be a
-			 * ghost in the room.
-			 **/
-			defaultTracks.push(this.customVideoTrack as AugmentedTrackPublication);
-		}
-		return defaultTracks;
-	}
-
-	/**
-	 * Returns all the participant tracks.
-	 * @internal
-	 */
-	get tracks(): OVTrackPublication[] {
-		return this.augmentedTracks;
-	}
-
+	// ── Public reactive properties ──────────────────────────────────────────────────────────────────
 	/**
 	 * Returns the participant streams grouped by source (camera and screen share).
 	 * Each stream bundles a video track and its paired audio track so they can be
@@ -354,23 +248,101 @@ export class ParticipantModel {
 		return result;
 	});
 
+	constructor(props: ParticipantProperties) {
+		this.participant = props.participant;
+		this.colorProfile = props.colorProfile ?? `hsl(${Math.random() * 360}, 100%, 80%)`;
+		this.room = props.room;
+		this.screenTrackPublicationDate = props.screenTrackPublicationDate ?? new Map<string, number>();
+
+		this.customVideoTrack = {
+			participant: this,
+			kind: Track.Kind.Video,
+			trackName: ParticipantModel.CUSTOM_VIDEO_SID,
+			trackSid: ParticipantModel.CUSTOM_VIDEO_SID,
+			source: Track.Source.Camera,
+			isPinned: false,
+			isFloating: false,
+			isMutedForcibly: false,
+			isCameraTrack: true,
+			isScreenTrack: false,
+			isAudioTrack: false
+		};
+
+		this.updateModerationMetadata(props.participant.metadata);
+	}
+
+	// ── Public getters ────────────────────────────────────────────────────────────────────────────
 	/**
-	 * Returns the persistent {@link ScreenZoomState} for the given screen stream, creating it on
-	 * first use and discarding state for any screen track that is no longer present. This keeps the
-	 * zoom stable across stream recomputations while resetting it when a new screen share starts.
+	 * @internal
 	 */
-	private resolveScreenZoom(streamId: string): ScreenZoomState {
-		for (const key of this.screenZoomStates.keys()) {
-			if (key !== streamId) {
-				this.screenZoomStates.delete(key);
-			}
-		}
-		let state = this.screenZoomStates.get(streamId);
-		if (!state) {
-			state = new ScreenZoomState();
-			this.screenZoomStates.set(streamId, state);
-		}
-		return state;
+	get identity() {
+		return this.participant.identity;
+	}
+
+	/**
+	 * Returns the server assigned unique identifier for the participant.
+	 * @returns string
+	 */
+	get sid(): string {
+		return this.participant.sid;
+	}
+
+	/**
+	 * Returns the participant name.
+	 * @returns string
+	 */
+	get name(): string | undefined {
+		return this._decryptedName() ?? this.participant.name;
+	}
+
+	/**
+	 * Returns the room name where the participant is.
+	 * @return string | undefined
+	 * @internal
+	 */
+	get roomName(): string | undefined {
+		return this.room?.name;
+	}
+
+	/**
+	 * Returns if the participant has enabled its camera.
+	 */
+	get isCameraEnabled(): boolean {
+		this._revision(); // reactive: re-evaluates in effects/computed when bump() is called
+		return this.participant.isCameraEnabled;
+	}
+
+	/**
+	 * Returns if the participant has enabled its microphone.
+	 */
+	get isMicrophoneEnabled(): boolean {
+		this._revision();
+		return this.participant.isMicrophoneEnabled;
+	}
+
+	/**
+	 * Returns if the participant has enabled its screen share.
+	 */
+	get isScreenShareEnabled(): boolean {
+		this._revision();
+		return this.participant.isScreenShareEnabled;
+	}
+
+	/**
+	 * Returns if the participant is speaking.
+	 */
+	get isSpeaking(): boolean {
+		// There is a bug when a participant mutes its microphone, it is still considered as speaking
+		// that's why we need to check if the microphone is enabled
+		return this._speaking() && this.isMicrophoneEnabled;
+	}
+
+	/**
+	 * Returns all the participant tracks.
+	 * @internal
+	 */
+	get tracks(): OVTrackPublication[] {
+		return this.augmentedTracks;
 	}
 
 	/**
@@ -396,6 +368,41 @@ export class ParticipantModel {
 		return this.augmentedTracks.some((track) => track.isFloating);
 	}
 
+	/**
+	 * Gets whether this participant is pinned.
+	 * This indicates that the participant's video is fixed in place in the UI.
+	 * @returns boolean
+	 */
+	get isPinned(): boolean {
+		return this.augmentedTracks.some((track) => track.isPinned);
+	}
+
+	/**
+	 * Gets whether this participant has an encryption error.
+	 * This indicates that the participant cannot decrypt the video stream due to an incorrect encryption key.
+	 * @returns boolean
+	 */
+	get hasEncryptionError(): boolean {
+		return this._hasEncryptionError();
+	}
+
+	/**
+	 * Returns the connection quality of this participant.
+	 */
+	get connectionQuality(): ConnectionQuality {
+		return this._connectionQuality();
+	}
+
+	// ── Public setters ────────────────────────────────────────────────────────────────────────────
+	set badge(badge: MeetRoomMemberUIBadge) {
+		this._badge.set(badge);
+	}
+
+	set promotedModerator(isPromoted: boolean) {
+		this._isPromotedModerator.set(isPromoted);
+	}
+
+	// ── Public methods ────────────────────────────────────────────────────────────────────────────
 	/**
 	 * @returns ParticipantProperties
 	 * @internal
@@ -569,18 +576,8 @@ export class ParticipantModel {
 		return tracksPublishedTypes;
 	}
 
-	/**
-	 * Sets the participant's name.
-	 * @param name
-	 * @internal
-	 * As updating name requires that the participant has the `canUpdateOwnMetadata` to true in server side, which is a little bit insecure,
-	 * we decided to not allow this feature for now.
-	 */
-	// setName(name: string) {
-	// 	if (this.participant instanceof LocalParticipant) {
-	// 		this.participant.setName(name);
-	// 	}
-	// }
+	// NOTE: a `setName` method is intentionally NOT implemented — updating a participant's name
+	// requires `canUpdateOwnMetadata=true` server-side, which is insecure, so the feature is omitted.
 
 	/**
 	 * Sets all video track elements to pinned or unpinned given a boolean value
@@ -603,15 +600,6 @@ export class ParticipantModel {
 			track.isPinned = !track.isPinned;
 			this.bump();
 		}
-	}
-
-	/**
-	 * Gets whether this participant is pinned.
-	 * This indicates that the participant's video is fixed in place in the UI.
-	 * @returns boolean
-	 */
-	get isPinned(): boolean {
-		return this.augmentedTracks.some((track) => track.isPinned);
 	}
 
 	/**
@@ -679,28 +667,12 @@ export class ParticipantModel {
 	}
 
 	/**
-	 * Gets whether this participant has an encryption error.
-	 * This indicates that the participant cannot decrypt the video stream due to an incorrect encryption key.
-	 * @returns boolean
-	 */
-	get hasEncryptionError(): boolean {
-		return this._hasEncryptionError();
-	}
-
-	/**
 	 * Sets the encryption error state for this participant.
 	 * @param hasError - Whether the participant has an encryption error
 	 * @internal
 	 */
 	setEncryptionError(hasError: boolean) {
 		this._hasEncryptionError.set(hasError);
-	}
-
-	/**
-	 * Returns the connection quality of this participant.
-	 */
-	get connectionQuality(): ConnectionQuality {
-		return this._connectionQuality();
 	}
 
 	/**
@@ -731,4 +703,103 @@ export class ParticipantModel {
 	bump(): void {
 		this._revision.update((v) => v + 1);
 	}
+
+	/**
+	 * Gets the participant's badge.
+	 * @returns The MeetRoomMemberUIBadge representing the participant's badge.
+	 */
+	getBadge(): MeetRoomMemberUIBadge {
+		return this._badge();
+	}
+
+	/**
+	 * Checks if the participant has a badge other than OTHER.
+	 * @returns True if the participant has a badge, false otherwise.
+	 */
+	hasBadge(): boolean {
+		return this._badge() !== MeetRoomMemberUIBadge.OTHER;
+	}
+
+	/**
+	 * Checks if the participant is a promoted moderator (not an original moderator).
+	 * @returns True if the participant is a promoted moderator, false otherwise.
+	 */
+	isPromotedModerator(): boolean {
+		return this._isPromotedModerator();
+	}
+
+	// ── Private methods ───────────────────────────────────────────────────────────────────────────
+	/**
+	 * Returns all the participant tracks (augmented with pin/floating/muted/source flags).
+	 * @internal
+	 */
+	private get augmentedTracks(): AugmentedTrackPublication[] {
+		// Reading _revision() registers it as a reactive dependency for any computed/effect/template
+		// that calls this getter — consumers re-evaluate automatically when bump() is called.
+		this._revision();
+		const defaultTracks = this.participant.getTrackPublications().map((track: OVTrackPublication) => {
+			const augmented = track as AugmentedTrackPublication;
+			augmented.participant = this;
+			augmented.isMutedForcibly = augmented.isMutedForcibly || false;
+			augmented.isCameraTrack = track.source === Track.Source.Camera;
+			augmented.isScreenTrack = track.source === Track.Source.ScreenShare;
+			augmented.isAudioTrack = track.kind === Track.Kind.Audio;
+			return augmented;
+		});
+
+		const hasCameraTrack = defaultTracks.some((track) => track.source === Track.Source.Camera);
+		if (!hasCameraTrack) {
+			/**
+			 * If default tracks does not contain camera track, we add a custom video track with the aim of showing the
+			 * participant's name and avatar. If we don't add this track, the participant's
+			 * name and avatar will not be shown in the video grid and the participant would be a
+			 * ghost in the room.
+			 **/
+			defaultTracks.push(this.customVideoTrack as AugmentedTrackPublication);
+		}
+		return defaultTracks;
+	}
+
+	/**
+	 * Returns the persistent {@link ScreenZoomState} for the given screen stream, creating it on
+	 * first use and discarding state for any screen track that is no longer present. This keeps the
+	 * zoom stable across stream recomputations while resetting it when a new screen share starts.
+	 */
+	private resolveScreenZoom(streamId: string): ScreenZoomState {
+		for (const key of this.screenZoomStates.keys()) {
+			if (key !== streamId) {
+				this.screenZoomStates.delete(key);
+			}
+		}
+		let state = this.screenZoomStates.get(streamId);
+		if (!state) {
+			state = new ScreenZoomState();
+			this.screenZoomStates.set(streamId, state);
+		}
+		return state;
+	}
+
+	/**
+	 * Parses the LiveKit participant metadata and syncs the badge / promoted-moderator signals.
+	 */
+	private updateModerationMetadata(metadata: unknown): void {
+		const parsedMetadata = parseParticipantMetadata(metadata);
+		this._badge.set(parsedMetadata?.badge || MeetRoomMemberUIBadge.OTHER);
+		this._isPromotedModerator.set(Boolean(parsedMetadata?.isPromotedModerator));
+	}
 }
+
+const parseParticipantMetadata = (metadata: unknown): MeetRoomMemberTokenMetadata | undefined => {
+	let parsedMetadata: MeetRoomMemberTokenMetadata | undefined;
+	try {
+		parsedMetadata = JSON.parse((metadata as string) || '{}');
+	} catch (e) {
+		console.warn('Failed to parse participant metadata:', e);
+	}
+
+	if (!parsedMetadata || typeof parsedMetadata !== 'object') {
+		return undefined;
+	}
+
+	return parsedMetadata;
+};

@@ -4,12 +4,11 @@ import { EnvironmentProviders, makeEnvironmentProviders } from '@angular/core';
 import { provideTranslations } from '../../../shared/models';
 import { MEETING_TRANSLATIONS } from '../lang/meeting-translations';
 import { CdkOverlayContainer } from './config/custom-cdk-overlay';
-import { OPENVIDU_COMPONENTS_CONFIG, OpenViduComponentsConfig } from './config/openvidu-components-angular.config';
 
 /**
- * Provides the OpenVidu Components configuration and its root-level overrides.
+ * Provides the OpenVidu Components root-level overrides for the meeting feature.
  *
- * Standalone/zoneless replacement for the legacy `OpenViduComponentsModule.forRoot(config)`.
+ * Standalone/zoneless replacement for the legacy `OpenViduComponentsModule.forRoot()`.
  *
  * The meeting feature services (OpenViduService, VirtualBackgroundService, E2eeService, …) are
  * all `providedIn: 'root'`, so they are intentionally NOT listed here. Enumerating them would
@@ -19,13 +18,11 @@ import { OPENVIDU_COMPONENTS_CONFIG, OpenViduComponentsConfig } from './config/o
  * it, so the meeting-only services land in the lazy meeting chunk rather than the initial bundle.
  *
  * Only the genuinely non-tree-shakeable bits belong here:
- * - the config value token (a plain `useValue`, no heavy deps),
  * - the CDK overlay-container override (remaps the global `OverlayContainer` token),
  * - the meeting translation bundle.
  */
-export function provideOpenViduComponents(config: OpenViduComponentsConfig): EnvironmentProviders {
+export function provideOpenViduComponents(): EnvironmentProviders {
 	return makeEnvironmentProviders([
-		{ provide: OPENVIDU_COMPONENTS_CONFIG, useValue: config },
 		{ provide: OverlayContainer, useExisting: CdkOverlayContainer },
 		provideTranslations(MEETING_TRANSLATIONS)
 	]);

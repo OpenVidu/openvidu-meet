@@ -10,14 +10,11 @@ import {
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideRouter } from '@angular/router';
 import { ceRoutes } from '@app/app.routes';
-import { environment } from '@environment/environment';
-import type { OpenViduComponentsConfig, ParticipantProperties } from '@openvidu-meet/shared-components';
 import {
 	AUTH_TRANSLATIONS,
 	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
 	CONSOLE_TRANSLATIONS,
-	CustomParticipantModel,
 	httpInterceptor,
 	MeetingLayoutService,
 	provideOpenViduComponents,
@@ -33,11 +30,6 @@ import {
 	USERS_TRANSLATIONS
 } from '@openvidu-meet/shared-components';
 
-const ovComponentsconfig: OpenViduComponentsConfig = {
-	production: environment.production,
-	participantFactory: (props: ParticipantProperties) => new CustomParticipantModel(props)
-};
-
 export const appConfig: ApplicationConfig = {
 	providers: [
 		provideZonelessChangeDetection(),
@@ -49,7 +41,7 @@ export const appConfig: ApplicationConfig = {
 		provideAppInitializer(() => inject(RoomMemberInterceptorErrorHandlerService).init()),
 		provideAppInitializer(() => inject(AuthHeaderProviderService).init()),
 		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
-		provideOpenViduComponents(ovComponentsconfig),
+		provideOpenViduComponents(),
 		provideTranslations(CONSOLE_TRANSLATIONS),
 		provideTranslations(ROOMS_TRANSLATIONS),
 		provideTranslations(USERS_TRANSLATIONS),

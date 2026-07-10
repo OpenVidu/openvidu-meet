@@ -1,6 +1,5 @@
-import { inject, Injectable } from '@angular/core';
+import { Injectable, isDevMode } from '@angular/core';
 import { ILogger, ILogService } from '../../models/logger.model';
-import { GlobalConfigService } from '../config/global-config.service';
 
 /**
  * @internal
@@ -9,8 +8,6 @@ import { GlobalConfigService } from '../config/global-config.service';
 	providedIn: 'root'
 })
 export class LoggerService implements ILogService {
-	private readonly globalService = inject(GlobalConfigService);
-
 	private log: Console = window.console;
 	private LOG_FNS: Function[] = [];
 	private MSG_PREFIXES: string[][] = [
@@ -38,7 +35,7 @@ export class LoggerService implements ILogService {
 	private createLoggerFunctions(
 		prefix: string
 	): [(...args: any[]) => void, (...args: any[]) => void, (...args: any[]) => void, (...args: any[]) => void] {
-		const prodMode = this.globalService.isProduction();
+		const prodMode = !isDevMode();
 
 		const debugFn = (...args: any[]): void => {
 			if (!prodMode) {

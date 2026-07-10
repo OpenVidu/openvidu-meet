@@ -1,9 +1,8 @@
 import { Injectable, inject, signal } from '@angular/core';
 import { AiAssistantService } from '../../../shared/services/ai-assistant.service';
 import { Caption, CaptionsConfig } from '../models/captions.model';
-import { CustomParticipantModel } from '../models/custom-participant.model';
 import type { TextStreamReader } from '../openvidu-components';
-import { ILogger, LoggerService, ParticipantService, Room } from '../openvidu-components';
+import { ILogger, LoggerService, ParticipantModel, ParticipantService, Room } from '../openvidu-components';
 
 /**
  * Service responsible for managing live transcription captions.
@@ -183,7 +182,7 @@ export class MeetingCaptionsService {
 			// Get full participant model from ParticipantService
 			const participant = this.participantService.getParticipantByIdentity(
 				participantIdentity
-			) as CustomParticipantModel;
+			) as ParticipantModel;
 			if (!participant) {
 				this.logger.e(`Participant with identity ${participantIdentity} not found for transcription`);
 				return;
@@ -217,7 +216,7 @@ export class MeetingCaptionsService {
 	 */
 	private handleFinalTranscription(
 		key: string,
-		participant: CustomParticipantModel,
+		participant: ParticipantModel,
 		text: string,
 		trackId: string
 	): void {
@@ -274,7 +273,7 @@ export class MeetingCaptionsService {
 	 */
 	private handleInterimTranscription(
 		key: string,
-		participant: CustomParticipantModel,
+		participant: ParticipantModel,
 		text: string,
 		trackId: string
 	): void {
@@ -329,7 +328,7 @@ export class MeetingCaptionsService {
 	 * @returns The ID of the created caption
 	 */
 	private addNewCaption(
-		participant: CustomParticipantModel,
+		participant: ParticipantModel,
 		text: string,
 		trackId: string,
 		isFinal: boolean

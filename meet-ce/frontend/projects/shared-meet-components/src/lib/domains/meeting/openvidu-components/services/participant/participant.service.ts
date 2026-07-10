@@ -1,7 +1,6 @@
 import { Injectable, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
-import { GlobalConfigService } from '../config/global-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
 import type {
 	OVAudioCaptureOptions,
@@ -23,7 +22,6 @@ import { StorageService } from '../storage/storage.service';
 	providedIn: 'root'
 })
 export class ParticipantService {
-	private readonly globalService = inject(GlobalConfigService);
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly openviduService = inject(OpenViduService);
 	private readonly storageSrv = inject(StorageService);
@@ -650,12 +648,7 @@ export class ParticipantService {
 	}
 
 	private newParticipant(props: ParticipantProperties): ParticipantModel {
-		let participant: ParticipantModel;
-		if (this.globalService.hasParticipantFactory()) {
-			participant = this.globalService.getParticipantFactory().apply(this, [props]);
-		} else {
-			participant = new ParticipantModel(props);
-		}
+		const participant = new ParticipantModel(props);
 
 		// Decrypt participant name asynchronously if E2EE is enabled
 		this.decryptParticipantName(participant);

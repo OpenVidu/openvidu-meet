@@ -3,8 +3,7 @@ import { GlobalConfigService } from '../../../shared/services/global-config.serv
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
-import { CustomParticipantModel } from '../models';
-import { ParticipantService, Room, ViewportService } from '../openvidu-components';
+import { ParticipantModel, ParticipantService, Room, ViewportService } from '../openvidu-components';
 import { RoomAccessLinkService } from './room-access-link.service';
 
 /**
@@ -32,8 +31,8 @@ export class MeetingContextService {
 	private readonly _isActiveMeeting = signal<boolean>(false);
 	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
 	private readonly _lkRoom = signal<Room | undefined>(undefined);
-	private readonly _localParticipant = signal<CustomParticipantModel | undefined>(undefined);
-	private readonly _remoteParticipants = signal<CustomParticipantModel[]>([]);
+	private readonly _localParticipant = signal<ParticipantModel | undefined>(undefined);
+	private readonly _remoteParticipants = signal<ParticipantModel[]>([]);
 
 	/** Readonly signal for the current room ID */
 	readonly roomId = this._roomId.asReadonly();
@@ -174,13 +173,13 @@ export class MeetingContextService {
 		// Sync local participant signal
 		effect(() => {
 			const localParticipant = this.ovParticipantService.localParticipant();
-			this._localParticipant.set(localParticipant as CustomParticipantModel);
+			this._localParticipant.set(localParticipant as ParticipantModel);
 		});
 
 		// Sync remote participants signal
 		effect(() => {
 			const remoteParticipants = this.ovParticipantService.remoteParticipants();
-			this._remoteParticipants.set(remoteParticipants as CustomParticipantModel[]);
+			this._remoteParticipants.set(remoteParticipants as ParticipantModel[]);
 		});
 	}
 

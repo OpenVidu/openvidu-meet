@@ -18,7 +18,6 @@ export * from './components/toolbar/toolbar-media-buttons/toolbar-media-buttons.
 export * from './components/toolbar/toolbar-panel-buttons/toolbar-panel-buttons.component';
 export * from './components/toolbar/toolbar.component';
 export * from './components/videoconference/videoconference.component';
-export * from './config/openvidu-components-angular.config';
 // Directives
 export * from './directives/api/activities-panel.directive';
 export * from './directives/api/api.directive.module';

@@ -13,7 +13,6 @@ import {
 	AUTH_TRANSLATIONS,
 	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
-	CustomParticipantModel,
 	httpInterceptor,
 	MeetingLayoutService,
 	provideOpenViduComponents,
@@ -23,16 +22,9 @@ import {
 	RoomMemberInterceptorErrorHandlerService,
 	SHARED_TRANSLATIONS,
 	SmartLayoutService,
-	ThemeService,
-	type OpenViduComponentsConfig,
-	type ParticipantProperties
+	ThemeService
 } from '@openvidu-meet/shared-components';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
-
-const ovComponentsConfig: OpenViduComponentsConfig = {
-	production: false,
-	participantFactory: (props: ParticipantProperties) => new CustomParticipantModel(props)
-};
 
 export const appConfig: ApplicationConfig = {
 	providers: [
@@ -48,7 +40,7 @@ export const appConfig: ApplicationConfig = {
 		provideAppInitializer(() => inject(AuthHeaderProviderService).init()),
 		provideAppInitializer(() => inject(AuthInterceptorErrorHandlerService).init()),
 		provideHttpClient(withXhr(), withInterceptors([httpInterceptor])),
-		provideOpenViduComponents(ovComponentsConfig),
+		provideOpenViduComponents(),
 		provideTranslations(RECORDINGS_TRANSLATIONS),
 		provideTranslations(AUTH_TRANSLATIONS),
 		provideTranslations(SHARED_TRANSLATIONS),
