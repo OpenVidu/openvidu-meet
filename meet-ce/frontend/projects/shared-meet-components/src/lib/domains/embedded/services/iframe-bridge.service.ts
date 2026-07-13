@@ -1,10 +1,10 @@
 import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { EmbeddedCommand, EmbeddedCommandName, EmbeddedEvent } from '@openvidu-meet/typings';
+import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { MeetingLiveKitService } from '../../meeting/openvidu-components';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
-import { LoggerService } from '../../../shared/services/logger.service';
 
 /**
  * `postMessage` transport for the embedded **iframe** integration.

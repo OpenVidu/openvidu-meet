@@ -1,19 +1,19 @@
 import { inject, Injectable } from '@angular/core';
+import type { ILogger } from '../../../../../shared/models/logger.model';
+import { AssetsService } from '../../../../../shared/services/assets.service';
+import { LoggerService } from '../../../../../shared/services/logger.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { DeviceService } from '../device/device.service';
 import {
 	ConnectionState,
-	ExternalE2EEKeyProvider,
 	E2EEOptions,
+	ExternalE2EEKeyProvider,
 	Room,
 	RoomOptions,
 	VideoPresets
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { StorageService } from '../storage/storage.service';
-import { AssetsService } from '../../../../../shared/services/assets.service';
-import { LoggerService } from '../../../../../shared/services/logger.service';
-import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * Owns the live meeting connection: the LiveKit Room lifecycle (create/connect/disconnect),
@@ -210,8 +210,9 @@ export class MeetingLiveKitService {
 	}
 
 	/**
-	 * Returns if local participant is connected to the room
-	 * @returns
+	 * Returns if local participant is connected to the room.
+	 * When reconnecting, the room is initialized but not connected yet, so this method will return false.
+	 * @returns true if local participant is connected to the room, false otherwise
 	 */
 	isConnected(): boolean {
 		return this.room?.state === ConnectionState.Connected;
