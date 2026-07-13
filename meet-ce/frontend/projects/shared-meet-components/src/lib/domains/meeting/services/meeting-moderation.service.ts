@@ -6,12 +6,12 @@ import { LoggerService } from '../../../shared/services/logger.service';
 @Injectable({
 	providedIn: 'root'
 })
-export class MeetingService {
+export class MeetingModerationService {
 	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
 
 	protected httpService = inject(HttpService);
 	protected loggerService = inject(LoggerService);
-	protected log = this.loggerService.get('OpenVidu Meet - MeetingService');
+	protected log = this.loggerService.get('OpenVidu Meet - MeetingModerationService');
 
 	/**
 	 * Ends a meeting by its room ID.

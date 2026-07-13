@@ -1,7 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { OpenViduService } from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
-import { MeetingService } from '../../meeting/services/meeting.service';
+import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
@@ -21,7 +21,7 @@ import { LoggerService } from '../../../shared/services/logger.service';
 	providedIn: 'root'
 })
 export class EmbeddedCommandService {
-	private readonly meetingService = inject(MeetingService);
+	private readonly meetingModerationService = inject(MeetingModerationService);
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly openviduService = inject(OpenViduService);
@@ -45,7 +45,7 @@ export class EmbeddedCommandService {
 
 		try {
 			this.log.d(`Ending meeting ${roomId}...`);
-			await this.meetingService.endMeeting(roomId);
+			await this.meetingModerationService.endMeeting(roomId);
 		} catch (error) {
 			this.log.e('Error ending meeting:', error);
 		}
@@ -88,7 +88,7 @@ export class EmbeddedCommandService {
 
 		try {
 			this.log.d(`Kicking participant ${participantIdentity} from meeting ${roomId}...`);
-			await this.meetingService.kickParticipant(roomId, participantIdentity);
+			await this.meetingModerationService.kickParticipant(roomId, participantIdentity);
 		} catch (error) {
 			this.log.e(`Error kicking participant ${participantIdentity}:`, error);
 		}

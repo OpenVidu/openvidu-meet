@@ -7,7 +7,7 @@ import { RoomMemberContextService } from '../../../room-members/services/room-me
 import { RoomMemberUiUtils } from '../../../room-members/utils/ui';
 import { OpenViduComponentsUiModule, ParticipantDisplayProperties, ParticipantModel } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
-import { MeetingService } from '../../services/meeting.service';
+import { MeetingModerationService } from '../../services/meeting-moderation.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 
 /**
@@ -24,7 +24,7 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 export class MeetingParticipantItemContentComponent {
 	readonly participant = input.required<ParticipantModel>();
 
-	protected meetingService = inject(MeetingService);
+	protected meetingModerationService = inject(MeetingModerationService);
 	protected meetingContextService = inject(MeetingContextService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
 	protected loggerService = inject(LoggerService);
@@ -91,7 +91,7 @@ export class MeetingParticipantItemContentComponent {
 		}
 
 		try {
-			await this.meetingService.changeParticipantRole(
+			await this.meetingModerationService.changeParticipantRole(
 				roomId,
 				this.participant().identity,
 				MeetParticipantModerationAction.UPGRADE
@@ -112,7 +112,7 @@ export class MeetingParticipantItemContentComponent {
 		}
 
 		try {
-			await this.meetingService.changeParticipantRole(
+			await this.meetingModerationService.changeParticipantRole(
 				roomId,
 				this.participant().identity,
 				MeetParticipantModerationAction.DOWNGRADE
@@ -133,7 +133,7 @@ export class MeetingParticipantItemContentComponent {
 		}
 
 		try {
-			await this.meetingService.kickParticipant(roomId, this.participant().identity);
+			await this.meetingModerationService.kickParticipant(roomId, this.participant().identity);
 			this.log.d('Participant kicked successfully');
 		} catch (error) {
 			this.log.e('Error kicking participant:', error);
