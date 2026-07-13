@@ -4,7 +4,7 @@ import type {
 	SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
 import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
-import { OVLocalVideoTrack } from '../livekit-adapter';
+import { LocalVideoTrack } from '../livekit-adapter';
 import { PlatformService } from '../platform/platform.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
@@ -150,7 +150,7 @@ export class VideoTrackProcessorService {
 	 */
 	async switchBackgroundMode(
 		options: SwitchBackgroundProcessorOptions,
-		videoTrack?: OVLocalVideoTrack
+		videoTrack?: LocalVideoTrack
 	): Promise<void> {
 		await this.ensureReady();
 
@@ -196,7 +196,7 @@ export class VideoTrackProcessorService {
 	 * @param videoTrack - The new video track to attach the processor to
 	 * @internal
 	 */
-	async applyToVideoTrack(videoTrack: OVLocalVideoTrack): Promise<void> {
+	async applyToVideoTrack(videoTrack: LocalVideoTrack): Promise<void> {
 		// If the module was never loaded, no background has ever been applied — nothing to restore.
 		const tp = this.processorsModule;
 		if (!tp || !this.isBackgroundProcessorSupported()) return;
@@ -233,7 +233,7 @@ export class VideoTrackProcessorService {
 	 */
 	private async handleLazyProcessorAttachment(
 		mode: SwitchBackgroundProcessorOptions['mode'],
-		videoTrack: OVLocalVideoTrack
+		videoTrack: LocalVideoTrack
 	): Promise<void> {
 		const tp = this.processorsModule;
 		if (!tp) return;

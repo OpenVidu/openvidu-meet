@@ -55,7 +55,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import type { OVRoom } from '../../services/livekit-adapter';
+import type { Room } from '../../services/livekit-adapter';
 import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
 import { StorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
@@ -323,7 +323,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * Provides event notifications that fire when Room is created for the local participant.
 	 * It provides the {@link https://openvidu.io/latest/docs/getting-started/#room Room} payload as event data.
 	 */
-	readonly onRoomCreated = output<OVRoom>();
+	readonly onRoomCreated = output<Room>();
 
 	/**
 	 * Provides event notifications that fire when local participant is connected to the Room.

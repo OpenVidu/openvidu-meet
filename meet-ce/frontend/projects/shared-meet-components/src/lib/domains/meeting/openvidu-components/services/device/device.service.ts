@@ -1,6 +1,6 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { CameraType, CustomDevice, DeviceType } from '../../models/device.model';
-import type { OVLocalTrack } from '../livekit-adapter';
+import type { LocalTrack } from '../livekit-adapter';
 import { Track } from '../livekit-adapter';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { PlatformService } from '../platform/platform.service';
@@ -248,7 +248,7 @@ export class DeviceService implements OnDestroy {
 	 * before enumeration. A stored preference, when the matching device exists, has already been
 	 * honoured by the track creation, so this is a no-op in that common case.
 	 */
-	private syncSelectedFromTracks(tracks: OVLocalTrack[]): void {
+	private syncSelectedFromTracks(tracks: LocalTrack[]): void {
 		for (const track of tracks) {
 			const deviceId = track?.mediaStreamTrack?.getSettings?.().deviceId;
 			if (!deviceId) continue;
@@ -272,7 +272,7 @@ export class DeviceService implements OnDestroy {
 	 * front), and the whole operation is best-effort: an enumeration failure is logged, never thrown,
 	 * so it can neither block joining nor cause the caller to re-acquire the tracks.
 	 */
-	async syncDevicesAfterTrackCreation(tracks: OVLocalTrack[]): Promise<void> {
+	async syncDevicesAfterTrackCreation(tracks: LocalTrack[]): Promise<void> {
 		try {
 			if (this.cameras().length === 0 && this.microphones().length === 0) {
 				await this.initializeDevices();

@@ -3,14 +3,14 @@ import { ParticipantModel, ParticipantProperties } from '../../models/participan
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
 import type {
-	OVAudioCaptureOptions,
-	OVDataPublishOptions,
-	OVLocalParticipant,
-	OVLocalTrackPublication,
-	OVParticipant,
-	OVRemoteParticipant,
-	OVScreenShareCaptureOptions,
-	OVVideoCaptureOptions
+	AudioCaptureOptions,
+	DataPublishOptions,
+	LocalParticipant,
+	LocalTrackPublication,
+	Participant,
+	RemoteParticipant,
+	ScreenShareCaptureOptions,
+	VideoCaptureOptions
 } from '../livekit-adapter';
 import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track, VideoPresets } from '../livekit-adapter';
@@ -76,7 +76,7 @@ export class ParticipantService {
 	 * Setting up the local participant object.
 	 * @param participant
 	 */
-	setLocalParticipant(participant: OVLocalParticipant) {
+	setLocalParticipant(participant: LocalParticipant) {
 		const room = this.meetingConnectionService.getRoom();
 		const newParticipant = this.newParticipant({ participant, room });
 		this._localParticipant.set(newParticipant);
@@ -113,7 +113,7 @@ export class ParticipantService {
 		const videoTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Video);
 		const audioTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Audio);
 
-		const promises: Promise<OVLocalTrackPublication>[] = [];
+		const promises: Promise<LocalTrackPublication>[] = [];
 		if (localParticipant && videoTrack) {
 			promises.push(localParticipant.publishTrack(videoTrack));
 		}
@@ -140,7 +140,7 @@ export class ParticipantService {
 	 * @param data
 	 * @param {DataPublishOptions} publishOptions [DataPublishOptions](https://docs.livekit.io/client-sdk-js/types/DataPublishOptions.html)
 	 */
-	publishData(data: Uint8Array, publishOptions: OVDataPublishOptions): Promise<void> {
+	publishData(data: Uint8Array, publishOptions: DataPublishOptions): Promise<void> {
 		const localParticipant = this.localParticipant();
 		if (localParticipant) {
 			return localParticipant.publishData(data, publishOptions);
@@ -213,7 +213,7 @@ export class ParticipantService {
 	async setCameraEnabled(enabled: boolean): Promise<void> {
 		if (this.meetingConnectionService.isRoomConnected()) {
 			const storageDevice = this.storageSrv.getVideoDevice();
-			let options: OVVideoCaptureOptions | undefined;
+			let options: VideoCaptureOptions | undefined;
 			if (storageDevice) {
 				options = {
 					deviceId: storageDevice.device,
@@ -235,7 +235,7 @@ export class ParticipantService {
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
 		if (this.meetingConnectionService.isRoomConnected()) {
 			const storageDevice = this.storageSrv.getAudioDevice();
-			let options: OVAudioCaptureOptions | undefined;
+			let options: AudioCaptureOptions | undefined;
 			if (storageDevice) {
 				options = {
 					deviceId: storageDevice.device
@@ -293,7 +293,7 @@ export class ParticipantService {
 	 * @param speakers
 	 * @internal
 	 */
-	setSpeaking(speakers: OVParticipant[]) {
+	setSpeaking(speakers: Participant[]) {
 		// Reset speaking state for all participants (_speaking signal update is a no-op if unchanged).
 		this._localParticipant()?.setSpeaking(false);
 		this.remoteParticipants().forEach((p) => p.setSpeaking(false));
@@ -550,7 +550,7 @@ export class ParticipantService {
 	/**
 	 * @internal
 	 */
-	addRemoteParticipant(participant: OVRemoteParticipant) {
+	addRemoteParticipant(participant: RemoteParticipant) {
 		const remotes = this._remoteParticipants();
 		const existing = remotes.find((p) => p.sid === participant.sid);
 		if (existing) {
@@ -569,7 +569,7 @@ export class ParticipantService {
 	 * @param trackSid
 	 * @internal
 	 */
-	removeRemoteParticipantTrack(participant: OVRemoteParticipant, trackSid: string) {
+	removeRemoteParticipantTrack(participant: RemoteParticipant, trackSid: string) {
 		const model = this._remoteParticipants().find((p) => p.sid === participant.sid);
 		if (model) {
 			const track = model.tracks.find((t) => t.trackSid === trackSid);
@@ -679,7 +679,7 @@ export class ParticipantService {
 		}
 	}
 
-	private getScreenCaptureOptions(): OVScreenShareCaptureOptions {
+	private getScreenCaptureOptions(): ScreenShareCaptureOptions {
 		return {
 			audio: true,
 			video: {

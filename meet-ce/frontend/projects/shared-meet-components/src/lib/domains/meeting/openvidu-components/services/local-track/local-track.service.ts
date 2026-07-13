@@ -2,10 +2,10 @@ import { inject, Injectable, Signal } from '@angular/core';
 import { DeviceService } from '../device/device.service';
 import {
 	AudioCaptureOptions,
-	OVCreateLocalTracksOptions,
-	OVLocalAudioTrack,
-	OVLocalTrack,
-	OVLocalVideoTrack,
+	CreateLocalTracksOptions,
+	LocalAudioTrack,
+	LocalTrack,
+	LocalVideoTrack,
 	Track,
 	VideoCaptureOptions
 } from '../livekit-adapter';
@@ -34,7 +34,7 @@ export class LocalTrackService {
 	/*
 	 * Tracks used in the prejoin component. They are created when the room is not yet created.
 	 */
-	private localTracks: OVLocalTrack[] = [];
+	private localTracks: LocalTrack[] = [];
 	private log: ILogger = inject(LoggerService).get('LocalTrackService');
 
 	/**
@@ -51,15 +51,15 @@ export class LocalTrackService {
 	 * @returns void
 	 * @internal
 	 */
-	setLocalTracks(tracks: OVLocalTrack[]): void {
-		this.localTracks = tracks.filter((track) => track !== undefined) as OVLocalTrack[];
+	setLocalTracks(tracks: LocalTrack[]): void {
+		this.localTracks = tracks.filter((track) => track !== undefined) as LocalTrack[];
 	}
 
 	/**
 	 * @internal
 	 * @returns
 	 */
-	getLocalTracks(): OVLocalTrack[] {
+	getLocalTracks(): LocalTrack[] {
 		return this.localTracks;
 	}
 
@@ -87,14 +87,14 @@ export class LocalTrackService {
 		videoDeviceId: string | boolean | undefined = undefined,
 		audioDeviceId: string | boolean | undefined = undefined,
 		allowPartialCreation: boolean = true
-	): Promise<OVLocalTrack[]> {
+	): Promise<LocalTrack[]> {
 		// Default to the user's stored preference (availability-independent). Whether a device is
 		// actually opened — and which one — is resolved by the per-kind logic below; on first visit
 		// the device list is still empty, so a default-device request is issued to obtain permission.
 		videoDeviceId ??= this.storageService.isCameraEnabled();
 		audioDeviceId ??= this.storageService.isMicrophoneEnabled();
 
-		const options: OVCreateLocalTracksOptions = {
+		const options: CreateLocalTracksOptions = {
 			audio: { echoCancellation: true, noiseSuppression: true },
 			video: {}
 		};
@@ -136,7 +136,7 @@ export class LocalTrackService {
 			(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(audioDeviceId);
 		}
 
-		let newLocalTracks: OVLocalTrack[] = [];
+		let newLocalTracks: LocalTrack[] = [];
 
 		if (options.audio || options.video) {
 			this.log.d('Creating local tracks with options', options);
@@ -149,7 +149,7 @@ export class LocalTrackService {
 				newLocalTracks = await this.livekitSdkService.createLocalTracks(options);
 			}
 
-			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
+			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 			if (videoTrack) {
 				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
 			}
@@ -172,8 +172,8 @@ export class LocalTrackService {
 	 * @returns Array of successfully created tracks
 	 * @internal
 	 */
-	private async createTracksWithFallback(options: OVCreateLocalTracksOptions): Promise<OVLocalTrack[]> {
-		const tracks: OVLocalTrack[] = [];
+	private async createTracksWithFallback(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
+		const tracks: LocalTrack[] = [];
 
 		// Try to create video track separately
 		if (options.video) {
@@ -278,7 +278,7 @@ export class LocalTrackService {
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
 		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as
-			| OVLocalVideoTrack
+			| LocalVideoTrack
 			| undefined;
 		const options: VideoCaptureOptions = { deviceId: this.toDeviceConstraint(deviceId) };
 		if (existingTrack) {
@@ -301,7 +301,7 @@ export class LocalTrackService {
 		// No existing track (edge case: camera was unavailable/unpublished) → create a fresh one
 		try {
 			const newVideoTracks = await this.livekitSdkService.createLocalTracks({ video: options });
-			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
+			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 			if (videoTrack) {
 				if (!this.deviceService.isCameraEnabled()) {
 					await videoTrack.mute();
@@ -329,7 +329,7 @@ export class LocalTrackService {
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
 		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Audio) as
-			| OVLocalAudioTrack
+			| LocalAudioTrack
 			| undefined;
 		const options: AudioCaptureOptions = {
 			deviceId: this.toDeviceConstraint(deviceId),
@@ -354,7 +354,7 @@ export class LocalTrackService {
 
 		// No existing track (edge case) → create a fresh one
 		try {
-			const newAudioTracks = await this.livekitSdkService.createLocalTracks(options as OVCreateLocalTracksOptions);
+			const newAudioTracks = await this.livekitSdkService.createLocalTracks(options as CreateLocalTracksOptions);
 			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
 			if (audioTrack) {
 				if (!this.deviceService.isMicrophoneEnabled()) {
@@ -375,9 +375,9 @@ export class LocalTrackService {
 	 * @returns LocalVideoTrack or undefined
 	 * @internal
 	 */
-	async getCurrentVideoTrack(): Promise<OVLocalVideoTrack | undefined> {
+	async getCurrentVideoTrack(): Promise<LocalVideoTrack | undefined> {
 		// First try to get from local tracks (prejoin state)
-		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
+		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 
 		// If not found and room is connected, get from published tracks
 		if (!videoTrack && this.meetingConnectionService.isRoomConnected()) {
@@ -385,7 +385,7 @@ export class LocalTrackService {
 			const videoPublication = localParticipant
 				.getTrackPublications()
 				.find((pub) => pub.kind === Track.Kind.Video);
-			videoTrack = videoPublication?.track as OVLocalVideoTrack | undefined;
+			videoTrack = videoPublication?.track as LocalVideoTrack | undefined;
 		}
 
 		return videoTrack;

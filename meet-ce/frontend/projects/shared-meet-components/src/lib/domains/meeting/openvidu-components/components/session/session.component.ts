@@ -23,7 +23,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
-import type { OVRoom } from '../../services/livekit-adapter';
 import { Room } from '../../services/livekit-adapter';
 import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
 import { PanelService } from '../../services/panel/panel.service';
@@ -53,7 +52,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	/**
 	 * Provides event notifications that fire when Room is created for the local participant.
 	 */
-	onRoomCreated = output<OVRoom>();
+	onRoomCreated = output<Room>();
 
 	/**
 	 * Provides event notifications that fire when Room is being reconnected for the local participant.

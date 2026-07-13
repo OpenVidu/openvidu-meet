@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
-import type { OVLocalParticipant, OVRemoteParticipant, OVRoom, OVTrackPublication } from '../services/livekit-adapter';
+import type { RemoteParticipant, Room, TrackPublication } from '../services/livekit-adapter';
 import {
 	AudioCaptureOptions,
 	ConnectionQuality,
@@ -16,7 +16,7 @@ import {
 import { DeviceType } from './device.model';
 import { ScreenZoomState } from './screen-zoom.model';
 
-type AugmentedTrackPublication = OVTrackPublication & {
+type AugmentedTrackPublication = TrackPublication & {
 	participant: ParticipantModel;
 	isPinned: boolean;
 	isFloating: boolean;
@@ -64,9 +64,9 @@ export interface ParticipantStream {
 	/** Primary source of this stream (Camera or ScreenShare). */
 	source: Track.Source;
 	/** Video track publication, undefined when no video is published (avatar will be shown). */
-	videoTrack: OVTrackPublication | undefined;
+	videoTrack: TrackPublication | undefined;
 	/** Associated audio track publication, undefined when no audio is published. */
-	audioTrack: OVTrackPublication | undefined;
+	audioTrack: TrackPublication | undefined;
 	/** True when this is the camera/mic stream. */
 	isCameraStream: boolean;
 	/** True when this is the screen-share stream. */
@@ -94,12 +94,12 @@ export interface ParticipantProperties {
 	/**
 	 * The participant instance, which can be either a local participant or a remote participant.
 	 */
-	participant: OVLocalParticipant | OVRemoteParticipant;
+	participant: LocalParticipant | RemoteParticipant;
 
 	/**
 	 * The room in which the participant is located, applicable only for local participants.
 	 */
-	room?: OVRoom;
+	room?: Room;
 
 	/**
 	 * The color profile associated with the participant.
@@ -148,8 +148,8 @@ export class ParticipantModel {
 	colorProfile: string;
 
 	// ── Private state ─────────────────────────────────────────────────────────────────────────────
-	private participant: OVLocalParticipant | OVRemoteParticipant;
-	private room: OVRoom | undefined;
+	private participant: LocalParticipant | RemoteParticipant;
+	private room: Room | undefined;
 	private customVideoTrack: Partial<AugmentedTrackPublication>;
 
 	// Reactive state. These signals replace plain boolean fields. Getters that read them are
@@ -341,7 +341,7 @@ export class ParticipantModel {
 	 * Returns all the participant tracks.
 	 * @internal
 	 */
-	get tracks(): OVTrackPublication[] {
+	get tracks(): TrackPublication[] {
 		return this.augmentedTracks;
 	}
 
@@ -737,7 +737,7 @@ export class ParticipantModel {
 		// Reading _revision() registers it as a reactive dependency for any computed/effect/template
 		// that calls this getter — consumers re-evaluate automatically when bump() is called.
 		this._revision();
-		const defaultTracks = this.participant.getTrackPublications().map((track: OVTrackPublication) => {
+		const defaultTracks = this.participant.getTrackPublications().map((track: TrackPublication) => {
 			const augmented = track as AugmentedTrackPublication;
 			augmented.participant = this;
 			augmented.isMutedForcibly = augmented.isMutedForcibly || false;

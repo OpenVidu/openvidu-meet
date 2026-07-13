@@ -4,9 +4,9 @@ import { DeviceService } from '../device/device.service';
 import {
 	ConnectionState,
 	ExternalE2EEKeyProvider,
-	OVE2EEOptions,
-	OVRoom,
-	OVRoomOptions,
+	E2EEOptions,
+	Room,
+	RoomOptions,
 	VideoPresets
 } from '../livekit-adapter';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
@@ -30,7 +30,7 @@ export class MeetingConnectionService {
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly assets = inject(AssetsService);
 
-	private room: OVRoom | undefined = undefined;
+	private room: Room | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
 
 	/**
@@ -68,7 +68,7 @@ export class MeetingConnectionService {
 		const videoDeviceId = this.deviceService.getCameraSelected()?.device ?? undefined;
 		const audioDeviceId = this.deviceService.getMicrophoneSelected()?.device ?? undefined;
 
-		const roomOptions: OVRoomOptions = {
+		const roomOptions: RoomOptions = {
 			adaptiveStream: true,
 			dynacast: true,
 			audioCaptureDefaults: {
@@ -99,7 +99,7 @@ export class MeetingConnectionService {
 		this.log.d('Room initialized successfully');
 	}
 
-	private buildE2EEOptions(): OVE2EEOptions {
+	private buildE2EEOptions(): E2EEOptions {
 		this.log.d('Configuring E2EE with provided key');
 		this.keyProvider = new ExternalE2EEKeyProvider();
 		return {
@@ -186,7 +186,7 @@ export class MeetingConnectionService {
 	/**
 	 * @returns Room instance
 	 */
-	getRoom(): OVRoom {
+	getRoom(): Room {
 		if (!this.room) {
 			this.log.e('Room is not initialized. Make sure token is set before accessing the room.');
 			throw new Error('Room is not initialized. Make sure token is set before accessing the room.');
