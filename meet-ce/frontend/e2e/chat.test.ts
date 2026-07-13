@@ -1,6 +1,4 @@
 import { expect, test } from '@playwright/test';
-import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
-import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
 	expectChatLinkCount,
 	expectChatLinkHrefContains,
@@ -9,7 +7,9 @@ import {
 	expectFirstMessageSender,
 	sendChatMessage,
 	toggleChatPanel
-} from './helpers/panels.helper';
+} from './helpers/chat.helper';
+import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
+import { openMeeting } from './helpers/meeting-navigation.helper';
 import { disconnectAllBrowserFakeParticipants, joinParticipants } from './helpers/participant-management.helper';
 import { expectSnackbarNotification } from './helpers/ui-utils.helper';
 

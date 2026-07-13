@@ -1,12 +1,8 @@
 import { test } from '@playwright/test';
+import { toggleChatPanel } from './helpers/chat.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
-import {
-	openSettingsPanel,
-	toggleActivitiesPanel,
-	toggleChatPanel,
-	toggleParticipantsPanel
-} from './helpers/panels.helper';
+import { openSettingsPanel, toggleActivitiesPanel, toggleParticipantsPanel } from './helpers/panels.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 
 test.describe('Panels E2E Tests', () => {

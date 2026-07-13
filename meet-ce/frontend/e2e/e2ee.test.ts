@@ -1,19 +1,18 @@
 import { expect, test } from '@playwright/test';
 import {
+	expectChatMessageCount,
+	expectChatMessageTextAt,
+	sendChatMessage,
+	toggleChatPanel
+} from './helpers/chat.helper';
+import {
 	expectOwnNameInSettings,
 	expectUnmaskedParticipantPanelNames,
 	expectUnmaskedVideoGridNames
 } from './helpers/e2ee.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openLobby, openMeeting } from './helpers/meeting-navigation.helper';
-import {
-	expectChatMessageCount,
-	expectChatMessageTextAt,
-	openMoreOptionsMenu,
-	sendChatMessage,
-	toggleChatPanel,
-	toggleParticipantsPanel
-} from './helpers/panels.helper';
+import { openMoreOptionsMenu, toggleParticipantsPanel } from './helpers/panels.helper';
 import { waitForRemoteStream } from './helpers/stream.helper';
 import { expectHidden, expectVisible } from './helpers/ui-utils.helper';
 

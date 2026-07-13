@@ -9,6 +9,7 @@ import {
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { createReadyMemberUser, expectLobbyAccessRestricted, expectNameInput } from './helpers/access.helper';
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
+import { expectChatAvailable, expectNoChat } from './helpers/chat.helper';
 import {
 	expectBackgroundsButtonAvailable,
 	expectCameraButtonAvailable,
@@ -37,7 +38,7 @@ import {
 	openLobby,
 	openMeeting
 } from './helpers/meeting-navigation.helper';
-import { expectChatAvailable, expectNoChat, toggleParticipantsPanel } from './helpers/panels.helper';
+import { toggleParticipantsPanel } from './helpers/panels.helper';
 import {
 	expectKickButton,
 	expectMakeModeratorButton,
