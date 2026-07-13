@@ -8,6 +8,7 @@ import { SmartLayoutService } from '../../openvidu-components/services/layout/sm
 import { RoomAccessLinkService } from '../../services/room-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
+import { MeetingStateService } from '../../services/meeting-state.service';
 import { MeetingLayoutService } from '../../services/meeting-layout.service';
 import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.component';
 import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-waiting-panel.component';
@@ -29,12 +30,13 @@ import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-w
 })
 export class MeetingCustomLayoutComponent {
 	protected meetingContextService = inject(MeetingContextService);
+	protected meetingStateService = inject(MeetingStateService);
 	protected roomAccessLinkService = inject(RoomAccessLinkService);
 	protected captionsService = inject(MeetingCaptionsService);
 	protected panelService = inject(PanelService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);
 
-	lkRoom = this.meetingContextService.lkRoom;
+	lkRoom = this.meetingStateService.lkRoom;
 	roomAccessUrl = this.roomAccessLinkService.speakerPublicLink;
 	areCaptionsEnabledByUser = this.captionsService.areCaptionsEnabledByUser;
 	captions = this.captionsService.captions;
@@ -54,7 +56,7 @@ export class MeetingCustomLayoutComponent {
 		return (
 			!this.isEmbeddedMode() &&
 			this.meetingContextService.meetingUI().showShareAccessLinks &&
-			this.meetingContextService.isAlone() &&
+			this.meetingStateService.isAlone() &&
 			hasPublicSpeakerLink
 		);
 	});
@@ -63,7 +65,7 @@ export class MeetingCustomLayoutComponent {
 	 * Waiting overlay: embedded modes (webcomponent or iframe) only, shown while alone
 	 * in place of the share/copy link overlay (link sharing is handled by the host application).
 	 */
-	shouldShowWaitingOverlay = computed(() => this.isEmbeddedMode() && this.meetingContextService.isAlone());
+	shouldShowWaitingOverlay = computed(() => this.isEmbeddedMode() && this.meetingStateService.isAlone());
 
 	/** True when either overlay covers the layout (used to hide the hidden-participants indicator). */
 	shouldShowOverlay = computed(() => this.shouldShowLinkOverlay() || this.shouldShowWaitingOverlay());

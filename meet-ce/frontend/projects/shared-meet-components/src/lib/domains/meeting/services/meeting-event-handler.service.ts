@@ -32,6 +32,7 @@ import type {
 } from '../openvidu-components';
 import { ParticipantLeftReason, RoomEvent } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
+import { MeetingStateService } from './meeting-state.service';
 
 /**
  * Service that handles all LiveKit/OpenVidu room events.
@@ -42,6 +43,7 @@ import { MeetingContextService } from './meeting-context.service';
 @Injectable()
 export class MeetingEventHandlerService {
 	protected meetingContext = inject(MeetingContextService);
+	protected meetingState = inject(MeetingStateService);
 	protected roomFeatureService = inject(RoomFeatureService);
 	protected recordingService = inject(RecordingService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
@@ -139,6 +141,7 @@ export class MeetingEventHandlerService {
 
 		// Clear meeting context but keep session storage intact
 		this.meetingContext.clearMeetingContext(false);
+		this.meetingState.clear();
 
 		// Notify the host that the local participant left (embedded modes only; the bus is drained there).
 		if (this.runtimeConfigService.isEmbeddedMode()) {
@@ -200,7 +203,7 @@ export class MeetingEventHandlerService {
 	 */
 	private async handleParticipantRoleUpdated(event: MeetParticipantRoleUpdatedPayload): Promise<void> {
 		const { roomId, participantIdentity, newBadge } = event;
-		const local = this.meetingContext.localParticipant();
+		const local = this.meetingState.localParticipant();
 
 		if (!roomId || !local || local.identity !== participantIdentity) {
 			return;
@@ -238,7 +241,7 @@ export class MeetingEventHandlerService {
 	private async handleParticipantPermissionsUpdated(event: MeetParticipantPermissionsUpdatedPayload): Promise<void> {
 		const { participantIdentity } = event;
 		const roomId = this.meetingContext.roomId();
-		const local = this.meetingContext.localParticipant();
+		const local = this.meetingState.localParticipant();
 
 		if (!roomId || !local || local.identity !== participantIdentity) {
 			return;
@@ -272,14 +275,14 @@ export class MeetingEventHandlerService {
 			return;
 		}
 
-		const local = this.meetingContext.localParticipant();
+		const local = this.meetingState.localParticipant();
 		if (local && local.identity === participantIdentity) {
 			local.badge = parsedMetadata.badge;
 			local.promotedModerator = Boolean(parsedMetadata.isPromotedModerator);
 			return;
 		}
 
-		const remoteParticipants = this.meetingContext.remoteParticipants();
+		const remoteParticipants = this.meetingState.remoteParticipants();
 		const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
 		if (participant) {
 			participant.badge = parsedMetadata.badge;

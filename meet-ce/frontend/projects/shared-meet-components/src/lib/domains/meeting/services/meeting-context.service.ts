@@ -1,21 +1,19 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, signal } from '@angular/core';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomFeatureService } from '../../rooms/services/room-feature.service';
-import { ParticipantModel, ParticipantService, Room, ViewportService } from '../openvidu-components';
+import { ViewportService } from '../openvidu-components';
 import { RoomAccessLinkService } from './room-access-link.service';
 
 /**
- * Central service for managing meeting context and state during the MEETING PHASE.
- *
- * This service is the SINGLE SOURCE OF TRUTH for all meeting-related state once a participant has joined.
+ * Meeting-domain context: the room identity/config and session flags of the current meeting.
+ * Lightweight (no LiveKit); the live participant/room runtime state lives in MeetingStateService.
  */
 @Injectable({
 	providedIn: 'root'
 })
 export class MeetingContextService {
-	private readonly ovParticipantService = inject(ParticipantService);
 	private readonly roomFeatureService = inject(RoomFeatureService);
 	private readonly globalConfigService = inject(GlobalConfigService);
 	private readonly viewportService = inject(ViewportService);
@@ -30,9 +28,6 @@ export class MeetingContextService {
 	private readonly _hasRecordings = signal<boolean>(false);
 	private readonly _isActiveMeeting = signal<boolean>(false);
 	private readonly _meetingEndedBy = signal<'self' | 'other' | null>(null);
-	private readonly _lkRoom = signal<Room | undefined>(undefined);
-	private readonly _localParticipant = signal<ParticipantModel | undefined>(undefined);
-	private readonly _remoteParticipants = signal<ParticipantModel[]>([]);
 
 	/** Readonly signal for the current room ID */
 	readonly roomId = this._roomId.asReadonly();
@@ -51,21 +46,6 @@ export class MeetingContextService {
 	/** Readonly signal for whether the meeting is active */
 	readonly isActiveMeeting = this._isActiveMeeting.asReadonly();
 
-	/** Readonly signal for the current LiveKit room */
-	readonly lkRoom = this._lkRoom.asReadonly();
-	/** Readonly signal for the local participant */
-	readonly localParticipant = this._localParticipant.asReadonly();
-	/** Readonly signal for the remote participants */
-	readonly remoteParticipants = this._remoteParticipants.asReadonly();
-	/** Computed signal that combines local and remote participants */
-	readonly allParticipants = computed(() => {
-		const local = this._localParticipant();
-		const remotes = this._remoteParticipants();
-		return local ? [local, ...remotes] : remotes;
-	});
-	/** Computed signal for whether the local participant is alone (no remote participants yet) */
-	readonly isAlone = computed(() => this._remoteParticipants().length === 0);
-
 	/** Readonly signal for meeting features */
 	readonly meetingUI = this.roomFeatureService.features;
 	/** Readonly signal for room appearance configuration from global settings */
@@ -73,11 +53,6 @@ export class MeetingContextService {
 
 	/** Readonly signal for whether the device is mobile */
 	readonly isMobile = this.viewportService.isMobile;
-
-	constructor() {
-		// Setup automatic synchronization with ParticipantService signals
-		this.setupParticipantSynchronization();
-	}
 
 	/**
 	 * Sets the room ID in context
@@ -158,32 +133,6 @@ export class MeetingContextService {
 	}
 
 	/**
-	 * Sets the LiveKit Room instance in context
-	 * @param room
-	 */
-	setLkRoom(room: Room) {
-		this._lkRoom.set(room);
-	}
-
-	/**
-	 * Synchronizes participants from OpenVidu Components ParticipantService using signals.
-	 * Effects are automatically cleaned up when the service is destroyed.
-	 */
-	private setupParticipantSynchronization(): void {
-		// Sync local participant signal
-		effect(() => {
-			const localParticipant = this.ovParticipantService.localParticipant();
-			this._localParticipant.set(localParticipant as ParticipantModel);
-		});
-
-		// Sync remote participants signal
-		effect(() => {
-			const remoteParticipants = this.ovParticipantService.remoteParticipants();
-			this._remoteParticipants.set(remoteParticipants as ParticipantModel[]);
-		});
-	}
-
-	/**
 	 * Clears all meeting-scoped state:
 	 * - room member context
 	 * - meeting context
@@ -212,8 +161,5 @@ export class MeetingContextService {
 		this._hasRecordings.set(false);
 		this._isActiveMeeting.set(false);
 		this._meetingEndedBy.set(null);
-		this._lkRoom.set(undefined);
-		this._localParticipant.set(undefined);
-		this._remoteParticipants.set([]);
 	}
 }

@@ -23,6 +23,7 @@ import { MeetingParticipantItemComponent } from '../../customization/meeting-par
 import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
+import { MeetingStateService } from '../../services/meeting-state.service';
 import { MeetingEventHandlerService } from '../../services/meeting-event-handler.service';
 import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 
@@ -44,6 +45,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 })
 export class MeetingComponent implements OnInit {
 	protected meetingContextService = inject(MeetingContextService);
+	protected meetingStateService = inject(MeetingStateService);
 	protected lobbyService = inject(MeetingLobbyService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
@@ -75,7 +77,7 @@ export class MeetingComponent implements OnInit {
 	 * The panel after the local participant — the share/copy link panel (standalone SPA)
 	 * or the waiting panel (embedded) — is only shown while alone.
 	 */
-	isAlone = this.meetingContextService.isAlone;
+	isAlone = this.meetingStateService.isAlone;
 
 	// Signals for meeting context data
 	roomName = this.lobbyService.roomName;
@@ -137,7 +139,7 @@ export class MeetingComponent implements OnInit {
 	onRoomCreated(lkRoom: Room) {
 		// At this point, user has joined the meeting and MeetingContextService becomes the Single Source of Truth
 		// Store LiveKit room in context
-		this.meetingContextService.setLkRoom(lkRoom);
+		this.meetingStateService.setLkRoom(lkRoom);
 
 		// Initialize captions service
 		this.captionsService.initialize(lkRoom, {
