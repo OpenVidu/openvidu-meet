@@ -3,10 +3,13 @@ import {
 	MeetRoom,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
+	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomOptions,
+	MeetRoomRolesConfig,
 	MeetUserDTO,
-	MeetUserOptions
+	MeetUserOptions,
+	MeetUserRole
 } from '@openvidu-meet/typings';
 
 // ---------------------------------------------------------------------------
@@ -102,6 +105,24 @@ export const createRoomAsUser = async (accessToken: string, options: MeetRoomOpt
 };
 
 /**
+ * Updates a room's role permissions (partial merge). Useful to temporarily change what an anonymous
+ * role can do — e.g. removing `canRetrieveRecordings` from the speaker role and restoring it after.
+ */
+export const updateRoomRoles = async (roomId: string, roles: MeetRoomRolesConfig): Promise<void> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/roles`), {
+		method: 'PUT',
+		headers: {
+			'content-type': 'application/json',
+			'x-api-key': API_KEY
+		},
+		body: JSON.stringify({ roles })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'update room roles');
+};
+
+/**
  * Adds a member to the specified room with the given options.
  */
 export const createRoomMember = async (roomId: string, options: MeetRoomMemberOptions): Promise<MeetRoomMember> => {
@@ -116,6 +137,35 @@ export const createRoomMember = async (roomId: string, options: MeetRoomMemberOp
 
 	const responseText = await response.text();
 	assertOk(response, responseText, 'create room member');
+
+	return JSON.parse(responseText) as MeetRoomMember;
+};
+
+/**
+ * Updates a member's base role and/or custom permissions.
+ */
+export const updateRoomMemberPermissions = async (
+	roomId: string,
+	memberId: string,
+	updates: {
+		baseRole?: MeetRoomMemberRole;
+		customPermissions?: Partial<MeetRoomMemberPermissions>;
+	}
+): Promise<MeetRoomMember> => {
+	const response = await fetch(
+		withApiPath(`/rooms/${encodeURIComponent(roomId)}/members/${encodeURIComponent(memberId)}`),
+		{
+			method: 'PUT',
+			headers: {
+				'content-type': 'application/json',
+				'x-api-key': API_KEY
+			},
+			body: JSON.stringify(updates)
+		}
+	);
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'update room member');
 
 	return JSON.parse(responseText) as MeetRoomMember;
 };
@@ -211,6 +261,38 @@ export const createUser = async (options: MeetUserOptions): Promise<MeetUserDTO>
 };
 
 /**
+ * Updates a user's role.
+ */
+export const updateUserRole = async (userId: string, role: MeetUserRole): Promise<void> => {
+	const response = await fetch(withApiPath(`/users/${encodeURIComponent(userId)}/role`), {
+		method: 'PUT',
+		headers: {
+			'content-type': 'application/json',
+			'x-api-key': API_KEY
+		},
+		body: JSON.stringify({ role })
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, `update role of user ${userId}`);
+};
+
+/**
+ * Deletes a single user.
+ */
+export const deleteUser = async (userId: string): Promise<void> => {
+	const response = await fetch(withApiPath(`/users/${encodeURIComponent(userId)}`), {
+		method: 'DELETE',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, `delete user ${userId}`);
+};
+
+/**
  * Deletes the specified users (best-effort; failures — e.g. the protected admin — are ignored).
  */
 export const deleteUsers = async (userIds: string[]): Promise<void> => {
@@ -231,12 +313,28 @@ export const deleteUsers = async (userIds: string[]): Promise<void> => {
 	assertOk(response, responseText, `delete users ${ids.join(',')}`);
 };
 
-type LoginResult = { accessToken: string; refreshToken?: string; mustChangePassword?: boolean };
+/**
+ * Logs a user in and returns a usable (full) access token. Freshly created users must change their
+ * password on first login (the login token is temporary), so this performs the change to
+ * {@link newPassword} when required — after which {@link newPassword} is the user's current password.
+ */
+export const getUserAccessToken = async (userId: string, password: string, newPassword: string): Promise<string> => {
+	const login = await loginUser(userId, password);
+
+	if (login.mustChangePassword) {
+		return changeUserPassword(login.accessToken, password, newPassword);
+	}
+
+	return login.accessToken;
+};
 
 /**
  * Logs in via the REST API, returning the issued tokens and whether a password change is required.
  */
-export const loginUser = async (userId: string, password: string): Promise<LoginResult> => {
+const loginUser = async (
+	userId: string,
+	password: string
+): Promise<{ accessToken: string; mustChangePassword?: boolean }> => {
 	const response = await fetch(withInternalApiPath('/auth/login'), {
 		method: 'POST',
 		headers: { 'content-type': 'application/json' },
@@ -246,13 +344,13 @@ export const loginUser = async (userId: string, password: string): Promise<Login
 	const responseText = await response.text();
 	assertOk(response, responseText, 'login user');
 
-	return JSON.parse(responseText) as LoginResult;
+	return JSON.parse(responseText) as { accessToken: string; mustChangePassword?: boolean };
 };
 
 /**
  * Changes a user's password via the REST API and returns the fresh (full) access token.
  */
-export const changeUserPassword = async (
+const changeUserPassword = async (
 	accessToken: string,
 	currentPassword: string,
 	newPassword: string
@@ -270,21 +368,6 @@ export const changeUserPassword = async (
 	assertOk(response, responseText, 'change password');
 
 	return (JSON.parse(responseText) as { accessToken: string }).accessToken;
-};
-
-/**
- * Logs a user in and returns a usable (full) access token. Freshly created users must change their
- * password on first login (the login token is temporary), so this performs the change to
- * {@link newPassword} when required — after which {@link newPassword} is the user's current password.
- */
-export const getUserAccessToken = async (userId: string, password: string, newPassword: string): Promise<string> => {
-	const login = await loginUser(userId, password);
-
-	if (login.mustChangePassword) {
-		return changeUserPassword(login.accessToken, password, newPassword);
-	}
-
-	return login.accessToken;
 };
 
 // ---------------------------------------------------------------------------

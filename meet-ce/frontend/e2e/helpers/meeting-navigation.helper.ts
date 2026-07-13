@@ -171,6 +171,24 @@ export const expectNoEndMeetingOption = async (page: Page): Promise<void> => {
 	await expect(page.locator('ov-meeting-toolbar-leave-button #leave-btn')).toHaveCount(0);
 };
 
+// ─── Forced meeting exit (kick / access revoked) ────────────────────────────────
+
+/**
+ * Asserts that the participant was kicked out of the meeting (e.g. after losing `canJoinMeeting` or
+ * having their account deleted): the disconnected page is shown with the "kicked" reason.
+ */
+export const expectKickedFromMeeting = async (page: Page, timeoutMs = 20_000): Promise<void> => {
+	await expect(page.locator('.disconnected-container')).toBeVisible({ timeout: timeoutMs });
+};
+
+/**
+ * Asserts that the participant's access to the meeting was revoked (e.g. after a role change that
+ * removes their access): the app redirects to the error page.
+ */
+export const expectMeetingAccessRevoked = async (page: Page, timeoutMs = 20_000): Promise<void> => {
+	await expect(page.locator('.error-page')).toBeVisible({ timeout: timeoutMs });
+};
+
 /**
  * Clicks the leave button (and the secondary confirmation if it appears) and
  * waits until the meeting layout is removed from the DOM.

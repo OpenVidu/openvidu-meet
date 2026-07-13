@@ -4,10 +4,10 @@ import { openMeeting } from './helpers/meeting-navigation.helper';
 import {
 	clickViewRecordingsButton,
 	expectRecordingBadgeVisible,
+	expectRoomRecordingsListShown,
 	expectStartRecordingButtonVisible,
 	expectStopRecordingButtonVisible,
 	expectViewRecordingsButtonVisible,
-	expectViewRecordingsPageOpened,
 	startStopRecordingFromActivitiesPanel,
 	startStopRecordingFromToolbar,
 	waitForRecordingStarted
@@ -43,7 +43,7 @@ test.describe('Recordings E2E Tests', () => {
 		await expectViewRecordingsButtonVisible(page);
 
 		const newPage = await clickViewRecordingsButton(page);
-		await expectViewRecordingsPageOpened(newPage, roomId);
+		await expectRoomRecordingsListShown(newPage);
 	});
 
 	test('should start a recording from toolbar and open recording panel', async ({ page }) => {
@@ -59,6 +59,6 @@ test.describe('Recordings E2E Tests', () => {
 		await expectViewRecordingsButtonVisible(page);
 
 		const newPage = await clickViewRecordingsButton(page);
-		await expectViewRecordingsPageOpened(newPage, roomId);
+		await expectRoomRecordingsListShown(newPage);
 	});
 });

@@ -30,8 +30,8 @@ test.describe('Token Refresh E2E Tests', () => {
 		room = await createRoom();
 		createdRoomIds.push(room.roomId);
 
-		adminUser = await createReadyUser('Refresh Admin');
-		nonMemberUser = await createReadyUser('Refresh Viewer', MeetUserRole.ROOM_MEMBER);
+		adminUser = (await createReadyUser('Refresh Admin')).user;
+		nonMemberUser = (await createReadyUser('Refresh Viewer', MeetUserRole.ROOM_MEMBER)).user;
 		createdUserIds.push(adminUser.userId, nonMemberUser.userId);
 
 		recording = await recordRoom(browser, room.roomId);
@@ -48,7 +48,7 @@ test.describe('Token Refresh E2E Tests', () => {
 
 	const authenticateAndOpenRecordingsList = async (page: Page): Promise<void> => {
 		await openLobby(page, room.access.user.url, {
-			login: { userId: adminUser.userId, password: adminUser.password }
+			login: adminUser
 		});
 		await openRoomRecordings(page, toRoomRecordingsUrl(room.access.user.url));
 	};
@@ -132,7 +132,7 @@ test.describe('Token Refresh E2E Tests', () => {
 				// A non-member user views via the private secret; reloading with an expired access token
 				// makes the recording request 401, which is recovered by refreshing the access token.
 				await openRecording(page, privateRecordingUrl, {
-					login: { userId: nonMemberUser.userId, password: nonMemberUser.password }
+					login: nonMemberUser
 				});
 				await expectRecordingViewShown(page);
 
@@ -153,7 +153,7 @@ test.describe('Token Refresh E2E Tests', () => {
 
 			try {
 				await openRecording(page, privateRecordingUrl, {
-					login: { userId: nonMemberUser.userId, password: nonMemberUser.password }
+					login: nonMemberUser
 				});
 				await expectRecordingViewShown(page);
 

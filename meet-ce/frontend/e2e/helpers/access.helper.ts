@@ -1,4 +1,35 @@
+import { MeetRoomMember, MeetRoomMemberPermissions, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
+import { createReadyUser, type ReadyUser } from './auth.helper';
+import { createRoomMember } from './meet-api.helper';
+
+// ─── Member users ─────────────────────────────────────────────────────────────
+
+/**
+ * Creates a ready-to-login user (defaults to {@link MeetUserRole.ROOM_MEMBER}) and registers them as
+ * a USER-type member of the given room. The member's access URL is the plain room URL (`/room/:id`),
+ * which requires the user to log in. Returns the user and the created member.
+ */
+export const createReadyMemberUser = async (
+	roomId: string,
+	options: {
+		name?: string;
+		role?: MeetUserRole;
+		baseRole?: MeetRoomMemberRole;
+		customPermissions?: Partial<MeetRoomMemberPermissions>;
+	} = {}
+): Promise<{ user: ReadyUser; member: MeetRoomMember }> => {
+	const {
+		name = 'Member User',
+		role = MeetUserRole.ROOM_MEMBER,
+		baseRole = MeetRoomMemberRole.SPEAKER,
+		customPermissions
+	} = options;
+
+	const { user } = await createReadyUser(name, role);
+	const member = await createRoomMember(roomId, { userId: user.userId, baseRole, customPermissions });
+	return { user, member };
+};
 
 // ─── Lobby name input ─────────────────────────────────────────────────────────
 

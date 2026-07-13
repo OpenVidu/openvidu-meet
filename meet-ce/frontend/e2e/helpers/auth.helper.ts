@@ -1,13 +1,6 @@
-import {
-	MeetRoom,
-	MeetRoomMember,
-	MeetRoomMemberPermissions,
-	MeetRoomMemberRole,
-	MeetRoomOptions,
-	MeetUserRole
-} from '@openvidu-meet/typings';
+import { MeetUserRole } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
-import { createRoomAsUser, createRoomMember, createUser, getUserAccessToken, MEET_BASE_URL } from './meet-api.helper';
+import { createUser, getUserAccessToken, MEET_BASE_URL } from './meet-api.helper';
 import { click } from './ui-utils.helper';
 
 // Monotonic counter guaranteeing unique user ids even when users are created within the same
@@ -122,56 +115,17 @@ export const expectLoginPage = async (page: Page): Promise<void> => {
 // ─── User creation ──────────────────────────────────────────────────────────────
 
 /**
- * Creates a user and returns credentials ready for a UI login: the mandatory first-login password
- * change is performed up front (via the API), so the returned `password` logs in directly without a
- * change-password step. Defaults to an admin, who always has room/recording access regardless of
- * the room's user-access setting.
+ * Creates a user ready for a UI login and returns it together with a usable access token: the
+ * mandatory first-login password change is performed up front (via the API), so the returned user's
+ * `password` logs in directly without a change-password step. Defaults to an admin, who always has
+ * room/recording access regardless of the room's user-access setting.
  */
-export const createReadyUser = async (name: string, role: MeetUserRole = MeetUserRole.ADMIN): Promise<ReadyUser> => {
+export const createReadyUser = async (
+	name: string,
+	role: MeetUserRole = MeetUserRole.ADMIN
+): Promise<{ user: ReadyUser; accessToken: string }> => {
 	const userId = `user${Date.now()}_${userSequence++}`;
 	await createUser({ userId, name, role, password: INITIAL_PASSWORD });
-	await getUserAccessToken(userId, INITIAL_PASSWORD, READY_PASSWORD);
-	return { userId, name, password: READY_PASSWORD };
-};
-
-/**
- * Creates a ready-to-login {@link MeetUserRole.ROOM_MANAGER} user and a room owned by them
- * (created via their access token). Returns the user, the owned room, and a usable access token.
- * A room manager (rather than an admin) is used so the OWNER badge/permissions can be distinguished
- * from the ADMIN short-circuit.
- */
-export const createReadyOwner = async (
-	name = 'Room Owner',
-	roomOptions: MeetRoomOptions = {}
-): Promise<{ user: ReadyUser; room: MeetRoom; accessToken: string }> => {
-	const user = await createReadyUser(name, MeetUserRole.ROOM_MANAGER);
-	const accessToken = await getUserAccessToken(user.userId, user.password, user.password);
-	const room = await createRoomAsUser(accessToken, roomOptions);
-	return { user, room, accessToken };
-};
-
-/**
- * Creates a ready-to-login user (defaults to {@link MeetUserRole.ROOM_MEMBER}) and registers them as
- * a USER-type member of the given room. The member's access URL is the plain room URL (`/room/:id`),
- * which requires the user to log in. Returns the user and the created member.
- */
-export const createReadyMemberUser = async (
-	roomId: string,
-	options: {
-		name?: string;
-		role?: MeetUserRole;
-		baseRole?: MeetRoomMemberRole;
-		customPermissions?: Partial<MeetRoomMemberPermissions>;
-	} = {}
-): Promise<{ user: ReadyUser; member: MeetRoomMember }> => {
-	const {
-		name = 'Member User',
-		role = MeetUserRole.ROOM_MEMBER,
-		baseRole = MeetRoomMemberRole.SPEAKER,
-		customPermissions
-	} = options;
-
-	const user = await createReadyUser(name, role);
-	const member = await createRoomMember(roomId, { userId: user.userId, baseRole, customPermissions });
-	return { user, member };
+	const accessToken = await getUserAccessToken(userId, INITIAL_PASSWORD, READY_PASSWORD);
+	return { user: { userId, name, password: READY_PASSWORD }, accessToken };
 };

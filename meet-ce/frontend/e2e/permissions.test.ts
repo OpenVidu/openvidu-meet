@@ -1,20 +1,14 @@
 import {
-	MeetRecordingInfo,
 	MeetRoom,
+	MeetRoomMember,
 	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
-	MeetRoomMemberUIBadge
+	MeetRoomMemberUIBadge,
+	MeetUserRole
 } from '@openvidu-meet/typings';
-import { test, type Browser, type Page } from '@playwright/test';
-import { createReadyMemberUser, createReadyUser, type ReadyUser } from './helpers/auth.helper';
-import { expectLobbyAccessRestricted, expectNameInput } from './helpers/access.helper';
-import { createRoom, createRoomMember, deleteRooms, deleteUsers, getRecordingShareUrl } from './helpers/meet-api.helper';
-import {
-	expectEndMeetingOption,
-	expectNoEndMeetingOption,
-	openLobby,
-	openMeeting
-} from './helpers/meeting-navigation.helper';
+import { expect, test, type Browser, type Page } from '@playwright/test';
+import { createReadyMemberUser, expectLobbyAccessRestricted, expectNameInput } from './helpers/access.helper';
+import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
 import {
 	expectBackgroundsButtonAvailable,
 	expectCameraButtonAvailable,
@@ -25,6 +19,24 @@ import {
 	expectNoScreenshareButton,
 	expectScreenshareButtonAvailable
 } from './helpers/media-controls.helper';
+import {
+	createRoom,
+	createRoomAsUser,
+	createRoomMember,
+	deleteRooms,
+	deleteUser,
+	deleteUsers,
+	updateRoomMemberPermissions,
+	updateUserRole
+} from './helpers/meet-api.helper';
+import {
+	expectEndMeetingOption,
+	expectKickedFromMeeting,
+	expectMeetingAccessRevoked,
+	expectNoEndMeetingOption,
+	openLobby,
+	openMeeting
+} from './helpers/meeting-navigation.helper';
 import { expectChatAvailable, expectNoChat, toggleParticipantsPanel } from './helpers/panels.helper';
 import {
 	expectKickButton,
@@ -36,34 +48,37 @@ import {
 	getParticipantIdByName,
 	joinParticipants
 } from './helpers/participant-management.helper';
-import { openRecording, openRoomRecordings, toRoomRecordingsUrl } from './helpers/recordings-navigation.helper';
+import {
+	openRecording,
+	openRoomRecordings,
+	toIndividualRecordingUrl,
+	toRoomRecordingsUrl
+} from './helpers/recordings-navigation.helper';
 import {
 	expectNoRecordButton,
+	expectNoViewRecordingsButton,
 	expectRecordButtonAvailable,
 	expectRecordingDeletable,
 	expectRecordingNotDeletable,
 	expectViewRecordingDeletable,
 	expectViewRecordingNotDeletable,
+	expectViewRecordingsButtonAvailable,
 	recordRoom
 } from './helpers/recordings.helper';
 import { expectNoShareAccessLink, expectShareAccessLinkAvailable } from './helpers/share-link.helper';
 
-/**
- * Permission tests verify one permission at a time on the page where it applies, then verify that a
- * combination of access methods grants the union of both methods' permissions. A member with exactly
- * one permission flipped is built via `createRoomMember(..., { customPermissions })`, which overrides
- * the base-role permissions for that single key. `canRetrieveRecordings` is covered by the access
- * suite and omitted here.
- */
 test.describe('Permissions E2E Tests', () => {
 	const createdUserIds: string[] = [];
 	const createdRoomIds: string[] = [];
 	let memberSequence = 0;
 
 	let room: MeetRoom;
-	let recording: MeetRecordingInfo;
-	let privateRecordingUrl: string;
+	let recordingId: string;
 	let adminUser: ReadyUser;
+	// A speaker member and an identified moderator guest, used by the merged-permission scenarios: a
+	// member user (speaker) combined with a moderator link gains the moderator's permissions.
+	let mergedMemberUser: ReadyUser;
+	let moderatorGuest: MeetRoomMember;
 
 	test.beforeAll(async ({ browser }) => {
 		test.setTimeout(180_000);
@@ -71,11 +86,23 @@ test.describe('Permissions E2E Tests', () => {
 		room = await createRoom();
 		createdRoomIds.push(room.roomId);
 
-		adminUser = await createReadyUser('Perm Admin');
+		adminUser = (await createReadyUser('Perm Admin')).user;
 		createdUserIds.push(adminUser.userId);
 
-		recording = await recordRoom(browser, room.roomId);
-		privateRecordingUrl = await getRecordingShareUrl(recording.recordingId, true);
+		mergedMemberUser = (
+			await createReadyMemberUser(room.roomId, {
+				name: 'Merged Member',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			})
+		).user;
+		createdUserIds.push(mergedMemberUser.userId);
+
+		moderatorGuest = await createRoomMember(room.roomId, {
+			name: 'Moderator Guest',
+			baseRole: MeetRoomMemberRole.MODERATOR
+		});
+
+		recordingId = (await recordRoom(browser, room.roomId)).recordingId;
 	});
 
 	test.afterAll(async () => {
@@ -86,8 +113,10 @@ test.describe('Permissions E2E Tests', () => {
 	 * Creates an identified-guest member of the shared room with the given base role and custom
 	 * permission overrides — the access URL requires no login, so the member can be driven directly.
 	 */
-	const createGuest = (customPermissions: Partial<MeetRoomMemberPermissions>, baseRole = MeetRoomMemberRole.SPEAKER) =>
-		createRoomMember(room.roomId, { name: `perm-${memberSequence++}`, baseRole, customPermissions });
+	const createGuest = (
+		customPermissions: Partial<MeetRoomMemberPermissions>,
+		baseRole = MeetRoomMemberRole.SPEAKER
+	) => createRoomMember(room.roomId, { name: `perm-${memberSequence++}`, baseRole, customPermissions });
 
 	/**
 	 * Joins the meeting as a fresh guest with the given custom permissions and returns the member.
@@ -133,6 +162,16 @@ test.describe('Permissions E2E Tests', () => {
 			await expectNoRecordButton(page);
 		});
 
+		test('canRetrieveRecordings granted: the view-recordings control is available', async ({ page }) => {
+			await joinAsGuest(page, { canRetrieveRecordings: true });
+			await expectViewRecordingsButtonAvailable(page);
+		});
+
+		test('canRetrieveRecordings denied: the view-recordings control is not available', async ({ page }) => {
+			await joinAsGuest(page, { canRetrieveRecordings: false });
+			await expectNoViewRecordingsButton(page);
+		});
+
 		test('canReadChat granted: the chat panel button is available', async ({ page }) => {
 			await joinAsGuest(page, { canReadChat: true });
 			await expectChatAvailable(page);
@@ -141,6 +180,13 @@ test.describe('Permissions E2E Tests', () => {
 		test('canReadChat denied: the chat panel button is not available', async ({ page }) => {
 			await joinAsGuest(page, { canReadChat: false });
 			await expectNoChat(page);
+		});
+
+		// canWriteChat is not wired to the UI yet (see features.utils.ts — showChatInput is commented
+		// out), so it cannot be asserted. Re-enable when the permission gates the chat input.
+		test.fixme('canWriteChat controls the chat input', async () => {
+			// When implemented: join with { canReadChat: true, canWriteChat: false }, open the chat panel,
+			// and assert #chat-input is disabled; with canWriteChat: true assert it is editable.
 		});
 
 		test('canChangeVirtualBackground granted: the backgrounds control is available', async ({ page }) => {
@@ -183,12 +229,12 @@ test.describe('Permissions E2E Tests', () => {
 			await expectNoScreenshareButton(page);
 		});
 
-		test('canShareAccessLinks granted: the share-access-link controls are available', async ({ page }) => {
+		test('canShareAccessLinks granted: the share-access-link button is available', async ({ page }) => {
 			await joinAsGuest(page, { canShareAccessLinks: true });
 			await expectShareAccessLinkAvailable(page);
 		});
 
-		test('canShareAccessLinks denied: the share-access-link controls are not available', async ({ page }) => {
+		test('canShareAccessLinks denied: the share-access-link button is not available', async ({ page }) => {
 			await joinAsGuest(page, { canShareAccessLinks: false });
 			await expectNoShareAccessLink(page);
 		});
@@ -201,13 +247,6 @@ test.describe('Permissions E2E Tests', () => {
 		test('canEndMeeting denied: the end-meeting option is not available', async ({ page }) => {
 			await joinAsGuest(page, { canEndMeeting: false });
 			await expectNoEndMeetingOption(page);
-		});
-
-		// canWriteChat is not wired to the UI yet (see features.utils.ts — showChatInput is commented
-		// out), so it cannot be asserted. Re-enable when the permission gates the chat input.
-		test.fixme('canWriteChat controls the chat input', async () => {
-			// When implemented: join with { canReadChat: true, canWriteChat: false }, open the chat panel,
-			// and assert #chat-input is disabled; with canWriteChat: true assert it is editable.
 		});
 	});
 
@@ -264,24 +303,19 @@ test.describe('Permissions E2E Tests', () => {
 			const member = await createGuest({ canDeleteRecordings: true });
 			await openRoomRecordings(page, toRoomRecordingsUrl(member.accessUrl));
 
-			await expectRecordingDeletable(page, recording.recordingId);
+			await expectRecordingDeletable(page, recordingId);
 		});
 
 		test('canDeleteRecordings denied: the recording cannot be deleted from the list', async ({ page }) => {
 			const member = await createGuest({ canDeleteRecordings: false });
 			await openRoomRecordings(page, toRoomRecordingsUrl(member.accessUrl));
 
-			await expectRecordingNotDeletable(page, recording.recordingId);
+			await expectRecordingNotDeletable(page, recordingId);
 		});
 
 		test('canDeleteRecordings granted: the recording can be deleted from the individual view', async ({ page }) => {
-			const { user } = await createReadyMemberUser(room.roomId, {
-				name: 'Deleter Member',
-				baseRole: MeetRoomMemberRole.MODERATOR
-			});
-			createdUserIds.push(user.userId);
-
-			await openRecording(page, privateRecordingUrl, { login: { userId: user.userId, password: user.password } });
+			const member = await createGuest({ canDeleteRecordings: true });
+			await openRecording(page, toIndividualRecordingUrl(member.accessUrl, recordingId));
 
 			await expectViewRecordingDeletable(page);
 		});
@@ -289,14 +323,8 @@ test.describe('Permissions E2E Tests', () => {
 		test('canDeleteRecordings denied: the recording cannot be deleted from the individual view', async ({
 			page
 		}) => {
-			const { user } = await createReadyMemberUser(room.roomId, {
-				name: 'Viewer Member',
-				baseRole: MeetRoomMemberRole.SPEAKER,
-				customPermissions: { canDeleteRecordings: false }
-			});
-			createdUserIds.push(user.userId);
-
-			await openRecording(page, privateRecordingUrl, { login: { userId: user.userId, password: user.password } });
+			const member = await createGuest({ canDeleteRecordings: false });
+			await openRecording(page, toIndividualRecordingUrl(member.accessUrl, recordingId));
 
 			await expectViewRecordingNotDeletable(page);
 		});
@@ -308,9 +336,7 @@ test.describe('Permissions E2E Tests', () => {
 		test('authenticated admin via anonymous speaker link gains admin permissions (union)', async ({ page }) => {
 			// The speaker link alone grants neither end-meeting nor the ADMIN badge; merged with the
 			// authenticated admin identity it grants both.
-			await openLobby(page, room.access.user.url, {
-				login: { userId: adminUser.userId, password: adminUser.password }
-			});
+			await authenticate(page, adminUser);
 			await openMeeting(page, room.access.anonymous.speaker.url);
 
 			await expectCameraButtonAvailable(page);
@@ -321,45 +347,195 @@ test.describe('Permissions E2E Tests', () => {
 			await expectParticipantBadge(page, participantId, MeetRoomMemberUIBadge.ADMIN);
 		});
 
-		test('authenticated member via anonymous moderator link gains moderator permissions (union)', async ({
-			page
-		}) => {
-			// The member is a speaker (no end-meeting); the moderator link adds moderator permissions.
-			const { user } = await createReadyMemberUser(room.roomId, {
-				name: 'Union Member',
+		// A speaker member combined with a moderator link gains the moderator's permissions (union),
+		// validated across every view. The member alone is a speaker (no end-meeting, no delete recordings);
+		// the moderator link adds those. Checked for both an anonymous moderator link and an identified
+		// moderator guest link.
+		const moderatorLinks = [
+			{ label: 'anonymous moderator link', getUrl: () => room.access.anonymous.moderator.url },
+			{ label: 'identified guest (moderator) link', getUrl: () => moderatorGuest.accessUrl }
+		];
+
+		for (const link of moderatorLinks) {
+			test(`member user via ${link.label} gains moderator permissions in the meeting`, async ({ page }) => {
+				await authenticate(page, mergedMemberUser);
+				await openMeeting(page, link.getUrl());
+
+				await expectEndMeetingOption(page);
+
+				await toggleParticipantsPanel(page);
+				const participantId = await getLocalParticipantId(page);
+				await expectParticipantBadge(page, participantId, MeetRoomMemberUIBadge.MODERATOR);
+			});
+
+			test(`member user via ${link.label} gains canDeleteRecordings in the recordings list`, async ({ page }) => {
+				await authenticate(page, mergedMemberUser);
+				await openRoomRecordings(page, toRoomRecordingsUrl(link.getUrl()));
+
+				await expectRecordingDeletable(page, recordingId);
+			});
+
+			test(`member user via ${link.label} gains canDeleteRecordings in the individual recording`, async ({
+				page
+			}) => {
+				await authenticate(page, mergedMemberUser);
+				await openRecording(page, toIndividualRecordingUrl(link.getUrl(), recordingId));
+
+				await expectViewRecordingDeletable(page);
+			});
+		}
+	});
+
+	// ── Live permission and role updates (participant already in the meeting) ─────────
+
+	test.describe('Live permission and role updates', () => {
+		/** Asserts the "permissions updated" snackbar the participant receives. */
+		const expectPermissionsUpdatedNotification = async (page: Page): Promise<void> => {
+			await expect(page.getByText('Your permissions have been updated')).toBeVisible({ timeout: 10_000 });
+		};
+
+		test("updating an identified guest's permissions updates the meeting UI live", async ({ page }) => {
+			const guest = await createRoomMember(room.roomId, {
+				name: 'Live Guest',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: {
+					canChangeVirtualBackground: true,
+					canReadChat: false
+				}
+			});
+
+			await openMeeting(page, guest.accessUrl);
+			await expectBackgroundsButtonAvailable(page);
+			await expectNoChat(page);
+
+			await updateRoomMemberPermissions(room.roomId, guest.memberId, {
+				customPermissions: {
+					canChangeVirtualBackground: false,
+					canReadChat: true
+				}
+			});
+
+			await expectPermissionsUpdatedNotification(page);
+			await expectNoBackgroundsButton(page);
+			await expectChatAvailable(page);
+		});
+
+		test("updating a user member's permissions updates the meeting UI live", async ({ page }) => {
+			const { user, member } = await createReadyMemberUser(room.roomId, {
+				name: 'Live Member',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: {
+					canChangeVirtualBackground: true,
+					canReadChat: false
+				}
+			});
+			createdUserIds.push(user.userId);
+
+			await openMeeting(page, member.accessUrl, { login: user });
+			await expectBackgroundsButtonAvailable(page);
+			await expectNoChat(page);
+
+			await updateRoomMemberPermissions(room.roomId, member.memberId, {
+				customPermissions: {
+					canChangeVirtualBackground: false,
+					canReadChat: true
+				}
+			});
+
+			await expectPermissionsUpdatedNotification(page);
+			await expectNoBackgroundsButton(page);
+			await expectChatAvailable(page);
+		});
+
+		test('removing canJoinMeeting from an identified guest kicks them from the meeting', async ({ page }) => {
+			const guest = await createRoomMember(room.roomId, {
+				name: 'Kick Guest',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+
+			await openMeeting(page, guest.accessUrl);
+
+			await updateRoomMemberPermissions(room.roomId, guest.memberId, {
+				customPermissions: { canJoinMeeting: false }
+			});
+
+			await expectKickedFromMeeting(page);
+		});
+
+		test('removing canJoinMeeting from a user member kicks them from the meeting', async ({ page }) => {
+			const { user, member } = await createReadyMemberUser(room.roomId, {
+				name: 'Kick Member',
 				baseRole: MeetRoomMemberRole.SPEAKER
 			});
 			createdUserIds.push(user.userId);
 
-			await openLobby(page, room.access.user.url, {
-				login: { userId: user.userId, password: user.password }
+			await openMeeting(page, member.accessUrl, { login: user });
+
+			await updateRoomMemberPermissions(room.roomId, member.memberId, {
+				customPermissions: { canJoinMeeting: false }
 			});
-			await openMeeting(page, room.access.anonymous.moderator.url);
 
-			await expectEndMeetingOption(page);
-
-			await toggleParticipantsPanel(page);
-			const participantId = await getLocalParticipantId(page);
-			await expectParticipantBadge(page, participantId, MeetRoomMemberUIBadge.MODERATOR);
+			await expectKickedFromMeeting(page);
 		});
 
-		test('authenticated admin via an anonymous link gains canDeleteRecordings when the link lacks it', async ({
-			page,
-			browser
-		}) => {
-			// Fresh room whose speaker role cannot delete recordings; the admin identity is merged in.
-			const gatedRoom = await createRoom({
-				roles: { speaker: { permissions: { canDeleteRecordings: false } } }
-			});
-			createdRoomIds.push(gatedRoom.roomId);
-			const gatedRecording = await recordRoom(browser, gatedRoom.roomId);
+		test('demoting an in-meeting admin revokes their access (redirect to error page)', async ({ page }) => {
+			const admin = (await createReadyUser('Live Admin')).user;
+			createdUserIds.push(admin.userId);
 
-			await openLobby(page, gatedRoom.access.user.url, {
-				login: { userId: adminUser.userId, password: adminUser.password }
-			});
-			await openRoomRecordings(page, toRoomRecordingsUrl(gatedRoom.access.anonymous.speaker.url));
+			// The admin can access any room; joining via the user URL works regardless of user access.
+			await openMeeting(page, room.access.user.url, { login: admin });
 
-			await expectRecordingDeletable(page, gatedRecording.recordingId);
+			// Demoted to room manager, they are neither owner nor member of this room → access revoked.
+			await updateUserRole(admin.userId, MeetUserRole.ROOM_MANAGER);
+
+			await expectMeetingAccessRevoked(page);
+		});
+
+		test('demoting an in-meeting room owner to room member revokes their access', async ({ page }) => {
+			// A room manager owns their room; demoting to room member transfers ownership away, so their
+			// access is revoked while they are in the meeting.
+			const owner = await createReadyUser('Live Owner', MeetUserRole.ROOM_MANAGER);
+			createdUserIds.push(owner.user.userId);
+			const ownedRoom = await createRoomAsUser(owner.accessToken);
+			createdRoomIds.push(ownedRoom.roomId);
+
+			await openMeeting(page, ownedRoom.access.user.url, { login: owner.user });
+
+			await updateUserRole(owner.user.userId, MeetUserRole.ROOM_MEMBER);
+
+			await expectMeetingAccessRevoked(page);
+		});
+
+		test('promoting an in-meeting room member to admin grants elevated permissions live', async ({ page }) => {
+			const { user, member } = await createReadyMemberUser(room.roomId, {
+				name: 'Promote Member',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+			createdUserIds.push(user.userId);
+
+			await openMeeting(page, member.accessUrl, { login: user });
+			// A speaker cannot end the meeting.
+			await expectNoEndMeetingOption(page);
+
+			await updateUserRole(user.userId, MeetUserRole.ADMIN);
+
+			// As an admin they gain every permission live, including ending the meeting.
+			await expectPermissionsUpdatedNotification(page);
+			await expectEndMeetingOption(page);
+		});
+
+		test("deleting an in-meeting user's account kicks them from the meeting", async ({ page }) => {
+			// Not tracked in createdUserIds — the account is deleted within the test.
+			const { user, member } = await createReadyMemberUser(room.roomId, {
+				name: 'Delete Member',
+				baseRole: MeetRoomMemberRole.SPEAKER
+			});
+
+			await openMeeting(page, member.accessUrl, { login: user });
+
+			await deleteUser(user.userId);
+
+			await expectKickedFromMeeting(page);
 		});
 	});
 });
