@@ -11,6 +11,7 @@ import { RoomMemberContextService } from '../../room-members/services/room-membe
 import { RoomService } from '../../rooms/services/room.service';
 import { MeetingContextService } from './meeting-context.service';
 import { RoomAccessLinkService } from './room-access-link.service';
+import { E2eeService } from '../openvidu-components/services/e2ee/e2ee.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
 /**
@@ -25,6 +26,7 @@ export class MeetingLobbyService {
 	protected recordingService = inject(RecordingService);
 	protected authService = inject(AuthService);
 	protected roomMemberContextService = inject(RoomMemberContextService);
+	protected e2eeService = inject(E2eeService);
 	protected navigationService = inject(NavigationService);
 	protected leaveRedirect = inject(LeaveRedirectService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
@@ -368,15 +370,22 @@ export class MeetingLobbyService {
 			const roomSecret = this.meetingContextService.roomSecret();
 			const participantName = this.participantName();
 
-			const roomMemberToken = await this.roomMemberContextService.generateToken(
-				roomId!,
-				{
-					secret: roomSecret,
-					joinMeeting: true,
-					participantName
-				},
-				this.e2eeKeyValue()
-			);
+			// For E2EE meetings, encrypt the display name before it is embedded in the token metadata
+			// so it is never exposed in plaintext. Done here (lazy lobby flow) to keep the room-member
+			// token layer free of the LiveKit-based E2eeService. The plaintext `participantName` is kept
+			// for local storage below.
+			const e2eeKey = this.e2eeKeyValue();
+			let tokenParticipantName = participantName;
+			if (e2eeKey && participantName) {
+				await this.e2eeService.setE2EEKey(e2eeKey);
+				tokenParticipantName = await this.e2eeService.encrypt(participantName);
+			}
+
+			const roomMemberToken = await this.roomMemberContextService.generateToken(roomId!, {
+				secret: roomSecret,
+				joinMeeting: true,
+				participantName: tokenParticipantName
+			});
 
 			// Save participant name to storage only if it was chosen freely by the user
 			if (!this.isParticipantNameDisabled()) {

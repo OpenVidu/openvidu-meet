@@ -46,7 +46,6 @@ export class RoomAccessService {
 					secret,
 					joinMeeting: false
 				},
-				undefined,
 				headers
 			);
 

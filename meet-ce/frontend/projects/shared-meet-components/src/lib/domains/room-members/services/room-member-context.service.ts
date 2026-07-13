@@ -9,7 +9,6 @@ import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { decodeToken } from '../../../shared/utils/token.utils';
 import { AuthService } from '../../auth/services/auth.service';
-import { E2eeService } from '../../meeting/openvidu-components';
 import { RoomMemberService } from './room-member.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
@@ -20,7 +19,6 @@ export class RoomMemberContextService {
 	protected roomMemberService = inject(RoomMemberService);
 	protected navigationService = inject(NavigationService);
 	protected authService = inject(AuthService);
-	protected e2eeService = inject(E2eeService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - RoomMemberContextService');
 
@@ -104,15 +102,14 @@ export class RoomMemberContextService {
 	 * Generates a room member token and updates the context with role and permissions.
 	 *
 	 * @param roomId - The unique identifier of the room
-	 * @param tokenOptions - The options for the token generation
-	 * @param e2eeKey - Optional E2EE encryption key
+	 * @param tokenOptions - The options for the token generation. When the meeting is E2EE-encrypted,
+	 *        `participantName` is expected to be already encrypted by the caller (see MeetingLobbyService).
 	 * @param headers - Optional additional headers to include in the token generation request
 	 * @return A promise that resolves to the room member token
 	 */
 	async generateToken(
 		roomId: string,
 		tokenOptions: MeetRoomMemberTokenOptions,
-		e2eeKey?: string,
 		headers?: Record<string, string>
 	): Promise<string> {
 		// Best effort: keep access token fresh for authenticated users before generating room member tokens.
@@ -123,13 +120,6 @@ export class RoomMemberContextService {
 			} catch {
 				// Ignore refresh failures here. Generation can still succeed for anonymous/secret-based flows.
 			}
-		}
-
-		if (tokenOptions.participantName && e2eeKey) {
-			// Assign E2EE key and encrypt participant name
-			await this.e2eeService.setE2EEKey(e2eeKey);
-			const encryptedName = await this.e2eeService.encrypt(tokenOptions.participantName);
-			tokenOptions.participantName = encryptedName;
 		}
 
 		const { token } = await this.roomMemberService.generateRoomMemberToken(roomId, tokenOptions, headers);
