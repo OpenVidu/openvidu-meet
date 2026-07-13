@@ -86,11 +86,13 @@ export const authLimiter: RequestHandler = withTestBypass({
 /**
  * Rate limiter for token-generation endpoints (e.g. room member tokens).
  * These endpoints touch persistent storage and sign cryptographic material, so they
- * are protected against floods that could exhaust resources.
+ * are protected against floods that could exhaust resources. The ceiling is kept generous
+ * because a large audience joining a single meeting from behind one shared public IP
+ * (corporate NAT, campus, event Wi-Fi) all issue their token through the same IP bucket.
  */
 export const tokenIssuanceLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('1m'),
-	limit: 60,
+	limit: 200,
 	message: tooManyRequestsMessage('Too many token requests, please try again later')
 });
 
@@ -100,20 +102,26 @@ export const tokenIssuanceLimiter: RequestHandler = withTestBypass({
  *
  * Skips server-to-server requests authenticated via API key (see skipApiKeyRequests), so it is safe
  * to apply to the public /api/v1 routes that are multiplexed between integrator backends and browsers.
+ *
+ * The ceiling is kept generous because the meeting join flow (room lookup, access, room-appearance
+ * and captions config) fires several of these calls per participant, and a large audience joining
+ * from behind one shared public IP would otherwise collapse into a single bucket and be throttled.
  */
 export const apiLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('1m'),
-	limit: 120,
+	limit: 500,
 	skip: skipApiKeyRequests,
 	message: tooManyRequestsMessage('Too many requests, please try again later')
 });
 
 /**
  * Rate limiter for static asset routes that hit the file system on every request.
- * Browsers cache these aggressively, so a higher ceiling is appropriate.
+ * Browsers cache these aggressively, so a higher ceiling is appropriate. The ceiling also
+ * accommodates a large audience loading the app for the first time (uncached) from behind one
+ * shared public IP.
  */
 export const staticAssetLimiter: RequestHandler = withTestBypass({
 	windowMs: ms('1m'),
-	limit: 300,
+	limit: 1000,
 	message: tooManyRequestsMessage('Too many requests, please try again later')
 });
