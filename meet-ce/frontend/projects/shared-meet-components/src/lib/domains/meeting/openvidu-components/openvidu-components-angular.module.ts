@@ -10,7 +10,7 @@ import { CdkOverlayContainer } from './config/custom-cdk-overlay';
  *
  * Standalone/zoneless replacement for the legacy `OpenViduComponentsModule.forRoot()`.
  *
- * The meeting feature services (OpenViduService, VirtualBackgroundService, E2eeService, …) are
+ * The meeting feature services (MeetingConnectionService, VirtualBackgroundService, E2eeService, …) are
  * all `providedIn: 'root'`, so they are intentionally NOT listed here. Enumerating them would
  * create a static reference from whatever eager injector calls this function, pinning them — and
  * their heavy transitive deps (MediaPipe / LiveKit / E2EE) — into that chunk. By relying on

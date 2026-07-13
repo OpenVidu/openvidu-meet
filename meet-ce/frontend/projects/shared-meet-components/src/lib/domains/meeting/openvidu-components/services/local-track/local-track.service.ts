@@ -1,58 +1,41 @@
 import { inject, Injectable, Signal } from '@angular/core';
-import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { DeviceService } from '../device/device.service';
 import {
 	AudioCaptureOptions,
-	ConnectionState,
-	ExternalE2EEKeyProvider,
 	OVCreateLocalTracksOptions,
-	OVE2EEOptions,
 	OVLocalAudioTrack,
 	OVLocalTrack,
 	OVLocalVideoTrack,
-	OVRoom,
-	OVRoomOptions,
 	Track,
-	VideoCaptureOptions,
-	VideoPresets
+	VideoCaptureOptions
 } from '../livekit-adapter';
-import { LivekitAdapterInterface } from '../livekit-adapter/interfaces/livekit.adapter.interface';
-import { LivekitAdapterFactory } from '../livekit-adapter/livekit-adapter.factory';
+import { LivekitSdkService } from '../livekit/livekit-sdk.service';
+import { MeetingConnectionService } from '../meeting-connection/meeting-connection.service';
 import { StorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
-import { AssetsService } from '../../../../../shared/services/assets.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 
+/**
+ * Owns the local participant's media capture: creating/switching camera & microphone tracks
+ * (prejoin and in-call) and their enabled state. The room connection itself lives separately
+ * in MeetingConnectionService.
+ */
 @Injectable({
 	providedIn: 'root'
 })
-export class OpenViduService {
+export class LocalTrackService {
 	private readonly deviceService = inject(DeviceService);
 	private readonly storageService = inject(StorageService);
-	private readonly configService = inject(OpenViduComponentsConfigService);
-	private readonly livekitAdapterFactory = inject(LivekitAdapterFactory);
-	private readonly livekitAdapter: LivekitAdapterInterface = this.livekitAdapterFactory.createLiveKitAdapter();
+	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
-	private readonly assets = inject(AssetsService);
-
-	private room: OVRoom | undefined = undefined;
-	private keyProvider: ExternalE2EEKeyProvider | undefined;
-
-	/**
-	 * @internal
-	 * Indicates whether the client initiated disconnect event should be handled.
-	 * This is used to determine if the disconnect event should be emitted when the 'Disconnect' event is triggered
-	 */
-	shouldHandleClientInitiatedDisconnectEvent = true;
+	private readonly meetingConnectionService = inject(MeetingConnectionService);
 
 	/*
 	 * Tracks used in the prejoin component. They are created when the room is not yet created.
 	 */
 	private localTracks: OVLocalTrack[] = [];
-	private livekitToken = '';
-	private livekitUrl = '';
-	private log: ILogger = inject(LoggerService).get('OpenViduService');
+	private log: ILogger = inject(LoggerService).get('LocalTrackService');
 
 	/**
 	 * Readonly signal indicating whether the background processor is available.
@@ -60,215 +43,6 @@ export class OpenViduService {
 	 */
 	readonly isBackgroundProcessorSupported: Signal<boolean> =
 		this.videoTrackProcessorService.isBackgroundProcessorSupported;
-
-	/**
-	 * Creates a new Room with audio and video devices selected or default ones.
-	 * @internal
-	 */
-	initRoom(): void {
-		// Check if E2EE configuration needs to be applied
-		const e2eeKey = this.configService.getE2EEKey();
-		const needsE2EEConfig = e2eeKey && e2eeKey.trim() !== '' && !this.keyProvider;
-
-		// If room already exists and doesn't need E2EE reconfiguration, don't recreate it
-		if (this.room && !needsE2EEConfig) {
-			this.log.d('Room already initialized, skipping re-initialization');
-			return;
-		}
-
-		// If room exists but needs E2EE configuration, we need to recreate it
-		if (this.room && needsE2EEConfig) {
-			this.log.d('Room needs E2EE configuration, recreating room');
-			this.room = undefined;
-		}
-
-		const videoDeviceId = this.deviceService.getCameraSelected()?.device ?? undefined;
-		const audioDeviceId = this.deviceService.getMicrophoneSelected()?.device ?? undefined;
-
-		const roomOptions: OVRoomOptions = {
-			adaptiveStream: true,
-			dynacast: true,
-			audioCaptureDefaults: {
-				deviceId: audioDeviceId,
-				echoCancellation: true,
-				noiseSuppression: true,
-				autoGainControl: true
-			},
-			videoCaptureDefaults: {
-				deviceId: videoDeviceId,
-				resolution: VideoPresets.h720.resolution
-			},
-			publishDefaults: {
-				dtx: true,
-				simulcast: true,
-				stopMicTrackOnMute: true
-			},
-			stopLocalTrackOnUnpublish: true,
-			disconnectOnPageLeave: true
-		};
-
-		// Configure E2EE if key is provided and keyProvider exists
-		if (needsE2EEConfig) {
-			roomOptions.encryption = this.buildE2EEOptions();
-		}
-
-		this.room = this.livekitAdapter.createRoom(roomOptions);
-		this.log.d('Room initialized successfully');
-	}
-
-	private buildE2EEOptions(): OVE2EEOptions {
-		this.log.d('Configuring E2EE with provided key');
-		this.keyProvider = new ExternalE2EEKeyProvider();
-		return {
-			keyProvider: this.keyProvider,
-			worker: this.createE2EEWorker()
-		};
-	}
-
-	/**
-	 * Loads the livekit-client E2EE worker, which is served from the Meet server's
-	 * assets. `resolveUrl` points it at that server — in webcomponent mode that may
-	 * be a remote, cross-origin origin. A module Worker cannot be constructed
-	 * directly from a cross-origin script URL, so in that case it is wrapped in a
-	 * same-origin blob that imports the real worker (the backend serves assets with
-	 * CORS). Same-origin (SPA / same-origin embed) loads the URL directly.
-	 */
-	private createE2EEWorker(): Worker {
-		const url = new URL(this.assets.e2eeWorker, window.location.href);
-
-		if (url.origin === window.location.origin) {
-			return new Worker(url.href, { type: 'module' });
-		}
-
-		const bootstrap = `import ${JSON.stringify(url.href)};`;
-		const blobUrl = URL.createObjectURL(new Blob([bootstrap], { type: 'text/javascript' }));
-		return new Worker(blobUrl, { type: 'module' });
-	}
-
-	/**
-	 * Connects local participant to the room
-	 */
-	async connectRoom(): Promise<void> {
-		try {
-			const room = this.getRoom();
-
-			// Configure E2EE if key provider was initialized
-			if (this.keyProvider) {
-				const e2eeKey = this.configService.getE2EEKey();
-				if (e2eeKey) {
-					this.log.d('Setting E2EE key and enabling encryption');
-					await this.keyProvider.setKey(e2eeKey);
-					await room.setE2EEEnabled(true);
-					this.log.d('E2EE successfully enabled');
-				}
-			}
-			await this.livekitAdapter.connectRoom(room, this.livekitUrl, this.livekitToken);
-			this.log.d(`Successfully connected to room ${room.name}`);
-
-			const participantName = this.storageService.getParticipantName();
-			if (participantName) {
-				room.localParticipant.setName(participantName);
-			}
-		} catch (error) {
-			this.log.e('Error connecting to room:', error);
-			throw {
-				code: 'CONNECTION_ERROR',
-				message: `Error connecting to the server at the following URL: ${this.livekitUrl}`
-			};
-		}
-	}
-
-	/**
-	 * Disconnects from the current room.
-	 *
-	 * This method will check if there's an active connection to a room before attempting to disconnect.
-	 * If the room is connected, it will perform the disconnection and call the optional callback function.
-	 *
-	 * @param callback - Optional function to be executed after a successful disconnection
-	 * @returns A Promise that resolves once the disconnection is complete
-	 */
-	async disconnectRoom(
-		callback?: () => void,
-		shouldHandleClientInitiatedDisconnectEvent: boolean = true
-	): Promise<void> {
-		this.shouldHandleClientInitiatedDisconnectEvent = shouldHandleClientInitiatedDisconnectEvent;
-		const room = this.room;
-		if (room && this.isRoomConnected()) {
-			this.log.d('Disconnecting from room');
-			await this.livekitAdapter.disconnectRoom(room);
-			if (callback) callback();
-		}
-	}
-
-	/**
-	 * @returns Room instance
-	 */
-	getRoom(): OVRoom {
-		if (!this.room) {
-			this.log.e('Room is not initialized. Make sure token is set before accessing the room.');
-			throw new Error('Room is not initialized. Make sure token is set before accessing the room.');
-		}
-		return this.room;
-	}
-
-	/**
-	 * Checks if room is initialized without throwing an error
-	 * @returns true if room is initialized, false otherwise
-	 */
-	isRoomInitialized(): boolean {
-		return !!this.room;
-	}
-
-	/**
-	 * Returns the room name
-	 */
-	getRoomName(): string {
-		return this.room?.name ?? '';
-	}
-
-	/**
-	 * Returns if local participant is connected to the room
-	 * @returns
-	 */
-	isRoomConnected(): boolean {
-		return this.room?.state === ConnectionState.Connected;
-	}
-
-	hasRoomTracksPublished(): boolean {
-		const { localParticipant, remoteParticipants } = this.getRoom();
-		const localTracks = localParticipant.getTrackPublications();
-		const remoteTracks = Array.from(remoteParticipants.values()).flatMap((p: any) => p.getTrackPublications());
-
-		return localTracks.length > 0 || remoteTracks.length > 0;
-	}
-
-	/**
-	 * @internal
-	 */
-	initializeAndSetToken(token: string, livekitUrl?: string): void {
-		const { livekitUrl: urlFromToken } = this.extractLivekitData(token);
-
-		this.livekitToken = token;
-		const url = livekitUrl || urlFromToken;
-
-		if (!url) {
-			this.log.e(
-				'LiveKit URL is not defined. Please, check the livekitUrl parameter of the VideoConferenceComponent'
-			);
-			throw new Error('Livekit URL is not defined');
-		}
-
-		this.livekitUrl = url;
-		// this.livekitRoomAdmin = !!livekitRoomAdmin;
-
-		// Initialize room if it doesn't exist yet
-		// This ensures that getRoom() won't fail if token is set before onTokenRequested
-		if (!this.room) {
-			this.log.d('Room not initialized yet, initializing room due to token assignment');
-			this.initRoom();
-		}
-		// return this.room.prepareConnection(this.livekitUrl, this.livekitToken);
-	}
 
 	/**
 	 * Sets the local tracks for the OpenVidu service.
@@ -372,7 +146,7 @@ export class OpenViduService {
 				newLocalTracks = await this.createTracksWithFallback(options);
 			} else {
 				// Original behavior - all or nothing
-				newLocalTracks = await this.livekitAdapter.createLocalTracks(options);
+				newLocalTracks = await this.livekitSdkService.createLocalTracks(options);
 			}
 
 			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
@@ -404,7 +178,7 @@ export class OpenViduService {
 		// Try to create video track separately
 		if (options.video) {
 			try {
-				const videoTracks = await this.livekitAdapter.createLocalTracks({ video: options.video });
+				const videoTracks = await this.livekitSdkService.createLocalTracks({ video: options.video });
 				tracks.push(...videoTracks);
 				this.log.d('Video track created successfully');
 			} catch (error) {
@@ -416,7 +190,7 @@ export class OpenViduService {
 		// Try to create audio track separately
 		if (options.audio) {
 			try {
-				const audioTracks = await this.livekitAdapter.createLocalTracks({ audio: options.audio });
+				const audioTracks = await this.livekitSdkService.createLocalTracks({ audio: options.audio });
 				tracks.push(...audioTracks);
 				this.log.d('Audio track created successfully');
 			} catch (error) {
@@ -526,7 +300,7 @@ export class OpenViduService {
 
 		// No existing track (edge case: camera was unavailable/unpublished) → create a fresh one
 		try {
-			const newVideoTracks = await this.livekitAdapter.createLocalTracks({ video: options });
+			const newVideoTracks = await this.livekitSdkService.createLocalTracks({ video: options });
 			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
 			if (videoTrack) {
 				if (!this.deviceService.isCameraEnabled()) {
@@ -580,7 +354,7 @@ export class OpenViduService {
 
 		// No existing track (edge case) → create a fresh one
 		try {
-			const newAudioTracks = await this.livekitAdapter.createLocalTracks(options as OVCreateLocalTracksOptions);
+			const newAudioTracks = await this.livekitSdkService.createLocalTracks(options as OVCreateLocalTracksOptions);
 			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
 			if (audioTrack) {
 				if (!this.deviceService.isMicrophoneEnabled()) {
@@ -606,8 +380,8 @@ export class OpenViduService {
 		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as OVLocalVideoTrack | undefined;
 
 		// If not found and room is connected, get from published tracks
-		if (!videoTrack && this.isRoomConnected() && this.room) {
-			const localParticipant = this.room.localParticipant;
+		if (!videoTrack && this.meetingConnectionService.isRoomConnected()) {
+			const localParticipant = this.meetingConnectionService.getRoom().localParticipant;
 			const videoPublication = localParticipant
 				.getTrackPublications()
 				.find((pub) => pub.kind === Track.Kind.Video);
@@ -615,42 +389,5 @@ export class OpenViduService {
 		}
 
 		return videoTrack;
-	}
-
-	/**
-	 * Extracts Livekit data from the provided token and returns an object containing the Livekit URL and room admin status.
-	 * @param token - The token to extract Livekit data from.
-	 * @param livekitUrl - The default Livekit URL to use if no Livekit URL is found in the token metadata.
-	 * @returns An object containing the Livekit URL and room admin status.
-	 * @throws Error if there is an error decoding and parsing the token.
-	 * @internal
-	 */
-	private extractLivekitData(token: string): { livekitUrl?: string; livekitRoomAdmin: boolean } {
-		try {
-			const base64Url = token.split('.')[1];
-			const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-			const jsonPayload = decodeURIComponent(
-				window
-					.atob(base64)
-					.split('')
-					.map((c) => {
-						return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-					})
-					.join('')
-			);
-
-			const payload = JSON.parse(jsonPayload);
-			if (payload?.metadata) {
-				const tokenMetadata = JSON.parse(payload.metadata);
-				return {
-					livekitUrl: tokenMetadata.livekitUrl,
-					livekitRoomAdmin: !!tokenMetadata.roomAdmin
-				};
-			}
-
-			return { livekitRoomAdmin: false };
-		} catch (error) {
-			throw new Error('Error decoding and parsing token: ' + error);
-		}
 	}
 }

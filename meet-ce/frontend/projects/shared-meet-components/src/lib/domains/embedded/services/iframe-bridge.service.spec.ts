@@ -2,7 +2,7 @@ import { provideZonelessChangeDetection, signal, WritableSignal } from '@angular
 import { TestBed } from '@angular/core/testing';
 import { EmbeddedCommandName, EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { OpenViduService } from '../../meeting/openvidu-components';
+import { MeetingConnectionService } from '../../meeting/openvidu-components';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
 import { IframeBridgeService } from './iframe-bridge.service';
@@ -27,7 +27,7 @@ describe('IframeBridgeService', () => {
 	let service: IframeBridgeService;
 	let eventBus: EmbeddedEventBusService;
 	let commandService: jasmine.SpyObj<EmbeddedCommandService>;
-	let openviduService: { isRoomConnected: jasmine.Spy };
+	let meetingConnectionService: { isRoomConnected: jasmine.Spy };
 	let isIframeMode: WritableSignal<boolean>;
 	let postMessageSpy: jasmine.Spy;
 
@@ -41,7 +41,7 @@ describe('IframeBridgeService', () => {
 		commandService.endMeeting.and.resolveTo();
 		commandService.leaveRoom.and.resolveTo();
 		commandService.kickParticipant.and.resolveTo();
-		openviduService = { isRoomConnected: jasmine.createSpy('isRoomConnected').and.returnValue(true) };
+		meetingConnectionService = { isRoomConnected: jasmine.createSpy('isRoomConnected').and.returnValue(true) };
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -50,7 +50,7 @@ describe('IframeBridgeService', () => {
 				EmbeddedEventBusService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: EmbeddedCommandService, useValue: commandService },
-				{ provide: OpenViduService, useValue: openviduService as unknown as OpenViduService },
+				{ provide: MeetingConnectionService, useValue: meetingConnectionService as unknown as MeetingConnectionService },
 				{ provide: RuntimeConfigService, useValue: { isIframeMode } as unknown as RuntimeConfigService }
 			]
 		});
@@ -125,7 +125,7 @@ describe('IframeBridgeService', () => {
 		});
 
 		it('ignores commands while not connected to the room', () => {
-			openviduService.isRoomConnected.and.returnValue(false);
+			meetingConnectionService.isRoomConnected.and.returnValue(false);
 			startBridge();
 
 			postFromHost({ command: EmbeddedCommandName.END_MEETING });
@@ -204,7 +204,7 @@ describe('IframeBridgeService', () => {
 			expect(commandService.leaveRoom).toHaveBeenCalledTimes(1);
 
 			// Connection dropped after the first command: the next one must be rejected.
-			openviduService.isRoomConnected.and.returnValue(false);
+			meetingConnectionService.isRoomConnected.and.returnValue(false);
 			postFromHost({ command: EmbeddedCommandName.END_MEETING });
 			expect(commandService.endMeeting).not.toHaveBeenCalled();
 		});

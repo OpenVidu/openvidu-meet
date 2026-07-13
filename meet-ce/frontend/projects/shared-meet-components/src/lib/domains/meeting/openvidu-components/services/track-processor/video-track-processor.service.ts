@@ -35,7 +35,7 @@ type TrackProcessorsModule = typeof import('@livekit/track-processors');
  * only when the user opens the background-effects panel or restores a saved background —
  * not on every meeting join, and never for participants who don't use virtual backgrounds.
  *
- * This service has no dependency on OpenViduService, keeping the processing concern
+ * This service has no dependency on MeetingConnectionService, keeping the processing concern
  * isolated and ready to be extended alongside a future AudioTrackProcessorService.
  *
  * @internal

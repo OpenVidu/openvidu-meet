@@ -25,7 +25,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import type { OVRoom } from '../../services/livekit-adapter';
 import { Room } from '../../services/livekit-adapter';
-import { OpenViduService } from '../../services/openvidu/openvidu.service';
+import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { SessionRoomEventsService } from '../../services/session/session-room-events.service';
@@ -92,7 +92,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly layoutService = inject(SmartLayoutService);
 	private readonly actionService = inject(ActionService);
-	private readonly openviduService = inject(OpenViduService);
+	private readonly meetingConnectionService = inject(MeetingConnectionService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly panelService = inject(PanelService);
@@ -214,7 +214,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		this.shouldDisconnectRoomWhenComponentIsDestroyed = true;
 
 		// Check if room is available before proceeding
-		if (!this.openviduService.isRoomInitialized()) {
+		if (!this.meetingConnectionService.isRoomInitialized()) {
 			this.log.e('Room is not initialized when SessionComponent starts. This indicates a timing issue.');
 			this.actionService.openDialog(
 				this.translateService.translate('ERRORS.SESSION'),
@@ -225,7 +225,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 
 		// Get room instance
 		try {
-			this.room = this.openviduService.getRoom();
+			this.room = this.meetingConnectionService.getRoom();
 			this.log.d('Room successfully obtained for SessionComponent');
 		} catch (error: any) {
 			this.log.e('Unexpected error getting room:', error);
@@ -311,9 +311,9 @@ export class SessionComponent implements OnInit, OnDestroy {
 	async disconnectRoom(reason: ParticipantLeftReason) {
 		// Mark session as disconnected for avoiding to do it again in ngOnDestroy
 		this.shouldDisconnectRoomWhenComponentIsDestroyed = false;
-		await this.openviduService.disconnectRoom(() => {
+		await this.meetingConnectionService.disconnectRoom(() => {
 			this.onParticipantLeft.emit({
-				roomName: this.openviduService.getRoomName(),
+				roomName: this.meetingConnectionService.getRoomName(),
 				participantName: this.participantService.getMyName() || '',
 				identity: this.participantService.getMyIdentity() || '',
 				reason

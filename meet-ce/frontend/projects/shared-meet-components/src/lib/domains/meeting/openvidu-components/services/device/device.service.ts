@@ -1,7 +1,8 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { CameraType, CustomDevice, DeviceType } from '../../models/device.model';
 import type { OVLocalTrack } from '../livekit-adapter';
-import { LivekitAdapterFactory, LivekitAdapterInterface, Track } from '../livekit-adapter';
+import { Track } from '../livekit-adapter';
+import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { PlatformService } from '../platform/platform.service';
 import { StorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -28,8 +29,7 @@ export class DeviceService implements OnDestroy {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly platformSrv = inject(PlatformService);
 	private readonly storageSrv = inject(StorageService);
-	private readonly livekitAdapterFactory = inject(LivekitAdapterFactory);
-	private readonly livekitAdapter: LivekitAdapterInterface = this.livekitAdapterFactory.createLiveKitAdapter();
+	private readonly livekitSdkService = inject(LivekitSdkService);
 
 	// Reactive device lists with Signals
 	readonly cameras = signal<CustomDevice[]>([]);
@@ -137,7 +137,7 @@ export class DeviceService implements OnDestroy {
 	private async enumerateDevices(): Promise<MediaDeviceInfo[]> {
 		try {
 			// Prefer LiveKit's enumeration (handles some cross-browser quirks).
-			const devices = await this.livekitAdapter.getLocalDevices();
+			const devices = await this.livekitSdkService.getLocalDevices();
 			return this.filterValidDevices(devices);
 		} catch (error) {
 			this.log.w('LiveKit device enumeration failed, falling back to browser API', error);

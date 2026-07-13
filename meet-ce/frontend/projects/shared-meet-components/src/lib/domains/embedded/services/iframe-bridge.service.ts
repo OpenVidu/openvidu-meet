@@ -1,7 +1,7 @@
 import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
 import { EmbeddedCommand, EmbeddedCommandName, EmbeddedEvent } from '@openvidu-meet/typings';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { OpenViduService } from '../../meeting/openvidu-components';
+import { MeetingConnectionService } from '../../meeting/openvidu-components';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
 import { LoggerService } from '../../../shared/services/logger.service';
@@ -26,7 +26,7 @@ import { LoggerService } from '../../../shared/services/logger.service';
 export class IframeBridgeService {
 	private readonly commandService = inject(EmbeddedCommandService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
-	private readonly openviduService = inject(OpenViduService);
+	private readonly meetingConnectionService = inject(MeetingConnectionService);
 	private readonly runtimeConfig = inject(RuntimeConfigService);
 	private readonly log = inject(LoggerService).get('IframeBridgeService');
 
@@ -126,7 +126,7 @@ export class IframeBridgeService {
 		}
 
 		// Commands only make sense once connected to the room.
-		if (!this.openviduService.isRoomConnected()) {
+		if (!this.meetingConnectionService.isRoomConnected()) {
 			this.log.w('Received command but participant is not connected to the room');
 			return;
 		}

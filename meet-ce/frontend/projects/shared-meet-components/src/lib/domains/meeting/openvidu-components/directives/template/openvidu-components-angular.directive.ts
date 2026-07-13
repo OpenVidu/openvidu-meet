@@ -1339,7 +1339,7 @@ export class ParticipantPanelItemDirective {
  * import { lastValueFrom } from 'rxjs';
  *
  * import {
- * 	OpenViduService,
+ * 	MeetingConnectionService,
  * 	OpenViduComponentsModule,
  * } from 'openvidu-components-angular';
  *
@@ -1388,7 +1388,7 @@ export class ParticipantPanelItemDirective {
  *
  * 	constructor(
  * 		private httpClient: HttpClient,
- * 		private openviduService: OpenViduService
+ * 		private meetingConnectionService: MeetingConnectionService
  * 	) {
  * 		this.configureUrls();
  * 	}
@@ -1422,7 +1422,7 @@ export class ParticipantPanelItemDirective {
  *
  * 	// Function to leave the session
  * 	async leaveSession() {
- * 		await this.openviduService.disconnectRoom();
+ * 		await this.meetingConnectionService.disconnectRoom();
  * 		this.connected = false;
  * 	}
  *

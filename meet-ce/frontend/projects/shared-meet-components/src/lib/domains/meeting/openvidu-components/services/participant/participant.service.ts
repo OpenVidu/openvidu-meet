@@ -14,7 +14,8 @@ import type {
 } from '../livekit-adapter';
 import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track, VideoPresets } from '../livekit-adapter';
-import { OpenViduService } from '../openvidu/openvidu.service';
+import { LocalTrackService } from '../local-track/local-track.service';
+import { MeetingConnectionService } from '../meeting-connection/meeting-connection.service';
 import { StorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
@@ -23,7 +24,8 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 })
 export class ParticipantService {
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
-	private readonly openviduService = inject(OpenViduService);
+	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly localTrackService = inject(LocalTrackService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
@@ -75,7 +77,7 @@ export class ParticipantService {
 	 * @param participant
 	 */
 	setLocalParticipant(participant: OVLocalParticipant) {
-		const room = this.openviduService.getRoom();
+		const room = this.meetingConnectionService.getRoom();
 		const newParticipant = this.newParticipant({ participant, room });
 		this._localParticipant.set(newParticipant);
 	}
@@ -85,7 +87,7 @@ export class ParticipantService {
 	 * @internal
 	 */
 	async connect(): Promise<void> {
-		let prejoinTracks = this.openviduService.getLocalTracks();
+		let prejoinTracks = this.localTrackService.getLocalTracks();
 
 		if (prejoinTracks.length === 0) {
 			// No prejoin page ran, so the local tracks have not been created yet. Decide what to open
@@ -96,7 +98,7 @@ export class ParticipantService {
 			const wantMicrophone = this.directiveService.isAudioEnabled() && this.storageSrv.isMicrophoneEnabled();
 
 			if (wantCamera || wantMicrophone) {
-				prejoinTracks = await this.openviduService.createLocalTracks(wantCamera, wantMicrophone);
+				prejoinTracks = await this.localTrackService.createLocalTracks(wantCamera, wantMicrophone);
 
 				// Permission may have just been granted → populate the device list and align the
 				// selection with the opened devices so the in-room selectors work.
@@ -104,8 +106,8 @@ export class ParticipantService {
 			}
 		}
 
-		await this.openviduService.connectRoom();
-		this.setLocalParticipant(this.openviduService.getRoom().localParticipant);
+		await this.meetingConnectionService.connectRoom();
+		this.setLocalParticipant(this.meetingConnectionService.getRoom().localParticipant);
 
 		const localParticipant = this.localParticipant();
 		const videoTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Video);
@@ -124,8 +126,8 @@ export class ParticipantService {
 		// if(!isCameraEnabled) await this.setCameraEnabled(isCameraEnabled);
 		// if(!isMicrophoneEnabled) await this.setMicrophoneEnabled(isMicrophoneEnabled);
 		// Once the Room is created, the temporary tracks are not longer needed.
-		this.log.d('Connected to room', this.openviduService.getRoom());
-		this.openviduService.getRoom().remoteParticipants.forEach((p) => {
+		this.log.d('Connected to room', this.meetingConnectionService.getRoom());
+		this.meetingConnectionService.getRoom().remoteParticipants.forEach((p) => {
 			this.addRemoteParticipant(p);
 		});
 		if (this._remoteParticipants().length > 0) {
@@ -151,11 +153,11 @@ export class ParticipantService {
 	 * @param deviceId
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		if (this.openviduService.isRoomConnected()) {
+		if (this.meetingConnectionService.isRoomConnected()) {
 			const localParticipant = this.localParticipant();
 			await localParticipant?.switchCamera(deviceId);
 		} else {
-			await this.openviduService.switchCamera(deviceId);
+			await this.localTrackService.switchCamera(deviceId);
 		}
 		// this.updateLocalParticipant();
 	}
@@ -165,11 +167,11 @@ export class ParticipantService {
 	 * @param deviceId
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
-		if (this.openviduService.isRoomConnected()) {
+		if (this.meetingConnectionService.isRoomConnected()) {
 			const localParticipant = this.localParticipant();
 			await localParticipant?.switchMicrophone(deviceId);
 		} else {
-			await this.openviduService.switchMicrophone(deviceId);
+			await this.localTrackService.switchMicrophone(deviceId);
 		}
 		// this.updateLocalParticipant();
 	}
@@ -209,7 +211,7 @@ export class ParticipantService {
 	 * @param enabled
 	 */
 	async setCameraEnabled(enabled: boolean): Promise<void> {
-		if (this.openviduService.isRoomConnected()) {
+		if (this.meetingConnectionService.isRoomConnected()) {
 			const storageDevice = this.storageSrv.getVideoDevice();
 			let options: OVVideoCaptureOptions | undefined;
 			if (storageDevice) {
@@ -222,7 +224,7 @@ export class ParticipantService {
 			await this._localParticipant()?.setCameraEnabled(enabled, options);
 			this._localParticipant()?.bump();
 		} else {
-			await this.openviduService.setVideoTrackEnabled(enabled);
+			await this.localTrackService.setVideoTrackEnabled(enabled);
 		}
 	}
 
@@ -231,7 +233,7 @@ export class ParticipantService {
 	 * @param enabled
 	 */
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		if (this.openviduService.isRoomConnected()) {
+		if (this.meetingConnectionService.isRoomConnected()) {
 			const storageDevice = this.storageSrv.getAudioDevice();
 			let options: OVAudioCaptureOptions | undefined;
 			if (storageDevice) {
@@ -242,7 +244,7 @@ export class ParticipantService {
 			await this._localParticipant()?.setMicrophoneEnabled(enabled, options);
 			this._localParticipant()?.bump();
 		} else {
-			this.openviduService.setAudioTrackEnabled(enabled);
+			this.localTrackService.setAudioTrackEnabled(enabled);
 		}
 	}
 
@@ -425,7 +427,7 @@ export class ParticipantService {
 	 */
 	isMyCameraEnabled(): boolean {
 		const local = this._localParticipant();
-		if (this.openviduService.isRoomConnected() && local) {
+		if (this.meetingConnectionService.isRoomConnected() && local) {
 			return local.isCameraEnabled;
 		} else {
 			const directiveCameraEnabled = this.directiveService.isVideoEnabled();
@@ -433,7 +435,7 @@ export class ParticipantService {
 			if (!directiveCameraEnabled) {
 				return false;
 			}
-			return this.openviduService.isVideoTrackEnabled() && this.storageSrv.isCameraEnabled();
+			return this.localTrackService.isVideoTrackEnabled() && this.storageSrv.isCameraEnabled();
 		}
 	}
 
@@ -442,7 +444,7 @@ export class ParticipantService {
 	 */
 	isMyMicrophoneEnabled(): boolean {
 		const local = this._localParticipant();
-		if (this.openviduService.isRoomConnected() && local) {
+		if (this.meetingConnectionService.isRoomConnected() && local) {
 			return local.isMicrophoneEnabled;
 		} else {
 			const directiveMicropgoneEnabled = this.directiveService.isAudioEnabled();
@@ -450,7 +452,7 @@ export class ParticipantService {
 			if (!directiveMicropgoneEnabled) {
 				return false;
 			}
-			return this.openviduService.isAudioTrackEnabled() && this.storageSrv.isMicrophoneEnabled();
+			return this.localTrackService.isAudioTrackEnabled() && this.storageSrv.isMicrophoneEnabled();
 		}
 	}
 

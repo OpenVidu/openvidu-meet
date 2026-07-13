@@ -22,7 +22,7 @@ import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.servic
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalTrack, Track } from '../../services/livekit-adapter';
-import { OpenViduService } from '../../services/openvidu/openvidu.service';
+import { LocalTrackService } from '../../services/local-track/local-track.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
@@ -105,7 +105,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	}));
 	private tracks: LocalTrack[] = [];
 	private readonly cdkSrv = inject(CdkOverlayService);
-	private readonly openviduService = inject(OpenViduService);
+	private readonly localTrackService = inject(LocalTrackService);
 	private readonly virtualBackgroundService = inject(VirtualBackgroundService);
 	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
@@ -176,10 +176,10 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 		if (!enabled) {
 			this.closeBackgroundPanel();
 		} else if (!this.videoTrack) {
-			const newVideoTrack = await this.openviduService.createLocalTracks(true, false);
+			const newVideoTrack = await this.localTrackService.createLocalTracks(true, false);
 			this.videoTrack = newVideoTrack[0];
 			this.tracks.push(this.videoTrack);
-			this.openviduService.setLocalTracks(this.tracks);
+			this.localTrackService.setLocalTracks(this.tracks);
 		}
 
 		this.onVideoEnabledChanged.emit(enabled);
@@ -190,7 +190,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			this.log.d('Video device changed to:', device);
 
 			// Get the updated tracks from the service
-			const updatedTracks = this.openviduService.getLocalTracks();
+			const updatedTracks = this.localTrackService.getLocalTracks();
 
 			// Find the new video track
 			const newVideoTrack = updatedTracks.find((track) => track.kind === Track.Kind.Video);
@@ -211,7 +211,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			this.log.d('Audio device changed to:', device);
 
 			// Get the updated tracks from the service
-			const updatedTracks = this.openviduService.getLocalTracks();
+			const updatedTracks = this.localTrackService.getLocalTracks();
 
 			// Find the new audio track
 			const newAudioTrack = updatedTracks.find((track) => track.kind === Track.Kind.Audio);
@@ -228,10 +228,10 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 
 	async audioEnabledChanged(enabled: boolean) {
 		if (enabled && !this.audioTrack) {
-			const newAudioTrack = await this.openviduService.createLocalTracks(false, true);
+			const newAudioTrack = await this.localTrackService.createLocalTracks(false, true);
 			this.audioTrack = newAudioTrack[0];
 			this.tracks.push(this.audioTrack);
-			this.openviduService.setLocalTracks(this.tracks);
+			this.localTrackService.setLocalTracks(this.tracks);
 		}
 		this.onAudioEnabledChanged.emit(enabled);
 	}
@@ -276,8 +276,8 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	private async initializeDevicesWithRetry(maxRetries: number = 3): Promise<void> {
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
-				this.tracks = await this.openviduService.createLocalTracks();
-				this.openviduService.setLocalTracks(this.tracks);
+				this.tracks = await this.localTrackService.createLocalTracks();
+				this.localTrackService.setLocalTracks(this.tracks);
 
 				// Creating the tracks above is what grants media permission on first visit; only then
 				// are device labels available. Populate the list and align the selection accordingly.
@@ -285,7 +285,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 
 				this.videoTrack = this.tracks.find((track) => track.kind === Track.Kind.Video);
 				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
-				this.isVideoEnabled.set(this.openviduService.isVideoTrackEnabled());
+				this.isVideoEnabled.set(this.localTrackService.isVideoTrackEnabled());
 
 				// Restore previously selected virtual background in prejoin when possible.
 				// Skip restore when the user is not allowed to use virtual backgrounds.
