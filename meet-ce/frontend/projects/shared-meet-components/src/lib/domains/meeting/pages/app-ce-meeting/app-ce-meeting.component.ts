@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, type OnInit } from '@angular/core';
+import { IframeBridgeService } from '../../../embedded/services/iframe-bridge.service';
 import { MeetingCustomLayoutComponent } from '../../customization/meeting-custom-layout/meeting-custom-layout.component';
 import { MeetingInvitePanelComponent } from '../../customization/meeting-invite-panel/meeting-invite-panel.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
@@ -37,4 +38,13 @@ import { MeetingComponent } from '../meeting/meeting.component';
 	styles: '',
 	changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class AppCeMeetingComponent {}
+export class AppCeMeetingComponent implements OnInit {
+	private readonly iframeBridge = inject(IframeBridgeService);
+
+	ngOnInit(): void {
+		// Starts the postMessage bridge when embedded in an iframe; no-op otherwise.
+		// Initialized here (lazy meeting entry) rather than at the app root so the embedded
+		// command/bridge chain — and its LiveKit dependency — stays out of the eager `main` bundle.
+		this.iframeBridge.initialize();
+	}
+}
