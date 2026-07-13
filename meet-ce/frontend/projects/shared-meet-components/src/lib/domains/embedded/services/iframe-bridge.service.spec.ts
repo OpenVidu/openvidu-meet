@@ -27,7 +27,7 @@ describe('IframeBridgeService', () => {
 	let service: IframeBridgeService;
 	let eventBus: EmbeddedEventBusService;
 	let commandService: jasmine.SpyObj<EmbeddedCommandService>;
-	let meetingConnectionService: { isRoomConnected: jasmine.Spy };
+	let meetingConnectionService: { isConnected: jasmine.Spy };
 	let isIframeMode: WritableSignal<boolean>;
 	let postMessageSpy: jasmine.Spy;
 
@@ -41,7 +41,7 @@ describe('IframeBridgeService', () => {
 		commandService.endMeeting.and.resolveTo();
 		commandService.leaveRoom.and.resolveTo();
 		commandService.kickParticipant.and.resolveTo();
-		meetingConnectionService = { isRoomConnected: jasmine.createSpy('isRoomConnected').and.returnValue(true) };
+		meetingConnectionService = { isConnected: jasmine.createSpy('isConnected').and.returnValue(true) };
 
 		TestBed.configureTestingModule({
 			providers: [
@@ -125,7 +125,7 @@ describe('IframeBridgeService', () => {
 		});
 
 		it('ignores commands while not connected to the room', () => {
-			meetingConnectionService.isRoomConnected.and.returnValue(false);
+			meetingConnectionService.isConnected.and.returnValue(false);
 			startBridge();
 
 			postFromHost({ command: EmbeddedCommandName.END_MEETING });
@@ -204,7 +204,7 @@ describe('IframeBridgeService', () => {
 			expect(commandService.leaveRoom).toHaveBeenCalledTimes(1);
 
 			// Connection dropped after the first command: the next one must be rejected.
-			meetingConnectionService.isRoomConnected.and.returnValue(false);
+			meetingConnectionService.isConnected.and.returnValue(false);
 			postFromHost({ command: EmbeddedCommandName.END_MEETING });
 			expect(commandService.endMeeting).not.toHaveBeenCalled();
 		});

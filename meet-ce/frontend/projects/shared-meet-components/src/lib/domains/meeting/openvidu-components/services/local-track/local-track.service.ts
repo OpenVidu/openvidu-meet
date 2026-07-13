@@ -380,7 +380,7 @@ export class LocalTrackService {
 		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 
 		// If not found and room is connected, get from published tracks
-		if (!videoTrack && this.meetingConnectionService.isRoomConnected()) {
+		if (!videoTrack && this.meetingConnectionService.isConnected()) {
 			const localParticipant = this.meetingConnectionService.getRoom().localParticipant;
 			const videoPublication = localParticipant
 				.getTrackPublications()

@@ -517,7 +517,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	async disconnect() {
 		try {
-			await this.meetingConnectionService.disconnectRoom(() => {
+			await this.meetingConnectionService.disconnect(() => {
 				this.onParticipantLeft.emit({
 					roomName: this.meetingConnectionService.getRoomName(),
 					participantName: this.participantService.getMyName() || '',

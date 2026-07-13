@@ -106,7 +106,7 @@ export class ParticipantService {
 			}
 		}
 
-		await this.meetingConnectionService.connectRoom();
+		await this.meetingConnectionService.connect();
 		this.setLocalParticipant(this.meetingConnectionService.getRoom().localParticipant);
 
 		const localParticipant = this.localParticipant();
@@ -153,7 +153,7 @@ export class ParticipantService {
 	 * @param deviceId
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		if (this.meetingConnectionService.isRoomConnected()) {
+		if (this.meetingConnectionService.isConnected()) {
 			const localParticipant = this.localParticipant();
 			await localParticipant?.switchCamera(deviceId);
 		} else {
@@ -167,7 +167,7 @@ export class ParticipantService {
 	 * @param deviceId
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
-		if (this.meetingConnectionService.isRoomConnected()) {
+		if (this.meetingConnectionService.isConnected()) {
 			const localParticipant = this.localParticipant();
 			await localParticipant?.switchMicrophone(deviceId);
 		} else {
@@ -211,7 +211,7 @@ export class ParticipantService {
 	 * @param enabled
 	 */
 	async setCameraEnabled(enabled: boolean): Promise<void> {
-		if (this.meetingConnectionService.isRoomConnected()) {
+		if (this.meetingConnectionService.isConnected()) {
 			const storageDevice = this.storageSrv.getVideoDevice();
 			let options: VideoCaptureOptions | undefined;
 			if (storageDevice) {
@@ -233,7 +233,7 @@ export class ParticipantService {
 	 * @param enabled
 	 */
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		if (this.meetingConnectionService.isRoomConnected()) {
+		if (this.meetingConnectionService.isConnected()) {
 			const storageDevice = this.storageSrv.getAudioDevice();
 			let options: AudioCaptureOptions | undefined;
 			if (storageDevice) {
@@ -427,7 +427,7 @@ export class ParticipantService {
 	 */
 	isMyCameraEnabled(): boolean {
 		const local = this._localParticipant();
-		if (this.meetingConnectionService.isRoomConnected() && local) {
+		if (this.meetingConnectionService.isConnected() && local) {
 			return local.isCameraEnabled;
 		} else {
 			const directiveCameraEnabled = this.directiveService.isVideoEnabled();
@@ -444,7 +444,7 @@ export class ParticipantService {
 	 */
 	isMyMicrophoneEnabled(): boolean {
 		const local = this._localParticipant();
-		if (this.meetingConnectionService.isRoomConnected() && local) {
+		if (this.meetingConnectionService.isConnected() && local) {
 			return local.isMicrophoneEnabled;
 		} else {
 			const directiveMicropgoneEnabled = this.directiveService.isAudioEnabled();

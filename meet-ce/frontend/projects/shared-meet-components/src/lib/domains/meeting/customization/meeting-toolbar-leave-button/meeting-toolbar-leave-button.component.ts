@@ -31,7 +31,7 @@ export class MeetingToolbarLeaveButtonComponent {
 	isMobile = this.meetingContextService.isMobile;
 
 	async onLeaveMeetingClick(): Promise<void> {
-		await this.meetingConnectionService.disconnectRoom();
+		await this.meetingConnectionService.disconnect();
 	}
 
 	async onEndMeetingClick(): Promise<void> {

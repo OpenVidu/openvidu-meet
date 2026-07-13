@@ -58,7 +58,7 @@ export class EmbeddedCommandService {
 	async leaveRoom(): Promise<void> {
 		try {
 			this.log.d('Leaving room...');
-			await this.meetingConnectionService.disconnectRoom();
+			await this.meetingConnectionService.disconnect();
 		} catch (error) {
 			this.log.e('Error leaving room:', error);
 		}

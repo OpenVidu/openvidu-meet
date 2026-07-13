@@ -48,7 +48,7 @@ export class MeetingConnectionService {
 	 * Creates a new Room with audio and video devices selected or default ones.
 	 * @internal
 	 */
-	initRoom(): void {
+	init(): void {
 		// Check if E2EE configuration needs to be applied
 		const e2eeKey = this.configService.getE2EEKey();
 		const needsE2EEConfig = e2eeKey && e2eeKey.trim() !== '' && !this.keyProvider;
@@ -131,7 +131,7 @@ export class MeetingConnectionService {
 	/**
 	 * Connects local participant to the room
 	 */
-	async connectRoom(): Promise<void> {
+	async connect(): Promise<void> {
 		try {
 			const room = this.getRoom();
 
@@ -170,13 +170,13 @@ export class MeetingConnectionService {
 	 * @param callback - Optional function to be executed after a successful disconnection
 	 * @returns A Promise that resolves once the disconnection is complete
 	 */
-	async disconnectRoom(
+	async disconnect(
 		callback?: () => void,
 		shouldHandleClientInitiatedDisconnectEvent: boolean = true
 	): Promise<void> {
 		this.shouldHandleClientInitiatedDisconnectEvent = shouldHandleClientInitiatedDisconnectEvent;
 		const room = this.room;
-		if (room && this.isRoomConnected()) {
+		if (room && this.isConnected()) {
 			this.log.d('Disconnecting from room');
 			await this.livekitSdkService.disconnectRoom(room);
 			if (callback) callback();
@@ -198,7 +198,7 @@ export class MeetingConnectionService {
 	 * Checks if room is initialized without throwing an error
 	 * @returns true if room is initialized, false otherwise
 	 */
-	isRoomInitialized(): boolean {
+	isInitialized(): boolean {
 		return !!this.room;
 	}
 
@@ -213,7 +213,7 @@ export class MeetingConnectionService {
 	 * Returns if local participant is connected to the room
 	 * @returns
 	 */
-	isRoomConnected(): boolean {
+	isConnected(): boolean {
 		return this.room?.state === ConnectionState.Connected;
 	}
 
@@ -247,7 +247,7 @@ export class MeetingConnectionService {
 		// This ensures that getRoom() won't fail if token is set before onTokenRequested
 		if (!this.room) {
 			this.log.d('Room not initialized yet, initializing room due to token assignment');
-			this.initRoom();
+			this.init();
 		}
 	}
 

@@ -126,7 +126,7 @@ export class IframeBridgeService {
 		}
 
 		// Commands only make sense once connected to the room.
-		if (!this.meetingConnectionService.isRoomConnected()) {
+		if (!this.meetingConnectionService.isConnected()) {
 			this.log.w('Received command but participant is not connected to the room');
 			return;
 		}

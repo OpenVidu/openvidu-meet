@@ -396,7 +396,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		const rawName = this.libService.getCurrentParticipantName() || this.storageSrv.getParticipantName() || '';
 		this.storageSrv.setParticipantName(rawName);
 
-		this.meetingConnectionService.initRoom();
+		this.meetingConnectionService.init();
 		this._applyToken(this.libService.tokenSignal());
 	}
 
@@ -430,7 +430,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * Used when showPrejoin = false. Applies the token directly without showing the prejoin page.
 	 */
 	private _requestTokenSkippingPrejoin(): void {
-		this.meetingConnectionService.initRoom();
+		this.meetingConnectionService.init();
 		this._applyToken(this.libService.tokenSignal());
 	}
 

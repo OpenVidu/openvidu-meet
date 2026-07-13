@@ -1422,7 +1422,7 @@ export class ParticipantPanelItemDirective {
  *
  * 	// Function to leave the session
  * 	async leaveSession() {
- * 		await this.meetingConnectionService.disconnectRoom();
+ * 		await this.meetingConnectionService.disconnect();
  * 		this.connected = false;
  * 	}
  *

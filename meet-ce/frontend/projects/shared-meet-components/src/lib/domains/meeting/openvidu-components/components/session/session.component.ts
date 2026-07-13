@@ -213,7 +213,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		this.shouldDisconnectRoomWhenComponentIsDestroyed = true;
 
 		// Check if room is available before proceeding
-		if (!this.meetingConnectionService.isRoomInitialized()) {
+		if (!this.meetingConnectionService.isInitialized()) {
 			this.log.e('Room is not initialized when SessionComponent starts. This indicates a timing issue.');
 			this.actionService.openDialog(
 				this.translateService.translate('ERRORS.SESSION'),
@@ -310,7 +310,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	async disconnectRoom(reason: ParticipantLeftReason) {
 		// Mark session as disconnected for avoiding to do it again in ngOnDestroy
 		this.shouldDisconnectRoomWhenComponentIsDestroyed = false;
-		await this.meetingConnectionService.disconnectRoom(() => {
+		await this.meetingConnectionService.disconnect(() => {
 			this.onParticipantLeft.emit({
 				roomName: this.meetingConnectionService.getRoomName(),
 				participantName: this.participantService.getMyName() || '',
