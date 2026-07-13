@@ -5,6 +5,7 @@ import { SessionRoomEventsService } from '../session/session-room-events.service
 import { ViewportService } from '../viewport/viewport.service';
 import { BaseLayoutService } from './layout.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
 @Injectable({
 	providedIn: 'root'
@@ -13,6 +14,7 @@ export class SmartLayoutService extends BaseLayoutService {
 	private readonly loggerService = inject(LoggerService);
 	private readonly sessionRoomEventsService = inject(SessionRoomEventsService);
 	private readonly viewportService = inject(ViewportService);
+	private readonly storageService = inject(MeetStorageService);
 	private readonly INITIAL_VISIBLE_PARTICIPANTS_COUNT = 4;
 	readonly MIN_VISIBLE_REMOTE_PARTICIPANTS = 1;
 	readonly MAX_VISIBLE_REMOTE_PARTICIPANTS_LIMIT = 6;
@@ -59,6 +61,27 @@ export class SmartLayoutService extends BaseLayoutService {
 		const viewportInfo = this.viewportService.viewportInfo();
 		const isMobileOrTablet = viewportInfo.isPhysicalMobile || viewportInfo.isPhysicalTablet;
 		if (isMobileOrTablet) this._maxVisibleRemoteParticipants.set(2);
+
+		// Persist the user's layout preferences across sessions (stored preferences override the
+		// viewport-based default above).
+		this.loadLayoutModeFromStorage();
+		this.loadMaxVisibleParticipantsFromStorage();
+		this.setupStoragePersistence();
+	}
+
+	private loadLayoutModeFromStorage(): void {
+		const storedMode = this.storageService.getLayoutMode();
+		if (storedMode) this.setLayoutMode(storedMode as SmartLayoutMode);
+	}
+
+	private loadMaxVisibleParticipantsFromStorage(): void {
+		const storedCount = this.storageService.getMaxVisibleRemoteParticipants();
+		if (storedCount) this.setMaxVisibleRemoteParticipants(storedCount);
+	}
+
+	private setupStoragePersistence(): void {
+		effect(() => this.storageService.setLayoutMode(this.layoutMode()));
+		effect(() => this.storageService.setMaxVisibleRemoteParticipants(this.maxVisibleRemoteParticipants()));
 	}
 
 	setLayoutMode(mode: SmartLayoutMode): void {

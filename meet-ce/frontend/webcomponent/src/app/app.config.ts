@@ -14,14 +14,12 @@ import {
 	AuthHeaderProviderService,
 	AuthInterceptorErrorHandlerService,
 	httpInterceptor,
-	MeetingLayoutService,
 	provideOpenViduComponents,
 	provideTranslations,
 	RECORDINGS_TRANSLATIONS,
 	RoomMemberHeaderProviderService,
 	RoomMemberInterceptorErrorHandlerService,
 	SHARED_TRANSLATIONS,
-	SmartLayoutService,
 	ThemeService
 } from '@openvidu-meet/shared-components';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
@@ -44,7 +42,6 @@ export const appConfig: ApplicationConfig = {
 		provideTranslations(RECORDINGS_TRANSLATIONS),
 		provideTranslations(AUTH_TRANSLATIONS),
 		provideTranslations(SHARED_TRANSLATIONS),
-		{ provide: SmartLayoutService, useExisting: MeetingLayoutService },
 		ShadowOverlayContainer,
 		{ provide: OverlayContainer, useExisting: ShadowOverlayContainer }
 	]

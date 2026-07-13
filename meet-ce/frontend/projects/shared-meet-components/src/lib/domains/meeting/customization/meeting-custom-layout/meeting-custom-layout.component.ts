@@ -4,12 +4,10 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
 import { OpenViduComponentsUiModule, PanelService, PanelType } from '../../openvidu-components';
 import { SmartLayoutComponent } from '../../openvidu-components/components/layout/smart-layout/smart-layout.component';
-import { SmartLayoutService } from '../../openvidu-components/services/layout/smart-layout.service';
 import { RoomAccessLinkService } from '../../services/room-access-link.service';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
-import { MeetingLayoutService } from '../../services/meeting-layout.service';
 import { MeetingCaptionsComponent } from '../meeting-captions/meeting-captions.component';
 import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-waiting-panel.component';
 
@@ -25,8 +23,7 @@ import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-w
 	],
 	templateUrl: './meeting-custom-layout.component.html',
 	styleUrl: './meeting-custom-layout.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	providers: [{ provide: SmartLayoutService, useExisting: MeetingLayoutService }]
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class MeetingCustomLayoutComponent {
 	protected meetingContextService = inject(MeetingContextService);

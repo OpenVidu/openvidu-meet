@@ -10,7 +10,7 @@ import { MatSliderModule } from '@angular/material/slider';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { SmartLayoutMode } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
-import { MeetingLayoutService } from '../../services/meeting-layout.service';
+import { SmartLayoutService } from '../../openvidu-components';
 
 /**
  * Component for additional settings in the Settings Panel.
@@ -33,7 +33,7 @@ import { MeetingLayoutService } from '../../services/meeting-layout.service';
 })
 export class MeetingSettingsExtensionsComponent {
 	protected readonly meetingContextService = inject(MeetingContextService);
-	private readonly layoutService = inject(MeetingLayoutService);
+	private readonly layoutService = inject(SmartLayoutService);
 
 	/** Whether the layout switching feature is allowed */
 	showLayoutSelector = computed(() => this.meetingContextService.meetingUI().showLayoutSelector);

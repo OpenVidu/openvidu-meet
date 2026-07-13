@@ -16,7 +16,6 @@ import {
 	AuthInterceptorErrorHandlerService,
 	CONSOLE_TRANSLATIONS,
 	httpInterceptor,
-	MeetingLayoutService,
 	provideOpenViduComponents,
 	provideTranslations,
 	RECORDINGS_TRANSLATIONS,
@@ -25,7 +24,6 @@ import {
 	RoomMemberInterceptorErrorHandlerService,
 	ROOMS_TRANSLATIONS,
 	SHARED_TRANSLATIONS,
-	SmartLayoutService,
 	ThemeService,
 	USERS_TRANSLATIONS
 } from '@openvidu-meet/shared-components';
@@ -49,7 +47,6 @@ export const appConfig: ApplicationConfig = {
 		provideTranslations(AUTH_TRANSLATIONS),
 		provideTranslations(ROOM_MEMBERS_TRANSLATIONS),
 		provideTranslations(SHARED_TRANSLATIONS),
-		{ provide: SmartLayoutService, useExisting: MeetingLayoutService },
 		provideRouter(ceRoutes),
 		provideAnimationsAsync(),
 		provideHttpClient(withXhr(), withInterceptors([httpInterceptor])),
