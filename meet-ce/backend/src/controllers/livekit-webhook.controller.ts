@@ -23,7 +23,7 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 
 		if (!belongsToOpenViduMeet) {
 			logger.verbose(`Webhook skipped: ${webhookEvent.event}. Not related to OpenVidu Meet.`);
-			return;
+			return res.status(200).send();
 		}
 
 		const executionResult = await mutexService.withLock(webhookLockKey, ms('5s'), async () => {
