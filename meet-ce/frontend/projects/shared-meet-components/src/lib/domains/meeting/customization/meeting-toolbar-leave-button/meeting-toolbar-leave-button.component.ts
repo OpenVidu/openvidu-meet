@@ -5,7 +5,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
-import { MeetingConnectionService } from '../../openvidu-components';
+import { MeetingLiveKitService } from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingModerationService } from '../../services/meeting-moderation.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
@@ -23,7 +23,7 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 export class MeetingToolbarLeaveButtonComponent {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingModerationService = inject(MeetingModerationService);
-	protected meetingConnectionService = inject(MeetingConnectionService);
+	protected meetingLiveKitService = inject(MeetingLiveKitService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - MeetingToolbarLeaveButtons');
 
@@ -31,7 +31,7 @@ export class MeetingToolbarLeaveButtonComponent {
 	isMobile = this.meetingContextService.isMobile;
 
 	async onLeaveMeetingClick(): Promise<void> {
-		await this.meetingConnectionService.disconnect();
+		await this.meetingLiveKitService.disconnect();
 	}
 
 	async onEndMeetingClick(): Promise<void> {

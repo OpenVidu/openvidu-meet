@@ -10,7 +10,7 @@ import {
 	VideoCaptureOptions
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
-import { MeetingConnectionService } from '../meeting-connection/meeting-connection.service';
+import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { StorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -19,7 +19,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 /**
  * Owns the local participant's media capture: creating/switching camera & microphone tracks
  * (prejoin and in-call) and their enabled state. The room connection itself lives separately
- * in MeetingConnectionService.
+ * in MeetingLiveKitService.
  */
 @Injectable({
 	providedIn: 'root'
@@ -29,7 +29,7 @@ export class LocalTrackService {
 	private readonly storageService = inject(StorageService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
-	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 
 	/*
 	 * Tracks used in the prejoin component. They are created when the room is not yet created.
@@ -380,8 +380,8 @@ export class LocalTrackService {
 		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 
 		// If not found and room is connected, get from published tracks
-		if (!videoTrack && this.meetingConnectionService.isConnected()) {
-			const localParticipant = this.meetingConnectionService.getRoom().localParticipant;
+		if (!videoTrack && this.meetingLiveKitService.isConnected()) {
+			const localParticipant = this.meetingLiveKitService.getRoom().localParticipant;
 			const videoPublication = localParticipant
 				.getTrackPublications()
 				.find((pub) => pub.kind === Track.Kind.Video);

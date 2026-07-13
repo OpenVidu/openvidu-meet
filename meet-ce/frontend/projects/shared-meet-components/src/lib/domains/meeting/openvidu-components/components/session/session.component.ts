@@ -24,7 +24,7 @@ import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { Room } from '../../services/livekit';
-import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
+import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { SessionRoomEventsService } from '../../services/session/session-room-events.service';
@@ -91,7 +91,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 	private readonly destroyRef = inject(DestroyRef);
 	private readonly layoutService = inject(SmartLayoutService);
 	private readonly actionService = inject(ActionService);
-	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly panelService = inject(PanelService);
@@ -213,7 +213,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		this.shouldDisconnectRoomWhenComponentIsDestroyed = true;
 
 		// Check if room is available before proceeding
-		if (!this.meetingConnectionService.isInitialized()) {
+		if (!this.meetingLiveKitService.isInitialized()) {
 			this.log.e('Room is not initialized when SessionComponent starts. This indicates a timing issue.');
 			this.actionService.openDialog(
 				this.translateService.translate('ERRORS.SESSION'),
@@ -224,7 +224,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 
 		// Get room instance
 		try {
-			this.room = this.meetingConnectionService.getRoom();
+			this.room = this.meetingLiveKitService.getRoom();
 			this.log.d('Room successfully obtained for SessionComponent');
 		} catch (error: any) {
 			this.log.e('Unexpected error getting room:', error);
@@ -310,9 +310,9 @@ export class SessionComponent implements OnInit, OnDestroy {
 	async disconnectRoom(reason: ParticipantLeftReason) {
 		// Mark session as disconnected for avoiding to do it again in ngOnDestroy
 		this.shouldDisconnectRoomWhenComponentIsDestroyed = false;
-		await this.meetingConnectionService.disconnect(() => {
+		await this.meetingLiveKitService.disconnect(() => {
 			this.onParticipantLeft.emit({
-				roomName: this.meetingConnectionService.getRoomName(),
+				roomName: this.meetingLiveKitService.getRoomName(),
 				participantName: this.participantService.getMyName() || '',
 				identity: this.participantService.getMyIdentity() || '',
 				reason

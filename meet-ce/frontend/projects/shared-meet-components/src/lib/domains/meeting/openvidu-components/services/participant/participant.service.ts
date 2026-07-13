@@ -15,7 +15,7 @@ import type {
 import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track, VideoPresets } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
-import { MeetingConnectionService } from '../meeting-connection/meeting-connection.service';
+import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { StorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
@@ -24,7 +24,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 })
 export class ParticipantService {
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
-	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly deviceSrv = inject(DeviceService);
@@ -77,7 +77,7 @@ export class ParticipantService {
 	 * @param participant
 	 */
 	setLocalParticipant(participant: LocalParticipant) {
-		const room = this.meetingConnectionService.getRoom();
+		const room = this.meetingLiveKitService.getRoom();
 		const newParticipant = this.newParticipant({ participant, room });
 		this._localParticipant.set(newParticipant);
 	}
@@ -106,8 +106,8 @@ export class ParticipantService {
 			}
 		}
 
-		await this.meetingConnectionService.connect();
-		this.setLocalParticipant(this.meetingConnectionService.getRoom().localParticipant);
+		await this.meetingLiveKitService.connect();
+		this.setLocalParticipant(this.meetingLiveKitService.getRoom().localParticipant);
 
 		const localParticipant = this.localParticipant();
 		const videoTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Video);
@@ -126,8 +126,8 @@ export class ParticipantService {
 		// if(!isCameraEnabled) await this.setCameraEnabled(isCameraEnabled);
 		// if(!isMicrophoneEnabled) await this.setMicrophoneEnabled(isMicrophoneEnabled);
 		// Once the Room is created, the temporary tracks are not longer needed.
-		this.log.d('Connected to room', this.meetingConnectionService.getRoom());
-		this.meetingConnectionService.getRoom().remoteParticipants.forEach((p) => {
+		this.log.d('Connected to room', this.meetingLiveKitService.getRoom());
+		this.meetingLiveKitService.getRoom().remoteParticipants.forEach((p) => {
 			this.addRemoteParticipant(p);
 		});
 		if (this._remoteParticipants().length > 0) {
@@ -153,7 +153,7 @@ export class ParticipantService {
 	 * @param deviceId
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		if (this.meetingConnectionService.isConnected()) {
+		if (this.meetingLiveKitService.isConnected()) {
 			const localParticipant = this.localParticipant();
 			await localParticipant?.switchCamera(deviceId);
 		} else {
@@ -167,7 +167,7 @@ export class ParticipantService {
 	 * @param deviceId
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
-		if (this.meetingConnectionService.isConnected()) {
+		if (this.meetingLiveKitService.isConnected()) {
 			const localParticipant = this.localParticipant();
 			await localParticipant?.switchMicrophone(deviceId);
 		} else {
@@ -211,7 +211,7 @@ export class ParticipantService {
 	 * @param enabled
 	 */
 	async setCameraEnabled(enabled: boolean): Promise<void> {
-		if (this.meetingConnectionService.isConnected()) {
+		if (this.meetingLiveKitService.isConnected()) {
 			const storageDevice = this.storageSrv.getVideoDevice();
 			let options: VideoCaptureOptions | undefined;
 			if (storageDevice) {
@@ -233,7 +233,7 @@ export class ParticipantService {
 	 * @param enabled
 	 */
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		if (this.meetingConnectionService.isConnected()) {
+		if (this.meetingLiveKitService.isConnected()) {
 			const storageDevice = this.storageSrv.getAudioDevice();
 			let options: AudioCaptureOptions | undefined;
 			if (storageDevice) {
@@ -427,7 +427,7 @@ export class ParticipantService {
 	 */
 	isMyCameraEnabled(): boolean {
 		const local = this._localParticipant();
-		if (this.meetingConnectionService.isConnected() && local) {
+		if (this.meetingLiveKitService.isConnected() && local) {
 			return local.isCameraEnabled;
 		} else {
 			const directiveCameraEnabled = this.directiveService.isVideoEnabled();
@@ -444,7 +444,7 @@ export class ParticipantService {
 	 */
 	isMyMicrophoneEnabled(): boolean {
 		const local = this._localParticipant();
-		if (this.meetingConnectionService.isConnected() && local) {
+		if (this.meetingLiveKitService.isConnected() && local) {
 			return local.isMicrophoneEnabled;
 		} else {
 			const directiveMicropgoneEnabled = this.directiveService.isAudioEnabled();

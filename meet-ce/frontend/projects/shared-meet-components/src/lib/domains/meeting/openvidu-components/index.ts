@@ -53,7 +53,7 @@ export * from './services/chat/chat.service';
 export * from './services/e2ee/e2ee.service';
 export * from './services/layout/smart-layout.service';
 export * from './services/local-track/local-track.service';
-export * from './services/meeting-connection/meeting-connection.service';
+export * from './services/meeting-livekit/meeting-livekit.service';
 export * from './services/panel/panel.service';
 export * from './services/participant/participant.service';
 export * from './services/storage/storage.service';

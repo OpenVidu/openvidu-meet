@@ -37,7 +37,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 import { DeviceService } from '../../services/device/device.service';
 import { DocumentService } from '../../services/document/document.service';
 import { Room, RoomEvent } from '../../services/livekit';
-import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
+import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { PlatformService } from '../../services/platform/platform.service';
@@ -80,7 +80,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly deviceService = inject(DeviceService);
 	private readonly actionService = inject(ActionService);
 	private readonly loggerSrv = inject(LoggerService);
@@ -432,7 +432,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	}
 
 	async ngOnInit() {
-		const roomValue = this.meetingConnectionService.getRoom();
+		const roomValue = this.meetingLiveKitService.getRoom();
 		this.room.set(roomValue);
 
 		this.subscribeToReconnection();
@@ -452,7 +452,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @internal
 	 */
 	get hasRoomTracksPublished(): boolean {
-		return this.meetingConnectionService.hasRoomTracksPublished();
+		return this.meetingLiveKitService.hasRoomTracksPublished();
 	}
 
 	/**
@@ -517,9 +517,9 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	async disconnect() {
 		try {
-			await this.meetingConnectionService.disconnect(() => {
+			await this.meetingLiveKitService.disconnect(() => {
 				this.onParticipantLeft.emit({
-					roomName: this.meetingConnectionService.getRoomName(),
+					roomName: this.meetingLiveKitService.getRoomName(),
 					participantName: this.participantService.getMyName() || '',
 					identity: this.participantService.getMyIdentity() || '',
 					reason: ParticipantLeftReason.LEAVE
@@ -556,12 +556,12 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 		if (recordingStatus === RecordingState.STARTED) {
 			this.onRecordingStopRequested.emit({
-				roomName: this.meetingConnectionService.getRoomName(),
+				roomName: this.meetingLiveKitService.getRoomName(),
 				recordingId: this.recordingStatus().id!
 			});
 		} else if (recordingStatus === RecordingState.STOPPED) {
 			this.onRecordingStartRequested.emit({
-				roomName: this.meetingConnectionService.getRoomName()
+				roomName: this.meetingLiveKitService.getRoomName()
 			});
 			this.openRecordingActivityPanel();
 		}

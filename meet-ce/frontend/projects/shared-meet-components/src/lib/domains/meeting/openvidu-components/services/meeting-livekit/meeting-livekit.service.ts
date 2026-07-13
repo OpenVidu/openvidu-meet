@@ -23,7 +23,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 @Injectable({
 	providedIn: 'root'
 })
-export class MeetingConnectionService {
+export class MeetingLiveKitService {
 	private readonly deviceService = inject(DeviceService);
 	private readonly storageService = inject(StorageService);
 	private readonly configService = inject(OpenViduComponentsConfigService);
@@ -42,7 +42,7 @@ export class MeetingConnectionService {
 
 	private livekitToken = '';
 	private livekitUrl = '';
-	private log: ILogger = inject(LoggerService).get('MeetingConnectionService');
+	private log: ILogger = inject(LoggerService).get('MeetingLiveKitService');
 
 	/**
 	 * Creates a new Room with audio and video devices selected or default ones.

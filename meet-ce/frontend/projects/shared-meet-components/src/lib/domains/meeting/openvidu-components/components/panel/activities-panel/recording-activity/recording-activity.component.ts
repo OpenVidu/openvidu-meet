@@ -14,7 +14,7 @@ import {
 } from '../../../../models/recording.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
 import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
-import { MeetingConnectionService } from '../../../../services/meeting-connection/meeting-connection.service';
+import { MeetingLiveKitService } from '../../../../services/meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { RecordingService } from '../../../../services/recording/recording.service';
 import { AssetsService } from '../../../../../../../shared/services/assets.service';
@@ -43,7 +43,7 @@ export class RecordingActivityComponent {
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly assets = inject(AssetsService);
 
 	/** Empty-state illustration served as a static asset (resolves in SPA & WC modes). */
@@ -147,7 +147,7 @@ export class RecordingActivityComponent {
 	private readonly roomTracksPublishedEffect = effect(() => {
 		this.participantService.localParticipant();
 		this.participantService.remoteParticipants();
-		this.hasRoomTracksPublished.set(this.meetingConnectionService.hasRoomTracksPublished());
+		this.hasRoomTracksPublished.set(this.meetingLiveKitService.hasRoomTracksPublished());
 	});
 
 	/**
@@ -183,7 +183,7 @@ export class RecordingActivityComponent {
 	 */
 	startRecording() {
 		const payload: RecordingStartRequestedEvent = {
-			roomName: this.meetingConnectionService.getRoomName()
+			roomName: this.meetingLiveKitService.getRoomName()
 		};
 		this.onRecordingStartRequested.emit(payload);
 	}
@@ -194,7 +194,7 @@ export class RecordingActivityComponent {
 	stopRecording() {
 		const recId = this.recordingService.recordingStatus().id;
 		const payload: RecordingStopRequestedEvent = {
-			roomName: this.meetingConnectionService.getRoomName(),
+			roomName: this.meetingLiveKitService.getRoomName(),
 			recordingId: recId
 		};
 		this.onRecordingStopRequested.emit(payload);

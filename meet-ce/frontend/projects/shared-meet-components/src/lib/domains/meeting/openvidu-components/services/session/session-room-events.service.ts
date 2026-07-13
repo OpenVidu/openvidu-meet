@@ -25,7 +25,7 @@ import { safeJsonParse } from '../../utils/utils';
 import { ActionService } from '../action/action.service';
 import { ChatService } from '../chat/chat.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
-import { MeetingConnectionService } from '../meeting-connection/meeting-connection.service';
+import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
@@ -43,7 +43,7 @@ export class SessionRoomEventsService {
 	private readonly chatService = inject(ChatService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly loggerSrv = inject(LoggerService);
-	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(MeetingTranslateService);
@@ -293,7 +293,7 @@ export class SessionRoomEventsService {
 			this._activeSpeakers.set([]);
 			this.actionService.closeConnectionDialog();
 			const participantLeftEvent: ParticipantLeftEvent = {
-				roomName: this.meetingConnectionService.getRoomName(),
+				roomName: this.meetingLiveKitService.getRoomName(),
 				participantName: this.participantService.getMyName() || '',
 				identity: this.participantService.getMyIdentity() || '',
 				reason: ParticipantLeftReason.NETWORK_DISCONNECT
@@ -302,7 +302,7 @@ export class SessionRoomEventsService {
 			let descriptionErrorKey = '';
 			switch (reason) {
 				case DisconnectReason.CLIENT_INITIATED:
-					if (!this.meetingConnectionService.shouldHandleClientInitiatedDisconnectEvent) return;
+					if (!this.meetingLiveKitService.shouldHandleClientInitiatedDisconnectEvent) return;
 					participantLeftEvent.reason = ParticipantLeftReason.LEAVE;
 					break;
 				case DisconnectReason.DUPLICATE_IDENTITY:

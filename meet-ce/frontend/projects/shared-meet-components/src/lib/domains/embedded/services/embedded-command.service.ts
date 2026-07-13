@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { MeetingConnectionService } from '../../meeting/openvidu-components';
+import { MeetingLiveKitService } from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -24,7 +24,7 @@ export class EmbeddedCommandService {
 	private readonly meetingModerationService = inject(MeetingModerationService);
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
-	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 
 	/**
@@ -58,7 +58,7 @@ export class EmbeddedCommandService {
 	async leaveRoom(): Promise<void> {
 		try {
 			this.log.d('Leaving room...');
-			await this.meetingConnectionService.disconnect();
+			await this.meetingLiveKitService.disconnect();
 		} catch (error) {
 			this.log.e('Error leaving room:', error);
 		}

@@ -56,7 +56,7 @@ import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
-import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
+import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { StorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { OpenViduThemeService } from '../../services/theme/theme.service';
@@ -109,7 +109,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly meetingConnectionService = inject(MeetingConnectionService);
+	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly themeService = inject(OpenViduThemeService);
@@ -396,7 +396,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		const rawName = this.libService.getCurrentParticipantName() || this.storageSrv.getParticipantName() || '';
 		this.storageSrv.setParticipantName(rawName);
 
-		this.meetingConnectionService.init();
+		this.meetingLiveKitService.init();
 		this._applyToken(this.libService.tokenSignal());
 	}
 
@@ -430,7 +430,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * Used when showPrejoin = false. Applies the token directly without showing the prejoin page.
 	 */
 	private _requestTokenSkippingPrejoin(): void {
-		this.meetingConnectionService.init();
+		this.meetingLiveKitService.init();
 		this._applyToken(this.libService.tokenSignal());
 	}
 
@@ -441,7 +441,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private _applyToken(token: string): void {
 		try {
 			const livekitUrl = this.libService.getLivekitUrl();
-			this.meetingConnectionService.initializeAndSetToken(token, livekitUrl);
+			this.meetingLiveKitService.initializeAndSetToken(token, livekitUrl);
 			this.log.d('Token applied, room is ready to connect');
 			this.phase.set('ready');
 		} catch (error: any) {
