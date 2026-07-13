@@ -1,6 +1,6 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
 import { ParticipantModel, ParticipantStream } from '../models/participant.model';
-import { Track } from '../services/livekit-adapter';
+import { Track } from '../services/livekit';
 import { MeetingTranslateService } from '../services/translate/meeting-translate.service';
 
 /**

@@ -17,7 +17,7 @@ import { LayoutAdditionalElementsDirective } from '../../../directives/template/
 import { ParticipantModel, ParticipantStream } from '../../../models/participant.model';
 import { SmartLayoutService } from '../../../services/layout/smart-layout.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
-import { Track } from '../../../services/livekit-adapter';
+import { Track } from '../../../services/livekit';
 import { HiddenParticipantsIndicatorComponent } from '../../hidden-participants-indicator/hidden-participants-indicator.component';
 import { BaseLayoutComponent } from '../base-layout.component';
 

@@ -4,7 +4,7 @@ import type {
 	SwitchBackgroundProcessorOptions
 } from '@livekit/track-processors';
 import { RuntimeConfigService } from '../../../../../shared/services/runtime-config.service';
-import { LocalVideoTrack } from '../livekit-adapter';
+import { LocalVideoTrack } from '../livekit';
 import { PlatformService } from '../platform/platform.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';

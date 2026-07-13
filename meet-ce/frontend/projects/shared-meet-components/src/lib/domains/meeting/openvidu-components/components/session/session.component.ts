@@ -23,7 +23,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
-import { Room } from '../../services/livekit-adapter';
+import { Room } from '../../services/livekit';
 import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';

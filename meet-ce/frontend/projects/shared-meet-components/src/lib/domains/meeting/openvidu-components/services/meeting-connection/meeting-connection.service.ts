@@ -8,7 +8,7 @@ import {
 	Room,
 	RoomOptions,
 	VideoPresets
-} from '../livekit-adapter';
+} from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { StorageService } from '../storage/storage.service';
 import { AssetsService } from '../../../../../shared/services/assets.service';

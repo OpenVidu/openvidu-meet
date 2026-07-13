@@ -21,7 +21,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import { LocalTrack, Track } from '../../services/livekit-adapter';
+import { LocalTrack, Track } from '../../services/livekit';
 import { LocalTrackService } from '../../services/local-track/local-track.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';

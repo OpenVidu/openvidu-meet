@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
 import { CameraType, CustomDevice, DeviceType } from '../../models/device.model';
-import type { LocalTrack } from '../livekit-adapter';
-import { Track } from '../livekit-adapter';
+import type { LocalTrack } from '../livekit';
+import { Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { PlatformService } from '../platform/platform.service';
 import { StorageService } from '../storage/storage.service';

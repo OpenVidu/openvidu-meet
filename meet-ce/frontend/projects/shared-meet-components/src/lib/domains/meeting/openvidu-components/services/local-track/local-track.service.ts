@@ -8,7 +8,7 @@ import {
 	LocalVideoTrack,
 	Track,
 	VideoCaptureOptions
-} from '../livekit-adapter';
+} from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MeetingConnectionService } from '../meeting-connection/meeting-connection.service';
 import { StorageService } from '../storage/storage.service';

@@ -11,9 +11,9 @@ import type {
 	RemoteParticipant,
 	ScreenShareCaptureOptions,
 	VideoCaptureOptions
-} from '../livekit-adapter';
+} from '../livekit';
 import { DeviceService } from '../device/device.service';
-import { ConnectionQuality, Track, VideoPresets } from '../livekit-adapter';
+import { ConnectionQuality, Track, VideoPresets } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { MeetingConnectionService } from '../meeting-connection/meeting-connection.service';
 import { StorageService } from '../storage/storage.service';

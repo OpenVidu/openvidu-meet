@@ -36,7 +36,7 @@ import { ChatService } from '../../services/chat/chat.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { DocumentService } from '../../services/document/document.service';
-import { Room, RoomEvent } from '../../services/livekit-adapter';
+import { Room, RoomEvent } from '../../services/livekit';
 import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';

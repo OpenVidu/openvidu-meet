@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { AvatarView, DEFAULT_AVATAR_VIEW } from '../../models/avatar-view.model';
 import { ScreenZoomState } from '../../models/screen-zoom.model';
-import { Track } from '../../services/livekit-adapter';
+import { Track } from '../../services/livekit';
 import { ParticipantAvatarComponent } from '../participant-avatar/participant-avatar.component';
 
 /**

@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
-import type { RemoteParticipant, Room, TrackPublication } from '../services/livekit-adapter';
+import type { RemoteParticipant, Room, TrackPublication } from '../services/livekit';
 import {
 	AudioCaptureOptions,
 	ConnectionQuality,
@@ -12,7 +12,7 @@ import {
 	Track,
 	TrackPublishOptions,
 	VideoCaptureOptions
-} from '../services/livekit-adapter';
+} from '../services/livekit';
 import { DeviceType } from './device.model';
 import { ScreenZoomState } from './screen-zoom.model';
 

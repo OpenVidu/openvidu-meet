@@ -1,6 +1,6 @@
 import { effect, inject, Injectable, OnDestroy } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
-import { createKeyMaterialFromString, deriveKeys } from '../livekit-adapter';
+import { createKeyMaterialFromString, deriveKeys } from '../livekit';
 
 /**
  * Independent E2EE Service for encrypting and decrypting text-based content

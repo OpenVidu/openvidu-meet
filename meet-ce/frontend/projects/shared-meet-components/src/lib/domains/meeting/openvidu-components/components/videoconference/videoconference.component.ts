@@ -55,7 +55,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import type { Room } from '../../services/livekit-adapter';
+import type { Room } from '../../services/livekit';
 import { MeetingConnectionService } from '../../services/meeting-connection/meeting-connection.service';
 import { StorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';

@@ -20,7 +20,7 @@ import {
 	RoomEvent,
 	Track,
 	TrackPublication
-} from '../../services/livekit-adapter';
+} from '../../services/livekit';
 import { safeJsonParse } from '../../utils/utils';
 import { ActionService } from '../action/action.service';
 import { ChatService } from '../chat/chat.service';

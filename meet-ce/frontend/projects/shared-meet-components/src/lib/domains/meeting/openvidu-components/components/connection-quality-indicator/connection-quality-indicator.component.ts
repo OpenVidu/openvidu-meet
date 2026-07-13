@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, On
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ParticipantModel } from '../../models/participant.model';
-import { ConnectionQuality } from '../../services/livekit-adapter';
+import { ConnectionQuality } from '../../services/livekit';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 @Component({
