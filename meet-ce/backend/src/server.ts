@@ -6,7 +6,7 @@ import type { Express, Request, Response, Router } from 'express';
 import express from 'express';
 import { initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
-import { MEET_ENV, logEnvVars } from './environment.js';
+import { checkModuleEnabled, MEET_ENV, logEnvVars } from './environment.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
 import { staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
@@ -209,6 +209,7 @@ const isMainModule = (): boolean => {
 };
 
 if (isMainModule()) {
+	checkModuleEnabled();
 	registerDependencies();
 	const app = createApp();
 	await initializeEagerServices();

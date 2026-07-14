@@ -4,7 +4,7 @@ import { inject, injectable } from 'inversify';
 import type { RedisOptions, SentinelAddress } from 'ioredis';
 import { Redis } from 'ioredis';
 import ms from 'ms';
-import { checkModuleEnabled, MEET_ENV } from '../environment.js';
+import { MEET_ENV } from '../environment.js';
 import type { DistributedEventPayload } from '../models/distributed-event.model.js';
 import { internalError } from '../models/error.model.js';
 import { LoggerService } from './logger.service.js';
@@ -451,9 +451,6 @@ export class RedisService extends EventEmitter {
 	}
 
 	private loadRedisConfig(): RedisOptions {
-		// Check if openviduCall module is enabled. If not, exit the process
-		checkModuleEnabled();
-
 		//Check if Redis Sentinel is configured
 		if (MEET_ENV.REDIS_SENTINEL_HOST_LIST) {
 			const sentinels: Array<SentinelAddress> = [];
