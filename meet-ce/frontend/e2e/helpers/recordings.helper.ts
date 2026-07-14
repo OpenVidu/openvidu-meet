@@ -310,3 +310,54 @@ export const expectViewRecordingNotDeletable = async (page: Page): Promise<void>
 	await expect(page.locator('ov-recording-video-player').first()).toBeVisible({ timeout: 15_000 });
 	await expect(page.locator('.icon-action-btn.delete-btn')).toHaveCount(0);
 };
+
+// ─── Recording share dialog: generate a public URL ──────────────────────────────
+
+const SHARE_DIALOG = 'ov-share-recording-dialog';
+
+/**
+ * Opens the recording share dialog from the recordings list (per-recording share button). When the
+ * user can delete recordings the share button is nested in the per-recording more-actions menu
+ * (rendered only once opened), so the menu is opened first when present.
+ */
+export const openShareDialogFromList = async (page: Page, recordingId: string): Promise<void> => {
+	const moreActions = page.locator(`[id="more-actions-btn-${recordingId}"]`).first();
+	if (await moreActions.isVisible().catch(() => false)) {
+		await moreActions.click({ timeout: 15_000 });
+	}
+	await page.locator(`[id="share-recording-link-${recordingId}"]`).first().click({ timeout: 15_000 });
+	await expect(page.locator(SHARE_DIALOG)).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Opens the recording share dialog from the individual recording view. The share control has no
+ * stable id and its class differs across responsive layouts, so it is matched by its `share` icon.
+ */
+export const openShareDialogFromRecordingView = async (page: Page): Promise<void> => {
+	await page.locator('button:has(mat-icon:text-is("share"))').first().click({ timeout: 15_000 });
+	await expect(page.locator(SHARE_DIALOG)).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * From an open share dialog, requests a public recording URL. `public` is the default access type
+ * and is enabled because the shared room allows anonymous recording access; the request is
+ * room-scoped (carries the room member token), so it drives the refresh cascade when tokens expire.
+ *
+ * Opening the dialog fires a room-access lookup that enables the public option — which, on an expired
+ * room member token, itself triggers (and transparently recovers) the cascade. We wait for that
+ * lookup to settle (public option enabled) before requesting the URL to avoid a race.
+ */
+export const generatePublicRecordingUrl = async (page: Page): Promise<void> => {
+	const dialog = page.locator(SHARE_DIALOG);
+	await expect(dialog.locator('mat-radio-button[value="public"]')).not.toHaveClass(/access-disabled/, {
+		timeout: 15_000
+	});
+	await dialog.locator('.generate-button').click({ timeout: 10_000 });
+};
+
+/**
+ * Asserts the share dialog produced a recording URL (the generate request succeeded / recovered).
+ */
+export const expectPublicRecordingUrlGenerated = async (page: Page): Promise<void> => {
+	await expect(page.locator(`${SHARE_DIALOG} .url-input`)).toBeVisible({ timeout: 15_000 });
+};
