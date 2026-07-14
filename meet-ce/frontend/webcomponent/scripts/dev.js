@@ -32,7 +32,7 @@ const TESTAPP_PORT = 4200;
 // ─── Resolve binaries ────────────────────────────────────────────────────────
 
 // Resolve a binary by walking up from `startDir` through node_modules/.bin/
-function resolveBin(name, startDir) {
+const resolveBin = (name, startDir) => {
   let dir = startDir;
   while (true) {
     const candidate = path.join(dir, 'node_modules', '.bin', name);
@@ -43,17 +43,21 @@ function resolveBin(name, startDir) {
     }
     dir = parent;
   }
-}
+};
 
 // Resolve Angular CLI binaries (may be hoisted to workspace root by pnpm)
 const ngBin = resolveBin('ng', rootDir);
 const testappNgBin = (() => {
-  try { return resolveBin('ng', testappDir); } catch { return ngBin; }
+  try {
+    return resolveBin('ng', testappDir);
+  } catch {
+    return ngBin;
+  }
 })();
 
 // ─── Post-build chain ────────────────────────────────────────────────────────
 
-function runPostBuild() {
+const runPostBuild = () => {
   console.log('\n[dev] Running post-build chain...');
 
   const steps = [
@@ -62,7 +66,13 @@ function runPostBuild() {
   ];
 
   for (const step of steps) {
-    const result = spawnSync(step.cmd, step.args, { cwd: step.cwd, stdio: 'inherit' });
+    // WC_DEV tells concat-wc.js to skip re-minifying the heavy ESM on every
+    // rebuild (~1-2 s/save); production builds run without it and stay minified.
+    const result = spawnSync(step.cmd, step.args, {
+      cwd: step.cwd,
+      stdio: 'inherit',
+      env: { ...process.env, WC_DEV: '1' },
+    });
     if (result.status !== 0) {
       console.error(`[dev] ${step.label} exited with code ${result.status}`);
       return false;
@@ -71,7 +81,7 @@ function runPostBuild() {
 
   console.log('[dev] Post-build complete.\n');
   return true;
-}
+};
 
 // ─── Watch dist output ───────────────────────────────────────────────────────
 
@@ -79,7 +89,7 @@ let debounceTimer = null;
 let lastMtime = 0;
 let testappProcess = null;
 
-function schedulePostBuild() {
+const schedulePostBuild = () => {
   if (!fs.existsSync(mainJs)) return;
   try {
     const mtime = fs.statSync(mainJs).mtimeMs;
@@ -88,25 +98,25 @@ function schedulePostBuild() {
 
     clearTimeout(debounceTimer);
     // Small debounce: Angular writes several files; wait until writes settle
-    debounceTimer = setTimeout(() => {
-      runPostBuild();
-    }, 500);
-  } catch (_) {}
-}
+    debounceTimer = setTimeout(() => runPostBuild(), 500);
+  } catch {
+    // ignore transient stat errors during Angular's rebuild churn
+  }
+};
 
-function startWatchingDist() {
+const startWatchingDist = () => {
   // Watch the directory instead of the file: fs.watch on a specific file
   // loses the watcher if Angular deletes+recreates it on every rebuild.
   const distDir = path.dirname(mainJs);
-  fs.watch(distDir, { persistent: true }, (event, filename) => {
+  fs.watch(distDir, { persistent: true }, (_event, filename) => {
     if (filename === 'main.js') schedulePostBuild();
   });
   console.log('[dev] Watching dist/wc/browser/ for main.js changes...\n');
-}
+};
 
 // ─── Wait for first build, then boot testapp ─────────────────────────────────
 
-function waitForFirstBuild(callback) {
+const waitForFirstBuild = (callback) => {
   if (fs.existsSync(mainJs)) {
     callback();
     return;
@@ -118,9 +128,9 @@ function waitForFirstBuild(callback) {
       callback();
     }
   }, 1000);
-}
+};
 
-function startTestapp() {
+const startTestapp = () => {
   console.log(`[dev] Starting testapp on http://localhost:${TESTAPP_PORT}...\n`);
   testappProcess = spawn(testappNgBin, ['serve', '--port', String(TESTAPP_PORT)], {
     cwd: testappDir,
@@ -136,7 +146,7 @@ function startTestapp() {
       console.error(`[dev] testapp ng serve exited with code ${code}`);
     }
   });
-}
+};
 
 // ─── Main ────────────────────────────────────────────────────────────────────
 
@@ -163,12 +173,12 @@ waitForFirstBuild(() => {
 
 // ─── Cleanup ─────────────────────────────────────────────────────────────────
 
-function cleanup() {
+const cleanup = () => {
   clearTimeout(debounceTimer);
   if (wcBuild) wcBuild.kill('SIGTERM');
   if (testappProcess) testappProcess.kill('SIGTERM');
   process.exit(0);
-}
+};
 
 process.on('SIGINT', cleanup);
 process.on('SIGTERM', cleanup);

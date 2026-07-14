@@ -21,11 +21,22 @@
  *               public dir with MEET_BACKEND_PUBLIC_DIR if needed)
  */
 
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
 const root = path.resolve(__dirname, '..');
-const bundle = path.join(root, 'dist', 'openvidu-meet-wc.js');
+
+// Both build outputs are produced together by concat-wc.js and deployed side by
+// side (see server.ts for the routes that serve them):
+//   - ESM    → `<basePath>/v1/openvidu-meet.esm.js` (import()'d by the loader, CORS-enabled)
+//   - loader → `<basePath>/v1/openvidu-meet.js`     (stable url, lazy loader)
+// The ESM is deployed FIRST so that once the new loader is live, the sibling ESM
+// it imports is already in place (shrinks the cross-file version-skew window).
+const bundles = [
+  { src: path.join(root, 'dist', 'openvidu-meet-wc.esm.js'), destName: 'openvidu-meet.esm.bundle.min.js' },
+  { src: path.join(root, 'dist', 'openvidu-meet-loader.js'), destName: 'openvidu-meet.loader.min.js' },
+];
 
 // meet-ce/frontend/webcomponent/scripts → meet-ce/backend/public
 const defaultBackendPublic = path.resolve(__dirname, '..', '..', '..', 'backend', 'public');
@@ -33,11 +44,11 @@ const backendPublic = process.env.MEET_BACKEND_PUBLIC_DIR
   ? path.resolve(process.env.MEET_BACKEND_PUBLIC_DIR)
   : defaultBackendPublic;
 const destDir = path.join(backendPublic, 'webcomponent');
-const dest = path.join(destDir, 'openvidu-meet.bundle.min.js');
 
-if (!fs.existsSync(bundle)) {
+const missing = bundles.filter(({ src }) => !fs.existsSync(src));
+if (missing.length > 0) {
   console.error(
-    `[deploy:backend] missing bundle: ${path.relative(root, bundle)}\n` +
+    `[deploy:backend] missing bundle(s): ${missing.map(({ src }) => path.relative(root, src)).join(', ')}\n` +
       `                 Run 'pnpm run build:wc:bundle' first.`
   );
   process.exit(1);
@@ -54,5 +65,23 @@ if (!fs.existsSync(backendPublic)) {
 }
 
 fs.mkdirSync(destDir, { recursive: true });
-fs.copyFileSync(bundle, dest);
-console.log(`[deploy:backend] copied bundle → ${dest}`);
+for (const { src, destName } of bundles) {
+  const dest = path.join(destDir, destName);
+  // Copy to a temp file in the SAME dir, then rename over the destination.
+  // rename() is atomic within a filesystem, so a running backend never reads a
+  // half-written bundle (which would also poison the content-hash ETag cache).
+  const tmp = path.join(destDir, `.${destName}.tmp`);
+  fs.copyFileSync(src, tmp);
+  fs.renameSync(tmp, dest);
+  console.log(`[deploy:backend] copied bundle → ${dest}`);
+
+  // Write a content-hash sidecar (`<bundle>.sha256`) so the backend answers the
+  // ETag from a 64-byte read instead of re-hashing the multi-MB bundle on the
+  // event loop (see getWebcomponentBundleEtag). Written AFTER the bundle rename,
+  // and atomically, so its mtime is never older than the bundle it describes —
+  // the backend treats an older sidecar as stale and recomputes.
+  const hash = crypto.createHash('sha256').update(fs.readFileSync(dest)).digest('hex');
+  const sidecarTmp = path.join(destDir, `.${destName}.sha256.tmp`);
+  fs.writeFileSync(sidecarTmp, hash);
+  fs.renameSync(sidecarTmp, `${dest}.sha256`);
+}

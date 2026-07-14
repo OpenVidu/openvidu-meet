@@ -6,13 +6,13 @@ import type { Express, Request, Response, Router } from 'express';
 import express from 'express';
 import { initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
-import { MEET_ENV, logEnvVars } from './environment.js';
+import { logEnvVars, MEET_ENV } from './environment.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
 import { staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
-import { analyticsRouter } from './routes/analytics.routes.js';
 import { aiAssistantRouter } from './routes/ai-assistant.routes.js';
+import { analyticsRouter } from './routes/analytics.routes.js';
 import { apiKeyRouter } from './routes/api-key.routes.js';
 import { authRouter } from './routes/auth.routes.js';
 import { configRouter } from './routes/global-config.routes.js';
@@ -27,11 +27,13 @@ import {
 	frontendHtmlPath,
 	internalApiHtmlFilePath,
 	publicApiHtmlFilePath,
-	webcomponentBundlePath
+	webcomponentEsmBundlePath,
+	webcomponentLoaderPath
 } from './utils/path.utils.js';
 import {
 	getWebcomponentBundleEtag,
 	matchesIfNoneMatch,
+	WEBCOMPONENT_BUNDLE_ALLOW_ORIGIN,
 	WEBCOMPONENT_BUNDLE_CACHE_CONTROL
 } from './utils/webcomponent-bundle.utils.js';
 
@@ -119,17 +121,21 @@ const createApp = () => {
 
 	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 
-	// Serve OpenVidu Meet webcomponent bundle file.
-	// Host apps embed this from a STABLE url and must auto-update to a freshly
-	// deployed WebComponent version without redeploying themselves. `no-cache`
-	// makes the browser revalidate BEFORE using the cached copy, so every load
-	// runs the current version (no stale window vs. the backend); the content-hash
-	// ETag keeps it cheap — a 304 with no body while unchanged, a 200 with the new
-	// bundle on the first load after a redeploy. See webcomponent-bundle.utils.
-	appRouter.get('/v1/openvidu-meet.js', staticAssetLimiter, (req: Request, res: Response) => {
-		const etag = getWebcomponentBundleEtag();
+	// Serve the OpenVidu Meet WebComponent bundle from a STABLE url so host apps
+	// auto-update to a freshly deployed version without redeploying themselves.
+	// `no-cache` makes the browser revalidate BEFORE using the cached copy, so
+	// every load runs the current version (no stale window vs. the backend); the
+	// content-hash ETag keeps it cheap — a 304 with no body while unchanged, a 200
+	// with the new bundle on the first load after a redeploy. See
+	// webcomponent-bundle.utils.
+	const serveWebcomponentBundle = (bundlePath: string, allowOrigin?: string) => (req: Request, res: Response) => {
+		const etag = getWebcomponentBundleEtag(bundlePath);
 
 		res.set('Cache-Control', WEBCOMPONENT_BUNDLE_CACHE_CONTROL);
+
+		if (allowOrigin) {
+			res.set('Access-Control-Allow-Origin', allowOrigin);
+		}
 
 		if (etag) {
 			res.set('ETag', etag);
@@ -140,8 +146,15 @@ const createApp = () => {
 			}
 		}
 
-		res.sendFile(webcomponentBundlePath, { etag: false, cacheControl: false, lastModified: false });
-	});
+		res.sendFile(bundlePath, { etag: false, cacheControl: false, lastModified: false });
+	};
+
+	appRouter.get('/v1/openvidu-meet.js', staticAssetLimiter, serveWebcomponentBundle(webcomponentLoaderPath));
+	appRouter.get(
+		'/v1/openvidu-meet.esm.js',
+		staticAssetLimiter,
+		serveWebcomponentBundle(webcomponentEsmBundlePath, WEBCOMPONENT_BUNDLE_ALLOW_ORIGIN)
+	);
 	// Serve OpenVidu Meet index.html file for all non-API routes (with dynamic base path injection)
 	appRouter.get(/^(?!.*\/(api|internal-api)\/).*$/, (_req: Request, res: Response) => {
 		res.type('html').send(getHtmlWithBasePath(frontendHtmlPath));

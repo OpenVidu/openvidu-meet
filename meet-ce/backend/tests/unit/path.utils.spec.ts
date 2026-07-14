@@ -24,7 +24,8 @@ describe('path.utils - Robust project path resolution', () => {
 			// Verify all exported paths exist as properties
 			expect(pathUtils.publicDirectoryPath).toBeDefined();
 			expect(pathUtils.frontendDirectoryPath).toBeDefined();
-			expect(pathUtils.webcomponentBundlePath).toBeDefined();
+			expect(pathUtils.webcomponentLoaderPath).toBeDefined();
+			expect(pathUtils.webcomponentEsmBundlePath).toBeDefined();
 			expect(pathUtils.frontendHtmlPath).toBeDefined();
 			expect(pathUtils.publicApiHtmlFilePath).toBeDefined();
 			expect(pathUtils.internalApiHtmlFilePath).toBeDefined();
@@ -36,8 +37,11 @@ describe('path.utils - Robust project path resolution', () => {
 			expect(typeof pathUtils.frontendDirectoryPath).toBe('string');
 			expect(pathUtils.frontendDirectoryPath.length).toBeGreaterThan(0);
 
-			expect(typeof pathUtils.webcomponentBundlePath).toBe('string');
-			expect(pathUtils.webcomponentBundlePath.length).toBeGreaterThan(0);
+			expect(typeof pathUtils.webcomponentLoaderPath).toBe('string');
+			expect(pathUtils.webcomponentLoaderPath.length).toBeGreaterThan(0);
+
+			expect(typeof pathUtils.webcomponentEsmBundlePath).toBe('string');
+			expect(pathUtils.webcomponentEsmBundlePath.length).toBeGreaterThan(0);
 		});
 
 		it('should build coherent paths (frontend inside public)', () => {
@@ -48,12 +52,14 @@ describe('path.utils - Robust project path resolution', () => {
 			expect(pathUtils.frontendDirectoryPath).toContain('frontend');
 		});
 
-		it('should build webcomponentBundlePath inside public', () => {
-			// webcomponentBundlePath must be inside publicDirectoryPath
-			expect(pathUtils.webcomponentBundlePath.startsWith(pathUtils.publicDirectoryPath)).toBe(true);
+		it('should build the webcomponent loader + ESM paths inside public', () => {
+			// Both bundle paths must live inside publicDirectoryPath
+			expect(pathUtils.webcomponentLoaderPath.startsWith(pathUtils.publicDirectoryPath)).toBe(true);
+			expect(pathUtils.webcomponentEsmBundlePath.startsWith(pathUtils.publicDirectoryPath)).toBe(true);
 
-			// Should end with the correct bundle name
-			expect(pathUtils.webcomponentBundlePath).toContain('openvidu-meet.bundle.min.js');
+			// ...and end with the correct bundle names
+			expect(pathUtils.webcomponentLoaderPath).toContain('openvidu-meet.loader.min.js');
+			expect(pathUtils.webcomponentEsmBundlePath).toContain('openvidu-meet.esm.bundle.min.js');
 		});
 
 		it('should build coherent HTML paths', () => {
@@ -113,7 +119,8 @@ describe('path.utils - Robust project path resolution', () => {
 			// All exported paths must be absolute
 			expect(path.isAbsolute(pathUtils.publicDirectoryPath)).toBe(true);
 			expect(path.isAbsolute(pathUtils.frontendDirectoryPath)).toBe(true);
-			expect(path.isAbsolute(pathUtils.webcomponentBundlePath)).toBe(true);
+			expect(path.isAbsolute(pathUtils.webcomponentLoaderPath)).toBe(true);
+			expect(path.isAbsolute(pathUtils.webcomponentEsmBundlePath)).toBe(true);
 			expect(path.isAbsolute(pathUtils.frontendHtmlPath)).toBe(true);
 			expect(path.isAbsolute(pathUtils.publicApiHtmlFilePath)).toBe(true);
 			expect(path.isAbsolute(pathUtils.internalApiHtmlFilePath)).toBe(true);
@@ -125,7 +132,8 @@ describe('path.utils - Robust project path resolution', () => {
 			expect(pathUtils.publicDirectoryPath).not.toMatch(/\/\.\//);
 
 			expect(pathUtils.frontendDirectoryPath).not.toContain('..');
-			expect(pathUtils.webcomponentBundlePath).not.toContain('..');
+			expect(pathUtils.webcomponentLoaderPath).not.toContain('..');
+			expect(pathUtils.webcomponentEsmBundlePath).not.toContain('..');
 		});
 	});
 
@@ -181,13 +189,20 @@ describe('path.utils - Robust project path resolution', () => {
 			const expectedFrontend = path.join(pathUtils.publicDirectoryPath, 'frontend');
 			expect(pathUtils.frontendDirectoryPath).toBe(expectedFrontend);
 
-			// Verify webcomponent
-			const expectedWebcomponent = path.join(
+			// Verify webcomponent loader + ESM bundle
+			const expectedLoader = path.join(
 				pathUtils.publicDirectoryPath,
 				'webcomponent',
-				'openvidu-meet.bundle.min.js'
+				'openvidu-meet.loader.min.js'
 			);
-			expect(pathUtils.webcomponentBundlePath).toBe(expectedWebcomponent);
+			expect(pathUtils.webcomponentLoaderPath).toBe(expectedLoader);
+
+			const expectedEsm = path.join(
+				pathUtils.publicDirectoryPath,
+				'webcomponent',
+				'openvidu-meet.esm.bundle.min.js'
+			);
+			expect(pathUtils.webcomponentEsmBundlePath).toBe(expectedEsm);
 		});
 	});
 });

@@ -1,6 +1,15 @@
 import crypto from 'crypto';
 import fs from 'fs';
-import { webcomponentBundlePath } from './path.utils.js';
+
+/**
+ * Cross-origin access for the ESM bundle served at
+ * `<basePath>/v1/openvidu-meet.esm.js`. The loader is a classic `<script src>`
+ * (no CORS), but importing the ESM bundle via `import()` — the loader does this,
+ * and so can a host app on another origin — requires the module response to be
+ * CORS-enabled. The bundle is public, credential-free static JS
+ * (like any CDN-hosted module), so a wildcard origin is both correct and safe.
+ */
+export const WEBCOMPONENT_BUNDLE_ALLOW_ORIGIN = '*';
 
 /**
  * Caching for the WebComponent bundle served at the STABLE url
@@ -39,28 +48,75 @@ interface CachedBundleEtag {
 	size: number;
 }
 
-let cachedEtag: CachedBundleEtag | null = null;
+// One cached ETag per bundle file (the loader and the ESM are separate paths).
+const cachedEtags = new Map<string, CachedBundleEtag>();
+
+const SHA256_HEX = /^[a-f0-9]{64}$/i;
 
 /**
- * Returns the current strong ETag for the WebComponent bundle, or `null` when
- * the bundle file cannot be read.
+ * Reads the precomputed content hash from the `<bundlePath>.sha256` sidecar
+ * written by the deploy step (a 64-byte read), but only when the sidecar is at
+ * least as new as the bundle. A sidecar older than the bundle is stale (e.g. read
+ * mid-deploy, between the bundle rename and the sidecar write), so we recompute.
  */
-export const getWebcomponentBundleEtag = (): string | null => {
+const readSidecarHash = (bundlePath: string, bundleMtimeMs: number): string | null => {
+	const sidecarPath = `${bundlePath}.sha256`;
+
+	try {
+		if (fs.statSync(sidecarPath).mtimeMs < bundleMtimeMs) {
+			return null;
+		}
+
+		const hash = fs.readFileSync(sidecarPath, 'utf8').trim().split(/\s+/)[0];
+
+		return SHA256_HEX.test(hash) ? hash : null;
+	} catch {
+		return null;
+	}
+};
+
+/** Hashes the bundle file directly — the fallback when no valid sidecar exists. */
+const hashFile = (bundlePath: string): string | null => {
+	try {
+		return crypto.createHash('sha256').update(fs.readFileSync(bundlePath)).digest('hex');
+	} catch {
+		return null;
+	}
+};
+
+/**
+ * Returns the current strong ETag for the given WebComponent bundle file, or
+ * `null` when the file cannot be read. Each path is hashed and cached
+ * independently (the loader and the ESM bundle each get their own entry).
+ *
+ * On a cache miss the hash comes from the `<bundle>.sha256` sidecar when present
+ * and current, avoiding a synchronous SHA-256 over the multi-MB bundle on the
+ * event loop; it falls back to hashing the file directly for dev / manual builds
+ * that have no sidecar, preserving the previous behaviour.
+ */
+export const getWebcomponentBundleEtag = (bundlePath: string): string | null => {
 	let stats: fs.Stats;
 
 	try {
-		stats = fs.statSync(webcomponentBundlePath);
+		stats = fs.statSync(bundlePath);
 	} catch {
 		return null;
 	}
 
-	if (cachedEtag && cachedEtag.mtimeMs === stats.mtimeMs && cachedEtag.size === stats.size) {
-		return cachedEtag.etag;
+	const cached = cachedEtags.get(bundlePath);
+
+	if (cached && cached.mtimeMs === stats.mtimeMs && cached.size === stats.size) {
+		return cached.etag;
 	}
 
-	const hash = crypto.createHash('sha256').update(fs.readFileSync(webcomponentBundlePath)).digest('hex');
+	const hash = readSidecarHash(bundlePath, stats.mtimeMs) ?? hashFile(bundlePath);
+
+	if (!hash) {
+		return null;
+	}
+
 	const etag = `"${hash}"`;
-	cachedEtag = { etag, mtimeMs: stats.mtimeMs, size: stats.size };
+	cachedEtags.set(bundlePath, { etag, mtimeMs: stats.mtimeMs, size: stats.size });
 
 	return etag;
 };
