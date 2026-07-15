@@ -144,7 +144,12 @@ export const frontendDirectoryPath = path.join(publicDirectoryPath, 'frontend');
 const webcomponentDirectoryPath = path.join(publicDirectoryPath, 'webcomponent');
 const openApiDirectoryPath = path.join(publicDirectoryPath, 'openapi');
 
-export const webcomponentBundlePath = path.join(webcomponentDirectoryPath, 'openvidu-meet.bundle.min.js');
+// The heavy WebComponent bundle (ESM), served at `<basePath>/v1/openvidu-meet.esm.js`.
+// The loader `import()`s it on first use; direct-import hosts can load it too.
+export const webcomponentEsmBundlePath = path.join(webcomponentDirectoryPath, 'openvidu-meet.esm.bundle.min.js');
+// Tiny lazy loader, served at the STABLE `<basePath>/v1/openvidu-meet.js`.
+// Registers `<openvidu-meet>` immediately and `import()`s the ESM on first use.
+export const webcomponentLoaderPath = path.join(webcomponentDirectoryPath, 'openvidu-meet.loader.min.js');
 export const frontendHtmlPath = path.join(frontendDirectoryPath, 'index.html');
 export const publicApiHtmlFilePath = path.join(openApiDirectoryPath, 'public.html');
 export const internalApiHtmlFilePath = path.join(openApiDirectoryPath, 'internal.html');
@@ -155,7 +160,8 @@ if (isDev) {
 }
 
 verifyPathExists(publicDirectoryPath, 'Public files directory');
-verifyPathExists(webcomponentBundlePath, 'Webcomponent bundle');
+verifyPathExists(webcomponentLoaderPath, 'Webcomponent loader');
+verifyPathExists(webcomponentEsmBundlePath, 'Webcomponent ESM bundle');
 verifyPathExists(frontendHtmlPath, 'Index HTML file');
 verifyPathExists(publicApiHtmlFilePath, 'Public API documentation');
 verifyPathExists(internalApiHtmlFilePath, 'Internal API documentation');

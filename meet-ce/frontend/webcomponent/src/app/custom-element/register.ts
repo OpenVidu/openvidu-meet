@@ -3,20 +3,22 @@ import { createCustomElement } from '@angular/elements';
 import { App } from '../app';
 import { createOpenViduMeetElementClass } from './wrapper';
 
-/** Tag name registered for the OpenVidu Meet custom element. */
-const TAG_NAME = 'openvidu-meet';
+/** Default tag name registered for the OpenVidu Meet custom element. */
+const DEFAULT_TAG_NAME = 'openvidu-meet';
 
 /**
- * Registers `<openvidu-meet>` once an application Injector is available.
+ * Registers the OpenVidu Meet custom element once an application Injector is available.
  *
- * Called from both bootstrap entry points (`main.ts` for the dev SPA harness,
- * `main.wc.ts` for the published WebComponent bundle). Re-entry is safe: the
- * tag is only defined the first time.
+ * Called from three entry points: `main.ts` (dev SPA harness) and `main.wc.ts`
+ * (published bundle) register the public `openvidu-meet` tag; the lazy-loading
+ * loader (`main.loader.ts`) reuses the same bundle to register the internal
+ * `openvidu-meet-impl` tag, which it then wraps. Re-entry is safe: a given tag
+ * is only defined the first time.
  */
-export function registerOpenViduMeetElement(injector: Injector): void {
-	if (customElements.get(TAG_NAME)) return;
+export const registerOpenViduMeetElement = (injector: Injector, tagName: string = DEFAULT_TAG_NAME): void => {
+	if (customElements.get(tagName)) return;
 
 	const NgElementConstructor = createCustomElement(App, { injector });
 	const ElementClass = createOpenViduMeetElementClass(NgElementConstructor as CustomElementConstructor);
-	customElements.define(TAG_NAME, ElementClass);
-}
+	customElements.define(tagName, ElementClass);
+};
