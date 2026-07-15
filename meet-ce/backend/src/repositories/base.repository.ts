@@ -170,10 +170,28 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 * @returns The updated domain object
 	 * @throws Error if document not found or update fails
 	 */
-	protected async updatePartialOne(
+	protected updatePartialOne(
 		filter: QueryFilter<TDocument>,
 		update: UpdateQuery<TDocument> | Partial<TDocument>
-	): Promise<TDomain> {
+	): Promise<TDomain>;
+
+	/**
+	 * Best-effort variant: returns `null` instead of throwing when no document matches the filter
+	 * (e.g. the target was concurrently deleted). Use for updates where a missing document is benign.
+	 */
+	protected updatePartialOne(
+		filter: QueryFilter<TDocument>,
+		update: UpdateQuery<TDocument> | Partial<TDocument>,
+		options: { throwIfNotFound: false }
+	): Promise<TDomain | null>;
+
+	protected async updatePartialOne(
+		filter: QueryFilter<TDocument>,
+		update: UpdateQuery<TDocument> | Partial<TDocument>,
+		options: { throwIfNotFound?: boolean } = {}
+	): Promise<TDomain | null> {
+		const { throwIfNotFound = true } = options;
+
 		try {
 			const isUpdateQuery = Object.keys(update).some((key) => key.startsWith('$'));
 			const safeUpdate = isUpdateQuery
@@ -196,6 +214,11 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 
 			if (!document) {
 				this.logger.error('No document found to update with filter:', filter);
+
+				if (!throwIfNotFound) {
+					return null;
+				}
+
 				throw new Error('Document not found for update');
 			}
 

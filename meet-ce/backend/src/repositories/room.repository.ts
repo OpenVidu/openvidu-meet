@@ -83,6 +83,20 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
+	 * Best-effort variant of {@link updatePartial}: returns `null` instead of throwing when the room
+	 * no longer exists (e.g. it was concurrently deleted). Use for updates where a missing room is
+	 * benign, such as reassigning ownership while the room is being deleted.
+	 *
+	 * @param roomId - The unique room identifier
+	 * @param fieldsToUpdate - Partial room data with fields to update
+	 * @returns The updated room with enriched URLs, or `null` if the room no longer exists
+	 */
+	updatePartialIfExists(roomId: string, fieldsToUpdate: Partial<MeetRoom>): Promise<MeetRoom | null> {
+		const normalizedFieldsToUpdate = this.normalizeRoomForStorage(fieldsToUpdate);
+		return this.updatePartialOne({ roomId }, normalizedFieldsToUpdate, { throwIfNotFound: false });
+	}
+
+	/**
 	 * Replaces an existing room with new data.
 	 * URLs are stored in the database without the base URL.
 	 *

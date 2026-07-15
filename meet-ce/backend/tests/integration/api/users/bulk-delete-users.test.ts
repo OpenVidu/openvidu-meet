@@ -1,9 +1,11 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { afterAll, beforeAll, describe, expect, it, jest } from '@jest/globals';
 import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetUserRole } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { OpenViduMeetError } from '../../../../src/models/error.model.js';
 import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
+import { MeetRoomModel } from '../../../../src/models/mongoose-schemas/room.schema.js';
+import { RoomRepository } from '../../../../src/repositories/room.repository.js';
 import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { TokenService } from '../../../../src/services/token.service.js';
@@ -186,6 +188,53 @@ describe('Users API Tests', () => {
 
 			const getRoom3Response = await getRoom(room3.roomId);
 			expect(getRoom3Response.body).toHaveProperty('owner', MEET_ENV.INITIAL_ADMIN_USER);
+		});
+
+		it('should tolerate a room being deleted concurrently during ownership transfer (TOCTOU)', async () => {
+			// Regression test for the concurrency bug where a room owned by a user being deleted was itself
+			// deleted in the window between reading the owned rooms and transferring their ownership. The
+			// stale read scheduled a transfer that then hit a missing room, which used to throw
+			// 'Document not found for update' and surface as a masked 500.
+			const ownerData = await createUserWithRole(MeetUserRole.ROOM_MANAGER);
+			const room = await createRoom(undefined, ownerData.accessToken);
+
+			// Deterministically reproduce the race: patch the shared repository instance so that reading the
+			// user's owned rooms also deletes the room, mimicking a parallel room deletion landing in the
+			// TOCTOU window. `findByOwner` still returns the (now stale) room, so the transfer step is
+			// exercised against a room that no longer exists.
+			const roomRepository = container.get(RoomRepository);
+			const realFindByOwner = roomRepository.findByOwner.bind(roomRepository);
+			const findByOwnerSpy = jest
+				.spyOn(roomRepository as any, 'findByOwner')
+				.mockImplementation(async (...args: any[]) => {
+					const rooms = await (realFindByOwner as any)(...args);
+
+					if (args[0] === ownerData.user.userId) {
+						await MeetRoomModel.deleteOne({ roomId: room.roomId }).exec();
+					}
+
+					return rooms;
+				});
+
+			try {
+				const response = await bulkDeleteUsers([ownerData.user.userId]);
+
+				// Before the fix this returned 500 ('Unexpected error while deleting users').
+				expect(response.status).toBe(200);
+				expect(response.body.deleted).toContain(ownerData.user.userId);
+				expect(response.body.failed).toHaveLength(0);
+				expect(findByOwnerSpy).toHaveBeenCalled();
+			} finally {
+				findByOwnerSpy.mockRestore();
+			}
+
+			// The concurrently deleted room stays deleted; ownership transfer was correctly skipped.
+			const getRoomResponse = await getRoom(room.roomId);
+			expect(getRoomResponse.status).toBe(404);
+
+			// The user was still fully deleted despite the skipped transfer.
+			const getUserResponse = await getUser(ownerData.user.userId);
+			expect(getUserResponse.status).toBe(404);
 		});
 
 		it('should update recording roomOwner when ownership is transferred by bulk delete', async () => {

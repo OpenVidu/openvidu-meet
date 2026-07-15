@@ -3,6 +3,8 @@ import { MeetRoomMemberRole, MeetRoomMemberTokenMetadata, MeetSignalType, MeetUs
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
 import { MeetRecordingModel } from '../../../../src/models/mongoose-schemas/recording.schema.js';
+import { MeetRoomModel } from '../../../../src/models/mongoose-schemas/room.schema.js';
+import { RoomRepository } from '../../../../src/repositories/room.repository.js';
 import { FrontendEventService } from '../../../../src/services/frontend-event.service.js';
 import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
@@ -181,6 +183,51 @@ describe('Users API Tests', () => {
 			const updatedRoomResponse = await getRoom(room.roomId);
 			expect(updatedRoomResponse.status).toBe(200);
 			expect(updatedRoomResponse.body.owner).toBe(MEET_ENV.INITIAL_ADMIN_USER);
+		});
+
+		it('should tolerate a room being deleted concurrently during role-change ownership transfer (TOCTOU)', async () => {
+			// Regression test for the same concurrency bug on the role-change path: demoting a ROOM_MANAGER
+			// to ROOM_MEMBER transfers owned rooms to the root admin. A room deleted in the window between
+			// reading owned rooms and transferring them used to throw and surface a masked 500.
+			const userId = `user_${Date.now()}`;
+			const userData = await setupUser({
+				userId,
+				name: 'Test User',
+				password: 'password123',
+				role: MeetUserRole.ROOM_MANAGER
+			});
+			const room = await createRoom(undefined, userData.accessToken);
+
+			// Deterministically reproduce the race: reading the user's owned rooms also deletes the room, so
+			// the subsequent ownership transfer runs against a room that no longer exists.
+			const roomRepository = container.get(RoomRepository);
+			const realFindByOwner = roomRepository.findByOwner.bind(roomRepository);
+			const findByOwnerSpy = jest
+				.spyOn(roomRepository as any, 'findByOwner')
+				.mockImplementation(async (...args: any[]) => {
+					const rooms = await (realFindByOwner as any)(...args);
+
+					if (args[0] === userId) {
+						await MeetRoomModel.deleteOne({ roomId: room.roomId }).exec();
+					}
+
+					return rooms;
+				});
+
+			try {
+				const result = await updateUserRole(userId, MeetUserRole.ROOM_MEMBER);
+
+				// Before the fix this returned 500.
+				expect(result.status).toBe(200);
+				expect(result.body.role).toBe(MeetUserRole.ROOM_MEMBER);
+				expect(findByOwnerSpy).toHaveBeenCalled();
+			} finally {
+				findByOwnerSpy.mockRestore();
+			}
+
+			// The concurrently deleted room stays deleted; ownership transfer was correctly skipped.
+			const getRoomResponse = await getRoom(room.roomId);
+			expect(getRoomResponse.status).toBe(404);
 		});
 
 		it('should update recording roomOwner when ownership is transferred by role change', async () => {
