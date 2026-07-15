@@ -15,8 +15,7 @@ import { VirtualBackgroundService } from '../../../services/virtual-background/v
 	selector: 'ov-background-effects-panel',
 	imports: [MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './background-effects-panel.component.html',
-	styleUrls: ['../panel.component.scss', './background-effects-panel.component.scss'],
-	standalone: true
+	styleUrls: ['../panel.component.scss', './background-effects-panel.component.scss']
 })
 export class BackgroundEffectsPanelComponent implements OnInit {
 	mode = input<'prejoin' | 'meeting'>('meeting');

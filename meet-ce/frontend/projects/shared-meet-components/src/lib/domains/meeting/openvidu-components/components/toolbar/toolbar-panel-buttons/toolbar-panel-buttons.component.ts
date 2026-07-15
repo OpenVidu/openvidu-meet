@@ -20,8 +20,7 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 		NgTemplateOutlet
 	],
 	templateUrl: './toolbar-panel-buttons.component.html',
-	styleUrl: './toolbar-panel-buttons.component.scss',
-	standalone: true
+	styleUrl: './toolbar-panel-buttons.component.scss'
 })
 export class ToolbarPanelButtonsComponent {
 	// Signal inputs from toolbar

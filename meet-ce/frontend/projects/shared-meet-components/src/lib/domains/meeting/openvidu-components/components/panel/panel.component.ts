@@ -22,8 +22,7 @@ import { TemplateRegistryService } from '../../services/template/template-regist
 	selector: 'ov-panel',
 	imports: [NgTemplateOutlet],
 	templateUrl: './panel.component.html',
-	styleUrls: ['./panel.component.scss'],
-	standalone: true
+	styleUrls: ['./panel.component.scss']
 })
 export class PanelComponent implements OnInit {
 	private readonly panelService = inject(PanelService);

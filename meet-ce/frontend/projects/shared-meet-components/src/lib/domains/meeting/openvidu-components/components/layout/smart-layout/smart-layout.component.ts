@@ -33,8 +33,7 @@ interface PersistentAudioEntry {
 		LayoutAdditionalElementsDirective,
 		HiddenParticipantsIndicatorComponent
 	],
-	templateUrl: './smart-layout.component.html',
-	standalone: true
+	templateUrl: './smart-layout.component.html'
 })
 export class SmartLayoutComponent implements OnDestroy {
 	readonly layoutService = inject(SmartLayoutService);

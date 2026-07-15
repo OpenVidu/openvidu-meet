@@ -97,8 +97,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 		NgTemplateOutlet
 	],
 	templateUrl: './videoconference.component.html',
-	styleUrls: ['./videoconference.component.scss'],
-	standalone: true
+	styleUrls: ['./videoconference.component.scss']
 })
 export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);

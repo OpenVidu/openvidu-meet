@@ -39,8 +39,7 @@ import { VideoElementComponent } from '../video-element/video-element.component'
 		VideoElementComponent
 	],
 	templateUrl: './stream.component.html',
-	styleUrls: ['./stream.component.scss'],
-	standalone: true
+	styleUrls: ['./stream.component.scss']
 })
 export class StreamComponent implements OnDestroy {
 	private readonly layoutService = inject(SmartLayoutService);

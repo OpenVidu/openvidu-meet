@@ -50,8 +50,7 @@ import { VideoDevicesComponent } from '../../settings/video-devices/video-device
 		NgTemplateOutlet
 	],
 	templateUrl: './settings-panel.component.html',
-	styleUrls: ['../panel.component.scss', './settings-panel.component.scss'],
-	standalone: true
+	styleUrls: ['../panel.component.scss', './settings-panel.component.scss']
 })
 export class SettingsPanelComponent implements OnInit {
 	onVideoEnabledChanged = output<boolean>();

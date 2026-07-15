@@ -7,7 +7,6 @@ import { MeetingTranslateService } from '../../services/translate/meeting-transl
 
 @Component({
 	selector: 'ov-connection-quality-indicator',
-	standalone: true,
 	imports: [MatIconModule, MatTooltipModule],
 	templateUrl: './connection-quality-indicator.component.html',
 	styleUrl: './connection-quality-indicator.component.scss'

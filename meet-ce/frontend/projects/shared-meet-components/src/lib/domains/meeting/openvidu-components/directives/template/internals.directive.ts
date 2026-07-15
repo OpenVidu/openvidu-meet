@@ -184,8 +184,7 @@
 import { Directive, TemplateRef, ViewContainerRef, computed, inject, input } from '@angular/core';
 
 @Directive({
-	selector: '[ovPreJoin]',
-	standalone: true
+	selector: '[ovPreJoin]'
 })
 export class PreJoinDirective {
 	public template = inject(TemplateRef<any>);
@@ -210,8 +209,7 @@ export class PreJoinDirective {
  * ```
  */
 @Directive({
-	selector: '[ovParticipantPanelAfterLocalParticipant]',
-	standalone: true
+	selector: '[ovParticipantPanelAfterLocalParticipant]'
 })
 export class ParticipantPanelAfterLocalParticipantDirective {
 	public template = inject(TemplateRef<any>);
@@ -234,8 +232,7 @@ export class ParticipantPanelAfterLocalParticipantDirective {
  * ```
  */
 @Directive({
-	selector: '[ovToolbarLeaveButton]',
-	standalone: true
+	selector: '[ovToolbarLeaveButton]'
 })
 export class LeaveButtonDirective {
 	public template = inject(TemplateRef<any>);
@@ -273,8 +270,7 @@ export class LeaveButtonDirective {
  * ```
  */
 @Directive({
-	selector: '[ovLayoutAdditionalElements]',
-	standalone: true
+	selector: '[ovLayoutAdditionalElements]'
 })
 export class LayoutAdditionalElementsDirective {
 	/** Raw input value — the microsyntax `*ovLayoutAdditionalElements="'bottom'"` binds here. */
@@ -313,8 +309,7 @@ export class LayoutAdditionalElementsDirective {
  * ```
  */
 @Directive({
-	selector: '[ovParticipantPanelParticipantBadge]',
-	standalone: true
+	selector: '[ovParticipantPanelParticipantBadge]'
 })
 export class ParticipantPanelParticipantBadgeDirective {
 	public template = inject(TemplateRef<any>);
@@ -346,8 +341,7 @@ export class ParticipantPanelParticipantBadgeDirective {
  * @internal
  */
 @Directive({
-	selector: '[ovSettingsPanelGeneralAdditionalElements]',
-	standalone: true
+	selector: '[ovSettingsPanelGeneralAdditionalElements]'
 })
 export class SettingsPanelGeneralAdditionalElementsDirective {
 	public template = inject(TemplateRef<any>);
@@ -379,8 +373,7 @@ export class SettingsPanelGeneralAdditionalElementsDirective {
  * @internal
  */
 @Directive({
-	selector: '[ovToolbarMoreOptionsAdditionalMenuItems]',
-	standalone: true
+	selector: '[ovToolbarMoreOptionsAdditionalMenuItems]'
 })
 export class ToolbarMoreOptionsAdditionalMenuItemsDirective {
 	public template = inject(TemplateRef<any>);

@@ -12,7 +12,6 @@ import { Component } from '@angular/core';
 			<div class="stick normal play"></div>
 		</div>
 	`,
-	styleUrl: './audio-wave.component.scss',
-	standalone: true
+	styleUrl: './audio-wave.component.scss'
 })
 export class AudioWaveComponent {}

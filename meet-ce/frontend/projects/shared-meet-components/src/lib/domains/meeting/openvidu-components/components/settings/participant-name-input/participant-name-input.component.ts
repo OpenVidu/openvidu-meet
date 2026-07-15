@@ -12,8 +12,7 @@ import { StorageService } from '../../../services/storage/storage.service';
 	selector: 'ov-participant-name-input',
 	imports: [FormsModule, MatIconModule, TranslatePipe],
 	templateUrl: './participant-name-input.component.html',
-	styleUrl: './participant-name-input.component.scss',
-	standalone: true
+	styleUrl: './participant-name-input.component.scss'
 })
 export class ParticipantNameInputComponent implements OnInit {
 	name = '';

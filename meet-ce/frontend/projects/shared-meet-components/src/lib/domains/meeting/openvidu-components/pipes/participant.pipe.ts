@@ -10,7 +10,7 @@ import { MeetingTranslateService } from '../services/translate/meeting-translate
  * element per stream instead of one per track.
  * @returns {ParticipantStream[]} Flat array of participant streams
  */
-@Pipe({ name: 'tracks', standalone: true })
+@Pipe({ name: 'tracks' })
 export class RemoteParticipantTracksPipe implements PipeTransform {
 	transform(participants: ParticipantModel[]): ParticipantStream[] {
 		return participants.map((p) => p.streams()).flat();
@@ -20,7 +20,7 @@ export class RemoteParticipantTracksPipe implements PipeTransform {
 /**
  * @internal
  */
-@Pipe({ name: 'tracksPublishedTypes', standalone: true })
+@Pipe({ name: 'tracksPublishedTypes' })
 export class TrackPublishedTypesPipe implements PipeTransform {
 	private readonly translateService = inject(MeetingTranslateService);
 

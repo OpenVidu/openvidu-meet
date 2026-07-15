@@ -33,8 +33,7 @@ import { ParticipantAvatarComponent } from '../../../participant-avatar/particip
 		NgTemplateOutlet
 	],
 	templateUrl: './participant-panel-item.component.html',
-	styleUrls: ['./participant-panel-item.component.scss'],
-	standalone: true
+	styleUrls: ['./participant-panel-item.component.scss']
 })
 export class ParticipantPanelItemComponent {
 	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });

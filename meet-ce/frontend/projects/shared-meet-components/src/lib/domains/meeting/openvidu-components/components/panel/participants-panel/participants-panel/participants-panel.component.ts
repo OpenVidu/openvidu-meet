@@ -28,8 +28,7 @@ import { ParticipantPanelItemComponent } from '../participant-panel-item/partici
 		NgTemplateOutlet
 	],
 	templateUrl: './participants-panel.component.html',
-	styleUrls: ['../../panel.component.scss', './participants-panel.component.scss'],
-	standalone: true
+	styleUrls: ['../../panel.component.scss', './participants-panel.component.scss']
 })
 export class ParticipantsPanelComponent {
 	/**

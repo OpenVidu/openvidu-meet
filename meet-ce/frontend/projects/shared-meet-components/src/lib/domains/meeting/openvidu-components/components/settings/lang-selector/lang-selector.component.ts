@@ -13,8 +13,7 @@ import { MeetingTranslateService } from '../../../services/translate/meeting-tra
 	selector: 'ov-lang-selector',
 	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
 	templateUrl: './lang-selector.component.html',
-	styleUrl: './lang-selector.component.scss',
-	standalone: true
+	styleUrl: './lang-selector.component.scss'
 })
 export class LangSelectorComponent implements OnInit {
 	/**

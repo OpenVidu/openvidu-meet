@@ -28,8 +28,7 @@ import { ParticipantService } from '../../../services/participant/participant.se
 	selector: 'ov-chat-panel',
 	imports: [FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe, LinkifyPipe],
 	templateUrl: './chat-panel.component.html',
-	styleUrls: ['../panel.component.scss', './chat-panel.component.scss'],
-	standalone: true
+	styleUrls: ['../panel.component.scss', './chat-panel.component.scss']
 })
 export class ChatPanelComponent implements AfterViewInit {
 	/**

@@ -17,8 +17,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  * <ov-participant-panel-item [muteButton]="false"></ov-participant-panel-item>
  */
 @Directive({
-	selector: 'ov-videoconference[participantPanelItemMuteButton], ov-participant-panel-item[muteButton]',
-	standalone: true
+	selector: 'ov-videoconference[participantPanelItemMuteButton], ov-participant-panel-item[muteButton]'
 })
 export class ParticipantPanelItemMuteButtonDirective implements OnDestroy {
 	readonly participantPanelItemMuteButton = input<boolean | undefined>(undefined);

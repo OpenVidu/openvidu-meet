@@ -10,8 +10,7 @@ import { TranslateService } from '../services/i18n/translate.service';
  */
 @Pipe({
 	name: 'translate',
-	pure: false,
-	standalone: true
+	pure: false
 })
 export class TranslatePipe implements PipeTransform {
 	private readonly translateService = inject(TranslateService);

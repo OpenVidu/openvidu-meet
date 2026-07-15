@@ -56,8 +56,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 	styleUrl: './pre-join.component.scss',
 	host: {
 		'(window:resize)': 'sizeChange()'
-	},
-	standalone: true
+	}
 })
 export class PreJoinComponent implements OnInit, OnDestroy {
 	readonly error = input<{ name: string; message: string } | undefined>(undefined);

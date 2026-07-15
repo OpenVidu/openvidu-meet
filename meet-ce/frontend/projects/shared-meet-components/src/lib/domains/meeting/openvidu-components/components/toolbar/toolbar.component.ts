@@ -70,8 +70,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 	host: {
 		'(window:resize)': 'sizeChange($event)',
 		'(document:keydown)': 'keyDown($event)'
-	},
-	standalone: true
+	}
 })
 export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly documentService = inject(DocumentService);

@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
  */
 @Component({
 	selector: 'ov-hidden-participants-indicator',
-	standalone: true,
 	imports: [MatIconModule],
 	templateUrl: './hidden-participants-indicator.component.html',
 	styleUrl: './hidden-participants-indicator.component.scss'

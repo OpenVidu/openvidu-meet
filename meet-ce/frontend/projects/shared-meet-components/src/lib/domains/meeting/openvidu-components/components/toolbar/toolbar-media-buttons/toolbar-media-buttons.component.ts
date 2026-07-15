@@ -34,8 +34,7 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 		NgTemplateOutlet
 	],
 	templateUrl: './toolbar-media-buttons.component.html',
-	styleUrl: './toolbar-media-buttons.component.scss',
-	standalone: true
+	styleUrl: './toolbar-media-buttons.component.scss'
 })
 export class ToolbarMediaButtonsComponent {
 	// Camera related inputs

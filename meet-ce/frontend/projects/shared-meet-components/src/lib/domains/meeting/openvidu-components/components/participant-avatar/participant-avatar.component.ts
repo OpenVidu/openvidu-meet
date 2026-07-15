@@ -16,7 +16,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 	imports: [MatIconModule, TranslatePipe],
 	templateUrl: './participant-avatar.component.html',
 	styleUrl: './participant-avatar.component.scss',
-	standalone: true,
 	host: {
 		'[class.participant-avatar]': 'true'
 	}

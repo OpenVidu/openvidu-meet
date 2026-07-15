@@ -35,8 +35,7 @@ import { AssetsService } from '../../../../../../../shared/services/assets.servi
 		UpperCasePipe
 	],
 	templateUrl: './recording-activity.component.html',
-	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss'],
-	standalone: true
+	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss']
 })
 export class RecordingActivityComponent {
 	private readonly libService = inject(OpenViduComponentsConfigService);

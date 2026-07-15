@@ -42,8 +42,7 @@ import { OpenViduThemeService } from '../../../services/theme/theme.service';
 			</mat-menu>
 		</div>
 	`,
-	styleUrl: './theme-selector.component.scss',
-	standalone: true
+	styleUrl: './theme-selector.component.scss'
 })
 export class ThemeSelectorComponent implements OnInit {
 	protected predefinedThemes: OpenViduThemeMode[] = [];

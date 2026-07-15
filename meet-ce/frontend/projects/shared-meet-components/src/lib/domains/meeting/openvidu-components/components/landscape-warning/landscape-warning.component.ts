@@ -10,7 +10,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 	selector: 'ov-landscape-warning',
 	imports: [MatIconModule, TranslatePipe],
 	templateUrl: './landscape-warning.component.html',
-	styleUrl: './landscape-warning.component.scss',
-	standalone: true
+	styleUrl: './landscape-warning.component.scss'
 })
 export class LandscapeWarningComponent {}

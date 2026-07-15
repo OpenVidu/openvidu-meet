@@ -18,8 +18,7 @@ import type { ILogger } from '../../../../../../shared/models/logger.model';
 	selector: 'ov-video-devices-select',
 	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './video-devices.component.html',
-	styleUrl: './video-devices.component.scss',
-	standalone: true
+	styleUrl: './video-devices.component.scss'
 })
 export class VideoDevicesComponent implements OnInit {
 	readonly compact = input(false);

@@ -37,8 +37,7 @@ import { StreamComponent } from '../stream/stream.component';
 	selector: 'ov-base-layout',
 	imports: [CdkDrag, StreamComponent, NgTemplateOutlet],
 	templateUrl: './base-layout.component.html',
-	styleUrls: ['./base-layout.component.scss'],
-	standalone: true
+	styleUrls: ['./base-layout.component.scss']
 })
 export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly layoutService = inject(SmartLayoutService);

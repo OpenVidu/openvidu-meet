@@ -18,8 +18,7 @@ import { RecordingActivityComponent } from './recording-activity/recording-activ
 	selector: 'ov-activities-panel',
 	imports: [MatButtonModule, MatExpansionModule, MatIconModule, MatTooltipModule, TranslatePipe, RecordingActivityComponent],
 	templateUrl: './activities-panel.component.html',
-	styleUrls: ['../panel.component.scss', './activities-panel.component.scss'],
-	standalone: true
+	styleUrls: ['../panel.component.scss', './activities-panel.component.scss']
 })
 export class ActivitiesPanelComponent implements OnInit {
 	/**

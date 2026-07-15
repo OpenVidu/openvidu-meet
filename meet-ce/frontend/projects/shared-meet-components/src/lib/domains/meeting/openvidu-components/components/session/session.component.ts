@@ -43,8 +43,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 	selector: 'ov-session',
 	imports: [MatProgressSpinnerModule, MatSidenavModule, TranslatePipe, LandscapeWarningComponent, NgTemplateOutlet],
 	templateUrl: './session.component.html',
-	styleUrls: ['./session.component.scss'],
-	standalone: true
+	styleUrls: ['./session.component.scss']
 })
 export class SessionComponent implements OnInit, OnDestroy {
 	/**
