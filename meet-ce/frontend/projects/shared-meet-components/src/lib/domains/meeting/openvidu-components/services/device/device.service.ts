@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, OnDestroy, signal } from '@angular/core';
+import { computed, inject, Service, OnDestroy, signal } from '@angular/core';
 import { CameraType, CustomDevice, DeviceType } from '../../models/device.model';
 import type { LocalTrack } from '../livekit';
 import { Track } from '../livekit';
@@ -22,9 +22,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
  *
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class DeviceService implements OnDestroy {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly platformSrv = inject(PlatformService);

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import {
 	ConnectionQuality,
@@ -37,9 +37,7 @@ import type {
 	VideoCaptureOptions
 } from 'livekit-client';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class LivekitSdkService {
 	createRoom(roomOptions: RoomOptions): Room {
 		return new Room(roomOptions);

@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpEvent, HttpHandlerFn, HttpRequest } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { catchError, Observable } from 'rxjs';
 
 /**
@@ -39,9 +39,7 @@ export interface ContinueWithNextHandlerError {
  *
  * Domain handlers register themselves and provide recovery strategies when they can handle an error.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class HttpErrorNotifierService {
 	private handlers: HttpErrorHandler[] = [];
 

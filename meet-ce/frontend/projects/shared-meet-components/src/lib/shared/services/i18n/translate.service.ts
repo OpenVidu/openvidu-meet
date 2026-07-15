@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, isDevMode, signal } from '@angular/core';
+import { effect, inject, Service, isDevMode, signal } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { DEFAULT_LANG, TRANSLATION_BUNDLES } from '../../models/translation-bundle.model';
 import { LanguageService } from './language.service';
@@ -16,9 +16,7 @@ import { LanguageService } from './language.service';
  * which the impure translate pipe calls on every change-detection cycle — never splits keys or walks
  * a nested object.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class TranslateService {
 	private readonly languageService = inject(LanguageService);
 	private readonly bundles = inject(TRANSLATION_BUNDLES, { optional: true }) ?? [];

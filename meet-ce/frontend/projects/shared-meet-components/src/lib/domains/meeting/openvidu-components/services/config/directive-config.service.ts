@@ -1,4 +1,4 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Service, computed, signal } from '@angular/core';
 import { ParticipantModel } from '../../models/participant.model';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
 
@@ -64,9 +64,7 @@ interface GeneralConfig {
 /**
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class OpenViduComponentsConfigService {
 	// Grouped configuration items by domain
 	private readonly generalConfig = signal<GeneralConfig>({

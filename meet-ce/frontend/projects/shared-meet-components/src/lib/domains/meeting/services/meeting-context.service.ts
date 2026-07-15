@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { SessionStorageService } from '../../../shared/services/session-storage.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -10,9 +10,7 @@ import { RoomAccessLinkService } from './room-access-link.service';
  * Meeting-domain context: the room identity/config and session flags of the current meeting.
  * Lightweight (no LiveKit); the live participant/room runtime state lives in MeetingStateService.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class MeetingContextService {
 	private readonly roomFeatureService = inject(RoomFeatureService);
 	private readonly globalConfigService = inject(GlobalConfigService);

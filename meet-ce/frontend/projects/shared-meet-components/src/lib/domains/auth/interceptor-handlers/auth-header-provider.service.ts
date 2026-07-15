@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import {
 	HttpHeaderContext,
@@ -11,9 +11,7 @@ import { TokenStorageService } from '../../../shared/services/token-storage.serv
  * Provider for authentication headers.
  * Adds the access token to all requests if available.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class AuthHeaderProviderService implements HttpHeaderProvider {
 	private readonly tokenStorageService = inject(TokenStorageService);
 	private readonly headerProviderService = inject(HttpHeaderProviderService);

@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, inject, Service, Signal, signal } from '@angular/core';
 import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { BackgroundCategory, BackgroundEffect, EffectType } from '../../models/background-effect.model';
@@ -13,9 +13,7 @@ function categoryPrefix(category: BackgroundCategory): string {
 /**
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class VirtualBackgroundService {
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);

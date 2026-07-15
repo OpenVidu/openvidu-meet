@@ -1,11 +1,9 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { PanelSettingsOptions, PanelStatusInfo, PanelType } from '../../models/panel.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class PanelService {
 	private readonly log = inject(LoggerService).get('PanelService');
 

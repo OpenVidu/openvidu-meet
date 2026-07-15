@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { MeetingEntryService } from '../../meeting/services/meeting-entry.service';
 import { RecordingEntryService } from '../../recordings/services/recording-entry.service';
 import { RoomRecordingsEntryService } from '../../recordings/services/room-recordings-entry.service';
@@ -25,7 +25,7 @@ export interface WcRouteGuard {
 }
 
 /** Meeting route guard — equivalent to the SPA `extractRoomMeetingParamsGuard` + `validateRoomMeetingAccessGuard`. */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class WcMeetingGuard implements WcRouteGuard {
 	private readonly meetingEntry = inject(MeetingEntryService);
 
@@ -47,7 +47,7 @@ export class WcMeetingGuard implements WcRouteGuard {
 }
 
 /** Single-recording route guard — equivalent to the SPA `extractRecordingParamsGuard` + `validateRecordingAccessGuard`. */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class WcSingleRecordingGuard implements WcRouteGuard {
 	private readonly recordingEntry = inject(RecordingEntryService);
 
@@ -70,7 +70,7 @@ export class WcSingleRecordingGuard implements WcRouteGuard {
 }
 
 /** Room-recordings route guard — equivalent to the SPA `extractRoomRecordingsParamsGuard` + `validateRoomRecordingsAccessGuard`. */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class WcRoomRecordingsGuard implements WcRouteGuard {
 	private readonly roomRecordingsEntry = inject(RoomRecordingsEntryService);
 

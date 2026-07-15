@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { ChatMessage } from '../../models/chat.model';
 import { INotificationOptions } from '../../models/notification-options.model';
 
@@ -15,9 +15,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 /**
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class ChatService {
 	private readonly participantService = inject(ParticipantService);
 	private readonly panelService = inject(PanelService);

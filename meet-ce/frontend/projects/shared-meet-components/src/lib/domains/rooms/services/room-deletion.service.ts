@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import {
 	MeetRoom,
@@ -28,9 +28,7 @@ interface RoomDeletionOptions {
 	onSuccess: (result: RoomDeletionResult) => void | Promise<void>;
 }
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RoomDeletionService {
 	private roomService = inject(RoomService);
 	private notificationService = inject(NotificationService);

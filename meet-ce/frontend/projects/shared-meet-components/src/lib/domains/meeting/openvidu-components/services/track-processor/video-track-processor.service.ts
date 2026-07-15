@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, Signal } from '@angular/core';
+import { inject, Service, signal, Signal } from '@angular/core';
 import type {
 	BackgroundProcessorWrapper,
 	SwitchBackgroundProcessorOptions
@@ -40,9 +40,7 @@ type TrackProcessorsModule = typeof import('@livekit/track-processors');
  *
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class VideoTrackProcessorService {
 	private backgroundProcessor?: BackgroundProcessorWrapper;
 

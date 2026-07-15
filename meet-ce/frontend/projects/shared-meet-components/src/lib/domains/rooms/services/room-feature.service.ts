@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
 import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -40,9 +40,7 @@ const DEFAULT_FEATURES: RoomFeatures = {
  * based on room configuration, user permissions, and global settings.
  * This service acts as a single source of truth for feature availability across the app.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RoomFeatureService {
 	protected log: ILogger = inject(LoggerService).get('OpenVidu Meet - RoomFeatureService');
 	protected globalConfigService = inject(GlobalConfigService);

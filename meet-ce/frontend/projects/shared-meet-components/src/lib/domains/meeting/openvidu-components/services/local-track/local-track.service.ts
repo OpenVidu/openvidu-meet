@@ -1,4 +1,4 @@
-import { inject, Injectable, Signal } from '@angular/core';
+import { inject, Service, Signal } from '@angular/core';
 import { DeviceService } from '../device/device.service';
 import {
 	AudioCaptureOptions,
@@ -21,9 +21,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
  * (prejoin and in-call) and their enabled state. The room connection itself lives separately
  * in MeetingLiveKitService.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class LocalTrackService {
 	private readonly deviceService = inject(DeviceService);
 	private readonly storageService = inject(StorageService);

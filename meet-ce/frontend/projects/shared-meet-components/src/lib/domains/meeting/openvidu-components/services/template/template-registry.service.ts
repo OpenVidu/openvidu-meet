@@ -1,4 +1,4 @@
-import { Injectable, signal, TemplateRef } from '@angular/core';
+import { Service, signal, TemplateRef } from '@angular/core';
 
 /**
  * Service that centralizes all TemplateRef instances for the videoconference component tree.
@@ -8,7 +8,7 @@ import { Injectable, signal, TemplateRef } from '@angular/core';
  * All templates are exposed as writable signals — VideoconferenceComponent sets them directly in
  * `setupTemplates()`, and any descendant component can inject this service to read them reactively.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class TemplateRegistryService {
 	// ── Core layout templates ─────────────────────────────────────────────────
 

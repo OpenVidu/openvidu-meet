@@ -1,10 +1,8 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MeetAnalytics } from '@openvidu-meet/typings';
 import { HttpService } from './http.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class AnalyticsService {
 	protected httpService = inject(HttpService);
 

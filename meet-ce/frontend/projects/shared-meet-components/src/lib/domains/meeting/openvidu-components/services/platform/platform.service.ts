@@ -1,12 +1,10 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 /**
  * Service to detect platform, device type, and browser features.
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class PlatformService {
 	private readonly userAgent: string = typeof navigator !== 'undefined' ? navigator.userAgent : '';
 

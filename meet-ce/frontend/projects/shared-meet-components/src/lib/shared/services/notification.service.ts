@@ -1,15 +1,13 @@
 import { Overlay } from '@angular/cdk/overlay';
 import { ComponentPortal } from '@angular/cdk/portal';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ConfirmDialogComponent } from '../components/dialogs/confirm-dialog/confirm-dialog.component';
 import { SpinnerComponent } from '../components/spinner/spinner.component';
 import { DialogOptions } from '../models/notification.model';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class NotificationService {
 	private snackBar = inject(MatSnackBar);
 	private dialog = inject(MatDialog);

@@ -1,5 +1,5 @@
 import { HttpRequest } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 /**
  * Context information for adding headers to an HTTP request
@@ -33,9 +33,7 @@ export interface HttpHeaderProvider {
  *
  * Domain providers register themselves and provide headers when applicable.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class HttpHeaderProviderService {
 	private providers: HttpHeaderProvider[] = [];
 

@@ -1,4 +1,4 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Service, computed, inject, signal } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { WcRoute, WcRouteName, WcRouteStatus } from '../models/wc-route.model';
 import { wcRouteToPath } from '../utils/wc-route.utils';
@@ -24,7 +24,7 @@ const MAX_REDIRECTS = 10;
  * {@link NavigationService} — also shared — drives it; the shell only translates host
  * attributes into a {@link WcRoute} and renders `currentRoute`.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class WcRouterService implements WcNavigator {
 	// Factory: route name → guard. Guarded routes delegate to their entry service via an
 	// attribute-injected guard; every other route renders directly (a synchronous `ready`).

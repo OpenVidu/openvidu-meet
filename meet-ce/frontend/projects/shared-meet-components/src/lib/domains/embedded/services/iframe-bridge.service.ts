@@ -1,4 +1,4 @@
-import { DestroyRef, effect, inject, Injectable, signal } from '@angular/core';
+import { DestroyRef, effect, inject, Service, signal } from '@angular/core';
 import { EmbeddedCommand, EmbeddedCommandName, EmbeddedEvent } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
@@ -20,9 +20,7 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
  * - **Events** (app → host) are drained from {@link EmbeddedEventBusService.events}
  *   (the shared lifecycle-event queue) and relayed as `postMessage` events.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class IframeBridgeService {
 	private readonly commandService = inject(EmbeddedCommandService);
 	private readonly eventBus = inject(EmbeddedEventBusService);

@@ -1,8 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 /**
  * Service for managing session storage operations.
  * Provides methods to store, retrieve, and remove data from sessionStorage.

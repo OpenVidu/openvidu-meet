@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
@@ -34,7 +34,7 @@ export type RoomRecordingsEntryOutcome =
  * Smaller than its meeting/single-recording siblings because the flow only
  * needs context seeding and a room-permission check with `canRetrieveRecordings`.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RoomRecordingsEntryService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomAccessService = inject(RoomAccessService);

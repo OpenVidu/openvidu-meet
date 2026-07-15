@@ -1,4 +1,4 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, Service, signal } from '@angular/core';
 
 declare global {
 	interface Window {
@@ -13,9 +13,7 @@ declare global {
  * It reads from a global configuration object injected at runtime (e.g., by the server or hosting environment) and provides utility methods to resolve asset paths.
  * This allows the application to be flexible in different deployment contexts (e.g., served from root, subpath, or embedded in an iframe).
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RuntimeConfigService {
 	/**
 	 * Deployment base path under which Meet is mounted (e.g. `/meet`), or `/` when

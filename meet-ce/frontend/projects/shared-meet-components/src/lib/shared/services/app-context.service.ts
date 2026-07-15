@@ -1,13 +1,11 @@
-import { Injectable, WritableSignal, signal } from '@angular/core';
+import { Service, WritableSignal, signal } from '@angular/core';
 import { Edition } from '../models';
 
 /**
  * Application-level metadata that is not derivable from the runtime
  * environment: edition (CE/PRO) and version.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class AppContextService {
 	private readonly _edition: WritableSignal<Edition> = signal(Edition.CE);
 	private readonly _version: WritableSignal<string> = signal('');

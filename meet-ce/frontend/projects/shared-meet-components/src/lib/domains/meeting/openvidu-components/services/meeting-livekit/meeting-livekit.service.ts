@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -20,9 +20,7 @@ import { StorageService } from '../storage/storage.service';
  * its E2EE setup (worker + key provider) and the connection token. Local media capture lives
  * separately in LocalTrackService.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class MeetingLiveKitService {
 	private readonly deviceService = inject(DeviceService);
 	private readonly storageService = inject(StorageService);

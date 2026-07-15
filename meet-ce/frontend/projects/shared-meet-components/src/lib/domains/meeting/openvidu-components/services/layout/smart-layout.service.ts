@@ -1,4 +1,4 @@
-import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
 import { SmartLayoutMode } from '../../models/layout/smart-layout.model';
 import type { Participant } from '../../services/livekit';
 import { SessionRoomEventsService } from '../session/session-room-events.service';
@@ -7,9 +7,7 @@ import { BaseLayoutService } from './layout.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class SmartLayoutService extends BaseLayoutService {
 	private readonly loggerService = inject(LoggerService);
 	private readonly sessionRoomEventsService = inject(SessionRoomEventsService);
