@@ -1,7 +1,6 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
-	ChangeDetectionStrategy,
 	Component,
 	contentChild,
 	effect,
@@ -99,7 +98,6 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 	],
 	templateUrl: './videoconference.component.html',
 	styleUrls: ['./videoconference.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class VideoconferenceComponent implements OnDestroy, AfterViewInit {

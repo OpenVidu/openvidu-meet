@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	contentChild,
@@ -37,8 +36,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MatProgressSpinnerModule,
 		MeetingLobbyComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService]
 })
 export class MeetingComponent implements OnInit {
 	protected meetingContextService = inject(MeetingContextService);

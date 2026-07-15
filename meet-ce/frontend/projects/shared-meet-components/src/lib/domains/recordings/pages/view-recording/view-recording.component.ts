@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -36,8 +36,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 		MatSnackBarModule,
 		RecordingVideoPlayerComponent,
 		TranslatePipe
-	],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	]
 })
 export class ViewRecordingComponent implements OnInit {
 	protected readonly recordingService = inject(RecordingService);

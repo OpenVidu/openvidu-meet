@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -27,8 +27,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 		TranslatePipe
 	],
 	templateUrl: './delete-room-dialog.component.html',
-	styleUrl: './delete-room-dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './delete-room-dialog.component.scss'
 })
 export class DeleteRoomDialogComponent {
 	readonly dialogRef = inject(MatDialogRef<DeleteRoomDialogComponent>);

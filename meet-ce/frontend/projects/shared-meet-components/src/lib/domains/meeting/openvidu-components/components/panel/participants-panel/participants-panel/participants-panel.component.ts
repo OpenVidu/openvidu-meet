@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, TemplateRef, viewChild } from '@angular/core';
+import { Component, computed, inject, TemplateRef, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -29,7 +29,6 @@ import { ParticipantPanelItemComponent } from '../participant-panel-item/partici
 	],
 	templateUrl: './participants-panel.component.html',
 	styleUrls: ['../../panel.component.scss', './participants-panel.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class ParticipantsPanelComponent {

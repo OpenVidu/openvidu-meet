@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 
 /**
  * Presentational panel that renders the event log. It owns no state: entries
@@ -7,8 +7,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 @Component({
 	selector: 'app-event-log',
 	templateUrl: './event-log.html',
-	styleUrl: './event-log.css',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './event-log.css'
 })
 export class EventLog {
 	/** Log lines to display, newest first. */

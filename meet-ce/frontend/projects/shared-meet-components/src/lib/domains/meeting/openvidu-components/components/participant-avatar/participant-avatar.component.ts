@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -16,7 +16,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 	imports: [MatIconModule, TranslatePipe],
 	templateUrl: './participant-avatar.component.html',
 	styleUrl: './participant-avatar.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true,
 	host: {
 		'[class.participant-avatar]': 'true'

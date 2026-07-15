@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { DialogData } from '../../models/dialog.model';
@@ -38,8 +38,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 				border-radius: var(--ov-surface-radius);
 			}
 		`
-    ],
-	changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
 export class DialogTemplateComponent {
 	private readonly dialogRef = inject(MatDialogRef<DialogTemplateComponent>);

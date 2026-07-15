@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -30,8 +30,7 @@ import type { ILogger } from '../../../../shared/models/logger.model';
 		MatIconModule,
 		MatProgressSpinnerModule,
 		TranslatePipe
-	],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	]
 })
 export class RoomRecordingsComponent implements OnInit {
 	protected readonly loggerService = inject(LoggerService);

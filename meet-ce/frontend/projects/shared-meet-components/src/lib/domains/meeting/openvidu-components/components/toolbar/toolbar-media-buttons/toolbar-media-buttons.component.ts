@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	TemplateRef,
 	computed,
@@ -36,7 +35,6 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 	],
 	templateUrl: './toolbar-media-buttons.component.html',
 	styleUrl: './toolbar-media-buttons.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class ToolbarMediaButtonsComponent {

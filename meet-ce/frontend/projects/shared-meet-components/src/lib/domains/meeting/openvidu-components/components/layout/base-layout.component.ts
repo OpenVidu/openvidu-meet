@@ -2,7 +2,6 @@ import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
 import { NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	contentChild,
@@ -39,7 +38,6 @@ import { StreamComponent } from '../stream/stream.component';
 	imports: [CdkDrag, StreamComponent, NgTemplateOutlet],
 	templateUrl: './base-layout.component.html',
 	styleUrls: ['./base-layout.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class BaseLayoutComponent implements OnDestroy, AfterViewInit {

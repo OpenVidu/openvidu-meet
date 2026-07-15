@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, signal } from '@angular/core';
+import { Component, OnInit, inject, input, signal } from '@angular/core';
 import {
 	AbstractControl,
 	FormControl,
@@ -38,8 +38,7 @@ import { UserService } from '../../../users/services/user.service';
 		TranslatePipe
 	],
 	templateUrl: './change-password-required.component.html',
-	styleUrl: './change-password-required.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './change-password-required.component.scss'
 })
 export class ChangePasswordRequiredComponent implements OnInit {
 	private readonly userService = inject(UserService);

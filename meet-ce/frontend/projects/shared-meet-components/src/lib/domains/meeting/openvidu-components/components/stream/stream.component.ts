@@ -1,5 +1,4 @@
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	effect,
@@ -41,7 +40,6 @@ import { VideoElementComponent } from '../video-element/video-element.component'
 	],
 	templateUrl: './stream.component.html',
 	styleUrls: ['./stream.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class StreamComponent implements OnDestroy {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -17,8 +17,7 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 	selector: 'ov-meeting-toolbar-leave-button',
 	templateUrl: './meeting-toolbar-leave-button.component.html',
 	styleUrls: ['./meeting-toolbar-leave-button.component.scss'],
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDividerModule, TranslatePipe],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, MatDividerModule, TranslatePipe]
 })
 export class MeetingToolbarLeaveButtonComponent {
 	protected meetingContextService = inject(MeetingContextService);

@@ -1,5 +1,4 @@
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	effect,
@@ -61,7 +60,6 @@ import { ParticipantAvatarComponent } from '../participant-avatar/participant-av
 		}
 	`,
 	styleUrl: './video-element.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class VideoElementComponent implements OnDestroy {

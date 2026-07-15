@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -41,8 +41,7 @@ export interface ResetPasswordDialogData {
 		TranslatePipe
 	],
 	templateUrl: './reset-password-dialog.component.html',
-	styleUrl: './reset-password-dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './reset-password-dialog.component.scss'
 })
 export class ResetPasswordDialogComponent {
 	readonly dialogRef = inject(MatDialogRef<ResetPasswordDialogComponent>);

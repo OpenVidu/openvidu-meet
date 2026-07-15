@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	contentChild,
@@ -52,7 +51,6 @@ import { VideoDevicesComponent } from '../../settings/video-devices/video-device
 	],
 	templateUrl: './settings-panel.component.html',
 	styleUrls: ['../panel.component.scss', './settings-panel.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class SettingsPanelComponent implements OnInit {

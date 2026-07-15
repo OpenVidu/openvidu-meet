@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -8,8 +8,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
     selector: 'ov-share-room-access-link',
     imports: [MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe],
     templateUrl: './share-room-access-link.component.html',
-    styleUrl: './share-room-access-link.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrl: './share-room-access-link.component.scss'
 })
 export class ShareRoomAccessLinkComponent {
 	roomAccessUrl = input.required<string>();

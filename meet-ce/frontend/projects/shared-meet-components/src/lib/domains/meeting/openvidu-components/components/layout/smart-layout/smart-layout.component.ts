@@ -1,5 +1,4 @@
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	contentChildren,
@@ -35,7 +34,6 @@ interface PersistentAudioEntry {
 		HiddenParticipantsIndicatorComponent
 	],
 	templateUrl: './smart-layout.component.html',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class SmartLayoutComponent implements OnDestroy {

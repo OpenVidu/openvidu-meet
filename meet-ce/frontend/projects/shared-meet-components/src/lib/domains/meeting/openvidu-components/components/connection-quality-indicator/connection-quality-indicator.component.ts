@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, OnDestroy, signal } from '@angular/core';
+import { Component, computed, effect, inject, input, OnDestroy, signal } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ParticipantModel } from '../../models/participant.model';
@@ -10,8 +10,7 @@ import { MeetingTranslateService } from '../../services/translate/meeting-transl
 	standalone: true,
 	imports: [MatIconModule, MatTooltipModule],
 	templateUrl: './connection-quality-indicator.component.html',
-	styleUrl: './connection-quality-indicator.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './connection-quality-indicator.component.scss'
 })
 export class ConnectionQualityIndicatorComponent implements OnDestroy {
 	readonly participant = input.required<ParticipantModel>();

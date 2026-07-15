@@ -1,5 +1,4 @@
 import {
-	ChangeDetectionStrategy,
 	Component,
 	ElementRef,
 	OnDestroy,
@@ -22,8 +21,7 @@ import { RecordingUiUtils } from '../../utils/ui';
 	selector: 'ov-recording-video-player',
 	imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './recording-video-player.component.html',
-	styleUrl: './recording-video-player.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './recording-video-player.component.scss'
 })
 export class RecordingVideoPlayerComponent implements OnDestroy {
 	viewportService = inject(ViewportService);

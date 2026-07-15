@@ -1,6 +1,5 @@
 import {
 	AfterViewInit,
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	effect,
@@ -30,7 +29,6 @@ import { ParticipantService } from '../../../services/participant/participant.se
 	imports: [FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe, LinkifyPipe],
 	templateUrl: './chat-panel.component.html',
 	styleUrls: ['../panel.component.scss', './chat-panel.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class ChatPanelComponent implements AfterViewInit {

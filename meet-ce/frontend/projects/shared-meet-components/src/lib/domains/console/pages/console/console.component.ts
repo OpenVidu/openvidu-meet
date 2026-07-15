@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { ConsoleNavLink } from '../../../../shared/models/sidenav.model';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ConsoleNavComponent } from '../../components/console-nav/console-nav.component';
@@ -8,8 +8,7 @@ import { consoleChildRoutes } from '../../routes/console.routes';
 	selector: 'ov-console',
 	imports: [ConsoleNavComponent],
 	templateUrl: './console.component.html',
-	styleUrl: './console.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './console.component.scss'
 })
 export class ConsoleComponent implements OnInit {
 	private authService = inject(AuthService);

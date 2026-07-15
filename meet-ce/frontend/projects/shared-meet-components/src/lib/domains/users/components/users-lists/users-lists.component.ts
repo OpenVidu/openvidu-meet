@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	DestroyRef,
@@ -95,7 +94,6 @@ export interface UserTableFilter {
 	],
 	templateUrl: './users-lists.component.html',
 	styleUrl: './users-lists.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'[class.has-selections]': 'hasSelections()'
 	}

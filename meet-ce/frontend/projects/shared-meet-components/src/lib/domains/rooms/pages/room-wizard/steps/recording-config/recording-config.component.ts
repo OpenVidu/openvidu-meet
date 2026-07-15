@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,8 +35,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		TranslatePipe
 	],
 	templateUrl: './recording-config.component.html',
-	styleUrl: './recording-config.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './recording-config.component.scss'
 })
 export class RecordingConfigComponent {
 	private wizardService = inject(RoomWizardStateService);

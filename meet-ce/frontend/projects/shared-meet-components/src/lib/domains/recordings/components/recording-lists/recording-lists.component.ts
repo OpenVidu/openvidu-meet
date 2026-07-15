@@ -1,6 +1,5 @@
 import { DatePipe } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	DestroyRef,
@@ -89,7 +88,6 @@ import { RecordingUiUtils } from '../../utils/ui';
 	],
 	templateUrl: './recording-lists.component.html',
 	styleUrl: './recording-lists.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'[class.has-selections]': 'hasSelections()'
 	}

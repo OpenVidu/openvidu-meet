@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, output } from '@angular/core';
+import { Component, computed, effect, inject, OnInit, output } from '@angular/core';
 import {
 	ActivitiesPanelStatusEvent,
 	ChatPanelStatusEvent,
@@ -23,7 +23,6 @@ import { TemplateRegistryService } from '../../services/template/template-regist
 	imports: [NgTemplateOutlet],
 	templateUrl: './panel.component.html',
 	styleUrls: ['./panel.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class PanelComponent implements OnInit {

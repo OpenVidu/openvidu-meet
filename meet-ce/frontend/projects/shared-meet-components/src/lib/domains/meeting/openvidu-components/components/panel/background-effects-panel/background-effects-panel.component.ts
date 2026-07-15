@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, output, Signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, output, Signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -16,7 +16,6 @@ import { VirtualBackgroundService } from '../../../services/virtual-background/v
 	imports: [MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './background-effects-panel.component.html',
 	styleUrls: ['../panel.component.scss', './background-effects-panel.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class BackgroundEffectsPanelComponent implements OnInit {

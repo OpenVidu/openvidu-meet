@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, TemplateRef, viewChild } from '@angular/core';
+import { Component, TemplateRef, viewChild } from '@angular/core';
 import { MeetingParticipantItemContentComponent } from '../meeting-participant-item-content/meeting-participant-item-content.component';
 
 /**
@@ -12,8 +12,7 @@ import { MeetingParticipantItemContentComponent } from '../meeting-participant-i
 @Component({
 	selector: 'ov-meeting-participant-item',
 	templateUrl: './meeting-participant-item.component.html',
-	imports: [MeetingParticipantItemContentComponent],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	imports: [MeetingParticipantItemContentComponent]
 })
 export class MeetingParticipantItemComponent {
 	// Template reference for the participant panel item, consumed by the OpenVidu library.

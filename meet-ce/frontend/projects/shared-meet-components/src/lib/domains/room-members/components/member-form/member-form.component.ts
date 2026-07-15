@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, output, signal } from '@angular/core';
+import { Component, inject, input, OnInit, output, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
@@ -50,8 +50,7 @@ import { RoomMemberUiUtils } from '../../utils/ui';
 		TranslatePipe
 	],
 	templateUrl: './member-form.component.html',
-	styleUrl: './member-form.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './member-form.component.scss'
 })
 export class MemberFormComponent implements OnInit {
 	private userService = inject(UserService);

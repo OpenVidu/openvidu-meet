@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, type OnInit } from '@angular/core';
+import { Component, inject, type OnInit } from '@angular/core';
 import { IframeBridgeService } from '../../../embedded/services/iframe-bridge.service';
 import { MeetingCustomLayoutComponent } from '../../customization/meeting-custom-layout/meeting-custom-layout.component';
 import { MeetingInvitePanelComponent } from '../../customization/meeting-invite-panel/meeting-invite-panel.component';
@@ -35,8 +35,7 @@ import { MeetingComponent } from '../meeting/meeting.component';
 			<ov-meeting-custom-layout />
 		</ov-meeting>
 	`,
-	styles: '',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styles: ''
 })
 export class AppCeMeetingComponent implements OnInit {
 	private readonly iframeBridge = inject(IframeBridgeService);

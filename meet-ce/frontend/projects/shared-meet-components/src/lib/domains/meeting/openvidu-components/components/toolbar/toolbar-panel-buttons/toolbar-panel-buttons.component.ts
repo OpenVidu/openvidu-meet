@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TemplateRef, computed, inject, input, output } from '@angular/core';
+import { Component, TemplateRef, computed, inject, input, output } from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,7 +21,6 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 	],
 	templateUrl: './toolbar-panel-buttons.component.html',
 	styleUrl: './toolbar-panel-buttons.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class ToolbarPanelButtonsComponent {

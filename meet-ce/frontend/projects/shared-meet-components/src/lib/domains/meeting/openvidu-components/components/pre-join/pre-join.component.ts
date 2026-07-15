@@ -1,5 +1,4 @@
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	effect,
@@ -55,7 +54,6 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 	],
 	templateUrl: './pre-join.component.html',
 	styleUrl: './pre-join.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'(window:resize)': 'sizeChange()'
 	},

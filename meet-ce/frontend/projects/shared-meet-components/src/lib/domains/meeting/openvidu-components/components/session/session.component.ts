@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	DestroyRef,
 	effect,
@@ -45,7 +44,6 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 	imports: [MatProgressSpinnerModule, MatSidenavModule, TranslatePipe, LandscapeWarningComponent, NgTemplateOutlet],
 	templateUrl: './session.component.html',
 	styleUrls: ['./session.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class SessionComponent implements OnInit, OnDestroy {

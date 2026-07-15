@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -28,8 +28,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MatTooltipModule,
 		ShareRoomAccessLinkComponent,
 		TranslatePipe
-	],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	]
 })
 export class MeetingLobbyComponent {
 	protected lobbyService = inject(MeetingLobbyService);

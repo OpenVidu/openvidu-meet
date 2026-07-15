@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, input, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -14,8 +14,7 @@ import { AuthService } from '../../../domains/auth/services/auth.service';
 	selector: 'ov-error',
 	imports: [MatCardModule, MatIconModule, MatButtonModule, TranslatePipe],
 	templateUrl: './error.component.html',
-	styleUrl: './error.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './error.component.scss'
 })
 export class ErrorComponent implements OnInit {
 	private route = inject(ActivatedRoute);

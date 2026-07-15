@@ -1,6 +1,5 @@
 import {
 	afterNextRender,
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	DestroyRef,
@@ -60,7 +59,6 @@ import { ShadowStylesService } from './shadow-dom/styles.service';
 	templateUrl: './app.html',
 	styleUrls: ['./app.material.scss', './app.css'],
 	encapsulation: ViewEncapsulation.ShadowDom,
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	providers: [ShadowStylesService],
 	host: {
 		'[attr.role]': '"application"',

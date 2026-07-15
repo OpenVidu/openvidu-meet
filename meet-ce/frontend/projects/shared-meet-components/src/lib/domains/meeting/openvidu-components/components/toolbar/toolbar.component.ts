@@ -1,7 +1,6 @@
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	DestroyRef,
@@ -68,7 +67,6 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 	],
 	templateUrl: './toolbar.component.html',
 	styleUrl: './toolbar.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'(window:resize)': 'sizeChange($event)',
 		'(document:keydown)': 'keyDown($event)'

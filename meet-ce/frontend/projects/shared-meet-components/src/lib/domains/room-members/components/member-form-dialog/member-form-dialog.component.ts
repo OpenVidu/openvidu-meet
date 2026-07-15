@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MeetRoomMemberOptions } from '@openvidu-meet/typings';
@@ -10,8 +10,7 @@ import { MemberFormComponent } from '../member-form/member-form.component';
 	selector: 'ov-member-form-dialog',
 	imports: [MatDialogModule, MemberFormComponent, MatIconModule, TranslatePipe],
 	templateUrl: './member-form-dialog.component.html',
-	styleUrl: './member-form-dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './member-form-dialog.component.scss'
 })
 export class MemberFormDialogComponent {
 	private dialogRef = inject(MatDialogRef<MemberFormDialogComponent, MeetRoomMemberOptions | null>);

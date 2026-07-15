@@ -1,5 +1,5 @@
 import { NgTemplateOutlet, LowerCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, contentChild, inject, input } from '@angular/core';
+import { Component, computed, contentChild, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -34,7 +34,6 @@ import { ParticipantAvatarComponent } from '../../../participant-avatar/particip
 	],
 	templateUrl: './participant-panel-item.component.html',
 	styleUrls: ['./participant-panel-item.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class ParticipantPanelItemComponent {

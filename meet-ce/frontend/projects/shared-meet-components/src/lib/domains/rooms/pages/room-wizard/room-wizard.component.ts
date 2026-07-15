@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -42,8 +42,7 @@ import { RoomWizardRoomDetailsComponent } from './steps/room-details/room-detail
 		TranslatePipe
 	],
 	templateUrl: './room-wizard.component.html',
-	styleUrl: './room-wizard.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './room-wizard.component.scss'
 })
 export class RoomWizardComponent implements OnInit {
 	private wizardService = inject(RoomWizardStateService);

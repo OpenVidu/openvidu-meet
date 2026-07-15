@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,8 +15,7 @@ import { AuthService } from '../../../auth/services/auth.service';
 	selector: 'ov-end-meeting',
 	imports: [MatCardModule, MatButtonModule, MatIconModule, TranslatePipe],
 	templateUrl: './end-meeting.component.html',
-	styleUrl: './end-meeting.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './end-meeting.component.scss'
 })
 export class EndMeetingComponent implements OnInit {
 	private route = inject(ActivatedRoute);

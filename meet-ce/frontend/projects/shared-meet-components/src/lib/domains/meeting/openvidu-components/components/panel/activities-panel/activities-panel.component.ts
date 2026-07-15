@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, OnInit, output, signal } from '@angular/core';
+import { Component, effect, inject, OnInit, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,7 +19,6 @@ import { RecordingActivityComponent } from './recording-activity/recording-activ
 	imports: [MatButtonModule, MatExpansionModule, MatIconModule, MatTooltipModule, TranslatePipe, RecordingActivityComponent],
 	templateUrl: './activities-panel.component.html',
 	styleUrls: ['../panel.component.scss', './activities-panel.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	standalone: true
 })
 export class ActivitiesPanelComponent implements OnInit {
