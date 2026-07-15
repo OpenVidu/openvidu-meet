@@ -1,4 +1,4 @@
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
@@ -97,7 +97,6 @@ export interface RoomTableFilter {
 @Component({
 	selector: 'ov-rooms-lists',
 	imports: [
-		NgClass,
 		ReactiveFormsModule,
 		RouterModule,
 		MatTableModule,

@@ -421,7 +421,7 @@
 							@if (RoomUiUtils.hasMeetingEndAction(room)) {
 								<mat-icon
 									class="meeting-end-info-icon"
-									[ngClass]="RoomUiUtils.getMeetingEndActionClass(room)"
+									[class]="RoomUiUtils.getMeetingEndActionClass(room)"
 									[matTooltip]="RoomUiUtils.getMeetingEndActionTooltip(room) | translate"
 									id="meeting-end-info-icon-{{ room.roomId }}"
 								>
@@ -459,7 +459,7 @@
 							<div class="auto-deletion-info" id="auto-deletion-info-{{ room.roomId }}">
 								<div
 									class="deletion-badge"
-									[ngClass]="RoomUiUtils.getAutoDeletionClass(room)"
+									[class]="RoomUiUtils.getAutoDeletionClass(room)"
 									[matTooltip]="RoomUiUtils.getAutoDeletionTooltip(room) | translate"
 									id="deletion-badge-{{ room.roomId }}"
 								>
@@ -553,7 +553,7 @@
 									<button
 										mat-menu-item
 										(click)="$event.stopPropagation(); toggleRoomStatus(room)"
-										[ngClass]="RoomUiUtils.getRoomToggleClass(room)"
+										[class]="RoomUiUtils.getRoomToggleClass(room)"
 										id="toggle-room-status-btn-{{ room.roomId }}"
 									>
 										<mat-icon>{{ RoomUiUtils.getRoomToggleIcon(room) }}</mat-icon>

@@ -37,7 +37,7 @@
 			@if (shouldShowIcon()) {
 				<mat-icon class="option-icon ov-action-icon">{{ option().icon }}</mat-icon>
 			}
-			<h4 class="option-title" [ngClass]="{ 'has-icon': shouldShowIcon(), 'has-image': shouldShowImage() }">
+			<h4 class="option-title" [class]="{ 'has-icon': shouldShowIcon(), 'has-image': shouldShowImage() }">
 				{{ option().title }}
 				@if (option().recommended && showRecommendedBadge()) {
 					<span class="recommended-badge">Recommended</span>

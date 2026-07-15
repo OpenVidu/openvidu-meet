@@ -1,9 +1,9 @@
 @if (lkRoom()) {
-	<div class="main-container" [ngClass]="{ withFooter: areCaptionsEnabledByUser() }">
+	<div class="main-container" [class.withFooter]="areCaptionsEnabledByUser()">
 		<ov-smart-layout
 			[ovSmartLayoutAllowed]="showLayoutSelector()"
 			[ovShowHiddenParticipantsIndicator]="!shouldShowOverlay()"
-			[ngClass]="{ withFooter: areCaptionsEnabledByUser() }"
+			[class.withFooter]="areCaptionsEnabledByUser()"
 			(hiddenParticipantsIndicatorClicked)="toggleParticipantsPanel()"
 		>
 			<ng-container *ovLayoutAdditionalElements>

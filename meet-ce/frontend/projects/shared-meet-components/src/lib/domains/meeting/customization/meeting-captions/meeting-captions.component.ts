@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { Component, effect, ElementRef, input, signal, untracked, viewChildren } from '@angular/core';
 import { ChangeDetectionStrategy } from '@angular/core';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -6,7 +5,7 @@ import { Caption } from '../../models/captions.model';
 
 @Component({
 	selector: 'ov-meeting-captions',
-	imports: [NgClass, TranslatePipe],
+	imports: [TranslatePipe],
 	templateUrl: './meeting-captions.component.html',
 	styleUrl: './meeting-captions.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush

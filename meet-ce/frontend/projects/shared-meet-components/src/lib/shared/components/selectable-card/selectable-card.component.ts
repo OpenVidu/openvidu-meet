@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { ProFeatureBadgeComponent } from '../pro-feature-badge/pro-feature-badge.component';
@@ -28,11 +27,11 @@ export interface SelectionCardEvent {
 }
 
 @Component({
-    selector: 'ov-selectable-card',
-	imports: [NgClass, MatIconModule, ProFeatureBadgeComponent],
-    templateUrl: './selectable-card.component.html',
-    styleUrl: './selectable-card.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+	selector: 'ov-selectable-card',
+	imports: [MatIconModule, ProFeatureBadgeComponent],
+	templateUrl: './selectable-card.component.html',
+	styleUrl: './selectable-card.component.scss',
+	changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SelectableCardComponent {
 	/**

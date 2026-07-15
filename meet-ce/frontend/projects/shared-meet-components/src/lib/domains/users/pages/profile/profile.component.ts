@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import {
@@ -35,7 +34,6 @@ import { UsersUiUtils } from '../../utils/ui';
 @Component({
 	selector: 'ov-profile',
 	imports: [
-		NgClass,
 		MatCardModule,
 		MatButtonModule,
 		MatIconModule,

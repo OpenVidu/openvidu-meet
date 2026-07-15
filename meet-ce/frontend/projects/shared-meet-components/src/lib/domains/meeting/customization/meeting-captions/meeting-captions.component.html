@@ -2,7 +2,7 @@
 	<div class="captions-wrapper" [class.single-caption]="captions().length === 1">
 		@for (caption of captions(); track caption.id) {
 			<div
-				[ngClass]="getCaptionClasses(caption)"
+				[class]="getCaptionClasses(caption)"
 				[attr.data-caption-id]="caption.id"
 				role="region"
 				aria-live="polite"

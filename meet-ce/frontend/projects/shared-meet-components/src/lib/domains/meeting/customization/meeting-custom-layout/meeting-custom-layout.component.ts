@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
@@ -14,7 +13,6 @@ import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-w
 @Component({
 	selector: 'ov-meeting-custom-layout',
 	imports: [
-		NgClass,
 		OpenViduComponentsUiModule,
 		SmartLayoutComponent,
 		ShareRoomAccessLinkComponent,
