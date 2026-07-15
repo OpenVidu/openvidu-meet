@@ -1,6 +1,6 @@
 // * Internal directives *
 
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, OnInit, inject, input } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, OnInit, effect, inject, input } from '@angular/core';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { ParticipantModel } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
@@ -57,22 +57,17 @@ export class FallbackLogoDirective implements OnInit {
 	selector: 'ov-smart-layout[ovRemoteParticipants]',
 	standalone: true
 })
-export class LayoutRemoteParticipantsDirective {
-	private _ovRemoteParticipants: ParticipantModel[] | undefined;
+export class LayoutRemoteParticipantsDirective implements OnDestroy {
+	readonly ovRemoteParticipants = input<ParticipantModel[] | undefined>(undefined);
 
-	@Input() set ovRemoteParticipants(value: ParticipantModel[] | undefined) {
-		this._ovRemoteParticipants = value;
-		this.update(value);
-	}
 	public elementRef = inject(ElementRef);
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
+	private readonly ovRemoteParticipantsEffect = effect(() => {
+		this.update(this.ovRemoteParticipants());
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
-	}
-
-	ngAfterViewInit() {
-		this.update(this._ovRemoteParticipants);
 	}
 
 	update(value: ParticipantModel[] | undefined) {
@@ -91,33 +86,26 @@ export class LayoutRemoteParticipantsDirective {
 	selector: 'ov-videoconference[brandingLogo], ov-toolbar[brandingLogo]',
 	standalone: true
 })
-export class ToolbarBrandingLogoDirective implements AfterViewInit, OnDestroy {
+export class ToolbarBrandingLogoDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set brandingLogo(value: string) {
-		this._brandingLogo = value;
-		this.update(this._brandingLogo);
-	}
-
-	private _brandingLogo: string = '';
+	readonly brandingLogo = input<string>('');
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this._brandingLogo);
-	}
+	private readonly brandingLogoEffect = effect(() => {
+		this.update(this.brandingLogo());
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this._brandingLogo = '';
-		this.update(this._brandingLogo);
+		this.update('');
 	}
 
 	private update(value: string) {
@@ -147,39 +135,29 @@ export class ToolbarBrandingLogoDirective implements AfterViewInit, OnDestroy {
 	selector: 'ov-videoconference[toolbarViewRecordingsButton], ov-toolbar[viewRecordingsButton]',
 	standalone: true
 })
-export class ToolbarViewRecordingsButtonDirective implements AfterViewInit, OnDestroy {
+export class ToolbarViewRecordingsButtonDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set toolbarViewRecordingsButton(value: boolean) {
-		this.viewRecordingsValue = value;
-		this.update(this.viewRecordingsValue);
-	}
+	readonly toolbarViewRecordingsButton = input<boolean | undefined>(undefined);
 	/**
 	 * @ignore
 	 */
-	@Input() set viewRecordingsButton(value: boolean) {
-		this.viewRecordingsValue = value;
-		this.update(this.viewRecordingsValue);
-	}
-
-	private viewRecordingsValue: boolean = false;
+	readonly viewRecordingsButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this.viewRecordingsValue);
-	}
+	private readonly viewRecordingsButtonEffect = effect(() => {
+		this.update(this.viewRecordingsButton() ?? this.toolbarViewRecordingsButton() ?? false);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	private clear() {
-		this.viewRecordingsValue = false;
 		this.update(true);
 	}
 
@@ -208,15 +186,16 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
 	/**
 	 * @ignore
 	 */
-	@Input() set recordingActivityStartStopRecordingButton(value: boolean) {
-		this.update(value);
-	}
+	readonly recordingActivityStartStopRecordingButton = input<boolean | undefined>(undefined);
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly startStopButtonEffect = effect(() => {
+		this.update(this.recordingActivityStartStopRecordingButton() ?? true);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
@@ -246,28 +225,21 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
 	selector: 'ov-videoconference[recordingActivityViewRecordingsButton]',
 	standalone: true
 })
-export class RecordingActivityViewRecordingsButtonDirective implements AfterViewInit, OnDestroy {
-	@Input() set recordingActivityViewRecordingsButton(value: boolean) {
-		this._value = value;
-		this.update(this._value);
-	}
-
-	private _value: boolean = false;
+export class RecordingActivityViewRecordingsButtonDirective implements OnDestroy {
+	readonly recordingActivityViewRecordingsButton = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this._value);
-	}
+	private readonly viewRecordingsButtonEffect = effect(() => {
+		this.update(this.recordingActivityViewRecordingsButton() ?? false);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 
 	private clear() {
-		this._value = false;
-		this.update(this._value);
+		this.update(false);
 	}
 
 	private update(value: boolean) {
@@ -290,37 +262,26 @@ export class RecordingActivityViewRecordingsButtonDirective implements AfterView
 	selector: 'ov-videoconference[toolbarRoomName], ov-toolbar[roomName]',
 	standalone: true
 })
-export class ToolbarRoomNameDirective implements AfterViewInit, OnDestroy {
-	@Input() set toolbarRoomName(value: string | undefined) {
-		this._roomName = value;
-		this.updateRoomName();
-	}
-
-	@Input() set roomName(value: string | undefined) {
-		this._roomName = value;
-		this.updateRoomName();
-	}
-
-	private _roomName?: string;
+export class ToolbarRoomNameDirective implements OnDestroy {
+	readonly toolbarRoomName = input<string | undefined>(undefined);
+	readonly roomName = input<string | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.updateRoomName();
-	}
+	private readonly roomNameEffect = effect(() => {
+		this.updateRoomName(this.roomName() ?? this.toolbarRoomName());
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 
 	private clear() {
-		this._roomName = undefined;
-		this.updateRoomName();
+		this.updateRoomName(undefined);
 	}
 
-	private updateRoomName() {
-		this.libService.updateToolbarConfig({ roomName: this._roomName || '' });
+	private updateRoomName(value: string | undefined) {
+		this.libService.updateToolbarConfig({ roomName: value || '' });
 	}
 }
 
@@ -339,28 +300,21 @@ export class ToolbarRoomNameDirective implements AfterViewInit, OnDestroy {
 	selector: 'ov-videoconference[showThemeSelector]',
 	standalone: true
 })
-export class ShowThemeSelectorDirective implements AfterViewInit, OnDestroy {
-	@Input() set showThemeSelector(value: boolean) {
-		this._value = value;
-		this.update(this._value);
-	}
-
-	private _value: boolean = false;
+export class ShowThemeSelectorDirective implements OnDestroy {
+	readonly showThemeSelector = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this._value);
-	}
+	private readonly showThemeSelectorEffect = effect(() => {
+		this.update(this.showThemeSelector() ?? false);
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 
 	private clear() {
-		this._value = true;
-		this.update(this._value);
+		this.update(true);
 	}
 
 	private update(value: boolean) {
@@ -383,28 +337,21 @@ export class ShowThemeSelectorDirective implements AfterViewInit, OnDestroy {
 	selector: 'ov-videoconference[e2eeKey]',
 	standalone: true
 })
-export class E2EEKeyDirective implements AfterViewInit, OnDestroy {
-	@Input() set e2eeKey(value: string | undefined) {
-		this._value = value;
-		this.update(this._value);
-	}
-
-	private _value: string | undefined;
+export class E2EEKeyDirective implements OnDestroy {
+	readonly e2eeKey = input<string | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-
-	ngAfterViewInit() {
-		this.update(this._value);
-	}
+	private readonly e2eeKeyEffect = effect(() => {
+		this.update(this.e2eeKey());
+	});
 
 	ngOnDestroy(): void {
 		this.clear();
 	}
 
 	private clear() {
-		this._value = undefined;
-		this.update(this._value);
+		this.update(undefined);
 	}
 
 	private update(value: string | undefined) {
