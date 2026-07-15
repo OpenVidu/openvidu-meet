@@ -1,4 +1,4 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
@@ -83,7 +83,6 @@ export interface MemberTableFilter {
 @Component({
 	selector: 'ov-room-members-list',
 	imports: [
-		CommonModule,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,
@@ -196,7 +195,10 @@ export class RoomMembersListsComponent implements OnInit {
 	// Base role filter options ('' means no filter)
 	baseRoleOptions: { value: MeetRoomMemberRole | ''; label: string }[] = [
 		{ value: '', label: this.translateService.translate('ROOM_MEMBERS.LIST.ROLE_FILTER_ALL') },
-		{ value: MeetRoomMemberRole.MODERATOR, label: this.translateService.translate('ROOM_MEMBERS.COMMON.MODERATOR') },
+		{
+			value: MeetRoomMemberRole.MODERATOR,
+			label: this.translateService.translate('ROOM_MEMBERS.COMMON.MODERATOR')
+		},
 		{ value: MeetRoomMemberRole.SPEAKER, label: this.translateService.translate('ROOM_MEMBERS.COMMON.SPEAKER') }
 	];
 

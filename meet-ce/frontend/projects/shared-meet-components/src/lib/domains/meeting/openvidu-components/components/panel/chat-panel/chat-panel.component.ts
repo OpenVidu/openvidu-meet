@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
 	AfterViewInit,
 	ChangeDetectionStrategy,
@@ -28,7 +27,7 @@ import { ParticipantService } from '../../../services/participant/participant.se
  */
 @Component({
 	selector: 'ov-chat-panel',
-	imports: [CommonModule, FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe, LinkifyPipe],
+	imports: [FormsModule, MatButtonModule, MatIconModule, MatTooltipModule, TranslatePipe, LinkifyPipe],
 	templateUrl: './chat-panel.component.html',
 	styleUrls: ['../panel.component.scss', './chat-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -126,5 +125,4 @@ export class ChatPanelComponent implements AfterViewInit {
 		}
 		return this.participantService.hasRemoteEncryptionErrorsSignal();
 	});
-
 }

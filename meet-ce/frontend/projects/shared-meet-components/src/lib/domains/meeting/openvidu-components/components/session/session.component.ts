@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
@@ -42,7 +42,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Component({
 	selector: 'ov-session',
-	imports: [CommonModule, MatProgressSpinnerModule, MatSidenavModule, TranslatePipe, LandscapeWarningComponent],
+	imports: [MatProgressSpinnerModule, MatSidenavModule, TranslatePipe, LandscapeWarningComponent, NgTemplateOutlet],
 	templateUrl: './session.component.html',
 	styleUrls: ['./session.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,

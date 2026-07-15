@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
@@ -25,7 +25,15 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
  */
 @Component({
 	selector: 'ov-toolbar-media-buttons',
-	imports: [CommonModule, MatButtonModule, MatDividerModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
+	imports: [
+		MatButtonModule,
+		MatDividerModule,
+		MatIconModule,
+		MatMenuModule,
+		MatTooltipModule,
+		TranslatePipe,
+		NgTemplateOutlet
+	],
 	templateUrl: './toolbar-media-buttons.component.html',
 	styleUrl: './toolbar-media-buttons.component.scss',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -68,7 +76,6 @@ export class ToolbarMediaButtonsComponent {
 	// Recording related inputs
 	recordingStatus = input<RecordingState>(RecordingState.STOPPED);
 	hasRoomTracksPublished = input<boolean>(false);
-
 
 	// Leave button
 	showLeaveButton = input<boolean>(true);
@@ -122,9 +129,7 @@ export class ToolbarMediaButtonsComponent {
 
 	// Check if there are active features that should show a badge on More Options
 	readonly hasActiveFeatures = computed(
-		() =>
-			this.isScreenShareEnabled() ||
-			this.recordingStatus() === this._recordingStatus.STARTED
+		() => this.isScreenShareEnabled() || this.recordingStatus() === this._recordingStatus.STARTED
 	);
 
 	// Check if additional buttons should be shown outside (desktop/tablet) or inside More Options (mobile)

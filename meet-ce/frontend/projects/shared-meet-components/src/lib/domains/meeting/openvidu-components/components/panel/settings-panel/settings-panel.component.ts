@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
 	ChangeDetectionStrategy,
 	Component,
@@ -37,7 +37,6 @@ import { VideoDevicesComponent } from '../../settings/video-devices/video-device
 @Component({
 	selector: 'ov-settings-panel',
 	imports: [
-		CommonModule,
 		MatButtonModule,
 		MatFormFieldModule,
 		MatIconModule,
@@ -48,7 +47,8 @@ import { VideoDevicesComponent } from '../../settings/video-devices/video-device
 		LangSelectorComponent,
 		ThemeSelectorComponent,
 		VideoDevicesComponent,
-		AudioDevicesComponent
+		AudioDevicesComponent,
+		NgTemplateOutlet
 	],
 	templateUrl: './settings-panel.component.html',
 	styleUrls: ['../panel.component.scss', './settings-panel.component.scss'],
@@ -118,5 +118,4 @@ export class SettingsPanelComponent implements OnInit {
 	onSelectionChanged(option: PanelSettingsOptions) {
 		this.selectedOption.set(option);
 	}
-
 }

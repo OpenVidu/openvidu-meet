@@ -1,12 +1,5 @@
-import { CommonModule } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    inject,
-    TemplateRef,
-    viewChild
-} from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, TemplateRef, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,7 +18,15 @@ import { ParticipantPanelItemComponent } from '../participant-panel-item/partici
  */
 @Component({
 	selector: 'ov-participants-panel',
-	imports: [CommonModule, MatButtonModule, MatDividerModule, MatIconModule, MatTooltipModule, TranslatePipe, ParticipantPanelItemComponent],
+	imports: [
+		MatButtonModule,
+		MatDividerModule,
+		MatIconModule,
+		MatTooltipModule,
+		TranslatePipe,
+		ParticipantPanelItemComponent,
+		NgTemplateOutlet
+	],
 	templateUrl: './participants-panel.component.html',
 	styleUrls: ['../../panel.component.scss', './participants-panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -52,13 +53,11 @@ export class ParticipantsPanelComponent {
 	readonly participantPanelItemTemplate = computed(
 		() => this.templateRegistry.participantPanelItem() ?? this.defaultParticipantPanelItemTemplateQuery()
 	);
-	readonly participantPanelAfterLocalParticipantTemplate = computed(
-		() => this.templateRegistry.participantPanelAfterLocalParticipant()
+	readonly participantPanelAfterLocalParticipantTemplate = computed(() =>
+		this.templateRegistry.participantPanelAfterLocalParticipant()
 	);
 
 	close() {
 		this.panelService.togglePanel(PanelType.PARTICIPANTS);
 	}
-
 }
-

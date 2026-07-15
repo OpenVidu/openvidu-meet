@@ -1,20 +1,12 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, output } from '@angular/core';
 import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    effect,
-    inject,
-    OnInit,
-    output
-} from '@angular/core';
-import {
-    ActivitiesPanelStatusEvent,
-    ChatPanelStatusEvent,
-    PanelStatusInfo,
-    PanelType,
-    ParticipantsPanelStatusEvent,
-    SettingsPanelStatusEvent
+	ActivitiesPanelStatusEvent,
+	ChatPanelStatusEvent,
+	PanelStatusInfo,
+	PanelType,
+	ParticipantsPanelStatusEvent,
+	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { PanelService } from '../../services/panel/panel.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
@@ -28,7 +20,7 @@ import { TemplateRegistryService } from '../../services/template/template-regist
 
 @Component({
 	selector: 'ov-panel',
-	imports: [CommonModule],
+	imports: [NgTemplateOutlet],
 	templateUrl: './panel.component.html',
 	styleUrls: ['./panel.component.scss'],
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -83,7 +75,9 @@ export class PanelComponent implements OnInit {
 	> = new Map();
 
 	readonly panelOpened = this.panelService.panelOpened;
-	readonly isChatPanelOpened = computed(() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.CHAT);
+	readonly isChatPanelOpened = computed(
+		() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.CHAT
+	);
 	readonly isParticipantsPanelOpened = computed(
 		() => this.panelOpened().isOpened && this.panelOpened().panelType === PanelType.PARTICIPANTS
 	);
@@ -122,8 +116,7 @@ export class PanelComponent implements OnInit {
 	/**
 	 * @ignore
 	 */
-	ngOnDestroy() {
-	}
+	ngOnDestroy() {}
 
 	private sendPanelStatusChangedEvent(event: PanelStatusInfo) {
 		const { panelType, isOpened, previousPanelType } = event;
