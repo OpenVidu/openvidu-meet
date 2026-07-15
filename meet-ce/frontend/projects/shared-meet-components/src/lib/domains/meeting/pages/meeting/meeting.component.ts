@@ -10,7 +10,6 @@ import {
 	signal,
 	untracked
 } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -34,8 +33,6 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	imports: [
 		OpenViduComponentsUiModule,
 		NgTemplateOutlet,
-		FormsModule,
-		ReactiveFormsModule,
 		MatIconModule,
 		MatProgressSpinnerModule,
 		MeetingLobbyComponent
