@@ -221,21 +221,11 @@ export class UserService {
 			const ownedRooms = await this.roomRepository.findByOwner(userId, ['roomId']);
 
 			if (ownedRooms.length > 0) {
-				await runConcurrently(
-					ownedRooms,
-					async (room) => {
-						await Promise.all([
-							this.roomRepository.updatePartial(room.roomId, { owner: MEET_ENV.INITIAL_ADMIN_USER }),
-							this.recordingRepository.updateAccessScopeMetadataByRoomId(room.roomId, {
-								roomOwner: MEET_ENV.INITIAL_ADMIN_USER
-							})
-						]);
-					},
-					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_USER_RESOURCES, failFast: true }
-				);
-
+				const adminUserId = MEET_ENV.INITIAL_ADMIN_USER;
+				const { transferred, skipped } = await this.transferOwnedRoomsToAdmin(ownedRooms, adminUserId);
 				this.logger.info(
-					`Transferred ownership of ${ownedRooms.length} room(s) from user '${userId}' to admin '${MEET_ENV.INITIAL_ADMIN_USER}' due to role change to '${MeetUserRole.ROOM_MEMBER}'`
+					`Transferred ownership of ${transferred} room(s) from user '${userId}' to admin '${adminUserId}' due to role change to '${MeetUserRole.ROOM_MEMBER}'` +
+						(skipped > 0 ? ` (skipped ${skipped} room(s) deleted concurrently)` : '')
 				);
 			}
 		}
@@ -405,26 +395,50 @@ export class UserService {
 		const allOwnedRooms = userCleanupResults.flat();
 
 		if (allOwnedRooms.length > 0) {
-			await runConcurrently(
-				allOwnedRooms,
-				async (room) => {
-					await Promise.all([
-						// Transfer ownership to admin user
-						this.roomRepository.updatePartial(room.roomId, { owner: adminUserId }),
-						this.recordingRepository.updateAccessScopeMetadataByRoomId(room.roomId, {
-							roomOwner: adminUserId
-						})
-					]);
-				},
-				{ concurrency, failFast: true }
-			);
-
+			const { transferred, skipped } = await this.transferOwnedRoomsToAdmin(allOwnedRooms, adminUserId);
 			this.logger.info(
-				`Transferred ownership of ${allOwnedRooms.length} room(s) from ${userIds.length} user(s) to admin '${adminUserId}'`
+				`Transferred ownership of ${transferred} room(s) from ${userIds.length} user(s) to admin '${adminUserId}'` +
+					(skipped > 0 ? ` (skipped ${skipped} room(s) deleted concurrently)` : '')
 			);
 		}
 
 		this.logger.info(`Completed cleanup for ${userIds.length} user(s)`);
+	}
+
+	/**
+	 * Transfers ownership of the given rooms to the admin user, tolerating rooms that are deleted
+	 * concurrently (e.g. a parallel room deletion during account cleanup or a role change).
+	 *
+	 * `updatePartialIfExists` returns `null` instead of throwing when the room no longer exists, so
+	 * transferring ownership of a deleted room is treated as a benign no-op and skipped rather than
+	 * propagated as an error through the fail-fast pool. The recording metadata update is already
+	 * tolerant of a missing room (`updateMany` matches nothing).
+	 *
+	 * @param rooms - Rooms to transfer, identified by `roomId`
+	 * @param adminUserId - The admin user to receive ownership
+	 * @returns Counts of rooms whose ownership was transferred vs skipped because they no longer exist
+	 */
+	private async transferOwnedRoomsToAdmin(
+		rooms: { roomId: string }[],
+		adminUserId: string
+	): Promise<{ transferred: number; skipped: number }> {
+		const transferResults = await runConcurrently(
+			rooms,
+			async (room) => {
+				const [transferredRoom] = await Promise.all([
+					this.roomRepository.updatePartialIfExists(room.roomId, { owner: adminUserId }),
+					this.recordingRepository.updateAccessScopeMetadataByRoomId(room.roomId, {
+						roomOwner: adminUserId
+					})
+				]);
+
+				return transferredRoom !== null;
+			},
+			{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_CLEANUP_USER_RESOURCES, failFast: true }
+		);
+
+		const transferred = transferResults.filter(Boolean).length;
+		return { transferred, skipped: transferResults.length - transferred };
 	}
 
 	// Convert user to UserDTO to remove sensitive information
