@@ -1,12 +1,10 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import { HttpService } from './http.service';
 import { LoggerService } from './logger.service';
 import type { ILogger } from '../models/logger.model';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class GlobalConfigService {
 	protected readonly GLOBAL_CONFIG_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/config`;
 

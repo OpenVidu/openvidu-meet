@@ -1,5 +1,4 @@
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	CUSTOM_ELEMENTS_SCHEMA,
@@ -25,7 +24,6 @@ export type Integration = 'webcomponent' | 'iframe';
 	imports: [FormsModule, EventLog],
 	templateUrl: './app.html',
 	styleUrl: './app.css',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	// The webcomponent integration uses the raw <openvidu-meet> element from the
 	// bundle (loaded via the backend <script>), so allow the custom element + its bindings.
 	schemas: [CUSTOM_ELEMENTS_SCHEMA]

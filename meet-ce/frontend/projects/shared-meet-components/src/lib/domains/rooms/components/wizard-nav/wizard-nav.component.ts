@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { MatButton } from '@angular/material/button';
 import { MatIcon } from '@angular/material/icon';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -8,8 +8,7 @@ import type { WizardNavigationConfig, WizardNavigationEvent } from '../../models
     selector: 'ov-wizard-nav',
     imports: [MatButton, MatIcon, TranslatePipe],
     templateUrl: './wizard-nav.component.html',
-    styleUrl: './wizard-nav.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrl: './wizard-nav.component.scss'
 })
 export class WizardNavComponent {
 	/**

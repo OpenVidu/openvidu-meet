@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -40,8 +40,7 @@ import { RecordingService } from '../../services/recording.service';
 		TranslatePipe
 	],
 	templateUrl: './recording-share-dialog.component.html',
-	styleUrl: './recording-share-dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './recording-share-dialog.component.scss'
 })
 export class RecordingShareDialogComponent implements OnInit {
 	readonly data = inject<{

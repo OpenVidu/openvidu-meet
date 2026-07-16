@@ -1,12 +1,10 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { RecordingState, RecordingStateInfo } from '../../models/recording.model';
 import { ActionService } from '../action/action.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RecordingService {
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(OpenViduComponentsConfigService);

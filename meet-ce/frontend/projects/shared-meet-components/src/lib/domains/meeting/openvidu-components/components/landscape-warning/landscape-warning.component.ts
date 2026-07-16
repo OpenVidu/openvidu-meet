@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 
@@ -10,8 +10,6 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 	selector: 'ov-landscape-warning',
 	imports: [MatIconModule, TranslatePipe],
 	templateUrl: './landscape-warning.component.html',
-	styleUrl: './landscape-warning.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrl: './landscape-warning.component.scss'
 })
 export class LandscapeWarningComponent {}

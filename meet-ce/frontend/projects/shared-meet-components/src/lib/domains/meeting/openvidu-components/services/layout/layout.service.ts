@@ -1,4 +1,4 @@
-import { effect, inject, Injectable } from '@angular/core';
+import { effect, inject, Service } from '@angular/core';
 import { LayoutAlignment, LayoutClass, OpenViduLayout, OpenViduLayoutOptions } from '../../models/layout/layout.model';
 import { ViewportService } from '../viewport/viewport.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -7,9 +7,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 /**
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class BaseLayoutService {
 	private readonly viewportSrv = inject(ViewportService);
 

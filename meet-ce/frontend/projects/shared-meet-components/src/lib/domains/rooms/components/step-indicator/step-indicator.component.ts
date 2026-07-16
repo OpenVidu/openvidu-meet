@@ -1,6 +1,6 @@
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { StepperOrientation, StepperSelectionEvent, StepState } from '@angular/cdk/stepper';
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatStepperModule } from '@angular/material/stepper';
@@ -14,8 +14,7 @@ type LayoutType = 'vertical-sidebar' | 'horizontal-compact' | 'vertical-compact'
     selector: 'ov-step-indicator',
 	imports: [MatStepperModule, ReactiveFormsModule, TranslatePipe],
     templateUrl: './step-indicator.component.html',
-    styleUrl: './step-indicator.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrl: './step-indicator.component.scss'
 })
 export class StepIndicatorComponent {
 	steps = input.required<WizardStep[]>();

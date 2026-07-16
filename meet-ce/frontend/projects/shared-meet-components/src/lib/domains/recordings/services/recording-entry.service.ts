@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
@@ -56,7 +56,7 @@ export type RecordingEntryOutcome =
  * - {@link extractRecordingParamsGuard} + {@link validateRecordingAccessGuard} (SPA route guards)
  * - Non-router callers (future Web Component recording-playback mode)
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RecordingEntryService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomAccessService = inject(RoomAccessService);

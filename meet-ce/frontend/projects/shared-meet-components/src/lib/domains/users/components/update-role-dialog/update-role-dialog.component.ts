@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatOptionModule } from '@angular/material/core';
@@ -40,8 +40,7 @@ export interface UpdateRoleDialogData {
 		TranslatePipe
 	],
 	templateUrl: './update-role-dialog.component.html',
-	styleUrl: './update-role-dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './update-role-dialog.component.scss'
 })
 export class UpdateRoleDialogComponent {
 	readonly dialogRef = inject(MatDialogRef<UpdateRoleDialogComponent, MeetUserDTO | null>);

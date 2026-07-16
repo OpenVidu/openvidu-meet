@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, inject, Input, OnDestroy } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
 /**
@@ -17,32 +17,22 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  * <ov-participant-panel-item [muteButton]="false"></ov-participant-panel-item>
  */
 @Directive({
-	selector: 'ov-videoconference[participantPanelItemMuteButton], ov-participant-panel-item[muteButton]',
-	standalone: true
+	selector: 'ov-videoconference[participantPanelItemMuteButton], ov-participant-panel-item[muteButton]'
 })
-export class ParticipantPanelItemMuteButtonDirective implements AfterViewInit, OnDestroy {
-	@Input() set participantPanelItemMuteButton(value: boolean) {
-		this.muteValue = value;
-		this.update(this.muteValue);
-	}
-	@Input() set muteButton(value: boolean) {
-		this.muteValue = value;
-		this.update(this.muteValue);
-	}
-
-	muteValue: boolean = true;
+export class ParticipantPanelItemMuteButtonDirective implements OnDestroy {
+	readonly participantPanelItemMuteButton = input<boolean | undefined>(undefined);
+	readonly muteButton = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly muteButtonEffect = effect(() => {
+		this.update(this.muteButton() ?? this.participantPanelItemMuteButton() ?? true);
+	});
 
-	ngAfterViewInit() {
-		this.update(this.muteValue);
-	}
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	clear() {
-		this.muteValue = true;
 		this.update(true);
 	}
 

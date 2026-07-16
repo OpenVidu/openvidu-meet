@@ -1,5 +1,5 @@
 import { UpperCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject, input, output, signal } from '@angular/core';
+import { Component, effect, inject, input, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
@@ -35,9 +35,7 @@ import { AssetsService } from '../../../../../../../shared/services/assets.servi
 		UpperCasePipe
 	],
 	templateUrl: './recording-activity.component.html',
-	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss']
 })
 export class RecordingActivityComponent {
 	private readonly libService = inject(OpenViduComponentsConfigService);

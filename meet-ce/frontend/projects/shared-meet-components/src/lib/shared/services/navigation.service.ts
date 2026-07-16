@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { NavigationStart, Params, Router, UrlTree } from '@angular/router';
 import { EmbeddedEventName, LeftEventReason } from '@openvidu-meet/typings';
 import { WcRouteName } from '../../domains/embedded/models/wc-route.model';
@@ -12,9 +12,7 @@ import { ListStateCacheService } from './list-state-cache.service';
 import { RuntimeConfigService } from './runtime-config.service';
 import { TokenStorageService } from './token-storage.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class NavigationService {
 	private readonly eventBus = inject(EmbeddedEventBusService);
 	private readonly router = inject(Router);

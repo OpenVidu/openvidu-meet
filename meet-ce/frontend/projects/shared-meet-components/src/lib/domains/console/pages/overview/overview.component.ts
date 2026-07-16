@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatGridListModule } from '@angular/material/grid-list';
@@ -12,8 +12,7 @@ import { NavigationService } from '../../../../shared/services/navigation.servic
 	selector: 'ov-overview',
 	imports: [MatCardModule, MatButtonModule, MatIconModule, MatGridListModule, TranslatePipe],
 	templateUrl: './overview.component.html',
-	styleUrl: './overview.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './overview.component.scss'
 })
 export class OverviewComponent implements OnInit {
 	private analyticsService: AnalyticsService = inject(AnalyticsService);

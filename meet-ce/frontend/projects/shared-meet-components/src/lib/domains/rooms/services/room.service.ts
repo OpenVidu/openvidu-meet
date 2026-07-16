@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import {
 	MeetRoom,
 	MeetRoomAccess,
@@ -22,9 +22,7 @@ import { RoomFeatureService } from './room-feature.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 import type { ILogger } from '../../../shared/models/logger.model';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RoomService {
 	protected httpService: HttpService = inject(HttpService);
 	protected roomFeatureService: RoomFeatureService = inject(RoomFeatureService);

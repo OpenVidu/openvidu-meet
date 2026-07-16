@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MeetingLiveKitService } from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
@@ -17,9 +17,7 @@ import { LoggerService } from '../../../shared/services/logger.service';
  * The signal-based bridge for shell-level actions lives separately on
  * `EmbeddedEventBusService` (in `shared/`, no meeting-domain deps).
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class EmbeddedCommandService {
 	private readonly meetingModerationService = inject(MeetingModerationService);
 	private readonly meetingContextService = inject(MeetingContextService);

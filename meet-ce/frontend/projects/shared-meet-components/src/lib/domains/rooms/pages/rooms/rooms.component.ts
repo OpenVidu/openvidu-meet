@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -79,8 +79,7 @@ interface RoomsListCachedState {
 		TranslatePipe
 	],
 	templateUrl: './rooms.component.html',
-	styleUrl: './rooms.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './rooms.component.scss'
 })
 export class RoomsComponent implements OnInit, OnDestroy {
 	private roomService = inject(RoomService);

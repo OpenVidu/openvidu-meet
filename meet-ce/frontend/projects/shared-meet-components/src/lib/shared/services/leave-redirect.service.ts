@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { getAutoRedirectUrl, getReferrerOrigin, isValidUrl } from '../utils/url.utils';
 import { RuntimeConfigService } from './runtime-config.service';
 import { SessionStorageService } from './session-storage.service';
@@ -9,7 +9,7 @@ import { SessionStorageService } from './session-storage.service';
  * storage so it survives reloads and the lobby can pre-fill it. Performing the actual redirect is
  * {@link NavigationService}'s job; this service only owns the resolved destination.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class LeaveRedirectService {
 	private readonly sessionStorageService = inject(SessionStorageService);
 	private readonly runtimeConfigService = inject(RuntimeConfigService);

@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import {
 	MeetRoomMember,
 	MeetRoomMemberField,
@@ -11,9 +11,7 @@ import { HttpService } from '../../../shared/services/http.service';
 import type { MeetRoomMemberClientResponseOptions } from '../models/room-member-request';
 import type { MeetRoomMemberQueryOptionsWithFields } from '../types/room-member-projection.types';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RoomMemberService {
 	protected httpService = inject(HttpService);
 

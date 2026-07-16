@@ -1,11 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { DialogOptions } from '../models/notification.model';
 
 export type DialogPreset = Omit<DialogOptions, 'confirmCallback' | 'cancelCallback'>;
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class DialogPresetsService {
 	getDeleteUserDialogPreset(name: string, userId: string): DialogPreset {
 		return {

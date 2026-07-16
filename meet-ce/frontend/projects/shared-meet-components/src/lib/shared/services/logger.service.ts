@@ -1,12 +1,10 @@
-import { Injectable, isDevMode } from '@angular/core';
+import { Service, isDevMode } from '@angular/core';
 import { ILogger, ILogService } from '../models/logger.model';
 
 /**
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class LoggerService implements ILogService {
 	private log: Console = window.console;
 	private LOG_FNS: Function[] = [];

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import {
 	HttpHeaderContext,
@@ -11,9 +11,7 @@ import { RoomMemberContextService } from '../services/room-member-context.servic
  * Provider for room member token headers.
  * Adds the room member token only to requests made from room pages.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RoomMemberHeaderProviderService implements HttpHeaderProvider {
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly headerProviderService = inject(HttpHeaderProviderService);

@@ -1,6 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { Component, effect, inject, OnInit, signal } from '@angular/core';
-import { ChangeDetectionStrategy } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -33,8 +32,7 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 		TranslatePipe
 	],
 	templateUrl: './embedded.component.html',
-	styleUrl: './embedded.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './embedded.component.scss'
 })
 export class EmbeddedComponent implements OnInit {
 	private runtimeConfigService = inject(RuntimeConfigService);

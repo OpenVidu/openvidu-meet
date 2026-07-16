@@ -1,4 +1,4 @@
-import { AfterViewInit, Directive, ElementRef, Input, OnDestroy, inject } from '@angular/core';
+import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 
 /**
@@ -17,32 +17,22 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  * <ov-activities-panel *ovActivitiesPanel [recordingActivity]="false"></ov-activities-panel>
  */
 @Directive({
-	selector: 'ov-videoconference[activitiesPanelRecordingActivity], ov-activities-panel[recordingActivity]',
-	standalone: true
+	selector: 'ov-videoconference[activitiesPanelRecordingActivity], ov-activities-panel[recordingActivity]'
 })
-export class ActivitiesPanelRecordingActivityDirective implements AfterViewInit, OnDestroy {
-	@Input() set activitiesPanelRecordingActivity(value: boolean) {
-		this.recordingActivityValue = value;
-		this.update(this.recordingActivityValue);
-	}
-	@Input() set recordingActivity(value: boolean) {
-		this.recordingActivityValue = value;
-		this.update(this.recordingActivityValue);
-	}
-
-	recordingActivityValue: boolean = true;
+export class ActivitiesPanelRecordingActivityDirective implements OnDestroy {
+	readonly activitiesPanelRecordingActivity = input<boolean | undefined>(undefined);
+	readonly recordingActivity = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly recordingActivityEffect = effect(() => {
+		this.update(this.recordingActivity() ?? this.activitiesPanelRecordingActivity() ?? true);
+	});
 
-	ngAfterViewInit() {
-		this.update(this.recordingActivityValue);
-	}
 	ngOnDestroy(): void {
 		this.clear();
 	}
 	clear() {
-		this.recordingActivityValue = true;
 		this.update(true);
 	}
 

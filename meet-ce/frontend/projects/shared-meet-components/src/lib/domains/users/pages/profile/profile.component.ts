@@ -1,6 +1,5 @@
-import { NgClass } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import {
 	AbstractControl,
 	FormControl,
@@ -35,7 +34,6 @@ import { UsersUiUtils } from '../../utils/ui';
 @Component({
 	selector: 'ov-profile',
 	imports: [
-		NgClass,
 		MatCardModule,
 		MatButtonModule,
 		MatIconModule,
@@ -48,8 +46,7 @@ import { UsersUiUtils } from '../../utils/ui';
 		TranslatePipe
 	],
 	templateUrl: './profile.component.html',
-	styleUrl: './profile.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './profile.component.scss'
 })
 export class ProfileComponent implements OnInit {
 	private authService = inject(AuthService);

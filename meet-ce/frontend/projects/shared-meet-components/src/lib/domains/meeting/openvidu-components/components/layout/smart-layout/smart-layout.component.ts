@@ -1,5 +1,4 @@
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	contentChildren,
@@ -34,9 +33,7 @@ interface PersistentAudioEntry {
 		LayoutAdditionalElementsDirective,
 		HiddenParticipantsIndicatorComponent
 	],
-	templateUrl: './smart-layout.component.html',
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	templateUrl: './smart-layout.component.html'
 })
 export class SmartLayoutComponent implements OnDestroy {
 	readonly layoutService = inject(SmartLayoutService);

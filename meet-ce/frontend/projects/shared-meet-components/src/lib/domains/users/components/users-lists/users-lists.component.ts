@@ -1,6 +1,5 @@
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	DestroyRef,
@@ -76,7 +75,6 @@ export interface UserTableFilter {
 @Component({
 	selector: 'ov-users-lists',
 	imports: [
-		NgClass,
 		ReactiveFormsModule,
 		MatTableModule,
 		MatCheckboxModule,
@@ -96,7 +94,6 @@ export interface UserTableFilter {
 	],
 	templateUrl: './users-lists.component.html',
 	styleUrl: './users-lists.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'[class.has-selections]': 'hasSelections()'
 	}

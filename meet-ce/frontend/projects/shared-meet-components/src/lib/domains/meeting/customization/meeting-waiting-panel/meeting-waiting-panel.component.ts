@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 
 /**
@@ -14,8 +14,7 @@ import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 	selector: 'ov-meeting-waiting-panel',
 	templateUrl: './meeting-waiting-panel.component.html',
 	styleUrls: ['./meeting-waiting-panel.component.scss'],
-	imports: [TranslatePipe],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	imports: [TranslatePipe]
 })
 export class MeetingWaitingPanelComponent {
 	title = input<string>();

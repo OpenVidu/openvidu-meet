@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -35,8 +35,7 @@ import { RoomWizardStateService } from '../../../../services/wizard-state.servic
 		TranslatePipe
 	],
 	templateUrl: './room-access.component.html',
-	styleUrl: './room-access.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './room-access.component.scss'
 })
 export class RoomAccessComponent implements OnInit {
 	private wizardService = inject(RoomWizardStateService);

@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { DeleteDialogComponent } from '../../components/dialogs/delete-recording.component';
@@ -10,9 +10,7 @@ import { MeetingTranslateService } from '../translate/meeting-translate.service'
 /**
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class ActionService {
 	private readonly snackBar = inject(MatSnackBar);
 	public readonly dialog = inject(MatDialog);

@@ -1,5 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { Component, inject } from '@angular/core';
+import { ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,7 +21,6 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	imports: [
 		MatFormFieldModule,
 		MatInputModule,
-		FormsModule,
 		ReactiveFormsModule,
 		MatCardModule,
 		MatButtonModule,
@@ -29,8 +28,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 		MatTooltipModule,
 		ShareRoomAccessLinkComponent,
 		TranslatePipe
-	],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	]
 })
 export class MeetingLobbyComponent {
 	protected lobbyService = inject(MeetingLobbyService);

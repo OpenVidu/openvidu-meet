@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, effect, inject, input, output } from '@angular/core';
+import { Component, OnInit, effect, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -13,9 +13,7 @@ import { MeetingTranslateService } from '../../../services/translate/meeting-tra
 	selector: 'ov-lang-selector',
 	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule],
 	templateUrl: './lang-selector.component.html',
-	styleUrl: './lang-selector.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrl: './lang-selector.component.scss'
 })
 export class LangSelectorComponent implements OnInit {
 	/**

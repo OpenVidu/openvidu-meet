@@ -21,7 +21,7 @@
 	} @else {
 		<button
 			id="captions-button"
-			[ngClass]="areCaptionsEnabledByUser() ? 'active' : ''"
+			[class]="areCaptionsEnabledByUser() ? 'active' : ''"
 			mat-icon-button
 			(click)="onCaptionsClick()"
 			[disabled]="isCaptionsButtonDisabled()"

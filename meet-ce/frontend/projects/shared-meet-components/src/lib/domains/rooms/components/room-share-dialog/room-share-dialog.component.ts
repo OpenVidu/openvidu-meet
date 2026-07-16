@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -45,8 +45,7 @@ export interface RoomShareDialogData {
 		TranslatePipe
 	],
 	templateUrl: './room-share-dialog.component.html',
-	styleUrl: './room-share-dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './room-share-dialog.component.scss'
 })
 export class RoomShareDialogComponent {
 	readonly data = inject<RoomShareDialogData>(MAT_DIALOG_DATA);

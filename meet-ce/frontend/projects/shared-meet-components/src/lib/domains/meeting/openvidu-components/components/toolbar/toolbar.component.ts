@@ -1,18 +1,17 @@
-import { CommonModule, DatePipe } from '@angular/common';
+import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
-    AfterViewInit,
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    DestroyRef,
-    effect,
-    inject,
-    OnDestroy,
-    OnInit,
-    output,
-    signal,
-    viewChild,
-    WritableSignal
+	AfterViewInit,
+	Component,
+	computed,
+	DestroyRef,
+	effect,
+	inject,
+	OnDestroy,
+	OnInit,
+	output,
+	signal,
+	viewChild,
+	WritableSignal
 } from '@angular/core';
 
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -26,9 +25,9 @@ import { ChatMessage } from '../../models/chat.model';
 import { PanelType } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason } from '../../models/participant.model';
 import {
-    RecordingStartRequestedEvent,
-    RecordingState,
-    RecordingStopRequestedEvent
+	RecordingStartRequestedEvent,
+	RecordingState,
+	RecordingStopRequestedEvent
 } from '../../models/recording.model';
 import { ActionService } from '../../services/action/action.service';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
@@ -57,23 +56,21 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 @Component({
 	selector: 'ov-toolbar',
 	imports: [
-		CommonModule,
 		DatePipe,
 		MatIconModule,
 		MatToolbarModule,
 		FallbackLogoDirective,
 		ToolbarMoreOptionsAdditionalMenuItemsDirective,
 		ToolbarMediaButtonsComponent,
-		ToolbarPanelButtonsComponent
+		ToolbarPanelButtonsComponent,
+		NgTemplateOutlet
 	],
 	templateUrl: './toolbar.component.html',
 	styleUrl: './toolbar.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'(window:resize)': 'sizeChange($event)',
 		'(document:keydown)': 'keyDown($event)'
-	},
-	standalone: true
+	}
 })
 export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly documentService = inject(DocumentService);

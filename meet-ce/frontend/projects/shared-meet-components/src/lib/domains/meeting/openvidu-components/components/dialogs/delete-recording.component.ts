@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -39,8 +39,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 				border-radius: var(--ov-surface-radius);
 			}
 		`
-    ],
-	changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
 export class DeleteDialogComponent {
 	private readonly dialogRef = inject(MatDialogRef<DeleteDialogComponent>);

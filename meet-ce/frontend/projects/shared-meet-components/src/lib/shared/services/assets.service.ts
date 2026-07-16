@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { RuntimeConfigService } from './runtime-config.service';
 
 /**
@@ -16,9 +16,7 @@ import { RuntimeConfigService } from './runtime-config.service';
  * `computed()` where reactivity to a late-resolved server URL is required (e.g.
  * the webcomponent shell, constructed before the server URL is known).
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class AssetsService {
 	private readonly runtimeConfig = inject(RuntimeConfigService);
 

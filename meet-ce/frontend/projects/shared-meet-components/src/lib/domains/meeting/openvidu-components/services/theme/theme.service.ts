@@ -1,5 +1,5 @@
 import { DOCUMENT } from '@angular/common';
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import {
 	OPENVIDU_COMPONENTS_DARK_THEME,
 	OPENVIDU_COMPONENTS_LIGHT_THEME,
@@ -19,9 +19,7 @@ import { StorageService } from '../storage/storage.service';
  *
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class OpenViduThemeService {
 	private readonly document = inject(DOCUMENT);
 	private readonly storageService = inject(StorageService);

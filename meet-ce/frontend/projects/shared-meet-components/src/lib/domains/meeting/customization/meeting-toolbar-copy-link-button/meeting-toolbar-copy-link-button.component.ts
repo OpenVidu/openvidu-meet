@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { Component, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -16,8 +16,7 @@ import { RoomAccessLinkService } from '../../services/room-access-link.service';
 	selector: 'ov-meeting-toolbar-copy-link-button',
 	templateUrl: './meeting-toolbar-copy-link-button.component.html',
 	styleUrl: './meeting-toolbar-copy-link-button.component.scss',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe]
 })
 export class MeetingToolbarCopyLinkButtonComponent {
 	protected roomAccessLinkService = inject(RoomAccessLinkService);

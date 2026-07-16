@@ -1,10 +1,8 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { SmartLayoutMode, StorageService } from '../../domains/meeting/openvidu-components';
 import { MeetStorageKeys, STORAGE_PREFIX } from '../models/storage.model';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class MeetStorageService extends StorageService {
 	constructor() {
 		super();

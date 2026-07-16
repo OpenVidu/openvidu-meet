@@ -1,11 +1,9 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 /**
  * Service to manage JWT token storage for authentication
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class TokenStorageService {
 	private readonly ACCESS_TOKEN_KEY = 'ovMeet-accessToken';
 	private readonly REFRESH_TOKEN_KEY = 'ovMeet-refreshToken';

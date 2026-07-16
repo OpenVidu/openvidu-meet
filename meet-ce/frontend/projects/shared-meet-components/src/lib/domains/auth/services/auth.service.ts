@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MeetUserDTO, MeetUserRole } from '@openvidu-meet/typings';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { HttpService } from '../../../shared/services/http.service';
@@ -8,9 +8,7 @@ import { SessionStorageService } from '../../../shared/services/session-storage.
 import { TokenStorageService } from '../../../shared/services/token-storage.service';
 import { UserService } from '../../users/services/user.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class AuthService {
 	protected httpService = inject(HttpService);
 	protected userService = inject(UserService);

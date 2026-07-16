@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 /**
@@ -7,11 +7,9 @@ import { MatIconModule } from '@angular/material/icon';
  */
 @Component({
 	selector: 'ov-hidden-participants-indicator',
-	standalone: true,
 	imports: [MatIconModule],
 	templateUrl: './hidden-participants-indicator.component.html',
-	styleUrl: './hidden-participants-indicator.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './hidden-participants-indicator.component.scss'
 })
 export class HiddenParticipantsIndicatorComponent {
 	count = input<number>(0);

@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, contentChild, inject, input } from '@angular/core';
+import { NgTemplateOutlet, LowerCasePipe } from '@angular/common';
+import { Component, computed, contentChild, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -21,11 +21,19 @@ import { ParticipantAvatarComponent } from '../../../participant-avatar/particip
  */
 @Component({
 	selector: 'ov-participant-panel-item',
-	imports: [CommonModule, MatButtonModule, MatIconModule, MatListModule, MatTooltipModule, TranslatePipe, ParticipantAvatarComponent, ConnectionQualityIndicatorComponent],
+	imports: [
+		MatButtonModule,
+		MatIconModule,
+		MatListModule,
+		MatTooltipModule,
+		TranslatePipe,
+		ParticipantAvatarComponent,
+		ConnectionQualityIndicatorComponent,
+		LowerCasePipe,
+		NgTemplateOutlet
+	],
 	templateUrl: './participant-panel-item.component.html',
-	styleUrls: ['./participant-panel-item.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrls: ['./participant-panel-item.component.scss']
 })
 export class ParticipantPanelItemComponent {
 	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });

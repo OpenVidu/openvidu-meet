@@ -119,8 +119,7 @@ import { Directive, TemplateRef, ViewContainerRef, inject } from '@angular/core'
  * You can run the associated tutorial [here](https://openvidu.io/latest/docs/tutorials/angular-components/openvidu-custom-toolbar/).
  */
 @Directive({
-	selector: '[ovToolbar]',
-	standalone: true
+	selector: '[ovToolbar]'
 })
 export class ToolbarDirective {
 	/**
@@ -257,8 +256,7 @@ export class ToolbarDirective {
  */
 
 @Directive({
-	selector: '[ovToolbarAdditionalButtons]',
-	standalone: true
+	selector: '[ovToolbarAdditionalButtons]'
 })
 export class ToolbarAdditionalButtonsDirective {
 	/**
@@ -378,8 +376,7 @@ export class ToolbarAdditionalButtonsDirective {
  * You can run the associated tutorial [here](https://openvidu.io/latest/docs/tutorials/angular-components/openvidu-toolbar-panel-buttons/).
  */
 @Directive({
-	selector: '[ovToolbarAdditionalPanelButtons]',
-	standalone: true
+	selector: '[ovToolbarAdditionalPanelButtons]'
 })
 export class ToolbarAdditionalPanelButtonsDirective {
 	/**
@@ -526,8 +523,7 @@ export class ToolbarAdditionalPanelButtonsDirective {
  * For a comprehensive tutorial on implementing custom panels, please refer to the associated guide [here](https://openvidu.io/latest/docs/tutorials/angular-components/openvidu-custom-panels/).
  */
 @Directive({
-	selector: '[ovPanel]',
-	standalone: true
+	selector: '[ovPanel]'
 })
 export class PanelDirective {
 	/**
@@ -711,8 +707,7 @@ export class PanelDirective {
  * For detailed instructions, refer to the tutorial available [here](https://openvidu.io/latest/docs/tutorials/angular-components/openvidu-additional-panels/).
  */
 @Directive({
-	selector: '[ovAdditionalPanels]',
-	standalone: true
+	selector: '[ovAdditionalPanels]'
 })
 export class AdditionalPanelsDirective {
 	/**
@@ -887,8 +882,7 @@ export class AdditionalPanelsDirective {
  * check out our comprehensive guide: [Customizing the Chat Panel](https://openvidu.io/latest/docs/tutorials/angular-components/openvidu-custom-chat-panel/).
  */
 @Directive({
-	selector: '[ovChatPanel]',
-	standalone: true
+	selector: '[ovChatPanel]'
 })
 export class ChatPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -900,8 +894,7 @@ export class ChatPanelDirective {
  * @internal
  */
 @Directive({
-	selector: '[ovBackgroundEffectsPanel]',
-	standalone: true
+	selector: '[ovBackgroundEffectsPanel]'
 })
 export class BackgroundEffectsPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1011,8 +1004,7 @@ export class BackgroundEffectsPanelDirective {
  * check out our comprehensive guide: [Customizing the Activities Panel](https://openvidu.io/latest/docs/tutorials/angular-components/openvidu-custom-activities-panel/).
  */
 @Directive({
-	selector: '[ovActivitiesPanel]',
-	standalone: true
+	selector: '[ovActivitiesPanel]'
 })
 export class ActivitiesPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1180,8 +1172,7 @@ export class ActivitiesPanelDirective {
  */
 
 @Directive({
-	selector: '[ovParticipantsPanel]',
-	standalone: true
+	selector: '[ovParticipantsPanel]'
 })
 export class ParticipantsPanelDirective {
 	public template = inject(TemplateRef<any>);
@@ -1316,8 +1307,7 @@ export class ParticipantsPanelDirective {
  */
 
 @Directive({
-	selector: '[ovParticipantPanelItem]',
-	standalone: true
+	selector: '[ovParticipantPanelItem]'
 })
 export class ParticipantPanelItemDirective {
 	public template = inject(TemplateRef<any>);
@@ -1457,8 +1447,7 @@ export class ParticipantPanelItemDirective {
  */
 
 @Directive({
-	selector: '[ovParticipantPanelItemElements]',
-	standalone: true
+	selector: '[ovParticipantPanelItemElements]'
 })
 export class ParticipantPanelItemElementsDirective {
 	public template = inject(TemplateRef<any>);
@@ -1638,8 +1627,7 @@ export class ParticipantPanelItemElementsDirective {
  * For a comprehensive guide on implementing custom layouts, please refer to the associated tutorial [here](https://openvidu.io/latest/docs/tutorials/angular-components/openvidu-custom-layout/).
  */
 @Directive({
-	selector: '[ovLayout]',
-	standalone: true
+	selector: '[ovLayout]'
 })
 export class LayoutDirective {
 	public template = inject(TemplateRef<any>);
@@ -1768,8 +1756,7 @@ export class LayoutDirective {
  */
 
 @Directive({
-	selector: '[ovStream]',
-	standalone: true
+	selector: '[ovStream]'
 })
 export class StreamDirective {
 	public template = inject(TemplateRef<any>);

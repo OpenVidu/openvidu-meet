@@ -1,5 +1,5 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -32,8 +32,7 @@ import { UsersUiUtils } from '../../utils/ui';
 		TranslatePipe
 	],
 	templateUrl: './create-user.component.html',
-	styleUrl: './create-user.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './create-user.component.scss'
 })
 export class CreateUserComponent {
 	private userService = inject(UserService);

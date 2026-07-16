@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, Signal, WritableSignal, effect, inject, input, output } from '@angular/core';
+import { Component, OnInit, Signal, WritableSignal, effect, inject, input, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -18,9 +18,7 @@ import type { ILogger } from '../../../../../../shared/models/logger.model';
 	selector: 'ov-audio-devices-select',
 	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './audio-devices.component.html',
-	styleUrl: './audio-devices.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrl: './audio-devices.component.scss'
 })
 export class AudioDevicesComponent implements OnInit {
 	readonly compact = input(false);

@@ -1,5 +1,5 @@
 import { HttpErrorResponse, HttpEvent } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { Observable, catchError, from, switchMap, throwError } from 'rxjs';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import {
@@ -16,9 +16,7 @@ import { AuthHeaderProviderService } from './auth-header-provider.service';
  * Registers itself with HttpErrorNotifierService to autonomously handle access token refresh.
  * The interceptor doesn't know about this service - it discovers itself via registration.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class AuthInterceptorErrorHandlerService implements HttpErrorHandler {
 	private readonly authService = inject(AuthService);
 	private readonly tokenStorageService = inject(TokenStorageService);

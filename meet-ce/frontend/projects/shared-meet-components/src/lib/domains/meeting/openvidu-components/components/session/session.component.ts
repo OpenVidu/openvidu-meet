@@ -1,11 +1,9 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	DestroyRef,
 	effect,
 	ElementRef,
-	HostListener,
 	inject,
 	OnDestroy,
 	OnInit,
@@ -42,11 +40,13 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Component({
 	selector: 'ov-session',
-	imports: [CommonModule, MatProgressSpinnerModule, MatSidenavModule, TranslatePipe, LandscapeWarningComponent],
+	imports: [MatProgressSpinnerModule, MatSidenavModule, TranslatePipe, LandscapeWarningComponent, NgTemplateOutlet],
 	templateUrl: './session.component.html',
 	styleUrls: ['./session.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	host: {
+		'(window:beforeunload)': 'beforeunloadHandler()',
+		'(window:resize)': 'sizeChange()'
+	}
 })
 export class SessionComponent implements OnInit, OnDestroy {
 	/**
@@ -199,12 +199,10 @@ export class SessionComponent implements OnInit, OnDestroy {
 		}
 	});
 
-	@HostListener('window:beforeunload')
 	beforeunloadHandler() {
 		this.disconnectRoom(ParticipantLeftReason.BROWSER_UNLOAD);
 	}
 
-	@HostListener('window:resize')
 	sizeChange() {
 		this.layoutService.update();
 	}

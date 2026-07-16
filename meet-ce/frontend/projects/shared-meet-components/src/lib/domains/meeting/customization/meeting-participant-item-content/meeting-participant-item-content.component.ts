@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -18,8 +18,7 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 	selector: 'ov-meeting-participant-item-content',
 	templateUrl: './meeting-participant-item-content.component.html',
 	styleUrls: ['./meeting-participant-item-content.component.scss'],
-	imports: [MatButtonModule, MatIconModule, MatTooltipModule, OpenViduComponentsUiModule],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	imports: [MatButtonModule, MatIconModule, MatTooltipModule, OpenViduComponentsUiModule]
 })
 export class MeetingParticipantItemContentComponent {
 	readonly participant = input.required<ParticipantModel>();

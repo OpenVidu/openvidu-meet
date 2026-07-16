@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal, viewChild } from '@angular/core';
+import { Component, inject, input, output, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
@@ -26,8 +26,7 @@ import { ThemeService } from '../../../../shared/services/theme.service';
 		TranslatePipe
 	],
 	templateUrl: './console-nav.component.html',
-	styleUrl: './console-nav.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './console-nav.component.scss'
 })
 export class ConsoleNavComponent {
 	private appCtxService = inject(AppContextService);

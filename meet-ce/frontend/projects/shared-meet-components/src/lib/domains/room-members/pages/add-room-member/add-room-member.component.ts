@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
@@ -17,8 +17,7 @@ import { RoomMemberUiUtils } from '../../utils/ui';
 	selector: 'ov-add-room-member',
 	imports: [MatCardModule, MatIconModule, MemberFormComponent, TranslatePipe],
 	templateUrl: './add-room-member.component.html',
-	styleUrl: './add-room-member.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './add-room-member.component.scss'
 })
 export class AddRoomMemberComponent implements OnInit {
 	private route = inject(ActivatedRoute);

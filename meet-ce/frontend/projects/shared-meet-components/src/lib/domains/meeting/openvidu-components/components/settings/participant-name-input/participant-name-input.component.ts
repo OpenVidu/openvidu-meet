@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, inject, input, output } from '@angular/core';
+import { Component, OnInit, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
@@ -12,9 +12,7 @@ import { StorageService } from '../../../services/storage/storage.service';
 	selector: 'ov-participant-name-input',
 	imports: [FormsModule, MatIconModule, TranslatePipe],
 	templateUrl: './participant-name-input.component.html',
-	styleUrl: './participant-name-input.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrl: './participant-name-input.component.scss'
 })
 export class ParticipantNameInputComponent implements OnInit {
 	name = '';

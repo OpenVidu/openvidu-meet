@@ -1,6 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDividerModule } from '@angular/material/divider';
@@ -45,8 +45,7 @@ import type { ILogger } from '../../../../shared/models/logger.model';
 		TranslatePipe
 	],
 	templateUrl: './recording-detail.component.html',
-	styleUrl: './recording-detail.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './recording-detail.component.scss'
 })
 export class RecordingDetailComponent implements OnInit {
 	private readonly route = inject(ActivatedRoute);

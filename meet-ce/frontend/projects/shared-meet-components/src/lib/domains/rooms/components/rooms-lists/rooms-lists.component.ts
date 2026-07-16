@@ -1,6 +1,5 @@
-import { DatePipe, NgClass } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	DestroyRef,
@@ -97,7 +96,6 @@ export interface RoomTableFilter {
 @Component({
 	selector: 'ov-rooms-lists',
 	imports: [
-		NgClass,
 		ReactiveFormsModule,
 		RouterModule,
 		MatTableModule,
@@ -119,7 +117,6 @@ export interface RoomTableFilter {
 	],
 	templateUrl: './rooms-lists.component.html',
 	styleUrl: './rooms-lists.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
 	host: {
 		'[class.has-selections]': 'hasSelections()'
 	}

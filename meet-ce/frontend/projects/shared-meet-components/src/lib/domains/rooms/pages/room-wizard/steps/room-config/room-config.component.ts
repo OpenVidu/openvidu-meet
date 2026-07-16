@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,8 +13,7 @@ import { RoomWizardStateService } from '../../../../services';
 	selector: 'ov-room-config',
 	imports: [ReactiveFormsModule, MatIconModule, MatSlideToggleModule, TranslatePipe],
 	templateUrl: './room-config.component.html',
-	styleUrl: './room-config.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './room-config.component.scss'
 })
 export class RoomConfigComponent {
 	private wizardService = inject(RoomWizardStateService);

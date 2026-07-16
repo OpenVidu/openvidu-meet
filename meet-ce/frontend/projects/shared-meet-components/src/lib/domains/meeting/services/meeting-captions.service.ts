@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Service, inject, signal } from '@angular/core';
 import { AiAssistantService } from '../../../shared/services/ai-assistant.service';
 import { Caption, CaptionsConfig } from '../models/captions.model';
 import type { TextStreamReader } from '../openvidu-components';
@@ -17,9 +17,7 @@ import type { ILogger } from '../../../shared/models/logger.model';
  *
  * Follows the single responsibility principle by focusing solely on caption management.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class MeetingCaptionsService {
 	private readonly participantService = inject(ParticipantService);
 	private readonly loggerService = inject(LoggerService);

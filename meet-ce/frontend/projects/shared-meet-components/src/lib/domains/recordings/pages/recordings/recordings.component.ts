@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { ActivatedRoute } from '@angular/router';
@@ -39,8 +39,7 @@ interface RecordingsListCachedState {
 	selector: 'ov-recordings',
 	imports: [RecordingListsComponent, MatIconModule, MatProgressSpinnerModule, ScrollPersistDirective, TranslatePipe],
 	templateUrl: './recordings.component.html',
-	styleUrl: './recordings.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './recordings.component.scss'
 })
 export class RecordingsComponent implements OnInit, OnDestroy {
 	private static readonly STATE_KEY = 'recordings';

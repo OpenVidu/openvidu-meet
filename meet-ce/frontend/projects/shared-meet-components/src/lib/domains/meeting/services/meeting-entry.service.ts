@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -54,7 +54,7 @@ export type MeetingEntryOutcome =
  * - {@link extractRoomMeetingParamsGuard} + {@link validateRoomMeetingAccessGuard} (SPA route guards)
  * - The Angular Elements Web Component (no router; seeds context from custom element inputs)
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class MeetingEntryService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);

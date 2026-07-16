@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { StorageService } from '../../../domains/meeting/openvidu-components/services/storage/storage.service';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 
@@ -27,9 +27,7 @@ export const DEFAULT_LANGUAGE_OPTIONS: LangOption[] = [
  * English too (and vice versa). Each area keeps its own translation files — only the *selected
  * language* is shared, persisted under the existing storage key for backward compatibility.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class LanguageService {
 	private readonly storageService = inject(StorageService);
 

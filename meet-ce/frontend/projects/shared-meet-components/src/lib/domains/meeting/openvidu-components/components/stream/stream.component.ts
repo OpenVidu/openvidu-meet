@@ -1,5 +1,4 @@
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	effect,
@@ -40,9 +39,7 @@ import { VideoElementComponent } from '../video-element/video-element.component'
 		VideoElementComponent
 	],
 	templateUrl: './stream.component.html',
-	styleUrls: ['./stream.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrls: ['./stream.component.scss']
 })
 export class StreamComponent implements OnDestroy {
 	private readonly layoutService = inject(SmartLayoutService);

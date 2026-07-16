@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, input, OnInit, signal } from '@angular/core';
-import { FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Component, inject, input, OnInit, signal } from '@angular/core';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -21,7 +21,6 @@ import { AuthService } from '../../services/auth.service';
 		ReactiveFormsModule,
 		MatInputModule,
 		MatButtonModule,
-		FormsModule,
 		MatCardModule,
 		MatIconModule,
 		MatTooltipModule,
@@ -29,8 +28,7 @@ import { AuthService } from '../../services/auth.service';
 		TranslatePipe
 	],
 	templateUrl: './login.component.html',
-	styleUrl: './login.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './login.component.scss'
 })
 export class LoginComponent implements OnInit {
 	private navigationService = inject(NavigationService);

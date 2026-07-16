@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -24,8 +24,7 @@ import type { DialogOptions } from '../../../models/notification.model';
 		MatDialogTitle
 	],
 	templateUrl: './confirm-dialog.component.html',
-	styleUrl: './confirm-dialog.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './confirm-dialog.component.scss'
 })
 export class ConfirmDialogComponent {
 	readonly dialogRef = inject(MatDialogRef<ConfirmDialogComponent>);

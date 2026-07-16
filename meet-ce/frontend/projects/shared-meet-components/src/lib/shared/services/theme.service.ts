@@ -1,11 +1,9 @@
-import { computed, DOCUMENT, inject, Injectable, signal } from '@angular/core';
+import { computed, DOCUMENT, inject, Service, signal } from '@angular/core';
 import { OpenViduThemeMode, OpenViduThemeService } from '../../domains/meeting/openvidu-components';
 
 export type Theme = 'light' | 'dark';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class ThemeService {
 	private document = inject(DOCUMENT);
 	protected ovComponentsThemeService = inject(OpenViduThemeService);

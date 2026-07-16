@@ -1,13 +1,11 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { lastValueFrom } from 'rxjs';
 import { RuntimeConfigService } from './runtime-config.service';
 
 const API_VERSION = 'v1';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class HttpService {
 	public static readonly API_PATH_PREFIX = `api/${API_VERSION}`;
 	public static readonly INTERNAL_API_PATH_PREFIX = `internal-api/${API_VERSION}`;

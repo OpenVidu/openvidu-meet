@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { CustomDevice } from '../../models/device.model';
 import { STORAGE_PREFIX, StorageKeys, TAB_SPECIFIC_KEYS } from '../../models/storage.model';
 import { OpenViduThemeMode } from '../../models/theme.model';
@@ -20,9 +20,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
  *
  * `MeetStorageService` extends this class to persist its own keys through {@link get}/{@link set}.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class StorageService {
 	protected readonly log: ILogger = inject(LoggerService).get('StorageService');
 	protected PREFIX_KEY = STORAGE_PREFIX;

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -15,8 +15,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 	selector: 'ov-language-selector',
 	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
 	templateUrl: './language-selector.component.html',
-	styleUrl: './language-selector.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './language-selector.component.scss'
 })
 export class LanguageSelectorComponent {
 	private readonly languageService = inject(LanguageService);

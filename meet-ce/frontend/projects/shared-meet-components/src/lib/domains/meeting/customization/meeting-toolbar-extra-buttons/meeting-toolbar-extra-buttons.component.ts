@@ -1,5 +1,4 @@
-import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -20,15 +19,13 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 	templateUrl: './meeting-toolbar-extra-buttons.component.html',
 	styleUrls: ['./meeting-toolbar-extra-buttons.component.scss'],
 	imports: [
-		NgClass,
 		MatButtonModule,
 		MatIconModule,
 		MatMenuModule,
 		MatTooltipModule,
 		MeetingToolbarCopyLinkButtonComponent,
 		TranslatePipe
-	],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	]
 })
 export class MeetingToolbarExtraButtonsComponent {
 	protected meetingContextService = inject(MeetingContextService);

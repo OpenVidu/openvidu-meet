@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, TemplateRef, computed, inject, input, output } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, TemplateRef, computed, inject, input, output } from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -10,11 +10,17 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 
 @Component({
 	selector: 'ov-toolbar-panel-buttons',
-	imports: [CommonModule, MatBadgeModule, MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
+	imports: [
+		MatBadgeModule,
+		MatButtonModule,
+		MatIconModule,
+		MatMenuModule,
+		MatTooltipModule,
+		TranslatePipe,
+		NgTemplateOutlet
+	],
 	templateUrl: './toolbar-panel-buttons.component.html',
-	styleUrl: './toolbar-panel-buttons.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrl: './toolbar-panel-buttons.component.scss'
 })
 export class ToolbarPanelButtonsComponent {
 	// Signal inputs from toolbar

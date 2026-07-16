@@ -1,12 +1,10 @@
-import { computed, effect, inject, Injectable, signal } from '@angular/core';
+import { computed, effect, inject, Service, signal } from '@angular/core';
 import { ParticipantModel, ParticipantService, Room } from '../openvidu-components';
 
 /**
  * Holds the LIVE runtime state of the active meeting
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class MeetingStateService {
 	private readonly ovParticipantService = inject(ParticipantService);
 	private readonly _lkRoom = signal<Room | undefined>(undefined);

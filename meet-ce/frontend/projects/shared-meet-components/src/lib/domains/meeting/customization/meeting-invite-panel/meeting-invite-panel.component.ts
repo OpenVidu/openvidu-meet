@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
 import { RoomAccessLinkService } from '../../services/room-access-link.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
@@ -11,8 +11,7 @@ import { MeetingContextService } from '../../services/meeting-context.service';
 	selector: 'ov-meeting-invite-panel',
 	templateUrl: './meeting-invite-panel.component.html',
 	styleUrls: ['./meeting-invite-panel.component.scss'],
-	imports: [ShareRoomAccessLinkComponent],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	imports: [ShareRoomAccessLinkComponent]
 })
 export class MeetingInvitePanelComponent {
 	protected meetingContextService = inject(MeetingContextService);

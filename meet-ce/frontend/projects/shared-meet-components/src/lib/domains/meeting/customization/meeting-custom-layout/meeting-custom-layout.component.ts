@@ -1,5 +1,4 @@
-import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
 import { ShareRoomAccessLinkComponent } from '../../components/share-room-access-link/share-room-access-link.component';
 import { OpenViduComponentsUiModule, PanelService, PanelType } from '../../openvidu-components';
@@ -14,7 +13,6 @@ import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-w
 @Component({
 	selector: 'ov-meeting-custom-layout',
 	imports: [
-		NgClass,
 		OpenViduComponentsUiModule,
 		SmartLayoutComponent,
 		ShareRoomAccessLinkComponent,
@@ -22,8 +20,7 @@ import { MeetingWaitingPanelComponent } from '../meeting-waiting-panel/meeting-w
 		MeetingWaitingPanelComponent
 	],
 	templateUrl: './meeting-custom-layout.component.html',
-	styleUrl: './meeting-custom-layout.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './meeting-custom-layout.component.scss'
 })
 export class MeetingCustomLayoutComponent {
 	protected meetingContextService = inject(MeetingContextService);

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { WcRoute } from '../models/wc-route.model';
 
 /**
@@ -21,7 +21,7 @@ export interface WcNavigator {
  * Until a router registers (SPA/iframe mode has no WC router) the methods are no-ops — safe because
  * NavigationService only calls them in webcomponent mode, where the shell has constructed the router.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class WcRouterGateway {
 	private navigator: WcNavigator | null = null;
 

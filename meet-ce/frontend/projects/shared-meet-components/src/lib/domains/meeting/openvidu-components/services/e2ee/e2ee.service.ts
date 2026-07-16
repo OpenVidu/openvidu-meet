@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, OnDestroy } from '@angular/core';
+import { effect, inject, Service, OnDestroy } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { createKeyMaterialFromString, deriveKeys } from '../livekit';
 
@@ -13,9 +13,7 @@ import { createKeyMaterialFromString, deriveKeys } from '../livekit';
  * - Generates random IV for each encryption operation
  * @internal
  */
-@Injectable({
-	providedIn: 'root',
-})
+@Service()
 export class E2eeService implements OnDestroy {
 	private readonly configService = inject(OpenViduComponentsConfigService);
 

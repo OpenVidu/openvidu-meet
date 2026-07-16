@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import {
 	MeetAssistantCapabilityName,
 	MeetCreateAssistantRequest,
@@ -6,9 +6,7 @@ import {
 } from '@openvidu-meet/typings';
 import { HttpService } from './http.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class AiAssistantService {
 	protected httpService = inject(HttpService);
 

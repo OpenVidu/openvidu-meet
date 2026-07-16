@@ -1,4 +1,4 @@
-import { Injectable, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
+import { Service, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
@@ -19,9 +19,7 @@ import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.servic
 import { StorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class ParticipantService {
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);

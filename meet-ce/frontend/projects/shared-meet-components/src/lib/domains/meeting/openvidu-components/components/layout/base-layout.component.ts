@@ -1,8 +1,7 @@
 import { CdkDrag, CdkDragRelease } from '@angular/cdk/drag-drop';
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	contentChild,
@@ -36,11 +35,9 @@ import { StreamComponent } from '../stream/stream.component';
  */
 @Component({
 	selector: 'ov-base-layout',
-	imports: [CommonModule, CdkDrag, StreamComponent],
+	imports: [CdkDrag, StreamComponent, NgTemplateOutlet],
 	templateUrl: './base-layout.component.html',
-	styleUrls: ['./base-layout.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrls: ['./base-layout.component.scss']
 })
 export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly layoutService = inject(SmartLayoutService);

@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { HTTP_HEADERS } from '../../../shared/constants/http-headers.constants';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
@@ -9,9 +9,7 @@ export interface RoomAccessValidationResult {
 	reason?: NavigationErrorReason;
 }
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RoomAccessService {
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly meetingContextService = inject(MeetingContextService);

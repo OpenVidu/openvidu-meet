@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
 import {
 	MeetRoomMember,
 	MeetRoomMemberPermissions,
@@ -12,9 +12,7 @@ import { AuthService } from '../../auth/services/auth.service';
 import { RoomMemberService } from './room-member.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RoomMemberContextService {
 	protected roomMemberService = inject(RoomMemberService);
 	protected navigationService = inject(NavigationService);

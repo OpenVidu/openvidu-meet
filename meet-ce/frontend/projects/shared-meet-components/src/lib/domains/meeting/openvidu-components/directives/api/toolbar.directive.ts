@@ -18,8 +18,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  * <ov-toolbar [cameraButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarCameraButton], ov-toolbar[cameraButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarCameraButton], ov-toolbar[cameraButton]'
 })
 export class ToolbarCameraButtonDirective implements OnDestroy {
 	/**
@@ -70,8 +69,7 @@ export class ToolbarCameraButtonDirective implements OnDestroy {
  * <ov-toolbar [microphoneButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarMicrophoneButton], ov-toolbar[microphoneButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarMicrophoneButton], ov-toolbar[microphoneButton]'
 })
 export class ToolbarMicrophoneButtonDirective implements OnDestroy {
 	/**
@@ -122,8 +120,7 @@ export class ToolbarMicrophoneButtonDirective implements OnDestroy {
  * <ov-toolbar [screenshareButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarScreenshareButton], ov-toolbar[screenshareButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarScreenshareButton], ov-toolbar[screenshareButton]'
 })
 export class ToolbarScreenshareButtonDirective implements OnDestroy {
 	/**
@@ -174,8 +171,7 @@ export class ToolbarScreenshareButtonDirective implements OnDestroy {
  * <ov-toolbar [recordingButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarRecordingButton], ov-toolbar[recordingButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarRecordingButton], ov-toolbar[recordingButton]'
 })
 export class ToolbarRecordingButtonDirective implements OnDestroy {
 	/**
@@ -225,8 +221,7 @@ export class ToolbarRecordingButtonDirective implements OnDestroy {
  * <ov-toolbar [fullscreenButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarFullscreenButton], ov-toolbar[fullscreenButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarFullscreenButton], ov-toolbar[fullscreenButton]'
 })
 export class ToolbarFullscreenButtonDirective implements OnDestroy {
 	/**
@@ -274,8 +269,7 @@ export class ToolbarFullscreenButtonDirective implements OnDestroy {
  * <ov-toolbar [backgroundEffectsButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarBackgroundEffectsButton], ov-toolbar[backgroundEffectsButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarBackgroundEffectsButton], ov-toolbar[backgroundEffectsButton]'
 })
 export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
 	/**
@@ -383,8 +377,7 @@ export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
  * <ov-toolbar [settingsButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarSettingsButton], ov-toolbar[settingsButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarSettingsButton], ov-toolbar[settingsButton]'
 })
 export class ToolbarSettingsButtonDirective implements OnDestroy {
 	/**
@@ -432,8 +425,7 @@ export class ToolbarSettingsButtonDirective implements OnDestroy {
  * <ov-toolbar [leaveButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarLeaveButton], ov-toolbar[leaveButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarLeaveButton], ov-toolbar[leaveButton]'
 })
 export class ToolbarLeaveButtonDirective implements OnDestroy {
 	/**
@@ -482,8 +474,7 @@ export class ToolbarLeaveButtonDirective implements OnDestroy {
  * <ov-toolbar [participantsPanelButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarParticipantsPanelButton], ov-toolbar[participantsPanelButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarParticipantsPanelButton], ov-toolbar[participantsPanelButton]'
 })
 export class ToolbarParticipantsPanelButtonDirective implements OnDestroy {
 	/**
@@ -533,8 +524,7 @@ export class ToolbarParticipantsPanelButtonDirective implements OnDestroy {
  * <ov-toolbar [chatPanelButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarChatPanelButton], ov-toolbar[chatPanelButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarChatPanelButton], ov-toolbar[chatPanelButton]'
 })
 export class ToolbarChatPanelButtonDirective implements OnDestroy {
 	/**
@@ -583,8 +573,7 @@ export class ToolbarChatPanelButtonDirective implements OnDestroy {
  * <ov-toolbar [activitiesPanelButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarActivitiesPanelButton], ov-toolbar[activitiesPanelButton]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarActivitiesPanelButton], ov-toolbar[activitiesPanelButton]'
 })
 export class ToolbarActivitiesPanelButtonDirective implements OnDestroy {
 	/**
@@ -633,8 +622,7 @@ export class ToolbarActivitiesPanelButtonDirective implements OnDestroy {
  * <ov-toolbar [displayRoomName]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarDisplayRoomName], ov-toolbar[displayRoomName]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarDisplayRoomName], ov-toolbar[displayRoomName]'
 })
 export class ToolbarDisplayRoomNameDirective implements OnDestroy {
 	/**
@@ -683,8 +671,7 @@ export class ToolbarDisplayRoomNameDirective implements OnDestroy {
  * <ov-toolbar [displayLogo]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarDisplayLogo], ov-toolbar[displayLogo]',
-	standalone: true
+	selector: 'ov-videoconference[toolbarDisplayLogo], ov-toolbar[displayLogo]'
 })
 export class ToolbarDisplayLogoDirective implements OnDestroy {
 	/**
@@ -730,8 +717,7 @@ export class ToolbarDisplayLogoDirective implements OnDestroy {
  *
  */
 @Directive({
-	selector: '[ovToolbarAdditionalButtonsPosition]',
-	standalone: true
+	selector: '[ovToolbarAdditionalButtonsPosition]'
 })
 export class ToolbarAdditionalButtonsPossitionDirective implements OnDestroy {
 	/**

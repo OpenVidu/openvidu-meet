@@ -1,4 +1,4 @@
-import { computed, DestroyRef, inject, Injectable, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Service, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
@@ -10,9 +10,7 @@ import { PlatformService } from '../platform/platform.service';
  * Provides reactive signals and utilities for building responsive interfaces.
  * @internal
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class ViewportService {
 	// Design system breakpoints
 	private readonly BREAKPOINTS = {

@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { EmbeddedEvent } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 
@@ -14,9 +14,7 @@ import { LoggerService } from '../../../shared/services/logger.service';
  * `WcRouterService`. Imperative commands live on `EmbeddedCommandService`
  * to keep this service in `shared/` and free of domain deps.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class EmbeddedEventBusService {
 	private readonly log = inject(LoggerService).get('EmbeddedEventBusService');
 

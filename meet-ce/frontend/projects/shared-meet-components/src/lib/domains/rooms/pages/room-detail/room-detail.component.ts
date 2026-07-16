@@ -1,7 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	OnDestroy,
 	OnInit,
@@ -93,8 +92,7 @@ interface RoomDetailCachedState {
 		TranslatePipe
 	],
 	templateUrl: './room-detail.component.html',
-	styleUrl: './room-detail.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './room-detail.component.scss'
 })
 export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly route = inject(ActivatedRoute);

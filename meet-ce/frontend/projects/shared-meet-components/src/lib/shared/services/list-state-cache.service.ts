@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 
 /**
  * In-memory cache of list-page UI state, used to restore filters, sort, loaded
@@ -13,9 +13,7 @@ import { Injectable } from '@angular/core';
  * state under 'rooms/<roomId>'. {@link invalidate} clears a key and anything
  * nested under it, so `invalidate('rooms')` also drops cached `rooms/<roomId>`.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class ListStateCacheService {
 	private readonly cache = new Map<string, unknown>();
 

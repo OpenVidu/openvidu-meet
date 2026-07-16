@@ -1,7 +1,6 @@
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
 	AfterViewInit,
-	ChangeDetectionStrategy,
 	Component,
 	contentChild,
 	effect,
@@ -46,10 +45,7 @@ import {
 	SettingsPanelStatusEvent
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantModel } from '../../models/participant.model';
-import {
-	RecordingStartRequestedEvent,
-	RecordingStopRequestedEvent
-} from '../../models/recording.model';
+import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
 import { VideoconferencePhase } from '../../models/videoconference-state.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
@@ -82,7 +78,6 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 @Component({
 	selector: 'ov-videoconference',
 	imports: [
-		CommonModule,
 		MatIconModule,
 		MatProgressSpinnerModule,
 		TranslatePipe,
@@ -98,12 +93,11 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 		ParticipantPanelItemComponent,
 		SmartLayoutComponent,
 		StreamComponent,
-		SettingsPanelGeneralAdditionalElementsDirective
+		SettingsPanelGeneralAdditionalElementsDirective,
+		NgTemplateOutlet
 	],
 	templateUrl: './videoconference.component.html',
-	styleUrls: ['./videoconference.component.scss'],
-	changeDetection: ChangeDetectionStrategy.OnPush,
-	standalone: true
+	styleUrls: ['./videoconference.component.scss']
 })
 export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
@@ -198,8 +192,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * @internal
 	 */
 	readonly defaultSettingsPanelTemplate = viewChild('defaultSettingsPanel', { read: TemplateRef });
-
-
 
 	// ── State machine ────────────────────────────────────────────────────────
 	// Single phase signal drives all UI branching. Effects only write to it
@@ -486,7 +478,9 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		r.settingsPanel.set(this.defaultSettingsPanelTemplate());
 
 		// Participant slots
-		r.participantPanelItem.set(this.externalParticipantPanelItem()?.template ?? this.defaultParticipantPanelItemTemplate()!);
+		r.participantPanelItem.set(
+			this.externalParticipantPanelItem()?.template ?? this.defaultParticipantPanelItemTemplate()!
+		);
 		r.participantPanelItemElements.set(this.externalParticipantPanelItemElements()?.template);
 		r.participantPanelAfterLocalParticipant.set(this.externalParticipantPanelAfterLocalParticipant()?.template);
 

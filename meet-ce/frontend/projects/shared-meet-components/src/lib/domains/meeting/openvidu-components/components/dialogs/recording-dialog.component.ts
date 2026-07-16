@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, computed, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { RecordingDialogData } from '../../models/dialog.model';
@@ -43,8 +43,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 				border-radius: var(--ov-surface-radius);
 			}
 		`
-    ],
-	changeDetection: ChangeDetectionStrategy.OnPush
+    ]
 })
 export class RecordingDialogComponent {
 	private readonly dialogRef = inject(MatDialogRef<RecordingDialogComponent>);

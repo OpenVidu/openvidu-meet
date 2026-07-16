@@ -1,4 +1,4 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, FormControl, ValidationErrors, Validators } from '@angular/forms';
 import {
 	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
@@ -93,9 +93,7 @@ const DEFAULT_ROOM_OPTIONS: MeetRoomOptions = {
  * Service to manage the state of the room creation wizard.
  * Handles step navigation, form data management, and room options building.
  */
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RoomWizardStateService {
 	private formBuilder = inject(FormBuilder);
 	private readonly translateService = inject(TranslateService);

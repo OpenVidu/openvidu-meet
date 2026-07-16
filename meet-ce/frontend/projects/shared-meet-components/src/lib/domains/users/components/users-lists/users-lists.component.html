@@ -269,7 +269,7 @@
 						<div class="user-info-container" id="user-info-{{ user.userId }}">
 							<div
 								class="user-avatar"
-								[ngClass]="'avatar-role-' + user.role"
+								[class]="'avatar-role-' + user.role"
 								id="user-avatar-{{ user.userId }}"
 							>
 								<span class="avatar-initials" id="user-initials-{{ user.userId }}">{{
@@ -302,7 +302,7 @@
 				<ng-container matColumnDef="role">
 					<th mat-header-cell *matHeaderCellDef id="role-header">{{ 'USERS.LIST.COLUMN_ROLE' | translate }}</th>
 					<td mat-cell *matCellDef="let user" id="role-cell-{{ user.userId }}">
-						<span class="role-chip" [ngClass]="'role-' + user.role" id="role-chip-{{ user.userId }}">
+						<span class="role-chip" [class]="'role-' + user.role" id="role-chip-{{ user.userId }}">
 							<mat-icon class="role-chip-icon">{{ UsersUiUtils.getRoleIcon(user.role) }}</mat-icon>
 							{{ UsersUiUtils.getRoleLabel(user.role) }}
 						</span>

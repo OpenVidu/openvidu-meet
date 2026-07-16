@@ -1,11 +1,9 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 import { LoggerService } from '../../../shared/services/logger.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class MeetingModerationService {
 	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
 

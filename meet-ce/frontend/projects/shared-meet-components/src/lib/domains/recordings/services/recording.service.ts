@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { MeetRecordingFilters, MeetRecordingInfo } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
@@ -10,9 +10,7 @@ import { RoomMemberContextService } from '../../room-members/services/room-membe
 import { RecordingShareDialogComponent } from '../components/recording-share-dialog/recording-share-dialog.component';
 import { LoggerService } from '../../../shared/services/logger.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class RecordingService {
 	private httpService = inject(HttpService);
 	private navigationService = inject(NavigationService);

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
+import { Component, inject, OnDestroy, OnInit, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -44,8 +44,7 @@ interface UsersListCachedState {
 		TranslatePipe
 	],
 	templateUrl: './users.component.html',
-	styleUrl: './users.component.scss',
-	changeDetection: ChangeDetectionStrategy.OnPush
+	styleUrl: './users.component.scss'
 })
 export class UsersComponent implements OnInit, OnDestroy {
 	private userService = inject(UserService);

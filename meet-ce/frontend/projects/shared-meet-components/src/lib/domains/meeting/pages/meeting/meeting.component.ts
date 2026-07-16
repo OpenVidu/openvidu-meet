@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-	ChangeDetectionStrategy,
 	Component,
 	computed,
 	contentChild,
@@ -10,7 +9,6 @@ import {
 	signal,
 	untracked
 } from '@angular/core';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
@@ -34,14 +32,11 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	imports: [
 		OpenViduComponentsUiModule,
 		NgTemplateOutlet,
-		FormsModule,
-		ReactiveFormsModule,
 		MatIconModule,
 		MatProgressSpinnerModule,
 		MeetingLobbyComponent
 	],
-	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService],
-	changeDetection: ChangeDetectionStrategy.OnPush
+	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService]
 })
 export class MeetingComponent implements OnInit {
 	protected meetingContextService = inject(MeetingContextService);

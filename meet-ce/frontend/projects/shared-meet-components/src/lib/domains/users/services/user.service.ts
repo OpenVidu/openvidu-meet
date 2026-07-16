@@ -1,10 +1,8 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { MeetUserDTO, MeetUserFilters, MeetUserOptions, MeetUserRole, SortOrder } from '@openvidu-meet/typings';
 import { HttpService } from '../../../shared/services/http.service';
 
-@Injectable({
-	providedIn: 'root'
-})
+@Service()
 export class UserService {
 	protected httpService = inject(HttpService);
 
