@@ -205,10 +205,6 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 			}
 		});
 
-		logger.info(
-			`Bulk delete operation - Successfully processed rooms: ${successful.length}, failed to process: ${allFailed.length}`
-		);
-
 		if (allFailed.length === 0) {
 			// All rooms were successfully processed
 			return res

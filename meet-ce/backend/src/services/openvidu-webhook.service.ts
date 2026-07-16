@@ -131,7 +131,7 @@ export class OpenViduWebhookService {
 				body: JSON.stringify(data)
 			});
 		} catch (error) {
-			this.logger.error(`Error sending test webhook to URL '${url}': ${error}`);
+			this.logger.warn(`Error sending test webhook to URL '${url}'`, error);
 			throw error;
 		}
 	}
@@ -151,7 +151,7 @@ export class OpenViduWebhookService {
 	): void {
 		this.sendWebhookEvent(event, payload).catch((error) => {
 			const contextInfo = context ? ` (${context})` : '';
-			this.logger.warn(`Background webhook ${event} failed${contextInfo}: ${error}`);
+			this.logger.warn(`Background webhook '${event}' failed${contextInfo}`, error);
 		});
 	}
 
@@ -182,7 +182,7 @@ export class OpenViduWebhookService {
 				body: JSON.stringify(data)
 			});
 		} catch (error) {
-			this.logger.error(`Error sending webhook event ${data.event} to '${webhookConfig.url}':`, error);
+			this.logger.debug(`Error sending webhook event ${data.event} to '${webhookConfig.url}'`, error);
 			throw error;
 		}
 	}
@@ -268,7 +268,7 @@ export class OpenViduWebhookService {
 			}
 
 			// Success case
-			this.logger.info(`Webhook test successful for URL: ${url}`);
+			this.logger.verbose(`Webhook test successful for URL: ${url}`);
 		} catch (error: any) {
 			clearTimeout(timeoutId);
 

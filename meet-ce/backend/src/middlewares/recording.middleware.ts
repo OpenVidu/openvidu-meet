@@ -97,7 +97,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 					break;
 				default:
 					// Invalid secret provided
-					return rejectRequestFromMeetError(res, errorInvalidRecordingSecret(recordingId, recordingSecret));
+					return rejectRequestFromMeetError(res, errorInvalidRecordingSecret(recordingId));
 			}
 
 			return withAuth(...authValidators)(req, res, next);

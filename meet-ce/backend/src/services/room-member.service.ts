@@ -347,11 +347,11 @@ export class RoomMemberService {
 							permissionsUpdatedAt: Date.now()
 						});
 
-						this.logger.verbose(
+						this.logger.debug(
 							`Updated effective permissions for member '${member.memberId}' in room '${roomId}'`
 						);
 					} catch (error) {
-						this.logger.error(
+						this.logger.warn(
 							`Failed to update effective permissions for member '${member.memberId}' in room '${roomId}':`,
 							error
 						);
@@ -494,9 +494,7 @@ export class RoomMemberService {
 			);
 		}
 
-		this.logger.verbose(
-			`Generating room member token for accessing room resources but not joining a meeting for room '${roomId}'`
-		);
+		this.logger.verbose(`Generating room member token for room '${roomId}' (not joining a meeting)`);
 		return this.tokenService.generateRoomMemberToken({ tokenMetadata });
 	}
 
@@ -549,7 +547,7 @@ export class RoomMemberService {
 				participantName = await this.participantNameService.reserveUniqueName(roomId, participantName);
 				this.logger.verbose(`Reserved unique name '${participantName}' for room '${roomId}'`);
 			} catch (error) {
-				this.logger.error(`Failed to reserve unique name '${participantName}' for room '${roomId}':`, error);
+				this.logger.debug(`Failed to reserve unique name '${participantName}' for room '${roomId}':`, error);
 				throw error;
 			}
 
@@ -751,7 +749,7 @@ export class RoomMemberService {
 						: undefined;
 
 		if (!anonymousRole) {
-			throw errorInvalidRoomSecret(roomId, secret);
+			throw errorInvalidRoomSecret(roomId);
 		}
 
 		if (!access.anonymous[anonymousRole].enabled) {
@@ -1044,7 +1042,10 @@ export class RoomMemberService {
 				metadata.badge
 			);
 		} catch (error) {
-			this.logger.error('Error applying participant moderation action:', error);
+			this.logger.warn(
+				`Error applying participant moderation action in room '${roomId}' for participant '${participantIdentity}'`,
+				error
+			);
 			throw error;
 		}
 	}
@@ -1061,8 +1062,7 @@ export class RoomMemberService {
 
 		if (!isParticipantInMeeting) {
 			this.logger.verbose(
-				`Not sending permissions updated signal to participant '${participantIdentity}' in room '${roomId}'
-				because they are not currently in a meeting`
+				`Not sending permissions updated signal to participant '${participantIdentity}' in room '${roomId}' because they are not currently in a meeting`
 			);
 			return;
 		}
@@ -1142,7 +1142,7 @@ export class RoomMemberService {
 		}
 
 		if (skippedCount > 0) {
-			this.logger.info(`Skipped ${skippedCount} participant(s) not present in meeting in room '${roomId}'`);
+			this.logger.verbose(`Skipped ${skippedCount} participant(s) not present in meeting in room '${roomId}'`);
 		}
 	}
 
@@ -1152,12 +1152,12 @@ export class RoomMemberService {
 	}
 
 	protected async existsParticipantInMeeting(roomId: string, participantIdentity: string): Promise<boolean> {
-		this.logger.verbose(`Checking if participant '${participantIdentity}' exists in room '${roomId}'`);
+		this.logger.debug(`Checking if participant '${participantIdentity}' exists in room '${roomId}'`);
 		return this.livekitService.participantExists(roomId, participantIdentity);
 	}
 
 	protected async getParticipantFromMeeting(roomId: string, participantIdentity: string): Promise<ParticipantInfo> {
-		this.logger.verbose(`Fetching participant '${participantIdentity}' from room '${roomId}'`);
+		this.logger.debug(`Fetching participant '${participantIdentity}' from room '${roomId}'`);
 		return this.livekitService.getParticipant(roomId, participantIdentity);
 	}
 

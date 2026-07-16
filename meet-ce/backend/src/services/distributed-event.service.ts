@@ -63,7 +63,7 @@ export class DistributedEventService {
 	 */
 	async publishEvent(eventType: DistributedEventType, payload: Record<string, unknown>): Promise<void> {
 		const message = JSON.stringify({ eventType, payload });
-		this.logger.verbose(`Publishing system event: ${eventType}`, payload);
+		this.logger.verbose(`Publishing system event: ${eventType}`);
 		await this.redisService.publishEvent(this.OPENVIDU_MEET_CHANNEL, message);
 	}
 
@@ -93,16 +93,16 @@ export class DistributedEventService {
 			const { eventType, payload } = eventData;
 
 			if (!eventType) {
-				this.logger.warn('Received an event without type from Redis:', message);
+				this.logger.warn('Received an event without type from Redis');
 				return;
 			}
 
-			this.logger.verbose(`Emitting system event: ${eventType}`, payload);
+			this.logger.verbose(`Emitting system event: ${eventType}`);
 
 			// Forward the event to all listeners
 			this.emitter.emit(eventType, payload);
 		} catch (error) {
-			this.logger.error('Error parsing redis message in DistributedEventService:', error);
+			this.logger.warn('Error parsing redis message in DistributedEventService', error);
 		}
 	}
 }

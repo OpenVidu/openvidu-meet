@@ -123,12 +123,12 @@ export class MutexService {
 				);
 				return lock;
 			} catch (error) {
-				this.logger.error(`Error storing lock registry for key ${key}:`, error);
+				this.logger.warn(`Error storing lock registry for key '${key}'`, error);
 
 				try {
 					await lock.release();
 				} catch (releaseError) {
-					this.logger.error(`Error rolling back lock acquisition for key ${key}:`, releaseError);
+					this.logger.error(`Error rolling back lock acquisition for key '${key}'`, releaseError);
 				}
 
 				return null;
@@ -164,7 +164,7 @@ export class MutexService {
 				await lock.release();
 				this.logger.verbose(`Lock ${key} successfully released.`);
 			} catch (error) {
-				this.logger.error(`Error releasing lock for key ${key}:`, error);
+				this.logger.error(`Error releasing lock for key '${key}'`, error);
 			} finally {
 				await this.redisService.delete(registryKey);
 			}
@@ -287,9 +287,9 @@ export class MutexService {
 	protected async release(lock: Lock): Promise<void> {
 		try {
 			await lock.release();
-			this.logger.verbose(`Local lock successfully released.`);
+			this.logger.verbose(`Local lock for '${lock.resources.join(', ')}' successfully released`);
 		} catch (error) {
-			this.logger.error(`Error releasing local lock :`, error);
+			this.logger.error(`Error releasing local lock for '${lock.resources.join(', ')}'`, error);
 		}
 	}
 
@@ -316,7 +316,7 @@ export class MutexService {
 		try {
 			redisLockData = await this.redisService.get(registryKey);
 		} catch (error) {
-			this.logger.warn(`Error reading lock registry '${registryKey}': ${error}`);
+			this.logger.warn(`Error reading lock registry '${registryKey}'`, error);
 			return null;
 		}
 
@@ -416,7 +416,7 @@ export class MutexService {
 			await this.redisService.delete(registryKey);
 			this.logger.debug(`Deleted orphaned lock registry '${registryKey}': ${reason}`);
 		} catch (error) {
-			this.logger.warn(`Error deleting lock registry '${registryKey}': ${error}`);
+			this.logger.warn(`Error deleting lock registry '${registryKey}'`, error);
 		}
 	}
 }

@@ -54,7 +54,7 @@ export class LivekitWebhookService {
 		try {
 			return await this.webhookReceiver.receive(body, auth);
 		} catch (error) {
-			this.logger.error('Error receiving webhook event', error);
+			this.logger.warn('Error receiving webhook event', error);
 			throw error;
 		}
 	}
@@ -67,47 +67,31 @@ export class LivekitWebhookService {
 	async webhookEventBelongsToOpenViduMeet(webhookEvent: WebhookEvent): Promise<boolean> {
 		// Extract relevant properties from the webhook event
 		const { room, egressInfo, ingressInfo } = webhookEvent;
-		this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Checking webhook event: ${webhookEvent.event}`);
+		this.logger.debug(`Checking if webhook event '${webhookEvent.event}' belongs to OpenVidu Meet`);
 
 		// Case 1: Check using room object from the event
 		if (room) {
-			this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Checking room metadata for room: ${room.name}`);
-
 			if (!room.metadata) {
-				this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Room metadata is empty for room: ${room.name}`);
-
 				const updatedMetadata = await this.livekitService.getRoomMetadata(room.name);
-
-				if (!updatedMetadata) {
-					this.logger.debug(`[webhookEventBelongsToOpenViduMeet] No metadata found for room: ${room.name}`);
-				}
 
 				if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(updatedMetadata)) return true;
 
 				const roomExists = await this.roomService.meetRoomExists(room.name);
 				this.logger.debug(
-					`[webhookEventBelongsToOpenViduMeet] Room '${room.name}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`
+					`Room '${room.name}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`
 				);
 				return roomExists;
 			}
 
-			this.logger.debug(`[webhookEventBelongsToOpenViduMeet] Room metadata found for room: ${room.name}`);
-
 			const belongToOpenViduMeet = MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(room.metadata);
 
 			if (!belongToOpenViduMeet) {
-				this.logger.debug(
-					`[webhookEventBelongsToOpenViduMeet] Room metadata does not indicate OpenVidu Meet for room: ${room.name}`
-				);
 				return false;
 			}
 
 			const roomExists = await this.roomService.meetRoomExists(room.name);
 
 			if (!roomExists) {
-				this.logger.debug(
-					`[webhookEventBelongsToOpenViduMeet] Room '${room.name}' does not exist in OpenVidu Meet`
-				);
 				return false;
 			}
 
@@ -118,7 +102,7 @@ export class LivekitWebhookService {
 		const roomName = egressInfo?.roomName ?? ingressInfo?.roomName;
 
 		if (!roomName) {
-			this.logger.debug('[webhookEventBelongsToOpenViduMeet] Room name not found in webhook event');
+			this.logger.debug('Room name not found in webhook event');
 			return false;
 		}
 
@@ -182,7 +166,10 @@ export class LivekitWebhookService {
 				await this.frontendEventService.sendRecordingUpdatedSignal(room.name, recordings[0], participant.sid);
 			}
 		} catch (error) {
-			this.logger.error('Error sending recording state on participant join:', error);
+			this.logger.error(
+				`Error sending recording state on participant join for room '${room.name}' and participant '${participant.identity}'`,
+				error
+			);
 		}
 	}
 
@@ -209,7 +196,10 @@ export class LivekitWebhookService {
 			]);
 			this.logger.verbose(`Released name for participant '${participant.name}' in room '${room.name}'`);
 		} catch (error) {
-			this.logger.error('Error releasing participant name on participant left:', error);
+			this.logger.error(
+				`Error releasing participant name on participant left for room '${room.name}' and participant '${participant.name}'`,
+				error
+			);
 		}
 	}
 
@@ -224,7 +214,7 @@ export class LivekitWebhookService {
 	 */
 	async handleRoomStarted({ name: roomId }: Room) {
 		try {
-			this.logger.info(`Processing room_started event for room: ${roomId}`);
+			this.logger.info(`Processing room_started event for room '${roomId}'`);
 
 			// Update Meet room status to ACTIVE_MEETING
 			const updatedRoom = await this.roomRepository.updatePartial(roomId, {
@@ -234,7 +224,7 @@ export class LivekitWebhookService {
 			// Send webhook notification
 			this.openViduWebhookService.sendMeetingStartedWebhook(updatedRoom);
 		} catch (error) {
-			this.logger.error('Error handling room started event:', error);
+			this.logger.error(`Error handling room started event for room '${roomId}'`, error);
 		}
 	}
 
@@ -257,7 +247,7 @@ export class LivekitWebhookService {
 		try {
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
-			this.logger.info(`Processing room_finished event for room: ${roomId}`);
+			this.logger.info(`Processing room_finished event for room '${roomId}'`);
 			const tasks = [];
 
 			switch (meetRoom.meetingEndAction) {
@@ -301,7 +291,7 @@ export class LivekitWebhookService {
 			);
 			await Promise.all(tasks);
 		} catch (error) {
-			this.logger.error(`Error handling room finished event: ${error}`);
+			this.logger.error(`Error handling room finished event for room '${roomId}'`, error);
 		}
 	}
 
@@ -374,8 +364,9 @@ export class LivekitWebhookService {
 			// Wait for all promises to resolve
 			await Promise.all([...commonTasks, ...specificTasks]);
 		} catch (error) {
-			this.logger.warn(
-				`Error processing recording_${webhookAction} webhook for egress ${egressInfo.egressId}: ${error}`
+			this.logger.error(
+				`Error processing recording_${webhookAction} webhook for egress '${egressInfo.egressId}'`,
+				error
 			);
 		}
 	}

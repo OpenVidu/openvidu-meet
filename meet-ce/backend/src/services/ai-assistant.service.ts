@@ -68,6 +68,7 @@ export class AiAssistantService {
 							INTERNAL_CONFIG.CAPTIONS_AGENT_NAME
 						);
 
+						this.logger.info(`Live captions assistant '${assistantId}' started for room '${roomId}'`);
 						return { id: assistantId, status: 'active' as const };
 					} catch (error) {
 						// Roll back the state write so a failed dispatch creation does not
@@ -84,7 +85,7 @@ export class AiAssistantService {
 
 			throw errorAiAssistantAlreadyStarting(roomId);
 		} catch (error) {
-			this.logger.error(`Error creating live captions assistant for room '${roomId}': ${error}`);
+			this.logger.debug(`Error creating live captions assistant for room '${roomId}'`, error);
 			throw error;
 		}
 	}
@@ -103,7 +104,7 @@ export class AiAssistantService {
 		try {
 			await this.deactivateParticipant(roomId, participantIdentity, capability);
 		} catch (error) {
-			this.logger.error(`Error cancelling assistant in room '${roomId}': ${error}`);
+			this.logger.debug(`Error cancelling assistant in room '${roomId}'`, error);
 			throw error;
 		}
 	}
@@ -124,7 +125,7 @@ export class AiAssistantService {
 				await this.cleanupRoom(roomId, capability);
 			}
 		} catch (error) {
-			this.logger.error(`Error occurred while cleaning up assistant state for room '${roomId}': ${error}`);
+			this.logger.error(`Error occurred while cleaning up assistant state for room '${roomId}'`, error);
 		}
 	}
 
@@ -190,7 +191,7 @@ export class AiAssistantService {
 		);
 
 		if (executionResult === null) {
-			this.logger.error(
+			this.logger.warn(
 				`Could not acquire lock '${lockKey}' for room cleanup '${roomId}' after retries. ` +
 					`Participant set has a TTL fallback, but the agent may still be running in LiveKit.`
 			);
@@ -273,5 +274,6 @@ export class AiAssistantService {
 		if (!dispatch) return;
 
 		await this.livekitService.stopAgent(dispatch.id, roomId);
+		this.logger.info(`Live captions assistant stopped for room '${roomId}'`);
 	}
 }

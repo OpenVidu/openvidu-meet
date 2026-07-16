@@ -1,7 +1,9 @@
 import type { NextFunction, Request, RequestHandler, Response } from 'express';
 import rateLimit, { type Options } from 'express-rate-limit';
 import ms from 'ms';
+import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { LoggerService } from '../services/logger.service.js';
 
 /**
  * Builds the JSON body returned on a 429 response so that rate-limited requests share the same
@@ -24,6 +26,17 @@ const withTestBypass = (options: Partial<Options>): RequestHandler => {
 		legacyHeaders: false,
 		// Disable check for trust proxy setting set to true
 		validate: { trustProxy: false },
+		// Log throttled requests so operators can see abuse / DoS pressure. Only fires when a
+		// client exceeds the limit; still returns the standard structured 429 body. Log the path
+		// without its query string: room/recording routes carry secrets in the query
+		// (?secret=, ?recordingSecret=) that must not leak into logs.
+		handler: (req: Request, res: Response, _next: NextFunction, opts: Options) => {
+			const pathWithoutQuery = req.originalUrl.split('?')[0];
+			container
+				.get(LoggerService)
+				.warn(`Rate limit exceeded for ${req.method} ${pathWithoutQuery} from IP ${req.ip}`);
+			res.status(opts.statusCode).json(opts.message);
+		},
 		...options
 	});
 

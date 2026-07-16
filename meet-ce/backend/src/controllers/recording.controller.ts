@@ -59,7 +59,7 @@ export const getRecordings = async (req: Request, res: Response) => {
 	const recordingService = container.get(RecordingService);
 	const queryParams = res.locals.validatedQuery ?? {};
 
-	logger.info('Getting all recordings');
+	logger.verbose('Getting all recordings');
 
 	try {
 		const { recordings, isTruncated, nextPageToken } = await recordingService.getAllRecordings(queryParams);
@@ -116,7 +116,7 @@ export const getRecording = async (req: Request, res: Response) => {
 	const recordingId = req.params.recordingId as string;
 	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 
-	logger.info(`Getting recording '${recordingId}'`);
+	logger.verbose(`Getting recording '${recordingId}'`);
 
 	try {
 		const recordingInfo = await recordingService.getRecording(recordingId, fields);
@@ -155,7 +155,7 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 	let fileStream: Readable | undefined;
 
 	try {
-		logger.info(`Streaming recording '${recordingId}'`);
+		logger.debug(`Streaming recording '${recordingId}'`);
 		const recordingService = container.get(RecordingService);
 
 		const result = await recordingService.getRecordingAsStream(recordingId, range);
@@ -163,7 +163,7 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 		fileStream = result.fileStream;
 
 		fileStream.on('error', (streamError) => {
-			logger.error(`Error streaming recording '${recordingId}': ${streamError.message}`);
+			logger.warn(`Error streaming recording '${recordingId}'`, streamError);
 
 			if (!res.headersSent) {
 				const error = internalError(`streaming recording '${recordingId}'`);
@@ -210,7 +210,7 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 				res.end();
 			})
 			.on('error', (err) => {
-				logger.error(`Error in response stream for recording '${recordingId}': ${err.message}`);
+				logger.warn(`Error in response stream for recording '${recordingId}'`, err);
 
 				if (!res.headersSent) {
 					res.status(500).end();
@@ -231,7 +231,7 @@ export const getRecordingUrl = async (req: Request, res: Response) => {
 	const recordingId = req.params.recordingId as string;
 	const { privateAccess } = res.locals.validatedQuery as { privateAccess: boolean };
 
-	logger.info(`Getting URL for recording '${recordingId}'`);
+	logger.verbose(`Getting URL for recording '${recordingId}'`);
 
 	try {
 		const recordingUrl = await recordingService.generateRecordingUrl(recordingId, privateAccess);
@@ -271,7 +271,7 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 
 		// Handle errors in the archive
 		archive.on('error', (err) => {
-			logger.error(`ZIP archive error: ${err.message}`);
+			logger.error(`ZIP archive error`, err);
 			res.status(500).end();
 		});
 

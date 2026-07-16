@@ -45,7 +45,6 @@ export class MigrationService {
 				// Sync collection indexes to match current schema definitions
 				await this.runIndexMigrations();
 
-				this.logger.info('All migrations completed successfully');
 				return true;
 			});
 
@@ -66,14 +65,14 @@ export class MigrationService {
 	 * This removes obsolete indexes and creates missing ones according to the current schema definitions.
 	 */
 	protected async runIndexMigrations(): Promise<void> {
-		this.logger.info('Running index migrations...');
+		this.logger.verbose('Running index migrations...');
 
 		try {
 			for (const registry of runtimeMigrationRegistry) {
 				await this.syncCollectionIndexes(registry);
 			}
 
-			this.logger.info('Index migrations completed successfully');
+			this.logger.verbose('Index migrations completed successfully');
 		} catch (error) {
 			this.logger.error('Error running index migrations:', error);
 			throw error;
@@ -88,7 +87,7 @@ export class MigrationService {
 	protected async syncCollectionIndexes<TDocument extends SchemaMigratableDocument>(
 		registry: CollectionMigrationRegistry<TDocument>
 	): Promise<void> {
-		this.logger.info(`Syncing indexes for collection: ${registry.collectionName}`);
+		this.logger.verbose(`Syncing indexes for collection: ${registry.collectionName}`);
 
 		await this.ensureCollectionExists(registry);
 
@@ -142,7 +141,7 @@ export class MigrationService {
 	 * Processes each collection in the registry and executes pending migrations.
 	 */
 	protected async runSchemaMigrations(): Promise<void> {
-		this.logger.info('Running schema migrations...');
+		this.logger.verbose('Running schema migrations...');
 
 		try {
 			let totalMigrated = 0;
@@ -168,12 +167,12 @@ export class MigrationService {
 	protected async migrateCollectionSchemas<TDocument extends SchemaMigratableDocument>(
 		registry: CollectionMigrationRegistry<TDocument>
 	): Promise<number> {
-		this.logger.info(`Checking schema version for collection: ${registry.collectionName}`);
+		this.logger.verbose(`Checking schema version for collection: ${registry.collectionName}`);
 
 		const oldestSchemaVersionInDb = await this.getMinSchemaVersion(registry.model);
 
 		if (oldestSchemaVersionInDb === null) {
-			this.logger.info(`No documents found in ${registry.collectionName}, skipping migration`);
+			this.logger.verbose(`No documents found in ${registry.collectionName}, skipping migration`);
 			return 0;
 		}
 
@@ -188,7 +187,7 @@ export class MigrationService {
 		}
 
 		if (oldestSchemaVersionInDb === registry.currentVersion) {
-			this.logger.info(
+			this.logger.verbose(
 				`Collection ${registry.collectionName} is already at version ${registry.currentVersion}, skipping migration`
 			);
 			return 0;
@@ -233,7 +232,7 @@ export class MigrationService {
 			);
 		}
 
-		this.logger.info(
+		this.logger.verbose(
 			`Found ${migrationSteps.length} migration steps for ${registry.collectionName} ` +
 				`(v${sourceSchemaVersion} -> v${registry.currentVersion})`
 		);
@@ -263,7 +262,7 @@ export class MigrationService {
 		);
 
 		if (pendingDocumentsBefore === 0) {
-			this.logger.info(`Migration ${migrationChainExecutionName} has no pending documents, skipping execution`);
+			this.logger.verbose(`Migration ${migrationChainExecutionName} has no pending documents, skipping execution`);
 			return 0;
 		}
 
@@ -433,7 +432,7 @@ export class MigrationService {
 			// If schemaVersion doesn't exist, assume version 1 (initial version)
 			return sampleDoc.schemaVersion ?? 1;
 		} catch (error) {
-			this.logger.error('Error getting current schema version:', error);
+			this.logger.debug('Error getting min schema version:', error);
 			throw error;
 		}
 	}
@@ -457,7 +456,7 @@ export class MigrationService {
 
 			return sampleDoc.schemaVersion ?? 1;
 		} catch (error) {
-			this.logger.error('Error getting max schema version:', error);
+			this.logger.debug('Error getting max schema version:', error);
 			throw error;
 		}
 	}

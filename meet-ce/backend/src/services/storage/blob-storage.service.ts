@@ -32,7 +32,7 @@ export class BlobStorageService {
 	 */
 	async checkHealth(): Promise<void> {
 		try {
-			this.logger.verbose('Performing blob storage health check...');
+			this.logger.verbose('Performing blob storage health check');
 			const healthStatus = await this.storageProvider.checkHealth();
 
 			if (!healthStatus.accessible) {
@@ -45,10 +45,9 @@ export class BlobStorageService {
 				process.exit(1);
 			}
 
-			this.logger.info('Blob storage health check passed successfully');
+			this.logger.verbose('Blob storage health check passed successfully');
 		} catch (error) {
 			this.logger.error('Blob storage health check failed:', error);
-			this.logger.error('Terminating process due to storage health check failure...');
 			process.exit(1);
 		}
 	}
@@ -84,7 +83,7 @@ export class BlobStorageService {
 				end: adjustedRange?.end
 			};
 		} catch (error) {
-			this.logger.error(`Error getting recording media for '${recordingId}':`, error);
+			this.logger.warn(`Error getting recording media for '${recordingId}':`, error);
 			throw error;
 		}
 	}
@@ -125,7 +124,7 @@ export class BlobStorageService {
 			await this.storageProvider.deleteObjects(storageKeys);
 			this.logger.verbose(`Deleted ${storageKeys.length} recording media files`);
 		} catch (error) {
-			this.logger.error('Error deleting recording media batch:', error);
+			this.logger.error(`Error deleting recording media batch for recordings [${recordingIds.join(', ')}]:`, error);
 			throw error;
 		}
 	}
@@ -141,7 +140,7 @@ export class BlobStorageService {
 			const storageKey = this.keyBuilder.buildBinaryRecordingKey(recordingId);
 			return await this.storageProvider.exists(storageKey);
 		} catch (error) {
-			this.logger.error(`Error checking if recording media exists for '${recordingId}':`, error);
+			this.logger.warn(`Error checking if recording media exists for '${recordingId}':`, error);
 			return false;
 		}
 	}
@@ -161,7 +160,7 @@ export class BlobStorageService {
 		const { contentLength: fileSize } = await this.storageProvider.getObjectHeaders(key);
 
 		if (!fileSize) {
-			this.logger.error(`Recording media not found for recording ${recordingId}`);
+			this.logger.debug(`Recording media not found for recording '${recordingId}'`);
 			throw errorRecordingNotFound(recordingId);
 		}
 
@@ -187,14 +186,13 @@ export class BlobStorageService {
 
 		// Validate input values
 		if (isNaN(start) || isNaN(originalEnd) || start < 0) {
-			this.logger.warn(`Invalid range values for recording ${recordingId}: start=${start}, end=${originalEnd}`);
-			this.logger.warn(`Returning full stream for recording ${recordingId}`);
+			this.logger.warn(`Invalid range values for recording '${recordingId}': start=${start}, end=${originalEnd}`);
 			return undefined;
 		}
 
 		// Check if start is beyond file size
 		if (start >= fileSize) {
-			this.logger.error(
+			this.logger.warn(
 				`Invalid range: start=${start} exceeds fileSize=${fileSize} for recording ${recordingId}`
 			);
 			throw errorRecordingRangeNotSatisfiable(recordingId, fileSize);

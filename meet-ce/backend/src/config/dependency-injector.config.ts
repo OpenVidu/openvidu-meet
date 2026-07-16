@@ -74,7 +74,6 @@ export const STORAGE_TYPES = {
  *
  */
 export const registerDependencies = () => {
-	console.log('Registering CE dependencies');
 	container.bind(LoggerService).toSelf().inSingletonScope();
 	container.bind(RedisService).toSelf().inSingletonScope();
 	container.bind(DistributedEventService).toSelf().inSingletonScope();

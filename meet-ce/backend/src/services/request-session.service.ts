@@ -1,7 +1,9 @@
 import type { MeetRoomMemberPermissions, MeetRoomMemberTokenMetadata, MeetUser, MeetUserRole } from '@openvidu-meet/typings';
-import { AsyncLocalStorage } from 'async_hooks';
-import { injectable } from 'inversify';
+import { randomUUID } from 'crypto';
+import { inject, injectable } from 'inversify';
 import type { RequestContext } from '../models/request-context.model.js';
+import { requestContextStorage } from '../utils/request-context.utils.js';
+import { LoggerService } from './logger.service.js';
 
 /**
  * Service that manages request-scoped session data using Node.js AsyncLocalStorage.
@@ -16,18 +18,29 @@ import type { RequestContext } from '../models/request-context.model.js';
  */
 @injectable()
 export class RequestSessionService {
-	private asyncLocalStorage = new AsyncLocalStorage<RequestContext>();
 	private hasLoggedWarning = false;
+
+	constructor(@inject(LoggerService) private readonly logger: LoggerService) {}
 
 	/**
 	 * Initializes the request context. Must be called at the start of each HTTP request.
-	 * This method creates an isolated storage context for the duration of the request.
+	 * This method creates an isolated storage context for the duration of the request and
+	 * assigns it a correlation id so every log line emitted during the request can be tied
+	 * back to it.
 	 *
 	 * @param callback - The function to execute within the request context
 	 * @returns The result of the callback
 	 */
 	run<T>(callback: () => T): T {
-		return this.asyncLocalStorage.run({}, callback);
+		return requestContextStorage.run({ requestId: randomUUID() }, callback);
+	}
+
+	/**
+	 * Gets the correlation id of the current request context.
+	 * Returns undefined if called outside of a request context.
+	 */
+	getRequestId(): string | undefined {
+		return this.getContext()?.requestId;
 	}
 
 	/**
@@ -36,14 +49,13 @@ export class RequestSessionService {
 	 * Logs a warning the first time this happens to help with debugging.
 	 */
 	private getContext(): RequestContext | undefined {
-		const context = this.asyncLocalStorage.getStore();
+		const context = requestContextStorage.getStore();
 
 		if (!context && !this.hasLoggedWarning) {
-			console.warn(
-				'RequestSessionService: No context found. ' +
-					'This service is being used outside of an HTTP request context (e.g., scheduler, webhook, background job). ' +
-					'All getters will return undefined and setters will be ignored. ' +
-					'This is expected behavior for non-HTTP contexts.'
+			// Expected when reached from a scheduler, webhook or background job (no HTTP request):
+			// getters return undefined and setters are ignored. Logged once, at debug.
+			this.logger.debug(
+				'Request context accessed outside an HTTP request; getters return undefined and setters are ignored'
 			);
 			this.hasLoggedWarning = true;
 		}

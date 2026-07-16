@@ -49,7 +49,7 @@ export class FrontendEventService {
 
 			await this.sendSignal(roomId, payload, options);
 		} catch (error) {
-			this.logger.error(`Error sending recording updated signal for room '${roomId}':`, error);
+			this.logger.warn(`Error sending recording updated signal for room '${roomId}'`, error);
 		}
 	}
 
@@ -57,7 +57,7 @@ export class FrontendEventService {
 	 * Sends a signal to notify participants in a room about updated room config.
 	 */
 	async sendRoomConfigUpdatedSignal(roomId: string, updatedRoom: MeetRoom): Promise<void> {
-		this.logger.debug(`Sending room config updated signal for room ${roomId}`);
+		this.logger.debug(`Sending room config updated signal for room '${roomId}'`);
 
 		try {
 			const payload: MeetRoomConfigUpdatedPayload = {
@@ -72,7 +72,7 @@ export class FrontendEventService {
 
 			await this.sendSignal(roomId, payload, options);
 		} catch (error) {
-			this.logger.error(`Error sending room config updated signal for room ${roomId}:`, error);
+			this.logger.warn(`Error sending room config updated signal for room '${roomId}'`, error);
 		}
 	}
 

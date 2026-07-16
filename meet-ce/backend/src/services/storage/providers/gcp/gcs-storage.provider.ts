@@ -23,7 +23,7 @@ export class GCSStorageProvider implements StorageProvider {
 			const result = await this.gcsService.getObjectAsJson(key);
 			return result as T;
 		} catch (error) {
-			this.logger.debug(`Object not found in GCS Storage: ${key}`);
+			this.logger.debug(`Failed to get object '${key}' from GCS Storage, treating as not found`, error);
 			return null;
 		}
 	}
@@ -35,9 +35,8 @@ export class GCSStorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Storing object in GCS Storage: ${key}`);
 			await this.gcsService.saveObject(key, data as Record<string, unknown>);
-			this.logger.verbose(`Successfully stored object in GCS Storage: ${key}`);
 		} catch (error) {
-			this.logger.error(`Error storing object in GCS Storage ${key}: ${error}`);
+			this.logger.debug(`Error storing object in GCS Storage ${key}`, error);
 			throw error;
 		}
 	}
@@ -49,9 +48,8 @@ export class GCSStorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Deleting object from GCS Storage: ${key}`);
 			await this.gcsService.deleteObjects([key]);
-			this.logger.verbose(`Successfully deleted object from GCS Storage: ${key}`);
 		} catch (error) {
-			this.logger.error(`Error deleting object from GCS Storage ${key}: ${error}`);
+			this.logger.debug(`Error deleting object from GCS Storage ${key}`, error);
 			throw error;
 		}
 	}
@@ -63,9 +61,8 @@ export class GCSStorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Deleting ${keys.length} objects from GCS Storage`);
 			await this.gcsService.deleteObjects(keys);
-			this.logger.verbose(`Successfully deleted ${keys.length} objects from GCS Storage`);
 		} catch (error) {
-			this.logger.error(`Error deleting objects from GCS Storage: ${error}`);
+			this.logger.debug('Error deleting objects from GCS Storage', error);
 			throw error;
 		}
 	}
@@ -78,7 +75,7 @@ export class GCSStorageProvider implements StorageProvider {
 			this.logger.debug(`Checking if object exists in GCS Storage: ${key}`);
 			return await this.gcsService.exists(key);
 		} catch (error) {
-			this.logger.debug(`Error checking object existence in GCS Storage ${key}: ${error}`);
+			this.logger.debug(`Error checking object existence in GCS Storage ${key}`, error);
 			return false;
 		}
 	}
@@ -116,7 +113,7 @@ export class GCSStorageProvider implements StorageProvider {
 				NextContinuationToken: result.continuationToken
 			};
 		} catch (error) {
-			this.logger.error(`Error listing objects in GCS Storage with prefix ${prefix}: ${error}`);
+			this.logger.debug(`Error listing objects in GCS Storage with prefix ${prefix}`, error);
 			throw error;
 		}
 	}
@@ -133,7 +130,7 @@ export class GCSStorageProvider implements StorageProvider {
 				contentType: data.ContentType
 			};
 		} catch (error) {
-			this.logger.error(`Error fetching object headers from GCS Storage ${key}: ${error}`);
+			this.logger.debug(`Error fetching object headers from GCS Storage ${key}`, error);
 			throw error;
 		}
 	}
@@ -146,7 +143,7 @@ export class GCSStorageProvider implements StorageProvider {
 			this.logger.debug(`Getting object stream from GCS Storage: ${key}`);
 			return await this.gcsService.getObjectAsStream(key, range);
 		} catch (error) {
-			this.logger.error(`Error fetching object stream from GCS Storage ${key}: ${error}`);
+			this.logger.debug(`Error fetching object stream from GCS Storage ${key}`, error);
 			throw error;
 		}
 	}
@@ -163,7 +160,7 @@ export class GCSStorageProvider implements StorageProvider {
 				bucketExists: healthResult.bucketExists
 			};
 		} catch (error) {
-			this.logger.error(`GCS storage health check failed: ${error}`);
+			this.logger.debug('GCS storage health check failed', error);
 			return {
 				accessible: false,
 				bucketExists: false

@@ -49,7 +49,7 @@ export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocum
 	async deleteAll(): Promise<void> {
 		try {
 			await this.deleteMany();
-			this.logger.verbose('All API keys deleted successfully');
+			this.logger.info('All API keys deleted successfully');
 		} catch (error) {
 			this.logger.error('Error deleting all API keys:', error);
 			throw error;

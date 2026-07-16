@@ -175,10 +175,10 @@ export const errorRoomHasNoParticipants = (roomId: string): OpenViduMeetError =>
 	return new OpenViduMeetError('Recording Error', `Room '${roomId}' has no participants`, 409);
 };
 
-export const errorInvalidRecordingSecret = (recordingId: string, secret: string): OpenViduMeetError => {
+export const errorInvalidRecordingSecret = (recordingId: string): OpenViduMeetError => {
 	return new OpenViduMeetError(
 		'Recording Error',
-		`Secret '${secret}' is not recognized for recording '${recordingId}'`,
+		`Provided secret is not recognized for recording '${recordingId}'`,
 		400
 	);
 };
@@ -287,8 +287,8 @@ export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
 };
 
-export const errorInvalidRoomSecret = (roomId: string, secret: string): OpenViduMeetError => {
-	return new OpenViduMeetError('Room Error', `Secret '${secret}' is not recognized for room '${roomId}'`, 400);
+export const errorInvalidRoomSecret = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `Provided secret is not recognized for room '${roomId}'`, 400);
 };
 
 export const errorAnonymousAccessDisabled = (
@@ -390,13 +390,22 @@ export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {
 
 export const handleError = (res: Response, error: OpenViduMeetError | unknown, operationDescription: string) => {
 	const logger = container.get(LoggerService);
-	logger.error(`Error while ${operationDescription}: ${error}`);
 
-	if (!(error instanceof OpenViduMeetError)) {
-		error = internalError(operationDescription);
+	if (error instanceof OpenViduMeetError) {
+		if (error.statusCode >= 500) {
+			// Server-side failure surfaced as a MeetError: log with cause/stack for diagnosis
+			logger.error(`Error while ${operationDescription}`, error);
+		} else {
+			// Expected client-side rejection (4xx): keep it out of the error stream
+			logger.debug(`Request rejected while ${operationDescription}: ${error.message}`);
+		}
+
+		return rejectRequestFromMeetError(res, error);
 	}
 
-	return rejectRequestFromMeetError(res, error as OpenViduMeetError);
+	// Unexpected error: always log with full stack, then mask it as a 500 to the client
+	logger.error(`Unexpected error while ${operationDescription}`, error);
+	return rejectRequestFromMeetError(res, internalError(operationDescription));
 };
 
 export const rejectRequestFromMeetError = (res: Response, error: OpenViduMeetError) => {

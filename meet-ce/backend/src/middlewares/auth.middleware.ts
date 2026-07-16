@@ -74,8 +74,15 @@ export const withAuth = (...validators: AuthValidator[]): RequestHandler => {
 					return next();
 				} catch (error) {
 					// If a present validator fails, return the error immediately
-					const meetError = error instanceof OpenViduMeetError ? error : errorUnauthorized();
-					return rejectRequestFromMeetError(res, meetError);
+					if (error instanceof OpenViduMeetError) {
+						return rejectRequestFromMeetError(res, error);
+					}
+
+					// A non-Meet error here is unexpected (e.g. Mongo/Redis down while resolving
+					// the user, room or permissions).
+					const logger = container.get(LoggerService);
+					logger.error('Unexpected error while authenticating request', error);
+					return rejectRequestFromMeetError(res, errorUnauthorized());
 				}
 			}
 		}
@@ -133,7 +140,7 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 				}
 			} catch (error) {
 				const logger = container.get(LoggerService);
-				logger.error('Invalid access token:', error);
+				logger.debug('Invalid access token:', error);
 				throw errorInvalidToken();
 			}
 
@@ -243,7 +250,7 @@ export const roomMemberTokenValidator: AuthValidator = {
 			requestSessionService.setRoomMemberTokenInfo(parsedMetadata, participantIdentity);
 		} catch (error) {
 			const logger = container.get(LoggerService);
-			logger.error('Invalid room member token:', error);
+			logger.debug('Invalid room member token:', error);
 			throw errorInvalidToken();
 		}
 
@@ -335,6 +342,6 @@ const setAuthenticatedUserIfPresent = async (req: Request): Promise<void> => {
 		}
 	} catch (error) {
 		const logger = container.get(LoggerService);
-		logger.debug('Token found but invalid:' + error);
+		logger.debug('Token found but invalid:', error);
 	}
 };

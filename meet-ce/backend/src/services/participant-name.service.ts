@@ -127,7 +127,7 @@ export class ParticipantNameService {
 			const keys = await this.redisService.getKeys(pattern);
 			return keys.map((key) => key.replace(`${participantsKey}:`, ''));
 		} catch (error) {
-			this.logger.error(`Error getting reserved names for room '${roomId}':`, error);
+			this.logger.warn(`Error getting reserved names for room '${roomId}'`, error);
 			return [];
 		}
 	}
@@ -150,9 +150,6 @@ export class ParticipantNameService {
 				this.redisService.getKeys(pattern),
 				this.redisService.getKeys(poolPattern)
 			]);
-			this.logger.verbose(
-				`Found ${participantKeys.length} participant reservations to check for room '${roomId}'`
-			);
 
 			// Redis TTL will automatically clean up expired keys, but we can force cleanup if needed.
 			await runConcurrently(
@@ -162,12 +159,8 @@ export class ParticipantNameService {
 				},
 				{ concurrency, failFast: true }
 			);
-			this.logger.verbose(
-				`Cleaned up ${participantKeys.length} expired participant names reservations for room '${roomId}'`
-			);
 
 			// Clean up expired participant name numbers from the pool
-			this.logger.verbose(`Found ${poolKeys.length} participant name numbers to check for room '${roomId}'`);
 			await runConcurrently(
 				poolKeys,
 				async (key) => {
@@ -175,9 +168,11 @@ export class ParticipantNameService {
 				},
 				{ concurrency, failFast: true }
 			);
-			this.logger.verbose(`Cleaned up ${poolKeys.length} expired participant name numbers for room '${roomId}'`);
+			this.logger.verbose(
+				`Cleaned up ${participantKeys.length} expired participant name reservations and ${poolKeys.length} pool numbers for room '${roomId}'`
+			);
 		} catch (error) {
-			this.logger.error(`Error cleaning up reservations for room '${roomId}':`, error);
+			this.logger.warn(`Error cleaning up reservations for room '${roomId}'`, error);
 		}
 	}
 
@@ -229,7 +224,7 @@ export class ParticipantNameService {
 			const nextNumber = await this.findNextAvailableNumber(roomId, baseName);
 			return `${baseName}_${nextNumber}`;
 		} catch (error) {
-			this.logger.warn(`Error generating alternative name, using fallback:`, error);
+			this.logger.warn(`Error generating alternative name for '${baseName}' in room '${roomId}', using fallback`, error);
 			// Fallback to simple incremental suffix if Redis fails
 			return `${baseName}_${fallbackSuffix}`;
 		}
@@ -258,7 +253,7 @@ export class ParticipantNameService {
 
 			return null;
 		} catch (error) {
-			this.logger.warn(`Error getting number from pool:`, error);
+			this.logger.warn(`Error getting number from pool for '${baseName}' in room '${roomId}'`, error);
 			return null;
 		}
 	}
@@ -299,7 +294,7 @@ export class ParticipantNameService {
 			this.logger.verbose(`Generated new sequential number ${nextNumber} for '${baseName}' in room '${roomId}'`);
 			return nextNumber;
 		} catch (error) {
-			this.logger.warn(`Error finding next available number:`, error);
+			this.logger.warn(`Error finding next available number for '${baseName}' in room '${roomId}'`, error);
 			// Fallback to timestamp-based number if everything fails
 			return Date.now() % 10000;
 		}
@@ -325,7 +320,7 @@ export class ParticipantNameService {
 
 			this.logger.verbose(`Returned number ${number} to pool for '${baseName}' in room '${roomId}'`);
 		} catch (error) {
-			this.logger.warn(`Error returning number to pool:`, error);
+			this.logger.warn(`Error returning number ${number} to pool for '${baseName}' in room '${roomId}'`, error);
 		}
 	}
 

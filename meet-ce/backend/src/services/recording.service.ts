@@ -149,7 +149,7 @@ export class RecordingService {
 
 					// Check if operation was completed while we were waiting
 					if (isOperationCompleted) {
-						this.logger.warn(`startRoomComposite completed after timeout for room ${roomId}`);
+						this.logger.warn(`Recording start for room '${roomId}' completed after timeout`);
 						throw errorRecordingStartTimeout(roomId);
 					}
 
@@ -170,7 +170,7 @@ export class RecordingService {
 					return await activeEgressEventPromise;
 				} catch (error) {
 					if (isOperationCompleted) {
-						this.logger.warn(`startRoomComposite failed after timeout: ${error}`);
+						this.logger.warn(`Recording start for room '${roomId}' failed after timeout`, error);
 
 						// Manually send the recording FAILED update to avoid missing the state transition.
 						await this.frontendEventService.sendRecordingUpdatedSignal(roomId, {
@@ -188,15 +188,14 @@ export class RecordingService {
 				}
 			})();
 
-			// Prevent UnhandledPromiseRejection from late failures
-			startRecordingPromise.catch((error) => {
-				if (!isOperationCompleted) {
-					this.logger.error(`Unhandled error in startRecordingPromise: ${error}`);
-				}
-			});
-			return await Promise.race([startRecordingPromise, timeoutPromise]);
+			// Swallow late rejections to prevent UnhandledPromiseRejection; the awaited race
+			// below (or its outer catch) surfaces and logs the actual failure.
+			startRecordingPromise.catch(() => {});
+			const recordingInfo = await Promise.race([startRecordingPromise, timeoutPromise]);
+			this.logger.info(`Recording '${recordingInfo.recordingId}' started for room '${roomId}'`);
+			return recordingInfo;
 		} catch (error) {
-			this.logger.error(`Error starting recording in room '${roomId}': ${error}`);
+			this.logger.debug(`Error starting recording in room '${roomId}'`, error);
 			throw error;
 		} finally {
 			try {
@@ -209,7 +208,7 @@ export class RecordingService {
 					await this.releaseRecordingLockIfNoEgress(roomId);
 				}
 			} catch (e) {
-				this.logger.warn(`Failed to release recording lock: ${e}`);
+				this.logger.warn(`Failed to release recording lock for room '${roomId}'`, e);
 			}
 		}
 	}
@@ -240,10 +239,10 @@ export class RecordingService {
 
 			const egressInfo = await this.livekitService.stopEgress(egressId);
 
-			this.logger.info(`Recording stopped successfully for room '${roomId}'.`);
+			this.logger.info(`Recording stopped successfully for room '${roomId}'`);
 			return await RecordingHelper.toRecordingInfo(egressInfo);
 		} catch (error) {
-			this.logger.error(`Error stopping recording '${recordingId}': ${error}`);
+			this.logger.debug(`Error stopping recording '${recordingId}'`, error);
 			throw error;
 		}
 	}
@@ -289,10 +288,10 @@ export class RecordingService {
 	): Promise<MeetRecordingPage<MeetRecordingInfo | ProjectedRecording<readonly MeetRecordingField[]>>> {
 		try {
 			const response = await this.recordingRepository.find(filters);
-			this.logger.info(`Retrieved ${response.recordings.length} recordings.`);
+			this.logger.verbose(`Retrieved ${response.recordings.length} recordings`);
 			return response;
 		} catch (error) {
-			this.logger.error(`Error getting recordings: ${error}`);
+			this.logger.debug(`Error getting recordings`, error);
 			throw error;
 		}
 	}
@@ -381,9 +380,15 @@ export class RecordingService {
 
 					return recordingId;
 				} catch (error) {
-					this.logger.error(`BulkDelete: Error processing recording '${recordingId}': ${error}`);
-					const message = error instanceof OpenViduMeetError ? error.message : 'Unexpected error';
-					throw { recordingId, error: message } as BulkDeleteFailed;
+					// Per-item failures are collected into the `failed` array and returned as an HTTP
+					// 400 payload, so they never reach handleError.
+					if (error instanceof OpenViduMeetError) {
+						this.logger.debug(`Recording '${recordingId}' cannot be deleted: ${error.message}`);
+						throw { recordingId, error: error.message } as BulkDeleteFailed;
+					}
+
+					this.logger.error(`Unexpected error deleting recording '${recordingId}'`, error);
+					throw { recordingId, error: 'Unexpected error' } as BulkDeleteFailed;
 				}
 			},
 			{ concurrency }
@@ -403,7 +408,7 @@ export class RecordingService {
 		const deletedRecordings = Array.from(validRecordingIds);
 
 		if (validRecordingIds.size === 0) {
-			this.logger.warn(`BulkDelete: No eligible recordings found for deletion.`);
+			this.logger.debug(`No eligible recordings found for deletion`);
 			return { deleted: deletedRecordings, failed: failedRecordings };
 		}
 
@@ -415,9 +420,9 @@ export class RecordingService {
 				this.recordingRepository.deleteByRecordingIds(validRecordingIdsArray),
 				this.blobStorageService.deleteRecordingMediaBatch(validRecordingIdsArray)
 			]);
-			this.logger.info(`BulkDelete: Successfully deleted ${validRecordingIds.size} recordings.`);
+			this.logger.info(`Successfully deleted ${validRecordingIds.size} recordings`);
 		} catch (error) {
-			this.logger.error(`BulkDelete: Error performing bulk deletion: ${error}`);
+			this.logger.error(`Error performing bulk deletion`, error);
 			throw error;
 		}
 
@@ -460,7 +465,7 @@ export class RecordingService {
 			const recordingId = recordingIds[index];
 
 			if (result.status === 'rejected') {
-				this.logger.error(`Error adding recording '${recordingId}' to ZIP: ${result.reason}`);
+				this.logger.warn(`Error adding recording '${recordingId}' to ZIP`, result.reason);
 				continue;
 			}
 
@@ -487,7 +492,7 @@ export class RecordingService {
 			const activeRecordings = await this.livekitService.getInProgressRecordingsEgress(roomId);
 
 			if (activeRecordings.length > 0) {
-				this.logger.info(
+				this.logger.verbose(
 					`Found ${activeRecordings.length} active recording(s) for room '${roomId}', stopping them first`
 				);
 
@@ -497,7 +502,7 @@ export class RecordingService {
 						const recordingId = RecordingHelper.extractRecordingIdFromEgress(egressInfo);
 
 						try {
-							this.logger.info(`Stopping active recording '${recordingId}'`);
+							this.logger.verbose(`Stopping active recording '${recordingId}'`);
 							await this.livekitService.stopEgress(egressInfo.egressId);
 							// Wait a bit for recording to fully stop
 							await new Promise((resolve) => setTimeout(resolve, 1000));
@@ -510,9 +515,9 @@ export class RecordingService {
 								await this.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
 							}
 
-							this.logger.info(`Successfully stopped recording '${recordingId}'`);
+							this.logger.verbose(`Successfully stopped recording '${recordingId}'`);
 						} catch (error) {
-							this.logger.error(`Failed to stop recording '${recordingId}': ${error}`);
+							this.logger.warn(`Failed to stop recording '${recordingId}'`, error);
 							// Continue with deletion anyway
 						}
 					},
@@ -524,11 +529,11 @@ export class RecordingService {
 			const allRecordingIds = await this.getAllRecordingIdsForRoom(roomId);
 
 			if (allRecordingIds.length === 0) {
-				this.logger.info(`No recordings found for room '${roomId}'`);
+				this.logger.verbose(`No recordings found for room '${roomId}'`);
 				return;
 			}
 
-			this.logger.info(
+			this.logger.verbose(
 				`Found ${allRecordingIds.length} recordings for room '${roomId}', proceeding with deletion`
 			);
 
@@ -539,7 +544,7 @@ export class RecordingService {
 			]);
 			this.logger.info(`Successfully deleted all recordings for room '${roomId}'`);
 		} catch (error) {
-			this.logger.error(`Error deleting all recordings for room '${roomId}': ${error}`);
+			this.logger.error(`Error deleting all recordings for room '${roomId}'`, error);
 			throw error;
 		}
 	}
@@ -654,9 +659,9 @@ export class RecordingService {
 				this.blobStorageService.deleteRecordingMedia(recordingId)
 			]);
 
-			this.logger.info(`Successfully deleted recording ${recordingId}`);
+			this.logger.info(`Successfully deleted recording '${recordingId}'`);
 		} catch (error) {
-			this.logger.error(`Error deleting recording ${recordingId}: ${error}`);
+			this.logger.debug(`Error deleting recording '${recordingId}'`, error);
 			throw error;
 		}
 	}
@@ -705,17 +710,17 @@ export class RecordingService {
 	 * @returns A promise that resolves to true if the room has recordings, false otherwise
 	 */
 	async hasRoomRecordings(roomId: string): Promise<boolean> {
-		try {
-			const { recordings } = await this.recordingRepository.find({
-				roomId,
-				maxItems: 1,
-				fields: ['recordingId']
-			});
-			return recordings.length > 0;
-		} catch (error) {
-			this.logger.warn(`Error checking recordings for room '${roomId}': ${error}`);
-			return false;
-		}
+		// Intentionally NOT wrapped in try/catch: a failure here must propagate, never be
+		// swallowed as "no recordings". This result gates room deletion (withRecordings=FAIL),
+		// so treating an infrastructure error as "no recordings" would silently bypass that
+		// guard and destroy a room that still has recordings. Letting it throw aborts the
+		// deletion; deleteMeetRoom and handleError already log it with context.
+		const { recordings } = await this.recordingRepository.find({
+			roomId,
+			maxItems: 1,
+			fields: ['recordingId']
+		});
+		return recordings.length > 0;
 	}
 
 	/**
@@ -756,7 +761,7 @@ export class RecordingService {
 			);
 			return lock;
 		} catch (error) {
-			this.logger.warn(`Error acquiring lock ${lockName} on egress started: ${error}`);
+			this.logger.warn(`Error acquiring lock '${lockName}'`, error);
 			return null;
 		}
 	}
@@ -775,7 +780,7 @@ export class RecordingService {
 
 			if (egress.length > 0) {
 				this.logger.verbose(
-					`Active egress found for room ${roomId}: ${egress.map((e) => e.egressId).join(', ')}`
+					`Active egress found for room '${roomId}': ${egress.map((e) => e.egressId).join(', ')}`
 				);
 				this.logger.debug(`Cannot release recording lock for room '${roomId}'. Recording is still active.`);
 				return;
@@ -783,9 +788,9 @@ export class RecordingService {
 
 			try {
 				await this.mutexService.releaseWithRegistry(lockName);
-				this.logger.verbose(`Recording active lock released for room '${roomId}'.`);
+				this.logger.verbose(`Recording active lock released for room '${roomId}'`);
 			} catch (error) {
-				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended: ${error}`);
+				this.logger.warn(`Error releasing recording lock for room '${roomId}' on egress ended`, error);
 			}
 		}
 	}
@@ -841,29 +846,29 @@ export class RecordingService {
 				const isRecordingNotFound = isErrorRecordingNotFound(error, recordingId);
 
 				if (isRecordingAlreadyStopped || isRecordingNotFound) {
-					this.logger.verbose(`Recording ${recordingId} is already stopped or not found.`);
-					this.logger.verbose(' Proceeding to release the recording active lock.');
+					this.logger.verbose(
+						`Recording '${recordingId}' is already stopped or not found. Releasing the active lock.`
+					);
 					shouldReleaseLock = true;
 				} else if (isErrorRecordingCannotBeStoppedWhileStarting(error, recordingId)) {
 					// The recording is still starting, the cleanup timer will be cancelled.
 					this.logger.warn(
-						`Recording ${recordingId} is still starting. Skipping recording active lock release.`
+						`Recording '${recordingId}' is still starting. Skipping recording active lock release.`
 					);
 				} else {
 					// An error occurred while stopping the recording.
-					this.logger.error(`Error stopping recording ${recordingId}: ${error.message}`);
+					this.logger.error(`Error stopping recording '${recordingId}'`, error);
 					shouldReleaseLock = true;
 				}
 			} else {
-				this.logger.error(`Unexpected error while run recording cleanup timer:`, error);
+				this.logger.error(`Unexpected error while running recording cleanup timer for room '${roomId}'`, error);
 			}
 		} finally {
 			if (shouldReleaseLock) {
 				try {
 					await this.releaseRecordingLockIfNoEgress(roomId);
-					this.logger.debug(`Recording active lock released for room ${roomId}.`);
 				} catch (releaseError) {
-					this.logger.error(`Error releasing active recording lock for room ${roomId}: ${releaseError}`);
+					this.logger.warn(`Error releasing active recording lock for room '${roomId}'`, releaseError);
 				}
 			}
 		}

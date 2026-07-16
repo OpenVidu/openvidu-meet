@@ -23,7 +23,7 @@ export class ABSStorageProvider implements StorageProvider {
 			const result = await this.azureBlobService.getObjectAsJson(key);
 			return result as T;
 		} catch (error) {
-			this.logger.debug(`Object not found in ABS: ${key}`);
+			this.logger.debug(`Failed to get object '${key}' from ABS, treating as not found`, error);
 			return null;
 		}
 	}
@@ -35,9 +35,8 @@ export class ABSStorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Storing object in ABS: ${key}`);
 			await this.azureBlobService.saveObject(key, data as Record<string, unknown>);
-			this.logger.verbose(`Successfully stored object in ABS: ${key}`);
 		} catch (error) {
-			this.logger.error(`Error storing object in ABS ${key}: ${error}`);
+			this.logger.debug(`Error storing object in ABS ${key}`, error);
 			throw error;
 		}
 	}
@@ -49,9 +48,8 @@ export class ABSStorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Deleting object from ABS: ${key}`);
 			await this.azureBlobService.deleteObjects([key]);
-			this.logger.verbose(`Successfully deleted object from ABS: ${key}`);
 		} catch (error) {
-			this.logger.error(`Error deleting object from ABS ${key}: ${error}`);
+			this.logger.debug(`Error deleting object from ABS ${key}`, error);
 			throw error;
 		}
 	}
@@ -63,9 +61,8 @@ export class ABSStorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Deleting ${keys.length} objects from ABS`);
 			await this.azureBlobService.deleteObjects(keys);
-			this.logger.verbose(`Successfully deleted ${keys.length} objects from ABS`);
 		} catch (error) {
-			this.logger.error(`Error deleting objects from ABS: ${error}`);
+			this.logger.debug('Error deleting objects from ABS', error);
 			throw error;
 		}
 	}
@@ -78,7 +75,7 @@ export class ABSStorageProvider implements StorageProvider {
 			this.logger.debug(`Checking if object exists in ABS: ${key}`);
 			return await this.azureBlobService.exists(key);
 		} catch (error) {
-			this.logger.debug(`Error checking object existence in ABS ${key}: ${error}`);
+			this.logger.debug(`Error checking object existence in ABS ${key}`, error);
 			return false;
 		}
 	}
@@ -115,7 +112,7 @@ export class ABSStorageProvider implements StorageProvider {
 				NextContinuationToken: response.continuationToken
 			};
 		} catch (error) {
-			this.logger.error(`Error listing objects in ABS with prefix ${prefix}: ${error}`);
+			this.logger.debug(`Error listing objects in ABS with prefix ${prefix}`, error);
 			throw error;
 		}
 	}
@@ -132,7 +129,7 @@ export class ABSStorageProvider implements StorageProvider {
 				contentType: data.ContentType
 			};
 		} catch (error) {
-			this.logger.error(`Error fetching object headers from ABS ${key}: ${error}`);
+			this.logger.debug(`Error fetching object headers from ABS ${key}`, error);
 			throw error;
 		}
 	}
@@ -145,7 +142,7 @@ export class ABSStorageProvider implements StorageProvider {
 			this.logger.debug(`Getting object stream from ABS: ${key}`);
 			return await this.azureBlobService.getObjectAsStream(key, range);
 		} catch (error) {
-			this.logger.error(`Error fetching object stream from ABS ${key}: ${error}`);
+			this.logger.debug(`Error fetching object stream from ABS ${key}`, error);
 			throw error;
 		}
 	}
@@ -162,7 +159,7 @@ export class ABSStorageProvider implements StorageProvider {
 				containerExists: healthResult.containerExists
 			};
 		} catch (error) {
-			this.logger.error(`ABS storage health check failed: ${error}`);
+			this.logger.debug('ABS storage health check failed', error);
 			return {
 				accessible: false,
 				containerExists: false

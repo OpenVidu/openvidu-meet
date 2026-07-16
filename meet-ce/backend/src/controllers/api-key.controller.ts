@@ -12,6 +12,7 @@ export const createApiKey = async (_req: Request, res: Response) => {
 
 	try {
 		const apiKey = await apiKeyService.createApiKey();
+		logger.info('API key created');
 		return res.status(201).json(apiKey);
 	} catch (error) {
 		handleError(res, error, 'creating API key');
@@ -40,6 +41,7 @@ export const deleteApiKeys = async (_req: Request, res: Response) => {
 
 	try {
 		await apiKeyService.deleteApiKeys();
+		logger.info('All API keys deleted');
 		return res.status(200).json({ message: 'API keys deleted successfully' });
 	} catch (error) {
 		handleError(res, error, 'deleting API keys');

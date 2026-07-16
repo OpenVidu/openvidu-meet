@@ -153,7 +153,7 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 			const isValidSecret = await roomService.isValidRoomSecret(roomId, secret);
 
 			if (!isValidSecret) {
-				const error = errorInvalidRoomSecret(roomId, secret);
+				const error = errorInvalidRoomSecret(roomId);
 				return rejectRequestFromMeetError(res, error);
 			}
 

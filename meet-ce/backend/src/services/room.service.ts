@@ -179,7 +179,9 @@ export class RoomService {
 			rolesUpdatedAt: now,
 			meetingEndAction: MeetingEndAction.NONE
 		};
-		return this.roomRepository.create(meetRoom);
+		const createdRoom = await this.roomRepository.create(meetRoom);
+		this.logger.info(`Room '${createdRoom.roomId}' created`);
+		return createdRoom;
 	}
 
 	/**
@@ -192,7 +194,7 @@ export class RoomService {
 		const roomExists = await this.livekitService.roomExists(roomId);
 
 		if (roomExists) {
-			this.logger.verbose(`Room ${roomId} already exists in LiveKit.`);
+			this.logger.verbose(`Room '${roomId}' already exists in LiveKit`);
 			return this.livekitService.getRoom(roomId);
 		}
 
@@ -210,7 +212,7 @@ export class RoomService {
 		};
 
 		const room = await this.livekitService.createRoom(livekitRoomOptions);
-		this.logger.verbose(`Room ${roomId} created in LiveKit with options: ${JSON.stringify(livekitRoomOptions)}.`);
+		this.logger.verbose(`Room '${roomId}' created in LiveKit with options: ${JSON.stringify(livekitRoomOptions)}`);
 		return room;
 	}
 
@@ -268,6 +270,11 @@ export class RoomService {
 		}
 
 		const updatedRoom = await this.roomRepository.updatePartial(roomId, fieldsToUpdate);
+
+		if (updated && status === MeetRoomStatus.CLOSED) {
+			this.logger.info(`Room '${roomId}' closed`);
+		}
+
 		return { room: updatedRoom, updated };
 	}
 
@@ -396,7 +403,7 @@ export class RoomService {
 		const room = await this.roomRepository.findByRoomId(roomId, fields);
 
 		if (!room) {
-			this.logger.error(`Meet room with ID ${roomId} not found.`);
+			this.logger.debug(`Meet room with ID '${roomId}' not found`);
 			throw errorRoomNotFound(roomId);
 		}
 
@@ -426,7 +433,7 @@ export class RoomService {
 		} = options;
 
 		try {
-			this.logger.info(
+			this.logger.verbose(
 				`Deleting room '${roomId}' with policies: withMeeting=${withMeeting}, withRecordings=${withRecordings}`
 			);
 
@@ -459,7 +466,7 @@ export class RoomService {
 				updatedRoom
 			);
 		} catch (error) {
-			this.logger.error(`Error deleting room '${roomId}': ${error}`);
+			this.logger.debug(`Error deleting room '${roomId}'`, error);
 			throw error;
 		}
 	}
@@ -743,7 +750,7 @@ export class RoomService {
 									withRecordings: room.autoDeletionPolicy?.withRecordings,
 									fields
 								});
-					this.logger.info(deletionResult.message);
+					this.logger.verbose(deletionResult.message);
 
 					return {
 						roomId,

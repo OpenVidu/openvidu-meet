@@ -23,7 +23,7 @@ export class S3StorageProvider implements StorageProvider {
 			const result = await this.s3Service.getObjectAsJson(key);
 			return result as T;
 		} catch (error) {
-			this.logger.debug(`Object not found in S3: ${key}`);
+			this.logger.debug(`Failed to get object '${key}' from S3, treating as not found`, error);
 			return null;
 		}
 	}
@@ -35,9 +35,8 @@ export class S3StorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Storing object in S3: ${key}`);
 			await this.s3Service.saveObject(key, data as Record<string, unknown>);
-			this.logger.verbose(`Successfully stored object in S3: ${key}`);
 		} catch (error) {
-			this.logger.error(`Error storing object in S3 ${key}: ${error}`);
+			this.logger.debug(`Error storing object in S3 ${key}`, error);
 			throw error;
 		}
 	}
@@ -49,9 +48,8 @@ export class S3StorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Deleting object from S3: ${key}`);
 			await this.s3Service.deleteObjects([key]);
-			this.logger.verbose(`Successfully deleted object from S3: ${key}`);
 		} catch (error) {
-			this.logger.error(`Error deleting object from S3 ${key}: ${error}`);
+			this.logger.debug(`Error deleting object from S3 ${key}`, error);
 			throw error;
 		}
 	}
@@ -63,9 +61,8 @@ export class S3StorageProvider implements StorageProvider {
 		try {
 			this.logger.debug(`Deleting ${keys.length} objects from S3`);
 			await this.s3Service.deleteObjects(keys);
-			this.logger.verbose(`Successfully deleted ${keys.length} objects from S3`);
 		} catch (error) {
-			this.logger.error(`Error deleting objects from S3: ${error}`);
+			this.logger.debug('Error deleting objects from S3', error);
 			throw error;
 		}
 	}
@@ -78,7 +75,7 @@ export class S3StorageProvider implements StorageProvider {
 			this.logger.debug(`Checking if object exists in S3: ${key}`);
 			return await this.s3Service.exists(key);
 		} catch (error) {
-			this.logger.debug(`Error checking object existence in S3 ${key}: ${error}`);
+			this.logger.debug(`Error checking object existence in S3 ${key}`, error);
 			return false;
 		}
 	}
@@ -104,7 +101,7 @@ export class S3StorageProvider implements StorageProvider {
 			this.logger.debug(`Listing objects in S3 with prefix: ${prefix}`);
 			return await this.s3Service.listObjectsPaginated(prefix, maxItems, continuationToken);
 		} catch (error) {
-			this.logger.error(`Error listing objects in S3 with prefix ${prefix}: ${error}`);
+			this.logger.debug(`Error listing objects in S3 with prefix ${prefix}`, error);
 			throw error;
 		}
 	}
@@ -121,7 +118,7 @@ export class S3StorageProvider implements StorageProvider {
 				contentType: data.ContentType
 			};
 		} catch (error) {
-			this.logger.error(`Error fetching object headers from S3 ${key}: ${error}`);
+			this.logger.debug(`Error fetching object headers from S3 ${key}`, error);
 			throw error;
 		}
 	}
@@ -134,7 +131,7 @@ export class S3StorageProvider implements StorageProvider {
 			this.logger.debug(`Getting object stream from S3: ${key}`);
 			return await this.s3Service.getObjectAsStream(key, range);
 		} catch (error) {
-			this.logger.error(`Error fetching object stream from S3 ${key}: ${error}`);
+			this.logger.debug(`Error fetching object stream from S3 ${key}`, error);
 			throw error;
 		}
 	}
@@ -151,7 +148,7 @@ export class S3StorageProvider implements StorageProvider {
 				bucketExists: healthResult.bucketExists
 			};
 		} catch (error) {
-			this.logger.error(`S3 storage health check failed: ${error}`);
+			this.logger.debug('S3 storage health check failed', error);
 			return {
 				accessible: false,
 				bucketExists: false

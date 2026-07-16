@@ -22,10 +22,20 @@ export const login = async (req: Request, res: Response) => {
 	const { userId, password } = req.body as { userId: string; password: string };
 
 	const userService = container.get(UserService);
-	const user = await userService.authenticateUser(userId, password);
+
+	let user;
+
+	try {
+		user = await userService.authenticateUser(userId, password);
+	} catch (error) {
+		// A failure here is an infrastructure error (e.g. Mongo down), not a bad credential:
+		// route it through handleError so it is logged at error and masked as 500, instead of
+		// escaping the handler as an unlabelled rejection.
+		return handleError(res, error, 'authenticating user');
+	}
 
 	if (!user) {
-		logger.warn('Login failed');
+		logger.warn(`Login failed for user '${userId}'`);
 		const error = errorInvalidCredentials();
 		return rejectRequestFromMeetError(res, error);
 	}
@@ -99,13 +109,23 @@ export const refreshToken = async (req: Request, res: Response) => {
 			throw new Error('Invalid token type for refresh operation');
 		}
 	} catch (error) {
-		logger.error('Invalid refresh token:', error);
+		logger.warn('Invalid refresh token:', error);
 		const meetError = errorInvalidRefreshToken();
 		return rejectRequestFromMeetError(res, meetError);
 	}
 
 	const userService = container.get(UserService);
-	const user = userId ? await userService.getUser(userId) : null;
+
+	let user;
+
+	try {
+		user = userId ? await userService.getUser(userId) : null;
+	} catch (error) {
+		// A failure resolving the user is an infrastructure error, not an invalid token:
+		// route it through handleError so it is logged at error and masked as 500, instead of
+		// escaping the handler as an unlabelled rejection.
+		return handleError(res, error, 'refreshing token');
+	}
 
 	if (!user) {
 		logger.warn('Invalid refresh token subject');
@@ -125,7 +145,7 @@ export const refreshToken = async (req: Request, res: Response) => {
 		const shouldRotateRefreshToken = MEET_ENV.REFRESH_TOKEN_ROTATION_ENABLED.toLowerCase() === 'true';
 		const newRefreshToken = shouldRotateRefreshToken ? await tokenService.generateRefreshToken(user) : undefined;
 
-		logger.info(`Access token refreshed for user '${userId}'`);
+		logger.verbose(`Access token refreshed for user '${userId}'`);
 		return res.status(200).json({
 			message: `Access token for user '${userId}' successfully refreshed`,
 			accessToken,

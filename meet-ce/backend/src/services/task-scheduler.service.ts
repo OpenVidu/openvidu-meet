@@ -27,7 +27,7 @@ export class TaskSchedulerService {
 			this.started = true;
 
 			this.systemEventService.onceRedisError(() => {
-				this.logger.debug('Redis shutdown detected. Cancelling all scheduled tasks...');
+				this.logger.warn('Redis shutdown detected. Cancelling all scheduled tasks...');
 				this.scheduledTasks.forEach((task, name) => {
 					this.cancelTask(name);
 				});
@@ -42,11 +42,11 @@ export class TaskSchedulerService {
 	 */
 	public registerTask(task: IScheduledTask): void {
 		if (this.taskRegistry.find((t) => t.name === task.name)) {
-			this.logger.error(`Task with name "${task.name}" already exists.`);
+			this.logger.warn(`Task with name '${task.name}' already exists.`);
 			return;
 		}
 
-		this.logger.debug(`Registering task "${task.name}".`);
+		this.logger.debug(`Registering task '${task.name}'.`);
 		this.taskRegistry.push(task);
 
 		if (this.started) {
@@ -58,15 +58,15 @@ export class TaskSchedulerService {
 		const lockKey = MeetLock.getScheduledTaskLock(name);
 
 		try {
-			this.logger.debug(`Attempting to acquire lock for cron task "${name}"`);
+			this.logger.debug(`Attempting to acquire lock for cron task '${name}'`);
 			const executionResult = await this.mutexService.withLock(lockKey, lockDuration, async () => {
-				this.logger.debug(`Running cron task "${name}"...`);
+				this.logger.debug(`Running cron task '${name}'...`);
 				await callback();
 				return true;
 			});
 
 			if (executionResult === null) {
-				this.logger.debug(`Task "${name}" skipped: another instance holds the lock.`);
+				this.logger.debug(`Task '${name}' skipped: another instance holds the lock.`);
 				return;
 			}
 		} catch (error) {
@@ -78,12 +78,12 @@ export class TaskSchedulerService {
 		const { name, type, scheduleOrDelay, callback } = task;
 
 		if (this.scheduledTasks.has(name)) {
-			this.logger.debug(`Task "${name}" already scheduled.`);
+			this.logger.debug(`Task '${name}' already scheduled.`);
 			return;
 		}
 
 		if (type === 'cron') {
-			this.logger.debug(`Scheduling cron task "${name}" with schedule "${scheduleOrDelay}"`);
+			this.logger.debug(`Scheduling cron task '${name}' with schedule '${scheduleOrDelay}'`);
 			const cronExpression = this.msStringToCronExpression(scheduleOrDelay);
 			const lockDuration = Math.max(ms(scheduleOrDelay) - ms('1m'), ms(INTERNAL_CONFIG.CRON_JOB_LOCK_TTL));
 
@@ -95,7 +95,7 @@ export class TaskSchedulerService {
 			job.start();
 			this.scheduledTasks.set(name, job);
 		} else if (type === 'timeout') {
-			this.logger.debug(`Scheduling timeout task "${name}" with delay ${scheduleOrDelay}`);
+			this.logger.debug(`Scheduling timeout task '${name}' with delay ${scheduleOrDelay}`);
 			const timeoutId = setTimeout(
 				async () => {
 					try {
@@ -126,7 +126,7 @@ export class TaskSchedulerService {
 
 			this.scheduledTasks.delete(name);
 			this.taskRegistry = this.taskRegistry.filter((task) => task.name !== name);
-			this.logger.debug(`Task "${name}" cancelled.`);
+			this.logger.debug(`Task '${name}' cancelled.`);
 		}
 	}
 

@@ -2,6 +2,7 @@ import type { SortAndPagination } from '@openvidu-meet/typings';
 import { SortOrder } from '@openvidu-meet/typings';
 import { inject, injectable, unmanaged } from 'inversify';
 import type { Model, QueryFilter, Require_id, UpdateQuery } from 'mongoose';
+import { DocumentNotFoundError } from '../models/database.model.js';
 import type { DocumentOnlyField, PaginatedResult, PaginationCursor } from '../models/database.model.js';
 import { LoggerService } from '../services/logger.service.js';
 
@@ -213,18 +214,23 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 				.exec()) as TDocument | null;
 
 			if (!document) {
-				this.logger.error('No document found to update with filter:', filter);
+				this.logger.debug('No document found to update with filter:', filter);
 
 				if (!throwIfNotFound) {
 					return null;
 				}
 
-				throw new Error('Document not found for update');
+				throw new DocumentNotFoundError('Document not found for update');
 			}
 
 			this.logger.debug('Document updated');
 			return this.toDomain(document);
 		} catch (error) {
+			if (error instanceof DocumentNotFoundError) {
+				// Expected not-found (already logged at debug above); do not relog at error.
+				throw error;
+			}
+
 			this.logger.error('Error updating document:', error);
 			throw error;
 		}
@@ -254,8 +260,8 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 					.exec()) as TDocument | null;
 
 				if (!existingDocument) {
-					this.logger.error('No document found to replace with filter:', filter);
-					throw new Error('Document not found for replacement');
+					this.logger.debug('No document found to replace with filter:', filter);
+					throw new DocumentNotFoundError('Document not found for replacement');
 				}
 
 				// Copy document-only fields from existing document to replacement document
@@ -275,13 +281,18 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 				.exec()) as TDocument | null;
 
 			if (!document) {
-				this.logger.error('No document found to replace with filter:', filter);
-				throw new Error('Document not found for replacement');
+				this.logger.debug('No document found to replace with filter:', filter);
+				throw new DocumentNotFoundError('Document not found for replacement');
 			}
 
 			this.logger.debug('Document replaced');
 			return this.toDomain(document);
 		} catch (error) {
+			if (error instanceof DocumentNotFoundError) {
+				// Expected not-found (already logged at debug above); do not relog at error.
+				throw error;
+			}
+
 			this.logger.error('Error replacing document:', error);
 			throw error;
 		}
@@ -298,12 +309,17 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			const result = await this.model.findOneAndDelete(filter).exec();
 
 			if (!result) {
-				this.logger.error('No document found to delete with filter:', filter);
-				throw new Error('Document not found for deletion');
+				this.logger.debug('No document found to delete with filter:', filter);
+				throw new DocumentNotFoundError('Document not found for deletion');
 			}
 
 			this.logger.debug(`Document with ID '${result._id}' deleted`);
 		} catch (error) {
+			if (error instanceof DocumentNotFoundError) {
+				// Expected not-found (already logged at debug above); do not relog at error.
+				throw error;
+			}
+
 			this.logger.error('Error deleting document:', error);
 			throw error;
 		}
@@ -323,8 +339,8 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 
 			if (deletedCount === 0) {
 				if (failIfEmpty) {
-					this.logger.error('No documents found to delete with filter:', filter);
-					throw new Error('No documents found for deletion');
+					this.logger.debug('No documents found to delete with filter:', filter);
+					throw new DocumentNotFoundError('No documents found for deletion');
 				} else {
 					this.logger.debug('No documents found to delete with filter:', filter);
 				}
@@ -332,7 +348,8 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 				this.logger.debug(`Deleted ${deletedCount} documents`);
 			}
 		} catch (error) {
-			if (error instanceof Error && error.message === 'No documents found for deletion') {
+			if (error instanceof DocumentNotFoundError) {
+				// Expected not-found (already logged at debug above); do not relog at error.
 				throw error;
 			}
 
@@ -494,7 +511,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 
 			return cursor;
 		} catch (error) {
-			this.logger.error('Failed to decode pagination cursor:', error);
+			this.logger.debug('Failed to decode pagination cursor:', error);
 			throw new Error('Invalid pagination token');
 		}
 	}

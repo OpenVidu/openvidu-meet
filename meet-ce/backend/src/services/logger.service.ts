@@ -1,6 +1,40 @@
 import { injectable } from 'inversify';
 import winston from 'winston';
 import { MEET_ENV } from '../environment.js';
+import { getCurrentRequestId } from '../utils/request-context.utils.js';
+
+/**
+ * Stamps the current request's correlation id onto the log info object.
+ *
+ * This is deliberately a LOGGER-level format: winston runs it synchronously within the
+ * log() call, i.e. still inside the request's AsyncLocalStorage context, so the id is
+ * captured reliably. Reading the id inside a transport's printf instead does NOT work —
+ * winston executes transport formats after the entry has crossed the stream pipeline, by
+ * which point the async context (and therefore the request id) is gone.
+ */
+const stampRequestId = winston.format((info) => {
+	const requestId = getCurrentRequestId();
+
+	if (requestId) {
+		info.requestId = requestId;
+	}
+
+	return info;
+});
+
+/**
+ * Renders a single log line. The correlation id is read from the (already stamped) info
+ * object rather than from the async context, so it is safe to run at transport time.
+ */
+const buildLogLine = (info: winston.Logform.TransformableInfo): string => {
+	const metadata = info.metadata;
+	const meta =
+		typeof metadata === 'object' && metadata !== null && Object.keys(metadata).length
+			? JSON.stringify(metadata)
+			: '';
+	const requestIdPart = info.requestId ? ` | ${info.requestId}` : '';
+	return `${info.timestamp} | ${MEET_ENV.EDITION}${requestIdPart} | [${info.level}] ${info.message} ${meta}`;
+};
 
 @injectable()
 export class LoggerService {
@@ -10,20 +44,11 @@ export class LoggerService {
 		this.logger = winston.createLogger({
 			level: MEET_ENV.LOG_LEVEL,
 			format: winston.format.combine(
+				stampRequestId(),
 				winston.format.timestamp({
 					format: 'YYYY-MM-DD HH:mm:ss'
 				}),
-				winston.format.printf((info) => {
-					const meta =
-						typeof info.metadata === 'object' && info.metadata !== null
-							? Object.keys(info.metadata).length
-								? JSON.stringify(info.metadata)
-								: ''
-							: '';
-					return `${info.timestamp} | ${MEET_ENV.EDITION} | [${info.level}] ${info.message} ${meta}`;
-
-					// return `${info.timestamp} [${info.level}] ${info.message}`;
-				}),
+				winston.format.printf(buildLogLine),
 				winston.format.errors({ stack: true })
 			),
 			transports: [
@@ -33,18 +58,12 @@ export class LoggerService {
 						winston.format.timestamp({
 							format: 'YYYY-MM-DD HH:mm:ss'
 						}),
-						winston.format.metadata({ fillExcept: ['message', 'level', 'timestamp', 'label'] }),
-						winston.format.printf((info) => {
-							const meta =
-								typeof info.metadata === 'object' && info.metadata !== null
-									? Object.keys(info.metadata).length
-										? JSON.stringify(info.metadata)
-										: ''
-									: '';
-							return `${info.timestamp} | ${MEET_ENV.EDITION} | [${info.level}] ${info.message} ${meta}`;
-
-							// return `${info.timestamp} [${info.level}] ${info.message}`;
-						})
+						// Keep requestId at the top level so buildLogLine can read it; everything else
+						// collapses into the metadata blob.
+						winston.format.metadata({
+							fillExcept: ['message', 'level', 'timestamp', 'label', 'requestId']
+						}),
+						winston.format.printf(buildLogLine)
 					)
 				})
 			]

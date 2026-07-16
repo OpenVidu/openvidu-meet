@@ -92,7 +92,9 @@ export class UserService {
 			mustChangePassword: true
 		};
 
-		return this.userRepository.create(user);
+		const createdUser = await this.userRepository.create(user);
+		this.logger.info(`User '${createdUser.userId}' created`);
+		return createdUser;
 	}
 
 	async getUsers(filters: MeetUserFilters): Promise<{
@@ -212,7 +214,7 @@ export class UserService {
 
 		// If the role is the same, no update is needed
 		if (oldRole === newRole) {
-			this.logger.info(`User '${userId}' already has role '${newRole}', no update needed`);
+			this.logger.debug(`User '${userId}' already has role '${newRole}', no update needed`);
 			return user;
 		}
 
@@ -402,7 +404,7 @@ export class UserService {
 			);
 		}
 
-		this.logger.info(`Completed cleanup for ${userIds.length} user(s)`);
+		this.logger.verbose(`Completed cleanup for ${userIds.length} user(s)`);
 	}
 
 	/**

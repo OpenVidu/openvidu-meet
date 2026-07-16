@@ -73,7 +73,7 @@ export class S3Service {
 			this.logger.verbose(`S3 exists: file '${this.getFullKey(name)}' found in bucket '${bucket}'`);
 			return true;
 		} catch (error) {
-			this.logger.warn(`S3 exists: file '${this.getFullKey(name)}' not found in bucket '${bucket}'`);
+			this.logger.debug(`S3 exists: file '${this.getFullKey(name)}' not found in bucket '${bucket}'`);
 			return false;
 		}
 	}
@@ -97,10 +97,10 @@ export class S3Service {
 				...this.sseParams()
 			});
 			const result = await this.retryOperation<PutObjectCommandOutput>(() => this.run(command));
-			this.logger.verbose(`S3 saveObject: successfully saved object '${fullKey}' in bucket '${bucket}'`);
+			this.logger.verbose(`Successfully saved object '${fullKey}' in bucket '${bucket}'`);
 			return result;
 		} catch (error: any) {
-			this.logger.error(`S3 saveObject: error saving object '${fullKey}' in bucket '${bucket}': ${error}`);
+			this.logger.error(`Error saving object '${fullKey}' in bucket '${bucket}'`, error);
 
 			if (error.code === 'ECONNREFUSED') {
 				throw errorS3NotAvailable(error);
@@ -118,7 +118,7 @@ export class S3Service {
 	async deleteObjects(keys: string[], bucket: string = MEET_ENV.S3_BUCKET): Promise<DeleteObjectsCommandOutput> {
 		try {
 			this.logger.verbose(
-				`S3 deleteObjects: attempting to delete ${keys.length} objects from bucket '${bucket}'`
+				`Attempting to delete ${keys.length} objects from bucket '${bucket}'`
 			);
 			const command = new DeleteObjectsCommand({
 				Bucket: bucket,
@@ -128,11 +128,10 @@ export class S3Service {
 				}
 			});
 			const result = await this.run(command);
-			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
-			this.logger.info(`Successfully deleted ${keys.length} objects from bucket '${bucket}'`);
+			this.logger.verbose(`Successfully deleted ${keys.length} objects from bucket '${bucket}'`);
 			return result;
 		} catch (error) {
-			this.logger.error(`S3 deleteObjects: error deleting objects in bucket '${bucket}': ${error}`);
+			this.logger.error(`Error deleting objects in bucket '${bucket}'`, error);
 			throw internalError('deleting objects from S3');
 		}
 	}
@@ -157,7 +156,7 @@ export class S3Service {
 		// Example: if s3Subbucket is "recordings" and additionalPrefix is ".metadata/",
 		// it will list objects with keys that start with "recordings/.metadata/".
 		const basePrefix = this.getFullKey(additionalPrefix);
-		this.logger.verbose(`S3 listObjectsPaginated: listing objects with prefix '${basePrefix}'`);
+		this.logger.verbose(`Listing objects with prefix '${basePrefix}'`);
 
 		const command = new ListObjectsV2Command({
 			Bucket: bucket,
@@ -169,7 +168,7 @@ export class S3Service {
 		try {
 			return await this.s3.send(command);
 		} catch (error) {
-			this.logger.error(`S3 listObjectsPaginated: error listing objects with prefix '${basePrefix}': ${error}`);
+			this.logger.error(`Error listing objects with prefix '${basePrefix}'`, error);
 			throw internalError('listing objects from S3');
 		}
 	}
@@ -180,12 +179,12 @@ export class S3Service {
 			const str = await obj.Body?.transformToString();
 			const parsed = JSON.parse(str as string);
 			this.logger.verbose(
-				`S3 getObjectAsJson: successfully retrieved and parsed object ${name} from bucket ${bucket}`
+				`Successfully retrieved and parsed object '${name}' from bucket '${bucket}'`
 			);
 			return parsed;
 		} catch (error: any) {
 			if (error.name === 'NoSuchKey') {
-				this.logger.warn(`S3 getObjectAsJson: object '${name}' does not exist in bucket ${bucket}`);
+				this.logger.debug(`Object '${name}' does not exist in bucket '${bucket}'`);
 				return undefined;
 			}
 
@@ -193,9 +192,7 @@ export class S3Service {
 				throw errorS3NotAvailable(error);
 			}
 
-			this.logger.error(
-				`S3 getObjectAsJson: error retrieving object '${name}' from bucket '${bucket}': ${error}`
-			);
+			this.logger.error(`Error retrieving object '${name}' from bucket '${bucket}'`, error);
 			throw internalError('getting object as JSON from S3');
 		}
 	}
@@ -212,14 +209,12 @@ export class S3Service {
 				throw new Error('Empty body response');
 			}
 
-			this.logger.info(
+			this.logger.verbose(
 				`S3 getObjectAsStream: successfully retrieved object '${name}' as stream from bucket '${bucket}'`
 			);
 			return obj.Body as Readable;
 		} catch (error: any) {
-			this.logger.error(
-				`S3 getObjectAsStream: error retrieving stream for object '${name}' from bucket '${bucket}': ${error}`
-			);
+			this.logger.error(`Error retrieving stream for object '${name}' from bucket '${bucket}'`, error);
 
 			if (error.code === 'ECONNREFUSED') {
 				throw errorS3NotAvailable(error);
@@ -236,11 +231,12 @@ export class S3Service {
 				Bucket: bucket,
 				Key: fullKey
 			});
-			this.logger.verbose(`S3 getHeaderObject: requesting headers for object '${fullKey}' in bucket '${bucket}'`);
+			this.logger.verbose(`Requesting headers for object '${fullKey}' in bucket '${bucket}'`);
 			return await this.run(headParams);
 		} catch (error) {
 			this.logger.error(
-				`S3 getHeaderObject: error retrieving headers for object '${this.getFullKey(name)}' in bucket '${bucket}': ${error}`
+				`Error retrieving headers for object '${this.getFullKey(name)}' in bucket '${bucket}'`,
+				error
 			);
 
 			throw internalError('getting object headers from S3');
@@ -270,7 +266,7 @@ export class S3Service {
 			this.logger.verbose(`S3 health check: service accessible and bucket '${MEET_ENV.S3_BUCKET}' exists`);
 			return { accessible: true, bucketExists: true };
 		} catch (error: any) {
-			this.logger.error(`S3 health check failed: ${error.message}`);
+			this.logger.error('S3 health check failed', error);
 
 			// Check if it's a bucket-specific error
 			if (error.name === 'NoSuchBucket') {
@@ -335,7 +331,7 @@ export class S3Service {
 				attempt++;
 
 				if (attempt >= maxRetries) {
-					this.logger.error(`S3 retryOperation: operation failed after ${maxRetries} attempts`);
+					this.logger.error(`S3 retryOperation: operation failed after ${maxRetries} attempts`, error);
 					throw error;
 				}
 

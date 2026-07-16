@@ -71,7 +71,7 @@ export class MongoDBService {
 
 		try {
 			this.logger.info(`Connecting to MongoDB (database: ${this.dbName})...`);
-			this.logger.info(`MongoDB connection pool: min=${MEET_ENV.MONGO_MIN_POOL_SIZE}, max=${MEET_ENV.MONGO_MAX_POOL_SIZE}`);
+			this.logger.debug(`MongoDB connection pool: min=${MEET_ENV.MONGO_MIN_POOL_SIZE}, max=${MEET_ENV.MONGO_MAX_POOL_SIZE}`);
 
 			await mongoose.connect(this.connectionString, {
 				dbName: this.dbName,
@@ -134,16 +134,14 @@ export class MongoDBService {
 			// Check connection state
 			if (mongoose.connection.readyState !== 1) {
 				this.logger.error('MongoDB connection state is not ready:', mongoose.connection.readyState);
-				this.logger.error('MongoDB is not healthy. Terminating application...');
 				process.exit(1);
 			}
 
 			// Perform ping operation to verify database accessibility
 			await mongoose.connection.db?.admin().ping();
-			this.logger.info('MongoDB health check passed');
+			this.logger.verbose('MongoDB health check passed');
 		} catch (error) {
 			this.logger.error('MongoDB health check failed:', error);
-			this.logger.error('MongoDB is not healthy. Terminating application...');
 			process.exit(1);
 		}
 	}

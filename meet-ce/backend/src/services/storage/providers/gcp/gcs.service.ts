@@ -31,13 +31,14 @@ export class GCSService {
 			if (exists) {
 				this.logger.verbose(`GCS exists: file '${this.getFullKey(name)}' found in bucket '${bucket}'`);
 			} else {
-				this.logger.warn(`GCS exists: file '${this.getFullKey(name)}' not found in bucket '${bucket}'`);
+				this.logger.debug(`GCS exists: file '${this.getFullKey(name)}' not found in bucket '${bucket}'`);
 			}
 
 			return exists;
 		} catch (error) {
 			this.logger.warn(
-				`GCS exists: error checking file '${this.getFullKey(name)}' in bucket '${bucket}': ${error}`
+				`GCS exists: error checking file '${this.getFullKey(name)}' in bucket '${bucket}'`,
+				error
 			);
 			return false;
 		}
@@ -65,7 +66,7 @@ export class GCSService {
 			this.logger.verbose(`GCS saveObject: successfully saved object '${fullKey}' in bucket '${bucket}'`);
 			return result;
 		} catch (error: any) {
-			this.logger.error(`GCS saveObject: error saving object '${fullKey}' in bucket '${bucket}': ${error}`);
+			this.logger.error(`Error saving object '${fullKey}' in bucket '${bucket}'`, error);
 
 			if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
 				throw errorS3NotAvailable(error); // Reuse S3 error for compatibility
@@ -98,14 +99,13 @@ export class GCSService {
 				{ concurrency, failFast: true }
 			);
 
-			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
-			this.logger.info(`Successfully deleted ${keys.length} objects from bucket '${bucket}'`);
+			this.logger.verbose(`Successfully deleted ${keys.length} objects from bucket '${bucket}'`);
 			return {
 				Deleted: keys.map((key) => ({ Key: this.getFullKey(key) })), // S3-like response format
 				Errors: []
 			};
 		} catch (error) {
-			this.logger.error(`GCS deleteObjects: error deleting objects in bucket '${bucket}': ${error}`);
+			this.logger.error(`Error deleting objects in bucket '${bucket}'`, error);
 			throw internalError('deleting objects from GCS Storage');
 		}
 	}
@@ -182,7 +182,7 @@ export class GCSService {
 				isTruncated: isTruncated
 			};
 		} catch (error) {
-			this.logger.error(`GCS listObjectsPaginated: error listing objects with prefix '${basePrefix}': ${error}`);
+			this.logger.error(`Error listing objects with prefix '${basePrefix}'`, error);
 			throw internalError('listing objects from GCS Storage');
 		}
 	}
@@ -195,7 +195,7 @@ export class GCSService {
 			const [exists] = await file.exists();
 
 			if (!exists) {
-				this.logger.warn(`GCS getObjectAsJson: object '${name}' does not exist in bucket ${bucket}`);
+				this.logger.debug(`Object '${name}' does not exist in bucket '${bucket}'`);
 				return undefined;
 			}
 
@@ -203,12 +203,12 @@ export class GCSService {
 			const parsed = JSON.parse(content.toString());
 
 			this.logger.verbose(
-				`GCS getObjectAsJson: successfully retrieved and parsed object ${name} from bucket ${bucket}`
+				`Successfully retrieved and parsed object '${name}' from bucket '${bucket}'`
 			);
 			return parsed;
 		} catch (error: any) {
 			if (error.code === 404) {
-				this.logger.warn(`GCS getObjectAsJson: object '${name}' does not exist in bucket ${bucket}`);
+				this.logger.debug(`Object '${name}' does not exist in bucket '${bucket}'`);
 				return undefined;
 			}
 
@@ -216,9 +216,7 @@ export class GCSService {
 				throw errorS3NotAvailable(error); // Reuse S3 error for compatibility
 			}
 
-			this.logger.error(
-				`GCS getObjectAsJson: error retrieving object '${name}' from bucket '${bucket}': ${error}`
-			);
+			this.logger.error(`Error retrieving object '${name}' from bucket '${bucket}'`, error);
 			throw internalError('getting object as JSON from GCS Storage');
 		}
 	}
@@ -241,14 +239,12 @@ export class GCSService {
 
 			const stream = file.createReadStream(options);
 
-			this.logger.info(
-				`GCS getObjectAsStream: successfully retrieved object '${name}' as stream from bucket '${bucket}'`
+			this.logger.verbose(
+				`Successfully retrieved object '${name}' as stream from bucket '${bucket}'`
 			);
 			return stream;
 		} catch (error: any) {
-			this.logger.error(
-				`GCS getObjectAsStream: error retrieving stream for object '${name}' from bucket '${bucket}': ${error}`
-			);
+			this.logger.error(`Error retrieving stream for object '${name}' from bucket '${bucket}'`, error);
 
 			if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
 				throw errorS3NotAvailable(error); // Reuse S3 error for compatibility
@@ -278,7 +274,8 @@ export class GCSService {
 			};
 		} catch (error) {
 			this.logger.error(
-				`GCS getObjectHeaders: error retrieving headers for object '${this.getFullKey(name)}' in bucket '${bucket}': ${error}`
+				`Error retrieving headers for object '${this.getFullKey(name)}' in bucket '${bucket}'`,
+				error
 			);
 
 			throw internalError('getting object headers from GCS Storage');
@@ -298,7 +295,7 @@ export class GCSService {
 			this.logger.verbose(`GCS health check: service accessible and bucket '${MEET_ENV.S3_BUCKET}' exists`);
 			return { accessible: true, bucketExists: true };
 		} catch (error: any) {
-			this.logger.error(`GCS health check failed: ${error.message}`);
+			this.logger.error('GCS health check failed', error);
 
 			// Check if it's a bucket-specific error
 			if (error.code === 404) {
@@ -342,7 +339,7 @@ export class GCSService {
 				attempt++;
 
 				if (attempt >= maxRetries) {
-					this.logger.error(`GCS retryOperation: operation failed after ${maxRetries} attempts`);
+					this.logger.error(`GCS retryOperation: operation failed after ${maxRetries} attempts`, error);
 					throw error;
 				}
 

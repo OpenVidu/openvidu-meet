@@ -33,7 +33,7 @@ export class TokenService {
 			const parsedMetadata = JSON.parse(metadata);
 			return validateTokenMetadata(parsedMetadata);
 		} catch (error) {
-			this.logger.error('Failed to parse token metadata:', error);
+			this.logger.debug('Failed to parse token metadata:', error);
 			throw new Error('Invalid token metadata format');
 		}
 	}
@@ -69,7 +69,7 @@ export class TokenService {
 			const parsedMetadata = JSON.parse(metadata);
 			return validateRoomMemberTokenMetadata(parsedMetadata);
 		} catch (error) {
-			this.logger.error('Failed to parse room member token metadata:', error);
+			this.logger.debug('Failed to parse room member token metadata:', error);
 			throw new Error('Invalid room member token metadata format');
 		}
 	}
@@ -97,7 +97,7 @@ export class TokenService {
 			const decoded = jwtDecode<ClaimGrants>(token);
 			return decoded;
 		} catch (error) {
-			this.logger.error('Failed to decode JWT:', error);
+			this.logger.debug('Failed to decode JWT:', error);
 			throw error;
 		}
 	}

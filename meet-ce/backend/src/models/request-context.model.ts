@@ -10,6 +10,8 @@ import type {
  * Context information stored per HTTP request.
  */
 export interface RequestContext {
+	/** Correlation id assigned once per HTTP request, emitted on every log line for traceability. */
+	requestId?: string;
 	user?: MeetUser;
 	roomMember?: MeetRoomMemberTokenMetadata & { participantIdentity?: string };
 }

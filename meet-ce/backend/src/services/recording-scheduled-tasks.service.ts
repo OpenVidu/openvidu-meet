@@ -97,9 +97,9 @@ export class RecordingScheduledTasksService {
 				async (roomId) => {
 					try {
 						await this.evaluateAndReleaseOrphanedLock(roomId, lockPrefix);
-						this.logger.verbose(`Processed orphaned lock for room ${roomId} successfully.`);
+						this.logger.verbose(`Processed orphaned lock for room '${roomId}' successfully`);
 					} catch (error) {
-						this.logger.error(`Failed to process lock for room ${roomId}:`, error);
+						this.logger.warn(`Failed to process lock for room ${roomId}:`, error);
 						// Continue processing other locks even if one fails
 					}
 				},
@@ -177,7 +177,7 @@ export class RecordingScheduledTasksService {
 					}
 
 					// No in-progress recordings, releasing orphaned lock
-					this.logger.info(`Room ${roomId} has no in-progress recordings, releasing orphaned lock`);
+					this.logger.verbose(`Room '${roomId}' has no in-progress recordings, releasing orphaned lock`);
 					await safeLockRelease(lockKey);
 					return;
 				}
@@ -187,7 +187,7 @@ export class RecordingScheduledTasksService {
 			this.logger.debug(`Room ${roomId} no longer exists or has no publishers, releasing orphaned lock`);
 			await safeLockRelease(lockKey);
 		} catch (error) {
-			this.logger.error(`Error processing orphan lock for room ${roomId}:`, error);
+			this.logger.warn(`Error processing orphan lock for room ${roomId}:`, error);
 			throw error;
 		}
 	}
@@ -245,8 +245,8 @@ export class RecordingScheduledTasksService {
 					if (result.status === 'fulfilled' && result.value) {
 						totalAborted++;
 					} else if (result.status === 'rejected') {
-						this.logger.error(
-							`Failed to process recording ${batch.recordings[index].recordingId}:`,
+						this.logger.warn(
+							`Failed to process recording '${batch.recordings[index].recordingId}':`,
 							result.reason
 						);
 					}
@@ -290,11 +290,11 @@ export class RecordingScheduledTasksService {
 			if (!egressInfo) {
 				// No egress found in LiveKit, recording is stale
 				this.logger.warn(
-					`Recording ${recordingId} has no corresponding egress in LiveKit, marking as stale and aborting...`
+					`Recording '${recordingId}' has no corresponding egress in LiveKit, marking as stale and aborting`
 				);
 
 				await this.recordingService.updateRecordingStatus(recordingId, MeetRecordingStatus.ABORTED);
-				this.logger.info(`Successfully aborted stale recording ${recordingId}`);
+				this.logger.info(`Successfully aborted stale recording '${recordingId}'`);
 				return true;
 			}
 
@@ -302,7 +302,7 @@ export class RecordingScheduledTasksService {
 			const updatedAt = RecordingHelper.extractUpdatedDate(egressInfo);
 
 			if (!updatedAt) {
-				this.logger.warn(`Recording ${recordingId} has no updatedAt timestamp, keeping it as fresh`);
+				this.logger.warn(`Recording '${recordingId}' has no updatedAt timestamp, keeping it as fresh`);
 				return false;
 			}
 
@@ -328,7 +328,7 @@ export class RecordingScheduledTasksService {
 			}
 
 			this.logger.warn(
-				`Room ${roomId} does not exist or has no participants and recording ${recordingId} is stale, aborting...`
+				`Room '${roomId}' does not exist or has no participants and recording '${recordingId}' is stale, aborting`
 			);
 
 			// Abort the recording
@@ -337,10 +337,10 @@ export class RecordingScheduledTasksService {
 				this.livekitService.stopEgress(egressId)
 			]);
 
-			this.logger.info(`Successfully aborted stale recording ${recordingId}`);
+			this.logger.info(`Successfully aborted stale recording '${recordingId}'`);
 			return true;
 		} catch (error) {
-			this.logger.error(`Error processing stale recording ${recordingId}:`, error);
+			this.logger.warn(`Error processing stale recording '${recordingId}':`, error);
 			throw error;
 		}
 	}

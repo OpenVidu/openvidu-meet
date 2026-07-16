@@ -29,8 +29,7 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 		const executionResult = await mutexService.withLock(webhookLockKey, ms('5s'), async () => {
 			const { event: eventType, egressInfo, room, participant } = webhookEvent;
 
-			logger.info(`Webhook received: ${eventType}`);
-			logger.debug(`Webhook event object: ${JSON.stringify(webhookEvent, null, 2)}`);
+			logger.verbose(`Webhook received: ${eventType}`);
 
 			switch (eventType) {
 				case 'egress_started':
@@ -66,7 +65,7 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 			return res.status(200).send();
 		}
 	} catch (error) {
-		logger.error(`Error handling webhook event: ${error}`);
+		logger.warn('Webhook event could not be processed', error);
 	}
 
 	return res.status(200).send();

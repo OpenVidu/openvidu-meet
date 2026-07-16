@@ -116,14 +116,14 @@ export function checkModuleEnabled() {
 		const enabledModules = MEET_ENV.ENABLED_MODULES.split(',').map((module) => module.trim());
 
 		if (!enabledModules.includes(moduleName)) {
-			console.error(`Module ${moduleName} is not enabled`);
+			console.warn(`Module '${moduleName}' is not enabled. Exiting.`);
 			process.exit(0);
 		}
 	}
 
 	// If MongoDB is not enabled, exit the process
 	if (MEET_ENV.MONGO_ENABLED.toLowerCase() !== 'true') {
-		console.error('MongoDB integration is not enabled. Exiting the process.');
+		console.warn('MongoDB integration is not enabled. Exiting.');
 		process.exit(0);
 	}
 }

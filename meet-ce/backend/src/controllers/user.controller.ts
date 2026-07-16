@@ -132,7 +132,7 @@ export const changePassword = async (req: Request, res: Response) => {
 
 		// Generate new tokens if the user had to change password
 		if (user.mustChangePassword) {
-			logger.info(`Generating new tokens for user '${user.userId}' after password change`);
+			logger.verbose(`Generating new tokens for user '${user.userId}' after password change`);
 			const tokenService = container.get(TokenService);
 			const accessToken = await tokenService.generateAccessToken(user);
 			const refreshToken = await tokenService.generateRefreshToken(user);

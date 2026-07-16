@@ -31,9 +31,9 @@ export class RedisService extends EventEmitter {
 	protected setupEventHandlers(): void {
 		const onConnect = () => {
 			if (!this.isConnected) {
-				this.logger.verbose('Connected to Redis');
+				this.logger.info('Connected to Redis');
 			} else {
-				this.logger.verbose('Reconnected to Redis');
+				this.logger.info('Reconnected to Redis');
 			}
 
 			this.isConnected = true;
@@ -41,7 +41,7 @@ export class RedisService extends EventEmitter {
 		};
 
 		const onError = (error: Error) => {
-			this.logger.error('Redis Error', error);
+			this.logger.error('Redis error', error);
 			this.emit('redisError', error);
 
 			// If Redis connection fails during startup, terminate the process
@@ -60,7 +60,7 @@ export class RedisService extends EventEmitter {
 		this.redisPublisher.on('connect', onConnect);
 		this.redisSubscriber.on('connect', () => this.logger.verbose('Connected to Redis subscriber'));
 		this.redisPublisher.on('error', onError);
-		this.redisSubscriber.on('error', (error) => this.logger.error('Redis Subscriber Error', error));
+		this.redisSubscriber.on('error', (error) => this.logger.error('Redis subscriber error', error));
 		this.redisPublisher.on('end', onDisconnect);
 		this.redisSubscriber.on('end', () => this.logger.warn('Redis subscriber disconnected'));
 	}
@@ -97,7 +97,7 @@ export class RedisService extends EventEmitter {
 		try {
 			await this.redisPublisher.publish(channel, message);
 		} catch (error) {
-			this.logger.error('Error publishing message to Redis', error);
+			this.logger.error(`Error publishing message to Redis channel '${channel}'`, error);
 		}
 	}
 
@@ -111,7 +111,7 @@ export class RedisService extends EventEmitter {
 		this.logger.verbose(`Subscribing to Redis channel: ${channel}`);
 		this.redisSubscriber.subscribe(channel, (err, count) => {
 			if (err) {
-				this.logger.error('Error subscribing to Redis channel', err);
+				this.logger.error(`Error subscribing to Redis channel '${channel}'`, err);
 				return;
 			}
 
@@ -133,7 +133,7 @@ export class RedisService extends EventEmitter {
 	unsubscribe(channel: string) {
 		this.redisSubscriber.unsubscribe(channel, (err, count) => {
 			if (err) {
-				this.logger.error('Error unsubscribing from Redis channel', err);
+				this.logger.error(`Error unsubscribing from Redis channel '${channel}'`, err);
 				return;
 			}
 
@@ -187,7 +187,7 @@ export class RedisService extends EventEmitter {
 
 			return pipelineResults.map(([error, result], index) => {
 				if (error) {
-					this.logger.warn(`Error checking existence for Redis key '${keys[index]}': ${error}`);
+					this.logger.warn(`Error checking existence for Redis key '${keys[index]}'`, error);
 					return false;
 				}
 
@@ -242,7 +242,7 @@ export class RedisService extends EventEmitter {
 		try {
 			return this.redisPublisher.get(key);
 		} catch (error) {
-			this.logger.error('Error getting value from Redis', error);
+			this.logger.error(`Error getting value from Redis for key '${key}'`, error);
 			throw internalError('getting value from Redis');
 		}
 	}
@@ -286,7 +286,7 @@ export class RedisService extends EventEmitter {
 
 			return 'OK';
 		} catch (error) {
-			this.logger.error('Error setting value in Redis with TTL', error);
+			this.logger.error(`Error setting value in Redis with TTL for key '${key}'`, error);
 			throw error;
 		}
 	}
@@ -330,7 +330,7 @@ export class RedisService extends EventEmitter {
 
 			return result === 'OK';
 		} catch (error) {
-			this.logger.error('Error setting value with NX option in Redis', error);
+			this.logger.error(`Error setting value with NX option in Redis for key '${key}'`, error);
 			throw error;
 		}
 	}
@@ -347,7 +347,7 @@ export class RedisService extends EventEmitter {
 			const result = await this.redisPublisher.expire(key, ttlSeconds);
 			return result === 1;
 		} catch (error) {
-			this.logger.error('Error setting expiration in Redis', error);
+			this.logger.error(`Error setting expiration in Redis for key '${key}'`, error);
 			throw error;
 		}
 	}
@@ -363,7 +363,7 @@ export class RedisService extends EventEmitter {
 		try {
 			return await this.redisPublisher.zpopmin(key, count);
 		} catch (error) {
-			this.logger.error('Error popping min from sorted set in Redis', error);
+			this.logger.error(`Error popping min from sorted set in Redis for key '${key}'`, error);
 			throw error;
 		}
 	}
@@ -380,7 +380,7 @@ export class RedisService extends EventEmitter {
 		try {
 			return await this.redisPublisher.zadd(key, score, member);
 		} catch (error) {
-			this.logger.error('Error adding to sorted set in Redis', error);
+			this.logger.error(`Error adding to sorted set in Redis for key '${key}'`, error);
 			throw error;
 		}
 	}
@@ -402,7 +402,7 @@ export class RedisService extends EventEmitter {
 
 			return await this.redisPublisher.sadd(key, member);
 		} catch (error) {
-			this.logger.error('Error adding to set in Redis', error);
+			this.logger.error(`Error adding to set in Redis for key '${key}'`, error);
 			throw error;
 		}
 	}
@@ -418,7 +418,7 @@ export class RedisService extends EventEmitter {
 		try {
 			return await this.redisPublisher.srem(key, member);
 		} catch (error) {
-			this.logger.error('Error removing from set in Redis', error);
+			this.logger.error(`Error removing from set in Redis for key '${key}'`, error);
 			throw error;
 		}
 	}
@@ -430,7 +430,7 @@ export class RedisService extends EventEmitter {
 		try {
 			return await this.redisPublisher.scard(key);
 		} catch (error) {
-			this.logger.error('Error reading set cardinality from Redis', error);
+			this.logger.error(`Error reading set cardinality from Redis for key '${key}'`, error);
 			throw error;
 		}
 	}
@@ -447,7 +447,6 @@ export class RedisService extends EventEmitter {
 		}
 
 		this.isConnected = false;
-		this.logger.verbose('Redis connections cleaned up');
 	}
 
 	private loadRedisConfig(): RedisOptions {

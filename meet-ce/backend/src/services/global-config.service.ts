@@ -40,7 +40,7 @@ export class GlobalConfigService {
 			const webhookConfig = await this.getGlobalConfigField('webhooksConfig');
 			return webhookConfig;
 		} catch (error) {
-			this.logger.error('Error retrieving webhook config:', error);
+			this.logger.debug('Error retrieving webhook config:', error);
 			throw error;
 		}
 	}
@@ -63,7 +63,7 @@ export class GlobalConfigService {
 			this.logger.info('Webhook config updated successfully');
 			return updatedConfig.webhooksConfig;
 		} catch (error) {
-			this.logger.error('Error updating webhook config:', error);
+			this.logger.debug('Error updating webhook config:', error);
 			throw error;
 		}
 	}
@@ -78,7 +78,7 @@ export class GlobalConfigService {
 			const securityConfig = await this.getGlobalConfigField('securityConfig');
 			return securityConfig;
 		} catch (error) {
-			this.logger.error('Error retrieving security config:', error);
+			this.logger.debug('Error retrieving security config:', error);
 			throw error;
 		}
 	}
@@ -95,7 +95,7 @@ export class GlobalConfigService {
 			this.logger.info('Security config updated successfully');
 			return updatedConfig.securityConfig;
 		} catch (error) {
-			this.logger.error('Error updating security config:', error);
+			this.logger.debug('Error updating security config:', error);
 			throw error;
 		}
 	}
@@ -110,7 +110,7 @@ export class GlobalConfigService {
 			const roomsConfig = await this.getGlobalConfigField('roomsConfig');
 			return roomsConfig;
 		} catch (error) {
-			this.logger.error('Error retrieving rooms appearance config:', error);
+			this.logger.debug('Error retrieving rooms appearance config:', error);
 			throw error;
 		}
 	}
@@ -146,7 +146,7 @@ export class GlobalConfigService {
 			this.logger.info('Rooms appearance config updated successfully');
 			return updatedConfig.roomsConfig;
 		} catch (error) {
-			this.logger.error('Error updating rooms appearance config:', error);
+			this.logger.debug('Error updating rooms appearance config:', error);
 			throw error;
 		}
 	}
@@ -163,13 +163,13 @@ export class GlobalConfigService {
 			const config = await this.globalConfigRepository.get([field]);
 
 			if (!config) {
-				this.logger.error('Global config not found');
+				this.logger.debug('Global config not found');
 				throw new Error('Global config not found');
 			}
 
 			return config[field];
 		} catch (error) {
-			this.logger.error('Error retrieving global config:', error);
+			this.logger.debug('Error retrieving global config:', error);
 			throw error;
 		}
 	}

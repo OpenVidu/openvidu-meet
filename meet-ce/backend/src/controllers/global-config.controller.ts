@@ -11,7 +11,7 @@ export const updateWebhookConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const configService = container.get(GlobalConfigService);
 
-	logger.info(`Updating webhooks config: ${JSON.stringify(req.body)}`);
+	logger.verbose('Updating webhooks config');
 	const webhookConfig = req.body as WebhookConfig;
 
 	try {
@@ -45,7 +45,7 @@ export const testWebhook = async (req: Request, res: Response) => {
 
 	try {
 		await webhookService.testWebhookUrl(url);
-		logger.info(`Webhook URL '${url}' is valid`);
+		logger.verbose(`Webhook URL '${url}' is valid`);
 		return res.status(200).json({ message: 'Webhook URL is valid' });
 	} catch (error) {
 		handleError(res, error, 'testing webhook URL');
@@ -56,7 +56,7 @@ export const updateSecurityConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const configService = container.get(GlobalConfigService);
 
-	logger.verbose(`Updating security config: ${JSON.stringify(req.body)}`);
+	logger.verbose('Updating security config');
 	const securityConfig = req.body as SecurityConfig;
 
 	try {
@@ -100,7 +100,7 @@ export const getRoomsAppearanceConfig = async (_req: Request, res: Response) => 
 	const logger = container.get(LoggerService);
 	const configService = container.get(GlobalConfigService);
 
-	logger.verbose(`Getting rooms appearance config`);
+	logger.verbose('Getting rooms appearance config');
 
 	try {
 		const appearanceConfig = await configService.getRoomsAppearanceConfig();

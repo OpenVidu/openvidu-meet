@@ -24,7 +24,7 @@ export class AnalyticsService {
 	 */
 	async getAnalytics(): Promise<MeetAnalytics> {
 		try {
-			this.logger.info('Retrieving analytics data...');
+			this.logger.verbose('Retrieving analytics data...');
 
 			// Fetch all metrics in parallel for better performance
 			const [totalRooms, activeRooms, totalRecordings, completeRecordings] = await Promise.all([
@@ -41,10 +41,10 @@ export class AnalyticsService {
 				completeRecordings
 			};
 
-			this.logger.info('Analytics data retrieved successfully', analytics);
+			this.logger.verbose('Analytics data retrieved successfully');
 			return analytics;
 		} catch (error) {
-			this.logger.error('Error retrieving analytics data:', error);
+			this.logger.debug('Error retrieving analytics data:', error);
 			throw error;
 		}
 	}

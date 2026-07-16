@@ -57,7 +57,7 @@ export class LiveKitService {
 		try {
 			return await this.roomClient.createRoom(options);
 		} catch (error) {
-			this.logger.error('Error creating LiveKit room:', error);
+			this.logger.error(`Error creating LiveKit room '${options.name}'`, error);
 			throw internalError('creating LiveKit room');
 		}
 	}
@@ -83,7 +83,7 @@ export class LiveKitService {
 				result.set(roomName, existingRoomNames.has(roomName));
 			}
 		} catch (error) {
-			this.logger.error(`Error batch checking rooms: ${error}`);
+			this.logger.warn('Error batch checking rooms', error);
 
 			// If the API call fails, assume no rooms exist
 			for (const roomName of roomNames) {
@@ -111,7 +111,7 @@ export class LiveKitService {
 			}
 
 			// Rethrow other errors as they indicate we couldn't determine if the room exists
-			this.logger.error(`Error checking if room ${roomName} exists:`, error);
+			this.logger.error(`Error checking if room '${roomName}' exists`, error);
 			throw error;
 		}
 	}
@@ -138,7 +138,7 @@ export class LiveKitService {
 		try {
 			rooms = await this.roomClient.listRooms([roomName]);
 		} catch (error) {
-			this.logger.error(`Error getting room: ${error}`);
+			this.logger.error(`Error getting room '${roomName}'`, error);
 			throw internalError(`getting LiveKit room '${roomName}'`);
 		}
 
@@ -173,7 +173,7 @@ export class LiveKitService {
 		try {
 			return await this.roomClient.listRooms();
 		} catch (error) {
-			this.logger.error(`Error getting LiveKit rooms: ${error}`);
+			this.logger.error('Error getting LiveKit rooms', error);
 			throw internalError('getting LiveKit rooms');
 		}
 	}
@@ -183,13 +183,13 @@ export class LiveKitService {
 			try {
 				await this.getRoom(roomName);
 			} catch (error) {
-				this.logger.warn(`Livekit Room ${roomName} not found. Skipping deletion.`);
+				this.logger.warn(`LiveKit room '${roomName}' not found. Skipping deletion`);
 				return Promise.resolve();
 			}
 
 			await this.roomClient.deleteRoom(roomName);
 		} catch (error) {
-			this.logger.error(`Error deleting LiveKit room: ${error}`);
+			this.logger.error(`Error deleting LiveKit room '${roomName}'`, error);
 			throw internalError(`deleting LiveKit room '${roomName}'`);
 		}
 	}
@@ -209,7 +209,7 @@ export class LiveKitService {
 					await this.deleteRoom(roomName);
 					this.logger.verbose(`Deleted LiveKit room '${roomName}' successfully.`);
 				} catch (error) {
-					this.logger.warn(`Error deleting LiveKit room '${roomName}': ${error}`);
+					this.logger.warn(`Error deleting LiveKit room '${roomName}'`, error);
 					// Continue with deletion of other rooms even if one fails
 				}
 			},
@@ -227,7 +227,7 @@ export class LiveKitService {
 		try {
 			return await this.roomClient.listParticipants(roomName);
 		} catch (error) {
-			this.logger.error(`Error listing participants for room '${roomName}': ${error}`);
+			this.logger.error(`Error listing participants for room '${roomName}'`, error);
 			throw internalError(`listing participants for room '${roomName}'`);
 		}
 	}
@@ -239,7 +239,10 @@ export class LiveKitService {
 				return participant.identity === participantIdentity;
 			});
 		} catch (error: any) {
-			this.logger.error(error);
+			this.logger.warn(
+				`Error checking if participant '${participantIdentity}' exists in room '${roomName}'`,
+				error
+			);
 
 			if (error?.cause?.code === 'ECONNREFUSED') {
 				throw errorLivekitNotAvailable();
@@ -261,7 +264,17 @@ export class LiveKitService {
 		try {
 			return await this.roomClient.getParticipant(roomName, participantIdentity);
 		} catch (error) {
-			this.logger.warn(`Participant ${participantIdentity} not found in room ${roomName}: ${error}`);
+			// Distinguish a real "participant not found" (404, expected) from LiveKit being
+			// unreachable (503): otherwise a LiveKit outage would masquerade as a 404 and, since
+			// handleError logs 4xx at debug, disappear from the logs at the default level.
+			const errorCode = (error as { cause?: { code?: string } })?.cause?.code;
+
+			if (errorCode === 'ECONNREFUSED') {
+				this.logger.warn(`Error retrieving participant '${participantIdentity}' in room '${roomName}'`, error);
+				throw errorLivekitNotAvailable();
+			}
+
+			this.logger.debug(`Participant '${participantIdentity}' not found in room '${roomName}'`, error);
 			throw errorParticipantNotFound(participantIdentity, roomName);
 		}
 	}
@@ -281,7 +294,8 @@ export class LiveKitService {
 			this.logger.verbose(`Updated metadata for participant '${participantIdentity}' in room '${roomName}'`);
 		} catch (error) {
 			this.logger.error(
-				`Error updating metadata for participant '${participantIdentity}' in room '${roomName}': ${error}`
+				`Error updating metadata for participant '${participantIdentity}' in room '${roomName}'`,
+				error
 			);
 			throw internalError(`updating metadata for participant '${participantIdentity}' in room '${roomName}'`);
 		}
@@ -310,7 +324,7 @@ export class LiveKitService {
 			const data: Uint8Array = new TextEncoder().encode(JSON.stringify(rawData));
 			await this.roomClient.sendData(roomName, data, DataPacket_Kind.RELIABLE, options);
 		} catch (error) {
-			this.logger.error(`Error sending data: ${error}`);
+			this.logger.error(`Error sending data to LiveKit room '${roomName}'`, error);
 			throw internalError(`sending data to LiveKit room '${roomName}'`);
 		}
 	}
@@ -389,17 +403,17 @@ export class LiveKitService {
 		try {
 			return await this.egressClient.startRoomCompositeEgress(roomName, output, options);
 		} catch (error: any) {
-			this.logger.error('Error starting Room Composite Egress:', error);
+			this.logger.error(`Error starting Room Composite Egress for room '${roomName}'`, error);
 			throw internalError(`starting Room Composite Egress for room '${roomName}'`);
 		}
 	}
 
 	async stopEgress(egressId: string): Promise<EgressInfo> {
 		try {
-			this.logger.info(`Stopping ${egressId} egress`);
+			this.logger.info(`Stopping egress '${egressId}'`);
 			return await this.egressClient.stopEgress(egressId);
 		} catch (error: any) {
-			this.logger.error(`Error stopping egress: ${JSON.stringify(error)}`);
+			this.logger.error(`Error stopping egress '${egressId}'`, error);
 			throw internalError(`stopping egress '${egressId}'`);
 		}
 	}
@@ -428,7 +442,7 @@ export class LiveKitService {
 				return [];
 			}
 
-			this.logger.error(`Error getting egress: ${JSON.stringify(error)}`);
+			this.logger.error(`Error getting egress '${egressId}'`, error);
 			throw internalError(`getting egress '${egressId}'`);
 		}
 	}
@@ -506,8 +520,7 @@ export class LiveKitService {
 				);
 			});
 		} catch (error) {
-			const errorMessage = error instanceof Error ? error.message : String(error);
-			this.logger.error(`Error getting in-progress recordings: ${errorMessage}`);
+			this.logger.error(`Error getting in-progress recordings for room '${roomName}'`, error);
 			throw internalError(`getting in-progress egress for room '${roomName}'`);
 		}
 	}

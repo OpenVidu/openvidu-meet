@@ -4,11 +4,13 @@ import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import type { Express, Request, Response, Router } from 'express';
 import express from 'express';
-import { initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
+import { container, initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
+import { LoggerService } from './services/logger.service.js';
 import { checkModuleEnabled, MEET_ENV, logEnvVars } from './environment.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
+import { globalErrorHandler } from './middlewares/error-handler.middleware.js';
 import { staticAssetLimiter } from './middlewares/rate-limit.middleware.js';
 import { initRequestContext } from './middlewares/request-context.middleware.js';
 import { aiAssistantRouter } from './routes/ai-assistant.routes.js';
@@ -171,6 +173,11 @@ const createApp = () => {
 	// Mount all routes under the configured base path
 	app.use(basePath, appRouter);
 
+	// Global catch-all error handler. MUST be registered last, after every route, so any
+	// error not handled by a controller's handleError() is still logged through Winston
+	// instead of falling through to Express's silent default handler.
+	app.use(globalErrorHandler);
+
 	return app;
 };
 
@@ -198,7 +205,29 @@ const startServer = (app: express.Application) => {
 	});
 
 	server.on('error', (error: Error) => {
-		console.error('Server failed to start:', error.message);
+		console.error('Server failed to start:', error);
+		process.exit(1);
+	});
+};
+
+/**
+ * Registers process-level handlers for otherwise-uncaught failures.
+ *
+ * Without these, an unhandled rejection or a thrown error outside any request context
+ * (schedulers, webhook listeners, event handlers) is either swallowed or crashes the
+ * process with no Winston trace. We log them with their stack for post-mortem analysis;
+ * an uncaught exception leaves the process in an undefined state, so we exit afterwards
+ * and let the orchestrator restart it.
+ */
+const registerProcessErrorHandlers = () => {
+	const logger = container.get(LoggerService);
+
+	process.on('unhandledRejection', (reason) => {
+		logger.error('Unhandled promise rejection', reason);
+	});
+
+	process.on('uncaughtException', (error) => {
+		logger.error('Uncaught exception, shutting down', error);
 		process.exit(1);
 	});
 };
@@ -224,6 +253,7 @@ const isMainModule = (): boolean => {
 if (isMainModule()) {
 	checkModuleEnabled();
 	registerDependencies();
+	registerProcessErrorHandlers();
 	const app = createApp();
 	await initializeEagerServices();
 	startServer(app);

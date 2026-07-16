@@ -37,10 +37,10 @@ export class ABSService {
 		try {
 			const blobClient = this.containerClient.getBlobClient(fullKey);
 			const exists = await blobClient.exists();
-			this.logger.verbose(`ABS exists: file '${fullKey}' ${!exists ? 'not' : ''} found`);
+			this.logger.verbose(`ABS exists: file '${fullKey}' ${exists ? 'found' : 'not found'}`);
 			return exists;
 		} catch (error) {
-			this.logger.warn(`ABS exists: file ${fullKey} not found`);
+			this.logger.warn(`ABS exists: error checking file '${fullKey}'`, error);
 			return false;
 		}
 	}
@@ -62,7 +62,7 @@ export class ABSService {
 			this.logger.verbose(`ABS saveObject: successfully saved object '${fullKey}'`);
 			return result;
 		} catch (error: any) {
-			this.logger.error(`ABS saveObject: error saving object '${fullKey}': ${error}`);
+			this.logger.error(`Error saving object '${fullKey}'`, error);
 
 			if (error.code === 'ECONNREFUSED') {
 				throw errorAzureNotAvailable(error);
@@ -90,10 +90,9 @@ export class ABSService {
 				},
 				{ concurrency, failFast: true }
 			);
-			this.logger.verbose(`Successfully deleted objects: [${keys.join(', ')}]`);
-			this.logger.info(`Successfully deleted ${keys.length} objects`);
+			this.logger.verbose(`Successfully deleted ${keys.length} objects`);
 		} catch (error) {
-			this.logger.error(`Azure deleteObjects: error deleting objects: ${error}`);
+			this.logger.error('Error deleting objects', error);
 			throw internalError('deleting objects from ABS');
 		}
 	}
@@ -114,7 +113,7 @@ export class ABSService {
 
 			await blobClient.delete();
 		} catch (error) {
-			this.logger.error(`Azure deleteObject: error deleting blob '${blobName}': ${error}`);
+			this.logger.error(`Error deleting blob '${blobName}'`, error);
 			throw error;
 		}
 	}
@@ -177,7 +176,7 @@ export class ABSService {
 				isTruncated: isTruncated
 			};
 		} catch (error) {
-			this.logger.error(`ABS listObjectsPaginated: error listing objects with prefix '${basePrefix}': ${error}`);
+			this.logger.error(`Error listing objects with prefix '${basePrefix}'`, error);
 			throw internalError('listing objects from ABS');
 		}
 	}
@@ -189,7 +188,7 @@ export class ABSService {
 			const exists = await blobClient.exists();
 
 			if (!exists) {
-				this.logger.warn(`ABS getObjectAsJson: object '${fullKey}' does not exist`);
+				this.logger.debug(`ABS getObjectAsJson: object '${fullKey}' does not exist`);
 				return undefined;
 			}
 
@@ -199,7 +198,7 @@ export class ABSService {
 			this.logger.verbose(`ABS getObjectAsJson: successfully retrieved and parsed object '${fullKey}'`);
 			return parsed;
 		} catch (error: any) {
-			this.logger.error(`ABS getObjectAsJson: error retrieving object '${blobName}': ${error}`);
+			this.logger.error(`Error retrieving object '${blobName}'`, error);
 
 			if (error.code === 'ECONNREFUSED') {
 				throw errorAzureNotAvailable(error);
@@ -223,10 +222,10 @@ export class ABSService {
 				throw new Error('No readable stream body found in the download response');
 			}
 
-			this.logger.info(`ABS getObjectAsStream: successfully retrieved object '${fullKey}' as stream`);
+			this.logger.verbose(`ABS getObjectAsStream: successfully retrieved object '${fullKey}' as stream`);
 			return downloadResp.readableStreamBody as Readable;
 		} catch (error: any) {
-			this.logger.error(`ABS getObjectAsStream: error retrieving stream for object '${blobName}': ${error}`);
+			this.logger.error(`Error retrieving stream for object '${blobName}'`, error);
 
 			if (error.code === 'ECONNREFUSED') {
 				throw errorAzureNotAvailable(error);
@@ -263,7 +262,7 @@ export class ABSService {
 				Metadata: properties.metadata
 			};
 		} catch (error) {
-			this.logger.error(`ABS getObjectHeaders: error retrieving headers for object '${blobName}': ${error}`);
+			this.logger.error(`Error retrieving headers for object '${blobName}'`, error);
 			throw internalError('getting object headers from ABS');
 		}
 	}
@@ -306,7 +305,7 @@ export class ABSService {
 				return { accessible: true, containerExists: false };
 			}
 		} catch (error: any) {
-			this.logger.error(`ABS health check failed: ${error.message}`);
+			this.logger.error('ABS health check failed', error);
 			return { accessible: false, containerExists: false };
 		}
 	}
