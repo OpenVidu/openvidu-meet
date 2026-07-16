@@ -180,18 +180,25 @@ export class LiveKitService {
 
 	async deleteRoom(roomName: string): Promise<void> {
 		try {
-			try {
-				await this.getRoom(roomName);
-			} catch (error) {
-				this.logger.warn(`LiveKit room '${roomName}' not found. Skipping deletion`);
-				return Promise.resolve();
-			}
-
 			await this.roomClient.deleteRoom(roomName);
 		} catch (error) {
+			if (this.isRoomNotFoundError(error)) {
+				this.logger.warn(`LiveKit room '${roomName}' not found. Skipping deletion`);
+				return;
+			}
+
 			this.logger.error(`Error deleting LiveKit room '${roomName}'`, error);
 			throw internalError(`deleting LiveKit room '${roomName}'`);
 		}
+	}
+
+	/**
+	 * Whether the given error is LiveKit reporting that the room does not exist.
+	 * LiveKit's Twirp errors carry the HTTP status (404) and a twirp code ('not_found').
+	 */
+	private isRoomNotFoundError(error: unknown): boolean {
+		const err = error as { status?: number; code?: string } | null;
+		return err?.status === 404 || err?.code === 'not_found';
 	}
 
 	/**
