@@ -53,7 +53,7 @@ import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import type { RedisLock } from './mutex.service.js';
+import type { RedisLock } from '../models/redis-lock.model.js';
 import { MutexService } from './mutex.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import type { RoomService } from './room.service.js';

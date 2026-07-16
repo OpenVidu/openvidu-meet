@@ -1,23 +1,14 @@
-import type { Redlock } from '@sesamecare-oss/redlock';
-import { Lock } from '@sesamecare-oss/redlock';
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetLock } from '../helpers/redis.helper.js';
+import { RedisDistributedLock, RedisRedlock, type RedisLockRegistryData } from '../models/redis-lock.model.js';
 import { LoggerService } from './logger.service.js';
 import { RedisService } from './redis.service.js';
 
-export type RedisLock = Lock;
-type RedisLockRegistryData = {
-	resources: string[];
-	value: string;
-	expiration: number;
-	createdAt: number;
-};
-
 @injectable()
 export class MutexService {
-	protected redlockWithoutRetry: Redlock;
+	protected redlockWithoutRetry: RedisRedlock;
 	protected readonly TTL_MS = ms('1m');
 	protected readonly LOCK_REGISTRY_BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL;
 
@@ -102,7 +93,7 @@ export class MutexService {
 	 * @param ttl The time-to-live (TTL) for the lock in milliseconds. Defaults to the TTL value of the MutexService.
 	 * @returns A Promise that resolves to the acquired Lock object. If the lock cannot be acquired, it resolves to null.
 	 */
-	async acquireWithRegistry(key: string, ttl: number = this.TTL_MS): Promise<Lock | null> {
+	async acquireWithRegistry(key: string, ttl: number = this.TTL_MS): Promise<RedisDistributedLock | null> {
 		const registryKey = MeetLock.getRegistryLock(key);
 
 		try {
@@ -179,7 +170,7 @@ export class MutexService {
 	 * @param pattern - The prefix to filter the keys in Redis.
 	 * @returns A promise that resolves to an array of `Lock` instances.
 	 */
-	async getRegistryLocksByPrefix(pattern: string): Promise<Lock[]> {
+	async getRegistryLocksByPrefix(pattern: string): Promise<RedisDistributedLock[]> {
 		const registryPattern = MeetLock.getRegistryLock(pattern);
 		const keys = await this.redisService.getKeys(registryPattern);
 		this.logger.debug(`Found ${keys.length} registry keys for pattern "${pattern}".`);
@@ -216,7 +207,7 @@ export class MutexService {
 		const uniqueResources = Array.from(new Set(lockEntries.flatMap((entry) => entry.data.resources)));
 		const resourceExistenceMap = await this.getResourceExistenceMap(uniqueResources);
 
-		const locks: Lock[] = [];
+		const locks: RedisDistributedLock[] = [];
 
 		for (const entry of lockEntries) {
 			const hasMissingResource = entry.data.resources.some((resource) => !resourceExistenceMap.get(resource));
@@ -227,7 +218,12 @@ export class MutexService {
 			}
 
 			locks.push(
-				new Lock(this.redlockWithoutRetry, entry.data.resources, entry.data.value, [], entry.data.expiration)
+				new RedisDistributedLock(
+					this.redlockWithoutRetry,
+					entry.data.resources,
+					entry.data.value,
+					entry.data.expiration
+				)
 			);
 		}
 
@@ -269,7 +265,7 @@ export class MutexService {
 	 * @param ttl The time-to-live (TTL) for the lock in milliseconds.
 	 * @returns A Promise that resolves to the acquired Lock, or null if it cannot be acquired.
 	 */
-	protected async acquire(key: string, ttl: number = this.TTL_MS): Promise<Lock | null> {
+	protected async acquire(key: string, ttl: number = this.TTL_MS): Promise<RedisDistributedLock | null> {
 		try {
 			this.logger.debug(`Requesting local lock: ${key}`);
 			return await this.redlockWithoutRetry.acquire([key], ttl);
@@ -284,7 +280,7 @@ export class MutexService {
 	 *
 	 * @param lock The Lock instance to release.
 	 */
-	protected async release(lock: Lock): Promise<void> {
+	protected async release(lock: RedisDistributedLock): Promise<void> {
 		try {
 			await lock.release();
 			this.logger.verbose(`Local lock for '${lock.resources.join(', ')}' successfully released`);
@@ -299,7 +295,7 @@ export class MutexService {
 	 * @param registryKey - The resource key to retrieve the lock data for.
 	 * @returns A promise that resolves to a `Lock` instance or null if not found.
 	 */
-	protected async buildLock(registryKey: string): Promise<Lock | null> {
+	protected async buildLock(registryKey: string): Promise<RedisDistributedLock | null> {
 		const registryLockData = await this.getRegistryLockData(registryKey);
 
 		if (!registryLockData) {
@@ -307,7 +303,7 @@ export class MutexService {
 		}
 
 		const { resources, value, expiration } = registryLockData;
-		return new Lock(this.redlockWithoutRetry, resources, value, [], expiration);
+		return new RedisDistributedLock(this.redlockWithoutRetry, resources, value, expiration);
 	}
 
 	protected async getRegistryLockData(registryKey: string): Promise<RedisLockRegistryData | null> {
