@@ -4,6 +4,7 @@ export * from './distributed-event.model.js';
 export * from './error.model.js';
 export * from './migration.model.js';
 export * from './redis.model.js';
+export * from './redis-lock.model.js';
 export * from './request-context.model.js';
 export * from './task-scheduler.model.js';
 export * from './token.model.js';

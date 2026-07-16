@@ -28,7 +28,7 @@ export const INTERNAL_CONFIG = {
 
 	// Timing and cleanup settings for recording lifecycle management
 	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording to be marked as started
-	RECORDING_ACTIVE_LOCK_TTL: '7d' as StringValue, // Redis Lock TTL for active recording in a room
+	RECORDING_ACTIVE_LOCK_TTL: '24h' as StringValue, // Redis Lock TTL for active recording in a room (capped at the 24h max supported by the distributed-lock engine; the real lifecycle is governed by the orphaned-locks GC, this is only a last-resort safety net)
 	RECORDING_ACTIVE_LOCK_GC_INTERVAL: '15m' as StringValue, // Interval for cleaning up stale active recording locks
 	RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD: '30s' as StringValue, // Grace period to consider an active recording lock as orphaned (should be greater than RECORDING_STARTED_TIMEOUT)
 	RECORDING_STALE_GC_INTERVAL: '14m' as StringValue, // Interval for cleaning up stale recordings (not updated recently)

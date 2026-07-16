@@ -1,12 +1,13 @@
-import { Redlock } from '@sesamecare-oss/redlock';
 import { EventEmitter } from 'events';
 import { inject, injectable } from 'inversify';
 import type { RedisOptions, SentinelAddress } from 'ioredis';
 import { Redis } from 'ioredis';
 import ms from 'ms';
+import { IoredisAdapter } from 'redlock-universal';
 import { MEET_ENV } from '../environment.js';
 import type { DistributedEventPayload } from '../models/distributed-event.model.js';
 import { internalError } from '../models/error.model.js';
+import { RedisRedlock } from '../models/redis-lock.model.js';
 import { LoggerService } from './logger.service.js';
 
 @injectable()
@@ -15,6 +16,7 @@ export class RedisService extends EventEmitter {
 	protected EVENT_CHANNEL = 'ov_meet_channel';
 	protected redisPublisher: Redis;
 	protected redisSubscriber: Redis;
+	protected redlockAdapter: IoredisAdapter;
 	protected isConnected = false;
 	protected eventHandler?: (event: DistributedEventPayload) => void;
 
@@ -24,6 +26,10 @@ export class RedisService extends EventEmitter {
 		const redisOptions = this.loadRedisConfig();
 		this.redisPublisher = new Redis(redisOptions);
 		this.redisSubscriber = new Redis(redisOptions);
+
+		// Shared distributed-lock adapter over the publisher connection. Reused
+		// across every Redlock so the release/extend Lua scripts stay EVALSHA-cached.
+		this.redlockAdapter = new IoredisAdapter(this.redisPublisher);
 
 		this.setupEventHandlers();
 	}
@@ -65,13 +71,16 @@ export class RedisService extends EventEmitter {
 		this.redisSubscriber.on('end', () => this.logger.warn('Redis subscriber disconnected'));
 	}
 
-	createRedlock(retryCount = -1, retryDelay = 200) {
-		return new Redlock([this.redisPublisher], {
-			driftFactor: 0.01,
-			retryCount,
-			retryDelay,
-			retryJitter: 200 // Random variation in the time between retries.
-		});
+	/**
+	 * Creates a distributed-lock engine backed by `redlock-universal`.
+	 *
+	 * @param retryCount Retries beyond the first acquisition attempt. `0` means
+	 * fail fast on contention. Negative values (the historical "retry forever"
+	 * sentinel) are unused and normalised to `0`.
+	 * @param retryDelay Delay between retries in milliseconds.
+	 */
+	createRedlock(retryCount = -1, retryDelay = 200): RedisRedlock {
+		return new RedisRedlock(this.redlockAdapter, Math.max(0, retryCount), retryDelay);
 	}
 
 	public onReady(callback: () => void) {

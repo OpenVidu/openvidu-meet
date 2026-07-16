@@ -1,10 +1,10 @@
 import { afterEach, beforeAll, describe, expect, it, jest } from '@jest/globals';
-import { Lock } from '@sesamecare-oss/redlock';
 import { SpiedFunction } from 'jest-mock';
 import { EgressInfo, Room } from 'livekit-server-sdk';
 import ms from 'ms';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MeetLock } from '../../../../src/helpers/redis.helper.js';
+import type { RedisLock } from '../../../../src/models/redis-lock.model.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
 import { LoggerService } from '../../../../src/services/logger.service.js';
 import { MutexService } from '../../../../src/services/mutex.service.js';
@@ -17,7 +17,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 	let livekitService: LiveKitService;
 
 	// Mock functions
-	let getRegistryLocksByPrefixMock: SpiedFunction<(pattern: string) => Promise<Lock[]>>;
+	let getRegistryLocksByPrefixMock: SpiedFunction<(pattern: string) => Promise<RedisLock[]>>;
 	let lockExistsMock: SpiedFunction<(key: string) => Promise<boolean>>;
 	let getLockCreatedAtMock: SpiedFunction<(key: string) => Promise<number | null>>;
 	let releaseWithRegistryMock: SpiedFunction<(key: string) => Promise<void>>;
@@ -96,7 +96,7 @@ describe('Orphaned Active Recording Locks GC Tests', () => {
 
 			// Simulate existing locks in the system
 			getRegistryLocksByPrefixMock.mockResolvedValueOnce(
-				testLockResources.map((resource) => ({ resources: [resource] }) as Lock)
+				testLockResources.map((resource) => ({ resources: [resource] }) as RedisLock)
 			);
 
 			// Execute the garbage collector

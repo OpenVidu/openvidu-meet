@@ -10,7 +10,7 @@ import { RecordingRepository } from '../repositories/recording.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import type { RedisLock } from './mutex.service.js';
+import type { RedisLock } from '../models/redis-lock.model.js';
 import { MutexService } from './mutex.service.js';
 import { RecordingService } from './recording.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
