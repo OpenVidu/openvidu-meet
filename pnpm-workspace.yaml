@@ -17,6 +17,7 @@ packages:
 
 allowBuilds:
   '@parcel/watcher': false
+  '@swc/core': false
   bcrypt: true
   chromedriver: false
   core-js: false
