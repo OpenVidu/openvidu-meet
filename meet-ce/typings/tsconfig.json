@@ -4,7 +4,7 @@
 		"target": "ESNext",
 		"sourceMap": true,
 		"declaration": true,
-		"moduleResolution": "node",
+		"moduleResolution": "bundler",
 		"emitDecoratorMetadata": true,
 		"experimentalDecorators": true,
 		"typeRoots": ["node_modules/@types"],
