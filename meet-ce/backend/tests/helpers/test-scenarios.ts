@@ -32,7 +32,7 @@ import {
 	stopRecording,
 	updateRoomMember
 } from './request-helpers';
-import { waitForMeetingToEnd } from './wait-helpers.js';
+import { waitForMeetingToEnd, waitForMeetingToStart } from './wait-helpers.js';
 
 let mockWebhookServer: http.Server;
 
@@ -69,6 +69,7 @@ export const setupSingleRoom = async (
 	// Join participant if needed
 	if (withParticipant) {
 		await joinFakeParticipant(room.roomId, 'TEST_PARTICIPANT');
+		await waitForMeetingToStart(room.roomId);
 	}
 
 	return {

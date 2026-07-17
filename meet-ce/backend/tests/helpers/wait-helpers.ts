@@ -261,6 +261,32 @@ export const waitForRecordingToStop = async (
 };
 
 /**
+ * Waits until a meeting has started from the backend point of view.
+ *
+ * When a participant joins a LiveKit room, LiveKit emits a `room_started`
+ * webhook that the backend processes asynchronously (serialized under a lock) to
+ * set the stored room status to {@link MeetRoomStatus.ACTIVE_MEETING}. LiveKit
+ * reports the participant as connected before this backend side effect lands, so
+ * setup helpers must wait for the persisted status to catch up — otherwise
+ * deletion/policy logic that reads `room.status` races the webhook and observes
+ * a stale (non-active) state.
+ *
+ * @param roomId    - Room identifier to poll.
+ * @param timeoutMs - Maximum wait time in milliseconds (default: 15 000).
+ */
+export const waitForMeetingToStart = async (roomId: string, timeoutMs = DEFAULT_ROOM_TIMEOUT_MS): Promise<void> => {
+	const roomRepository = container.get(RoomRepository);
+
+	await pollUntil(
+		async () => {
+			const room = await roomRepository.findByRoomId(roomId, ['status']);
+			return !!room && room.status === MeetRoomStatus.ACTIVE_MEETING;
+		},
+		{ timeoutMs, errorMessage: `Meeting in room '${roomId}' did not become active` }
+	);
+};
+
+/**
  * Waits until a meeting has ended from both the backend and LiveKit point of view.
  *
  * The condition is satisfied when either the room no longer exists in the
