@@ -56,7 +56,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	protected async createDocument(data: TDocument): Promise<TDomain> {
 		try {
 			const document = await this.model.create(data);
-			this.logger.debug(`Document created with ID: ${document._id}`);
+			this.logger.debug(`Document created with ID: ${String(document._id)}`);
 			return this.toDomain(this.stripMetadataFromDocument(document.toObject()));
 		} catch (error) {
 			this.logger.error('Error creating document:', error);
@@ -197,7 +197,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			const isUpdateQuery = Object.keys(update).some((key) => key.startsWith('$'));
 			const safeUpdate = isUpdateQuery
 				? (update as UpdateQuery<TDocument>)
-				: this.buildUpdateQuery(update as Partial<TDocument>);
+				: this.buildUpdateQuery(update);
 
 			if (!safeUpdate.$set && !safeUpdate.$unset) {
 				throw new Error('Partial update requires at least one field to set or unset');
@@ -313,7 +313,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 				throw new DocumentNotFoundError('Document not found for deletion');
 			}
 
-			this.logger.debug(`Document with ID '${result._id}' deleted`);
+			this.logger.debug(`Document with ID '${String(result._id)}' deleted`);
 		} catch (error) {
 			if (error instanceof DocumentNotFoundError) {
 				// Expected not-found (already logged at debug above); do not relog at error.
@@ -405,7 +405,8 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	 */
 	private stripMetadataFromDocument(document: Require_id<TDocument> & { __v?: number }): TDocument {
 		const { _id, __v, ...domainDocument } = document;
-		(void _id, __v);
+		void _id;
+		void __v;
 		return domainDocument as TDocument;
 	}
 
@@ -439,7 +440,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			}
 		};
 
-		buildUpdateQueryDeep(partial as Record<string, unknown>);
+		buildUpdateQueryDeep(partial);
 
 		const updateQuery: UpdateQuery<TDocument> = {};
 
@@ -500,16 +501,13 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 	protected decodeCursor(token: string): PaginationCursor {
 		try {
 			const decoded = Buffer.from(token, 'base64').toString('utf-8');
-			const cursor = JSON.parse(decoded);
+			const parsed: unknown = JSON.parse(decoded);
 
-			if (
-				!Object.prototype.hasOwnProperty.call(cursor, 'fieldValue') ||
-				!Object.prototype.hasOwnProperty.call(cursor, 'id')
-			) {
+			if (typeof parsed !== 'object' || parsed === null || !('fieldValue' in parsed) || !('id' in parsed)) {
 				throw new Error('Invalid cursor format');
 			}
 
-			return cursor;
+			return parsed as PaginationCursor;
 		} catch (error) {
 			this.logger.debug('Failed to decode pagination cursor:', error);
 			throw new Error('Invalid pagination token');
@@ -556,31 +554,31 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			orConditions.push({
 				[sortField]: { $exists: false },
 				_id: { [equalComparison]: cursor.id }
-			} as QueryFilter<TDocument>);
+			});
 
 			// In ascending order, also include documents where the field exists (they come after missing fields)
 			if (sortOrder === SortOrder.ASC) {
 				orConditions.push({
 					[sortField]: { $exists: true }
-				} as QueryFilter<TDocument>);
+				});
 			}
 		} else {
 			// Normal case: field has a value
 			orConditions.push(
 				{
 					[sortField]: { [comparison]: cursor.fieldValue }
-				} as QueryFilter<TDocument>,
+				},
 				{
 					[sortField]: cursor.fieldValue,
 					_id: { [equalComparison]: cursor.id }
-				} as QueryFilter<TDocument>
+				}
 			);
 
 			// In descending order, also include documents where the field doesn't exist (they come after all values)
 			if (sortOrder === SortOrder.DESC) {
 				orConditions.push({
 					[sortField]: { $exists: false }
-				} as QueryFilter<TDocument>);
+				});
 			}
 		}
 

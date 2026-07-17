@@ -36,11 +36,11 @@ export const withRecordingEnabled = async (req: Request, res: Response, next: Ne
 
 	try {
 		const { roomId } = req.body as { roomId: string };
-		const { config } = await roomService.getMeetRoom(roomId!, ['config']);
+		const { config } = await roomService.getMeetRoom(roomId, ['config']);
 
 		if (!config.recording.enabled) {
 			logger.debug(`Recording is disabled for room '${roomId}'`);
-			const error = errorRecordingDisabled(roomId!);
+			const error = errorRecordingDisabled(roomId);
 			return rejectRequestFromMeetError(res, error);
 		}
 
@@ -124,7 +124,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
  * - ROOM_MANAGER: defaults to owner OR member OR user-access scopes.
  * - ROOM_MEMBER: defaults to member OR user-access scopes.
  */
-export const applyRecordingListAccessFilters = async (_req: Request, res: Response, next: NextFunction) => {
+export const applyRecordingListAccessFilters = (_req: Request, res: Response, next: NextFunction) => {
 	const requestSessionService = container.get(RequestSessionService);
 	const memberRoomId = requestSessionService.getRoomIdFromMember();
 
@@ -267,13 +267,15 @@ const validateBulkRecordingAccess = async (
 
 	const settledResults = await runConcurrently(
 		recordingIds,
-		async (recordingId) => {
+		async (
+			recordingId
+		): Promise<{ ok: true; recordingId: string } | { ok: false; failed: BulkRecordingFailed }> => {
 			try {
 				await recordingService.validateRecordingAccess(recordingId, permission, ['recordingId']);
-				return recordingId;
+				return { ok: true, recordingId };
 			} catch (error) {
 				const message = error instanceof OpenViduMeetError ? error.message : 'Unexpected error';
-				throw { recordingId, error: message } as BulkRecordingFailed;
+				return { ok: false, failed: { recordingId, error: message } };
 			}
 		},
 		{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_RECORDINGS }
@@ -284,9 +286,11 @@ const validateBulkRecordingAccess = async (
 
 	settledResults.forEach((result) => {
 		if (result.status === 'fulfilled') {
-			processableIds.push(result.value);
-		} else {
-			failed.push(result.reason as BulkRecordingFailed);
+			if (result.value.ok) {
+				processableIds.push(result.value.recordingId);
+			} else {
+				failed.push(result.value.failed);
+			}
 		}
 	});
 

@@ -1,9 +1,13 @@
 import type {
+	MeetRoomAccessConfig,
+	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
 	MeetRoomExtraField,
 	MeetRoomField,
-	MeetRoomOptions
+	MeetRoomOptions,
+	MeetRoomRolesConfig,
+	MeetRoomStatus
 } from '@openvidu-meet/typings';
 import { MeetRoomDeletionSuccessCode } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
@@ -21,7 +25,7 @@ import { getBaseUrl } from '../utils/url.utils.js';
 export const createRoom = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const options: MeetRoomOptions = req.body;
+	const options = req.body as MeetRoomOptions;
 	// Fields are merged from headers into req.query by the middleware
 	const { fields, extraFields } = res.locals.validatedQuery as {
 		fields?: MeetRoomField[];
@@ -182,7 +186,7 @@ export const bulkDeleteRooms = async (req: Request, res: Response) => {
 	const bulkValidation = res.locals.bulkValidation;
 
 	try {
-		logger.verbose(`Deleting rooms: ${roomIds} with options: ${JSON.stringify(res.locals.validatedQuery)}`);
+		logger.verbose(`Deleting rooms: ${String(roomIds)} with options: ${JSON.stringify(res.locals.validatedQuery)}`);
 
 		const deleteOpts: MeetRoomDeletionOptions = {
 			withMeeting,
@@ -242,7 +246,7 @@ export const getRoomConfig = async (req: Request, res: Response) => {
 export const updateRoomConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { config } = req.body;
+	const { config } = req.body as { config: Partial<MeetRoomConfig> };
 	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Updating room config for room '${roomId}'`);
@@ -258,7 +262,7 @@ export const updateRoomConfig = async (req: Request, res: Response) => {
 export const updateRoomStatus = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { status } = req.body;
+	const { status } = req.body as { status: MeetRoomStatus };
 	const { roomId } = req.params as Record<string, string>;
 	const { fields, extraFields } = res.locals.validatedQuery as {
 		fields?: MeetRoomField[];
@@ -284,7 +288,7 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 export const updateRoomRoles = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { roles } = req.body;
+	const { roles } = req.body as { roles: MeetRoomRolesConfig };
 	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Updating roles permissions for room '${roomId}'`);
@@ -300,7 +304,7 @@ export const updateRoomRoles = async (req: Request, res: Response) => {
 export const updateRoomAccess = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const roomService = container.get(RoomService);
-	const { access } = req.body;
+	const { access } = req.body as { access: MeetRoomAccessConfig };
 	const { roomId } = req.params as Record<string, string>;
 
 	logger.verbose(`Updating access config for room '${roomId}'`);

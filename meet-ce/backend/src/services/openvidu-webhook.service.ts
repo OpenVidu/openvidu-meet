@@ -200,7 +200,7 @@ export class OpenViduWebhookService {
 			await this.sendRequest(url, options);
 		} catch (error) {
 			if (retries <= 0) {
-				throw new Error(`Request failed: ${error}`);
+				throw new Error(`Request failed: ${error instanceof Error ? error.message : String(error)}`);
 			}
 
 			this.logger.warn(`Retrying in ${delay / 1000} seconds... (${retries} retries left)`);
@@ -225,11 +225,11 @@ export class OpenViduWebhookService {
 			if (!response.ok) {
 				throw new Error(`Request failed with status ${response.status}`);
 			}
-		} catch (error: any) {
+		} catch (error) {
 			clearTimeout(timeoutId);
 
 			// Handle timeout error specifically
-			if (error.name === 'AbortError') {
+			if (error instanceof Error && error.name === 'AbortError') {
 				throw new Error('Request timed out after 5 seconds');
 			}
 
@@ -269,7 +269,7 @@ export class OpenViduWebhookService {
 
 			// Success case
 			this.logger.verbose(`Webhook test successful for URL: ${url}`);
-		} catch (error: any) {
+		} catch (error) {
 			clearTimeout(timeoutId);
 
 			// If it's already our webhook error, re-throw it
@@ -279,12 +279,15 @@ export class OpenViduWebhookService {
 
 			// Handle specific error types
 			let reason: string;
+			const errorName = error instanceof Error ? error.name : '';
+			const errorMessage = error instanceof Error ? error.message : String(error);
 
-			if (error.name === 'AbortError') {
+			if (errorName === 'AbortError') {
 				reason = 'Request timed out after 5 seconds';
-			} else if (error.name === 'TypeError' && error.message.includes('fetch')) {
+			} else if (errorName === 'TypeError' && errorMessage.includes('fetch')) {
 				// Network errors
-				const errorCode = error.cause?.code;
+				const errorCode =
+					error instanceof Error ? (error.cause as { code?: string } | undefined)?.code : undefined;
 
 				switch (errorCode) {
 					case 'ENOTFOUND':
@@ -302,10 +305,10 @@ export class OpenViduWebhookService {
 						reason = 'SSL/TLS certificate error';
 						break;
 					default:
-						reason = `Network error: ${error.message}`;
+						reason = `Network error: ${errorMessage}`;
 				}
 			} else {
-				reason = `Connection failed: ${error.message}`;
+				reason = `Connection failed: ${errorMessage}`;
 			}
 
 			throw errorInvalidWebhookUrl(url, reason);
@@ -317,7 +320,7 @@ export class OpenViduWebhookService {
 
 		try {
 			apiKeys = await this.apiKeyService.getApiKeys();
-		} catch (error) {
+		} catch {
 			// If there is an error retrieving API keys, we assume they are not configured
 			apiKeys = [];
 		}

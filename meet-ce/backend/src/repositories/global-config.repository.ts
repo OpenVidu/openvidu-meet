@@ -27,7 +27,7 @@ export class GlobalConfigRepository extends BaseRepository<GlobalConfig, MeetGlo
 	protected toDomain(dbObject: MeetGlobalConfigDocument): GlobalConfig {
 		const { schemaVersion, ...globalConfig } = dbObject;
 		void schemaVersion;
-		return globalConfig as GlobalConfig;
+		return globalConfig;
 	}
 
 	protected override getDocumentOnlyFields(): readonly MeetGlobalConfigDocumentOnlyField[] {

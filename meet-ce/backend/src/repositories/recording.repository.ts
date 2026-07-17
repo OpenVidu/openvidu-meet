@@ -42,8 +42,11 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 
 	protected toDomain(dbObject: MeetRecordingDocument): MeetRecordingInfo {
 		const { schemaVersion, roomOwner, roomUserAccess, accessSecrets, ...recording } = dbObject;
-		(void schemaVersion, roomOwner, roomUserAccess, accessSecrets);
-		return recording as MeetRecordingInfo;
+		void schemaVersion;
+		void roomOwner;
+		void roomUserAccess;
+		void accessSecrets;
+		return recording;
 	}
 
 	protected override getDocumentOnlyFields(): readonly MeetRecordingDocumentOnlyField[] {
@@ -161,9 +164,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		recordingId: string,
 		fields?: readonly MeetRecordingField[]
 	): Promise<MeetRecordingInfo | Partial<MeetRecordingInfo> | null> {
-		return this.findOne({ recordingId }, fields as string[]) as Promise<
-			MeetRecordingInfo | Partial<MeetRecordingInfo> | null
-		>;
+		return this.findOne({ recordingId }, fields as string[]);
 	}
 
 	/**

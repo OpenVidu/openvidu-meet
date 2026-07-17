@@ -22,7 +22,7 @@ import { runConcurrently } from '../utils/concurrency.utils.js';
  * - ROOM_MANAGER: can list rooms they own or where they are members (and rooms with user access enabled)
  * - ROOM_MEMBER: can list only rooms where they are members (and rooms with user access enabled)
  */
-export const applyRoomListAccessFilters = async (_req: Request, res: Response, next: NextFunction) => {
+export const applyRoomListAccessFilters = (_req: Request, res: Response, next: NextFunction) => {
 	const requestSessionService = container.get(RequestSessionService);
 	const user = requestSessionService.getAuthenticatedUser();
 
@@ -185,7 +185,7 @@ export const validateBulkDeleteRoomManagement = async (_req: Request, res: Respo
 
 	const settledResults = await runConcurrently(
 		roomIds,
-		async (roomId) => {
+		async (roomId): Promise<{ ok: true; roomId: string } | { ok: false; failed: BulkDeleteRoomFailed }> => {
 			try {
 				// Check that user is admin or owner of the room
 				if (user && user.role !== MeetUserRole.ADMIN) {
@@ -196,16 +196,19 @@ export const validateBulkDeleteRoomManagement = async (_req: Request, res: Respo
 					}
 				}
 
-				return roomId;
+				return { ok: true, roomId };
 			} catch (error) {
 				const meetError =
 					error instanceof OpenViduMeetError ? error : internalError(`deleting room '${roomId}'`);
 
-				throw {
-					roomId,
-					error: meetError.name,
-					message: meetError.message
-				} as BulkDeleteRoomFailed;
+				return {
+					ok: false,
+					failed: {
+						roomId,
+						error: meetError.name,
+						message: meetError.message
+					}
+				};
 			}
 		},
 		{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_ROOMS }
@@ -216,9 +219,11 @@ export const validateBulkDeleteRoomManagement = async (_req: Request, res: Respo
 
 	settledResults.forEach((result) => {
 		if (result.status === 'fulfilled') {
-			processableIds.push(result.value);
-		} else {
-			failed.push(result.reason as BulkDeleteRoomFailed);
+			if (result.value.ok) {
+				processableIds.push(result.value.roomId);
+			} else {
+				failed.push(result.value.failed);
+			}
 		}
 	});
 

@@ -186,7 +186,7 @@ export const bulkDeleteUsers = async (req: Request, res: Response) => {
 	const { userIds } = res.locals.validatedQuery as { userIds: string[] };
 
 	const logger = container.get(LoggerService);
-	logger.verbose(`Deleting users: ${userIds}`);
+	logger.verbose(`Deleting users: ${String(userIds)}`);
 
 	try {
 		const userService = container.get(UserService);

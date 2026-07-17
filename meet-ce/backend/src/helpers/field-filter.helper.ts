@@ -66,7 +66,7 @@ export function buildFieldsForDbQuery<TField extends string, TExtraField extends
 	// Case 3: Neither fields nor extraFields specified
 	// Return only base fields (exclude all extra fields)
 	const baseFields = allFields.filter((field) => !extraFieldsList.includes(field as TExtraField));
-	return baseFields as TField[];
+	return baseFields;
 }
 
 /**

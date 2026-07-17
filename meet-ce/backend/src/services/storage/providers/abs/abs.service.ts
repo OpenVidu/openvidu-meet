@@ -1,4 +1,10 @@
-import type { BlobItem, BlockBlobClient, BlockBlobUploadResponse, ContainerClient } from '@azure/storage-blob';
+import type {
+	BlobItem,
+	BlockBlobClient,
+	BlockBlobUploadResponse,
+	ContainerClient,
+	ContainerListBlobFlatSegmentResponse
+} from '@azure/storage-blob';
 import { BlobServiceClient } from '@azure/storage-blob';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
@@ -7,6 +13,10 @@ import { MEET_ENV } from '../../../../environment.js';
 import { errorAzureNotAvailable, internalError } from '../../../../models/error.model.js';
 import { runConcurrently } from '../../../../utils/concurrency.utils.js';
 import { LoggerService } from '../../../logger.service.js';
+
+/** Type guard: narrows an unknown error to one exposing a matching `code` property. */
+const hasErrorCode = (error: unknown, code: string): boolean =>
+	typeof error === 'object' && error !== null && 'code' in error && error.code === code;
 
 @injectable()
 export class ABSService {
@@ -61,10 +71,10 @@ export class ABSService {
 			const result = await blockBlob.upload(data, Buffer.byteLength(data));
 			this.logger.verbose(`ABS saveObject: successfully saved object '${fullKey}'`);
 			return result;
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error(`Error saving object '${fullKey}'`, error);
 
-			if (error.code === 'ECONNREFUSED') {
+			if (hasErrorCode(error, 'ECONNREFUSED')) {
 				throw errorAzureNotAvailable(error);
 			}
 
@@ -146,15 +156,14 @@ export class ABSService {
 					continuationToken && continuationToken !== 'undefined' ? continuationToken : undefined
 			});
 
-			const response = await iterator.next();
-			const segment = response.value;
+			const segment = await this.getFirstPage(iterator);
 
 			let NextContinuationToken =
-				segment.continuationToken === ''
+				segment?.continuationToken === ''
 					? undefined
-					: segment.continuationToken === continuationToken
+					: segment?.continuationToken === continuationToken
 						? undefined
-						: segment.continuationToken;
+						: segment?.continuationToken;
 			let isTruncated = NextContinuationToken !== undefined;
 
 			// We need to check if the next page has items, if not we set isTruncated to false
@@ -162,16 +171,15 @@ export class ABSService {
 				.listBlobsFlat({ prefix: basePrefix })
 				.byPage({ maxPageSize: maxResults, continuationToken: NextContinuationToken });
 
-			const response2 = await iterator2.next();
-			const segment2 = response2.value;
+			const segment2 = await this.getFirstPage(iterator2);
 
-			if (segment2.segment.blobItems.length === 0) {
+			if (segment2?.segment.blobItems.length === 0) {
 				NextContinuationToken = undefined;
 				isTruncated = false;
 			}
 
 			return {
-				items: segment.segment.blobItems,
+				items: segment?.segment.blobItems ?? [],
 				continuationToken: NextContinuationToken,
 				isTruncated: isTruncated
 			};
@@ -179,6 +187,19 @@ export class ABSService {
 			this.logger.error(`Error listing objects with prefix '${basePrefix}'`, error);
 			throw internalError('listing objects from ABS');
 		}
+	}
+
+	/**
+	 * Reads the first page from a paged blob-listing iterator, preserving the strongly-typed
+	 * segment shape (the raw `IteratorResult.value` is typed as `any`, which we avoid here).
+	 *
+	 * @returns The first page segment, or `undefined` if the iterator produced no page.
+	 */
+	protected async getFirstPage(
+		iterator: AsyncIterableIterator<ContainerListBlobFlatSegmentResponse>
+	): Promise<ContainerListBlobFlatSegmentResponse | undefined> {
+		const result = await iterator.next();
+		return result.done ? undefined : result.value;
 	}
 
 	async getObjectAsJson(blobName: string): Promise<object | undefined> {
@@ -194,13 +215,13 @@ export class ABSService {
 
 			const downloadResp = await blobClient.download();
 			const downloaded = await this.streamToString(downloadResp.readableStreamBody!);
-			const parsed = JSON.parse(downloaded);
+			const parsed = JSON.parse(downloaded) as Record<string, unknown>;
 			this.logger.verbose(`ABS getObjectAsJson: successfully retrieved and parsed object '${fullKey}'`);
 			return parsed;
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error(`Error retrieving object '${blobName}'`, error);
 
-			if (error.code === 'ECONNREFUSED') {
+			if (hasErrorCode(error, 'ECONNREFUSED')) {
 				throw errorAzureNotAvailable(error);
 			}
 
@@ -224,10 +245,10 @@ export class ABSService {
 
 			this.logger.verbose(`ABS getObjectAsStream: successfully retrieved object '${fullKey}' as stream`);
 			return downloadResp.readableStreamBody as Readable;
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error(`Error retrieving stream for object '${blobName}'`, error);
 
-			if (error.code === 'ECONNREFUSED') {
+			if (hasErrorCode(error, 'ECONNREFUSED')) {
 				throw errorAzureNotAvailable(error);
 			}
 
@@ -270,7 +291,7 @@ export class ABSService {
 	protected async streamToString(readable: NodeJS.ReadableStream): Promise<string> {
 		return new Promise((resolve, reject) => {
 			const chunks: Buffer[] = [];
-			readable.on('data', (data) => chunks.push(Buffer.isBuffer(data) ? data : Buffer.from(data)));
+			readable.on('data', (data: string | Buffer) => chunks.push(Buffer.isBuffer(data) ? data : Buffer.from(data)));
 			readable.on('end', () => resolve(Buffer.concat(chunks).toString('utf-8')));
 			readable.on('error', reject);
 		});
@@ -304,7 +325,7 @@ export class ABSService {
 				this.logger.error(`ABS container '${MEET_ENV.AZURE_CONTAINER_NAME}' does not exist`);
 				return { accessible: true, containerExists: false };
 			}
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error('ABS health check failed', error);
 			return { accessible: false, containerExists: false };
 		}

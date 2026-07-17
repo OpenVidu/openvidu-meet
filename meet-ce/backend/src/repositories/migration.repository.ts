@@ -13,7 +13,7 @@ export class MigrationRepository extends BaseRepository<MeetMigration, MeetMigra
 	}
 
 	protected toDomain(dbObject: MeetMigrationDocument): MeetMigration {
-		return dbObject as MeetMigration;
+		return dbObject;
 	}
 
 	/**

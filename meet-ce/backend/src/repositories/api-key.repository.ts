@@ -18,7 +18,7 @@ export class ApiKeyRepository extends BaseRepository<MeetApiKey, MeetApiKeyDocum
 	protected toDomain(dbObject: MeetApiKeyDocument): MeetApiKey {
 		const { schemaVersion, ...apiKey } = dbObject;
 		void schemaVersion;
-		return apiKey as MeetApiKey;
+		return apiKey;
 	}
 
 	protected override getDocumentOnlyFields(): readonly MeetApiKeyDocumentOnlyField[] {

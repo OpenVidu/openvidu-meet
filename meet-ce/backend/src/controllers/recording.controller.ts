@@ -1,6 +1,8 @@
 import type { MeetRecordingField } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import type { Readable } from 'stream';
+import type { z } from 'zod';
+import type { StartRecordingReqSchema } from '../models/zod-schemas/recording.schema.js';
 import { container } from '../config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
@@ -17,7 +19,7 @@ import { getBaseUrl } from '../utils/url.utils.js';
 export const startRecording = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const recordingService = container.get(RecordingService);
-	const { roomId, config } = req.body;
+	const { roomId, config } = req.body as z.infer<typeof StartRecordingReqSchema>;
 	const { fields } = res.locals.validatedQuery as { fields?: MeetRecordingField[] };
 	logger.info(`Starting recording in room '${roomId}'`);
 
@@ -84,7 +86,7 @@ export const bulkDeleteRecordings = async (req: Request, res: Response) => {
 	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
 	const bulkValidation = res.locals.bulkValidation;
 
-	logger.info(`Deleting recordings: ${recordingIds}`);
+	logger.info(`Deleting recordings: ${String(recordingIds)}`);
 
 	try {
 		const recordingIdsToProcess = bulkValidation?.processableIds ?? [];
@@ -248,7 +250,7 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 	const { recordingIds } = res.locals.validatedQuery as { recordingIds: string[] };
 	const bulkValidation = res.locals.bulkValidation;
 
-	logger.info(`Preparing ZIP download for recordings: ${recordingIds}`);
+	logger.info(`Preparing ZIP download for recordings: ${String(recordingIds)}`);
 
 	try {
 		const recordingIdsToProccess = bulkValidation?.processableIds ?? [];
@@ -279,7 +281,7 @@ export const downloadRecordingsZip = async (req: Request, res: Response) => {
 		archive.pipe(res);
 
 		// Finalize the archive
-		archive.finalize();
+		void archive.finalize();
 	} catch (error) {
 		handleError(res, error, 'downloading recordings ZIP');
 	}

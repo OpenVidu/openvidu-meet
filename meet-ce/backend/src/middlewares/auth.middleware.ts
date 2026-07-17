@@ -38,7 +38,7 @@ export interface AuthValidator {
 	 * Checks if the authentication credentials for this validator are present in the request.
 	 * This allows the middleware to skip validation for methods that are not being used.
 	 */
-	isPresent(req: Request): Promise<boolean>;
+	isPresent(req: Request): boolean | Promise<boolean>;
 
 	/**
 	 * Validates the authentication credentials and sets the session.
@@ -104,7 +104,7 @@ export const accessTokenValidator = (...roles: MeetUserRole[]): AuthValidator =>
 			return 2;
 		},
 
-		async isPresent(req: Request): Promise<boolean> {
+		isPresent(req: Request): boolean {
 			const token = getAccessToken(req);
 			return !!token;
 		},
@@ -187,7 +187,7 @@ export const roomMemberTokenValidator: AuthValidator = {
 		return 3;
 	},
 
-	async isPresent(req: Request): Promise<boolean> {
+	isPresent(req: Request): boolean {
 		const token = getRoomMemberToken(req);
 		return !!token;
 	},
@@ -267,7 +267,7 @@ export const apiKeyValidator: AuthValidator = {
 		return 4;
 	},
 
-	async isPresent(req: Request): Promise<boolean> {
+	isPresent(req: Request): boolean {
 		const apiKey = req.headers[INTERNAL_CONFIG.API_KEY_HEADER];
 		return !!apiKey;
 	},
@@ -307,7 +307,7 @@ export const allowAnonymous: AuthValidator = {
 		return 1;
 	},
 
-	async isPresent(): Promise<boolean> {
+	isPresent(): boolean {
 		// Anonymous access is always available
 		return true;
 	},

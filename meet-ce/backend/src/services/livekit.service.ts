@@ -127,7 +127,7 @@ export class LiveKitService {
 		try {
 			const participants = await this.listRoomParticipants(roomName);
 			return participants.length > 0;
-		} catch (error) {
+		} catch {
 			return false;
 		}
 	}
@@ -164,7 +164,7 @@ export class LiveKitService {
 			}
 
 			return undefined;
-		} catch (error) {
+		} catch {
 			return undefined;
 		}
 	}
@@ -199,6 +199,14 @@ export class LiveKitService {
 	private isRoomNotFoundError(error: unknown): boolean {
 		const err = error as { status?: number; code?: string } | null;
 		return err?.status === 404 || err?.code === 'not_found';
+	}
+
+	/**
+	 * Extracts the underlying system error code (e.g. 'ECONNREFUSED') carried on a
+	 * LiveKit/fetch error's `cause`, when present.
+	 */
+	private getErrorCauseCode(error: unknown): string | undefined {
+		return (error as { cause?: { code?: string } } | null)?.cause?.code;
 	}
 
 	/**
@@ -245,13 +253,13 @@ export class LiveKitService {
 			return participants.some((participant) => {
 				return participant.identity === participantIdentity;
 			});
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.warn(
 				`Error checking if participant '${participantIdentity}' exists in room '${roomName}'`,
 				error
 			);
 
-			if (error?.cause?.code === 'ECONNREFUSED') {
+			if (this.getErrorCauseCode(error) === 'ECONNREFUSED') {
 				throw errorLivekitNotAvailable();
 			}
 
@@ -274,7 +282,7 @@ export class LiveKitService {
 			// Distinguish a real "participant not found" (404, expected) from LiveKit being
 			// unreachable (503): otherwise a LiveKit outage would masquerade as a 404 and, since
 			// handleError logs 4xx at debug, disappear from the logs at the default level.
-			const errorCode = (error as { cause?: { code?: string } })?.cause?.code;
+			const errorCode = this.getErrorCauseCode(error);
 
 			if (errorCode === 'ECONNREFUSED') {
 				this.logger.warn(`Error retrieving participant '${participantIdentity}' in room '${roomName}'`, error);
@@ -318,7 +326,7 @@ export class LiveKitService {
 		await this.roomClient.removeParticipant(roomName, participantIdentity);
 	}
 
-	async sendData(roomName: string, rawData: Record<string, any>, options: SendDataOptions): Promise<void> {
+	async sendData(roomName: string, rawData: object, options: SendDataOptions): Promise<void> {
 		// Check if the room exists before sending data
 		const roomExists = await this.roomExists(roomName);
 
@@ -391,8 +399,8 @@ export class LiveKitService {
 	async stopAgent(agentId: string, roomName: string): Promise<void> {
 		try {
 			await this.agentClient.deleteDispatch(agentId, roomName);
-		} catch (error: any) {
-			if (error?.code === 'not_found' || error?.status === 404) {
+		} catch (error) {
+			if (this.isRoomNotFoundError(error)) {
 				this.logger.debug(`Agent dispatch '${agentId}' already gone in room '${roomName}', skipping stop.`);
 				return;
 			}
@@ -409,7 +417,7 @@ export class LiveKitService {
 	): Promise<EgressInfo> {
 		try {
 			return await this.egressClient.startRoomCompositeEgress(roomName, output, options);
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error(`Error starting Room Composite Egress for room '${roomName}'`, error);
 			throw internalError(`starting Room Composite Egress for room '${roomName}'`);
 		}
@@ -419,7 +427,7 @@ export class LiveKitService {
 		try {
 			this.logger.info(`Stopping egress '${egressId}'`);
 			return await this.egressClient.stopEgress(egressId);
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error(`Error stopping egress '${egressId}'`, error);
 			throw internalError(`stopping egress '${egressId}'`);
 		}
@@ -440,11 +448,13 @@ export class LiveKitService {
 				active
 			};
 			return await this.egressClient.listEgress(options);
-		} catch (error: any) {
+		} catch (error) {
+			const err = error as { code?: string; status?: number; message?: string } | null;
+
 			if (
-				error.code === 'not_found' ||
-				error.status === 404 ||
-				(error.message && error.message.includes('egress does not exist'))
+				err?.code === 'not_found' ||
+				err?.status === 404 ||
+				(typeof err?.message === 'string' && err.message.includes('egress does not exist'))
 			) {
 				return [];
 			}

@@ -135,7 +135,7 @@ export class RecordingHelper {
 	static extractFilename(info: MeetRecordingInfo | EgressInfo): string {
 		if ('request' in info) {
 			// EgressInfo
-			return info.fileResults[0]!.filename.split('/').pop()!;
+			return info.fileResults[0].filename.split('/').pop()!;
 		} else {
 			// MeetRecordingInfo
 			const { filename, roomId } = info;

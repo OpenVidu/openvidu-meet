@@ -132,7 +132,7 @@ export class MongoDBService {
 	async checkHealth(): Promise<void> {
 		try {
 			// Check connection state
-			if (mongoose.connection.readyState !== 1) {
+			if (mongoose.connection.readyState !== mongoose.ConnectionStates.connected) {
 				this.logger.error('MongoDB connection state is not ready:', mongoose.connection.readyState);
 				process.exit(1);
 			}

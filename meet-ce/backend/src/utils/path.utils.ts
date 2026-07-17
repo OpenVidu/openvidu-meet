@@ -31,7 +31,7 @@ const findUp = (startDir: string, predicate: (d: string) => boolean): string | n
 			if (predicate(dir)) {
 				return dir;
 			}
-		} catch (err) {
+		} catch {
 			// ignore fs errors and continue climbing
 		}
 

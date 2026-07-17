@@ -94,7 +94,7 @@ export const authorizeRoomMemberAccess = async (req: Request, res: Response, nex
  * - If a secret is provided in the request body, anonymous access is allowed.
  * - If no secret is provided, the user must be authenticated as ADMIN, ROOM_MANAGER, or ROOM_MEMBER.
  */
-export const setupRoomMemberTokenAuthentication = async (req: Request, res: Response, next: NextFunction) => {
+export const setupRoomMemberTokenAuthentication = (req: Request, res: Response, next: NextFunction) => {
 	const { secret } = req.body as MeetRoomMemberTokenOptions;
 	const authValidators: AuthValidator[] = [];
 
@@ -191,11 +191,11 @@ export const withRoomMemberPermission = (permission: keyof MeetRoomMemberPermiss
 		const roomId = req.params.roomId as string;
 
 		const roomService = container.get(RoomService);
-		const roomExists = await roomService.meetRoomExists(roomId!);
+		const roomExists = await roomService.meetRoomExists(roomId);
 
 		// Fail fast if room does not exist
 		if (!roomExists) {
-			const error = errorRoomNotFound(roomId!);
+			const error = errorRoomNotFound(roomId);
 			return rejectRequestFromMeetError(res, error);
 		}
 

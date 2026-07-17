@@ -136,10 +136,14 @@ export class MeetRoomHelper {
 		if (!metadata) return false;
 
 		try {
-			const parsed = JSON.parse(metadata);
-			const isOurs = parsed?.createdBy === MEET_ENV.NAME_ID;
-			return isOurs;
-		} catch (err: unknown) {
+			const parsed: unknown = JSON.parse(metadata);
+			return (
+				typeof parsed === 'object' &&
+				parsed !== null &&
+				'createdBy' in parsed &&
+				parsed.createdBy === MEET_ENV.NAME_ID
+			);
+		} catch {
 			return false;
 		}
 	}
@@ -207,7 +211,7 @@ export class MeetRoomHelper {
 			return room;
 		}
 
-		const filteredRoom = { ...room } as TRoom;
+		const filteredRoom = { ...room };
 
 		for (const [permissionKey, fieldPaths] of SENSITIVE_ROOM_FIELDS_ENTRIES) {
 			if (fieldPaths.length === 0 || permissions[permissionKey]) {
@@ -215,7 +219,7 @@ export class MeetRoomHelper {
 			}
 
 			fieldPaths.forEach((fieldPath) => {
-				this.deleteFieldByPath(filteredRoom as unknown as Record<string, unknown>, fieldPath);
+				this.deleteFieldByPath(filteredRoom, fieldPath);
 			});
 		}
 

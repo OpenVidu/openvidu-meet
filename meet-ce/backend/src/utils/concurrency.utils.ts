@@ -68,7 +68,7 @@ export async function runConcurrently<T, R>(
 		const { results } = await PromisePool.for(items)
 			.withConcurrency(concurrency)
 			.useCorrespondingResults()
-			.handleError(async (error) => {
+			.handleError((error) => {
 				throw error;
 			})
 			.process(workerFn);
@@ -82,9 +82,9 @@ export async function runConcurrently<T, R>(
 		.process(async (item, index) => {
 			try {
 				const value = await workerFn(item, index);
-				return { status: 'fulfilled', value } as PromiseFulfilledResult<R>;
+				return { status: 'fulfilled', value };
 			} catch (reason) {
-				return { status: 'rejected', reason } as PromiseRejectedResult;
+				return { status: 'rejected', reason };
 			}
 		});
 

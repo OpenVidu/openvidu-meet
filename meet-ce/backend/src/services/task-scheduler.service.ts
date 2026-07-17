@@ -22,7 +22,7 @@ export class TaskSchedulerService {
 		this.systemEventService.onRedisReady(() => {
 			this.logger.debug('Starting all registered tasks...');
 			this.taskRegistry.forEach((task) => {
-				this.scheduleTask(task);
+				void this.scheduleTask(task);
 			});
 			this.started = true;
 
@@ -50,7 +50,7 @@ export class TaskSchedulerService {
 		this.taskRegistry.push(task);
 
 		if (this.started) {
-			this.scheduleTask(task);
+			void this.scheduleTask(task);
 		}
 	}
 
@@ -96,17 +96,16 @@ export class TaskSchedulerService {
 			this.scheduledTasks.set(name, job);
 		} else if (type === 'timeout') {
 			this.logger.debug(`Scheduling timeout task '${name}' with delay ${scheduleOrDelay}`);
-			const timeoutId = setTimeout(
-				async () => {
+			const timeoutId = setTimeout(() => {
+				void (async () => {
 					try {
 						this.scheduledTasks.delete(name);
 						await callback();
 					} catch (error) {
 						this.logger.error(`Error running timeout task "${name}":`, error);
 					}
-				},
-				ms(scheduleOrDelay as ms.StringValue)
-			);
+				})();
+			}, ms(scheduleOrDelay));
 			this.scheduledTasks.set(name, timeoutId);
 		}
 	}
@@ -119,9 +118,9 @@ export class TaskSchedulerService {
 
 		if (scheduled) {
 			if (scheduled instanceof CronJob) {
-				scheduled.stop();
+				void scheduled.stop();
 			} else {
-				clearTimeout(scheduled as NodeJS.Timeout);
+				clearTimeout(scheduled);
 			}
 
 			this.scheduledTasks.delete(name);

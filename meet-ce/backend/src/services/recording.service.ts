@@ -348,7 +348,7 @@ export class RecordingService {
 			throw errorInsufficientPermissions();
 		}
 
-		return recordingInfo as MeetRecordingInfo | Partial<MeetRecordingInfo>;
+		return recordingInfo;
 	}
 
 	/**
@@ -366,7 +366,10 @@ export class RecordingService {
 		type BulkDeleteFailed = { recordingId: string; error: string };
 		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_RECORDINGS;
 
-		const settledResults = await runConcurrently<string, string>(
+		const settledResults = await runConcurrently<
+			string,
+			{ ok: true; recordingId: string } | { ok: false; failed: BulkDeleteFailed }
+		>(
 			recordingIds,
 			async (recordingId) => {
 				try {
@@ -378,17 +381,17 @@ export class RecordingService {
 						throw errorRecordingNotStopped(recordingId);
 					}
 
-					return recordingId;
+					return { ok: true, recordingId };
 				} catch (error) {
 					// Per-item failures are collected into the `failed` array and returned as an HTTP
 					// 400 payload, so they never reach handleError.
 					if (error instanceof OpenViduMeetError) {
 						this.logger.debug(`Recording '${recordingId}' cannot be deleted: ${error.message}`);
-						throw { recordingId, error: error.message } as BulkDeleteFailed;
+						return { ok: false, failed: { recordingId, error: error.message } };
 					}
 
 					this.logger.error(`Unexpected error deleting recording '${recordingId}'`, error);
-					throw { recordingId, error: 'Unexpected error' } as BulkDeleteFailed;
+					return { ok: false, failed: { recordingId, error: 'Unexpected error' } };
 				}
 			},
 			{ concurrency }
@@ -399,9 +402,11 @@ export class RecordingService {
 
 		settledResults.forEach((result) => {
 			if (result.status === 'fulfilled') {
-				validRecordingIds.add(result.value);
-			} else {
-				failedRecordings.push(result.reason as BulkDeleteFailed);
+				if (result.value.ok) {
+					validRecordingIds.add(result.value.recordingId);
+				} else {
+					failedRecordings.push(result.value.failed);
+				}
 			}
 		});
 
@@ -590,7 +595,7 @@ export class RecordingService {
 			throw errorRecordingNotFound(recordingId);
 		}
 
-		return recordingInfo as MeetRecordingInfo | Partial<MeetRecordingInfo>;
+		return recordingInfo;
 	}
 
 	/**

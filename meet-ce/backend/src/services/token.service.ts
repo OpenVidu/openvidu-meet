@@ -30,7 +30,7 @@ export class TokenService {
 
 	parseTokenMetadata(metadata: string): TokenMetadata {
 		try {
-			const parsedMetadata = JSON.parse(metadata);
+			const parsedMetadata: unknown = JSON.parse(metadata);
 			return validateTokenMetadata(parsedMetadata);
 		} catch (error) {
 			this.logger.debug('Failed to parse token metadata:', error);
@@ -66,7 +66,7 @@ export class TokenService {
 
 	parseRoomMemberTokenMetadata(metadata: string): MeetRoomMemberTokenMetadata {
 		try {
-			const parsedMetadata = JSON.parse(metadata);
+			const parsedMetadata: unknown = JSON.parse(metadata);
 			return validateRoomMemberTokenMetadata(parsedMetadata);
 		} catch (error) {
 			this.logger.debug('Failed to parse room member token metadata:', error);

@@ -4,7 +4,9 @@ import type {
 	HeadObjectCommandOutput,
 	ListObjectsV2CommandOutput,
 	PutObjectCommandOutput,
-	S3ClientConfig
+	S3ClientConfig,
+	ServiceInputTypes,
+	ServiceOutputTypes
 } from '@aws-sdk/client-s3';
 import {
 	DeleteObjectsCommand,
@@ -14,6 +16,8 @@ import {
 	PutObjectCommand,
 	S3Client
 } from '@aws-sdk/client-s3';
+import type { SmithyResolvedConfiguration } from '@smithy/smithy-client';
+import type { Command, HttpHandlerOptions } from '@smithy/types';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
 import { INTERNAL_CONFIG } from '../../../../config/internal-config.js';
@@ -26,6 +30,14 @@ import {
 } from '../../../../helpers/s3-sse.helper.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { LoggerService } from '../../../logger.service.js';
+
+/** Type guard: narrows an unknown error to one exposing a matching `code` property. */
+const hasErrorCode = (error: unknown, code: string): boolean =>
+	typeof error === 'object' && error !== null && 'code' in error && error.code === code;
+
+/** Type guard: narrows an unknown error to one exposing a matching `name` property. */
+const hasErrorName = (error: unknown, name: string): boolean =>
+	typeof error === 'object' && error !== null && 'name' in error && error.name === name;
 
 @injectable()
 export class S3Service {
@@ -72,7 +84,7 @@ export class S3Service {
 			await this.getObjectHeaders(name, bucket);
 			this.logger.verbose(`S3 exists: file '${this.getFullKey(name)}' found in bucket '${bucket}'`);
 			return true;
-		} catch (error) {
+		} catch {
 			this.logger.debug(`S3 exists: file '${this.getFullKey(name)}' not found in bucket '${bucket}'`);
 			return false;
 		}
@@ -99,10 +111,10 @@ export class S3Service {
 			const result = await this.retryOperation<PutObjectCommandOutput>(() => this.run(command));
 			this.logger.verbose(`Successfully saved object '${fullKey}' in bucket '${bucket}'`);
 			return result;
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error(`Error saving object '${fullKey}' in bucket '${bucket}'`, error);
 
-			if (error.code === 'ECONNREFUSED') {
+			if (hasErrorCode(error, 'ECONNREFUSED')) {
 				throw errorS3NotAvailable(error);
 			}
 
@@ -177,18 +189,18 @@ export class S3Service {
 		try {
 			const obj = await this.getObject(name, bucket);
 			const str = await obj.Body?.transformToString();
-			const parsed = JSON.parse(str as string);
+			const parsed = JSON.parse(str as string) as Record<string, unknown>;
 			this.logger.verbose(
 				`Successfully retrieved and parsed object '${name}' from bucket '${bucket}'`
 			);
 			return parsed;
-		} catch (error: any) {
-			if (error.name === 'NoSuchKey') {
+		} catch (error) {
+			if (hasErrorName(error, 'NoSuchKey')) {
 				this.logger.debug(`Object '${name}' does not exist in bucket '${bucket}'`);
 				return undefined;
 			}
 
-			if (error.code === 'ECONNREFUSED') {
+			if (hasErrorCode(error, 'ECONNREFUSED')) {
 				throw errorS3NotAvailable(error);
 			}
 
@@ -213,10 +225,10 @@ export class S3Service {
 				`S3 getObjectAsStream: successfully retrieved object '${name}' as stream from bucket '${bucket}'`
 			);
 			return obj.Body as Readable;
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error(`Error retrieving stream for object '${name}' from bucket '${bucket}'`, error);
 
-			if (error.code === 'ECONNREFUSED') {
+			if (hasErrorCode(error, 'ECONNREFUSED')) {
 				throw errorS3NotAvailable(error);
 			}
 
@@ -265,11 +277,11 @@ export class S3Service {
 			// If we reach here, both service and bucket are accessible
 			this.logger.verbose(`S3 health check: service accessible and bucket '${MEET_ENV.S3_BUCKET}' exists`);
 			return { accessible: true, bucketExists: true };
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error('S3 health check failed', error);
 
 			// Check if it's a bucket-specific error
-			if (error.name === 'NoSuchBucket') {
+			if (hasErrorName(error, 'NoSuchBucket')) {
 				this.logger.error(`S3 bucket '${MEET_ENV.S3_BUCKET}' does not exist`);
 				return { accessible: true, bucketExists: false };
 			}
@@ -311,7 +323,15 @@ export class S3Service {
 		return await this.run(command);
 	}
 
-	protected async run(command: any) {
+	protected async run<InputType extends ServiceInputTypes, OutputType extends ServiceOutputTypes>(
+		command: Command<
+			ServiceInputTypes,
+			InputType,
+			ServiceOutputTypes,
+			OutputType,
+			SmithyResolvedConfiguration<HttpHandlerOptions>
+		>
+	): Promise<OutputType> {
 		return this.s3.send(command);
 	}
 

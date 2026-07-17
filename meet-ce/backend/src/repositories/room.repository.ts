@@ -40,7 +40,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	protected toDomain(dbObject: MeetRoomDocument): MeetRoom {
 		const { schemaVersion, ...room } = dbObject;
 		void schemaVersion;
-		return this.enrichRoomWithBaseUrls(room as MeetRoom);
+		return this.enrichRoomWithBaseUrls(room);
 	}
 
 	protected override getDocumentOnlyFields(): readonly MeetRoomDocumentOnlyField[] {
@@ -127,7 +127,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	findByRoomId(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom> | null>;
 
 	findByRoomId(roomId: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom | Partial<MeetRoom> | null> {
-		return this.findOne({ roomId }, fields as string[]) as Promise<MeetRoom | Partial<MeetRoom> | null>;
+		return this.findOne({ roomId }, fields as string[]);
 	}
 
 	/**
@@ -146,7 +146,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	): Promise<ProjectedMeetRoom<TFields>[]>;
 
 	findByOwner(owner: string, fields?: readonly MeetRoomField[]): Promise<MeetRoom[] | Partial<MeetRoom>[]> {
-		return this.findAll({ owner }, fields as string[]) as Promise<MeetRoom[] | Partial<MeetRoom>[]>;
+		return this.findAll({ owner }, fields as string[]);
 	}
 
 	/**
@@ -308,7 +308,7 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		);
 
 		return {
-			rooms: items as Pick<MeetRoom, 'roomId'>[],
+			rooms: items,
 			isTruncated,
 			nextPageToken
 		};
@@ -399,19 +399,19 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 		const recordingUrl = room.access?.anonymous.recording.url;
 
 		if (userUrl) {
-			room.access!.user.url = addBaseUrlToPath(userUrl);
+			room.access.user.url = addBaseUrlToPath(userUrl);
 		}
 
 		if (moderatorUrl) {
-			room.access!.anonymous.moderator.url = addBaseUrlToPath(moderatorUrl);
+			room.access.anonymous.moderator.url = addBaseUrlToPath(moderatorUrl);
 		}
 
 		if (speakerUrl) {
-			room.access!.anonymous.speaker.url = addBaseUrlToPath(speakerUrl);
+			room.access.anonymous.speaker.url = addBaseUrlToPath(speakerUrl);
 		}
 
 		if (recordingUrl) {
-			room.access!.anonymous.recording.url = addBaseUrlToPath(recordingUrl);
+			room.access.anonymous.recording.url = addBaseUrlToPath(recordingUrl);
 		}
 
 		return room;

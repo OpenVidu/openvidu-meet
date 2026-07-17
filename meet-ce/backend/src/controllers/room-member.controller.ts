@@ -2,10 +2,13 @@ import type {
 	MeetRoomMemberExtraField,
 	MeetRoomMemberField,
 	MeetRoomMemberFilters,
+	MeetRoomMemberOptions,
 	MeetRoomMemberTokenOptions
 } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
+import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
+import type { UpdateRoomMemberReqSchema } from '../models/zod-schemas/room-member.schema.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
 import { errorRoomMemberNotFound, errorUnauthorized, handleError } from '../models/error.model.js';
@@ -19,7 +22,7 @@ export const createRoomMember = async (req: Request, res: Response) => {
 	const roomMemberService = container.get(RoomMemberService);
 
 	const { roomId } = req.params as Record<string, string>;
-	const memberOptions = req.body;
+	const memberOptions = req.body as MeetRoomMemberOptions;
 	const { fields, extraFields } = res.locals.validatedQuery as {
 		fields?: MeetRoomMemberField[];
 		extraFields?: MeetRoomMemberExtraField[];
@@ -101,7 +104,7 @@ export const updateRoomMember = async (req: Request, res: Response) => {
 	const roomMemberService = container.get(RoomMemberService);
 
 	const { roomId, memberId } = req.params as Record<string, string>;
-	const updates = req.body;
+	const updates = req.body as z.infer<typeof UpdateRoomMemberReqSchema>;
 	const { fields, extraFields } = res.locals.validatedQuery as {
 		fields?: MeetRoomMemberField[];
 		extraFields?: MeetRoomMemberExtraField[];
@@ -142,7 +145,7 @@ export const bulkDeleteRoomMembers = async (req: Request, res: Response) => {
 	const { memberIds } = res.locals.validatedQuery as { memberIds: string[] };
 
 	try {
-		logger.verbose(`Deleting members from room '${roomId}' with IDs: ${memberIds}`);
+		logger.verbose(`Deleting members from room '${roomId}' with IDs: ${String(memberIds)}`);
 		const { deleted, failed } = await roomMemberService.bulkDeleteRoomMembers(roomId, memberIds);
 
 		// All room members were successfully deleted

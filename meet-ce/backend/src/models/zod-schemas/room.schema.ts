@@ -41,7 +41,7 @@ export const nonEmptySanitizedRoomId = (fieldName: string) =>
 		.string()
 		.min(1, { message: `${fieldName} is required and cannot be empty` })
 		.max(100, { message: `${fieldName} cannot exceed 100 characters` })
-		.transform(MeetRoomHelper.sanitizeRoomId)
+		.transform((value) => MeetRoomHelper.sanitizeRoomId(value))
 		.refine((data) => data !== '', {
 			message: `${fieldName} cannot be empty after sanitization`
 		});
@@ -68,7 +68,7 @@ export const EncodingOptionsSchema: z.ZodType<MeetRecordingEncodingOptions> = z.
  * Custom encoding validator to handle both preset strings and encoding objects.
  * Used in RecordingConfigSchema
  */
-export const encodingValidator = z.any().superRefine((value, ctx) => {
+export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 	// If undefined, skip validation (it's optional)
 	if (value === undefined) {
 		return;
@@ -76,9 +76,9 @@ export const encodingValidator = z.any().superRefine((value, ctx) => {
 
 	// Check if it's a string preset
 	if (typeof value === 'string') {
-		const presetValues = Object.values(MeetRecordingEncodingPreset);
+		const presetValues: string[] = Object.values(MeetRecordingEncodingPreset);
 
-		if (!presetValues.includes(value as MeetRecordingEncodingPreset)) {
+		if (!presetValues.includes(value)) {
 			ctx.addIssue({
 				code: z.ZodIssueCode.custom,
 				message: `Invalid encoding preset. Must be one of: ${presetValues.join(', ')}`
@@ -97,8 +97,10 @@ export const encodingValidator = z.any().superRefine((value, ctx) => {
 		return;
 	}
 
+	const encoding = value as Record<string, unknown>;
+
 	// Both video and audio must be provided
-	if (!value.video || !value.audio) {
+	if (!encoding.video || !encoding.audio) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
 			message: 'Both video and audio configuration must be provided when using encoding options'
@@ -106,7 +108,7 @@ export const encodingValidator = z.any().superRefine((value, ctx) => {
 		return;
 	}
 
-	if (value.video === null || typeof value.video !== 'object') {
+	if (encoding.video === null || typeof encoding.video !== 'object') {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
 			message: 'Video encoding must be a valid object'
@@ -114,7 +116,7 @@ export const encodingValidator = z.any().superRefine((value, ctx) => {
 		return;
 	}
 
-	if (value.audio === null || typeof value.audio !== 'object') {
+	if (encoding.audio === null || typeof encoding.audio !== 'object') {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
 			message: 'Audio encoding must be a valid object'
@@ -122,9 +124,12 @@ export const encodingValidator = z.any().superRefine((value, ctx) => {
 		return;
 	}
 
+	const videoEncoding = encoding.video;
+	const audioEncoding = encoding.audio;
+
 	// Check video fields
 	const requiredVideoFields = ['width', 'height', 'framerate', 'codec', 'bitrate', 'keyFrameInterval', 'depth'];
-	const missingVideoFields = requiredVideoFields.filter((field) => !(field in value.video));
+	const missingVideoFields = requiredVideoFields.filter((field) => !(field in videoEncoding));
 
 	if (missingVideoFields.length > 0) {
 		ctx.addIssue({
@@ -136,7 +141,7 @@ export const encodingValidator = z.any().superRefine((value, ctx) => {
 
 	// Check audio fields
 	const requiredAudioFields = ['codec', 'bitrate', 'frequency'];
-	const missingAudioFields = requiredAudioFields.filter((field) => !(field in value.audio));
+	const missingAudioFields = requiredAudioFields.filter((field) => !(field in audioEncoding));
 
 	if (missingAudioFields.length > 0) {
 		ctx.addIssue({
@@ -270,7 +275,7 @@ const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 			};
 		}
 
-		return data as MeetRoomConfig;
+		return data;
 	});
 
 const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.nativeEnum(
@@ -330,7 +335,7 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 	roomName: z
 		.string()
 		.max(50, 'roomName cannot exceed 50 characters')
-		.transform(MeetRoomHelper.sanitizeRoomName)
+		.transform((value) => MeetRoomHelper.sanitizeRoomName(value))
 		.optional()
 		.default('Room'),
 	autoDeletionDate: z

@@ -32,8 +32,9 @@ const buildLogLine = (info: winston.Logform.TransformableInfo): string => {
 		typeof metadata === 'object' && metadata !== null && Object.keys(metadata).length
 			? JSON.stringify(metadata)
 			: '';
-	const requestIdPart = info.requestId ? ` | ${info.requestId}` : '';
-	return `${info.timestamp} | ${MEET_ENV.EDITION}${requestIdPart} | [${info.level}] ${info.message} ${meta}`;
+	const requestId = info.requestId;
+	const requestIdPart = typeof requestId === 'string' ? ` | ${requestId}` : '';
+	return `${String(info.timestamp)} | ${MEET_ENV.EDITION}${requestIdPart} | [${info.level}] ${String(info.message)} ${meta}`;
 };
 
 @injectable()

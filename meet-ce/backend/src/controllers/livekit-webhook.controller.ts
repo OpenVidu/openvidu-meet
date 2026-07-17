@@ -14,8 +14,8 @@ export const lkWebhookHandler = async (req: Request, res: Response) => {
 	try {
 		const lkWebhookService = container.get(LivekitWebhookService);
 		const webhookEvent: WebhookEvent = await lkWebhookService.getEventFromWebhook(
-			req.body,
-			req.get('Authorization')!
+			req.body as string,
+			req.get('Authorization')
 		);
 
 		const webhookLockKey = MeetLock.getWebhookLock(webhookEvent);

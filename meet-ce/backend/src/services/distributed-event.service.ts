@@ -89,7 +89,9 @@ export class DistributedEventService {
 	 */
 	protected handleRedisMessage(message: string): void {
 		try {
-			const eventData: DistributedEventPayload = JSON.parse(message);
+			const parsed: unknown = JSON.parse(message);
+			const eventData: Partial<DistributedEventPayload> =
+				typeof parsed === 'object' && parsed !== null ? parsed : {};
 			const { eventType, payload } = eventData;
 
 			if (!eventType) {

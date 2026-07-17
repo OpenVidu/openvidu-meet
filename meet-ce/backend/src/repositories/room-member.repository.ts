@@ -40,7 +40,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 	protected toDomain(dbObject: MeetRoomMemberDocument): MeetRoomMember {
 		const { schemaVersion, ...member } = dbObject;
 		void schemaVersion;
-		return this.enrichRoomMemberWithBaseUrl(member as MeetRoomMember);
+		return this.enrichRoomMemberWithBaseUrl(member);
 	}
 
 	protected override getDocumentOnlyFields(): readonly MeetRoomMemberDocumentOnlyField[] {
@@ -121,9 +121,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		memberId: string,
 		fields?: readonly MeetRoomMemberField[]
 	): Promise<MeetRoomMember | Partial<MeetRoomMember> | null> {
-		return this.findOne({ roomId, memberId }, fields as string[]) as Promise<
-			MeetRoomMember | Partial<MeetRoomMember> | null
-		>;
+		return this.findOne({ roomId, memberId }, fields as string[]);
 	}
 
 	/**
@@ -147,9 +145,7 @@ export class RoomMemberRepository extends BaseRepository<MeetRoomMember, MeetRoo
 		memberIds: string[],
 		fields?: readonly MeetRoomMemberField[]
 	): Promise<MeetRoomMember[] | Partial<MeetRoomMember>[]> {
-		return this.findAll({ roomId, memberId: { $in: memberIds } }, fields as string[]) as Promise<
-			MeetRoomMember[] | Partial<MeetRoomMember>[]
-		>;
+		return this.findAll({ roomId, memberId: { $in: memberIds } }, fields as string[]);
 	}
 
 	/**

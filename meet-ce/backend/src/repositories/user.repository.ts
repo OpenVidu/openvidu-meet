@@ -29,7 +29,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 	protected toDomain(dbObject: MeetUserDocument): MeetUser {
 		const { schemaVersion, ...user } = dbObject;
 		void schemaVersion;
-		return user as MeetUser;
+		return user;
 	}
 
 	protected override getDocumentOnlyFields(): readonly MeetUserDocumentOnlyField[] {
@@ -93,7 +93,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 		userId: string,
 		fields?: readonly MeetUserField[]
 	): Promise<MeetUser | Partial<MeetUser> | null> {
-		return this.findOne({ userId }, fields as string[]) as Promise<MeetUser | Partial<MeetUser> | null>;
+		return this.findOne({ userId }, fields as string[]);
 	}
 
 	/**
@@ -116,9 +116,7 @@ export class UserRepository extends BaseRepository<MeetUser, MeetUserDocument> {
 		userIds: string[],
 		fields?: readonly MeetUserField[]
 	): Promise<MeetUser[] | Partial<MeetUser>[]> {
-		return this.findAll({ userId: { $in: userIds } }, fields as string[]) as Promise<
-			MeetUser[] | Partial<MeetUser>[]
-		>;
+		return this.findAll({ userId: { $in: userIds } }, fields as string[]);
 	}
 
 	/**

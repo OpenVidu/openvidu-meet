@@ -56,11 +56,11 @@ export const errorLivekitNotAvailable = (): OpenViduMeetError => {
 };
 
 export const errorS3NotAvailable = (error: unknown): OpenViduMeetError => {
-	return new OpenViduMeetError('S3 Error', `S3 is not available ${error}`, 503);
+	return new OpenViduMeetError('S3 Error', `S3 is not available ${String(error)}`, 503);
 };
 
 export const errorAzureNotAvailable = (error: unknown): OpenViduMeetError => {
-	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${error}`, 503);
+	return new OpenViduMeetError('ABS Error', `Azure Blob Storage is not available ${String(error)}`, 503);
 };
 
 export const errorConfigurationError = (message: string): OpenViduMeetError => {
@@ -388,7 +388,7 @@ export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {
 
 // Handlers
 
-export const handleError = (res: Response, error: OpenViduMeetError | unknown, operationDescription: string) => {
+export const handleError = (res: Response, error: unknown, operationDescription: string) => {
 	const logger = container.get(LoggerService);
 
 	if (error instanceof OpenViduMeetError) {

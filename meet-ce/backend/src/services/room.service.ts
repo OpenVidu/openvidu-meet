@@ -407,7 +407,7 @@ export class RoomService {
 			throw errorRoomNotFound(roomId);
 		}
 
-		return room as MeetRoom | Partial<MeetRoom>;
+		return room;
 	}
 
 	/**
@@ -736,7 +736,10 @@ export class RoomService {
 			message: string;
 		};
 
-		const settledResults = await runConcurrently<string | MeetRoom, SuccessfulDelete>(
+		const settledResults = await runConcurrently<
+			string | MeetRoom,
+			{ ok: true; value: SuccessfulDelete } | { ok: false; failed: FailedDelete }
+		>(
 			roomsOrRoomIds,
 			async (room) => {
 				const roomId = typeof room === 'string' ? room : room.roomId;
@@ -753,20 +756,26 @@ export class RoomService {
 					this.logger.verbose(deletionResult.message);
 
 					return {
-						roomId,
-						successCode: deletionResult.successCode,
-						message: deletionResult.message,
-						room: deletionResult.room
+						ok: true,
+						value: {
+							roomId,
+							successCode: deletionResult.successCode,
+							message: deletionResult.message,
+							room: deletionResult.room
+						}
 					};
 				} catch (error) {
 					const meetError =
 						error instanceof OpenViduMeetError ? error : internalError(`deleting room '${roomId}'`);
 
-					throw {
-						roomId,
-						error: meetError.name,
-						message: meetError.message
-					} as FailedDelete;
+					return {
+						ok: false,
+						failed: {
+							roomId,
+							error: meetError.name,
+							message: meetError.message
+						}
+					};
 				}
 			},
 			{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_ROOMS }
@@ -777,9 +786,11 @@ export class RoomService {
 
 		settledResults.forEach((result) => {
 			if (result.status === 'fulfilled') {
-				successful.push(result.value);
-			} else {
-				failed.push(result.reason as FailedDelete);
+				if (result.value.ok) {
+					successful.push(result.value.value);
+				} else {
+					failed.push(result.value.failed);
+				}
 			}
 		});
 

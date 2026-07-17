@@ -1,6 +1,8 @@
 import type { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
+import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
+import type { TestWebhookReqSchema } from '../models/zod-schemas/global-config.schema.js';
 import { MEET_ENV } from '../environment.js';
 import { handleError } from '../models/error.model.js';
 import { GlobalConfigService } from '../services/global-config.service.js';
@@ -40,8 +42,8 @@ export const testWebhook = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 	const webhookService = container.get(OpenViduWebhookService);
 
-	logger.verbose(`Testing webhook URL: ${req.body.url}`);
-	const url = req.body.url;
+	const { url } = req.body as z.infer<typeof TestWebhookReqSchema>;
+	logger.verbose(`Testing webhook URL: ${url}`);
 
 	try {
 		await webhookService.testWebhookUrl(url);
@@ -110,7 +112,7 @@ export const getRoomsAppearanceConfig = async (_req: Request, res: Response) => 
 	}
 };
 
-export const getCaptionsConfig = async (_req: Request, res: Response) => {
+export const getCaptionsConfig = (_req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
 
 	logger.verbose('Getting captions config');

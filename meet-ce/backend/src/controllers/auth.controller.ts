@@ -71,7 +71,7 @@ export const login = async (req: Request, res: Response) => {
 	}
 };
 
-export const logout = async (_req: Request, res: Response) => {
+export const logout = (_req: Request, res: Response) => {
 	// The client is responsible for clearing tokens from localStorage,
 	// so just respond with success
 	return res.status(200).json({ message: 'Logout successful' });

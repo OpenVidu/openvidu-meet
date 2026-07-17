@@ -118,13 +118,13 @@ export class RedisService extends EventEmitter {
 	 */
 	subscribe(channel: string, callback: (message: string) => void) {
 		this.logger.verbose(`Subscribing to Redis channel: ${channel}`);
-		this.redisSubscriber.subscribe(channel, (err, count) => {
+		void this.redisSubscriber.subscribe(channel, (err, count) => {
 			if (err) {
 				this.logger.error(`Error subscribing to Redis channel '${channel}'`, err);
 				return;
 			}
 
-			this.logger.verbose(`Subscribed to ${channel}. Now subscribed to ${count} channel(s).`);
+			this.logger.verbose(`Subscribed to ${channel}. Now subscribed to ${String(count)} channel(s).`);
 		});
 
 		this.redisSubscriber.on('message', (receivedChannel, message) => {
@@ -140,13 +140,13 @@ export class RedisService extends EventEmitter {
 	 * @param channel - The channel to unsubscribe from.
 	 */
 	unsubscribe(channel: string) {
-		this.redisSubscriber.unsubscribe(channel, (err, count) => {
+		void this.redisSubscriber.unsubscribe(channel, (err, count) => {
 			if (err) {
 				this.logger.error(`Error unsubscribing from Redis channel '${channel}'`, err);
 				return;
 			}
 
-			this.logger.verbose(`Unsubscribed from channel ${channel}. Now subscribed to ${count} channel(s).`);
+			this.logger.verbose(`Unsubscribed from channel ${channel}. Now subscribed to ${String(count)} channel(s).`);
 		});
 	}
 
@@ -218,7 +218,7 @@ export class RedisService extends EventEmitter {
 		try {
 			const result = await this.redisPublisher.exists(key);
 			return result === 1;
-		} catch (error) {
+		} catch {
 			return false;
 		}
 	}
@@ -266,16 +266,9 @@ export class RedisService extends EventEmitter {
 	 */
 	async set(key: string, value: string | number | boolean | object, ttlMs: number): Promise<string> {
 		try {
-			const valueType = typeof value;
 			const hasTTL = ttlMs !== undefined;
 
-			if (valueType === 'string' || valueType === 'number') {
-				if (hasTTL) {
-					await this.redisPublisher.set(key, value.toString(), 'PX', ttlMs);
-				} else {
-					await this.redisPublisher.set(key, value.toString());
-				}
-			} else if (valueType === 'boolean') {
+			if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
 				const stringValue = value.toString();
 
 				if (hasTTL) {
@@ -283,14 +276,12 @@ export class RedisService extends EventEmitter {
 				} else {
 					await this.redisPublisher.set(key, stringValue);
 				}
-			} else if (valueType === 'object') {
+			} else {
 				await this.redisPublisher.hmset(key, value as Record<string, string | number>);
 
 				if (hasTTL) {
 					await this.redisPublisher.pexpire(key, ttlMs);
 				}
-			} else {
-				throw new Error('Invalid value type');
 			}
 
 			return 'OK';
@@ -314,7 +305,7 @@ export class RedisService extends EventEmitter {
 			}
 
 			return this.redisPublisher.del(keys);
-		} catch (error) {
+		} catch {
 			throw internalError(`deleting key from Redis`);
 		}
 	}
@@ -446,8 +437,8 @@ export class RedisService extends EventEmitter {
 
 	cleanup() {
 		this.logger.verbose('Cleaning up Redis connections');
-		this.redisPublisher.quit();
-		this.redisSubscriber.quit();
+		void this.redisPublisher.quit();
+		void this.redisSubscriber.quit();
 		this.removeAllListeners();
 
 		if (this.eventHandler) {

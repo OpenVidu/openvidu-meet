@@ -1,4 +1,4 @@
-import type { Bucket, File, GetFilesOptions } from '@google-cloud/storage';
+import type { Bucket, CreateReadStreamOptions, File, FileMetadata, GetFilesOptions } from '@google-cloud/storage';
 import { Storage } from '@google-cloud/storage';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';
@@ -7,6 +7,37 @@ import { MEET_ENV } from '../../../../environment.js';
 import { errorS3NotAvailable, internalError } from '../../../../models/error.model.js';
 import { runConcurrently } from '../../../../utils/concurrency.utils.js';
 import { LoggerService } from '../../../logger.service.js';
+
+/**
+ * Extracts a `code` property (string or number) from an unknown error value, if present.
+ * GCS/Node errors expose an error code that is used to map failures to specific responses.
+ */
+function getErrorCode(error: unknown): string | number | undefined {
+	if (typeof error === 'object' && error !== null && 'code' in error) {
+		const code: unknown = (error as Record<string, unknown>).code;
+
+		if (typeof code === 'string' || typeof code === 'number') {
+			return code;
+		}
+	}
+
+	return undefined;
+}
+
+/**
+ * Extracts the `nextPageToken` from the raw GCS getFiles API response, if present.
+ */
+function getNextPageToken(response: unknown): string | undefined {
+	if (typeof response === 'object' && response !== null && 'nextPageToken' in response) {
+		const token: unknown = (response as Record<string, unknown>).nextPageToken;
+
+		if (typeof token === 'string') {
+			return token;
+		}
+	}
+
+	return undefined;
+}
 
 @injectable()
 export class GCSService {
@@ -48,7 +79,11 @@ export class GCSService {
 	 * Saves an object to a GCS bucket.
 	 * Uses an internal retry mechanism in case of errors.
 	 */
-	async saveObject(name: string, body: Record<string, unknown>, bucket: string = MEET_ENV.S3_BUCKET): Promise<any> {
+	async saveObject(
+		name: string,
+		body: Record<string, unknown>,
+		bucket: string = MEET_ENV.S3_BUCKET
+	): Promise<{ success: boolean }> {
 		const fullKey = this.getFullKey(name);
 
 		try {
@@ -65,10 +100,12 @@ export class GCSService {
 
 			this.logger.verbose(`GCS saveObject: successfully saved object '${fullKey}' in bucket '${bucket}'`);
 			return result;
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error(`Error saving object '${fullKey}' in bucket '${bucket}'`, error);
 
-			if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+			const code = getErrorCode(error);
+
+			if (code === 'ECONNREFUSED' || code === 'ENOTFOUND') {
 				throw errorS3NotAvailable(error); // Reuse S3 error for compatibility
 			}
 
@@ -81,7 +118,10 @@ export class GCSService {
 	 * @param keys Array of object keys to delete
 	 * @param bucket GCS bucket name (default: S3_BUCKET)
 	 */
-	async deleteObjects(keys: string[], bucket: string = MEET_ENV.S3_BUCKET): Promise<any> {
+	async deleteObjects(
+		keys: string[],
+		bucket: string = MEET_ENV.S3_BUCKET
+	): Promise<{ Deleted: Array<{ Key: string }>; Errors: unknown[] }> {
 		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_DELETE_STORAGE;
 
 		try {
@@ -156,7 +196,7 @@ export class GCSService {
 				ETag: file.metadata.etag || undefined
 			}));
 
-			let NextContinuationToken = (response as any)?.nextPageToken;
+			let NextContinuationToken = getNextPageToken(response);
 			let isTruncated = NextContinuationToken !== undefined;
 
 			// Check if next page has items, similar to ABS implementation
@@ -200,19 +240,21 @@ export class GCSService {
 			}
 
 			const [content] = await file.download();
-			const parsed = JSON.parse(content.toString());
+			const parsed = JSON.parse(content.toString()) as object;
 
 			this.logger.verbose(
 				`Successfully retrieved and parsed object '${name}' from bucket '${bucket}'`
 			);
 			return parsed;
-		} catch (error: any) {
-			if (error.code === 404) {
+		} catch (error) {
+			const code = getErrorCode(error);
+
+			if (code === 404) {
 				this.logger.debug(`Object '${name}' does not exist in bucket '${bucket}'`);
 				return undefined;
 			}
 
-			if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+			if (code === 'ECONNREFUSED' || code === 'ENOTFOUND') {
 				throw errorS3NotAvailable(error); // Reuse S3 error for compatibility
 			}
 
@@ -221,7 +263,7 @@ export class GCSService {
 		}
 	}
 
-	async getObjectAsStream(
+	getObjectAsStream(
 		name: string,
 		range?: { start: number; end: number },
 		bucket: string = MEET_ENV.S3_BUCKET
@@ -230,7 +272,7 @@ export class GCSService {
 			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 			const file = bucketObj.file(this.getFullKey(name));
 
-			const options: any = {};
+			const options: CreateReadStreamOptions = {};
 
 			if (range) {
 				options.start = range.start;
@@ -242,19 +284,30 @@ export class GCSService {
 			this.logger.verbose(
 				`Successfully retrieved object '${name}' as stream from bucket '${bucket}'`
 			);
-			return stream;
-		} catch (error: any) {
+			return Promise.resolve(stream);
+		} catch (error) {
 			this.logger.error(`Error retrieving stream for object '${name}' from bucket '${bucket}'`, error);
 
-			if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
-				throw errorS3NotAvailable(error); // Reuse S3 error for compatibility
+			const code = getErrorCode(error);
+
+			if (code === 'ECONNREFUSED' || code === 'ENOTFOUND') {
+				return Promise.reject(errorS3NotAvailable(error)); // Reuse S3 error for compatibility
 			}
 
-			throw internalError('getting object as stream from GCS Storage');
+			return Promise.reject(internalError('getting object as stream from GCS Storage'));
 		}
 	}
 
-	async getObjectHeaders(name: string, bucket: string = MEET_ENV.S3_BUCKET): Promise<any> {
+	async getObjectHeaders(
+		name: string,
+		bucket: string = MEET_ENV.S3_BUCKET
+	): Promise<{
+		ContentLength?: number;
+		LastModified?: Date;
+		ContentType?: string;
+		ETag?: string;
+		Metadata: NonNullable<FileMetadata['metadata']>;
+	}> {
 		try {
 			const bucketObj = bucket === MEET_ENV.S3_BUCKET ? this.bucket : this.storage.bucket(bucket);
 			const file = bucketObj.file(this.getFullKey(name));
@@ -266,7 +319,7 @@ export class GCSService {
 
 			// Return S3-compatible response format
 			return {
-				ContentLength: metadata.size,
+				ContentLength: metadata.size !== undefined ? Number(metadata.size) : undefined,
 				LastModified: metadata.updated ? new Date(metadata.updated) : undefined,
 				ContentType: metadata.contentType,
 				ETag: metadata.etag,
@@ -294,11 +347,11 @@ export class GCSService {
 			// If we reach here, both service and bucket are accessible
 			this.logger.verbose(`GCS health check: service accessible and bucket '${MEET_ENV.S3_BUCKET}' exists`);
 			return { accessible: true, bucketExists: true };
-		} catch (error: any) {
+		} catch (error) {
 			this.logger.error('GCS health check failed', error);
 
 			// Check if it's a bucket-specific error
-			if (error.code === 404) {
+			if (getErrorCode(error) === 404) {
 				this.logger.error(`GCS bucket '${MEET_ENV.S3_BUCKET}' does not exist`);
 				return { accessible: true, bucketExists: false };
 			}
