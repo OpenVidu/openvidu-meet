@@ -42,3 +42,8 @@ lockfile: true
 # published packages clear the release-age cooldown. The cooldown still applies
 # when dependencies are updated (resolution time), where it actually protects us.
 trustLockfile: true
+
+minimumReleaseAgeExclude:
+  - '@inversifyjs/container@3.1.1'
+  - '@inversifyjs/core@14.0.0'
+  - inversify@8.2.1

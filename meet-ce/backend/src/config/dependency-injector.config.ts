@@ -1,8 +1,7 @@
-import { Container } from 'inversify';
+import { Container, ContainerModule } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 
 import { ApiKeyRepository } from '../repositories/api-key.repository.js';
-import { BaseRepository } from '../repositories/base.repository.js';
 import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
 import { MigrationRepository } from '../repositories/migration.repository.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
@@ -10,12 +9,6 @@ import { RoomRepository } from '../repositories/room.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 
-/*
- * Services should be imported in order of use, starting with services
- * without dependencies and then the services that depend on others. This
- * helps avoid dependency cycles and ensures constructors receive the
- * dependencies already registered in the container.
- */
 import { LoggerService } from '../services/logger.service.js';
 import { RedisService } from '../services/redis.service.js';
 import { DistributedEventService } from '../services/distributed-event.service.js';
@@ -58,6 +51,19 @@ import { RecordingScheduledTasksService } from '../services/recording-scheduled-
 import { AnalyticsService } from '../services/analytics.service.js';
 import { AiAssistantService } from '../services/ai-assistant.service.js';
 
+/*
+ * Dependency injection is fully explicit: every service declares its collaborators with
+ * `@inject(...)` and every binding below is registered lazily as a singleton. Because bindings
+ * are resolved on demand (never eagerly during registration), the ORDER in which they are
+ * declared is irrelevant, and so is the order of the imports above. Grouping the bindings into
+ * cohesive `ContainerModule`s makes that independence explicit: each module is self-contained and
+ * `container.load(...)` can receive them in any order.
+ *
+ * Runtime construction cycles (e.g. RoomService needs RecordingService, and RecordingService
+ * occasionally needs RoomService) are broken at the point of use with a lazy `container.get(...)`
+ * lookup rather than a constructor dependency — see RecordingService#getRoomService.
+ */
+
 export const container: Container = new Container();
 
 export const STORAGE_TYPES = {
@@ -66,84 +72,111 @@ export const STORAGE_TYPES = {
 };
 
 /**
+ * Cross-cutting infrastructure with no domain dependencies: logging, Redis, distributed
+ * coordination, scheduling, request-scoped context and the MongoDB connection.
+ */
+const infrastructureModule = new ContainerModule(({ bind }) => {
+	bind(LoggerService).toSelf().inSingletonScope();
+	bind(RedisService).toSelf().inSingletonScope();
+	bind(DistributedEventService).toSelf().inSingletonScope();
+	bind(MutexService).toSelf().inSingletonScope();
+	bind(TaskSchedulerService).toSelf().inSingletonScope();
+	bind(BaseUrlService).toSelf().inSingletonScope();
+	// RequestSessionService uses AsyncLocalStorage for request isolation. It's a singleton but
+	// provides per-request data isolation automatically.
+	bind(RequestSessionService).toSelf().inSingletonScope();
+	bind(MongoDBService).toSelf().inSingletonScope();
+});
+
+/**
+ * Persistence layer. Each concrete repository extends the abstract `BaseRepository` but declares
+ * its own constructor with explicit `@inject(...)`, so `BaseRepository` itself is never resolved
+ * from the container and is intentionally not bound.
+ */
+const persistenceModule = new ContainerModule(({ bind }) => {
+	bind(RoomRepository).toSelf().inSingletonScope();
+	bind(RoomMemberRepository).toSelf().inSingletonScope();
+	bind(UserRepository).toSelf().inSingletonScope();
+	bind(ApiKeyRepository).toSelf().inSingletonScope();
+	bind(GlobalConfigRepository).toSelf().inSingletonScope();
+	bind(RecordingRepository).toSelf().inSingletonScope();
+	bind(MigrationRepository).toSelf().inSingletonScope();
+});
+
+/**
+ * Blob storage bindings. Only the provider, key builder and provider-specific client differ per
+ * storage mode; the factory, facade and initialization services are mode-agnostic.
+ */
+const createStorageModule = (storageMode: string): ContainerModule =>
+	new ContainerModule(({ bind }) => {
+		switch (storageMode) {
+			default:
+			case 's3':
+				bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(S3StorageProvider).inSingletonScope();
+				bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+				bind(S3Service).toSelf().inSingletonScope();
+				bind(S3StorageProvider).toSelf().inSingletonScope();
+				break;
+			case 'abs':
+				bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(ABSStorageProvider).inSingletonScope();
+				bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+				bind(ABSService).toSelf().inSingletonScope();
+				bind(ABSStorageProvider).toSelf().inSingletonScope();
+				break;
+			case 'gcs':
+				bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(GCSStorageProvider).inSingletonScope();
+				bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
+				bind(GCSService).toSelf().inSingletonScope();
+				bind(GCSStorageProvider).toSelf().inSingletonScope();
+				break;
+		}
+
+		bind(StorageFactory).toSelf().inSingletonScope();
+		bind(BlobStorageService).toSelf().inSingletonScope();
+		bind(StorageInitService).toSelf().inSingletonScope();
+	});
+
+/**
+ * Domain services (rooms, recordings, meetings, users, webhooks, scheduled tasks, ...).
+ */
+const domainModule = new ContainerModule(({ bind }) => {
+	bind(TokenService).toSelf().inSingletonScope();
+	bind(UserService).toSelf().inSingletonScope();
+	bind(ApiKeyService).toSelf().inSingletonScope();
+	bind(GlobalConfigService).toSelf().inSingletonScope();
+	bind(MigrationService).toSelf().inSingletonScope();
+	bind(FrontendEventService).toSelf().inSingletonScope();
+	bind(LiveKitService).toSelf().inSingletonScope();
+	bind(RecordingService).toSelf().inSingletonScope();
+	bind(RoomService).toSelf().inSingletonScope();
+	bind(ParticipantNameService).toSelf().inSingletonScope();
+	bind(MeetingPresenceService).toSelf().inSingletonScope();
+	bind(RoomMemberService).toSelf().inSingletonScope();
+	bind(OpenViduWebhookService).toSelf().inSingletonScope();
+	bind(LivekitWebhookService).toSelf().inSingletonScope();
+	bind(RoomScheduledTasksService).toSelf().inSingletonScope();
+	bind(RecordingScheduledTasksService).toSelf().inSingletonScope();
+	bind(AnalyticsService).toSelf().inSingletonScope();
+	bind(AiAssistantService).toSelf().inSingletonScope();
+});
+
+/**
  * Registers all necessary dependencies in the container.
  *
- * This function is responsible for registering services and other dependencies
- * that are required by the application. It ensures that the dependencies are
- * available for injection throughout the application.
- *
+ * Modules are loaded in a single, order-independent `container.load(...)` call. Every binding is a
+ * lazy singleton, so no service is instantiated here; construction happens on first resolution.
  */
 export const registerDependencies = () => {
-	container.bind(LoggerService).toSelf().inSingletonScope();
-	container.bind(RedisService).toSelf().inSingletonScope();
-	container.bind(DistributedEventService).toSelf().inSingletonScope();
-	container.bind(MutexService).toSelf().inSingletonScope();
-	container.bind(TaskSchedulerService).toSelf().inSingletonScope();
-	container.bind(BaseUrlService).toSelf().inSingletonScope();
-	// RequestSessionService uses AsyncLocalStorage for request isolation
-	// It's a singleton but provides per-request data isolation automatically
-	container.bind(RequestSessionService).toSelf().inSingletonScope();
+	container.load(
+		infrastructureModule,
+		persistenceModule,
+		createStorageModule(MEET_ENV.BLOB_STORAGE_MODE),
+		domainModule
+	);
 
-	container.bind(MongoDBService).toSelf().inSingletonScope();
-	container.bind(BaseRepository).toSelf().inSingletonScope();
-	container.bind(RoomRepository).toSelf().inSingletonScope();
-	container.bind(RoomMemberRepository).toSelf().inSingletonScope();
-	container.bind(UserRepository).toSelf().inSingletonScope();
-	container.bind(ApiKeyRepository).toSelf().inSingletonScope();
-	container.bind(GlobalConfigRepository).toSelf().inSingletonScope();
-	container.bind(RecordingRepository).toSelf().inSingletonScope();
-	container.bind(MigrationRepository).toSelf().inSingletonScope();
-
-	container.bind(TokenService).toSelf().inSingletonScope();
-	container.bind(UserService).toSelf().inSingletonScope();
-	container.bind(ApiKeyService).toSelf().inSingletonScope();
-	container.bind(GlobalConfigService).toSelf().inSingletonScope();
-
-	configureStorage(MEET_ENV.BLOB_STORAGE_MODE);
-	container.bind(StorageFactory).toSelf().inSingletonScope();
-	container.bind(BlobStorageService).toSelf().inSingletonScope();
-	container.bind(StorageInitService).toSelf().inSingletonScope();
-	container.bind(MigrationService).toSelf().inSingletonScope();
-
-	container.bind(FrontendEventService).toSelf().inSingletonScope();
-	container.bind(LiveKitService).toSelf().inSingletonScope();
-	container.bind(RecordingService).toSelf().inSingletonScope();
-	container.bind(RoomService).toSelf().inSingletonScope();
-	container.bind(ParticipantNameService).toSelf().inSingletonScope();
-	container.bind(MeetingPresenceService).toSelf().inSingletonScope();
-	container.bind(RoomMemberService).toSelf().inSingletonScope();
-	container.bind(OpenViduWebhookService).toSelf().inSingletonScope();
-	container.bind(LivekitWebhookService).toSelf().inSingletonScope();
-	container.bind(RoomScheduledTasksService).toSelf().inSingletonScope();
-	container.bind(RecordingScheduledTasksService).toSelf().inSingletonScope();
-	container.bind(AnalyticsService).toSelf().inSingletonScope();
-	container.bind(AiAssistantService).toSelf().inSingletonScope();
-};
-
-const configureStorage = (storageMode: string) => {
-	container.get(LoggerService).info(`Creating ${storageMode} storage provider`);
-
-	switch (storageMode) {
-		default:
-		case 's3':
-			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(S3StorageProvider).inSingletonScope();
-			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
-			container.bind(S3Service).toSelf().inSingletonScope();
-			container.bind(S3StorageProvider).toSelf().inSingletonScope();
-			break;
-		case 'abs':
-			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(ABSStorageProvider).inSingletonScope();
-			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
-			container.bind(ABSService).toSelf().inSingletonScope();
-			container.bind(ABSStorageProvider).toSelf().inSingletonScope();
-			break;
-		case 'gcs':
-			container.bind<StorageProvider>(STORAGE_TYPES.StorageProvider).to(GCSStorageProvider).inSingletonScope();
-			container.bind<StorageKeyBuilder>(STORAGE_TYPES.KeyBuilder).to(S3KeyBuilder).inSingletonScope();
-			container.bind(GCSService).toSelf().inSingletonScope();
-			container.bind(GCSStorageProvider).toSelf().inSingletonScope();
-			break;
-	}
+	// Safe to resolve here: all modules (including the LoggerService binding) are loaded above,
+	// so this does not depend on binding order.
+	container.get(LoggerService).info(`Creating ${MEET_ENV.BLOB_STORAGE_MODE} storage provider`);
 };
 
 export const initializeEagerServices = async () => {
