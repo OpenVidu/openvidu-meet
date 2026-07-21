@@ -418,12 +418,15 @@ class WebComponentDocGenerator {
     }
 
     /**
-     * Generates separate documentation files
+     * Generates separate documentation files following the openvidu.io shared snippets
+     * convention: a "webcomponent" folder containing events.md, commands.md and attributes.md
+     * (matching openvidu.io's shared/meet/webcomponent/)
      */
     generateSeparateDocuments(outputDir = './docs') {
         // Ensure output directory exists
-        if (!fs.existsSync(outputDir)) {
-            fs.mkdirSync(outputDir, { recursive: true });
+        const webcomponentDir = path.join(outputDir, 'webcomponent');
+        if (!fs.existsSync(webcomponentDir)) {
+            fs.mkdirSync(webcomponentDir, { recursive: true });
         }
 
         // Header comment for all generated files
@@ -434,9 +437,9 @@ class WebComponentDocGenerator {
         const attributesTable = this.generateAttributesTable();
 
         // Write separate files with header comments
-        const eventsPath = path.join(outputDir, 'webcomponent-events.md');
-        const commandsPath = path.join(outputDir, 'webcomponent-commands.md');
-        const attributesPath = path.join(outputDir, 'webcomponent-attributes.md');
+        const eventsPath = path.join(webcomponentDir, 'events.md');
+        const commandsPath = path.join(webcomponentDir, 'commands.md');
+        const attributesPath = path.join(webcomponentDir, 'attributes.md');
 
         fs.writeFileSync(eventsPath, headerComment + eventsTable, 'utf8');
         fs.writeFileSync(commandsPath, headerComment + commandsTable, 'utf8');

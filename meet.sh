@@ -666,15 +666,17 @@ build_webcomponent_doc() {
       mkdir -p "$output_dir"
     fi
 
-    if [ -f "docs/webcomponent-events.md" ] && \
-       [ -f "docs/webcomponent-commands.md" ] && \
-       [ -f "docs/webcomponent-attributes.md" ]; then
-      echo -e "${GREEN}Copying documentation to: $output_dir${NC}"
-      cp docs/webcomponent-{events,commands,attributes}.md "$output_dir"/
+    if [ -f "docs/webcomponent/events.md" ] && \
+       [ -f "docs/webcomponent/commands.md" ] && \
+       [ -f "docs/webcomponent/attributes.md" ]; then
+      echo -e "${GREEN}Copying documentation to: $output_dir/webcomponent${NC}"
+      mkdir -p "$output_dir"/webcomponent
+      cp docs/webcomponent/{events,commands,attributes}.md "$output_dir"/webcomponent/
       echo -e "${GREEN}✓ Documentation copied successfully!${NC}"
-      rm -f docs/webcomponent-{events,commands,attributes}.md
+      rm -f docs/webcomponent/{events,commands,attributes}.md
+      rmdir docs/webcomponent 2>/dev/null || true
     else
-      echo -e "${RED}Error: Documentation files not found in docs/ directory${NC}"
+      echo -e "${RED}Error: Documentation files not found in docs/webcomponent/ directory${NC}"
       exit 1
     fi
   else
