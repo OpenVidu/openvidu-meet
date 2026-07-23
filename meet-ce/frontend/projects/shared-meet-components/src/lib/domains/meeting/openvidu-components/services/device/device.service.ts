@@ -330,34 +330,20 @@ export class DeviceService implements OnDestroy {
 		this.log.d('Device change detection enabled');
 	}
 
-	// Public API methods (compatible with original DeviceService)
-
 	/**
-	 * Check if camera is enabled based on storage and device availability
+	 * Whether the camera should be opened: a stored "enabled" preference AND a camera being present.
+	 * Combines storage with availability, so it is not a plain signal alias and stays here.
 	 */
 	isCameraEnabled(): boolean {
-		return this.hasVideoDeviceAvailable() && this.storageSrv.isCameraEnabled();
+		return this.hasVideoDevices() && this.storageSrv.isCameraEnabled();
 	}
 
 	/**
-	 * Check if microphone is enabled based on storage and device availability
+	 * Whether the microphone should be opened: a stored "enabled" preference AND a microphone being
+	 * present. Combines storage with availability, so it is not a plain signal alias and stays here.
 	 */
 	isMicrophoneEnabled(): boolean {
-		return this.hasAudioDeviceAvailable() && this.storageSrv.isMicrophoneEnabled();
-	}
-
-	/**
-	 * Get currently selected camera
-	 */
-	getCameraSelected(): CustomDevice | undefined {
-		return this.cameraSelected();
-	}
-
-	/**
-	 * Get currently selected microphone
-	 */
-	getMicrophoneSelected(): CustomDevice | undefined {
-		return this.microphoneSelected();
+		return this.hasAudioDevices() && this.storageSrv.isMicrophoneEnabled();
 	}
 
 	/**
@@ -411,70 +397,6 @@ export class DeviceService implements OnDestroy {
 			current?.label !== newDevice.label
 		);
 	}
-
-	// ==========================================
-	// Public API - Device Access
-	// ==========================================
-
-	/**
-	 * Get list of available cameras
-	 */
-	getCameras(): CustomDevice[] {
-		return this.cameras();
-	}
-
-	/**
-	 * Get list of available microphones
-	 */
-	getMicrophones(): CustomDevice[] {
-		return this.microphones();
-	}
-
-	// ==========================================
-	// Public API - Device State
-	// ==========================================
-
-	/**
-	 * Check if video devices are available
-	 */
-	hasVideoDeviceAvailable(): boolean {
-		return this.hasVideoDevices();
-	}
-
-	/**
-	 * Check if audio devices are available
-	 */
-	hasAudioDeviceAvailable(): boolean {
-		return this.hasAudioDevices();
-	}
-
-	// ==========================================
-	// Public API - Permission State
-	// ==========================================
-
-	/**
-	 * Check if video permission was granted
-	 */
-	hasVideoPermissionGranted(): boolean {
-		return this.hasVideoPermission();
-	}
-
-	/**
-	 * Check if audio permission was granted
-	 */
-	hasAudioPermissionGranted(): boolean {
-		return this.hasAudioPermission();
-	}
-
-	// ==========================================
-	// Public API - Reactive State Access
-	// For components that need direct signal access, use:
-	// - this.cameras, this.microphones (device lists)
-	// - this.cameraSelected, this.microphoneSelected (selections)
-	// - this.hasVideoDevices, this.hasAudioDevices (availability)
-	// - this.hasVideoPermission, this.hasAudioPermission (permissions)
-	// - this.allPermissionsGranted (combined permissions)
-	// ==========================================
 
 	/**
 	 * Clear all device data

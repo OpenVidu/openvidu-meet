@@ -99,10 +99,10 @@ export class LocalTrackService {
 
 		// Video device
 		if (videoDeviceId === true) {
-			if (this.deviceService.hasVideoDeviceAvailable()) {
-				const selectedCamera = this.deviceService.getCameraSelected();
+			if (this.deviceService.hasVideoDevices()) {
+				const selectedCamera = this.deviceService.cameraSelected();
 				options.video = { deviceId: this.toDeviceConstraint(selectedCamera?.device) } as VideoCaptureOptions;
-			} else if (!this.deviceService.hasVideoPermissionGranted()) {
+			} else if (!this.deviceService.hasVideoPermission()) {
 				// Permission not granted yet (e.g. first visit): request the default camera so this
 				// call obtains permission. The caller enumerates devices afterwards.
 				options.video = {} as VideoCaptureOptions;
@@ -118,10 +118,10 @@ export class LocalTrackService {
 
 		// Audio device
 		if (audioDeviceId === true) {
-			if (this.deviceService.hasAudioDeviceAvailable()) {
-				const selectedMic = this.deviceService.getMicrophoneSelected();
+			if (this.deviceService.hasAudioDevices()) {
+				const selectedMic = this.deviceService.microphoneSelected();
 				(options.audio as AudioCaptureOptions).deviceId = this.toDeviceConstraint(selectedMic?.device);
-			} else if (!this.deviceService.hasAudioPermissionGranted()) {
+			} else if (!this.deviceService.hasAudioPermission()) {
 				// Permission not granted yet: keep the default-device audio request (set above) so
 				// this call can obtain permission. The caller enumerates devices afterwards.
 			} else {

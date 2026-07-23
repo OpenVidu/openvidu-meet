@@ -63,8 +63,8 @@ export class MeetingLiveKitService {
 			this.room = undefined;
 		}
 
-		const videoDeviceId = this.deviceService.getCameraSelected()?.device ?? undefined;
-		const audioDeviceId = this.deviceService.getMicrophoneSelected()?.device ?? undefined;
+		const videoDeviceId = this.deviceService.cameraSelected()?.device ?? undefined;
+		const audioDeviceId = this.deviceService.microphoneSelected()?.device ?? undefined;
 
 		const roomOptions: RoomOptions = {
 			adaptiveStream: true,
