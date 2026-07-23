@@ -13,7 +13,6 @@ import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
-import { LocalMediaControlService } from '../local-media-control/local-media-control.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { StorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -24,7 +23,6 @@ export class ParticipantService {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
-	private readonly localMediaControlService = inject(LocalMediaControlService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
@@ -153,59 +151,6 @@ export class ParticipantService {
 	}
 
 	/**
-	 * Switches the active camera track used in this room to the given device id.
-	 * @param deviceId
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	async switchCamera(deviceId: string): Promise<void> {
-		return this.localMediaControlService.switchCamera(deviceId);
-	}
-
-	/**
-	 * Switches the active microphone track used in this room to the given device id.
-	 * @param deviceId
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	async switchMicrophone(deviceId: string): Promise<void> {
-		return this.localMediaControlService.switchMicrophone(deviceId);
-	}
-
-	/**
-	 * Switches the active screen share track showing a native browser dialog to select a screen or window.
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	async switchScreenShare(): Promise<void> {
-		return this.localMediaControlService.switchScreenShare();
-	}
-
-	/**
-	 * Sets the local participant camera enabled or disabled.
-	 * @param enabled
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	async setCameraEnabled(enabled: boolean): Promise<void> {
-		return this.localMediaControlService.setCameraEnabled(enabled);
-	}
-
-	/**
-	 * Sets the local participant microphone enabled or disabled.
-	 * @param enabled
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		return this.localMediaControlService.setMicrophoneEnabled(enabled);
-	}
-
-	/**
-	 * Share or unshare the local participant screen.
-	 * @param enabled: true to share the screen, false to unshare it
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	async setScreenShareEnabled(enabled: boolean): Promise<void> {
-		return this.localMediaControlService.setScreenShareEnabled(enabled);
-	}
-
-	/**
 	 * @internal
 	 * As updating name requires that the participant has the `canUpdateOwnMetadata` to true in server side, which is a little bit insecure,
 	 * we decided to not allow this feature for now.
@@ -302,90 +247,12 @@ export class ParticipantService {
 	}
 
 	/**
-	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}. Delegating wrapper kept for
-	 * out-of-library consumers; removed at the end of R2.
-	 */
-	toggleMyVideoPinned(sid: string | undefined) {
-		this.streamLayoutService.toggleMyVideoPinned(sid);
-	}
-
-	/**
-	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}.
-	 */
-	toggleLocalVideoFloating(sid: string | undefined) {
-		this.streamLayoutService.toggleLocalVideoFloating(sid);
-	}
-
-	/**
-	 * Floats the local camera video if it is not already floating.
-	 * Called automatically when the first remote participant joins the room.
-	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}.
-	 */
-	floatLocalCameraVideo(): void {
-		this.streamLayoutService.floatLocalCameraVideo();
-	}
-
-	/**
-	 * Restores the local camera video to the layout if it is currently floating.
-	 * Called automatically when the last remote participant leaves the room.
-	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}.
-	 */
-	dockLocalCameraVideo(): void {
-		this.streamLayoutService.dockLocalCameraVideo();
-	}
-
-	/**
-	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}.
-	 */
-	resetLocalStreamsToNormalSize() {
-		this.streamLayoutService.resetLocalStreamsToNormalSize();
-	}
-
-	/**
-	 * Returns if the local participant camera is enabled.
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	isMyCameraEnabled(): boolean {
-		return this.localMediaControlService.isMyCameraEnabled();
-	}
-
-	/**
-	 * Returns if the local participant microphone is enabled.
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	isMyMicrophoneEnabled(): boolean {
-		return this.localMediaControlService.isMyMicrophoneEnabled();
-	}
-
-	/**
-	 * Returns if the local participant screen is enabled.
-	 * @deprecated Moved to {@link LocalMediaControlService}.
-	 */
-	isMyScreenShareEnabled(): boolean {
-		return this.localMediaControlService.isMyScreenShareEnabled();
-	}
-
-	/**
 	 * Forces to update the local participant object and notify signal consumers.
 	 * @deprecated No longer needed — ParticipantModel state is now signal-based and propagates
 	 * reactively. Kept for external consumers and subclasses that may override it.
 	 */
 	updateLocalParticipant() {
 		this._localParticipant()?.bump();
-	}
-
-	/**
-	 * Sets the last screen element as pinned
-	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}.
-	 */
-	setLastScreenPinned() {
-		this.streamLayoutService.setLastScreenPinned();
 	}
 
 	/**
@@ -465,37 +332,9 @@ export class ParticipantService {
 
 	/**
 	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}.
-	 */
-	resetRemoteStreamsToNormalSize() {
-		this.streamLayoutService.resetRemoteStreamsToNormalSize();
-	}
-
-	/**
-	 * Set the screen track publication date of a remote participant with the aim of taking control of the last screen published
-	 * @param participantSid
-	 * @param trackSid
-	 * @param createdAt
-	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}.
-	 */
-	setScreenTrackPublicationDate(participantSid: string, trackSid: string, createdAt: number) {
-		this.streamLayoutService.setScreenTrackPublicationDate(participantSid, trackSid, createdAt);
-	}
-
-	/**
-	 * @internal
 	 */
 	someRemoteIsSharingScreen(): boolean {
 		return this.remoteParticipants().some((p) => p.isScreenShareEnabled);
-	}
-
-	/**
-	 * @internal
-	 * @deprecated Moved to {@link StreamLayoutStateService}.
-	 */
-	toggleRemoteVideoPinned(sid: string | undefined) {
-		this.streamLayoutService.toggleRemoteVideoPinned(sid);
 	}
 
 	/**
