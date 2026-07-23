@@ -51,6 +51,10 @@ jobs:
           fail_on_failure: true
           require_tests: true
 
+      - name: Run ESLint
+        if: always()
+        run: ./meet.sh lint-backend --skip-install
+
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@040cbfd01320475801d7b12e33769e0d55a737a8 # v1.0.21

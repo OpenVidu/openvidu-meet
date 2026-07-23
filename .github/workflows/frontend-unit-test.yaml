@@ -44,6 +44,10 @@ jobs:
       - name: Run frontend library unit tests
         run: ./meet.sh test-unit-frontend --skip-install
 
+      - name: Run ESLint
+        if: always()
+        run: ./meet.sh lint-frontend --skip-install
+
       - name: Clean up
         if: always()
         uses: OpenVidu/actions/cleanup@040cbfd01320475801d7b12e33769e0d55a737a8 # v1.0.21

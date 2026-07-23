@@ -56,7 +56,9 @@ export function validateSSEConfig(sse: S3SSEConfig): void {
 					parsed = JSON.parse(sse.kmsEncryptionContext);
 				} catch (err) {
 					const msg = err instanceof Error ? err.message : String(err);
-					throw new Error(`s3 sse: MEET_S3_SSE_KMS_ENCRYPTION_CONTEXT must be valid JSON: ${msg}`);
+					throw new Error(`s3 sse: MEET_S3_SSE_KMS_ENCRYPTION_CONTEXT must be valid JSON: ${msg}`, {
+						cause: err
+					});
 				}
 
 				if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) {

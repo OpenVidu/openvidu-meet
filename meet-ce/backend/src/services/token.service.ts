@@ -34,7 +34,7 @@ export class TokenService {
 			return validateTokenMetadata(parsedMetadata);
 		} catch (error) {
 			this.logger.debug('Failed to parse token metadata:', error);
-			throw new Error('Invalid token metadata format');
+			throw new Error('Invalid token metadata format', { cause: error });
 		}
 	}
 
@@ -70,7 +70,7 @@ export class TokenService {
 			return validateRoomMemberTokenMetadata(parsedMetadata);
 		} catch (error) {
 			this.logger.debug('Failed to parse room member token metadata:', error);
-			throw new Error('Invalid room member token metadata format');
+			throw new Error('Invalid room member token metadata format', { cause: error });
 		}
 	}
 

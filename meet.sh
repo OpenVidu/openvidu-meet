@@ -115,6 +115,12 @@ show_help() {
   echo -e "  ${BLUE}test-unit-frontend${NC}"
   echo "    Run unit tests for the frontend shared-meet-components library (Karma, headless Chrome)"
   echo
+  echo -e "  ${BLUE}lint-backend${NC}"
+  echo "    Run ESLint over the backend project (fails on any error or warning)"
+  echo
+  echo -e "  ${BLUE}lint-frontend${NC}"
+  echo "    Run ESLint over the frontend project (fails on any error or warning)"
+  echo
   echo -e "  ${BLUE}test-e2e-webcomponent${NC}"
   echo "    Run end-to-end tests for the webcomponent project (Playwright '--project=webcomponent')"
   echo -e "    ${YELLOW}Options:${NC} --force-install-browsers    Force reinstall of Playwright browsers"
@@ -255,6 +261,35 @@ test_unit_backend() {
 
   echo -e "${GREEN}Running backend unit tests...${NC}"
   pnpm run test:unit-backend
+}
+
+# Run ESLint over the backend project
+lint_backend() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Linting Backend (ESLint)${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+  # The backend uses type-checked lint rules, which resolve @openvidu-meet/typings
+  # from its built output, so the typings package must exist beforehand.
+  build_typings
+
+  echo -e "${GREEN}Running ESLint on the backend...${NC}"
+  pnpm --filter @openvidu-meet/backend run lint
+}
+
+# Run ESLint over the frontend project
+lint_frontend() {
+  echo -e "${BLUE}=====================================${NC}"
+  echo -e "${BLUE}   Linting Frontend (ESLint)${NC}"
+  echo -e "${BLUE}=====================================${NC}"
+  echo
+
+  install_dependencies
+
+  echo -e "${GREEN}Running ESLint on the frontend...${NC}"
+  pnpm --filter @openvidu-meet/frontend run lint
 }
 
 # Run unit tests for the frontend shared-meet-components library (Karma)
@@ -901,6 +936,12 @@ main() {
       ;;
     test-unit-frontend)
       test_unit_frontend
+      ;;
+    lint-backend)
+      lint_backend
+      ;;
+    lint-frontend)
+      lint_frontend
       ;;
     test-e2e-webcomponent)
       test_e2e_webcomponent "$@"

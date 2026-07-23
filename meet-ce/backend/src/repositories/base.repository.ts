@@ -510,7 +510,7 @@ export abstract class BaseRepository<TDomain, TDocument extends TDomain = TDomai
 			return parsed as PaginationCursor;
 		} catch (error) {
 			this.logger.debug('Failed to decode pagination cursor:', error);
-			throw new Error('Invalid pagination token');
+			throw new Error('Invalid pagination token', { cause: error });
 		}
 	}
 

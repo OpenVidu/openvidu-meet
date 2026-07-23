@@ -10,7 +10,6 @@ import { RecordingRepository } from '../repositories/recording.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import type { RedisLock } from '../models/redis-lock.model.js';
 import { MutexService } from './mutex.service.js';
 import { RecordingService } from './recording.service.js';
 import { TaskSchedulerService } from './task-scheduler.service.js';
@@ -78,10 +77,9 @@ export class RecordingScheduledTasksService {
 		// Create the lock pattern for finding all recording locks
 		const lockPattern = MeetLock.getRecordingActiveLock('*');
 		this.logger.debug(`Searching for locks with pattern: ${lockPattern}`);
-		let recordingLocks: RedisLock[] = [];
 
 		try {
-			recordingLocks = await this.mutexService.getRegistryLocksByPrefix(lockPattern);
+			const recordingLocks = await this.mutexService.getRegistryLocksByPrefix(lockPattern);
 
 			if (recordingLocks.length === 0) {
 				this.logger.debug('No active recording locks found');

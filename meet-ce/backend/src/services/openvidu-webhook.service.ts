@@ -200,7 +200,9 @@ export class OpenViduWebhookService {
 			await this.sendRequest(url, options);
 		} catch (error) {
 			if (retries <= 0) {
-				throw new Error(`Request failed: ${error instanceof Error ? error.message : String(error)}`);
+				throw new Error(`Request failed: ${error instanceof Error ? error.message : String(error)}`, {
+					cause: error
+				});
 			}
 
 			this.logger.warn(`Retrying in ${delay / 1000} seconds... (${retries} retries left)`);
@@ -230,7 +232,7 @@ export class OpenViduWebhookService {
 
 			// Handle timeout error specifically
 			if (error instanceof Error && error.name === 'AbortError') {
-				throw new Error('Request timed out after 5 seconds');
+				throw new Error('Request timed out after 5 seconds', { cause: error });
 			}
 
 			// Re-throw other errors

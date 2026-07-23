@@ -133,7 +133,7 @@ export class LiveKitService {
 	}
 
 	async getRoom(roomName: string): Promise<Room> {
-		let rooms: Room[] = [];
+		let rooms: Room[];
 
 		try {
 			rooms = await this.roomClient.listRooms([roomName]);
