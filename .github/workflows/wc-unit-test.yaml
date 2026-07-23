@@ -29,7 +29,7 @@ jobs:
       - name: Install safe-chain
         uses: OpenVidu/actions/install-safe-chain@040cbfd01320475801d7b12e33769e0d55a737a8 # v1.0.21
       - name: Checkout OpenVidu Meet
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install dependencies
         run: ./meet.sh install
