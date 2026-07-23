@@ -38,6 +38,7 @@ import { DocumentService } from '../../services/document/document.service';
 import { Room, RoomEvent } from '../../services/livekit';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
+import { LocalMediaControlService } from '../../services/local-media-control/local-media-control.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
@@ -76,6 +77,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
+	private readonly localMediaControlService = inject(LocalMediaControlService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly deviceService = inject(DeviceService);
 	private readonly actionService = inject(ActionService);
@@ -457,8 +459,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	async toggleMicrophone() {
 		try {
 			this.microphoneMuteChanging.set(false);
-			const isMicrophoneEnabled = this.participantService.isMyMicrophoneEnabled();
-			await this.participantService.setMicrophoneEnabled(!isMicrophoneEnabled);
+			const isMicrophoneEnabled = this.localMediaControlService.isMyMicrophoneEnabled();
+			await this.localMediaControlService.setMicrophoneEnabled(!isMicrophoneEnabled);
 		} catch (error: unknown) {
 			this.log.e('There was an error toggling microphone:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
@@ -476,11 +478,11 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	async toggleCamera() {
 		try {
 			this.cameraMuteChanging.set(true);
-			const isCameraEnabled = this.participantService.isMyCameraEnabled();
+			const isCameraEnabled = this.localMediaControlService.isMyCameraEnabled();
 			if (this.panelService.isBackgroundEffectsPanelOpened() && isCameraEnabled) {
 				this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);
 			}
-			await this.participantService.setCameraEnabled(!isCameraEnabled);
+			await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
 		} catch (error) {
 			this.log.e('There was an error toggling camera:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
@@ -496,15 +498,15 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	async toggleScreenShare() {
-		const isScreenShareEnabled = this.participantService.isMyScreenShareEnabled();
-		await this.participantService.setScreenShareEnabled(!isScreenShareEnabled);
+		const isScreenShareEnabled = this.localMediaControlService.isMyScreenShareEnabled();
+		await this.localMediaControlService.setScreenShareEnabled(!isScreenShareEnabled);
 	}
 
 	/**
 	 * @ignore
 	 */
 	async replaceScreenTrack() {
-		await this.participantService.switchScreenShare();
+		await this.localMediaControlService.switchScreenShare();
 	}
 
 	/**

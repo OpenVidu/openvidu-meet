@@ -7,6 +7,7 @@ import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { DeviceService } from '../../../services/device/device.service';
+import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
@@ -41,6 +42,7 @@ export class AudioDevicesComponent implements OnInit {
 
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly participantService = inject(ParticipantService);
+	private readonly localMediaControlService = inject(LocalMediaControlService);
 	private readonly loggerSrv = inject(LoggerService);
 
 	constructor() {
@@ -61,14 +63,14 @@ export class AudioDevicesComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		this.isMicrophoneEnabled = this.participantService.isMyMicrophoneEnabled();
+		this.isMicrophoneEnabled = this.localMediaControlService.isMyMicrophoneEnabled();
 	}
 
 	async toggleMic(event: MouseEvent) {
 		event.stopPropagation();
 		this.microphoneStatusChanging = true;
 		this.isMicrophoneEnabled = !this.isMicrophoneEnabled;
-		await this.participantService.setMicrophoneEnabled(this.isMicrophoneEnabled);
+		await this.localMediaControlService.setMicrophoneEnabled(this.isMicrophoneEnabled);
 		this.microphoneStatusChanging = false;
 		this.onAudioEnabledChanged.emit(this.isMicrophoneEnabled);
 	}
@@ -78,7 +80,7 @@ export class AudioDevicesComponent implements OnInit {
 			const device: CustomDevice = event?.value;
 			if (this.deviceSrv.needUpdateAudioTrack(device)) {
 				this.microphoneStatusChanging = true;
-				await this.participantService.switchMicrophone(device.device);
+				await this.localMediaControlService.switchMicrophone(device.device);
 				this.deviceSrv.setMicSelected(device.device);
 				const selectedMicrophone = this.microphoneSelected();
 				if (selectedMicrophone) {

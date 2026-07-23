@@ -6,6 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { DeviceService } from '../../../services/device/device.service';
+import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
@@ -40,6 +41,7 @@ export class VideoDevicesComponent implements OnInit {
 
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly participantService = inject(ParticipantService);
+	private readonly localMediaControlService = inject(LocalMediaControlService);
 	private readonly loggerSrv = inject(LoggerService);
 
 	constructor() {
@@ -59,14 +61,14 @@ export class VideoDevicesComponent implements OnInit {
 	}
 
 	async ngOnInit() {
-		this.isCameraEnabled = this.participantService.isMyCameraEnabled();
+		this.isCameraEnabled = this.localMediaControlService.isMyCameraEnabled();
 	}
 
 	async toggleCam(event: MouseEvent) {
 		event.stopPropagation();
 		this.cameraStatusChanging = true;
 		this.isCameraEnabled = !this.isCameraEnabled;
-		await this.participantService.setCameraEnabled(this.isCameraEnabled);
+		await this.localMediaControlService.setCameraEnabled(this.isCameraEnabled);
 		this.onVideoEnabledChanged.emit(this.isCameraEnabled);
 		this.cameraStatusChanging = false;
 	}
@@ -78,7 +80,7 @@ export class VideoDevicesComponent implements OnInit {
 			// Is New deviceId different from the old one?
 			if (this.deviceSrv.needUpdateVideoTrack(device)) {
 				this.cameraStatusChanging = true;
-				await this.participantService.switchCamera(device.device);
+				await this.localMediaControlService.switchCamera(device.device);
 				this.deviceSrv.setCameraSelected(device.device);
 				const selectedCamera = this.cameraSelected();
 				if (selectedCamera) {

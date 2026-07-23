@@ -3,19 +3,17 @@ import { ParticipantModel, ParticipantProperties } from '../../models/participan
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
 import type {
-	AudioCaptureOptions,
 	DataPublishOptions,
 	LocalParticipant,
 	LocalTrackPublication,
 	Participant,
-	RemoteParticipant,
-	ScreenShareCaptureOptions,
-	VideoCaptureOptions
+	RemoteParticipant
 } from '../livekit';
 import { DeviceService } from '../device/device.service';
-import { ConnectionQuality, Track, VideoPresets } from '../livekit';
+import { ConnectionQuality, Track } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
+import { LocalMediaControlService } from '../local-media-control/local-media-control.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { StorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -26,6 +24,7 @@ export class ParticipantService {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
+	private readonly localMediaControlService = inject(LocalMediaControlService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
@@ -156,148 +155,54 @@ export class ParticipantService {
 	/**
 	 * Switches the active camera track used in this room to the given device id.
 	 * @param deviceId
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		if (this.meetingLiveKitService.isConnected()) {
-			const localParticipant = this.localParticipant();
-			await localParticipant?.switchCamera(deviceId);
-			// The device switch replaced the underlying MediaStreamTrack → bump so the camera track
-			// state re-evaluates.
-			localParticipant?.bump();
-		} else {
-			await this.localTrackService.switchCamera(deviceId);
-		}
+		return this.localMediaControlService.switchCamera(deviceId);
 	}
 
 	/**
 	 * Switches the active microphone track used in this room to the given device id.
 	 * @param deviceId
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
-		if (this.meetingLiveKitService.isConnected()) {
-			const localParticipant = this.localParticipant();
-			await localParticipant?.switchMicrophone(deviceId);
-			// The device switch replaced the underlying MediaStreamTrack → bump so the microphone
-			// track state re-evaluates and MicActivityService re-clones onto the new track.
-			localParticipant?.bump();
-		} else {
-			await this.localTrackService.switchMicrophone(deviceId);
-		}
+		return this.localMediaControlService.switchMicrophone(deviceId);
 	}
 
 	/**
 	 * Switches the active screen share track showing a native browser dialog to select a screen or window.
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	async switchScreenShare(): Promise<void> {
-		const localParticipant = this.localParticipant();
-		if (!localParticipant) {
-			this.log.e('Local participant is undefined when switching screenshare');
-			return;
-		}
-
-		// Chrome / Safari: seamless replaceTrack keeps the same publication SID.
-		const options = this.getScreenCaptureOptions();
-		const [newTrack] = await localParticipant.createScreenTracks(options);
-		if (newTrack) {
-			newTrack.addListener('ended', async () => {
-				this.log.d('Clicked native stop button. Stopping screen sharing');
-				await this.setScreenShareEnabled(false);
-			});
-
-			try {
-				await localParticipant.switchScreenshare(newTrack);
-			} catch (error) {
-				newTrack.stop();
-				throw error;
-			}
-		}
-
-		// this.updateLocalParticipant();
+		return this.localMediaControlService.switchScreenShare();
 	}
 
 	/**
 	 * Sets the local participant camera enabled or disabled.
 	 * @param enabled
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	async setCameraEnabled(enabled: boolean): Promise<void> {
-		if (this.meetingLiveKitService.isConnected()) {
-			const storageDevice = this.storageSrv.getVideoDevice();
-			let options: VideoCaptureOptions | undefined;
-			if (storageDevice) {
-				options = {
-					deviceId: storageDevice.device,
-					facingMode: 'user',
-					resolution: VideoPresets.h720.resolution
-				};
-			}
-			await this._localParticipant()?.setCameraEnabled(enabled, options);
-			this._localParticipant()?.bump();
-		} else {
-			await this.localTrackService.setVideoTrackEnabled(enabled);
-		}
-
-		// Single writer of the camera preference. A call here always represents user/app
-		// intent, so this is the only place that persists it — components must not re-persist on
-		// every participant-state change (that would clobber the preference on e.g. a moderator
-		// force-mute). The embedding-app default set before track creation is written by
-		// CameraEnabledDirective, the only other legitimate (initialization) writer.
-		this.storageSrv.setCameraEnabled(enabled);
+		return this.localMediaControlService.setCameraEnabled(enabled);
 	}
 
 	/**
 	 * Sets the local participant microphone enabled or disabled.
 	 * @param enabled
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		if (this.meetingLiveKitService.isConnected()) {
-			const storageDevice = this.storageSrv.getAudioDevice();
-			let options: AudioCaptureOptions | undefined;
-			if (storageDevice) {
-				options = {
-					deviceId: storageDevice.device
-				};
-			}
-			await this._localParticipant()?.setMicrophoneEnabled(enabled, options);
-			// Enabling may have (re-)acquired/published a fresh mic track (e.g. joined muted with no
-			// audio track, or `stopMicTrackOnMute` re-acquisition). bump() re-evaluates the state,
-			// and MicActivityService re-clones onto the new track via its effect.
-			this._localParticipant()?.bump();
-		} else {
-			this.localTrackService.setAudioTrackEnabled(enabled);
-		}
-
-		// Single writer of the microphone preference. See setCameraEnabled for the rationale;
-		// the only other legitimate writer is AudioEnabledDirective (embedding-app default).
-		this.storageSrv.setMicrophoneEnabled(enabled);
+		return this.localMediaControlService.setMicrophoneEnabled(enabled);
 	}
 
 	/**
 	 * Share or unshare the local participant screen.
 	 * @param enabled: true to share the screen, false to unshare it
-	 *
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	async setScreenShareEnabled(enabled: boolean): Promise<void> {
-		const options = this.getScreenCaptureOptions();
-		const track = await this._localParticipant()?.setScreenShareEnabled(enabled, options);
-		if (enabled && track) {
-			// Set all videos to normal size when a local screen is shared
-			this.streamLayoutService.resetRemoteStreamsToNormalSize();
-			this.streamLayoutService.resetLocalStreamsToNormalSize();
-			this._localParticipant()?.toggleVideoPinned(track.trackSid);
-			this._localParticipant()?.setScreenTrackPublicationDate(track.trackSid, new Date().getTime());
-
-			track?.addListener('ended', async () => {
-				this.log.d('Clicked native stop button. Stopping screen sharing');
-				await this.setScreenShareEnabled(false);
-			});
-		} else if (!enabled && track) {
-			// Enlarge the last screen shared when a local screen is stopped
-			this._localParticipant()?.setScreenTrackPublicationDate(track.trackSid, -1);
-			this.streamLayoutService.resetRemoteStreamsToNormalSize();
-			this.streamLayoutService.resetLocalStreamsToNormalSize();
-			this.streamLayoutService.setLastScreenPinned();
-		}
-		this._localParticipant()?.bump();
+		return this.localMediaControlService.setScreenShareEnabled(enabled);
 	}
 
 	/**
@@ -443,43 +348,26 @@ export class ParticipantService {
 
 	/**
 	 * Returns if the local participant camera is enabled.
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	isMyCameraEnabled(): boolean {
-		const local = this._localParticipant();
-		if (this.meetingLiveKitService.isConnected() && local) {
-			return local.isCameraEnabled;
-		} else {
-			const directiveCameraEnabled = this.directiveService.isVideoEnabled();
-
-			if (!directiveCameraEnabled) {
-				return false;
-			}
-			return this.localTrackService.isVideoTrackEnabled() && this.storageSrv.isCameraEnabled();
-		}
+		return this.localMediaControlService.isMyCameraEnabled();
 	}
 
 	/**
 	 * Returns if the local participant microphone is enabled.
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	isMyMicrophoneEnabled(): boolean {
-		const local = this._localParticipant();
-		if (this.meetingLiveKitService.isConnected() && local) {
-			return local.isMicrophoneEnabled;
-		} else {
-			const directiveMicropgoneEnabled = this.directiveService.isAudioEnabled();
-
-			if (!directiveMicropgoneEnabled) {
-				return false;
-			}
-			return this.localTrackService.isAudioTrackEnabled() && this.storageSrv.isMicrophoneEnabled();
-		}
+		return this.localMediaControlService.isMyMicrophoneEnabled();
 	}
 
 	/**
 	 * Returns if the local participant screen is enabled.
+	 * @deprecated Moved to {@link LocalMediaControlService}.
 	 */
 	isMyScreenShareEnabled(): boolean {
-		return this._localParticipant()?.isScreenShareEnabled || false;
+		return this.localMediaControlService.isMyScreenShareEnabled();
 	}
 
 	/**
@@ -655,21 +543,5 @@ export class ParticipantService {
 		} catch (error) {
 			this.log.w('Failed to decrypt participant name:', error);
 		}
-	}
-
-	private getScreenCaptureOptions(): ScreenShareCaptureOptions {
-		return {
-			audio: true,
-			video: {
-				displaySurface: 'browser' // Set browser tab as default options
-			},
-			systemAudio: 'include', // Include system audio as an option
-			resolution: VideoPresets.h1080.resolution,
-			contentHint: 'text', // Optimized for detailed content, adjust based on use case
-			suppressLocalAudioPlayback: true, // Prevent echo by not playing local audio
-			selfBrowserSurface: 'exclude', // Avoid self capture to prevent mirror effect
-			surfaceSwitching: 'include', // Allow users to switch shared tab dynamically
-			preferCurrentTab: false // Do not force current tab to be selected
-		};
 	}
 }
