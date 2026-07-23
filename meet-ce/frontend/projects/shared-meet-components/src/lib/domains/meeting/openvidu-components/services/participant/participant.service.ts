@@ -15,6 +15,7 @@ import type {
 import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track, VideoPresets } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
+import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { StorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -24,6 +25,7 @@ export class ParticipantService {
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
+	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly storageSrv = inject(StorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
@@ -134,7 +136,7 @@ export class ParticipantService {
 			this.addRemoteParticipant(p);
 		});
 		if (this._remoteParticipants().length > 0) {
-			this.floatLocalCameraVideo();
+			this.streamLayoutService.floatLocalCameraVideo();
 		}
 	}
 
@@ -279,8 +281,8 @@ export class ParticipantService {
 		const track = await this._localParticipant()?.setScreenShareEnabled(enabled, options);
 		if (enabled && track) {
 			// Set all videos to normal size when a local screen is shared
-			this.resetRemoteStreamsToNormalSize();
-			this.resetLocalStreamsToNormalSize();
+			this.streamLayoutService.resetRemoteStreamsToNormalSize();
+			this.streamLayoutService.resetLocalStreamsToNormalSize();
 			this._localParticipant()?.toggleVideoPinned(track.trackSid);
 			this._localParticipant()?.setScreenTrackPublicationDate(track.trackSid, new Date().getTime());
 
@@ -291,9 +293,9 @@ export class ParticipantService {
 		} else if (!enabled && track) {
 			// Enlarge the last screen shared when a local screen is stopped
 			this._localParticipant()?.setScreenTrackPublicationDate(track.trackSid, -1);
-			this.resetRemoteStreamsToNormalSize();
-			this.resetLocalStreamsToNormalSize();
-			this.setLastScreenPinned();
+			this.streamLayoutService.resetRemoteStreamsToNormalSize();
+			this.streamLayoutService.resetLocalStreamsToNormalSize();
+			this.streamLayoutService.setLastScreenPinned();
 		}
 		this._localParticipant()?.bump();
 	}
@@ -396,51 +398,47 @@ export class ParticipantService {
 
 	/**
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}. Delegating wrapper kept for
+	 * out-of-library consumers; removed at the end of R2.
 	 */
 	toggleMyVideoPinned(sid: string | undefined) {
-		const local = this._localParticipant();
-		if (sid && local) local.toggleVideoPinned(sid);
-		// toggleVideoPinned calls bump() internally — no explicit update needed.
+		this.streamLayoutService.toggleMyVideoPinned(sid);
 	}
 
 	/**
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}.
 	 */
 	toggleLocalVideoFloating(sid: string | undefined) {
-		const local = this._localParticipant();
-		if (sid && local) local.toggleVideoFloating(sid);
-		// toggleVideoFloating calls bump() internally — no explicit update needed.
+		this.streamLayoutService.toggleLocalVideoFloating(sid);
 	}
 
 	/**
 	 * Floats the local camera video if it is not already floating.
 	 * Called automatically when the first remote participant joins the room.
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}.
 	 */
 	floatLocalCameraVideo(): void {
-		const local = this._localParticipant();
-		if (!local || local.isFloating) return;
-		const cameraStream = local.streams().find((s) => s.isCameraStream);
-		if (cameraStream) local.toggleVideoFloating(cameraStream.streamId);
+		this.streamLayoutService.floatLocalCameraVideo();
 	}
 
 	/**
 	 * Restores the local camera video to the layout if it is currently floating.
 	 * Called automatically when the last remote participant leaves the room.
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}.
 	 */
 	dockLocalCameraVideo(): void {
-		const local = this._localParticipant();
-		if (!local || !local.isFloating) return;
-		const cameraStream = local.streams().find((s) => s.isCameraStream);
-		if (cameraStream) local.toggleVideoFloating(cameraStream.streamId);
+		this.streamLayoutService.dockLocalCameraVideo();
 	}
 
 	/**
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}.
 	 */
 	resetLocalStreamsToNormalSize() {
-		this._localParticipant()?.setAllVideoPinned(false);
+		this.streamLayoutService.resetLocalStreamsToNormalSize();
 	}
 
 	/**
@@ -496,46 +494,10 @@ export class ParticipantService {
 	/**
 	 * Sets the last screen element as pinned
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}.
 	 */
 	setLastScreenPinned() {
-		const local = this._localParticipant();
-		if (!local?.isScreenShareEnabled && !this.someRemoteIsSharingScreen()) {
-			return;
-		}
-		let localCreatedAt = -Infinity;
-		let localTrackSid = '';
-		if (local?.isScreenShareEnabled) {
-			localCreatedAt = Math.max(...local.screenTrackPublicationDate.values());
-			local.screenTrackPublicationDate.forEach((value, key) => {
-				if (value === localCreatedAt) {
-					localTrackSid = key;
-					return;
-				}
-			});
-		}
-
-		let remoteCreatedAt = -Infinity;
-		let remoteTrackSid = '';
-		if (this.someRemoteIsSharingScreen()) {
-			const lastRemoteParticipant = this.remoteParticipants().reduce((prev, current) => {
-				const prevMax = Math.max(...prev.screenTrackPublicationDate.values());
-				const currentMax = Math.max(...current.screenTrackPublicationDate.values());
-				return prevMax > currentMax ? prev : current;
-			});
-			remoteCreatedAt = Math.max(...lastRemoteParticipant.screenTrackPublicationDate.values());
-			lastRemoteParticipant.screenTrackPublicationDate.forEach((value, key) => {
-				if (value === remoteCreatedAt) {
-					remoteTrackSid = key;
-					return;
-				}
-			});
-		}
-
-		if (remoteCreatedAt > localCreatedAt) {
-			this.toggleRemoteVideoPinned(remoteTrackSid);
-		} else {
-			this.toggleMyVideoPinned(localTrackSid);
-		}
+		this.streamLayoutService.setLastScreenPinned();
 	}
 
 	/**
@@ -615,10 +577,10 @@ export class ParticipantService {
 
 	/**
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}.
 	 */
 	resetRemoteStreamsToNormalSize() {
-		// setAllVideoPinned calls bump() internally — no array update needed.
-		this.remoteParticipants().forEach((p) => p.setAllVideoPinned(false));
+		this.streamLayoutService.resetRemoteStreamsToNormalSize();
 	}
 
 	/**
@@ -627,12 +589,10 @@ export class ParticipantService {
 	 * @param trackSid
 	 * @param createdAt
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}.
 	 */
 	setScreenTrackPublicationDate(participantSid: string, trackSid: string, createdAt: number) {
-		// setScreenTrackPublicationDate bumps _revision internally.
-		this.remoteParticipants()
-			.find((p) => p.sid === participantSid)
-			?.setScreenTrackPublicationDate(trackSid, createdAt);
+		this.streamLayoutService.setScreenTrackPublicationDate(participantSid, trackSid, createdAt);
 	}
 
 	/**
@@ -644,13 +604,10 @@ export class ParticipantService {
 
 	/**
 	 * @internal
+	 * @deprecated Moved to {@link StreamLayoutStateService}.
 	 */
 	toggleRemoteVideoPinned(sid: string | undefined) {
-		if (sid) {
-			const participant = this.remoteParticipants().find((p) => p.tracks.some((track) => track.trackSid === sid));
-			// toggleVideoPinned calls bump() internally — no array update needed.
-			participant?.toggleVideoPinned(sid);
-		}
+		this.streamLayoutService.toggleRemoteVideoPinned(sid);
 	}
 
 	/**

@@ -25,6 +25,7 @@ import { safeJsonParse } from '../../utils/utils';
 import { ActionService } from '../action/action.service';
 import { ChatService } from '../chat/chat.service';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
@@ -45,6 +46,7 @@ export class SessionRoomEventsService {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly participantService = inject(ParticipantService);
+	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly log = this.loggerSrv.get('SessionRoomEventsService');
@@ -91,7 +93,7 @@ export class SessionRoomEventsService {
 			this.participantService.addRemoteParticipant(participant);
 			// Auto-float the local video the first time a remote participant joins.
 			if (this.participantService.remoteParticipants().length === 1) {
-				this.participantService.floatLocalCameraVideo();
+				this.streamLayoutService.floatLocalCameraVideo();
 			}
 		});
 	}
@@ -109,11 +111,11 @@ export class SessionRoomEventsService {
 				const isScreenTrack = track.source === Track.Source.ScreenShare;
 				this.participantService.addRemoteParticipant(participant);
 				if (isScreenTrack) {
-					this.participantService.resetLocalStreamsToNormalSize();
-					this.participantService.resetRemoteStreamsToNormalSize();
-					this.participantService.toggleRemoteVideoPinned(track.sid);
+					this.streamLayoutService.resetLocalStreamsToNormalSize();
+					this.streamLayoutService.resetRemoteStreamsToNormalSize();
+					this.streamLayoutService.toggleRemoteVideoPinned(track.sid);
 					if (track.sid) {
-						this.participantService.setScreenTrackPublicationDate(
+						this.streamLayoutService.setScreenTrackPublicationDate(
 							participant.sid,
 							track.sid,
 							new Date().getTime()
@@ -132,11 +134,11 @@ export class SessionRoomEventsService {
 				const isScreenTrack = track.source === Track.Source.ScreenShare;
 				if (isScreenTrack) {
 					if (track.sid) {
-						this.participantService.setScreenTrackPublicationDate(participant.sid, track.sid, -1);
+						this.streamLayoutService.setScreenTrackPublicationDate(participant.sid, track.sid, -1);
 					}
-					this.participantService.resetLocalStreamsToNormalSize();
-					this.participantService.resetRemoteStreamsToNormalSize();
-					this.participantService.setLastScreenPinned();
+					this.streamLayoutService.resetLocalStreamsToNormalSize();
+					this.streamLayoutService.resetRemoteStreamsToNormalSize();
+					this.streamLayoutService.setLastScreenPinned();
 				}
 
 				if (track.sid) {
@@ -189,7 +191,7 @@ export class SessionRoomEventsService {
 		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
 			this.participantService.removeRemoteParticipant(participant.sid);
 			if (this.participantService.remoteParticipants().length === 0) {
-				this.participantService.dockLocalCameraVideo();
+				this.streamLayoutService.dockLocalCameraVideo();
 			}
 		});
 	}

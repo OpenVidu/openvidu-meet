@@ -18,6 +18,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
+import { StreamLayoutStateService } from '../../services/layout/stream-layout-state.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { AudioWaveComponent } from '../audio-wave/audio-wave.component';
 import { ConnectionQualityIndicatorComponent } from '../connection-quality-indicator/connection-quality-indicator.component';
@@ -43,6 +44,7 @@ import { VideoElementComponent } from '../video-element/video-element.component'
 })
 export class StreamComponent implements OnDestroy {
 	private readonly layoutService = inject(SmartLayoutService);
+	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
@@ -121,11 +123,11 @@ export class StreamComponent implements OnDestroy {
 		if (stream?.participant) {
 			if (stream.participant.isLocal) {
 				if (stream.participant.isFloating) {
-					this.participantService.toggleLocalVideoFloating(sid);
+					this.streamLayoutService.toggleLocalVideoFloating(sid);
 				}
-				this.participantService.toggleMyVideoPinned(sid);
+				this.streamLayoutService.toggleMyVideoPinned(sid);
 			} else {
-				this.participantService.toggleRemoteVideoPinned(sid);
+				this.streamLayoutService.toggleRemoteVideoPinned(sid);
 			}
 		}
 		this.layoutService.update();
@@ -138,7 +140,7 @@ export class StreamComponent implements OnDestroy {
 		const stream = this.stream();
 		const sid = stream?.videoTrack?.trackSid;
 		if (stream?.participant && stream.participant.isLocal) {
-			this.participantService.toggleLocalVideoFloating(sid);
+			this.streamLayoutService.toggleLocalVideoFloating(sid);
 			this.layoutService.update();
 		}
 	}
