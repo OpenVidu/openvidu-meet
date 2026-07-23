@@ -11,7 +11,7 @@ import { MeetingTranslateService } from '../../services/translate/meeting-transl
  *
  * It is only available for {@link VideoconferenceComponent}.
  *
- *  Default: `""`
+ * Default: `""`
  *
  * @example
  * <ov-videoconference [livekitUrl]="http://localhost:1234"></ov-videoconference>
@@ -62,7 +62,7 @@ export class LivekitUrlDirective implements OnDestroy {
  *
  * It is only available for {@link VideoconferenceComponent}.
  *
- *  Default: `""`
+ * Default: `""`
  *
  * @example
  * <ov-videoconference [token]="token"></ov-videoconference>
@@ -112,7 +112,7 @@ export class TokenDirective implements OnDestroy {
  *
  * It is only available for {@link VideoconferenceComponent}.
  *
- *  Default: `undefined`
+ * Default: `undefined`
  *
  * @example
  * <ov-videoconference [tokenError]="error"></ov-videoconference>
@@ -230,15 +230,15 @@ export class LangDirective implements OnDestroy {
  * Default: ```
  * [
  * 	{ name: 'English', lang: 'en' },
- *  { name: 'Español', lang: 'es' },
- *  { name: 'Deutsch', lang: 'de' },
- *  { name: 'Français', lang: 'fr' },
- *  { name: '中国', lang: 'cn' },
- *  { name: 'हिन्दी', lang: 'hi' },
- *  { name: 'Italiano', lang: 'it' },
- *  { name: 'やまと', lang: 'ja' },
- *  { name: 'Dutch', lang: 'nl' },
- *  { name: 'Português', lang: 'pt' }
+ * { name: 'Español', lang: 'es' },
+ * { name: 'Deutsch', lang: 'de' },
+ * { name: 'Français', lang: 'fr' },
+ * { name: '中国', lang: 'cn' },
+ * { name: 'हिन्दी', lang: 'hi' },
+ * { name: 'Italiano', lang: 'it' },
+ * { name: 'やまと', lang: 'ja' },
+ * { name: 'Dutch', lang: 'nl' },
+ * { name: 'Português', lang: 'pt' }
  * ]```
  *
  * Note: If you want to add a new language, you must add a new object with the name and the language code (e.g. `{ name: 'Custom', lang: 'cus' }`)
@@ -449,7 +449,11 @@ export class VideoEnabledDirective implements OnDestroy {
 			finalEnabledState = false;
 		}
 
-		// Update the storage with the final state
+		// Update the storage with the final state.
+		// Second writer of the camera preference (besides the media-control toggle):
+		// it runs before tracks are created and seeds the stored
+		// preference from the embedding app's `cameraEnabled` input — a flow that never goes through
+		// setCameraEnabled(), so it cannot be folded into that single writer.
 		this.storageService.setCameraEnabled(finalEnabledState);
 
 		// Ensure libService state is consistent with the final enabled state
@@ -516,7 +520,10 @@ export class AudioEnabledDirective implements OnDestroy {
 			finalEnabledState = false;
 		}
 
-		// Update the storage with the final state
+		// Update the storage with the final state.
+		// Second writer of the microphone preference (besides the media-control toggle):
+		// it seeds the stored preference from the embedding
+		// app's `audioEnabled` input before tracks exist (does not go through setMicrophoneEnabled()).
 		this.storageService.setMicrophoneEnabled(finalEnabledState);
 
 		if (this.libService.isAudioEnabled() !== enabled) {
@@ -584,13 +591,13 @@ export class ShowDisconnectionDialogDirective implements OnDestroy {
  *
  * The final URL format will be:
  *
- *    {recordingStreamBaseUrl}/{recordingId}/media
+ * {recordingStreamBaseUrl}/{recordingId}/media
  *
  * Default: `"call/api/recordings/{recordingId}/stream"`
  *
  * Example:
  * Given a recordingStreamBaseUrl of `api/recordings`, the resulting URL for a recordingId of `12345` would be:
- *   `api/recordings/12345/media`
+ * `api/recordings/12345/media`
  *
  * It is essential that the resulting route is declared and configured on your backend, as it is
  * used for serving and accessing the recording streams.

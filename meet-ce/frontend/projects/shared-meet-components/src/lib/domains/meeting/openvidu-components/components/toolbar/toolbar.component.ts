@@ -41,7 +41,6 @@ import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
-import { StorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ToolbarMediaButtonsComponent } from './toolbar-media-buttons/toolbar-media-buttons.component';
@@ -83,7 +82,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(MeetingTranslateService);
-	private readonly storageSrv = inject(StorageService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
 	private readonly platformService = inject(PlatformService);
@@ -92,7 +90,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	/**
 	 * This event is emitted when the room has been disconnected.
-	 *  @deprecated Use {@link ToolbarComponent.onParticipantLeft} instead.
+	 * @deprecated Use {@link ToolbarComponent.onParticipantLeft} instead.
 	 */
 	readonly onRoomDisconnected = output<void>();
 
@@ -385,17 +383,18 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			const micChanged = currentMicEnabled !== p.isMicrophoneEnabled;
 			const screenShareChanged = currentScreenShareEnabled !== p.isScreenShareEnabled;
 
-			// Only emit and update if there's an actual change
+			// Only emit and update if there's an actual change. Persistence of the camera/mic
+			// preference is owned by the media-control service — this effect only mirrors
+			// participant state into local signals + emits API events; it must NOT write storage, or
+			// a non-user state change (e.g. moderator force-mute) would clobber the user's preference.
 			if (cameraChanged) {
 				this.onVideoEnabledChanged.emit(p.isCameraEnabled);
 				this.isCameraEnabled.set(p.isCameraEnabled);
-				this.storageSrv.setCameraEnabled(p.isCameraEnabled);
 			}
 
 			if (micChanged) {
 				this.onAudioEnabledChanged.emit(p.isMicrophoneEnabled);
 				this.isMicrophoneEnabled.set(p.isMicrophoneEnabled);
-				this.storageSrv.setMicrophoneEnabled(p.isMicrophoneEnabled);
 			}
 
 			if (screenShareChanged) {

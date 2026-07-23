@@ -235,6 +235,13 @@ export class ParticipantService {
 		} else {
 			await this.localTrackService.setVideoTrackEnabled(enabled);
 		}
+
+		// Single writer of the camera preference. A call here always represents user/app
+		// intent, so this is the only place that persists it — components must not re-persist on
+		// every participant-state change (that would clobber the preference on e.g. a moderator
+		// force-mute). The embedding-app default set before track creation is written by
+		// CameraEnabledDirective, the only other legitimate (initialization) writer.
+		this.storageSrv.setCameraEnabled(enabled);
 	}
 
 	/**
@@ -261,6 +268,10 @@ export class ParticipantService {
 		} else {
 			this.localTrackService.setAudioTrackEnabled(enabled);
 		}
+
+		// Single writer of the microphone preference. See setCameraEnabled for the rationale;
+		// the only other legitimate writer is AudioEnabledDirective (embedding-app default).
+		this.storageSrv.setMicrophoneEnabled(enabled);
 	}
 
 	/**

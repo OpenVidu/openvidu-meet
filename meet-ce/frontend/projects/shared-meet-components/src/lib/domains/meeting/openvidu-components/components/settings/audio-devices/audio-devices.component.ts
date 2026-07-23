@@ -8,7 +8,6 @@ import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { DeviceService } from '../../../services/device/device.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
-import { StorageService } from '../../../services/storage/storage.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
 
@@ -41,7 +40,6 @@ export class AudioDevicesComponent implements OnInit {
 	protected readonly hasAudioDevices: Signal<boolean>;
 
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly storageSrv = inject(StorageService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly loggerSrv = inject(LoggerService);
 
@@ -51,12 +49,13 @@ export class AudioDevicesComponent implements OnInit {
 		this.microphoneSelected = this.deviceSrv.microphoneSelected;
 		this.hasAudioDevices = this.deviceSrv.hasAudioDevices;
 
-		// Use effect instead of subscription for reactive updates
+		// Keep the local flag in sync with the participant state. Persistence of the preference is
+		// owned by the media-control service — do NOT write storage here, or a
+		// non-user mute (e.g. moderator force-mute) would overwrite the user's preference.
 		effect(() => {
 			const participant = this.participantService.localParticipant();
 			if (participant) {
 				this.isMicrophoneEnabled = participant.isMicrophoneEnabled;
-				this.storageSrv.setMicrophoneEnabled(this.isMicrophoneEnabled);
 			}
 		});
 	}
@@ -71,7 +70,6 @@ export class AudioDevicesComponent implements OnInit {
 		this.isMicrophoneEnabled = !this.isMicrophoneEnabled;
 		await this.participantService.setMicrophoneEnabled(this.isMicrophoneEnabled);
 		this.microphoneStatusChanging = false;
-		this.storageSrv.setMicrophoneEnabled(this.isMicrophoneEnabled);
 		this.onAudioEnabledChanged.emit(this.isMicrophoneEnabled);
 	}
 
