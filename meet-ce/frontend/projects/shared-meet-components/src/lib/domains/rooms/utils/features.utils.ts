@@ -25,12 +25,12 @@ export class FeatureCalculator {
 		if (features.showStartStopRecording) {
 			features.showStartStopRecording = permissions.canRecord;
 		}
-		// Chat
+		// Chat: canReadChat gates the whole panel; canWriteChat gates the message input within it.
 		if (features.showChat) {
 			features.showChat = permissions.canReadChat;
-			// TODO: Handle canWriteChat permissions
-			// features.showChatInput = permissions.canWriteChat;
 		}
+		// The input is writable only when the chat is visible AND the member may write.
+		features.showChatInput = features.showChat && permissions.canWriteChat;
 		// Backgrounds
 		if (features.showBackgrounds) {
 			features.showBackgrounds = permissions.canChangeVirtualBackground;

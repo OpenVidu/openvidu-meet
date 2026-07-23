@@ -60,6 +60,11 @@ export interface RoomFeatures {
 	 */
 	showChat: boolean;
 	/**
+	 * Indicates if the chat message input is enabled (the participant may send messages).
+	 * When false the chat panel is still readable but the input is disabled.
+	 */
+	showChatInput: boolean;
+	/**
 	 * Indicates if the participant list is shown in the UI
 	 */
 	showParticipantList: boolean;

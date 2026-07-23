@@ -116,6 +116,9 @@ export class OpenViduComponentsConfigService {
 
 	// Individual configs that don't fit into groups
 	private readonly layoutRemoteParticipantsConfig = signal<ParticipantModel[] | undefined>(undefined);
+	// Whether the chat message input is enabled (the participant may send messages). The chat panel
+	// visibility is a separate concern (chatPanel above); this only gates writing.
+	private readonly chatInputEnabledConfig = signal<boolean>(true);
 
 	// Signals-first selectors used by migrated consumers/directives
 	readonly tokenSignal = computed(() => this.generalConfig().token);
@@ -140,6 +143,7 @@ export class OpenViduComponentsConfigService {
 	readonly leaveButtonSignal = computed(() => this.toolbarConfig().leave);
 	readonly participantsPanelButtonSignal = computed(() => this.toolbarConfig().participantsPanel);
 	readonly chatPanelButtonSignal = computed(() => this.toolbarConfig().chatPanel);
+	readonly chatInputEnabledSignal = this.chatInputEnabledConfig.asReadonly();
 	readonly activitiesPanelButtonSignal = computed(() => this.toolbarConfig().activitiesPanel);
 	readonly displayRoomNameSignal = computed(() => this.toolbarConfig().displayRoomName);
 	readonly roomNameSignal = computed(() => this.toolbarConfig().roomName);
@@ -185,6 +189,13 @@ export class OpenViduComponentsConfigService {
 	 */
 	updateRecordingActivityConfig(partialConfig: Partial<RecordingActivityConfig>): void {
 		this.recordingActivityConfig.update((current) => ({ ...current, ...partialConfig }));
+	}
+
+	/**
+	 * Enable or disable the chat message input (whether the participant may send messages).
+	 */
+	setChatInputEnabled(enabled: boolean): void {
+		this.chatInputEnabledConfig.set(enabled);
 	}
 
 	// ============================================

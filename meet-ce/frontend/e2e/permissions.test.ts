@@ -9,7 +9,7 @@ import {
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { createReadyMemberUser, expectLobbyAccessRestricted, expectNameInput } from './helpers/access.helper';
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
-import { expectChatAvailable, expectNoChat } from './helpers/chat.helper';
+import { expectChatAvailable, expectNoChat, toggleChatPanel } from './helpers/chat.helper';
 import {
 	expectBackgroundsButtonAvailable,
 	expectCameraButtonAvailable,
@@ -183,11 +183,18 @@ test.describe('Permissions E2E Tests', () => {
 			await expectNoChat(page);
 		});
 
-		// canWriteChat is not wired to the UI yet (see features.utils.ts — showChatInput is commented
-		// out), so it cannot be asserted. Re-enable when the permission gates the chat input.
-		test.fixme('canWriteChat controls the chat input', async () => {
-			// When implemented: join with { canReadChat: true, canWriteChat: false }, open the chat panel,
-			// and assert #chat-input is disabled; with canWriteChat: true assert it is editable.
+		test('canWriteChat granted: the chat input is editable', async ({ page }) => {
+			await joinAsGuest(page, { canReadChat: true, canWriteChat: true });
+			await toggleChatPanel(page, 'open');
+			await expect(page.locator('#chat-input')).toBeEnabled();
+			await expect(page.locator('#send-btn')).toBeEnabled();
+		});
+
+		test('canWriteChat denied: the chat panel opens but the input is disabled', async ({ page }) => {
+			await joinAsGuest(page, { canReadChat: true, canWriteChat: false });
+			await toggleChatPanel(page, 'open');
+			await expect(page.locator('#chat-input')).toBeDisabled();
+			await expect(page.locator('#send-btn')).toBeDisabled();
 		});
 
 		test('canChangeVirtualBackground granted: the backgrounds control is available', async ({ page }) => {

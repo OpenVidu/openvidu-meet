@@ -645,3 +645,41 @@ export class RecordingStreamBaseUrlDirective implements OnDestroy {
 		if (value) this.libService.updateGeneralConfig({ recordingStreamBaseUrl: value });
 	}
 }
+
+/**
+ * The **chatWritable** directive enables/disables the chat message input, i.e. whether the local
+ * participant may send messages. When `false` the chat panel remains readable but its input is
+ * disabled. Pair it with {@link ToolbarChatPanelButtonDirective} (which controls chat visibility).
+ *
+ * It is only available for {@link VideoconferenceComponent}.
+ *
+ * Default: `true`
+ *
+ * @example
+ * <ov-videoconference [chatWritable]="false"></ov-videoconference>
+ */
+@Directive({
+	selector: 'ov-videoconference[chatWritable]'
+})
+export class ChatWritableDirective implements OnDestroy {
+	/**
+	 * @ignore
+	 */
+	readonly chatWritable = input<boolean | undefined>(undefined);
+
+	/**
+	 * @ignore
+	 */
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly chatWritableEffect = effect(() => {
+		this.libService.setChatInputEnabled(this.chatWritable() ?? true);
+	});
+
+	/**
+	 * @ignore
+	 */
+	ngOnDestroy(): void {
+		this.libService.setChatInputEnabled(true);
+	}
+}

@@ -35,6 +35,7 @@ import {
 } from './toolbar.directive';
 import {
     AudioEnabledDirective,
+    ChatWritableDirective,
     LangDirective,
     LangOptionsDirective,
     LivekitUrlDirective,
@@ -67,6 +68,7 @@ const directives = [
 	ToolbarRecordingButtonDirective,
 	ToolbarParticipantsPanelButtonDirective,
 	ToolbarChatPanelButtonDirective,
+	ChatWritableDirective,
 	ToolbarActivitiesPanelButtonDirective,
 	ToolbarDisplayRoomNameDirective,
 	ToolbarDisplayLogoDirective,

@@ -46,10 +46,17 @@
 				(keypress)="eventKeyPress($event)"
 				[ngModel]="message()"
 				(ngModelChange)="message.set($event)"
+				[disabled]="!canWrite()"
 				id="chat-input"
 				[class.vertical-align]="!message()"
 			></textarea>
-		<button mat-icon-button id="send-btn" (click)="sendMessage()" matTooltip="{{ 'PANEL.CHAT.SEND' | translate }}">
+		<button
+			mat-icon-button
+			id="send-btn"
+			[disabled]="!canWrite()"
+			(click)="sendMessage()"
+			matTooltip="{{ 'PANEL.CHAT.SEND' | translate }}"
+		>
 			<mat-icon>send</mat-icon>
 		</button>
 	</div>
