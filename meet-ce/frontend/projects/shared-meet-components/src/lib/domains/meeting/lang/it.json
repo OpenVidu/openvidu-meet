@@ -243,5 +243,11 @@
 		"INIT_ERROR_TITLE": "Errore",
 		"INIT_ERROR_MESSAGE": "Si è verificato un errore durante l'inizializzazione della lobby della riunione. Riprova più tardi.",
 		"INIT_ERROR_CONFIRM": "OK"
+	},
+	"MIC_ALERT": {
+		"SYSTEM_MUTED_TITLE": "Microfono disattivato dal sistema",
+		"SYSTEM_MUTED_DESC": "Vai alle impostazioni del computer per riattivare il microfono e alzare il volume",
+		"MUTED_SPEAKING": "Stai parlando? Il microfono è disattivato. Fai clic per attivarlo.",
+		"CLOSE": "Chiudi"
 	}
 }

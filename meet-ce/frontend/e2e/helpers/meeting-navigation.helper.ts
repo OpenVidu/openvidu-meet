@@ -218,3 +218,30 @@ export const leaveMeeting = async (page: Page, timeoutMs = 10_000): Promise<void
 
 	await expect(page.locator('#layout-container')).toHaveCount(0, { timeout: timeoutMs });
 };
+
+/**
+ * Re-opens the prejoin in the SAME browser context (simulating a returning user). The lobby may be
+ * skipped when the participant name is already stored for the tab, so this tolerates both flows
+ * rather than assuming the name form is shown (which is what {@link openPrejoin} requires).
+ */
+export const reopenPrejoin = async (page: Page, accessUrl: string): Promise<void> => {
+	await page.goto(accessUrl, { waitUntil: 'domcontentloaded' });
+
+	const nameSubmit = page.locator('#participant-name-submit');
+	const lobbyShown = await nameSubmit
+		.waitFor({ state: 'visible', timeout: 5_000 })
+		.then(() => true)
+		.catch(() => false);
+
+	if (lobbyShown) {
+		const nameInput = page.locator('#participant-name-input');
+
+		if (!(await nameInput.inputValue())) {
+			await nameInput.fill(`pw-${Date.now()}`);
+		}
+
+		await nameSubmit.click();
+	}
+
+	await expect(page.locator('#join-button')).toBeVisible({ timeout: 15_000 });
+};

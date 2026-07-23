@@ -1,0 +1,40 @@
+@if (showBadge()) {
+	<span id="mic-warning-badge" class="mic-warning-badge" aria-hidden="true">!</span>
+}
+
+<!-- The bubble is projected into a top-level CDK overlay (see the component) so it is never
+	 clipped by the toolbar / prejoin containers nor hidden behind the meeting layout. -->
+<ng-template #popupTpl>
+	@if (activeAlert(); as alert) {
+		<div
+			class="mic-status-alert"
+			[id]="alert === 'system-muted' ? 'mic-system-muted-alert' : 'mic-muted-speaking-alert'"
+			role="alert"
+			aria-live="assertive"
+		>
+			<div class="alert-content">
+				@if (alert === 'system-muted') {
+					<div class="alert-title">
+						<span class="alert-title-icon" aria-hidden="true">!</span>
+						<span>{{ 'MIC_ALERT.SYSTEM_MUTED_TITLE' | translate }}</span>
+					</div>
+					<p class="alert-text">{{ 'MIC_ALERT.SYSTEM_MUTED_DESC' | translate }}</p>
+				} @else {
+					<p class="alert-text">{{ 'MIC_ALERT.MUTED_SPEAKING' | translate }}</p>
+				}
+			</div>
+
+			<button
+				id="mic-alert-close"
+				class="alert-close"
+				type="button"
+				(click)="dismiss(alert)"
+				[attr.aria-label]="'MIC_ALERT.CLOSE' | translate"
+			>
+				<mat-icon>close</mat-icon>
+			</button>
+
+			<span class="alert-pointer" aria-hidden="true"></span>
+		</div>
+	}
+</ng-template>

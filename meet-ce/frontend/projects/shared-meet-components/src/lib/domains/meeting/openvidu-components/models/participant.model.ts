@@ -1,6 +1,6 @@
 import { computed, signal } from '@angular/core';
 import { MeetRoomMemberTokenMetadata, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
-import type { RemoteParticipant, Room, TrackPublication } from '../services/livekit';
+import type { LocalAudioTrack, RemoteParticipant, Room, TrackPublication } from '../services/livekit';
 import {
 	AudioCaptureOptions,
 	ConnectionQuality,
@@ -326,6 +326,18 @@ export class ParticipantModel {
 	get isScreenShareEnabled(): boolean {
 		this._revision();
 		return this.participant.isScreenShareEnabled;
+	}
+
+	/**
+	 * Returns the participant's published microphone audio track, if any. Used to feed the
+	 * local microphone activity analyser behind the mic status warnings.
+	 * @internal
+	 */
+	getMicrophoneTrack(): LocalAudioTrack | undefined {
+		const publication = this.participant
+			.getTrackPublications()
+			.find((pub) => pub.source === Track.Source.Microphone && pub.kind === Track.Kind.Audio);
+		return publication?.track as LocalAudioTrack | undefined;
 	}
 
 	/**

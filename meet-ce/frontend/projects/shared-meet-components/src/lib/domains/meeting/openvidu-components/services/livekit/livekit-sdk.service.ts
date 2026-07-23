@@ -3,6 +3,7 @@ import type { SwitchBackgroundProcessorOptions } from '@livekit/track-processors
 import {
 	ConnectionQuality,
 	ConnectionState,
+	createAudioAnalyser,
 	createKeyMaterialFromString,
 	createLocalTracks,
 	DataPacket_Kind,
@@ -68,6 +69,7 @@ export {
 	AudioCaptureOptions,
 	ConnectionQuality,
 	ConnectionState,
+	createAudioAnalyser,
 	createKeyMaterialFromString,
 	createLocalTracks,
 	CreateLocalTracksOptions,

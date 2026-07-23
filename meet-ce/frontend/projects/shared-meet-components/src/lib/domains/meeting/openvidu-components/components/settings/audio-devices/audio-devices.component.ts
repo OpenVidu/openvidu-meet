@@ -5,6 +5,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
+import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { DeviceService } from '../../../services/device/device.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
 import { StorageService } from '../../../services/storage/storage.service';
@@ -16,7 +17,7 @@ import type { ILogger } from '../../../../../../shared/models/logger.model';
  */
 @Component({
 	selector: 'ov-audio-devices-select',
-	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe],
+	imports: [MatButtonModule, MatIconModule, MatMenuModule, MatTooltipModule, TranslatePipe, MicStatusAlertComponent],
 	templateUrl: './audio-devices.component.html',
 	styleUrl: './audio-devices.component.scss'
 })

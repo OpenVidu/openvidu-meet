@@ -242,5 +242,11 @@
 		"INIT_ERROR_TITLE": "Erreur",
 		"INIT_ERROR_MESSAGE": "Une erreur s'est produite lors de l'initialisation du salon d'attente de la réunion. Veuillez réessayer plus tard.",
 		"INIT_ERROR_CONFIRM": "OK"
+	},
+	"MIC_ALERT": {
+		"SYSTEM_MUTED_TITLE": "Micro coupé par le système",
+		"SYSTEM_MUTED_DESC": "Accédez aux paramètres de votre ordinateur pour réactiver le micro et augmenter le volume",
+		"MUTED_SPEAKING": "Vous parlez ? Votre micro est désactivé. Cliquez dessus pour l'activer.",
+		"CLOSE": "Fermer"
 	}
 }

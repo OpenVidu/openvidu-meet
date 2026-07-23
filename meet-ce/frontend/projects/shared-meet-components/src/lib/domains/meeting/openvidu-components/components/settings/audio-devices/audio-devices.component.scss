@@ -8,6 +8,12 @@
 	.audio-device-selector {
 		@include shared.device-selector-base();
 
+		// Positioning context for the mic status warnings (badge + popup). The unified button
+		// itself clips its content (overflow: hidden), so the overlay hangs from this wrapper.
+		.mic-button-anchor {
+			position: relative;
+		}
+
 		// Audio-specific overrides for normal mode
 		// &:not(.compact) {
 		// 	.normal-device-selector {

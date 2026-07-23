@@ -2,34 +2,49 @@
 	<!-- Unified Device Button (Compact Mode) -->
 	@if (compact()) {
 		@if (hasAudioDevices()) {
-			<div class="unified-device-button">
-				<!-- Main toggle button -->
-				<button
-					mat-flat-button
-					class="toggle-section"
-				[disabled]="!hasAudioDevices() || microphoneStatusChanging"
-				[class.device-enabled]="isMicrophoneEnabled"
-				[class.device-disabled]="!isMicrophoneEnabled"
-				(click)="toggleMic($event)"
-				[matTooltip]="isMicrophoneEnabled ? ('TOOLBAR.MUTE_AUDIO' | translate) : ('TOOLBAR.UNMUTE_AUDIO' | translate)"
-				[matTooltipDisabled]="!hasAudioDevices()"
-					id="microphone-button"
-				>
-					<mat-icon [id]="isMicrophoneEnabled ? 'mic' : 'mic_off'">{{ isMicrophoneEnabled ? 'mic' : 'mic_off' }}</mat-icon>
-				</button>
-
-				<!-- Dropdown section -->
-				@if (isMicrophoneEnabled) {
+			<!-- Anchor for the mic status warnings: the unified button clips its content
+				 (overflow: hidden for the rounded corners), so the alert overlay hangs from
+				 this wrapper instead -->
+			<div class="mic-button-anchor">
+				<div class="unified-device-button">
+					<!-- Main toggle button -->
 					<button
 						mat-flat-button
-						id="audio-dropdown"
-						class="dropdown-section"
-						[matMenuTriggerFor]="microphoneMenu"
-						[disabled]="microphoneStatusChanging"
+						class="toggle-section"
+						[disabled]="!hasAudioDevices() || microphoneStatusChanging"
+						[class.device-enabled]="isMicrophoneEnabled"
+						[class.device-disabled]="!isMicrophoneEnabled"
+						(click)="toggleMic($event)"
+						[matTooltip]="
+							isMicrophoneEnabled
+								? ('TOOLBAR.MUTE_AUDIO' | translate)
+								: ('TOOLBAR.UNMUTE_AUDIO' | translate)
+						"
+						[matTooltipDisabled]="!hasAudioDevices()"
+						id="microphone-button"
 					>
-						<mat-icon>expand_more</mat-icon>
+						<mat-icon [id]="isMicrophoneEnabled ? 'mic' : 'mic_off'">{{
+							isMicrophoneEnabled ? 'mic' : 'mic_off'
+						}}</mat-icon>
 					</button>
-				}
+
+					<!-- Dropdown section -->
+					@if (isMicrophoneEnabled) {
+						<button
+							mat-flat-button
+							id="audio-dropdown"
+							class="dropdown-section"
+							[matMenuTriggerFor]="microphoneMenu"
+							[disabled]="microphoneStatusChanging"
+						>
+							<mat-icon>expand_more</mat-icon>
+						</button>
+					}
+				</div>
+
+				<!-- Mic status warnings (talking while muted / muted by the system).
+				 The popup overlay is anchored to the mic toggle button so it always points at it. -->
+				<ov-mic-status-alert [micEnabled]="isMicrophoneEnabled" originSelector="#microphone-button" />
 			</div>
 		} @else {
 			<!-- No Microphone Available -->
@@ -50,15 +65,17 @@
 							mat-flat-button
 							id="audio-dropdown"
 							class="selector-button"
-						[disabled]="microphoneStatusChanging || microphones().length <= 1"
-						[matMenuTriggerFor]="microphoneMenu"
-						[attr.aria-expanded]="false"
-					>
-						<mat-icon class="device-icon">mic</mat-icon>
-						<span class="selected-device-name">{{ microphoneSelected()?.label || 'No microphone selected' }}</span>
-						@if (microphones().length > 1) {
-							<mat-icon class="dropdown-icon">expand_more</mat-icon>
-						}
+							[disabled]="microphoneStatusChanging || microphones().length <= 1"
+							[matMenuTriggerFor]="microphoneMenu"
+							[attr.aria-expanded]="false"
+						>
+							<mat-icon class="device-icon">mic</mat-icon>
+							<span class="selected-device-name">{{
+								microphoneSelected()?.label || 'No microphone selected'
+							}}</span>
+							@if (microphones().length > 1) {
+								<mat-icon class="dropdown-icon">expand_more</mat-icon>
+							}
 						</button>
 					</div>
 				} @else {
@@ -68,7 +85,11 @@
 							<div class="selector-button disabled">
 								<mat-icon class="device-icon">mic_off</mat-icon>
 								<span class="selected-device-name">
-								{{ !hasAudioDevices() ? ('PREJOIN.NO_AUDIO_DEVICE' | translate) : 'Microphone disabled' }}
+									{{
+										!hasAudioDevices()
+											? ('PREJOIN.NO_AUDIO_DEVICE' | translate)
+											: 'Microphone disabled'
+									}}
 								</span>
 							</div>
 						</div>

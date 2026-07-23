@@ -18,20 +18,28 @@
 
 <!-- Microphone button -->
 @if (showMicrophoneButtonDirect()) {
-	<button
-		id="mic-btn"
-		mat-icon-button
-		(click)="onMicrophoneToggle()"
-		[disabled]="isConnectionLost() || !hasAudioDevices() || microphoneMuteChanging()"
-		[class.disabled]="!isMicrophoneEnabled()"
-		[class.mobile-btn]="isMobileView()"
-		[matTooltip]="isMicrophoneEnabled() ? ('TOOLBAR.MUTE_AUDIO' | translate) : ('TOOLBAR.UNMUTE_AUDIO' | translate)"
-		[matTooltipDisabled]="!hasAudioDevices()"
-	>
-		<mat-icon [id]="isMicrophoneEnabled() ? 'mic' : 'mic_off'">
-			{{ isMicrophoneEnabled() ? 'mic' : 'mic_off' }}
-		</mat-icon>
-	</button>
+	<div class="mic-button-anchor">
+		<button
+			id="mic-btn"
+			mat-icon-button
+			(click)="onMicrophoneToggle()"
+			[disabled]="isConnectionLost() || !hasAudioDevices() || microphoneMuteChanging()"
+			[class.disabled]="!isMicrophoneEnabled()"
+			[class.mobile-btn]="isMobileView()"
+			[matTooltip]="
+				isMicrophoneEnabled() ? ('TOOLBAR.MUTE_AUDIO' | translate) : ('TOOLBAR.UNMUTE_AUDIO' | translate)
+			"
+			[matTooltipDisabled]="!hasAudioDevices()"
+		>
+			<mat-icon [id]="isMicrophoneEnabled() ? 'mic' : 'mic_off'">
+				{{ isMicrophoneEnabled() ? 'mic' : 'mic_off' }}
+			</mat-icon>
+		</button>
+
+		<!-- Mic status warnings (talking while muted / muted by the system).
+			 The popup overlay is anchored to the mic button so it always points at it. -->
+		<ov-mic-status-alert [micEnabled]="isMicrophoneEnabled()" originSelector="#mic-btn" />
+	</div>
 }
 
 <!-- Screenshare button - Only visible on tablet+ or when active -->

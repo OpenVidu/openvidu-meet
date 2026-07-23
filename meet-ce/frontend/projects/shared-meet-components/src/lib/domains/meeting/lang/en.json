@@ -244,5 +244,11 @@
 		"INIT_ERROR_TITLE": "Error",
 		"INIT_ERROR_MESSAGE": "An error occurred while initializing the meeting lobby. Please try again later.",
 		"INIT_ERROR_CONFIRM": "OK"
+	},
+	"MIC_ALERT": {
+		"SYSTEM_MUTED_TITLE": "Microphone muted by your system",
+		"SYSTEM_MUTED_DESC": "Go to your computer's settings to unmute the microphone and turn up the volume",
+		"MUTED_SPEAKING": "Are you talking? Your microphone is off. Click it to turn it on.",
+		"CLOSE": "Dismiss"
 	}
 }

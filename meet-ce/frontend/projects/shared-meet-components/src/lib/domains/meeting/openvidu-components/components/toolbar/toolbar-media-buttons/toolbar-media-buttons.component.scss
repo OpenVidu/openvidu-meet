@@ -4,6 +4,12 @@
 	align-items: center;
 	gap: 2px;
 
+	// Positioning context for the mic status warnings (badge + popup) around the mic button.
+	.mic-button-anchor {
+		position: relative;
+		display: inline-flex;
+	}
+
 	.mat-mdc-icon-button {
 		--mat-mdc-button-persistent-ripple-color: transparent !important;
 		--mat-mdc-button-ripple-color: transparent !important;

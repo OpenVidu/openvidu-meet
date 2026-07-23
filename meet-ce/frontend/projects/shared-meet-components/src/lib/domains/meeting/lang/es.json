@@ -243,5 +243,11 @@
 		"INIT_ERROR_TITLE": "Error",
 		"INIT_ERROR_MESSAGE": "Se produjo un error al inicializar la sala de espera de la reunión. Inténtalo de nuevo más tarde.",
 		"INIT_ERROR_CONFIRM": "Aceptar"
+	},
+	"MIC_ALERT": {
+		"SYSTEM_MUTED_TITLE": "Micrófono silenciado por el sistema",
+		"SYSTEM_MUTED_DESC": "Accede a la configuración de tu ordenador para activar el sonido del micrófono y subir el volumen",
+		"MUTED_SPEAKING": "¿Estás hablando? El micrófono está desactivado. Haz clic en él para activarlo.",
+		"CLOSE": "Cerrar"
 	}
 }

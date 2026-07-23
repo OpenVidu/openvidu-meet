@@ -243,5 +243,11 @@
 		"INIT_ERROR_TITLE": "Fout",
 		"INIT_ERROR_MESSAGE": "Er is een fout opgetreden bij het initialiseren van de meetinglobby. Probeer het later opnieuw.",
 		"INIT_ERROR_CONFIRM": "OK"
+	},
+	"MIC_ALERT": {
+		"SYSTEM_MUTED_TITLE": "Microfoon gedempt door het systeem",
+		"SYSTEM_MUTED_DESC": "Ga naar de instellingen van je computer om de microfoon aan te zetten en het volume te verhogen",
+		"MUTED_SPEAKING": "Praat je? Je microfoon staat uit. Klik erop om hem aan te zetten.",
+		"CLOSE": "Sluiten"
 	}
 }

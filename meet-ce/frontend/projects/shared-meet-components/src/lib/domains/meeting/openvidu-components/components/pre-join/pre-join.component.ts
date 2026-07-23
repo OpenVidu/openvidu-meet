@@ -21,7 +21,9 @@ import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.servic
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalTrack, Track } from '../../services/livekit';
+import type { LocalAudioTrack } from '../../services/livekit';
 import { LocalTrackService } from '../../services/local-track/local-track.service';
+import { MicActivityService } from '../../services/mic-activity/mic-activity.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
@@ -103,6 +105,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	private tracks: LocalTrack[] = [];
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly localTrackService = inject(LocalTrackService);
+	private readonly micActivityService = inject(MicActivityService);
 	private readonly virtualBackgroundService = inject(VirtualBackgroundService);
 	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
@@ -135,6 +138,10 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 
 	async ngOnDestroy() {
 		this.cdkSrv.setSelector('body');
+
+		// Always release the mic activity monitor (it owns a cloned MediaStreamTrack). When the
+		// user joins, ParticipantService.connect() re-attaches it right after publishing.
+		this.micActivityService.detach();
 
 		if (this.shouldRemoveTracksWhenComponentIsDestroyed) {
 			this.tracks?.forEach((track) => {
@@ -216,6 +223,9 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			this.tracks = updatedTracks;
 			this.audioTrack = newAudioTrack;
 
+			// The device switch replaced the underlying MediaStreamTrack → re-clone the monitor.
+			this.micActivityService.attach(this.audioTrack as LocalAudioTrack | undefined);
+
 			this.onAudioDeviceChanged.emit(device);
 		} catch (error) {
 			this.log.e('Error handling audio device change:', error);
@@ -230,6 +240,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			this.tracks.push(this.audioTrack);
 			this.localTrackService.setLocalTracks(this.tracks);
 		}
+		this.micActivityService.attach(this.audioTrack as LocalAudioTrack | undefined);
 		this.onAudioEnabledChanged.emit(enabled);
 	}
 
@@ -283,6 +294,9 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 				this.videoTrack = this.tracks.find((track) => track.kind === Track.Kind.Video);
 				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
 				this.isVideoEnabled.set(this.localTrackService.isVideoTrackEnabled());
+
+				// Start monitoring the mic input for the mic status warnings shown on the button.
+				this.micActivityService.attach(this.audioTrack as LocalAudioTrack | undefined);
 
 				// Restore previously selected virtual background in prejoin when possible.
 				// Skip restore when the user is not allowed to use virtual backgrounds.

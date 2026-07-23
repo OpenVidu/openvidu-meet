@@ -5,6 +5,7 @@ import { E2eeService } from '../e2ee/e2ee.service';
 import type {
 	AudioCaptureOptions,
 	DataPublishOptions,
+	LocalAudioTrack,
 	LocalParticipant,
 	LocalTrackPublication,
 	Participant,
@@ -15,6 +16,7 @@ import type {
 import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track, VideoPresets } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
+import { MicActivityService } from '../mic-activity/mic-activity.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { StorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -27,6 +29,7 @@ export class ParticipantService {
 	private readonly storageSrv = inject(StorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
+	private readonly micActivityService = inject(MicActivityService);
 	private readonly log = inject(LoggerService).get('ParticipantService');
 
 	/**
@@ -65,6 +68,8 @@ export class ParticipantService {
 	 * @internal
 	 */
 	clear(): void {
+		// Stop the mic activity monitor so its cloned MediaStreamTrack releases the device.
+		this.micActivityService.detach();
 		this._localParticipant.set(undefined);
 		this._remoteParticipants.set([]);
 	}
@@ -121,6 +126,10 @@ export class ParticipantService {
 
 		await Promise.all(promises);
 		this._localParticipant()?.bump();
+
+		// Monitor the published mic input for the mic status warnings (talking while muted /
+		// muted by the system). Reuses the same underlying MediaStreamTrack the prejoin monitored.
+		this.micActivityService.attach(audioTrack as LocalAudioTrack | undefined);
 		// if(!isCameraEnabled) await this.setCameraEnabled(isCameraEnabled);
 		// if(!isMicrophoneEnabled) await this.setMicrophoneEnabled(isMicrophoneEnabled);
 		// Once the Room is created, the temporary tracks are not longer needed.
@@ -168,6 +177,8 @@ export class ParticipantService {
 		if (this.meetingLiveKitService.isConnected()) {
 			const localParticipant = this.localParticipant();
 			await localParticipant?.switchMicrophone(deviceId);
+			// The device switch replaced the underlying MediaStreamTrack → re-clone it.
+			this.micActivityService.attach(localParticipant?.getMicrophoneTrack());
 		} else {
 			await this.localTrackService.switchMicrophone(deviceId);
 		}
@@ -241,6 +252,12 @@ export class ParticipantService {
 			}
 			await this._localParticipant()?.setMicrophoneEnabled(enabled, options);
 			this._localParticipant()?.bump();
+
+			if (enabled) {
+				// Enabling may have (re-)acquired or published a fresh mic track (e.g. the user
+				// joined muted with no audio track). attach() is a no-op for the same track.
+				this.micActivityService.attach(this._localParticipant()?.getMicrophoneTrack());
+			}
 		} else {
 			this.localTrackService.setAudioTrackEnabled(enabled);
 		}

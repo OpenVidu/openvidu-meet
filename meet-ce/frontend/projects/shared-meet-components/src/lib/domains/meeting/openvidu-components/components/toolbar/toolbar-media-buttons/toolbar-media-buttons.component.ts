@@ -14,6 +14,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ToolbarMoreOptionsAdditionalMenuItemsDirective } from '../../../directives/template/internals.directive';
+import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { RecordingState } from '../../../models/recording.model';
 import { ToolbarAdditionalButtonsPosition } from '../../../models/toolbar.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
@@ -31,7 +32,8 @@ import { ViewportService } from '../../../services/viewport/viewport.service';
 		MatMenuModule,
 		MatTooltipModule,
 		TranslatePipe,
-		NgTemplateOutlet
+		NgTemplateOutlet,
+		MicStatusAlertComponent
 	],
 	templateUrl: './toolbar-media-buttons.component.html',
 	styleUrl: './toolbar-media-buttons.component.scss'

@@ -243,5 +243,11 @@
 		"INIT_ERROR_TITLE": "エラー",
 		"INIT_ERROR_MESSAGE": "会議ロビーの初期化中にエラーが発生しました。後でもう一度お試しください。",
 		"INIT_ERROR_CONFIRM": "OK"
+	},
+	"MIC_ALERT": {
+		"SYSTEM_MUTED_TITLE": "システムによってマイクがミュートされています",
+		"SYSTEM_MUTED_DESC": "パソコンの設定でマイクのミュートを解除し、音量を上げてください",
+		"MUTED_SPEAKING": "話していますか？マイクがオフになっています。クリックしてオンにしてください。",
+		"CLOSE": "閉じる"
 	}
 }

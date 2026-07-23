@@ -243,5 +243,11 @@
 		"INIT_ERROR_TITLE": "Fehler",
 		"INIT_ERROR_MESSAGE": "Beim Initialisieren der Meeting-Lobby ist ein Fehler aufgetreten. Bitte versuchen Sie es später erneut.",
 		"INIT_ERROR_CONFIRM": "OK"
+	},
+	"MIC_ALERT": {
+		"SYSTEM_MUTED_TITLE": "Mikrofon vom System stummgeschaltet",
+		"SYSTEM_MUTED_DESC": "Öffne die Einstellungen deines Computers, um das Mikrofon zu aktivieren und die Lautstärke zu erhöhen",
+		"MUTED_SPEAKING": "Sprichst du gerade? Dein Mikrofon ist aus. Klicke darauf, um es zu aktivieren.",
+		"CLOSE": "Schließen"
 	}
 }

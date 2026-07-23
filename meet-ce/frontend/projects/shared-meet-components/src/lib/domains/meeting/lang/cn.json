@@ -243,5 +243,11 @@
 		"INIT_ERROR_TITLE": "错误",
 		"INIT_ERROR_MESSAGE": "初始化会议大厅时发生错误。请稍后重试。",
 		"INIT_ERROR_CONFIRM": "确定"
+	},
+	"MIC_ALERT": {
+		"SYSTEM_MUTED_TITLE": "麦克风已被系统静音",
+		"SYSTEM_MUTED_DESC": "请前往电脑设置开启麦克风并调高音量",
+		"MUTED_SPEAKING": "你在说话吗？麦克风已关闭。点击它以开启。",
+		"CLOSE": "关闭"
 	}
 }
