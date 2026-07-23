@@ -38,10 +38,10 @@ jobs:
           version: 11.8.0
 
       - name: Install safe-chain
-        uses: OpenVidu/actions/install-safe-chain@040cbfd01320475801d7b12e33769e0d55a737a8 # v1.0.21
+        uses: OpenVidu/actions/install-safe-chain@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
 
       - name: Setup OpenVidu Local Deployment
-        uses: OpenVidu/actions/start-openvidu-local-deployment@040cbfd01320475801d7b12e33769e0d55a737a8 # v1.0.21
+        uses: OpenVidu/actions/start-openvidu-local-deployment@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
         with:
           ref-openvidu-local-deployment: development
           pre_startup_commands: |
@@ -55,7 +55,7 @@ jobs:
             chmod +x pre_startup_commands.sh && ./pre_startup_commands.sh
 
       - name: Build and Start OpenVidu Meet
-        uses: OpenVidu/actions/start-openvidu-meet@040cbfd01320475801d7b12e33769e0d55a737a8 # v1.0.21
+        uses: OpenVidu/actions/start-openvidu-meet@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
 
       - name: Run frontend E2E tests
         run: ./meet.sh test-e2e-frontend --skip-install
@@ -113,4 +113,4 @@ jobs:
 
       - name: Cleanup
         if: always()
-        uses: OpenVidu/actions/cleanup@040cbfd01320475801d7b12e33769e0d55a737a8 # v1.0.21
+        uses: OpenVidu/actions/cleanup@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
