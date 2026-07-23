@@ -1,4 +1,4 @@
-import { inject, Service, Signal } from '@angular/core';
+import { computed, inject, Service, Signal, signal } from '@angular/core';
 import { DeviceService } from '../device/device.service';
 import {
 	AudioCaptureOptions,
@@ -17,6 +17,18 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
+ * Signal equality keyed on the underlying MediaStreamTrack id. Two track objects are "equal" when
+ * they wrap the same MediaStreamTrack — so consumers re-run when the real capture track changes
+ * (creation, device switch, re-acquisition) but not on a mere enabled/mute toggle of the same track.
+ */
+function sameMediaStreamTrack(
+	a: LocalAudioTrack | LocalVideoTrack | undefined,
+	b: LocalAudioTrack | LocalVideoTrack | undefined
+): boolean {
+	return a?.mediaStreamTrack?.id === b?.mediaStreamTrack?.id;
+}
+
+/**
  * Owns the local participant's media capture: creating/switching camera & microphone tracks
  * (prejoin and in-call) and their enabled state. The room connection itself lives separately
  * in MeetingLiveKitService.
@@ -31,8 +43,35 @@ export class LocalTrackService {
 
 	/*
 	 * Tracks used in the prejoin component. They are created when the room is not yet created.
+	 *
+	 * Reactive source of truth for the prejoin phase: mutating it re-drives the
+	 * microphone/camera computeds below, which feed LocalMediaStateService and, through it,
+	 * MicActivityService. Always mutate via setLocalTracks/removeLocalTracks/clearLocalTracksReference
+	 * or update() — never push into the array in place, or the signal would not notify.
 	 */
-	private localTracks: LocalTrack[] = [];
+	private readonly _localTracks = signal<LocalTrack[]>([]);
+
+	/**
+	 * Current prejoin microphone track, or undefined. Equality is compared by the underlying
+	 * MediaStreamTrack id, so an in-place device switch (restartTrack keeps the same LocalAudioTrack
+	 * object but swaps its MediaStreamTrack) still propagates to consumers, while a mute/unmute
+	 * (same MediaStreamTrack) does not churn the monitor.
+	 * @internal
+	 */
+	readonly microphoneTrack: Signal<LocalAudioTrack | undefined> = computed(
+		() => this._localTracks().find((t) => t.kind === Track.Kind.Audio) as LocalAudioTrack | undefined,
+		{ equal: sameMediaStreamTrack }
+	);
+
+	/**
+	 * Current prejoin camera track, or undefined. See {@link microphoneTrack} for the equality note.
+	 * @internal
+	 */
+	readonly cameraTrack: Signal<LocalVideoTrack | undefined> = computed(
+		() => this._localTracks().find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined,
+		{ equal: sameMediaStreamTrack }
+	);
+
 	private log: ILogger = inject(LoggerService).get('LocalTrackService');
 
 	/**
@@ -50,7 +89,7 @@ export class LocalTrackService {
 	 * @internal
 	 */
 	setLocalTracks(tracks: LocalTrack[]): void {
-		this.localTracks = tracks.filter((track) => track !== undefined) as LocalTrack[];
+		this._localTracks.set(tracks.filter((track) => track !== undefined) as LocalTrack[]);
 	}
 
 	/**
@@ -58,18 +97,30 @@ export class LocalTrackService {
 	 * @returns
 	 */
 	getLocalTracks(): LocalTrack[] {
-		return this.localTracks;
+		return this._localTracks();
 	}
 
 	/**
+	 * Stops and detaches the prejoin tracks and clears the reference. Use when the tracks are being
+	 * discarded (e.g. leaving the prejoin without joining).
 	 * @internal
 	 **/
 	removeLocalTracks(): void {
-		this.localTracks.forEach((track) => {
+		this._localTracks().forEach((track) => {
 			track.stop();
 			track.detach();
 		});
-		this.localTracks = [];
+		this._localTracks.set([]);
+	}
+
+	/**
+	 * Clears the prejoin track reference WITHOUT stopping the tracks. Used after {@link connect}
+	 * publishes them: the tracks live on as the participant's publications, only the prejoin
+	 * reference is released so the media-state computeds hand off to the connected participant.
+	 * @internal
+	 **/
+	clearLocalTracksReference(): void {
+		this._localTracks.set([]);
 	}
 
 	/**
@@ -212,7 +263,7 @@ export class LocalTrackService {
 	 * This method must be only called from the prejoin component.
 	 **/
 	async setVideoTrackEnabled(enabled: boolean) {
-		let videoTrack = this.localTracks?.find((track) => track.kind === Track.Kind.Video);
+		let videoTrack = this._localTracks().find((track) => track.kind === Track.Kind.Video);
 		// Room is not connected, so we can't enable/disable the camera
 		if (enabled) {
 			await videoTrack?.unmute();
@@ -227,7 +278,7 @@ export class LocalTrackService {
 	 * This method must be only called from the prejoin component.
 	 **/
 	async setAudioTrackEnabled(enabled: boolean) {
-		const audioTrack = this.localTracks?.find((track) => track.kind === Track.Kind.Audio);
+		const audioTrack = this._localTracks().find((track) => track.kind === Track.Kind.Audio);
 		// Session is not connected, so we can't enable/disable the camera
 		if (enabled) {
 			await audioTrack?.unmute();
@@ -242,10 +293,10 @@ export class LocalTrackService {
 	 * This method must be only called before connect to room.
 	 **/
 	isVideoTrackEnabled(): boolean {
-		if (this.localTracks.length === 0) {
+		if (this._localTracks().length === 0) {
 			return this.deviceService.isCameraEnabled();
 		}
-		const videoTrack = this.localTracks.find((track) => track.kind === Track.Kind.Video);
+		const videoTrack = this._localTracks().find((track) => track.kind === Track.Kind.Video);
 		return !!videoTrack && !videoTrack.isMuted && videoTrack?.mediaStreamTrack?.enabled;
 	}
 
@@ -255,10 +306,10 @@ export class LocalTrackService {
 	 * This method must be only called before connect to room.
 	 **/
 	isAudioTrackEnabled(): boolean {
-		if (this.localTracks.length === 0) {
+		if (this._localTracks().length === 0) {
 			return this.deviceService.isMicrophoneEnabled();
 		}
-		const audioTrack = this.localTracks.find((track) => track.kind === Track.Kind.Audio);
+		const audioTrack = this._localTracks().find((track) => track.kind === Track.Kind.Audio);
 		return !!audioTrack && !audioTrack.isMuted && audioTrack?.mediaStreamTrack?.enabled;
 	}
 
@@ -275,7 +326,7 @@ export class LocalTrackService {
 	 * @internal
 	 */
 	async switchCamera(deviceId: string): Promise<void> {
-		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as
+		const existingTrack = this._localTracks().find((t) => t.kind === Track.Kind.Video) as
 			| LocalVideoTrack
 			| undefined;
 		const options: VideoCaptureOptions = { deviceId: this.toDeviceConstraint(deviceId) };
@@ -288,6 +339,9 @@ export class LocalTrackService {
 				if (!this.deviceService.isCameraEnabled()) {
 					await existingTrack.mute();
 				}
+				// restartTrack swapped the MediaStreamTrack in place (same LocalVideoTrack object), so
+				// emit a new array reference to re-run the cameraTrack computed (which compares by MST id).
+				this._localTracks.update((tracks) => [...tracks]);
 				this.log.d('Camera switched via restartTrack:', deviceId);
 			} catch (error) {
 				this.log.e('Failed to switch camera via restartTrack:', error);
@@ -306,7 +360,7 @@ export class LocalTrackService {
 				}
 				// Attach processor (and restore active background if any) to the fresh track
 				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
-				this.localTracks.push(videoTrack);
+				this._localTracks.update((tracks) => [...tracks, videoTrack]);
 				this.log.d('New camera track created and added:', deviceId);
 			}
 		} catch (error) {
@@ -326,7 +380,7 @@ export class LocalTrackService {
 	 * @internal
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
-		const existingTrack = this.localTracks.find((t) => t.kind === Track.Kind.Audio) as
+		const existingTrack = this._localTracks().find((t) => t.kind === Track.Kind.Audio) as
 			| LocalAudioTrack
 			| undefined;
 		const options: AudioCaptureOptions = {
@@ -342,6 +396,10 @@ export class LocalTrackService {
 				if (!this.deviceService.isMicrophoneEnabled()) {
 					await existingTrack.mute();
 				}
+				// restartTrack swapped the MediaStreamTrack in place (same LocalAudioTrack object), so
+				// emit a new array reference to re-run the microphoneTrack computed (MST-id equality):
+				// this is what re-clones the mic-activity monitor onto the new device.
+				this._localTracks.update((tracks) => [...tracks]);
 				this.log.d('Microphone switched via restartTrack:', deviceId);
 			} catch (error) {
 				this.log.e('Failed to switch microphone via restartTrack:', error);
@@ -358,7 +416,7 @@ export class LocalTrackService {
 				if (!this.deviceService.isMicrophoneEnabled()) {
 					await audioTrack.mute();
 				}
-				this.localTracks.push(audioTrack);
+				this._localTracks.update((tracks) => [...tracks, audioTrack]);
 				this.log.d('New microphone track created and added:', deviceId);
 			}
 		} catch (error) {
@@ -375,7 +433,7 @@ export class LocalTrackService {
 	 */
 	async getCurrentVideoTrack(): Promise<LocalVideoTrack | undefined> {
 		// First try to get from local tracks (prejoin state)
-		let videoTrack = this.localTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
+		let videoTrack = this._localTracks().find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 
 		// If not found and room is connected, get from published tracks
 		if (!videoTrack && this.meetingLiveKitService.isConnected()) {

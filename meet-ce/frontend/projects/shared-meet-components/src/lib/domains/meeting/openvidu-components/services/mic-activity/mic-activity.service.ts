@@ -1,8 +1,9 @@
-import { OnDestroy, Service, inject, signal } from '@angular/core';
+import { OnDestroy, Service, effect, inject, signal } from '@angular/core';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { LocalAudioTrack } from '../livekit';
 import { createAudioAnalyser } from '../livekit';
+import { LocalMediaStateService } from '../local-media-state/local-media-state.service';
 
 // Voice-activity thresholds, expressed on a time-domain RMS scale (0-1) — see the loop for why
 // we measure RMS rather than LiveKit's frequency-based `calculateVolume`. Typical readings:
@@ -44,13 +45,22 @@ export class MicActivityService implements OnDestroy {
 	private currentTrackId?: string;
 
 	private readonly log: ILogger = inject(LoggerService).get('MicActivityService');
+	private readonly localMediaState = inject(LocalMediaStateService);
+
+	constructor() {
+		// Self-managed lifecycle: the monitored track follows the reactive local-media state,
+		// so there are no external attach/detach call-sites. The effect fires only when the underlying
+		// MediaStreamTrack changes (the signal is compared by MST id), re-cloning onto the new track or
+		// detaching when it becomes undefined (prejoin torn down, participant cleared, left the meeting).
+		effect(() => this.attach(this.localMediaState.microphoneTrack()));
+	}
 
 	/**
 	 * Starts monitoring the given local microphone track. Idempotent for the same underlying
 	 * MediaStreamTrack; when the track changes (device switch / re-acquisition) the previous
 	 * analyser and clone are disposed first.
 	 */
-	attach(track: LocalAudioTrack | undefined): void {
+	private attach(track: LocalAudioTrack | undefined): void {
 		const source = track?.mediaStreamTrack;
 
 		if (!track || !source) {
@@ -98,7 +108,7 @@ export class MicActivityService implements OnDestroy {
 	 * Stops monitoring: cancels the read loop, closes the AudioContext and stops the cloned
 	 * MediaStreamTrack so the capture device is released. Safe to call repeatedly.
 	 */
-	detach(): void {
+	private detach(): void {
 		if (this.rafId !== null) {
 			cancelAnimationFrame(this.rafId);
 			this.rafId = null;

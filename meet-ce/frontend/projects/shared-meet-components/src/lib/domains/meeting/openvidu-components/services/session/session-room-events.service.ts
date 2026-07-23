@@ -61,6 +61,7 @@ export class SessionRoomEventsService {
 		this.subscribeToTrackUnpublished(room);
 		this.subscribeToTrackUnsubscribed(room);
 		this.subscribeToTrackMuteStateChanged(room);
+		this.subscribeToLocalTrackPublished(room);
 		this.subscribeToParticipantDisconnected(room);
 		this.subscribeToParticipantMetadataChanged(room);
 		this.subscribeToDataMessage(room);
@@ -170,6 +171,18 @@ export class SessionRoomEventsService {
 		room.on(RoomEvent.TrackUnmuted, (_publication: TrackPublication, participant: Participant) => {
 			refreshParticipantState(participant);
 		});
+	}
+
+	/**
+	 * Keeps the local participant model in sync with its own track publications. Local tracks
+	 * can be (un)published out of band — most notably `stopMicTrackOnMute` re-acquiring a fresh
+	 * microphone MediaStreamTrack on unmute — so bump the model to re-evaluate the local-media
+	 * state (and thus MicActivityService) whenever a local publication changes.
+	 */
+	private subscribeToLocalTrackPublished(room: Room) {
+		const bumpLocal = () => this.participantService.updateLocalParticipant();
+		room.on(RoomEvent.LocalTrackPublished, bumpLocal);
+		room.on(RoomEvent.LocalTrackUnpublished, bumpLocal);
 	}
 
 	private subscribeToParticipantDisconnected(room: Room) {

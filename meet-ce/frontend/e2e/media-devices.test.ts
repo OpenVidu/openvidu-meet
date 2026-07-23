@@ -341,6 +341,41 @@ test.describe('Media Devices E2E Tests', () => {
 			await expect(page.locator('#mic-warning-badge')).toBeHidden({ timeout: 10_000 });
 			await expect(page.locator('#mic-system-muted-alert')).toBeHidden({ timeout: 10_000 });
 		});
+
+		// Prejoin → meeting hand-off (R1): with the reactive local-media read-model, the mic-activity
+		// monitor must follow the microphone track across the join without any manual attach call. If
+		// the hand-off were broken, the warning that was live in the prejoin would vanish on join.
+		test('carries the speaking-while-muted warning from the prejoin into the meeting', async ({ page }) => {
+			// Join already muted: openMeeting mutes the mic in the prejoin, then clicks join.
+			await openMeeting(page, accessUrl, { audioEnabled: false });
+
+			// In the meeting the mic is muted while the fake device keeps feeding speech. The warning
+			// only appears if the monitor handed off from the prejoin track to the published track.
+			await expect(page.locator('#mic-muted-speaking-alert')).toBeVisible({ timeout: 15_000 });
+
+			// And unmuting inside the meeting clears it — the monitor is still the one driving the alert.
+			await toggleMicrophone(page);
+			await expect(page.locator('#mic-muted-speaking-alert')).toBeHidden({ timeout: 10_000 });
+		});
+
+		test('carries the system-muted warning from the prejoin into the meeting', async ({ page }) => {
+			await openPrejoin(page, accessUrl);
+
+			// System-mute the input while still in the prejoin and confirm the warning shows there.
+			await setSystemMicrophoneMuted(page, true);
+			await expect(page.locator('#mic-system-muted-alert')).toBeVisible({ timeout: 10_000 });
+
+			// Join: the monitor must keep reporting the system mute against the published track.
+			await page.locator('#join-button').click();
+			await expect(page.locator('#layout-container')).toBeVisible({ timeout: 15_000 });
+
+			await expect(page.locator('#mic-warning-badge')).toBeVisible({ timeout: 10_000 });
+			await expect(page.locator('#mic-system-muted-alert')).toBeVisible({ timeout: 10_000 });
+
+			// Clearing the system mute in the meeting removes the warning.
+			await setSystemMicrophoneMuted(page, false);
+			await expect(page.locator('#mic-system-muted-alert')).toBeHidden({ timeout: 10_000 });
+		});
 	});
 
 	// Voice-activity detection: the "talking while muted" warning must fire on real speech but NOT

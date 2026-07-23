@@ -21,9 +21,7 @@ import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.servic
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalTrack, Track } from '../../services/livekit';
-import type { LocalAudioTrack } from '../../services/livekit';
 import { LocalTrackService } from '../../services/local-track/local-track.service';
-import { MicActivityService } from '../../services/mic-activity/mic-activity.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
@@ -105,7 +103,6 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	private tracks: LocalTrack[] = [];
 	private readonly cdkSrv = inject(CdkOverlayService);
 	private readonly localTrackService = inject(LocalTrackService);
-	private readonly micActivityService = inject(MicActivityService);
 	private readonly virtualBackgroundService = inject(VirtualBackgroundService);
 	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
@@ -139,14 +136,12 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	async ngOnDestroy() {
 		this.cdkSrv.setSelector('body');
 
-		// Always release the mic activity monitor (it owns a cloned MediaStreamTrack). When the
-		// user joins, ParticipantService.connect() re-attaches it right after publishing.
-		this.micActivityService.detach();
-
 		if (this.shouldRemoveTracksWhenComponentIsDestroyed) {
-			this.tracks?.forEach((track) => {
-				track.stop();
-			});
+			// Stop and release the prejoin tracks. Clearing the track signal drops the local-media
+			// state to `undefined`, which detaches the mic-activity monitor automatically.
+			// On join (shouldRemove=false) the tracks are kept — connect() publishes them and releases
+			// the reference instead, so monitoring hands off to the connected participant seamlessly.
+			this.localTrackService.removeLocalTracks();
 		}
 	}
 
@@ -223,8 +218,8 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			this.tracks = updatedTracks;
 			this.audioTrack = newAudioTrack;
 
-			// The device switch replaced the underlying MediaStreamTrack → re-clone the monitor.
-			this.micActivityService.attach(this.audioTrack as LocalAudioTrack | undefined);
+			// The device switch replaced the underlying MediaStreamTrack; the mic-activity monitor
+			// re-clones automatically via the local-media state — see LocalTrackService.switchMicrophone.
 
 			this.onAudioDeviceChanged.emit(device);
 		} catch (error) {
@@ -238,9 +233,10 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 			const newAudioTrack = await this.localTrackService.createLocalTracks(false, true);
 			this.audioTrack = newAudioTrack[0];
 			this.tracks.push(this.audioTrack);
+			// Publishing the new track to the signal is what drives the mic-activity monitor to attach
+			// — no explicit attach() call needed.
 			this.localTrackService.setLocalTracks(this.tracks);
 		}
-		this.micActivityService.attach(this.audioTrack as LocalAudioTrack | undefined);
 		this.onAudioEnabledChanged.emit(enabled);
 	}
 
@@ -295,8 +291,8 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
 				this.isVideoEnabled.set(this.localTrackService.isVideoTrackEnabled());
 
-				// Start monitoring the mic input for the mic status warnings shown on the button.
-				this.micActivityService.attach(this.audioTrack as LocalAudioTrack | undefined);
+				// The mic-activity monitor starts automatically: setLocalTracks above populated the
+				// local-media state, whose signal the MicActivityService effect follows.
 
 				// Restore previously selected virtual background in prejoin when possible.
 				// Skip restore when the user is not allowed to use virtual backgrounds.
