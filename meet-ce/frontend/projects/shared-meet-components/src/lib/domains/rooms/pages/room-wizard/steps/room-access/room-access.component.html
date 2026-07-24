@@ -81,6 +81,7 @@
 									@for (permission of group.permissions; track permission.key) {
 										<div
 											class="permission-row"
+											[attr.id]="'moderator-permission-' + permission.key"
 											[matTooltip]="
 												isPermissionFeatureDisabled(permission.key)
 													? ('ROOMS.WIZARD.ACCESS.FEATURE_DISABLED_PERMISSION' | translate)
@@ -128,6 +129,7 @@
 									@for (permission of group.permissions; track permission.key) {
 										<div
 											class="permission-row"
+											[attr.id]="'speaker-permission-' + permission.key"
 											[matTooltip]="
 												isPermissionFeatureDisabled(permission.key)
 													? ('ROOMS.WIZARD.ACCESS.FEATURE_DISABLED_PERMISSION' | translate)
