@@ -74,16 +74,13 @@ test.describe('Permissions E2E Tests', () => {
 	let memberSequence = 0;
 
 	let room: MeetRoom;
-	let recordingId: string;
 	let adminUser: ReadyUser;
 	// A speaker member and an identified moderator guest, used by the merged-permission scenarios: a
 	// member user (speaker) combined with a moderator link gains the moderator's permissions.
 	let mergedMemberUser: ReadyUser;
 	let moderatorGuest: MeetRoomMember;
 
-	test.beforeAll(async ({ browser }) => {
-		test.setTimeout(180_000);
-
+	test.beforeAll(async () => {
 		room = await createRoom();
 		createdRoomIds.push(room.roomId);
 
@@ -102,8 +99,6 @@ test.describe('Permissions E2E Tests', () => {
 			name: 'Moderator Guest',
 			baseRole: MeetRoomMemberRole.MODERATOR
 		});
-
-		recordingId = (await recordRoom(browser, room.roomId)).recordingId;
 	});
 
 	test.afterAll(async () => {
@@ -130,6 +125,22 @@ test.describe('Permissions E2E Tests', () => {
 		const member = await createGuest(customPermissions, options.baseRole);
 		await openMeeting(page, member.accessUrl, { skipPrejoinMediaCheck: options.skipPrejoinMediaCheck });
 		return member;
+	};
+
+	/**
+	 * Lazily records the shared room the first time a recording-dependent test asks for it, caching the
+	 * completed recording's id for the rest of the suite.
+	 */
+	let cachedRecordingId: string | undefined;
+
+	const ensureRecording = async (browser: Browser): Promise<string> => {
+		if (!cachedRecordingId) {
+			test.setTimeout(180_000);
+			const recording = await recordRoom(browser, room.roomId);
+			cachedRecordingId = recording.recordingId;
+		}
+
+		return cachedRecordingId;
 	};
 
 	// ── Lobby permissions ─────────────────────────────────────────────────────────
@@ -163,7 +174,10 @@ test.describe('Permissions E2E Tests', () => {
 			await expectNoRecordButton(page);
 		});
 
-		test('canRetrieveRecordings granted: the view-recordings control is available', async ({ page }) => {
+		test('canRetrieveRecordings granted: the view-recordings control is available', async ({ page, browser }) => {
+			// The button is gated by both the permission and the room actually having recordings
+			// (`hasRecordings()`), so a completed recording must exist before joining.
+			await ensureRecording(browser);
 			await joinAsGuest(page, { canRetrieveRecordings: true });
 			await expectViewRecordingsButtonAvailable(page);
 		});
@@ -307,21 +321,27 @@ test.describe('Permissions E2E Tests', () => {
 	// ── Recordings permissions (canDeleteRecordings) ─────────────────────────────────
 
 	test.describe('Recordings', () => {
-		test('canDeleteRecordings granted: the recording can be deleted from the list', async ({ page }) => {
+		test('canDeleteRecordings granted: the recording can be deleted from the list', async ({ page, browser }) => {
+			const recordingId = await ensureRecording(browser);
 			const member = await createGuest({ canDeleteRecordings: true });
 			await openRoomRecordings(page, toRoomRecordingsUrl(member.accessUrl));
 
 			await expectRecordingDeletable(page, recordingId);
 		});
 
-		test('canDeleteRecordings denied: the recording cannot be deleted from the list', async ({ page }) => {
+		test('canDeleteRecordings denied: the recording cannot be deleted from the list', async ({ page, browser }) => {
+			const recordingId = await ensureRecording(browser);
 			const member = await createGuest({ canDeleteRecordings: false });
 			await openRoomRecordings(page, toRoomRecordingsUrl(member.accessUrl));
 
 			await expectRecordingNotDeletable(page, recordingId);
 		});
 
-		test('canDeleteRecordings granted: the recording can be deleted from the individual view', async ({ page }) => {
+		test('canDeleteRecordings granted: the recording can be deleted from the individual view', async ({
+			page,
+			browser
+		}) => {
+			const recordingId = await ensureRecording(browser);
 			const member = await createGuest({ canDeleteRecordings: true });
 			await openRecording(page, toIndividualRecordingUrl(member.accessUrl, recordingId));
 
@@ -329,8 +349,10 @@ test.describe('Permissions E2E Tests', () => {
 		});
 
 		test('canDeleteRecordings denied: the recording cannot be deleted from the individual view', async ({
-			page
+			page,
+			browser
 		}) => {
+			const recordingId = await ensureRecording(browser);
 			const member = await createGuest({ canDeleteRecordings: false });
 			await openRecording(page, toIndividualRecordingUrl(member.accessUrl, recordingId));
 
@@ -376,7 +398,11 @@ test.describe('Permissions E2E Tests', () => {
 				await expectParticipantBadge(page, participantId, MeetRoomMemberUIBadge.MODERATOR);
 			});
 
-			test(`member user via ${link.label} gains canDeleteRecordings in the recordings list`, async ({ page }) => {
+			test(`member user via ${link.label} gains canDeleteRecordings in the recordings list`, async ({
+				page,
+				browser
+			}) => {
+				const recordingId = await ensureRecording(browser);
 				await authenticate(page, mergedMemberUser);
 				await openRoomRecordings(page, toRoomRecordingsUrl(link.getUrl()));
 
@@ -384,8 +410,10 @@ test.describe('Permissions E2E Tests', () => {
 			});
 
 			test(`member user via ${link.label} gains canDeleteRecordings in the individual recording`, async ({
-				page
+				page,
+				browser
 			}) => {
+				const recordingId = await ensureRecording(browser);
 				await authenticate(page, mergedMemberUser);
 				await openRecording(page, toIndividualRecordingUrl(link.getUrl(), recordingId));
 
