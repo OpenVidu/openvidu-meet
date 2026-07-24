@@ -7,7 +7,13 @@ import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetRoomMemberOptions, MeetRoomOptions, MeetRoomRoles } from '@openvidu-meet/typings';
+import {
+	MeetRoomConfig,
+	MeetRoomMemberOptions,
+	MeetRoomMemberPermissions,
+	MeetRoomOptions,
+	MeetRoomRoles
+} from '@openvidu-meet/typings';
 import { take } from 'rxjs';
 import { AuthService } from '../../../../../auth/services/auth.service';
 import { MemberFormDialogComponent } from '../../../../../room-members/components/member-form-dialog/member-form-dialog.component';
@@ -22,6 +28,27 @@ import {
 } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
+
+/**
+ * Role permissions that only make sense when a given room feature is enabled. When the feature is
+ * turned off in the Room Features step, these permissions are force-disabled in the Role permissions
+ * section — they would have no effect in a room without that feature, and the user must not be able to
+ * grant them. Angular's native enable()/disable() preserves each control's value, so re-enabling the
+ * feature restores the permission exactly as the user left it ("keep as-is").
+ */
+const FEATURE_DEPENDENT_PERMISSIONS: {
+	permissionKeys: (keyof MeetRoomMemberPermissions)[];
+	isEnabled: (config: Partial<MeetRoomConfig> | undefined) => boolean;
+}[] = [
+	{
+		permissionKeys: ['canReadChat', 'canWriteChat'],
+		isEnabled: (config) => config?.chat?.enabled ?? false
+	},
+	{
+		permissionKeys: ['canChangeVirtualBackground'],
+		isEnabled: (config) => config?.virtualBackground?.enabled ?? false
+	}
+];
 
 @Component({
 	selector: 'ov-room-access',
@@ -51,12 +78,21 @@ export class RoomAccessComponent implements OnInit {
 	editMode = this.wizardService.editMode;
 	pendingMembers = this.wizardService.pendingMembers;
 
+	// Permission keys whose toggle is disabled because the room feature they depend on is turned off.
+	private readonly featureDisabledPermissions = new Set<keyof MeetRoomMemberPermissions>();
+
 	constructor() {
 		const roomAccessStep = this.wizardService.getStepById(WizardStepId.ROOM_ACCESS);
 		if (!roomAccessStep) {
 			throw new Error('roomAccess step not found in wizard state');
 		}
 		this.roomAccessForm = roomAccessStep.formGroup;
+
+		// Disable role permissions whose room feature is off before wiring valueChanges, so the
+		// disable() calls (emitEvent: false) don't trigger a save. The feature flags can't change while
+		// this step is mounted — the Room Features step is a sibling @switch case that isn't rendered at
+		// the same time — so applying the constraint once here is enough.
+		this.applyFeatureConstraints();
 
 		this.roomAccessForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
 			this.saveFormData(value);
@@ -73,6 +109,41 @@ export class RoomAccessComponent implements OnInit {
 
 	get speakerForm(): RoomAccessRolePermissionsFormGroup {
 		return this.roomAccessForm.controls.speaker;
+	}
+
+	/**
+	 * Enables/disables each role's feature-dependent permission controls to match the room features
+	 * selected in the previous step. Uses the reactive form's own enable()/disable() so the control
+	 * value is preserved across toggles and the bound mat-slide-toggle greys out automatically.
+	 */
+	private applyFeatureConstraints(): void {
+		const config = this.wizardService.roomOptions().config;
+
+		for (const { permissionKeys, isEnabled } of FEATURE_DEPENDENT_PERMISSIONS) {
+			const enabled = isEnabled(config);
+
+			for (const key of permissionKeys) {
+				for (const roleForm of [this.moderatorForm, this.speakerForm]) {
+					const control = roleForm.controls[key];
+					if (enabled) {
+						control.enable({ emitEvent: false });
+					} else {
+						control.disable({ emitEvent: false });
+					}
+				}
+
+				if (enabled) {
+					this.featureDisabledPermissions.delete(key);
+				} else {
+					this.featureDisabledPermissions.add(key);
+				}
+			}
+		}
+	}
+
+	/** Whether this permission's toggle is disabled because the room feature it depends on is off. */
+	isPermissionFeatureDisabled(key: keyof MeetRoomMemberPermissions): boolean {
+		return this.featureDisabledPermissions.has(key);
 	}
 
 	openAddMemberDialog(): void {

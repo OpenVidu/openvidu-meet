@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "Members to add (",
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Edit member",
-        "REMOVE_MEMBER": "Remove member"
+        "REMOVE_MEMBER": "Remove member",
+        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in Room Features to configure this permission."
       },
       "FEATURES": {
         "TITLE": "Room Features",

@@ -79,7 +79,14 @@
 										<span class="permission-group-label">{{ group.label | translate }}</span>
 									</div>
 									@for (permission of group.permissions; track permission.key) {
-										<div class="permission-row">
+										<div
+											class="permission-row"
+											[matTooltip]="
+												isPermissionFeatureDisabled(permission.key)
+													? ('ROOMS.WIZARD.ACCESS.FEATURE_DISABLED_PERMISSION' | translate)
+													: ''
+											"
+										>
 											<div class="permission-info">
 												<mat-icon class="permission-icon material-symbols-outlined">{{
 													permission.icon
@@ -119,7 +126,14 @@
 										<span class="permission-group-label">{{ group.label | translate }}</span>
 									</div>
 									@for (permission of group.permissions; track permission.key) {
-										<div class="permission-row">
+										<div
+											class="permission-row"
+											[matTooltip]="
+												isPermissionFeatureDisabled(permission.key)
+													? ('ROOMS.WIZARD.ACCESS.FEATURE_DISABLED_PERMISSION' | translate)
+													: ''
+											"
+										>
 											<div class="permission-info">
 												<mat-icon class="permission-icon material-symbols-outlined">{{
 													permission.icon

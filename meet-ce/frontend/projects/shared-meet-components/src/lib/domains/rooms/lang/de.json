@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "Hinzuzufügende Mitglieder (",
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Mitglied bearbeiten",
-        "REMOVE_MEMBER": "Mitglied entfernen"
+        "REMOVE_MEMBER": "Mitglied entfernen",
+        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion unter Raumfunktionen, um diese Berechtigung zu konfigurieren."
       },
       "FEATURES": {
         "TITLE": "Raumfunktionen",

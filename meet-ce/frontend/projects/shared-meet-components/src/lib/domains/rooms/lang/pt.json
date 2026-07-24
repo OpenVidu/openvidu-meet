@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "Membros a adicionar (",
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Editar membro",
-        "REMOVE_MEMBER": "Remover membro"
+        "REMOVE_MEMBER": "Remover membro",
+        "FEATURE_DISABLED_PERMISSION": "Ative o recurso correspondente em Recursos da sala para configurar esta permissão."
       },
       "FEATURES": {
         "TITLE": "Recursos da sala",

@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "Toe te voegen leden (",
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Lid bewerken",
-        "REMOVE_MEMBER": "Lid verwijderen"
+        "REMOVE_MEMBER": "Lid verwijderen",
+        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij Kamerfuncties om deze machtiging te configureren."
       },
       "FEATURES": {
         "TITLE": "Kamerfuncties",

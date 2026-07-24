@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "追加するメンバー（",
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "メンバーを編集",
-        "REMOVE_MEMBER": "メンバーを削除"
+        "REMOVE_MEMBER": "メンバーを削除",
+        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「ルームの機能」で対応する機能を有効にしてください。"
       },
       "FEATURES": {
         "TITLE": "ルームの機能",

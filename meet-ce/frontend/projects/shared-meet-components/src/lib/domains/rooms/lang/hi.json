@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "जोड़े जाने वाले सदस्य (",
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "सदस्य संपादित करें",
-        "REMOVE_MEMBER": "सदस्य हटाएं"
+        "REMOVE_MEMBER": "सदस्य हटाएं",
+        "FEATURE_DISABLED_PERMISSION": "इस अनुमति को कॉन्फ़िगर करने के लिए कक्ष सुविधाएं में संबंधित सुविधा सक्षम करें।"
       },
       "FEATURES": {
         "TITLE": "कक्ष सुविधाएं",

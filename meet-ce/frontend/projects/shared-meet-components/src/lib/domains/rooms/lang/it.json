@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "Membri da aggiungere (",
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Modifica membro",
-        "REMOVE_MEMBER": "Rimuovi membro"
+        "REMOVE_MEMBER": "Rimuovi membro",
+        "FEATURE_DISABLED_PERMISSION": "Abilita la funzionalità corrispondente in Funzionalità della stanza per configurare questa autorizzazione."
       },
       "FEATURES": {
         "TITLE": "Funzionalità della stanza",

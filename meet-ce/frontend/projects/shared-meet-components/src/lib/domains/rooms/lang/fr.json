@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "Membres à ajouter (",
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Modifier le membre",
-        "REMOVE_MEMBER": "Retirer le membre"
+        "REMOVE_MEMBER": "Retirer le membre",
+        "FEATURE_DISABLED_PERMISSION": "Activez la fonctionnalité correspondante dans Fonctionnalités de la salle pour configurer cette autorisation."
       },
       "FEATURES": {
         "TITLE": "Fonctionnalités de la salle",

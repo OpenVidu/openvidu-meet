@@ -224,7 +224,8 @@
         "MEMBERS_TO_ADD_PREFIX": "待添加成员（",
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "编辑成员",
-        "REMOVE_MEMBER": "移除成员"
+        "REMOVE_MEMBER": "移除成员",
+        "FEATURE_DISABLED_PERMISSION": "在“房间功能”中启用相应功能以配置此权限。"
       },
       "FEATURES": {
         "TITLE": "房间功能",
