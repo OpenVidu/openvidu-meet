@@ -30,6 +30,7 @@ import {
 	startTestServer,
 	updateParticipant,
 	updateRoomAccessConfig,
+	updateRoomMember,
 	updateRoomRoles,
 	updateRoomStatus,
 	updateUserRole
@@ -289,7 +290,11 @@ describe('Room Members API Tests', () => {
 			const roomWithOwner = await createRoom({}, testUsers.roomManager.accessToken);
 
 			// Generate token for the room owner
-			const response = await generateRoomMemberTokenRequest(roomWithOwner.roomId, {}, testUsers.roomManager.accessToken);
+			const response = await generateRoomMemberTokenRequest(
+				roomWithOwner.roomId,
+				{},
+				testUsers.roomManager.accessToken
+			);
 			expectValidRoomMemberTokenResponse(response, {
 				roomId: roomWithOwner.roomId,
 				userId: testUsers.roomManager.user.userId,
@@ -378,6 +383,44 @@ describe('Room Members API Tests', () => {
 				badge: MeetRoomMemberUIBadge.OTHER,
 				permissions
 			});
+		});
+
+		it('should grant LiveKit canPublishData when canWriteChat is enabled', async () => {
+			// Chat is the only thing participants publish over the data channel, so canWriteChat is
+			// enforced server-side through the LiveKit canPublishData grant, not just the frontend UI.
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Chat Writer',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { canReadChat: true, canWriteChat: true }
+			});
+			const memberId = createResponse.body.memberId as string;
+
+			const token = await generateRoomMemberToken(roomId, {
+				secret: memberId,
+				joinMeeting: true,
+				participantName: 'Chat Writer'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(token));
+			expect(claims.video?.canPublishData).toBe(true);
+		});
+
+		it('should deny LiveKit canPublishData when canWriteChat is disabled', async () => {
+			// The read-only member can still receive chat (subscribe), but the SFU rejects any data it
+			// tries to publish — closing the client-side bypass of publishing chat directly.
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Chat Reader',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { canReadChat: true, canWriteChat: false }
+			});
+			const memberId = createResponse.body.memberId as string;
+
+			const token = await generateRoomMemberToken(roomId, {
+				secret: memberId,
+				joinMeeting: true,
+				participantName: 'Chat Reader'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(token));
+			expect(claims.video?.canPublishData).toBe(false);
 		});
 
 		it('should fail to generate token when room does not exist', async () => {
@@ -715,6 +758,66 @@ describe('Room Members API Tests', () => {
 				joinMeeting: true,
 				participantName: 'Test Participant'
 			});
+		});
+
+		it('should apply the LiveKit canPublishData grant live when canWriteChat changes mid-meeting', async () => {
+			// Identified guest speaker joins the meeting with chat-write enabled
+			const createResponse = await createRoomMember(roomId, {
+				name: 'Live Chat Writer',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { canReadChat: true, canWriteChat: true }
+			});
+			const memberId = createResponse.body.memberId as string;
+
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: memberId,
+				joinMeeting: true,
+				participantName: 'Live Chat Writer'
+			});
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = claims.sub;
+			expect(participantIdentity).toBeDefined();
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			await joinFakeParticipant(roomId, participantIdentity!);
+			await updateParticipantMetadata(roomId, participantIdentity!, metadata);
+
+			// Revoke chat-write while in the meeting. The client reacts to the permissions-updated signal
+			// by regenerating its token, and that refresh is what pushes the new grant to the SFU.
+			let updateResponse = await updateRoomMember(roomId, memberId, {
+				customPermissions: { canReadChat: true, canWriteChat: false }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			let refreshResponse = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: memberId, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(refreshResponse.status).toBe(200);
+
+			// The SFU now enforces the revoked data-publish grant live, without the participant reconnecting
+			let participant = await livekitService.getParticipant(roomId, participantIdentity!);
+			expect(participant.permission?.canPublishData).toBe(false);
+
+			// Re-granting chat-write restores the grant the same way — proving it tracks the permission
+			// through our refresh flow in both directions (not a fixed join-time value).
+			updateResponse = await updateRoomMember(roomId, memberId, {
+				customPermissions: { canReadChat: true, canWriteChat: true }
+			});
+			expect(updateResponse.status).toBe(200);
+
+			refreshResponse = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: memberId, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(refreshResponse.status).toBe(200);
+
+			participant = await livekitService.getParticipant(roomId, participantIdentity!);
+			expect(participant.permission?.canPublishData).toBe(true);
 		});
 
 		it('should fail to regenerate token when participant does not exist in the meeting', async () => {

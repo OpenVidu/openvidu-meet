@@ -9,7 +9,13 @@ import {
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { createReadyMemberUser, expectLobbyAccessRestricted, expectNameInput } from './helpers/access.helper';
 import { authenticate, createReadyUser, type ReadyUser } from './helpers/auth.helper';
-import { expectChatAvailable, expectNoChat, toggleChatPanel } from './helpers/chat.helper';
+import {
+	expectChatAvailable,
+	expectChatWriteDisabled,
+	expectChatWriteEnabled,
+	expectNoChat,
+	toggleChatPanel
+} from './helpers/chat.helper';
 import {
 	expectBackgroundsButtonAvailable,
 	expectCameraButtonAvailable,
@@ -200,15 +206,13 @@ test.describe('Permissions E2E Tests', () => {
 		test('canWriteChat granted: the chat input is editable', async ({ page }) => {
 			await joinAsGuest(page, { canReadChat: true, canWriteChat: true });
 			await toggleChatPanel(page, 'open');
-			await expect(page.locator('#chat-input')).toBeEnabled();
-			await expect(page.locator('#send-btn')).toBeEnabled();
+			await expectChatWriteEnabled(page);
 		});
 
-		test('canWriteChat denied: the chat panel opens but the input is disabled', async ({ page }) => {
+		test('canWriteChat denied: the chat panel opens read-only with no input', async ({ page }) => {
 			await joinAsGuest(page, { canReadChat: true, canWriteChat: false });
 			await toggleChatPanel(page, 'open');
-			await expect(page.locator('#chat-input')).toBeDisabled();
-			await expect(page.locator('#send-btn')).toBeDisabled();
+			await expectChatWriteDisabled(page);
 		});
 
 		test('canChangeVirtualBackground granted: the backgrounds control is available', async ({ page }) => {
@@ -454,6 +458,25 @@ test.describe('Permissions E2E Tests', () => {
 			await expectPermissionsUpdatedNotification(page);
 			await expectNoBackgroundsButton(page);
 			await expectChatAvailable(page);
+		});
+
+		test('revoking canWriteChat live switches the chat panel to read-only', async ({ page }) => {
+			const guest = await createRoomMember(room.roomId, {
+				name: 'Live Chat Writer',
+				baseRole: MeetRoomMemberRole.SPEAKER,
+				customPermissions: { canReadChat: true, canWriteChat: true }
+			});
+
+			await openMeeting(page, guest.accessUrl);
+			await toggleChatPanel(page, 'open');
+			await expectChatWriteEnabled(page);
+
+			await updateRoomMemberPermissions(room.roomId, guest.memberId, {
+				customPermissions: { canReadChat: true, canWriteChat: false }
+			});
+
+			await expectPermissionsUpdatedNotification(page);
+			await expectChatWriteDisabled(page);
 		});
 
 		test("updating a user member's permissions updates the meeting UI live", async ({ page }) => {

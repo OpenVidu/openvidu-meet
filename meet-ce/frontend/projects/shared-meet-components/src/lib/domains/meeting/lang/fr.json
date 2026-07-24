@@ -56,6 +56,7 @@
 			"SUBTITLE": "Les messages seront supprimés à la fin de la réunion",
 			"PLACEHOLDER": "Envoyer un message...",
 			"SEND": "Envoyer",
+			"WRITE_DISABLED": "Vous n'êtes pas autorisé à envoyer des messages",
 			"MESSAGE_SENT_NOTIFICATION": "message envoyé",
 			"OPEN_CHAT": "OUVRIR",
 			"ENCRYPTION_KEY_MISMATCH": "Il y a des participants connectés avec une clé de chiffrement différente. Vous ne recevrez pas leurs messages."

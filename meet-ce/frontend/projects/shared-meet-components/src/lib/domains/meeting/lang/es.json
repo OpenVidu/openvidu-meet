@@ -57,6 +57,7 @@
 			"SUBTITLE": "Los mensajes se borrarán al finalizar la reunión",
 			"PLACEHOLDER": "Enviar mensaje...",
 			"SEND": "Enviar",
+			"WRITE_DISABLED": "No tienes permiso para enviar mensajes",
 			"MESSAGE_SENT_NOTIFICATION": "mensaje enviado",
 			"OPEN_CHAT": "ABRIR",
 			"ENCRYPTION_KEY_MISMATCH": "Hay participantes conectados con una clave de cifrado diferente a la tuya. No recibirás mensajes de ellos."

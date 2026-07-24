@@ -57,6 +57,7 @@
 			"SUBTITLE": "Berichten worden aan het einde van de meeting verwijderd",
 			"PLACEHOLDER": "Stuur een bericht ...",
 			"SEND": "Versturen",
+			"WRITE_DISABLED": "U hebt geen toestemming om berichten te versturen",
 			"MESSAGE_SENT_NOTIFICATION": "bericht verzonden",
 			"OPEN_CHAT": "OPENEN",
 			"ENCRYPTION_KEY_MISMATCH": "Er zijn deelnemers verbonden met een andere versleutelingssleutel. U ontvangt hun berichten niet."

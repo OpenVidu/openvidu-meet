@@ -57,6 +57,7 @@
 			"SUBTITLE": "Nachrichten werden am Ende des Meetings entfernt",
 			"PLACEHOLDER": "Eine Nachricht senden...",
 			"SEND": "Senden",
+			"WRITE_DISABLED": "Sie haben keine Berechtigung, Nachrichten zu senden",
 			"MESSAGE_SENT_NOTIFICATION": "Nachricht gesendet",
 			"OPEN_CHAT": "ÖFFNEN",
 			"ENCRYPTION_KEY_MISMATCH": "Es gibt Teilnehmer, die mit einem anderen Verschlüsselungsschlüssel verbunden sind. Sie werden deren Nachrichten nicht empfangen."

@@ -1,30 +1,29 @@
 import { expect, type Page } from '@playwright/test';
 
 /**
- * Ensures the chat panel is open or closed, clicking the appropriate control
- * only when the panel is not already in the desired state.
+ * Ensures the chat panel is open or closed, clicking the appropriate control only when the panel is
+ * not already in the desired state. Keyed off the panel container rather than the message input, since
+ * the input is absent when the participant lacks `canWriteChat` (read-only mode).
  */
 export const toggleChatPanel = async (page: Page, action: 'open' | 'close' = 'open'): Promise<void> => {
-	const chatInput = page.locator('#chat-input');
+	const chatContainer = page.locator('#chat-container');
 
 	if (action === 'open') {
-		if (!(await chatInput.isVisible())) {
+		if (!(await chatContainer.isVisible())) {
 			await page.locator('#chat-panel-btn').click();
 		}
 
-		await expect(page.locator('#chat-container')).toBeVisible({ timeout: 10_000 });
-		await expect(chatInput).toBeVisible({ timeout: 10_000 });
+		await expect(chatContainer).toBeVisible({ timeout: 10_000 });
 		return;
 	}
 
-	if (await chatInput.isVisible()) {
+	if (await chatContainer.isVisible()) {
 		const closeButton = page.locator('#chat-container .panel-close-button');
 		const buttonToClick = (await closeButton.isVisible()) ? closeButton : page.locator('#chat-panel-btn');
 		await buttonToClick.click();
 	}
 
-	await expect(page.locator('#chat-container')).toHaveCount(0, { timeout: 10_000 });
-	await expect(chatInput).toHaveCount(0, { timeout: 10_000 });
+	await expect(chatContainer).toHaveCount(0, { timeout: 10_000 });
 };
 
 /**
@@ -87,4 +86,25 @@ export const expectChatAvailable = async (page: Page): Promise<void> => {
  */
 export const expectNoChat = async (page: Page): Promise<void> => {
 	await expect(page.locator('#chat-panel-btn')).toHaveCount(0);
+};
+
+/**
+ * Asserts the chat panel is editable: the message input and send button are present and enabled
+ * (`canWriteChat` granted). Assumes the panel is already open.
+ */
+export const expectChatWriteEnabled = async (page: Page): Promise<void> => {
+	await expect(page.locator('#chat-input')).toBeEnabled({ timeout: 10_000 });
+	await expect(page.locator('#send-btn')).toBeEnabled();
+};
+
+/**
+ * Asserts the chat panel is read-only: the message input and send button are absent — removed from the
+ * DOM, not merely disabled — and the read-only notice is shown (`canWriteChat` denied). Removal is not
+ * the security boundary (the server denies the LiveKit data-publish grant); it is the honest UI for it.
+ * Assumes the panel is already open.
+ */
+export const expectChatWriteDisabled = async (page: Page): Promise<void> => {
+	await expect(page.locator('#chat-read-only-notice')).toBeVisible({ timeout: 10_000 });
+	await expect(page.locator('#chat-input')).toHaveCount(0);
+	await expect(page.locator('#send-btn')).toHaveCount(0);
 };

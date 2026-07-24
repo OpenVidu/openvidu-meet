@@ -57,6 +57,7 @@
 			"SUBTITLE": "Messages will be removed at the end of the meeting",
 			"PLACEHOLDER": "Send a message...",
 			"SEND": "Send",
+			"WRITE_DISABLED": "You don't have permission to send messages",
 			"MESSAGE_SENT_NOTIFICATION": "message sent",
 			"OPEN_CHAT": "OPEN",
 			"ENCRYPTION_KEY_MISMATCH": "There are participants connected with a different encryption key. You will not receive messages from them."

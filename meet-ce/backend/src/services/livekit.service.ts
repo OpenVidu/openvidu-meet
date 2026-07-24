@@ -1,4 +1,4 @@
-import type { AgentDispatch } from '@livekit/protocol';
+import type { AgentDispatch, ParticipantPermission } from '@livekit/protocol';
 import { ParticipantInfo_Kind } from '@livekit/protocol';
 import { inject, injectable } from 'inversify';
 import type {
@@ -295,24 +295,27 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Updates the metadata of a participant in a LiveKit room.
+	 * Updates a participant's metadata in a LiveKit room and, optionally, replaces their permission
+	 * grant at the same time. When `permission` is provided and it takes effect immediately without the participant reconnecting.
 	 *
 	 * @param roomName - The name of the room where the participant is located
-	 * @param participantIdentity - The identity of the participant whose metadata will be updated
+	 * @param participantIdentity - The identity of the participant to update
 	 * @param metadata - The new metadata to set for the participant
-	 * @returns A Promise that resolves when the metadata has been successfully updated
-	 * @throws An internal error if there is an issue updating the metadata
+	 * @param permission - Optional complete permission set to apply to the participant
+	 * @throws An internal error if there is an issue updating the participant
 	 */
-	async updateParticipantMetadata(roomName: string, participantIdentity: string, metadata: string): Promise<void> {
+	async updateParticipant(
+		roomName: string,
+		participantIdentity: string,
+		metadata: string,
+		permission?: Partial<ParticipantPermission>
+	): Promise<void> {
 		try {
-			await this.roomClient.updateParticipant(roomName, participantIdentity, metadata);
-			this.logger.verbose(`Updated metadata for participant '${participantIdentity}' in room '${roomName}'`);
+			await this.roomClient.updateParticipant(roomName, participantIdentity, { metadata, permission });
+			this.logger.verbose(`Updated participant '${participantIdentity}' in room '${roomName}'`);
 		} catch (error) {
-			this.logger.error(
-				`Error updating metadata for participant '${participantIdentity}' in room '${roomName}'`,
-				error
-			);
-			throw internalError(`updating metadata for participant '${participantIdentity}' in room '${roomName}'`);
+			this.logger.error(`Error updating participant '${participantIdentity}' in room '${roomName}'`, error);
+			throw internalError(`updating participant '${participantIdentity}' in room '${roomName}'`);
 		}
 	}
 

@@ -1,3 +1,4 @@
+import type { ParticipantPermission } from '@livekit/protocol';
 import type {
 	LiveKitPermissions,
 	MeetRoomMember,
@@ -576,6 +577,8 @@ export class RoomMemberService {
 			const participantMetadata = this.parseParticipantMeetingMetadata(participant.metadata);
 			const isCurrentlyPromotedModerator = participantMetadata.isPromotedModerator === true;
 
+			let metadataToApply: string;
+
 			if (isCurrentlyPromotedModerator && tokenMetadata.badge === MeetRoomMemberUIBadge.OTHER) {
 				const mergedPermissions = this.mergePermissions(
 					tokenMetadata.permissions,
@@ -590,18 +593,16 @@ export class RoomMemberService {
 				tokenMetadata.badge = MeetRoomMemberUIBadge.MODERATOR;
 				tokenMetadata.isPromotedModerator = true;
 
-				await this.livekitService.updateParticipantMetadata(
-					roomId,
-					participantIdentity!,
-					JSON.stringify(participantMetadata)
-				);
+				metadataToApply = JSON.stringify(participantMetadata);
 			} else {
-				await this.livekitService.updateParticipantMetadata(
-					roomId,
-					participantIdentity!,
-					JSON.stringify(tokenMetadata)
-				);
+				metadataToApply = JSON.stringify(tokenMetadata);
 			}
+
+			const permission = this.buildLiveParticipantPermission(
+				participant.permission,
+				tokenMetadata.permissions.canWriteChat
+			);
+			await this.livekitService.updateParticipant(roomId, participant.identity, metadataToApply, permission);
 		}
 
 		const livekitPermissions = this.getLiveKitPermissions(roomId, tokenMetadata.permissions);
@@ -978,10 +979,24 @@ export class RoomMemberService {
 			canPublish: permissions.canPublishAudio || permissions.canPublishVideo || permissions.canShareScreen,
 			canPublishSources,
 			canSubscribe: true,
-			canPublishData: true,
+			canPublishData: permissions.canWriteChat,
 			canUpdateOwnMetadata: true
 		};
 		return livekitPermissions;
+	}
+
+	/**
+	 * Builds the LiveKit grant to push when a participant's permissions change mid-meeting
+	 */
+	protected buildLiveParticipantPermission(
+		currentPermission: ParticipantInfo['permission'],
+		canWriteChat: boolean
+	): Partial<ParticipantPermission> | undefined {
+		if (!currentPermission) {
+			return undefined;
+		}
+
+		return { ...currentPermission, canPublishData: canWriteChat };
 	}
 
 	/**
@@ -1035,7 +1050,11 @@ export class RoomMemberService {
 				delete metadata.originalPermissions;
 			}
 
-			await this.livekitService.updateParticipantMetadata(roomId, participantIdentity, JSON.stringify(metadata));
+			const permission = this.buildLiveParticipantPermission(
+				participant.permission,
+				metadata.permissions.canWriteChat
+			);
+			await this.livekitService.updateParticipant(roomId, participantIdentity, JSON.stringify(metadata), permission);
 			await this.frontendEventService.sendParticipantRoleUpdatedSignal(
 				roomId,
 				participantIdentity,

@@ -57,6 +57,7 @@
 			"SUBTITLE": "メッセージは会議終了時に削除されます",
 			"PLACEHOLDER": "メッセージを送信...",
 			"SEND": "送信する",
+			"WRITE_DISABLED": "メッセージを送信する権限がありません",
 			"MESSAGE_SENT_NOTIFICATION": "メッセージを送信しました",
 			"OPEN_CHAT": "開く",
 			"ENCRYPTION_KEY_MISMATCH": "異なる暗号化キーで接続している参加者がいます。彼らからのメッセージは受信できません。"

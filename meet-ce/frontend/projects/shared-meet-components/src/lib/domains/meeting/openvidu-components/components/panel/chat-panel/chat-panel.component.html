@@ -1,7 +1,12 @@
 <div class="panel-container" id="chat-container">
 	<div class="panel-header-container">
 		<h3 class="panel-title">{{ 'PANEL.CHAT.TITLE' | translate }}</h3>
-		<button class="panel-close-button" mat-icon-button matTooltip="{{ 'PANEL.CLOSE' | translate }}" (click)="close()">
+		<button
+			class="panel-close-button"
+			mat-icon-button
+			matTooltip="{{ 'PANEL.CLOSE' | translate }}"
+			(click)="close()"
+		>
 			<mat-icon>close</mat-icon>
 		</button>
 	</div>
@@ -19,45 +24,50 @@
 
 	<div class="messages-container" #chatScroll>
 		@for (data of messageList(); track data) {
-		<div class="message" [class.right]="data.isLocal" [class.left]="!data.isLocal">
-			<div class="msg-detail">
-				<div class="participant-name-container">
-					@if (data.isLocal) {
-						<p>{{ 'PANEL.CHAT.YOU' | translate }}</p>
-					} @else {
-						<p>{{ data.participantName }}</p>
-					}
-				</div>
-				<div class="chat-message">
-					<p [innerHTML]="data.message | linkify"></p>
+			<div class="message" [class.right]="data.isLocal" [class.left]="!data.isLocal">
+				<div class="msg-detail">
+					<div class="participant-name-container">
+						@if (data.isLocal) {
+							<p>{{ 'PANEL.CHAT.YOU' | translate }}</p>
+						} @else {
+							<p>{{ data.participantName }}</p>
+						}
+					</div>
+					<div class="chat-message">
+						<p [innerHTML]="data.message | linkify"></p>
+					</div>
 				</div>
 			</div>
-		</div>
 		}
 	</div>
 
-	<div class="input-container">
+	@if (canWrite()) {
+		<div class="input-container">
 			<textarea
-			#chatInput
-			maxlength="500"
-			rows="4"
-			placeholder="{{ 'PANEL.CHAT.PLACEHOLDER' | translate }}"
-			autocomplete="off"
+				#chatInput
+				maxlength="500"
+				rows="4"
+				placeholder="{{ 'PANEL.CHAT.PLACEHOLDER' | translate }}"
+				autocomplete="off"
 				(keypress)="eventKeyPress($event)"
 				[ngModel]="message()"
 				(ngModelChange)="message.set($event)"
-				[disabled]="!canWrite()"
 				id="chat-input"
 				[class.vertical-align]="!message()"
 			></textarea>
-		<button
-			mat-icon-button
-			id="send-btn"
-			[disabled]="!canWrite()"
-			(click)="sendMessage()"
-			matTooltip="{{ 'PANEL.CHAT.SEND' | translate }}"
-		>
-			<mat-icon>send</mat-icon>
-		</button>
-	</div>
+			<button
+				mat-icon-button
+				id="send-btn"
+				(click)="sendMessage()"
+				matTooltip="{{ 'PANEL.CHAT.SEND' | translate }}"
+			>
+				<mat-icon>send</mat-icon>
+			</button>
+		</div>
+	} @else {
+		<div class="read-only-notice" id="chat-read-only-notice">
+			<mat-icon>lock</mat-icon>
+			<p>{{ 'PANEL.CHAT.WRITE_DISABLED' | translate }}</p>
+		</div>
+	}
 </div>

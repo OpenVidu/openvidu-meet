@@ -1,13 +1,4 @@
-import {
-	AfterViewInit,
-	Component,
-	computed,
-	effect,
-	ElementRef,
-	inject,
-	signal,
-	viewChild
-} from '@angular/core';
+import { AfterViewInit, Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -50,7 +41,6 @@ export class ChatPanelComponent implements AfterViewInit {
 	readonly messageList = computed(() => this.chatService.chatMessages());
 	/**
 	 * Whether the local participant may send messages (gated by the `canWriteChat` permission).
-	 * When false the input and send button are disabled; the history stays readable.
 	 */
 	readonly canWrite = inject(OpenViduComponentsConfigService).chatInputEnabledSignal;
 
@@ -92,8 +82,6 @@ export class ChatPanelComponent implements AfterViewInit {
 	 * @ignore
 	 */
 	async sendMessage(): Promise<void> {
-		// Guard here as well as in the template: the input is disabled when writing is not allowed,
-		// but this keeps sending impossible even if invoked programmatically.
 		if (!this.canWrite()) return;
 		if (!!this.message()) {
 			await this.chatService.sendMessage(this.message());
