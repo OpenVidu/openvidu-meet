@@ -122,6 +122,8 @@
 	},
 	"ERRORS": {
 		"SESSION": "连接会议时出错",
+		"MEETING_NOT_READY": "会议尚未准备就绪。请重新加载页面后重试。",
+		"MEETING_CONNECTION_FAILED": "无法连接到会议。请检查网络连接后重试。",
 		"CONNECTION": "连接丢失",
 		"RECONNECT": "正在尝试重新连接会议...",
 		"DISCONNECT": "您已断开连接",

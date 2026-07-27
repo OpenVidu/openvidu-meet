@@ -122,6 +122,8 @@
 	},
 	"ERRORS": {
 		"SESSION": "Er is een fout opgetreden bij het verbinden met de meeting",
+		"MEETING_NOT_READY": "De meeting is nog niet gereed. Herlaad de pagina en probeer het opnieuw.",
+		"MEETING_CONNECTION_FAILED": "Kan geen verbinding maken met de meeting. Controleer uw verbinding en probeer het opnieuw.",
 		"CONNECTION": "Verbinding verloren",
 		"RECONNECT": "Proberen opnieuw verbinding te maken met de meeting...",
 		"DISCONNECT": "Je bent losgekoppeld",

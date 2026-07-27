@@ -465,7 +465,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			this.log.e('There was an error toggling microphone:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
 				this.translateService.translate('ERRORS.TOGGLE_MICROPHONE'),
-				(error as any)?.error || (error as any)?.message || error
+				this.translateService.translate('ERRORS.GENERIC')
 			);
 		} finally {
 			this.microphoneMuteChanging.set(false);
@@ -487,7 +487,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			this.log.e('There was an error toggling camera:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
 				this.translateService.translate('ERRORS.TOGGLE_CAMERA'),
-				(error as any)?.error || (error as any)?.message || error
+				this.translateService.translate('ERRORS.GENERIC')
 			);
 		} finally {
 			this.cameraMuteChanging.set(false);
@@ -528,7 +528,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			this.log.e('There was an error disconnecting:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
 				this.translateService.translate('ERRORS.DISCONNECT'),
-				(error as any)?.error || (error as any)?.message || error
+				this.translateService.translate('ERRORS.GENERIC')
 			);
 		}
 	}

@@ -122,6 +122,8 @@
 	},
 	"ERRORS": {
 		"SESSION": "Si è verificato un errore di connessione alla riunione",
+		"MEETING_NOT_READY": "La riunione non è ancora pronta. Ricarica la pagina e riprova.",
+		"MEETING_CONNECTION_FAILED": "Impossibile connettersi alla riunione. Controlla la connessione e riprova.",
 		"CONNECTION": "Connessione persa",
 		"RECONNECT": "Oops! Si sta cercando di riconnettersi alla riunione...",
 		"DISCONNECT": "Sei stato disconnesso",

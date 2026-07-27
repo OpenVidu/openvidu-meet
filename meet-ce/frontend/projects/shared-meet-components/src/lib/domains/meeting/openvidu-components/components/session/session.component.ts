@@ -213,10 +213,7 @@ export class SessionComponent implements OnInit, OnDestroy {
 		// Check if room is available before proceeding
 		if (!this.meetingLiveKitService.isInitialized()) {
 			this.log.e('Room is not initialized when SessionComponent starts. This indicates a timing issue.');
-			this.actionService.openDialog(
-				this.translateService.translate('ERRORS.SESSION'),
-				'Room is not ready. Please ensure the token is properly configured.'
-			);
+			this.showStartupError('ERRORS.MEETING_NOT_READY');
 			return;
 		}
 
@@ -224,12 +221,9 @@ export class SessionComponent implements OnInit, OnDestroy {
 		try {
 			this.room = this.meetingLiveKitService.getRoom();
 			this.log.d('Room successfully obtained for SessionComponent');
-		} catch (error: any) {
+		} catch (error: unknown) {
 			this.log.e('Unexpected error getting room:', error);
-			this.actionService.openDialog(
-				this.translateService.translate('ERRORS.SESSION'),
-				'Failed to get room instance: ' + (error?.message || error)
-			);
+			this.showStartupError('ERRORS.MEETING_NOT_READY');
 			return;
 		}
 		this.sessionRoomEventsService.bindRoom(this.room, {
@@ -249,12 +243,22 @@ export class SessionComponent implements OnInit, OnDestroy {
 				this.onParticipantConnected.emit(localParticipant);
 			}
 		} catch (error: any) {
-			this.log.e('There was an error connecting to the room:', error?.code, error?.message);
-			this.actionService.openDialog(
-				this.translateService.translate('ERRORS.SESSION'),
-				error?.error || error?.message || error
-			);
+			// The technical detail goes to the log; the user gets a translated, actionable message.
+			this.log.e('There was an error connecting to the meeting:', error?.code, error?.message, error);
+			this.showStartupError('ERRORS.MEETING_CONNECTION_FAILED');
 		}
+	}
+
+	/**
+	 * Single policy for the errors that prevent the meeting from starting: same translated title,
+	 * a translated message keyed by cause, and never the raw error — which used to leak LiveKit
+	 * internals into the dialog. Callers are responsible for logging the technical detail.
+	 */
+	private showStartupError(messageKey: string): void {
+		this.actionService.openDialog(
+			this.translateService.translate('ERRORS.SESSION'),
+			this.translateService.translate(messageKey)
+		);
 	}
 
 	/**
