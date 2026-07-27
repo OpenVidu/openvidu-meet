@@ -1,16 +1,16 @@
 {
 	"ROOM": {
-		"JOINING": "正在加入房间...",
+		"JOINING": "正在加入会议...",
 		"LANDSCAPE_WARNING": "请将设备旋转到纵向以获得最佳体验",
-		"DISCONNECTED": "您已离开房间",
-		"DISCONNECTED_SUBTITLE": "会话已结束"
+		"DISCONNECTED": "您已离开会议",
+		"DISCONNECTED_SUBTITLE": "会议已结束"
 	},
 	"PREJOIN": {
-		"NICKNAME": "昵称",
+		"NICKNAME": "显示名称",
 		"NO_VIDEO_DEVICE": "未找到视频设备",
 		"NO_AUDIO_DEVICE": "未找到音频设备",
 		"JOIN": "加入会议",
-		"PREPARING": "筹备会议",
+		"PREPARING": "正在准备会议...",
 		"BACKGROUND": "背景效果"
 	},
 	"TOOLBAR": {
@@ -121,15 +121,15 @@
 		}
 	},
 	"ERRORS": {
-		"SESSION": "连接到房间时有错误",
+		"SESSION": "连接会议时出错",
 		"CONNECTION": "连接丢失",
-		"RECONNECT": "试图重新连接到房间",
+		"RECONNECT": "正在尝试重新连接会议...",
 		"DISCONNECT": "您已断开连接",
 		"SIGNAL_CLOSE": "与服务器的连接意外关闭",
 		"SERVER_SHUTDOWN": "服务器当前已关闭或正在维护中",
-		"PARTICIPANT_REMOVED": "您已被移出此房间",
+		"PARTICIPANT_REMOVED": "您已被移出此会议",
 		"ROOM_DELETED": "此房间已被删除",
-		"DUPLICATE_IDENTITY": "由于您的昵称已被分配给另一位参与者，您已被断开连接",
+		"DUPLICATE_IDENTITY": "由于您的名称已被分配给另一位参与者，您已被断开连接",
 		"TOGGLE_CAMERA": "切换相机时出现错误",
 		"TOGGLE_MICROPHONE": "切换麦克风时出现错误",
 		"LOAD_RECORDING_TITLE": "加载录音时出错",
@@ -137,8 +137,8 @@
 		"MEDIA_ERR_NETWORK": "网络错误导致视频下载中途失败。",
 		"MEDIA_ERR_DECODE": "由于损坏问题或视频使用了您的浏览器不支持的功能，视频播放被中止。",
 		"MEDIA_ERR_SRC_NOT_SUPPORTED": "流媒体录制错误：无法访问 S3。",
-		"E2EE_ERROR_TITLE": "房间密码错误",
-		"E2EE_ERROR_CONTENT": "此参与者使用了不同的安全密钥。无法显示视频。",
+		"E2EE_ERROR_TITLE": "加密密钥错误",
+		"E2EE_ERROR_CONTENT": "此参与者使用了不同的加密密钥。无法显示视频。",
 		"GENERIC": "发生意外错误。请重试。"
 	},
 	"LOBBY": {
@@ -231,7 +231,7 @@
 		"DISCONNECTED_TITLE": "已与会议断开连接",
 		"NETWORK_MESSAGE": "由于网络连接问题，连接已丢失",
 		"SERVER_SHUTDOWN_MESSAGE": "由于服务器关闭，连接已丢失",
-		"DUPLICATE_MESSAGE": "由于您从另一个标签页或设备加入了同一会议，此会话已关闭",
+		"DUPLICATE_MESSAGE": "由于您从另一个标签页或设备加入，此会议已关闭",
 		"UNKNOWN_MESSAGE": "发生了意外错误，请稍后重试",
 		"FOOTER": "感谢您使用 OpenVidu Meet",
 		"BACK": "返回",

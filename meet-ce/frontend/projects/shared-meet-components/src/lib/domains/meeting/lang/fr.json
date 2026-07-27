@@ -1,16 +1,16 @@
 {
 	"ROOM": {
-		"JOINING": "Rejoindre la salle...",
+		"JOINING": "Connexion à la réunion...",
 		"LANDSCAPE_WARNING": "Veuillez faire pivoter votre appareil en mode portrait pour une meilleure expérience",
-		"DISCONNECTED": "Vous avez quitté la salle",
-		"DISCONNECTED_SUBTITLE": "La session est terminée"
+		"DISCONNECTED": "Vous avez quitté la réunion",
+		"DISCONNECTED_SUBTITLE": "La réunion est terminée"
 	},
 	"PREJOIN": {
-		"NICKNAME": "Surnom",
+		"NICKNAME": "Nom affiché",
 		"NO_VIDEO_DEVICE": "Appareil vidéo introuvable",
 		"NO_AUDIO_DEVICE": "Appareil audio introuvable",
 		"JOIN": "Rejoindre la réunion",
-		"PREPARING": "Préparation de la salle ...",
+		"PREPARING": "Préparation de la réunion...",
 		"BACKGROUND": "Effets de fond"
 	},
 	"TOOLBAR": {
@@ -27,7 +27,7 @@
 		"START_RECORDING": "démarrer l'enregistrement",
 		"STOP_RECORDING": "Arrêter l'enregistrement",
 		"SETTINGS": "Paramètres",
-		"LEAVE": "Quitter la salle",
+		"LEAVE": "Quitter la réunion",
 		"PARTICIPANTS": "Participants",
 		"CHAT": "Chat",
 		"PANELS": "Panneaux",
@@ -120,15 +120,15 @@
 		}
 	},
 	"ERRORS": {
-		"SESSION": "There was an error connecting to the salle",
+		"SESSION": "Une erreur s'est produite lors de la connexion à la réunion",
 		"CONNECTION": "Connexion perdue",
-		"RECONNECT": "Oups ! Tentative de reconnexion à la salle...",
+		"RECONNECT": "Oups ! Tentative de reconnexion à la réunion...",
 		"DISCONNECT": "Vous avez été déconnecté",
 		"SIGNAL_CLOSE": "La connexion au serveur a été interrompue de manière inattendue",
 		"SERVER_SHUTDOWN": "Le serveur est actuellement hors service ou en maintenance",
-		"PARTICIPANT_REMOVED": "Vous avez été retiré de cette salle",
+		"PARTICIPANT_REMOVED": "Vous avez été retiré de cette réunion",
 		"ROOM_DELETED": "Cette salle a été supprimée",
-		"DUPLICATE_IDENTITY": "Vous avez été déconnecté car votre pseudo a été attribué à un autre participant",
+		"DUPLICATE_IDENTITY": "Vous avez été déconnecté car votre nom a été attribué à un autre participant",
 		"TOGGLE_CAMERA": "There was an error toggle camera",
 		"TOGGLE_MICROPHONE": "There was an error toggling microphone",
 		"LOAD_RECORDING_TITLE": "Erreur de chargement de l'enregistrement",
@@ -136,8 +136,8 @@
 		"MEDIA_ERR_NETWORK": "Une erreur de réseau a causé l'échec du téléchargement de la vidéo en cours de route.",
 		"MEDIA_ERR_DECODE": "La lecture de la vidéo a été interrompue en raison d'un problème de corruption ou parce que la vidéo utilise des fonctionnalités que votre navigateur ne prend pas en charge.",
 		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Erreur de diffusion de l'enregistrement : S3 n'a pas pu être atteint.",
-		"E2EE_ERROR_TITLE": "Erreur de mot de passe de la salle",
-		"E2EE_ERROR_CONTENT": "Ce participant utilise une clé de sécurité différente. La vidéo ne peut pas être affichée.",
+		"E2EE_ERROR_TITLE": "Erreur de clé de chiffrement",
+		"E2EE_ERROR_CONTENT": "Ce participant utilise une clé de chiffrement différente. La vidéo ne peut pas être affichée.",
 		"GENERIC": "Une erreur inattendue s'est produite. Veuillez réessayer."
 	},
 	"LOBBY": {
@@ -230,7 +230,7 @@
 		"DISCONNECTED_TITLE": "Déconnecté de la réunion",
 		"NETWORK_MESSAGE": "Connexion perdue en raison de problèmes de connectivité réseau",
 		"SERVER_SHUTDOWN_MESSAGE": "Connexion perdue en raison de l'arrêt du serveur",
-		"DUPLICATE_MESSAGE": "Cette session a été fermée car vous avez rejoint la même réunion depuis un autre onglet ou appareil",
+		"DUPLICATE_MESSAGE": "Cette réunion a été fermée car vous l'avez rejointe depuis un autre onglet ou appareil",
 		"UNKNOWN_MESSAGE": "Une erreur inattendue s'est produite, veuillez réessayer plus tard",
 		"FOOTER": "Merci d'utiliser OpenVidu Meet",
 		"BACK": "Retour",

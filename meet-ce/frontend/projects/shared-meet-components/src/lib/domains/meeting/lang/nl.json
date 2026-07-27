@@ -1,16 +1,16 @@
 {
 	"ROOM": {
-		"JOINING": "De ruimte betreden...",
+		"JOINING": "Deelnemen aan meeting...",
 		"LANDSCAPE_WARNING": "Draai uw apparaat voor een betere ervaring naar portretmodus",
-		"DISCONNECTED": "U heeft de kamer verlaten",
-		"DISCONNECTED_SUBTITLE": "De sessie is beëindigd"
+		"DISCONNECTED": "U heeft de meeting verlaten",
+		"DISCONNECTED_SUBTITLE": "De meeting is beëindigd"
 	},
 	"PREJOIN": {
-		"NICKNAME": "Bijnaam",
+		"NICKNAME": "Weergavenaam",
 		"NO_VIDEO_DEVICE": "Videoapparaat niet gevonden",
 		"NO_AUDIO_DEVICE": "Audioapparaat niet gevonden",
 		"JOIN": "Deelnemen aan meeting",
-		"PREPARING": "Kamer voorbereiden ...",
+		"PREPARING": "Meeting voorbereiden...",
 		"BACKGROUND": "Achtergrondeffecten"
 	},
 	"TOOLBAR": {
@@ -27,7 +27,7 @@
 		"START_RECORDING": "Start opname",
 		"STOP_RECORDING": "Stop opname",
 		"SETTINGS": "Instellingen",
-		"LEAVE": "Verlaat de kamer",
+		"LEAVE": "Verlaat de meeting",
 		"PARTICIPANTS": "Deelnemers",
 		"CHAT": "Chat",
 		"ACTIVITIES": "Activiteiten",
@@ -121,15 +121,15 @@
 		}
 	},
 	"ERRORS": {
-		"SESSION": "Er is een fout opgetreden bij het verbinden met de kamer",
+		"SESSION": "Er is een fout opgetreden bij het verbinden met de meeting",
 		"CONNECTION": "Verbinding verloren",
-		"RECONNECT": "Proberen opnieuw verbinding te maken met de kamer...",
+		"RECONNECT": "Proberen opnieuw verbinding te maken met de meeting...",
 		"DISCONNECT": "Je bent losgekoppeld",
 		"SIGNAL_CLOSE": "De verbinding met de server werd onverwacht verbroken",
 		"SERVER_SHUTDOWN": "De server is momenteel offline of ondergaat onderhoud",
-		"PARTICIPANT_REMOVED": "Je bent uit deze kamer verwijderd",
+		"PARTICIPANT_REMOVED": "Je bent uit deze meeting verwijderd",
 		"ROOM_DELETED": "Deze kamer is verwijderd",
-		"DUPLICATE_IDENTITY": "Je bent losgekoppeld omdat je bijnaam aan een andere deelnemer is toegewezen",
+		"DUPLICATE_IDENTITY": "Je bent losgekoppeld omdat je naam aan een andere deelnemer is toegewezen",
 		"TOGGLE_CAMERA": "Er is een fout opgetreden bij het overschakelen naar een andere camera",
 		"TOGGLE_MICROPHONE": "Er is een fout opgetreden bij het overschakelen naar een microfoon",
 		"LOAD_RECORDING_TITLE": "Fout bij het laden van opname",
@@ -137,7 +137,7 @@
 		"MEDIA_ERR_NETWORK": "Een netwerkfout heeft ertoe geleid dat het downloaden van de video halverwege is mislukt.",
 		"MEDIA_ERR_DECODE": "Het afspelen van de video is afgebroken vanwege een corruptieprobleem of omdat de video functies gebruikte die uw browser niet ondersteunde.",
 		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Fout bij het streamen van de opname: S3 kon niet worden bereikt.",
-		"E2EE_ERROR_TITLE": "Kamerwachtwoordfout",
+		"E2EE_ERROR_TITLE": "Versleutelingssleutelfout",
 		"E2EE_ERROR_CONTENT": "Deze deelnemer gebruikt een andere beveiligingssleutel. Video kan niet worden weergegeven.",
 		"GENERIC": "Er is een onverwachte fout opgetreden. Probeer het opnieuw."
 	},
@@ -231,7 +231,7 @@
 		"DISCONNECTED_TITLE": "Verbinding met meeting verbroken",
 		"NETWORK_MESSAGE": "Verbinding verloren door netwerkproblemen",
 		"SERVER_SHUTDOWN_MESSAGE": "Verbinding verloren door het afsluiten van de server",
-		"DUPLICATE_MESSAGE": "Deze sessie is gesloten omdat u via een ander tabblad of apparaat aan dezelfde meeting bent gaan deelnemen",
+		"DUPLICATE_MESSAGE": "Deze meeting is gesloten omdat u via een ander tabblad of apparaat bent gaan deelnemen",
 		"UNKNOWN_MESSAGE": "Er is een onverwachte fout opgetreden, probeer het later opnieuw",
 		"FOOTER": "Bedankt voor het gebruik van OpenVidu Meet",
 		"BACK": "Terug",

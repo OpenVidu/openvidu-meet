@@ -1,16 +1,16 @@
 {
 	"ROOM": {
-		"JOINING": "Raum beitreten...",
+		"JOINING": "Meeting wird betreten...",
 		"LANDSCAPE_WARNING": "Bitte drehen Sie Ihr Gerät für eine bessere Erfahrung in den Hochformatmodus",
-		"DISCONNECTED": "Sie haben den Raum verlassen",
-		"DISCONNECTED_SUBTITLE": "Die Sitzung wurde beendet"
+		"DISCONNECTED": "Sie haben das Meeting verlassen",
+		"DISCONNECTED_SUBTITLE": "Das Meeting wurde beendet"
 	},
 	"PREJOIN": {
-		"NICKNAME": "Spitzname",
+		"NICKNAME": "Anzeigename",
 		"NO_VIDEO_DEVICE": "Video-Gerät nicht gefunden",
 		"NO_AUDIO_DEVICE": "Audio-Gerät nicht gefunden",
 		"JOIN": "Meeting beitreten",
-		"PREPARING": "Raum vorbereiten...",
+		"PREPARING": "Meeting wird vorbereitet...",
 		"BACKGROUND": "Hintergrund-Effekte"
 	},
 	"TOOLBAR": {
@@ -27,7 +27,7 @@
 		"START_RECORDING": "Aufzeichnung starten",
 		"STOP_RECORDING": "Aufzeichnung stoppen",
 		"SETTINGS": "Einstellungen",
-		"LEAVE": "Die Raum verlassen",
+		"LEAVE": "Das Meeting verlassen",
 		"PARTICIPANTS": "Teilnehmer",
 		"CHAT": "Chat",
 		"ACTIVITIES": "Aktivitäten",
@@ -121,15 +121,15 @@
 		}
 	},
 	"ERRORS": {
-		"SESSION": "Es ist ein Fehler beim Verbinden mit der Raum aufgetreten",
+		"SESSION": "Es ist ein Fehler beim Verbinden mit dem Meeting aufgetreten",
 		"CONNECTION": "Verbindung verloren",
-		"RECONNECT": "Ich versuche, die Verbindung zur Raum wiederherzustellen...",
+		"RECONNECT": "Verbindung zum Meeting wird wiederhergestellt...",
 		"DISCONNECT": "Sie wurden getrennt",
 		"SIGNAL_CLOSE": "Die Verbindung zum Server wurde unerwartet geschlossen",
 		"SERVER_SHUTDOWN": "Der Server ist derzeit nicht verfügbar oder wird gewartet",
-		"PARTICIPANT_REMOVED": "Sie wurden aus diesem Raum entfernt",
+		"PARTICIPANT_REMOVED": "Sie wurden aus diesem Meeting entfernt",
 		"ROOM_DELETED": "Dieser Raum wurde gelöscht",
-		"DUPLICATE_IDENTITY": "Sie wurden getrennt, da Ihr Spitzname einem anderen Teilnehmer zugewiesen wurde",
+		"DUPLICATE_IDENTITY": "Sie wurden getrennt, da Ihr Name einem anderen Teilnehmer zugewiesen wurde",
 		"TOGGLE_CAMERA": "Es gab einen Fehler beim Umschalten der Kamera",
 		"TOGGLE_MICROPHONE": "Es ist ein Fehler beim Umschalten des Mikrofons aufgetreten",
 		"LOAD_RECORDING_TITLE": "Fehler beim Laden der Aufnahme",
@@ -137,8 +137,8 @@
 		"MEDIA_ERR_NETWORK": "Ein Netzwerkfehler führte dazu, dass der Video-Download teilweise fehlschlug.",
 		"MEDIA_ERR_DECODE": "Die Videowiedergabe wurde aufgrund eines Korruptionsproblems oder weil das Video Funktionen verwendet, die Ihr Browser nicht unterstützt, abgebrochen.",
 		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Fehler beim Streaming der Aufnahme: S3 konnte nicht erreicht werden.",
-		"E2EE_ERROR_TITLE": "Raum-Passwortfehler",
-		"E2EE_ERROR_CONTENT": "Dieser Teilnehmer verwendet einen anderen Sicherheitsschlüssel. Video kann nicht angezeigt werden.",
+		"E2EE_ERROR_TITLE": "Fehler beim Verschlüsselungsschlüssel",
+		"E2EE_ERROR_CONTENT": "Dieser Teilnehmer verwendet einen anderen Verschlüsselungsschlüssel. Video kann nicht angezeigt werden.",
 		"GENERIC": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut."
 	},
 	"LOBBY": {
@@ -231,7 +231,7 @@
 		"DISCONNECTED_TITLE": "Vom Meeting getrennt",
 		"NETWORK_MESSAGE": "Verbindung aufgrund von Netzwerkproblemen verloren",
 		"SERVER_SHUTDOWN_MESSAGE": "Verbindung aufgrund einer Serverabschaltung verloren",
-		"DUPLICATE_MESSAGE": "Diese Sitzung wurde geschlossen, weil Sie demselben Meeting von einem anderen Tab oder Gerät beigetreten sind",
+		"DUPLICATE_MESSAGE": "Dieses Meeting wurde geschlossen, weil Sie ihm von einem anderen Tab oder Gerät beigetreten sind",
 		"UNKNOWN_MESSAGE": "Ein unerwarteter Fehler ist aufgetreten, bitte versuchen Sie es später erneut",
 		"FOOTER": "Vielen Dank, dass Sie OpenVidu Meet nutzen",
 		"BACK": "Zurück",

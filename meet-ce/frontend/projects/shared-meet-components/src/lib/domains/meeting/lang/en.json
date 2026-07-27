@@ -1,17 +1,17 @@
 {
 	"PREJOIN": {
-		"NICKNAME": "Nickname",
+		"NICKNAME": "Display name",
 		"NO_VIDEO_DEVICE": "Video device not found",
 		"NO_AUDIO_DEVICE": "Audio device not found",
 		"JOIN": "Join meeting",
-		"PREPARING": "Preparing room...",
+		"PREPARING": "Preparing meeting...",
 		"BACKGROUND": "Background effects"
 	},
 	"ROOM": {
-		"JOINING": "Joining room...",
+		"JOINING": "Joining meeting...",
 		"LANDSCAPE_WARNING": "Please rotate your device to portrait for a better experience",
-		"DISCONNECTED": "You have left the room",
-		"DISCONNECTED_SUBTITLE": "The session has ended"
+		"DISCONNECTED": "You have left the meeting",
+		"DISCONNECTED_SUBTITLE": "The meeting has ended"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mute your audio",
@@ -27,7 +27,7 @@
 		"START_RECORDING": "Start recording",
 		"STOP_RECORDING": "Stop recording",
 		"SETTINGS": "Settings",
-		"LEAVE": "Leave the room",
+		"LEAVE": "Leave the meeting",
 		"PARTICIPANTS": "Participants",
 		"CHAT": "Chat",
 		"ACTIVITIES": "Activities",
@@ -122,15 +122,15 @@
 		}
 	},
 	"ERRORS": {
-		"SESSION": "There was an error connecting to the room",
+		"SESSION": "There was an error connecting to the meeting",
 		"CONNECTION": "Connection lost",
-		"RECONNECT": "Oops! Trying to reconnect to the room...",
+		"RECONNECT": "Oops! Trying to reconnect to the meeting...",
 		"DISCONNECT": "You have been disconnected",
 		"SIGNAL_CLOSE": "The connection to the server was unexpectedly closed",
 		"SERVER_SHUTDOWN": "The server is currently down or under maintenance",
-		"PARTICIPANT_REMOVED": "You have been removed from this room",
+		"PARTICIPANT_REMOVED": "You have been removed from this meeting",
 		"ROOM_DELETED": "This room has been deleted",
-		"DUPLICATE_IDENTITY": "You have been disconnected because your alias was assigned to another participant",
+		"DUPLICATE_IDENTITY": "You have been disconnected because your name was assigned to another participant",
 		"TOGGLE_CAMERA": "There was an error toggling camera",
 		"TOGGLE_MICROPHONE": "There was an error toggling microphone",
 		"LOAD_RECORDING_TITLE": "Error loading recording",
@@ -138,7 +138,7 @@
 		"MEDIA_ERR_NETWORK": "A network error caused the video download to fail part-way.",
 		"MEDIA_ERR_DECODE": "The video playback was aborted due to a corruption problem or because the video used features your browser did not support.",
 		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Error streaming recording: S3 could not be reached.",
-		"E2EE_ERROR_TITLE": "Room password error",
+		"E2EE_ERROR_TITLE": "Encryption key error",
 		"E2EE_ERROR_CONTENT": "This participant is using a different encryption key. Video cannot be displayed.",
 		"GENERIC": "An unexpected error occurred. Please try again."
 	},
@@ -232,7 +232,7 @@
 		"DISCONNECTED_TITLE": "Disconnected from Meeting",
 		"NETWORK_MESSAGE": "Connection lost due to network connectivity issues",
 		"SERVER_SHUTDOWN_MESSAGE": "Connection lost due to server shutdown",
-		"DUPLICATE_MESSAGE": "This session was closed because you joined the same meeting from another tab or device",
+		"DUPLICATE_MESSAGE": "This meeting was closed because you joined it from another tab or device",
 		"UNKNOWN_MESSAGE": "Some unexpected error occurred, please try again later",
 		"FOOTER": "Thank you for using OpenVidu Meet",
 		"BACK": "Back",

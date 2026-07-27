@@ -1,15 +1,15 @@
 {
 	"ROOM": {
-		"JOINING": "Uniéndose a la sala...",
+		"JOINING": "Uniéndose a la reunión...",
 		"LANDSCAPE_WARNING": "Por favor, gira tu dispositivo a modo retrato para una mejor experiencia",
-		"DISCONNECTED": "Has salido de la sala",
-		"DISCONNECTED_SUBTITLE": "La sesión ha finalizado"
+		"DISCONNECTED": "Has salido de la reunión",
+		"DISCONNECTED_SUBTITLE": "La reunión ha finalizado"
 	},
 	"PREJOIN": {
-		"NICKNAME": "Nombre",
+		"NICKNAME": "Nombre para mostrar",
 		"NO_VIDEO_DEVICE": "Dispositivo de vídeo no encontrado",
 		"NO_AUDIO_DEVICE": "Dispositivo de audio no encontrado",
-		"PREPARING": "Preparando la sala ...",
+		"PREPARING": "Preparando la reunión...",
 		"JOIN": "Unirme ahora",
 		"BACKGROUND": "Efectos de fondo"
 	},
@@ -27,7 +27,7 @@
 		"START_RECORDING": "Iniciar grabación",
 		"STOP_RECORDING": "Detener grabación",
 		"SETTINGS": "Configuración",
-		"LEAVE": "Salir de la sala",
+		"LEAVE": "Salir de la reunión",
 		"PARTICIPANTS": "Participantes",
 		"CHAT": "Chat",
 		"ACTIVITIES": "Actividades",
@@ -121,15 +121,15 @@
 		}
 	},
 	"ERRORS": {
-		"SESSION": "Hubo un error al conectar a la sala",
+		"SESSION": "Hubo un error al conectar a la reunión",
 		"CONNECTION": "Sin conexión",
-		"RECONNECT": "Intentando reconectar a la sala...",
+		"RECONNECT": "Intentando reconectar a la reunión...",
 		"DISCONNECT": "Te has desconectado",
 		"SIGNAL_CLOSE": "La conexión con el servidor se cerró inesperadamente",
 		"SERVER_SHUTDOWN": "El servidor está actualmente fuera de servicio o en mantenimiento",
-		"PARTICIPANT_REMOVED": "Has sido eliminado de esta sala",
+		"PARTICIPANT_REMOVED": "Has sido eliminado de esta reunión",
 		"ROOM_DELETED": "Esta sala ha sido eliminada",
-		"DUPLICATE_IDENTITY": "Te has desconectado porque tu alias ha sido asignado a otro participante",
+		"DUPLICATE_IDENTITY": "Te has desconectado porque tu nombre ha sido asignado a otro participante",
 		"TOGGLE_CAMERA": "Hubo un error cambiando la cámara",
 		"TOGGLE_MICROPHONE": "Hubo un error cambiando el micrófono",
 		"LOAD_RECORDING_TITLE": "Error al cargar la grabación",
@@ -137,7 +137,7 @@
 		"MEDIA_ERR_NETWORK": "Un error de red causó que la descarga del vídeo fallara a mitad de camino.",
 		"MEDIA_ERR_DECODE": "La reproducción del vídeo se interrumpió debido a un problema de corrupción o porque el vídeo utiliza características que su navegador no soporta.",
 		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Error al transmitir la grabación: no se pudo conectar con S3.",
-		"E2EE_ERROR_TITLE": "Error de contraseña de sala",
+		"E2EE_ERROR_TITLE": "Error de clave de cifrado",
 		"E2EE_ERROR_CONTENT": "Este participante está utilizando una clave de cifrado diferente. No se puede mostrar el vídeo.",
 		"GENERIC": "Se produjo un error inesperado. Inténtalo de nuevo."
 	},
@@ -231,7 +231,7 @@
 		"DISCONNECTED_TITLE": "Desconectado de la reunión",
 		"NETWORK_MESSAGE": "Se perdió la conexión debido a problemas de conectividad de red",
 		"SERVER_SHUTDOWN_MESSAGE": "Se perdió la conexión debido al apagado del servidor",
-		"DUPLICATE_MESSAGE": "Esta sesión se cerró porque te uniste a la misma reunión desde otra pestaña o dispositivo",
+		"DUPLICATE_MESSAGE": "Esta reunión se cerró porque te uniste desde otra pestaña o dispositivo",
 		"UNKNOWN_MESSAGE": "Se produjo un error inesperado, inténtalo de nuevo más tarde",
 		"FOOTER": "Gracias por usar OpenVidu Meet",
 		"BACK": "Atrás",

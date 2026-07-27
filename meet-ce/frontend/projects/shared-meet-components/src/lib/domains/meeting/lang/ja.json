@@ -1,16 +1,16 @@
 {
 	"ROOM": {
-		"JOINING": "ルームに参加しています...",
+		"JOINING": "会議に参加しています...",
 		"LANDSCAPE_WARNING": "より良い体験のために、デバイスを縦向きに回転させてください",
-		"DISCONNECTED": "ルームから退出しました",
-		"DISCONNECTED_SUBTITLE": "セッションが終了しました"
+		"DISCONNECTED": "会議から退出しました",
+		"DISCONNECTED_SUBTITLE": "会議が終了しました"
 	},
 	"PREJOIN": {
-		"NICKNAME": "ニックネーム",
+		"NICKNAME": "表示名",
 		"NO_VIDEO_DEVICE": "ビデオデバイスが見つかりません",
 		"NO_AUDIO_DEVICE": "オーディオデバイスが見つかりません",
 		"JOIN": "会議に参加する",
-		"PREPARING": "ルームの準備中...",
+		"PREPARING": "会議の準備中...",
 		"BACKGROUND": "背景効果"
 	},
 	"TOOLBAR": {
@@ -27,7 +27,7 @@
 		"START_RECORDING": "録画開始",
 		"STOP_RECORDING": "録画の停止",
 		"SETTINGS": "設定",
-		"LEAVE": "ルームを終了する",
+		"LEAVE": "会議から退出する",
 		"PARTICIPANTS": "参加者",
 		"CHAT": "チャット",
 		"ACTIVITIES": "アクティビティ",
@@ -121,15 +121,15 @@
 		}
 	},
 	"ERRORS": {
-		"SESSION": "ルームへの接続にエラーが発生しました",
+		"SESSION": "会議への接続にエラーが発生しました",
 		"CONNECTION": "接続が失われました",
-		"RECONNECT": "ルームへの再接続を試みています",
+		"RECONNECT": "会議への再接続を試みています...",
 		"DISCONNECT": "接続が切断されました",
 		"SIGNAL_CLOSE": "サーバーへの接続が予期せず切断されました",
 		"SERVER_SHUTDOWN": "サーバーは現在ダウンしているか、メンテナンス中です",
-		"PARTICIPANT_REMOVED": "このルームから削除されました",
+		"PARTICIPANT_REMOVED": "この会議から退出させられました",
 		"ROOM_DELETED": "このルームは削除されました",
-		"DUPLICATE_IDENTITY": "ニックネームが他の参加者に割り当てられたため、切断されました",
+		"DUPLICATE_IDENTITY": "表示名が他の参加者に割り当てられたため、切断されました",
 		"TOGGLE_CAMERA": "カメラの切り替えに失敗しました",
 		"TOGGLE_MICROPHONE": "マイクの切り替えに失敗しました",
 		"LOAD_RECORDING_TITLE": "録音の読み込みエラー",
@@ -137,8 +137,8 @@
 		"MEDIA_ERR_NETWORK": "ネットワークエラーにより、ビデオのダウンロードが途中で失敗しました。",
 		"MEDIA_ERR_DECODE": "破損の問題またはビデオがブラウザでサポートされていない機能を使用したために、ビデオの再生が中止されました。",
 		"MEDIA_ERR_SRC_NOT_SUPPORTED": "録画のストリーミングエラー：S3にアクセスできませんでした。",
-		"E2EE_ERROR_TITLE": "ルームパスワードエラー",
-		"E2EE_ERROR_CONTENT": "この参加者は異なるセキュリティキーを使用しています。ビデオを表示できません。",
+		"E2EE_ERROR_TITLE": "暗号化キーエラー",
+		"E2EE_ERROR_CONTENT": "この参加者は異なる暗号化キーを使用しています。ビデオを表示できません。",
 		"GENERIC": "予期しないエラーが発生しました。もう一度お試しください。"
 	},
 	"LOBBY": {
@@ -231,7 +231,7 @@
 		"DISCONNECTED_TITLE": "会議から切断されました",
 		"NETWORK_MESSAGE": "ネットワーク接続の問題により接続が切断されました",
 		"SERVER_SHUTDOWN_MESSAGE": "サーバーのシャットダウンにより接続が切断されました",
-		"DUPLICATE_MESSAGE": "別のタブまたはデバイスから同じ会議に参加したため、このセッションは終了しました",
+		"DUPLICATE_MESSAGE": "別のタブまたはデバイスから参加したため、この会議は終了しました",
 		"UNKNOWN_MESSAGE": "予期しないエラーが発生しました。後でもう一度お試しください",
 		"FOOTER": "OpenVidu Meet をご利用いただきありがとうございます",
 		"BACK": "戻る",
