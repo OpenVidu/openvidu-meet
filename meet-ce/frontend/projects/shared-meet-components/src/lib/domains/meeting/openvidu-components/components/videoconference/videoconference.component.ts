@@ -55,7 +55,6 @@ import type { Room } from '../../services/livekit';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { MediaStorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
-import { OpenViduThemeService } from '../../services/theme/theme.service';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
 import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
@@ -106,7 +105,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly themeService = inject(OpenViduThemeService);
 	readonly templateRegistry = inject(TemplateRegistryService);
 
 	// Constants
@@ -355,7 +353,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	constructor() {
 		this.log = this.loggerSrv.get('VideoconferenceComponent');
 		this.addMaterialIconsIfNeeded();
-		this.themeService.initializeTheme();
 	}
 
 	ngOnDestroy() {

@@ -12,7 +12,7 @@ import { MeetStorageService } from '../../../../../shared/services/storage.servi
  * Service for managing OpenVidu component themes dynamically
  *
  * This service allows you to:
- * - Switch between light, dark and classic themes
+ * - Switch between the light and dark themes
  * - Apply custom theme variables
  * - Listen to theme changes
  * - Integrate with Angular Material themes
@@ -28,7 +28,7 @@ export class OpenViduThemeService {
 	/**
 	 * Signal that emits the current theme mode
 	 */
-	readonly currentTheme = signal<OpenViduThemeMode>(OpenViduThemeMode.Classic);
+	readonly currentTheme = signal<OpenViduThemeMode>(OpenViduThemeMode.Light);
 
 	/**
 	 * Signal that emits the current theme variables
@@ -37,12 +37,11 @@ export class OpenViduThemeService {
 
 	constructor() {}
 
-	initializeTheme(): void {
-		const savedTheme = this.storageService.getTheme();
-		const initialTheme = savedTheme || OpenViduThemeMode.Classic;
-		this.applyTheme(initialTheme);
-		this.currentTheme.set(initialTheme);
-	}
+	// NOTE: there is intentionally no `initializeTheme()` here. Resolving the initial theme
+	// (saved preference → system preference → light) is owned solely by Meet's `ThemeService.init()`,
+	// registered as an app initializer in both the SPA and the webcomponent. A second resolver in
+	// this service used to run later, from the meeting component's constructor, and overrode that
+	// decision with its own fallback.
 
 	getAllThemes(): OpenViduThemeMode[] {
 		return Object.values(OpenViduThemeMode);
@@ -117,16 +116,8 @@ export class OpenViduThemeService {
 	 * Toggles between light and dark themes
 	 */
 	toggleTheme(): void {
-		const currentTheme = this.getCurrentTheme();
-		if (currentTheme === OpenViduThemeMode.Light) {
-			this.setTheme(OpenViduThemeMode.Dark);
-		} else if (currentTheme === OpenViduThemeMode.Dark) {
-			this.setTheme(OpenViduThemeMode.Light);
-		} else {
-			// If auto, switch to opposite of system preference
-			const prefersDark = this.prefersDarkMode();
-			this.setTheme(prefersDark ? OpenViduThemeMode.Light : OpenViduThemeMode.Dark);
-		}
+		const isDark = this.getCurrentTheme() === OpenViduThemeMode.Dark;
+		this.setTheme(isDark ? OpenViduThemeMode.Light : OpenViduThemeMode.Dark);
 	}
 
 	/**
@@ -138,27 +129,11 @@ export class OpenViduThemeService {
 		return getComputedStyle(this.document.documentElement).getPropertyValue(varName).trim();
 	}
 
-	/**
-	 * Checks if the system prefers dark mode
-	 */
-	prefersDarkMode(): boolean {
-		return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-	}
-
 	private applyTheme(theme: OpenViduThemeMode): void {
-		const documentElement = this.document.documentElement;
-		const currentTheme = this.getCurrentTheme();
-		if (theme === OpenViduThemeMode.Classic) {
-			documentElement.removeAttribute(this.THEME_ATTRIBUTE);
-			const currentVariables = this.getDefaultVariablesForTheme(currentTheme);
-			this.removeCSSVariables(currentVariables);
-		} else {
-			documentElement.setAttribute(this.THEME_ATTRIBUTE, theme);
-		}
-
-		// Apply default variables for the theme
-		const defaultVariables = this.getDefaultVariablesForTheme(theme);
-		this.applyCSSVariables(defaultVariables);
+		// Until a theme is applied, `:root:not([data-ov-theme])` in theme.scss follows the system
+		// preference through media queries. From here on the attribute pins the choice explicitly.
+		this.document.documentElement.setAttribute(this.THEME_ATTRIBUTE, theme);
+		this.applyCSSVariables(this.getDefaultVariablesForTheme(theme));
 	}
 
 	private applyCSSVariables(variables: OpenViduThemeVariables): void {
@@ -171,22 +146,7 @@ export class OpenViduThemeService {
 		});
 	}
 
-	private removeCSSVariables(variables: OpenViduThemeVariables): void {
-		const documentElement = this.document.documentElement;
-
-		Object.keys(variables).forEach((property) => {
-			documentElement.style.removeProperty(property);
-		});
-	}
-
 	private getDefaultVariablesForTheme(theme: OpenViduThemeMode): OpenViduThemeVariables {
-		switch (theme) {
-			case OpenViduThemeMode.Light:
-				return OPENVIDU_COMPONENTS_LIGHT_THEME;
-			case OpenViduThemeMode.Dark:
-				return OPENVIDU_COMPONENTS_DARK_THEME;
-			default:
-				return {};
-		}
+		return theme === OpenViduThemeMode.Dark ? OPENVIDU_COMPONENTS_DARK_THEME : OPENVIDU_COMPONENTS_LIGHT_THEME;
 	}
 }

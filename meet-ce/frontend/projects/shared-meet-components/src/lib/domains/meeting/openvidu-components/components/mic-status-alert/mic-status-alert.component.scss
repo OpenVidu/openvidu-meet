@@ -8,7 +8,7 @@
 }
 
 // Theme-aware surface for the popup. Resolves to the active OpenVidu theme's raised-surface
-// colour (dark card in dark/classic themes, light card in the light theme); the fallback keeps
+// colour (dark card in the dark theme, light card in the light theme); the fallback keeps
 // the previous dark look if the variable is ever missing.
 $alert-background: var(--ov-surface-container-color, #3c4043);
 
