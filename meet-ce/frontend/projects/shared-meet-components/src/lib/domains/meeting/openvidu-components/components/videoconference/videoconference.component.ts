@@ -108,8 +108,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	readonly templateRegistry = inject(TemplateRegistryService);
 
 	// Constants
-	private static readonly MATERIAL_ICONS_URL = 'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined';
-	private static readonly MATERIAL_ICONS_SELECTOR = 'link[href*="Material+Symbols+Outlined"]';
 	private static readonly SPINNER_DIAMETER = 50;
 	private static readonly ENTER_ANIMATION_CLASS = 'ov-fade-in-enter';
 
@@ -352,7 +350,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 */
 	constructor() {
 		this.log = this.loggerSrv.get('VideoconferenceComponent');
-		this.addMaterialIconsIfNeeded();
 	}
 
 	ngOnDestroy() {
@@ -437,19 +434,6 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 			this.log.e('Error applying token', error);
 			this.tokenError.set({ name: 'Token error', message: error?.message ?? String(error) });
 			this.phase.set('error');
-		}
-	}
-
-	/**
-	 * @internal
-	 */
-	private addMaterialIconsIfNeeded(): void {
-		const existingLink = document.querySelector(VideoconferenceComponent.MATERIAL_ICONS_SELECTOR);
-		if (!existingLink) {
-			const link = document.createElement('link');
-			link.href = VideoconferenceComponent.MATERIAL_ICONS_URL;
-			link.rel = 'stylesheet';
-			document.head.appendChild(link);
 		}
 	}
 
