@@ -9,17 +9,16 @@
 	}
 	<div id="session-container" [animate.enter]="'ov-fade-in-200'" [animate.leave]="'ov-fade-out-200'">
 		<mat-sidenav-container
-			#container
-			#videoContainer
+			ovSidenavLayout
+			#sidenavLayout="ovSidenavLayout"
 			class="sidenav-container"
-			[hasBackdrop]="sidenavMode() === SidenavMode.OVER"
+			[hasBackdrop]="sidenavLayout.hasBackdrop()"
 		>
 			<mat-sidenav
-				#sidenav
-				[mode]="sidenavMode()"
+				[mode]="sidenavLayout.mode()"
 				position="end"
 				class="sidenav-menu"
-				[class.big]="settingsPanelOpened()"
+				[class.big]="sidenavLayout.isSettingsPanelOpened()"
 				fixedInViewport="true"
 				fixedTopGap="0"
 				fixedBottomGap="0"
