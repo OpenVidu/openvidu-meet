@@ -1,16 +1,20 @@
 import { expect, test } from './fixtures/media-devices.fixture';
 import {
+	MIC_SYSTEM_MUTED_ALERT,
 	assertHasVideoDeviceOption,
 	ensurePrejoinAudioState,
 	ensurePrejoinVideoState,
+	expectMicAlertDoesNotOverlap,
 	expectMicAlertFullyVisible,
 	expectMicAlertPointsAtButton,
 	getVideoDeviceOptions,
 	isPrejoinVideoEnabled,
 	selectVideoDevice,
 	setSystemMicrophoneMuted,
+	setSystemMicrophoneMutedFromStart,
 	startScreensharing,
-	toggleMicrophone
+	toggleMicrophone,
+	waitForElementToStopMoving
 } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting, openPrejoin, reopenPrejoin } from './helpers/meeting-navigation.helper';
@@ -454,6 +458,27 @@ test.describe('Media Devices E2E Tests', () => {
 				await toggleMicrophone(page);
 				await expectMicAlertFullyVisible(page);
 				await expectMicAlertPointsAtButton(page, '#mic-btn');
+			});
+
+			// Joining with the OS mic already muted raises the warning while the prejoin card is
+			// still animating in (it slides up ~20px). The CDK only re-measures the origin on
+			// scroll / viewport resize, so the bubble used to stay at the mid-animation position
+			// and land right on top of the media buttons.
+			test(`prejoin popup is placed correctly when the system mic is muted before load (${vp.name})`, async ({
+				page
+			}) => {
+				await page.setViewportSize(vp.size);
+				await setSystemMicrophoneMutedFromStart(page);
+				await openPrejoin(page, accessUrl);
+
+				await expect(page.locator(MIC_SYSTEM_MUTED_ALERT)).toBeVisible({ timeout: 15_000 });
+				// The bug only shows once the card has finished moving: the popup was placed against
+				// the button's mid-animation position and stayed there.
+				await waitForElementToStopMoving(page, '#microphone-button');
+
+				await expectMicAlertFullyVisible(page, MIC_SYSTEM_MUTED_ALERT);
+				await expectMicAlertPointsAtButton(page, '#microphone-button', MIC_SYSTEM_MUTED_ALERT);
+				await expectMicAlertDoesNotOverlap(page, '.device-controls', MIC_SYSTEM_MUTED_ALERT);
 			});
 		}
 	});

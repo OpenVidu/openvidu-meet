@@ -67,32 +67,48 @@ export const ensurePrejoinAudioState = async (page: Page, enabled: boolean, time
 };
 
 /**
+ * Overrides `MediaStreamTrack.muted` for audio tracks so the app observes the same signal a real
+ * system mute produces. Self-contained on purpose: it is serialized into the page both as an
+ * `evaluate` and as an init script.
+ */
+const forceSystemMutePatch = (isMuted: boolean): void => {
+	const win = window as unknown as Record<string, unknown>;
+
+	if (!win['__e2eSystemMutePatched']) {
+		const nativeMuted = Object.getOwnPropertyDescriptor(MediaStreamTrack.prototype, 'muted');
+		Object.defineProperty(MediaStreamTrack.prototype, 'muted', {
+			configurable: true,
+			get(this: MediaStreamTrack): boolean {
+				if (this.kind === 'audio' && win['__e2eForceSystemMuted']) {
+					return true;
+				}
+
+				return (nativeMuted?.get?.call(this) as boolean) ?? false;
+			}
+		});
+		win['__e2eSystemMutePatched'] = true;
+	}
+
+	win['__e2eForceSystemMuted'] = isMuted;
+};
+
+/**
  * Simulates the microphone being muted at the operating-system level (e.g. the OS input volume
- * set to zero or a hardware mute switch). Overrides `MediaStreamTrack.muted` for audio tracks so
- * the app observes the same signal a real system mute produces. Passing `false` restores the
+ * set to zero or a hardware mute switch) on an already-loaded page. Passing `false` restores the
  * native behavior.
  */
 export const setSystemMicrophoneMuted = async (page: Page, muted: boolean): Promise<void> => {
-	await page.evaluate((isMuted) => {
-		const win = window as unknown as Record<string, unknown>;
+	await page.evaluate(forceSystemMutePatch, muted);
+};
 
-		if (!win['__e2eSystemMutePatched']) {
-			const nativeMuted = Object.getOwnPropertyDescriptor(MediaStreamTrack.prototype, 'muted');
-			Object.defineProperty(MediaStreamTrack.prototype, 'muted', {
-				configurable: true,
-				get(this: MediaStreamTrack): boolean {
-					if (this.kind === 'audio' && win['__e2eForceSystemMuted']) {
-						return true;
-					}
-
-					return (nativeMuted?.get?.call(this) as boolean) ?? false;
-				}
-			});
-			win['__e2eSystemMutePatched'] = true;
-		}
-
-		win['__e2eForceSystemMuted'] = isMuted;
-	}, muted);
+/**
+ * Same simulation, but installed before any navigation, so the very first microphone track the app
+ * acquires already reads as system-muted. That is the real-world case of joining with the OS mic
+ * muted: the warning is raised while the prejoin card is still animating in, which used to leave
+ * the popup at a stale position on top of the media buttons.
+ */
+export const setSystemMicrophoneMutedFromStart = async (page: Page): Promise<void> => {
+	await page.addInitScript(forceSystemMutePatch, true);
 };
 
 // ─── In-meeting media toggles ───────────────────────────────────────────────
@@ -371,17 +387,21 @@ export const selectVideoDevice = async (page: Page, label: string): Promise<void
 	await option.click();
 };
 
-// ─── Mic status alert (talking-while-muted popup) ───────────────────────────
+// ─── Mic status alert popups ────────────────────────────────────────────────
 
-const MIC_MUTED_SPEAKING_ALERT = '#mic-muted-speaking-alert';
+export const MIC_MUTED_SPEAKING_ALERT = '#mic-muted-speaking-alert';
+export const MIC_SYSTEM_MUTED_ALERT = '#mic-system-muted-alert';
 
 /**
- * Asserts the "talking while muted" popup is visible, fully inside the viewport, and not covered by
- * another element. Guards the mobile regressions where it was clipped by the prejoin controls or
- * hidden behind the meeting layout.
+ * Asserts a mic status popup is visible, fully inside the viewport, and not covered by another
+ * element. Guards the mobile regressions where it was clipped by the prejoin controls or hidden
+ * behind the meeting layout.
  */
-export const expectMicAlertFullyVisible = async (page: Page): Promise<void> => {
-	const locator = page.locator(MIC_MUTED_SPEAKING_ALERT);
+export const expectMicAlertFullyVisible = async (
+	page: Page,
+	alertSelector: string = MIC_MUTED_SPEAKING_ALERT
+): Promise<void> => {
+	const locator = page.locator(alertSelector);
 	await expect(locator).toBeVisible({ timeout: 15_000 });
 
 	const box = (await locator.boundingBox())!;
@@ -399,7 +419,7 @@ export const expectMicAlertFullyVisible = async (page: Page): Promise<void> => {
 		const r = el.getBoundingClientRect();
 		const top = document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2);
 		return !!top && (el === top || el.contains(top));
-	}, MIC_MUTED_SPEAKING_ALERT);
+	}, alertSelector);
 	expect(notCovered).toBe(true);
 };
 
@@ -407,7 +427,11 @@ export const expectMicAlertFullyVisible = async (page: Page): Promise<void> => {
  * Asserts the popup's pointer tip sits horizontally over the given mic button's center (within a
  * button's width), i.e. it points at the button rather than a random toolbar spot.
  */
-export const expectMicAlertPointsAtButton = async (page: Page, buttonSelector: string): Promise<void> => {
+export const expectMicAlertPointsAtButton = async (
+	page: Page,
+	buttonSelector: string,
+	alertSelector: string = MIC_MUTED_SPEAKING_ALERT
+): Promise<void> => {
 	const delta = await page.evaluate(
 		({ alertSel, buttonSel }) => {
 			const arrow = document.querySelector(`${alertSel} .alert-pointer`) as HTMLElement | null;
@@ -419,10 +443,60 @@ export const expectMicAlertPointsAtButton = async (page: Page, buttonSelector: s
 			const b = button.getBoundingClientRect();
 			return Math.abs(a.x + a.width / 2 - (b.x + b.width / 2));
 		},
-		{ alertSel: MIC_MUTED_SPEAKING_ALERT, buttonSel: buttonSelector }
+		{ alertSel: alertSelector, buttonSel: buttonSelector }
 	);
 	expect(delta).not.toBeNull();
 	// The pointer should land within the button (buttons are ~48px wide); the pre-fix bug was off
 	// by 70px+.
 	expect(delta!).toBeLessThanOrEqual(24);
+};
+
+/**
+ * Waits until an element's position is stable across two consecutive samples. The prejoin card
+ * animates in on mount, so geometry assertions taken right after the popup appears would measure a
+ * mid-animation layout and miss a stale placement.
+ */
+export const waitForElementToStopMoving = async (page: Page, selector: string): Promise<void> => {
+	let previous: number | undefined;
+
+	await expect
+		.poll(
+			async () => {
+				const current = await page.evaluate((sel) => {
+					const el = document.querySelector(sel) as HTMLElement | null;
+					return el ? Math.round(el.getBoundingClientRect().top) : null;
+				}, selector);
+				const stable = current !== null && current === previous;
+				previous = current ?? undefined;
+				return stable;
+			},
+			{ intervals: [150, 150, 150, 150, 300, 300], timeout: 5_000 }
+		)
+		.toBe(true);
+};
+
+/**
+ * Asserts the popup's box does not intersect the given element's box, i.e. it sits next to the
+ * anchor instead of on top of it. The regression this guards is the popup landing over the media
+ * buttons because it was placed against a stale position of the mic button.
+ */
+export const expectMicAlertDoesNotOverlap = async (
+	page: Page,
+	elementSelector: string,
+	alertSelector: string = MIC_MUTED_SPEAKING_ALERT
+): Promise<void> => {
+	const overlap = await page.evaluate(
+		({ alertSel, elementSel }) => {
+			const alert = document.querySelector(alertSel) as HTMLElement | null;
+			const element = document.querySelector(elementSel) as HTMLElement | null;
+
+			if (!alert || !element) return null;
+
+			const a = alert.getBoundingClientRect();
+			const e = element.getBoundingClientRect();
+			return !(a.right <= e.left || e.right <= a.left || a.bottom <= e.top || e.bottom <= a.top);
+		},
+		{ alertSel: alertSelector, elementSel: elementSelector }
+	);
+	expect(overlap).toBe(false);
 };

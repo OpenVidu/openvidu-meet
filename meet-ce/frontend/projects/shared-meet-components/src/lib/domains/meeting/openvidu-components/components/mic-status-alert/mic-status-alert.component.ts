@@ -81,6 +81,8 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 
 	private overlayRef?: OverlayRef;
 	private bubbleResizeObserver?: ResizeObserver;
+	private originTrackerId?: number;
+	private lastOriginRect?: DOMRect;
 	private viewReady = false;
 
 	constructor() {
@@ -127,8 +129,7 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 	}
 
 	ngOnDestroy(): void {
-		this.bubbleResizeObserver?.disconnect();
-		this.bubbleResizeObserver = undefined;
+		this.stopTracking();
 		this.overlayRef?.dispose();
 		this.overlayRef = undefined;
 	}
@@ -177,6 +178,7 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 			// dimensions — and again if the content height changes — which is when we can aim the
 			// pointer. positionChanges above handles later repositions (scroll / viewport resize).
 			this.observeBubbleSize();
+			this.trackOriginPosition();
 		}
 	}
 
@@ -185,13 +187,63 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 			return;
 		}
 		this.bubbleResizeObserver?.disconnect();
-		this.bubbleResizeObserver = new ResizeObserver(() => this.syncArrow());
+		this.bubbleResizeObserver = new ResizeObserver(() => {
+			// The bubble growing (async render, text wrapping) changes where its anchored edge
+			// should sit, so re-run the placement before re-aiming the pointer.
+			this.overlayRef?.updatePosition();
+			this.syncArrow();
+		});
 		this.bubbleResizeObserver.observe(this.overlayRef.overlayElement);
 	}
 
-	private hideOverlay(): void {
+	/**
+	 * Keeps the bubble glued to the mic button while the page moves underneath it.
+	 */
+	private trackOriginPosition(): void {
+		if (this.originTrackerId !== undefined || typeof requestAnimationFrame === 'undefined') {
+			return;
+		}
+
+		const tick = () => {
+			if (!this.overlayRef?.hasAttached()) {
+				this.originTrackerId = undefined;
+				return;
+			}
+
+			const rect = this.resolveOrigin().getBoundingClientRect();
+			const previous = this.lastOriginRect;
+			const moved =
+				!previous ||
+				previous.top !== rect.top ||
+				previous.left !== rect.left ||
+				previous.width !== rect.width ||
+				previous.height !== rect.height;
+
+			if (moved) {
+				this.lastOriginRect = rect;
+				this.overlayRef.updatePosition();
+				this.syncArrow();
+			}
+
+			this.originTrackerId = requestAnimationFrame(tick);
+		};
+
+		this.originTrackerId = requestAnimationFrame(tick);
+	}
+
+	private stopTracking(): void {
 		this.bubbleResizeObserver?.disconnect();
 		this.bubbleResizeObserver = undefined;
+
+		if (this.originTrackerId !== undefined) {
+			cancelAnimationFrame(this.originTrackerId);
+			this.originTrackerId = undefined;
+		}
+		this.lastOriginRect = undefined;
+	}
+
+	private hideOverlay(): void {
+		this.stopTracking();
 		if (this.overlayRef?.hasAttached()) {
 			this.overlayRef.detach();
 		}
