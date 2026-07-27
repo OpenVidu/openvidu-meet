@@ -1,6 +1,10 @@
 # OpenVidu Meet
 
-OpenVidu Meet is a fully featured video conferencing application built with Angular, Node.js, and LiveKit. This repository provides both a Community Edition (CE) and a Professional Edition (PRO) with advanced features.
+OpenVidu Meet is a fully featured, self-hosted video conferencing application built with Angular, Node.js and [LiveKit](https://livekit.io/). It ships as part of an OpenVidu deployment and provides user accounts and login, granular roles and per-room permissions, room management, recordings, analytics and webhooks.
+
+It can also be **embedded** into third-party web applications — either as the `<openvidu-meet>` web component or inside an `<iframe>` — so the host application can build its own business layer on top of the meeting.
+
+This repository contains the **Community Edition (CE)**. The **Professional Edition (PRO)** lives in a separate private repository and extends CE rather than forking it.
 
 # Table of Contents
 
@@ -10,6 +14,7 @@ OpenVidu Meet is a fully featured video conferencing application built with Angu
 4. [Development](#development)
     - [Development Mode](#development-mode)
     - [Manual Development Setup](#manual-development-setup)
+    - [Environment Configuration](#environment-configuration)
 5. [Building](#building)
 6. [Testing](#testing)
 7. [Documentation](#documentation)
@@ -19,39 +24,46 @@ OpenVidu Meet is a fully featured video conferencing application built with Angu
 
 ## Architecture Overview
 
-The OpenVidu Meet application is a monorepo managed with **pnpm workspaces** and consists of multiple interconnected packages:
+OpenVidu Meet is a monorepo managed with **pnpm workspaces**:
 
 [![OpenVidu Meet CE Architecture Overview](docs/openvidu-meet-ce-architecture.png)](/docs/openvidu-meet-ce-architecture.png)
 
-### Core Components
+| Package                                              | Workspace name                     | Role |
+| ---------------------------------------------------- | ---------------------------------- | ---- |
+| `meet-ce/typings`                                     | `@openvidu-meet/typings`           | TypeScript contracts shared by backend, frontend and embedding API |
+| `meet-ce/backend`                                     | `@openvidu-meet/backend`           | Node.js + Express REST API; also serves the built frontend and the web component bundle |
+| `meet-ce/frontend`                                    | `@openvidu-meet/frontend`          | Angular application shell |
+| `meet-ce/frontend/projects/shared-meet-components`    | `@openvidu-meet/shared-components` | Angular library holding **all** UI logic, organized by domain |
+| `meet-ce/frontend/webcomponent`                        | `@openvidu-meet/webcomponent`      | The `<openvidu-meet>` custom element (Angular Elements) |
+| `testapp`                                             | `@openvidu-meet/testapp`           | Host application used to validate the web component and iframe integrations |
 
-- **Frontend** (`frontend/`): Angular 20 application providing the user interface
-    - **shared-meet-components**: Reusable Angular library with shared components for administration and preferences
+Two design decisions are worth knowing up front:
 
-- **Backend** (`backend/`): Node.js/TypeScript REST API server
-    - Manages rooms, participants, recordings, and authentication
-    - Serves the compiled frontend in production
+- **All application logic lives in the `shared-meet-components` library**, not in the application shell. This lets the PRO edition override or extend components instead of duplicating them.
+- **The backend serves everything in production.** The frontend build writes into `meet-ce/backend/public/frontend`, and the web component bundle is deployed into `meet-ce/backend/public/webcomponent`. There is no separate web server.
 
-- **Typings** (`typings/`): Shared TypeScript type definitions used across frontend and backend
-
-- **Webcomponent** (`frontend/webcomponent/`): Standalone web component version of OpenVidu Meet
-
-- **TestApp** (`testapp/`): Angular application for testing and validating the embedding integrations (web component and iframe)
+The REST API is described with OpenAPI 3.1 and split in two: a **public API** (`/api/v1`, documented and backwards-compatible) and an **internal API** (`/internal-api/v1`, consumed by our own frontend, no compatibility promise).
 
 ## Prerequisites
 
-Before starting, ensure you have the following installed:
+- **Node.js** `24.15.0` or later (Angular 22 requires `^22.22.3 || ^24.15.0 || >=26`). CI and the Docker image both pin `24.15.0`.
+- **pnpm** — CI and the Docker image pin `11.8.0`; `./meet.sh` offers to install it globally if it is missing.
+- **Backing services**: OpenVidu Meet needs **LiveKit**, **MongoDB**, **Redis** and an **S3-compatible object store** (or Azure Blob Storage / Google Cloud Storage). It refuses to start without MongoDB.
 
-- **Node.js**: Version 22 or higher
-- **pnpm**: Package manager (will be installed automatically by meet.sh if missing)
-- **LiveKit**: For local testing (optional)
-    ```bash
-    curl -sSL https://get.livekit.io/cli | bash
-    ```
+The simplest way to get all of them locally is the [OpenVidu local deployment](https://github.com/OpenVidu/openvidu-local-deployment), which is also what CI uses. The default values in [meet-ce/backend/src/environment.ts](meet-ce/backend/src/environment.ts) already match it, so no configuration is needed:
+
+| Service         | Default endpoint         |
+| --------------- | ------------------------ |
+| LiveKit         | `ws://localhost:7880` (`devkey` / `secret`) |
+| MongoDB         | `localhost:27017`        |
+| Redis           | `localhost:6379`         |
+| S3 (MinIO)      | `http://localhost:9000`  |
+
+> [!TIP]
+> When running the OpenVidu local deployment alongside this repository, disable its bundled
+> `openvidu-meet` container so your local build is the one being used.
 
 ## Getting Started
-
-### Clone and Setup
 
 ```bash
 # Clone the repository
@@ -62,38 +74,39 @@ cd openvidu-meet
 ./meet.sh dev
 ```
 
-Then, the application will be available at [http://localhost:6080](http://localhost:6080).
+The application is then available at [http://localhost:6080/meet](http://localhost:6080/meet), and the REST API documentation at [http://localhost:6080/meet/api/v1/docs](http://localhost:6080/meet/api/v1/docs).
+
+Log in with the initial administrator account, `admin` / `admin` (override with `MEET_INITIAL_ADMIN_USER` and `MEET_INITIAL_ADMIN_PASSWORD`).
 
 ## Development
 
 ### Development Mode
 
-The recommended way to develop is using the integrated development mode that watches all components:
+The recommended way to develop is the integrated development mode, which runs all watchers concurrently:
 
 ```bash
 ./meet.sh dev
 ```
 
-This command starts concurrent watchers for:
+It starts:
 
-- **Typings**: Shared type definitions with automatic sync
-- **Shared Meet Components**: Angular library with hot reload
-- **Backend**: Node.js server with auto-restart (ignores public folder)
-- **Frontend**: Angular application (watch build)
-- **REST API Docs**: OpenAPI documentation generation
+- **Typings** — `tsc --watch` over the shared type definitions
+- **Shared Meet Components** — the Angular library, watch build
+- **Backend** — Node.js server with auto-restart and a parallel type-checker
+- **Frontend** — Angular watch build, output written straight into the backend's `public/frontend`
+- **REST API docs** — regenerated from the OpenAPI specs on change
 
 Optional flags:
-- `--testapp`: Include testapp watcher
-- `--webcomponent`: Include webcomponent watcher
 
-> [!NOTE]
-> The backend uses `backend/.env.development` for environment variables during development. Configure your LiveKit credentials there:
->
-> ```env
-> LIVEKIT_URL=ws://localhost:7880
-> LIVEKIT_API_KEY=your-api-key
-> LIVEKIT_API_SECRET=your-api-secret
-> ```
+- `--testapp` — also start the testapp UI on `:5080` and the webhook bridge on `:5081`
+- `--webcomponent` — also start the web component bundle watcher
+
+> [!IMPORTANT]
+> The typings watcher publishes a `dist/typings-ready.flag` that every other watcher waits on, and it
+> restarts them whenever the contracts change. If the backend or frontend watcher looks stuck, check
+> the typings watcher output first — a type error there blocks the rest by design.
+
+If a `meet-pro/` checkout is present, `./meet.sh dev` first asks whether to run the CE or the PRO edition.
 
 ### Manual Development Setup
 
@@ -103,135 +116,146 @@ If you prefer more granular control:
 # Install dependencies
 ./meet.sh install
 
-# Build shared typings (required first)
+# Build shared typings first (required — they emit runtime JavaScript)
 ./meet.sh build-typings
 
 # In separate terminals:
 # Terminal 1 - Backend
-cd backend
-pnpm run start:dev
+cd meet-ce/backend && pnpm run start:dev
 
 # Terminal 2 - Frontend
-cd frontend
-pnpm run dev
+cd meet-ce/frontend && pnpm run dev
 
 # Terminal 3 - Typings watcher (optional)
-cd typings
-pnpm run dev
+cd meet-ce/typings && pnpm run dev
 ```
 
-> [!IMPORTANT]
-> **Shared Typings**: The `typings/` package contains types shared between frontend and backend. When you modify these types in development mode, they are automatically synced to both projects. Always build typings before building other components.
+### Environment Configuration
+
+The backend loads its environment file based on `NODE_ENV`, relative to `meet-ce/backend/`:
+
+| `NODE_ENV`             | File        |
+| ---------------------- | ----------- |
+| `development`          | `.env.dev`  |
+| `test` / `ci`          | `.env.test` |
+| `production`           | process environment only |
+
+Set `MEET_CONFIG_DIR` to point at a custom file instead. Most variables are `MEET_*`-prefixed; the LiveKit ones are not:
+
+```env
+LIVEKIT_URL=ws://localhost:7880
+LIVEKIT_API_KEY=devkey
+LIVEKIT_API_SECRET=secret
+```
+
+For the complete list, see [meet-ce/backend/src/environment.ts](meet-ce/backend/src/environment.ts).
 
 ## Building
 
-Build all components in the correct order:
+Build all components in the correct order (typings → backend → library → frontend → web component):
 
 ```bash
-# Build everything (typings → frontend → backend → webcomponent)
 ./meet.sh build
 
 # Or build individual components:
-./meet.sh build-typings          # Build shared types
-./meet.sh build-webcomponent     # Build web component only
-./meet.sh build-testapp          # Build test application
+./meet.sh build-typings          # shared contracts
+./meet.sh build-webcomponent     # web component bundle (deployed into the backend)
+./meet.sh build-testapp          # test application
 ```
 
 ### CI/CD Optimized Builds
 
-The `meet.sh` script supports flags to optimize CI/CD pipelines:
+`meet.sh` accepts flags to skip work already done earlier in a pipeline:
 
 ```bash
-# Install dependencies once
 ./meet.sh install
-
-# Build typings once
 ./meet.sh build-typings
-
-# Build webcomponent (skip already completed steps)
 ./meet.sh build-webcomponent --skip-install --skip-typings
-
-# Run tests without reinstalling
 ./meet.sh test-unit-webcomponent --skip-install
 ```
 
-**Available flags:**
-
-- `--skip-install`: Skip dependency installation
-- `--skip-build`: Skip build steps
-- `--skip-typings`: Skip typings build (use when already built)
+**Available flags:** `--skip-install`, `--skip-build`, `--skip-typings`, `--base-href <path>`.
 
 ## Testing
 
-OpenVidu Meet includes comprehensive testing capabilities:
-
 ### Unit Tests
 
-```bash
-# Backend unit tests
-./meet.sh test-unit-backend
-
-# Webcomponent unit tests
-./meet.sh test-unit-webcomponent
-```
-
-### End-to-End Tests
+These run without any backing services:
 
 ```bash
-# Run E2E tests for webcomponent (installs Playwright automatically)
-./meet.sh test-e2e-webcomponent
-
-# Force reinstall Playwright browsers
-./meet.sh test-e2e-webcomponent --force-install
+./meet.sh test-unit-backend        # Jest
+./meet.sh test-unit-frontend       # Karma + Jasmine (shared-meet-components)
+./meet.sh test-unit-webcomponent   # Jest
 ```
+
+### Linting
+
+Both projects fail on any warning:
+
+```bash
+./meet.sh lint-backend
+./meet.sh lint-frontend
+```
+
+### Integration and End-to-End Tests
+
+```bash
+# Backend integration tests (grouped so they can be sharded in CI)
+pnpm run test:integration-backend-room-management
+pnpm run test:integration-backend-auth-security
+pnpm run test:integration-backend-recordings
+# ... see package.json for the full list
+
+# Playwright suites
+./meet.sh test-e2e-frontend        # SPA + web component projects
+./meet.sh test-e2e-webcomponent    # web component project only
+```
+
+> [!NOTE]
+> Integration and E2E tests exercise real infrastructure (LiveKit, MongoDB, Redis, object storage) and,
+> for the embedding suites, a running testapp. They cannot pass against a bare checkout — bring the
+> environment up first. Playwright browsers are installed automatically; add `--force-install-browsers`
+> to reinstall them or `--skip-install-browsers` to skip that step.
 
 ### TestApp
 
-The repository includes a dedicated testing application for manual testing:
+A dedicated application for manually exercising the embedding integrations:
 
 ```bash
-# Build and start the test application
 ./meet.sh start-testapp
 ```
 
-The test app will be available at [http://localhost:5080](http://localhost:5080)
-
-> [!NOTE]
-> The TestApp requires LiveKit CLI to be installed and configured for full functionality.
+Available at [http://localhost:5080](http://localhost:5080), with the webhook bridge on `:5081`.
 
 ## Documentation
 
-### Generate Documentation
-
 ```bash
-# Generate webcomponent documentation
+# Embedding API reference (attributes, commands, events)
 ./meet.sh build-webcomponent-doc [output_dir]
 
-# Generate REST API documentation
+# REST API reference (public + internal)
 ./meet.sh build-rest-api-doc [output_dir]
 ```
 
-Documentation files will be generated in:
+Output locations:
 
-- **Webcomponent**: `docs/webcomponent-*.md` (events, commands, attributes)
-- **REST API**: `meet-ce/backend/public/openapi/public.html`
+- **Embedding API**: `docs/webcomponent/{attributes,commands,events}.md`, generated from the documented enums in `meet-ce/typings/src/embedded/`. Passing `output_dir` moves them there instead.
+- **REST API**: `meet-ce/backend/public/openapi/public.html` and `internal.html`.
 
-If you specify an output directory, the documentation will be copied there.
+Both are generated artifacts — edit the sources (the typings enums, the YAML under `meet-ce/backend/openapi/`), never the output.
 
 ## Production Deployment
 
 ### Using Docker
 
-Build and run the production container:
-
 ```bash
-# Build the Docker image (using meet.sh)
+# Build the image
 ./meet.sh build-docker openvidu-meet-ce
 
-# Build Docker image for demos (different BASE_HREF)
+# Build a demo image (different base href)
 ./meet.sh build-docker openvidu-meet-ce --demos
 
-# Run the container
+# Run it
 docker run \
   -e LIVEKIT_URL=<your-livekit-url> \
   -e LIVEKIT_API_KEY=<your-livekit-api-key> \
@@ -240,118 +264,122 @@ docker run \
   openvidu-meet-ce
 ```
 
+The three LiveKit variables are mandatory unless `MEET_CONFIG_DIR` provides a configuration file; the container refuses to start without them. MongoDB, Redis and object storage must also be reachable.
+
 ### Manual Production Start
 
 ```bash
-# Build all components
 ./meet.sh build
-
-# Start in production mode
-./meet.sh start --prod
-
-# Or start in CI mode
-./meet.sh start --ci
+./meet.sh start --prod     # or: ./meet.sh start --ci
 ```
 
-### Environment Variables
+### Key Environment Variables
 
-Configure your production environment using these key variables:
+| Variable | Purpose |
+| -------- | ------- |
+| `LIVEKIT_URL`, `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` | LiveKit connection (required) |
+| `SERVER_PORT` | Backend port (default `6080`) |
+| `MEET_BASE_PATH` | Path Meet is mounted under (default `/meet`) |
+| `MEET_INITIAL_ADMIN_USER`, `MEET_INITIAL_ADMIN_PASSWORD` | Bootstrap administrator account |
+| `MEET_INITIAL_API_KEY` | Bootstrap API key for the public REST API |
+| `MEET_MONGO_*`, `MEET_REDIS_*` | Database and Redis connection |
+| `MEET_BLOB_STORAGE_MODE` | `s3` (default), `abs` or `gcs`, plus the matching provider variables |
+| `NODE_ENV` | `development`, `ci` or `production` |
 
-- `LIVEKIT_URL`: WebSocket URL for LiveKit server
-- `LIVEKIT_API_KEY`: LiveKit API key
-- `LIVEKIT_API_SECRET`: LiveKit API secret
-- `SERVER_PORT`: Backend server port (default: 6080)
-- `NODE_ENV`: Environment mode (`development`, `production`, `ci`)
-
-For a complete list of environment variables, see [backend/src/environment.ts](backend/src/environment.ts).
+The full list, with defaults, is in [meet-ce/backend/src/environment.ts](meet-ce/backend/src/environment.ts).
 
 ## Project Structure
 
 ```
 openvidu-meet/
-├── meet.sh                          # Main build and development script
-├── pnpm-workspace.yaml              # pnpm workspace configuration
-├── package.json                     # Root package with scripts
+├── meet.sh                             # Main build, development and test script
+├── pnpm-workspace.yaml                 # pnpm workspace configuration
+├── CLAUDE.md                           # Architecture notes for AI coding agents
 │
-├── typings/                         # Shared TypeScript definitions
-│   ├── src/
-│   │   ├── api-key.ts
-│   │   ├── auth-config.ts
-│   │   ├── room.ts
-│   │   └── ...
-│   └── package.json
+├── meet-ce/                            # Community Edition
+│   ├── typings/                        # Shared TypeScript contracts
+│   │   └── src/
+│   │       ├── database/               # Domain entities (room, user, recording, ...)
+│   │       ├── request/ response/      # REST API shapes
+│   │       └── embedded/               # Public embedding API (attributes, commands, events)
+│   │
+│   ├── backend/
+│   │   ├── src/
+│   │   │   ├── routes/                 # Route definitions (public + internal)
+│   │   │   ├── middlewares/            # Auth, validation, rate limiting, error handling
+│   │   │   ├── controllers/            # Thin HTTP layer
+│   │   │   ├── services/               # Business logic (incl. storage providers)
+│   │   │   ├── repositories/           # MongoDB access
+│   │   │   ├── models/                 # Zod + Mongoose schemas, errors, tokens
+│   │   │   ├── migrations/             # MongoDB schema migrations
+│   │   │   └── environment.ts          # Environment configuration
+│   │   ├── openapi/                    # OpenAPI 3.1 specifications
+│   │   ├── tests/                      # unit/ and integration/
+│   │   └── public/                     # Generated: built frontend + web component bundle
+│   │
+│   ├── frontend/
+│   │   ├── src/                        # Application shell (thin)
+│   │   ├── projects/
+│   │   │   └── shared-meet-components/ # Angular library — all UI logic, by domain
+│   │   │       └── src/lib/
+│   │   │           ├── domains/        # auth, console, rooms, room-members, users,
+│   │   │           │                   #   recordings, meeting, embedded
+│   │   │           └── shared/         # Cross-domain services, guards, models, i18n
+│   │   ├── webcomponent/               # <openvidu-meet> custom element
+│   │   └── e2e/                        # Playwright specs (SPA)
+│   │
+│   └── docker/                         # Dockerfile + entrypoint
 │
-├── frontend/                       # Angular frontend application
-│   ├── src/                        # Main application source
-│   ├── projects/
-│   │   └── shared-meet-components/ # Reusable Angular library
-│   └── webcomponent/               # Web component build
-│       └── testapp/                # Web component testing application
-│
-├── backend/                        # Node.js/Express backend
-│   ├── src/
-│   │   ├── config/                 # Configuration files
-│   │   ├── controllers/            # REST API controllers
-│   │   ├── helpers/                # Helper functions
-│   │   ├── middleware/             # Express middleware
-│   │   ├── migrations/             # Database migration scripts
-│   │   ├── models/                 # Domain models
-│   │   ├── repositories/           # Database interaction
-│   │   ├── routes/                 # API route definitions
-│   │   ├── services/               # Business logic
-│   │   ├── utils/                  # Utility functions
-│   │   └── environment.ts          # Environment configuration
-│   ├── openapi/                    # OpenAPI specifications
-│   └── public/                     # Static files (includes built frontend)
-│
-├── docker/                         # Docker build files
-│   └── create_image.sh
-│
-├── docs/                           # Generated documentation
-├── scripts/                        # Build and utility scripts
-└── openvidu-meet-pro/              # Professional Edition (separate license)
+├── testapp/                            # Embedding test application
+├── scripts/                            # Dev watchers and doc generators
+├── docs/                               # Architecture diagram + generated docs
+└── webhooks-snippets/                  # Webhook receiver examples in several languages
 ```
+
+The `typings`, `backend`, `frontend` and `webcomponent` packages each contain a `CLAUDE.md` documenting their architecture, conventions and pitfalls in more depth. They are written for AI coding agents, but are useful to new contributors too.
 
 ## Using the meet.sh Script
 
-The `meet.sh` script is the main entry point for all development and build tasks:
-
-### Command Reference
+`./meet.sh` is the entry point for all development, build and test tasks. Run `./meet.sh help` for the authoritative list.
 
 ```bash
-# Help
-./meet.sh help
-
 # Installation
-./meet.sh install                    # Install all dependencies
+./meet.sh install                       # Install all dependencies
 
 # Building
-./meet.sh build                      # Build all components
-./meet.sh build-typings              # Build shared types only
-./meet.sh build-webcomponent         # Build webcomponent only
-./meet.sh build-testapp              # Build test application
+./meet.sh build                         # Build all components in order
+./meet.sh build-typings                 # Shared contracts only
+./meet.sh build-webcomponent            # Web component bundle only
+./meet.sh build-testapp                 # Test application
 
 # Development
-./meet.sh dev                        # Start development mode with watchers (default)
-./meet.sh dev --testapp              # Include testapp watcher
-./meet.sh dev --webcomponent       # Include webcomponent watcher
+./meet.sh dev                           # Start all watchers
+./meet.sh dev --testapp                 # + testapp (:5080) and webhook bridge (:5081)
+./meet.sh dev --webcomponent            # + web component watcher
 
-# Testing
-./meet.sh test-unit-backend          # Run backend unit tests
-./meet.sh test-unit-webcomponent     # Run webcomponent unit tests
-./meet.sh test-e2e-webcomponent      # Run webcomponent E2E tests
+# Testing and linting
+./meet.sh test-unit-backend
+./meet.sh test-unit-frontend
+./meet.sh test-unit-webcomponent
+./meet.sh test-e2e-frontend
+./meet.sh test-e2e-webcomponent
+./meet.sh lint-backend
+./meet.sh lint-frontend
 
 # Running
-./meet.sh start --prod               # Start in production mode
-./meet.sh start --ci                 # Start in CI mode
-./meet.sh start-testapp              # Start test application
+./meet.sh start --prod                  # Production mode
+./meet.sh start --ci                    # CI mode
+./meet.sh start-testapp                 # Test application only
 
 # Documentation
-./meet.sh build-webcomponent-doc [dir]  # Generate webcomponent docs
-./meet.sh build-rest-api-doc [dir]      # Generate REST API docs
+./meet.sh build-webcomponent-doc [dir]
+./meet.sh build-rest-api-doc [dir]
 
 # Docker
-./meet.sh build-docker <image-name> [--demos]  # Build Docker image
+./meet.sh build-docker <image-name> [--demos]
+
+# Professional Edition (requires access to the private repository)
+./meet.sh clone-pro
 ```
 
 ### Examples
@@ -367,35 +395,33 @@ The `meet.sh` script is the main entry point for all development and build tasks
 ./meet.sh build-webcomponent --skip-install --skip-typings
 ./meet.sh test-unit-webcomponent --skip-install
 
-# Production build and deploy
+# Production build and run
 ./meet.sh build
 ./meet.sh start --prod
-
-# Build Docker image
-./meet.sh build-docker openvidu-meet-ce
-
-# Build Docker image for demos
-./meet.sh build-docker openvidu-meet-ce --demos
 ```
 
 ## Technologies
 
-- **Frontend**: Angular 20, Material Design, TypeScript
-- **Backend**: Node.js, Express, TypeScript
+- **Frontend**: Angular 22 (standalone, zoneless, signals), Angular Material, TypeScript 6
+- **Web Component**: Angular Elements, shadow DOM, lazy-loaded bundle
+- **Backend**: Node.js, Express 5, TypeScript 6, InversifyJS, Zod, Mongoose, Winston
+- **Data**: MongoDB, Redis, S3 / Azure Blob Storage / Google Cloud Storage
 - **WebRTC Infrastructure**: LiveKit
 - **Package Manager**: pnpm (workspaces)
-- **Build Tools**: Angular CLI, TypeScript Compiler, Rollup (webcomponent)
-- **Testing**: Jest (unit), Playwright (E2E), Mocha
-- **Documentation**: OpenAPI/Swagger, Custom generators
+- **Build Tools**: Angular CLI, ng-packagr, TypeScript Compiler, esbuild
+- **Testing**: Jest (backend and web component unit), Karma + Jasmine (library unit), Playwright (E2E)
+- **Documentation**: OpenAPI 3.1 / Redocly, custom generators
 
 ## Contributing
 
-Contributions are welcome! Please ensure that:
+Contributions are welcome. Before opening a pull request, please make sure that:
 
-1. All tests pass: `./meet.sh test-unit-backend && ./meet.sh test-unit-webcomponent`
-2. Code is properly formatted
-3. TypeScript types are correctly defined in `typings/`
-4. Documentation is updated as needed
+1. Unit tests pass: `./meet.sh test-unit-backend && ./meet.sh test-unit-frontend && ./meet.sh test-unit-webcomponent`
+2. Linting is clean: `./meet.sh lint-backend && ./meet.sh lint-frontend`
+3. Code is formatted with Prettier (tabs, width 4, print width 120 — see `.prettierrc`)
+4. Shared types are declared in `meet-ce/typings/` and documented with TSDoc
+5. New or changed endpoints are reflected in the OpenAPI specs under `meet-ce/backend/openapi/`
+6. Documentation is updated as needed
 
 ## License
 
