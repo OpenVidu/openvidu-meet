@@ -16,7 +16,7 @@ import {
 	PutObjectCommand,
 	S3Client
 } from '@aws-sdk/client-s3';
-import type { SmithyResolvedConfiguration } from '@smithy/smithy-client';
+import type { SmithyResolvedConfiguration } from '@smithy/core/client';
 import type { Command, HttpHandlerOptions } from '@smithy/types';
 import { inject, injectable } from 'inversify';
 import type { Readable } from 'stream';

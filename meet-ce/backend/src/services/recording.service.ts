@@ -9,7 +9,7 @@ import type {
 } from '@openvidu-meet/typings';
 import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { Archiver } from 'archiver';
-import archiver from 'archiver';
+import { ZipArchive } from 'archiver';
 import { inject, injectable } from 'inversify';
 import type { RoomCompositeOptions } from 'livekit-server-sdk';
 import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
@@ -444,7 +444,7 @@ export class RecordingService {
 	 * @returns An Archiver instance already populated with recordings.
 	 */
 	async createRecordingsZipArchive(recordingIds: string[]): Promise<Archiver> {
-		const archive = archiver('zip', { zlib: { level: 0 } });
+		const archive = new ZipArchive({ zlib: { level: 0 } });
 		const concurrency = INTERNAL_CONFIG.CONCURRENCY_BULK_RETRIEVE_RECORDINGS;
 
 		const settledResults = await runConcurrently(

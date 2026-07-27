@@ -17,7 +17,7 @@ export const validateAssistantIdPathParam = (req: Request, res: Response, next: 
 	const { success, error, data } = AssistantIdSchema.safeParse(req.params.assistantId);
 
 	if (!success) {
-		error.errors[0].path = ['assistantId'];
+		error.issues[0] = { ...error.issues[0], path: ['assistantId'] };
 		return rejectUnprocessableRequest(res, error);
 	}
 

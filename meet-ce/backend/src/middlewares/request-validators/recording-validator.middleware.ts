@@ -69,7 +69,7 @@ export const withValidRecordingId = (req: Request, res: Response, next: NextFunc
 	const { success, error, data } = nonEmptySanitizedRecordingId('recordingId').safeParse(req.params.recordingId);
 
 	if (!success) {
-		error.errors[0].path = ['recordingId'];
+		error.issues[0] = { ...error.issues[0], path: ['recordingId'] };
 		return rejectUnprocessableRequest(res, error);
 	}
 

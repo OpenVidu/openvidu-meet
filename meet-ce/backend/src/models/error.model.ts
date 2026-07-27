@@ -417,7 +417,7 @@ export const rejectRequestFromMeetError = (res: Response, error: OpenViduMeetErr
 };
 
 export const rejectUnprocessableRequest = (res: Response, error: z.ZodError) => {
-	const errorDetails = error.errors.map((error) => ({
+	const errorDetails = error.issues.map((error) => ({
 		field: error.path.join('.'),
 		message: error.message
 	}));

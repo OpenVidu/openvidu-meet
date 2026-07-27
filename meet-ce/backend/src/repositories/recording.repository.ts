@@ -369,6 +369,6 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * Counts the number of recordings with status 'complete'.
 	 */
 	countCompleteRecordings(): Promise<number> {
-		return this.count({ status: 'complete' });
+		return this.count({ status: MeetRecordingStatus.COMPLETE });
 	}
 }

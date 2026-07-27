@@ -25,6 +25,7 @@ allowBuilds:
   lmdb: false
   msgpackr-extract: false
   protobufjs: false
+  unrs-resolver: true
 
 overrides:
   livekit-client: 2.16.1

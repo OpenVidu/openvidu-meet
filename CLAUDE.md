@@ -32,8 +32,14 @@ Each of the four domains has its own `CLAUDE.md` with the details; read it befor
 - The same applies to the backend: PRO depends on the CE backend package and overrides services.
 - Consequence: when adding CE features, keep seams open (injectable services, content projection,
   route config arrays). Do not inline logic into `meet-ce/frontend/src/` — put it in the library.
-- `meet-pro/` is git-ignored and may not be present. It has pre-existing build errors unrelated to
-  CE work; never "fix" CE by changing PRO, and never assume PRO builds.
+- `meet-pro/` is git-ignored and may not be present, and has pre-existing build errors unrelated to
+  CE work — don't try to fix those unrelated errors from a CE session, and don't assume PRO builds
+  cleanly. Dependency **versions** are the exception: a dependency shared between `meet-ce/*` and
+  `meet-pro/*` must be kept at the same version in both. This workspace uses `nodeLinker: hoisted`
+  with one lockfile across CE and PRO, so a version mismatch on a shared dependency silently installs
+  two copies side by side instead of erroring, which can break TypeScript structural typing (hit this
+  with `@aws-sdk/client-s3`/`@smithy/*`). When bumping a shared dependency in CE, also bump the
+  matching one in PRO to the same version.
 
 ## Build order (non-negotiable)
 

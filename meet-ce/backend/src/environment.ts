@@ -14,7 +14,7 @@ if (process.env.MEET_CONFIG_DIR) {
 	envPath = undefined;
 }
 
-dotenv.config(envPath ? { path: envPath } : {});
+dotenv.config({ quiet: true, ...(envPath ? { path: envPath } : {}) });
 
 // Extract environment variables with defaults
 export const MEET_ENV = {
