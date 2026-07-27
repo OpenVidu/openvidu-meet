@@ -12,13 +12,7 @@ import type {
 	SendDataOptions,
 	StreamOutput
 } from 'livekit-server-sdk';
-import {
-	AgentDispatchClient,
-	DataPacket_Kind,
-	EgressClient,
-	EgressStatus,
-	RoomServiceClient
-} from 'livekit-server-sdk';
+import { DataPacket_Kind, EgressStatus, LiveKitAPI } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
@@ -34,28 +28,20 @@ import { LoggerService } from './logger.service.js';
 
 @injectable()
 export class LiveKitService {
-	private egressClient: EgressClient;
-	private roomClient: RoomServiceClient;
-	private agentClient: AgentDispatchClient;
+	private readonly lk: LiveKitAPI;
 
 	constructor(@inject(LoggerService) protected logger: LoggerService) {
 		const livekitUrlHostname = MEET_ENV.LIVEKIT_URL_PRIVATE.replace(/^ws:/, 'http:').replace(/^wss:/, 'https:');
-		this.egressClient = new EgressClient(livekitUrlHostname, MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
-		this.roomClient = new RoomServiceClient(
-			livekitUrlHostname,
-			MEET_ENV.LIVEKIT_API_KEY,
-			MEET_ENV.LIVEKIT_API_SECRET
-		);
-		this.agentClient = new AgentDispatchClient(
-			livekitUrlHostname,
-			MEET_ENV.LIVEKIT_API_KEY,
-			MEET_ENV.LIVEKIT_API_SECRET
-		);
+		this.lk = new LiveKitAPI({
+			host: livekitUrlHostname,
+			apiKey: MEET_ENV.LIVEKIT_API_KEY,
+			secret: MEET_ENV.LIVEKIT_API_SECRET
+		});
 	}
 
 	async createRoom(options: CreateOptions): Promise<Room> {
 		try {
-			return await this.roomClient.createRoom(options);
+			return await this.lk.room.createRoom(options);
 		} catch (error) {
 			this.logger.error(`Error creating LiveKit room '${options.name}'`, error);
 			throw internalError('creating LiveKit room');
@@ -76,7 +62,7 @@ export class LiveKitService {
 		}
 
 		try {
-			const existingRooms = await this.roomClient.listRooms(roomNames);
+			const existingRooms = await this.lk.room.listRooms(roomNames);
 			const existingRoomNames = new Set(existingRooms.map((room) => room.name));
 
 			for (const roomName of roomNames) {
@@ -136,7 +122,7 @@ export class LiveKitService {
 		let rooms: Room[];
 
 		try {
-			rooms = await this.roomClient.listRooms([roomName]);
+			rooms = await this.lk.room.listRooms([roomName]);
 		} catch (error) {
 			this.logger.error(`Error getting room '${roomName}'`, error);
 			throw internalError(`getting LiveKit room '${roomName}'`);
@@ -171,7 +157,7 @@ export class LiveKitService {
 
 	async listRooms(): Promise<Room[]> {
 		try {
-			return await this.roomClient.listRooms();
+			return await this.lk.room.listRooms();
 		} catch (error) {
 			this.logger.error('Error getting LiveKit rooms', error);
 			throw internalError('getting LiveKit rooms');
@@ -180,7 +166,7 @@ export class LiveKitService {
 
 	async deleteRoom(roomName: string): Promise<void> {
 		try {
-			await this.roomClient.deleteRoom(roomName);
+			await this.lk.room.deleteRoom(roomName);
 		} catch (error) {
 			if (this.isRoomNotFoundError(error)) {
 				this.logger.warn(`LiveKit room '${roomName}' not found. Skipping deletion`);
@@ -240,7 +226,7 @@ export class LiveKitService {
 	 */
 	async listRoomParticipants(roomName: string): Promise<ParticipantInfo[]> {
 		try {
-			return await this.roomClient.listParticipants(roomName);
+			return await this.lk.room.listParticipants(roomName);
 		} catch (error) {
 			this.logger.error(`Error listing participants for room '${roomName}'`, error);
 			throw internalError(`listing participants for room '${roomName}'`);
@@ -277,7 +263,7 @@ export class LiveKitService {
 	 */
 	async getParticipant(roomName: string, participantIdentity: string): Promise<ParticipantInfo> {
 		try {
-			return await this.roomClient.getParticipant(roomName, participantIdentity);
+			return await this.lk.room.getParticipant(roomName, participantIdentity);
 		} catch (error) {
 			// Distinguish a real "participant not found" (404, expected) from LiveKit being
 			// unreachable (503): otherwise a LiveKit outage would masquerade as a 404 and, since
@@ -311,7 +297,7 @@ export class LiveKitService {
 		permission?: Partial<ParticipantPermission>
 	): Promise<void> {
 		try {
-			await this.roomClient.updateParticipant(roomName, participantIdentity, { metadata, permission });
+			await this.lk.room.updateParticipant(roomName, participantIdentity, { metadata, permission });
 			this.logger.verbose(`Updated participant '${participantIdentity}' in room '${roomName}'`);
 		} catch (error) {
 			this.logger.error(`Error updating participant '${participantIdentity}' in room '${roomName}'`, error);
@@ -326,7 +312,7 @@ export class LiveKitService {
 			throw errorParticipantNotFound(participantIdentity, roomName);
 		}
 
-		await this.roomClient.removeParticipant(roomName, participantIdentity);
+		await this.lk.room.removeParticipant(roomName, participantIdentity);
 	}
 
 	async sendData(roomName: string, rawData: object, options: SendDataOptions): Promise<void> {
@@ -340,7 +326,7 @@ export class LiveKitService {
 
 		try {
 			const data: Uint8Array = new TextEncoder().encode(JSON.stringify(rawData));
-			await this.roomClient.sendData(roomName, data, DataPacket_Kind.RELIABLE, options);
+			await this.lk.room.sendData(roomName, data, DataPacket_Kind.RELIABLE, options);
 		} catch (error) {
 			this.logger.error(`Error sending data to LiveKit room '${roomName}'`, error);
 			throw internalError(`sending data to LiveKit room '${roomName}'`);
@@ -358,7 +344,7 @@ export class LiveKitService {
 		agentName: string /*, options: CreateDispatchOptions*/
 	): Promise<AgentDispatch> {
 		try {
-			return await this.agentClient.createDispatch(roomName, agentName);
+			return await this.lk.agentDispatch.createDispatch(roomName, agentName);
 		} catch (error) {
 			this.logger.error(`Error creating agent dispatch for room '${roomName}':`, error);
 			throw internalError(`creating agent dispatch for room '${roomName}'`);
@@ -381,7 +367,7 @@ export class LiveKitService {
 		}
 
 		try {
-			return await this.agentClient.listDispatch(roomName);
+			return await this.lk.agentDispatch.listDispatch(roomName);
 		} catch (error) {
 			this.logger.error(`Error listing agent dispatches for room '${roomName}':`, error);
 			throw internalError(`listing agent dispatches for room '${roomName}'`);
@@ -401,7 +387,7 @@ export class LiveKitService {
 	 */
 	async stopAgent(agentId: string, roomName: string): Promise<void> {
 		try {
-			await this.agentClient.deleteDispatch(agentId, roomName);
+			await this.lk.agentDispatch.deleteDispatch(agentId, roomName);
 		} catch (error) {
 			if (this.isRoomNotFoundError(error)) {
 				this.logger.debug(`Agent dispatch '${agentId}' already gone in room '${roomName}', skipping stop.`);
@@ -419,7 +405,7 @@ export class LiveKitService {
 		options: RoomCompositeOptions
 	): Promise<EgressInfo> {
 		try {
-			return await this.egressClient.startRoomCompositeEgress(roomName, output, options);
+			return await this.lk.egress.startRoomCompositeEgress(roomName, output, options);
 		} catch (error) {
 			this.logger.error(`Error starting Room Composite Egress for room '${roomName}'`, error);
 			throw internalError(`starting Room Composite Egress for room '${roomName}'`);
@@ -429,7 +415,7 @@ export class LiveKitService {
 	async stopEgress(egressId: string): Promise<EgressInfo> {
 		try {
 			this.logger.info(`Stopping egress '${egressId}'`);
-			return await this.egressClient.stopEgress(egressId);
+			return await this.lk.egress.stopEgress(egressId);
 		} catch (error) {
 			this.logger.error(`Error stopping egress '${egressId}'`, error);
 			throw internalError(`stopping egress '${egressId}'`);
@@ -450,7 +436,7 @@ export class LiveKitService {
 				egressId,
 				active
 			};
-			return await this.egressClient.listEgress(options);
+			return await this.lk.egress.listEgress(options);
 		} catch (error) {
 			const err = error as { code?: string; status?: number; message?: string } | null;
 
