@@ -69,7 +69,7 @@
 		padding: 10px;
 	}
 
-	#session-name {
+	#meeting-name {
 		font-family: 'Ubuntu', sans-serif;
 		font-weight: bold;
 		font-size: 15px;
@@ -77,7 +77,7 @@
 		padding: 0px 5px;
 		color: var(--ov-text-primary-color);
 	}
-	#session-info-container {
+	#meeting-info-container {
 		display: flex;
 	}
 
@@ -161,7 +161,7 @@
 	/* Styles for screens <= 750px */
 	@media (max-width: 750px) {
 		/* Hide elements on smaller screens */
-		#session-name {
+		#meeting-name {
 			display: none;
 		}
 
@@ -180,7 +180,7 @@
 		}
 
 		/* Display session info container inline */
-		#session-info-container {
+		#meeting-info-container {
 			display: inline-flex;
 		}
 	}

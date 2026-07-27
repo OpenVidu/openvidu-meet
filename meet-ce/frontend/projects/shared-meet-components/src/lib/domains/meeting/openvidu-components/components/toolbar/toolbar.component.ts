@@ -597,7 +597,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	toggleFullscreen() {
-		this.documentService.toggleFullscreen('session-container');
+		this.documentService.toggleFullscreen('meeting-stage');
 	}
 
 	/**
@@ -627,7 +627,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			.subscribe(() => {
 				const isFullscreen = Boolean(document.fullscreenElement);
 				if (isFullscreen) {
-					this.cdkOverlayService.setSelector('#session-container');
+					this.cdkOverlayService.setSelector('#meeting-stage');
 				} else {
 					this.cdkOverlayService.setSelector('body');
 				}

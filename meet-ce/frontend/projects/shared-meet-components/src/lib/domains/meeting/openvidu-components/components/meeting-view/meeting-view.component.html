@@ -1,4 +1,4 @@
-<div id="call-container">
+<div id="meeting-view-container">
 	<!-- Loading spinner (devices initializing) -->
 	@if (phase() === 'loading') {
 		<div id="spinner">
@@ -46,7 +46,7 @@
 		@if (viewportService.shouldShowLandscapeWarning()) {
 			<ov-landscape-warning />
 		}
-		<div id="session-container" [animate.enter]="enterAnimationClass" [animate.leave]="'ov-fade-out-200'">
+		<div id="meeting-stage" [animate.enter]="enterAnimationClass" [animate.leave]="'ov-fade-out-200'">
 			<mat-sidenav-container
 				ovSidenavLayout
 				#sidenavLayout="ovSidenavLayout"
@@ -73,7 +73,7 @@
 			</mat-sidenav-container>
 
 			@if (templateRegistry.toolbar()) {
-				<div id="footer-container">
+				<div id="toolbar-container">
 					<ng-container *ngTemplateOutlet="templateRegistry.toolbar() ?? null" />
 				</div>
 			}

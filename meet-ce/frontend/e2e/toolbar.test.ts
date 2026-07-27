@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { toggleCamera, toggleMicrophone } from './helpers/media-controls.helper';
 import { createRoomAndGetAnonymousAccessUrl, deleteRooms } from './helpers/meet-api.helper';
 import { openMeeting } from './helpers/meeting-navigation.helper';
-import { openLayoutSettingsPanel } from './helpers/panels.helper';
+import { openLayoutSettingsPanel, openMoreOptionsMenu } from './helpers/panels.helper';
 
 test.describe('Toolbar Buttons E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -47,5 +47,29 @@ test.describe('Toolbar Buttons E2E Tests', () => {
 		await openLayoutSettingsPanel(page);
 		await expect(page.locator('.layout-section')).toBeVisible();
 		await expect(page.locator('.theme-section')).toBeVisible();
+	});
+
+	// Guards the only two DOM anchors in the app that are addressed by *string* id, both from
+	// `toolbar.component.ts`: `documentService.toggleFullscreen('meeting-stage')` and
+	// `cdkOverlayService.setSelector('#meeting-stage')`. Neither is visible to the compiler, and
+	// until this test nothing covered them — renaming the id silently broke fullscreen and left
+	// every overlay (menus, dialogs, tooltips) invisible behind the fullscreened element.
+	test('should fullscreen the meeting stage and move CDK overlays inside it', async ({ page }) => {
+		await openMeeting(page, accessUrl);
+
+		// Opening the menu also creates the .cdk-overlay-container that has to be re-parented.
+		await openMoreOptionsMenu(page);
+		await page.locator('#fullscreen-btn').click();
+
+		// requestFullscreen resolves asynchronously, so poll rather than read once.
+		await expect
+			.poll(() => page.evaluate(() => document.fullscreenElement?.id ?? null), { timeout: 10_000 })
+			.toBe('meeting-stage');
+		await expect(page.locator('#meeting-stage > .cdk-overlay-container')).toHaveCount(1);
+
+		// The menu lives in that overlay container: if it were left on <body> it would render
+		// behind the fullscreened element instead of inside it.
+		await openMoreOptionsMenu(page);
+		await expect(page.locator('#fullscreen-btn mat-icon')).toHaveText('fullscreen_exit');
 	});
 });

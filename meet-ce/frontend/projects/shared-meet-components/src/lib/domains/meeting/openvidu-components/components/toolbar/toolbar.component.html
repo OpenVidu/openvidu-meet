@@ -8,10 +8,10 @@
 			}
 
 			<!-- Session Info -->
-			<div id="session-info-container" [class.collapsed]="isRecordingStarted()">
+			<div id="meeting-info-container" [class.collapsed]="isRecordingStarted()">
 				<!-- Room Name -->
 				@if (showRoomName()) {
-					<span id="session-name">{{ roomName() }}</span>
+					<span id="meeting-name">{{ roomName() }}</span>
 				}
 
 				<!-- Activities (Recording / Broadcasting) -->

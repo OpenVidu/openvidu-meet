@@ -1,10 +1,10 @@
 /* ── Phase containers ─────────────────────────────────────────────────────── */
-/* #call-container hosts every phase; #session-container is the live stage. */
-#call-container,
-#session-container {
+/* #meeting-view-container hosts every phase; #meeting-stage is the live one. */
+#meeting-view-container,
+#meeting-stage {
 	height: 100%;
 }
-#session-container {
+#meeting-stage {
 	background-color: var(--ov-background-color);
 }
 
@@ -13,7 +13,7 @@
 }
 
 /* Private css variables */
-#call-container {
+#meeting-view-container {
 	--ov-captions-height: 230px;
 }
 
@@ -131,35 +131,14 @@
 	background-color: var(--ov-background-color);
 }
 
-#toolbar-container,
-#footer-container {
+#toolbar-container {
 	background-color: var(--ov-background-color);
 	width: 100%;
 	height: 70px;
 }
 
-#footer {
-	color: var(--ov-text-primary-color);
-	height: 25px;
-	background-color: var(--ov-background-color);
-	padding: 0 14px 0 0;
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	z-index: 999999;
-}
-
-.reconnecting-container {
-	width: 100%;
-	height: 100%;
-	z-index: 1000;
-	background-color: var(--ov-video-background, var(--ov-primary-action-color));
-	opacity: 80%;
-	position: absolute;
-}
-
 @media only screen and (max-width: 790px) {
-	#session-container {
+	#meeting-stage {
 		width: 100%;
 	}
 
