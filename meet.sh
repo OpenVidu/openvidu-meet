@@ -950,7 +950,9 @@ main() {
       test_e2e_frontend "$@"
       ;;
     dev)
-      dev
+      # "$@" must be forwarded: dev() parses its own --testapp / --webcomponent flags,
+      # and parse_global_flags above silently ignores unknown arguments.
+      dev "$@"
       ;;
     start)
       start "$@"

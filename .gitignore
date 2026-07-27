@@ -43,9 +43,9 @@ pnpm-debug.log*
 **/**/test-results
 **/**/openvidu-meet.bundle.min.js
 
-**/**/docs/webcomponent-attributes.md
-**/**/docs/webcomponent-commands.md
-**/**/docs/webcomponent-events.md
+# Generated embedding API docs (scripts/generate-webcomponent-docs.js writes
+# <outputDir>/webcomponent/{attributes,commands,events}.md)
+**/docs/webcomponent/
 
 **/**/meet-pro
 **/**/test_localstorage_state.json

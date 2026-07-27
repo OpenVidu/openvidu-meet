@@ -6,8 +6,9 @@ const path = require('path');
  */
 class WebComponentDocGenerator {
     constructor() {
+        // Single source of truth for the embedding API: the documented enums in the
+        // shared typings package (attributes.ts / commands.ts / events.ts).
         this.typingsPath = path.join(__dirname, '../meet-ce/typings/src/embedded');
-        this.webComponentPath = path.join(__dirname, '../meet-ce/frontend/webcomponent/src/components/OpenViduMeet.ts');
     }
 
     /**
@@ -177,30 +178,6 @@ class WebComponentDocGenerator {
         }
 
         return payloads;
-    }
-
-    /**
-     * Extracts WebComponent attributes from the OpenViduMeet.ts file
-     */
-    extractWebComponentAttributes() {
-        const content = fs.readFileSync(this.webComponentPath, 'utf8');
-        const attributes = [];
-
-        // Look for @attribute JSDoc comments
-        const attributeMatches = content.match(/@attribute\s+([^\s]+)\s*-\s*([^\n]+)/g);
-        if (attributeMatches) {
-            attributeMatches.forEach(match => {
-                const parts = match.match(/@attribute\s+([^\s]+)\s*-\s*(.+)/);
-                if (parts) {
-                    attributes.push({
-                        name: parts[1],
-                        description: parts[2].trim()
-                    });
-                }
-            });
-        }
-
-        return attributes;
     }
 
     /**
