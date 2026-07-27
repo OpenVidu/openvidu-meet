@@ -53,7 +53,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
-import { StorageService } from '../../services/storage/storage.service';
+import { MediaStorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
 import { OpenViduThemeService } from '../../services/theme/theme.service';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
@@ -101,7 +101,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 })
 export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
-	private readonly storageSrv = inject(StorageService);
+	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly actionService = inject(ActionService);

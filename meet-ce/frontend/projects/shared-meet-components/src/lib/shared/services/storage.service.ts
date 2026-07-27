@@ -1,13 +1,20 @@
-import { Service } from '@angular/core';
-import { SmartLayoutMode, StorageService } from '../../domains/meeting/openvidu-components';
-import { MeetStorageKeys, STORAGE_PREFIX } from '../models/storage.model';
+import { inject, Service } from '@angular/core';
+import type { SmartLayoutMode } from '../../domains/meeting/openvidu-components';
+import type { OpenViduThemeMode } from '../../domains/meeting/openvidu-components/models/theme.model';
+import { MeetStorageKeys } from '../models/storage.model';
+import { BrowserStorageService } from './browser-storage.service';
 
+/**
+ * Persists shell-level preferences shared across the whole application (layout, language, theme,
+ * last-used participant name) through the single {@link BrowserStorageService} engine (composition —
+ * no storage inheritance).
+ *
+ * This store is the single persisted owner of the user's language and theme preferences: both the
+ * shell and the meeting read/write them here.
+ */
 @Service()
-export class MeetStorageService extends StorageService {
-	constructor() {
-		super();
-		this.PREFIX_KEY = STORAGE_PREFIX;
-	}
+export class MeetStorageService {
+	private readonly storage = inject(BrowserStorageService);
 
 	/**
 	 * Sets the layout mode in the storage.
@@ -15,7 +22,7 @@ export class MeetStorageService extends StorageService {
 	 * @param layoutMode - The layout mode to be set.
 	 */
 	setLayoutMode(layoutMode: SmartLayoutMode): void {
-		this.set(MeetStorageKeys.LAYOUT_MODE, layoutMode);
+		this.storage.set(MeetStorageKeys.LAYOUT_MODE, layoutMode);
 	}
 
 	/**
@@ -24,7 +31,7 @@ export class MeetStorageService extends StorageService {
 	 * @returns {SmartLayoutMode | null} The layout mode stored in the storage, or null if not found.
 	 */
 	getLayoutMode(): SmartLayoutMode | null {
-		return this.get(MeetStorageKeys.LAYOUT_MODE) || null;
+		return this.storage.get<SmartLayoutMode>(MeetStorageKeys.LAYOUT_MODE);
 	}
 
 	/**
@@ -33,16 +40,48 @@ export class MeetStorageService extends StorageService {
 	 * @param count - The maximum number of visible remote participants.
 	 */
 	setMaxVisibleRemoteParticipants(count: number): void {
-		this.set(MeetStorageKeys.MAX_VISIBLE_REMOTE_PARTICIPANTS, count.toString());
+		this.storage.set(MeetStorageKeys.MAX_VISIBLE_REMOTE_PARTICIPANTS, count);
 	}
 
 	/**
 	 * Retrieves the maximum number of visible remote participants from storage.
-	 *
-	 * Falls back to the legacy key to preserve stored user preferences after the rename.
 	 */
 	getMaxVisibleRemoteParticipants(): number | null {
-		const value = this.get(MeetStorageKeys.MAX_VISIBLE_REMOTE_PARTICIPANTS) ?? this.get('maxRemoteSpeakers');
-		return value ? parseInt(value, 10) : null;
+		return this.storage.get<number>(MeetStorageKeys.MAX_VISIBLE_REMOTE_PARTICIPANTS);
+	}
+
+	/** Retrieves the shared language preference. */
+	getLang(): string | null {
+		return this.storage.get<string>(MeetStorageKeys.LANG);
+	}
+
+	/** Persists the shared language preference. */
+	setLang(lang: string): void {
+		this.storage.set(MeetStorageKeys.LANG, lang);
+	}
+
+	/** Retrieves the shared theme preference. */
+	getTheme(): OpenViduThemeMode | null {
+		return this.storage.get<OpenViduThemeMode>(MeetStorageKeys.THEME);
+	}
+
+	/** Persists the shared theme preference. */
+	setTheme(theme: OpenViduThemeMode): void {
+		this.storage.set(MeetStorageKeys.THEME, theme);
+	}
+
+	/** Removes the shared theme preference (falls back to the system preference). */
+	removeTheme(): void {
+		this.storage.remove(MeetStorageKeys.THEME);
+	}
+
+	/** Retrieves the last participant name used on this device (cross-visit, shared across tabs). */
+	getLastParticipantName(): string | null {
+		return this.storage.get<string>(MeetStorageKeys.LAST_PARTICIPANT_NAME);
+	}
+
+	/** Persists the last participant name used on this device. */
+	setLastParticipantName(name: string): void {
+		this.storage.set(MeetStorageKeys.LAST_PARTICIPANT_NAME, name);
 	}
 }

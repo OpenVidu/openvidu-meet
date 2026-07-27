@@ -4,7 +4,7 @@ import type { LocalTrack } from '../livekit';
 import { Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { PlatformService } from '../platform/platform.service';
-import { StorageService } from '../storage/storage.service';
+import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 
@@ -26,7 +26,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 export class DeviceService implements OnDestroy {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly platformSrv = inject(PlatformService);
-	private readonly storageSrv = inject(StorageService);
+	private readonly storageSrv = inject(MediaStorageService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 
 	// Reactive device lists with Signals

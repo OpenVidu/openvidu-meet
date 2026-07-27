@@ -1,36 +1,40 @@
-import { Service } from '@angular/core';
+import { inject, Service } from '@angular/core';
+import { TokenStorageKeys } from '../models/storage.model';
+import { BrowserStorageService } from './browser-storage.service';
 
 /**
- * Service to manage JWT token storage for authentication
+ * Service to manage JWT token storage for authentication.
+ *
+ * Persists through the shared {@link BrowserStorageService} engine, so it inherits the availability
+ * guard for free (no uncaught throw in Safari private mode / storage-blocked browsers).
  */
 @Service()
 export class TokenStorageService {
-	private readonly ACCESS_TOKEN_KEY = 'ovMeet-accessToken';
-	private readonly REFRESH_TOKEN_KEY = 'ovMeet-refreshToken';
+	private readonly storage = inject(BrowserStorageService);
 
 	// Saves the access token to localStorage
 	setAccessToken(token: string): void {
-		localStorage.setItem(this.ACCESS_TOKEN_KEY, token);
+		this.storage.set(TokenStorageKeys.ACCESS_TOKEN, token);
 	}
 
 	// Retrieves the access token from localStorage
 	getAccessToken(): string | null {
-		return localStorage.getItem(this.ACCESS_TOKEN_KEY);
+		return this.storage.get<string>(TokenStorageKeys.ACCESS_TOKEN);
 	}
 
 	// Saves the refresh token to localStorage
 	setRefreshToken(token: string): void {
-		localStorage.setItem(this.REFRESH_TOKEN_KEY, token);
+		this.storage.set(TokenStorageKeys.REFRESH_TOKEN, token);
 	}
 
 	// Retrieves the refresh token from localStorage
 	getRefreshToken(): string | null {
-		return localStorage.getItem(this.REFRESH_TOKEN_KEY);
+		return this.storage.get<string>(TokenStorageKeys.REFRESH_TOKEN);
 	}
 
 	// Clears access and refresh tokens from localStorage
 	clearAccessAndRefreshTokens(): void {
-		localStorage.removeItem(this.ACCESS_TOKEN_KEY);
-		localStorage.removeItem(this.REFRESH_TOKEN_KEY);
+		this.storage.remove(TokenStorageKeys.ACCESS_TOKEN);
+		this.storage.remove(TokenStorageKeys.REFRESH_TOKEN);
 	}
 }

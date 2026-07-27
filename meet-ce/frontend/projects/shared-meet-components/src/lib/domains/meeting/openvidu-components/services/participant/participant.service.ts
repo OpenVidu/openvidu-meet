@@ -14,7 +14,7 @@ import { ConnectionQuality, Track } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
-import { StorageService } from '../storage/storage.service';
+import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Service()
@@ -23,7 +23,7 @@ export class ParticipantService {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
-	private readonly storageSrv = inject(StorageService);
+	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
 	private readonly log = inject(LoggerService).get('ParticipantService');

@@ -8,7 +8,7 @@ import { VideoPresets } from '../livekit';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../participant/participant.service';
-import { StorageService } from '../storage/storage.service';
+import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
 /**
@@ -36,7 +36,7 @@ interface LocalMediaTarget {
 class RoomTarget implements LocalMediaTarget {
 	constructor(
 		private readonly participant: ParticipantModel,
-		private readonly storageSrv: StorageService
+		private readonly storageSrv: MediaStorageService
 	) {}
 
 	async setCameraEnabled(enabled: boolean): Promise<void> {
@@ -90,7 +90,7 @@ class PrejoinTarget implements LocalMediaTarget {
 	constructor(
 		private readonly localTrackService: LocalTrackService,
 		private readonly directiveService: OpenViduComponentsConfigService,
-		private readonly storageSrv: StorageService
+		private readonly storageSrv: MediaStorageService
 	) {}
 
 	async setCameraEnabled(enabled: boolean): Promise<void> {
@@ -134,7 +134,7 @@ export class LocalMediaControlService {
 	private readonly injector = inject(Injector);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
-	private readonly storageSrv = inject(StorageService);
+	private readonly storageSrv = inject(MediaStorageService);
 	private readonly directiveService = inject(OpenViduComponentsConfigService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly log = inject(LoggerService).get('LocalMediaControlService');

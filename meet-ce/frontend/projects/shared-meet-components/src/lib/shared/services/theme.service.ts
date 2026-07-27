@@ -1,5 +1,6 @@
 import { computed, DOCUMENT, inject, Service, signal } from '@angular/core';
 import { OpenViduThemeMode, OpenViduThemeService } from '../../domains/meeting/openvidu-components';
+import { MeetStorageService } from './storage.service';
 
 export type Theme = 'light' | 'dark';
 
@@ -7,8 +8,8 @@ export type Theme = 'light' | 'dark';
 export class ThemeService {
 	private document = inject(DOCUMENT);
 	protected ovComponentsThemeService = inject(OpenViduThemeService);
+	private readonly meetStorageService = inject(MeetStorageService);
 
-	private readonly THEME_KEY = 'ovMeet-theme';
 	private readonly _currentTheme = signal<Theme>('light');
 
 	// Computed signals for reactivity
@@ -47,15 +48,15 @@ export class ThemeService {
 	/**
 	 * Changes the current theme
 	 * @param theme The theme to set
-	 * @param saveToStorage Whether to save the theme to localStorage (default: true)
+	 * @param saveToStorage Whether to persist the theme as the user's preference (default: true)
 	 */
 	private setTheme(theme: Theme, saveToStorage: boolean = true): void {
 		this._currentTheme.set(theme);
 		this.applyThemeToDocument(theme);
-		if (saveToStorage) {
-			this.saveThemePreference(theme);
-		}
-		this.ovComponentsThemeService.setTheme(theme as OpenViduThemeMode);
+		// Persistence flows through the single owner (MeetStorageService) via the components chain:
+		// one key, one format, one write path. When saveToStorage is false the theme is applied but
+		// not remembered (e.g. following the system preference, or a themed room config).
+		this.ovComponentsThemeService.setTheme(theme as OpenViduThemeMode, saveToStorage);
 	}
 
 	/**
@@ -72,27 +73,11 @@ export class ThemeService {
 	}
 
 	/**
-	 * Saves the theme preference in localStorage
-	 */
-	private saveThemePreference(theme: Theme): void {
-		try {
-			localStorage.setItem(this.THEME_KEY, theme);
-		} catch (error) {
-			console.warn('Could not save theme preference:', error);
-		}
-	}
-
-	/**
-	 * Gets the saved preference from localStorage
+	 * Gets the saved preference from the single theme owner (MeetStorageService)
 	 */
 	private getSavedTheme(): Theme | null {
-		try {
-			const saved = localStorage.getItem(this.THEME_KEY);
-			return saved === 'dark' || saved === 'light' ? saved : null;
-		} catch (error) {
-			console.warn('Could not read theme preference:', error);
-			return null;
-		}
+		const saved = this.meetStorageService.getTheme();
+		return saved === OpenViduThemeMode.Dark ? 'dark' : saved === OpenViduThemeMode.Light ? 'light' : null;
 	}
 
 	/**
@@ -125,11 +110,7 @@ export class ThemeService {
 	 * Resets to system preference
 	 */
 	public resetToSystemPreference(): void {
-		try {
-			localStorage.removeItem(this.THEME_KEY);
-		} catch (error) {
-			console.warn('Could not remove theme preference:', error);
-		}
+		this.meetStorageService.removeTheme();
 
 		const systemTheme = this.getSystemPreference();
 		this.setTheme(systemTheme, false);

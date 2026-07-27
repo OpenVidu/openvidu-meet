@@ -2,7 +2,7 @@ import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angula
 // import { CaptionService } from '../../services/caption/caption.service';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
-import { StorageService } from '../../services/storage/storage.service';
+import { MediaStorageService } from '../../services/storage/storage.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 /**
@@ -414,7 +414,7 @@ export class VideoEnabledDirective implements OnDestroy {
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly storageService = inject(StorageService);
+	private readonly storageService = inject(MediaStorageService);
 	private readonly videoEnabledEffect = effect(() => {
 		this.update(this.videoEnabled());
 	});
@@ -488,7 +488,7 @@ export class AudioEnabledDirective implements OnDestroy {
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly libService = inject(OpenViduComponentsConfigService);
-	private readonly storageService = inject(StorageService);
+	private readonly storageService = inject(MediaStorageService);
 	private readonly audioEnabledEffect = effect(() => {
 		this.update(this.audioEnabled());
 	});

@@ -1,16 +1,18 @@
 /**
  * @internal
+ *
+ * Keys owned by {@link MediaStorageService} (per-participant meeting media preferences).
+ *
+ * Language and theme are NOT here: they are shell-level preferences persisted by
+ * `MeetStorageService` (a single persisted owner per preference).
  */
-export enum StorageKeys {
+export enum MediaStorageKeys {
 	PARTICIPANT_NAME = 'participantName',
 	VIDEO_DEVICE = 'videoDevice',
 	AUDIO_DEVICE = 'audioDevice',
 	MICROPHONE_ENABLED = 'microphoneEnabled',
 	CAMERA_ENABLED = 'cameraEnabled',
-	LANG = 'lang',
-	CAPTION_LANG = 'captionLang',
-	BACKGROUND = 'virtualBg',
-	THEME = 'theme'
+	BACKGROUND = 'virtualBg'
 }
 
 /**
@@ -23,10 +25,8 @@ export enum StorageKeys {
  * (name, camera/microphone state) without leaking state between them. Every other key is stored
  * in `localStorage` and therefore shared across all tabs of the same origin.
  */
-export const TAB_SPECIFIC_KEYS: StorageKeys[] = [
-	StorageKeys.PARTICIPANT_NAME,
-	StorageKeys.MICROPHONE_ENABLED,
-	StorageKeys.CAMERA_ENABLED
-];
-
-export const STORAGE_PREFIX = 'ovComponents-';
+export const TAB_SPECIFIC_KEYS: ReadonlySet<MediaStorageKeys> = new Set([
+	MediaStorageKeys.PARTICIPANT_NAME,
+	MediaStorageKeys.MICROPHONE_ENABLED,
+	MediaStorageKeys.CAMERA_ENABLED
+]);

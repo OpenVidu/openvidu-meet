@@ -13,7 +13,7 @@ import {
 	VideoPresets
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
-import { StorageService } from '../storage/storage.service';
+import { MediaStorageService } from '../storage/storage.service';
 
 /**
  * Owns the live meeting connection: the LiveKit Room lifecycle (create/connect/disconnect),
@@ -23,7 +23,7 @@ import { StorageService } from '../storage/storage.service';
 @Service()
 export class MeetingLiveKitService {
 	private readonly deviceService = inject(DeviceService);
-	private readonly storageService = inject(StorageService);
+	private readonly storageService = inject(MediaStorageService);
 	private readonly configService = inject(OpenViduComponentsConfigService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly assets = inject(AssetsService);

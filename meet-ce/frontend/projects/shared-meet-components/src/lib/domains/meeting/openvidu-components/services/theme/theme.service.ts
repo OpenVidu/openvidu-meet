@@ -6,7 +6,7 @@ import {
 	OpenViduThemeMode,
 	OpenViduThemeVariables
 } from '../../models/theme.model';
-import { StorageService } from '../storage/storage.service';
+import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
 /**
  * Service for managing OpenVidu component themes dynamically
@@ -22,7 +22,7 @@ import { StorageService } from '../storage/storage.service';
 @Service()
 export class OpenViduThemeService {
 	private readonly document = inject(DOCUMENT);
-	private readonly storageService = inject(StorageService);
+	private readonly storageService = inject(MeetStorageService);
 
 	private readonly THEME_ATTRIBUTE = 'data-ov-theme';
 	/**
@@ -65,11 +65,16 @@ export class OpenViduThemeService {
 	/**
 	 * Sets the theme mode to apply {@link OpenViduThemeMode}
 	 * @param theme The theme mode to apply
+	 * @param persist Whether to persist the theme as the user's preference (default: true). A themed
+	 *        room config applies a theme with `persist = false` so it does not overwrite the user's
+	 *        app-wide preference.
 	 */
-	setTheme(theme: OpenViduThemeMode): void {
+	setTheme(theme: OpenViduThemeMode, persist: boolean = true): void {
 		this.applyTheme(theme);
 		this.currentTheme.set(theme);
-		this.storageService.setTheme(theme);
+		if (persist) {
+			this.storageService.setTheme(theme);
+		}
 	}
 
 	/**

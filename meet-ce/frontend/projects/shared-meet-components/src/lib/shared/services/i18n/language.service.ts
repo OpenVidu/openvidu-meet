@@ -1,6 +1,6 @@
 import { inject, Service, signal } from '@angular/core';
-import { StorageService } from '../../../domains/meeting/openvidu-components/services/storage/storage.service';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
+import { MeetStorageService } from '../storage.service';
 
 /**
  * Default set of languages shipped with the application, shared by every scope (meeting, console).
@@ -29,7 +29,7 @@ export const DEFAULT_LANGUAGE_OPTIONS: LangOption[] = [
  */
 @Service()
 export class LanguageService {
-	private readonly storageService = inject(StorageService);
+	private readonly storageService = inject(MeetStorageService);
 
 	/** Languages offered in the selectors. */
 	readonly availableLanguages = signal<LangOption[]>(DEFAULT_LANGUAGE_OPTIONS);

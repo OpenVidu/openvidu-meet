@@ -3,7 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ParticipantService } from '../../../services/participant/participant.service';
-import { StorageService } from '../../../services/storage/storage.service';
+import { MediaStorageService } from '../../../services/storage/storage.service';
 
 /**
  * @internal
@@ -22,7 +22,7 @@ export class ParticipantNameInputComponent implements OnInit {
 	readonly onEnterPressed = output<void>();
 
 	private readonly participantService = inject(ParticipantService);
-	private readonly storageSrv = inject(StorageService);
+	private readonly storageSrv = inject(MediaStorageService);
 
 	ngOnInit(): void {
 		this.subscribeToParticipantProperties();

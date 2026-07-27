@@ -94,7 +94,7 @@ export class MeetingComponent implements OnInit {
 			untracked(() => {
 				if (hasTheme) {
 					const theme = themes[0];
-					this.ovThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode);
+					this.ovThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode, false);
 					this.ovThemeService.updateThemeVariables({
 						'--ov-primary-action-color': theme?.primaryColor,
 						'--ov-secondary-action-color': theme?.secondaryColor,

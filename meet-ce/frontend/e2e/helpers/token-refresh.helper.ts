@@ -60,6 +60,25 @@ export interface TokenExpiryController {
 
 const bearer = (value?: string): string | undefined => value?.replace(/^Bearer\s+/i, '').trim() || undefined;
 
+/**
+ * Reads a token from localStorage, unwrapping the `{ "item": … }` envelope written by
+ * `BrowserStorageService`. Falls back to the raw value (pre-migration format) and returns null when
+ * the key is absent.
+ */
+const readStoredToken = (page: Page, key: string): Promise<string | null> =>
+	page.evaluate((storageKey) => {
+		const raw = localStorage.getItem(storageKey);
+		if (!raw) {
+			return null;
+		}
+		try {
+			const parsed = JSON.parse(raw);
+			return parsed && typeof parsed === 'object' && 'item' in parsed ? (parsed.item as string) : raw;
+		} catch {
+			return raw;
+		}
+	}, key);
+
 /** Parses a request body as JSON, returning undefined when it is absent or not JSON. */
 const parseBody = (data: string | null): Record<string, unknown> | undefined => {
 	if (!data) {
@@ -176,14 +195,14 @@ export const installTokenExpiryController = async (page: Page): Promise<TokenExp
 
 	return {
 		expireAccessToken: async () => {
-			const token = await page.evaluate(() => localStorage.getItem('ovMeet-accessToken'));
+			const token = await readStoredToken(page, 'ovMeet-accessToken');
 
 			if (token) {
 				expired.add(token);
 			}
 		},
 		expireRefreshToken: async () => {
-			const token = await page.evaluate(() => localStorage.getItem('ovMeet-refreshToken'));
+			const token = await readStoredToken(page, 'ovMeet-refreshToken');
 
 			if (token) {
 				refreshExpired.add(token);

@@ -12,12 +12,29 @@
 		<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet" />
 
 		<script>
-			// Apply the correct theme on initial load to prevent flickering
+			// Apply the correct theme on initial load to prevent flickering.
+			// The theme is persisted by BrowserStorageService wrapped as {"item":"light|dark"}. A raw
+			// 'light'/'dark' fallback covers the very first post-upgrade load, before the one-shot
+			// migration runs; that fallback can be removed together with browser-storage.migration.ts.
 			(function () {
-				const savedTheme = localStorage.getItem('ovMeet-theme');
+				let savedTheme = null;
+				try {
+					const raw = localStorage.getItem('ovMeet-theme');
+					if (raw) {
+						try {
+							const parsed = JSON.parse(raw);
+							savedTheme = parsed && typeof parsed === 'object' ? parsed.item : raw;
+						} catch (e) {
+							savedTheme = raw; // legacy raw value written before the migration
+						}
+					}
+				} catch (e) {
+					// storage blocked (e.g. Safari private mode): fall back to system preference
+				}
+
 				let theme = 'light';
 
-				if (savedTheme) {
+				if (savedTheme === 'dark' || savedTheme === 'light') {
 					// Use saved preference
 					theme = savedTheme;
 				} else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {

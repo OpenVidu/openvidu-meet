@@ -11,6 +11,7 @@ import { decodeToken } from '../../../shared/utils/token.utils';
 import { AuthService } from '../../auth/services/auth.service';
 import { RoomMemberService } from './room-member.service';
 import { LoggerService } from '../../../shared/services/logger.service';
+import { MeetStorageService } from '../../../shared/services/storage.service';
 
 @Service()
 export class RoomMemberContextService {
@@ -19,8 +20,7 @@ export class RoomMemberContextService {
 	protected authService = inject(AuthService);
 	protected loggerService = inject(LoggerService);
 	protected log = this.loggerService.get('OpenVidu Meet - RoomMemberContextService');
-
-	protected readonly PARTICIPANT_NAME_KEY = 'ovMeet-participantName';
+	private readonly meetStorageService = inject(MeetStorageService);
 
 	protected readonly TOKEN_REFRESH_BUFFER_MS = 60 * 1000;
 	protected readonly TOKEN_REFRESH_MIN_DELAY_MS = 5 * 1000;
@@ -67,19 +67,19 @@ export class RoomMemberContextService {
 	}
 
 	/**
-	 * Saves the participant name to localStorage
+	 * Saves the participant name to storage (cross-visit, shared across tabs).
 	 *
 	 * @param participantName - The display name of the participant to save
 	 */
 	saveParticipantNameToStorage(participantName: string) {
-		localStorage.setItem(this.PARTICIPANT_NAME_KEY, participantName);
+		this.meetStorageService.setLastParticipantName(participantName);
 	}
 
 	/**
-	 * Loads the participant name from localStorage
+	 * Loads the participant name from storage.
 	 */
 	loadParticipantNameFromStorage() {
-		const storedName = localStorage.getItem(this.PARTICIPANT_NAME_KEY);
+		const storedName = this.meetStorageService.getLastParticipantName();
 		if (storedName) {
 			this._participantName.set(storedName);
 			this._isParticipantNameFromUrl.set(false);

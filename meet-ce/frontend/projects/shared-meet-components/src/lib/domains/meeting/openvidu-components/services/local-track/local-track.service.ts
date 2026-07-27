@@ -11,7 +11,7 @@ import {
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
-import { StorageService } from '../storage/storage.service';
+import { MediaStorageService } from '../storage/storage.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
@@ -36,7 +36,7 @@ function sameMediaStreamTrack(
 @Service()
 export class LocalTrackService {
 	private readonly deviceService = inject(DeviceService);
-	private readonly storageService = inject(StorageService);
+	private readonly storageService = inject(MediaStorageService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);

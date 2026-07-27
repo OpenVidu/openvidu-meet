@@ -1,15 +1,17 @@
-import { Service } from '@angular/core';
+import { inject, Service } from '@angular/core';
+import { SessionStorageKeys } from '../models/storage.model';
+import { BrowserStorageService } from './browser-storage.service';
 
-@Service()
 /**
- * Service for managing session storage operations.
- * Provides methods to store, retrieve, and remove data from sessionStorage.
+ * Service for managing meeting-scoped session storage.
+ *
+ * Persists through the shared {@link BrowserStorageService} engine, always routing to
+ * `sessionStorage`, so it inherits the availability guard for free (no uncaught throw in Safari
+ * private mode / storage-blocked browsers — important because this runs inside `auth.guard`).
  */
+@Service()
 export class SessionStorageService {
-	private readonly ROOM_SECRET_KEY = 'ovMeet-roomSecret';
-	private readonly REDIRECT_URL_KEY = 'ovMeet-redirectUrl';
-	private readonly E2EE_DATA_KEY = 'ovMeet-e2eeData';
-	private readonly MUST_CHANGE_PASSWORD_KEY = 'ovMeet-mustChangePassword';
+	private readonly storage = inject(BrowserStorageService);
 
 	/**
 	 * Stores the room secret.
@@ -17,7 +19,7 @@ export class SessionStorageService {
 	 * @param secret The secret to store.
 	 */
 	public setRoomSecret(secret: string): void {
-		this.set(this.ROOM_SECRET_KEY, secret);
+		this.storage.set(SessionStorageKeys.ROOM_SECRET, secret, 'session');
 	}
 
 	/**
@@ -26,14 +28,14 @@ export class SessionStorageService {
 	 * @returns The stored secret or null if not found.
 	 */
 	public getRoomSecret(): string | null {
-		return this.get<string>(this.ROOM_SECRET_KEY);
+		return this.storage.get<string>(SessionStorageKeys.ROOM_SECRET, 'session');
 	}
 
 	/**
 	 * Removes the stored room secret.
 	 */
 	public removeRoomSecret(): void {
-		this.remove(this.ROOM_SECRET_KEY);
+		this.storage.remove(SessionStorageKeys.ROOM_SECRET, 'session');
 	}
 
 	/**
@@ -42,7 +44,7 @@ export class SessionStorageService {
 	 * @param redirectUrl The URL to redirect to.
 	 */
 	public setRedirectUrl(redirectUrl: string): void {
-		this.set(this.REDIRECT_URL_KEY, redirectUrl);
+		this.storage.set(SessionStorageKeys.REDIRECT_URL, redirectUrl, 'session');
 	}
 
 	/**
@@ -51,14 +53,14 @@ export class SessionStorageService {
 	 * @returns The redirect URL or null if not found.
 	 */
 	public getRedirectUrl(): string | null {
-		return this.get<string>(this.REDIRECT_URL_KEY);
+		return this.storage.get<string>(SessionStorageKeys.REDIRECT_URL, 'session');
 	}
 
 	/**
 	 * Removes the stored redirect URL.
 	 */
 	public removeRedirectUrl(): void {
-		this.remove(this.REDIRECT_URL_KEY);
+		this.storage.remove(SessionStorageKeys.REDIRECT_URL, 'session');
 	}
 
 	/**
@@ -68,7 +70,7 @@ export class SessionStorageService {
 	 * @param fromUrl True if the E2EE key came from a URL parameter.
 	 */
 	public setE2EEData(e2eeKey: string, fromUrl: boolean): void {
-		this.set(this.E2EE_DATA_KEY, { key: e2eeKey, fromUrl });
+		this.storage.set(SessionStorageKeys.E2EE_DATA, { key: e2eeKey, fromUrl }, 'session');
 	}
 
 	/**
@@ -77,14 +79,14 @@ export class SessionStorageService {
 	 * @returns The stored E2EE data or null if not found.
 	 */
 	public getE2EEData(): { key: string; fromUrl: boolean } | null {
-		return this.get<{ key: string; fromUrl: boolean }>(this.E2EE_DATA_KEY);
+		return this.storage.get<{ key: string; fromUrl: boolean }>(SessionStorageKeys.E2EE_DATA, 'session');
 	}
 
 	/**
 	 * Removes the stored E2EE key data.
 	 */
 	public removeE2EEData(): void {
-		this.remove(this.E2EE_DATA_KEY);
+		this.storage.remove(SessionStorageKeys.E2EE_DATA, 'session');
 	}
 
 	/**
@@ -93,7 +95,7 @@ export class SessionStorageService {
 	 * @param required True when password change is required.
 	 */
 	public setMustChangePasswordRequired(required: boolean): void {
-		this.set(this.MUST_CHANGE_PASSWORD_KEY, required);
+		this.storage.set(SessionStorageKeys.MUST_CHANGE_PASSWORD, required, 'session');
 	}
 
 	/**
@@ -102,14 +104,14 @@ export class SessionStorageService {
 	 * @returns True if password change is required; otherwise false.
 	 */
 	public getMustChangePasswordRequired(): boolean {
-		return this.get<boolean>(this.MUST_CHANGE_PASSWORD_KEY) ?? false;
+		return this.storage.get<boolean>(SessionStorageKeys.MUST_CHANGE_PASSWORD, 'session') ?? false;
 	}
 
 	/**
 	 * Removes the stored mandatory password change flag.
 	 */
 	public removeMustChangePasswordRequired(): void {
-		this.remove(this.MUST_CHANGE_PASSWORD_KEY);
+		this.storage.remove(SessionStorageKeys.MUST_CHANGE_PASSWORD, 'session');
 	}
 
 	/**
@@ -119,38 +121,5 @@ export class SessionStorageService {
 		this.removeRoomSecret();
 		this.removeRedirectUrl();
 		this.removeE2EEData();
-	}
-
-	/**
-	 * Stores a value in sessionStorage.
-	 * The value is converted to a JSON string before saving.
-	 *
-	 * @param key The key under which the value will be stored.
-	 * @param value The value to be stored (any type).
-	 */
-	protected set(key: string, value: any): void {
-		const jsonValue = JSON.stringify(value);
-		sessionStorage.setItem(key, jsonValue);
-	}
-
-	/**
-	 * Retrieves a value from sessionStorage.
-	 * The value is parsed from JSON back to its original type.
-	 *
-	 * @param key The key of the item to retrieve.
-	 * @returns The stored value or null if the key does not exist.
-	 */
-	protected get<T>(key: string): T | null {
-		const jsonValue = sessionStorage.getItem(key);
-		return jsonValue ? (JSON.parse(jsonValue) as T) : null;
-	}
-
-	/**
-	 * Removes a specific item from sessionStorage.
-	 *
-	 * @param key The key of the item to remove.
-	 */
-	protected remove(key: string): void {
-		sessionStorage.removeItem(key);
 	}
 }

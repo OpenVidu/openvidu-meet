@@ -20,8 +20,8 @@
 		"e2e:run-home": "pnpm exec mocha ./tests/e2e/home.test.ts",
 		"e2e:run-recordings": "pnpm exec mocha --recursive --timeout 30000 ./tests/e2e/recording.test.ts",
 		"e2e:run-auth": "pnpm exec mocha --recursive --timeout 30000 ./tests/e2e/auth.test.ts",
-		"lint": "eslint src --max-warnings 0",
-		"lint:fix": "eslint src --fix --max-warnings 0",
+		"lint": "eslint src projects/shared-meet-components/src --max-warnings 0",
+		"lint:fix": "eslint src projects/shared-meet-components/src --fix --max-warnings 0",
 		"format:code": "prettier --ignore-path ../gitignore . --write"
 	},
 	"dependencies": {
