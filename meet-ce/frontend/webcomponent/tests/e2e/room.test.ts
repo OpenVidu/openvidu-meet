@@ -29,7 +29,7 @@ test.describe('Room Features E2E Tests', () => {
 			// The host element mounts and Playwright pierces its open Shadow DOM to
 			// reach the in-meeting view rendered inside it (no iframe involved).
 			await expect(page.locator('openvidu-meet')).toBeVisible();
-			await expect(wcLocator(page, 'ov-session')).toBeVisible();
+			await expect(wcLocator(page, 'ov-meeting-view')).toBeVisible();
 
 			await leaveMeeting(page, { role: 'moderator' });
 		});

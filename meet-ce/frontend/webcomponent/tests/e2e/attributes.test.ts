@@ -215,7 +215,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 			await expect(wcLocator(page, 'ov-pre-join')).toBeVisible({ timeout: 15_000 });
 			await wcLocator(page, '#join-button').click();
-			await expect(wcLocator(page, 'ov-session')).toBeVisible({ timeout: 15_000 });
+			await expect(wcLocator(page, '#layout-container')).toBeVisible({ timeout: 15_000 });
 
 			// Leave to reach the disconnected page (moderator leave-option menu is shown).
 			await wcLocator(page, '#leave-btn').click();

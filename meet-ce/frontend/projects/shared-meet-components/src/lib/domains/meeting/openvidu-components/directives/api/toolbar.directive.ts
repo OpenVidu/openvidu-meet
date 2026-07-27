@@ -7,10 +7,10 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarCameraButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarCameraButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -18,7 +18,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  * <ov-toolbar [cameraButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarCameraButton], ov-toolbar[cameraButton]'
+	selector: 'ov-meeting-view[toolbarCameraButton], ov-toolbar[cameraButton]'
 })
 export class ToolbarCameraButtonDirective implements OnDestroy {
 	/**
@@ -58,10 +58,10 @@ export class ToolbarCameraButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarMicrophoneButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarMicrophoneButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -69,7 +69,7 @@ export class ToolbarCameraButtonDirective implements OnDestroy {
  * <ov-toolbar [microphoneButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarMicrophoneButton], ov-toolbar[microphoneButton]'
+	selector: 'ov-meeting-view[toolbarMicrophoneButton], ov-toolbar[microphoneButton]'
 })
 export class ToolbarMicrophoneButtonDirective implements OnDestroy {
 	/**
@@ -109,10 +109,10 @@ export class ToolbarMicrophoneButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarScreenshareButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarScreenshareButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -120,7 +120,7 @@ export class ToolbarMicrophoneButtonDirective implements OnDestroy {
  * <ov-toolbar [screenshareButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarScreenshareButton], ov-toolbar[screenshareButton]'
+	selector: 'ov-meeting-view[toolbarScreenshareButton], ov-toolbar[screenshareButton]'
 })
 export class ToolbarScreenshareButtonDirective implements OnDestroy {
 	/**
@@ -160,10 +160,10 @@ export class ToolbarScreenshareButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarRecordingButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarRecordingButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -171,7 +171,7 @@ export class ToolbarScreenshareButtonDirective implements OnDestroy {
  * <ov-toolbar [recordingButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarRecordingButton], ov-toolbar[recordingButton]'
+	selector: 'ov-meeting-view[toolbarRecordingButton], ov-toolbar[recordingButton]'
 })
 export class ToolbarRecordingButtonDirective implements OnDestroy {
 	/**
@@ -210,10 +210,10 @@ export class ToolbarRecordingButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarFullscreenButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarFullscreenButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -221,7 +221,7 @@ export class ToolbarRecordingButtonDirective implements OnDestroy {
  * <ov-toolbar [fullscreenButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarFullscreenButton], ov-toolbar[fullscreenButton]'
+	selector: 'ov-meeting-view[toolbarFullscreenButton], ov-toolbar[fullscreenButton]'
 })
 export class ToolbarFullscreenButtonDirective implements OnDestroy {
 	/**
@@ -258,10 +258,10 @@ export class ToolbarFullscreenButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarBackgroundEffectsButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarBackgroundEffectsButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -269,7 +269,7 @@ export class ToolbarFullscreenButtonDirective implements OnDestroy {
  * <ov-toolbar [backgroundEffectsButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarBackgroundEffectsButton], ov-toolbar[backgroundEffectsButton]'
+	selector: 'ov-meeting-view[toolbarBackgroundEffectsButton], ov-toolbar[backgroundEffectsButton]'
 })
 export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
 	/**
@@ -306,10 +306,10 @@ export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarCaptionsButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarCaptionsButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -317,7 +317,7 @@ export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
  * <ov-toolbar [captionsButton]="false"></ov-toolbar>
  */
 //  @Directive({
-// 	selector: 'ov-videoconference[toolbarCaptionsButton], ov-toolbar[captionsButton]'
+// 	selector: 'ov-meeting-view[toolbarCaptionsButton], ov-toolbar[captionsButton]'
 // })
 // export class ToolbarCaptionsButtonDirective implements AfterViewInit, OnDestroy {
 // 	/**
@@ -366,10 +366,10 @@ export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarSettingsButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarSettingsButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -377,7 +377,7 @@ export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
  * <ov-toolbar [settingsButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarSettingsButton], ov-toolbar[settingsButton]'
+	selector: 'ov-meeting-view[toolbarSettingsButton], ov-toolbar[settingsButton]'
 })
 export class ToolbarSettingsButtonDirective implements OnDestroy {
 	/**
@@ -414,10 +414,10 @@ export class ToolbarSettingsButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarLeaveButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarLeaveButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -425,7 +425,7 @@ export class ToolbarSettingsButtonDirective implements OnDestroy {
  * <ov-toolbar [leaveButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarLeaveButton], ov-toolbar[leaveButton]'
+	selector: 'ov-meeting-view[toolbarLeaveButton], ov-toolbar[leaveButton]'
 })
 export class ToolbarLeaveButtonDirective implements OnDestroy {
 	/**
@@ -463,10 +463,10 @@ export class ToolbarLeaveButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarParticipantsPanelButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarParticipantsPanelButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -474,7 +474,7 @@ export class ToolbarLeaveButtonDirective implements OnDestroy {
  * <ov-toolbar [participantsPanelButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarParticipantsPanelButton], ov-toolbar[participantsPanelButton]'
+	selector: 'ov-meeting-view[toolbarParticipantsPanelButton], ov-toolbar[participantsPanelButton]'
 })
 export class ToolbarParticipantsPanelButtonDirective implements OnDestroy {
 	/**
@@ -513,10 +513,10 @@ export class ToolbarParticipantsPanelButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarChatPanelButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarChatPanelButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -524,7 +524,7 @@ export class ToolbarParticipantsPanelButtonDirective implements OnDestroy {
  * <ov-toolbar [chatPanelButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarChatPanelButton], ov-toolbar[chatPanelButton]'
+	selector: 'ov-meeting-view[toolbarChatPanelButton], ov-toolbar[chatPanelButton]'
 })
 export class ToolbarChatPanelButtonDirective implements OnDestroy {
 	/**
@@ -562,10 +562,10 @@ export class ToolbarChatPanelButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarActivitiesPanelButton]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarActivitiesPanelButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -573,7 +573,7 @@ export class ToolbarChatPanelButtonDirective implements OnDestroy {
  * <ov-toolbar [activitiesPanelButton]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarActivitiesPanelButton], ov-toolbar[activitiesPanelButton]'
+	selector: 'ov-meeting-view[toolbarActivitiesPanelButton], ov-toolbar[activitiesPanelButton]'
 })
 export class ToolbarActivitiesPanelButtonDirective implements OnDestroy {
 	/**
@@ -611,10 +611,10 @@ export class ToolbarActivitiesPanelButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarDisplayRoomName]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarDisplayRoomName]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -622,7 +622,7 @@ export class ToolbarActivitiesPanelButtonDirective implements OnDestroy {
  * <ov-toolbar [displayRoomName]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarDisplayRoomName], ov-toolbar[displayRoomName]'
+	selector: 'ov-meeting-view[toolbarDisplayRoomName], ov-toolbar[displayRoomName]'
 })
 export class ToolbarDisplayRoomNameDirective implements OnDestroy {
 	/**
@@ -660,10 +660,10 @@ export class ToolbarDisplayRoomNameDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarDisplayLogo]="false"></ov-videoconference>
+ * <ov-meeting-view [toolbarDisplayLogo]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -671,7 +671,7 @@ export class ToolbarDisplayRoomNameDirective implements OnDestroy {
  * <ov-toolbar [displayLogo]="false"></ov-toolbar>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarDisplayLogo], ov-toolbar[displayLogo]'
+	selector: 'ov-meeting-view[toolbarDisplayLogo], ov-toolbar[displayLogo]'
 })
 export class ToolbarDisplayLogoDirective implements OnDestroy {
 	/**

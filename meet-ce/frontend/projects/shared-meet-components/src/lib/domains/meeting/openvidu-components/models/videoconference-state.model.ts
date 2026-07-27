@@ -1,11 +1,12 @@
 /**
- * The phase of the videoconference connection lifecycle.
+ * The phase of the meeting view lifecycle.
  *
  * Transitions:
- *   loading → prejoin  (when showPrejoin = true)
- *   loading → ready    (when showPrejoin = false, token applied directly)
- *   prejoin → ready    (user clicks join, token applied directly)
- *   ready   → disconnected (user leaves)
- *   any     → error    (unrecoverable error)
+ *   loading    → prejoin      (when showPrejoin = true)
+ *   loading    → connecting   (when showPrejoin = false, token applied directly)
+ *   prejoin    → connecting   (user clicks join, token applied directly)
+ *   connecting → live         (connected to the room)
+ *   live       → disconnected (user leaves)
+ *   any        → error        (unrecoverable error)
  */
-export type VideoconferencePhase = 'loading' | 'prejoin' | 'ready' | 'disconnected' | 'error';
+export type VideoconferencePhase = 'loading' | 'prejoin' | 'connecting' | 'live' | 'disconnected' | 'error';

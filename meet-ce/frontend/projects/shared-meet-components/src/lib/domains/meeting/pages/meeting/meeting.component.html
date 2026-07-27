@@ -14,7 +14,7 @@
 		</div>
 	}
 } @else if (!isMeetingLeft()) {
-	<ov-videoconference
+	<ov-meeting-view
 		[token]="roomMemberToken()!"
 		[prejoin]="true"
 		[videoEnabled]="features().videoEnabled"
@@ -96,5 +96,5 @@
 		<ng-container *ovLayout>
 			<ng-content select="ov-meeting-custom-layout" />
 		</ng-container>
-	</ov-videoconference>
+	</ov-meeting-view>
 }

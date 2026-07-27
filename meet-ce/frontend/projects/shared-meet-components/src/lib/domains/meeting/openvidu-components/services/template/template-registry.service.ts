@@ -4,8 +4,8 @@ import { Service, signal, TemplateRef } from '@angular/core';
  * Service that centralizes all TemplateRef instances for the videoconference component tree.
  *
  * Provided at root level so it is available to all components regardless of injection context
- * (including content-projected components whose injector chain doesn't pass through VideoconferenceComponent).
- * All templates are exposed as writable signals — VideoconferenceComponent sets them directly in
+ * (including content-projected components whose injector chain doesn't pass through MeetingViewComponent).
+ * All templates are exposed as writable signals — MeetingViewComponent sets them directly in
  * `setupTemplates()`, and any descendant component can inject this service to read them reactively.
  */
 @Service()

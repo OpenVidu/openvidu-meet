@@ -4,6 +4,7 @@ import {
 	Component,
 	contentChild,
 	effect,
+	ElementRef,
 	inject,
 	OnDestroy,
 	output,
@@ -14,6 +15,8 @@ import {
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { SidenavLayoutDirective } from '../../directives/layout/sidenav-layout.directive';
 import {
 	LayoutAdditionalElementsDirective,
 	LeaveButtonDirective,
@@ -44,7 +47,7 @@ import {
 	ParticipantsPanelStatusEvent,
 	SettingsPanelStatusEvent
 } from '../../models/panel.model';
-import { ParticipantLeftEvent, ParticipantModel } from '../../models/participant.model';
+import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
 import { VideoconferencePhase } from '../../models/videoconference-state.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
@@ -53,8 +56,14 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
+import { PanelService } from '../../services/panel/panel.service';
+import { ParticipantService } from '../../services/participant/participant.service';
+import { SessionRoomEventsService } from '../../services/session/session-room-events.service';
 import { MediaStorageService } from '../../services/storage/storage.service';
 import { TemplateRegistryService } from '../../services/template/template-registry.service';
+import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
+import { ViewportService } from '../../services/viewport/viewport.service';
+import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
 import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
@@ -63,25 +72,28 @@ import { PanelComponent } from '../panel/panel.component';
 import { ParticipantPanelItemComponent } from '../panel/participants-panel/participant-panel-item/participant-panel-item.component';
 import { ParticipantsPanelComponent } from '../panel/participants-panel/participants-panel/participants-panel.component';
 import { SettingsPanelComponent } from '../panel/settings-panel/settings-panel.component';
+import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 import { PreJoinComponent } from '../pre-join/pre-join.component';
-import { SessionComponent } from '../session/session.component';
 import { StreamComponent } from '../stream/stream.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
- * The **VideoconferenceComponent** is the parent of all OpenVidu components.
- * It allow us to create a modern, useful and powerful videoconference apps with ease.
+ * The **MeetingViewComponent** is the parent of all OpenVidu components: it owns the phase machine
+ * that decides what is on screen (device setup → prejoin → connecting → live) **and** the live stage
+ * itself, including the LiveKit connection.
  */
 @Component({
-	selector: 'ov-videoconference',
+	selector: 'ov-meeting-view',
 	imports: [
 		MatIconModule,
 		MatProgressSpinnerModule,
+		MatSidenavModule,
+		SidenavLayoutDirective,
 		TranslatePipe,
 		PreJoinComponent,
-		SessionComponent,
+		LandscapeWarningComponent,
 		ToolbarComponent,
 		PanelComponent,
 		BackgroundEffectsPanelComponent,
@@ -95,16 +107,25 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 		SettingsPanelGeneralAdditionalElementsDirective,
 		NgTemplateOutlet
 	],
-	templateUrl: './videoconference.component.html',
-	styleUrls: ['./videoconference.component.scss']
+	templateUrl: './meeting-view.component.html',
+	styleUrls: ['./meeting-view.component.scss'],
+	host: {
+		'(window:beforeunload)': 'beforeunloadHandler()'
+	}
 })
-export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
+export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly participantService = inject(ParticipantService);
+	private readonly panelService = inject(PanelService);
+	private readonly backgroundService = inject(VirtualBackgroundService);
+	private readonly meetingEventsService = inject(SessionRoomEventsService);
+	private readonly translateService = inject(MeetingTranslateService);
+	protected readonly viewportService = inject(ViewportService);
 	readonly templateRegistry = inject(TemplateRegistryService);
 
 	// Constants
@@ -189,22 +210,42 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 */
 	readonly defaultSettingsPanelTemplate = viewChild('defaultSettingsPanel', { read: TemplateRef });
 
+	/**
+	 * @internal
+	 * The layout container entering the DOM is the cue that the live stage is on screen and the
+	 * stored virtual background can be applied.
+	 */
+	readonly layoutContainerQuery = viewChild<ElementRef>('layoutContainer');
+
 	// ── State machine ────────────────────────────────────────────────────────
 	// Single phase signal drives all UI branching. Effects only write to it
 	// and use untracked() for any internal reads, so there are no reactive loops.
+	//
+	// IMPORTANT — template-registry ordering invariant: setupTemplates() runs in ngAfterViewInit
+	// because it needs both the consumer's contentChild slots and this component's own viewChild
+	// default <ng-template>s. The 'live' branch *reads* that registry through its ngTemplateOutlets,
+	// and it is only reachable after a successful connect, i.e. strictly later than ngAfterViewInit.
+	// Reordering the phases so that 'live' can be entered earlier breaks it.
 	/** @internal */
 	readonly phase = signal<VideoconferencePhase>('loading');
 
 	/** @internal - error details from token operations */
 	readonly tokenError = signal<{ name: string; message: string } | undefined>(undefined);
 
+	// No `room` field on purpose: MeetingLiveKitService owns the Room and may recreate it (E2EE
+	// reconfiguration), so a copy here could go stale. Always read it through the service.
+
+	// False until the connect starts: destroying the view during device setup or prejoin must not
+	// reach into MeetingLiveKitService, which is root-provided and outlives this component.
+	private shouldDisconnectRoomWhenComponentIsDestroyed = false;
+
 	// Expose constants to template
 	get spinnerDiameter(): number {
-		return VideoconferenceComponent.SPINNER_DIAMETER;
+		return MeetingViewComponent.SPINNER_DIAMETER;
 	}
 
 	get enterAnimationClass(): string {
-		return VideoconferenceComponent.ENTER_ANIMATION_CLASS;
+		return MeetingViewComponent.ENTER_ANIMATION_CLASS;
 	}
 
 	// ── Outputs ──────────────────────────────────────────────────────────────
@@ -341,6 +382,45 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 		if (prevPhase !== 'prejoin' && prevPhase !== 'loading') {
 			this.actionService.openDialog(error.name, error.message, false);
 		}
+
+		// A token error raised while connected has to release the room. Before the merge this was
+		// implicit: leaving the live phase destroyed <ov-session>, whose ngOnDestroy disconnected.
+		// Behaviour kept as it was, including the side effect that the disconnection emits
+		// onParticipantLeft and therefore moves the phase on from 'error' to 'disconnected'.
+		if (prevPhase === 'connecting' || prevPhase === 'live') {
+			void this.disconnectRoom(ParticipantLeftReason.LEAVE);
+		}
+	});
+
+	/**
+	 * @internal
+	 * Applies the stored virtual background once the live stage is on screen, and only when the
+	 * background-effects button is enabled.
+	 */
+	private readonly applyStoredBackgroundEffect = effect(() => {
+		const container = this.layoutContainerQuery();
+		if (container) {
+			// Use microtask instead of setTimeout for better performance
+			Promise.resolve().then(async () => {
+				if (container && this.libService.showBackgroundEffectsButton()) {
+					await this.backgroundService.applyBackgroundFromStorage();
+				}
+			});
+		}
+	});
+
+	// Close background effects panel and remove background if the button is disabled
+	private readonly backgroundEffectsEffect = effect(() => {
+		const enabled = this.libService.backgroundEffectsButtonSignal();
+		if (enabled) return;
+
+		if (this.backgroundService.isBackgroundApplied()) {
+			void this.backgroundService.removeBackground().then(() => {
+				if (this.panelService.isBackgroundEffectsPanelOpened()) {
+					this.panelService.closePanel();
+				}
+			});
+		}
 	});
 
 	private log: ILogger;
@@ -349,11 +429,30 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	 * @internal
 	 */
 	constructor() {
-		this.log = this.loggerSrv.get('VideoconferenceComponent');
+		this.log = this.loggerSrv.get('MeetingViewComponent');
 	}
 
-	ngOnDestroy() {
+	async ngOnDestroy() {
+		if (this.shouldDisconnectRoomWhenComponentIsDestroyed) {
+			await this.disconnectRoom(ParticipantLeftReason.LEAVE);
+		}
+
+		if (this.meetingLiveKitService.isInitialized()) {
+			this.meetingLiveKitService.getRoom().removeAllListeners();
+		}
+
+		this.participantService.clear();
 		this.deviceSrv.clear();
+	}
+
+	/**
+	 * @internal
+	 */
+	beforeunloadHandler() {
+		// Only meaningful once there is something to disconnect from.
+		if (this.phase() !== 'connecting' && this.phase() !== 'live') return;
+
+		this.disconnectRoom(ParticipantLeftReason.BROWSER_UNLOAD);
 	}
 
 	/**
@@ -374,7 +473,7 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 	/**
 	 * @internal
 	 * Called by the PreJoin component when the user clicks join.
-	 * Transitions from 'prejoin' → 'ready' by applying the token immediately.
+	 * Transitions from 'prejoin' → 'connecting' by applying the token immediately.
 	 */
 	_onReadyToJoin(): void {
 		this.log.d('User clicked join in prejoin');
@@ -422,19 +521,95 @@ export class VideoconferenceComponent implements OnDestroy, AfterViewInit {
 
 	/**
 	 * @internal
-	 * Applies a received token and transitions to the 'ready' phase.
+	 * Applies a received token and connects: 'connecting' → 'live'.
 	 */
 	private _applyToken(token: string): void {
 		try {
 			const livekitUrl = this.libService.getLivekitUrl();
 			this.meetingLiveKitService.initializeAndSetToken(token, livekitUrl);
 			this.log.d('Token applied, room is ready to connect');
-			this.phase.set('ready');
+			this.phase.set('connecting');
 		} catch (error: any) {
 			this.log.e('Error applying token', error);
 			this.tokenError.set({ name: 'Token error', message: error?.message ?? String(error) });
 			this.phase.set('error');
+			return;
 		}
+
+		void this._connectToRoom();
+	}
+
+	/**
+	 * @internal
+	 * Joins the room the token was applied to and transitions to the 'live' phase.
+	 *
+	 * Only reachable after `initializeAndSetToken()` succeeded, so the room exists; `getRoom()` is
+	 * still wrapped because it throws rather than returning undefined.
+	 */
+	private async _connectToRoom(): Promise<void> {
+		this.shouldDisconnectRoomWhenComponentIsDestroyed = true;
+
+		let room: Room;
+
+		try {
+			room = this.meetingLiveKitService.getRoom();
+		} catch (error: unknown) {
+			this.log.e('Unexpected error getting room:', error);
+			this.showStartupError('ERRORS.MEETING_NOT_READY');
+			return;
+		}
+
+		this.meetingEventsService.bindRoom(room, {
+			onRoomReconnecting: () => this.onRoomReconnecting.emit(),
+			onRoomReconnected: () => this.onRoomReconnected.emit(),
+			onParticipantLeft: (event) => this._onParticipantLeft(event)
+		});
+
+		try {
+			await this.participantService.connect();
+			// Send room created after participant connect for avoiding to send incomplete room payload
+			this.onRoomCreated.emit(room);
+
+			this.phase.set('live');
+
+			const localParticipant = this.participantService.localParticipant();
+			if (localParticipant) {
+				this.onParticipantConnected.emit(localParticipant);
+			}
+		} catch (error: any) {
+			// The technical detail goes to the log; the user gets a translated, actionable message.
+			this.log.e('There was an error connecting to the meeting:', error?.code, error?.message, error);
+			this.showStartupError('ERRORS.MEETING_CONNECTION_FAILED');
+		}
+	}
+
+	/**
+	 * @internal
+	 * Leaves the room, emitting `onParticipantLeft` once the disconnection completes.
+	 */
+	async disconnectRoom(reason: ParticipantLeftReason) {
+		// Mark the room as disconnected to avoid doing it again in ngOnDestroy
+		this.shouldDisconnectRoomWhenComponentIsDestroyed = false;
+		await this.meetingLiveKitService.disconnect(() => {
+			this._onParticipantLeft({
+				roomName: this.meetingLiveKitService.getRoomName(),
+				participantName: this.participantService.getMyName() || '',
+				identity: this.participantService.getMyIdentity() || '',
+				reason
+			});
+		}, false);
+	}
+
+	/**
+	 * Single policy for the errors that prevent the meeting from starting: same translated title,
+	 * a translated message keyed by cause, and never the raw error — which used to leak LiveKit
+	 * internals into the dialog. Callers are responsible for logging the technical detail.
+	 */
+	private showStartupError(messageKey: string): void {
+		this.actionService.openDialog(
+			this.translateService.translate('ERRORS.SESSION'),
+			this.translateService.translate(messageKey)
+		);
 	}
 
 	/**

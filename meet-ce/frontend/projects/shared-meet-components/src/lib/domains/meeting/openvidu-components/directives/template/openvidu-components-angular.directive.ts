@@ -20,7 +20,7 @@ import { Directive, TemplateRef, ViewContainerRef, inject } from '@angular/core'
  * @Component({
  *   selector: 'app-root',
  *   template: `
- *     <ov-videoconference
+ *     <ov-meeting-view
  *       [token]="token"
  *       [livekitUrl]="LIVEKIT_URL"
  *       (onTokenRequested)="onTokenRequested($event)"
@@ -29,7 +29,7 @@ import { Directive, TemplateRef, ViewContainerRef, inject } from '@angular/core'
  *         <button (click)="toggleVideo()">Toggle Video</button>
  *         <button (click)="toggleAudio()">Toggle Audio</button>
  *       </div>
- *     </ov-videoconference>
+ *     </ov-meeting-view>
  *   `,
  *   standalone: true,
  *   imports: [OpenViduComponentsModule],
@@ -150,7 +150,7 @@ export class ToolbarDirective {
  * @Component({
  * 	selector: 'app-root',
  * 	template: `
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			(onTokenRequested)="onTokenRequested($event)"
@@ -163,7 +163,7 @@ export class ToolbarDirective {
  * 					<mat-icon>mic</mat-icon>
  * 				</button>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: [],
  * 	standalone: true,
@@ -283,7 +283,7 @@ export class ToolbarAdditionalButtonsDirective {
  * @Component({
  * 	selector: 'app-root',
  * 	template: `
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			[toolbarDisplayRoomName]="false"
@@ -294,7 +294,7 @@ export class ToolbarAdditionalButtonsDirective {
  * 					<mat-icon>star</mat-icon>
  * 				</button>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: [],
  * 	standalone: true,
@@ -405,7 +405,7 @@ export class ToolbarAdditionalPanelButtonsDirective {
  * 	selector: 'app-root',
  * 	template: `
  * 		<!-- OpenVidu Video Conference Component -->
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			(onTokenRequested)="onTokenRequested($event)"
@@ -425,7 +425,7 @@ export class ToolbarAdditionalPanelButtonsDirective {
  * 					This is my custom activities panel
  * 				</div>
  * 			</ov-panel>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: `
  * 		#my-chat-panel,
@@ -559,7 +559,7 @@ export class PanelDirective {
  * 	selector: 'app-root',
  * 	template: `
  * 		<!-- OpenVidu Video Conference Component -->
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			[toolbarDisplayRoomName]="false"
@@ -589,7 +589,7 @@ export class PanelDirective {
  * 				</div>
  * 				}
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: `
  * 		#my-panels {
@@ -743,7 +743,7 @@ export class AdditionalPanelsDirective {
  * 	selector: 'app-root',
  * 	template: `
  * 		<!-- OpenVidu Video Conference Component -->
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			[toolbarDisplayRoomName]="false"
@@ -763,7 +763,7 @@ export class AdditionalPanelsDirective {
  * 				<input value="Hello" #input />
  * 				<button (click)="send(input.value)">Send</button>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: `
  * 		#my-panel {
@@ -916,7 +916,7 @@ export class BackgroundEffectsPanelDirective {
  * @Component({
  * 	selector: 'app-root',
  * 	template: `
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			(onTokenRequested)="onTokenRequested($event)"
@@ -926,7 +926,7 @@ export class BackgroundEffectsPanelDirective {
  * 				<h3>ACTIVITIES</h3>
  * 				<div>CUSTOM ACTIVITIES</div>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: `
  * 		#my-panel {
@@ -1031,7 +1031,7 @@ export class ActivitiesPanelDirective {
  * 	selector: 'app-root',
  * 	template: `
  * 		<!-- OpenVidu Video Conference Component -->
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			(onTokenRequested)="onTokenRequested($event)"
@@ -1047,7 +1047,7 @@ export class ActivitiesPanelDirective {
  * 					}
  * 				</ul>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: `
  * 		#my-panel {
@@ -1202,7 +1202,7 @@ export class ParticipantsPanelDirective {
  * 	selector: 'app-root',
  * 	template: `
  * 		<!-- OpenVidu Video Conference Component -->
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			(onTokenRequested)="onTokenRequested($event)"
@@ -1222,7 +1222,7 @@ export class ParticipantsPanelDirective {
  * 					<button mat-menu-item>Button 2</button>
  * 				</mat-menu>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: [],
  * 	standalone: true,
@@ -1338,7 +1338,7 @@ export class ParticipantPanelItemDirective {
  * 	template: `
  * 		<!-- OpenVidu Video Conference Component -->
  * 		@if (connected) {
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			[toolbarDisplayRoomName]="false"
@@ -1351,7 +1351,7 @@ export class ParticipantPanelItemDirective {
  * 				<button (click)="leaveSession()">Leave</button>
  * 				}
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 		}
  *
  * 		<!-- Session Disconnected Message -->
@@ -1477,7 +1477,7 @@ export class ParticipantPanelItemElementsDirective {
  * 	selector: 'app-root',
  * 	template: `
  * 		<!-- OpenVidu Video Conference Component -->
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			(onTokenRequested)="onTokenRequested($event)"
@@ -1500,7 +1500,7 @@ export class ParticipantPanelItemElementsDirective {
  * 					}
  * 				</div>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: `
  * 		.container {
@@ -1658,7 +1658,7 @@ export class LayoutDirective {
  * 	selector: 'app-root',
  * 	template: `
  * 		<!-- OpenVidu Video Conference Component -->
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			(onTokenRequested)="onTokenRequested($event)"
@@ -1671,7 +1671,7 @@ export class LayoutDirective {
  * 				<!-- Display Participant's Name -->
  * 				<p>{{ stream.participant.name }}</p>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: `
  * 		p {

@@ -6,10 +6,10 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `stream` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `stream` component:
  *
  * @example
- * <ov-videoconference [streamDisplayParticipantName]="false"></ov-videoconference>
+ * <ov-meeting-view [streamDisplayParticipantName]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link StreamComponent}.
@@ -17,7 +17,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  * <ov-stream [displayParticipantName]="false"></ov-stream>
  */
 @Directive({
-	selector: 'ov-videoconference[streamDisplayParticipantName], ov-stream[displayParticipantName]'
+	selector: 'ov-meeting-view[streamDisplayParticipantName], ov-stream[displayParticipantName]'
 })
 export class StreamDisplayParticipantNameDirective implements OnDestroy {
 	readonly streamDisplayParticipantName = input<boolean | undefined>(undefined);
@@ -47,10 +47,10 @@ export class StreamDisplayParticipantNameDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `stream` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `stream` component:
  *
  * @example
- * <ov-videoconference [streamDisplayAudioDetection]="false"></ov-videoconference>
+ * <ov-meeting-view [streamDisplayAudioDetection]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link StreamComponent}.
@@ -58,7 +58,7 @@ export class StreamDisplayParticipantNameDirective implements OnDestroy {
  * <ov-stream [displayAudioDetection]="false"></ov-stream>
  */
 @Directive({
-	selector: 'ov-videoconference[streamDisplayAudioDetection], ov-stream[displayAudioDetection]'
+	selector: 'ov-meeting-view[streamDisplayAudioDetection], ov-stream[displayAudioDetection]'
 })
 export class StreamDisplayAudioDetectionDirective implements OnDestroy {
 	readonly streamDisplayAudioDetection = input<boolean | undefined>(undefined);
@@ -87,10 +87,10 @@ export class StreamDisplayAudioDetectionDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `stream` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `stream` component:
  *
  * @example
- * <ov-videoconference [streamVideoControls]="false"></ov-videoconference>
+ * <ov-meeting-view [streamVideoControls]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link StreamComponent}.
@@ -98,7 +98,7 @@ export class StreamDisplayAudioDetectionDirective implements OnDestroy {
  * <ov-stream [videoControls]="false"></ov-stream>
  */
 @Directive({
-	selector: 'ov-videoconference[streamVideoControls], ov-stream[videoControls]'
+	selector: 'ov-meeting-view[streamVideoControls], ov-stream[videoControls]'
 })
 export class StreamVideoControlsDirective implements OnDestroy {
 	readonly streamVideoControls = input<boolean | undefined>(undefined);

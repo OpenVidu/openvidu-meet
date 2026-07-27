@@ -50,7 +50,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
- * The **ToolbarComponent** is hosted inside of the {@link VideoconferenceComponent}.
+ * The **ToolbarComponent** is hosted inside of the {@link MeetingViewComponent}.
  * It is in charge of displaying the participants controlls for handling the media, panels and more videoconference features.
  */
 @Component({

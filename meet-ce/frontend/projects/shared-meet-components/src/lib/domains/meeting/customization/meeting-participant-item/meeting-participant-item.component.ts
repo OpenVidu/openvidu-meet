@@ -5,7 +5,7 @@ import { MeetingParticipantItemContentComponent } from '../meeting-participant-i
  * Exposes the participant-panel-item `TemplateRef` consumed by the OpenVidu components library.
  *
  * `MeetingComponent` reads this component's `template()` (via `contentChild`) and re-emits it through
- * the `*ovParticipantPanelItem` slot of `<ov-videoconference>`, so the participants panel stamps the
+ * the `*ovParticipantPanelItem` slot of `<ov-meeting-view>`, so the participants panel stamps the
  * template once per participant. The template delegates to {@link MeetingParticipantItemContentComponent},
  * which therefore gets one instance per participant and owns all per-participant rendering and logic.
  */

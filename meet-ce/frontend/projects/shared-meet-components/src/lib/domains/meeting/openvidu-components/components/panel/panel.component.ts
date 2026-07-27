@@ -13,7 +13,7 @@ import { TemplateRegistryService } from '../../services/template/template-regist
 
 /**
  *
- * The **PanelComponent** is hosted inside of the {@link VideoconferenceComponent}.
+ * The **PanelComponent** is hosted inside of the {@link MeetingViewComponent}.
  * It is in charge of displaying the videoconference panels providing functionalities to the videoconference app
  * such as the chat ({@link ChatPanelComponent}) and list of participants ({@link ParticipantsPanelComponent})
  */

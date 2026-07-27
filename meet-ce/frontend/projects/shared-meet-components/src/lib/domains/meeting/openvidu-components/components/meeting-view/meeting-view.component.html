@@ -8,8 +8,8 @@
 	} @else if (phase() === 'prejoin') {
 		<!-- Prejoin -->
 		<div [animate.enter]="enterAnimationClass" id="pre-join-container">
-		@if (templateRegistry.preJoin()) {
-			<ng-container *ngTemplateOutlet="templateRegistry.preJoin()!" />
+			@if (templateRegistry.preJoin()) {
+				<ng-container *ngTemplateOutlet="templateRegistry.preJoin()!" />
 			} @else {
 				<ov-pre-join
 					[error]="tokenError()"
@@ -35,16 +35,48 @@
 			<span>{{ 'ROOM.DISCONNECTED' | translate }}</span>
 			<p class="subtitle">{{ 'ROOM.DISCONNECTED_SUBTITLE' | translate }}</p>
 		</div>
-	} @else if (phase() === 'ready') {
-		<!-- VideoConference -->
-		<div [animate.enter]="enterAnimationClass" id="vc-container">
-			<ov-session
-				(onRoomCreated)="onRoomCreated.emit($event)"
-				(onRoomReconnecting)="onRoomReconnecting.emit()"
-				(onRoomReconnected)="onRoomReconnected.emit()"
-				(onParticipantConnected)="onParticipantConnected.emit($event)"
-				(onParticipantLeft)="_onParticipantLeft($event)"
-			/>
+	} @else if (phase() === 'connecting') {
+		<!-- Joining the room -->
+		<div id="spinner" class="joining" [animate.enter]="'ov-fade-in-200'" [animate.leave]="'ov-fade-out-200'">
+			<mat-spinner [diameter]="spinnerDiameter" />
+			<span>{{ 'ROOM.JOINING' | translate }}</span>
+		</div>
+	} @else if (phase() === 'live') {
+		<!-- Live meeting -->
+		@if (viewportService.shouldShowLandscapeWarning()) {
+			<ov-landscape-warning />
+		}
+		<div id="session-container" [animate.enter]="enterAnimationClass" [animate.leave]="'ov-fade-out-200'">
+			<mat-sidenav-container
+				ovSidenavLayout
+				#sidenavLayout="ovSidenavLayout"
+				class="sidenav-container"
+				[hasBackdrop]="sidenavLayout.hasBackdrop()"
+			>
+				<mat-sidenav
+					[mode]="sidenavLayout.mode()"
+					position="end"
+					class="sidenav-menu"
+					[class.big]="sidenavLayout.isSettingsPanelOpened()"
+					fixedInViewport="true"
+					fixedTopGap="0"
+					fixedBottomGap="0"
+				>
+					<ng-container *ngTemplateOutlet="templateRegistry.panel() ?? null" />
+				</mat-sidenav>
+
+				<mat-sidenav-content class="sidenav-main">
+					<div id="layout-container" #layoutContainer>
+						<ng-container *ngTemplateOutlet="templateRegistry.layout() ?? null" />
+					</div>
+				</mat-sidenav-content>
+			</mat-sidenav-container>
+
+			@if (templateRegistry.toolbar()) {
+				<div id="footer-container">
+					<ng-container *ngTemplateOutlet="templateRegistry.toolbar() ?? null" />
+				</div>
+			}
 		</div>
 	}
 </div>

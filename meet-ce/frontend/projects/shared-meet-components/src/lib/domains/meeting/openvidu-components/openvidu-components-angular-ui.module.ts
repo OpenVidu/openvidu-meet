@@ -5,7 +5,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { AudioWaveComponent } from './components/audio-wave/audio-wave.component';
 import { SmartLayoutComponent } from './components/layout/smart-layout/smart-layout.component';
 import { VideoElementComponent } from './components/video-element/video-element.component';
-import { SessionComponent } from './components/session/session.component';
 import { StreamComponent } from './components/stream/stream.component';
 import { ToolbarMediaButtonsComponent } from './components/toolbar/toolbar-media-buttons/toolbar-media-buttons.component';
 import { ToolbarPanelButtonsComponent } from './components/toolbar/toolbar-panel-buttons/toolbar-panel-buttons.component';
@@ -20,7 +19,7 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import { PanelComponent } from './components/panel/panel.component';
 import { ParticipantPanelItemComponent } from './components/panel/participants-panel/participant-panel-item/participant-panel-item.component';
 import { PreJoinComponent } from './components/pre-join/pre-join.component';
-import { VideoconferenceComponent } from './components/videoconference/videoconference.component';
+import { MeetingViewComponent } from './components/meeting-view/meeting-view.component';
 
 import { LandscapeWarningComponent } from './components/landscape-warning/landscape-warning.component';
 import { RecordingActivityComponent } from './components/panel/activities-panel/recording-activity/recording-activity.component';
@@ -34,7 +33,7 @@ import { ApiDirectiveModule } from './directives/api/api.directive.module';
 import { OpenViduComponentsDirectiveModule } from './directives/template/openvidu-components-angular.directive.module';
 
 const publicComponents = [
-	VideoconferenceComponent,
+	MeetingViewComponent,
 	ToolbarComponent,
 	PanelComponent,
 	StreamComponent,
@@ -71,8 +70,7 @@ const privateComponents: any[] = [];
 		ToolbarComponent,
 		ParticipantPanelItemComponent,
 		RecordingActivityComponent,
-		SessionComponent,
-		VideoconferenceComponent,
+		MeetingViewComponent,
 		TranslatePipe,
 		OpenViduComponentsDirectiveModule,
 		ApiDirectiveModule,

@@ -6,10 +6,10 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `participantPanelItem` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `participantPanelItem` component:
  *
  * @example
- * <ov-videoconference [participantPanelItemMuteButton]="false"></ov-videoconference>
+ * <ov-meeting-view [participantPanelItemMuteButton]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ParticipantPanelItemComponent}.
@@ -17,7 +17,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  * <ov-participant-panel-item [muteButton]="false"></ov-participant-panel-item>
  */
 @Directive({
-	selector: 'ov-videoconference[participantPanelItemMuteButton], ov-participant-panel-item[muteButton]'
+	selector: 'ov-meeting-view[participantPanelItemMuteButton], ov-participant-panel-item[muteButton]'
 })
 export class ParticipantPanelItemMuteButtonDirective implements OnDestroy {
 	readonly participantPanelItemMuteButton = input<boolean | undefined>(undefined);

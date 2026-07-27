@@ -81,7 +81,7 @@ export class LayoutRemoteParticipantsDirective implements OnDestroy {
  * @internal
  */
 @Directive({
-	selector: 'ov-videoconference[brandingLogo], ov-toolbar[brandingLogo]'
+	selector: 'ov-meeting-view[brandingLogo], ov-toolbar[brandingLogo]'
 })
 export class ToolbarBrandingLogoDirective implements OnDestroy {
 	/**
@@ -116,10 +116,10 @@ export class ToolbarBrandingLogoDirective implements OnDestroy {
  *
  * Default: `false`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `toolbar` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
  *
  * @example
- * <ov-videoconference [toolbarViewRecordingsButton]="true"></ov-videoconference>
+ * <ov-meeting-view [toolbarViewRecordingsButton]="true"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ToolbarComponent}.
@@ -129,7 +129,7 @@ export class ToolbarBrandingLogoDirective implements OnDestroy {
  * When the button is clicked, it will fire the `onViewRecordingsClicked` event.
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarViewRecordingsButton], ov-toolbar[viewRecordingsButton]'
+	selector: 'ov-meeting-view[toolbarViewRecordingsButton], ov-toolbar[viewRecordingsButton]'
 })
 export class ToolbarViewRecordingsButtonDirective implements OnDestroy {
 	/**
@@ -169,13 +169,13 @@ export class ToolbarViewRecordingsButtonDirective implements OnDestroy {
  *
  * Default: `true`
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * @example
- * <ov-videoconference [recordingActivityStartStopRecordingButton]="false"></ov-videoconference>
+ * <ov-meeting-view [recordingActivityStartStopRecordingButton]="false"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[recordingActivityStartStopRecordingButton]'
+	selector: 'ov-meeting-view[recordingActivityStartStopRecordingButton]'
 })
 export class StartStopRecordingButtonsDirective implements OnDestroy {
 	/**
@@ -211,13 +211,13 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
  *
  * Default: `false`
  *
- * Can be used in {@link VideoconferenceComponent}.
+ * Can be used in {@link MeetingViewComponent}.
  *
  * @example
- * <ov-videoconference [recordingActivityViewRecordingsButton]="true"></ov-videoconference>
+ * <ov-meeting-view [recordingActivityViewRecordingsButton]="true"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[recordingActivityViewRecordingsButton]'
+	selector: 'ov-meeting-view[recordingActivityViewRecordingsButton]'
 })
 export class RecordingActivityViewRecordingsButtonDirective implements OnDestroy {
 	readonly recordingActivityViewRecordingsButton = input<boolean | undefined>(undefined);
@@ -250,10 +250,10 @@ export class RecordingActivityViewRecordingsButtonDirective implements OnDestroy
  * Can be used in {@link ToolbarComponent}.
  *
  * @example
- * <ov-videoconference [toolbarRoomName]="roomName"></ov-videoconference>
+ * <ov-meeting-view [toolbarRoomName]="roomName"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[toolbarRoomName], ov-toolbar[roomName]'
+	selector: 'ov-meeting-view[toolbarRoomName], ov-toolbar[roomName]'
 })
 export class ToolbarRoomNameDirective implements OnDestroy {
 	readonly toolbarRoomName = input<string | undefined>(undefined);
@@ -287,10 +287,10 @@ export class ToolbarRoomNameDirective implements OnDestroy {
  * Default: `false`
  *
  * Usage:
- * <ov-videoconference [showThemeSelector]="false"></ov-videoconference>
+ * <ov-meeting-view [showThemeSelector]="false"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[showThemeSelector]'
+	selector: 'ov-meeting-view[showThemeSelector]'
 })
 export class ShowThemeSelectorDirective implements OnDestroy {
 	readonly showThemeSelector = input<boolean | undefined>(undefined);
@@ -323,10 +323,10 @@ export class ShowThemeSelectorDirective implements OnDestroy {
  * Default: `undefined`
  *
  * Usage:
- * <ov-videoconference [e2eeKey]="yourEncryptionKey"></ov-videoconference>
+ * <ov-meeting-view [e2eeKey]="yourEncryptionKey"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[e2eeKey]'
+	selector: 'ov-meeting-view[e2eeKey]'
 })
 export class E2EEKeyDirective implements OnDestroy {
 	readonly e2eeKey = input<string | undefined>(undefined);

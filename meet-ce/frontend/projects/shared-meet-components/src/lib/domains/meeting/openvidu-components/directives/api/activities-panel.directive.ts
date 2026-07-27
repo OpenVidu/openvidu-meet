@@ -6,10 +6,10 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  *
  * Default: `true`
  *
- * It can be used in the parent element {@link VideoconferenceComponent} specifying the name of the `activitiesPanel` component:
+ * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `activitiesPanel` component:
  *
  * @example
- * <ov-videoconference [activitiesPanelRecordingActivity]="false"></ov-videoconference>
+ * <ov-meeting-view [activitiesPanelRecordingActivity]="false"></ov-meeting-view>
  *
  * \
  * And it also can be used in the {@link ActivitiesPanelComponent}.
@@ -17,7 +17,7 @@ import { OpenViduComponentsConfigService } from '../../services/config/directive
  * <ov-activities-panel *ovActivitiesPanel [recordingActivity]="false"></ov-activities-panel>
  */
 @Directive({
-	selector: 'ov-videoconference[activitiesPanelRecordingActivity], ov-activities-panel[recordingActivity]'
+	selector: 'ov-meeting-view[activitiesPanelRecordingActivity], ov-activities-panel[recordingActivity]'
 })
 export class ActivitiesPanelRecordingActivityDirective implements OnDestroy {
 	readonly activitiesPanelRecordingActivity = input<boolean | undefined>(undefined);

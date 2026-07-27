@@ -67,8 +67,9 @@ for (const integration of INTEGRATIONS) {
 				await leaveRoomCommand(page);
 				await expectEvent(page, EmbeddedEventName.LEFT);
 
-				// Speaker should still be in the meeting
-				await expect(wcLocator(speakerPage, 'ov-session')).toBeVisible();
+				// Speaker should still be in the meeting. Assert the live stage: `ov-meeting-view` is the
+				// host component and stays mounted through the disconnected phase too.
+				await expect(wcLocator(speakerPage, '#layout-container')).toBeVisible();
 				await expect(eventLocator(speakerPage, EmbeddedEventName.LEFT)).toHaveCount(0);
 
 				await leaveMeeting(speakerPage);
@@ -164,8 +165,8 @@ for (const integration of INTEGRATIONS) {
 
 				await expectEvent(speakerPage, EmbeddedEventName.LEFT);
 
-				// Moderator should still be in the meeting
-				await expect(meetLocator(page, integration, 'ov-session')).toBeVisible();
+				// Moderator should still be in the meeting (live stage, see above).
+				await expect(meetLocator(page, integration, '#layout-container')).toBeVisible();
 				await expect(eventLocator(page, EmbeddedEventName.LEFT)).toHaveCount(0);
 
 				await leaveMeeting(page, { integration, role: 'moderator' });

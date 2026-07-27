@@ -152,7 +152,12 @@ export const openMeeting = async (
 
 	await expect(meet('ov-pre-join')).toBeVisible({ timeout: 15_000 });
 	await meet('#join-button').click();
-	await expect(meet('ov-session')).toBeVisible({ timeout: 15_000 });
+	// Gate on the live stage, not on the host component: `ov-meeting-view` exists from the first
+	// render (device setup, prejoin, …), so waiting for it would return before the room is
+	// connected and any command sent right after would be dropped by the iframe bridge's
+	// `isConnected()` guard. `#layout-container` only renders in the `live` phase — same marker the
+	// SPA helper uses (`e2e/helpers/meeting-navigation.helper.ts`).
+	await expect(meet('#layout-container')).toBeVisible({ timeout: 15_000 });
 };
 
 /**

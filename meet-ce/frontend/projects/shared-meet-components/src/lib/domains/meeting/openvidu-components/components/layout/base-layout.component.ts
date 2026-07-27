@@ -30,7 +30,7 @@ import { StreamComponent } from '../stream/stream.component';
 
 /**
  *
- * The **BaseLayoutComponent** is hosted inside of the {@link VideoconferenceComponent}.
+ * The **BaseLayoutComponent** is hosted inside of the {@link MeetingViewComponent}.
  * It is in charge of displaying the participants streams layout.
  */
 @Component({

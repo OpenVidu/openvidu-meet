@@ -21,7 +21,7 @@
  * @Component({
  * 	selector: 'app-root',
  * 	template: `
- * 		<ov-videoconference
+ * 		<ov-meeting-view
  * 			[token]="token"
  * 			[livekitUrl]="LIVEKIT_URL"
  * 			(onTokenRequested)="onTokenRequested($event)"
@@ -46,7 +46,7 @@
  * 					</button>
  * 				</div>
  * 			</div>
- * 		</ov-videoconference>
+ * 		</ov-meeting-view>
  * 	`,
  * 	styles: `
  * 		.custom-prejoin {
@@ -222,13 +222,13 @@ export class ParticipantPanelAfterLocalParticipantDirective {
  *
  * Usage example:
  * ```html
- * <ov-videoconference [toolbarLeaveButton]="false">
+ * <ov-meeting-view [toolbarLeaveButton]="false">
  *   <ng-container *ovLeaveButton>
  *     <button class="my-leave-button" (click)="customLeave()">
  *       Leave meeting
  *     </button>
  *   </ng-container>
- * </ov-videoconference>
+ * </ov-meeting-view>
  * ```
  */
 @Directive({
@@ -251,7 +251,7 @@ export class LeaveButtonDirective {
  *
  * Usage examples:
  * ```html
- * <ov-videoconference>
+ * <ov-meeting-view>
  *   <!-- Default position (after local participant) -->
  *   <ng-container *ovLayoutAdditionalElements>
  *     <div class="my-banner">Banner</div>
@@ -266,7 +266,7 @@ export class LeaveButtonDirective {
  *   <ng-container *ovLayoutAdditionalElements="'bottom'">
  *     <div class="bottom-info">Footer Info</div>
  *   </ng-container>
- * </ov-videoconference>
+ * </ov-meeting-view>
  * ```
  */
 @Directive({
@@ -323,7 +323,7 @@ export class ParticipantPanelParticipantBadgeDirective {
  *
  * Usage example:
  * ```html
- * <ov-videoconference>
+ * <ov-meeting-view>
  *   <ng-container *ovSettingsPanelGeneralAdditionalElements>
  *     <div class="custom-settings-section">
  *       <mat-list>
@@ -335,7 +335,7 @@ export class ParticipantPanelParticipantBadgeDirective {
  *       </mat-list>
  *     </div>
  *   </ng-container>
- * </ov-videoconference>
+ * </ov-meeting-view>
  * ```
  *
  * @internal
@@ -355,7 +355,7 @@ export class SettingsPanelGeneralAdditionalElementsDirective {
  *
  * Usage example:
  * ```html
- * <ov-videoconference>
+ * <ov-meeting-view>
  *   <ng-container *ovToolbarMoreOptionsAdditionalMenuItems>
  *     <button mat-menu-item (click)="onCustomAction()">
  *       <mat-icon>star</mat-icon>
@@ -367,7 +367,7 @@ export class SettingsPanelGeneralAdditionalElementsDirective {
  *       <span>Another Action</span>
  *     </button>
  *   </ng-container>
- * </ov-videoconference>
+ * </ov-meeting-view>
  * ```
  *
  * @internal

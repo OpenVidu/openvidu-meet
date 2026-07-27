@@ -9,15 +9,15 @@ import { MeetingTranslateService } from '../../services/translate/meeting-transl
  * The **livekitUrl** directive sets the livekitUrl to grant a participant access to a Room.
  * This Livekit Url will be use by each participant when connecting to a Room.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: `""`
  *
  * @example
- * <ov-videoconference [livekitUrl]="http://localhost:1234"></ov-videoconference>
+ * <ov-meeting-view [livekitUrl]="http://localhost:1234"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[livekitUrl]'
+	selector: 'ov-meeting-view[livekitUrl]'
 })
 export class LivekitUrlDirective implements OnDestroy {
 	/**
@@ -60,15 +60,15 @@ export class LivekitUrlDirective implements OnDestroy {
  * The **token** directive sets the token to grant a participant access to a Room.
  * This OpenVidu token will be use by each participant when connecting to a Room.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: `""`
  *
  * @example
- * <ov-videoconference [token]="token"></ov-videoconference>
+ * <ov-meeting-view [token]="token"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[token]'
+	selector: 'ov-meeting-view[token]'
 })
 export class TokenDirective implements OnDestroy {
 	/**
@@ -110,15 +110,15 @@ export class TokenDirective implements OnDestroy {
 /**
  * The **tokenError** directive allows to display an error message in case of issues during token request.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: `undefined`
  *
  * @example
- * <ov-videoconference [tokenError]="error"></ov-videoconference>
+ * <ov-meeting-view [tokenError]="error"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[tokenError]'
+	selector: 'ov-meeting-view[tokenError]'
 })
 export class TokenErrorDirective implements OnDestroy {
 	/**
@@ -160,7 +160,7 @@ export class TokenErrorDirective implements OnDestroy {
 /**
  * The **lang** directive allows set the UI language to a default language.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * **Default:** English `en`
  *
@@ -178,10 +178,10 @@ export class TokenErrorDirective implements OnDestroy {
  * * Portuguese: `pt`
  *
  * @example
- * <ov-videoconference [lang]="'es'"></ov-videoconference>
+ * <ov-meeting-view [lang]="'es'"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[lang]'
+	selector: 'ov-meeting-view[lang]'
 })
 export class LangDirective implements OnDestroy {
 	/**
@@ -225,7 +225,7 @@ export class LangDirective implements OnDestroy {
  * It will override the application languages provided by default.
  * This propety is an array of objects which must comply with the {@link LangOption} interface.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: ```
  * [
@@ -246,10 +246,10 @@ export class LangDirective implements OnDestroy {
  *
  *
  * @example
- * <ov-videoconference [langOptions]="[{name:'Spanish', lang: 'es'}]"></ov-videoconference>
+ * <ov-meeting-view [langOptions]="[{name:'Spanish', lang: 'es'}]"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[langOptions]'
+	selector: 'ov-meeting-view[langOptions]'
 })
 export class LangOptionsDirective implements OnDestroy {
 	/**
@@ -292,13 +292,13 @@ export class LangOptionsDirective implements OnDestroy {
 /**
  * The **participantName** directive sets the participant name. It can be useful for aplications which doesn't need the prejoin page.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * @example
- * <ov-videoconference [participantName]="'OpenVidu'"></ov-videoconference>
+ * <ov-meeting-view [participantName]="'OpenVidu'"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[participantName]'
+	selector: 'ov-meeting-view[participantName]'
 })
 export class ParticipantNameDirective implements OnDestroy {
 	/**
@@ -342,15 +342,15 @@ export class ParticipantNameDirective implements OnDestroy {
 /**
  * The **prejoin** directive allows show/hide the prejoin page for selecting media devices.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: `true`
  *
  * @example
- * <ov-videoconference [prejoin]="false"></ov-videoconference>
+ * <ov-meeting-view [prejoin]="false"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[prejoin]'
+	selector: 'ov-meeting-view[prejoin]'
 })
 export class PrejoinDirective implements OnDestroy {
 	/**
@@ -392,16 +392,16 @@ export class PrejoinDirective implements OnDestroy {
 /**
  * The **videoEnabled** directive allows to join the meeting with camera enabled or disabled.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: `true`
  *
  *
  * @example
- * <ov-videoconference [videoEnabled]="false"></ov-videoconference>
+ * <ov-meeting-view [videoEnabled]="false"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[videoEnabled]'
+	selector: 'ov-meeting-view[videoEnabled]'
 })
 export class VideoEnabledDirective implements OnDestroy {
 	/**
@@ -466,16 +466,16 @@ export class VideoEnabledDirective implements OnDestroy {
 /**
  * The **audioEnabled** directive allows to join the meeting with microphone enabled or disabled.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: `true`
  *
  * @example
- * <ov-videoconference [audioEnabled]="false"></ov-videoconference>
+ * <ov-meeting-view [audioEnabled]="false"></ov-meeting-view>
  */
 
 @Directive({
-	selector: 'ov-videoconference[audioEnabled]'
+	selector: 'ov-meeting-view[audioEnabled]'
 })
 export class AudioEnabledDirective implements OnDestroy {
 	/**
@@ -535,15 +535,15 @@ export class AudioEnabledDirective implements OnDestroy {
 /**
  * The **showDisconnectionDialog** directive allows to show/hide the disconnection dialog when the local participant is disconnected from the room.
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: `true`
  *
  * @example
- * <ov-videoconference [showDisconnectionDialog]="false"></ov-videoconference>
+ * <ov-meeting-view [showDisconnectionDialog]="false"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[showDisconnectionDialog]'
+	selector: 'ov-meeting-view[showDisconnectionDialog]'
 })
 export class ShowDisconnectionDialogDirective implements OnDestroy {
 	/**
@@ -603,11 +603,11 @@ export class ShowDisconnectionDialogDirective implements OnDestroy {
  * used for serving and accessing the recording streams.
  *
  * @example
- * <ov-videoconference [recordingStreamBaseUrl]="'https://myserver.com/api/recordings'">
- * </ov-videoconference>
+ * <ov-meeting-view [recordingStreamBaseUrl]="'https://myserver.com/api/recordings'">
+ * </ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[recordingStreamBaseUrl]'
+	selector: 'ov-meeting-view[recordingStreamBaseUrl]'
 })
 export class RecordingStreamBaseUrlDirective implements OnDestroy {
 	/**
@@ -651,15 +651,15 @@ export class RecordingStreamBaseUrlDirective implements OnDestroy {
  * participant may send messages. When `false` the chat panel remains readable but its input is
  * disabled. Pair it with {@link ToolbarChatPanelButtonDirective} (which controls chat visibility).
  *
- * It is only available for {@link VideoconferenceComponent}.
+ * It is only available for {@link MeetingViewComponent}.
  *
  * Default: `true`
  *
  * @example
- * <ov-videoconference [chatWritable]="false"></ov-videoconference>
+ * <ov-meeting-view [chatWritable]="false"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-videoconference[chatWritable]'
+	selector: 'ov-meeting-view[chatWritable]'
 })
 export class ChatWritableDirective implements OnDestroy {
 	/**
