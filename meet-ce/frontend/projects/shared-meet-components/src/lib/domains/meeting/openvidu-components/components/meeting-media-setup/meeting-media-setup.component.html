@@ -29,11 +29,11 @@
 						<div class="video-preview-container" [class.compact]="showBackgroundPanel()">
 							<div class="video-frame">
 								<ov-video-element
-									[videoTrack]="videoTrack"
+									[videoTrack]="videoTrack()"
 									[avatar]="avatarView()"
 									[isLocal]="true"
 									class="video-element"
-									[id]="videoTrack?.id || 'no-video'"
+									[id]="videoTrack()?.id || 'no-video'"
 								/>
 
 								<!-- Video Controls Overlay -->

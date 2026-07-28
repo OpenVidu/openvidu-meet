@@ -7,27 +7,27 @@
 				<button
 					mat-flat-button
 					class="toggle-section"
-				[disabled]="!hasVideoDevices() || cameraStatusChanging"
-				[class.device-enabled]="isCameraEnabled"
-				[class.device-disabled]="!isCameraEnabled"
+				[disabled]="!hasVideoDevices() || cameraStatusChanging()"
+				[class.device-enabled]="isCameraEnabled()"
+				[class.device-disabled]="!isCameraEnabled()"
 				(click)="toggleCam($event)"
-				[matTooltip]="isCameraEnabled ? ('TOOLBAR.STOP_VIDEO' | translate) : ('TOOLBAR.START_VIDEO' | translate)"
+				[matTooltip]="isCameraEnabled() ? ('TOOLBAR.STOP_VIDEO' | translate) : ('TOOLBAR.START_VIDEO' | translate)"
 				[matTooltipDisabled]="!hasVideoDevices()"
 					id="camera-button"
 				>
-					<mat-icon [id]="isCameraEnabled ? 'videocam' : 'videocam_off'">
-						{{ isCameraEnabled ? 'videocam' : 'videocam_off' }}
+					<mat-icon [id]="isCameraEnabled() ? 'videocam' : 'videocam_off'">
+						{{ isCameraEnabled() ? 'videocam' : 'videocam_off' }}
 					</mat-icon>
 				</button>
 
 				<!-- Dropdown section -->
-				@if (isCameraEnabled) {
+				@if (isCameraEnabled()) {
 					<button
 						mat-flat-button
 						id="video-dropdown"
 						class="dropdown-section"
 						[matMenuTriggerFor]="cameraMenu"
-						[disabled]="cameraStatusChanging"
+						[disabled]="cameraStatusChanging()"
 					>
 						<mat-icon>expand_more</mat-icon>
 					</button>
@@ -44,14 +44,14 @@
 		<!-- Normal Mode - Input-style Selector -->
 		<div class="normal-device-selector">
 			<!-- Device Selector (Input Style) -->
-			@if (isCameraEnabled) {
+			@if (isCameraEnabled()) {
 				<div class="device-input-selector">
 					<button
 						mat-flat-button
 						id="video-dropdown"
 						class="selector-button"
 						[matMenuTriggerFor]="cameraMenu"
-						[disabled]="cameraStatusChanging || cameras().length <= 1"
+						[disabled]="cameraStatusChanging() || cameras().length <= 1"
 					>
 						<mat-icon class="device-icon">videocam</mat-icon>
 						<span class="selected-device-name">{{ cameraSelected()?.label || 'No camera selected' }}</span>

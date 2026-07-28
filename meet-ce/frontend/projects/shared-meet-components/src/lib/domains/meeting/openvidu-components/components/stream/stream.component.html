@@ -14,7 +14,6 @@
 		[class.screen-source]="stream.isScreenStream"
 		[class.camera-source]="stream.isCameraStream"
 		[id]="'stream-' + stream.source + '-' + stream.streamId"
-		(mousemove)="mouseHover($event)"
 		#streamContainer
 	>
 		@if (showParticipantName()) {

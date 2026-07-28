@@ -77,8 +77,14 @@ recording UI.
 
 - Services use Angular 22's `@Service()` (not `@Injectable({providedIn:'root'})`) — follow the
   surrounding files. Inject with `inject()`, never constructor params.
-- State is signals: `signal`/`computed`, expose `asReadonly()`. `ChangeDetectionStrategy.OnPush`,
-  native control flow (`@if`/`@for`/`@switch`), `class`/`style` bindings (never `ngClass`/`ngStyle`).
+- State is signals: `signal`/`computed`, expose `asReadonly()`. Native control flow
+  (`@if`/`@for`/`@switch`), `class`/`style` bindings (never `ngClass`/`ngStyle`).
+- **Change detection**: OnPush is the **default** in Angular 22 (the runtime resolves
+  `onPush: changeDetection !== ChangeDetectionStrategy.Eager`, so an absent value means OnPush).
+  Never write `changeDetection: ChangeDetectionStrategy.OnPush` — it is a no-op and Angular's own
+  style guide forbids it. `ChangeDetectionStrategy.Eager` is the opt-out (CheckAlways) and nothing
+  here needs it. Consequence to keep in mind: a plain mutable field mutated **after an `await`** will
+  not re-render, since only signals, template event listeners and input changes mark a view dirty.
 - **Storage**: never touch `localStorage`/`sessionStorage` directly in the library — ESLint blocks it.
   Persist through `BrowserStorageService`, the single storage engine (one prefix, one serialization,
   one availability guard).

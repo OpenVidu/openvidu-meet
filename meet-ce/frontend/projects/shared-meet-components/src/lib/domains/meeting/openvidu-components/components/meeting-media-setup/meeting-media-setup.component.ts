@@ -1,14 +1,4 @@
-import {
-	Component,
-	computed,
-	effect,
-	inject,
-	input,
-	OnDestroy,
-	OnInit,
-	output,
-	signal
-} from '@angular/core';
+import { Component, computed, effect, inject, input, OnDestroy, OnInit, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -53,10 +43,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 		BackgroundEffectsPanelComponent
 	],
 	templateUrl: './meeting-media-setup.component.html',
-	styleUrl: './meeting-media-setup.component.scss',
-	host: {
-		'(window:resize)': 'sizeChange()'
-	}
+	styleUrl: './meeting-media-setup.component.scss'
 })
 export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	readonly error = input<{ name: string; message: string } | undefined>(undefined);
@@ -70,7 +57,6 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	private readonly deviceSrv = inject(DeviceService);
 
 	readonly errorMessage = signal<string | undefined>(undefined);
-	windowSize!: number;
 	readonly isLoading = signal(true);
 	readonly participantName = signal<string>('');
 
@@ -84,7 +70,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 
 	readonly showBackgroundPanel = signal(false);
 
-	videoTrack: LocalTrack | undefined;
+	readonly videoTrack = signal<LocalTrack | undefined>(undefined);
 	audioTrack: LocalTrack | undefined;
 	readonly isVideoEnabled = signal(false);
 	readonly hasVideoDevices = this.deviceSrv.hasVideoDevices;
@@ -123,13 +109,8 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		}
 	});
 
-	sizeChange() {
-		this.windowSize = window.innerWidth;
-	}
-
 	async ngOnInit() {
 		await this.initializeDevicesWithRetry();
-		this.windowSize = window.innerWidth;
 		this.isLoading.set(false);
 	}
 
@@ -174,10 +155,10 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		this.isVideoEnabled.set(enabled);
 		if (!enabled) {
 			this.closeBackgroundPanel();
-		} else if (!this.videoTrack) {
+		} else if (!this.videoTrack()) {
 			const newVideoTrack = await this.localTrackService.createLocalTracks(true, false);
-			this.videoTrack = newVideoTrack[0];
-			this.tracks.push(this.videoTrack);
+			this.videoTrack.set(newVideoTrack[0]);
+			this.tracks.push(newVideoTrack[0]);
 			this.localTrackService.setLocalTracks(this.tracks);
 		}
 
@@ -194,9 +175,8 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 			// Find the new video track
 			const newVideoTrack = updatedTracks.find((track) => track.kind === Track.Kind.Video);
 
-			// if (newVideoTrack && newVideoTrack !== this.videoTrack) {
 			this.tracks = updatedTracks;
-			this.videoTrack = newVideoTrack;
+			this.videoTrack.set(newVideoTrack);
 
 			this.onVideoDeviceChanged.emit(device);
 		} catch (error) {
@@ -287,7 +267,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 				// are device labels available. Populate the list and align the selection accordingly.
 				await this.deviceSrv.syncDevicesAfterTrackCreation(this.tracks);
 
-				this.videoTrack = this.tracks.find((track) => track.kind === Track.Kind.Video);
+				this.videoTrack.set(this.tracks.find((track) => track.kind === Track.Kind.Video));
 				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
 				this.isVideoEnabled.set(this.localTrackService.isVideoTrackEnabled());
 

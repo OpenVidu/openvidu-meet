@@ -1,14 +1,4 @@
-import {
-	Component,
-	computed,
-	effect,
-	ElementRef,
-	inject,
-	input,
-	OnDestroy,
-	signal,
-	viewChild
-} from '@angular/core';
+import { Component, computed, effect, ElementRef, inject, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -104,6 +94,29 @@ export class StreamComponent implements OnDestroy {
 		}
 	});
 
+	/** Element the native mousemove listener is currently attached to (the @if recreates it). */
+	private hoverBoundElement: HTMLElement | undefined;
+	private readonly onContainerMouseMove = (event: MouseEvent) => {
+		event.preventDefault();
+		this.revealControls();
+	};
+
+	/**
+	 * Reveals the controls on pointer movement over the stream. Bound as a native listener rather
+	 * than a template (mousemove) binding: mousemove fires at pointer rate and every template
+	 * listener schedules a change-detection tick, while revealControls() only notifies when the
+	 * mouseHovering signal actually flips.
+	 */
+	private readonly hoverListenerEffect = effect(() => {
+		const element = this.streamContainerQuery()?.nativeElement as HTMLElement | undefined;
+
+		if (element === this.hoverBoundElement) return;
+
+		this.hoverBoundElement?.removeEventListener('mousemove', this.onContainerMouseMove);
+		this.hoverBoundElement = element;
+		element?.addEventListener('mousemove', this.onContainerMouseMove);
+	});
+
 	ngOnDestroy() {
 		if (this.showVideoTimeout) {
 			clearTimeout(this.showVideoTimeout);
@@ -111,6 +124,7 @@ export class StreamComponent implements OnDestroy {
 		if (this.hoveringTimeout) {
 			clearTimeout(this.hoveringTimeout);
 		}
+		this.hoverBoundElement?.removeEventListener('mousemove', this.onContainerMouseMove);
 		this.cdkSrv.setSelector('body');
 	}
 
@@ -154,15 +168,6 @@ export class StreamComponent implements OnDestroy {
 				stream.source
 			);
 		}
-	}
-
-	/**
-	 * @ignore
-	 * Reveals the controls on pointer movement over the stream and (re)arms the auto-hide timer.
-	 */
-	mouseHover(event: MouseEvent) {
-		event.preventDefault();
-		this.revealControls();
 	}
 
 	/**

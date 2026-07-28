@@ -11,31 +11,31 @@
 					<button
 						mat-flat-button
 						class="toggle-section"
-						[disabled]="!hasAudioDevices() || microphoneStatusChanging"
-						[class.device-enabled]="isMicrophoneEnabled"
-						[class.device-disabled]="!isMicrophoneEnabled"
+						[disabled]="!hasAudioDevices() || microphoneStatusChanging()"
+						[class.device-enabled]="isMicrophoneEnabled()"
+						[class.device-disabled]="!isMicrophoneEnabled()"
 						(click)="toggleMic($event)"
 						[matTooltip]="
-							isMicrophoneEnabled
+							isMicrophoneEnabled()
 								? ('TOOLBAR.MUTE_AUDIO' | translate)
 								: ('TOOLBAR.UNMUTE_AUDIO' | translate)
 						"
 						[matTooltipDisabled]="!hasAudioDevices()"
 						id="microphone-button"
 					>
-						<mat-icon [id]="isMicrophoneEnabled ? 'mic' : 'mic_off'">{{
-							isMicrophoneEnabled ? 'mic' : 'mic_off'
+						<mat-icon [id]="isMicrophoneEnabled() ? 'mic' : 'mic_off'">{{
+							isMicrophoneEnabled() ? 'mic' : 'mic_off'
 						}}</mat-icon>
 					</button>
 
 					<!-- Dropdown section -->
-					@if (isMicrophoneEnabled) {
+					@if (isMicrophoneEnabled()) {
 						<button
 							mat-flat-button
 							id="audio-dropdown"
 							class="dropdown-section"
 							[matMenuTriggerFor]="microphoneMenu"
-							[disabled]="microphoneStatusChanging"
+							[disabled]="microphoneStatusChanging()"
 						>
 							<mat-icon>expand_more</mat-icon>
 						</button>
@@ -44,7 +44,7 @@
 
 				<!-- Mic status warnings (talking while muted / muted by the system).
 				 The popup overlay is anchored to the mic toggle button so it always points at it. -->
-				<ov-mic-status-alert [micEnabled]="isMicrophoneEnabled" originSelector="#microphone-button" />
+				<ov-mic-status-alert [micEnabled]="isMicrophoneEnabled()" originSelector="#microphone-button" />
 			</div>
 		} @else {
 			<!-- No Microphone Available -->
@@ -57,15 +57,15 @@
 		<!-- Normal Mode - Input Style Selector -->
 		<div class="normal-device-selector">
 			<!-- Input-style Device Selector -->
-			<div class="device-input-selector" [class.disabled]="!hasAudioDevices() || !isMicrophoneEnabled">
+			<div class="device-input-selector" [class.disabled]="!hasAudioDevices() || !isMicrophoneEnabled()">
 				<!-- When microphone is enabled -->
-				@if (isMicrophoneEnabled) {
+				@if (isMicrophoneEnabled()) {
 					<div class="device-input-selector">
 						<button
 							mat-flat-button
 							id="audio-dropdown"
 							class="selector-button"
-							[disabled]="microphoneStatusChanging || microphones().length <= 1"
+							[disabled]="microphoneStatusChanging() || microphones().length <= 1"
 							[matMenuTriggerFor]="microphoneMenu"
 							[attr.aria-expanded]="false"
 						>

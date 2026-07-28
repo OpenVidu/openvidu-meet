@@ -66,11 +66,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 		NgTemplateOutlet
 	],
 	templateUrl: './toolbar.component.html',
-	styleUrl: './toolbar.component.scss',
-	host: {
-		'(window:resize)': 'sizeChange($event)',
-		'(document:keydown)': 'keyDown($event)'
-	}
+	styleUrl: './toolbar.component.scss'
 })
 export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly documentService = inject(DocumentService);
@@ -318,7 +314,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	readonly totalParticipants = this.participantService.totalParticipantsSignal;
 
 	private log: ILogger = inject(LoggerService).get('ToolbarComponent');
-	private readonly currentWindowHeight = signal(window.innerHeight);
 
 	private readonly roomNameEffect = effect(() => {
 		this.evalAndSetRoomName(this.libService.roomNameSignal());
@@ -370,6 +365,19 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	constructor() {
 		this.isFirefoxBrowser.set(this.platformService.isFirefox());
 
+		// F11 is the only key the toolbar reacts to. Bound as a native listener (not a
+		// (document:keydown) host binding) so typing — e.g. in the chat input — doesn't schedule a
+		// change-detection tick per keystroke; fullscreen state itself is tracked reactively via the
+		// fullscreenchange subscription.
+		const onDocumentKeyDown = (event: KeyboardEvent) => {
+			if (event.key !== 'F11') return;
+
+			event.preventDefault();
+			this.toggleFullscreen();
+		};
+		document.addEventListener('keydown', onDocumentKeyDown);
+		this.destroyRef.onDestroy(() => document.removeEventListener('keydown', onDocumentKeyDown));
+
 		// Effect to react to local participant changes
 		effect(() => {
 			const p = this.participantService.localParticipant();
@@ -404,29 +412,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 				this.isScreenShareEnabled.set(p.isScreenShareEnabled);
 			}
 		});
-	}
-
-	/**
-	 * @ignore
-	 */
-	sizeChange(_: Event) {
-		if (this.currentWindowHeight() >= window.innerHeight) {
-			// The user has exit the fullscreen mode
-			this.currentWindowHeight.set(window.innerHeight);
-		}
-	}
-
-	/**
-	 * @ignore
-	 */
-	keyDown(event: KeyboardEvent) {
-		if (event.key === 'F11') {
-			event.preventDefault();
-			this.toggleFullscreen();
-			this.currentWindowHeight.set(window.innerHeight);
-			return false;
-		}
-		return true;
 	}
 
 	async ngOnInit() {

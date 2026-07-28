@@ -188,10 +188,6 @@ export class ParticipantModel {
 	 * that the participant avatar is always visible. This mirrors the previous
 	 * behaviour that injected a synthetic `customVideoTrack` placeholder.
 	 *
-	 * NOTE: This getter intentionally calls `this.tracks` so that any Proxy that wraps
-	 * the participant (e.g. the SmartMosaic video-only proxy in MeetingCustomLayoutComponent)
-	 * is transparently applied via the JS Proxy receiver mechanism.
-	 *
 	 * Reactive: declared as an Angular `computed` signal. LayoutComponent's template reads
 	 * `participant.streams()` — Angular tracks `_revision` (via augmentedTracks) and only
 	 * re-evaluates when track structure or augmented-track properties actually change.
@@ -368,7 +364,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	get tracks(): TrackPublication[] {
-		return this.augmentedTracks;
+		return this.augmentedTracks();
 	}
 
 	/**
@@ -383,7 +379,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	get isMutedForcibly() {
-		return this.augmentedTracks.some((track) => track.isMutedForcibly);
+		return this.augmentedTracks().some((track) => track.isMutedForcibly);
 	}
 
 	/**
@@ -391,7 +387,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	get isFloating(): boolean {
-		return this.augmentedTracks.some((track) => track.isFloating);
+		return this.augmentedTracks().some((track) => track.isFloating);
 	}
 
 	/**
@@ -400,7 +396,7 @@ export class ParticipantModel {
 	 * @returns boolean
 	 */
 	get isPinned(): boolean {
-		return this.augmentedTracks.some((track) => track.isPinned);
+		return this.augmentedTracks().some((track) => track.isPinned);
 	}
 
 	/**
@@ -564,7 +560,7 @@ export class ParticipantModel {
 			return Promise.reject("Remote participant can't switch screen share");
 		}
 
-		const screenTrack = this.augmentedTracks.find((track) => track.source === Track.Source.ScreenShare);
+		const screenTrack = this.augmentedTracks().find((track) => track.source === Track.Source.ScreenShare);
 		if (!screenTrack || !screenTrack.videoTrack) {
 			return Promise.reject('No active screen share track to switch');
 		}
@@ -611,7 +607,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	setAllVideoPinned(pinned: boolean) {
-		this.augmentedTracks.forEach((track) => (track.isPinned = pinned));
+		this.augmentedTracks().forEach((track) => (track.isPinned = pinned));
 		this.bump();
 	}
 
@@ -621,7 +617,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	toggleVideoPinned(trackSid: string): void {
-		const track = this.augmentedTracks.find((track) => track.trackSid === trackSid);
+		const track = this.augmentedTracks().find((track) => track.trackSid === trackSid);
 		if (track) {
 			track.isPinned = !track.isPinned;
 			this.bump();
@@ -635,7 +631,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	setVideoPinnedBySource(source: Track.Source, pinned: boolean) {
-		this.augmentedTracks
+		this.augmentedTracks()
 			.filter((track) => track.source === source && track.kind === Track.Kind.Video)
 			.forEach((track) => (track.isPinned = pinned));
 		this.bump();
@@ -648,7 +644,7 @@ export class ParticipantModel {
 	 * @internal
 	 */
 	toggleVideoFloating(trackSid: string): void {
-		const track = this.augmentedTracks.find((track) => track.trackSid === trackSid);
+		const track = this.augmentedTracks().find((track) => track.trackSid === trackSid);
 		if (track) {
 			track.isFloating = !track.isFloating;
 			this.bump();
@@ -688,7 +684,9 @@ export class ParticipantModel {
 			return true;
 		};
 
-		this.augmentedTracks.filter(matchesScope).forEach((track) => (track.isMutedForcibly = muted));
+		this.augmentedTracks()
+			.filter(matchesScope)
+			.forEach((track) => (track.isMutedForcibly = muted));
 		this.bump();
 	}
 
@@ -759,9 +757,11 @@ export class ParticipantModel {
 	 * Returns all the participant tracks (augmented with pin/floating/muted/source flags).
 	 * @internal
 	 */
-	private get augmentedTracks(): AugmentedTrackPublication[] {
-		// Reading _revision() registers it as a reactive dependency for any computed/effect/template
-		// that calls this getter — consumers re-evaluate automatically when bump() is called.
+	private readonly augmentedTracks = computed<AugmentedTrackPublication[]>(() => {
+		// Reading _revision() registers it as a reactive dependency — consumers re-evaluate when
+		// bump() is called. As a computed, the augmented array is CACHED between revisions: template
+		// getters (isPinned/isFloating/isMutedForcibly/tracks) no longer re-run getTrackPublications()
+		// + map() on every change-detection pass, only when the revision actually changes.
 		this._revision();
 		const defaultTracks = this.participant.getTrackPublications().map((track: TrackPublication) => {
 			const augmented = track as AugmentedTrackPublication;
@@ -784,7 +784,7 @@ export class ParticipantModel {
 			defaultTracks.push(this.customVideoTrack as AugmentedTrackPublication);
 		}
 		return defaultTracks;
-	}
+	});
 
 	/**
 	 * Returns the persistent {@link ScreenZoomState} for the given screen stream, creating it on

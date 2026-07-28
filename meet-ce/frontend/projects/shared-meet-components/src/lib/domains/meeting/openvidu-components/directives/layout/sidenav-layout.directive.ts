@@ -41,10 +41,7 @@ import { TemplateRegistryService } from '../../services/template/template-regist
  */
 @Directive({
 	selector: 'mat-sidenav-container[ovSidenavLayout]',
-	exportAs: 'ovSidenavLayout',
-	host: {
-		'(window:resize)': 'onWindowResize()'
-	}
+	exportAs: 'ovSidenavLayout'
 })
 export class SidenavLayoutDirective implements OnDestroy {
 	/** Container width (px) at or below which the sidenav overlays the content instead of pushing it. */
@@ -54,6 +51,13 @@ export class SidenavLayoutDirective implements OnDestroy {
 	private readonly LAYOUT_ANIMATION_TICK_MS = 50;
 	/** Grace period after Material reports a content-margin change, so the transition has settled. */
 	private readonly CONTENT_MARGIN_SETTLE_MS = 250;
+	/**
+	 * Hard stop for the animation-follow interval. The Material drawer transition lasts 400ms; not
+	 * every start path gets a matching stop event (a settings-panel swap at identical width never
+	 * fires `_contentMarginChanges`), so without this cap the 50ms interval would keep forcing a
+	 * layout reflow 20 times per second until the next open/close.
+	 */
+	private readonly LAYOUT_ANIMATION_MAX_MS = 600;
 
 	private readonly container = inject(MatSidenavContainer, { self: true });
 	private readonly hostElement: ElementRef<HTMLElement> = inject(ElementRef);
@@ -81,6 +85,7 @@ export class SidenavLayoutDirective implements OnDestroy {
 	private layoutUpdateTimeoutId: ReturnType<typeof setTimeout> | null = null;
 	private contentMarginUpdateTimeoutId: ReturnType<typeof setTimeout> | null = null;
 	private updateLayoutInterval: ReturnType<typeof setInterval> | undefined = undefined;
+	private updateLayoutSafetyTimeoutId: ReturnType<typeof setTimeout> | null = null;
 	private resizeObserver: ResizeObserver | undefined = undefined;
 
 	/**
@@ -121,6 +126,14 @@ export class SidenavLayoutDirective implements OnDestroy {
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe(() => this.scheduleContentMarginUpdate());
 		this.observeContainerWidth();
+
+		// The grid is sized from the container, so a viewport change has to recompute it. Bound as a
+		// native listener (not a host binding) because the handler only produces DOM layout work:
+		// update() already coalesces to one pass per animation frame, and a host (window:resize)
+		// binding would additionally schedule a whole change-detection tick per resize event.
+		const onWindowResize = () => this.layoutService.update();
+		window.addEventListener('resize', onWindowResize, { passive: true });
+		this.destroyRef.onDestroy(() => window.removeEventListener('resize', onWindowResize));
 	}
 
 	ngOnDestroy(): void {
@@ -136,15 +149,6 @@ export class SidenavLayoutDirective implements OnDestroy {
 
 		this.stopUpdateLayoutInterval();
 		this.resizeObserver?.disconnect();
-	}
-
-	/**
-	 * The grid is sized from the container, so a viewport change has to recompute it. The sidenav
-	 * container is only in the DOM while the meeting is live, which is the only time there is a
-	 * layout to update.
-	 */
-	protected onWindowResize(): void {
-		this.layoutService.update();
 	}
 
 	private bindSidenav(sidenav: MatSidenav): void {
@@ -219,12 +223,22 @@ export class SidenavLayoutDirective implements OnDestroy {
 		this.updateLayoutInterval = setInterval(() => {
 			this.layoutService.update();
 		}, this.LAYOUT_ANIMATION_TICK_MS);
+		// Unconditional cap: whichever path started the interval, it never outlives the animation.
+		this.updateLayoutSafetyTimeoutId = setTimeout(
+			() => this.stopUpdateLayoutInterval(),
+			this.LAYOUT_ANIMATION_MAX_MS
+		);
 	}
 
 	private stopUpdateLayoutInterval(): void {
 		if (this.updateLayoutInterval) {
 			clearInterval(this.updateLayoutInterval);
 			this.updateLayoutInterval = undefined;
+		}
+
+		if (this.updateLayoutSafetyTimeoutId !== null) {
+			clearTimeout(this.updateLayoutSafetyTimeoutId);
+			this.updateLayoutSafetyTimeoutId = null;
 		}
 	}
 

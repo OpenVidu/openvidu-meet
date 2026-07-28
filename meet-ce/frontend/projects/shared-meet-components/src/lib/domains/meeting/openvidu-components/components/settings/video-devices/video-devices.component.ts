@@ -1,4 +1,4 @@
-import { Component, OnInit, Signal, WritableSignal, effect, inject, input, output } from '@angular/core';
+import { Component, effect, inject, input, OnInit, output, Signal, signal, WritableSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -25,8 +25,8 @@ export class VideoDevicesComponent implements OnInit {
 	readonly onVideoDeviceChanged = output<CustomDevice>();
 	readonly onVideoEnabledChanged = output<boolean>();
 
-	cameraStatusChanging: boolean = false;
-	isCameraEnabled: boolean = false;
+	readonly cameraStatusChanging = signal(false);
+	readonly isCameraEnabled = signal(false);
 
 	protected readonly cameras: WritableSignal<CustomDevice[]>;
 	protected readonly cameraSelected: WritableSignal<CustomDevice | undefined>;
@@ -55,22 +55,23 @@ export class VideoDevicesComponent implements OnInit {
 		effect(() => {
 			const participant = this.participantService.localParticipant();
 			if (participant) {
-				this.isCameraEnabled = participant.isCameraEnabled;
+				this.isCameraEnabled.set(participant.isCameraEnabled);
 			}
 		});
 	}
 
 	async ngOnInit() {
-		this.isCameraEnabled = this.localMediaControlService.isMyCameraEnabled();
+		this.isCameraEnabled.set(this.localMediaControlService.isMyCameraEnabled());
 	}
 
 	async toggleCam(event: MouseEvent) {
 		event.stopPropagation();
-		this.cameraStatusChanging = true;
-		this.isCameraEnabled = !this.isCameraEnabled;
-		await this.localMediaControlService.setCameraEnabled(this.isCameraEnabled);
-		this.onVideoEnabledChanged.emit(this.isCameraEnabled);
-		this.cameraStatusChanging = false;
+		this.cameraStatusChanging.set(true);
+		const enabled = !this.isCameraEnabled();
+		this.isCameraEnabled.set(enabled);
+		await this.localMediaControlService.setCameraEnabled(enabled);
+		this.onVideoEnabledChanged.emit(enabled);
+		this.cameraStatusChanging.set(false);
 	}
 
 	async onCameraSelected(event: { value: CustomDevice }) {
@@ -79,7 +80,7 @@ export class VideoDevicesComponent implements OnInit {
 
 			// Is New deviceId different from the old one?
 			if (this.deviceSrv.needUpdateVideoTrack(device)) {
-				this.cameraStatusChanging = true;
+				this.cameraStatusChanging.set(true);
 				await this.localMediaControlService.switchCamera(device.device);
 				this.deviceSrv.setCameraSelected(device.device);
 				const selectedCamera = this.cameraSelected();
@@ -90,7 +91,7 @@ export class VideoDevicesComponent implements OnInit {
 		} catch (error) {
 			this.log.e('Error switching camera', error);
 		} finally {
-			this.cameraStatusChanging = false;
+			this.cameraStatusChanging.set(false);
 		}
 	}
 }

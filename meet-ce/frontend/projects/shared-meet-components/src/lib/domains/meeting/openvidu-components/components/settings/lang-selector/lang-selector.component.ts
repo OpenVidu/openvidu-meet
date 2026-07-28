@@ -1,4 +1,4 @@
-import { Component, OnInit, effect, inject, input, output } from '@angular/core';
+import { Component, effect, inject, input, OnInit, output } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -21,13 +21,12 @@ export class LangSelectorComponent implements OnInit {
 	 */
 	readonly compact = input(false);
 	readonly onLangChanged = output<LangOption>();
-	langSelected: LangOption = { name: 'English', lang: 'en' };
 	languages: LangOption[] = [];
 	private readonly translateService = inject(MeetingTranslateService);
+	/** Mirrors the shared selected-language signal so the label updates under OnPush. */
+	readonly langSelected = this.translateService.selectedLanguageOption;
 	private readonly langSelectedEffect = effect(() => {
-		const lang = this.translateService.selectedLanguageOption();
-		this.langSelected = lang;
-		this.onLangChanged.emit(lang);
+		this.onLangChanged.emit(this.langSelected());
 	});
 
 	ngOnInit(): void {
@@ -38,5 +37,4 @@ export class LangSelectorComponent implements OnInit {
 		// `setCurrentLanguage` persists the choice through the shared language service.
 		this.translateService.setCurrentLanguage(lang);
 	}
-
 }

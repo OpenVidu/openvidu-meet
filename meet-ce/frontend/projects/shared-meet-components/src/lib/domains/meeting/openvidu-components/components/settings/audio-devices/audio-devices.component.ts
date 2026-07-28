@@ -1,4 +1,4 @@
-import { Component, OnInit, Signal, WritableSignal, effect, inject, input, output } from '@angular/core';
+import { Component, effect, inject, input, OnInit, output, Signal, signal, WritableSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -26,8 +26,8 @@ export class AudioDevicesComponent implements OnInit {
 	readonly onAudioDeviceChanged = output<CustomDevice>();
 	readonly onAudioEnabledChanged = output<boolean>();
 
-	microphoneStatusChanging: boolean = false;
-	isMicrophoneEnabled: boolean = false;
+	readonly microphoneStatusChanging = signal(false);
+	readonly isMicrophoneEnabled = signal(false);
 	private log: ILogger = {
 		d: () => {},
 		v: () => {},
@@ -57,29 +57,30 @@ export class AudioDevicesComponent implements OnInit {
 		effect(() => {
 			const participant = this.participantService.localParticipant();
 			if (participant) {
-				this.isMicrophoneEnabled = participant.isMicrophoneEnabled;
+				this.isMicrophoneEnabled.set(participant.isMicrophoneEnabled);
 			}
 		});
 	}
 
 	async ngOnInit() {
-		this.isMicrophoneEnabled = this.localMediaControlService.isMyMicrophoneEnabled();
+		this.isMicrophoneEnabled.set(this.localMediaControlService.isMyMicrophoneEnabled());
 	}
 
 	async toggleMic(event: MouseEvent) {
 		event.stopPropagation();
-		this.microphoneStatusChanging = true;
-		this.isMicrophoneEnabled = !this.isMicrophoneEnabled;
-		await this.localMediaControlService.setMicrophoneEnabled(this.isMicrophoneEnabled);
-		this.microphoneStatusChanging = false;
-		this.onAudioEnabledChanged.emit(this.isMicrophoneEnabled);
+		this.microphoneStatusChanging.set(true);
+		const enabled = !this.isMicrophoneEnabled();
+		this.isMicrophoneEnabled.set(enabled);
+		await this.localMediaControlService.setMicrophoneEnabled(enabled);
+		this.microphoneStatusChanging.set(false);
+		this.onAudioEnabledChanged.emit(enabled);
 	}
 
 	async onMicrophoneSelected(event: { value: CustomDevice }) {
 		try {
 			const device: CustomDevice = event?.value;
 			if (this.deviceSrv.needUpdateAudioTrack(device)) {
-				this.microphoneStatusChanging = true;
+				this.microphoneStatusChanging.set(true);
 				await this.localMediaControlService.switchMicrophone(device.device);
 				this.deviceSrv.setMicSelected(device.device);
 				const selectedMicrophone = this.microphoneSelected();
@@ -90,7 +91,7 @@ export class AudioDevicesComponent implements OnInit {
 		} catch (error) {
 			this.log.e('Error switching microphone', error);
 		} finally {
-			this.microphoneStatusChanging = false;
+			this.microphoneStatusChanging.set(false);
 		}
 	}
 }

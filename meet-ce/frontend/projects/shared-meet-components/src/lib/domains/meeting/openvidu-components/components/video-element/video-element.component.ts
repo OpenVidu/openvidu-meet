@@ -1,13 +1,4 @@
-import {
-	Component,
-	computed,
-	effect,
-	ElementRef,
-	input,
-	OnDestroy,
-	signal,
-	viewChild
-} from '@angular/core';
+import { Component, computed, effect, ElementRef, input, OnDestroy, signal, viewChild } from '@angular/core';
 import { AvatarView, DEFAULT_AVATAR_VIEW } from '../../models/avatar-view.model';
 import { ScreenZoomState } from '../../models/screen-zoom.model';
 import { Track } from '../../services/livekit';
@@ -52,9 +43,6 @@ import { ParticipantAvatarComponent } from '../participant-avatar/participant-av
 				[style.transform]="videoTransform()"
 				[style.transform-origin]="'center center'"
 				(pointerdown)="onPointerDown($event)"
-				(pointermove)="onPointerMove($event)"
-				(pointerup)="onPointerUp($event)"
-				(pointercancel)="onPointerUp($event)"
 				[attr.id]="videoTrack()!.sid"
 			></video>
 		}
@@ -153,7 +141,10 @@ export class VideoElementComponent implements OnDestroy {
 
 	/**
 	 * @ignore
-	 * Starts a pan drag when the screen share is zoomed in.
+	 * Starts a pan drag when the screen share is zoomed in. Only pointerdown is a template binding;
+	 * pointermove/pointerup are attached natively for the duration of the gesture, so an idle
+	 * <video> never schedules change detection at pointer rate. During the drag the pan updates flow
+	 * through the zoom-state signals, which is what keeps the [style.transform] binding in sync.
 	 */
 	onPointerDown(event: PointerEvent) {
 		const state = this.zoomState();
@@ -164,15 +155,17 @@ export class VideoElementComponent implements OnDestroy {
 		const { x, y } = state.pan();
 		this.dragOrigin = { pointerX: event.clientX, pointerY: event.clientY, panX: x, panY: y };
 		this.isPanning.set(true);
-		(event.target as HTMLElement).setPointerCapture?.(event.pointerId);
+
+		const target = event.target as HTMLElement;
+		target.setPointerCapture?.(event.pointerId);
+		this.attachDragListeners(target);
 	}
 
 	/**
-	 * @ignore
 	 * Translates the pointer delta into a normalized pan delta and pushes it to the zoom state,
 	 * which clamps it. Working in normalized units keeps the pan valid across zoom changes and resizes.
 	 */
-	onPointerMove(event: PointerEvent) {
+	private readonly onPointerMove = (event: PointerEvent) => {
 		const state = this.zoomState();
 		if (!this.isPanning() || !state) {
 			return;
@@ -181,17 +174,28 @@ export class VideoElementComponent implements OnDestroy {
 		const dx = maxX ? (event.clientX - this.dragOrigin.pointerX) / maxX : 0;
 		const dy = maxY ? (event.clientY - this.dragOrigin.pointerY) / maxY : 0;
 		state.setPan(this.dragOrigin.panX + dx, this.dragOrigin.panY + dy);
-	}
+	};
 
-	/**
-	 * @ignore
-	 */
-	onPointerUp(event: PointerEvent) {
+	private readonly onPointerUp = (event: PointerEvent) => {
+		this.detachDragListeners(event.target as HTMLElement);
+
 		if (!this.isPanning()) {
 			return;
 		}
 		this.isPanning.set(false);
 		(event.target as HTMLElement).releasePointerCapture?.(event.pointerId);
+	};
+
+	private attachDragListeners(target: HTMLElement): void {
+		target.addEventListener('pointermove', this.onPointerMove);
+		target.addEventListener('pointerup', this.onPointerUp);
+		target.addEventListener('pointercancel', this.onPointerUp);
+	}
+
+	private detachDragListeners(target: HTMLElement): void {
+		target.removeEventListener('pointermove', this.onPointerMove);
+		target.removeEventListener('pointerup', this.onPointerUp);
+		target.removeEventListener('pointercancel', this.onPointerUp);
 	}
 
 	/** Maps a normalized pan offset ([-1, 1] per axis) to a pixel translation for the current zoom. */
