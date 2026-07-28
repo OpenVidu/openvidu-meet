@@ -20,6 +20,10 @@ export default tseslint.config(
 			}
 		},
 		rules: {
+			// Not part of recommendedTypeChecked, so deprecated APIs (our own @deprecated JSDoc
+			// included) accumulated invisibly until a dependency major removed them. Enabled after
+			// clearing the zod 4 deprecations; intentional uses need an inline disable + a reason.
+			'@typescript-eslint/no-deprecated': 'error',
 			'@typescript-eslint/no-inferrable-types': 'warn',
 			'@typescript-eslint/no-unused-vars': 'warn',
 			'lines-between-class-members': [

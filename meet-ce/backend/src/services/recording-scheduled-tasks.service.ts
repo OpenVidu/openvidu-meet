@@ -122,6 +122,9 @@ export class RecordingScheduledTasksService {
 			const stillExists = await this.mutexService.lockRegistryExists(lockKey);
 
 			if (stillExists) {
+				// Garbage-collecting a recording_active lock left behind by another replica: there
+				// is no local Lock instance to release, only the Redis registry entry.
+				// eslint-disable-next-line @typescript-eslint/no-deprecated
 				await this.mutexService.releaseWithRegistry(lockKey);
 			}
 		};

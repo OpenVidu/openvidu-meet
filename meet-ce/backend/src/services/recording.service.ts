@@ -760,6 +760,10 @@ export class RecordingService {
 		const lockName = MeetLock.getRecordingActiveLock(roomId);
 
 		try {
+			// recording_active is a long-lived lock released by a different request (or replica)
+			// than the one that took it, which is exactly the cross-instance case the registry
+			// variant is documented to still be for.
+			// eslint-disable-next-line @typescript-eslint/no-deprecated
 			const lock = await this.mutexService.acquireWithRegistry(
 				lockName,
 				ms(INTERNAL_CONFIG.RECORDING_ACTIVE_LOCK_TTL)
@@ -792,6 +796,9 @@ export class RecordingService {
 			}
 
 			try {
+				// Releases the long-lived recording_active lock acquired by another request or
+				// replica, so it must go through the Redis registry rather than a local Lock.
+				// eslint-disable-next-line @typescript-eslint/no-deprecated
 				await this.mutexService.releaseWithRegistry(lockName);
 				this.logger.verbose(`Recording active lock released for room '${roomId}'`);
 			} catch (error) {
