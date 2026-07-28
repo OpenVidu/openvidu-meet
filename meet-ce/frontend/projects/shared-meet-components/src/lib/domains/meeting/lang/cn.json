@@ -5,13 +5,14 @@
 		"DISCONNECTED": "您已离开会议",
 		"DISCONNECTED_SUBTITLE": "会议已结束"
 	},
-	"PREJOIN": {
-		"NICKNAME": "显示名称",
-		"NO_VIDEO_DEVICE": "未找到视频设备",
-		"NO_AUDIO_DEVICE": "未找到音频设备",
+	"MEDIA_SETUP": {
 		"JOIN": "加入会议",
 		"PREPARING": "正在准备会议...",
 		"BACKGROUND": "背景效果"
+	},
+	"DEVICES": {
+		"NO_VIDEO_DEVICE": "未找到视频设备",
+		"NO_AUDIO_DEVICE": "未找到音频设备"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "将你的音频静音",
@@ -88,6 +89,7 @@
 		"SETTINGS": {
 			"TITLE": "设置",
 			"GENERAL": "一般的",
+			"DISPLAY_NAME": "显示名称",
 			"VIDEO": "视频",
 			"AUDIO": "声音的",
 			"LANGUAGE": "语",

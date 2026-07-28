@@ -50,7 +50,7 @@
 			<!-- No Microphone Available -->
 			<div id="no-audio-device-message" class="no-device-message">
 				<mat-icon class="warning-icon">warning</mat-icon>
-				<span>{{ 'PREJOIN.NO_AUDIO_DEVICE' | translate }}</span>
+				<span>{{ 'DEVICES.NO_AUDIO_DEVICE' | translate }}</span>
 			</div>
 		}
 	} @else {
@@ -87,7 +87,7 @@
 								<span class="selected-device-name">
 									{{
 										!hasAudioDevices()
-											? ('PREJOIN.NO_AUDIO_DEVICE' | translate)
+											? ('DEVICES.NO_AUDIO_DEVICE' | translate)
 											: 'Microphone disabled'
 									}}
 								</span>
@@ -97,7 +97,7 @@
 						<!-- No Microphone Available -->
 						<div id="no-audio-device-message" class="no-device-message">
 							<mat-icon class="warning-icon">warning</mat-icon>
-							<span>{{ 'PREJOIN.NO_AUDIO_DEVICE' | translate }}</span>
+							<span>{{ 'DEVICES.NO_AUDIO_DEVICE' | translate }}</span>
 						</div>
 					}
 				}

@@ -5,13 +5,14 @@
 		"DISCONNECTED": "Hai lasciato la riunione",
 		"DISCONNECTED_SUBTITLE": "La riunione è terminata"
 	},
-	"PREJOIN": {
-		"NICKNAME": "Nome visualizzato",
-		"NO_VIDEO_DEVICE": "Dispositivo video non trovato",
-		"NO_AUDIO_DEVICE": "Dispositivo audio non trovato",
+	"MEDIA_SETUP": {
 		"JOIN": "Partecipa alla riunione",
 		"PREPARING": "Preparazione della riunione in corso...",
 		"BACKGROUND": "Effetti di sfondo"
+	},
+	"DEVICES": {
+		"NO_VIDEO_DEVICE": "Dispositivo video non trovato",
+		"NO_AUDIO_DEVICE": "Dispositivo audio non trovato"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Disattiva l'audio",
@@ -88,6 +89,7 @@
 		"SETTINGS": {
 			"TITLE": "Impostazioni",
 			"GENERAL": "Generale",
+			"DISPLAY_NAME": "Nome visualizzato",
 			"VIDEO": "video",
 			"AUDIO": "Audio",
 			"LANGUAGE": "Lingua",

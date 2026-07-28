@@ -5,13 +5,14 @@
 		"DISCONNECTED": "U heeft de meeting verlaten",
 		"DISCONNECTED_SUBTITLE": "De meeting is beëindigd"
 	},
-	"PREJOIN": {
-		"NICKNAME": "Weergavenaam",
-		"NO_VIDEO_DEVICE": "Videoapparaat niet gevonden",
-		"NO_AUDIO_DEVICE": "Audioapparaat niet gevonden",
+	"MEDIA_SETUP": {
 		"JOIN": "Deelnemen aan meeting",
 		"PREPARING": "Meeting voorbereiden...",
 		"BACKGROUND": "Achtergrondeffecten"
+	},
+	"DEVICES": {
+		"NO_VIDEO_DEVICE": "Videoapparaat niet gevonden",
+		"NO_AUDIO_DEVICE": "Audioapparaat niet gevonden"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Audio dempen",
@@ -88,6 +89,7 @@
 		"SETTINGS": {
 			"TITLE": "Instellingen",
 			"GENERAL": "Algemeen",
+			"DISPLAY_NAME": "Weergavenaam",
 			"VIDEO": "Video",
 			"AUDIO": "Audio",
 			"LANGUAGE": "Taal",

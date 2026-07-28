@@ -5,13 +5,14 @@
 		"DISCONNECTED": "आपने मीटिंग छोड़ दी है",
 		"DISCONNECTED_SUBTITLE": "मीटिंग समाप्त हो गई है"
 	},
-	"PREJOIN": {
-		"NICKNAME": "प्रदर्शित नाम",
-		"NO_VIDEO_DEVICE": "वीडियो डिवाइस नहीं मिला",
-		"NO_AUDIO_DEVICE": "ऑडियो डिवाइस नहीं मिला",
+	"MEDIA_SETUP": {
 		"JOIN": "मीटिंग में शामिल हों",
 		"PREPARING": "मीटिंग तैयार कर रहे हैं...",
 		"BACKGROUND": "पृष्ठभूमि प्रभाव"
+	},
+	"DEVICES": {
+		"NO_VIDEO_DEVICE": "वीडियो डिवाइस नहीं मिला",
+		"NO_AUDIO_DEVICE": "ऑडियो डिवाइस नहीं मिला"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "अपनी ऑडियो को मौन करें",
@@ -88,6 +89,7 @@
 		"SETTINGS": {
 			"TITLE": "सेटिंग्स",
 			"GENERAL": "सामान्य",
+			"DISPLAY_NAME": "प्रदर्शित नाम",
 			"VIDEO": "वीडियो",
 			"AUDIO": "ऑडियो",
 			"LANGUAGE": "भाषा",

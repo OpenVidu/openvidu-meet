@@ -1,11 +1,12 @@
 {
-	"PREJOIN": {
-		"NICKNAME": "Display name",
-		"NO_VIDEO_DEVICE": "Video device not found",
-		"NO_AUDIO_DEVICE": "Audio device not found",
+	"MEDIA_SETUP": {
 		"JOIN": "Join meeting",
 		"PREPARING": "Preparing meeting...",
 		"BACKGROUND": "Background effects"
+	},
+	"DEVICES": {
+		"NO_VIDEO_DEVICE": "Video device not found",
+		"NO_AUDIO_DEVICE": "Audio device not found"
 	},
 	"ROOM": {
 		"JOINING": "Joining meeting...",
@@ -88,6 +89,7 @@
 		"SETTINGS": {
 			"TITLE": "Settings",
 			"GENERAL": "General",
+			"DISPLAY_NAME": "Display name",
 			"VIDEO": "Video",
 			"AUDIO": "Audio",
 			"LANGUAGE": "Language",

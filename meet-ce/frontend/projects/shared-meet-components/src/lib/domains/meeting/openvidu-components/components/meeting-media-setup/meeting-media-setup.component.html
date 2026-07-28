@@ -16,7 +16,7 @@
 			<div class="loading-overlay">
 				<div class="loading-content">
 					<mat-spinner [diameter]="40" />
-					<span class="loading-text">{{ 'PREJOIN.PREPARING' | translate }}</span>
+					<span class="loading-text">{{ 'MEDIA_SETUP.PREPARING' | translate }}</span>
 				</div>
 			</div>
 		} @else {
@@ -70,7 +70,7 @@
 												mat-flat-button
 												class="background-button"
 												(click)="toggleBackgroundPanel()"
-												[matTooltip]="'PREJOIN.BACKGROUND' | translate"
+												[matTooltip]="'MEDIA_SETUP.BACKGROUND' | translate"
 												[disabled]="!isVideoEnabled()"
 												id="backgrounds-button"
 											>
@@ -98,7 +98,7 @@
 						<!-- Join Button -->
 						<div class="join-section">
 							<button mat-flat-button (click)="join()" class="join-button" id="join-button">
-								{{ 'PREJOIN.JOIN' | translate }}
+								{{ 'MEDIA_SETUP.JOIN' | translate }}
 							</button>
 						</div>
 					</div>

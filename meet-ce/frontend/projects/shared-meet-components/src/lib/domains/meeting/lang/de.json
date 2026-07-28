@@ -5,13 +5,14 @@
 		"DISCONNECTED": "Sie haben das Meeting verlassen",
 		"DISCONNECTED_SUBTITLE": "Das Meeting wurde beendet"
 	},
-	"PREJOIN": {
-		"NICKNAME": "Anzeigename",
-		"NO_VIDEO_DEVICE": "Video-Gerät nicht gefunden",
-		"NO_AUDIO_DEVICE": "Audio-Gerät nicht gefunden",
+	"MEDIA_SETUP": {
 		"JOIN": "Meeting beitreten",
 		"PREPARING": "Meeting wird vorbereitet...",
 		"BACKGROUND": "Hintergrund-Effekte"
+	},
+	"DEVICES": {
+		"NO_VIDEO_DEVICE": "Video-Gerät nicht gefunden",
+		"NO_AUDIO_DEVICE": "Audio-Gerät nicht gefunden"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Stummschalten des Audios",
@@ -88,6 +89,7 @@
 		"SETTINGS": {
 			"TITLE": "Einstellungen",
 			"GENERAL": "Allgemein",
+			"DISPLAY_NAME": "Anzeigename",
 			"VIDEO": "Video",
 			"AUDIO": "Audio",
 			"LANGUAGE": "Sprache",

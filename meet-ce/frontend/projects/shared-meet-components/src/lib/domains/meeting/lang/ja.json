@@ -5,13 +5,14 @@
 		"DISCONNECTED": "会議から退出しました",
 		"DISCONNECTED_SUBTITLE": "会議が終了しました"
 	},
-	"PREJOIN": {
-		"NICKNAME": "表示名",
-		"NO_VIDEO_DEVICE": "ビデオデバイスが見つかりません",
-		"NO_AUDIO_DEVICE": "オーディオデバイスが見つかりません",
+	"MEDIA_SETUP": {
 		"JOIN": "会議に参加する",
 		"PREPARING": "会議の準備中...",
 		"BACKGROUND": "背景効果"
+	},
+	"DEVICES": {
+		"NO_VIDEO_DEVICE": "ビデオデバイスが見つかりません",
+		"NO_AUDIO_DEVICE": "オーディオデバイスが見つかりません"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "オーディオをミュートする",
@@ -88,6 +89,7 @@
 		"SETTINGS": {
 			"TITLE": "設定",
 			"GENERAL": "全般的",
+			"DISPLAY_NAME": "表示名",
 			"VIDEO": "ビデオ",
 			"AUDIO": "オーディオ",
 			"LANGUAGE": "言語",
