@@ -9,7 +9,7 @@ export const UserOptionsSchema: z.ZodType<MeetUserOptions> = z.object({
 		.max(20, 'userId cannot exceed 20 characters')
 		.regex(/^[a-z0-9_]+$/, 'userId must contain only lowercase letters, numbers, and underscores'),
 	name: z.string().min(1, 'name is required and cannot be empty').max(50, 'name cannot exceed 50 characters'),
-	role: z.nativeEnum(MeetUserRole),
+	role: z.enum(MeetUserRole),
 	password: z.string().min(5, 'password must be at least 5 characters long')
 });
 
@@ -17,7 +17,7 @@ export const UserFiltersSchema = z
 	.object({
 		userId: z.string().optional(),
 		name: z.string().optional(),
-		nameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		nameMatchMode: z.enum(TextMatchMode).optional(),
 		nameCaseInsensitive: z.preprocess((arg) => {
 			if (typeof arg === 'string') {
 				if (arg.toLowerCase() === 'true') return true;
@@ -27,7 +27,7 @@ export const UserFiltersSchema = z
 
 			return arg;
 		}, z.boolean().optional().default(false)),
-		role: z.nativeEnum(MeetUserRole).optional(),
+		role: z.enum(MeetUserRole).optional(),
 		maxItems: z.coerce
 			.number()
 			.positive('maxItems must be a positive number')
@@ -40,7 +40,7 @@ export const UserFiltersSchema = z
 			.default(10),
 		nextPageToken: z.string().optional(),
 		sortField: z.enum(MEET_USER_SORT_FIELDS).optional().default('registrationDate'),
-		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+		sortOrder: z.enum(SortOrder).optional().default(SortOrder.DESC)
 	})
 	.superRefine((data, ctx) => {
 		if (data.nameMatchMode === TextMatchMode.REGEX && data.name) {
@@ -48,7 +48,7 @@ export const UserFiltersSchema = z
 				new RegExp(String(data.name));
 			} catch {
 				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
+					code: 'custom',
 					path: ['name'],
 					message: 'Invalid regular expression pattern'
 				});
@@ -85,5 +85,5 @@ export const ResetUserPasswordReqSchema = z.object({
 });
 
 export const UpdateUserRoleReqSchema = z.object({
-	role: z.nativeEnum(MeetUserRole)
+	role: z.enum(MeetUserRole)
 });

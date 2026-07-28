@@ -66,7 +66,7 @@ const extraFieldsSchema = z
 		return valid.length > 0 ? valid : undefined;
 	});
 
-const RoomMemberRoleSchema: z.ZodType<MeetRoomMemberRole> = z.nativeEnum(MeetRoomMemberRole);
+const RoomMemberRoleSchema: z.ZodType<MeetRoomMemberRole> = z.enum(MeetRoomMemberRole);
 
 export const MeetPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = z.object({
 	canRecord: z.boolean(),
@@ -126,7 +126,7 @@ export const RoomMemberOptionsSchema: z.ZodType<MeetRoomMemberOptions> = z
 export const RoomMemberFiltersSchema = z
 	.object({
 		name: z.string().optional(),
-		nameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		nameMatchMode: z.enum(TextMatchMode).optional(),
 		nameCaseInsensitive: z.preprocess((arg) => {
 			if (typeof arg === 'string') {
 				if (arg.toLowerCase() === 'true') return true;
@@ -136,8 +136,8 @@ export const RoomMemberFiltersSchema = z
 
 			return arg;
 		}, z.boolean().optional().default(false)),
-		baseRole: z.nativeEnum(MeetRoomMemberRole).optional(),
-		type: z.nativeEnum(MeetRoomMemberType).optional(),
+		baseRole: z.enum(MeetRoomMemberRole).optional(),
+		type: z.enum(MeetRoomMemberType).optional(),
 		fields: fieldsSchema,
 		extraFields: extraFieldsSchema,
 		maxItems: z.coerce
@@ -152,7 +152,7 @@ export const RoomMemberFiltersSchema = z
 			.default(10),
 		nextPageToken: z.string().optional(),
 		sortField: z.enum(MEET_ROOM_MEMBER_SORT_FIELDS).optional().default('membershipDate'),
-		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+		sortOrder: z.enum(SortOrder).optional().default(SortOrder.DESC)
 	})
 	.superRefine((data, ctx) => {
 		if (data.nameMatchMode === TextMatchMode.REGEX && data.name) {
@@ -160,7 +160,7 @@ export const RoomMemberFiltersSchema = z
 				new RegExp(String(data.name));
 			} catch {
 				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
+					code: 'custom',
 					path: ['name'],
 					message: 'Invalid regular expression pattern'
 				});
@@ -265,7 +265,7 @@ export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadat
 	memberId: z.string().optional(),
 	userId: z.string().optional(),
 	permissions: MeetPermissionsSchema,
-	badge: z.nativeEnum(MeetRoomMemberUIBadge),
+	badge: z.enum(MeetRoomMemberUIBadge),
 	isPromotedModerator: z.boolean().optional(),
-	livekitUrl: z.string().url('LiveKit URL must be a valid URL').optional()
+	livekitUrl: z.url('LiveKit URL must be a valid URL').optional()
 });

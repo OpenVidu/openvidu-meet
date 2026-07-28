@@ -88,7 +88,7 @@ export const StartRecordingReqSchema = z.object({
 	roomId: nonEmptySanitizedRoomId('roomId'),
 	config: z
 		.object({
-			layout: z.nativeEnum(MeetRecordingLayout).optional(),
+			layout: z.enum(MeetRecordingLayout).optional(),
 			encoding: encodingValidator.optional()
 		})
 		.optional()
@@ -98,7 +98,7 @@ export const RecordingFiltersSchema = z
 	.object({
 		roomId: nonEmptySanitizedRoomId('roomId').optional(),
 		roomName: z.string().optional(),
-		roomNameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		roomNameMatchMode: z.enum(TextMatchMode).optional(),
 		roomNameCaseInsensitive: z.preprocess((arg) => {
 			if (typeof arg === 'string') {
 				if (arg.toLowerCase() === 'true') return true;
@@ -108,7 +108,7 @@ export const RecordingFiltersSchema = z
 
 			return arg;
 		}, z.boolean().optional().default(false)),
-		status: z.nativeEnum(MeetRecordingStatus).optional(),
+		status: z.enum(MeetRecordingStatus).optional(),
 		fields: fieldsSchema,
 		maxItems: z.coerce
 			.number()
@@ -122,7 +122,7 @@ export const RecordingFiltersSchema = z
 			.default(10),
 		nextPageToken: z.string().optional(),
 		sortField: z.enum(MEET_RECORDING_SORT_FIELDS).optional().default('startDate'),
-		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+		sortOrder: z.enum(SortOrder).optional().default(SortOrder.DESC)
 	})
 	.superRefine((data, ctx) => {
 		if (data.roomNameMatchMode === TextMatchMode.REGEX && data.roomName) {
@@ -130,7 +130,7 @@ export const RecordingFiltersSchema = z
 				new RegExp(String(data.roomName));
 			} catch {
 				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
+					code: 'custom',
 					path: ['roomName'],
 					message: 'Invalid regular expression pattern'
 				});
@@ -230,7 +230,7 @@ export const GetRecordingMediaReqSchema = z.object({
 				})
 				.optional()
 		})
-		.passthrough() // Allow other headers to pass through
+		.loose() // Allow other headers to pass through
 });
 
 export const GetRecordingUrlReqSchema = z.object({

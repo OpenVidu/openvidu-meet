@@ -7,7 +7,6 @@ export const WebhookConfigSchema: z.ZodType<WebhookConfig> = z
 	.object({
 		enabled: z.boolean(),
 		url: z
-			.string()
 			.url('Must be a valid URL')
 			.regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' })
 			.optional()
@@ -24,14 +23,11 @@ export const WebhookConfigSchema: z.ZodType<WebhookConfig> = z
 	);
 
 export const TestWebhookReqSchema = z.object({
-	url: z
-		.string()
-		.url('Must be a valid URL')
-		.regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' })
+	url: z.url('Must be a valid URL').regex(/^https?:\/\//, { message: 'URL must start with http:// or https://' })
 });
 
 const OAuthProviderConfigSchema = z.object({
-	provider: z.nativeEnum(OAuthProvider),
+	provider: z.enum(OAuthProvider),
 	clientId: z.string(),
 	clientSecret: z.string(),
 	redirectUri: z.string()

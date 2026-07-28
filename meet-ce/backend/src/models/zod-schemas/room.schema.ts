@@ -52,13 +52,13 @@ export const EncodingOptionsSchema: z.ZodType<MeetRecordingEncodingOptions> = z.
 		width: z.number().positive('Video width must be a positive number'),
 		height: z.number().positive('Video height must be a positive number'),
 		framerate: z.number().positive('Video framerate must be a positive number'),
-		codec: z.nativeEnum(MeetRecordingVideoCodec),
+		codec: z.enum(MeetRecordingVideoCodec),
 		bitrate: z.number().positive('Video bitrate must be a positive number'),
 		keyFrameInterval: z.number().positive('Video keyFrameInterval must be a positive number'),
 		depth: z.number().positive('Video depth must be a positive number')
 	}),
 	audio: z.object({
-		codec: z.nativeEnum(MeetRecordingAudioCodec),
+		codec: z.enum(MeetRecordingAudioCodec),
 		bitrate: z.number().positive('Audio bitrate must be a positive number'),
 		frequency: z.number().positive('Audio frequency must be a positive number')
 	})
@@ -80,7 +80,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 
 		if (!presetValues.includes(value)) {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: 'custom',
 				message: `Invalid encoding preset. Must be one of: ${presetValues.join(', ')}`
 			});
 		}
@@ -91,7 +91,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 	// If it's not a string, it must be an encoding object
 	if (typeof value !== 'object' || value === null) {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: 'custom',
 			message: 'Encoding must be either a preset string or an encoding configuration object'
 		});
 		return;
@@ -102,7 +102,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 	// Both video and audio must be provided
 	if (!encoding.video || !encoding.audio) {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: 'custom',
 			message: 'Both video and audio configuration must be provided when using encoding options'
 		});
 		return;
@@ -110,7 +110,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 
 	if (encoding.video === null || typeof encoding.video !== 'object') {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: 'custom',
 			message: 'Video encoding must be a valid object'
 		});
 		return;
@@ -118,7 +118,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 
 	if (encoding.audio === null || typeof encoding.audio !== 'object') {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: 'custom',
 			message: 'Audio encoding must be a valid object'
 		});
 		return;
@@ -133,7 +133,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 
 	if (missingVideoFields.length > 0) {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: 'custom',
 			message: `When video encoding is provided, required fields are missing: ${missingVideoFields.join(', ')}`,
 			path: ['video']
 		});
@@ -145,7 +145,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 
 	if (missingAudioFields.length > 0) {
 		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
+			code: 'custom',
 			message: `When audio encoding is provided, required fields are missing: ${missingAudioFields.join(', ')}`,
 			path: ['audio']
 		});
@@ -157,7 +157,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 	if (!result.success) {
 		result.error.issues.forEach((issue) => {
 			ctx.addIssue({
-				code: z.ZodIssueCode.custom,
+				code: 'custom',
 				message: issue.message,
 				path: issue.path
 			});
@@ -167,7 +167,7 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
 	enabled: z.boolean(),
-	layout: z.nativeEnum(MeetRecordingLayout).optional(),
+	layout: z.enum(MeetRecordingLayout).optional(),
 	encoding: encodingValidator.optional()
 });
 
@@ -187,7 +187,7 @@ const CaptionsConfigSchema: z.ZodType<MeetRoomCaptionsConfig> = z.object({
 	enabled: z.boolean()
 });
 
-const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.nativeEnum(MeetRoomThemeMode);
+const ThemeModeSchema: z.ZodType<MeetRoomThemeMode> = z.enum(MeetRoomThemeMode);
 
 const hexColorSchema = z
 	.string()
@@ -282,11 +282,11 @@ const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 		return data;
 	});
 
-const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.nativeEnum(
+const RoomDeletionPolicyWithMeetingSchema: z.ZodType<MeetRoomDeletionPolicyWithMeeting> = z.enum(
 	MeetRoomDeletionPolicyWithMeeting
 );
 
-const RoomDeletionPolicyWithRecordingsSchema: z.ZodType<MeetRoomDeletionPolicyWithRecordings> = z.nativeEnum(
+const RoomDeletionPolicyWithRecordingsSchema: z.ZodType<MeetRoomDeletionPolicyWithRecordings> = z.enum(
 	MeetRoomDeletionPolicyWithRecordings
 );
 
@@ -452,7 +452,7 @@ const fieldsSchema = z
 export const RoomFiltersSchema = z
 	.object({
 		roomName: z.string().optional(),
-		roomNameMatchMode: z.nativeEnum(TextMatchMode).optional(),
+		roomNameMatchMode: z.enum(TextMatchMode).optional(),
 		roomNameCaseInsensitive: z.preprocess((arg) => {
 			if (typeof arg === 'string') {
 				if (arg.toLowerCase() === 'true') return true;
@@ -473,7 +473,7 @@ export const RoomFiltersSchema = z
 
 			return arg;
 		}, z.boolean().optional()),
-		status: z.nativeEnum(MeetRoomStatus).optional(),
+		status: z.enum(MeetRoomStatus).optional(),
 		fields: fieldsSchema,
 		extraFields: extraFieldsSchema,
 		maxItems: z.coerce
@@ -488,7 +488,7 @@ export const RoomFiltersSchema = z
 			.default(10),
 		nextPageToken: z.string().optional(),
 		sortField: z.enum(MEET_ROOM_SORT_FIELDS).optional().default('creationDate'),
-		sortOrder: z.nativeEnum(SortOrder).optional().default(SortOrder.DESC)
+		sortOrder: z.enum(SortOrder).optional().default(SortOrder.DESC)
 	})
 	.superRefine((data, ctx) => {
 		if (data.roomNameMatchMode === TextMatchMode.REGEX && data.roomName) {
@@ -496,7 +496,7 @@ export const RoomFiltersSchema = z
 				new RegExp(String(data.roomName));
 			} catch {
 				ctx.addIssue({
-					code: z.ZodIssueCode.custom,
+					code: 'custom',
 					path: ['roomName'],
 					message: 'Invalid regular expression pattern'
 				});

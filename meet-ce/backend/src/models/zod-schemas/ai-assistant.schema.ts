@@ -3,7 +3,7 @@ import { z } from 'zod';
 
 export const CreateAssistantReqSchema = z.object({
 	// scope: z.object({
-	// 	resourceType: z.nativeEnum(MeetAssistantScopeResourceType),
+	// 	resourceType: z.enum(MeetAssistantScopeResourceType),
 	// 	resourceIds: z.array(z.string().trim().min(1)).min(1)
 	// }),
 	capabilities: z
