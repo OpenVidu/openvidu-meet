@@ -68,6 +68,7 @@ export class ParticipantService {
 		// MicActivityService effect observes and uses to release its cloned MediaStreamTrack.
 		this._localParticipant.set(undefined);
 		this._remoteParticipants.set([]);
+		this.streamLayoutService.clearAllViewState();
 	}
 
 	/**
@@ -133,7 +134,7 @@ export class ParticipantService {
 			this.addRemoteParticipant(p);
 		});
 		if (this._remoteParticipants().length > 0) {
-			this.streamLayoutService.floatLocalCameraVideo();
+			this.streamLayoutService.floatLocalCameraVideo(this._localParticipant());
 		}
 	}
 
@@ -270,14 +271,6 @@ export class ParticipantService {
 	/* ------------------------------ Remote Participants ------------------------------ */
 
 	/**
-	 * Forces to update the remote participants array and notify signal consumers.
-	 * @deprecated No longer needed — each ParticipantModel bumps its own _revision signal.
-	 * Kept for external consumers that may call it.
-	 */
-	private updateRemoteParticipants(): void {
-		// No-op: remote participant state propagates via each model's internal signals.
-	}
-	/**
 	 * Returns the remote participant with the given sid.
 	 * @param sid
 	 */
@@ -325,16 +318,12 @@ export class ParticipantService {
 		const remotes = [...this.remoteParticipants()];
 		const index = remotes.findIndex((p) => p.sid === sid);
 		if (index !== -1) {
+			// Drop the leaver's view state (pins/floats/mutes) so a rejoin with the same
+			// identity does not inherit it.
+			this.streamLayoutService.clearParticipantViewState(remotes[index]);
 			remotes.splice(index, 1);
 			this._remoteParticipants.set(remotes);
 		}
-	}
-
-	/**
-	 * @internal
-	 */
-	someRemoteIsSharingScreen(): boolean {
-		return this.remoteParticipants().some((p) => p.isScreenShareEnabled);
 	}
 
 	/**
@@ -348,14 +337,15 @@ export class ParticipantService {
 	 * @internal
 	 */
 	setRemoteMutedForcibly(sid: string, value: boolean, source?: Track.Source) {
-		// setMutedForcibly calls bump() internally — no array update needed.
-		this.remoteParticipants()
-			.find((p) => p.sid === sid)
-			?.setMutedForcibly(value, source);
+		if (!this.getRemoteParticipantBySid(sid)) return;
+
+		// View state lives in StreamLayoutStateService signals — streams() picks it up reactively.
+		this.streamLayoutService.setParticipantMutedForcibly(sid, value, source);
 	}
 
 	private newParticipant(props: ParticipantProperties): ParticipantModel {
-		const participant = new ParticipantModel(props);
+		// Every model reads its per-viewer view state (pin/float/mute) from the layout store.
+		const participant = new ParticipantModel({ viewState: this.streamLayoutService, ...props });
 
 		// Decrypt participant name asynchronously if E2EE is enabled
 		this.decryptParticipantName(participant);

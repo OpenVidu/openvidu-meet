@@ -6,7 +6,6 @@ import {
 	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingStatus,
 	MeetRecordingUpdatedPayload,
-	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberTokenOptions,
 	MeetRoomMemberUIBadge,
 	MeetSignalType
@@ -30,7 +29,7 @@ import type {
 	RemoteParticipant,
 	Room
 } from '../openvidu-components';
-import { ParticipantLeftReason, RoomEvent } from '../openvidu-components';
+import { ParticipantLeftReason, RoomEvent, parseParticipantMetadata } from '../openvidu-components';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingStateService } from './meeting-state.service';
 
@@ -270,7 +269,7 @@ export class MeetingEventHandlerService {
 	 * @param metadata - The new metadata string, expected to be a JSON string containing badge and promotedModerator properties
 	 */
 	private handleParticipantMetadataChanged(participantIdentity: string, metadata: string | undefined): void {
-		const parsedMetadata = this.parseParticipantMetadata(metadata);
+		const parsedMetadata = parseParticipantMetadata(metadata);
 		if (!parsedMetadata) {
 			return;
 		}
@@ -287,27 +286,6 @@ export class MeetingEventHandlerService {
 		if (participant) {
 			participant.badge = parsedMetadata.badge;
 			participant.promotedModerator = Boolean(parsedMetadata.isPromotedModerator);
-		}
-	}
-
-	private parseParticipantMetadata(metadata: string | undefined): MeetRoomMemberTokenMetadata | undefined {
-		if (!metadata) {
-			return undefined;
-		}
-
-		try {
-			const parsed = JSON.parse(metadata) as Partial<MeetRoomMemberTokenMetadata>;
-			if (
-				!parsed.badge ||
-				(parsed.isPromotedModerator !== undefined && typeof parsed.isPromotedModerator !== 'boolean')
-			) {
-				return undefined;
-			}
-
-			return parsed as MeetRoomMemberTokenMetadata;
-		} catch (error) {
-			console.warn('Failed to parse participant metadata', error);
-			return undefined;
 		}
 	}
 

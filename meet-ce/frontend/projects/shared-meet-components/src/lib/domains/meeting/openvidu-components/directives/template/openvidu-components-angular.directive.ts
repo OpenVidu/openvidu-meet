@@ -1486,7 +1486,7 @@ export class ParticipantPanelItemElementsDirective {
  * 			<div *ovLayout>
  * 				<div class="container">
  * 					<!-- Local Participant's Streams -->
- * 					@for (stream of localParticipant.streams; track stream.streamId) {
+ * 					@for (stream of localParticipant.streams(); track stream.streamId) {
  * 					<div class="item">
  * 						<ov-stream [stream]="stream"></ov-stream>
  * 					</div>

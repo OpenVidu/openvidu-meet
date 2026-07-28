@@ -16,16 +16,6 @@ import {
 import { DeviceType } from './device.model';
 import { ScreenZoomState } from './screen-zoom.model';
 
-type AugmentedTrackPublication = TrackPublication & {
-	participant: ParticipantModel;
-	isPinned: boolean;
-	isFloating: boolean;
-	isCameraTrack: boolean;
-	isScreenTrack: boolean;
-	isAudioTrack: boolean;
-	isMutedForcibly?: boolean;
-};
-
 export interface ParticipantLeftEvent {
 	roomName: string;
 	participantName: string;
@@ -54,6 +44,19 @@ export enum ParticipantLeftReason {
 }
 
 /**
+ * Read side of the per-viewer stream view state (pin, float, forcible mute). Implemented by
+ * `StreamLayoutStateService`, which owns that state; declared here so the model does not depend on
+ * the service layer. Pin/float are keyed by {@link ParticipantStream.streamId}; forcible mutes are
+ * keyed by participant SID.
+ */
+export interface ParticipantViewStateReader {
+	isStreamPinned(streamId: string): boolean;
+	isStreamFloating(streamId: string): boolean;
+	isCameraStreamMuted(participantSid: string): boolean;
+	isScreenStreamMuted(participantSid: string): boolean;
+}
+
+/**
  * Interface that represents a combined audio+video stream for a single visual element.
  * A camera stream groups the camera video track and the microphone audio track.
  * A screen-share stream groups the screen-share video track and the screen-share audio track.
@@ -73,11 +76,11 @@ export interface ParticipantStream {
 	isScreenStream: boolean;
 	/** Stable identifier used for @for trackBy — videoTrack SID or a synthetic fallback. */
 	streamId: string;
-	/** Mirrors the videoTrack isPinned state. */
+	/** Whether this stream is pinned (enlarged) for this viewer. */
 	isPinned: boolean;
-	/** Mirrors the videoTrack isFloating state. */
+	/** Whether this stream floats as picture-in-picture for this viewer. */
 	isFloating: boolean;
-	/** Mirrors the audioTrack isMutedForcibly state. */
+	/** Whether this stream is forcibly muted for this viewer. */
 	isMutedForcibly: boolean;
 	/**
 	 * Per-viewer zoom/pan state for screen-share streams. Only present on screen streams;
@@ -108,11 +111,12 @@ export interface ParticipantProperties {
 	colorProfile?: string;
 
 	/**
-	 * This property allows to know what screen track is the last one published for enlarging it
-	 * Map <trackSid, publicationDate>
+	 * Per-viewer view state (pin/float/forcible mute) read by {@link ParticipantModel.streams}.
+	 * Provided by `ParticipantService` when it creates the model. When absent, every stream
+	 * reports unpinned/undocked/unmuted.
 	 * @internal
 	 **/
-	screenTrackPublicationDate?: Map<string, number>;
+	viewState?: ParticipantViewStateReader;
 }
 
 /**
@@ -130,17 +134,7 @@ export interface ParticipantDisplayProperties {
  * Class that represents a participant in the room.
  */
 export class ParticipantModel {
-	// ── Static ────────────────────────────────────────────────────────────────────────────────────
-	/** @internal Synthetic placeholder SID used when no real camera track exists. */
-	private static readonly CUSTOM_VIDEO_SID = 'customVideoTrack';
-
 	// ── Public state ────────────────────────────────────────────────────────────────────────────────
-	/**
-	 * This property allows to know what screen track is the last one published for enlarging it
-	 * Map <trackSid, publicationDate>
-	 * @internal
-	 **/
-	screenTrackPublicationDate: Map<string, number>;
 	/**
 	 * The color profile associated with the participant.
 	 * It specifies the visual representation of the participant in the user interface.
@@ -150,7 +144,7 @@ export class ParticipantModel {
 	// ── Private state ─────────────────────────────────────────────────────────────────────────────
 	private participant: LocalParticipant | RemoteParticipant;
 	private room: Room | undefined;
-	private customVideoTrack: Partial<AugmentedTrackPublication>;
+	private viewState: ParticipantViewStateReader | undefined;
 
 	// Reactive state. These signals replace plain boolean fields. Getters that read them are
 	// automatically tracked by Angular templates and effects, eliminating the need to clone
@@ -161,10 +155,11 @@ export class ParticipantModel {
 	private readonly _connectionQuality = signal<ConnectionQuality>(ConnectionQuality.Unknown);
 	/**
 	 * Revision counter — bumped via bump() whenever the underlying LiveKit participant object is
-	 * mutated in-place (track published/unpublished, isCameraEnabled changes, etc.) or when
-	 * augmented-track properties (isPinned, isFloating, isMutedForcibly) are written.
-	 * Reading _revision() inside augmentedTracks propagates the dependency to every getter and
-	 * computed that calls it — so streams, isFloating, isPinned, etc. all react automatically.
+	 * mutated in-place (track published/unpublished, isCameraEnabled changes, name changes, etc.).
+	 * Reading _revision() inside publications propagates the dependency to every getter and
+	 * computed that calls it — so streams, isCameraEnabled, etc. all react automatically.
+	 * This is its ONLY meaning: per-viewer view state (pin/float/mute) lives in
+	 * `StreamLayoutStateService` signals and needs no bump.
 	 */
 	private readonly _revision = signal(0);
 	// Meet moderation / badge state.
@@ -185,31 +180,32 @@ export class ParticipantModel {
 	 * and the audio/video de-sync risk that came with it.
 	 *
 	 * A camera stream is **always** produced (even when there is no camera track) so
-	 * that the participant avatar is always visible. This mirrors the previous
-	 * behaviour that injected a synthetic `customVideoTrack` placeholder.
+	 * that the participant avatar is always visible.
 	 *
 	 * Reactive: declared as an Angular `computed` signal. LayoutComponent's template reads
-	 * `participant.streams()` — Angular tracks `_revision` (via augmentedTracks) and only
-	 * re-evaluates when track structure or augmented-track properties actually change.
-	 * State-only changes (speaking, encryptionError) are tracked independently per StreamComponent
-	 * via the signal-backed getters (isSpeaking, hasEncryptionError, etc.).
+	 * `participant.streams()` — Angular tracks `_revision` (via publications) plus the
+	 * view-state signals behind {@link ParticipantViewStateReader}, and only re-evaluates when
+	 * track structure or per-viewer view state actually changes. State-only changes (speaking,
+	 * encryptionError) are tracked independently per StreamComponent via the signal-backed
+	 * getters (isSpeaking, hasEncryptionError, etc.).
 	 */
 	readonly streams = computed(() => {
-		const allTracks = this.tracks as AugmentedTrackPublication[];
+		const allTracks = this.publications();
 
-		// Real camera video publication (excludes the synthetic placeholder)
 		const cameraVideoTrack = allTracks.find(
-			(t) =>
-				t.source === Track.Source.Camera && !t.isAudioTrack && t.trackSid !== ParticipantModel.CUSTOM_VIDEO_SID
+			(t) => t.source === Track.Source.Camera && t.kind === Track.Kind.Video
 		);
 		const micAudioTrack = allTracks.find((t) => t.source === Track.Source.Microphone);
-		const screenVideoTrack = allTracks.find((t) => t.source === Track.Source.ScreenShare && !t.isAudioTrack);
+		const screenVideoTrack = allTracks.find(
+			(t) => t.source === Track.Source.ScreenShare && t.kind === Track.Kind.Video
+		);
 		const screenAudioTrack = allTracks.find((t) => t.source === Track.Source.ScreenShareAudio);
 
 		const result: ParticipantStream[] = [];
 
 		// Camera stream — always present so the participant is always visible in the grid.
 		// When there is no real camera track, the MediaElement renders the avatar instead.
+		const cameraStreamId = cameraVideoTrack?.trackSid ?? `camera-${this.identity}`;
 		result.push({
 			participant: this,
 			source: Track.Source.Camera,
@@ -217,10 +213,10 @@ export class ParticipantModel {
 			audioTrack: micAudioTrack,
 			isCameraStream: true,
 			isScreenStream: false,
-			streamId: cameraVideoTrack?.trackSid ?? `camera-${this.identity}`,
-			isPinned: cameraVideoTrack?.isPinned ?? false,
-			isFloating: cameraVideoTrack?.isFloating ?? false,
-			isMutedForcibly: micAudioTrack?.isMutedForcibly ?? false
+			streamId: cameraStreamId,
+			isPinned: this.viewState?.isStreamPinned(cameraStreamId) ?? false,
+			isFloating: this.viewState?.isStreamFloating(cameraStreamId) ?? false,
+			isMutedForcibly: this.viewState?.isCameraStreamMuted(this.sid) ?? false
 		});
 
 		// Screen share stream — only when screen sharing is active
@@ -234,9 +230,9 @@ export class ParticipantModel {
 				isCameraStream: false,
 				isScreenStream: true,
 				streamId: screenStreamId,
-				isPinned: screenVideoTrack?.isPinned ?? false,
+				isPinned: this.viewState?.isStreamPinned(screenStreamId) ?? false,
 				isFloating: false,
-				isMutedForcibly: (screenAudioTrack ?? screenVideoTrack)?.isMutedForcibly ?? false,
+				isMutedForcibly: this.viewState?.isScreenStreamMuted(this.sid) ?? false,
 				zoom: this.resolveScreenZoom(screenStreamId)
 			});
 		}
@@ -248,21 +244,7 @@ export class ParticipantModel {
 		this.participant = props.participant;
 		this.colorProfile = props.colorProfile ?? `hsl(${Math.random() * 360}, 100%, 80%)`;
 		this.room = props.room;
-		this.screenTrackPublicationDate = props.screenTrackPublicationDate ?? new Map<string, number>();
-
-		this.customVideoTrack = {
-			participant: this,
-			kind: Track.Kind.Video,
-			trackName: ParticipantModel.CUSTOM_VIDEO_SID,
-			trackSid: ParticipantModel.CUSTOM_VIDEO_SID,
-			source: Track.Source.Camera,
-			isPinned: false,
-			isFloating: false,
-			isMutedForcibly: false,
-			isCameraTrack: true,
-			isScreenTrack: false,
-			isAudioTrack: false
-		};
+		this.viewState = props.viewState;
 
 		this.updateModerationMetadata(props.participant.metadata);
 	}
@@ -288,6 +270,7 @@ export class ParticipantModel {
 	 * @returns string
 	 */
 	get name(): string | undefined {
+		this._revision(); // reactive: the name can be renamed server-side (ParticipantNameChanged)
 		return this._decryptedName() ?? this.participant.name;
 	}
 
@@ -360,11 +343,11 @@ export class ParticipantModel {
 	}
 
 	/**
-	 * Returns all the participant tracks.
+	 * Returns all the participant track publications, straight from LiveKit.
 	 * @internal
 	 */
 	get tracks(): TrackPublication[] {
-		return this.augmentedTracks();
+		return this.publications();
 	}
 
 	/**
@@ -375,19 +358,19 @@ export class ParticipantModel {
 	}
 
 	/**
-	 * Returns if the participant has any track forcibly muted.
+	 * Returns if the participant has any stream forcibly muted for this viewer.
 	 * @internal
 	 */
-	get isMutedForcibly() {
-		return this.augmentedTracks().some((track) => track.isMutedForcibly);
+	get isMutedForcibly(): boolean {
+		return this.streams().some((stream) => stream.isMutedForcibly);
 	}
 
 	/**
-	 * Returns if the participant has any track floating
+	 * Returns if the participant has any stream floating.
 	 * @internal
 	 */
 	get isFloating(): boolean {
-		return this.augmentedTracks().some((track) => track.isFloating);
+		return this.streams().some((stream) => stream.isFloating);
 	}
 
 	/**
@@ -396,7 +379,7 @@ export class ParticipantModel {
 	 * @returns boolean
 	 */
 	get isPinned(): boolean {
-		return this.augmentedTracks().some((track) => track.isPinned);
+		return this.streams().some((stream) => stream.isPinned);
 	}
 
 	/**
@@ -425,19 +408,6 @@ export class ParticipantModel {
 	}
 
 	// ── Public methods ────────────────────────────────────────────────────────────────────────────
-	/**
-	 * @returns ParticipantProperties
-	 * @internal
-	 */
-	getProperties(): ParticipantProperties {
-		return {
-			participant: this.participant,
-			room: this.room,
-			colorProfile: this.colorProfile,
-			screenTrackPublicationDate: this.screenTrackPublicationDate
-		};
-	}
-
 	/**
 	 *
 	 * Creates a screen capture tracks with getDisplayMedia(). A LocalVideoTrack is always created and returned.
@@ -551,6 +521,8 @@ export class ParticipantModel {
 
 	/**
 	 * Switches the active screen share track showing a native browser dialog to select a screen or window.
+	 * No bump() is needed: replaceTrack keeps the same publication and SID, and livekit-client
+	 * re-attaches the new MediaStreamTrack to the already-attached elements.
 	 * @param newTrack [LocalTrack](https://docs.livekit.io/client-sdk-js/classes/LocalTrack.html)
 	 * @returns Promise<void>
 	 * @internal
@@ -560,7 +532,7 @@ export class ParticipantModel {
 			return Promise.reject("Remote participant can't switch screen share");
 		}
 
-		const screenTrack = this.augmentedTracks().find((track) => track.source === Track.Source.ScreenShare);
+		const screenTrack = this.publications().find((track) => track.source === Track.Source.ScreenShare);
 		if (!screenTrack || !screenTrack.videoTrack) {
 			return Promise.reject('No active screen share track to switch');
 		}
@@ -602,95 +574,6 @@ export class ParticipantModel {
 	// requires `canUpdateOwnMetadata=true` server-side, which is insecure, so the feature is omitted.
 
 	/**
-	 * Sets all video track elements to pinned or unpinned given a boolean value
-	 * @param pinned
-	 * @internal
-	 */
-	setAllVideoPinned(pinned: boolean) {
-		this.augmentedTracks().forEach((track) => (track.isPinned = pinned));
-		this.bump();
-	}
-
-	/**
-	 * Toggle the pinned status of a video track element
-	 * @param trackSid
-	 * @internal
-	 */
-	toggleVideoPinned(trackSid: string): void {
-		const track = this.augmentedTracks().find((track) => track.trackSid === trackSid);
-		if (track) {
-			track.isPinned = !track.isPinned;
-			this.bump();
-		}
-	}
-
-	/**
-	 * Sets all video track elements from a specific source to pinned or unpinned given a boolean value
-	 * @param source The source of the track to be pinned or unpinned (e.g., 'camera', 'screenShare').
-	 * @param pinned
-	 * @internal
-	 */
-	setVideoPinnedBySource(source: Track.Source, pinned: boolean) {
-		this.augmentedTracks()
-			.filter((track) => track.source === source && track.kind === Track.Kind.Video)
-			.forEach((track) => (track.isPinned = pinned));
-		this.bump();
-	}
-
-	/**
-	 * Toggle the floating status of a video track element
-	 * @param trackSid
-	 * @returns
-	 * @internal
-	 */
-	toggleVideoFloating(trackSid: string): void {
-		const track = this.augmentedTracks().find((track) => track.trackSid === trackSid);
-		if (track) {
-			track.isFloating = !track.isFloating;
-			this.bump();
-		}
-	}
-
-	/**
-	 * Sets the publication date of a screen track
-	 * @param trackSid
-	 * @param publicationDate
-	 * @internal
-	 */
-	setScreenTrackPublicationDate(trackSid: string, publicationDate: number) {
-		if (publicationDate === -1) {
-			this.screenTrackPublicationDate.delete(trackSid);
-		} else {
-			this.screenTrackPublicationDate.set(trackSid, publicationDate);
-		}
-		this.bump();
-	}
-
-	/**
-	 * Forcibly mutes (or un-mutes) this participant's tracks.
-	 *
-	 * Calling without {@link source} mutes every track on the participant
-	 *
-	 * @internal
-	 */
-	setMutedForcibly(muted: boolean, source?: Track.Source) {
-		const matchesScope = (track: AugmentedTrackPublication): boolean => {
-			if (source === Track.Source.Camera) {
-				return track.source === Track.Source.Camera || track.source === Track.Source.Microphone;
-			}
-			if (source === Track.Source.ScreenShare) {
-				return track.source === Track.Source.ScreenShare || track.source === Track.Source.ScreenShareAudio;
-			}
-			return true;
-		};
-
-		this.augmentedTracks()
-			.filter(matchesScope)
-			.forEach((track) => (track.isMutedForcibly = muted));
-		this.bump();
-	}
-
-	/**
 	 * Sets the encryption error state for this participant.
 	 * @param hasError - Whether the participant has an encryption error
 	 * @internal
@@ -719,9 +602,10 @@ export class ParticipantModel {
 
 	/**
 	 * Bumps the internal revision signal, causing `streams` and all reactive getters
-	 * (isCameraEnabled, isFloating, isPinned, etc.) to re-evaluate in templates and effects.
-	 * Call this after any operation that mutates the underlying LiveKit participant in-place
-	 * (e.g. after setCameraEnabled, setMicrophoneEnabled, publishTrack).
+	 * (isCameraEnabled, name, etc.) to re-evaluate in templates and effects.
+	 * Only the event/media layer (ParticipantService, LocalMediaControlService) should call this,
+	 * and only after an operation that mutates the underlying LiveKit participant in-place
+	 * (e.g. after setCameraEnabled, setMicrophoneEnabled, publishTrack, a room event).
 	 * @internal
 	 */
 	bump(): void {
@@ -754,36 +638,13 @@ export class ParticipantModel {
 
 	// ── Private methods ───────────────────────────────────────────────────────────────────────────
 	/**
-	 * Returns all the participant tracks (augmented with pin/floating/muted/source flags).
-	 * @internal
+	 * Returns the participant's LiveKit track publications, cached per revision. Reading
+	 * _revision() registers it as a reactive dependency — consumers re-evaluate when bump() is
+	 * called after a LiveKit mutation.
 	 */
-	private readonly augmentedTracks = computed<AugmentedTrackPublication[]>(() => {
-		// Reading _revision() registers it as a reactive dependency — consumers re-evaluate when
-		// bump() is called. As a computed, the augmented array is CACHED between revisions: template
-		// getters (isPinned/isFloating/isMutedForcibly/tracks) no longer re-run getTrackPublications()
-		// + map() on every change-detection pass, only when the revision actually changes.
+	private readonly publications = computed<TrackPublication[]>(() => {
 		this._revision();
-		const defaultTracks = this.participant.getTrackPublications().map((track: TrackPublication) => {
-			const augmented = track as AugmentedTrackPublication;
-			augmented.participant = this;
-			augmented.isMutedForcibly = augmented.isMutedForcibly || false;
-			augmented.isCameraTrack = track.source === Track.Source.Camera;
-			augmented.isScreenTrack = track.source === Track.Source.ScreenShare;
-			augmented.isAudioTrack = track.kind === Track.Kind.Audio;
-			return augmented;
-		});
-
-		const hasCameraTrack = defaultTracks.some((track) => track.source === Track.Source.Camera);
-		if (!hasCameraTrack) {
-			/**
-			 * If default tracks does not contain camera track, we add a custom video track with the aim of showing the
-			 * participant's name and avatar. If we don't add this track, the participant's
-			 * name and avatar will not be shown in the video grid and the participant would be a
-			 * ghost in the room.
-			 **/
-			defaultTracks.push(this.customVideoTrack as AugmentedTrackPublication);
-		}
-		return defaultTracks;
+		return this.participant.getTrackPublications();
 	});
 
 	/**
@@ -815,17 +676,33 @@ export class ParticipantModel {
 	}
 }
 
-const parseParticipantMetadata = (metadata: unknown): MeetRoomMemberTokenMetadata | undefined => {
-	let parsedMetadata: MeetRoomMemberTokenMetadata | undefined;
-	try {
-		parsedMetadata = JSON.parse((metadata as string) || '{}');
-	} catch (e) {
-		console.warn('Failed to parse participant metadata:', e);
-	}
-
-	if (!parsedMetadata || typeof parsedMetadata !== 'object') {
+/**
+ * Parses the LiveKit connection metadata into a {@link MeetRoomMemberTokenMetadata}, returning
+ * `undefined` for anything that is not a valid payload (missing, malformed JSON, no badge, or a
+ * non-boolean promoted-moderator flag). Single parser shared by the model constructor and the
+ * `ParticipantMetadataChanged` handler so both paths validate identically.
+ */
+export const parseParticipantMetadata = (metadata: unknown): MeetRoomMemberTokenMetadata | undefined => {
+	if (!metadata || typeof metadata !== 'string') {
 		return undefined;
 	}
 
-	return parsedMetadata;
+	let parsed: Partial<MeetRoomMemberTokenMetadata>;
+
+	try {
+		parsed = JSON.parse(metadata) as Partial<MeetRoomMemberTokenMetadata>;
+	} catch (error) {
+		console.warn('Failed to parse participant metadata:', error);
+		return undefined;
+	}
+
+	if (!parsed || typeof parsed !== 'object' || !parsed.badge) {
+		return undefined;
+	}
+
+	if (parsed.isPromotedModerator !== undefined && typeof parsed.isPromotedModerator !== 'boolean') {
+		return undefined;
+	}
+
+	return parsed as MeetRoomMemberTokenMetadata;
 };

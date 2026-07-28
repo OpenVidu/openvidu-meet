@@ -248,10 +248,9 @@ export class LocalMediaControlService {
 		const track = await localParticipant?.setScreenShareEnabled(enabled, options);
 		if (enabled && track) {
 			// Set all videos to normal size when a local screen is shared
-			this.streamLayoutService.resetRemoteStreamsToNormalSize();
-			this.streamLayoutService.resetLocalStreamsToNormalSize();
-			localParticipant?.toggleVideoPinned(track.trackSid);
-			localParticipant?.setScreenTrackPublicationDate(track.trackSid, new Date().getTime());
+			this.streamLayoutService.unpinAllStreams();
+			this.streamLayoutService.toggleStreamPinned(track.trackSid);
+			this.streamLayoutService.recordScreenSharePublication(track.trackSid, new Date().getTime());
 
 			track?.addListener('ended', async () => {
 				this.log.d('Clicked native stop button. Stopping screen sharing');
@@ -259,9 +258,8 @@ export class LocalMediaControlService {
 			});
 		} else if (!enabled && track) {
 			// Enlarge the last screen shared when a local screen is stopped
-			localParticipant?.setScreenTrackPublicationDate(track.trackSid, -1);
-			this.streamLayoutService.resetRemoteStreamsToNormalSize();
-			this.streamLayoutService.resetLocalStreamsToNormalSize();
+			this.streamLayoutService.clearScreenSharePublication(track.trackSid);
+			this.streamLayoutService.unpinAllStreams();
 			this.streamLayoutService.setLastScreenPinned();
 		}
 		localParticipant?.bump();

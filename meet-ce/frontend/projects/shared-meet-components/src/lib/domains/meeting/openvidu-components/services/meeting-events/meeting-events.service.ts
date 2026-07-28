@@ -65,7 +65,7 @@ export class MeetingEventsService {
 		this.subscribeToTrackMuteStateChanged(room);
 		this.subscribeToLocalTrackPublished(room);
 		this.subscribeToParticipantDisconnected(room);
-		this.subscribeToParticipantMetadataChanged(room);
+		this.subscribeToParticipantNameChanged(room);
 		this.subscribeToDataMessage(room);
 		this.subscribeToReconnection(room, callbacks);
 		this.subscribeToConnectionQualityChanged(room);
@@ -93,7 +93,7 @@ export class MeetingEventsService {
 			this.participantService.addRemoteParticipant(participant);
 			// Auto-float the local video the first time a remote participant joins.
 			if (this.participantService.remoteParticipants().length === 1) {
-				this.streamLayoutService.floatLocalCameraVideo();
+				this.streamLayoutService.floatLocalCameraVideo(this.participantService.localParticipant());
 			}
 		});
 	}
@@ -111,15 +111,10 @@ export class MeetingEventsService {
 				const isScreenTrack = track.source === Track.Source.ScreenShare;
 				this.participantService.addRemoteParticipant(participant);
 				if (isScreenTrack) {
-					this.streamLayoutService.resetLocalStreamsToNormalSize();
-					this.streamLayoutService.resetRemoteStreamsToNormalSize();
-					this.streamLayoutService.toggleRemoteVideoPinned(track.sid);
+					this.streamLayoutService.unpinAllStreams();
+					this.streamLayoutService.toggleStreamPinned(track.sid);
 					if (track.sid) {
-						this.streamLayoutService.setScreenTrackPublicationDate(
-							participant.sid,
-							track.sid,
-							new Date().getTime()
-						);
+						this.streamLayoutService.recordScreenSharePublication(track.sid, new Date().getTime());
 					}
 				}
 			}
@@ -134,10 +129,9 @@ export class MeetingEventsService {
 				const isScreenTrack = track.source === Track.Source.ScreenShare;
 				if (isScreenTrack) {
 					if (track.sid) {
-						this.streamLayoutService.setScreenTrackPublicationDate(participant.sid, track.sid, -1);
+						this.streamLayoutService.clearScreenSharePublication(track.sid);
 					}
-					this.streamLayoutService.resetLocalStreamsToNormalSize();
-					this.streamLayoutService.resetRemoteStreamsToNormalSize();
+					this.streamLayoutService.unpinAllStreams();
 					this.streamLayoutService.setLastScreenPinned();
 				}
 
@@ -155,24 +149,39 @@ export class MeetingEventsService {
 	}
 
 	private subscribeToTrackMuteStateChanged(room: Room) {
-		const refreshParticipantState = (participant: Participant | RemoteParticipant | LocalParticipant) => {
-			if (!participant) return;
-
-			if (participant.isLocal) {
-				this.participantService.updateLocalParticipant();
-				return;
-			}
-
-			this.participantService.addRemoteParticipant(participant as RemoteParticipant);
-		};
-
 		room.on(RoomEvent.TrackMuted, (_publication: TrackPublication, participant: Participant) => {
-			refreshParticipantState(participant);
+			this.refreshParticipantState(participant);
 		});
 
 		room.on(RoomEvent.TrackUnmuted, (_publication: TrackPublication, participant: Participant) => {
-			refreshParticipantState(participant);
+			this.refreshParticipantState(participant);
 		});
+	}
+
+	/**
+	 * LiveKit renamed a participant server-side (e.g. via the server API). The name lives on the
+	 * mutated-in-place LiveKit object, so bump the model for the reactive `name` getter to repaint.
+	 */
+	private subscribeToParticipantNameChanged(room: Room) {
+		room.on(RoomEvent.ParticipantNameChanged, (_name: string, participant: Participant) => {
+			this.refreshParticipantState(participant);
+		});
+	}
+
+	/**
+	 * Re-syncs the model wrapping the given LiveKit participant after an in-place mutation
+	 * (mute state, name, …): the local model is bumped, a remote one is bumped through
+	 * `addRemoteParticipant` (which also registers it if it was unknown).
+	 */
+	private refreshParticipantState(participant: Participant | RemoteParticipant | LocalParticipant) {
+		if (!participant) return;
+
+		if (participant.isLocal) {
+			this.participantService.updateLocalParticipant();
+			return;
+		}
+
+		this.participantService.addRemoteParticipant(participant as RemoteParticipant);
 	}
 
 	/**
@@ -191,18 +200,9 @@ export class MeetingEventsService {
 		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
 			this.participantService.removeRemoteParticipant(participant.sid);
 			if (this.participantService.remoteParticipants().length === 0) {
-				this.streamLayoutService.dockLocalCameraVideo();
+				this.streamLayoutService.dockLocalCameraVideo(this.participantService.localParticipant());
 			}
 		});
-	}
-
-	private subscribeToParticipantMetadataChanged(room: Room) {
-		room.on(
-			RoomEvent.ParticipantMetadataChanged,
-			(metadata: string | undefined, participant: RemoteParticipant | LocalParticipant) => {
-				this.log.d('ParticipantMetadataChanged', { metadata, participant });
-			}
-		);
 	}
 
 	private subscribeToDataMessage(room: Room) {
