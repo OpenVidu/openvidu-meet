@@ -62,7 +62,7 @@ export class ChatService {
 			try {
 				// Create message payload
 				const payload = JSON.stringify({ message: plainTextMessage });
-				const data: Uint8Array = new TextEncoder().encode(payload);
+				const data: Uint8Array<ArrayBuffer> = new TextEncoder().encode(payload);
 
 				// Send through data channel
 				await this.participantService.publishData(data, { topic: DataTopic.CHAT, reliable: true });

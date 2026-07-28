@@ -1,6 +1,6 @@
 import { effect, inject, Service, OnDestroy } from '@angular/core';
 import { OpenViduComponentsConfigService } from '../config/directive-config.service';
-import { createKeyMaterialFromString, deriveKeys } from '../livekit';
+import { createKeyMaterialFromString, deriveKeys, type KeyProviderOptions } from '../livekit';
 
 /**
  * Independent E2EE Service for encrypting and decrypting text-based content
@@ -19,7 +19,16 @@ export class E2eeService implements OnDestroy {
 
 	private static readonly ENCRYPTION_ALGORITHM = 'AES-GCM';
 	private static readonly IV_LENGTH = 12;
-	private static readonly SALT = 'livekit-e2ee-data'; // Salt for HKDF key derivation
+	// Only `ratchetSalt` feeds the HKDF derivation below; the rest mirror livekit-client's own
+	// BaseKeyProvider defaults since `KeyProviderOptions` requires them all.
+	private static readonly KEY_PROVIDER_OPTIONS: KeyProviderOptions = {
+		sharedKey: false,
+		ratchetSalt: 'livekit-e2ee-data',
+		ratchetWindowSize: 8,
+		failureTolerance: 10,
+		keyringSize: 16,
+		keySize: 128
+	};
 
 	private decryptionCache = new Map<string, string>();
 	private isE2EEEnabled = false;
@@ -53,7 +62,7 @@ export class E2eeService implements OnDestroy {
 			const keyMaterial = await createKeyMaterialFromString(passphrase);
 
 			// Use LiveKit's deriveKeys to get encryption key (HKDF)
-			const derivedKeys = await deriveKeys(keyMaterial, E2eeService.SALT);
+			const derivedKeys = await deriveKeys(keyMaterial, E2eeService.KEY_PROVIDER_OPTIONS);
 
 			// Store the encryption key for use in encrypt/decrypt operations
 			this.encryptionKey = derivedKeys.encryptionKey;

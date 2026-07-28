@@ -582,7 +582,7 @@ export class ParticipantModel {
 	 * @returns Promise that is resolved if the data was successfully sent, or rejected with an Error object if not.
 	 * @internal
 	 */
-	async publishData(data: Uint8Array, publishOptions: DataPublishOptions): Promise<void> {
+	async publishData(data: Uint8Array<ArrayBuffer>, publishOptions: DataPublishOptions): Promise<void> {
 		if (this.participant instanceof LocalParticipant) {
 			return this.participant.publishData(data, publishOptions);
 		}

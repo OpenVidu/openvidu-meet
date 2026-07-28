@@ -28,7 +28,7 @@ allowBuilds:
   unrs-resolver: true
 
 overrides:
-  livekit-client: 2.16.1
+  livekit-client: 2.21.0
 
 strictPeerDependencies: false
 autoInstallPeers: true

@@ -142,7 +142,7 @@ export class ParticipantService {
 	 * @param data
 	 * @param {DataPublishOptions} publishOptions [DataPublishOptions](https://docs.livekit.io/client-sdk-js/types/DataPublishOptions.html)
 	 */
-	publishData(data: Uint8Array, publishOptions: DataPublishOptions): Promise<void> {
+	publishData(data: Uint8Array<ArrayBuffer>, publishOptions: DataPublishOptions): Promise<void> {
 		const localParticipant = this.localParticipant();
 		if (localParticipant) {
 			return localParticipant.publishData(data, publishOptions);

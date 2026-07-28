@@ -9,10 +9,10 @@ import {
 	SortOrder,
 	TextMatchMode
 } from '@openvidu-meet/typings';
-import { NavigationService } from 'projects/shared-meet-components/src/lib/shared/services/navigation.service';
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
+import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
