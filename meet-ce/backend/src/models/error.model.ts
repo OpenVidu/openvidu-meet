@@ -2,7 +2,13 @@ import type { MeetRoomDeletionErrorCode, MeetRoomMemberRole } from '@openvidu-me
 import type { Response } from 'express';
 import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
+import { configureZodErrorMessages } from '../config/zod-config.js';
 import { LoggerService } from '../services/logger.service.js';
+
+// Applied here because this module owns the rendering of zod errors into 422 responses
+// (`rejectUnprocessableRequest`) and is imported by every request validator, so the error
+// map is installed at boot in both editions before any request is parsed.
+configureZodErrorMessages();
 
 type StatusError = 400 | 401 | 402 | 403 | 404 | 409 | 415 | 416 | 422 | 500 | 503;
 export class OpenViduMeetError extends Error {
