@@ -32,7 +32,7 @@ import {
 import { ActionService } from '../../services/action/action.service';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { ChatService } from '../../services/chat/chat.service';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { DocumentService } from '../../services/document/document.service';
 import { Room, RoomEvent } from '../../services/livekit';
@@ -85,7 +85,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly platformService = inject(PlatformService);
 	private readonly destroyRef = inject(DestroyRef);
 	readonly templateRegistry = inject(TemplateRegistryService);

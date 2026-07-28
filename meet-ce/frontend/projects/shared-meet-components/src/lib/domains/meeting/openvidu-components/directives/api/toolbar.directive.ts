@@ -1,6 +1,6 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 
 /**
  * The **cameraButton** directive allows show/hide the camera toolbar button.
@@ -35,7 +35,7 @@ export class ToolbarCameraButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly cameraButtonEffect = effect(() => {
 		this.update(this.cameraButton() ?? this.toolbarCameraButton() ?? true);
 	});
@@ -86,7 +86,7 @@ export class ToolbarMicrophoneButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly microphoneButtonEffect = effect(() => {
 		this.update(this.microphoneButton() ?? this.toolbarMicrophoneButton() ?? true);
 	});
@@ -137,7 +137,7 @@ export class ToolbarScreenshareButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly screenshareButtonEffect = effect(() => {
 		this.update(this.screenshareButton() ?? this.toolbarScreenshareButton() ?? true);
 	});
@@ -187,7 +187,7 @@ export class ToolbarRecordingButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly recordingButtonEffect = effect(() => {
 		this.update(this.recordingButton() ?? this.toolbarRecordingButton() ?? true);
 	});
@@ -237,7 +237,7 @@ export class ToolbarFullscreenButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly fullscreenButtonEffect = effect(() => {
 		this.update(this.fullscreenButton() ?? this.toolbarFullscreenButton() ?? true);
 	});
@@ -285,7 +285,7 @@ export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly backgroundEffectsButtonEffect = effect(() => {
 		this.update(this.backgroundEffectsButton() ?? this.toolbarBackgroundEffectsButton() ?? true);
 	});
@@ -393,7 +393,7 @@ export class ToolbarSettingsButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly settingsButtonEffect = effect(() => {
 		this.update(this.settingsButton() ?? this.toolbarSettingsButton() ?? true);
 	});
@@ -441,7 +441,7 @@ export class ToolbarLeaveButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly leaveButtonEffect = effect(() => {
 		this.update(this.leaveButton() ?? this.toolbarLeaveButton() ?? true);
 	});
@@ -491,7 +491,7 @@ export class ToolbarParticipantsPanelButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantsPanelButtonEffect = effect(() => {
 		this.update(this.participantsPanelButton() ?? this.toolbarParticipantsPanelButton() ?? true);
 	});
@@ -540,7 +540,7 @@ export class ToolbarChatPanelButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly chatPanelButtonEffect = effect(() => {
 		this.update(this.chatPanelButton() ?? this.toolbarChatPanelButton() ?? true);
 	});
@@ -589,7 +589,7 @@ export class ToolbarActivitiesPanelButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly activitiesPanelButtonEffect = effect(() => {
 		this.update(this.activitiesPanelButton() ?? this.toolbarActivitiesPanelButton() ?? true);
 	});
@@ -638,7 +638,7 @@ export class ToolbarDisplayRoomNameDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly displayRoomNameEffect = effect(() => {
 		this.update(this.displayRoomName() ?? this.toolbarDisplayRoomName() ?? true);
 	});
@@ -687,7 +687,7 @@ export class ToolbarDisplayLogoDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly displayLogoEffect = effect(() => {
 		this.update(this.displayLogo() ?? this.toolbarDisplayLogo() ?? true);
 	});
@@ -729,7 +729,7 @@ export class ToolbarAdditionalButtonsPossitionDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly additionalButtonsPositionEffect = effect(() => {
 		const value = this.ovToolbarAdditionalButtonsPosition() ?? ToolbarAdditionalButtonsPosition.AFTER_MENU;
 		if (!Object.values(ToolbarAdditionalButtonsPosition).includes(value)) return;

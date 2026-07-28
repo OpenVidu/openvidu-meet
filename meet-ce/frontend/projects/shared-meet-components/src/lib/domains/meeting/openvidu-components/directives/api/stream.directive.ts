@@ -1,5 +1,5 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 
 /**
  * The **displayParticipantName** directive allows show/hide the participants name in stream component.
@@ -24,7 +24,7 @@ export class StreamDisplayParticipantNameDirective implements OnDestroy {
 	readonly displayParticipantName = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly displayParticipantNameEffect = effect(() => {
 		this.update(this.displayParticipantName() ?? this.streamDisplayParticipantName() ?? true);
 	});
@@ -65,7 +65,7 @@ export class StreamDisplayAudioDetectionDirective implements OnDestroy {
 	readonly displayAudioDetection = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly displayAudioDetectionEffect = effect(() => {
 		this.update(this.displayAudioDetection() ?? this.streamDisplayAudioDetection() ?? true);
 	});
@@ -105,7 +105,7 @@ export class StreamVideoControlsDirective implements OnDestroy {
 	readonly videoControls = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly videoControlsEffect = effect(() => {
 		this.update(this.videoControls() ?? this.streamVideoControls() ?? true);
 	});

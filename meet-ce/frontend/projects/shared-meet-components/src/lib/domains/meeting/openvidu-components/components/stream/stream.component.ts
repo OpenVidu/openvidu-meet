@@ -16,7 +16,7 @@ import { AvatarView, DEFAULT_AVATAR_VIEW } from '../../models/avatar-view.model'
 import { ParticipantStream } from '../../models/participant.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { StreamLayoutStateService } from '../../services/layout/stream-layout-state.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -47,7 +47,7 @@ export class StreamComponent implements OnDestroy {
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly cdkSrv = inject(CdkOverlayService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	readonly stream = input<ParticipantStream | undefined>(undefined);
 
 	readonly showParticipantName = this.libService.displayParticipantNameSignal;

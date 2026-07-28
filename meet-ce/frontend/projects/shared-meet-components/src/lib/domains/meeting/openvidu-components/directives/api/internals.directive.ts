@@ -3,7 +3,7 @@
 import { Directive, ElementRef, OnDestroy, OnInit, effect, inject, input } from '@angular/core';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { ParticipantModel } from '../../models/participant.model';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 
 /**
  * Load default OpenVidu logo if custom one is not exist
@@ -59,7 +59,7 @@ export class LayoutRemoteParticipantsDirective implements OnDestroy {
 	readonly ovRemoteParticipants = input<ParticipantModel[] | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly directiveService = inject(OpenViduComponentsConfigService);
+	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly ovRemoteParticipantsEffect = effect(() => {
 		this.update(this.ovRemoteParticipants());
 	});
@@ -93,7 +93,7 @@ export class ToolbarBrandingLogoDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly brandingLogoEffect = effect(() => {
 		this.update(this.brandingLogo());
 	});
@@ -145,7 +145,7 @@ export class ToolbarViewRecordingsButtonDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly viewRecordingsButtonEffect = effect(() => {
 		this.update(this.viewRecordingsButton() ?? this.toolbarViewRecordingsButton() ?? false);
 	});
@@ -187,7 +187,7 @@ export class StartStopRecordingButtonsDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly startStopButtonEffect = effect(() => {
 		this.update(this.recordingActivityStartStopRecordingButton() ?? true);
 	});
@@ -223,7 +223,7 @@ export class RecordingActivityViewRecordingsButtonDirective implements OnDestroy
 	readonly recordingActivityViewRecordingsButton = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly viewRecordingsButtonEffect = effect(() => {
 		this.update(this.recordingActivityViewRecordingsButton() ?? false);
 	});
@@ -260,7 +260,7 @@ export class ToolbarRoomNameDirective implements OnDestroy {
 	readonly roomName = input<string | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly roomNameEffect = effect(() => {
 		this.updateRoomName(this.roomName() ?? this.toolbarRoomName());
 	});
@@ -296,7 +296,7 @@ export class ShowThemeSelectorDirective implements OnDestroy {
 	readonly showThemeSelector = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly showThemeSelectorEffect = effect(() => {
 		this.update(this.showThemeSelector() ?? false);
 	});
@@ -332,7 +332,7 @@ export class E2EEKeyDirective implements OnDestroy {
 	readonly e2eeKey = input<string | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly e2eeKeyEffect = effect(() => {
 		this.update(this.e2eeKey());
 	});

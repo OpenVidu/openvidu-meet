@@ -8,7 +8,7 @@ import { ParticipantPanelItemElementsDirective } from '../../../../directives/te
 import { ParticipantPanelParticipantBadgeDirective } from '../../../../directives/template/internals.directive';
 import { ParticipantModel } from '../../../../models/participant.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
-import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../../../services/config/meeting-ui-config.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { TemplateRegistryService } from '../../../../services/template/template-registry.service';
 import { ConnectionQualityIndicatorComponent } from '../../../connection-quality-indicator/connection-quality-indicator.component';
@@ -38,7 +38,7 @@ import { ParticipantAvatarComponent } from '../../../participant-avatar/particip
 export class ParticipantPanelItemComponent {
 	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });
 	readonly muteButtonInput = input(true, { alias: 'muteButton' });
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
 

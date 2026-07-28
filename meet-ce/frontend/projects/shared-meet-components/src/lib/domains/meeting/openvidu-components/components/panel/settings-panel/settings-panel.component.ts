@@ -20,7 +20,7 @@ import { CustomDevice } from '../../../models/device.model';
 import { LangOption } from '../../../models/lang.model';
 import { PanelSettingsOptions, PanelType } from '../../../models/panel.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
-import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
 import { PlatformService } from '../../../services/platform/platform.service';
 import { ViewportService } from '../../../services/viewport/viewport.service';
@@ -61,7 +61,7 @@ export class SettingsPanelComponent implements OnInit {
 
 	private readonly panelService = inject(PanelService);
 	private readonly platformService = inject(PlatformService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	public readonly viewportService = inject(ViewportService);
 
 	/**

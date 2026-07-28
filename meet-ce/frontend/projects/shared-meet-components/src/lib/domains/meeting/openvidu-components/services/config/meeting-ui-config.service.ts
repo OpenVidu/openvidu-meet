@@ -65,7 +65,7 @@ interface GeneralConfig {
  * @internal
  */
 @Service()
-export class OpenViduComponentsConfigService {
+export class MeetingUiConfigService {
 	// Grouped configuration items by domain
 	private readonly generalConfig = signal<GeneralConfig>({
 		token: '',

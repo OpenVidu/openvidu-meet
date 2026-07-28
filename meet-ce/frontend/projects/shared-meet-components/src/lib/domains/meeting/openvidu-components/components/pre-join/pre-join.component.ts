@@ -18,7 +18,7 @@ import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { LocalTrack, Track } from '../../services/livekit';
 import { LocalTrackService } from '../../services/local-track/local-track.service';
@@ -66,7 +66,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	readonly onAudioEnabledChanged = output<boolean>();
 	readonly onLangChanged = output<LangOption>();
 	readonly onReadyToJoin = output<void>();
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly deviceSrv = inject(DeviceService);
 
 	readonly errorMessage = signal<string | undefined>(undefined);

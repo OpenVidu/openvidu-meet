@@ -1,13 +1,13 @@
 import { inject, Service, signal } from '@angular/core';
 import { RecordingState, RecordingStateInfo } from '../../models/recording.model';
 import { ActionService } from '../action/action.service';
-import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Service()
 export class RecordingService {
 	private readonly actionService = inject(ActionService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly log = inject(LoggerService).get('RecordingService');
 
 	private recordingTimeInterval: ReturnType<typeof setInterval> | undefined = undefined;

@@ -24,7 +24,7 @@ import {
 import { safeJsonParse } from '../../utils/utils';
 import { ActionService } from '../action/action.service';
 import { ChatService } from '../chat/chat.service';
-import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../participant/participant.service';
@@ -42,7 +42,7 @@ export interface MeetingEventCallbacks {
 export class MeetingEventsService {
 	private readonly actionService = inject(ActionService);
 	private readonly chatService = inject(ChatService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly participantService = inject(ParticipantService);

@@ -1,5 +1,5 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 
 /**
  * The **muteButton** directive allows show/hide the muted button in participant panel item component.
@@ -24,7 +24,7 @@ export class ParticipantPanelItemMuteButtonDirective implements OnDestroy {
 	readonly muteButton = input<boolean | undefined>(undefined);
 
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly muteButtonEffect = effect(() => {
 		this.update(this.muteButton() ?? this.participantPanelItemMuteButton() ?? true);
 	});

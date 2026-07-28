@@ -1,5 +1,5 @@
 import { effect, inject, Service, OnDestroy } from '@angular/core';
-import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { createKeyMaterialFromString, deriveKeys, type KeyProviderOptions } from '../livekit';
 
 /**
@@ -15,7 +15,7 @@ import { createKeyMaterialFromString, deriveKeys, type KeyProviderOptions } from
  */
 @Service()
 export class E2eeService implements OnDestroy {
-	private readonly configService = inject(OpenViduComponentsConfigService);
+	private readonly configService = inject(MeetingUiConfigService);
 
 	private static readonly ENCRYPTION_ALGORITHM = 'AES-GCM';
 	private static readonly IV_LENGTH = 12;

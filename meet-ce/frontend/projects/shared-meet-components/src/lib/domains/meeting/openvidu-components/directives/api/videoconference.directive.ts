@@ -1,7 +1,7 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 // import { CaptionService } from '../../services/caption/caption.service';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { MediaStorageService } from '../../services/storage/storage.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
@@ -29,7 +29,7 @@ export class LivekitUrlDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly livekitUrlEffect = effect(() => {
 		this.update(this.livekitUrl());
 	});
@@ -80,7 +80,7 @@ export class TokenDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly tokenEffect = effect(() => {
 		this.update(this.token());
 	});
@@ -130,7 +130,7 @@ export class TokenErrorDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly tokenErrorEffect = effect(() => {
 		this.update(this.tokenError());
 	});
@@ -310,7 +310,7 @@ export class ParticipantNameDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantNameEffect = effect(() => {
 		this.update(this.participantName());
 	});
@@ -362,7 +362,7 @@ export class PrejoinDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly prejoinEffect = effect(() => {
 		this.update(this.prejoin());
 	});
@@ -413,7 +413,7 @@ export class VideoEnabledDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly storageService = inject(MediaStorageService);
 	private readonly videoEnabledEffect = effect(() => {
 		this.update(this.videoEnabled());
@@ -487,7 +487,7 @@ export class AudioEnabledDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly storageService = inject(MediaStorageService);
 	private readonly audioEnabledEffect = effect(() => {
 		this.update(this.audioEnabled());
@@ -555,7 +555,7 @@ export class ShowDisconnectionDialogDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly showDisconnectionDialogEffect = effect(() => {
 		this.update(this.showDisconnectionDialog());
 	});
@@ -619,7 +619,7 @@ export class RecordingStreamBaseUrlDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly recordingStreamBaseUrlEffect = effect(() => {
 		this.update(this.recordingStreamBaseUrl());
 	});
@@ -671,7 +671,7 @@ export class ChatWritableDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly chatWritableEffect = effect(() => {
 		this.libService.setChatInputEnabled(this.chatWritable() ?? true);
 	});

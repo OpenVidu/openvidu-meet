@@ -1,6 +1,6 @@
 import { Injector, Service, inject } from '@angular/core';
 import { ParticipantModel } from '../../models/participant.model';
-import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { DeviceService } from '../device/device.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import type { AudioCaptureOptions, ScreenShareCaptureOptions, VideoCaptureOptions } from '../livekit';
@@ -89,7 +89,7 @@ class RoomTarget implements LocalMediaTarget {
 class PrejoinTarget implements LocalMediaTarget {
 	constructor(
 		private readonly localTrackService: LocalTrackService,
-		private readonly directiveService: OpenViduComponentsConfigService,
+		private readonly directiveService: MeetingUiConfigService,
 		private readonly storageSrv: MediaStorageService
 	) {}
 
@@ -135,7 +135,7 @@ export class LocalMediaControlService {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly storageSrv = inject(MediaStorageService);
-	private readonly directiveService = inject(OpenViduComponentsConfigService);
+	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly log = inject(LoggerService).get('LocalMediaControlService');
 

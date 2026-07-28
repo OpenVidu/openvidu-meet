@@ -52,7 +52,7 @@ import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '.
 import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
@@ -119,7 +119,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly actionService = inject(ActionService);
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly panelService = inject(PanelService);
 	private readonly backgroundService = inject(VirtualBackgroundService);

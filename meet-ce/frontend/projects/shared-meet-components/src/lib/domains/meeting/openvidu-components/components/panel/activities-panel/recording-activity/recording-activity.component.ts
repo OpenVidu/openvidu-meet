@@ -13,7 +13,7 @@ import {
     RecordingStopRequestedEvent
 } from '../../../../models/recording.model';
 import { TranslatePipe } from '../../../../pipes/translate.pipe';
-import { OpenViduComponentsConfigService } from '../../../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../../../services/config/meeting-ui-config.service';
 import { MeetingLiveKitService } from '../../../../services/meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../../../../services/participant/participant.service';
 import { RecordingService } from '../../../../services/recording/recording.service';
@@ -38,7 +38,7 @@ import { AssetsService } from '../../../../../../../shared/services/assets.servi
 	styleUrls: ['./recording-activity.component.scss', '../activities-panel.component.scss']
 })
 export class RecordingActivityComponent {
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);

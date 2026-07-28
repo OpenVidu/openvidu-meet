@@ -21,7 +21,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { LayoutAdditionalElementsDirective } from '../../directives/template/internals.directive';
 import { ParticipantStream } from '../../models/participant.model';
-import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { SmartLayoutService } from '../../services/layout/smart-layout.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -43,7 +43,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly layoutService = inject(SmartLayoutService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly directiveService = inject(OpenViduComponentsConfigService);
+	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly templateRegistry = inject(TemplateRegistryService);
 	private readonly destroyRef = inject(DestroyRef);
 

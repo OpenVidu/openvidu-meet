@@ -7,7 +7,7 @@ import { PanelType } from '../../../models/panel.model';
 import { LinkifyPipe } from '../../../pipes/linkify.pipe';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { ChatService } from '../../../services/chat/chat.service';
-import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
 import { E2eeService } from '../../../services/e2ee/e2ee.service';
 import { PanelService } from '../../../services/panel/panel.service';
 import { ParticipantService } from '../../../services/participant/participant.service';
@@ -42,7 +42,7 @@ export class ChatPanelComponent implements AfterViewInit {
 	/**
 	 * Whether the local participant may send messages (gated by the `canWriteChat` permission).
 	 */
-	readonly canWrite = inject(OpenViduComponentsConfigService).chatInputEnabledSignal;
+	readonly canWrite = inject(MeetingUiConfigService).chatInputEnabledSignal;
 
 	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);

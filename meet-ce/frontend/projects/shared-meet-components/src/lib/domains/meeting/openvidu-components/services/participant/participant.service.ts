@@ -1,6 +1,6 @@
 import { Service, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
-import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
 import type {
 	DataPublishOptions,
@@ -19,7 +19,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Service()
 export class ParticipantService {
-	private readonly directiveService = inject(OpenViduComponentsConfigService);
+	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);

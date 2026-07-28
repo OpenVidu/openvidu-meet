@@ -2,7 +2,7 @@ import { inject, Service } from '@angular/core';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
-import { OpenViduComponentsConfigService } from '../config/directive-config.service';
+import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { DeviceService } from '../device/device.service';
 import {
 	ConnectionState,
@@ -24,7 +24,7 @@ import { MediaStorageService } from '../storage/storage.service';
 export class MeetingLiveKitService {
 	private readonly deviceService = inject(DeviceService);
 	private readonly storageService = inject(MediaStorageService);
-	private readonly configService = inject(OpenViduComponentsConfigService);
+	private readonly configService = inject(MeetingUiConfigService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly assets = inject(AssetsService);
 

@@ -6,7 +6,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PanelType } from '../../../models/panel.model';
 import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../../models/recording.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
-import { OpenViduComponentsConfigService } from '../../../services/config/directive-config.service';
+import { MeetingUiConfigService } from '../../../services/config/meeting-ui-config.service';
 import { PanelService } from '../../../services/panel/panel.service';
 import { RecordingActivityComponent } from './recording-activity/recording-activity.component';
 
@@ -52,7 +52,7 @@ export class ActivitiesPanelComponent implements OnInit {
 	/**
 	 * @internal
 	 */
-	private readonly libService = inject(OpenViduComponentsConfigService);
+	private readonly libService = inject(MeetingUiConfigService);
 
 	/**
 	 * @internal
