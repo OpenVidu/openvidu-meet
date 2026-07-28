@@ -3,7 +3,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { OpenViduThemeMode } from '../../../models/theme.model';
-import { OpenViduThemeService } from '../../../services/theme/theme.service';
+import { MeetingThemeService } from '../../../services/theme/meeting-theme.service';
 
 @Component({
 	selector: 'ov-theme-selector',
@@ -46,7 +46,7 @@ import { OpenViduThemeService } from '../../../services/theme/theme.service';
 })
 export class ThemeSelectorComponent implements OnInit {
 	protected predefinedThemes: OpenViduThemeMode[] = [];
-	private readonly themeService = inject(OpenViduThemeService);
+	private readonly themeService = inject(MeetingThemeService);
 
 	ngOnInit() {
 		this.predefinedThemes = this.themeService.getAllThemes();

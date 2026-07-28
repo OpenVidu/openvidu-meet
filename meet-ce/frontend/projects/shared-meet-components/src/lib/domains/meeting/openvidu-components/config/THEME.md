@@ -16,18 +16,18 @@ The OpenVidu Components Angular library provides a comprehensive theming system 
 
 ### Basic Usage
 
-To get started with theming, import and inject the `OpenViduThemeService`:
+To get started with theming, import and inject the `MeetingThemeService`:
 
 ```typescript
 import { Component } from '@angular/core';
-import { OpenViduThemeService, OpenViduThemeMode } from 'openvidu-components-angular';
+import { MeetingThemeService, OpenViduThemeMode } from 'openvidu-components-angular';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html'
 })
 export class AppComponent {
-  constructor(private themeService: OpenViduThemeService) {}
+  constructor(private themeService: MeetingThemeService) {}
 
   setLightTheme() {
     this.themeService.setTheme('light');
@@ -57,7 +57,7 @@ You can also customize themes by overriding CSS variables directly in your globa
 
 ## Theme Service
 
-The `OpenViduThemeService` provides methods to manage themes dynamically:
+The `MeetingThemeService` provides methods to manage themes dynamically:
 
 ### Available Methods
 
@@ -229,11 +229,11 @@ To manually integrate with Angular Material themes in your component:
 
 ```typescript
 import { Injectable } from '@angular/core';
-import { OpenViduThemeService } from 'openvidu-components-angular';
+import { MeetingThemeService } from 'openvidu-components-angular';
 
 @Injectable()
 export class MaterialThemeIntegration {
-  constructor(private themeService: OpenViduThemeService) {}
+  constructor(private themeService: MeetingThemeService) {}
 
   applyMaterialTheme(materialTheme: any) {
     // Extract colors from Material theme and apply to OpenVidu
@@ -331,7 +331,7 @@ Sets up responsive theme detection based on system preferences.
 ```typescript
 import { Component, OnInit } from '@angular/core';
 import {
-  OpenViduThemeService,
+  MeetingThemeService,
   OpenViduThemeMode,
   OPENVIDU_LIGHT_THEME,
   OPENVIDU_DARK_THEME
@@ -355,7 +355,7 @@ import {
 export class ThemeDemoComponent implements OnInit {
   currentTheme: OpenViduThemeMode = 'auto';
 
-  constructor(private themeService: OpenViduThemeService) {}
+  constructor(private themeService: MeetingThemeService) {}
 
   ngOnInit() {
     this.themeService.currentTheme$.subscribe(theme => {

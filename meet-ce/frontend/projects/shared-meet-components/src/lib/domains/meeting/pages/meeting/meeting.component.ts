@@ -18,7 +18,7 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
-import { OpenViduComponentsUiModule, OpenViduThemeMode, OpenViduThemeService, Room } from '../../openvidu-components';
+import { MeetingThemeService, OpenViduComponentsUiModule, OpenViduThemeMode, Room } from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
@@ -44,7 +44,7 @@ export class MeetingComponent implements OnInit {
 	protected lobbyService = inject(MeetingLobbyService);
 	protected eventHandlerService = inject(MeetingEventHandlerService);
 	protected captionsService = inject(MeetingCaptionsService);
-	protected ovThemeService = inject(OpenViduThemeService);
+	protected meetingThemeService = inject(MeetingThemeService);
 	protected navigationService = inject(NavigationService);
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
@@ -94,8 +94,8 @@ export class MeetingComponent implements OnInit {
 			untracked(() => {
 				if (hasTheme) {
 					const theme = themes[0];
-					this.ovThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode, false);
-					this.ovThemeService.updateThemeVariables({
+					this.meetingThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode, false);
+					this.meetingThemeService.updateThemeVariables({
 						'--ov-primary-action-color': theme?.primaryColor,
 						'--ov-secondary-action-color': theme?.secondaryColor,
 						'--ov-accent-action-color': theme?.accentColor,
@@ -103,7 +103,7 @@ export class MeetingComponent implements OnInit {
 						'--ov-surface-color': theme?.surfaceColor
 					});
 				} else {
-					this.ovThemeService.resetThemeVariables();
+					this.meetingThemeService.resetThemeVariables();
 				}
 			});
 		});

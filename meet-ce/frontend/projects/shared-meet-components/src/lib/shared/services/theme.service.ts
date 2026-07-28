@@ -1,5 +1,5 @@
 import { computed, DOCUMENT, inject, Service, signal } from '@angular/core';
-import { OpenViduThemeMode, OpenViduThemeService } from '../../domains/meeting/openvidu-components';
+import { MeetingThemeService, OpenViduThemeMode } from '../../domains/meeting/openvidu-components';
 import { MeetStorageService } from './storage.service';
 
 export type Theme = 'light' | 'dark';
@@ -7,7 +7,7 @@ export type Theme = 'light' | 'dark';
 @Service()
 export class ThemeService {
 	private document = inject(DOCUMENT);
-	protected ovComponentsThemeService = inject(OpenViduThemeService);
+	protected meetingThemeService = inject(MeetingThemeService);
 	private readonly meetStorageService = inject(MeetStorageService);
 
 	private readonly _currentTheme = signal<Theme>('light');
@@ -25,7 +25,7 @@ export class ThemeService {
 	 */
 	init(): void {
 		// This is the single owner of initial-theme resolution: saved preference → system
-		// preference → light. `OpenViduThemeService` deliberately has no resolver of its own.
+		// preference → light. `MeetingThemeService` deliberately has no resolver of its own.
 		const savedTheme = this.getSavedTheme();
 		const systemPreference = this.getSystemPreference();
 		const initialTheme = savedTheme || systemPreference || 'light';
@@ -54,7 +54,7 @@ export class ThemeService {
 		// Persistence flows through the single owner (MeetStorageService) via the components chain:
 		// one key, one format, one write path. When saveToStorage is false the theme is applied but
 		// not remembered (e.g. following the system preference, or a themed room config).
-		this.ovComponentsThemeService.setTheme(theme as OpenViduThemeMode, saveToStorage);
+		this.meetingThemeService.setTheme(theme as OpenViduThemeMode, saveToStorage);
 	}
 
 	/**

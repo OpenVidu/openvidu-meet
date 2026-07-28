@@ -9,7 +9,7 @@ import {
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
 /**
- * Service for managing OpenVidu component themes dynamically
+ * Service for managing the meeting UI themes dynamically
  *
  * This service allows you to:
  * - Switch between the light and dark themes
@@ -20,7 +20,7 @@ import { MeetStorageService } from '../../../../../shared/services/storage.servi
  * @internal
  */
 @Service()
-export class OpenViduThemeService {
+export class MeetingThemeService {
 	private readonly document = inject(DOCUMENT);
 	private readonly storageService = inject(MeetStorageService);
 
