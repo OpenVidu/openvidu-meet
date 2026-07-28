@@ -532,7 +532,11 @@ export const dragStream = async (page: Page, selector: string, targetX: number, 
 		throw new Error('Element not found for dragging');
 	}
 
-	await element.hover();
+	// Grab the tile at the TOP-CENTER edge, clear of the hover controls (tile center) and the
+	// corner resize handles. Dragging is 1:1 (no transition on the CDK transform), so the grabbed
+	// point stays under the pointer for the whole drag — pressing on the center would press the
+	// float/pin buttons and the release would CLICK them, toggling dock instead of dragging.
+	await page.mouse.move(box.x + box.width / 2, box.y + 8);
 	await page.mouse.down();
 	await page.mouse.move(targetX, targetY, { steps: 10 });
 	await page.mouse.up();

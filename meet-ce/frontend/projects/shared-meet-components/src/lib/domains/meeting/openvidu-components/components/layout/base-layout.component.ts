@@ -135,6 +135,10 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private readonly MIN_CORNER_MARGIN = 0;
 	/** Gap kept between the floating tile and the right edge of the layout. */
 	private readonly RIGHT_EDGE_MARGIN = 5;
+	/** Duration of the grid-slot → bottom-right glide when the local tile starts floating. */
+	private readonly FLOAT_GLIDE_MS = 250;
+	/** Deceleration easing for the float glide (fast start, soft landing). */
+	private readonly FLOAT_GLIDE_EASING = 'cubic-bezier(0.2, 0, 0, 1)';
 
 	// ── Private observer / timeout state ─────────────────────────────────────────
 
@@ -149,6 +153,14 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private wasLocalFloating = false;
 	private lastLayoutWidth = 0;
 	private lastLayoutHeight = 0;
+	/**
+	 * True while the just-floated tile is gliding to the bottom-right corner (see
+	 * {@link glideFloatingTileToBottomRight}) and until the final snap. Rects read during this
+	 * window are mid-animation values; the ResizeObserver repositioning must not consume them or
+	 * it redirects the glide (visible as the tile "trembling" toward the corner).
+	 */
+	private floatPlacementSettling = false;
+	private floatPlacementTimeout: ReturnType<typeof setTimeout> | undefined;
 
 	// ── Resize interaction state ─────────────────────────────────────────────────
 
@@ -174,10 +186,15 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		if (this.wasLocalFloating && !isLocalFloating) {
 			// Restore from floating: clear CSS resize state, reset drag offset, reposition.
 			this.videoIsAtRight = false;
+			this.floatPlacementSettling = false;
+			clearTimeout(this.floatPlacementTimeout);
 			queueMicrotask(() => {
 				const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
 				el?.style.removeProperty('--ov-min-w');
 				el?.style.removeProperty('--ov-min-h');
+				// Drop the float-time inline `transition: none` so the grid renderer's own
+				// transition stamping animates the tile back into the layout.
+				el?.style.removeProperty('transition');
 				this.resetDragPosition();
 				this.layoutService.update();
 			});
@@ -185,11 +202,22 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			// Just became floating: move to the bottom-right corner to avoid overlapping the main layout.
 			// Mark it right-anchored so layout/panel resizes keep it pinned to the right edge.
 			this.videoIsAtRight = true;
-			// Place immediately, then re-correct after the float resize transition (0.1s) settles:
-			// the container's content height collapses for a frame as the tile leaves the grid, which
-			// would otherwise leave the tile hovering above the bottom edge.
-			requestAnimationFrame(() => this.moveStreamToBottomRight());
-			setTimeout(() => this.moveStreamToBottomRight(), 150);
+			this.floatPlacementSettling = true;
+			// FLIP glide: capture the tile's grid rect now — effects run before the template applies
+			// the .OV_floating class, so this is the pre-float geometry — then place the tile at the
+			// corner and glide only the CDK transform (compositor-driven; see glideFloatingTile...).
+			const gridRect = this.getActiveLocalDrag()?.element.nativeElement.getBoundingClientRect();
+			requestAnimationFrame(() => this.glideFloatingTileToBottomRight(gridRect));
+			clearTimeout(this.floatPlacementTimeout);
+			this.floatPlacementTimeout = setTimeout(() => {
+				// Final correction with transitions off: the container reflows while the glide runs
+				// (its content height collapses as the tile leaves the grid), so snap the last few
+				// pixels and hand control back to the resize/drag handlers.
+				const el = this.getActiveLocalDrag()?.element.nativeElement as HTMLElement | undefined;
+				el?.style.setProperty('transition', 'none');
+				this.moveStreamToBottomRight();
+				this.floatPlacementSettling = false;
+			}, this.FLOAT_GLIDE_MS + 50);
 		}
 
 		this.wasLocalFloating = isLocalFloating;
@@ -217,6 +245,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		this.mutationObserver?.disconnect();
 		clearTimeout(this.resizeTimeout);
 		clearTimeout(this.mutationTimeout);
+		clearTimeout(this.floatPlacementTimeout);
 		document.removeEventListener('pointermove', this.boundResizeMove);
 		document.removeEventListener('pointerup', this.boundResizeEnd);
 		this.layoutService.clear();
@@ -328,7 +357,9 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 					this.layoutService.update();
 				}
 
-				if (this.localParticipant()?.isFloating) {
+				// While the float glide is settling, rects are mid-animation — skip the
+				// repositioning entirely (the pending final snap already lands the tile).
+				if (this.localParticipant()?.isFloating && !this.floatPlacementSettling) {
 					const drag = this.getActiveLocalDrag();
 					if (drag) {
 						if (this.panelService.isPanelOpened()) {
@@ -411,8 +442,50 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private moveStreamToRight(parentWidth: number, drag = this.getActiveLocalDrag()): void {
 		if (!drag) return;
-		const { y, width } = drag.element.nativeElement.getBoundingClientRect();
-		this.setDragPosition({ x: parentWidth - width - this.RIGHT_EDGE_MARGIN, y }, drag);
+		const { width } = drag.element.nativeElement.getBoundingClientRect();
+		// Preserve the last SET y target rather than rect.y: a rect read while the tile is
+		// animating returns a mid-flight y, which would redirect the move instead of only
+		// re-anchoring it horizontally.
+		this.setDragPosition({ x: parentWidth - width - this.RIGHT_EDGE_MARGIN, y: this.currentDragPosition().y }, drag);
+	}
+
+	/**
+	 * Animates the just-floated tile from its grid slot to the bottom-right corner using the FLIP
+	 * technique on the CDK drag transform only.
+	 *
+	 * Why not let the grid renderer's `transition: all 0.1s linear` handle it (previous behavior):
+	 * that eased top/left/width/height AND the transform at once — two opposing coordinate-system
+	 * animations that mostly cancel out, forcing a reflow on every frame (dropped frames, visible
+	 * stutter) and easing every later programmatic placement and pointer drag. Instead: transitions
+	 * are turned OFF inline (they stay off while the tile floats, so dragging/resizing is 1:1), the
+	 * tile is placed at its final corner instantly, and only the compositor-friendly `transform`
+	 * glides from the old grid slot (center-anchored) to the corner with a deceleration curve.
+	 */
+	private glideFloatingTileToBottomRight(gridRect: DOMRect | undefined): void {
+		const drag = this.getActiveLocalDrag();
+		const el = drag?.element.nativeElement as HTMLElement | undefined;
+		if (!drag || !el) return;
+
+		// Neutralize the renderer's inherited `transition: all` before any placement.
+		el.style.setProperty('transition', 'none');
+		this.moveStreamToBottomRight(drag);
+
+		if (!gridRect) return;
+
+		const target = this.currentDragPosition();
+		const cornerRect = el.getBoundingClientRect();
+		// Center-anchored FLIP delta: the (now small) tile starts centered on the old grid slot.
+		const dx = gridRect.x + gridRect.width / 2 - (cornerRect.x + cornerRect.width / 2);
+		const dy = gridRect.y + gridRect.height / 2 - (cornerRect.y + cornerRect.height / 2);
+		if (dx === 0 && dy === 0) return;
+
+		// Start frame: back over the grid slot. Applied straight on CDK (not via setDragPosition)
+		// so currentDragPosition keeps holding the real target for any concurrent handler.
+		drag.setFreeDragPosition({ x: target.x + dx, y: target.y + dy });
+		void el.offsetWidth; // flush styles so the start position is committed before the glide
+
+		el.style.setProperty('transition', `transform ${this.FLOAT_GLIDE_MS}ms ${this.FLOAT_GLIDE_EASING}`);
+		drag.setFreeDragPosition(target);
 	}
 
 	private moveStreamToBottomRight(drag = this.getActiveLocalDrag()): void {
