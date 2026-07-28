@@ -213,7 +213,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			await expect(wcLocator(page, '#participant-name-submit')).toBeVisible();
 			await wcLocator(page, '#participant-name-submit').click();
 
-			await expect(wcLocator(page, 'ov-pre-join')).toBeVisible({ timeout: 15_000 });
+			await expect(wcLocator(page, 'ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
 			await wcLocator(page, '#join-button').click();
 			await expect(wcLocator(page, '#layout-container')).toBeVisible({ timeout: 15_000 });
 

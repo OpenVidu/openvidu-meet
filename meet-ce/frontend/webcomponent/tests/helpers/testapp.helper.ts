@@ -150,7 +150,7 @@ export const openMeeting = async (
 		// Name screen skipped — proceed directly.
 	}
 
-	await expect(meet('ov-pre-join')).toBeVisible({ timeout: 15_000 });
+	await expect(meet('ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
 	await meet('#join-button').click();
 	// Gate on the live stage, not on the host component: `ov-meeting-view` exists from the first
 	// render (device setup, prejoin, …), so waiting for it would return before the room is

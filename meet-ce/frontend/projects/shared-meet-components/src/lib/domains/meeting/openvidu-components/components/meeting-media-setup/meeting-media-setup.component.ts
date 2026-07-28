@@ -38,7 +38,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
  * @internal
  */
 @Component({
-	selector: 'ov-pre-join',
+	selector: 'ov-meeting-media-setup',
 	imports: [
 		MatButtonModule,
 		MatIconModule,
@@ -52,13 +52,13 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 		AudioDevicesComponent,
 		BackgroundEffectsPanelComponent
 	],
-	templateUrl: './pre-join.component.html',
-	styleUrl: './pre-join.component.scss',
+	templateUrl: './meeting-media-setup.component.html',
+	styleUrl: './meeting-media-setup.component.scss',
 	host: {
 		'(window:resize)': 'sizeChange()'
 	}
 })
-export class PreJoinComponent implements OnInit, OnDestroy {
+export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	readonly error = input<{ name: string; message: string } | undefined>(undefined);
 	readonly onVideoDeviceChanged = output<CustomDevice>();
 	readonly onAudioDeviceChanged = output<CustomDevice>();
@@ -106,7 +106,7 @@ export class PreJoinComponent implements OnInit, OnDestroy {
 	private readonly virtualBackgroundService = inject(VirtualBackgroundService);
 	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
-	private log: ILogger = inject(LoggerService).get('PreJoinComponent');
+	private log: ILogger = inject(LoggerService).get('MeetingMediaSetupComponent');
 	private shouldRemoveTracksWhenComponentIsDestroyed: boolean = true;
 
 	private readonly errorEffect = effect(() => {

@@ -11,7 +11,7 @@
 			@if (templateRegistry.preJoin()) {
 				<ng-container *ngTemplateOutlet="templateRegistry.preJoin()!" />
 			} @else {
-				<ov-pre-join
+				<ov-meeting-media-setup
 					[error]="tokenError()"
 					(onReadyToJoin)="_onReadyToJoin()"
 					(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"

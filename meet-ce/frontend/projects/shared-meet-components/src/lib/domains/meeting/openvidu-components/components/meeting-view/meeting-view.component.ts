@@ -73,7 +73,7 @@ import { ParticipantPanelItemComponent } from '../panel/participants-panel/parti
 import { ParticipantsPanelComponent } from '../panel/participants-panel/participants-panel/participants-panel.component';
 import { SettingsPanelComponent } from '../panel/settings-panel/settings-panel.component';
 import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
-import { PreJoinComponent } from '../pre-join/pre-join.component';
+import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
 import { StreamComponent } from '../stream/stream.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -92,7 +92,7 @@ import type { ILogger } from '../../../../../shared/models/logger.model';
 		MatSidenavModule,
 		SidenavLayoutDirective,
 		TranslatePipe,
-		PreJoinComponent,
+		MeetingMediaSetupComponent,
 		LandscapeWarningComponent,
 		ToolbarComponent,
 		PanelComponent,

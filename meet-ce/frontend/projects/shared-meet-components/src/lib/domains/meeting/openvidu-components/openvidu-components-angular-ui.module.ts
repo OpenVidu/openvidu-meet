@@ -18,7 +18,7 @@ import { TranslatePipe } from './pipes/translate.pipe';
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { PanelComponent } from './components/panel/panel.component';
 import { ParticipantPanelItemComponent } from './components/panel/participants-panel/participant-panel-item/participant-panel-item.component';
-import { PreJoinComponent } from './components/pre-join/pre-join.component';
+import { MeetingMediaSetupComponent } from './components/meeting-media-setup/meeting-media-setup.component';
 import { MeetingViewComponent } from './components/meeting-view/meeting-view.component';
 
 import { LandscapeWarningComponent } from './components/landscape-warning/landscape-warning.component';
@@ -64,7 +64,7 @@ const privateComponents: any[] = [];
 		ToolbarMediaButtonsComponent,
 		ToolbarPanelButtonsComponent,
 		StreamComponent,
-		PreJoinComponent,
+		MeetingMediaSetupComponent,
 		SmartLayoutComponent,
 		PanelComponent,
 		ToolbarComponent,
