@@ -41,6 +41,7 @@ import {
 } from '../../directives/template/openvidu-components-angular.directive';
 import { CustomDevice } from '../../models/device.model';
 import { LangOption } from '../../models/lang.model';
+import { MeetingViewPhase } from '../../models/meeting-view-state.model';
 import {
 	ActivitiesPanelStatusEvent,
 	ChatPanelStatusEvent,
@@ -49,7 +50,6 @@ import {
 } from '../../models/panel.model';
 import { ParticipantLeftEvent, ParticipantLeftReason, ParticipantModel } from '../../models/participant.model';
 import { RecordingStartRequestedEvent, RecordingStopRequestedEvent } from '../../models/recording.model';
-import { VideoconferencePhase } from '../../models/videoconference-state.model';
 import { TranslatePipe } from '../../pipes/translate.pipe';
 import { ActionService } from '../../services/action/action.service';
 import { OpenViduComponentsConfigService } from '../../services/config/directive-config.service';
@@ -227,7 +227,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// and it is only reachable after a successful connect, i.e. strictly later than ngAfterViewInit.
 	// Reordering the phases so that 'live' can be entered earlier breaks it.
 	/** @internal */
-	readonly phase = signal<VideoconferencePhase>('loading');
+	readonly phase = signal<MeetingViewPhase>('loading');
 
 	/** @internal - error details from token operations */
 	readonly tokenError = signal<{ name: string; message: string } | undefined>(undefined);

@@ -9,4 +9,4 @@
  *   live       → disconnected (user leaves)
  *   any        → error        (unrecoverable error)
  */
-export type VideoconferencePhase = 'loading' | 'prejoin' | 'connecting' | 'live' | 'disconnected' | 'error';
+export type MeetingViewPhase = 'loading' | 'prejoin' | 'connecting' | 'live' | 'disconnected' | 'error';
