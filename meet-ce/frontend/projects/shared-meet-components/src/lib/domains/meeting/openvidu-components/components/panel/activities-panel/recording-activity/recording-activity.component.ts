@@ -119,11 +119,6 @@ export class RecordingActivityComponent {
 	/**
 	 * @internal
 	 */
-	readonly viewButtonText = signal('PANEL.RECORDING.VIEW');
-
-	/**
-	 * @internal
-	 */
 	readonly showStartStopRecordingButton = this.libService.recordingActivityStartStopRecordingButtonSignal;
 
 	/**
