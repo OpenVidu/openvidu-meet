@@ -1,6 +1,6 @@
 import { inject, Service } from '@angular/core';
 import type { SmartLayoutMode } from '../../domains/meeting/openvidu-components';
-import type { OpenViduThemeMode } from '../../domains/meeting/openvidu-components/models/theme.model';
+import type { MeetingThemeMode } from '../../domains/meeting/openvidu-components/models/theme.model';
 import { MeetStorageKeys } from '../models/storage.model';
 import { BrowserStorageService } from './browser-storage.service';
 
@@ -61,12 +61,12 @@ export class MeetStorageService {
 	}
 
 	/** Retrieves the shared theme preference. */
-	getTheme(): OpenViduThemeMode | null {
-		return this.storage.get<OpenViduThemeMode>(MeetStorageKeys.THEME);
+	getTheme(): MeetingThemeMode | null {
+		return this.storage.get<MeetingThemeMode>(MeetStorageKeys.THEME);
 	}
 
 	/** Persists the shared theme preference. */
-	setTheme(theme: OpenViduThemeMode): void {
+	setTheme(theme: MeetingThemeMode): void {
 		this.storage.set(MeetStorageKeys.THEME, theme);
 	}
 

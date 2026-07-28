@@ -1,17 +1,17 @@
 /**
- * Represents the possible theme modes for OpenVidu components
+ * Represents the possible theme modes for the meeting UI
  * @internal
  */
-export enum OpenViduThemeMode {
+export enum MeetingThemeMode {
 	Light = 'light',
 	Dark = 'dark'
 }
 
 /**
- * Interface representing the complete set of theme variables for OpenVidu components
+ * Interface representing the complete set of theme variables for the meeting UI
  * @internal
  */
-export interface OpenViduThemeVariables {
+export interface MeetingThemeVariables {
 	// === Core Background Colors ===
 	'--ov-background-color'?: string;
 	'--ov-surface-color'?: string;
@@ -67,7 +67,7 @@ export interface OpenViduThemeVariables {
  * Predefined theme configurations
  * @internal
  */
-export const OPENVIDU_COMPONENTS_LIGHT_THEME: OpenViduThemeVariables = {
+export const MEETING_LIGHT_THEME: MeetingThemeVariables = {
 	'--ov-background-color': '#f5f5f5',
 	'--ov-surface-color': '#ffffff',
 	'--ov-surface-container-color': '#f8f9fa',
@@ -99,7 +99,7 @@ export const OPENVIDU_COMPONENTS_LIGHT_THEME: OpenViduThemeVariables = {
  * Predefined dark theme configuration
  * @internal
  */
-export const OPENVIDU_COMPONENTS_DARK_THEME: OpenViduThemeVariables = {
+export const MEETING_DARK_THEME: MeetingThemeVariables = {
 	'--ov-background-color': '#1f2020',
 	'--ov-surface-color': '#2d2d2d',
 	'--ov-surface-container-color': '#3a3a3a',

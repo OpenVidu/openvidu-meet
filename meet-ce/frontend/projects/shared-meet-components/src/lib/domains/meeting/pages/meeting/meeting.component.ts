@@ -18,7 +18,7 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 import { SoundService } from '../../../../shared/services/sound.service';
 import { MeetingLobbyComponent } from '../../components/meeting-lobby/meeting-lobby.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
-import { MeetingThemeService, OpenViduComponentsUiModule, OpenViduThemeMode, Room } from '../../openvidu-components';
+import { MeetingThemeMode, MeetingThemeService, OpenViduComponentsUiModule, Room } from '../../openvidu-components';
 import { MeetingCaptionsService } from '../../services/meeting-captions.service';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingStateService } from '../../services/meeting-state.service';
@@ -94,7 +94,7 @@ export class MeetingComponent implements OnInit {
 			untracked(() => {
 				if (hasTheme) {
 					const theme = themes[0];
-					this.meetingThemeService.setTheme(theme!.baseTheme as unknown as OpenViduThemeMode, false);
+					this.meetingThemeService.setTheme(theme!.baseTheme as unknown as MeetingThemeMode, false);
 					this.meetingThemeService.updateThemeVariables({
 						'--ov-primary-action-color': theme?.primaryColor,
 						'--ov-secondary-action-color': theme?.secondaryColor,

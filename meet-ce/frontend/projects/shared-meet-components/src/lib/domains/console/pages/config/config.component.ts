@@ -14,7 +14,7 @@ import { MeetAppearanceConfig, MeetRoomTheme, MeetRoomThemeMode } from '@openvid
 import { ColorField, ThemeColors } from '../../../../shared/models';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { GlobalConfigService, NotificationService, TranslateService } from '../../../../shared/services';
-import { OPENVIDU_COMPONENTS_DARK_THEME, OPENVIDU_COMPONENTS_LIGHT_THEME } from '../../../meeting/openvidu-components';
+import { MEETING_DARK_THEME, MEETING_LIGHT_THEME } from '../../../meeting/openvidu-components';
 
 @Component({
 	selector: 'ov-config',
@@ -94,18 +94,18 @@ export class ConfigComponent implements OnInit {
 	// Default color values based on theme
 	private readonly defaultColors: Record<MeetRoomThemeMode, ThemeColors> = {
 		[MeetRoomThemeMode.LIGHT]: {
-			backgroundColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-background-color'] as string,
-			primaryColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-primary-action-color'] as string,
-			secondaryColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-secondary-action-color'] as string,
-			accentColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-accent-action-color'] as string,
-			surfaceColor: OPENVIDU_COMPONENTS_LIGHT_THEME['--ov-surface-color'] as string
+			backgroundColor: MEETING_LIGHT_THEME['--ov-background-color'] as string,
+			primaryColor: MEETING_LIGHT_THEME['--ov-primary-action-color'] as string,
+			secondaryColor: MEETING_LIGHT_THEME['--ov-secondary-action-color'] as string,
+			accentColor: MEETING_LIGHT_THEME['--ov-accent-action-color'] as string,
+			surfaceColor: MEETING_LIGHT_THEME['--ov-surface-color'] as string
 		},
 		[MeetRoomThemeMode.DARK]: {
-			backgroundColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-background-color'] as string,
-			primaryColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-primary-action-color'] as string,
-			secondaryColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-secondary-action-color'] as string,
-			accentColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-accent-action-color'] as string,
-			surfaceColor: OPENVIDU_COMPONENTS_DARK_THEME['--ov-surface-color'] as string
+			backgroundColor: MEETING_DARK_THEME['--ov-background-color'] as string,
+			primaryColor: MEETING_DARK_THEME['--ov-primary-action-color'] as string,
+			secondaryColor: MEETING_DARK_THEME['--ov-secondary-action-color'] as string,
+			accentColor: MEETING_DARK_THEME['--ov-accent-action-color'] as string,
+			surfaceColor: MEETING_DARK_THEME['--ov-surface-color'] as string
 		}
 	};
 

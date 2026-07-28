@@ -2,7 +2,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
-import { OpenViduThemeMode } from '../../../models/theme.model';
+import { MeetingThemeMode } from '../../../models/theme.model';
 import { MeetingThemeService } from '../../../services/theme/meeting-theme.service';
 
 @Component({
@@ -45,7 +45,7 @@ import { MeetingThemeService } from '../../../services/theme/meeting-theme.servi
 	styleUrl: './theme-selector.component.scss'
 })
 export class ThemeSelectorComponent implements OnInit {
-	protected predefinedThemes: OpenViduThemeMode[] = [];
+	protected predefinedThemes: MeetingThemeMode[] = [];
 	private readonly themeService = inject(MeetingThemeService);
 
 	ngOnInit() {
@@ -56,7 +56,7 @@ export class ThemeSelectorComponent implements OnInit {
 		return this.themeService.getCurrentTheme();
 	}
 
-	setTheme(theme: OpenViduThemeMode) {
+	setTheme(theme: MeetingThemeMode) {
 		this.themeService.setTheme(theme);
 	}
 }

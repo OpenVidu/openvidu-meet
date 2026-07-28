@@ -20,7 +20,7 @@ To get started with theming, import and inject the `MeetingThemeService`:
 
 ```typescript
 import { Component } from '@angular/core';
-import { MeetingThemeService, OpenViduThemeMode } from 'openvidu-components-angular';
+import { MeetingThemeService, MeetingThemeMode } from 'openvidu-components-angular';
 
 @Component({
   selector: 'app-root',
@@ -61,7 +61,7 @@ The `MeetingThemeService` provides methods to manage themes dynamically:
 
 ### Available Methods
 
-#### `setTheme(theme: OpenViduThemeMode)`
+#### `setTheme(theme: MeetingThemeMode)`
 Sets the global theme mode.
 
 ```typescript
@@ -75,7 +75,7 @@ this.themeService.setTheme('dark');
 this.themeService.setTheme('auto');
 ```
 
-#### `updateThemeVariables(variables: OpenViduThemeVariables)`
+#### `updateThemeVariables(variables: MeetingThemeVariables)`
 Updates specific theme variables without changing the overall theme.
 
 ```typescript
@@ -85,16 +85,16 @@ this.themeService.updateThemeVariables({
 });
 ```
 
-#### `applyThemeConfiguration(themeVariables: OpenViduThemeVariables)`
+#### `applyThemeConfiguration(themeVariables: MeetingThemeVariables)`
 Applies a complete theme configuration.
 
 ```typescript
-import { OPENVIDU_DARK_THEME } from 'openvidu-components-angular';
+import { MEETING_DARK_THEME } from 'openvidu-components-angular';
 
-this.themeService.applyThemeConfiguration(OPENVIDU_DARK_THEME);
+this.themeService.applyThemeConfiguration(MEETING_DARK_THEME);
 ```
 
-#### `getCurrentTheme(): OpenViduThemeMode`
+#### `getCurrentTheme(): MeetingThemeMode`
 Returns the current active theme mode.
 
 ```typescript
@@ -254,9 +254,9 @@ export class MaterialThemeIntegration {
 Define a custom theme object:
 
 ```typescript
-import { OpenViduThemeVariables } from 'openvidu-components-angular';
+import { MeetingThemeVariables } from 'openvidu-components-angular';
 
-const myCustomTheme: OpenViduThemeVariables = {
+const myCustomTheme: MeetingThemeVariables = {
   '--ov-primary-action-color': '#ff5722',
   '--ov-accent-action-color': '#4caf50',
   '--ov-background-color': '#fafafa',
@@ -332,9 +332,9 @@ Sets up responsive theme detection based on system preferences.
 import { Component, OnInit } from '@angular/core';
 import {
   MeetingThemeService,
-  OpenViduThemeMode,
-  OPENVIDU_LIGHT_THEME,
-  OPENVIDU_DARK_THEME
+  MeetingThemeMode,
+  MEETING_LIGHT_THEME,
+  MEETING_DARK_THEME
 } from 'openvidu-components-angular';
 
 @Component({
@@ -353,7 +353,7 @@ import {
   `
 })
 export class ThemeDemoComponent implements OnInit {
-  currentTheme: OpenViduThemeMode = 'auto';
+  currentTheme: MeetingThemeMode = 'auto';
 
   constructor(private themeService: MeetingThemeService) {}
 
@@ -363,7 +363,7 @@ export class ThemeDemoComponent implements OnInit {
     });
   }
 
-  setTheme(theme: OpenViduThemeMode) {
+  setTheme(theme: MeetingThemeMode) {
     this.themeService.setTheme(theme);
   }
 

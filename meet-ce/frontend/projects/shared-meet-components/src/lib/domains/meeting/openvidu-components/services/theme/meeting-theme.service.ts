@@ -1,10 +1,10 @@
 import { DOCUMENT } from '@angular/common';
 import { inject, Service, signal } from '@angular/core';
 import {
-	OPENVIDU_COMPONENTS_DARK_THEME,
-	OPENVIDU_COMPONENTS_LIGHT_THEME,
-	OpenViduThemeMode,
-	OpenViduThemeVariables
+	MEETING_DARK_THEME,
+	MEETING_LIGHT_THEME,
+	MeetingThemeMode,
+	MeetingThemeVariables
 } from '../../models/theme.model';
 import { MeetStorageService } from '../../../../../shared/services/storage.service';
 
@@ -28,12 +28,12 @@ export class MeetingThemeService {
 	/**
 	 * Signal that emits the current theme mode
 	 */
-	readonly currentTheme = signal<OpenViduThemeMode>(OpenViduThemeMode.Light);
+	readonly currentTheme = signal<MeetingThemeMode>(MeetingThemeMode.Light);
 
 	/**
 	 * Signal that emits the current theme variables
 	 */
-	readonly currentVariables = signal<OpenViduThemeVariables>({});
+	readonly currentVariables = signal<MeetingThemeVariables>({});
 
 	constructor() {}
 
@@ -43,32 +43,32 @@ export class MeetingThemeService {
 	// this service used to run later, from the meeting component's constructor, and overrode that
 	// decision with its own fallback.
 
-	getAllThemes(): OpenViduThemeMode[] {
-		return Object.values(OpenViduThemeMode);
+	getAllThemes(): MeetingThemeMode[] {
+		return Object.values(MeetingThemeMode);
 	}
 
 	/**
 	 * Gets the current theme mode
 	 */
-	getCurrentTheme(): OpenViduThemeMode {
+	getCurrentTheme(): MeetingThemeMode {
 		return this.currentTheme();
 	}
 
 	/**
 	 * Gets the current theme variables
 	 */
-	getCurrentVariables(): OpenViduThemeVariables {
+	getCurrentVariables(): MeetingThemeVariables {
 		return this.currentVariables();
 	}
 
 	/**
-	 * Sets the theme mode to apply {@link OpenViduThemeMode}
+	 * Sets the theme mode to apply {@link MeetingThemeMode}
 	 * @param theme The theme mode to apply
 	 * @param persist Whether to persist the theme as the user's preference (default: true). A themed
 	 *        room config applies a theme with `persist = false` so it does not overwrite the user's
 	 *        app-wide preference.
 	 */
-	setTheme(theme: OpenViduThemeMode, persist: boolean = true): void {
+	setTheme(theme: MeetingThemeMode, persist: boolean = true): void {
 		this.applyTheme(theme);
 		this.currentTheme.set(theme);
 		if (persist) {
@@ -80,7 +80,7 @@ export class MeetingThemeService {
 	 * Updates specific theme variables
 	 * @param variables Object containing CSS variables to update
 	 */
-	updateThemeVariables(variables: OpenViduThemeVariables): void {
+	updateThemeVariables(variables: MeetingThemeVariables): void {
 		const mergedVariables = { ...this.currentVariables(), ...variables };
 		this.currentVariables.set(mergedVariables);
 		this.applyCSSVariables(variables);
@@ -90,7 +90,7 @@ export class MeetingThemeService {
 	 * Replaces all theme variables with a new set
 	 * @param variables Complete set of theme variables
 	 */
-	setThemeVariables(variables: OpenViduThemeVariables): void {
+	setThemeVariables(variables: MeetingThemeVariables): void {
 		this.currentVariables.set(variables);
 		this.applyCSSVariables(variables);
 	}
@@ -106,9 +106,9 @@ export class MeetingThemeService {
 
 	/**
 	 * Applies a predefined theme configuration
-	 * @param themeVariables Predefined theme configuration (e.g., OPENVIDU_LIGHT_THEME)
+	 * @param themeVariables Predefined theme configuration (e.g., MEETING_LIGHT_THEME)
 	 */
-	applyThemeConfiguration(themeVariables: OpenViduThemeVariables): void {
+	applyThemeConfiguration(themeVariables: MeetingThemeVariables): void {
 		this.setThemeVariables(themeVariables);
 	}
 
@@ -116,8 +116,8 @@ export class MeetingThemeService {
 	 * Toggles between light and dark themes
 	 */
 	toggleTheme(): void {
-		const isDark = this.getCurrentTheme() === OpenViduThemeMode.Dark;
-		this.setTheme(isDark ? OpenViduThemeMode.Light : OpenViduThemeMode.Dark);
+		const isDark = this.getCurrentTheme() === MeetingThemeMode.Dark;
+		this.setTheme(isDark ? MeetingThemeMode.Light : MeetingThemeMode.Dark);
 	}
 
 	/**
@@ -129,14 +129,14 @@ export class MeetingThemeService {
 		return getComputedStyle(this.document.documentElement).getPropertyValue(varName).trim();
 	}
 
-	private applyTheme(theme: OpenViduThemeMode): void {
+	private applyTheme(theme: MeetingThemeMode): void {
 		// Until a theme is applied, `:root:not([data-ov-theme])` in theme.scss follows the system
 		// preference through media queries. From here on the attribute pins the choice explicitly.
 		this.document.documentElement.setAttribute(this.THEME_ATTRIBUTE, theme);
 		this.applyCSSVariables(this.getDefaultVariablesForTheme(theme));
 	}
 
-	private applyCSSVariables(variables: OpenViduThemeVariables): void {
+	private applyCSSVariables(variables: MeetingThemeVariables): void {
 		const documentElement = this.document.documentElement;
 
 		Object.entries(variables).forEach(([property, value]) => {
@@ -146,7 +146,7 @@ export class MeetingThemeService {
 		});
 	}
 
-	private getDefaultVariablesForTheme(theme: OpenViduThemeMode): OpenViduThemeVariables {
-		return theme === OpenViduThemeMode.Dark ? OPENVIDU_COMPONENTS_DARK_THEME : OPENVIDU_COMPONENTS_LIGHT_THEME;
+	private getDefaultVariablesForTheme(theme: MeetingThemeMode): MeetingThemeVariables {
+		return theme === MeetingThemeMode.Dark ? MEETING_DARK_THEME : MEETING_LIGHT_THEME;
 	}
 }
