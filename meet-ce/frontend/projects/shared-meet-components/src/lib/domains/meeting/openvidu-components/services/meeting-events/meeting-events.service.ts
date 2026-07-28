@@ -32,14 +32,14 @@ import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
-export interface SessionRoomEventCallbacks {
+export interface MeetingEventCallbacks {
 	onRoomReconnecting: () => void;
 	onRoomReconnected: () => void;
 	onParticipantLeft: (event: ParticipantLeftEvent) => void;
 }
 
 @Service()
-export class SessionRoomEventsService {
+export class MeetingEventsService {
 	private readonly actionService = inject(ActionService);
 	private readonly chatService = inject(ChatService);
 	private readonly libService = inject(OpenViduComponentsConfigService);
@@ -49,11 +49,11 @@ export class SessionRoomEventsService {
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(MeetingTranslateService);
-	private readonly log = this.loggerSrv.get('SessionRoomEventsService');
+	private readonly log = this.loggerSrv.get('MeetingEventsService');
 	private readonly _activeSpeakers = signal<Participant[]>([]);
 	readonly activeSpeakers = this._activeSpeakers.asReadonly();
 
-	bindRoom(room: Room, callbacks: SessionRoomEventCallbacks): void {
+	bindRoom(room: Room, callbacks: MeetingEventCallbacks): void {
 		this._activeSpeakers.set([]);
 		this.subscribeToEncryptionErrors(room);
 		this.subscribeToActiveSpeakersChanged(room);
@@ -288,7 +288,7 @@ export class SessionRoomEventsService {
 		}
 	}
 
-	private subscribeToReconnection(room: Room, callbacks: SessionRoomEventCallbacks) {
+	private subscribeToReconnection(room: Room, callbacks: MeetingEventCallbacks) {
 		room.on(RoomEvent.Reconnecting, () => {
 			this.log.w('Connection lost: Reconnecting');
 			this.actionService.openConnectionDialog(

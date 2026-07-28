@@ -1,7 +1,7 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
 import { SmartLayoutMode } from '../../models/layout/smart-layout.model';
 import type { Participant } from '../../services/livekit';
-import { SessionRoomEventsService } from '../session/session-room-events.service';
+import { MeetingEventsService } from '../meeting-events/meeting-events.service';
 import { ViewportService } from '../viewport/viewport.service';
 import { BaseLayoutService } from './layout.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -10,7 +10,7 @@ import { MeetStorageService } from '../../../../../shared/services/storage.servi
 @Service()
 export class SmartLayoutService extends BaseLayoutService {
 	private readonly loggerService = inject(LoggerService);
-	private readonly sessionRoomEventsService = inject(SessionRoomEventsService);
+	private readonly meetingEventsService = inject(MeetingEventsService);
 	private readonly viewportService = inject(ViewportService);
 	private readonly storageService = inject(MeetStorageService);
 	private readonly INITIAL_VISIBLE_PARTICIPANTS_COUNT = 4;
@@ -48,7 +48,7 @@ export class SmartLayoutService extends BaseLayoutService {
 	 * instead of being eclipsed by the first-N iteration order for {@link MIN_SPEAKING_DURATION_MS}.
 	 */
 	private readonly activeSpeakersTrackingEffect = effect(() => {
-		const speakers = this.sessionRoomEventsService.activeSpeakers();
+		const speakers = this.meetingEventsService.activeSpeakers();
 		untracked(() => this.processActiveSpeakersChanged(speakers));
 	});
 
