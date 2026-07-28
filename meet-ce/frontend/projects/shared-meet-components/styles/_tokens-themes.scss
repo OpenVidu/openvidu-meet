@@ -43,12 +43,6 @@
 	--ov-meet-avatar-text-color: #1f2937;
 }
 
-// Preserve the existing global light-theme behavior by emitting onto :root.
-:root {
-	// Reuse the extracted light-theme mixin instead of duplicating declarations.
-	@include emit-light-theme-token-values;
-}
-
 // === DARK THEME ===
 // Activated when the [data-theme="dark"] attribute is present on html
 // Expose the dark theme token overrides as a reusable mixin for alternative roots.
@@ -93,8 +87,5 @@
 	--ov-meet-avatar-text-color: #1f2937;
 }
 
-// Preserve the existing global dark-theme behavior for the regular SPA document.
-[data-theme='dark'] {
-	// Reuse the extracted dark-theme mixin instead of duplicating declarations.
-	@include emit-dark-theme-token-values;
-}
+// NOTE: this module intentionally emits NO CSS (see the note in _tokens-core.scss).
+// The theme tokens are published once per runtime root by _runtime-theme.scss.

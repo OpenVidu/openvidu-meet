@@ -9,7 +9,7 @@
 // Theme Configuration Section
 .theme-config-card {
 	.theme-form {
-		@extend .ov-settings-form-section;
+		@extend %ov-settings-form-section;
 
 		.full-width {
 			width: 100%;

@@ -2,7 +2,7 @@
 
 // Use utility classes for users toolbar
 .users-toolbar {
-	@extend .ov-data-toolbar;
+	@extend %ov-data-toolbar;
 
 	.toolbar-right {
 		gap: var(--ov-meet-spacing-sm);
@@ -11,26 +11,26 @@
 
 // Use utility classes
 .search-field {
-	@extend .ov-search-field;
+	@extend %ov-search-field;
 }
 
 .selection-info {
-	@extend .ov-selection-info;
+	@extend %ov-selection-info;
 }
 
 .batch-actions {
-	@extend .ov-batch-actions;
+	@extend %ov-batch-actions;
 	::ng-deep button {
 		padding: var(--ov-meet-spacing-sm);
 	}
 }
 
 .loading-container {
-	@extend .ov-loading-container;
+	@extend %ov-loading-container;
 }
 
 .table-container {
-	@extend .ov-table-container;
+	@extend %ov-table-container;
 	margin-top: 0;
 }
 
@@ -46,7 +46,7 @@
 }
 
 .users-table {
-	@extend .ov-data-table;
+	@extend %ov-data-table;
 
 	.mat-mdc-header-cell {
 		&.user-header {
@@ -134,7 +134,7 @@
 }
 
 .user-info {
-	@extend .ov-info-display;
+	@extend %ov-info-display;
 
 	.user-name {
 		@extend .primary-text;
@@ -214,11 +214,11 @@
 // ─── Date ─────────────────────────────────────────────────────────────────────
 
 .date-info {
-	@extend .ov-date-info;
+	@extend %ov-date-info;
 }
 
 .no-data {
-	@extend .ov-no-data;
+	@extend %ov-no-data;
 }
 
 // ─── Protected rows ───────────────────────────────────────────────────────────
@@ -236,7 +236,7 @@
 // ─── Action buttons ───────────────────────────────────────────────────────────
 
 .action-buttons {
-	@extend .ov-action-buttons;
+	@extend %ov-action-buttons;
 
 	.action-tooltip-target {
 		display: inline-flex;
@@ -263,13 +263,13 @@
 }
 
 .delete-action {
-	@extend .ov-delete-action;
+	@extend %ov-delete-action;
 }
 
 // ─── Empty State ──────────────────────────────────────────────────────────────
 
 .no-users-state {
-	@extend .ov-empty-state;
+	@extend %ov-empty-state;
 
 	.getting-started-actions {
 		@include design-tokens.ov-mobile-down {
@@ -295,5 +295,5 @@
 .mat-mdc-checkbox,
 .mat-mdc-icon-button,
 .mat-mdc-button {
-	@extend .ov-focus-visible;
+	@extend %ov-focus-visible;
 }

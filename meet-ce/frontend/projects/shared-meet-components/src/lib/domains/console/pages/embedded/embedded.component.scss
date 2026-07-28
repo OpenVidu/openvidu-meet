@@ -28,7 +28,7 @@
 	}
 
 	.api-key-display {
-		@extend .ov-api-key-display;
+		@extend %ov-api-key-display;
 
 		.api-key-actions {
 			display: flex;
@@ -82,7 +82,7 @@
 // Webhooks Section - simplified with utilities
 .webhooks-section {
 	.webhook-form {
-		@extend .ov-settings-form-section;
+		@extend %ov-settings-form-section;
 
 		.full-width {
 			width: 100%;

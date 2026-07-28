@@ -3,10 +3,10 @@
 
 ::ng-deep {
 	mat-slide-toggle {
-		@extend .ov-slide-toggle-success;
+		@extend %ov-slide-toggle-success;
 	}
 
 	.mat-mdc-nav-list {
-		@extend .ov-nav-list-clean;
+		@extend %ov-nav-list-clean;
 	}
 }

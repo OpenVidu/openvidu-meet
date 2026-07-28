@@ -114,7 +114,7 @@
 			line-height: var(--ov-meet-line-height-tight);
 
 			&.no-data {
-				@extend .ov-no-data;
+				@extend %ov-no-data;
 			}
 		}
 
@@ -152,7 +152,7 @@
 }
 
 .card-actions {
-	@extend .ov-action-buttons;
+	@extend %ov-action-buttons;
 	justify-content: flex-end;
 	padding-top: var(--ov-meet-spacing-sm);
 	border-top: 1px solid var(--ov-meet-border-color-light);
@@ -185,7 +185,7 @@
 
 // === TOOLBAR AND SHARED UTILITIES ===
 .recordings-toolbar {
-	@extend .ov-data-toolbar;
+	@extend %ov-data-toolbar;
 	margin-bottom: var(--ov-meet-spacing-md);
 
 	// Responsive toolbar adjustments
@@ -235,11 +235,11 @@
 }
 
 .search-field {
-	@extend .ov-search-field;
+	@extend %ov-search-field;
 }
 
 .batch-actions {
-	@extend .ov-batch-actions;
+	@extend %ov-batch-actions;
 }
 
 .bulk-delete-btn {
@@ -257,7 +257,7 @@
 
 // === DESKTOP TABLE VIEW ===
 .table-container {
-	@extend .ov-table-container;
+	@extend %ov-table-container;
 	margin-top: 0;
 
 	@include design-tokens.ov-tablet-down {
@@ -267,7 +267,7 @@
 }
 
 .recordings-table {
-	@extend .ov-data-table;
+	@extend %ov-data-table;
 	min-width: 600px;
 
 	.mat-mdc-header-cell {
@@ -310,7 +310,7 @@
 
 // === SHARED COMPONENTS ===
 .room-info {
-	@extend .ov-info-display;
+	@extend %ov-info-display;
 	flex: 1;
 	min-width: 0;
 
@@ -338,7 +338,7 @@
 }
 
 .status-badge {
-	@extend .ov-status-badge;
+	@extend %ov-status-badge;
 	display: flex;
 	align-items: center;
 	gap: var(--ov-meet-spacing-xs);
@@ -370,15 +370,15 @@
 
 // === UTILITY EXTENSIONS ===
 .loading-container {
-	@extend .ov-loading-container;
+	@extend %ov-loading-container;
 }
 
 .date-info {
-	@extend .ov-date-info;
+	@extend %ov-date-info;
 }
 
 .action-buttons {
-	@extend .ov-action-buttons;
+	@extend %ov-action-buttons;
 
 	@include design-tokens.ov-tablet-down {
 		.play-btn,
@@ -389,11 +389,11 @@
 }
 
 .delete-action {
-	@extend .ov-delete-action;
+	@extend %ov-delete-action;
 }
 
 .no-recordings-state {
-	@extend .ov-empty-state;
+	@extend %ov-empty-state;
 
 	.getting-started-actions {
 		@include design-tokens.ov-mobile-down {
@@ -412,7 +412,7 @@
 .mat-mdc-checkbox,
 .mat-mdc-icon-button,
 .mat-mdc-button {
-	@extend .ov-focus-visible;
+	@extend %ov-focus-visible;
 }
 
 @include design-tokens.ov-mobile-down {

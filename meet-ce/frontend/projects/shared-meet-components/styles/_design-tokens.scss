@@ -1,24 +1,33 @@
 // Design Tokens - Centralized design variable system for OpenVidu Meet
-// This file forwards all modular design system files to maintain the same public API
-// while organizing the code in a more maintainable structure
+//
+// This barrel is loaded by (almost) every component stylesheet, so it MUST stay
+// side-effect free: it only forwards mixins, functions and placeholder selectors.
+// Anything forwarded from here that emitted top-level CSS would be duplicated
+// once per component (it happened: 51 copies of the token/utility layer, ~38% of
+// the SPA main bundle). The global CSS layer (token values on the runtime root,
+// utility classes, animation keyframes) is emitted exactly once per runtime root
+// by the entry points instead:
+//   - SPA:          src/styles.scss            (html / html[data-theme='dark'])
+//   - webcomponent: src/app/app.material.scss  (:host, inside the shadow root)
+// both via _runtime-theme.scss + meta.load-css of _utilities.scss/_animations.scss.
 
-// Core tokens (colors, spacing, typography, etc.)
+// Core token emitter mixin (colors, spacing, typography, etc.) - no CSS output.
 @forward './_tokens-core.scss';
 
-// Theme-specific variables (light/dark themes)
+// Light/dark theme token emitter mixins - no CSS output.
 @forward './_tokens-themes.scss';
 
-// Layout-related mixins (containers, grids, positioning)
+// Layout-related mixins (containers, grids, positioning).
 @forward './_mixins-layout.scss';
 
-// Component-specific mixins (cards, buttons, headers)
+// Component-specific mixins (cards, buttons, headers).
 @forward './_mixins-components.scss';
 
-// Responsive design utilities
+// Responsive design mixins.
 @forward './_mixins-responsive.scss';
 
-// Animation keyframes and classes
-@forward './_animations.scss';
-
-// Utility classes
-@forward './_utilities.scss';
+// Utility placeholder selectors (%ov-x) for @extend - no CSS output unless extended.
+// The class twins (.ov-x) live in _utilities.scss, which only the global entry
+// points load. Animation keyframes/classes (_animations.scss) are likewise
+// global-only and are intentionally NOT forwarded here.
+@forward './_utilities-api.scss';

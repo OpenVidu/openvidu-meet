@@ -35,7 +35,7 @@
 
 // === DIALOG TITLE ===
 .dialog-title {
-	@extend .ov-text-center;
+	@extend %ov-text-center;
 	@include design-tokens.ov-theme-transition;
 	@include design-tokens.ov-flex-center;
 	gap: var(--ov-meet-spacing-sm);

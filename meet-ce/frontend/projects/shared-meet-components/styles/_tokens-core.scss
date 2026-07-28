@@ -118,8 +118,8 @@
 	--ov-meet-input-border-color-focus: var(--ov-meet-color-primary);
 }
 
-// Preserve the existing global SPA behavior by emitting the same tokens on :root.
-:root {
-	// Reuse the extracted mixin instead of duplicating the token declarations.
-	@include emit-core-token-values;
-}
+// NOTE: this module intentionally emits NO CSS. Every component stylesheet loads it
+// (through _design-tokens.scss), so a top-level :root block here would be duplicated
+// once per component. The tokens are published exactly once per runtime root by the
+// global entry points via _runtime-theme.scss (SPA: src/styles.scss on html;
+// webcomponent: app.material.scss on :host).

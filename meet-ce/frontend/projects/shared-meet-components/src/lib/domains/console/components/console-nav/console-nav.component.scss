@@ -11,7 +11,7 @@ mat-sidenav-container {
 }
 
 mat-toolbar {
-	@extend .ov-nav-toolbar;
+	@extend %ov-nav-toolbar;
 }
 
 .icon-division {
@@ -34,7 +34,7 @@ a {
 
 // Move the content down so that it won't be hidden by the toolbar
 mat-sidenav {
-	@extend .ov-sidenav;
+	@extend %ov-sidenav;
 
 	.entry {
 		@extend .nav-entry;
@@ -51,7 +51,7 @@ mat-sidenav {
 
 // Move the content down so that it won't be hidden by the toolbar
 mat-sidenav-content {
-	@extend .ov-sidenav-content;
+	@extend %ov-sidenav-content;
 }
 
 .main-container {
@@ -63,7 +63,7 @@ mat-sidenav-content {
 }
 
 .menu-button {
-	@extend .ov-menu-button;
+	@extend %ov-menu-button;
 
 	&.active-nav-item {
 		@extend .active;
@@ -75,9 +75,9 @@ mat-sidenav-content {
 }
 
 .version {
-	@extend .ov-nav-version;
+	@extend %ov-nav-version;
 }
 
 .separator {
-	@extend .ov-nav-separator;
+	@extend %ov-nav-separator;
 }

@@ -33,7 +33,7 @@
 	min-height: 48px;
 
 	.back-button {
-		// @extend .ov-icon-button;
+		// @extend %ov-icon-button;
 		color: var(--ov-meet-text-primary);
 		flex-shrink: 0;
 

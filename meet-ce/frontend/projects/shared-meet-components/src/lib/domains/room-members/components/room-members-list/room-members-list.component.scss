@@ -1,7 +1,7 @@
 @use '_design-tokens.scss';
 
 .members-toolbar {
-	@extend .ov-data-toolbar;
+	@extend %ov-data-toolbar;
 
 	.toolbar-right {
 		gap: var(--ov-meet-spacing-sm);
@@ -9,22 +9,22 @@
 }
 
 .search-field {
-	@extend .ov-search-field;
+	@extend %ov-search-field;
 }
 
 .batch-actions {
-	@extend .ov-batch-actions;
+	@extend %ov-batch-actions;
 	::ng-deep button {
 		padding: var(--ov-meet-spacing-sm);
 	}
 }
 
 .loading-container {
-	@extend .ov-loading-container;
+	@extend %ov-loading-container;
 }
 
 .table-container {
-	@extend .ov-table-container;
+	@extend %ov-table-container;
 	margin-top: 0;
 }
 
@@ -40,7 +40,7 @@
 }
 
 .members-table {
-	@extend .ov-data-table;
+	@extend %ov-data-table;
 
 	.mat-mdc-header-cell {
 		&.member-name-header {
@@ -169,15 +169,15 @@
 }
 
 .date-info {
-	@extend .ov-date-info;
+	@extend %ov-date-info;
 }
 
 .no-data {
-	@extend .ov-no-data;
+	@extend %ov-no-data;
 }
 
 .action-buttons {
-	@extend .ov-action-buttons;
+	@extend %ov-action-buttons;
 
 	::ng-deep button {
 		padding: var(--ov-meet-spacing-sm);
@@ -195,11 +195,11 @@
 }
 
 .delete-action {
-	@extend .ov-delete-action;
+	@extend %ov-delete-action;
 }
 
 .no-members-state {
-	@extend .ov-empty-state;
+	@extend %ov-empty-state;
 
 	.empty-icon {
 		@include design-tokens.ov-icon(lg);
@@ -216,5 +216,5 @@
 .mat-mdc-checkbox,
 .mat-mdc-icon-button,
 .mat-mdc-button {
-	@extend .ov-focus-visible;
+	@extend %ov-focus-visible;
 }

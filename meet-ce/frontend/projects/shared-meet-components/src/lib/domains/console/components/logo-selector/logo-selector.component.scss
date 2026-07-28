@@ -2,7 +2,7 @@
 
 // Form styling
 .form-section {
-	@extend .ov-form-section;
+	@extend %ov-form-section;
 }
 
 .form-field-header {
@@ -12,5 +12,5 @@
 
 // Logo upload section
 .logo-upload-section {
-	@extend .ov-logo-upload;
+	@extend %ov-logo-upload;
 }

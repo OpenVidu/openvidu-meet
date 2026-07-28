@@ -232,7 +232,7 @@
 				}
 
 				.date-info {
-					@extend .ov-date-info;
+					@extend %ov-date-info;
 				}
 
 				.auto-deletion-info {
@@ -298,7 +298,7 @@
 				}
 
 				.no-data {
-					@extend .ov-no-data;
+					@extend %ov-no-data;
 				}
 			}
 		}
