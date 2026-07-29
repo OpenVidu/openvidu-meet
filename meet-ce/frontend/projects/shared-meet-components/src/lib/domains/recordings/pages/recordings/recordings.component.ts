@@ -324,8 +324,8 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 			} catch (error: any) {
 				this.log.e('Error deleting recordings:', error);
 
-				const deleted = error.error?.deleted as string[];
-				const failed = error.error?.failed as { recordingId: string; error: string }[];
+				const deleted = (error?.error?.deleted ?? []) as string[];
+				const failed = (error?.error?.failed ?? []) as { recordingId: string; error: string }[];
 
 				// Some recordings were deleted, some not
 				if (failed.length > 0 || deleted.length > 0) {
