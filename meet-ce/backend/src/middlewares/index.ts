@@ -8,6 +8,7 @@ export * from './recording.middleware.js';
 export * from './request-context.middleware.js';
 export * from './room-member.middleware.js';
 export * from './room.middleware.js';
+export * from './webcomponent-bundle.middleware.js';
 
 // Request validators
 export * from './request-validators/auth-validator.middleware.js';

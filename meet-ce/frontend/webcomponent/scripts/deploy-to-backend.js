@@ -15,10 +15,12 @@
  * Run automatically as the last step of `build:wc:bundle` (via `build:wc:post`)
  * and from the `dev` watch loop. Run manually:  node scripts/deploy-to-backend.js
  *
- * Source:      dist/openvidu-meet-wc.js   (produced by concat-wc.js)
- * Destination: <backend>/public/webcomponent/openvidu-meet.bundle.min.js
- *              (the exact file the backend route serves; override the backend
- *               public dir with MEET_BACKEND_PUBLIC_DIR if needed)
+ * What gets deployed (both produced by concat-wc.js), in this order — the ESM
+ * FIRST so that once the new loader is live, the sibling ESM it imports is
+ * already in place (shrinks the cross-file version-skew window):
+ *   dist/openvidu-meet-wc.esm.js → openvidu-meet.esm.bundle.min.js
+ *   dist/openvidu-meet-loader.js → openvidu-meet.loader.min.js
+ * (Override the backend public dir with MEET_BACKEND_PUBLIC_DIR if needed.)
  */
 
 const crypto = require('crypto');
@@ -27,15 +29,13 @@ const path = require('path');
 
 const root = path.resolve(__dirname, '..');
 
-// Both build outputs are produced together by concat-wc.js and deployed side by
-// side (see server.ts for the routes that serve them):
-//   - ESM    → `<basePath>/v1/openvidu-meet.esm.js` (import()'d by the loader, CORS-enabled)
-//   - loader → `<basePath>/v1/openvidu-meet.js`     (stable url, lazy loader)
-// The ESM is deployed FIRST so that once the new loader is live, the sibling ESM
-// it imports is already in place (shrinks the cross-file version-skew window).
+// Overridable so the deploy contract (renames, sidecar hashes) can be
+// exercised against fabricated dirs in unit tests.
+const distDir = process.env.MEET_WC_DIST_DIR ? path.resolve(process.env.MEET_WC_DIST_DIR) : path.join(root, 'dist');
+
 const bundles = [
-  { src: path.join(root, 'dist', 'openvidu-meet-wc.esm.js'), destName: 'openvidu-meet.esm.bundle.min.js' },
-  { src: path.join(root, 'dist', 'openvidu-meet-loader.js'), destName: 'openvidu-meet.loader.min.js' },
+  { src: path.join(distDir, 'openvidu-meet-wc.esm.js'), destName: 'openvidu-meet.esm.bundle.min.js' },
+  { src: path.join(distDir, 'openvidu-meet-loader.js'), destName: 'openvidu-meet.loader.min.js' },
 ];
 
 // meet-ce/frontend/webcomponent/scripts → meet-ce/backend/public

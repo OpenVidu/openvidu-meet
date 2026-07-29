@@ -21,8 +21,14 @@ Two artifacts are produced and deployed into `meet-ce/backend/public/webcomponen
 | `openvidu-meet-wc.esm.js` | `<basePath>/v1/openvidu-meet.esm.js` | The heavy Angular+LiveKit ESM, `import()`ed on first use (CORS-enabled) |
 
 The bundle is always served **by the backend** so host apps pick up a redeployed version without
-changing their page. The backend sends `no-cache` + a content-hash ETag (`.sha256` sidecar), so
-browsers revalidate and get a 304 while unchanged.
+changing their page. Caching contract (locked by backend unit tests + the `bundle-caching` e2e spec):
+both files are served `no-cache` + a strong content-hash ETag (`.sha256` sidecar), so browsers
+revalidate on every load — a 304 while unchanged, a full 200 with the new version on the first
+load after a redeploy.
+
+The ESM is deliberately ONE file: esbuild `splitting: true` was implemented and reverted
+(2026-07-29, product decision) because serving the emitted `chunk-*.js` files requires sibling
+public urls, and the distribution surface must stay at exactly the two stable urls above.
 
 ## Loader delegation (`src/main.loader.ts`)
 
@@ -81,12 +87,13 @@ pnpm run test:e2e          # Playwright, project `webcomponent`
 
 ## Tests
 
-- **Unit** (`tests/unit/`): loader delegation and wrapper API only — framework-agnostic logic. The
-  Angular shell is covered by e2e instead of a TestBed. Config: `jest.config.mjs` (ts-jest ESM,
-  typings mapped to source, SCSS stubbed).
-- **E2E** (`tests/e2e/`): `attributes`, `commands`, `events`, `room`, `identified-guest-state`,
-  `webhooks`. They load the real bundle into the **testapp** and require a full environment — endpoints
-  in `tests/config.ts`, overridable by env:
+- **Unit** (`tests/unit/`): loader delegation, wrapper API and the `deploy-to-backend` script
+  contract (stable names + `.sha256` sidecars, exercised hermetically via `MEET_WC_DIST_DIR` /
+  `MEET_BACKEND_PUBLIC_DIR`) — framework-agnostic logic. The Angular shell is covered by e2e instead
+  of a TestBed. Config: `jest.config.mjs` (ts-jest ESM, typings mapped to source, SCSS stubbed).
+- **E2E** (`tests/e2e/`): `attributes`, `bundle-caching`, `commands`, `events`, `room`,
+  `identified-guest-state`, `webhooks`. They load the real bundle into the **testapp** and require a
+  full environment — endpoints in `tests/config.ts`, overridable by env:
   - backend `http://localhost:6080/meet` (`MEET_API_URL`, `MEET_API_KEY`)
   - testapp `http://localhost:5080` (`MEET_TESTAPP_URL`) + webhook bridge on `:5081`
   - bundle `http://localhost:6080/meet/v1/openvidu-meet.js` (`MEET_WEBCOMPONENT_SRC`)

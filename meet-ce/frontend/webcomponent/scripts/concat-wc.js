@@ -42,12 +42,7 @@ const esbuild = require(esbuildPath);
 const build = async () => {
   await Promise.all([
     // ESM: a single self-contained module importable via `import()` (the loader
-    // loads it). NOTE: this is one bundled file, NOT code-split — esbuild inlines
-    // Angular's dynamic-import chunks here. `minify` re-minifies the merged output
-    // globally (Angular minifies each chunk in isolation), which shrinks it a
-    // further ~19% vs. leaving it un-minified. Skipped when WC_DEV is set (the
-    // `dev` watch loop): re-minifying the ~4.5 MB ESM on every save costs ~1-2 s
-    // and buys nothing locally.
+    // loads it).
     esbuild.build({
       entryPoints: [entry],
       bundle: true,
