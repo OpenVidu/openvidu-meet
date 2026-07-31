@@ -76,6 +76,7 @@ export class RecordingDetailComponent implements OnInit {
 
 	async ngOnInit() {
 		const recordingId = this.route.snapshot.paramMap.get('recording-id');
+
 		if (!recordingId) {
 			await this.navigationService.navigateTo('/recordings');
 			return;

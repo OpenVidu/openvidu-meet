@@ -17,7 +17,9 @@ const isWrapped = (raw: string): boolean => {
 /** Wraps a raw (unwrapped) value at `key` in place as `{ item: raw }`. No-op if already wrapped. */
 const wrapInPlace = (storage: Storage, key: string): void => {
 	const raw = storage.getItem(key);
+
 	if (raw === null || isWrapped(raw)) return;
+
 	storage.setItem(key, JSON.stringify({ item: raw }));
 };
 
@@ -27,7 +29,9 @@ const wrapInPlace = (storage: Storage, key: string): void => {
  */
 const rewrapJsonInPlace = (storage: Storage, key: string): void => {
 	const raw = storage.getItem(key);
+
 	if (raw === null || isWrapped(raw)) return;
+
 	try {
 		storage.setItem(key, JSON.stringify({ item: JSON.parse(raw) }));
 	} catch {
@@ -48,11 +52,13 @@ const moveKey = (
 	{ onlyIfAbsent = false, transform }: { onlyIfAbsent?: boolean; transform?: (raw: string) => string } = {}
 ): void => {
 	const raw = storage.getItem(oldKey);
+
 	if (raw === null) return;
 
 	if (!onlyIfAbsent || storage.getItem(newKey) === null) {
 		storage.setItem(newKey, transform ? transform(raw) : raw);
 	}
+
 	storage.removeItem(oldKey);
 };
 

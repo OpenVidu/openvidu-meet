@@ -61,9 +61,11 @@ export class RecordingConfigComponent {
 
 	constructor() {
 		const recordingStep = this.wizardService.getStepById(WizardStepId.RECORDING);
+
 		if (!recordingStep) {
 			throw new Error('recording step not found in wizard state');
 		}
+
 		this.recordingForm = recordingStep.formGroup;
 
 		this.recordingForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
@@ -129,6 +131,7 @@ export class RecordingConfigComponent {
 			} else if (previouslyEnabled && !willBeEnabled) {
 				// Disabling recording: restore E2EE state if it was saved
 				const previousE2EEState = this.wizardService.getE2EEStateBeforeRecording();
+
 				if (previousE2EEState !== undefined) {
 					configStep.formGroup.patchValue(
 						{

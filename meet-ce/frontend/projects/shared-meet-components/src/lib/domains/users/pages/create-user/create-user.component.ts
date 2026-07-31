@@ -67,6 +67,7 @@ export class CreateUserComponent {
 
 	copyPasswordToClipboard() {
 		const password = this.form.get('password')?.value ?? '';
+
 		if (!password) {
 			return;
 		}
@@ -105,6 +106,7 @@ export class CreateUserComponent {
 
 	getFieldError(field: string): string | null {
 		const control = this.form.get(field);
+
 		if (!control?.errors || !control.touched) {
 			return null;
 		}
@@ -112,12 +114,15 @@ export class CreateUserComponent {
 		if (control.errors['required']) {
 			return this.translateService.translate('USERS.ERRORS.FIELD_REQUIRED');
 		}
+
 		if (control.errors['minlength']) {
 			return `${this.translateService.translate('USERS.ERRORS.MIN_LENGTH')} ${control.errors['minlength'].requiredLength} ${this.translateService.translate('USERS.ERRORS.MIN_LENGTH_SUFFIX')}`;
 		}
+
 		if (control.errors['pattern']) {
 			return this.translateService.translate('USERS.ERRORS.PATTERN');
 		}
+
 		if (control.errors['maxlength']) {
 			return `${this.translateService.translate('USERS.ERRORS.MAX_LENGTH')} ${control.errors['maxlength'].requiredLength} ${this.translateService.translate('USERS.ERRORS.MAX_LENGTH_SUFFIX')}`;
 		}

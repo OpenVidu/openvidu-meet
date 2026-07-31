@@ -36,9 +36,11 @@ export class RoomBasicCreationComponent {
 
 	constructor() {
 		const currentStep = this.wizardService.getStepById(WizardStepId.ROOM_DETAILS);
+
 		if (!currentStep) {
 			throw new Error('roomDetails step not found in wizard state');
 		}
+
 		this.roomDetailsForm = currentStep.formGroup;
 
 		this.roomDetailsForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {

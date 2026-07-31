@@ -24,11 +24,13 @@ export const storeTokensFromQueryParamsGuard: CanActivateFn = (route: ActivatedR
 	const tokenStorageService = inject(TokenStorageService);
 
 	const accessToken = route.queryParams[ACCESS_TOKEN_QUERY_PARAM] as string | undefined;
+
 	if (accessToken) {
 		tokenStorageService.setAccessToken(accessToken);
 	}
 
 	const refreshToken = route.queryParams[REFRESH_TOKEN_QUERY_PARAM] as string | undefined;
+
 	if (refreshToken) {
 		tokenStorageService.setRefreshToken(refreshToken);
 	}

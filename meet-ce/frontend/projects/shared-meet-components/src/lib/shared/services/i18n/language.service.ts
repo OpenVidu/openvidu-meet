@@ -48,6 +48,7 @@ export class LanguageService {
 	 */
 	setLanguage(lang: AvailableLangs): void {
 		const option = this.availableLanguages().find((o) => o.lang === lang);
+
 		if (!option) return;
 
 		this.selectedLanguage.set(option);

@@ -21,6 +21,7 @@ export class ConsoleComponent implements OnInit {
 		const filteredLinks = consoleChildRoutes
 			.filter((config) => {
 				if (!config.navMetadata) return false;
+
 				return role !== undefined && config.navMetadata.allowedRoles.includes(role);
 			})
 			.map((config) => ({

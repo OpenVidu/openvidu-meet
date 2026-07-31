@@ -195,6 +195,7 @@ export class ToolbarRecordingButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -244,6 +245,7 @@ export class ToolbarFullscreenButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -292,6 +294,7 @@ export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -400,6 +403,7 @@ export class ToolbarSettingsButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -449,6 +453,7 @@ export class ToolbarLeaveButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -499,6 +504,7 @@ export class ToolbarParticipantsPanelButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -548,6 +554,7 @@ export class ToolbarChatPanelButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -597,6 +604,7 @@ export class ToolbarActivitiesPanelButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -646,6 +654,7 @@ export class ToolbarDisplayRoomNameDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -695,6 +704,7 @@ export class ToolbarDisplayLogoDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}
@@ -732,6 +742,7 @@ export class ToolbarAdditionalButtonsPossitionDirective implements OnDestroy {
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly additionalButtonsPositionEffect = effect(() => {
 		const value = this.ovToolbarAdditionalButtonsPosition() ?? ToolbarAdditionalButtonsPosition.AFTER_MENU;
+
 		if (!Object.values(ToolbarAdditionalButtonsPosition).includes(value)) return;
 
 		this.update(value);
@@ -740,6 +751,7 @@ export class ToolbarAdditionalButtonsPossitionDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(ToolbarAdditionalButtonsPosition.AFTER_MENU);
 	}

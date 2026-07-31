@@ -136,6 +136,7 @@ export class RuntimeConfigService {
 	 */
 	stripBasePath(url: string): string {
 		const basePathPrefix = this.normalizedBasePath();
+
 		if (!basePathPrefix || !url.startsWith(basePathPrefix)) {
 			return url;
 		}
@@ -169,12 +170,14 @@ export class RuntimeConfigService {
 	private readBaseHrefFromDocument(): string | null {
 		try {
 			const baseElement = document.querySelector('base');
+
 			if (baseElement) {
 				return baseElement.getAttribute('href') || null;
 			}
 		} catch (e) {
 			console.warn('Could not read base element:', e);
 		}
+
 		return null;
 	}
 }

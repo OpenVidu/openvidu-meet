@@ -69,6 +69,7 @@ export class OpenViduLayout {
 			cancelAnimationFrame(this.pendingFrame);
 			this.pendingFrame = null;
 		}
+
 		this.dimensionsCache.clear();
 	}
 
@@ -79,6 +80,7 @@ export class OpenViduLayout {
 	 */
 	private scheduleLayout(): void {
 		if (this.pendingFrame !== null) return;
+
 		this.pendingFrame = requestAnimationFrame(() => {
 			this.pendingFrame = null;
 			this.applyLayout();
@@ -87,6 +89,7 @@ export class OpenViduLayout {
 
 	private applyLayout(): void {
 		if (!this.layoutContainer) return;
+
 		if (readStyle(this.layoutContainer, 'display') === 'none') return;
 
 		if (!this.layoutContainer.id) {
@@ -132,6 +135,7 @@ export class OpenViduLayout {
 		if (video && video.videoHeight && video.videoWidth) {
 			return { height: video.videoHeight, width: video.videoWidth };
 		}
+
 		return {
 			height: LAYOUT_CONSTANTS.DEFAULT_VIDEO_HEIGHT,
 			width: LAYOUT_CONSTANTS.DEFAULT_VIDEO_WIDTH
@@ -142,6 +146,7 @@ export class OpenViduLayout {
 		if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
 			return crypto.randomUUID();
 		}
+
 		return Math.floor(Math.random() * 100000000).toString();
 	}
 }

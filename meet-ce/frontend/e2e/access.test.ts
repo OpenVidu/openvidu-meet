@@ -207,6 +207,7 @@ test.describe('Access E2E Tests', () => {
 					if (scenario.kind !== 'login') {
 						await expectNoLoginPage(page);
 					}
+
 					await view.expectShown(page, scenario.getName?.());
 				} finally {
 					await restoreRoles?.();

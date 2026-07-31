@@ -60,6 +60,7 @@ export class MeetingCaptionsService {
 	constructor() {
 		this.logger = this.loggerService.get('OpenVidu Meet - MeetingCaptionsService');
 	}
+
 	/**
 	 * Initializes the captions service by registering text stream handlers.
 	 *
@@ -183,6 +184,7 @@ export class MeetingCaptionsService {
 			const participant = this.participantService.getParticipantByIdentity(
 				participantIdentity
 			) as ParticipantModel;
+
 			if (!participant) {
 				this.logger.e(`Participant with identity ${participantIdentity} not found for transcription`);
 				return;
@@ -244,6 +246,7 @@ export class MeetingCaptionsService {
 						participantColor: participant.colorProfile
 					};
 				}
+
 				return caption;
 			});
 
@@ -299,6 +302,7 @@ export class MeetingCaptionsService {
 						participantColor: participant.colorProfile
 					};
 				}
+
 				return caption;
 			});
 
@@ -383,6 +387,7 @@ export class MeetingCaptionsService {
 	 */
 	private clearExpirationTimer(captionId: string): void {
 		const timeout = this.expirationTimeouts.get(captionId);
+
 		if (timeout) {
 			clearTimeout(timeout);
 			this.expirationTimeouts.delete(captionId);

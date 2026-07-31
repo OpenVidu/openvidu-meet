@@ -130,6 +130,7 @@ export class ProfileComponent implements OnInit {
 		// Clear invalid password error when user types on current password
 		this.changePasswordForm.get('currentPassword')?.valueChanges.subscribe(() => {
 			const control = this.changePasswordForm.get('currentPassword');
+
 			if (control?.errors?.['invalidPassword']) {
 				const errors = { ...control.errors };
 				delete errors['invalidPassword'];
@@ -137,6 +138,7 @@ export class ProfileComponent implements OnInit {
 			}
 
 			const newPasswordControl = this.changePasswordForm.get('newPassword');
+
 			if (newPasswordControl?.value) {
 				newPasswordControl.updateValueAndValidity();
 			}
@@ -145,6 +147,7 @@ export class ProfileComponent implements OnInit {
 		// Revalidate confirm password when new password changes
 		this.changePasswordForm.get('newPassword')?.valueChanges.subscribe(() => {
 			const confirmPasswordControl = this.changePasswordForm.get('confirmPassword');
+
 			if (confirmPasswordControl?.value) {
 				confirmPasswordControl.updateValueAndValidity();
 			}
@@ -156,14 +159,18 @@ export class ProfileComponent implements OnInit {
 	private newPasswordValidator(control: AbstractControl): ValidationErrors | null {
 		const currentPassword = this.changePasswordForm?.get('currentPassword')?.value;
 		const newPassword = control.value;
+
 		if (!currentPassword || !newPassword) return null;
+
 		return currentPassword === newPassword ? { samePassword: true } : null;
 	}
 
 	private confirmPasswordValidator(control: AbstractControl): ValidationErrors | null {
 		const newPassword = this.changePasswordForm?.get('newPassword')?.value;
 		const confirmPassword = control.value;
+
 		if (!newPassword || !confirmPassword) return null;
+
 		return newPassword === confirmPassword ? null : { passwordMismatch: true };
 	}
 
@@ -186,6 +193,7 @@ export class ProfileComponent implements OnInit {
 			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.PASSWORD_UPDATED_SUCCESS'));
 		} catch (error) {
 			console.error('Error changing password:', error);
+
 			if ((error as HttpErrorResponse).status === 400) {
 				const control = this.changePasswordForm.get('currentPassword');
 				control?.setErrors({ invalidPassword: true });
@@ -204,6 +212,7 @@ export class ProfileComponent implements OnInit {
 
 	async onUpdateRole() {
 		const user = this.targetUser();
+
 		if (!user) {
 			return;
 		}
@@ -229,6 +238,7 @@ export class ProfileComponent implements OnInit {
 
 	async onResetPassword() {
 		const user = this.targetUser();
+
 		if (!user) return;
 
 		this.dialog.open(ResetPasswordDialogComponent, {
@@ -240,6 +250,7 @@ export class ProfileComponent implements OnInit {
 
 	async onDeleteUser() {
 		const user = this.targetUser();
+
 		if (!user) return;
 
 		this.notificationService.showDialog({
@@ -263,31 +274,42 @@ export class ProfileComponent implements OnInit {
 
 	getCurrentPasswordError(): string | null {
 		const control = this.changePasswordForm.get('currentPassword');
+
 		if (control?.errors && control.touched) {
 			if (control.errors['required']) return this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_REQUIRED');
+
 			if (control.errors['invalidPassword']) return this.translateService.translate('USERS.ERRORS.CURRENT_PASSWORD_INCORRECT');
 		}
+
 		return null;
 	}
 
 	getNewPasswordError(): string | null {
 		const control = this.changePasswordForm.get('newPassword');
+
 		if (control?.errors && control.touched) {
 			const errors = control.errors;
+
 			if (errors['required']) return this.translateService.translate('USERS.ERRORS.NEW_PASSWORD_REQUIRED');
+
 			if (errors['minlength'])
 				return `${this.translateService.translate('USERS.ERRORS.NEW_PASSWORD_MIN_LENGTH')} ${errors['minlength'].requiredLength} ${this.translateService.translate('USERS.ERRORS.NEW_PASSWORD_MIN_LENGTH_SUFFIX')}`;
+
 			if (errors['samePassword']) return this.translateService.translate('USERS.ERRORS.NEW_PASSWORD_SAME');
 		}
+
 		return null;
 	}
 
 	getConfirmPasswordError(): string | null {
 		const control = this.changePasswordForm.get('confirmPassword');
+
 		if (control?.touched && control?.errors) {
 			if (control.errors['required']) return this.translateService.translate('USERS.ERRORS.CONFIRM_PASSWORD_REQUIRED');
+
 			if (control.errors['passwordMismatch']) return this.translateService.translate('USERS.ERRORS.CONFIRM_PASSWORD_MISMATCH');
 		}
+
 		return null;
 	}
 }

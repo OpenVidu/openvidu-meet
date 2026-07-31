@@ -28,6 +28,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 
 	// Collect headers from all registered providers
 	const headers = httpHeaderProvider.collectHeaders({ request: req, pageUrl });
+
 	if (headers) {
 		req = req.clone({ setHeaders: headers });
 	}

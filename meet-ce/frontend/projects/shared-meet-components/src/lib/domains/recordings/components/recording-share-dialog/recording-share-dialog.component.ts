@@ -97,6 +97,7 @@ export class RecordingShareDialogComponent implements OnInit {
 	 */
 	private buildRecordingViewUrl(): string | undefined {
 		const { recordingId, recordingSecret } = this.data;
+
 		if (!recordingSecret) {
 			// No secret to build a link with. In the webcomponent there are no routes,
 			// so window.location points at the host page and is not shareable.
@@ -119,10 +120,12 @@ export class RecordingShareDialogComponent implements OnInit {
 	 */
 	private async loadAnonymousRecordingAccess() {
 		this.canGeneratePublicUrls.set(false);
+
 		try {
 			const roomId = this.data.recordingId.split('--')[0];
 			const { access } = await this.roomService.getRoom(roomId, { fields: ['access'] });
 			this.canGeneratePublicUrls.set(access.anonymous.recording.enabled);
+
 			if (!this.canGeneratePublicUrls()) {
 				this.accessType.set('private');
 			}
@@ -161,6 +164,7 @@ export class RecordingShareDialogComponent implements OnInit {
 
 	copyToClipboard() {
 		const url = this.recordingUrl();
+
 		if (!url) {
 			return;
 		}

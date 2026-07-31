@@ -60,6 +60,7 @@ export class LoginComponent implements OnInit {
 	ngOnInit() {
 		// Webcomponent: the input carries the destination. SPA: fall back to the route query param.
 		const fromInput = this.redirectToInput();
+
 		if (fromInput) {
 			this.redirectTo.set(fromInput);
 		}

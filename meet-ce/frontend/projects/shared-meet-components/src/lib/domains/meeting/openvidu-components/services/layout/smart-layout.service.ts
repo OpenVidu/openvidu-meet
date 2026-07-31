@@ -58,6 +58,7 @@ export class SmartLayoutService extends BaseLayoutService {
 
 		const viewportInfo = this.viewportService.viewportInfo();
 		const isMobileOrTablet = viewportInfo.isPhysicalMobile || viewportInfo.isPhysicalTablet;
+
 		if (isMobileOrTablet) this._maxVisibleRemoteParticipants.set(2);
 
 		// Persist the user's layout preferences across sessions (stored preferences override the
@@ -69,11 +70,13 @@ export class SmartLayoutService extends BaseLayoutService {
 
 	private loadLayoutModeFromStorage(): void {
 		const storedMode = this.storageService.getLayoutMode();
+
 		if (storedMode) this.setLayoutMode(storedMode as SmartLayoutMode);
 	}
 
 	private loadMaxVisibleParticipantsFromStorage(): void {
 		const storedCount = this.storageService.getMaxVisibleRemoteParticipants();
+
 		if (storedCount) this.setMaxVisibleRemoteParticipants(storedCount);
 	}
 
@@ -105,6 +108,7 @@ export class SmartLayoutService extends BaseLayoutService {
 		if (this._maxVisibleRemoteParticipants() === count) return;
 
 		this._maxVisibleRemoteParticipants.set(count);
+
 		if (this.isSmartLayoutEnabled()) this.update();
 	}
 
@@ -125,6 +129,7 @@ export class SmartLayoutService extends BaseLayoutService {
 		for (const id of this.speakingStartTimes.keys()) {
 			if (!connectedParticipantIds.has(id)) this.speakingStartTimes.delete(id);
 		}
+
 		for (const id of this.speakingStopTimes.keys()) {
 			if (!connectedParticipantIds.has(id)) this.speakingStopTimes.delete(id);
 		}
@@ -144,6 +149,7 @@ export class SmartLayoutService extends BaseLayoutService {
 		const speakerOrder = this._speakerPriorityOrder();
 
 		const recentSpeakers = speakerOrder.filter((id) => availableIds.has(id)).slice(0, maxCount);
+
 		if (recentSpeakers.length >= maxCount) return new Set(recentSpeakers);
 
 		const recentSpeakerSet = new Set(recentSpeakers);
@@ -184,6 +190,7 @@ export class SmartLayoutService extends BaseLayoutService {
 			this.speakingStopTimes.delete(id);
 
 			const startTime = this.speakingStartTimes.get(id);
+
 			if (startTime === undefined) {
 				this.speakingStartTimes.set(id, now);
 			} else if (stopTime !== undefined) {
@@ -200,6 +207,7 @@ export class SmartLayoutService extends BaseLayoutService {
 				if (!this.speakingStopTimes.has(id)) this.speakingStopTimes.set(id, now);
 
 				const stopTime = this.speakingStopTimes.get(id);
+
 				if (stopTime && now - stopTime >= this.SPEAKING_GRACE_PERIOD_MS) {
 					this.speakingStartTimes.delete(id);
 					this.speakingStopTimes.delete(id);

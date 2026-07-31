@@ -39,14 +39,17 @@ export class AddRoomMemberComponent implements OnInit {
 
 	async ngOnInit(): Promise<void> {
 		const roomId = this.route.snapshot.paramMap.get('room-id');
+
 		if (!roomId) {
 			this.notificationService.showSnackbar(this.translateService.translate('ROOM_MEMBERS.ERRORS.ROOM_ID_REQUIRED'));
 			this.navigationService.navigateTo('/rooms');
 			return;
 		}
+
 		this.roomId = roomId;
 
 		const memberId = this.route.snapshot.paramMap.get('member-id');
+
 		if (memberId) {
 			this.isEditMode.set(true);
 			this.memberId = memberId;

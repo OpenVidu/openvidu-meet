@@ -36,6 +36,7 @@ export class EmbeddedCommandService {
 		}
 
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			this.log.w('endMeeting() called but room id is undefined');
 			return;
@@ -79,6 +80,7 @@ export class EmbeddedCommandService {
 		}
 
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			this.log.w('kickParticipant() called but room id is undefined');
 			return;

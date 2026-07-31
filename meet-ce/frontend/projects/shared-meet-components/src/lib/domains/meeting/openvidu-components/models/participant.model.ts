@@ -419,6 +419,7 @@ export class ParticipantModel {
 		if (this.participant instanceof LocalParticipant) {
 			return this.participant.createScreenTracks(options);
 		}
+
 		return Promise.reject("Remote participant can't create screen tracks");
 	}
 
@@ -432,6 +433,7 @@ export class ParticipantModel {
 		if (this.participant instanceof LocalParticipant) {
 			return this.participant.publishTrack(track, options);
 		}
+
 		return Promise.reject("Remote participant can't publish tracks");
 	}
 
@@ -449,6 +451,7 @@ export class ParticipantModel {
 		if (this.participant instanceof LocalParticipant) {
 			return this.participant.setCameraEnabled(enabled, options, publishOptions);
 		}
+
 		return Promise.reject("Remote participant can't enable camera");
 	}
 
@@ -466,6 +469,7 @@ export class ParticipantModel {
 		if (this.participant instanceof LocalParticipant) {
 			return this.participant.setMicrophoneEnabled(enabled, options, publishOptions);
 		}
+
 		return Promise.reject("Remote participant can't enable microphone");
 	}
 
@@ -483,6 +487,7 @@ export class ParticipantModel {
 		if (this.participant instanceof LocalParticipant) {
 			return this.participant.setScreenShareEnabled(enabled, options, publishOptions);
 		}
+
 		return Promise.reject("Remote participant can't enable screen share");
 	}
 
@@ -533,6 +538,7 @@ export class ParticipantModel {
 		}
 
 		const screenTrack = this.publications().find((track) => track.source === Track.Source.ScreenShare);
+
 		if (!screenTrack || !screenTrack.videoTrack) {
 			return Promise.reject('No active screen share track to switch');
 		}
@@ -554,6 +560,7 @@ export class ParticipantModel {
 		if (this.participant instanceof LocalParticipant) {
 			return this.participant.publishData(data, publishOptions);
 		}
+
 		return Promise.reject("Remote participant can't publish data");
 	}
 
@@ -563,8 +570,11 @@ export class ParticipantModel {
 	 */
 	getTracksPublishedTypes(): Track.Source[] {
 		const tracksPublishedTypes: Track.Source[] = [];
+
 		if (this.isCameraEnabled) tracksPublishedTypes.push(Track.Source.Camera);
+
 		if (this.isScreenShareEnabled) tracksPublishedTypes.push(Track.Source.ScreenShare);
+
 		if (this.isMicrophoneEnabled) tracksPublishedTypes.push(Track.Source.Microphone);
 
 		return tracksPublishedTypes;
@@ -658,11 +668,14 @@ export class ParticipantModel {
 				this.screenZoomStates.delete(key);
 			}
 		}
+
 		let state = this.screenZoomStates.get(streamId);
+
 		if (!state) {
 			state = new ScreenZoomState();
 			this.screenZoomStates.set(streamId, state);
 		}
+
 		return state;
 	}
 

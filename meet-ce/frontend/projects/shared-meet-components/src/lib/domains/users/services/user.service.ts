@@ -46,6 +46,7 @@ export class UserService {
 			});
 
 			const queryString = queryParams.toString();
+
 			if (queryString) {
 				path += `?${queryString}`;
 			}

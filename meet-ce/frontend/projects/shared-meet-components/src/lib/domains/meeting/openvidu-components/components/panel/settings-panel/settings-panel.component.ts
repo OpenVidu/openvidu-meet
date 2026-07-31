@@ -100,6 +100,7 @@ export class SettingsPanelComponent implements OnInit {
 
 	private readonly panelTogglingEffect = effect(() => {
 		const ev = this.panelService.panelOpened();
+
 		if (ev.panelType === PanelType.SETTINGS && !!ev.subOptionType) {
 			this.selectedOption.set(ev.subOptionType as PanelSettingsOptions);
 		}
@@ -112,6 +113,7 @@ export class SettingsPanelComponent implements OnInit {
 	close() {
 		this.panelService.togglePanel(PanelType.SETTINGS);
 	}
+
 	onSelectionChanged(option: PanelSettingsOptions) {
 		this.selectedOption.set(option);
 	}

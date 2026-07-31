@@ -68,9 +68,11 @@ const bearer = (value?: string): string | undefined => value?.replace(/^Bearer\s
 const readStoredToken = (page: Page, key: string): Promise<string | null> =>
 	page.evaluate((storageKey) => {
 		const raw = localStorage.getItem(storageKey);
+
 		if (!raw) {
 			return null;
 		}
+
 		try {
 			const parsed = JSON.parse(raw);
 			return parsed && typeof parsed === 'object' && 'item' in parsed ? (parsed.item as string) : raw;
@@ -84,6 +86,7 @@ const parseBody = (data: string | null): Record<string, unknown> | undefined => 
 	if (!data) {
 		return undefined;
 	}
+
 	try {
 		return JSON.parse(data) as Record<string, unknown>;
 	} catch {
@@ -165,6 +168,7 @@ export const installTokenExpiryController = async (page: Page): Promise<TokenExp
 			// expired one makes it 401 — recovery must refresh the access token first, then retry the mint.
 			// A secret-based mint (anonymous/guest link) authenticates via the room secret and is unaffected.
 			const hasSecret = !!parseBody(request.postData())?.secret;
+
 			if (!hasSecret && access && expired.has(access)) {
 				blocked++;
 				return fulfillError(route, 401, 'Authentication Error', 'Invalid token');
@@ -183,6 +187,7 @@ export const installTokenExpiryController = async (page: Page): Promise<TokenExp
 		// (RMT outranks AT), matching the backend's short-circuit `withAuth`. 401 it when that deciding
 		// credential is expired and the request did not opt out of recovery.
 		const deciding = rmt ?? access;
+
 		if (!skipRecovery && deciding && expired.has(deciding)) {
 			blocked++;
 			return fulfillError(route, 401, 'Authentication Error', 'Invalid token');

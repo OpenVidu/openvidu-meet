@@ -44,9 +44,13 @@ export class ToolbarPanelButtonsComponent {
 	// Computed signals
 	visibleButtonsCount = computed(() => {
 		let count = 0;
+
 		if (this.showActivitiesPanelButton()) count++;
+
 		if (this.showParticipantsPanelButton()) count++;
+
 		if (this.showChatPanelButton()) count++;
+
 		return count;
 	});
 

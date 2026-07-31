@@ -83,9 +83,11 @@ export class RoomAccessComponent implements OnInit {
 
 	constructor() {
 		const roomAccessStep = this.wizardService.getStepById(WizardStepId.ROOM_ACCESS);
+
 		if (!roomAccessStep) {
 			throw new Error('roomAccess step not found in wizard state');
 		}
+
 		this.roomAccessForm = roomAccessStep.formGroup;
 
 		// Disable role permissions whose room feature is off before wiring valueChanges, so the
@@ -125,6 +127,7 @@ export class RoomAccessComponent implements OnInit {
 			for (const key of permissionKeys) {
 				for (const roleForm of [this.moderatorForm, this.speakerForm]) {
 					const control = roleForm.controls[key];
+
 					if (enabled) {
 						control.enable({ emitEvent: false });
 					} else {
@@ -164,10 +167,12 @@ export class RoomAccessComponent implements OnInit {
 			.pipe(take(1))
 			.subscribe((result) => {
 				if (!result) return;
+
 				// Deduplicate by userId for users
 				const isDuplicate = result.userId
 					? this.pendingMembers().some((m) => m.userId === result.userId)
 					: false;
+
 				if (!isDuplicate) {
 					this.wizardService.addPendingMember(result);
 				}
@@ -176,6 +181,7 @@ export class RoomAccessComponent implements OnInit {
 
 	openEditMemberDialog(index: number): void {
 		const member = this.pendingMembers()[index];
+
 		if (!member) return;
 
 		this.dialog

@@ -137,6 +137,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		// navigating *back* (browser back/forward). An explicit navigation to this page
 		// (clicking the menu/link) loads fresh data so changes by others are reflected.
 		const cached = this.listStateCache.get<RoomsListCachedState>(RoomsComponent.STATE_KEY);
+
 		if (cached && isBackNavigation) {
 			this.list.restore(cached.list);
 			this.initialFilters.set(cached.list.filters); // seeds the child filter form via setupFilters()
@@ -210,12 +211,16 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		if (role === MeetUserRole.ADMIN) {
 			// For ADMIN: direct filter pass-through — results are narrowed to rooms matching any selected criterion
 			if (filters.ownerFilter) roomFilters.owner = filters.ownerFilter;
+
 			if (filters.memberFilter) roomFilters.member = filters.memberFilter;
+
 			if (filters.showUserAccessRooms) roomFilters.userAccess = true;
 		} else if (userId) {
 			// For ROOM_MANAGER/ROOM_MEMBER: scope selectors bound to the current user's identity
 			if (filters.showOwnedRooms) roomFilters.owner = userId;
+
 			if (filters.showMemberRooms) roomFilters.member = userId;
+
 			if (filters.showUserAccessRooms) roomFilters.userAccess = true;
 		}
 
@@ -360,6 +365,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 					const hasRoomDeletionError = failed.some((result) =>
 						this.roomDeletionService.isValidDeletionErrorCode(result.error)
 					);
+
 					if (hasRoomDeletionError) {
 						this.showBulkDeletionErrorDialogWithOptions(failed, errorMessage);
 					} else {

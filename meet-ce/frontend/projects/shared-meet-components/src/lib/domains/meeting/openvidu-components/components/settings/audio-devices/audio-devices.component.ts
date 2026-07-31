@@ -56,6 +56,7 @@ export class AudioDevicesComponent implements OnInit {
 		// non-user mute (e.g. moderator force-mute) would overwrite the user's preference.
 		effect(() => {
 			const participant = this.participantService.localParticipant();
+
 			if (participant) {
 				this.isMicrophoneEnabled.set(participant.isMicrophoneEnabled);
 			}
@@ -79,11 +80,13 @@ export class AudioDevicesComponent implements OnInit {
 	async onMicrophoneSelected(event: { value: CustomDevice }) {
 		try {
 			const device: CustomDevice = event?.value;
+
 			if (this.deviceSrv.needUpdateAudioTrack(device)) {
 				this.microphoneStatusChanging.set(true);
 				await this.localMediaControlService.switchMicrophone(device.device);
 				this.deviceSrv.setMicSelected(device.device);
 				const selectedMicrophone = this.microphoneSelected();
+
 				if (selectedMicrophone) {
 					this.onAudioDeviceChanged.emit(selectedMicrophone);
 				}

@@ -39,8 +39,10 @@ export class LocalMediaStateService {
 	readonly microphoneTrack: Signal<LocalAudioTrack | undefined> = computed(
 		() => {
 			const local = this.participantService.localParticipant();
+
 			// Connected: read the published track (reactive via the model's _revision).
 			if (local) return local.getMicrophoneTrack();
+
 			// Prejoin: read the temporary local track signal.
 			return this.localTrackService.microphoneTrack();
 		},
@@ -51,7 +53,9 @@ export class LocalMediaStateService {
 	readonly cameraTrack: Signal<LocalVideoTrack | undefined> = computed(
 		() => {
 			const local = this.participantService.localParticipant();
+
 			if (local) return local.getCameraTrack();
+
 			return this.localTrackService.cameraTrack();
 		},
 		{ equal: sameMediaStreamTrack }

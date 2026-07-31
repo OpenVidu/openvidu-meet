@@ -37,9 +37,13 @@ export class ViewportService {
 	 */
 	readonly viewportSize = computed<ViewportSize>(() => {
 		const width = this._width();
+
 		if (width >= this.BREAKPOINTS.wide) return 'wide';
+
 		if (width >= this.BREAKPOINTS.desktop) return 'desktop';
+
 		if (width >= this.BREAKPOINTS.tablet) return 'tablet';
+
 		return 'mobile';
 	});
 

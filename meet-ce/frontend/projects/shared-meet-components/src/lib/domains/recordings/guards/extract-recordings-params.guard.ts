@@ -30,6 +30,7 @@ export const extractRecordingParamsGuard: CanActivateFn = (route: ActivatedRoute
 	const { secret: roomSecret } = extractParams(route);
 
 	const decision = recordingEntry.prepare({ recordingId, roomSecret });
+
 	if (decision.kind === 'error') {
 		return navigationService.redirectToErrorPage(decision.reason);
 	}

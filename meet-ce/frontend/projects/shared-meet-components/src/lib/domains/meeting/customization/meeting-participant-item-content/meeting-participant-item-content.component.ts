@@ -84,6 +84,7 @@ export class MeetingParticipantItemContentComponent {
 		if (!this.roomMemberContextService.hasPermission('canMakeModerator')) return;
 
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			this.log.e('Cannot change participant role: room ID is undefined');
 			return;
@@ -105,6 +106,7 @@ export class MeetingParticipantItemContentComponent {
 		if (!this.roomMemberContextService.hasPermission('canMakeModerator')) return;
 
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			this.log.e('Cannot change participant role: room ID is undefined');
 			return;
@@ -126,6 +128,7 @@ export class MeetingParticipantItemContentComponent {
 		if (!this.roomMemberContextService.hasPermission('canKickParticipants')) return;
 
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			this.log.e('Cannot kick participant: room ID is undefined');
 			return;

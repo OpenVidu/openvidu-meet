@@ -441,6 +441,7 @@ export class VideoEnabledDirective implements OnDestroy {
 
 		// Determine the final enabled state of the camera
 		let finalEnabledState: boolean;
+
 		if (enabled) {
 			// If enabled is true, respect the storage value if it's false
 			finalEnabledState = storageIsEnabled !== false;
@@ -512,6 +513,7 @@ export class AudioEnabledDirective implements OnDestroy {
 
 		// Determine the final enabled state of the microphone
 		let finalEnabledState: boolean;
+
 		if (enabled) {
 			// If enabled is true, respect the storage value if it's false
 			finalEnabledState = storageIsEnabled !== false;

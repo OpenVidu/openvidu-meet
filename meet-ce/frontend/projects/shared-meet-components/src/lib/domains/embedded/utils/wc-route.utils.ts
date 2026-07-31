@@ -130,6 +130,7 @@ export const wcRouteFromPath = (path: string): WcRoute | null => {
 	}
 
 	let url: URL;
+
 	try {
 		// Dummy origin lets URL parse an app-relative path with its query string.
 		url = new URL(path, 'http://wc.local');
@@ -147,9 +148,11 @@ export const wcRouteFromPath = (path: string): WcRoute | null => {
 			params: { roomId: segments[1], secret: q.get('secret') ?? undefined }
 		};
 	}
+
 	if (head === 'room' && segments[1]) {
 		return { name: WcRouteName.MEETING, params: { roomId: segments[1], secret: q.get('secret') ?? undefined } };
 	}
+
 	if (head === 'recording' && segments[1]) {
 		return {
 			name: WcRouteName.SINGLE_RECORDING,
@@ -160,16 +163,20 @@ export const wcRouteFromPath = (path: string): WcRoute | null => {
 			}
 		};
 	}
+
 	if (head === 'login') {
 		return { name: WcRouteName.LOGIN, params: { redirectTo: q.get('redirectTo') ?? undefined } };
 	}
+
 	if (head === 'change-password-required') {
 		return { name: WcRouteName.CHANGE_PASSWORD, params: { redirectTo: q.get('redirectTo') ?? undefined } };
 	}
+
 	if (head === 'error') {
 		const reason = (q.get('reason') as NavigationErrorReason) ?? NavigationErrorReason.INTERNAL_ERROR;
 		return { name: WcRouteName.ERROR, params: { reason } };
 	}
+
 	if (head === 'disconnected') {
 		const reason = (q.get('reason') as LeftEventReason) ?? LeftEventReason.UNKNOWN;
 		return { name: WcRouteName.DISCONNECTED, params: { reason } };
@@ -183,8 +190,10 @@ export const sameWcRoute = (a: WcRoute | null, b: WcRoute | null): boolean => {
 	if (a === b) {
 		return true;
 	}
+
 	if (!a || !b || a.name !== b.name) {
 		return false;
 	}
+
 	return JSON.stringify(a.params) === JSON.stringify(b.params);
 };

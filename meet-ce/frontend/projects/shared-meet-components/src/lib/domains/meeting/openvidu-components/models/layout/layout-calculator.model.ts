@@ -96,6 +96,7 @@ export class LayoutCalculator {
 			});
 
 			const { bigWidth, bigHeight, offsetTop, offsetLeft, bigOffsetTop, bigOffsetLeft, showBigFirst } = placement;
+
 			if (showBigFirst) {
 				areas.big = { top: 0, left: 0, width: bigWidth, height: bigHeight };
 				areas.normal = { top: offsetTop, left: offsetLeft, width: containerWidth - offsetLeft, height: containerHeight - offsetTop };
@@ -164,6 +165,7 @@ export class LayoutCalculator {
 	): BestDimensions {
 		const cacheKey = LayoutDimensionsCache.generateKey(minRatio, maxRatio, width, height, count, maxWidth, maxHeight);
 		const cached = this.dimensionsCache.get(cacheKey);
+
 		if (cached) {
 			return cached;
 		}
@@ -182,6 +184,7 @@ export class LayoutCalculator {
 			let tWidth = Math.floor(width / cols);
 
 			let tRatio = tHeight / tWidth;
+
 			if (tRatio > maxRatio) {
 				tRatio = maxRatio;
 				tHeight = tWidth * tRatio;
@@ -258,11 +261,14 @@ export class LayoutCalculator {
 
 		// Bucket elements into rows of `dimensions.targetCols`.
 		const rows: LayoutRow[] = [];
+
 		for (let i = 0; i < count; i++) {
 			const ratio = ratios[i];
+
 			if (i % dimensions.targetCols === 0) {
 				rows.push({ ratios: [], width: 0, height: 0 });
 			}
+
 			const row = rows[rows.length - 1];
 			const widthForElement = fixedRatio ? dimensions.targetHeight / ratio : dimensions.targetWidth;
 			row.ratios.push(ratio);
@@ -273,6 +279,7 @@ export class LayoutCalculator {
 		// Shrink overflowing rows; count rows that still have room to grow.
 		let totalRowHeight = 0;
 		let remainingShortRows = 0;
+
 		for (const row of rows) {
 			if (row.width > containerWidth) {
 				row.height = Math.floor(row.height * (containerWidth / row.width));
@@ -280,23 +287,28 @@ export class LayoutCalculator {
 			} else if (row.width < containerWidth && row.height < maxHeight) {
 				remainingShortRows += 1;
 			}
+
 			totalRowHeight += row.height;
 		}
 
 		if (scaleLastRow && totalRowHeight < containerHeight && remainingShortRows > 0) {
 			let remainingHeightDiff = containerHeight - totalRowHeight;
 			totalRowHeight = 0;
+
 			for (const row of rows) {
 				if (row.width < containerWidth) {
 					let extraHeight = remainingHeightDiff / remainingShortRows;
+
 					if (extraHeight / row.height > (containerWidth - row.width) / row.width) {
 						extraHeight = Math.floor(((containerWidth - row.width) / row.width) * row.height);
 					}
+
 					row.width += Math.floor((extraHeight / row.height) * row.width);
 					row.height += extraHeight;
 					remainingHeightDiff -= extraHeight;
 					remainingShortRows -= 1;
 				}
+
 				totalRowHeight += row.height;
 			}
 		}
@@ -308,8 +320,10 @@ export class LayoutCalculator {
 		for (const row of rows) {
 			let x = this.alignmentOffset(alignItems, containerWidth, row.width);
 			const rowHeight = row.height;
+
 			for (const ratio of row.ratios) {
 				let targetWidth: number;
+
 				if (fixedRatio) {
 					targetWidth = Math.floor(rowHeight / ratio);
 				} else if (Math.abs(rowHeight / dimensions.targetWidth - baseRatio) > RATIO_EPSILON) {
@@ -327,8 +341,10 @@ export class LayoutCalculator {
 				});
 				x += targetWidth;
 			}
+
 			y += rowHeight;
 		}
+
 		return boxes;
 	}
 
@@ -519,6 +535,7 @@ export class LayoutCalculator {
 		// Tall orientation lays rows; wide orientation lays columns. `bigFirst === 'row'` means
 		// "big takes a row" — that only places big first when we're stacked vertically (tall).
 		let showBigFirst: BigAreaPlacement['showBigFirst'] = bigFirst;
+
 		if (bigFirst === 'column') {
 			showBigFirst = !isTall;
 		} else if (bigFirst === 'row') {
@@ -541,6 +558,7 @@ export class LayoutCalculator {
 
 		for (let i = 0; i < elements.length; i++) {
 			const el = elements[i];
+
 			if (el.big) {
 				big.push(el);
 				categories[i] = 'big';
@@ -577,10 +595,12 @@ export class LayoutCalculator {
 		};
 
 		const result: LayoutBox[] = new Array(categorized.categories.length);
+
 		for (let i = 0; i < categorized.categories.length; i++) {
 			const src = sources[categorized.categories[i]];
 			result[i] = src.boxes[src.idx++];
 		}
+
 		return result;
 	}
 

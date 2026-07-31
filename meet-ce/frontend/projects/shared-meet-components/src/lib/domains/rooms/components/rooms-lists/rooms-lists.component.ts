@@ -250,6 +250,7 @@ export class RoomsListsComponent implements OnInit {
 	activeFilterChips = computed(() => {
 		const f = this.appliedFilterState();
 		const chips: { key: string; label: string }[] = [];
+
 		if (f.statusFilter) {
 			const opt = this.statusOptions.find((o) => o.value === f.statusFilter);
 			const statusLabel = opt ? this.translateService.translate(opt.label) : f.statusFilter;
@@ -258,26 +259,32 @@ export class RoomsListsComponent implements OnInit {
 				label: `${this.translateService.translate('ROOMS.LIST.CHIP_STATUS_PREFIX')}${statusLabel}`
 			});
 		}
+
 		if (f.ownerFilter)
 			chips.push({
 				key: 'ownerFilter',
 				label: `${this.translateService.translate('ROOMS.LIST.CHIP_OWNER_PREFIX')}${f.ownerFilter}`
 			});
+
 		if (f.memberFilter)
 			chips.push({
 				key: 'memberFilter',
 				label: `${this.translateService.translate('ROOMS.LIST.CHIP_MEMBER_PREFIX')}${f.memberFilter}`
 			});
+
 		if (f.showOwnedRooms)
 			chips.push({ key: 'showOwnedRooms', label: this.translateService.translate('ROOMS.LIST.CREATED_BY_ME') });
+
 		if (f.showMemberRooms)
 			chips.push({ key: 'showMemberRooms', label: this.translateService.translate('ROOMS.LIST.IM_A_MEMBER_OF') });
+
 		if (f.showUserAccessRooms) {
 			chips.push({
 				key: 'showUserAccessRooms',
 				label: this.translateService.translate('ROOMS.LIST.OPEN_TO_ALL_USERS')
 			});
 		}
+
 		return chips;
 	});
 
@@ -365,6 +372,7 @@ export class RoomsListsComponent implements OnInit {
 
 	toggleAllSelection() {
 		const selected = this.selectedRooms();
+
 		if (this.allSelected()) {
 			selected.clear();
 		} else {
@@ -374,17 +382,20 @@ export class RoomsListsComponent implements OnInit {
 				}
 			});
 		}
+
 		this.selectedRooms.set(new Set(selected));
 		this.updateSelectionState();
 	}
 
 	toggleRoomSelection(room: MeetRoom) {
 		const selected = this.selectedRooms();
+
 		if (selected.has(room.roomId)) {
 			selected.delete(room.roomId);
 		} else {
 			selected.add(room.roomId);
 		}
+
 		this.selectedRooms.set(new Set(selected));
 		this.updateSelectionState();
 	}
@@ -447,6 +458,7 @@ export class RoomsListsComponent implements OnInit {
 
 	bulkDeleteSelected() {
 		const selectedRooms = this.getSelectedRooms();
+
 		if (selectedRooms.length > 0) {
 			this.roomAction.emit({ rooms: selectedRooms, action: 'bulkDelete' });
 		}
@@ -490,7 +502,9 @@ export class RoomsListsComponent implements OnInit {
 
 	removeFilter(key: string) {
 		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
+
 		if (!control) return;
+
 		control.setValue(typeof control.value === 'boolean' ? false : '');
 	}
 

@@ -30,6 +30,7 @@ export class RoomMemberHeaderProviderService implements HttpHeaderProvider {
 		if (!this.roomMemberContextService.roomMemberToken()) {
 			return false;
 		}
+
 		return context.pageUrl.startsWith('/room/') || context.pageUrl.startsWith('/recording/');
 	}
 
@@ -38,6 +39,7 @@ export class RoomMemberHeaderProviderService implements HttpHeaderProvider {
 	 */
 	provideHeaders(): Record<string, string> | null {
 		const roomMemberToken = this.roomMemberContextService.roomMemberToken();
+
 		if (!roomMemberToken) {
 			return null;
 		}

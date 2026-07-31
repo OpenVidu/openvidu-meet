@@ -35,6 +35,7 @@ export class ActionService {
 		}
 
 		const notification = this.snackBar.open(options.message, options.buttonActionText, options.config);
+
 		if (callback) {
 			// subscribe and complete immediately after calling callback
 			const sub = notification.onAction().subscribe(() => {
@@ -57,6 +58,7 @@ export class ActionService {
 
 	openConnectionDialog(titleMessage: string, descriptionMessage: string, allowClose = false) {
 		if (this.isConnectionDialogOpen) return;
+
 		const config: MatDialogConfig = {
 			minWidth: '250px',
 			data: { title: titleMessage, description: descriptionMessage, showActionButtons: allowClose },
@@ -78,6 +80,7 @@ export class ActionService {
 			if (result) {
 				successCallback();
 			}
+
 			this.dialogRef = undefined;
 		});
 	}
@@ -94,6 +97,7 @@ export class ActionService {
 			if (data && data.manageError) {
 				this.handleRecordingPlayerError(data.error);
 			}
+
 			this.dialogRef = undefined;
 		});
 	}
@@ -115,6 +119,7 @@ export class ActionService {
 
 	private handleRecordingPlayerError(error: MediaError | null) {
 		let message = 'ERRORS.MEDIA_ERR_GENERIC';
+
 		if (error) {
 			switch (error.code) {
 				case error.MEDIA_ERR_NETWORK:

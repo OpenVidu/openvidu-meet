@@ -124,6 +124,7 @@ export class ConfigComponent implements OnInit {
 
 	async ngOnInit() {
 		this.isLoading.set(true);
+
 		try {
 			await this.loadAppearanceConfig();
 		} catch (error) {
@@ -142,6 +143,7 @@ export class ConfigComponent implements OnInit {
 	// Color management methods
 	getColorValue(colorField: ColorField): string {
 		const formValue = this.appearanceForm.get(colorField)?.value;
+
 		if (formValue?.trim()) {
 			return formValue;
 		}
@@ -253,6 +255,7 @@ export class ConfigComponent implements OnInit {
 	 */
 	private handleThemeChange(): void {
 		const newBaseTheme = this.appearanceForm.value.baseTheme || MeetRoomThemeMode.LIGHT;
+
 		if (newBaseTheme === this.lastBaseThemeValue) return;
 
 		const newDefaults = this.defaultColors[newBaseTheme];
@@ -262,6 +265,7 @@ export class ConfigComponent implements OnInit {
 			if (!this.wasColorCustomizedFromLastTheme(key)) {
 				acc[key] = newDefaults[key];
 			}
+
 			return acc;
 		}, {} as Partial<MeetRoomTheme>);
 

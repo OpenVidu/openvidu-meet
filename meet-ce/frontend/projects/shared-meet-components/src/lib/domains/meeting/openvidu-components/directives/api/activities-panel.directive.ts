@@ -32,6 +32,7 @@ export class ActivitiesPanelRecordingActivityDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	clear() {
 		this.update(true);
 	}

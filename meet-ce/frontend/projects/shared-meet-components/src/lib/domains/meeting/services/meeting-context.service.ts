@@ -79,6 +79,7 @@ export class MeetingContextService {
 	 */
 	loadRoomSecretFromStorage(): void {
 		const secret = this.sessionStorageService.getRoomSecret();
+
 		if (secret) {
 			this._roomSecret.set(secret);
 		}
@@ -100,6 +101,7 @@ export class MeetingContextService {
 	 */
 	loadE2eeKeyFromStorage(): void {
 		const e2eeData = this.sessionStorageService.getE2EEData();
+
 		if (e2eeData) {
 			this._e2eeKey.set(e2eeData.key);
 			this._isE2eeKeyFromUrl.set(e2eeData.fromUrl);

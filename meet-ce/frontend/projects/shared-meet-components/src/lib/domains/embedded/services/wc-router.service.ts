@@ -97,6 +97,7 @@ export class WcRouterService implements WcNavigator {
 		this._status.set('running');
 
 		let result: WcGuardResult;
+
 		try {
 			result = await this.runGuard(route);
 		} catch (error) {

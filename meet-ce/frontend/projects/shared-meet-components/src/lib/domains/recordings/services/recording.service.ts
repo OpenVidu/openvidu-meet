@@ -86,6 +86,7 @@ export class RecordingService {
 			});
 
 			const queryString = queryParams.toString();
+
 			if (queryString) {
 				path += `?${queryString}`;
 			}
@@ -108,6 +109,7 @@ export class RecordingService {
 		headers?: Record<string, string>
 	): Promise<MeetRecordingInfo> {
 		let path = `${this.RECORDINGS_API}/${recordingId}`;
+
 		if (recordingSecret) {
 			path += `?recordingSecret=${recordingSecret}`;
 		}
@@ -132,11 +134,13 @@ export class RecordingService {
 
 		// Also use access and/or room member token if available
 		const accessToken = this.tokenStorageService.getAccessToken();
+
 		if (accessToken) {
 			params.append('accessToken', accessToken);
 		}
 
 		const roomMemberToken = this.roomMemberContextService.roomMemberToken();
+
 		if (roomMemberToken) {
 			params.append('roomMemberToken', roomMemberToken);
 		}
@@ -228,6 +232,7 @@ export class RecordingService {
 		}
 
 		const response = await fetch(url);
+
 		if (!response.ok) {
 			throw new Error(`Download request failed with status ${response.status}`);
 		}
@@ -270,11 +275,13 @@ export class RecordingService {
 
 		// Try to add access and/or room member token if available
 		const accessToken = this.tokenStorageService.getAccessToken();
+
 		if (accessToken) {
 			params.append('accessToken', accessToken);
 		}
 
 		const roomMemberToken = this.roomMemberContextService.roomMemberToken();
+
 		if (roomMemberToken) {
 			params.append('roomMemberToken', roomMemberToken);
 		}

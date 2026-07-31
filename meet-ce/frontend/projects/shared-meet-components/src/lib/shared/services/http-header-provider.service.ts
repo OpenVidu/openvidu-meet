@@ -58,6 +58,7 @@ export class HttpHeaderProviderService {
 		for (const provider of this.providers) {
 			if (provider.canProvide(context)) {
 				const providerHeaders = provider.provideHeaders();
+
 				if (providerHeaders) {
 					Object.assign(headers, providerHeaders);
 				}

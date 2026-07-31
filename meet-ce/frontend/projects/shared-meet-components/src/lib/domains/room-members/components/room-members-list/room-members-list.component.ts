@@ -317,6 +317,7 @@ export class RoomMembersListsComponent implements OnInit {
 
 	toggleAllSelection() {
 		const selected = this.selectedMembers();
+
 		if (this.allSelected()) {
 			selected.clear();
 		} else {
@@ -326,17 +327,20 @@ export class RoomMembersListsComponent implements OnInit {
 				}
 			});
 		}
+
 		this.selectedMembers.set(new Set(selected));
 		this.updateSelectionState();
 	}
 
 	toggleMemberSelection(member: MeetRoomMember) {
 		const selected = this.selectedMembers();
+
 		if (selected.has(member.memberId)) {
 			selected.delete(member.memberId);
 		} else {
 			selected.add(member.memberId);
 		}
+
 		this.selectedMembers.set(new Set(selected));
 		this.updateSelectionState();
 	}
@@ -387,6 +391,7 @@ export class RoomMembersListsComponent implements OnInit {
 
 	bulkDeleteSelected() {
 		const selectedMembers = this.getSelectedMembers();
+
 		if (selectedMembers.length > 0) {
 			this.memberAction.emit({ members: selectedMembers, action: 'bulkDelete' });
 		}
@@ -418,7 +423,9 @@ export class RoomMembersListsComponent implements OnInit {
 
 	removeFilter(key: string) {
 		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
+
 		if (!control) return;
+
 		control.setValue(typeof control.value === 'boolean' ? false : '');
 	}
 

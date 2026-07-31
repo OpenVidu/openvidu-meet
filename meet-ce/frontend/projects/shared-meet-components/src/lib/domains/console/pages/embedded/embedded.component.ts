@@ -108,6 +108,7 @@ export class EmbeddedComponent implements OnInit {
 	private async loadApiKeyData() {
 		try {
 			const apiKeys = await this.apiKeyService.getApiKeys();
+
 			if (apiKeys.length > 0) {
 				const apiKey = apiKeys[0]; // Assuming we only handle one API key
 				this.apiKeyData.set(apiKey);
@@ -143,6 +144,7 @@ export class EmbeddedComponent implements OnInit {
 
 	copyApiKey() {
 		const apiKey = this.apiKeyData();
+
 		if (apiKey) {
 			this.clipboard.copy(apiKey.key);
 			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_COPIED'));
@@ -157,6 +159,7 @@ export class EmbeddedComponent implements OnInit {
 
 			// Disable webhooks when API key is revoked
 			const webhookToggle = this.webhookForm.get('isEnabled');
+
 			if (webhookToggle?.value) {
 				webhookToggle.setValue(false);
 				await this.saveWebhookConfig();
@@ -240,6 +243,7 @@ export class EmbeddedComponent implements OnInit {
 
 	async testWebhook() {
 		const url = this.webhookForm.get('url')?.value;
+
 		if (url) {
 			try {
 				await this.configService.testWebhookUrl(url);

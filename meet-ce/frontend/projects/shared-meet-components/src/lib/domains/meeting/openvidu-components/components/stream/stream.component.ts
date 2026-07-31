@@ -88,6 +88,7 @@ export class StreamComponent implements OnDestroy {
 			if (this.showVideoTimeout) {
 				clearTimeout(this.showVideoTimeout);
 			}
+
 			this.showVideoTimeout = setTimeout(() => {
 				this.showVideo.set(true);
 			}, this.NO_SIZE_TIMEOUT);
@@ -121,9 +122,11 @@ export class StreamComponent implements OnDestroy {
 		if (this.showVideoTimeout) {
 			clearTimeout(this.showVideoTimeout);
 		}
+
 		if (this.hoveringTimeout) {
 			clearTimeout(this.hoveringTimeout);
 		}
+
 		this.hoverBoundElement?.removeEventListener('mousemove', this.onContainerMouseMove);
 		this.cdkSrv.setSelector('body');
 	}
@@ -133,6 +136,7 @@ export class StreamComponent implements OnDestroy {
 	 */
 	toggleVideoPinned() {
 		const stream = this.stream();
+
 		if (stream?.participant) {
 			// streamId (not videoTrack.trackSid) so pinning also works on avatar-only tiles.
 			if (stream.participant.isLocal && stream.isFloating) {
@@ -141,6 +145,7 @@ export class StreamComponent implements OnDestroy {
 
 			this.streamLayoutService.toggleStreamPinned(stream.streamId);
 		}
+
 		this.layoutService.update();
 	}
 
@@ -149,6 +154,7 @@ export class StreamComponent implements OnDestroy {
 	 */
 	toggleFloat() {
 		const stream = this.stream();
+
 		if (stream?.participant && stream.participant.isLocal) {
 			this.streamLayoutService.toggleStreamFloating(stream.streamId);
 			this.layoutService.update();
@@ -157,6 +163,7 @@ export class StreamComponent implements OnDestroy {
 
 	toggleMuteForcibly() {
 		const stream = this.stream();
+
 		if (stream?.participant) {
 			this.participantService.setRemoteMutedForcibly(
 				stream.participant.sid,
@@ -197,9 +204,11 @@ export class StreamComponent implements OnDestroy {
 	 */
 	private scheduleAutoHideControls() {
 		clearTimeout(this.hoveringTimeout);
+
 		if (this.isOverControls) {
 			return;
 		}
+
 		this.hoveringTimeout = setTimeout(() => this.mouseHovering.set(false), this.HOVER_TIMEOUT);
 	}
 }

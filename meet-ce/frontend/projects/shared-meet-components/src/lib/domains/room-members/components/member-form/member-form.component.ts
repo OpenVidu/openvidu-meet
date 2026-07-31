@@ -97,6 +97,7 @@ export class MemberFormComponent implements OnInit {
 				const isUser = type === 'user';
 				this.isUserMode.set(isUser);
 				this.memberTypeChanged.emit(type);
+
 				if (isUser) {
 					this.form.get('userId')!.enable();
 					this.form.get('memberName')!.disable();
@@ -134,6 +135,7 @@ export class MemberFormComponent implements OnInit {
 
 	ngOnInit(): void {
 		const data = this.initialData();
+
 		if (data) {
 			this.applyInitialData(data);
 		} else {
@@ -153,6 +155,7 @@ export class MemberFormComponent implements OnInit {
 
 	onUserInputFocus(): void {
 		const currentValue = this.form.get('userId')!.value || '';
+
 		if (!currentValue) {
 			this.searchUsers('');
 		}
@@ -166,15 +169,19 @@ export class MemberFormComponent implements OnInit {
 		if (user.role === MeetUserRole.ADMIN) {
 			return this.translateService.translate('ROOM_MEMBERS.FORM.DISABLED_REASON_ADMIN');
 		}
+
 		if (user.userId === this.roomOwner()) {
 			return this.translateService.translate('ROOM_MEMBERS.FORM.DISABLED_REASON_OWNER');
 		}
+
 		return null;
 	}
 
 	displayUserFn(user: MeetUserDTO | string | null): string {
 		if (!user) return '';
+
 		if (typeof user === 'string') return user;
+
 		return user.userId;
 	}
 
@@ -195,16 +202,19 @@ export class MemberFormComponent implements OnInit {
 
 		// Only send permissions that differ from the role's defaults
 		let customPermissions: Partial<MeetRoomMemberPermissions> | undefined;
+
 		if (this.permissionsForm.dirty && permissions && role) {
 			const roleDefaults =
 				role === MeetRoomMemberRole.MODERATOR ? roles.moderator.permissions : roles.speaker.permissions;
 
 			const diff: Partial<MeetRoomMemberPermissions> = {};
+
 			for (const key of MEET_ROOM_MEMBER_PERMISSIONS_FIELDS) {
 				if (permissions[key] !== roleDefaults[key]) {
 					diff[key] = permissions[key] as boolean;
 				}
 			}
+
 			if (Object.keys(diff).length > 0) {
 				customPermissions = diff;
 			}
@@ -225,13 +235,18 @@ export class MemberFormComponent implements OnInit {
 
 	getFieldError(field: string): string | null {
 		const control = this.form.get(field);
+
 		if (!control?.errors || !control.touched) return null;
+
 		if (control.errors['required']) return this.translateService.translate('ROOM_MEMBERS.ERRORS.FIELD_REQUIRED');
+
 		if (control.errors['pattern']) return this.translateService.translate('ROOM_MEMBERS.ERRORS.PATTERN');
+
 		if (control.errors['maxlength']) {
 			const { requiredLength } = control.errors['maxlength'];
 			return `${this.translateService.translate('ROOM_MEMBERS.ERRORS.MAX_LENGTH_PREFIX')}${requiredLength}${this.translateService.translate('ROOM_MEMBERS.ERRORS.MAX_LENGTH_SUFFIX')}`;
 		}
+
 		return null;
 	}
 
@@ -254,11 +269,13 @@ export class MemberFormComponent implements OnInit {
 
 		if (memberType === 'user') {
 			this.form.get('userId')!.setValue(options.userId ?? '');
+
 			if (lockIdentity) {
 				this.form.get('userId')!.disable();
 			}
 		} else {
 			this.form.get('memberName')!.setValue(options.name ?? '');
+
 			if (lockIdentity) {
 				this.form.get('memberName')!.disable();
 			}
@@ -270,6 +287,7 @@ export class MemberFormComponent implements OnInit {
 			role === MeetRoomMemberRole.MODERATOR ? roles.moderator.permissions : roles.speaker.permissions;
 
 		const permissionsForm = this.permissionsForm;
+
 		for (const key of MEET_ROOM_MEMBER_PERMISSIONS_FIELDS) {
 			const value = options.customPermissions?.[key] ?? roleDefaults[key] ?? false;
 			permissionsForm.get(key)?.setValue(value, { emitEvent: false });
@@ -285,11 +303,13 @@ export class MemberFormComponent implements OnInit {
 
 	private buildPermissionsFormGroup(): FormGroup {
 		const controls: Record<string, FormControl<boolean>> = {};
+
 		for (const key of MEET_ROOM_MEMBER_PERMISSIONS_FIELDS) {
 			controls[key] = new FormControl<boolean>(false, {
 				nonNullable: true
 			}) as FormControl<boolean>;
 		}
+
 		return new FormGroup(controls);
 	}
 
@@ -299,9 +319,11 @@ export class MemberFormComponent implements OnInit {
 			role === MeetRoomMemberRole.MODERATOR ? roomRoles.moderator.permissions : roomRoles.speaker.permissions;
 
 		const permissionsForm = this.permissionsForm;
+
 		for (const key of MEET_ROOM_MEMBER_PERMISSIONS_FIELDS) {
 			permissionsForm.get(key)?.setValue(rolePermissions[key] ?? false, { emitEvent: false });
 		}
+
 		permissionsForm.markAsPristine();
 	}
 
@@ -314,6 +336,7 @@ export class MemberFormComponent implements OnInit {
 				sortField: 'name',
 				sortOrder: SortOrder.ASC
 			};
+
 			if (query) {
 				filters.name = query;
 				filters.userId = query;

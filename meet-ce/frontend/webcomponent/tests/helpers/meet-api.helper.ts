@@ -65,6 +65,7 @@ export const getRoom = async (roomId: string): Promise<MeetRoom> => {
  */
 export const deleteRooms = async (roomIds: string[]): Promise<void> => {
 	const ids = roomIds.filter((id) => id.trim().length > 0);
+
 	if (ids.length === 0) return;
 
 	const response = await fetch(

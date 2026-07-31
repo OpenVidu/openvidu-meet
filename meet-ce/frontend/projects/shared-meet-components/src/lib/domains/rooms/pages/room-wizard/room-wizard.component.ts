@@ -81,6 +81,7 @@ export class RoomWizardComponent implements OnInit {
 
 		// Jump to a specific step if requested via query param
 		const requestedStep = this.route.snapshot.queryParamMap.get('step') as WizardStepId | null;
+
 		if (requestedStep && Object.values(WizardStepId).includes(requestedStep)) {
 			this.wizardService.goToStepById(requestedStep);
 		}
@@ -204,9 +205,11 @@ export class RoomWizardComponent implements OnInit {
 				if (roomOptions.config) {
 					await this.roomService.updateRoomConfig(this.roomId, roomOptions.config);
 				}
+
 				if (roomOptions.access) {
 					await this.roomService.updateRoomAccess(this.roomId, roomOptions.access);
 				}
+
 				if (roomOptions.roles) {
 					await this.roomService.updateRoomRoles(this.roomId, roomOptions.roles);
 				}
@@ -263,6 +266,7 @@ export class RoomWizardComponent implements OnInit {
 			members.map((m) => this.roomMemberService.createRoomMember(roomId, m))
 		);
 		const failed = results.filter((r) => r.status === 'rejected');
+
 		if (failed.length > 0) {
 			const failedIds = members
 				.filter((_, i) => results[i].status === 'rejected')

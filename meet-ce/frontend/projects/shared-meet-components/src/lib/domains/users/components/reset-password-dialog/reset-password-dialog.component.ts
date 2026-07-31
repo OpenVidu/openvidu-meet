@@ -64,6 +64,7 @@ export class ResetPasswordDialogComponent {
 
 	copyToClipboard() {
 		const password = this.password();
+
 		if (!password) return;
 
 		this.clipboard.copy(password);
@@ -74,6 +75,7 @@ export class ResetPasswordDialogComponent {
 
 	async confirm() {
 		const password = this.password();
+
 		if (!password) return;
 
 		const delayLoader = setTimeout(() => this.isSaving.set(true), 200);

@@ -55,6 +55,7 @@ export class EndMeetingComponent implements OnInit {
 	 */
 	private setDisconnectReason() {
 		const reason = this.reason() ?? this.route.snapshot.queryParams['reason'];
+
 		if (reason) {
 			const { titleKey, messageKey } = this.mapReasonToTitleAndMessage(reason);
 			this.disconnectedTitleKey.set(titleKey);

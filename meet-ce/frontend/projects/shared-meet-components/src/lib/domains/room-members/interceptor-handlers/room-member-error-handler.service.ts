@@ -82,6 +82,7 @@ export class RoomMemberInterceptorErrorHandlerService implements HttpErrorHandle
 		console.log('Regenerating room member token...');
 
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			console.error('Cannot regenerate room member token: room ID is undefined');
 			throw originalError;

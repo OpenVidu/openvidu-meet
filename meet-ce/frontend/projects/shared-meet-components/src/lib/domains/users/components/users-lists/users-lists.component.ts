@@ -176,6 +176,7 @@ export class UsersListsComponent implements OnInit {
 	activeFilterChips = computed(() => {
 		const f = this.appliedFilterState();
 		const chips: { key: string; label: string }[] = [];
+
 		if (f.roleFilter) {
 			const opt = this.roleOptions.find((o) => o.value === f.roleFilter);
 			chips.push({
@@ -183,6 +184,7 @@ export class UsersListsComponent implements OnInit {
 				label: `${this.translateService.translate('USERS.LIST.ROLE_CHIP_PREFIX')}${opt?.label ?? f.roleFilter}`
 			});
 		}
+
 		return chips;
 	});
 
@@ -273,6 +275,7 @@ export class UsersListsComponent implements OnInit {
 
 	toggleAllSelection() {
 		const selected = this.selectedUsers();
+
 		if (this.allSelected()) {
 			selected.clear();
 		} else {
@@ -282,17 +285,20 @@ export class UsersListsComponent implements OnInit {
 				}
 			});
 		}
+
 		this.selectedUsers.set(new Set(selected));
 		this.updateSelectionState();
 	}
 
 	toggleUserSelection(user: MeetUserDTO) {
 		const selected = this.selectedUsers();
+
 		if (selected.has(user.userId)) {
 			selected.delete(user.userId);
 		} else {
 			selected.add(user.userId);
 		}
+
 		this.selectedUsers.set(new Set(selected));
 		this.updateSelectionState();
 	}
@@ -343,6 +349,7 @@ export class UsersListsComponent implements OnInit {
 
 	bulkDeleteSelected() {
 		const selectedUsers = this.getSelectedUsers();
+
 		if (selectedUsers.length > 0) {
 			this.userAction.emit({ users: selectedUsers, action: 'bulkDelete' });
 		}
@@ -386,7 +393,9 @@ export class UsersListsComponent implements OnInit {
 
 	removeFilter(key: string) {
 		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
+
 		if (!control) return;
+
 		control.setValue(typeof control.value === 'boolean' ? false : '');
 	}
 

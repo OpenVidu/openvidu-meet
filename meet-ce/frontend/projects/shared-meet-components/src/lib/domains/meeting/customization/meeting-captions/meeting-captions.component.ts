@@ -69,6 +69,7 @@ export class MeetingCaptionsComponent {
 
 		// Add animation state class
 		const animationState = this.captionAnimationState().get(caption.id);
+
 		if (animationState) {
 			classes.push(`caption-${animationState}`);
 		}
@@ -84,6 +85,7 @@ export class MeetingCaptionsComponent {
 		// Use setTimeout to ensure DOM has updated
 		setTimeout(() => {
 			const captionTextContainers = this.captionTextContainers();
+
 			if (captionTextContainers) {
 				captionTextContainers.forEach((container: ElementRef<HTMLDivElement>) => {
 					const element = container.nativeElement;

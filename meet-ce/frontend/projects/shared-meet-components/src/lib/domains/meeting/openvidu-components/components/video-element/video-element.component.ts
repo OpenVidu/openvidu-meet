@@ -82,21 +82,27 @@ export class VideoElementComponent implements OnDestroy {
 	 */
 	readonly videoTransform = computed(() => {
 		const track = this.videoTrack();
+
 		if (!track) {
 			return 'none';
 		}
+
 		if (track.source === Track.Source.ScreenShare) {
 			const state = this.zoomState();
+
 			if (!state) {
 				return 'none';
 			}
+
 			const level = state.level();
 			const { x, y } = this.toPixelPan(state.pan(), level);
 			return `translate(${x}px, ${y}px) scale(${level})`;
 		}
+
 		if (track.source === Track.Source.Camera && this.isLocal()) {
 			return 'scaleX(-1)';
 		}
+
 		return 'none';
 	});
 
@@ -112,8 +118,10 @@ export class VideoElementComponent implements OnDestroy {
 			if (this.previousVideoTrack && this.previousVideoElement) {
 				this.previousVideoTrack.detach(this.previousVideoElement);
 			}
+
 			this.previousVideoTrack = newVideoTrack ?? null;
 			this.previousVideoElement = video;
+
 			if (newVideoTrack && video) {
 				this.updateVideoStyles(newVideoTrack, video, local);
 				newVideoTrack.attach(video);
@@ -148,9 +156,11 @@ export class VideoElementComponent implements OnDestroy {
 	 */
 	onPointerDown(event: PointerEvent) {
 		const state = this.zoomState();
+
 		if (!this.isZoomable() || !state) {
 			return;
 		}
+
 		event.preventDefault();
 		const { x, y } = state.pan();
 		this.dragOrigin = { pointerX: event.clientX, pointerY: event.clientY, panX: x, panY: y };
@@ -167,9 +177,11 @@ export class VideoElementComponent implements OnDestroy {
 	 */
 	private readonly onPointerMove = (event: PointerEvent) => {
 		const state = this.zoomState();
+
 		if (!this.isPanning() || !state) {
 			return;
 		}
+
 		const { maxX, maxY } = this.maxPixelPan(state.level());
 		const dx = maxX ? (event.clientX - this.dragOrigin.pointerX) / maxX : 0;
 		const dy = maxY ? (event.clientY - this.dragOrigin.pointerY) / maxY : 0;
@@ -182,6 +194,7 @@ export class VideoElementComponent implements OnDestroy {
 		if (!this.isPanning()) {
 			return;
 		}
+
 		this.isPanning.set(false);
 		(event.target as HTMLElement).releasePointerCapture?.(event.pointerId);
 	};
@@ -210,9 +223,11 @@ export class VideoElementComponent implements OnDestroy {
 	 */
 	private maxPixelPan(level: number): { maxX: number; maxY: number } {
 		const video = this.videoElement()?.nativeElement;
+
 		if (!video || level <= 1) {
 			return { maxX: 0, maxY: 0 };
 		}
+
 		return {
 			maxX: (video.clientWidth * (level - 1)) / 2,
 			maxY: (video.clientHeight * (level - 1)) / 2

@@ -73,9 +73,11 @@ export class RecordingLayoutComponent {
 
 	constructor() {
 		const recordingLayoutStep = this.wizardService.getStepById(WizardStepId.RECORDING_LAYOUT);
+
 		if (!recordingLayoutStep) {
 			throw new Error('recordingLayout step not found in wizard state');
 		}
+
 		this.layoutForm = recordingLayoutStep.formGroup;
 
 		// Initialize formValues signal after layoutForm is created

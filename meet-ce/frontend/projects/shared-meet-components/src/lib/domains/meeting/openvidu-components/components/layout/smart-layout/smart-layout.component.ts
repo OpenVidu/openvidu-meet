@@ -87,9 +87,11 @@ export class SmartLayoutComponent implements OnDestroy {
 			const allIdSet = new Set(allIds);
 			const mosaicOrder = previous.filter((id) => allIdSet.has(id));
 			const orderSet = new Set(mosaicOrder);
+
 			for (const p of allRemotes) {
 				if (!orderSet.has(p.identity)) mosaicOrder.push(p.identity);
 			}
+
 			return mosaicOrder;
 		}
 
@@ -105,7 +107,9 @@ export class SmartLayoutComponent implements OnDestroy {
 		const next = this.displayedCameraOrder();
 		untracked(() => {
 			const current = this._displayedCameraOrder();
+
 			if (current.length === next.length && current.every((v, i) => v === next[i])) return;
+
 			this._displayedCameraOrder.set(next);
 		});
 	});
@@ -124,6 +128,7 @@ export class SmartLayoutComponent implements OnDestroy {
 		// so interleaving here is safe — only within-category order matters.
 		for (const id of order) {
 			const p = participantMap.get(id);
+
 			if (p) streams.push(...p.streams());
 		}
 
@@ -134,6 +139,7 @@ export class SmartLayoutComponent implements OnDestroy {
 			for (const p of allRemotes) {
 				if (!targetIds.has(p.identity) && p.isScreenShareEnabled) {
 					const screen = p.streams().find((s) => s.isScreenStream);
+
 					if (screen) streams.push(screen);
 				}
 			}
@@ -195,7 +201,9 @@ export class SmartLayoutComponent implements OnDestroy {
 		for (const dep of departing) {
 			const replacement = arriving.shift();
 			const idx = order.indexOf(dep);
+
 			if (idx === -1) continue;
+
 			if (replacement) {
 				order[idx] = replacement;
 			} else {
@@ -252,12 +260,14 @@ export class SmartLayoutComponent implements OnDestroy {
 			for (const stream of participant.streams()) {
 				const audioTrack = stream.audioTrack;
 				const track = audioTrack?.track;
+
 				if (!track || typeof track.attach !== 'function') continue;
 
 				const key = `${participant.identity}:${stream.source}`;
 				activeKeys.add(key);
 
 				let entry = this.audioElements.get(key);
+
 				if (!entry) {
 					const element = document.createElement('audio');
 					element.autoplay = true;

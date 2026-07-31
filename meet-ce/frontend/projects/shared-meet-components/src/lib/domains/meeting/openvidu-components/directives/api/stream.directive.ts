@@ -77,6 +77,7 @@ export class StreamDisplayAudioDetectionDirective implements OnDestroy {
 	update(value: boolean) {
 		this.libService.updateStreamConfig({ displayAudioDetection: value });
 	}
+
 	clear() {
 		this.update(true);
 	}

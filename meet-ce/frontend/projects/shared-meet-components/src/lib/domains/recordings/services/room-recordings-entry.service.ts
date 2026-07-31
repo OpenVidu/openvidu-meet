@@ -44,6 +44,7 @@ export class RoomRecordingsEntryService {
 	 */
 	prepare(params: RoomRecordingsEntryParams): RoomRecordingsEntryDecision {
 		this.meetingContextService.setRoomId(params.roomId);
+
 		// Prefer the caller-supplied secret; otherwise restore the one persisted on
 		// this origin, so every adapter (route guard, Web Component) shares the
 		// fallback without re-implementing it.
@@ -52,6 +53,7 @@ export class RoomRecordingsEntryService {
 		} else {
 			this.meetingContextService.loadRoomSecretFromStorage();
 		}
+
 		return { kind: 'proceed' };
 	}
 
@@ -61,9 +63,11 @@ export class RoomRecordingsEntryService {
 	 */
 	async validate(): Promise<RoomRecordingsEntryOutcome> {
 		const access = await this.roomAccessService.validateAccess({ requireRecordingsPermission: true });
+
 		if (access.allowed) {
 			return { kind: 'ready' };
 		}
+
 		return { kind: 'error', reason: access.reason ?? NavigationErrorReason.INTERNAL_ERROR };
 	}
 

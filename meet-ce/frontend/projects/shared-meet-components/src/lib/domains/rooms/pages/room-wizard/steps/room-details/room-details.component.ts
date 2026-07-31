@@ -73,9 +73,11 @@ export class RoomWizardRoomDetailsComponent {
 
 	constructor() {
 		const roomDetailsStep = this.wizardService.getStepById(WizardStepId.ROOM_DETAILS);
+
 		if (!roomDetailsStep) {
 			throw new Error('roomDetails step not found in wizard state');
 		}
+
 		this.roomDetailsForm = roomDetailsStep.formGroup;
 
 		this.roomDetailsForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
@@ -127,6 +129,7 @@ export class RoomWizardRoomDetailsComponent {
 
 	getFormattedDateTime(): string {
 		const formValue = this.roomDetailsForm.getRawValue();
+
 		if (!formValue.autoDeletionDate) {
 			return '';
 		}

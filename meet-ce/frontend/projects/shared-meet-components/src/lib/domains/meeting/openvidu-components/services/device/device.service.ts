@@ -214,6 +214,7 @@ export class DeviceService implements OnDestroy {
 			this.cameras(),
 			storedCamera?.device
 		);
+
 		if (selectedCam) {
 			this.cameraSelected.set(selectedCam);
 		}
@@ -223,6 +224,7 @@ export class DeviceService implements OnDestroy {
 			this.microphones(),
 			storedMic?.device
 		);
+
 		if (selectedMic) {
 			this.microphoneSelected.set(selectedMic);
 		}
@@ -233,6 +235,7 @@ export class DeviceService implements OnDestroy {
 	 */
 	private findDeviceOrDefault(devices: CustomDevice[], deviceId?: string): CustomDevice | undefined {
 		if (devices.length === 0) return undefined;
+
 		return deviceId
 			? devices.find((d) => d.device === deviceId) || devices[0]
 			: devices[0];
@@ -249,13 +252,16 @@ export class DeviceService implements OnDestroy {
 	private syncSelectedFromTracks(tracks: LocalTrack[]): void {
 		for (const track of tracks) {
 			const deviceId = track?.mediaStreamTrack?.getSettings?.().deviceId;
+
 			if (!deviceId) continue;
 
 			if (track.kind === Track.Kind.Video) {
 				const match = this.cameras().find((c) => c.device === deviceId);
+
 				if (match) this.cameraSelected.set(match);
 			} else if (track.kind === Track.Kind.Audio) {
 				const match = this.microphones().find((m) => m.device === deviceId);
+
 				if (match) this.microphoneSelected.set(match);
 			}
 		}
@@ -275,6 +281,7 @@ export class DeviceService implements OnDestroy {
 			if (this.cameras().length === 0 && this.microphones().length === 0) {
 				await this.initializeDevices();
 			}
+
 			this.syncSelectedFromTracks(tracks);
 		} catch (error) {
 			this.log.w('Failed to enumerate devices after track creation', error);
@@ -318,6 +325,7 @@ export class DeviceService implements OnDestroy {
 			if (this.deviceChangeDebounceTimer) {
 				clearTimeout(this.deviceChangeDebounceTimer);
 			}
+
 			this.deviceChangeDebounceTimer = setTimeout(() => {
 				this.deviceChangeDebounceTimer = null;
 				this.log.d('Device change detected, refreshing device list');
@@ -351,6 +359,7 @@ export class DeviceService implements OnDestroy {
 	 */
 	setCameraSelected(deviceId: string): void {
 		const device = this.cameras().find((c) => c.device === deviceId);
+
 		if (!device) {
 			this.log.w('Camera not found:', deviceId);
 			return;
@@ -366,6 +375,7 @@ export class DeviceService implements OnDestroy {
 	 */
 	setMicSelected(deviceId: string): void {
 		const device = this.microphones().find((m) => m.device === deviceId);
+
 		if (!device) {
 			this.log.w('Microphone not found:', deviceId);
 			return;

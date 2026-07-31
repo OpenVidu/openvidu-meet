@@ -91,11 +91,13 @@ export class UsersComponent implements OnInit, OnDestroy {
 		this.currentUserId.set((await this.authService.getUserId()) ?? '');
 
 		const rootAdmin = await this.userService.getRootAdmin();
+
 		if (rootAdmin) this.rootAdminId.set(rootAdmin.userId);
 
 		// Restore cached state only when navigating *back* (browser back/forward); an
 		// explicit navigation to this page loads fresh data so others' changes show.
 		const cached = this.listStateCache.get<UsersListCachedState>(UsersComponent.STATE_KEY);
+
 		if (cached && isBackNavigation) {
 			this.list.restore(cached.list);
 			this.initialFilters.set(cached.list.filters);

@@ -67,11 +67,13 @@ export const extractParams = (route: {
 /** Appends the defined query params to a path; omits the `?` entirely when none are present. */
 export const appendQuery = (path: string, params: Record<string, string | undefined>): string => {
 	const search = new URLSearchParams();
+
 	for (const [key, value] of Object.entries(params)) {
 		if (value) {
 			search.set(key, value);
 		}
 	}
+
 	const query = search.toString();
 	return query ? `${path}?${query}` : path;
 };
@@ -96,6 +98,7 @@ export const getReferrerOrigin = (): string | null => {
 		if (!document.referrer) {
 			return null;
 		}
+
 		return new URL(document.referrer).origin;
 	} catch (error) {
 		console.warn('Could not read referrer origin:', error);

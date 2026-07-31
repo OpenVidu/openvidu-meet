@@ -13,6 +13,7 @@ export const checkUserAuthenticatedGuard: CanActivateFn = async (
 
 	// Check if user is authenticated
 	const isAuthenticated = await authService.isUserAuthenticated();
+
 	if (!isAuthenticated) {
 		// Redirect to the login page
 		return navigationService.redirectToLoginPage(state.url);
@@ -32,6 +33,7 @@ export const checkUserNotAuthenticatedGuard: CanActivateFn = async (
 
 	// Check if user is not authenticated
 	const isAuthenticated = await authService.isUserAuthenticated();
+
 	if (isAuthenticated) {
 		// If user is authenticated but must change password, redirect to mandatory password change page
 		if (sessionStorageService.getMustChangePasswordRequired()) {
@@ -86,6 +88,7 @@ export const checkRoleGuard =
 
 		// If user doesn't have required role, redirect to rooms page
 		const role = await authService.getUserRole();
+
 		if (!role || !allowedRoles.includes(role)) {
 			return navigationService.createRedirectionTo('/rooms');
 		}

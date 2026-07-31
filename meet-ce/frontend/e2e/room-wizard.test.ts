@@ -64,9 +64,11 @@ test.describe('Room wizard E2E Tests', () => {
 	const setFeature = async (page: Page, featureId: string, enabled: boolean): Promise<void> => {
 		const toggle = page.locator(`#${featureId} button`);
 		const isChecked = (await toggle.getAttribute('aria-checked')) === 'true';
+
 		if (isChecked !== enabled) {
 			await toggle.click();
 		}
+
 		await expect(toggle).toHaveAttribute('aria-checked', String(enabled));
 	};
 

@@ -77,6 +77,7 @@ export class MeetingEventsService {
 				this.log.w('Encryption error received without participant info:', error);
 				return;
 			}
+
 			this.participantService.setEncryptionError(participant.sid, true);
 		});
 	}
@@ -91,6 +92,7 @@ export class MeetingEventsService {
 	private subscribeToParticipantConnected(room: Room) {
 		room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
 			this.participantService.addRemoteParticipant(participant);
+
 			// Auto-float the local video the first time a remote participant joins.
 			if (this.participantService.remoteParticipants().length === 1) {
 				this.streamLayoutService.floatLocalCameraVideo(this.participantService.localParticipant());
@@ -110,9 +112,11 @@ export class MeetingEventsService {
 			(track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
 				const isScreenTrack = track.source === Track.Source.ScreenShare;
 				this.participantService.addRemoteParticipant(participant);
+
 				if (isScreenTrack) {
 					this.streamLayoutService.unpinAllStreams();
 					this.streamLayoutService.toggleStreamPinned(track.sid);
+
 					if (track.sid) {
 						this.streamLayoutService.recordScreenSharePublication(track.sid, new Date().getTime());
 					}
@@ -127,10 +131,12 @@ export class MeetingEventsService {
 			(track: RemoteTrack, publication: RemoteTrackPublication, participant: RemoteParticipant) => {
 				this.log.d('TrackUnSubscribed', track, participant);
 				const isScreenTrack = track.source === Track.Source.ScreenShare;
+
 				if (isScreenTrack) {
 					if (track.sid) {
 						this.streamLayoutService.clearScreenSharePublication(track.sid);
 					}
+
 					this.streamLayoutService.unpinAllStreams();
 					this.streamLayoutService.setLastScreenPinned();
 				}
@@ -199,6 +205,7 @@ export class MeetingEventsService {
 	private subscribeToParticipantDisconnected(room: Room) {
 		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
 			this.participantService.removeRemoteParticipant(participant.sid);
+
 			if (this.participantService.remoteParticipants().length === 0) {
 				this.streamLayoutService.dockLocalCameraVideo(this.participantService.localParticipant());
 			}
@@ -215,10 +222,12 @@ export class MeetingEventsService {
 					const storedParticipant = participant
 						? this.participantService.getRemoteParticipantBySid(participant.sid || '')
 						: undefined;
+
 					if (participant && !storedParticipant) {
 						this.log.w('DataReceived from unknown participant', participant);
 						return;
 					}
+
 					if (!fromServer && !participant) {
 						this.log.w('DataReceived from unknown source', payload);
 						return;
@@ -230,6 +239,7 @@ export class MeetingEventsService {
 					this.log.d('DataReceived (raw)', { topic });
 
 					const eventMessage = safeJsonParse(rawText);
+
 					if (!eventMessage) {
 						this.log.w('Discarding data: malformed JSON', rawText);
 						return;
@@ -253,10 +263,12 @@ export class MeetingEventsService {
 				this.chatService.addRemoteMessage(message, participantName);
 				break;
 			}
+
 			case MeetSignalType.MEET_RECORDING_UPDATED: {
 				this.handleRecordingUpdated(event as MeetRecordingUpdatedPayload);
 				break;
 			}
+
 			default:
 				break;
 		}
@@ -315,9 +327,11 @@ export class MeetingEventsService {
 			};
 			const messageErrorKey = 'ERRORS.DISCONNECT';
 			let descriptionErrorKey = '';
+
 			switch (reason) {
 				case DisconnectReason.CLIENT_INITIATED:
 					if (!this.meetingLiveKitService.shouldHandleClientInitiatedDisconnectEvent) return;
+
 					participantLeftEvent.reason = ParticipantLeftReason.LEAVE;
 					break;
 				case DisconnectReason.DUPLICATE_IDENTITY:
@@ -348,6 +362,7 @@ export class MeetingEventsService {
 
 			this.log.d('Participant disconnected', participantLeftEvent);
 			callbacks.onParticipantLeft(participantLeftEvent);
+
 			if (this.libService.getShowDisconnectionDialog() && descriptionErrorKey) {
 				this.actionService.openDialog(
 					this.translateService.translate(messageErrorKey),
@@ -360,6 +375,7 @@ export class MeetingEventsService {
 	private subscribeToConnectionQualityChanged(room: Room) {
 		room.on(RoomEvent.ConnectionQualityChanged, (quality: ConnectionQuality, participant: Participant) => {
 			const previousQuality = this.participantService.getConnectionQuality(participant.sid);
+
 			if (previousQuality === quality) {
 				return;
 			}

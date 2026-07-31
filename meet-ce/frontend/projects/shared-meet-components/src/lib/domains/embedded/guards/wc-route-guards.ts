@@ -31,15 +31,18 @@ export class WcMeetingGuard implements WcRouteGuard {
 
 	async canActivate(route: MeetingRoute): Promise<WcGuardResult> {
 		const outcome = await this.meetingEntry.attempt(route.params);
+
 		switch (outcome.kind) {
 			case 'ready':
 				return { kind: 'ready' };
+
 			case 'redirect': {
 				// MeetingEntryService returns an SPA-style path (showRecording / showOnlyRecordings);
 				// translate it to a route so the WC honors the redirect like the SPA does.
 				const to = wcRouteFromPath(outcome.to);
 				return to ? { kind: 'redirect', to } : { kind: 'error', reason: NavigationErrorReason.INTERNAL_ERROR };
 			}
+
 			case 'error':
 				return { kind: 'error', reason: outcome.reason };
 		}
@@ -53,6 +56,7 @@ export class WcSingleRecordingGuard implements WcRouteGuard {
 
 	async canActivate(route: SingleRecordingRoute): Promise<WcGuardResult> {
 		const outcome = await this.recordingEntry.attempt(route.params);
+
 		switch (outcome.kind) {
 			case 'ready':
 				return { kind: 'ready' };

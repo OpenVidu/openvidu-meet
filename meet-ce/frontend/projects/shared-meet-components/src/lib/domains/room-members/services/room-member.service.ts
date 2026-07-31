@@ -88,6 +88,7 @@ export class RoomMemberService {
 			});
 
 			const queryString = queryParams.toString();
+
 			if (queryString) {
 				path += `?${queryString}`;
 			}
@@ -117,12 +118,15 @@ export class RoomMemberService {
 		responseOptions?: MeetRoomMemberClientResponseOptions
 	): Promise<MeetRoomMember | Partial<MeetRoomMember>> {
 		const queryParams = new URLSearchParams();
+
 		if (responseOptions?.fields) {
 			queryParams.set('fields', responseOptions.fields.join(','));
 		}
+
 		if (responseOptions?.extraFields) {
 			queryParams.set('extraFields', responseOptions.extraFields.join(','));
 		}
+
 		const queryString = queryParams.toString();
 		const path = `${this.getRoomMemberApiPath(roomId)}/${memberId}${queryString ? `?${queryString}` : ''}`;
 

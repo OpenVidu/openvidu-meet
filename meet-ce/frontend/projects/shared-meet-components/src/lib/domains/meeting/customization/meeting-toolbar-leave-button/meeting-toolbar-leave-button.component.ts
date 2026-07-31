@@ -35,6 +35,7 @@ export class MeetingToolbarLeaveButtonComponent {
 
 	async onEndMeetingClick(): Promise<void> {
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			this.log.e('Cannot end meeting: room ID is undefined');
 			return;

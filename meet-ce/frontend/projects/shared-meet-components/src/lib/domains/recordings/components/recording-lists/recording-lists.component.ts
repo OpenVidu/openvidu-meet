@@ -189,6 +189,7 @@ export class RecordingListsComponent implements OnInit {
 	activeFilterChips = computed(() => {
 		const f = this.appliedFilterState();
 		const chips: { key: string; label: string }[] = [];
+
 		if (f.statusFilter) {
 			const opt = this.statusOptions.find((o) => o.value === f.statusFilter);
 			chips.push({
@@ -196,6 +197,7 @@ export class RecordingListsComponent implements OnInit {
 				label: `${this.translateService.translate('RECORDINGS.LIST.STATUS_FILTER_LABEL_PREFIX')}${opt?.label ?? f.statusFilter}`
 			});
 		}
+
 		return chips;
 	});
 
@@ -231,12 +233,15 @@ export class RecordingListsComponent implements OnInit {
 	// Table configuration
 	displayedColumns = computed(() => {
 		const columns = ['status', 'startDate', 'duration', 'size', 'actions'];
+
 		if (this.showRoomInfo()) {
 			columns.unshift('roomInfo');
 		}
+
 		if (this.showSelection()) {
 			columns.unshift('select');
 		}
+
 		return columns;
 	});
 
@@ -321,6 +326,7 @@ export class RecordingListsComponent implements OnInit {
 
 	toggleAllSelection() {
 		const selected = this.selectedRecordings();
+
 		if (this.allSelected()) {
 			selected.clear();
 		} else {
@@ -330,17 +336,20 @@ export class RecordingListsComponent implements OnInit {
 				}
 			});
 		}
+
 		this.selectedRecordings.set(new Set(selected));
 		this.updateSelectionState();
 	}
 
 	toggleRecordingSelection(recording: MeetRecordingInfo) {
 		const selected = this.selectedRecordings();
+
 		if (selected.has(recording.recordingId)) {
 			selected.delete(recording.recordingId);
 		} else {
 			selected.add(recording.recordingId);
 		}
+
 		this.selectedRecordings.set(new Set(selected));
 		this.updateSelectionState();
 	}
@@ -367,6 +376,7 @@ export class RecordingListsComponent implements OnInit {
 
 	canDeleteRecordingItem(recording: MeetRecordingInfo): boolean {
 		if (this.canDeleteRecordings()) return true;
+
 		return this.deletableRoomIds().has(recording.roomId);
 	}
 
@@ -399,6 +409,7 @@ export class RecordingListsComponent implements OnInit {
 
 	bulkDeleteSelected() {
 		const recordings = this.deletableSelected();
+
 		if (recordings.length > 0) {
 			this.recordingAction.emit({ recordings, action: 'bulkDelete' });
 		}
@@ -406,6 +417,7 @@ export class RecordingListsComponent implements OnInit {
 
 	bulkDownloadSelected() {
 		const recordings = this.downloadableSelected();
+
 		if (recordings.length > 0) {
 			this.recordingAction.emit({ recordings, action: 'bulkDownload' });
 		}
@@ -449,7 +461,9 @@ export class RecordingListsComponent implements OnInit {
 
 	removeFilter(key: string) {
 		const control = (this.filtersForm.controls as Record<string, FormControl>)[key];
+
 		if (!control) return;
+
 		control.setValue(typeof control.value === 'boolean' ? false : '');
 	}
 

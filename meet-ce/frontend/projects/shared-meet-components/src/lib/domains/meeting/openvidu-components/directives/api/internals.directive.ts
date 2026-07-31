@@ -45,6 +45,7 @@ export class FallbackLogoDirective implements OnInit {
 		tempImage.onerror = () => {
 			handleImageErrorOrLoad(url);
 		};
+
 		tempImage.src = url;
 	}
 }
@@ -101,6 +102,7 @@ export class ToolbarBrandingLogoDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update('');
 	}
@@ -153,6 +155,7 @@ export class ToolbarViewRecordingsButtonDirective implements OnDestroy {
 	ngOnDestroy(): void {
 		this.clear();
 	}
+
 	private clear() {
 		this.update(true);
 	}

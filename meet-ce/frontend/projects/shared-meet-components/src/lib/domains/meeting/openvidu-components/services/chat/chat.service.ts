@@ -39,6 +39,7 @@ export class ChatService {
 	 */
 	async addRemoteMessage(message: string, participantName: string) {
 		this.addMessage(message, false, participantName);
+
 		if (!this.panelService.isChatPanelOpened()) {
 			const notificationMessage = this.translateService.translate('PANEL.CHAT.MESSAGE_SENT_NOTIFICATION');
 			const action = this.translateService.translate('PANEL.CHAT.OPEN_CHAT');
@@ -58,6 +59,7 @@ export class ChatService {
 	 */
 	async sendMessage(message: string) {
 		const plainTextMessage = message.replace(/ +(?= )/g, '');
+
 		if (plainTextMessage !== '' && plainTextMessage !== ' ') {
 			try {
 				// Create message payload

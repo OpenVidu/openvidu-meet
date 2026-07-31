@@ -61,6 +61,7 @@ export class RoomShareDialogComponent {
 
 	currentUrl = computed(() => {
 		const access = this.data.access;
+
 		switch (this.selectedAccessType()) {
 			case 'anonymous-moderator':
 				return access.anonymous.moderator.url;
@@ -88,6 +89,7 @@ export class RoomShareDialogComponent {
 
 	isAccessEnabled(accessType: RoomAccessType): boolean {
 		const access = this.data.access;
+
 		switch (accessType) {
 			case 'anonymous-moderator':
 				return access.anonymous.moderator.enabled;
@@ -108,11 +110,13 @@ export class RoomShareDialogComponent {
 
 	generateLink() {
 		if (!this.isCurrentAccessSelectable()) return;
+
 		this.roomUrl.set(this.currentUrl());
 	}
 
 	copyToClipboard() {
 		const url = this.roomUrl();
+
 		if (!url) return;
 
 		this.clipboard.copy(url);
@@ -130,6 +134,7 @@ export class RoomShareDialogComponent {
 
 	async editRoomAccess() {
 		if (!this.data.canManageRoom || !this.data.roomId) return;
+
 		this.dialogRef.close();
 		await this.navigationService.navigateTo(`/rooms/${this.data.roomId}/edit`, { step: WizardStepId.ROOM_ACCESS });
 	}

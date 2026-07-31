@@ -63,6 +63,7 @@ export class HttpErrorNotifierService {
 		const tryHandleFromIndex = (startIndex: number): Observable<HttpEvent<unknown>> | null => {
 			for (let i = startIndex; i < this.handlers.length; i++) {
 				const handler = this.handlers[i];
+
 				if (!handler.canHandle(context)) {
 					continue;
 				}
@@ -84,6 +85,7 @@ export class HttpErrorNotifierService {
 						}
 
 						const nextHandler$ = tryHandleFromIndex(i + 1);
+
 						if (nextHandler$) {
 							return nextHandler$;
 						}

@@ -132,6 +132,7 @@ export class RecordingActivityComponent {
 		this.recordingStatus.set(status);
 		this.recordingError.set(error);
 		this.recordingAlive.set(status === RecordingState.STARTED);
+
 		if (status !== RecordingState.FAILED) {
 			this.oldRecordingStatus.set(status);
 		}
@@ -162,6 +163,7 @@ export class RecordingActivityComponent {
 	 */
 	resetStatus() {
 		const currentStatus = this.recordingService.recordingStatus();
+
 		if (this.oldRecordingStatus() === RecordingState.STARTING) {
 			this.recordingService.setRecordingStopped();
 		} else if (this.oldRecordingStatus() === RecordingState.STOPPING) {

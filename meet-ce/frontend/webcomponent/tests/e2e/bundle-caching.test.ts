@@ -56,6 +56,7 @@ const backendIsLocal = ['localhost', '127.0.0.1'].includes(new URL(MEET_API_URL)
  */
 const visitAndCollect = async (page: Page): Promise<ObservedResponse[]> => {
 	const responses: ObservedResponse[] = [];
+
 	const listener = (response: import('@playwright/test').Response): void => {
 		const { pathname } = new URL(response.url());
 

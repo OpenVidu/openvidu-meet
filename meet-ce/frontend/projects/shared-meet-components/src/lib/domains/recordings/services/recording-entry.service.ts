@@ -70,12 +70,14 @@ export class RecordingEntryService {
 	 */
 	prepare(params: RecordingEntryParams): RecordingEntryDecision {
 		const roomId = this.parseRoomId(params.recordingId);
+
 		if (!roomId) {
 			console.error('Cannot prepare recording entry: invalid recording ID format');
 			return { kind: 'error', reason: NavigationErrorReason.INVALID_RECORDING };
 		}
 
 		this.meetingContextService.setRoomId(roomId);
+
 		// Prefer the caller-supplied secret; otherwise restore the one persisted on
 		// this origin, so every adapter (route guard, Web Component) shares the
 		// fallback without re-implementing it.
@@ -117,6 +119,7 @@ export class RecordingEntryService {
 			return { kind: 'ready' };
 		} catch (error: any) {
 			console.error('Error checking recording access:', error);
+
 			switch (error.status) {
 				case 400:
 					return { kind: 'error', reason: NavigationErrorReason.INVALID_RECORDING_SECRET };
@@ -142,9 +145,11 @@ export class RecordingEntryService {
 	 */
 	async attempt(params: RecordingEntryParams): Promise<RecordingEntryOutcome> {
 		const decision = this.prepare(params);
+
 		if (decision.kind === 'error') {
 			return decision;
 		}
+
 		return this.validate(params);
 	}
 

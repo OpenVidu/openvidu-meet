@@ -84,6 +84,7 @@ export class MeetingEntryService {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
 		this.meetingContextService.setRoomId(roomId);
+
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
 		// persisted on this origin. Keeping the fallback here means every adapter
 		// (route guard, Web Component) shares it without re-implementing it.
@@ -96,6 +97,7 @@ export class MeetingEntryService {
 		if (showRecording) {
 			return { kind: 'redirect', to: `/recording/${showRecording}` };
 		}
+
 		if (showOnlyRecordings) {
 			return { kind: 'redirect', to: `/room/${roomId}/recordings` };
 		}
@@ -125,14 +127,17 @@ export class MeetingEntryService {
 	 */
 	async attempt(params: MeetingEntryParams): Promise<MeetingEntryOutcome> {
 		const decision = this.prepare(params);
+
 		if (decision.kind === 'redirect') {
 			return decision;
 		}
 
 		const access = await this.roomAccessService.validateAccess();
+
 		if (access.allowed) {
 			return { kind: 'ready' };
 		}
+
 		return { kind: 'error', reason: access.reason ?? NavigationErrorReason.INTERNAL_ERROR };
 	}
 }

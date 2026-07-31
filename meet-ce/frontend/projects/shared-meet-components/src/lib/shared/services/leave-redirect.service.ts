@@ -23,6 +23,7 @@ export class LeaveRedirectService {
 	 */
 	getLeaveRedirectURL(): string | undefined {
 		const storedRedirectUrl = this.sessionStorageService.getRedirectUrl();
+
 		if (!this.leaveRedirectUrl && storedRedirectUrl) {
 			this.leaveRedirectUrl = storedRedirectUrl;
 		}
@@ -58,9 +59,11 @@ export class LeaveRedirectService {
 			// reconstructed from the referrer (the parent page that loaded the iframe).
 			if (isIframeMode) {
 				const hostOrigin = getReferrerOrigin();
+
 				if (hostOrigin) {
 					this.setLeaveRedirectUrl(hostOrigin + leaveRedirectUrl);
 				}
+
 				return;
 			}
 		}
@@ -68,6 +71,7 @@ export class LeaveRedirectService {
 		// Auto-detect from referrer (only when running standalone and no explicit URL provided)
 		if (!leaveRedirectUrl && !isWebcomponentMode && !isIframeMode) {
 			const autoRedirectUrl = getAutoRedirectUrl();
+
 			if (autoRedirectUrl) {
 				this.setLeaveRedirectUrl(autoRedirectUrl);
 			}

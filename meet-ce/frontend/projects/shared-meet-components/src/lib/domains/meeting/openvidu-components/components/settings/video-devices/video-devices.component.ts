@@ -54,6 +54,7 @@ export class VideoDevicesComponent implements OnInit {
 		// owned by the media-control service — do NOT write storage here.
 		effect(() => {
 			const participant = this.participantService.localParticipant();
+
 			if (participant) {
 				this.isCameraEnabled.set(participant.isCameraEnabled);
 			}
@@ -84,6 +85,7 @@ export class VideoDevicesComponent implements OnInit {
 				await this.localMediaControlService.switchCamera(device.device);
 				this.deviceSrv.setCameraSelected(device.device);
 				const selectedCamera = this.cameraSelected();
+
 				if (selectedCamera) {
 					this.onVideoDeviceChanged.emit(selectedCamera);
 				}

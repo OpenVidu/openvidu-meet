@@ -80,6 +80,7 @@ export class RoomDeletionService {
 			await onSuccess({ roomId, successCode, message, room });
 		} catch (error: any) {
 			const errorCode = error.error?.error;
+
 			if (errorCode && this.isValidDeletionErrorCode(errorCode)) {
 				const errorMessage = this.removeRoomIdFromMessage(error.error.message);
 				this.showDeletionErrorDialogWithOptions(roomId, errorMessage, log, onSuccess);

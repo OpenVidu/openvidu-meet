@@ -114,9 +114,11 @@ export class ParticipantService {
 		const audioTrack = prejoinTracks.find((track) => track.kind === Track.Kind.Audio);
 
 		const promises: Promise<LocalTrackPublication>[] = [];
+
 		if (localParticipant && videoTrack) {
 			promises.push(localParticipant.publishTrack(videoTrack));
 		}
+
 		if (localParticipant && audioTrack) {
 			promises.push(localParticipant?.publishTrack(audioTrack));
 		}
@@ -133,6 +135,7 @@ export class ParticipantService {
 		this.meetingLiveKitService.getRoom().remoteParticipants.forEach((p) => {
 			this.addRemoteParticipant(p);
 		});
+
 		if (this._remoteParticipants().length > 0) {
 			this.streamLayoutService.floatLocalCameraVideo(this._localParticipant());
 		}
@@ -145,9 +148,11 @@ export class ParticipantService {
 	 */
 	publishData(data: Uint8Array<ArrayBuffer>, publishOptions: DataPublishOptions): Promise<void> {
 		const localParticipant = this.localParticipant();
+
 		if (localParticipant) {
 			return localParticipant.publishData(data, publishOptions);
 		}
+
 		return Promise.reject('Local participant not found');
 	}
 
@@ -194,6 +199,7 @@ export class ParticipantService {
 	 */
 	setEncryptionError(participantSid: string, hasError: boolean) {
 		const local = this._localParticipant();
+
 		if (local?.sid === participantSid) {
 			local.setEncryptionError(hasError);
 		} else {
@@ -212,6 +218,7 @@ export class ParticipantService {
 	 */
 	setConnectionQuality(participantSid: string, quality: ConnectionQuality) {
 		const local = this._localParticipant();
+
 		if (local?.sid === participantSid) {
 			local.setConnectionQuality(quality);
 		} else {
@@ -230,9 +237,11 @@ export class ParticipantService {
 	 */
 	getConnectionQuality(participantSid: string): ConnectionQuality | undefined {
 		const local = this._localParticipant();
+
 		if (local?.sid === participantSid) {
 			return local.connectionQuality;
 		}
+
 		return this.getRemoteParticipantBySid(participantSid)?.connectionQuality;
 	}
 
@@ -265,6 +274,7 @@ export class ParticipantService {
 		if (this._localParticipant()?.identity === identity) {
 			return this._localParticipant();
 		}
+
 		return this.remoteParticipants().find((p) => p.identity === identity);
 	}
 
@@ -284,6 +294,7 @@ export class ParticipantService {
 	addRemoteParticipant(participant: RemoteParticipant) {
 		const remotes = this._remoteParticipants();
 		const existing = remotes.find((p) => p.sid === participant.sid);
+
 		if (existing) {
 			// The LiveKit participant object is mutated in-place by the SDK (new track publications).
 			// Bumping the model's revision signal causes streams to recompute reactively —
@@ -302,6 +313,7 @@ export class ParticipantService {
 	 */
 	removeRemoteParticipantTrack(participant: RemoteParticipant, trackSid: string) {
 		const model = this._remoteParticipants().find((p) => p.sid === participant.sid);
+
 		if (model) {
 			const track = model.tracks.find((t) => t.trackSid === trackSid);
 			track?.track?.stop();
@@ -317,6 +329,7 @@ export class ParticipantService {
 	removeRemoteParticipant(sid: string) {
 		const remotes = [...this.remoteParticipants()];
 		const index = remotes.findIndex((p) => p.sid === sid);
+
 		if (index !== -1) {
 			// Drop the leaver's view state (pins/floats/mutes) so a rejoin with the same
 			// identity does not inherit it.
@@ -361,6 +374,7 @@ export class ParticipantService {
 	 */
 	private async decryptParticipantName(participant: ParticipantModel): Promise<void> {
 		const originalName = participant.name;
+
 		if (!originalName) {
 			return;
 		}

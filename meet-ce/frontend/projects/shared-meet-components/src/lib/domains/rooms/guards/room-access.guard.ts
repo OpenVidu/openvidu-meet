@@ -14,6 +14,7 @@ export const checkRoomAccessGuard: CanActivateFn = async (route) => {
 	const navigationService = inject(NavigationService);
 
 	const roomId = route.paramMap.get('room-id');
+
 	if (!roomId) {
 		return navigationService.createRedirectionTo('/rooms');
 	}
@@ -37,12 +38,14 @@ export const checkRoomManageGuard: CanActivateFn = async (route) => {
 	const navigationService = inject(NavigationService);
 
 	const roomId = route.paramMap.get('room-id');
+
 	if (!roomId) {
 		return navigationService.createRedirectionTo('/rooms');
 	}
 
 	// If user is ADMIN, allow access without further checks
 	const role = await authService.getUserRole();
+
 	if (role === MeetUserRole.ADMIN) {
 		return true;
 	}
@@ -56,6 +59,7 @@ export const checkRoomManageGuard: CanActivateFn = async (route) => {
 		// For ROOM_MANAGER role, check if they are the owner of the room
 		const userId = await authService.getUserId();
 		const { owner } = await roomService.getRoom(roomId, { fields: ['owner'] });
+
 		if (owner === userId) {
 			return true;
 		}

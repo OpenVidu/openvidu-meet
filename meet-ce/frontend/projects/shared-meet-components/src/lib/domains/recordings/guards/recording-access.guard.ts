@@ -12,6 +12,7 @@ export const checkRecordingAccessGuard: CanActivateFn = async (route) => {
 	const navigationService = inject(NavigationService);
 
 	const recordingId = route.paramMap.get('recording-id');
+
 	if (!recordingId) {
 		return navigationService.createRedirectionTo('/recordings');
 	}

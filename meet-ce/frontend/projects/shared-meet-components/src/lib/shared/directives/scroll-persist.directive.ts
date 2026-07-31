@@ -53,6 +53,7 @@ export class ScrollPersistDirective {
 
 			// Restore the cached position after the content (e.g. table rows) has laid out.
 			const target = this.restoreTo();
+
 			if (target > 0) {
 				requestAnimationFrame(() => {
 					element.scrollTop = target;

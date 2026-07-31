@@ -25,16 +25,20 @@ export class FeatureCalculator {
 		if (features.showStartStopRecording) {
 			features.showStartStopRecording = permissions.canRecord;
 		}
+
 		// Chat: canReadChat gates the whole panel; canWriteChat gates the message input within it.
 		if (features.showChat) {
 			features.showChat = permissions.canReadChat;
 		}
+
 		// The input is writable only when the chat is visible AND the member may write.
 		features.showChatInput = features.showChat && permissions.canWriteChat;
+
 		// Backgrounds
 		if (features.showBackgrounds) {
 			features.showBackgrounds = permissions.canChangeVirtualBackground;
 		}
+
 		// Media features
 		features.videoEnabled = permissions.canPublishVideo;
 		features.showCamera = permissions.canPublishVideo;
@@ -68,6 +72,7 @@ export class FeatureCalculator {
 		if (!roomCaptionsConfig.enabled) {
 			return 'HIDDEN';
 		}
+
 		return globalEnabled ? 'ENABLED' : 'DISABLED_WITH_WARNING';
 	}
 }

@@ -24,6 +24,7 @@ export const getWebhookFromStorage = async (
 	const handle = await page.waitForFunction(
 		({ roomId, eventName }) => {
 			const data = sessionStorage.getItem('webhookEventsByRoom');
+
 			if (!data) return null;
 
 			const map = JSON.parse(data) as Record<string, Array<{ event: string }>>;

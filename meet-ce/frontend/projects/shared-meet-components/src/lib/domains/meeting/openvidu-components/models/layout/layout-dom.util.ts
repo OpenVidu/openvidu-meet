@@ -21,6 +21,7 @@ export function writeStyle(el: HTMLElement, prop: string, value: string): void {
 
 export function writeStyles(el: HTMLElement, styles: Record<string, string>): void {
 	const target = el.style as Record<string, any>;
+
 	for (const key in styles) {
 		target[key] = styles[key];
 	}

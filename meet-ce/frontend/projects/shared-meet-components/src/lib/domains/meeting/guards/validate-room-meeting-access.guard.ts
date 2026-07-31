@@ -14,6 +14,7 @@ export const validateRoomMeetingAccessGuard: CanActivateFn = async (
 	const navigationService = inject(NavigationService);
 
 	const result = await roomAccessService.validateAccess();
+
 	if (result.allowed) {
 		return true;
 	}

@@ -84,6 +84,7 @@ export class ParticipantPanelItemComponent {
 	 */
 	toggleMuteForcibly() {
 		const participant = this._participant;
+
 		if (participant && !participant.isLocal) {
 			this.participantService.setRemoteMutedForcibly(participant.sid, !participant.isMutedForcibly);
 		}

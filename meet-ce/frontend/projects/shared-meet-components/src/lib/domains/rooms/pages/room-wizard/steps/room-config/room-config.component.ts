@@ -22,9 +22,11 @@ export class RoomConfigComponent {
 
 	constructor() {
 		const roomConfigStep = this.wizardService.getStepById(WizardStepId.ROOM_CONFIG);
+
 		if (!roomConfigStep) {
 			throw new Error('roomConfig step not found in wizard state');
 		}
+
 		this.roomConfigForm = roomConfigStep.formGroup;
 
 		this.roomConfigForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
@@ -60,6 +62,7 @@ export class RoomConfigComponent {
 		});
 
 		const recordingStep = this.wizardService.getStepById(WizardStepId.RECORDING);
+
 		if (!recordingStep) return;
 
 		const recordingForm = recordingStep.formGroup;
@@ -91,6 +94,7 @@ export class RoomConfigComponent {
 		} else {
 			// Restore the previous recording state when E2EE is disabled
 			const previousRecordingState = this.wizardService.getRecordingStateBeforeE2EE();
+
 			if (previousRecordingState !== undefined) {
 				recordingForm.patchValue(
 					{

@@ -35,9 +35,11 @@ export class EmbeddedEventBusService {
 	 */
 	drain(): EmbeddedEvent[] {
 		const queued = this._events();
+
 		if (queued.length === 0) {
 			return queued;
 		}
+
 		this._events.set([]);
 		return queued;
 	}

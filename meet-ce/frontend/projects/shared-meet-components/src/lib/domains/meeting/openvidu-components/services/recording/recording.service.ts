@@ -30,6 +30,7 @@ export class RecordingService {
 
 		// Calculate the elapsed time based on the actual start timestamp
 		const recordingElapsedTime = new Date(0, 0, 0, 0, 0, 0);
+
 		if (this.recordingStartTimestamp) {
 			const elapsedSeconds = Math.floor((Date.now() - this.recordingStartTimestamp) / 1000);
 			recordingElapsedTime.setSeconds(Math.max(0, elapsedSeconds)); // Ensure non-negative
@@ -140,6 +141,7 @@ export class RecordingService {
 		if (this.recordingTimeInterval) {
 			clearInterval(this.recordingTimeInterval);
 		}
+
 		const { status, error, id } = this.recordingStatus();
 		const statusInfo: RecordingStateInfo = {
 			id,

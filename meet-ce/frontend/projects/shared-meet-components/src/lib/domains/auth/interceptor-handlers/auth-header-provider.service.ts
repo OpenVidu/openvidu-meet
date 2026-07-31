@@ -36,6 +36,7 @@ export class AuthHeaderProviderService implements HttpHeaderProvider {
 	 */
 	provideHeaders(): Record<string, string> | null {
 		const accessToken = this.tokenStorageService.getAccessToken();
+
 		if (!accessToken) {
 			return null;
 		}

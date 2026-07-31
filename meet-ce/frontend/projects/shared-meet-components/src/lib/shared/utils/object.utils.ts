@@ -6,6 +6,7 @@ const UNSAFE_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
 
 export const isPlainObject = (value: unknown): value is PlainObject => {
 	if (value === null || typeof value !== 'object') return false;
+
 	const proto = Object.getPrototypeOf(value);
 	return proto === Object.prototype || proto === null;
 };
@@ -21,16 +22,22 @@ export const isPlainObject = (value: unknown): value is PlainObject => {
  */
 export const deepMerge = <T>(target: T, source: unknown): T => {
 	if (!isPlainObject(source)) return target;
+
 	const out = (isPlainObject(target) ? target : {}) as PlainObject;
+
 	for (const key of Object.keys(source)) {
 		if (UNSAFE_KEYS.has(key)) continue;
+
 		const sourceValue = source[key];
+
 		if (sourceValue === undefined) continue;
+
 		if (isPlainObject(sourceValue)) {
 			out[key] = deepMerge(isPlainObject(out[key]) ? out[key] : {}, sourceValue);
 		} else {
 			out[key] = sourceValue;
 		}
 	}
+
 	return out as T;
 };

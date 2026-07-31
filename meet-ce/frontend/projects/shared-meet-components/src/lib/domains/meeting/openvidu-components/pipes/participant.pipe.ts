@@ -36,9 +36,11 @@ export class TrackPublishedTypesPipe implements PipeTransform {
 				types.push(this.translateService.translate('PANEL.PARTICIPANTS.SCREEN'));
 			}
 		});
+
 		if (types.length === 0) {
 			return `(${this.translateService.translate('PANEL.PARTICIPANTS.NO_STREAMS')})`;
 		}
+
 		return `(${types.join(', ')})`;
 	}
 }

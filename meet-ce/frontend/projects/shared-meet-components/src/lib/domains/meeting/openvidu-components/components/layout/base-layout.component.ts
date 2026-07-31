@@ -229,6 +229,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	ngAfterViewInit(): void {
 		const container = this.layoutContainer()?.element?.nativeElement;
+
 		if (!container) return;
 
 		this.layoutService.initialize(container);
@@ -268,6 +269,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		event.stopPropagation();
 
 		this.resizingDrag = this.getActiveLocalDrag();
+
 		if (!this.resizingDrag) return;
 
 		this.isResizing = true;
@@ -305,6 +307,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		if (this.resizeDirection === 'sw' || this.resizeDirection === 'nw') {
 			newDragX = this.resizeDragStartPos.x - widthChange;
 		}
+
 		if (this.resizeDirection === 'ne' || this.resizeDirection === 'nw') {
 			newDragY = this.resizeDragStartPos.y - (newHeight - this.resizeStartWidth / this.ASPECT_RATIO);
 		}
@@ -317,6 +320,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private onResizeEnd(_event: PointerEvent): void {
 		if (!this.isResizing) return;
+
 		this.isResizing = false;
 		this.resizingDrag = undefined;
 		document.removeEventListener('pointermove', this.boundResizeMove);
@@ -330,6 +334,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			const hasStructuralChanges = mutations.some(
 				(m) => m.type === 'childList' && (m.addedNodes.length > 0 || m.removedNodes.length > 0)
 			);
+
 			if (!hasStructuralChanges) return;
 
 			clearTimeout(this.mutationTimeout);
@@ -361,6 +366,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 				// repositioning entirely (the pending final snap already lands the tile).
 				if (this.localParticipant()?.isFloating && !this.floatPlacementSettling) {
 					const drag = this.getActiveLocalDrag();
+
 					if (drag) {
 						if (this.panelService.isPanelOpened()) {
 							if (this.lastLayoutWidth < parentWidth) {
@@ -368,6 +374,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 							} else {
 								const { x, width } = drag.element.nativeElement.getBoundingClientRect();
 								this.videoIsAtRight = x + width >= parentWidth;
+
 								if (this.videoIsAtRight) this.moveStreamToRight(parentWidth, drag);
 							}
 						} else if (this.videoIsAtRight) {
@@ -391,6 +398,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			this.setDragPosition(this.getActualDragPosition(el), event.source);
 
 			if (!this.panelService.isPanelOpened()) return;
+
 			const { x, width } = el.getBoundingClientRect();
 			this.videoIsAtRight = x !== 0 && x + width >= container.getBoundingClientRect().width;
 		};
@@ -442,6 +450,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private moveStreamToRight(parentWidth: number, drag = this.getActiveLocalDrag()): void {
 		if (!drag) return;
+
 		const { width } = drag.element.nativeElement.getBoundingClientRect();
 		// Preserve the last SET y target rather than rect.y: a rect read while the tile is
 		// animating returns a mid-flight y, which would redirect the move instead of only
@@ -464,6 +473,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	private glideFloatingTileToBottomRight(gridRect: DOMRect | undefined): void {
 		const drag = this.getActiveLocalDrag();
 		const el = drag?.element.nativeElement as HTMLElement | undefined;
+
 		if (!drag || !el) return;
 
 		// Neutralize the renderer's inherited `transition: all` before any placement.
@@ -477,6 +487,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		// Center-anchored FLIP delta: the (now small) tile starts centered on the old grid slot.
 		const dx = gridRect.x + gridRect.width / 2 - (cornerRect.x + cornerRect.width / 2);
 		const dy = gridRect.y + gridRect.height / 2 - (cornerRect.y + cornerRect.height / 2);
+
 		if (dx === 0 && dy === 0) return;
 
 		// Start frame: back over the grid slot. Applied straight on CDK (not via setDragPosition)
@@ -490,8 +501,11 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private moveStreamToBottomRight(drag = this.getActiveLocalDrag()): void {
 		if (!drag) return;
+
 		const container = this.layoutContainer()?.element?.nativeElement as HTMLElement | undefined;
+
 		if (!container) return;
+
 		// Use the known minimum floating size (CSS constants) rather than reading the DOM:
 		// at the moment the effect fires the .OV_floating class may not yet be painted,
 		// so getBoundingClientRect would still report the layout-driven size.
@@ -512,13 +526,16 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			drag.reset();
 			drag.setFreeDragPosition(this.ZERO_DRAG_POSITION);
 		}
+
 		this.currentDragPosition.set(this.ZERO_DRAG_POSITION);
 	}
 
 	/** Reads the actual CDK transform from the element's computed style. */
 	private getActualDragPosition(element: HTMLElement): { x: number; y: number } {
 		const transformStr = window.getComputedStyle(element).transform;
+
 		if (!transformStr || transformStr === 'none') return this.ZERO_DRAG_POSITION;
+
 		const { e, f } = new DOMMatrix(transformStr);
 		return { x: e, y: f };
 	}

@@ -29,6 +29,7 @@ export class RoomAccessService {
 		const { requireRecordingsPermission = false, skipAuthRecoveryOn401 = false } = options || {};
 
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			console.error('Cannot validate room access: room ID is undefined');
 			return { allowed: false, reason: NavigationErrorReason.INVALID_ROOM };
@@ -64,11 +65,13 @@ export class RoomAccessService {
 					if (message.includes('Anonymous access')) {
 						return { allowed: false, reason: NavigationErrorReason.ANONYMOUS_ACCESS_DISABLED };
 					}
+
 					return { allowed: false, reason: NavigationErrorReason.FORBIDDEN_ROOM_ACCESS };
 				case 404:
 					if (message.includes('Room member')) {
 						return { allowed: false, reason: NavigationErrorReason.INVALID_MEMBER };
 					}
+
 					return { allowed: false, reason: NavigationErrorReason.INVALID_ROOM };
 				case 429:
 					return { allowed: false, reason: NavigationErrorReason.TOO_MANY_REQUESTS };

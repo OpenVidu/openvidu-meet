@@ -17,9 +17,11 @@ export const validateRoomRecordingsAccessGuard: CanActivateFn = async (
 	const navigationService = inject(NavigationService);
 
 	const outcome = await roomRecordingsEntry.validate();
+
 	if (outcome.kind === 'ready') {
 		return true;
 	}
+
 	return navigationService.redirectToErrorPage(outcome.reason);
 };
 

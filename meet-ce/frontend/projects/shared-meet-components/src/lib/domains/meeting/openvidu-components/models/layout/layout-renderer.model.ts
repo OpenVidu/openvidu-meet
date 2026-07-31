@@ -32,6 +32,7 @@ export class LayoutRenderer {
 	renderLayout(container: HTMLElement, boxes: LayoutBox[], elements: HTMLElement[], animate: boolean): void {
 		boxes.forEach((box, idx) => {
 			const elem = elements[idx];
+
 			if (!elem) return;
 
 			elem.style.position = 'absolute';
@@ -52,6 +53,7 @@ export class LayoutRenderer {
 
 		// Cache reads so the same computed value isn't pulled twice.
 		const m: Record<string, number> = {};
+
 		for (const p of BOX_PROPS) m[p] = px(p);
 
 		const inset = includesPaddingAndBorder
@@ -106,7 +108,9 @@ export class LayoutRenderer {
 	 */
 	private fixAspectRatio(elem: HTMLElement, width: number): void {
 		const sub = elem.querySelector<HTMLElement>('.OV_root');
+
 		if (!sub) return;
+
 		const oldWidth = sub.style.width;
 		sub.style.width = `${width}px`;
 		sub.style.width = oldWidth || '';

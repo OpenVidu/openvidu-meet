@@ -35,7 +35,9 @@ export class StepIndicatorComponent {
 					const isMediumDesktop = this.breakpointObserver.isMatched('(min-width: 768px)') && !isLargeDesktop;
 
 					if (isLargeDesktop) return 'vertical-sidebar';
+
 					if (isMediumDesktop) return 'horizontal-compact';
+
 					return 'vertical-compact';
 				})
 			),
@@ -48,6 +50,7 @@ export class StepIndicatorComponent {
 	onStepClick(event: StepperSelectionEvent) {
 		if (this.allowNavigation()) {
 			const index = event.selectedIndex;
+
 			if (index < 0 || index >= this.visibleSteps().length) {
 				console.warn('Invalid step index:', index);
 				return;
@@ -64,9 +67,11 @@ export class StepIndicatorComponent {
 		if (step.isCompleted && !step.isActive) {
 			return 'done';
 		}
+
 		if (step.isActive && step.formGroup?.invalid) {
 			return 'error';
 		}
+
 		if (step.isActive) {
 			return 'edit';
 		}

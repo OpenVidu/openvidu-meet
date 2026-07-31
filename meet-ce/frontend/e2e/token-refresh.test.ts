@@ -104,9 +104,11 @@ test.describe('Token Refresh E2E Tests', () => {
 		if (expire.at) {
 			await ctrl.expireAccessToken();
 		}
+
 		if (expire.rt) {
 			await ctrl.expireRefreshToken();
 		}
+
 		if (expire.rmt) {
 			ctrl.expireRoomMemberToken();
 		}
@@ -320,9 +322,11 @@ test.describe('Token Refresh E2E Tests', () => {
 
 				try {
 					const { actor } = scenario;
+
 					if (actor.kind === 'preauth') {
 						await authenticate(page, actor.getUser!());
 					}
+
 					await openRoomRecordings(
 						page,
 						toRoomRecordingsUrl(actor.getUrl()),
@@ -355,9 +359,11 @@ test.describe('Token Refresh E2E Tests', () => {
 
 				try {
 					const { actor } = scenario;
+
 					if (actor.kind === 'preauth') {
 						await authenticate(page, actor.getUser!());
 					}
+
 					await openRecording(
 						page,
 						toIndividualRecordingUrl(actor.getUrl(), recordingId),

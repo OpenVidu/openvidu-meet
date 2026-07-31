@@ -11,6 +11,7 @@ class FakeNgElementBase extends HTMLElement {
 	// Assigned per test to the component instance the imperative methods should delegate to.
 	ngElementStrategy: { componentRef: { instance: unknown } } | undefined;
 	connectedCallback(): void {}
+
 	disconnectedCallback(): void {}
 }
 

@@ -91,13 +91,16 @@ export class TranslateService {
 	 */
 	private lookup(map: Map<string, string>, key: string): string {
 		const translation = map.get(key);
+
 		if (translation === undefined) {
 			if (isDevMode() && !this.warnedMissingKeys.has(key)) {
 				this.warnedMissingKeys.add(key);
 				console.warn(`[i18n] Missing translation key "${key}"`);
 			}
+
 			return '';
 		}
+
 		return translation;
 	}
 
@@ -126,15 +129,18 @@ export class TranslateService {
 	 */
 	private flatten(source: unknown, prefix: string, target: Map<string, string>): Map<string, string> {
 		const obj = (source as { default?: Record<string, any> })?.default ?? (source as Record<string, any>) ?? {};
+
 		for (const key of Object.keys(obj)) {
 			const value = obj[key];
 			const path = prefix ? `${prefix}.${key}` : key;
+
 			if (value && typeof value === 'object' && !Array.isArray(value)) {
 				this.flatten(value, path, target);
 			} else if (typeof value === 'string') {
 				target.set(path, value);
 			}
 		}
+
 		return target;
 	}
 }

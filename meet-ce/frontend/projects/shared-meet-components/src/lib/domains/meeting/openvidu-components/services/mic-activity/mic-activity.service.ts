@@ -145,6 +145,7 @@ export class MicActivityService implements OnDestroy {
 	private readonly loop = (): void => {
 		const analyser = this.analyser;
 		const buffer = this.timeDomainBuffer;
+
 		if (!analyser || !buffer) {
 			return;
 		}
@@ -153,10 +154,12 @@ export class MicActivityService implements OnDestroy {
 		// dB calibration. Samples are 0-255 centered on 128, so recenter to [-1, 1] before RMS.
 		analyser.getByteTimeDomainData(buffer);
 		let sumSquares = 0;
+
 		for (const sample of buffer) {
 			const centered = (sample - 128) / 128;
 			sumSquares += centered * centered;
 		}
+
 		const rms = Math.sqrt(sumSquares / buffer.length);
 		this._level.set(rms);
 
@@ -165,18 +168,22 @@ export class MicActivityService implements OnDestroy {
 		this._systemMuted.set(this.sourceTrack?.muted ?? false);
 
 		const now = performance.now();
+
 		if (rms > SPEAKING_THRESHOLD) {
 			// Require the level to stay up for SPEAKING_ATTACK_MS before latching "speaking",
 			// so a brief transient does not raise the warning.
 			if (this.aboveThresholdSince === 0) {
 				this.aboveThresholdSince = now;
 			}
+
 			this.lastSpeakingAt = now;
+
 			if (!this._isSpeaking() && now - this.aboveThresholdSince >= SPEAKING_ATTACK_MS) {
 				this._isSpeaking.set(true);
 			}
 		} else {
 			this.aboveThresholdSince = 0;
+
 			if (this._isSpeaking() && now - this.lastSpeakingAt > SPEAKING_RELEASE_MS) {
 				this._isSpeaking.set(false);
 			}

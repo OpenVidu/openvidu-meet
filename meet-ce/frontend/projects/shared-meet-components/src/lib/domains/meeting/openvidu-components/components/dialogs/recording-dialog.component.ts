@@ -58,7 +58,9 @@ export class RecordingDialogComponent {
 
 	handleError() {
 		const videoElement = this.videoElement();
+
 		if (!videoElement) return;
+
 		this.dialogRef.close({ manageError: true, error: videoElement.nativeElement.error });
 	}
 }

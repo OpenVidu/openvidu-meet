@@ -130,6 +130,7 @@ export class SelectableCardComponent {
 	 */
 	isOptionSelected(optionId: string): boolean {
 		const selectedValue = this.selectedValue();
+
 		if (!selectedValue) {
 			return false;
 		}
@@ -146,12 +147,14 @@ export class SelectableCardComponent {
 	 */
 	onOptionSelect(optionId: string): void {
 		const option = this.option();
+
 		// Don't allow selection if option is disabled
 		if (option.disabled) {
 			return;
 		}
 
 		const wasSelected = this.isOptionSelected(optionId);
+
 		if (!this.allowMultiSelect() && wasSelected) {
 			return; // No change if already selected
 		}
@@ -193,21 +196,27 @@ export class SelectableCardComponent {
 		if (this.isOptionSelected(option.id)) {
 			classes.push('selected');
 		}
+
 		if (option.recommended && this.showRecommendedBadge()) {
 			classes.push('recommended');
 		}
+
 		if (option.isPro && this.showProBadge()) {
 			classes.push('pro-feature');
 		}
+
 		if (option.disabled) {
 			classes.push('disabled');
 		}
+
 		if (!this.enableHover()) {
 			classes.push('no-hover');
 		}
+
 		if (!this.enableAnimations()) {
 			classes.push('no-animations');
 		}
+
 		if (this.customClasses()) {
 			classes.push(this.customClasses());
 		}
@@ -220,6 +229,7 @@ export class SelectableCardComponent {
 	 */
 	getSelectionIcon(): string {
 		const option = this.option();
+
 		if (this.allowMultiSelect()) {
 			return this.isOptionSelected(option.id) ? 'check_box' : 'check_box_outline_blank';
 		} else {
@@ -238,12 +248,15 @@ export class SelectableCardComponent {
 		if (option.recommended) {
 			statusParts.push('Recommended');
 		}
+
 		if (option.isPro) {
 			statusParts.push('PRO feature');
 		}
+
 		if (option.disabled) {
 			statusParts.push('Disabled');
 		}
+
 		if (this.isOptionSelected(option.id)) {
 			statusParts.push('Selected');
 		}
@@ -265,9 +278,11 @@ export class SelectableCardComponent {
 	 */
 	shouldShowIcon(): boolean {
 		const option = this.option();
+
 		if (this.showImageAndIcon()) {
 			return !!option.icon;
 		}
+
 		return !this.shouldShowImage() && !!option.icon;
 	}
 }

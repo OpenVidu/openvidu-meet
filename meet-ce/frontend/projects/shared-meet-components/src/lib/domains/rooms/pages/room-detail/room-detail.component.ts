@@ -114,7 +114,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	);
 	canManageRoom = computed(() => {
 		const room = this.room();
+
 		if (!room) return false;
+
 		return RoomUiUtils.canManageRoom(room, this.currentUserId(), this.currentUserRole());
 	});
 	canViewRecordings = signal(false);
@@ -176,6 +178,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		const isBackNavigation = this.navigationService.isPopStateNavigation();
 
 		const roomId = this.route.snapshot.paramMap.get('room-id');
+
 		if (!roomId) {
 			await this.navigationService.navigateTo('/rooms');
 			return;
@@ -201,6 +204,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		// Restore cached state only when navigating *back* (browser back/forward), e.g.
 		// from a member edit page. Opening this room afresh (clicking it) loads fresh data.
 		const cached = this.listStateCache.get<RoomDetailCachedState>(this.cacheKey());
+
 		if (cached && isBackNavigation) {
 			this.room.set(cached.room);
 			this.canViewRecordings.set(cached.canViewRecordings);
@@ -209,12 +213,14 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			this.initialMemberFilters.set(cached.members.filters);
 			this.recordingList.restore(cached.recordings);
 			this.initialRecordingFilters.set(cached.recordings.filters);
+
 			// An explicit ?tab=members request wins over the cached tab.
 			if (this.route.snapshot.queryParamMap.get('tab') === 'members' && this.canManageRoom()) {
 				this.selectedTabIndex.set(1);
 			} else {
 				this.selectedTabIndex.set(cached.selectedTabIndex);
 			}
+
 			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
 			this.isInitializing.set(false);
 			return;
@@ -238,6 +244,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 	ngOnDestroy() {
 		const room = this.room();
+
 		// Only cache once the room has loaded; nothing useful to restore otherwise.
 		if (!room) return;
 
@@ -283,12 +290,15 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 			// Load initial data for visible tabs only
 			const tabLoads: Promise<unknown>[] = [];
+
 			if (this.canViewRecordings()) {
 				tabLoads.push(this.recordingList.load(this.initialRecordingFilters()));
 			}
+
 			if (this.canManageRoom()) {
 				tabLoads.push(this.memberList.load(this.initialMemberFilters()));
 			}
+
 			await Promise.all(tabLoads);
 		} catch (error) {
 			this.log.e('Error loading room details:', error);

@@ -106,6 +106,7 @@ export class StreamLayoutStateService implements ParticipantViewStateReader {
 		if (!local || local.isFloating) return;
 
 		const cameraStream = local.streams().find((s) => s.isCameraStream);
+
 		if (cameraStream) this.toggleStreamFloating(cameraStream.streamId);
 	}
 
@@ -118,6 +119,7 @@ export class StreamLayoutStateService implements ParticipantViewStateReader {
 		if (!local || !local.isFloating) return;
 
 		const cameraStream = local.streams().find((s) => s.isCameraStream);
+
 		if (cameraStream) this.toggleStreamFloating(cameraStream.streamId);
 	}
 

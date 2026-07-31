@@ -81,6 +81,7 @@ export class VideoTrackProcessorService {
 	 */
 	private async loadModule(): Promise<TrackProcessorsModule> {
 		if (this.processorsModule) return this.processorsModule;
+
 		this.moduleLoadPromise ??= import('@livekit/track-processors');
 		this.processorsModule = await this.moduleLoadPromise;
 		return this.processorsModule;
@@ -94,6 +95,7 @@ export class VideoTrackProcessorService {
 	 */
 	async ensureReady(): Promise<void> {
 		if (this._isSupportDetected()) return;
+
 		this.supportDetectionPromise ??= this.detectSupport();
 		await this.supportDetectionPromise;
 	}
@@ -103,6 +105,7 @@ export class VideoTrackProcessorService {
 			const tp = await this.loadModule();
 			const supported = tp.supportsBackgroundProcessors();
 			this._isBackgroundProcessorSupported.set(supported);
+
 			if (!supported) {
 				this.log.w('Background processors not supported in this browser (GPU may be disabled)');
 			}
@@ -129,6 +132,7 @@ export class VideoTrackProcessorService {
 	/** Creates the shared background processor on first use (idempotent). */
 	private createProcessorIfNeeded(tp: TrackProcessorsModule): void {
 		if (this.backgroundProcessor) return;
+
 		this.backgroundProcessor = tp.BackgroundProcessor({
 			mode: 'disabled',
 			assetPaths: this.getAssetPaths()
@@ -158,6 +162,7 @@ export class VideoTrackProcessorService {
 		}
 
 		const tp = this.processorsModule;
+
 		if (!tp) return;
 
 		try {
@@ -169,6 +174,7 @@ export class VideoTrackProcessorService {
 				// Modern browsers: create the processor on first use and attach it to the active
 				// track (this used to be pre-done at startup for every meeting).
 				this.createProcessorIfNeeded(tp);
+
 				if (videoTrack && !videoTrack.getProcessor() && this.backgroundProcessor) {
 					await videoTrack.setProcessor(this.backgroundProcessor);
 				}
@@ -197,10 +203,12 @@ export class VideoTrackProcessorService {
 	async applyToVideoTrack(videoTrack: LocalVideoTrack): Promise<void> {
 		// If the module was never loaded, no background has ever been applied — nothing to restore.
 		const tp = this.processorsModule;
+
 		if (!tp || !this.isBackgroundProcessorSupported()) return;
 
 		if (tp.supportsModernBackgroundProcessors()) {
 			if (!this.backgroundProcessor) return;
+
 			try {
 				await videoTrack.setProcessor(this.backgroundProcessor);
 				this.log.d('Background processor applied to video track');
@@ -212,6 +220,7 @@ export class VideoTrackProcessorService {
 			// Firefox: processor is not pre-allocated; create on first use and restore the effect.
 			try {
 				this.createProcessorIfNeeded(tp);
+
 				if (this.backgroundProcessor) {
 					await videoTrack.setProcessor(this.backgroundProcessor);
 					// The transformer options are reset on init for non-modern browsers; re-apply explicitly.
@@ -234,6 +243,7 @@ export class VideoTrackProcessorService {
 		videoTrack: LocalVideoTrack
 	): Promise<void> {
 		const tp = this.processorsModule;
+
 		if (!tp) return;
 
 		const hasProcessor = Boolean(videoTrack.getProcessor());
@@ -245,7 +255,9 @@ export class VideoTrackProcessorService {
 					this.log.d('Creating background processor on-demand');
 					this.createProcessorIfNeeded(tp);
 				}
+
 				this.log.d('Attaching processor on effect activation (lazy loading)');
+
 				if (this.backgroundProcessor) {
 					await videoTrack.setProcessor(this.backgroundProcessor);
 				}
@@ -253,6 +265,7 @@ export class VideoTrackProcessorService {
 				this.log.w('Failed to attach background processor (GPU may be disabled):', error?.message || error);
 				this._isBackgroundProcessorSupported.set(false);
 			}
+
 			return;
 		}
 

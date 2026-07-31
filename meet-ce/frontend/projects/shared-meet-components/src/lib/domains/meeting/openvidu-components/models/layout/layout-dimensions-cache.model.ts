@@ -15,11 +15,13 @@ export class LayoutDimensionsCache {
 
 	get(key: string): BestDimensions | undefined {
 		const value = this.cache.get(key);
+
 		if (value !== undefined) {
 			// Move to most-recently-used position by reinserting.
 			this.cache.delete(key);
 			this.cache.set(key, value);
 		}
+
 		return value;
 	}
 
@@ -29,10 +31,12 @@ export class LayoutDimensionsCache {
 		} else if (this.cache.size >= this.maxEntries) {
 			// Map preserves insertion order — first key is the least-recently-used.
 			const oldest = this.cache.keys().next().value;
+
 			if (oldest !== undefined) {
 				this.cache.delete(oldest);
 			}
 		}
+
 		this.cache.set(key, value);
 	}
 

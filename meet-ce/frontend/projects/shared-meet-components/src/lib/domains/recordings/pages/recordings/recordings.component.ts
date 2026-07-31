@@ -95,6 +95,7 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		// Restore cached state only when navigating *back* (browser back/forward); an
 		// explicit navigation to this page loads fresh data so others' changes show.
 		const cached = this.listStateCache.get<RecordingsListCachedState>(RecordingsComponent.STATE_KEY);
+
 		if (cached && isBackNavigation) {
 			this.list.restore(cached.list);
 			this.initialFilters.set(cached.list.filters);

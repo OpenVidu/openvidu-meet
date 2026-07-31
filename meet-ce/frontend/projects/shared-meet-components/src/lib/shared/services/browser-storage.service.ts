@@ -53,6 +53,7 @@ export class BrowserStorageService {
 	 */
 	set(key: string, value: unknown, area: StorageArea = 'local'): void {
 		const storage = this.storageFor(area);
+
 		if (!storage) return;
 
 		try {
@@ -72,17 +73,21 @@ export class BrowserStorageService {
 	 */
 	get<T = unknown>(key: string, area: StorageArea = 'local'): T | null {
 		const storage = this.storageFor(area);
+
 		if (!storage) return null;
 
 		const storageKey = STORAGE_PREFIX + key;
 		const raw = storage.getItem(storageKey);
+
 		if (raw === null) return null;
 
 		try {
 			const parsed: unknown = JSON.parse(raw);
+
 			if (!parsed || typeof parsed !== 'object' || !('item' in parsed)) {
 				throw new Error('Unexpected storage shape');
 			}
+
 			return (parsed as { item: T }).item;
 		} catch (e) {
 			this.log.e(`Failed to parse storage key: ${key}`, e);
@@ -93,6 +98,7 @@ export class BrowserStorageService {
 
 	remove(key: string, area: StorageArea = 'local'): void {
 		const storage = this.storageFor(area);
+
 		if (!storage) return;
 
 		try {
@@ -108,6 +114,7 @@ export class BrowserStorageService {
 	 */
 	private storageFor(area: StorageArea): Storage | null {
 		if (!this.available) return null;
+
 		return area === 'session' ? window.sessionStorage : window.localStorage;
 	}
 
@@ -117,11 +124,13 @@ export class BrowserStorageService {
 	 */
 	private checkStorageAvailability(): boolean {
 		const probe = '__ovStorageProbe__';
+
 		try {
 			for (const storage of [window.localStorage, window.sessionStorage]) {
 				storage.setItem(probe, probe);
 				storage.removeItem(probe);
 			}
+
 			return true;
 		} catch {
 			return false;

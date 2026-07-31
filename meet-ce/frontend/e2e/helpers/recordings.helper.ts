@@ -322,9 +322,11 @@ const SHARE_DIALOG = 'ov-share-recording-dialog';
  */
 export const openShareDialogFromList = async (page: Page, recordingId: string): Promise<void> => {
 	const moreActions = page.locator(`[id="more-actions-btn-${recordingId}"]`).first();
+
 	if (await moreActions.isVisible().catch(() => false)) {
 		await moreActions.click({ timeout: 15_000 });
 	}
+
 	await page.locator(`[id="share-recording-link-${recordingId}"]`).first().click({ timeout: 15_000 });
 	await expect(page.locator(SHARE_DIALOG)).toBeVisible({ timeout: 10_000 });
 };

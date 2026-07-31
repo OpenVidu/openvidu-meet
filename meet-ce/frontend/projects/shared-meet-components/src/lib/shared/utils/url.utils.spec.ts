@@ -144,6 +144,7 @@ describe('extractParams', () => {
 const stubReferrer = (value: string): void => {
 	Object.defineProperty(document, 'referrer', { configurable: true, get: () => value });
 };
+
 const restoreReferrer = (): void => {
 	delete (document as { referrer?: string }).referrer;
 };

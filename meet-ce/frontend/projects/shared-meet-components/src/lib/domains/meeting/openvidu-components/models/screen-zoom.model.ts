@@ -76,12 +76,14 @@ export class ScreenZoomState {
 			this._pan.set({ x: 0, y: 0 });
 			return;
 		}
+
 		this._pan.set({ x: ScreenZoomState.clampAxis(x), y: ScreenZoomState.clampAxis(y) });
 	}
 
 	private setLevel(level: number): void {
 		const clamped = Math.min(ScreenZoomState.MAX_LEVEL, Math.max(ScreenZoomState.MIN_LEVEL, level));
 		this._level.set(clamped);
+
 		// Recenter once fully zoomed out — there is nothing to pan at 1x.
 		if (clamped === ScreenZoomState.MIN_LEVEL) {
 			this._pan.set({ x: 0, y: 0 });

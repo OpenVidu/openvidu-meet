@@ -370,6 +370,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 */
 	private readonly _tokenErrorEffect = effect(() => {
 		const error = this.libService.tokenErrorSignal();
+
 		if (!error) return;
 
 		this.log.e('Token error received', error);
@@ -399,6 +400,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	 */
 	private readonly applyStoredBackgroundEffect = effect(() => {
 		const container = this.layoutContainerQuery();
+
 		if (container) {
 			// Use microtask instead of setTimeout for better performance
 			Promise.resolve().then(async () => {
@@ -412,6 +414,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	// Close background effects panel and remove background if the button is disabled
 	private readonly backgroundEffectsEffect = effect(() => {
 		const enabled = this.libService.backgroundEffectsButtonSignal();
+
 		if (enabled) return;
 
 		if (this.backgroundService.isBackgroundApplied()) {
@@ -573,6 +576,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			this.phase.set('live');
 
 			const localParticipant = this.participantService.localParticipant();
+
 			if (localParticipant) {
 				this.onParticipantConnected.emit(localParticipant);
 			}

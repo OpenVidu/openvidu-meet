@@ -73,9 +73,11 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 		if (this.systemMutedCondition() && !this.dismissedSystemMuted()) {
 			return 'system-muted';
 		}
+
 		if (this.mutedSpeakingCondition() && !this.dismissedMutedSpeaking()) {
 			return 'muted-speaking';
 		}
+
 		return undefined;
 	});
 
@@ -123,6 +125,7 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 
 	ngAfterViewInit(): void {
 		this.viewReady = true;
+
 		if (this.activeAlert()) {
 			this.showOverlay();
 		}
@@ -144,6 +147,7 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 
 	private showOverlay(): void {
 		const template = this.popupTpl();
+
 		if (!template) {
 			return;
 		}
@@ -186,6 +190,7 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 		if (typeof ResizeObserver === 'undefined' || !this.overlayRef) {
 			return;
 		}
+
 		this.bubbleResizeObserver?.disconnect();
 		this.bubbleResizeObserver = new ResizeObserver(() => {
 			// The bubble growing (async render, text wrapping) changes where its anchored edge
@@ -239,11 +244,13 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 			cancelAnimationFrame(this.originTrackerId);
 			this.originTrackerId = undefined;
 		}
+
 		this.lastOriginRect = undefined;
 	}
 
 	private hideOverlay(): void {
 		this.stopTracking();
+
 		if (this.overlayRef?.hasAttached()) {
 			this.overlayRef.detach();
 		}
@@ -269,11 +276,14 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 		const bubble = this.overlayRef?.overlayElement.querySelector('.mic-status-alert') as HTMLElement | null;
 		const pointer = bubble?.querySelector('.alert-pointer') as HTMLElement | null;
 		const originEl = this.resolveOrigin();
+
 		if (!bubble || !pointer || !originEl) {
 			return;
 		}
+
 		const bubbleRect = bubble.getBoundingClientRect();
 		const originRect = originEl.getBoundingClientRect();
+
 		if (bubbleRect.width === 0) {
 			return;
 		}
