@@ -28,7 +28,11 @@ type MediaDevicesFixtures = {
 };
 
 export const test = base.extend<MediaDevicesFixtures>({
-	noMediaPage: async (_fixtures, use, testInfo) => {
+	// Playwright statically inspects the first parameter to resolve which fixtures a fixture
+	// depends on, so it must be an object destructuring pattern — empty here, since this one
+	// only needs `testInfo`. Naming the parameter instead makes Playwright reject the file.
+	// eslint-disable-next-line no-empty-pattern
+	noMediaPage: async ({}, use, testInfo) => {
 		const browser = await chromium.launch({
 			headless: testInfo.project.use.headless,
 			args: ['--window-size=1366,900']
