@@ -9,9 +9,11 @@ import { ScrollPersistDirective } from '../../../../shared/directives/scroll-per
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
+import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { parseBulkDeleteError } from '../../../../shared/utils/bulk-delete.utils';
 import { AuthService } from '../../../auth/services/auth.service';
 import { ResetPasswordDialogComponent } from '../../components/reset-password-dialog/reset-password-dialog.component';
 import { UpdateRoleDialogComponent } from '../../components/update-role-dialog/update-role-dialog.component';
@@ -26,10 +28,7 @@ import type { ILogger } from '../../../../shared/models/logger.model';
 
 /** Cached UI state for the users list, restored when navigating back to it. */
 interface UsersListCachedState {
-	users: MeetUserDTO[];
-	nextPageToken?: string;
-	hasMore: boolean;
-	filters: UserTableFilter;
+	list: EntityListSnapshot<MeetUserDTO, UserTableFilter>;
 	scrollTop: number;
 }
 
@@ -64,14 +63,8 @@ export class UsersComponent implements OnInit, OnDestroy {
 	/** Scroll position to restore on the page container (set when restoring cached state). */
 	protected scrollToRestore = 0;
 
-	users = signal<MeetUserDTO[]>([]);
 	currentUserId = signal<string>('');
 	rootAdminId = signal<string>('');
-
-	// Loading state
-	isInitializing = signal(true);
-	showInitialLoader = signal(false);
-	isLoading = signal(false);
 
 	initialFilters = signal<UserTableFilter>({
 		nameFilter: '',
@@ -82,12 +75,14 @@ export class UsersComponent implements OnInit, OnDestroy {
 		sortOrder: SortOrder.DESC
 	});
 
-	// Pagination
-	hasMoreUsers = signal(false);
-	private nextPageToken?: string;
-
-	// Track current active filters so deletions can trigger auto-load
-	private currentFilters: UserTableFilter = this.initialFilters();
+	protected readonly list = new EntityListState<MeetUserDTO, UserTableFilter>({
+		initialFilters: this.initialFilters(),
+		fetchPage: (filters, nextPageToken) => this.fetchUsersPage(filters, nextPageToken),
+		onLoadError: (error) => {
+			this.log.e('Error loading users:', error);
+			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USERS_LOAD_FAILED'));
+		}
+	});
 
 	async ngOnInit() {
 		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
@@ -102,101 +97,49 @@ export class UsersComponent implements OnInit, OnDestroy {
 		// explicit navigation to this page loads fresh data so others' changes show.
 		const cached = this.listStateCache.get<UsersListCachedState>(UsersComponent.STATE_KEY);
 		if (cached && isBackNavigation) {
-			this.users.set(cached.users);
-			this.nextPageToken = cached.nextPageToken;
-			this.hasMoreUsers.set(cached.hasMore);
-			this.currentFilters = cached.filters;
-			this.initialFilters.set(cached.filters);
+			this.list.restore(cached.list);
+			this.initialFilters.set(cached.list.filters);
 			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
-			this.isInitializing.set(false);
 			return;
 		}
 
-		const delayLoader = setTimeout(() => {
-			this.showInitialLoader.set(true);
-		}, 200);
-
-		await this.loadUsers(this.initialFilters());
-
-		clearTimeout(delayLoader);
-		this.showInitialLoader.set(false);
-		this.isInitializing.set(false);
+		await this.list.initialize(this.initialFilters());
 	}
 
 	ngOnDestroy() {
 		this.listStateCache.set<UsersListCachedState>(UsersComponent.STATE_KEY, {
-			users: this.users(),
-			nextPageToken: this.nextPageToken,
-			hasMore: this.hasMoreUsers(),
-			filters: this.currentFilters,
+			list: this.list.snapshot(),
 			scrollTop: this.scroller()?.scrollTop ?? 0
 		});
 	}
 
-	private async autoLoadIfEmpty() {
-		if (this.users().length === 0 && this.hasMoreUsers()) {
-			await this.loadUsers(this.currentFilters);
+	private async fetchUsersPage(filters: UserTableFilter, nextPageToken: string | undefined) {
+		const userFilters: MeetUserFilters = {
+			maxItems: 50,
+			nextPageToken,
+			sortField: filters.sortField,
+			sortOrder: filters.sortOrder
+		};
+
+		// Apply user name filter if provided
+		if (filters.nameFilter) {
+			userFilters.name = filters.nameFilter;
+			userFilters.nameMatchMode = filters.nameMatchMode;
+			userFilters.nameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 		}
-	}
 
-	private async loadUsers(filters: UserTableFilter, refresh = false) {
-		this.currentFilters = filters;
-		const delayLoader = setTimeout(() => {
-			this.isLoading.set(true);
-		}, 200);
-
-		try {
-			const userFilters: MeetUserFilters = {
-				maxItems: 50,
-				nextPageToken: !refresh ? this.nextPageToken : undefined,
-				sortField: filters.sortField,
-				sortOrder: filters.sortOrder
-			};
-
-			// Apply user name filter if provided
-			if (filters.nameFilter) {
-				userFilters.name = filters.nameFilter;
-				userFilters.nameMatchMode = filters.nameMatchMode;
-				userFilters.nameCaseInsensitive = filters.nameCaseInsensitive || undefined;
-			}
-
-			// Apply role filter if provided
-			if (filters.roleFilter) {
-				userFilters.role = filters.roleFilter as MeetUserRole;
-			}
-
-			const response = await this.userService.listUsers(userFilters);
-
-			if (!refresh) {
-				// Update users list
-				this.users.set([...this.users(), ...response.users]);
-			} else {
-				// Replace users list
-				this.users.set(response.users);
-			}
-
-			// Update pagination
-			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreUsers.set(response.pagination.isTruncated);
-		} catch (error) {
-			this.log.e('Error loading users:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USERS_LOAD_FAILED'));
-		} finally {
-			clearTimeout(delayLoader);
-			this.isLoading.set(false);
+		// Apply role filter if provided
+		if (filters.roleFilter) {
+			userFilters.role = filters.roleFilter as MeetUserRole;
 		}
-	}
 
-	async loadMoreUsers(filters: UserTableFilter) {
-		if (!this.hasMoreUsers() || this.isLoading()) {
-			return;
-		}
-		await this.loadUsers(filters);
-	}
+		const response = await this.userService.listUsers(userFilters);
 
-	async refreshUsers(filters: UserTableFilter) {
-		this.nextPageToken = undefined;
-		await this.loadUsers(filters, true);
+		return {
+			items: response.users,
+			nextPageToken: response.pagination.nextPageToken,
+			hasMore: response.pagination.isTruncated
+		};
 	}
 
 	// ─── Actions ──────────────────────────────────────────────────────────────
@@ -240,8 +183,8 @@ export class UsersComponent implements OnInit, OnDestroy {
 			return;
 		}
 
-		this.users.update((currentUsers) =>
-			currentUsers.map((currentUser) => (currentUser.userId === updatedUser.userId ? updatedUser : currentUser))
+		this.list.update((users) =>
+			users.map((currentUser) => (currentUser.userId === updatedUser.userId ? updatedUser : currentUser))
 		);
 	}
 
@@ -260,12 +203,11 @@ export class UsersComponent implements OnInit, OnDestroy {
 				try {
 					await this.userService.deleteUser(user.userId);
 
-					// Remove deleted user from the list
-					this.users.set(this.users().filter((u) => u.userId !== user.userId));
+					this.list.remove((u) => u.userId === user.userId);
 					this.notificationService.showSnackbar(
 						`${this.translateService.translate('USERS.ERRORS.USER_DELETED_PREFIX')}${user.name}${this.translateService.translate('USERS.ERRORS.USER_DELETED_SUFFIX')}`
 					);
-					await this.autoLoadIfEmpty();
+					await this.list.autoLoadIfEmpty();
 				} catch (error) {
 					this.log.e('Error deleting user:', error);
 					this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USER_DELETE_FAILED'));
@@ -280,37 +222,37 @@ export class UsersComponent implements OnInit, OnDestroy {
 				const userIds = usersToDelete.map((u) => u.userId);
 				const { deleted } = await this.userService.bulkDeleteUsers(userIds);
 
-				// Remove deleted users from the list
-				this.users.set(this.users().filter((u) => !deleted.includes(u.userId)));
+				this.list.remove((u) => deleted.includes(u.userId));
 				this.notificationService.showSnackbar(
 					`${deleted.length} ${this.translateService.translate(deleted.length > 1 ? 'USERS.ERRORS.USERS_DELETED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_DELETED_SUFFIX_SINGULAR')}`
 				);
-				await this.autoLoadIfEmpty();
-			} catch (error: any) {
+				await this.list.autoLoadIfEmpty();
+			} catch (error) {
 				this.log.e('Error deleting users:', error);
 
-				const deleted = (error?.error?.deleted ?? []) as string[];
-				const failed = (error?.error?.failed ?? []) as { userId: string; error: string }[];
+				const { deleted, failed } = parseBulkDeleteError<{ userId: string; error: string }>(error);
 
-				// Some users were deleted, some not
-				if (failed.length > 0 || deleted.length > 0) {
-					if (deleted.length > 0) {
-						this.users.set(this.users().filter((u) => !deleted.includes(u.userId)));
-					}
-
-					let message = '';
-					if (deleted.length > 0) {
-						message += `${deleted.length} ${this.translateService.translate(deleted.length > 1 ? 'USERS.ERRORS.USERS_DELETED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_DELETED_SUFFIX_SINGULAR')} `;
-					}
-					if (failed.length > 0) {
-						message += `${failed.length} ${this.translateService.translate(failed.length > 1 ? 'USERS.ERRORS.USERS_FAILED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_FAILED_SUFFIX_SINGULAR')}`;
-					}
-
-					this.notificationService.showSnackbar(message.trim());
-					await this.autoLoadIfEmpty();
-				} else {
+				// Nothing structured to report (401, 500, network drop): plain failure.
+				if (deleted.length === 0 && failed.length === 0) {
 					this.notificationService.showSnackbar(this.translateService.translate('USERS.ERRORS.USERS_DELETE_FAILED'));
+					return;
 				}
+
+				// Partial result: some users were deleted, some not.
+				this.list.remove((u) => deleted.includes(u.userId));
+
+				let message = '';
+
+				if (deleted.length > 0) {
+					message += `${deleted.length} ${this.translateService.translate(deleted.length > 1 ? 'USERS.ERRORS.USERS_DELETED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_DELETED_SUFFIX_SINGULAR')} `;
+				}
+
+				if (failed.length > 0) {
+					message += `${failed.length} ${this.translateService.translate(failed.length > 1 ? 'USERS.ERRORS.USERS_FAILED_SUFFIX_PLURAL' : 'USERS.ERRORS.USERS_FAILED_SUFFIX_SINGULAR')}`;
+				}
+
+				this.notificationService.showSnackbar(message.trim());
+				await this.list.autoLoadIfEmpty();
 			}
 		};
 

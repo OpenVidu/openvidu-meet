@@ -5,7 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { ActivatedRoute } from '@angular/router';
 import { MeetRecordingFilters, MeetRecordingInfo, SortOrder, TextMatchMode } from '@openvidu-meet/typings';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { EntityListState } from '../../../../shared/models/entity-list.model';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
@@ -15,6 +15,7 @@ import { RoomMemberContextService } from '../../../room-members/services/room-me
 import { RoomService } from '../../../rooms/services/room.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
+import { RecordingActionsService } from '../../services/recording-actions.service';
 import { RecordingService } from '../../services/recording.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
@@ -35,10 +36,10 @@ import type { ILogger } from '../../../../shared/models/logger.model';
 export class RoomRecordingsComponent implements OnInit {
 	protected readonly loggerService = inject(LoggerService);
 	protected readonly recordingService = inject(RecordingService);
+	private readonly recordingActions = inject(RecordingActionsService);
 	protected readonly roomMemberContextService = inject(RoomMemberContextService);
 	protected readonly roomService = inject(RoomService);
 	protected readonly notificationService = inject(NotificationService);
-	protected readonly dialogPresetsService = inject(DialogPresetsService);
 	protected readonly navigationService = inject(NavigationService);
 	protected readonly meetingContextService = inject(MeetingContextService);
 	private readonly translateService = inject(TranslateService);
@@ -53,15 +54,9 @@ export class RoomRecordingsComponent implements OnInit {
 	 */
 	readonly roomIdInput = input<string>('', { alias: 'roomId' });
 
-	recordings = signal<MeetRecordingInfo[]>([]);
 	roomId = '';
 	roomName = signal('');
 	canDeleteRecordings = signal(false);
-
-	// Loading state
-	isInitializing = signal(true);
-	showInitialLoader = signal(false);
-	isLoading = signal(false);
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
@@ -72,36 +67,34 @@ export class RoomRecordingsComponent implements OnInit {
 		sortOrder: SortOrder.DESC
 	});
 
-	// Pagination
-	hasMoreRecordings = signal(false);
-	private nextPageToken?: string;
-
-	// Track current active filters so deletions can trigger auto-load
-	private currentFilters: RecordingTableFilter = this.initialFilters();
+	protected readonly list = new EntityListState<MeetRecordingInfo, RecordingTableFilter>({
+		initialFilters: this.initialFilters(),
+		fetchPage: (filters, nextPageToken) => this.fetchRecordingsPage(filters, nextPageToken),
+		onLoadError: (error) => {
+			this.notificationService.showSnackbar(
+				this.translateService.translate('RECORDINGS.ERRORS.LOAD_RECORDINGS_FAILED')
+			);
+			this.log.e('Error loading recordings:', error);
+		}
+	});
 
 	async ngOnInit() {
 		this.roomId = this.roomIdInput() || this.route.snapshot.paramMap.get('room-id')!;
 		this.canDeleteRecordings.set(this.roomMemberContextService.hasPermission('canDeleteRecordings'));
 
-		// Load recordings
-		const delayLoader = setTimeout(() => {
-			this.showInitialLoader.set(true);
-		}, 200);
+		await this.list.initialize(this.initialFilters(), () => this.resolveRoomName());
+	}
 
-		await this.loadRecordings(this.initialFilters());
+	/** Derives the toolbar title from the first page, falling back to the room service. */
+	private async resolveRoomName() {
+		const [firstRecording] = this.list.items();
 
-		// Set room name based on recordings
-		if (this.recordings().length > 0) {
-			this.roomName.set(this.recordings()[0].roomName);
+		if (firstRecording) {
+			this.roomName.set(firstRecording.roomName);
 		} else {
-			// If no recordings, fetch room name from room service
 			const { roomName } = await this.roomService.getRoom(this.roomId, { fields: ['roomName'] });
 			this.roomName.set(roomName);
 		}
-
-		clearTimeout(delayLoader);
-		this.showInitialLoader.set(false);
-		this.isInitializing.set(false);
 	}
 
 	async goBackToRoom() {
@@ -113,187 +106,29 @@ export class RoomRecordingsComponent implements OnInit {
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
-		switch (action.action) {
-			case 'play':
-				this.playRecording(action.recordings[0]);
-				break;
-			case 'download':
-				this.downloadRecording(action.recordings[0]);
-				break;
-			case 'shareLink':
-				this.shareRecordingLink(action.recordings[0]);
-				break;
-			case 'delete':
-				this.deleteRecording(action.recordings[0]);
-				break;
-			case 'bulkDelete':
-				this.bulkDeleteRecordings(action.recordings);
-				break;
-			case 'bulkDownload':
-				this.bulkDownloadRecordings(action.recordings);
-				break;
-		}
+		await this.recordingActions.handle(action, { list: this.list, log: this.log });
 	}
 
-	private async autoLoadIfEmpty() {
-		if (this.recordings().length === 0 && this.hasMoreRecordings()) {
-			await this.loadRecordings(this.currentFilters);
-		}
-	}
-
-	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
-		this.currentFilters = filters;
-		const delayLoader = setTimeout(() => {
-			this.isLoading.set(true);
-		}, 200);
-
-		try {
-			const recordingFilters: MeetRecordingFilters = {
-				roomId: this.roomId,
-				maxItems: 50,
-				nextPageToken: !refresh ? this.nextPageToken : undefined,
-				sortField: filters.sortField,
-				sortOrder: filters.sortOrder
-			};
-
-			// Apply status filter if provided
-			if (filters.statusFilter) {
-				recordingFilters.status = filters.statusFilter;
-			}
-
-			const response = await this.recordingService.listRecordings(recordingFilters);
-			let recordings = response.recordings;
-
-			if (!refresh) {
-				// Update recordings list
-				const currentRecordings = this.recordings();
-				this.recordings.set([...currentRecordings, ...recordings]);
-			} else {
-				// Replace recordings list
-				this.recordings.set(recordings);
-			}
-
-			// Update pagination
-			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRecordings.set(response.pagination.isTruncated);
-		} catch (error) {
-			this.notificationService.showSnackbar(
-				this.translateService.translate('RECORDINGS.ERRORS.LOAD_RECORDINGS_FAILED')
-			);
-			this.log.e('Error loading recordings:', error);
-		} finally {
-			clearTimeout(delayLoader);
-			this.isLoading.set(false);
-		}
-	}
-
-	async loadMoreRecordings(filters: RecordingTableFilter) {
-		if (!this.hasMoreRecordings() || this.isLoading()) return;
-		await this.loadRecordings(filters);
-	}
-
-	async refreshRecordings(filters: RecordingTableFilter) {
-		this.nextPageToken = undefined;
-		await this.loadRecordings(filters, true);
-	}
-
-	private async playRecording(recording: MeetRecordingInfo) {
-		await this.recordingService.playRecording(recording.recordingId);
-	}
-
-	private downloadRecording(recording: MeetRecordingInfo) {
-		this.recordingService.downloadRecording(recording);
-	}
-
-	private shareRecordingLink(recording: MeetRecordingInfo) {
-		this.recordingService.openShareRecordingDialog(recording.recordingId);
-	}
-
-	private deleteRecording(recording: MeetRecordingInfo) {
-		const deleteCallback = async () => {
-			try {
-				await this.recordingService.deleteRecording(recording.recordingId);
-
-				// Remove from local list
-				this.recordings.set(this.recordings().filter((r) => r.recordingId !== recording.recordingId));
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED'));
-				await this.autoLoadIfEmpty();
-			} catch (error) {
-				this.log.e('Error deleting recording:', error);
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED'));
-			}
+	private async fetchRecordingsPage(filters: RecordingTableFilter, nextPageToken: string | undefined) {
+		const recordingFilters: MeetRecordingFilters = {
+			roomId: this.roomId,
+			maxItems: 50,
+			nextPageToken,
+			sortField: filters.sortField,
+			sortOrder: filters.sortOrder
 		};
 
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
-			confirmCallback: deleteCallback
-		});
-	}
+		// Apply status filter if provided
+		if (filters.statusFilter) {
+			recordingFilters.status = filters.statusFilter;
+		}
 
-	private bulkDeleteRecordings(recordings: MeetRecordingInfo[]) {
-		const bulkDeleteCallback = async () => {
-			try {
-				const recordingIds = recordings.map((r) => r.recordingId);
-				const { deleted } = await this.recordingService.bulkDeleteRecordings(recordingIds);
+		const response = await this.recordingService.listRecordings(recordingFilters);
 
-				// Remove deleted recordings from the list
-				this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
-				this.notificationService.showSnackbar(
-					`${deleted.length} ${this.translateService.translate(
-						deleted.length > 1
-							? 'RECORDINGS.ERRORS.RECORDINGS_DELETED_SUFFIX_PLURAL'
-							: 'RECORDINGS.ERRORS.RECORDINGS_DELETED_SUFFIX_SINGULAR'
-					)}`
-				);
-				await this.autoLoadIfEmpty();
-			} catch (error: any) {
-				this.log.e('Error deleting recordings:', error);
-
-				const deleted = (error?.error?.deleted ?? []) as string[];
-				const failed = (error?.error?.failed ?? []) as { recordingId: string; error: string }[];
-
-				// Some recordings were deleted, some not
-				if (failed.length > 0 || deleted.length > 0) {
-					// Remove deleted recordings from the list
-					if (deleted.length > 0) {
-						this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
-					}
-
-					let msg = '';
-					if (deleted.length > 0) {
-						msg += `${deleted.length} ${this.translateService.translate(
-							deleted.length > 1
-								? 'RECORDINGS.ERRORS.RECORDINGS_DELETED_DOT_SUFFIX_PLURAL'
-								: 'RECORDINGS.ERRORS.RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR'
-						)}`;
-					}
-					if (failed.length > 0) {
-						msg += `${failed.length} ${this.translateService.translate(
-							failed.length > 1
-								? 'RECORDINGS.ERRORS.RECORDINGS_FAILED_SUFFIX_PLURAL'
-								: 'RECORDINGS.ERRORS.RECORDINGS_FAILED_SUFFIX_SINGULAR'
-						)}`;
-					}
-
-					this.notificationService.showSnackbar(msg.trim());
-					await this.autoLoadIfEmpty();
-				} else {
-					this.notificationService.showSnackbar(
-						this.translateService.translate('RECORDINGS.ERRORS.DELETE_RECORDINGS_FAILED')
-					);
-				}
-			}
+		return {
+			items: response.recordings,
+			nextPageToken: response.pagination.nextPageToken,
+			hasMore: response.pagination.isTruncated
 		};
-
-		const count = recordings.length;
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getBulkDeleteRecordingsDialogPreset(count),
-			confirmCallback: bulkDeleteCallback
-		});
-	}
-
-	private bulkDownloadRecordings(recordings: MeetRecordingInfo[]) {
-		const recordingIds = recordings.map((r) => r.recordingId);
-		this.recordingService.downloadRecordingsAsZip(recordingIds);
 	}
 }

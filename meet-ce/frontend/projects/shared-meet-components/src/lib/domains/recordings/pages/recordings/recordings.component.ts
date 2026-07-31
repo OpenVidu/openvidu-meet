@@ -10,7 +10,7 @@ import {
 	TextMatchMode
 } from '@openvidu-meet/typings';
 import { ScrollPersistDirective } from '../../../../shared/directives/scroll-persist.directive';
-import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
@@ -21,16 +21,14 @@ import { AuthService } from '../../../auth/services/auth.service';
 import { RoomMemberService } from '../../../room-members/services/room-member.service';
 import { RecordingListsComponent } from '../../components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../models/recording-list.model';
+import { RecordingActionsService } from '../../services/recording-actions.service';
 import { RecordingService } from '../../services/recording.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
 
 /** Cached UI state for the recordings list, restored when navigating back to it. */
 interface RecordingsListCachedState {
-	recordings: MeetRecordingInfo[];
-	nextPageToken?: string;
-	hasMore: boolean;
-	filters: RecordingTableFilter;
+	list: EntityListSnapshot<MeetRecordingInfo, RecordingTableFilter>;
 	deletableRoomIds: string[];
 	scrollTop: number;
 }
@@ -52,15 +50,13 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 	private listStateCache = inject(ListStateCacheService);
 	private authService: AuthService = inject(AuthService);
 	private recordingService: RecordingService = inject(RecordingService);
+	private recordingActions = inject(RecordingActionsService);
 	private roomMemberService: RoomMemberService = inject(RoomMemberService);
 	private notificationService: NotificationService = inject(NotificationService);
-	private dialogPresetsService = inject(DialogPresetsService);
 	private readonly translateService = inject(TranslateService);
 	protected route: ActivatedRoute = inject(ActivatedRoute);
 	protected navigationService: NavigationService = inject(NavigationService);
 	protected log: ILogger = this.loggerService.get('OpenVidu Meet - RecordingsComponent');
-
-	recordings = signal<MeetRecordingInfo[]>([]);
 
 	// Permission signals
 	protected currentUserRole = signal<MeetUserRole | undefined>(undefined);
@@ -68,11 +64,6 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 	deletableRoomIds = signal<Set<string>>(new Set());
 	// Cache: roomId → canDelete (avoids re-fetching tokens for already-seen rooms)
 	private roomDeletePermissionCache = new Map<string, boolean>();
-
-	// Loading state
-	isInitializing = signal(true);
-	showInitialLoader = signal(false);
-	isLoading = signal(false);
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
@@ -83,12 +74,16 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		sortOrder: SortOrder.DESC
 	});
 
-	// Pagination
-	hasMoreRecordings = signal(false);
-	private nextPageToken?: string;
-
-	// Track current active filters so deletions can trigger auto-load
-	private currentFilters: RecordingTableFilter = this.initialFilters();
+	protected readonly list = new EntityListState<MeetRecordingInfo, RecordingTableFilter>({
+		initialFilters: this.initialFilters(),
+		fetchPage: (filters, nextPageToken) => this.fetchRecordingsPage(filters, nextPageToken),
+		onLoadError: (error) => {
+			this.notificationService.showSnackbar(
+				this.translateService.translate('RECORDINGS.ERRORS.LOAD_RECORDINGS_FAILED')
+			);
+			this.log.e('Error loading recordings:', error);
+		}
+	});
 
 	async ngOnInit() {
 		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
@@ -101,60 +96,26 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		// explicit navigation to this page loads fresh data so others' changes show.
 		const cached = this.listStateCache.get<RecordingsListCachedState>(RecordingsComponent.STATE_KEY);
 		if (cached && isBackNavigation) {
-			this.recordings.set(cached.recordings);
-			this.nextPageToken = cached.nextPageToken;
-			this.hasMoreRecordings.set(cached.hasMore);
-			this.currentFilters = cached.filters;
-			this.initialFilters.set(cached.filters);
+			this.list.restore(cached.list);
+			this.initialFilters.set(cached.list.filters);
 			this.deletableRoomIds.set(new Set(cached.deletableRoomIds));
 			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
-			this.isInitializing.set(false);
 			return;
 		}
 
-		const delayLoader = setTimeout(() => {
-			this.showInitialLoader.set(true);
-		}, 200);
-
-		await this.loadRecordings(this.initialFilters());
-
-		clearTimeout(delayLoader);
-		this.showInitialLoader.set(false);
-		this.isInitializing.set(false);
+		await this.list.initialize(this.initialFilters());
 	}
 
 	ngOnDestroy() {
 		this.listStateCache.set<RecordingsListCachedState>(RecordingsComponent.STATE_KEY, {
-			recordings: this.recordings(),
-			nextPageToken: this.nextPageToken,
-			hasMore: this.hasMoreRecordings(),
-			filters: this.currentFilters,
+			list: this.list.snapshot(),
 			deletableRoomIds: [...this.deletableRoomIds()],
 			scrollTop: this.scroller()?.scrollTop ?? 0
 		});
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
-		switch (action.action) {
-			case 'play':
-				this.playRecording(action.recordings[0]);
-				break;
-			case 'download':
-				this.downloadRecording(action.recordings[0]);
-				break;
-			case 'shareLink':
-				this.shareRecordingLink(action.recordings[0]);
-				break;
-			case 'delete':
-				this.deleteRecording(action.recordings[0]);
-				break;
-			case 'bulkDelete':
-				this.bulkDeleteRecordings(action.recordings);
-				break;
-			case 'bulkDownload':
-				this.bulkDownloadRecordings(action.recordings);
-				break;
-		}
+		await this.recordingActions.handle(action, { list: this.list, log: this.log, hasRecordingAccess: true });
 	}
 
 	async onRecordingClick(recordingId: string) {
@@ -168,65 +129,36 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	private async autoLoadIfEmpty() {
-		if (this.recordings().length === 0 && this.hasMoreRecordings()) {
-			await this.loadRecordings(this.currentFilters);
+	private async fetchRecordingsPage(filters: RecordingTableFilter, nextPageToken: string | undefined) {
+		const recordingFilters: MeetRecordingFilters = {
+			maxItems: 50,
+			nextPageToken,
+			sortField: filters.sortField,
+			sortOrder: filters.sortOrder
+		};
+
+		// Apply room name filter if provided
+		if (filters.nameFilter) {
+			recordingFilters.roomName = filters.nameFilter;
+			recordingFilters.roomNameMatchMode = filters.nameMatchMode;
+			recordingFilters.roomNameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 		}
-	}
 
-	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
-		this.currentFilters = filters;
-		const delayLoader = setTimeout(() => {
-			this.isLoading.set(true);
-		}, 200);
-
-		try {
-			const recordingFilters: MeetRecordingFilters = {
-				maxItems: 50,
-				nextPageToken: !refresh ? this.nextPageToken : undefined,
-				sortField: filters.sortField,
-				sortOrder: filters.sortOrder
-			};
-
-			// Apply room name filter if provided
-			if (filters.nameFilter) {
-				recordingFilters.roomName = filters.nameFilter;
-				recordingFilters.roomNameMatchMode = filters.nameMatchMode;
-				recordingFilters.roomNameCaseInsensitive = filters.nameCaseInsensitive || undefined;
-			}
-
-			// Apply status filter if provided
-			if (filters.statusFilter) {
-				recordingFilters.status = filters.statusFilter;
-			}
-
-			const response = await this.recordingService.listRecordings(recordingFilters);
-			let recordings = response.recordings;
-
-			if (!refresh) {
-				// Update recordings list
-				const currentRecordings = this.recordings();
-				this.recordings.set([...currentRecordings, ...recordings]);
-			} else {
-				// Replace recordings list
-				this.recordings.set(recordings);
-			}
-
-			// Update pagination
-			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRecordings.set(response.pagination.isTruncated);
-
-			// Resolve per-room delete permissions for the newly loaded recordings
-			await this.resolveDeletePermissions(recordings);
-		} catch (error) {
-			this.notificationService.showSnackbar(
-				this.translateService.translate('RECORDINGS.ERRORS.LOAD_RECORDINGS_FAILED')
-			);
-			this.log.e('Error loading recordings:', error);
-		} finally {
-			clearTimeout(delayLoader);
-			this.isLoading.set(false);
+		// Apply status filter if provided
+		if (filters.statusFilter) {
+			recordingFilters.status = filters.statusFilter;
 		}
+
+		const response = await this.recordingService.listRecordings(recordingFilters);
+
+		// Resolve per-room delete permissions for the newly loaded recordings
+		await this.resolveDeletePermissions(response.recordings);
+
+		return {
+			items: response.recordings,
+			nextPageToken: response.pagination.nextPageToken,
+			hasMore: response.pagination.isTruncated
+		};
 	}
 
 	/**
@@ -261,114 +193,5 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 			[...this.roomDeletePermissionCache.entries()].filter(([, canDelete]) => canDelete).map(([id]) => id)
 		);
 		this.deletableRoomIds.set(deletable);
-	}
-
-	async loadMoreRecordings(filters: RecordingTableFilter) {
-		if (!this.hasMoreRecordings() || this.isLoading()) return;
-		await this.loadRecordings(filters);
-	}
-
-	async refreshRecordings(filters: RecordingTableFilter) {
-		await this.loadRecordings(filters, true);
-	}
-
-	private async playRecording(recording: MeetRecordingInfo) {
-		await this.recordingService.playRecording(recording.recordingId);
-	}
-
-	private downloadRecording(recording: MeetRecordingInfo) {
-		this.recordingService.downloadRecording(recording);
-	}
-
-	private shareRecordingLink(recording: MeetRecordingInfo) {
-		this.recordingService.openShareRecordingDialog(recording.recordingId, true);
-	}
-
-	private deleteRecording(recording: MeetRecordingInfo) {
-		const deleteCallback = async () => {
-			try {
-				await this.recordingService.deleteRecording(recording.recordingId);
-
-				// Remove from local list
-				this.recordings.set(this.recordings().filter((r) => r.recordingId !== recording.recordingId));
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.RECORDING_DELETED'));
-				await this.autoLoadIfEmpty();
-			} catch (error) {
-				this.log.e('Error deleting recording:', error);
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED'));
-			}
-		};
-
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
-			confirmCallback: deleteCallback
-		});
-	}
-
-	private bulkDeleteRecordings(recordings: MeetRecordingInfo[]) {
-		const bulkDeleteCallback = async () => {
-			try {
-				const recordingIds = recordings.map((r) => r.recordingId);
-				const { deleted } = await this.recordingService.bulkDeleteRecordings(recordingIds);
-
-				// Remove deleted recordings from the list
-				this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
-				this.notificationService.showSnackbar(
-					`${deleted.length} ${this.translateService.translate(
-						deleted.length > 1
-							? 'RECORDINGS.ERRORS.RECORDINGS_DELETED_SUFFIX_PLURAL'
-							: 'RECORDINGS.ERRORS.RECORDINGS_DELETED_SUFFIX_SINGULAR'
-					)}`
-				);
-				await this.autoLoadIfEmpty();
-			} catch (error: any) {
-				this.log.e('Error deleting recordings:', error);
-
-				const deleted = (error?.error?.deleted ?? []) as string[];
-				const failed = (error?.error?.failed ?? []) as { recordingId: string; error: string }[];
-
-				// Some recordings were deleted, some not
-				if (failed.length > 0 || deleted.length > 0) {
-					// Remove deleted recordings from the list
-					if (deleted.length > 0) {
-						this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
-					}
-
-					let msg = '';
-					if (deleted.length > 0) {
-						msg += `${deleted.length} ${this.translateService.translate(
-							deleted.length > 1
-								? 'RECORDINGS.ERRORS.RECORDINGS_DELETED_DOT_SUFFIX_PLURAL'
-								: 'RECORDINGS.ERRORS.RECORDINGS_DELETED_DOT_SUFFIX_SINGULAR'
-						)}`;
-					}
-					if (failed.length > 0) {
-						msg += `${failed.length} ${this.translateService.translate(
-							failed.length > 1
-								? 'RECORDINGS.ERRORS.RECORDINGS_FAILED_SUFFIX_PLURAL'
-								: 'RECORDINGS.ERRORS.RECORDINGS_FAILED_SUFFIX_SINGULAR'
-						)}`;
-					}
-
-					this.notificationService.showSnackbar(msg.trim());
-					await this.autoLoadIfEmpty();
-				} else {
-					this.notificationService.showSnackbar(
-						this.translateService.translate('RECORDINGS.ERRORS.DELETE_RECORDINGS_FAILED')
-					);
-				}
-			}
-		};
-
-		const count = recordings.length;
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getBulkDeleteRecordingsDialogPreset(count),
-			confirmCallback: bulkDeleteCallback
-		});
-	}
-
-	private bulkDownloadRecordings(recordings: MeetRecordingInfo[]) {
-		const recordingIds = recordings.map((r) => r.recordingId);
-		this.recordingService.downloadRecordingsAsZip(recordingIds);
 	}
 }

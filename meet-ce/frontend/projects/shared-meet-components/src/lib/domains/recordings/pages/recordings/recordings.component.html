@@ -1,5 +1,5 @@
 <!-- Loading State -->
-@if (isInitializing() && showInitialLoader()) {
+@if (list.isInitializing() && list.showInitialLoader()) {
 	<div class="ov-page-loading">
 		<div class="loading-content">
 			<div class="loading-header">
@@ -17,7 +17,7 @@
 	</div>
 }
 
-@if (!isInitializing()) {
+@if (!list.isInitializing()) {
 	<div class="ov-page-container ov-mb-xxl" [ovScrollPersist]="scrollToRestore">
 		<!-- Recordings Header -->
 		<div class="page-header">
@@ -31,20 +31,20 @@
 		<!-- Content -->
 		<div class="page-content">
 			<ov-recording-lists
-				[recordings]="recordings()"
+				[recordings]="list.items()"
 				[canDeleteRecordings]="canDeleteRecordings()"
 				[deletableRoomIds]="deletableRoomIds()"
-				[loading]="isLoading()"
+				[loading]="list.isLoading()"
 				[showSearchBox]="true"
 				[showFilters]="true"
 				[showSelection]="true"
-				[showLoadMore]="hasMoreRecordings()"
+				[showLoadMore]="list.hasMore()"
 				[initialFilters]="initialFilters()"
 				(recordingAction)="onRecordingAction($event)"
 				(recordingClicked)="onRecordingClick($event)"
-				(loadMore)="loadMoreRecordings($event)"
-				(refresh)="refreshRecordings($event)"
-				(filterChange)="refreshRecordings($event)"
+				(loadMore)="list.loadMore($event)"
+				(refresh)="list.refresh($event)"
+				(filterChange)="list.refresh($event)"
 			/>
 		</div>
 	</div>

@@ -208,27 +208,27 @@
 						<ng-template mat-tab-label>
 							<mat-icon class="tab-icon ov-recording-icon">video_library</mat-icon>
 							<span>{{ 'ROOMS.DETAIL.TAB_RECORDINGS' | translate }}</span>
-							<span class="tab-count">{{ recordings().length }}</span>
+							<span class="tab-count">{{ recordingList.items().length }}</span>
 						</ng-template>
 
 						<div class="tab-content">
 							@if (canViewRecordings()) {
 								<ov-recording-lists
-									[recordings]="recordings()"
+									[recordings]="recordingList.items()"
 									[canDeleteRecordings]="canDeleteRecordings()"
-									[loading]="loadingRecordings()"
+									[loading]="recordingList.isLoading()"
 									[showSearchBox]="false"
 									[showFilters]="true"
 									[showSelection]="true"
 									[showRoomInfo]="false"
-									[showLoadMore]="hasMoreRecordings()"
+									[showLoadMore]="recordingList.hasMore()"
 									[roomName]="room()!.roomName"
 									[initialFilters]="initialRecordingFilters()"
 									(recordingAction)="onRecordingAction($event)"
 									(recordingClicked)="onRecordingClick($event)"
-									(loadMore)="loadMoreRecordings($event)"
-									(refresh)="refreshRecordings($event)"
-									(filterChange)="refreshRecordings($event)"
+									(loadMore)="recordingList.loadMore($event)"
+									(refresh)="recordingList.refresh($event)"
+									(filterChange)="recordingList.refresh($event)"
 								/>
 							} @else {
 								<div class="no-permission-state">
@@ -246,22 +246,22 @@
 							<ng-template mat-tab-label>
 								<mat-icon class="tab-icon">people</mat-icon>
 								<span>{{ 'ROOMS.DETAIL.TAB_ROOM_MEMBERS' | translate }}</span>
-								<span class="tab-count">{{ roomMembers().length }}</span>
+								<span class="tab-count">{{ memberList.items().length }}</span>
 							</ng-template>
 
 							<div class="tab-content">
 								<ov-room-members-list
-									[members]="roomMembers()"
-									[loading]="loadingMembers()"
+									[members]="memberList.items()"
+									[loading]="memberList.isLoading()"
 									[showSearchBox]="true"
 									[showFilters]="true"
 									[showSelection]="true"
-									[showLoadMore]="hasMoreMembers()"
+									[showLoadMore]="memberList.hasMore()"
 									[initialFilters]="initialMemberFilters()"
 									(memberAction)="onMemberAction($event)"
-									(loadMore)="loadMoreRoomMembers($event)"
-									(refresh)="refreshRoomMembers($event)"
-									(filterChange)="refreshRoomMembers($event)"
+									(loadMore)="memberList.loadMore($event)"
+									(refresh)="memberList.refresh($event)"
+									(filterChange)="memberList.refresh($event)"
 								/>
 							</div>
 						</mat-tab>

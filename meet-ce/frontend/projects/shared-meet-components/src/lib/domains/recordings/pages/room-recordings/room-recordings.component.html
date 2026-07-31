@@ -21,7 +21,7 @@
 	</div>
 
 	<!-- Loading State -->
-	@if (isInitializing() && showInitialLoader()) {
+	@if (list.isInitializing() && list.showInitialLoader()) {
 		<div class="recordings-loading-container fade-in">
 			<div class="loading-card">
 				<mat-icon class="ov-recording-icon loading-icon">video_library</mat-icon>
@@ -35,24 +35,24 @@
 	}
 
 	<!-- Content -->
-	@if (!isInitializing()) {
+	@if (!list.isInitializing()) {
 		<div class="recordings-content fade-in-delayed">
 			<div class="section-content">
 				<ov-recording-lists
-					[recordings]="recordings()"
+					[recordings]="list.items()"
 					[canDeleteRecordings]="canDeleteRecordings()"
-					[loading]="isLoading()"
+					[loading]="list.isLoading()"
 					[showSearchBox]="false"
 					[showFilters]="true"
 					[showSelection]="true"
 					[showRoomInfo]="false"
-					[showLoadMore]="hasMoreRecordings()"
+					[showLoadMore]="list.hasMore()"
 					[roomName]="roomName()"
 					[initialFilters]="initialFilters()"
 					(recordingAction)="onRecordingAction($event)"
-					(loadMore)="loadMoreRecordings($event)"
-					(refresh)="refreshRecordings($event)"
-					(filterChange)="refreshRecordings($event)"
+					(loadMore)="list.loadMore($event)"
+					(refresh)="list.refresh($event)"
+					(filterChange)="list.refresh($event)"
 					class="recordings-list"
 				/>
 			</div>

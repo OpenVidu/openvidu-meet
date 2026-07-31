@@ -29,10 +29,10 @@ import { ScrollPersistDirective } from '../../../../shared/directives/scroll-per
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { AuthService } from '../../../auth/services/auth.service';
 
 import { DeleteRoomDialogOptions } from '../../../../shared/models/notification.model';
 import { DeleteRoomDialogComponent } from '../../components/delete-room-dialog/delete-room-dialog.component';
@@ -45,15 +45,13 @@ import {
 import { RoomDeletionService } from '../../services/room-deletion.service';
 import { RoomService } from '../../services/room.service';
 import { RoomUiUtils } from '../../utils/ui';
+import { AuthService } from '../../../auth/services/auth.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../shared/models/logger.model';
 
 /** Cached UI state for the rooms list, restored when navigating back to it. */
 interface RoomsListCachedState {
-	rooms: MeetRoom[];
-	nextPageToken?: string;
-	hasMore: boolean;
-	filters: RoomTableFilter;
+	list: EntityListSnapshot<MeetRoom, RoomTableFilter>;
 	scrollTop: number;
 }
 
@@ -100,15 +98,9 @@ export class RoomsComponent implements OnInit, OnDestroy {
 	/** Scroll position to restore on the page container (set when restoring cached state). */
 	protected scrollToRestore = 0;
 
-	rooms = signal<MeetRoom[]>([]);
 	currentUserId = signal<string>('');
 	currentUserRole = signal<MeetUserRole | undefined>(undefined);
 	protected readonly MeetUserRole = MeetUserRole;
-
-	// Loading state
-	isInitializing = signal(true);
-	showInitialLoader = signal(false);
-	isLoading = signal(false);
 
 	initialFilters = signal<RoomTableFilter>({
 		nameFilter: '',
@@ -124,12 +116,14 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		showUserAccessRooms: false
 	});
 
-	// Pagination
-	hasMoreRooms = signal(false);
-	private nextPageToken?: string;
-
-	// Track current active filters so deletions can trigger auto-load
-	private currentFilters: RoomTableFilter = this.initialFilters();
+	protected readonly list = new EntityListState<MeetRoom, RoomTableFilter>({
+		initialFilters: this.initialFilters(),
+		fetchPage: (filters, nextPageToken) => this.fetchRoomsPage(filters, nextPageToken),
+		onLoadError: (error) => {
+			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.LOADING_ROOMS'));
+			this.log.e('Error loading rooms:', error);
+		}
+	});
 
 	async ngOnInit() {
 		// Capture the navigation trigger synchronously, before any await finalizes the navigation.
@@ -144,33 +138,18 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		// (clicking the menu/link) loads fresh data so changes by others are reflected.
 		const cached = this.listStateCache.get<RoomsListCachedState>(RoomsComponent.STATE_KEY);
 		if (cached && isBackNavigation) {
-			this.rooms.set(cached.rooms);
-			this.nextPageToken = cached.nextPageToken;
-			this.hasMoreRooms.set(cached.hasMore);
-			this.currentFilters = cached.filters;
-			this.initialFilters.set(cached.filters); // seeds the child filter form via setupFilters()
+			this.list.restore(cached.list);
+			this.initialFilters.set(cached.list.filters); // seeds the child filter form via setupFilters()
 			this.scrollToRestore = cached.scrollTop; // applied by ScrollPersistDirective once rendered
-			this.isInitializing.set(false);
 			return;
 		}
 
-		const delayLoader = setTimeout(() => {
-			this.showInitialLoader.set(true);
-		}, 200);
-
-		await this.loadRooms(this.initialFilters());
-
-		clearTimeout(delayLoader);
-		this.showInitialLoader.set(false);
-		this.isInitializing.set(false);
+		await this.list.initialize(this.initialFilters());
 	}
 
 	ngOnDestroy() {
 		this.listStateCache.set<RoomsListCachedState>(RoomsComponent.STATE_KEY, {
-			rooms: this.rooms(),
-			nextPageToken: this.nextPageToken,
-			hasMore: this.hasMoreRooms(),
-			filters: this.currentFilters,
+			list: this.list.snapshot(),
 			scrollTop: this.scroller()?.scrollTop ?? 0
 		});
 	}
@@ -204,86 +183,49 @@ export class RoomsComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	private async autoLoadIfEmpty() {
-		if (this.rooms().length === 0 && this.hasMoreRooms()) {
-			await this.loadRooms(this.currentFilters);
+	private async fetchRoomsPage(filters: RoomTableFilter, nextPageToken: string | undefined) {
+		const roomFilters: MeetRoomFilters = {
+			maxItems: 50,
+			nextPageToken,
+			sortField: filters.sortField,
+			sortOrder: filters.sortOrder
+		};
+
+		// Apply room name filter if provided
+		if (filters.nameFilter) {
+			roomFilters.roomName = filters.nameFilter;
+			roomFilters.roomNameMatchMode = filters.nameMatchMode;
+			roomFilters.roomNameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 		}
-	}
 
-	private async loadRooms(filters: RoomTableFilter, refresh = false) {
-		this.currentFilters = filters;
-		const delayLoader = setTimeout(() => {
-			this.isLoading.set(true);
-		}, 200);
-
-		try {
-			const roomFilters: MeetRoomFilters = {
-				maxItems: 50,
-				nextPageToken: !refresh ? this.nextPageToken : undefined,
-				sortField: filters.sortField,
-				sortOrder: filters.sortOrder
-			};
-
-			// Apply room name filter if provided
-			if (filters.nameFilter) {
-				roomFilters.roomName = filters.nameFilter;
-				roomFilters.roomNameMatchMode = filters.nameMatchMode;
-				roomFilters.roomNameCaseInsensitive = filters.nameCaseInsensitive || undefined;
-			}
-
-			// Apply status filter if provided
-			if (filters.statusFilter) {
-				roomFilters.status = filters.statusFilter as MeetRoomStatus;
-			}
-
-			// Apply access-scope filters based on user role
-			const role = this.currentUserRole();
-			const userId = this.currentUserId();
-
-			if (role === MeetUserRole.ADMIN) {
-				// For ADMIN: direct filter pass-through — results are narrowed to rooms matching any selected criterion
-				if (filters.ownerFilter) roomFilters.owner = filters.ownerFilter;
-				if (filters.memberFilter) roomFilters.member = filters.memberFilter;
-				if (filters.showUserAccessRooms) roomFilters.userAccess = true;
-			} else if (userId) {
-				// For ROOM_MANAGER/ROOM_MEMBER: scope selectors bound to the current user's identity
-				if (filters.showOwnedRooms) roomFilters.owner = userId;
-				if (filters.showMemberRooms) roomFilters.member = userId;
-				if (filters.showUserAccessRooms) roomFilters.userAccess = true;
-			}
-
-			const response = await this.roomService.listRooms(roomFilters);
-			const rooms = response.rooms;
-
-			if (!refresh) {
-				// Update rooms list
-				const currentRooms = this.rooms();
-				this.rooms.set([...currentRooms, ...rooms]);
-			} else {
-				// Replace rooms list
-				this.rooms.set(rooms);
-			}
-
-			// Update pagination
-			this.nextPageToken = response.pagination.nextPageToken;
-			this.hasMoreRooms.set(response.pagination.isTruncated);
-		} catch (error) {
-			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.LOADING_ROOMS'));
-			this.log.e('Error loading rooms:', error);
-		} finally {
-			clearTimeout(delayLoader);
-			this.isLoading.set(false);
+		// Apply status filter if provided
+		if (filters.statusFilter) {
+			roomFilters.status = filters.statusFilter as MeetRoomStatus;
 		}
-	}
 
-	async loadMoreRooms(filters: RoomTableFilter) {
-		if (!this.hasMoreRooms() || this.isLoading()) return;
-		await this.loadRooms(filters);
-	}
+		// Apply access-scope filters based on user role
+		const role = this.currentUserRole();
+		const userId = this.currentUserId();
 
-	async refreshRooms(filters: RoomTableFilter) {
-		this.nextPageToken = undefined;
-		await this.loadRooms(filters, true);
+		if (role === MeetUserRole.ADMIN) {
+			// For ADMIN: direct filter pass-through — results are narrowed to rooms matching any selected criterion
+			if (filters.ownerFilter) roomFilters.owner = filters.ownerFilter;
+			if (filters.memberFilter) roomFilters.member = filters.memberFilter;
+			if (filters.showUserAccessRooms) roomFilters.userAccess = true;
+		} else if (userId) {
+			// For ROOM_MANAGER/ROOM_MEMBER: scope selectors bound to the current user's identity
+			if (filters.showOwnedRooms) roomFilters.owner = userId;
+			if (filters.showMemberRooms) roomFilters.member = userId;
+			if (filters.showUserAccessRooms) roomFilters.userAccess = true;
+		}
+
+		const response = await this.roomService.listRooms(roomFilters);
+
+		return {
+			items: response.rooms,
+			nextPageToken: response.pagination.nextPageToken,
+			hasMore: response.pagination.isTruncated
+		};
 	}
 
 	private async createRoom() {
@@ -332,7 +274,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			const updatedRoom = await this.roomService.updateRoomStatus(room.roomId, MeetRoomStatus.OPEN);
 
 			// Update room in the list
-			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
+			this.list.update((rooms) => rooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
 			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.ROOM_REOPENED'));
 		} catch (error) {
 			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_REOPEN_ROOM'));
@@ -345,7 +287,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			const updatedRoom = await this.roomService.updateRoomStatus(room.roomId, MeetRoomStatus.CLOSED);
 
 			// Update room in the list
-			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
+			this.list.update((rooms) => rooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
 
 			// The close is applied immediately unless a meeting is still active, in which case
 			// it is scheduled to take effect when the meeting ends.
@@ -382,11 +324,11 @@ export class RoomsComponent implements OnInit, OnDestroy {
 				updatedRoom.status = MeetRoomStatus.CLOSED;
 			}
 
-			this.rooms.set(this.rooms().map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
+			this.list.update((rooms) => rooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r)));
 		} else {
 			// Room was deleted, remove from list
-			this.rooms.set(this.rooms().filter((r) => r.roomId !== roomId));
-			await this.autoLoadIfEmpty();
+			this.list.remove((r) => r.roomId === roomId);
+			await this.list.autoLoadIfEmpty();
 		}
 
 		this.notificationService.showSnackbar(this.roomDeletionService.removeRoomIdFromMessage(message));
@@ -404,7 +346,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
 				this.handleSuccessfulBulkDeletion(deleted);
 				this.notificationService.showSnackbar(message);
-				await this.autoLoadIfEmpty();
+				await this.list.autoLoadIfEmpty();
 			} catch (error: any) {
 				// Check if it's a structured error with failed rooms
 				const failed = error.error?.failed as { roomId: string; error: string; message: string }[];
@@ -413,7 +355,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
 				if (failed) {
 					this.handleSuccessfulBulkDeletion(deleted);
-					await this.autoLoadIfEmpty();
+					await this.list.autoLoadIfEmpty();
 
 					const hasRoomDeletionError = failed.some((result) =>
 						this.roomDeletionService.isValidDeletionErrorCode(result.error)
@@ -445,33 +387,33 @@ export class RoomsComponent implements OnInit, OnDestroy {
 			room?: MeetRoom;
 		}[]
 	) {
-		const currentRooms = this.rooms();
-		let updatedRooms = [...currentRooms];
-		const deletedRoomIds: string[] = [];
+		this.list.update((currentRooms) => {
+			let updatedRooms = [...currentRooms];
+			const deletedRoomIds: string[] = [];
 
-		// Process each successful result
-		successResults.forEach(({ roomId, successCode, room: updatedRoom }) => {
-			if (updatedRoom) {
-				// Room was not deleted, but updated (e.g., scheduled for deletion, closed)
-				if (successCode === MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED) {
-					updatedRoom.status = MeetRoomStatus.CLOSED;
+			// Process each successful result
+			successResults.forEach(({ roomId, successCode, room: updatedRoom }) => {
+				if (updatedRoom) {
+					// Room was not deleted, but updated (e.g., scheduled for deletion, closed)
+					if (successCode === MeetRoomDeletionSuccessCode.ROOM_WITH_ACTIVE_MEETING_CLOSED) {
+						updatedRoom.status = MeetRoomStatus.CLOSED;
+					}
+
+					// Update the room in the array
+					updatedRooms = updatedRooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r));
+				} else {
+					// Room was deleted, mark for removal from list
+					deletedRoomIds.push(roomId);
 				}
+			});
 
-				// Update the room in the array
-				updatedRooms = updatedRooms.map((r) => (r.roomId === updatedRoom.roomId ? updatedRoom : r));
-			} else {
-				// Room was deleted, mark for removal from list
-				deletedRoomIds.push(roomId);
+			// Remove deleted rooms from the array
+			if (deletedRoomIds.length > 0) {
+				updatedRooms = updatedRooms.filter((r) => !deletedRoomIds.includes(r.roomId));
 			}
+
+			return updatedRooms;
 		});
-
-		// Remove deleted rooms from the array
-		if (deletedRoomIds.length > 0) {
-			updatedRooms = updatedRooms.filter((r) => !deletedRoomIds.includes(r.roomId));
-		}
-
-		// Update the rooms signal with all changes
-		this.rooms.set(updatedRooms);
 	}
 
 	private showBulkDeletionErrorDialogWithOptions(
@@ -497,7 +439,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 
 				this.handleSuccessfulBulkDeletion(deleted);
 				this.notificationService.showSnackbar(message);
-				await this.autoLoadIfEmpty();
+				await this.list.autoLoadIfEmpty();
 			} catch (error: any) {
 				this.log.e('Error in second bulk deletion attempt:', error);
 
@@ -509,7 +451,7 @@ export class RoomsComponent implements OnInit, OnDestroy {
 				if (failed && deleted) {
 					this.handleSuccessfulBulkDeletion(deleted);
 					this.notificationService.showSnackbar(message);
-					await this.autoLoadIfEmpty();
+					await this.list.autoLoadIfEmpty();
 				} else {
 					this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.FAILED_DELETE_ROOMS'));
 				}

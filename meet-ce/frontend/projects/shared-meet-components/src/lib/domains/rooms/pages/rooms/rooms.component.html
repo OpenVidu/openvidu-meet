@@ -1,5 +1,5 @@
 <!-- Loading State -->
-@if (isInitializing() && showInitialLoader()) {
+@if (list.isInitializing() && list.showInitialLoader()) {
 	<div class="ov-page-loading">
 		<div class="loading-content">
 			<div class="loading-header">
@@ -17,7 +17,7 @@
 	</div>
 }
 
-@if (!isInitializing()) {
+@if (!list.isInitializing()) {
 	<div class="ov-page-container ov-mb-xxl" id="rooms-page-container" [ovScrollPersist]="scrollToRestore">
 		<!-- Rooms Header -->
 		<div class="page-header" id="rooms-page-header">
@@ -38,20 +38,20 @@
 		<div class="page-content" id="rooms-content">
 			<ov-rooms-lists
 				id="rooms-list"
-				[rooms]="rooms()"
-				[loading]="isLoading()"
+				[rooms]="list.items()"
+				[loading]="list.isLoading()"
 				[showSearchBox]="true"
 				[showFilters]="true"
 				[showSelection]="true"
-				[showLoadMore]="hasMoreRooms()"
+				[showLoadMore]="list.hasMore()"
 				[initialFilters]="initialFilters()"
 				[currentUserId]="currentUserId()"
 				[currentUserRole]="currentUserRole()"
 				(roomAction)="onRoomAction($event)"
 				(roomClicked)="onRoomClick($event)"
-				(loadMore)="loadMoreRooms($event)"
-				(refresh)="refreshRooms($event)"
-				(filterChange)="refreshRooms($event)"
+				(loadMore)="list.loadMore($event)"
+				(refresh)="list.refresh($event)"
+				(filterChange)="list.refresh($event)"
 			/>
 		</div>
 	</div>

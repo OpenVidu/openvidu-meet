@@ -1,14 +1,6 @@
 import { Clipboard } from '@angular/cdk/clipboard';
 import { DatePipe } from '@angular/common';
-import {
-	Component,
-	OnDestroy,
-	OnInit,
-	computed,
-	inject,
-	signal,
-	viewChild
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, signal, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatChipsModule } from '@angular/material/chips';
@@ -35,13 +27,16 @@ import { ScrollPersistDirective } from '../../../../shared/directives/scroll-per
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
+import { EntityListSnapshot, EntityListState } from '../../../../shared/models/entity-list.model';
 import { ListStateCacheService } from '../../../../shared/services/list-state-cache.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
+import { parseBulkDeleteError } from '../../../../shared/utils/bulk-delete.utils';
 import { decodeToken } from '../../../../shared/utils/token.utils';
 import { AuthService } from '../../../auth/services/auth.service';
 import { RecordingListsComponent } from '../../../recordings/components/recording-lists/recording-lists.component';
 import { RecordingTableAction, RecordingTableFilter } from '../../../recordings/models/recording-list.model';
+import { RecordingActionsService } from '../../../recordings/services/recording-actions.service';
 import { RecordingService } from '../../../recordings/services/recording.service';
 import {
 	MemberTableAction,
@@ -62,14 +57,8 @@ interface RoomDetailCachedState {
 	canViewRecordings: boolean;
 	canDeleteRecordings: boolean;
 	selectedTabIndex: number;
-	members: MeetRoomMember[];
-	nextMembersPageToken?: string;
-	hasMoreMembers: boolean;
-	memberFilters: MemberTableFilter;
-	recordings: MeetRecordingInfo[];
-	nextRecordingsPageToken?: string;
-	hasMoreRecordings: boolean;
-	recordingFilters: RecordingTableFilter;
+	members: EntityListSnapshot<MeetRoomMember, MemberTableFilter>;
+	recordings: EntityListSnapshot<MeetRecordingInfo, RecordingTableFilter>;
 	scrollTop: number;
 }
 
@@ -102,6 +91,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	private readonly roomDeletionService = inject(RoomDeletionService);
 	private readonly roomMemberService = inject(RoomMemberService);
 	private readonly recordingService = inject(RecordingService);
+	private readonly recordingActions = inject(RecordingActionsService);
 	private readonly notificationService = inject(NotificationService);
 	private readonly dialogPresetsService = inject(DialogPresetsService);
 	private readonly translateService = inject(TranslateService);
@@ -137,9 +127,6 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	breadcrumbItems = signal<BreadcrumbItem[]>([]);
 
 	// Room Members tab
-	roomMembers = signal<MeetRoomMember[]>([]);
-	loadingMembers = signal(false);
-	hasMoreMembers = signal(false);
 	initialMemberFilters = signal<MemberTableFilter>({
 		nameFilter: '',
 		nameMatchMode: TextMatchMode.PREFIX,
@@ -149,15 +136,17 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		sortField: 'membershipDate',
 		sortOrder: SortOrder.DESC
 	});
-	private nextMembersPageToken?: string;
 
-	// Track current active filters so deletions can trigger auto-load
-	private currentMemberFilters: MemberTableFilter = this.initialMemberFilters();
+	protected readonly memberList = new EntityListState<MeetRoomMember, MemberTableFilter>({
+		initialFilters: this.initialMemberFilters(),
+		fetchPage: (filters, nextPageToken) => this.fetchMembersPage(filters, nextPageToken),
+		onLoadError: (error) => {
+			this.log.e('Error loading room members:', error);
+			this.notificationService.showSnackbar('Failed to load room members');
+		}
+	});
 
 	// Recordings tab
-	recordings = signal<MeetRecordingInfo[]>([]);
-	loadingRecordings = signal(false);
-	hasMoreRecordings = signal(false);
 	initialRecordingFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
 		nameMatchMode: TextMatchMode.PREFIX,
@@ -166,10 +155,15 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 		sortField: 'startDate',
 		sortOrder: SortOrder.DESC
 	});
-	private nextRecordingsPageToken?: string;
 
-	// Track current active filters so deletions can trigger auto-load
-	private currentRecordingFilters: RecordingTableFilter = this.initialRecordingFilters();
+	protected readonly recordingList = new EntityListState<MeetRecordingInfo, RecordingTableFilter>({
+		initialFilters: this.initialRecordingFilters(),
+		fetchPage: (filters, nextPageToken) => this.fetchRecordingsPage(filters, nextPageToken),
+		onLoadError: (error) => {
+			this.log.e('Error loading recordings:', error);
+			this.notificationService.showSnackbar('Failed to load recordings');
+		}
+	});
 
 	// Tab management
 	selectedTabIndex = signal(0);
@@ -211,16 +205,10 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			this.room.set(cached.room);
 			this.canViewRecordings.set(cached.canViewRecordings);
 			this.canDeleteRecordings.set(cached.canDeleteRecordings);
-			this.roomMembers.set(cached.members);
-			this.nextMembersPageToken = cached.nextMembersPageToken;
-			this.hasMoreMembers.set(cached.hasMoreMembers);
-			this.currentMemberFilters = cached.memberFilters;
-			this.initialMemberFilters.set(cached.memberFilters);
-			this.recordings.set(cached.recordings);
-			this.nextRecordingsPageToken = cached.nextRecordingsPageToken;
-			this.hasMoreRecordings.set(cached.hasMoreRecordings);
-			this.currentRecordingFilters = cached.recordingFilters;
-			this.initialRecordingFilters.set(cached.recordingFilters);
+			this.memberList.restore(cached.members);
+			this.initialMemberFilters.set(cached.members.filters);
+			this.recordingList.restore(cached.recordings);
+			this.initialRecordingFilters.set(cached.recordings.filters);
 			// An explicit ?tab=members request wins over the cached tab.
 			if (this.route.snapshot.queryParamMap.get('tab') === 'members' && this.canManageRoom()) {
 				this.selectedTabIndex.set(1);
@@ -258,14 +246,8 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			canViewRecordings: this.canViewRecordings(),
 			canDeleteRecordings: this.canDeleteRecordings(),
 			selectedTabIndex: this.selectedTabIndex(),
-			members: this.roomMembers(),
-			nextMembersPageToken: this.nextMembersPageToken,
-			hasMoreMembers: this.hasMoreMembers(),
-			memberFilters: this.currentMemberFilters,
-			recordings: this.recordings(),
-			nextRecordingsPageToken: this.nextRecordingsPageToken,
-			hasMoreRecordings: this.hasMoreRecordings(),
-			recordingFilters: this.currentRecordingFilters,
+			members: this.memberList.snapshot(),
+			recordings: this.recordingList.snapshot(),
 			scrollTop: this.scroller()?.scrollTop ?? 0
 		});
 	}
@@ -302,10 +284,10 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			// Load initial data for visible tabs only
 			const tabLoads: Promise<unknown>[] = [];
 			if (this.canViewRecordings()) {
-				tabLoads.push(this.loadRecordings(this.initialRecordingFilters()));
+				tabLoads.push(this.recordingList.load(this.initialRecordingFilters()));
 			}
 			if (this.canManageRoom()) {
-				tabLoads.push(this.loadRoomMembers(this.initialMemberFilters()));
+				tabLoads.push(this.memberList.load(this.initialMemberFilters()));
 			}
 			await Promise.all(tabLoads);
 		} catch (error) {
@@ -407,73 +389,38 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 	// --- Room Members management ---
 
-	private async autoLoadMembersIfEmpty() {
-		if (this.roomMembers().length === 0 && this.hasMoreMembers()) {
-			await this.loadRoomMembers(this.currentMemberFilters);
+	private async fetchMembersPage(filters: MemberTableFilter, nextPageToken: string | undefined) {
+		const memberFilters: MeetRoomMemberFilters = {
+			maxItems: 50,
+			nextPageToken,
+			sortField: filters.sortField,
+			sortOrder: filters.sortOrder
+		};
+
+		// Apply member name filter if provided
+		if (filters.nameFilter) {
+			memberFilters.name = filters.nameFilter;
+			memberFilters.nameMatchMode = filters.nameMatchMode;
+			memberFilters.nameCaseInsensitive = filters.nameCaseInsensitive || undefined;
 		}
-	}
 
-	private async loadRoomMembers(filters: MemberTableFilter, refresh = false) {
-		this.currentMemberFilters = filters;
-		const delayLoader = setTimeout(() => {
-			this.loadingMembers.set(true);
-		}, 200);
-
-		try {
-			const memberFilters: MeetRoomMemberFilters = {
-				maxItems: 50,
-				nextPageToken: !refresh ? this.nextMembersPageToken : undefined,
-				sortField: filters.sortField,
-				sortOrder: filters.sortOrder
-			};
-
-			// Apply member name filter if provided
-			if (filters.nameFilter) {
-				memberFilters.name = filters.nameFilter;
-				memberFilters.nameMatchMode = filters.nameMatchMode;
-				memberFilters.nameCaseInsensitive = filters.nameCaseInsensitive || undefined;
-			}
-
-			// Apply base role filter if provided
-			if (filters.baseRole) {
-				memberFilters.baseRole = filters.baseRole;
-			}
-
-			// Apply member type filter if provided
-			if (filters.type) {
-				memberFilters.type = filters.type;
-			}
-
-			const response = await this.roomMemberService.listRoomMembers(this.roomId(), memberFilters);
-
-			if (!refresh) {
-				// Update members list
-				this.roomMembers.set([...this.roomMembers(), ...response.members]);
-			} else {
-				// Replace members list
-				this.roomMembers.set(response.members);
-			}
-
-			// Update pagination
-			this.nextMembersPageToken = response.pagination.nextPageToken;
-			this.hasMoreMembers.set(response.pagination.isTruncated);
-		} catch (error) {
-			this.log.e('Error loading room members:', error);
-			this.notificationService.showSnackbar('Failed to load room members');
-		} finally {
-			clearTimeout(delayLoader);
-			this.loadingMembers.set(false);
+		// Apply base role filter if provided
+		if (filters.baseRole) {
+			memberFilters.baseRole = filters.baseRole;
 		}
-	}
 
-	async loadMoreRoomMembers(filters: MemberTableFilter) {
-		if (!this.hasMoreMembers() || this.loadingMembers()) return;
-		await this.loadRoomMembers(filters);
-	}
+		// Apply member type filter if provided
+		if (filters.type) {
+			memberFilters.type = filters.type;
+		}
 
-	async refreshRoomMembers(filters: MemberTableFilter) {
-		this.nextMembersPageToken = undefined;
-		await this.loadRoomMembers(filters, true);
+		const response = await this.roomMemberService.listRoomMembers(this.roomId(), memberFilters);
+
+		return {
+			items: response.members,
+			nextPageToken: response.pagination.nextPageToken,
+			hasMore: response.pagination.isTruncated
+		};
 	}
 
 	async onMemberAction(action: MemberTableAction) {
@@ -516,10 +463,9 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 				try {
 					await this.roomMemberService.deleteRoomMember(this.roomId(), member.memberId);
 
-					// Remove deleted member from the list
-					this.roomMembers.set(this.roomMembers().filter((m) => m.memberId !== member.memberId));
+					this.memberList.remove((m) => m.memberId === member.memberId);
 					this.notificationService.showSnackbar(`Member "${member.name}" removed successfully`);
-					await this.autoLoadMembersIfEmpty();
+					await this.memberList.autoLoadIfEmpty();
 				} catch (error) {
 					this.log.e('Error removing member:', error);
 					this.notificationService.showSnackbar('Failed to remove member');
@@ -534,36 +480,37 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 				const memberIds = members.map((m) => m.memberId);
 				const { deleted } = await this.roomMemberService.bulkDeleteRoomMembers(this.roomId(), memberIds);
 
-				// Remove deleted members from the list
-				this.roomMembers.set(this.roomMembers().filter((m) => !deleted.includes(m.memberId)));
+				this.memberList.remove((m) => deleted.includes(m.memberId));
 				this.notificationService.showSnackbar(
 					`${deleted.length} member${deleted.length > 1 ? 's' : ''} removed successfully`
 				);
-				await this.autoLoadMembersIfEmpty();
-			} catch (error: any) {
+				await this.memberList.autoLoadIfEmpty();
+			} catch (error) {
 				this.log.e('Error removing members:', error);
 
-				const deleted = (error?.error?.deleted ?? []) as string[];
-				const failed = (error?.error?.failed ?? []) as { memberId: string; error: string }[];
+				const { deleted, failed } = parseBulkDeleteError<{ memberId: string; error: string }>(error);
 
-				if (failed.length > 0 || deleted.length > 0) {
-					if (deleted.length > 0) {
-						this.roomMembers.set(this.roomMembers().filter((m) => !deleted.includes(m.memberId)));
-					}
-
-					let msg = '';
-					if (deleted.length > 0) {
-						msg += `${deleted.length} member${deleted.length > 1 ? 's' : ''} removed successfully. `;
-					}
-					if (failed.length > 0) {
-						msg += `${failed.length} member${failed.length > 1 ? 's' : ''} could not be removed.`;
-					}
-
-					this.notificationService.showSnackbar(msg.trim());
-					await this.autoLoadMembersIfEmpty();
-				} else {
+				// Nothing structured to report (401, 500, network drop): plain failure.
+				if (deleted.length === 0 && failed.length === 0) {
 					this.notificationService.showSnackbar('Failed to remove members');
+					return;
 				}
+
+				// Partial result: some members were removed, some not.
+				this.memberList.remove((m) => deleted.includes(m.memberId));
+
+				let msg = '';
+
+				if (deleted.length > 0) {
+					msg += `${deleted.length} member${deleted.length > 1 ? 's' : ''} removed successfully. `;
+				}
+
+				if (failed.length > 0) {
+					msg += `${failed.length} member${failed.length > 1 ? 's' : ''} could not be removed.`;
+				}
+
+				this.notificationService.showSnackbar(msg.trim());
+				await this.memberList.autoLoadIfEmpty();
 			}
 		};
 
@@ -580,85 +527,35 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 
 	// --- Recordings management ---
 
-	private async autoLoadRecordingsIfEmpty() {
-		if (this.recordings().length === 0 && this.hasMoreRecordings()) {
-			await this.loadRecordings(this.currentRecordingFilters);
+	private async fetchRecordingsPage(filters: RecordingTableFilter, nextPageToken: string | undefined) {
+		const recordingFilters: MeetRecordingFilters = {
+			roomId: this.roomId(),
+			maxItems: 50,
+			nextPageToken,
+			sortField: filters.sortField,
+			sortOrder: filters.sortOrder
+		};
+
+		// Apply status filter if provided
+		if (filters.statusFilter) {
+			recordingFilters.status = filters.statusFilter;
 		}
-	}
 
-	private async loadRecordings(filters: RecordingTableFilter, refresh = false) {
-		this.currentRecordingFilters = filters;
-		const delayLoader = setTimeout(() => {
-			this.loadingRecordings.set(true);
-		}, 200);
+		const response = await this.recordingService.listRecordings(recordingFilters);
 
-		try {
-			const recordingFilters: MeetRecordingFilters = {
-				roomId: this.roomId(),
-				maxItems: 50,
-				nextPageToken: !refresh ? this.nextRecordingsPageToken : undefined,
-				sortField: filters.sortField,
-				sortOrder: filters.sortOrder
-			};
-
-			// Apply status filter if provided
-			if (filters.statusFilter) {
-				recordingFilters.status = filters.statusFilter;
-			}
-
-			const response = await this.recordingService.listRecordings(recordingFilters);
-
-			if (!refresh) {
-				// Update recordings list
-				this.recordings.set([...this.recordings(), ...response.recordings]);
-			} else {
-				// Replace recordings list
-				this.recordings.set(response.recordings);
-			}
-
-			// Update pagination
-			this.nextRecordingsPageToken = response.pagination.nextPageToken;
-			this.hasMoreRecordings.set(response.pagination.isTruncated);
-		} catch (error) {
-			this.log.e('Error loading recordings:', error);
-			this.notificationService.showSnackbar('Failed to load recordings');
-		} finally {
-			clearTimeout(delayLoader);
-			this.loadingRecordings.set(false);
-		}
-	}
-
-	async loadMoreRecordings(filters: RecordingTableFilter) {
-		if (!this.hasMoreRecordings() || this.loadingRecordings()) return;
-		await this.loadRecordings(filters);
-	}
-
-	async refreshRecordings(filters: RecordingTableFilter) {
-		this.nextRecordingsPageToken = undefined;
-		await this.loadRecordings(filters, true);
+		return {
+			items: response.recordings,
+			nextPageToken: response.pagination.nextPageToken,
+			hasMore: response.pagination.isTruncated
+		};
 	}
 
 	async onRecordingAction(action: RecordingTableAction) {
-		switch (action.action) {
-			case 'play':
-				await this.playRecording(action.recordings[0]);
-				break;
-			case 'download':
-				this.downloadRecording(action.recordings[0]);
-				break;
-			case 'shareLink':
-				this.shareRecordingLink(action.recordings[0]);
-				break;
-			case 'delete':
-				this.deleteRecording(action.recordings[0]);
-				break;
-			case 'bulkDelete':
-				this.bulkDeleteRecordings(action.recordings);
-				break;
-			case 'bulkDownload':
-				this.bulkDownloadRecordings(action.recordings);
-				break;
-		}
+		await this.recordingActions.handle(action, {
+			list: this.recordingList,
+			log: this.log,
+			hasRecordingAccess: true
+		});
 	}
 
 	async onRecordingClick(recordingId: string) {
@@ -668,91 +565,5 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			this.notificationService.showSnackbar(this.translateService.translate('ROOMS.ERRORS.NAVIGATING_RECORDING_DETAIL'));
 			this.log.e('Error navigating to recording detail:', error);
 		}
-	}
-
-	private async playRecording(recording: MeetRecordingInfo) {
-		await this.recordingService.playRecording(recording.recordingId);
-	}
-
-	private downloadRecording(recording: MeetRecordingInfo) {
-		this.recordingService.downloadRecording(recording);
-	}
-
-	private shareRecordingLink(recording: MeetRecordingInfo) {
-		this.recordingService.openShareRecordingDialog(recording.recordingId, true);
-	}
-
-	private deleteRecording(recording: MeetRecordingInfo) {
-		const deleteCallback = async () => {
-			try {
-				await this.recordingService.deleteRecording(recording.recordingId);
-
-				// Remove from local list
-				this.recordings.set(this.recordings().filter((r) => r.recordingId !== recording.recordingId));
-				this.notificationService.showSnackbar('Recording deleted successfully');
-				await this.autoLoadRecordingsIfEmpty();
-			} catch (error) {
-				this.log.e('Error deleting recording:', error);
-				this.notificationService.showSnackbar('Failed to delete recording');
-			}
-		};
-
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getDeleteRecordingDialogPreset(recording.recordingId),
-			confirmCallback: deleteCallback
-		});
-	}
-
-	private bulkDeleteRecordings(recordings: MeetRecordingInfo[]) {
-		const bulkDeleteCallback = async () => {
-			try {
-				const recordingIds = recordings.map((r) => r.recordingId);
-				const { deleted } = await this.recordingService.bulkDeleteRecordings(recordingIds);
-
-				// Remove deleted recordings from the list
-				this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
-				this.notificationService.showSnackbar(
-					`${deleted.length} recording${deleted.length > 1 ? 's' : ''} deleted successfully`
-				);
-				await this.autoLoadRecordingsIfEmpty();
-			} catch (error: any) {
-				this.log.e('Error deleting recordings:', error);
-
-				const deleted = (error?.error?.deleted ?? []) as string[];
-				const failed = (error?.error?.failed ?? []) as { recordingId: string; error: string }[];
-
-				// Some recordings were deleted, some not
-				if (failed.length > 0 || deleted.length > 0) {
-					// Remove deleted recordings from the list
-					if (deleted.length > 0) {
-						this.recordings.set(this.recordings().filter((r) => !deleted.includes(r.recordingId)));
-					}
-
-					let msg = '';
-					if (deleted.length > 0) {
-						msg += `${deleted.length} recording${deleted.length > 1 ? 's' : ''} deleted successfully. `;
-					}
-					if (failed.length > 0) {
-						msg += `${failed.length} recording${failed.length > 1 ? 's' : ''} could not be deleted.`;
-					}
-
-					this.notificationService.showSnackbar(msg.trim());
-					await this.autoLoadRecordingsIfEmpty();
-				} else {
-					this.notificationService.showSnackbar('Failed to delete recordings');
-				}
-			}
-		};
-
-		const count = recordings.length;
-		this.notificationService.showDialog({
-			...this.dialogPresetsService.getBulkDeleteRecordingsDialogPreset(count),
-			confirmCallback: bulkDeleteCallback
-		});
-	}
-
-	private bulkDownloadRecordings(recordings: MeetRecordingInfo[]) {
-		const recordingIds = recordings.map((r) => r.recordingId);
-		this.recordingService.downloadRecordingsAsZip(recordingIds);
 	}
 }
