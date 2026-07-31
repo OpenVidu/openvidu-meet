@@ -85,10 +85,12 @@ export class RoomService {
 			});
 
 			const queryString = queryParams.toString();
+
 			if (queryString) {
 				path += `?${queryString}`;
 			}
 		}
+
 		return this.httpService.getRequest(path);
 	}
 
@@ -115,12 +117,15 @@ export class RoomService {
 		responseOptions?: MeetRoomClientResponseOptions
 	): Promise<MeetRoom | Partial<MeetRoom>> {
 		const queryParams = new URLSearchParams();
+
 		if (responseOptions?.fields) {
 			queryParams.set('fields', responseOptions.fields.join(','));
 		}
+
 		if (responseOptions?.extraFields) {
 			queryParams.set('extraFields', responseOptions.extraFields.join(','));
 		}
+
 		const queryString = queryParams.toString();
 		const path = `${this.ROOMS_API}/${roomId}${queryString ? `?${queryString}` : ''}`;
 
@@ -152,7 +157,7 @@ export class RoomService {
 			this.log.d('Room config loaded:', config);
 		} catch (error) {
 			this.log.e('Error loading room config', error);
-			throw new Error('Failed to load room config');
+			throw new Error('Failed to load room config', { cause: error });
 		}
 	}
 

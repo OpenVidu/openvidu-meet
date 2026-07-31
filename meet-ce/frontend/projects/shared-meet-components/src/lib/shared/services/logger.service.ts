@@ -7,7 +7,7 @@ import { ILogger, ILogService } from '../models/logger.model';
 @Service()
 export class LoggerService implements ILogService {
 	private log: Console = window.console;
-	private LOG_FNS: Function[] = [];
+	private LOG_FNS: ((...args: unknown[]) => void)[] = [];
 	private MSG_PREFIXES: string[][] = [
 		['[', '] DEBUG: '],
 		['[', '] VERBOSE: '],

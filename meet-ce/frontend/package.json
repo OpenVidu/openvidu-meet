@@ -14,7 +14,7 @@
 		"e2e:playwright:all": "pnpm run e2e:playwright:spa && pnpm run e2e:playwright:wc",
 		"e2e:playwright:spa": "playwright test --project=spa",
 		"e2e:playwright:wc": "playwright test --config=webcomponent/playwright.config.ts --project=webcomponent",
-		"lint": "eslint src projects/shared-meet-components/src --max-warnings 0",
+		"lint": "eslint src projects/shared-meet-components/src webcomponent/src webcomponent/tests e2e --max-warnings 0",
 		"lint:fix": "eslint src projects/shared-meet-components/src --fix --max-warnings 0",
 		"format:code": "prettier --ignore-path ../gitignore . --write"
 	},

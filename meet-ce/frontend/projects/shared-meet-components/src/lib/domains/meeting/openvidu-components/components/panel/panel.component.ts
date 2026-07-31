@@ -111,23 +111,20 @@ export class PanelComponent implements OnInit {
 		this.panelEmitersHandler.set(PanelType.ACTIVITIES, this.onActivitiesPanelStatusChanged);
 	}
 
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy() {}
-
 	private sendPanelStatusChangedEvent(event: PanelStatusInfo) {
 		const { panelType, isOpened, previousPanelType } = event;
 
 		// Emit to the current panel
 		if (panelType) {
 			const panelMatch = this.panelEmitersHandler.get(panelType as PanelType);
+
 			if (panelMatch) panelMatch.emit({ isOpened });
 		}
 
 		// Emit to the previous panel if it's different from the current one
 		if (previousPanelType && panelType !== previousPanelType) {
 			const previousPanelMatch = this.panelEmitersHandler.get(previousPanelType as PanelType);
+
 			if (previousPanelMatch) previousPanelMatch.emit({ isOpened: false });
 		}
 	}

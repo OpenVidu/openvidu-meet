@@ -68,9 +68,10 @@ export class MeetingThemeService {
 	 *        room config applies a theme with `persist = false` so it does not overwrite the user's
 	 *        app-wide preference.
 	 */
-	setTheme(theme: MeetingThemeMode, persist: boolean = true): void {
+	setTheme(theme: MeetingThemeMode, persist = true): void {
 		this.applyTheme(theme);
 		this.currentTheme.set(theme);
+
 		if (persist) {
 			this.storageService.setTheme(theme);
 		}

@@ -85,15 +85,17 @@ export class MeetingEventHandlerService {
 							this.handleRecordingUpdated(event as MeetRecordingUpdatedPayload);
 							break;
 
-						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED:
+						case MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED: {
 							const roleUpdateEvent = event as MeetParticipantRoleUpdatedPayload;
 							await this.handleParticipantRoleUpdated(roleUpdateEvent);
 							break;
+						}
 
-						case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED:
+						case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED: {
 							const permissionsUpdateEvent = event as MeetParticipantPermissionsUpdatedPayload;
 							await this.handleParticipantPermissionsUpdated(permissionsUpdateEvent);
 							break;
+						}
 					}
 				} catch (error) {
 					console.warn(`Failed to parse data message for topic: ${topic}`, error);
@@ -134,6 +136,7 @@ export class MeetingEventHandlerService {
 
 		// If meeting was ended by local user, update reason
 		const meetingEndedBySelf = this.meetingContext.meetingEndedBy() === 'self';
+
 		if (leftReason === LeftEventReason.MEETING_ENDED && meetingEndedBySelf) {
 			leftReason = LeftEventReason.MEETING_ENDED_BY_SELF;
 		}
@@ -270,11 +273,13 @@ export class MeetingEventHandlerService {
 	 */
 	private handleParticipantMetadataChanged(participantIdentity: string, metadata: string | undefined): void {
 		const parsedMetadata = parseParticipantMetadata(metadata);
+
 		if (!parsedMetadata) {
 			return;
 		}
 
 		const local = this.meetingState.localParticipant();
+
 		if (local && local.identity === participantIdentity) {
 			local.badge = parsedMetadata.badge;
 			local.promotedModerator = Boolean(parsedMetadata.isPromotedModerator);
@@ -283,6 +288,7 @@ export class MeetingEventHandlerService {
 
 		const remoteParticipants = this.meetingState.remoteParticipants();
 		const participant = remoteParticipants.find((p) => p.identity === participantIdentity);
+
 		if (participant) {
 			participant.badge = parsedMetadata.badge;
 			participant.promotedModerator = Boolean(parsedMetadata.isPromotedModerator);

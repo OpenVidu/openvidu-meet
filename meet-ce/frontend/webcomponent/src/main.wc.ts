@@ -58,7 +58,7 @@ export const bootstrapOpenViduMeet = async (tagName?: string): Promise<void> => 
 // this by setting the flag before importing, then registers `openvidu-meet-impl`
 // itself via the exported `bootstrapOpenViduMeet`.
 declare global {
-	// eslint-disable-next-line no-var
+	// `var` is required: `declare global` only augments globalThis through var bindings.
 	var __OV_MEET_SKIP_AUTODEFINE__: boolean | undefined;
 }
 

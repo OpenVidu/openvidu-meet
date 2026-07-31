@@ -10,7 +10,8 @@ export function createOpenViduMeetElementClass(
 	NgElementConstructor: CustomElementConstructor
 ): CustomElementConstructor {
 	return class extends (NgElementConstructor as any) {
-		private readonly _handlerMap = new Map<string, Map<Function, EventListener>>();
+		// Keyed by the caller's handler, so `off()` can find the wrapper it was registered with.
+		private readonly _handlerMap = new Map<string, Map<(...args: never[]) => unknown, EventListener>>();
 
 		connectedCallback(): void {
 			super.connectedCallback();

@@ -11,8 +11,7 @@ import {
 	ToolbarDirective,
 	ToolbarAdditionalPanelButtonsDirective,
 	AdditionalPanelsDirective,
-	ActivitiesPanelDirective,
-	BackgroundEffectsPanelDirective
+	ActivitiesPanelDirective
 } from './openvidu-components-angular.directive';
 import {
 	LayoutAdditionalElementsDirective,

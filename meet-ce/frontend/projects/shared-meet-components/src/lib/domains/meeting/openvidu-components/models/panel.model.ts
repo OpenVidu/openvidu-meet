@@ -52,8 +52,9 @@ interface PanelStatusEvent {
 	isOpened: boolean;
 }
 
-export interface ChatPanelStatusEvent extends PanelStatusEvent {}
-export interface ParticipantsPanelStatusEvent extends PanelStatusEvent {}
-export interface ActivitiesPanelStatusEvent extends PanelStatusEvent {}
-export interface SettingsPanelStatusEvent extends PanelStatusEvent {}
+// Distinct names for the same payload, one per panel, so each output documents what it emits.
+export type ChatPanelStatusEvent = PanelStatusEvent;
+export type ParticipantsPanelStatusEvent = PanelStatusEvent;
+export type ActivitiesPanelStatusEvent = PanelStatusEvent;
+export type SettingsPanelStatusEvent = PanelStatusEvent;
 // export interface BackgroundEffectsPanelStatusEvent extends PanelStatusEvent { }

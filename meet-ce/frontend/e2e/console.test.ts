@@ -212,7 +212,11 @@ test.describe('Console Room detail E2E Tests', () => {
 		// The recordings tab is selected first.
 		await expect(page.locator('ov-recording-lists')).toBeVisible({ timeout: 20_000 });
 
-		await page.getByRole('tab').filter({ hasText: /member/i }).first().click();
+		await page
+			.getByRole('tab')
+			.filter({ hasText: /member/i })
+			.first()
+			.click();
 
 		await expect(page.locator('ov-room-members-list')).toBeVisible({ timeout: 20_000 });
 	});

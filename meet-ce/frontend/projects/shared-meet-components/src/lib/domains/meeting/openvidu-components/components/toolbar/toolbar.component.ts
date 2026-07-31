@@ -375,12 +375,14 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			event.preventDefault();
 			this.toggleFullscreen();
 		};
+
 		document.addEventListener('keydown', onDocumentKeyDown);
 		this.destroyRef.onDestroy(() => document.removeEventListener('keydown', onDocumentKeyDown));
 
 		// Effect to react to local participant changes
 		effect(() => {
 			const p = this.participantService.localParticipant();
+
 			if (!p) return;
 
 			// Read current state into local variables first
@@ -464,9 +466,11 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 		try {
 			this.cameraMuteChanging.set(true);
 			const isCameraEnabled = this.localMediaControlService.isMyCameraEnabled();
+
 			if (this.panelService.isBackgroundEffectsPanelOpened() && isCameraEnabled) {
 				this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);
 			}
+
 			await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
 		} catch (error) {
 			this.log.e('There was an error toggling camera:', (error as any).code, (error as any).message);
@@ -532,6 +536,7 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	toggleRecording() {
 		const recordingStatus = this.recordingStatus().status;
+
 		if (recordingStatus === RecordingState.FAILED) {
 			this.openRecordingActivityPanel();
 			return;
@@ -595,12 +600,14 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 	private subscribeToReconnection() {
 		const roomValue = this.room();
+
 		if (!roomValue) return;
 
 		roomValue.on(RoomEvent.Reconnecting, () => {
 			if (this.panelService.isPanelOpened()) {
 				this.panelService.closePanel();
 			}
+
 			this.isConnectionLost.set(true);
 		});
 		roomValue.on(RoomEvent.Reconnected, () => this.isConnectionLost.set(false));
@@ -611,21 +618,24 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			.pipe(takeUntilDestroyed(this.destroyRef))
 			.subscribe(() => {
 				const isFullscreen = Boolean(document.fullscreenElement);
+
 				if (isFullscreen) {
 					this.cdkOverlayService.setSelector('#meeting-stage');
 				} else {
 					this.cdkOverlayService.setSelector('body');
 				}
+
 				this.isFullscreenActive.set(isFullscreen);
 				this.onFullscreenEnabledChanged.emit(this.isFullscreenActive());
 			});
 	}
 
 	private evalAndSetRoomName(value: string) {
-		if (!!value) {
+		if (value) {
 			this.roomName.set(value);
 		} else {
 			const roomValue = this.room();
+
 			if (!!roomValue && roomValue.name) {
 				this.roomName.set(roomValue.name);
 			} else {

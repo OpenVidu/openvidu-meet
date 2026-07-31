@@ -1,4 +1,4 @@
-import { Component, effect, inject, OnInit, output, signal } from '@angular/core';
+import { Component, effect, inject, output, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,7 +20,7 @@ import { RecordingActivityComponent } from './recording-activity/recording-activ
 	templateUrl: './activities-panel.component.html',
 	styleUrls: ['../panel.component.scss', './activities-panel.component.scss']
 })
-export class ActivitiesPanelComponent implements OnInit {
+export class ActivitiesPanelComponent {
 	/**
 	 * This event is fired when the user clicks on the start recording button.
 	 * It provides the {@link RecordingStartRequestedEvent} payload as event data.
@@ -69,16 +69,11 @@ export class ActivitiesPanelComponent implements OnInit {
 	private readonly panelService = inject(PanelService);
 	private readonly panelTogglingEffect = effect(() => {
 		const ev = this.panelService.panelOpened();
+
 		if (ev.panelType === PanelType.ACTIVITIES && !!ev.subOptionType) {
 			this.expandedPanel.set(ev.subOptionType);
 		}
 	});
-
-	/**
-	 * @internal
-	 */
-	ngOnInit(): void {
-	}
 
 	/**
 	 * @internal

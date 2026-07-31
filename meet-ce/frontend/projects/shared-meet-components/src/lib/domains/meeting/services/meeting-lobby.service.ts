@@ -120,9 +120,11 @@ export class MeetingLobbyService {
 	readonly participantName = computed(() => {
 		const form = this._participantForm();
 		const rawValue = form.getRawValue();
+
 		if (form.invalid || !rawValue.name?.trim()) {
 			return '';
 		}
+
 		return rawValue.name.trim();
 	});
 
@@ -140,9 +142,11 @@ export class MeetingLobbyService {
 	readonly e2eeKeyValue = computed(() => {
 		const form = this._participantForm();
 		const rawValue = form.getRawValue();
+
 		if (form.invalid || !rawValue.e2eeKey?.trim()) {
 			return '';
 		}
+
 		return rawValue.e2eeKey.trim();
 	});
 
@@ -152,6 +156,7 @@ export class MeetingLobbyService {
 	async initialize(): Promise<void> {
 		try {
 			const roomId = this.meetingContextService.roomId();
+
 			if (!roomId) throw new Error('Room ID is not set in Meeting Context');
 
 			this._roomId.set(roomId);
@@ -182,13 +187,16 @@ export class MeetingLobbyService {
 				const form = this._participantForm();
 				form.get('e2eeKey')?.setValidators([Validators.required]);
 				const contextE2eeKey = this.meetingContextService.e2eeKey();
+
 				if (contextE2eeKey) {
 					this.setE2eeKey(contextE2eeKey);
+
 					// Disable input only if the E2EE key was originally provided via URL parameter
 					if (this.meetingContextService.isE2eeKeyFromUrl()) {
 						form.get('e2eeKey')?.disable();
 					}
 				}
+
 				form.get('e2eeKey')?.updateValueAndValidity();
 			}
 		} catch (error) {
@@ -236,7 +244,9 @@ export class MeetingLobbyService {
 	async goToRecordings(): Promise<void> {
 		try {
 			const roomId = this._roomId();
+
 			if (!roomId) return;
+
 			await this.navigationService.goToRoomRecordings(roomId);
 		} catch (error) {
 			this.log.e('Error navigating to recordings:', error);
@@ -245,6 +255,7 @@ export class MeetingLobbyService {
 
 	async submitAccess(): Promise<void> {
 		const name = this.participantName();
+
 		if (!name) {
 			this.log.e('Participant form is invalid. Cannot join meeting.');
 			throw new Error('Participant form is invalid');
@@ -252,12 +263,15 @@ export class MeetingLobbyService {
 
 		// For E2EE rooms, validate passkey and set it in MeetingContextService if not already set
 		const hasRoomE2EEEnabled = this.hasRoomE2EEEnabled();
+
 		if (hasRoomE2EEEnabled && !this.meetingContextService.isE2eeKeyFromUrl()) {
 			const e2eeKey = this.e2eeKeyValue();
+
 			if (!e2eeKey) {
 				this.log.w('E2EE key is required for encrypted rooms.');
 				return;
 			}
+
 			this.meetingContextService.setE2eeKey(e2eeKey);
 		}
 
@@ -304,7 +318,9 @@ export class MeetingLobbyService {
 			}
 
 			const roomId = this._roomId();
+
 			if (!roomId) throw new Error('Room ID is not set in lobby state');
+
 			const { recordings } = await this.recordingService.listRecordings({
 				maxItems: 1,
 				roomId,
@@ -339,6 +355,7 @@ export class MeetingLobbyService {
 	protected async initializeParticipantName(): Promise<void> {
 		const form = this._participantForm();
 		const nameControl = form.get('name');
+
 		if (!nameControl) return;
 
 		const memberName = this.roomMemberContextService.memberName();
@@ -348,12 +365,14 @@ export class MeetingLobbyService {
 
 		// Get name by priority: member > authenticated user > URL param > stored context
 		const name = memberName || userName || contextName;
+
 		if (name) {
 			this.setParticipantName(name);
 		}
 
 		// Disable input if name comes from: member, authenticated user or URL param
 		const shouldDisable = !!(memberName || userName || (isNameFromUrl && contextName));
+
 		if (shouldDisable) {
 			nameControl.disable();
 		}
@@ -376,6 +395,7 @@ export class MeetingLobbyService {
 			// for local storage below.
 			const e2eeKey = this.e2eeKeyValue();
 			let tokenParticipantName = participantName;
+
 			if (e2eeKey && participantName) {
 				await this.e2eeService.setE2EEKey(e2eeKey);
 				tokenParticipantName = await this.e2eeService.encrypt(participantName);
@@ -397,6 +417,7 @@ export class MeetingLobbyService {
 		} catch (error: any) {
 			this.log.e('Error generating room member token for joining meeting:', error);
 			const message = error?.error?.message || error.message || 'Unknown error';
+
 			switch (error.status) {
 				case 400:
 					// Invalid secret
@@ -415,6 +436,7 @@ export class MeetingLobbyService {
 							true
 						);
 					}
+
 					break;
 				case 404:
 					// Room or member not found
@@ -423,6 +445,7 @@ export class MeetingLobbyService {
 					} else {
 						await this.navigationService.redirectToErrorPage(NavigationErrorReason.INVALID_ROOM, true);
 					}
+
 					break;
 				case 409:
 					// Room is closed
@@ -436,7 +459,7 @@ export class MeetingLobbyService {
 					await this.navigationService.redirectToErrorPage(NavigationErrorReason.INTERNAL_ERROR, true);
 			}
 
-			throw new Error('Error generating room member token');
+			throw new Error('Error generating room member token', { cause: error });
 		}
 	}
 

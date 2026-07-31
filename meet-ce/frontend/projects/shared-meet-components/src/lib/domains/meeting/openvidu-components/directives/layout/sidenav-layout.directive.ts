@@ -183,7 +183,11 @@ export class SidenavLayoutDirective implements OnDestroy {
 		}
 
 		if (panel.isOpened !== sidenav.opened) {
-			panel.isOpened ? sidenav.open() : sidenav.close();
+			if (panel.isOpened) {
+				sidenav.open();
+			} else {
+				sidenav.close();
+			}
 		}
 	}
 

@@ -52,5 +52,6 @@ interface RecordingEvent {
 	recordingId?: string;
 }
 
-export interface RecordingStartRequestedEvent extends RecordingEvent {}
-export interface RecordingStopRequestedEvent extends RecordingEvent {}
+// Distinct names for the same payload, so each output documents what it emits.
+export type RecordingStartRequestedEvent = RecordingEvent;
+export type RecordingStopRequestedEvent = RecordingEvent;

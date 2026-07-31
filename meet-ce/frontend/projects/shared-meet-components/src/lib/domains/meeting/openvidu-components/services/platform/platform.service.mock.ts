@@ -19,11 +19,12 @@ export class PlatformServiceMock {
 	private isIos(): boolean {
 		return false
 	}
-	private isIPhoneOrIPad(userAgent): boolean {
+
+	private isIPhoneOrIPad(_userAgent: string): boolean {
 		return false;
 	}
 
-	private isIOSWithSafari(userAgent): boolean {
+	private isIOSWithSafari(_userAgent: string): boolean {
 		return false;
 	}
 }

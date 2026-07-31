@@ -43,12 +43,14 @@ export class NavigationService {
 	 */
 	async redirectToLeaveUrl() {
 		const url = this.leaveRedirect.getLeaveRedirectURL();
+
 		if (!url) {
 			console.warn('No leave redirect URL set');
 			return;
 		}
 
 		const isExternalURL = /^https?:\/\//.test(url);
+
 		if (!isExternalURL) {
 			console.error('Leave redirect URL is not a valid external URL:', url);
 			return;
@@ -79,7 +81,7 @@ export class NavigationService {
 	 * @param queryParams - Optional query parameters to include in the navigation
 	 * @param replaceUrl - If true, replaces the current URL in the browser history
 	 */
-	async navigateTo(route: string, queryParams?: Params, replaceUrl: boolean = false): Promise<void> {
+	async navigateTo(route: string, queryParams?: Params, replaceUrl = false): Promise<void> {
 		// The WC has no router: arbitrary route navigation isn't supported here (in-WC
 		// view changes go through the high-level intents / navigation requests). Guard
 		// against hitting the empty router, which would only log a NavigationError.
@@ -122,16 +124,19 @@ export class NavigationService {
 			}
 
 			const accessToken = this.tokenStorageService.getAccessToken();
+
 			if (accessToken) {
 				queryParams.set(ACCESS_TOKEN_QUERY_PARAM, accessToken);
 			}
 
 			const refreshToken = this.tokenStorageService.getRefreshToken();
+
 			if (refreshToken) {
 				queryParams.set(REFRESH_TOKEN_QUERY_PARAM, refreshToken);
 			}
 
 			const queryString = queryParams.toString();
+
 			if (queryString) {
 				path += `?${queryString}`;
 			}
@@ -157,7 +162,7 @@ export class NavigationService {
 		route: string,
 		pathToInvalidate: string,
 		queryParams?: Params,
-		replaceUrl: boolean = false
+		replaceUrl = false
 	): Promise<void> {
 		this.listStateCacheService.invalidate(pathToInvalidate);
 		await this.navigateTo(route, queryParams, replaceUrl);
@@ -201,18 +206,20 @@ export class NavigationService {
 	 * @param url - The URL to redirect to
 	 * @param replaceUrl - If true, replaces the current URL in the browser history
 	 */
-	async redirectTo(url: string, replaceUrl: boolean = true): Promise<void> {
+	async redirectTo(url: string, replaceUrl = true): Promise<void> {
 		// In the WC, `redirectTo` completes an interrupt flow (login / change-password).
 		// Resolve the destination path back to a route and drive the mini-router there
 		// (re-running its guard now that the user is authenticated). An empty/unparseable
 		// destination falls back to the attribute-derived home view.
 		if (this.runtimeConfigService.isWebcomponentMode()) {
 			const route = url ? wcRouteFromPath(url) : null;
+
 			if (route) {
 				await this.wcRouterGateway.navigate(route);
 			} else {
 				await this.wcRouterGateway.navigateToInitial();
 			}
+
 			return;
 		}
 
@@ -220,7 +227,7 @@ export class NavigationService {
 			// Strip basePath prefix if present, since Angular router operates relative to <base href>
 			url = this.runtimeConfigService.stripBasePath(url);
 
-			let urlTree = this.router.parseUrl(url);
+			const urlTree = this.router.parseUrl(url);
 			await this.router.navigateByUrl(urlTree, { replaceUrl });
 		} catch (error) {
 			console.error('Error navigating to internal route:', error);
@@ -400,11 +407,13 @@ export class NavigationService {
 	 */
 	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
 		const isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode();
+
 		if (isEmbeddedMode) {
 			this.eventBus.emit({ event: EmbeddedEventName.CLOSED });
 		}
 
 		const leaveRedirectUrl = this.leaveRedirect.getLeaveRedirectURL();
+
 		if (leaveRedirectUrl) {
 			await this.redirectToLeaveUrl();
 			return;

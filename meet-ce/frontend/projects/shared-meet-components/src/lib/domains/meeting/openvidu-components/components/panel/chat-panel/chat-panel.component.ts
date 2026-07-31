@@ -83,7 +83,8 @@ export class ChatPanelComponent implements AfterViewInit {
 	 */
 	async sendMessage(): Promise<void> {
 		if (!this.canWrite()) return;
-		if (!!this.message()) {
+
+		if (this.message()) {
 			await this.chatService.sendMessage(this.message());
 			this.message.set('');
 		}
@@ -94,12 +95,15 @@ export class ChatPanelComponent implements AfterViewInit {
 	 */
 	scrollToBottom(): void {
 		const chatScroll = this.chatScroll();
+
 		if (!chatScroll) return;
 
 		setTimeout(() => {
 			try {
 				chatScroll.nativeElement.scrollTop = chatScroll.nativeElement.scrollHeight;
-			} catch (err) {}
+			} catch {
+				// The panel can be torn down before the timeout fires; nothing to scroll then.
+			}
 		}, 20);
 	}
 
@@ -117,6 +121,7 @@ export class ChatPanelComponent implements AfterViewInit {
 		if (!this.e2eeService.isEnabled) {
 			return false;
 		}
+
 		return this.participantService.hasRemoteEncryptionErrorsSignal();
 	});
 }

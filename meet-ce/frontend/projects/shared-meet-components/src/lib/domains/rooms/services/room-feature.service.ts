@@ -91,6 +91,7 @@ export class RoomFeatureService {
 		if (appearanceResult.status === 'rejected') {
 			this.log.e('Could not load room appearance config for features:', appearanceResult.reason);
 		}
+
 		if (captionsResult.status === 'rejected') {
 			this.log.e('Could not load captions config for features:', captionsResult.reason);
 		}
@@ -103,7 +104,7 @@ export class RoomFeatureService {
 		roomConfig?: MeetRoomConfig,
 		permissions?: MeetRoomMemberPermissions,
 		appearanceConfig?: MeetAppearanceConfig,
-		captionsGlobalEnabled: boolean = false
+		captionsGlobalEnabled = false
 	): RoomFeatures {
 		const features = structuredClone(DEFAULT_FEATURES);
 

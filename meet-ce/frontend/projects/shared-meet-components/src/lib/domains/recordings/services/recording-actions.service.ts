@@ -77,7 +77,9 @@ export class RecordingActionsService {
 				await list.autoLoadIfEmpty();
 			} catch (error) {
 				log.e('Error deleting recording:', error);
-				this.notificationService.showSnackbar(this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED'));
+				this.notificationService.showSnackbar(
+					this.translateService.translate('RECORDINGS.ERRORS.DELETE_FAILED')
+				);
 			}
 		};
 

@@ -28,7 +28,7 @@ type MediaDevicesFixtures = {
 };
 
 export const test = base.extend<MediaDevicesFixtures>({
-	noMediaPage: async ({}, use, testInfo) => {
+	noMediaPage: async (_fixtures, use, testInfo) => {
 		const browser = await chromium.launch({
 			headless: testInfo.project.use.headless,
 			args: ['--window-size=1366,900']

@@ -17,10 +17,14 @@ export class BaseLayoutService {
 	protected log: ILogger = inject(LoggerService).get('BaseLayoutService');
 
 	private _layoutUpdateEffect = effect(() => {
-		// Setup reactive viewport listener
-		const viewportInfo = this.viewportSrv.viewportInfo();
-		const isMobile = this.viewportSrv.isMobile();
-		const orientation = this.viewportSrv.orientation();
+		// Reading these registers the effect's viewport dependencies. `updateLayoutOptions()` only
+		// reaches isMobile/isTablet/isPortrait (through `getOptions()`), so viewportInfo and
+		// orientation are tracked here to also refresh on changes that don't flip those booleans.
+		const _trackedViewportSignals = [
+			this.viewportSrv.viewportInfo(),
+			this.viewportSrv.isMobile(),
+			this.viewportSrv.orientation()
+		];
 		this.updateLayoutOptions();
 	});
 
@@ -32,6 +36,7 @@ export class BaseLayoutService {
 		this.layoutContainer = container;
 		this.openviduLayout = new OpenViduLayout();
 		this.openviduLayoutOptions = this.getOptions();
+
 		if (this.layoutContainer) {
 			this.openviduLayout.initLayoutContainer(this.layoutContainer, this.openviduLayoutOptions);
 		}
@@ -39,6 +44,7 @@ export class BaseLayoutService {
 
 	update() {
 		if (!this.openviduLayout || !this.layoutContainer) return;
+
 		this.openviduLayoutOptions = this.getOptions();
 		this.openviduLayout.updateLayout(this.layoutContainer, this.openviduLayoutOptions);
 	}

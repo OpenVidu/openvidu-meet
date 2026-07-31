@@ -40,6 +40,9 @@ export class WizardNavComponent {
 	 */
 	previous = output<WizardNavigationEvent>();
 	next = output<WizardNavigationEvent>();
+	// `cancel` shadows a native DOM event name, but it is the accurate name for the wizard's Cancel
+	// button and renaming it would churn every wizard template for no gain.
+	// eslint-disable-next-line @angular-eslint/no-output-native
 	cancel = output<WizardNavigationEvent>();
 	back = output<WizardNavigationEvent>();
 	finish = output<WizardNavigationEvent>();
@@ -84,6 +87,7 @@ export class WizardNavComponent {
 
 	onBack() {
 		if (!this.config().showBack) return;
+
 		const event: WizardNavigationEvent = {
 			action: 'back',
 			currentStepIndex: this.currentStepId()

@@ -131,7 +131,7 @@ export class RoomWizardStateService {
 	 * @param editMode - Whether the wizard is in edit mode
 	 * @param existingData - Existing room options to prefill the wizard
 	 */
-	initializeWizard(editMode: boolean = false, existingData?: MeetRoomOptions): void {
+	initializeWizard(editMode = false, existingData?: MeetRoomOptions): void {
 		this._isInitialized.set(false);
 		this._editMode.set(editMode);
 
@@ -347,12 +347,14 @@ export class RoomWizardStateService {
 					isVisible: recordingEnabled // Only show if recording is enabled
 				};
 			}
+
 			if (step.id === WizardStepId.RECORDING_TRIGGER) {
 				return {
 					...step,
 					isVisible: false // TODO: Change to 'recordingEnabled' when recording trigger config is implemented
 				};
 			}
+
 			return step;
 		});
 		this._steps.set(updatedSteps);
@@ -405,6 +407,7 @@ export class RoomWizardStateService {
 
 	goToStep(targetIndex: number): boolean {
 		const currentIndex = this._currentStepIndex();
+
 		if (targetIndex === currentIndex) {
 			return false; // No change if the target index is the same as current
 		}
@@ -414,6 +417,7 @@ export class RoomWizardStateService {
 		if (targetIndex >= 0 && targetIndex < visibleSteps.length) {
 			// Deactivate current step
 			const currentStep = this.currentStep();
+
 			if (currentStep) {
 				currentStep.isActive = false;
 			}
@@ -438,7 +442,9 @@ export class RoomWizardStateService {
 	 */
 	goToStepById(stepId: WizardStepId): boolean {
 		const targetIndex = this._visibleSteps().findIndex((step) => step.id === stepId);
+
 		if (targetIndex === -1) return false;
+
 		return this.goToStep(targetIndex);
 	}
 
@@ -479,9 +485,11 @@ export class RoomWizardStateService {
 		values: Partial<Record<T, boolean>>
 	): { [K in T]: FormControl<boolean> } {
 		const controls = {} as { [K in T]: FormControl<boolean> };
+
 		for (const key of keys) {
 			controls[key] = this.formBuilder.nonNullable.control(values[key] ?? false);
 		}
+
 		return controls;
 	}
 

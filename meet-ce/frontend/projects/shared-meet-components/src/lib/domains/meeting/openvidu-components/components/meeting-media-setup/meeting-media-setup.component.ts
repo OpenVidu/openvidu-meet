@@ -93,10 +93,11 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
 	private log: ILogger = inject(LoggerService).get('MeetingMediaSetupComponent');
-	private shouldRemoveTracksWhenComponentIsDestroyed: boolean = true;
+	private shouldRemoveTracksWhenComponentIsDestroyed = true;
 
 	private readonly errorEffect = effect(() => {
 		const currentError = this.error();
+
 		if (currentError) {
 			this.errorMessage.set(currentError.message ?? currentError.name);
 		}
@@ -104,6 +105,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 
 	private readonly participantNameEffect = effect(() => {
 		const configuredName = this.libService.participantNameSignal();
+
 		if (configuredName) {
 			this.participantName.set(configuredName);
 		}
@@ -153,6 +155,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 
 	async videoEnabledChanged(enabled: boolean) {
 		this.isVideoEnabled.set(enabled);
+
 		if (!enabled) {
 			this.closeBackgroundPanel();
 		} else if (!this.videoTrack()) {
@@ -217,6 +220,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 			// — no explicit attach() call needed.
 			this.localTrackService.setLocalTracks(this.tracks);
 		}
+
 		this.onAudioEnabledChanged.emit(enabled);
 	}
 
@@ -257,7 +261,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	/**
 	 * Improved device initialization with error handling
 	 */
-	private async initializeDevicesWithRetry(maxRetries: number = 3): Promise<void> {
+	private async initializeDevicesWithRetry(maxRetries = 3): Promise<void> {
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
 				this.tracks = await this.localTrackService.createLocalTracks();

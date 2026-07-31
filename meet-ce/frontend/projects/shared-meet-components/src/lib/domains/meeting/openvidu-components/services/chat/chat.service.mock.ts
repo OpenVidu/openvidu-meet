@@ -10,7 +10,7 @@ export class ChatServiceMock {
 	subscribeToChat() {
 	}
 
-	sendMessage(message: string) {
+	sendMessage(_message: string) {
 
 	}
 

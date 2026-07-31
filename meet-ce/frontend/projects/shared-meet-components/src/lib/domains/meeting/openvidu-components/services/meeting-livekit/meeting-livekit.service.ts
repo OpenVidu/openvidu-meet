@@ -136,6 +136,7 @@ export class MeetingLiveKitService {
 			// Configure E2EE if key provider was initialized
 			if (this.keyProvider) {
 				const e2eeKey = this.configService.getE2EEKey();
+
 				if (e2eeKey) {
 					this.log.d('Setting E2EE key and enabling encryption');
 					await this.keyProvider.setKey(e2eeKey);
@@ -143,10 +144,12 @@ export class MeetingLiveKitService {
 					this.log.d('E2EE successfully enabled');
 				}
 			}
+
 			await this.livekitSdkService.connectRoom(room, this.livekitUrl, this.livekitToken);
 			this.log.d(`Successfully connected to room ${room.name}`);
 
 			const participantName = this.storageService.getParticipantName();
+
 			if (participantName) {
 				room.localParticipant.setName(participantName);
 			}
@@ -170,13 +173,15 @@ export class MeetingLiveKitService {
 	 */
 	async disconnect(
 		callback?: () => void,
-		shouldHandleClientInitiatedDisconnectEvent: boolean = true
+		shouldHandleClientInitiatedDisconnectEvent = true
 	): Promise<void> {
 		this.shouldHandleClientInitiatedDisconnectEvent = shouldHandleClientInitiatedDisconnectEvent;
 		const room = this.room;
+
 		if (room && this.isConnected()) {
 			this.log.d('Disconnecting from room');
 			await this.livekitSdkService.disconnectRoom(room);
+
 			if (callback) callback();
 		}
 	}
@@ -189,6 +194,7 @@ export class MeetingLiveKitService {
 			this.log.e('Room is not initialized. Make sure token is set before accessing the room.');
 			throw new Error('Room is not initialized. Make sure token is set before accessing the room.');
 		}
+
 		return this.room;
 	}
 
@@ -272,6 +278,7 @@ export class MeetingLiveKitService {
 			);
 
 			const payload = JSON.parse(jsonPayload);
+
 			if (payload?.metadata) {
 				const tokenMetadata = JSON.parse(payload.metadata);
 				return {
@@ -282,7 +289,7 @@ export class MeetingLiveKitService {
 
 			return { livekitRoomAdmin: false };
 		} catch (error) {
-			throw new Error('Error decoding and parsing token: ' + error);
+			throw new Error('Error decoding and parsing token: ' + error, { cause: error });
 		}
 	}
 }

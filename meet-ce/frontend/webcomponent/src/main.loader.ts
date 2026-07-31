@@ -23,7 +23,7 @@ import { EmbeddedAttribute, EmbeddedCommandName, EmbeddedEventName } from '@open
 declare global {
 	// Set before importing the heavy bundle so it skips its own `openvidu-meet`
 	// auto-registration; the loader registers `openvidu-meet-impl` instead.
-	// eslint-disable-next-line no-var
+	// `var` is required: `declare global` only augments globalThis through var bindings.
 	var __OV_MEET_SKIP_AUTODEFINE__: boolean | undefined;
 }
 
@@ -61,14 +61,17 @@ const ESM_URL = new URL('openvidu-meet.esm.js', loaderSrc || window.location.hre
 // Load the heavy bundle once (shared across every loader instance) and register
 // the internal implementation tag.
 let implReady: Promise<void> | null = null;
+
 const importImpl = async (): Promise<void> => {
 	// Already registered (e.g. the ESM was imported directly, or a previous load
 	// already ran): nothing to import or bootstrap. Keeps this idempotent.
 	if (customElements.get(IMPL_TAG)) return;
+
 	globalThis.__OV_MEET_SKIP_AUTODEFINE__ = true;
 	const mod: { bootstrapOpenViduMeet: (tag: string) => Promise<void> } = await import(ESM_URL);
 	await mod.bootstrapOpenViduMeet(IMPL_TAG);
 };
+
 // Memoized so the heavy bundle loads at most once per page. On failure the cached
 // promise is CLEARED so a later reconnect can retry — otherwise a single transient
 // import error (network blip, 5xx) would leave a permanently-rejected promise and
@@ -113,6 +116,7 @@ const LOADER_STYLES = `
 // back to a per-instance <style> where constructable stylesheets aren't available
 // (very old engines / some jsdom versions).
 let sharedStyleSheet: CSSStyleSheet | null = null;
+
 try {
 	sharedStyleSheet = new CSSStyleSheet();
 	sharedStyleSheet.replaceSync(LOADER_STYLES);
@@ -168,6 +172,7 @@ class OpenViduMeetLoader extends HTMLElement {
 		// preserves the live meeting; only a genuine removal lets it fire. See
 		// TEARDOWN_GRACE_MS.
 		if (this._teardownTimer !== null) return;
+
 		this._teardownTimer = setTimeout(() => {
 			this._teardownTimer = null;
 			this._attrObserver?.disconnect();
@@ -293,7 +298,9 @@ class OpenViduMeetLoader extends HTMLElement {
 		for (const name of EVENTS) {
 			impl.addEventListener(name, (e: Event) => {
 				const ce = e as CustomEvent;
+
 				if (ce.composed) return;
+
 				this.dispatchEvent(new CustomEvent(name, { detail: ce.detail, bubbles: ce.bubbles }));
 			});
 		}
@@ -318,8 +325,11 @@ class OpenViduMeetLoader extends HTMLElement {
 		this._attrObserver = new MutationObserver((records) => {
 			for (const record of records) {
 				const name = record.attributeName;
+
 				if (record.type !== 'attributes' || !name) continue;
+
 				const value = this.getAttribute(name);
+
 				if (value === null) impl.removeAttribute(name);
 				else impl.setAttribute(name, value);
 			}
@@ -330,6 +340,7 @@ class OpenViduMeetLoader extends HTMLElement {
 		for (const { method, args } of this._deferred) {
 			(impl[method] as ((...a: unknown[]) => unknown) | undefined)?.(...args);
 		}
+
 		this._deferred = [];
 	}
 }
@@ -345,6 +356,7 @@ for (const prop of PROPERTIES) {
 		},
 		set(this: OpenViduMeetLoader, value: unknown) {
 			this._props[prop] = value;
+
 			if (this._impl) this._impl[prop] = value;
 		}
 	});
@@ -360,6 +372,7 @@ for (const method of METHODS) {
 			if (this._impl) {
 				return (this._impl[method] as (...a: unknown[]) => unknown)(...args);
 			}
+
 			this._deferred.push({ method, args });
 			return undefined;
 		}

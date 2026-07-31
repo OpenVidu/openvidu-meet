@@ -10,6 +10,7 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 function categoryPrefix(category: BackgroundCategory): string {
 	return category.toLowerCase().replace('_', '-');
 }
+
 /**
  * @internal
  */
@@ -112,8 +113,10 @@ export class VirtualBackgroundService {
 
 	async applyBackgroundFromStorage() {
 		const bgId = this.storageService.getBackground();
-		if (!!bgId) {
+
+		if (bgId) {
 			const background = this.backgrounds.find((bg) => bg.id === bgId);
+
 			if (background) {
 				await this.applyBackground(background);
 			}
@@ -156,12 +159,14 @@ export class VirtualBackgroundService {
 	async removeBackground() {
 		if (this.isBackgroundApplied()) {
 			this.backgroundIdSelectedWritable.set('no_effect');
+
 			try {
 				const videoTrack = await this.localTrackService.getCurrentVideoTrack();
 				await this.videoTrackProcessorService.switchBackgroundMode({ mode: 'disabled' }, videoTrack);
 			} catch (e) {
 				this.log.w('Error disabling processor:', e);
 			}
+
 			this.storageService.removeBackground();
 		}
 	}
@@ -177,6 +182,7 @@ export class VirtualBackgroundService {
 				blurRadius: bg.id === 'soft_blur' ? this.SOFT_BLUR_INTENSITY : this.HARD_BLUR_INTENSITY
 			};
 		}
+
 		return { mode: 'disabled' };
 	}
 

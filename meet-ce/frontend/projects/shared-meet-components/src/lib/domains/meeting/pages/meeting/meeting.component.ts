@@ -7,7 +7,7 @@ import {
 	inject,
 	OnInit,
 	signal,
-	untracked
+	untracked, OnDestroy
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -38,7 +38,7 @@ import { MeetingLobbyService } from '../../services/meeting-lobby.service';
 	],
 	providers: [MeetingLobbyService, MeetingEventHandlerService, SoundService]
 })
-export class MeetingComponent implements OnInit {
+export class MeetingComponent implements OnInit, OnDestroy {
 	protected meetingContextService = inject(MeetingContextService);
 	protected meetingStateService = inject(MeetingStateService);
 	protected lobbyService = inject(MeetingLobbyService);
@@ -150,6 +150,7 @@ export class MeetingComponent implements OnInit {
 
 	onViewRecordingsClicked(): void {
 		const roomId = this.meetingContextService.roomId();
+
 		if (!roomId) {
 			return;
 		}

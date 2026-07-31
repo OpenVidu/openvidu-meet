@@ -41,11 +41,13 @@ export class AuthService {
 
 			// Save tokens in localStorage
 			this.tokenStorageService.setAccessToken(response.accessToken);
+
 			if (response.refreshToken) {
 				this.tokenStorageService.setRefreshToken(response.refreshToken);
 			}
 
 			const mustChangePassword = response.mustChangePassword ?? false;
+
 			if (mustChangePassword) {
 				this.sessionStorageService.setMustChangePasswordRequired(true);
 			}
@@ -70,6 +72,7 @@ export class AuthService {
 
 		// Add refresh token header if in header mode
 		let headers: Record<string, string> | undefined;
+
 		if (refreshToken) {
 			headers = {};
 			headers[HTTP_HEADERS.REFRESH_TOKEN] = `Bearer ${refreshToken}`;
@@ -83,6 +86,7 @@ export class AuthService {
 
 		// Update tokens in localStorage
 		this.tokenStorageService.setAccessToken(response.accessToken);
+
 		if (response.refreshToken) {
 			this.tokenStorageService.setRefreshToken(response.refreshToken);
 		}
@@ -180,7 +184,7 @@ export class AuthService {
 			try {
 				const user = await this.userService.getMe();
 				this.user = user;
-			} catch (error) {
+			} catch {
 				this.user = null;
 			}
 		}

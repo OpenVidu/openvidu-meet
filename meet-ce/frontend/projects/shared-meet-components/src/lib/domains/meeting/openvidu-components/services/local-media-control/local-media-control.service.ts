@@ -1,7 +1,6 @@
 import { Injector, Service, inject } from '@angular/core';
 import { ParticipantModel } from '../../models/participant.model';
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
-import { DeviceService } from '../device/device.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import type { AudioCaptureOptions, ScreenShareCaptureOptions, VideoCaptureOptions } from '../livekit';
 import { VideoPresets } from '../livekit';
@@ -42,6 +41,7 @@ class RoomTarget implements LocalMediaTarget {
 	async setCameraEnabled(enabled: boolean): Promise<void> {
 		const storageDevice = this.storageSrv.getVideoDevice();
 		let options: VideoCaptureOptions | undefined;
+
 		if (storageDevice) {
 			options = {
 				deviceId: storageDevice.device,
@@ -49,6 +49,7 @@ class RoomTarget implements LocalMediaTarget {
 				resolution: VideoPresets.h720.resolution
 			};
 		}
+
 		await this.participant.setCameraEnabled(enabled, options);
 		this.participant.bump();
 	}
@@ -56,9 +57,11 @@ class RoomTarget implements LocalMediaTarget {
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
 		const storageDevice = this.storageSrv.getAudioDevice();
 		let options: AudioCaptureOptions | undefined;
+
 		if (storageDevice) {
 			options = { deviceId: storageDevice.device };
 		}
+
 		await this.participant.setMicrophoneEnabled(enabled, options);
 		this.participant.bump();
 	}
@@ -111,11 +114,13 @@ class PrejoinTarget implements LocalMediaTarget {
 
 	isCameraEnabled(): boolean {
 		if (!this.directiveService.isVideoEnabled()) return false;
+
 		return this.localTrackService.isVideoTrackEnabled() && this.storageSrv.isCameraEnabled();
 	}
 
 	isMicrophoneEnabled(): boolean {
 		if (!this.directiveService.isAudioEnabled()) return false;
+
 		return this.localTrackService.isAudioTrackEnabled() && this.storageSrv.isMicrophoneEnabled();
 	}
 }
@@ -215,6 +220,7 @@ export class LocalMediaControlService {
 	 */
 	async switchScreenShare(): Promise<void> {
 		const localParticipant = this.participantService.localParticipant();
+
 		if (!localParticipant) {
 			this.log.e('Local participant is undefined when switching screenshare');
 			return;
@@ -223,6 +229,7 @@ export class LocalMediaControlService {
 		// Chrome / Safari: seamless replaceTrack keeps the same publication SID.
 		const options = this.getScreenCaptureOptions();
 		const [newTrack] = await localParticipant.createScreenTracks(options);
+
 		if (newTrack) {
 			newTrack.addListener('ended', async () => {
 				this.log.d('Clicked native stop button. Stopping screen sharing');
@@ -246,6 +253,7 @@ export class LocalMediaControlService {
 		const localParticipant = this.participantService.localParticipant();
 		const options = this.getScreenCaptureOptions();
 		const track = await localParticipant?.setScreenShareEnabled(enabled, options);
+
 		if (enabled && track) {
 			// Set all videos to normal size when a local screen is shared
 			this.streamLayoutService.unpinAllStreams();
@@ -262,6 +270,7 @@ export class LocalMediaControlService {
 			this.streamLayoutService.unpinAllStreams();
 			this.streamLayoutService.setLastScreenPinned();
 		}
+
 		localParticipant?.bump();
 	}
 

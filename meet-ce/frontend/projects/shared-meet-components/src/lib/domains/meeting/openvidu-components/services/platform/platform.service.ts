@@ -86,6 +86,7 @@ export class PlatformService {
 	 */
 	getMaxScreenDimension(): number {
 		if (typeof screen === 'undefined') return 1024;
+
 		return Math.max(screen.width, screen.height);
 	}
 
@@ -94,6 +95,7 @@ export class PlatformService {
 	 */
 	getMinScreenDimension(): number {
 		if (typeof screen === 'undefined') return 768;
+
 		return Math.min(screen.width, screen.height);
 	}
 
@@ -123,7 +125,7 @@ export class PlatformService {
 	// ===== Browser Detection =====
 
 	isFirefox(): boolean {
-		return /Firefox[\/\s](\d+\.\d+)/.test(this.userAgent);
+		return /Firefox[/\s](\d+\.\d+)/.test(this.userAgent);
 	}
 
 	isSafariIos(): boolean {

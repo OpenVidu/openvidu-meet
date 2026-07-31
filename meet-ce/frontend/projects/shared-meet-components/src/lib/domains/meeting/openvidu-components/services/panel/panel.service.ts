@@ -1,7 +1,6 @@
 import { inject, Service, signal } from '@angular/core';
 import { PanelSettingsOptions, PanelStatusInfo, PanelType } from '../../models/panel.model';
 import { LoggerService } from '../../../../../shared/services/logger.service';
-import type { ILogger } from '../../../../../shared/models/logger.model';
 
 @Service()
 export class PanelService {
@@ -11,8 +10,8 @@ export class PanelService {
 	 * Panel signal which emits the panel status in every update.
 	 */
 	readonly panelOpened = signal<PanelStatusInfo>({ isOpened: false });
-	private isExternalOpened: boolean = false;
-	private externalType: string = '';
+	private isExternalOpened = false;
+	private externalType = '';
 	private panelTypes: string[] = Object.values(PanelType);
 
 	/**

@@ -114,6 +114,7 @@ export class E2eeService implements OnDestroy {
 		}
 
 		const isString = typeof input === 'string';
+
 		if (isString && !input) {
 			return input;
 		}
@@ -188,6 +189,7 @@ export class E2eeService implements OnDestroy {
 		}
 
 		const isString = typeof input === 'string';
+
 		if (isString && !input) {
 			return input;
 		}
@@ -195,6 +197,7 @@ export class E2eeService implements OnDestroy {
 		// Check cache for strings (caching binary data would be too memory intensive)
 		if (isString) {
 			const cacheKey = `${participantIdentity || 'unknown'}:${input}`;
+
 			if (this.decryptionCache.has(cacheKey)) {
 				return this.decryptionCache.get(cacheKey)!;
 			}
@@ -236,6 +239,7 @@ export class E2eeService implements OnDestroy {
 				// Limit cache size to prevent memory issues
 				if (this.decryptionCache.size > 1000) {
 					const firstKey = this.decryptionCache.keys().next().value;
+
 					if (firstKey) {
 						this.decryptionCache.delete(firstKey);
 					}
@@ -247,7 +251,9 @@ export class E2eeService implements OnDestroy {
 			}
 		} catch (error) {
 			console.warn('E2EE decryption failed (wrong key or corrupted data):', error);
-			throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			throw new Error(`Decryption failed: ${error instanceof Error ? error.message : 'Unknown error'}`, {
+				cause: error
+			});
 		}
 	}
 
@@ -279,7 +285,7 @@ export class E2eeService implements OnDestroy {
 	async decryptOrMask(
 		input: string | Uint8Array,
 		participantIdentity?: string,
-		maskText: string = '******'
+		maskText = '******'
 	): Promise<string | Uint8Array> {
 		const isString = typeof input === 'string';
 

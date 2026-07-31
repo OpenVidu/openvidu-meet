@@ -48,7 +48,7 @@ export class ThemeService {
 	 * @param theme The theme to set
 	 * @param saveToStorage Whether to persist the theme as the user's preference (default: true)
 	 */
-	private setTheme(theme: Theme, saveToStorage: boolean = true): void {
+	private setTheme(theme: Theme, saveToStorage = true): void {
 		this._currentTheme.set(theme);
 		this.applyThemeToDocument(theme);
 		// Persistence flows through the single owner (MeetStorageService) via the components chain:
@@ -85,6 +85,7 @@ export class ThemeService {
 		if (typeof window !== 'undefined' && window.matchMedia) {
 			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 		}
+
 		return 'light';
 	}
 

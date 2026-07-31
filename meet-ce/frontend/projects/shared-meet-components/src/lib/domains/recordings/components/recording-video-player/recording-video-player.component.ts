@@ -62,11 +62,12 @@ export class RecordingVideoPlayerComponent implements OnDestroy {
 
 		// Try play unmuted and if it fails, mute and play again
 		const videoElement = this.videoPlayer()?.nativeElement;
+
 		if (videoElement) {
 			try {
 				await videoElement.play();
 				// Autoplay started successfully without muting
-			} catch (error) {
+			} catch {
 				// Autoplay was prevented, mute and try again
 				videoElement.muted = true;
 				videoElement.play().catch((err) => {

@@ -80,6 +80,7 @@ export class RoomMemberContextService {
 	 */
 	loadParticipantNameFromStorage() {
 		const storedName = this.meetStorageService.getLastParticipantName();
+
 		if (storedName) {
 			this._participantName.set(storedName);
 			this._isParticipantNameFromUrl.set(false);
@@ -112,6 +113,7 @@ export class RoomMemberContextService {
 	): Promise<string> {
 		// Best effort: keep access token fresh for authenticated users before generating room member tokens.
 		const isAuthenticated = await this.authService.isUserAuthenticated();
+
 		if (isAuthenticated) {
 			try {
 				await this.authService.refreshToken();
@@ -182,7 +184,7 @@ export class RoomMemberContextService {
 			}
 		} catch (error) {
 			this.log.e('Error decoding room member token:', error);
-			throw new Error('Invalid room member token');
+			throw new Error('Invalid room member token', { cause: error });
 		}
 	}
 

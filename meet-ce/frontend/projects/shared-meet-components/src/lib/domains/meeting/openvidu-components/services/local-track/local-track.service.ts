@@ -135,7 +135,7 @@ export class LocalTrackService {
 	async createLocalTracks(
 		videoDeviceId: string | boolean | undefined = undefined,
 		audioDeviceId: string | boolean | undefined = undefined,
-		allowPartialCreation: boolean = true
+		allowPartialCreation = true
 	): Promise<LocalTrack[]> {
 		// Default to the user's stored preference (availability-independent). Whether a device is
 		// actually opened — and which one — is resolved by the per-kind logic below; on first visit
@@ -199,6 +199,7 @@ export class LocalTrackService {
 			}
 
 			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
+
 			if (videoTrack) {
 				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
 			}
@@ -208,10 +209,12 @@ export class LocalTrackService {
 			if (!this.storageService.isCameraEnabled()) {
 				newLocalTracks.find((t) => t.kind === Track.Kind.Video)?.mute();
 			}
+
 			if (!this.storageService.isMicrophoneEnabled()) {
 				newLocalTracks.find((t) => t.kind === Track.Kind.Audio)?.mute();
 			}
 		}
+
 		return newLocalTracks;
 	}
 
@@ -254,6 +257,7 @@ export class LocalTrackService {
 		if (!deviceId || deviceId === 'default') {
 			return { ideal: 'default' };
 		}
+
 		return { exact: deviceId };
 	}
 
@@ -263,7 +267,8 @@ export class LocalTrackService {
 	 * This method must be only called from the prejoin component.
 	 **/
 	async setVideoTrackEnabled(enabled: boolean) {
-		let videoTrack = this._localTracks().find((track) => track.kind === Track.Kind.Video);
+		const videoTrack = this._localTracks().find((track) => track.kind === Track.Kind.Video);
+
 		// Room is not connected, so we can't enable/disable the camera
 		if (enabled) {
 			await videoTrack?.unmute();
@@ -279,6 +284,7 @@ export class LocalTrackService {
 	 **/
 	async setAudioTrackEnabled(enabled: boolean) {
 		const audioTrack = this._localTracks().find((track) => track.kind === Track.Kind.Audio);
+
 		// Session is not connected, so we can't enable/disable the camera
 		if (enabled) {
 			await audioTrack?.unmute();
@@ -296,6 +302,7 @@ export class LocalTrackService {
 		if (this._localTracks().length === 0) {
 			return this.deviceService.isCameraEnabled();
 		}
+
 		const videoTrack = this._localTracks().find((track) => track.kind === Track.Kind.Video);
 		return !!videoTrack && !videoTrack.isMuted && videoTrack?.mediaStreamTrack?.enabled;
 	}
@@ -309,6 +316,7 @@ export class LocalTrackService {
 		if (this._localTracks().length === 0) {
 			return this.deviceService.isMicrophoneEnabled();
 		}
+
 		const audioTrack = this._localTracks().find((track) => track.kind === Track.Kind.Audio);
 		return !!audioTrack && !audioTrack.isMuted && audioTrack?.mediaStreamTrack?.enabled;
 	}
@@ -330,15 +338,18 @@ export class LocalTrackService {
 			| LocalVideoTrack
 			| undefined;
 		const options: VideoCaptureOptions = { deviceId: this.toDeviceConstraint(deviceId) };
+
 		if (existingTrack) {
 			try {
 				// restartTrack replaces the underlying MediaStreamTrack in-place.
 				// LiveKit's setMediaStreamTrack will call processor.restart(newTrack) automatically
 				// if a background processor is attached, preserving the active effect.
 				await existingTrack.restartTrack(options);
+
 				if (!this.deviceService.isCameraEnabled()) {
 					await existingTrack.mute();
 				}
+
 				// restartTrack swapped the MediaStreamTrack in place (same LocalVideoTrack object), so
 				// emit a new array reference to re-run the cameraTrack computed (which compares by MST id).
 				this._localTracks.update((tracks) => [...tracks]);
@@ -347,6 +358,7 @@ export class LocalTrackService {
 				this.log.e('Failed to switch camera via restartTrack:', error);
 				throw error;
 			}
+
 			return;
 		}
 
@@ -354,10 +366,12 @@ export class LocalTrackService {
 		try {
 			const newVideoTracks = await this.livekitSdkService.createLocalTracks({ video: options });
 			const videoTrack = newVideoTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
+
 			if (videoTrack) {
 				if (!this.deviceService.isCameraEnabled()) {
 					await videoTrack.mute();
 				}
+
 				// Attach processor (and restore active background if any) to the fresh track
 				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
 				this._localTracks.update((tracks) => [...tracks, videoTrack]);
@@ -366,7 +380,7 @@ export class LocalTrackService {
 		} catch (error) {
 			this.log.e('Failed to create new video track:', error);
 			const message = error instanceof Error ? error.message : 'Unknown error';
-			throw new Error(`Failed to switch camera: ${message}`);
+			throw new Error(`Failed to switch camera: ${message}`, { cause: error });
 		}
 	}
 
@@ -393,9 +407,11 @@ export class LocalTrackService {
 		if (existingTrack) {
 			try {
 				await existingTrack.restartTrack(options);
+
 				if (!this.deviceService.isMicrophoneEnabled()) {
 					await existingTrack.mute();
 				}
+
 				// restartTrack swapped the MediaStreamTrack in place (same LocalAudioTrack object), so
 				// emit a new array reference to re-run the microphoneTrack computed (MST-id equality):
 				// this is what re-clones the mic-activity monitor onto the new device.
@@ -405,6 +421,7 @@ export class LocalTrackService {
 				this.log.e('Failed to switch microphone via restartTrack:', error);
 				throw error;
 			}
+
 			return;
 		}
 
@@ -412,17 +429,19 @@ export class LocalTrackService {
 		try {
 			const newAudioTracks = await this.livekitSdkService.createLocalTracks(options as CreateLocalTracksOptions);
 			const audioTrack = newAudioTracks.find((t) => t.kind === Track.Kind.Audio);
+
 			if (audioTrack) {
 				if (!this.deviceService.isMicrophoneEnabled()) {
 					await audioTrack.mute();
 				}
+
 				this._localTracks.update((tracks) => [...tracks, audioTrack]);
 				this.log.d('New microphone track created and added:', deviceId);
 			}
 		} catch (error) {
 			this.log.e('Failed to create new audio track:', error);
 			const message = error instanceof Error ? error.message : 'Unknown error';
-			throw new Error(`Failed to switch microphone: ${message}`);
+			throw new Error(`Failed to switch microphone: ${message}`, { cause: error });
 		}
 	}
 

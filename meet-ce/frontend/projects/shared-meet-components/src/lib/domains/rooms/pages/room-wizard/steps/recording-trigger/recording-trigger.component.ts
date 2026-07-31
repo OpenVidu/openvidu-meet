@@ -63,9 +63,11 @@ export class RecordingTriggerComponent {
 
 	constructor() {
 		const recordingTriggerStep = this.wizardService.getStepById(WizardStepId.RECORDING_TRIGGER);
+
 		if (!recordingTriggerStep) {
 			throw new Error('recordingTrigger step not found in wizard state');
 		}
+
 		this.triggerForm = recordingTriggerStep.formGroup;
 
 		this.triggerForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
@@ -73,7 +75,7 @@ export class RecordingTriggerComponent {
 		});
 	}
 
-	private saveFormData(formValue: any) {
+	private saveFormData(_formValue: unknown) {
 		// Note: Recording trigger type is not part of MeetRoomOptions
 		// For now, just keep the form state
 	}

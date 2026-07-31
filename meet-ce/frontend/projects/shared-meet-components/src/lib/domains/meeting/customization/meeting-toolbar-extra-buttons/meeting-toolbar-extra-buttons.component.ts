@@ -71,9 +71,11 @@ export class MeetingToolbarExtraButtonsComponent {
 				return;
 			}
 
-			this.captionService.areCaptionsEnabledByUser()
-				? await this.captionService.disable()
-				: await this.captionService.enable();
+			if (this.captionService.areCaptionsEnabledByUser()) {
+				await this.captionService.disable();
+			} else {
+				await this.captionService.enable();
+			}
 		} catch (error) {
 			this.log.e('Error toggling captions:', error);
 		} finally {

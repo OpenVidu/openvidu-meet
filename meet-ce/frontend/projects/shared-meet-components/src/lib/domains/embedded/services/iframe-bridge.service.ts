@@ -71,6 +71,7 @@ export class IframeBridgeService {
 		}
 
 		const parentOrigin = this.resolveParentOrigin();
+
 		if (!parentOrigin) {
 			// Without a concrete parent origin we can neither validate inbound commands nor
 			// safely target outbound events, so we refuse to open the bridge instead of
@@ -113,6 +114,7 @@ export class IframeBridgeService {
 
 	private async handleMessage(event: MessageEvent): Promise<void> {
 		const message = event.data as EmbeddedCommand | undefined;
+
 		if (!message || typeof message.command !== 'string') {
 			return;
 		}
@@ -136,8 +138,10 @@ export class IframeBridgeService {
 			case EmbeddedCommandName.LEAVE_ROOM:
 				await this.commandService.leaveRoom();
 				break;
-			case EmbeddedCommandName.KICK_PARTICIPANT:
+
+			case EmbeddedCommandName.KICK_PARTICIPANT: {
 				const participantIdentity = message.payload?.participantIdentity;
+
 				if (!participantIdentity) {
 					this.log.e('kickParticipant command received without a participantIdentity');
 					return;
@@ -145,6 +149,8 @@ export class IframeBridgeService {
 
 				await this.commandService.kickParticipant(participantIdentity);
 				break;
+			}
+
 			default:
 				break;
 		}
@@ -155,9 +161,11 @@ export class IframeBridgeService {
 	 */
 	private relayEventToParent(event: EmbeddedEvent): void {
 		const targetOrigin = this.parentDomain();
+
 		if (!this.initialized || !targetOrigin) {
 			return;
 		}
+
 		this.log.d('Relaying event to parent:', event);
 		window.parent.postMessage(event, targetOrigin);
 	}
