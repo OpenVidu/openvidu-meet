@@ -46,9 +46,12 @@ export enum PanelSettingsOptions {
 }
 
 /**
- * Interface representing a panel status event emmited by the library to the final app
+ * Interface representing a panel status event emmited by the library to the final app.
+ *
+ * Exported because the aliases below name it: a public output typed with an unexported
+ * name cannot be emitted into the library's declaration files (TS4029).
  */
-interface PanelStatusEvent {
+export interface PanelStatusEvent {
 	isOpened: boolean;
 }
 

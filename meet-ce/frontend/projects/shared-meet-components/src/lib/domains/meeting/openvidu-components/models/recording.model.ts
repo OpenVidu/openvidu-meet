@@ -45,9 +45,12 @@ export interface RecordingInfo {
 }
 
 /**
- * Interface representing a recording event
+ * Interface representing a recording event.
+ *
+ * Exported because the aliases below name it: a public output typed with an unexported
+ * name cannot be emitted into the library's declaration files (TS4029).
  */
-interface RecordingEvent {
+export interface RecordingEvent {
 	roomName: string;
 	recordingId?: string;
 }
