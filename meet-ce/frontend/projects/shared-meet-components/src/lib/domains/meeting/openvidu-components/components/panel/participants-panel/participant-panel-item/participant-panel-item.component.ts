@@ -37,7 +37,6 @@ import { ParticipantAvatarComponent } from '../../../participant-avatar/particip
 })
 export class ParticipantPanelItemComponent {
 	readonly participantInput = input<ParticipantModel | undefined>(undefined, { alias: 'participant' });
-	readonly muteButtonInput = input(true, { alias: 'muteButton' });
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly participantService = inject(ParticipantService);
 	private readonly templateRegistry = inject(TemplateRegistryService);

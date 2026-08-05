@@ -68,10 +68,6 @@
 		},
 		"PARTICIPANTS": {
 			"TITLE": "Participantes",
-			"CAMERA": "CÂMERA",
-			"MICROPHONE": "MICROFONE",
-			"SCREEN": "TELA",
-			"NO_STREAMS": "NENHUM",
 			"YOU": "Você (eu)",
 			"MUTE": "Silenciar",
 			"UNMUTE": "Ativar som",

@@ -207,7 +207,6 @@
 
 	// Language selector styling
 	::ng-deep .lang-selector {
-		.expand-more-icon,
 		mat-icon {
 			color: var(--ov-text-surface-color) !important;
 		}
@@ -220,9 +219,7 @@
 		margin: 0 !important;
 	}
 
-	::ng-deep .lang-selector .expand-more-icon,
 	::ng-deep .lang-selector mat-icon,
-	::ng-deep .theme-selector .expand-more-icon,
 	::ng-deep .theme-selector mat-icon {
 		color: var(--ov-text-surface-color) !important;
 	}

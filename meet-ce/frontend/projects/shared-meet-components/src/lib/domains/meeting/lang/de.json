@@ -68,10 +68,6 @@
 		},
 		"PARTICIPANTS": {
 			"TITLE": "Teilnehmer",
-			"CAMERA": "KAMERA",
-			"MICROPHONE": "MIKROFON",
-			"SCREEN": "BILDSCHIRM",
-			"NO_STREAMS": "KEINE",
 			"YOU": "Sie",
 			"MUTE": "Stummschalten",
 			"UNMUTE": "Stummschaltung aufheben",

@@ -68,10 +68,6 @@
 		},
 		"PARTICIPANTS": {
 			"TITLE": "Participantes",
-			"CAMERA": "CÁMARA",
-			"MICROPHONE": "MICRÓFONO",
-			"SCREEN": "PANTALLA",
-			"NO_STREAMS": "NINGUNO",
 			"YOU": "Tú",
 			"MUTE": "Silenciar",
 			"UNMUTE": "Activar audio",

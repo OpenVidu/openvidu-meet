@@ -68,10 +68,6 @@
 		},
 		"PARTICIPANTS": {
 			"TITLE": "参与者",
-			"CAMERA": "摄像头",
-			"MICROPHONE": "麦克风",
-			"SCREEN": "屏幕",
-			"NO_STREAMS": "无",
 			"YOU": "你",
 			"MUTE": "静音",
 			"UNMUTE": "取消静音",

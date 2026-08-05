@@ -68,10 +68,6 @@
 		},
 		"PARTICIPANTS": {
 			"TITLE": "Deelnemers",
-			"CAMERA": "CAMERA",
-			"MICROPHONE": "MICROFOON",
-			"SCREEN": "SCHERM",
-			"NO_STREAMS": "GEEN",
 			"YOU": "Jij",
 			"MUTE": "Dempen",
 			"UNMUTE": "Dempen opheffen",

@@ -21,25 +21,6 @@
 			border-bottom: none;
 		}
 
-		// Loading state
-		&.loading {
-			opacity: 0.7;
-			pointer-events: none;
-
-			&::after {
-				content: '';
-				position: absolute;
-				top: 50%;
-				right: 16px;
-				width: 16px;
-				height: 16px;
-				border: 2px solid var(--ov-primary-color, #1976d2);
-				border-radius: 50%;
-				border-top-color: transparent;
-				animation: spin 1s linear infinite;
-			}
-		}
-
 		// Focus state for keyboard navigation
 		&:focus-within {
 			outline: 2px solid var(--ov-primary-color, #1976d2);
@@ -119,31 +100,6 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 
-		// Status indicators
-		.status-indicator {
-			display: inline-flex;
-			align-items: center;
-			gap: 3px;
-
-			mat-icon {
-				font-size: 12px;
-				width: 12px;
-				height: 12px;
-			}
-
-			// Different colors for different statuses
-			&.camera-on {
-				color: var(--ov-success-color, #4caf50);
-			}
-
-			&.camera-off {
-				color: var(--ov-warning-color, #ff9800);
-			}
-
-			&.microphone-muted {
-				color: var(--ov-error-color, #d32f2f);
-			}
-		}
 	}
 
 	// Action buttons container
@@ -248,22 +204,7 @@
 			&.speaker {
 				color: var(--ov-primary-color, #1976d2);
 			}
-
-			&.host {
-				color: var(--ov-success-color, #4caf50);
-			}
 		}
-	}
-
-	// After local participant content area
-	.after-local-content {
-		margin-top: 12px;
-		padding-top: 12px;
-		border-top: 1px solid var(--ov-surface-border, #e0e0e0);
-		animation: fadeIn 0.3s ease-in-out;
-		background-color: var(--ov-surface-alt, #fafafa);
-		border-radius: var(--ov-surface-radius, 8px);
-		padding: 12px;
 	}
 
 	// External item elements styling
@@ -311,6 +252,10 @@
 	}
 
 	// Animations
+	// No rule in this component animates fadeIn any more, but @keyframes names are NOT scoped by
+	// Angular's style encapsulation: end-meeting, recording-lists, error and room-wizard all write
+	// `animation: fadeIn ...` without declaring it, so they depend on a definition like this one being
+	// in the document. Kept until that is untangled — do not delete as "unused".
 	@keyframes fadeIn {
 		from {
 			opacity: 0;
@@ -319,15 +264,6 @@
 		to {
 			opacity: 1;
 			transform: translateY(0);
-		}
-	}
-
-	@keyframes spin {
-		from {
-			transform: rotate(0deg);
-		}
-		to {
-			transform: rotate(360deg);
 		}
 	}
 
@@ -371,21 +307,12 @@
 			}
 		}
 
-		.after-local-content {
-			margin-top: 10px;
-			padding-top: 10px;
-			padding: 10px;
-		}
 	}
 
 	// High contrast mode support
 	@media (prefers-contrast: high) {
 		.participant-container {
 			border: 2px solid var(--ov-text-primary, #212121);
-		}
-
-		.local-indicator {
-			border-width: 2px;
 		}
 	}
 
@@ -394,7 +321,6 @@
 		.participant-container,
 		.participant-avatar,
 		#mute-btn,
-		.after-local-content,
 		.external-elements ::ng-deep button {
 			transition: none;
 			animation: none;
@@ -432,10 +358,6 @@
 
 		.participant-subtitle {
 			color: var(--ov-text-secondary, #cccccc);
-		}
-
-		.after-local-content {
-			background-color: var(--ov-surface-alt, #373737);
 		}
 	}
 }

@@ -564,22 +564,6 @@ export class ParticipantModel {
 		return Promise.reject("Remote participant can't publish data");
 	}
 
-	/**
-	 * @returns The participant active connection types
-	 * @internal
-	 */
-	getTracksPublishedTypes(): Track.Source[] {
-		const tracksPublishedTypes: Track.Source[] = [];
-
-		if (this.isCameraEnabled) tracksPublishedTypes.push(Track.Source.Camera);
-
-		if (this.isScreenShareEnabled) tracksPublishedTypes.push(Track.Source.ScreenShare);
-
-		if (this.isMicrophoneEnabled) tracksPublishedTypes.push(Track.Source.Microphone);
-
-		return tracksPublishedTypes;
-	}
-
 	// NOTE: a `setName` method is intentionally NOT implemented — updating a participant's name
 	// requires `canUpdateOwnMetadata=true` server-side, which is insecure, so the feature is omitted.
 

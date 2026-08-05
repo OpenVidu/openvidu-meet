@@ -171,14 +171,6 @@ describe('ParticipantModel', () => {
 			expect(participant.isScreenShareEnabled).toBeTrue();
 		});
 
-		it('reports the published track types from the enabled flags', () => {
-			const participant = modelFor(
-				fakeLiveKitParticipant({ isCameraEnabled: true, isMicrophoneEnabled: true, isScreenShareEnabled: false })
-			);
-
-			expect(participant.getTracksPublishedTypes()).toEqual([Track.Source.Camera, Track.Source.Microphone]);
-		});
-
 		it('never reports speaking while the microphone is disabled', () => {
 			const fake = fakeLiveKitParticipant({ isMicrophoneEnabled: false });
 			const participant = modelFor(fake);

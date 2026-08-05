@@ -49,6 +49,7 @@
 			display: contents;
 		}
 	}
+	// Reaches into ov-toolbar-panel-buttons' own template via ::ng-deep — the class lives there.
 	::ng-deep .menu-buttons-container:has(.collapsed-menu-container) {
 		flex: 0;
 	}

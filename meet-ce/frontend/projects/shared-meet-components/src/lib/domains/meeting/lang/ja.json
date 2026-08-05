@@ -68,10 +68,6 @@
 		},
 		"PARTICIPANTS": {
 			"TITLE": "参加者",
-			"CAMERA": "カメラ",
-			"MICROPHONE": "マイクロフォン",
-			"SCREEN": "スクリーン",
-			"NO_STREAMS": "ストリームなし",
 			"YOU": "あなた",
 			"MUTE": "ミュート",
 			"UNMUTE": "ミュート解除",
