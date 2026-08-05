@@ -39,6 +39,11 @@ pnpm-debug.log*
 **/**/test-results
 **/backend/public/
 
+# Build metadata (git commit + build date) stamped by 'meet.sh build-info' right before a
+# build/Docker image, surfaced by GET /info. Never committed: a commit can't correctly embed
+# its own hash. Missing entirely is fine too — system-info.utils.ts falls back to 'unknown'.
+**/backend/info.json
+
 **/*/coverage
 **/**/test-results
 **/**/openvidu-meet.bundle.min.js

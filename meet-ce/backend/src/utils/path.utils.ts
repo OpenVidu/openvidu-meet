@@ -153,6 +153,14 @@ export const webcomponentLoaderPath = path.join(webcomponentDirectoryPath, 'open
 export const frontendHtmlPath = path.join(frontendDirectoryPath, 'index.html');
 export const publicApiHtmlFilePath = path.join(openApiDirectoryPath, 'public.html');
 export const internalApiHtmlFilePath = path.join(openApiDirectoryPath, 'internal.html');
+// Backend's own package.json (sits next to 'public' in both dev and the production image).
+export const packageJsonPath = path.join(projectRoot, 'package.json');
+// Build metadata (git commit + build date) stamped by `meet.sh build-info`, surfaced by GET
+// /info. Sits next to 'package.json' rather than under 'src/', so it isn't part of the
+// TypeScript compile and can be (re)stamped independently of the backend build. Gitignored
+// and often absent (fresh checkout, dev mode, unit tests) — system-info.utils.ts falls back
+// to 'unknown' when it can't be read, so its absence is not verified here like the rest.
+export const infoJsonPath = path.join(projectRoot, 'info.json');
 
 // Verify the existence of the paths
 if (isDev) {
@@ -165,6 +173,7 @@ verifyPathExists(webcomponentEsmBundlePath, 'Webcomponent ESM bundle');
 verifyPathExists(frontendHtmlPath, 'Index HTML file');
 verifyPathExists(publicApiHtmlFilePath, 'Public API documentation');
 verifyPathExists(internalApiHtmlFilePath, 'Internal API documentation');
+verifyPathExists(packageJsonPath, 'Backend package.json');
 
 if (isDev) {
 	console.log('---------------------------------------------------------');

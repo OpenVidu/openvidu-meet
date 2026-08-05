@@ -92,6 +92,7 @@ COPY --from=builder --chown=node:node /app/pnpm-workspace.yaml ./
 COPY --from=builder --chown=node:node /app/meet-ce/backend/dist ./meet-ce/backend/dist
 COPY --from=builder --chown=node:node /app/meet-ce/backend/public ./meet-ce/backend/public
 COPY --from=builder --chown=node:node /app/meet-ce/backend/package.json ./meet-ce/backend/package.json
+COPY --from=builder --chown=node:node /app/meet-ce/backend/info.json ./meet-ce/backend/info.json
 
 # Copy typings
 COPY --from=builder --chown=node:node /app/meet-ce/typings/dist ./meet-ce/typings/dist

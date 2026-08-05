@@ -151,6 +151,10 @@ show_help() {
   echo -e "  ${BLUE}build-rest-api-doc${NC} [output_dir]"
   echo "    Generate REST API documentation"
   echo
+  echo -e "  ${BLUE}build-info${NC}"
+  echo "    Stamp the real git commit + build date into the backend's info.json (GET /info)."
+  echo "    No-op outside a git checkout. Also run automatically by 'build', 'start' and 'build-docker'."
+  echo
   echo -e "  ${BLUE}build-docker${NC} <image-name> [--demos]"
   echo "    Build Docker image (use --demos for demo deployment)"
   echo
@@ -174,6 +178,35 @@ install_dependencies() {
   pnpm install --frozen-lockfile
 }
 
+# Stamps the real git commit + build date into the backend's info.json (surfaced by GET
+# /info). Only does this inside a git checkout; outside one (e.g. the Docker builder stage,
+# which doesn't copy .git) it leaves the file untouched, keeping whatever was already stamped
+# into it. info.json is gitignored (a commit can't correctly embed its own hash) and often
+# just absent — system-info.utils.ts falls back to 'unknown' when it can't read it. It sits
+# next to the backend's package.json, outside src/, so it isn't part of the TypeScript compile
+# and this can run at any point in the pipeline, not just right before tsc.
+stamp_backend_info() {
+  local info_file="meet-ce/backend/info.json"
+
+  if ! git rev-parse HEAD >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local git_commit
+  local build_date
+  git_commit=$(git rev-parse HEAD)
+  build_date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+  cat > "$info_file" <<EOF
+{
+	"gitCommit": "${git_commit}",
+	"buildDate": "${build_date}"
+}
+EOF
+
+  echo -e "${GREEN}✓ Stamped backend info.json (commit ${git_commit:0:12}, ${build_date})${NC}"
+}
+
 # Build typings
 build_typings() {
   echo -e "${BLUE}=====================================${NC}"
@@ -194,6 +227,8 @@ build_project() {
 
   install_dependencies
   echo
+
+  stamp_backend_info
 
   echo -e "${GREEN}Building all components...${NC}"
   export BASE_HREF
@@ -650,6 +685,7 @@ start() {
     echo -e "${BLUE}Building backend...${NC}"
     install_dependencies
     pnpm run build:typings
+    stamp_backend_info
     pnpm run build:backend
   fi
 
@@ -882,6 +918,10 @@ build_docker() {
 
   echo -e "${GREEN}Using BASE_HREF: $base_href${NC}"
 
+  # The Docker builder stage doesn't copy .git, so stamp real build info here on the host
+  # before the source tree is sent as the build context.
+  stamp_backend_info
+
   export BUILDKIT_PROGRESS=plain
   if docker build --pull --no-cache --rm=true -f meet-ce/docker/Dockerfile -t "$final_image_name" --build-arg BASE_HREF="$base_href" .; then
     echo
@@ -965,6 +1005,9 @@ main() {
       ;;
     build-rest-api-doc)
       build_rest_api_doc "$1"
+      ;;
+    build-info)
+      stamp_backend_info
       ;;
     build-docker)
       build_docker "$@"
