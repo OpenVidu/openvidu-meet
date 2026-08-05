@@ -110,8 +110,6 @@ export class ToolbarMediaButtonsComponent {
 
 	// Computed properties for responsive button grouping
 	readonly isMobileView = computed(() => this.viewportService.isMobile());
-	readonly isTabletView = computed(() => this.viewportService.isTablet());
-	readonly isDesktopView = computed(() => this.viewportService.isDesktop());
 
 	// Essential buttons that always stay visible
 	readonly showCameraButtonDirect = computed(() => this.showCameraButton());
@@ -125,11 +123,6 @@ export class ToolbarMediaButtonsComponent {
 
 	// More options button - always visible
 	readonly showMoreOptionsButtonDirect = computed(() => this.showMoreOptionsButton());
-
-	// Check if there are active features that should show a badge on More Options
-	readonly hasActiveFeatures = computed(
-		() => this.isScreenShareEnabled() || this.recordingStatus() === this._recordingStatus.STARTED
-	);
 
 	// Check if additional buttons should be shown outside (desktop/tablet) or inside More Options (mobile)
 	readonly showAdditionalButtonsOutside = computed(() => {

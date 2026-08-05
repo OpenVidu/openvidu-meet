@@ -30,7 +30,6 @@ export class SmartLayoutService extends BaseLayoutService {
 	readonly isSmartLayoutEnabled = computed(() => this._layoutMode() === SmartLayoutMode.SMART_MOSAIC);
 
 	private readonly _speakerPriorityOrder = signal<string[]>([]);
-	readonly speakerPriorityOrder = this._speakerPriorityOrder.asReadonly();
 
 	private speakingStartTimes = new Map<string, number>();
 	private speakingStopTimes = new Map<string, number>();
@@ -110,12 +109,6 @@ export class SmartLayoutService extends BaseLayoutService {
 		this._maxVisibleRemoteParticipants.set(count);
 
 		if (this.isSmartLayoutEnabled()) this.update();
-	}
-
-	resetSpeakerTrackingState(): void {
-		this._speakerPriorityOrder.set([]);
-		this.speakingStartTimes.clear();
-		this.speakingStopTimes.clear();
 	}
 
 	removeDisconnectedSpeakers(connectedParticipantIds: Set<string>): void {

@@ -38,11 +38,7 @@ const publicComponents = [
 	StreamComponent,
 	SmartLayoutComponent
 ];
-const declaredPublicComponents: any[] = [];
-const privateComponents: any[] = [];
-
 @NgModule({
-	declarations: [...declaredPublicComponents, ...privateComponents],
 	imports: [
 		CommonModule,
 		FormsModule,

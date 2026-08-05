@@ -45,7 +45,6 @@ export class DeviceService implements OnDestroy {
 	// signals — no extra computed node needed.
 	readonly hasVideoPermission = this.hasVideoDevices;
 	readonly hasAudioPermission = this.hasAudioDevices;
-	readonly allPermissionsGranted = computed(() => this.hasVideoPermission() && this.hasAudioPermission());
 
 	// Internal state
 	private log: ILogger;

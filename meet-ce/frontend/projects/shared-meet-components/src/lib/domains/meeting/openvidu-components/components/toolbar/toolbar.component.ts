@@ -77,7 +77,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly deviceService = inject(DeviceService);
 	private readonly actionService = inject(ActionService);
-	private readonly loggerSrv = inject(LoggerService);
 	private readonly recordingService = inject(RecordingService);
 	private readonly translateService = inject(MeetingTranslateService);
 	private readonly cdkOverlayService = inject(CdkOverlayService);

@@ -8,7 +8,6 @@ import {
 	contentChildren,
 	DestroyRef,
 	effect,
-	ElementRef,
 	inject,
 	input,
 	OnDestroy,
@@ -59,8 +58,6 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 	readonly defaultStreamTemplate = viewChild<TemplateRef<any>>('defaultStream');
 	/** @ignore */
 	readonly cdkDragQueries = viewChildren(CdkDrag);
-	/** @ignore */
-	readonly localLayoutElementQueries = viewChildren('localLayoutElement', { read: ElementRef });
 
 	// ── Inputs ───────────────────────────────────────────────────────────────────
 

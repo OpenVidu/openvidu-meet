@@ -55,13 +55,6 @@ export class MeetingThemeService {
 	}
 
 	/**
-	 * Gets the current theme variables
-	 */
-	getCurrentVariables(): MeetingThemeVariables {
-		return this.currentVariables();
-	}
-
-	/**
 	 * Sets the theme mode to apply {@link MeetingThemeMode}
 	 * @param theme The theme mode to apply
 	 * @param persist Whether to persist the theme as the user's preference (default: true). A themed
@@ -106,28 +99,11 @@ export class MeetingThemeService {
 	}
 
 	/**
-	 * Applies a predefined theme configuration
-	 * @param themeVariables Predefined theme configuration (e.g., MEETING_LIGHT_THEME)
-	 */
-	applyThemeConfiguration(themeVariables: MeetingThemeVariables): void {
-		this.setThemeVariables(themeVariables);
-	}
-
-	/**
 	 * Toggles between light and dark themes
 	 */
 	toggleTheme(): void {
 		const isDark = this.getCurrentTheme() === MeetingThemeMode.Dark;
 		this.setTheme(isDark ? MeetingThemeMode.Light : MeetingThemeMode.Dark);
-	}
-
-	/**
-	 * Gets a specific CSS variable value
-	 * @param variableName The CSS variable name (with or without --)
-	 */
-	getThemeVariable(variableName: string): string {
-		const varName = variableName.startsWith('--') ? variableName : `--${variableName}`;
-		return getComputedStyle(this.document.documentElement).getPropertyValue(varName).trim();
 	}
 
 	private applyTheme(theme: MeetingThemeMode): void {

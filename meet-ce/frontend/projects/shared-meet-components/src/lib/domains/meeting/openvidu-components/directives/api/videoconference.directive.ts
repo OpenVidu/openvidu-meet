@@ -586,68 +586,6 @@ export class ShowDisconnectionDialogDirective implements OnDestroy {
 }
 
 /**
- * The **recordingStreamBaseUrl** directive sets the base URL for retrieving recording streams.
- * The complete request URL is dynamically constructed by concatenating the supplied URL, the
- * internally managed recordingId, and the `/media` segment.
- *
- * The final URL format will be:
- *
- * {recordingStreamBaseUrl}/{recordingId}/media
- *
- * Default: `"call/api/recordings/{recordingId}/stream"`
- *
- * Example:
- * Given a recordingStreamBaseUrl of `api/recordings`, the resulting URL for a recordingId of `12345` would be:
- * `api/recordings/12345/media`
- *
- * It is essential that the resulting route is declared and configured on your backend, as it is
- * used for serving and accessing the recording streams.
- *
- * @example
- * <ov-meeting-view [recordingStreamBaseUrl]="'https://myserver.com/api/recordings'">
- * </ov-meeting-view>
- */
-@Directive({
-	selector: 'ov-meeting-view[recordingStreamBaseUrl]'
-})
-export class RecordingStreamBaseUrlDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	readonly recordingStreamBaseUrl = input<string>('');
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(MeetingUiConfigService);
-	private readonly recordingStreamBaseUrlEffect = effect(() => {
-		this.update(this.recordingStreamBaseUrl());
-	});
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	/**
-	 * @ignore
-	 */
-	clear() {
-		this.update('');
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(value: string) {
-		if (value) this.libService.updateGeneralConfig({ recordingStreamBaseUrl: value });
-	}
-}
-
-/**
  * The **chatWritable** directive enables/disables the chat message input, i.e. whether the local
  * participant may send messages. When `false` the chat panel remains readable but its input is
  * disabled. Pair it with {@link ToolbarChatPanelButtonDirective} (which controls chat visibility).

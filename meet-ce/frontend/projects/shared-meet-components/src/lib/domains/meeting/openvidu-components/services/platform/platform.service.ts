@@ -128,10 +128,6 @@ export class PlatformService {
 		return /Firefox[/\s](\d+\.\d+)/.test(this.userAgent);
 	}
 
-	isSafariIos(): boolean {
-		return this.isIos() && this.isIOSWithSafari(this.userAgent);
-	}
-
 	private isIOSWithSafari(userAgent: string): boolean {
 		return /\bSafari\b/.test(userAgent) && !/\bCriOS\b/.test(userAgent) && !/\bFxiOS\b/.test(userAgent);
 	}

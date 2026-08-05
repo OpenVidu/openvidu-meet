@@ -57,7 +57,6 @@ interface GeneralConfig {
 	prejoin: boolean;
 	showDisconnectionDialog: boolean;
 	showThemeSelector: boolean;
-	recordingStreamBaseUrl: string;
 	e2eeKey?: string;
 }
 
@@ -75,7 +74,6 @@ export class MeetingUiConfigService {
 		prejoin: true,
 		showDisconnectionDialog: true,
 		showThemeSelector: false,
-		recordingStreamBaseUrl: 'call/api/recordings',
 		e2eeKey: undefined
 	});
 
@@ -122,15 +120,9 @@ export class MeetingUiConfigService {
 
 	// Signals-first selectors used by migrated consumers/directives
 	readonly tokenSignal = computed(() => this.generalConfig().token);
-	readonly livekitUrlSignal = computed(() => this.generalConfig().livekitUrl);
 	readonly tokenErrorSignal = computed(() => this.generalConfig().tokenError);
 	readonly participantNameSignal = computed(() => this.generalConfig().participantName);
-	readonly prejoinSignal = computed(() => this.generalConfig().prejoin);
-	readonly showDisconnectionDialogSignal = computed(() => this.generalConfig().showDisconnectionDialog);
-	readonly recordingStreamBaseUrlSignal = computed(() => this.generalConfig().recordingStreamBaseUrl);
 	readonly e2eeKeySignal = computed(() => this.generalConfig().e2eeKey);
-	readonly videoEnabledSignal = computed(() => this.streamConfig().videoEnabled);
-	readonly audioEnabledSignal = computed(() => this.streamConfig().audioEnabled);
 	readonly displayParticipantNameSignal = computed(() => this.streamConfig().displayParticipantName);
 	readonly displayAudioDetectionSignal = computed(() => this.streamConfig().displayAudioDetection);
 	readonly streamVideoControlsSignal = computed(() => this.streamConfig().videoControls);
@@ -226,13 +218,6 @@ export class MeetingUiConfigService {
 
 	getShowDisconnectionDialog(): boolean {
 		return this.generalConfig().showDisconnectionDialog;
-	}
-
-	getRecordingStreamBaseUrl(): string {
-		let baseUrl = this.generalConfig().recordingStreamBaseUrl;
-		// Add trailing slash if not present
-		baseUrl += baseUrl.endsWith('/') ? '' : '/';
-		return baseUrl;
 	}
 
 	getE2EEKey(): string | undefined {

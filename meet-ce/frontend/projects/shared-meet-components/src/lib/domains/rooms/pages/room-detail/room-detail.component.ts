@@ -105,7 +105,6 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	/** Scroll position to restore on the page container (set when restoring cached state). */
 	protected scrollToRestore = 0;
 
-	protected readonly MeetUserRole = MeetUserRole;
 
 	currentUserId = signal<string>('');
 	currentUserRole = signal<MeetUserRole | undefined>(undefined);
@@ -170,7 +169,6 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	// Tab management
 	selectedTabIndex = signal(0);
 
-	MeetRoomStatus = MeetRoomStatus;
 	protected readonly RoomUiUtils = RoomUiUtils;
 
 	async ngOnInit() {

@@ -15,10 +15,6 @@ export function readStyleNumber(el: HTMLElement, prop: string): number {
 	return raw ? parseInt(raw, 10) : 0;
 }
 
-export function writeStyle(el: HTMLElement, prop: string, value: string): void {
-	(el.style as Record<string, any>)[prop] = value;
-}
-
 export function writeStyles(el: HTMLElement, styles: Record<string, string>): void {
 	const target = el.style as Record<string, any>;
 

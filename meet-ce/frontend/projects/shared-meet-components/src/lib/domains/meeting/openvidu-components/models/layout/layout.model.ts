@@ -53,10 +53,6 @@ export class OpenViduLayout {
 		this.updateLayout(container, opts);
 	}
 
-	getLayoutContainer(): HTMLElement {
-		return this.layoutContainer;
-	}
-
 	clearCache(): void {
 		this.dimensionsCache.clear();
 	}

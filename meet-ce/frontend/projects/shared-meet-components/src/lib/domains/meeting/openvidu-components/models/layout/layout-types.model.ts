@@ -2,13 +2,11 @@
  * @internal
  */
 export enum LayoutClass {
-	ROOT_ELEMENT = 'OV_root',
 	BIG_ELEMENT = 'OV_big',
 	SMALL_ELEMENT = 'OV_small',
 	TOP_BAR_ELEMENT = 'OV_top-bar',
 	IGNORED_ELEMENT = 'OV_ignored',
 	FLOATING_ELEMENT = 'OV_floating',
-	NO_SIZE_ELEMENT = 'no-size',
 	CLASS_NAME = 'layout'
 }
 

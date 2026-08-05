@@ -49,14 +49,6 @@ export class BaseLayoutService {
 		this.openviduLayout.updateLayout(this.layoutContainer, this.openviduLayoutOptions);
 	}
 
-	updateResponsive() {
-		this.updateLayoutOptions();
-	}
-
-	getLayout() {
-		return this.openviduLayout;
-	}
-
 	clear() {
 		this.openviduLayout?.destroy();
 		this.openviduLayout = undefined;
