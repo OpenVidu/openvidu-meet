@@ -151,7 +151,6 @@ export class ToolbarMediaButtonsComponent {
 	readonly fullscreenToggled = output<void>();
 	readonly recordingToggled = output<void>();
 	readonly viewRecordingsClicked = output<void>();
-	readonly broadcastingToggled = output<void>();
 	readonly backgroundEffectsToggled = output<void>();
 	readonly settingsToggled = output<void>();
 
@@ -185,10 +184,6 @@ export class ToolbarMediaButtonsComponent {
 
 	onViewRecordingsClick(): void {
 		this.viewRecordingsClicked.emit();
-	}
-
-	onBroadcastingToggle(): void {
-		this.broadcastingToggled.emit();
 	}
 
 	onBackgroundEffectsToggle(): void {

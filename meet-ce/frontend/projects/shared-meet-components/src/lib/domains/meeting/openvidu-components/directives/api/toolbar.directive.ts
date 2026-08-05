@@ -305,66 +305,6 @@ export class ToolbarBackgroundEffectsButtonDirective implements OnDestroy {
 }
 
 /**
- * The **captionsButton** directive allows show/hide the captions toolbar button.
- *
- * Default: `true`
- *
- * It can be used in the parent element {@link MeetingViewComponent} specifying the name of the `toolbar` component:
- *
- * @example
- * <ov-meeting-view [toolbarCaptionsButton]="false"></ov-meeting-view>
- *
- * \
- * And it also can be used in the {@link ToolbarComponent}.
- * @example
- * <ov-toolbar [captionsButton]="false"></ov-toolbar>
- */
-//  @Directive({
-// 	selector: 'ov-meeting-view[toolbarCaptionsButton], ov-toolbar[captionsButton]'
-// })
-// export class ToolbarCaptionsButtonDirective implements AfterViewInit, OnDestroy {
-// 	/**
-// 	 * @ignore
-// 	 */
-// 	@Input() set toolbarCaptionsButton(value: boolean) {
-// 		this.captionsButtonValue = value;
-// 		this.update(this.captionsButtonValue);
-// 	}
-// 	/**
-// 	 * @ignore
-// 	 */
-// 	@Input() set captionsButton(value: boolean) {
-// 		this.captionsButtonValue = value;
-// 		this.update(this.captionsButtonValue);
-// 	}
-
-// 	private captionsButtonValue: boolean = true;
-
-// 	/**
-// 	 * @ignore
-// 	 */
-// 	public elementRef = inject(ElementRef);
-// 	private readonly libService = inject(OpenViduAngularConfigService);
-
-// 	ngAfterViewInit() {
-// 		this.update(this.captionsButtonValue);
-// 	}
-// 	ngOnDestroy(): void {
-// 		this.clear();
-// 	}
-// 	private clear() {
-// 		this.captionsButtonValue = true;
-// 		this.update(true);
-// 	}
-
-// 	private update(value: boolean) {
-// 		if (this.libService.captionsButton.getValue() !== value) {
-// 			this.libService.captionsButton.next(value);
-// 		}
-// 	}
-// }
-
-/**
  * The **settingsButton** directive allows show/hide the settings toolbar button.
  *
  * Default: `true`

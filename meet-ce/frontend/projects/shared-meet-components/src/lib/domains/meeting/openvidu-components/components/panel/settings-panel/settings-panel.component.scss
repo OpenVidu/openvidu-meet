@@ -173,12 +173,6 @@
 	// Video and Audio settings containers
 	.video-settings,
 	.audio-settings,
-	.captions-settings {
-		width: 100%;
-		max-width: 100%;
-		box-sizing: border-box;
-	}
-
 	// List option styling
 	mat-list-option[aria-selected='true'] {
 		background: var(--ov-accent-action-color) !important;

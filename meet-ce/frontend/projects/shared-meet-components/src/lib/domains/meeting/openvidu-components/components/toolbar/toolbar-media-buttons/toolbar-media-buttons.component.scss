@@ -107,10 +107,6 @@
 		color: var(--ov-text-surface-color) !important;
 	}
 
-	::ng-deep #toolbar-broadcasting-btn > .mat-icon {
-		color: var(--ov-broadcasting-color, #5903ca) !important;
-	}
-
 	::ng-deep #recording-btn > .mat-icon {
 		color: var(--ov-recording-color, var(--ov-error-color)) !important;
 	}
@@ -138,28 +134,4 @@
 		line-height: 16px !important;
 	}
 
-	/* Styles for XS screens */
-	@media (max-width: 599px) {
-		/* Animation for recording blinking */
-		@keyframes blinker-recording {
-			50% {
-				background-color: var(--ov-recording-color, var(--ov-error-color));
-			}
-		}
-
-		/* Animation for broadcasting blinking */
-		@keyframes blinker-broadcasting {
-			50% {
-				background-color: var(--ov-broadcasting-color, #5903ca);
-			}
-		}
-
-		/* Apply blinking animations to buttons */
-		.blinking-broadcasting-button {
-			animation: blinker-broadcasting 1.5s linear infinite;
-		}
-		.blinking-recording-button {
-			animation: blinker-recording 1.5s linear infinite;
-		}
-	}
 }

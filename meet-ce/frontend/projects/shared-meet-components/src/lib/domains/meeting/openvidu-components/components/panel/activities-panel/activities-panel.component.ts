@@ -12,7 +12,7 @@ import { RecordingActivityComponent } from './recording-activity/recording-activ
 
 /**
  * The **ActivitiesPanelComponent** is the component that allows showing the activities panel.
- * This panel shows the recording and broadcasting activities.
+ * This panel shows the recording activity.
  */
 @Component({
 	selector: 'ov-activities-panel',

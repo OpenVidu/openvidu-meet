@@ -1,5 +1,4 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
-// import { CaptionService } from '../../services/caption/caption.service';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { MediaStorageService } from '../../services/storage/storage.service';

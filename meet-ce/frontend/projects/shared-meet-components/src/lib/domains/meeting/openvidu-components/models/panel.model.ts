@@ -41,8 +41,7 @@ export interface PanelStatusInfo {
 export enum PanelSettingsOptions {
 	GENERAL = 'general',
 	AUDIO = 'audio',
-	VIDEO = 'video',
-	CAPTIONS = 'captions'
+	VIDEO = 'video'
 }
 
 /**

@@ -1,5 +1,5 @@
 <mat-toolbar id="toolbar" class="toolbar-container">
-	<!-- Info container (logo, room name, recording/broadcasting status) -->
+	<!-- Info container (logo, room name, recording status) -->
 	<div id="info-container" class="info-container">
 		<div>
 			<!-- Branding Logo -->
@@ -14,7 +14,7 @@
 					<span id="meeting-name">{{ roomName() }}</span>
 				}
 
-				<!-- Activities (Recording / Broadcasting) -->
+				<!-- Activities (Recording) -->
 				@if (isRecordingStarted()) {
 					<div id="activities-tag">
 						@if (isRecordingStarted()) {
