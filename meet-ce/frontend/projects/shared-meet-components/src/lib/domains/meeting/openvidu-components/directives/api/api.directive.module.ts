@@ -41,7 +41,6 @@ import {
     LivekitUrlDirective,
     ParticipantNameDirective,
     PrejoinDirective,
-    ShowDisconnectionDialogDirective,
     TokenDirective,
     TokenErrorDirective,
     VideoEnabledDirective
@@ -56,7 +55,6 @@ const directives = [
 	PrejoinDirective,
 	VideoEnabledDirective,
 	AudioEnabledDirective,
-	ShowDisconnectionDialogDirective,
 	ToolbarCameraButtonDirective,
 	ToolbarMicrophoneButtonDirective,
 	ToolbarScreenshareButtonDirective,

@@ -534,58 +534,6 @@ export class AudioEnabledDirective implements OnDestroy {
 }
 
 /**
- * The **showDisconnectionDialog** directive allows to show/hide the disconnection dialog when the local participant is disconnected from the room.
- *
- * It is only available for {@link MeetingViewComponent}.
- *
- * Default: `true`
- *
- * @example
- * <ov-meeting-view [showDisconnectionDialog]="false"></ov-meeting-view>
- */
-@Directive({
-	selector: 'ov-meeting-view[showDisconnectionDialog]'
-})
-export class ShowDisconnectionDialogDirective implements OnDestroy {
-	/**
-	 * @ignore
-	 */
-	readonly showDisconnectionDialog = input<boolean>(true);
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly libService = inject(MeetingUiConfigService);
-	private readonly showDisconnectionDialogEffect = effect(() => {
-		this.update(this.showDisconnectionDialog());
-	});
-
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
-	/**
-	 * @ignore
-	 */
-	clear() {
-		this.update(true);
-	}
-
-	/**
-	 * @ignore
-	 */
-	update(value: boolean) {
-		if (this.libService.getShowDisconnectionDialog() !== value) {
-			this.libService.updateGeneralConfig({ showDisconnectionDialog: value });
-		}
-	}
-}
-
-/**
  * The **chatWritable** directive enables/disables the chat message input, i.e. whether the local
  * participant may send messages. When `false` the chat panel remains readable but its input is
  * disabled. Pair it with {@link ToolbarChatPanelButtonDirective} (which controls chat visibility).

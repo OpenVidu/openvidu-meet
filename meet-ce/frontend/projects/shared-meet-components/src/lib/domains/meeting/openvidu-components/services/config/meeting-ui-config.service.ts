@@ -55,7 +55,6 @@ interface GeneralConfig {
 	tokenError: any;
 	participantName: string;
 	prejoin: boolean;
-	showDisconnectionDialog: boolean;
 	showThemeSelector: boolean;
 	e2eeKey?: string;
 }
@@ -72,7 +71,6 @@ export class MeetingUiConfigService {
 		tokenError: null,
 		participantName: '',
 		prejoin: true,
-		showDisconnectionDialog: true,
 		showThemeSelector: false,
 		e2eeKey: undefined
 	});
@@ -216,9 +214,6 @@ export class MeetingUiConfigService {
 		return this.generalConfig().prejoin;
 	}
 
-	getShowDisconnectionDialog(): boolean {
-		return this.generalConfig().showDisconnectionDialog;
-	}
 
 	getE2EEKey(): string | undefined {
 		return this.generalConfig().e2eeKey;

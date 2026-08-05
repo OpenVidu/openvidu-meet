@@ -325,9 +325,9 @@ export class MeetingEventsService {
 				identity: this.participantService.getMyIdentity() || '',
 				reason: ParticipantLeftReason.NETWORK_DISCONNECT
 			};
-			const messageErrorKey = 'ERRORS.DISCONNECT';
-			let descriptionErrorKey = '';
 
+			// The reason is what matters: it travels in the event and the end-meeting page turns it into
+			// the message the participant actually sees.
 			switch (reason) {
 				case DisconnectReason.CLIENT_INITIATED:
 					if (!this.meetingLiveKitService.shouldHandleClientInitiatedDisconnectEvent) return;
@@ -336,39 +336,26 @@ export class MeetingEventsService {
 					break;
 				case DisconnectReason.DUPLICATE_IDENTITY:
 					participantLeftEvent.reason = ParticipantLeftReason.DUPLICATE_IDENTITY;
-					descriptionErrorKey = 'ERRORS.DUPLICATE_IDENTITY';
 					break;
 				case DisconnectReason.SERVER_SHUTDOWN:
-					descriptionErrorKey = 'ERRORS.SERVER_SHUTDOWN';
 					participantLeftEvent.reason = ParticipantLeftReason.SERVER_SHUTDOWN;
 					break;
 				case DisconnectReason.PARTICIPANT_REMOVED:
 					participantLeftEvent.reason = ParticipantLeftReason.PARTICIPANT_REMOVED;
-					descriptionErrorKey = 'ERRORS.PARTICIPANT_REMOVED';
 					break;
 				case DisconnectReason.ROOM_DELETED:
 					participantLeftEvent.reason = ParticipantLeftReason.ROOM_DELETED;
-					descriptionErrorKey = 'ERRORS.ROOM_DELETED';
 					break;
 				case DisconnectReason.SIGNAL_CLOSE:
 					participantLeftEvent.reason = ParticipantLeftReason.SIGNAL_CLOSE;
-					descriptionErrorKey = 'ERRORS.SIGNAL_CLOSE';
 					break;
 				default:
 					participantLeftEvent.reason = ParticipantLeftReason.OTHER;
-					descriptionErrorKey = 'ERRORS.DISCONNECT';
 					break;
 			}
 
 			this.log.d('Participant disconnected', participantLeftEvent);
 			callbacks.onParticipantLeft(participantLeftEvent);
-
-			if (this.libService.getShowDisconnectionDialog() && descriptionErrorKey) {
-				this.actionService.openDialog(
-					this.translateService.translate(messageErrorKey),
-					this.translateService.translate(descriptionErrorKey)
-				);
-			}
 		});
 	}
 
