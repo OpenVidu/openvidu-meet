@@ -10,11 +10,6 @@ export enum RecordingState {
 	READY = 'READY'
 }
 
-export enum RecordingOutputMode {
-	COMPOSED = 'COMPOSED',
-	INDIVIDUAL = 'INDIVIDUAL'
-}
-
 /**
  * Interface representing information related to the recording status
  */
@@ -32,7 +27,6 @@ export interface RecordingInfo {
 	id: string;
 	roomName: string;
 	roomId: string;
-	outputMode: RecordingOutputMode;
 	status: RecordingState;
 	filename?: string;
 	startedAt?: number;

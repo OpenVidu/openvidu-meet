@@ -114,10 +114,7 @@
 			"CONTENT_SUBTITLE": "When recording has finished you will be able to download it with ease",
 			"STARTING": "Starting recording",
 			"STOPPING": "Stopping recording",
-			"DELETE": "Delete",
-			"CANCEL": "Cancel",
 			"ACCEPT": "Accept",
-			"DELETE_QUESTION": "Are you sure you want to delete the recording?",
 			"NO_TRACKS_PUBLISHED": "Share audio or video to start recording.",
 			"ERROR_STARTING": "Error starting recording"
 		}
@@ -136,11 +133,6 @@
 		"DUPLICATE_IDENTITY": "You have been disconnected because your name was assigned to another participant",
 		"TOGGLE_CAMERA": "There was an error toggling camera",
 		"TOGGLE_MICROPHONE": "There was an error toggling microphone",
-		"LOAD_RECORDING_TITLE": "Error loading recording",
-		"MEDIA_ERR_GENERIC": "An error occurred while loading the video.",
-		"MEDIA_ERR_NETWORK": "A network error caused the video download to fail part-way.",
-		"MEDIA_ERR_DECODE": "The video playback was aborted due to a corruption problem or because the video used features your browser did not support.",
-		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Error streaming recording: S3 could not be reached.",
 		"E2EE_ERROR_TITLE": "Encryption key error",
 		"E2EE_ERROR_CONTENT": "This participant is using a different encryption key. Video cannot be displayed.",
 		"GENERIC": "An unexpected error occurred. Please try again."

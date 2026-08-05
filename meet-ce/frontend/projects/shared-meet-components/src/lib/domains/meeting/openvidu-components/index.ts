@@ -45,7 +45,6 @@ export * from './models/toolbar.model';
 export * from './models/viewport.model';
 // Pipes
 export * from './pipes/participant.pipe';
-export * from './pipes/recording.pipe';
 export * from './pipes/translate.pipe';
 // Services
 export * from './services/action/action.service';

@@ -114,10 +114,7 @@
 			"CONTENT_SUBTITLE": "当录音完成后，你将可以轻松地下载它",
 			"STARTING": "开始录音",
 			"STOPPING": "停止录制",
-			"DELETE": "删除",
-			"CANCEL": "取消",
 			"ACCEPT": "接受",
-			"DELETE_QUESTION": "您确定要删除录音吗",
 			"NO_TRACKS_PUBLISHED": "请分享音频或视频以开始录制。",
 			"ERROR_STARTING": "开始录音时出错"
 		}
@@ -136,11 +133,6 @@
 		"DUPLICATE_IDENTITY": "由于您的名称已被分配给另一位参与者，您已被断开连接",
 		"TOGGLE_CAMERA": "切换相机时出现错误",
 		"TOGGLE_MICROPHONE": "切换麦克风时出现错误",
-		"LOAD_RECORDING_TITLE": "加载录音时出错",
-		"MEDIA_ERR_GENERIC": "加载视频时发生错误。",
-		"MEDIA_ERR_NETWORK": "网络错误导致视频下载中途失败。",
-		"MEDIA_ERR_DECODE": "由于损坏问题或视频使用了您的浏览器不支持的功能，视频播放被中止。",
-		"MEDIA_ERR_SRC_NOT_SUPPORTED": "流媒体录制错误：无法访问 S3。",
 		"E2EE_ERROR_TITLE": "加密密钥错误",
 		"E2EE_ERROR_CONTENT": "此参与者使用了不同的加密密钥。无法显示视频。",
 		"GENERIC": "发生意外错误。请重试。"

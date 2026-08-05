@@ -114,10 +114,7 @@
 			"CONTENT_SUBTITLE": "Wenn die Aufzeichnung beendet ist, können Sie sie ganz einfach herunterladen",
 			"STARTING": "Aufzeichnung starten",
 			"STOPPING": "Aufnahme stoppen",
-			"DELETE": "Löschen",
-			"CANCEL": "Absagen",
 			"ACCEPT": "Akzeptieren",
-			"DELETE_QUESTION": "Möchten Sie die Aufzeichnung wirklich löschen?",
 			"NO_TRACKS_PUBLISHED": "Teile Audio oder Video, um mit der Aufnahme zu beginnen.",
 			"ERROR_STARTING": "Fehler beim Starten der Aufnahme"
 		}
@@ -136,11 +133,6 @@
 		"DUPLICATE_IDENTITY": "Sie wurden getrennt, da Ihr Name einem anderen Teilnehmer zugewiesen wurde",
 		"TOGGLE_CAMERA": "Es gab einen Fehler beim Umschalten der Kamera",
 		"TOGGLE_MICROPHONE": "Es ist ein Fehler beim Umschalten des Mikrofons aufgetreten",
-		"LOAD_RECORDING_TITLE": "Fehler beim Laden der Aufnahme",
-		"MEDIA_ERR_GENERIC": "Beim Laden des Videos ist ein Fehler aufgetreten.",
-		"MEDIA_ERR_NETWORK": "Ein Netzwerkfehler führte dazu, dass der Video-Download teilweise fehlschlug.",
-		"MEDIA_ERR_DECODE": "Die Videowiedergabe wurde aufgrund eines Korruptionsproblems oder weil das Video Funktionen verwendet, die Ihr Browser nicht unterstützt, abgebrochen.",
-		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Fehler beim Streaming der Aufnahme: S3 konnte nicht erreicht werden.",
 		"E2EE_ERROR_TITLE": "Fehler beim Verschlüsselungsschlüssel",
 		"E2EE_ERROR_CONTENT": "Dieser Teilnehmer verwendet einen anderen Verschlüsselungsschlüssel. Video kann nicht angezeigt werden.",
 		"GENERIC": "Ein unerwarteter Fehler ist aufgetreten. Bitte versuche es erneut."

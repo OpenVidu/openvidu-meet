@@ -12,7 +12,6 @@ import { ToolbarComponent } from './components/toolbar/toolbar.component';
 
 import { LinkifyPipe } from './pipes/linkify.pipe';
 import { RemoteParticipantTracksPipe, TrackPublishedTypesPipe } from './pipes/participant.pipe';
-import { DurationFromSecondsPipe } from './pipes/recording.pipe';
 import { TranslatePipe } from './pipes/translate.pipe';
 
 import { DragDropModule } from '@angular/cdk/drag-drop';
@@ -50,7 +49,6 @@ const privateComponents: any[] = [];
 		ReactiveFormsModule,
 		LinkifyPipe,
 		RemoteParticipantTracksPipe,
-		DurationFromSecondsPipe,
 		TrackPublishedTypesPipe,
 		AudioWaveComponent,
 		LandscapeWarningComponent,
@@ -80,7 +78,6 @@ const privateComponents: any[] = [];
 		...publicComponents,
 		ParticipantPanelItemComponent,
 		RemoteParticipantTracksPipe,
-		DurationFromSecondsPipe,
 		TrackPublishedTypesPipe,
 		TranslatePipe,
 		OpenViduComponentsDirectiveModule,

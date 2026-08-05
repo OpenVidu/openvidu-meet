@@ -42,15 +42,6 @@ export class ActivitiesPanelComponent {
 
 	/**
 	 * @internal
-	 * Provides event notifications that fire when view recording button has been clicked.
-	 * This event is triggered when the user wants to view a specific recording in an external page.
-	 * It provides the recording ID as event data.
-	 */
-	onViewRecordingClicked = output<string>();
-
-
-	/**
-	 * @internal
 	 */
 	private readonly libService = inject(MeetingUiConfigService);
 

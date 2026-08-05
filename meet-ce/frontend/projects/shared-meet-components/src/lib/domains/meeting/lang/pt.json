@@ -114,10 +114,7 @@
 			"CONTENT_SUBTITLE": "Quando a gravação tiver terminado, poderá descarregá-la com facilidade",
 			"STARTING": "Começar a gravação",
 			"STOPPING": "Parando a gravação",
-			"DELETE": "Excluir",
-			"CANCEL": "Cancelar",
 			"ACCEPT": "Aceitar",
-			"DELETE_QUESTION": "Tem certeza de que deseja excluir a gravação?",
 			"NO_TRACKS_PUBLISHED": "Compartilhe áudio ou vídeo para começar a gravar.",
 			"ERROR_STARTING": "Erro ao iniciar gravação"
 		}
@@ -136,11 +133,6 @@
 		"DUPLICATE_IDENTITY": "Você foi desconectado porque seu nome foi atribuído a outro participante",
 		"TOGGLE_CAMERA": "Houve um erro ao alternar a câmara",
 		"TOGGLE_MICROPHONE": "Houve um erro ao alternar microphone",
-		"LOAD_RECORDING_TITLE": "Erro ao carregar a gravação",
-		"MEDIA_ERR_GENERIC": "Ocorreu um erro ao carregar o vídeo.",
-		"MEDIA_ERR_NETWORK": "Um erro de rede fez com que o download do vídeo falhasse parcialmente.",
-		"MEDIA_ERR_DECODE": "A reprodução do vídeo foi interrompida devido a um problema de corrupção ou porque o vídeo usou recursos que o seu navegador não suportava.",
-		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Erro ao transmitir a gravação: não foi possível acessar o S3.",
 		"E2EE_ERROR_TITLE": "Erro de chave de criptografia",
 		"E2EE_ERROR_CONTENT": "Este participante está usando uma chave de criptografia diferente. O vídeo não pode ser exibido.",
 		"GENERIC": "Ocorreu um erro inesperado. Tente novamente."

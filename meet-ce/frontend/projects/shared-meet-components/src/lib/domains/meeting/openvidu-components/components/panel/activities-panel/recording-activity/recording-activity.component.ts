@@ -7,7 +7,6 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatListModule } from '@angular/material/list';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import {
-    RecordingInfo,
     RecordingStartRequestedEvent,
     RecordingState,
     RecordingStopRequestedEvent
@@ -73,13 +72,6 @@ export class RecordingActivityComponent {
 
 	/**
 	 * @internal
-	 * This event is fired when the user clicks on the view recording button.
-	 * It provides the recording ID as event data.
-	 */
-	onViewRecordingClicked = output<string>();
-
-	/**
-	 * @internal
 	 */
 	readonly recordingStatus = signal(RecordingState.STOPPED);
 	/**
@@ -114,11 +106,6 @@ export class RecordingActivityComponent {
 	/**
 	 * @internal
 	 */
-	readonly mouseHovering = signal(false);
-
-	/**
-	 * @internal
-	 */
 	readonly showStartStopRecordingButton = this.libService.recordingActivityStartStopRecordingButtonSignal;
 
 	/**
@@ -143,13 +130,6 @@ export class RecordingActivityComponent {
 		this.participantService.remoteParticipants();
 		this.hasRoomTracksPublished.set(this.meetingLiveKitService.hasRoomTracksPublished());
 	});
-
-	/**
-	 * @internal
-	 */
-	trackByRecordingId(index: number, recording: RecordingInfo): string | undefined {
-		return recording.id;
-	}
 
 	/**
 	 * @internal

@@ -337,13 +337,6 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 	/**
 	 * @internal
-	 * This event is fired when the user clicks on the view recording button.
-	 * It provides the recording ID as event data.
-	 */
-	readonly onViewRecordingClicked = output<string>();
-
-	/**
-	 * @internal
 	 * This event is fired when the user clicks on the view recordings button.
 	 */
 	readonly onViewRecordingsClicked = output<void>();

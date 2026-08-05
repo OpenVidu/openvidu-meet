@@ -114,10 +114,7 @@
 			"CONTENT_SUBTITLE": "Als de opname klaar is kunt u deze met gemak downloaden",
 			"STARTING": "Beginnen met opnemen",
 			"STOPPING": "Opname stoppen",
-			"DELETE": "Verwijderen",
-			"CANCEL": "Annuleren",
 			"ACCEPT": "Accepteren",
-			"DELETE_QUESTION": "Weet je zeker dat je de opname wilt verwijderen?",
 			"NO_TRACKS_PUBLISHED": "Deel audio of video om met opnemen te beginnen.",
 			"ERROR_STARTING": "Fout bij starten opname"
 		}
@@ -136,11 +133,6 @@
 		"DUPLICATE_IDENTITY": "Je bent losgekoppeld omdat je naam aan een andere deelnemer is toegewezen",
 		"TOGGLE_CAMERA": "Er is een fout opgetreden bij het overschakelen naar een andere camera",
 		"TOGGLE_MICROPHONE": "Er is een fout opgetreden bij het overschakelen naar een microfoon",
-		"LOAD_RECORDING_TITLE": "Fout bij het laden van opname",
-		"MEDIA_ERR_GENERIC": "Er is een fout opgetreden bij het laden van de video.",
-		"MEDIA_ERR_NETWORK": "Een netwerkfout heeft ertoe geleid dat het downloaden van de video halverwege is mislukt.",
-		"MEDIA_ERR_DECODE": "Het afspelen van de video is afgebroken vanwege een corruptieprobleem of omdat de video functies gebruikte die uw browser niet ondersteunde.",
-		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Fout bij het streamen van de opname: S3 kon niet worden bereikt.",
 		"E2EE_ERROR_TITLE": "Versleutelingssleutelfout",
 		"E2EE_ERROR_CONTENT": "Deze deelnemer gebruikt een andere beveiligingssleutel. Video kan niet worden weergegeven.",
 		"GENERIC": "Er is een onverwachte fout opgetreden. Probeer het opnieuw."

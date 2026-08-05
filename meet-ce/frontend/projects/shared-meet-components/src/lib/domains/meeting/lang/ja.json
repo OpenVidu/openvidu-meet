@@ -114,10 +114,7 @@
 			"CONTENT_SUBTITLE": "録画が完了したら、簡単にダウンロードできます",
 			"STARTING": "録画開始",
 			"STOPPING": "録音停止",
-			"DELETE": "削除",
-			"CANCEL": "キャンセル",
 			"ACCEPT": "受け入れる",
-			"DELETE_QUESTION": "録画を削除してもよろしいですか",
 			"NO_TRACKS_PUBLISHED": "録音を開始するには、音声または動画を共有してください。",
 			"ERROR_STARTING": "録画開始エラー"
 		}
@@ -136,11 +133,6 @@
 		"DUPLICATE_IDENTITY": "表示名が他の参加者に割り当てられたため、切断されました",
 		"TOGGLE_CAMERA": "カメラの切り替えに失敗しました",
 		"TOGGLE_MICROPHONE": "マイクの切り替えに失敗しました",
-		"LOAD_RECORDING_TITLE": "録音の読み込みエラー",
-		"MEDIA_ERR_GENERIC": "ビデオの読み込み中にエラーが発生しました。",
-		"MEDIA_ERR_NETWORK": "ネットワークエラーにより、ビデオのダウンロードが途中で失敗しました。",
-		"MEDIA_ERR_DECODE": "破損の問題またはビデオがブラウザでサポートされていない機能を使用したために、ビデオの再生が中止されました。",
-		"MEDIA_ERR_SRC_NOT_SUPPORTED": "録画のストリーミングエラー：S3にアクセスできませんでした。",
 		"E2EE_ERROR_TITLE": "暗号化キーエラー",
 		"E2EE_ERROR_CONTENT": "この参加者は異なる暗号化キーを使用しています。ビデオを表示できません。",
 		"GENERIC": "予期しないエラーが発生しました。もう一度お試しください。"

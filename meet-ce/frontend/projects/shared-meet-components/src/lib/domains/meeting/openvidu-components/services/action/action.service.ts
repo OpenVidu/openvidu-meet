@@ -1,11 +1,8 @@
 import { inject, Service } from '@angular/core';
 import { MatDialog, MatDialogConfig, MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { DeleteDialogComponent } from '../../components/dialogs/delete-recording.component';
 import { DialogTemplateComponent } from '../../components/dialogs/dialog.component';
-import { RecordingDialogComponent } from '../../components/dialogs/recording-dialog.component';
 import { INotificationOptions } from '../../models/notification-options.model';
-import { MeetingTranslateService } from '../translate/meeting-translate.service';
 
 /**
  * @internal
@@ -14,11 +11,8 @@ import { MeetingTranslateService } from '../translate/meeting-translate.service'
 export class ActionService {
 	private readonly snackBar = inject(MatSnackBar);
 	public readonly dialog = inject(MatDialog);
-	private readonly translateService = inject(MeetingTranslateService);
 
-	private dialogRef:
-		| MatDialogRef<DialogTemplateComponent | RecordingDialogComponent | DeleteDialogComponent>
-		| undefined;
+	private dialogRef: MatDialogRef<DialogTemplateComponent> | undefined;
 	private connectionDialogRef: MatDialogRef<DialogTemplateComponent> | undefined;
 	private isConnectionDialogOpen = false;
 
@@ -73,35 +67,6 @@ export class ActionService {
 		});
 	}
 
-	openDeleteRecordingDialog(successCallback: () => void) {
-		this.closeDialog();
-		this.dialogRef = this.dialog.open(DeleteDialogComponent);
-		this.dialogRef.afterClosed().subscribe((result) => {
-			if (result) {
-				successCallback();
-			}
-
-			this.dialogRef = undefined;
-		});
-	}
-
-	openRecordingPlayerDialog(src: string, allowClose = true) {
-		this.closeDialog();
-		const config: MatDialogConfig = {
-			minWidth: '250px',
-			data: { src, showActionButtons: allowClose },
-			disableClose: !allowClose
-		};
-		this.dialogRef = this.dialog.open(RecordingDialogComponent, config);
-		this.dialogRef.afterClosed().subscribe((data: { manageError: boolean; error: MediaError | null }) => {
-			if (data && data.manageError) {
-				this.handleRecordingPlayerError(data.error);
-			}
-
-			this.dialogRef = undefined;
-		});
-	}
-
 	closeDialog() {
 		if (this.dialogRef) {
 			this.dialogRef.close();
@@ -115,27 +80,5 @@ export class ActionService {
 			this.isConnectionDialogOpen = false;
 			this.connectionDialogRef = undefined;
 		}
-	}
-
-	private handleRecordingPlayerError(error: MediaError | null) {
-		let message = 'ERRORS.MEDIA_ERR_GENERIC';
-
-		if (error) {
-			switch (error.code) {
-				case error.MEDIA_ERR_NETWORK:
-					message = 'ERRORS.MEDIA_ERR_NETWORK';
-					break;
-				case error.MEDIA_ERR_DECODE:
-					message = 'ERRORS.MEDIA_ERR_DECODE';
-					break;
-				case error.MEDIA_ERR_SRC_NOT_SUPPORTED:
-					message = 'ERRORS.MEDIA_ERR_SRC_NOT_SUPPORTED';
-					break;
-			}
-		}
-
-		const title = this.translateService.translate('ERRORS.LOAD_RECORDING_TITLE');
-		message = this.translateService.translate(message);
-		this.openDialog(title, message, true);
 	}
 }

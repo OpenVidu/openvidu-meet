@@ -114,10 +114,7 @@
 			"CONTENT_SUBTITLE": "Al termine della registrazione potrete scaricarla con facilità",
 			"STARTING": "Avvio della registrazione",
 			"STOPPING": "Interruzione della registrazione",
-			"DELETE": "Elimina",
-			"CANCEL": "Annulla",
 			"ACCEPT": "Accetta",
-			"DELETE_QUESTION": "Sei sicuro di voler eliminare la registrazione?",
 			"NO_TRACKS_PUBLISHED": "Condividi audio o video per iniziare la registrazione.",
 			"ERROR_STARTING": "Errore di avvio"
 		}
@@ -136,11 +133,6 @@
 		"DUPLICATE_IDENTITY": "Sei stato disconnesso perché il tuo nome è stato assegnato a un altro partecipante",
 		"TOGGLE_CAMERA": "Si è verificato un errore nell'attivazione della telecamera",
 		"TOGGLE_MICROPHONE": "Si è verificato un errore nell'attivazione del microfono",
-		"LOAD_RECORDING_TITLE": "Errore nel caricamento della registrazione",
-		"MEDIA_ERR_GENERIC": "Si è verificato un errore durante il caricamento del video.",
-		"MEDIA_ERR_NETWORK": "Un errore di rete ha causato l'interruzione del download del video a metà strada.",
-		"MEDIA_ERR_DECODE": "La riproduzione del video è stata interrotta a causa di un problema di corruzione o perché il video utilizzava funzionalità non supportate dal tuo browser.",
-		"MEDIA_ERR_SRC_NOT_SUPPORTED": "Errore nello streaming della registrazione: impossibile raggiungere S3.",
 		"E2EE_ERROR_TITLE": "Errore della chiave di crittografia",
 		"E2EE_ERROR_CONTENT": "Questo partecipante sta utilizzando una chiave di crittografia diversa. Il video non può essere visualizzato.",
 		"GENERIC": "Si è verificato un errore imprevisto. Riprova."
