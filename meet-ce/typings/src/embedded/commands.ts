@@ -1,19 +1,41 @@
 /**
  * All available commands that can be sent to the embedded OpenVidu Meet application.
+ *
+ * Canonical names follow the `moduleAction` scheme (module first, then an imperative verb), so a
+ * module's commands sort and autocomplete together. The former action-first names are kept as
+ * `@deprecated` aliases that forward to the canonical command, and are removed in **3.12.0**.
+ * They are excluded from the generated documentation so new integrations only see canonical names.
  */
 export enum EmbeddedCommandName {
+	/**
+	 * Disconnects the local participant from the current meeting.
+	 */
+	MEETING_LEAVE = 'meetingLeave',
 	/**
 	 * Ends the current meeting for all participants.
 	 * @moderator
 	 */
+	MEETING_END = 'meetingEnd',
+	/**
+	 * Kicks a participant from the meeting.
+	 * @moderator
+	 */
+	PARTICIPANT_KICK = 'participantKick',
+	/**
+	 * Ends the current meeting for all participants.
+	 * @moderator
+	 * @deprecated Renamed to `meetingEnd` ({@link EmbeddedCommandName.MEETING_END}). Removed in 3.12.0.
+	 */
 	END_MEETING = 'endMeeting',
 	/**
 	 * Disconnects the local participant from the current meeting.
+	 * @deprecated Renamed to `meetingLeave` ({@link EmbeddedCommandName.MEETING_LEAVE}). Removed in 3.12.0.
 	 */
 	LEAVE_ROOM = 'leaveRoom',
 	/**
 	 * Kicks a participant from the meeting.
 	 * @moderator
+	 * @deprecated Renamed to `participantKick` ({@link EmbeddedCommandName.PARTICIPANT_KICK}). Removed in 3.12.0.
 	 */
 	KICK_PARTICIPANT = 'kickParticipant'
 }
@@ -21,23 +43,67 @@ export enum EmbeddedCommandName {
 /**
  * Type definitions for command payloads.
  * Each property corresponds to a command in {@link EmbeddedCommandName}.
+ *
+ * A deprecated alias always carries the **same** payload as its canonical command, expressed as an
+ * indexed access so the two can never drift apart.
  * @category Communication
  */
 export interface EmbeddedCommandPayloads {
 	/**
-	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
+	 * Payload for the {@link EmbeddedCommandName.MEETING_LEAVE} command.
 	 */
-	[EmbeddedCommandName.END_MEETING]: void;
+	[EmbeddedCommandName.MEETING_LEAVE]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.LEAVE_ROOM} command.
+	 * Payload for the {@link EmbeddedCommandName.MEETING_END} command.
 	 */
-	[EmbeddedCommandName.LEAVE_ROOM]: void;
+	[EmbeddedCommandName.MEETING_END]: void;
 	/**
-	 * Payload for the {@link EmbeddedCommandName.KICK_PARTICIPANT} command.
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_KICK} command.
 	 */
-	[EmbeddedCommandName.KICK_PARTICIPANT]: {
+	[EmbeddedCommandName.PARTICIPANT_KICK]: {
 		participantIdentity: string;
 	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
+	 * @deprecated Use {@link EmbeddedCommandName.MEETING_END}. Removed in 3.12.0.
+	 */
+	[EmbeddedCommandName.END_MEETING]: EmbeddedCommandPayloads[EmbeddedCommandName.MEETING_END];
+	/**
+	 * Payload for the {@link EmbeddedCommandName.LEAVE_ROOM} command.
+	 * @deprecated Use {@link EmbeddedCommandName.MEETING_LEAVE}. Removed in 3.12.0.
+	 */
+	[EmbeddedCommandName.LEAVE_ROOM]: EmbeddedCommandPayloads[EmbeddedCommandName.MEETING_LEAVE];
+	/**
+	 * Payload for the {@link EmbeddedCommandName.KICK_PARTICIPANT} command.
+	 * @deprecated Use {@link EmbeddedCommandName.PARTICIPANT_KICK}. Removed in 3.12.0.
+	 */
+	[EmbeddedCommandName.KICK_PARTICIPANT]: EmbeddedCommandPayloads[EmbeddedCommandName.PARTICIPANT_KICK];
+}
+
+/**
+ * Maps every deprecated command alias to the canonical command it forwards to. Consumers that must
+ * accept both spellings (the iframe bridge, the webcomponent shell) derive their handling from this
+ * map instead of hardcoding pairs.
+ * @category Communication
+ */
+export const EMBEDDED_COMMAND_ALIASES = {
+	[EmbeddedCommandName.END_MEETING]: EmbeddedCommandName.MEETING_END,
+	[EmbeddedCommandName.LEAVE_ROOM]: EmbeddedCommandName.MEETING_LEAVE,
+	[EmbeddedCommandName.KICK_PARTICIPANT]: EmbeddedCommandName.PARTICIPANT_KICK
+} as const satisfies Readonly<Partial<Record<EmbeddedCommandName, EmbeddedCommandName>>>;
+
+/**
+ * A deprecated command name that aliases a canonical one.
+ * @category Type Helpers
+ */
+export type EmbeddedDeprecatedCommandName = keyof typeof EMBEDDED_COMMAND_ALIASES;
+
+/**
+ * Resolves a command name to its canonical form, leaving canonical names untouched.
+ * @category Type Helpers
+ */
+export function resolveEmbeddedCommandName(command: EmbeddedCommandName): EmbeddedCommandName {
+	return EMBEDDED_COMMAND_ALIASES[command as EmbeddedDeprecatedCommandName] ?? command;
 }
 
 /**
@@ -51,8 +117,35 @@ export type EmbeddedCommandPayloadFor<T extends EmbeddedCommandName> = T extends
 	: never;
 
 /**
+ * Command message for {@link EmbeddedCommandName.MEETING_LEAVE} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedMeetingLeaveCommand {
+	command: EmbeddedCommandName.MEETING_LEAVE;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.MEETING_END} (no payload).
+ * @category Communication
+ */
+export interface EmbeddedMeetingEndCommand {
+	command: EmbeddedCommandName.MEETING_END;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_KICK}: the command name plus its payload,
+ * derived from {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantKickCommand {
+	command: EmbeddedCommandName.PARTICIPANT_KICK;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_KICK>;
+}
+
+/**
  * Command message for {@link EmbeddedCommandName.END_MEETING} (no payload).
  * @category Communication
+ * @deprecated Use {@link EmbeddedMeetingEndCommand}. Removed in 3.12.0.
  */
 export interface EmbeddedEndMeetingCommand {
 	command: EmbeddedCommandName.END_MEETING;
@@ -61,6 +154,7 @@ export interface EmbeddedEndMeetingCommand {
 /**
  * Command message for {@link EmbeddedCommandName.LEAVE_ROOM} (no payload).
  * @category Communication
+ * @deprecated Use {@link EmbeddedMeetingLeaveCommand}. Removed in 3.12.0.
  */
 export interface EmbeddedLeaveRoomCommand {
 	command: EmbeddedCommandName.LEAVE_ROOM;
@@ -70,6 +164,7 @@ export interface EmbeddedLeaveRoomCommand {
  * Command message for {@link EmbeddedCommandName.KICK_PARTICIPANT}: the command name plus its payload,
  * derived from {@link EmbeddedCommandPayloadFor}.
  * @category Communication
+ * @deprecated Use {@link EmbeddedParticipantKickCommand}. Removed in 3.12.0.
  */
 export interface EmbeddedKickParticipantCommand {
 	command: EmbeddedCommandName.KICK_PARTICIPANT;
@@ -79,9 +174,13 @@ export interface EmbeddedKickParticipantCommand {
 /**
  * Discriminated union of every command message the host can send to the embedded app; narrow on
  * `command`. In the iframe integration this is the object posted verbatim over `postMessage`.
+ * Includes the deprecated aliases, which hosts written against 3.8.0 still send.
  * @category Communication
  */
 export type EmbeddedCommand =
+	| EmbeddedMeetingLeaveCommand
+	| EmbeddedMeetingEndCommand
+	| EmbeddedParticipantKickCommand
 	| EmbeddedEndMeetingCommand
 	| EmbeddedLeaveRoomCommand
 	| EmbeddedKickParticipantCommand;
