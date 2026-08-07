@@ -123,5 +123,12 @@ frontend). Two details matter when things look stale:
 - `MEET-*.md` at the root are design proposals, not implemented state. `MEET-E2E-DOMAIN-STRATEGY.md`
   describes a *planned* move of frontend e2e to `tests/e2e/`; the suites still live in
   `meet-ce/frontend/e2e/`.
+- **API migration plans live outside this repo.** The single source of truth for the API-naming
+  migration (the `moduleAction`/`moduleAbility` scheme, the deprecation window and its phased
+  implementation plan) is `../openvidu-competitors/meet-update-plan/` —
+  `new-api-format.md` (the target contract), `api-surface-and-namespacing-impact.md` (the rationale
+  and the naming charter) and `api-naming-migration-phase.md` (the phase plan, its decisions and its
+  register of verified barriers). Do **not** copy them here: duplicates diverged once already. That
+  repo is already a folder of `openvidu-meet.code-workspace`.
 - The root `README.md` predates the `meet-ce/` reorganization and still shows Angular 20 and
   top-level `frontend/`, `backend/`. Trust the tree, not the README.
