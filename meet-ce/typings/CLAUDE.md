@@ -47,13 +47,23 @@ or through the folder's `index.ts`).
   - `scripts/generate-webcomponent-docs.js` parses the JSDoc of the enums in `src/embedded/` to
     generate `docs/webcomponent/{attributes,commands,events}.md`. It reads the raw text, so keep the
     `/** … */` block directly above each enum member and keep one member per line. Tags like
-    `@required`, `@moderator` and `@category` are meaningful to that generator.
+    `@required`, `@moderator` and `@category` are meaningful to that generator, and so is
+    **`@deprecated`**: a member carrying it is **excluded** from the generated tables (like `@private`),
+    so the public docs only ever show canonical names. The generator prints what it excluded.
   - `{@link Other}` references are used throughout; keep them valid when renaming.
 - Domain entity types describe the **API/domain shape**, not the persistence shape. Mongo-only fields
   (`_id`, `schemaVersion`) stay in the backend's document types and are stripped before responses.
 - Payload maps use the "enum key → payload" pattern (`EmbeddedCommandPayloads`,
   `EmbeddedEventPayloads`) with a `…PayloadFor<T>` helper. Add a new command/event by extending the
   enum *and* its payload map so consumers stay type-safe.
+- **Renaming** a public identifier is never a rename in place: add the new name as canonical, keep the
+  old one as a `@deprecated` alias whose text states the removal release (`Removed in 3.12.0.`), and
+  register the pair in the alias map next to the enum (`EMBEDDED_COMMAND_ALIASES`,
+  `EMBEDDED_EVENT_ALIASES`, `MEET_PERMISSION_ALIASES`). Those maps are the single source of truth every
+  consumer derives from — never hardcode a pair. Give a deprecated alias the **same** payload as its
+  canonical twin through an indexed access (`EmbeddedEventPayloads[EmbeddedEventName.MEETING_LEFT]`)
+  so the two cannot drift. The plan behind this lives in
+  `../openvidu-competitors/meet-update-plan/api-naming-migration-phase.md`.
 
 ## Change discipline
 
