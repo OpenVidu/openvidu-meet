@@ -4,12 +4,15 @@ import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.he
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
 import {
 	endMeetingCommand,
+	endMeetingLegacyCommand,
 	eventLocator,
 	expectEvent,
 	expectWebhook,
 	kickParticipantCommand,
+	kickParticipantLegacyCommand,
 	leaveMeeting,
 	leaveRoomCommand,
+	leaveRoomLegacyCommand,
 	openMeeting
 } from '../helpers/testapp.helper';
 
@@ -202,6 +205,55 @@ for (const integration of INTEGRATIONS) {
 				await expect(speakerLeft).toContainText(roomId);
 
 				await leaveMeeting(page, { integration, role: 'moderator' });
+				await speakerContext.close();
+			});
+		});
+
+		// The btn-legacy-* testapp buttons exist since F4 but nothing exercised them
+		// end-to-end until now: this closes that gap by pressing each deprecated
+		// command name and asserting the same real behavior as its canonical twin.
+		test.describe('Deprecated Command Aliases', () => {
+			test('should disconnect via the deprecated leaveRoom() alias', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				await leaveRoomLegacyCommand(page);
+
+				const left = await expectEvent(page, EmbeddedEventName.LEFT);
+				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+			});
+
+			test('should end the meeting via the deprecated endMeeting() alias', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				await endMeetingLegacyCommand(page);
+
+				const left = await expectEvent(page, EmbeddedEventName.LEFT);
+				await expect(left).toContainText(LeftEventReason.MEETING_ENDED);
+			});
+
+			test('should kick a participant via the deprecated kickParticipant() alias', async ({ page, browser }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				const speakerName = 'Speaker';
+				await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
+
+				const speakerJoined = await expectEvent(speakerPage, EmbeddedEventName.JOINED);
+				const speakerJoinedText = (await speakerJoined.textContent()) ?? '';
+				const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
+				const speakerIdentity = match?.[1] ?? speakerName;
+
+				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
+
+				await kickParticipantLegacyCommand(page, speakerIdentity);
+
+				const speakerLeft = await expectEvent(speakerPage, EmbeddedEventName.LEFT);
+				await expect(speakerLeft).toContainText(LeftEventReason.PARTICIPANT_KICKED);
+
 				await speakerContext.close();
 			});
 		});

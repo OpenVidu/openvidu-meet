@@ -181,6 +181,7 @@ export class App {
 
 	// ── Lifecycle events (unified across integrations) ──────────────────────
 
+	/** @deprecated Handles the 3.8.0 `joined` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleJoined(event: Event): void {
 		this.emitEvent(
 			EmbeddedEventName.JOINED,
@@ -188,6 +189,7 @@ export class App {
 		);
 	}
 
+	/** @deprecated Handles the 3.8.0 `left` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleLeft(event: Event): void {
 		this.emitEvent(
 			EmbeddedEventName.LEFT,
@@ -195,8 +197,27 @@ export class App {
 		);
 	}
 
+	/** @deprecated Handles the 3.8.0 `closed` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleClosed(): void {
 		this.emitEvent(EmbeddedEventName.CLOSED, {});
+	}
+
+	protected handleMeetingJoined(event: Event): void {
+		this.emitEvent(
+			EmbeddedEventName.MEETING_JOINED,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_JOINED>>).detail
+		);
+	}
+
+	protected handleMeetingLeft(event: Event): void {
+		this.emitEvent(
+			EmbeddedEventName.MEETING_LEFT,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>).detail
+		);
+	}
+
+	protected handleMeetingClosed(): void {
+		this.emitEvent(EmbeddedEventName.MEETING_CLOSED, {});
 	}
 
 	private handleIframeEvent(event: EmbeddedEvent): void {
