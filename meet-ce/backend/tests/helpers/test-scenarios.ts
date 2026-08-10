@@ -12,13 +12,13 @@ import {
 import express, { Request, Response } from 'express';
 import http from 'http';
 import { StringValue } from 'ms';
-import { container } from '../../src/config/dependency-injector.config';
-import { MeetRoomHelper } from '../../src/helpers/room.helper';
-import { RecordingRepository } from '../../src/repositories/recording.repository';
-import { RoomRepository } from '../../src/repositories/room.repository';
+import { container } from '../../src/config/dependency-injector.config.js';
+import { MeetRoomHelper } from '../../src/helpers/room.helper.js';
+import { RecordingRepository } from '../../src/repositories/recording.repository.js';
+import { RoomRepository } from '../../src/repositories/room.repository.js';
 import { LiveKitService } from '../../src/services/livekit.service.js';
-import { RoomData, RoomMemberData, RoomTestUsers, TestContext, TestUsers, UserData } from '../interfaces/scenarios';
-import { expectValidStartRecordingResponse } from './assertion-helpers';
+import { RoomData, RoomMemberData, RoomTestUsers, TestContext, TestUsers, UserData } from '../interfaces/scenarios.js';
+import { expectValidStartRecordingResponse } from './assertion-helpers.js';
 import { joinFakeParticipant } from './livekit-cli-helpers.js';
 import {
 	changePassword,
@@ -31,7 +31,7 @@ import {
 	startRecording,
 	stopRecording,
 	updateRoomMember
-} from './request-helpers';
+} from './request-helpers.js';
 import { waitForMeetingToEnd, waitForMeetingToStart } from './wait-helpers.js';
 
 let mockWebhookServer: http.Server;
@@ -448,7 +448,9 @@ export const setupTestUsersForRoom = async (roomData: RoomData): Promise<RoomDat
 	// Change room ownership to roomManagerOwner
 	const roomRepository = container.get(RoomRepository);
 	const recordingRepository = container.get(RecordingRepository);
-	const updatedRoom = await roomRepository.updatePartial(roomData.room.roomId, { owner: roomManagerOwner.user.userId });
+	const updatedRoom = await roomRepository.updatePartial(roomData.room.roomId, {
+		owner: roomManagerOwner.user.userId
+	});
 	await recordingRepository.updateAccessScopeMetadataByRoomId(roomData.room.roomId, {
 		roomOwner: roomManagerOwner.user.userId
 	});

@@ -154,14 +154,14 @@ describe('toLegacyPermissions', () => {
 	});
 
 	it('should collapse a split group with AND', () => {
-		expect(
-			toLegacyPermissions({ recordingList: true, recordingPlay: true, recordingDownload: true })
-		).toEqual({ canRetrieveRecordings: true });
+		expect(toLegacyPermissions({ recordingList: true, recordingPlay: true, recordingDownload: true })).toEqual({
+			canRetrieveRecordings: true
+		});
 		// "play but no download" cannot be expressed by the old flag: the safe reading is false, so an
 		// old client hides the feature instead of offering a button that would be rejected.
-		expect(
-			toLegacyPermissions({ recordingList: true, recordingPlay: true, recordingDownload: false })
-		).toEqual({ canRetrieveRecordings: false });
+		expect(toLegacyPermissions({ recordingList: true, recordingPlay: true, recordingDownload: false })).toEqual({
+			canRetrieveRecordings: false
+		});
 	});
 
 	it('should omit a split group when part of it is missing', () => {
@@ -177,7 +177,7 @@ describe('toLegacyPermissions', () => {
 	});
 
 	it('should omit keys with no boolean value', () => {
-		expect(toLegacyPermissions({ recordingAdmin: undefined, chatRead: true })).toEqual({ canReadChat: true });
+		expect(toLegacyPermissions({ recordingControl: undefined, chatRead: true })).toEqual({ canReadChat: true });
 	});
 });
 

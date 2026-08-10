@@ -1,6 +1,6 @@
-import { container } from '../../src/config/dependency-injector.config';
-import { DistributedEventType } from '../../src/models/distributed-event.model';
-import { DistributedEventService } from '../../src/services/distributed-event.service';
+import { container } from '../../src/config/dependency-injector.config.js';
+import { DistributedEventType } from '../../src/models/distributed-event.model.js';
+import { DistributedEventService } from '../../src/services/distributed-event.service.js';
 
 export const eventController = {
 	systemEventService: undefined as unknown as DistributedEventService,

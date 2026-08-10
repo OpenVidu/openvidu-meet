@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from '@jest/globals';
 import { MeetRoom } from '@openvidu-meet/typings';
-import { expectValidationError } from '../../../helpers/assertion-helpers';
+import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
@@ -9,9 +9,9 @@ import {
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
-} from '../../../helpers/request-helpers';
+} from '../../../helpers/request-helpers.js';
 
-import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios';
+import { setupMultiRecordingsTestContext } from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {

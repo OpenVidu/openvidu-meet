@@ -1,5 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
-import { expectValidationError } from '../../../helpers/assertion-helpers';
+import { expectValidationError } from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRecordings,
@@ -9,9 +9,9 @@ import {
 	getAllRecordings,
 	startTestServer,
 	stopRecording
-} from '../../../helpers/request-helpers';
+} from '../../../helpers/request-helpers.js';
 
-import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios';
+import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {

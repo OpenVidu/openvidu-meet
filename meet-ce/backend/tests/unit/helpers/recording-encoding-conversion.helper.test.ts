@@ -6,7 +6,7 @@ import {
 	MeetRecordingVideoCodec
 } from '@openvidu-meet/typings';
 import { AudioCodec, EncodingOptions, EncodingOptionsPreset, VideoCodec } from 'livekit-server-sdk';
-import { EncodingConverter } from '../../../src/helpers/encoding-converter.helper';
+import { EncodingConverter } from '../../../src/helpers/encoding-converter.helper.js';
 
 // Helper to create complete encoding options with all required fields
 const createCompleteEncodingOptions = (

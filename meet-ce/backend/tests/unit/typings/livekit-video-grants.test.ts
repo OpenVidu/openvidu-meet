@@ -35,6 +35,10 @@ type PropertyTypeCheck = { [K in KeysVideo]: CheckPropertyTypes<K> };
 
 describe('OpenVidu Meet LiveKitPermissions type', () => {
 	it('should have identical properties to VideoGrant', () => {
+		// Referencing the assertion types here is what makes them "used" for `noUnusedLocals` —
+		// their real job already happened above: TS raises a compile error if any check fails.
+		const typeChecks: [Assert, BiDirectionalCheck, PropertyTypeCheck] = undefined as never;
+		void typeChecks;
 		expect(true).toBe(true); // Test passes if compilation succeeds
 	});
 });

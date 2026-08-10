@@ -92,9 +92,10 @@ describe('path.utils - Robust project path resolution', () => {
 		});
 
 		it('should work for both meet-ce and meet-pro', () => {
-			// Path may be identifiable as CE or PRO
+			// This checkout is always one edition or the other, never both/neither.
 			const isCE = pathUtils.publicDirectoryPath.includes('meet-ce');
 			const isPRO = pathUtils.publicDirectoryPath.includes('meet-pro');
+			expect(isCE).not.toBe(isPRO);
 
 			// The structure backend/public must exist
 			expect(pathUtils.publicDirectoryPath).toMatch(/backend[\/\\]public$/);

@@ -16,10 +16,10 @@ import {
 	TrackSource
 } from '@openvidu-meet/typings';
 import { Response } from 'supertest';
-import { container } from '../../src/config/dependency-injector.config';
-import { INTERNAL_CONFIG } from '../../src/config/internal-config';
-import { TokenService } from '../../src/services/token.service';
-import { getFullPath } from './request-helpers';
+import { container } from '../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
+import { TokenService } from '../../src/services/token.service.js';
+import { getFullPath } from './request-helpers.js';
 
 export const DEFAULT_RECORDING_ENCODING_PRESET = MeetRecordingEncodingPreset.H264_720P_30;
 export const DEFAULT_RECORDING_LAYOUT = MeetRecordingLayout.GRID;
