@@ -11,7 +11,8 @@ export type IframeLifecycleHandler = (event: EmbeddedEvent) => void;
  *
  * - validates that inbound events come from the iframe's origin;
  * - relays `joined/left/closed` to the caller;
- * - sends `endMeeting/leaveRoom/kickParticipant` commands.
+ * - sends `meetingEnd/meetingLeave/participantKick` commands (and their deprecated
+ *   3.8.0 spellings, so both wire formats stay exercised).
  *
  * The embedded app resolves the trusted host origin on its own (from
  * `ancestorOrigins`/`referrer`), so no `READY`/`INITIALIZE` handshake is needed.
@@ -59,15 +60,35 @@ export class IframeHostService {
 		this.targetOrigin = '';
 	}
 
-	endMeeting(): void {
+	meetingEnd(): void {
+		this.post({ command: EmbeddedCommandName.MEETING_END });
+	}
+
+	meetingLeave(): void {
+		this.post({ command: EmbeddedCommandName.MEETING_LEAVE });
+	}
+
+	participantKick(participantIdentity: string): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_KICK, payload: { participantIdentity } });
+	}
+
+	// ── Deprecated command names ────────────────────────────────────────────
+	// These post the OLD wire strings on purpose: they are how the e2e checks that a host
+	// still on 3.8.0 keeps working. They are not forwarders to the canonical methods, since
+	// what is under test is the name that travels over `postMessage`.
+
+	/** @deprecated Sends the 3.8.0 `endMeeting` command. Removed in 3.12.0. */
+	legacyEndMeeting(): void {
 		this.post({ command: EmbeddedCommandName.END_MEETING });
 	}
 
-	leaveRoom(): void {
+	/** @deprecated Sends the 3.8.0 `leaveRoom` command. Removed in 3.12.0. */
+	legacyLeaveRoom(): void {
 		this.post({ command: EmbeddedCommandName.LEAVE_ROOM });
 	}
 
-	kickParticipant(participantIdentity: string): void {
+	/** @deprecated Sends the 3.8.0 `kickParticipant` command. Removed in 3.12.0. */
+	legacyKickParticipant(participantIdentity: string): void {
 		this.post({ command: EmbeddedCommandName.KICK_PARTICIPANT, payload: { participantIdentity } });
 	}
 

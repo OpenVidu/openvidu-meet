@@ -9,8 +9,14 @@ import { EmbeddedEventName, EmbeddedEventPayloadFor } from '@openvidu-meet/typin
  * `viewChild` element reference and imperative calls.
  */
 export interface OpenViduMeetElement extends HTMLElement {
+	meetingEnd(): void;
+	meetingLeave(): void;
+	participantKick(participantIdentity: string): void;
+	/** @deprecated Renamed to `meetingEnd()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	endMeeting(): void;
+	/** @deprecated Renamed to `meetingLeave()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	leaveRoom(): void;
+	/** @deprecated Renamed to `participantKick()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	kickParticipant(participantIdentity: string): void;
 	on(
 		eventName: EmbeddedEventName,

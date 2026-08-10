@@ -1,5 +1,10 @@
 import { DestroyRef, effect, inject, Service, signal } from '@angular/core';
-import { EmbeddedCommand, EmbeddedCommandName, EmbeddedEvent } from '@openvidu-meet/typings';
+import {
+	EmbeddedCommand,
+	EmbeddedCommandName,
+	EmbeddedEvent,
+	resolveEmbeddedCommandName
+} from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { MeetingLiveKitService } from '../../meeting/openvidu-components';
@@ -131,23 +136,29 @@ export class IframeBridgeService {
 			return;
 		}
 
-		switch (message.command) {
-			case EmbeddedCommandName.END_MEETING:
-				await this.commandService.endMeeting();
+		// Hosts written against 3.8.0 post the deprecated names; resolving up front means the
+		// switch only ever deals with canonical ones, and adding a future alias is a typings
+		// change alone.
+		switch (resolveEmbeddedCommandName(message.command)) {
+			case EmbeddedCommandName.MEETING_END:
+				await this.commandService.meetingEnd();
 				break;
-			case EmbeddedCommandName.LEAVE_ROOM:
-				await this.commandService.leaveRoom();
+			case EmbeddedCommandName.MEETING_LEAVE:
+				await this.commandService.meetingLeave();
 				break;
 
-			case EmbeddedCommandName.KICK_PARTICIPANT: {
-				const participantIdentity = message.payload?.participantIdentity;
+			case EmbeddedCommandName.PARTICIPANT_KICK: {
+				// Resolving the name discards the discriminant, so narrow on the payload's presence
+				// instead — only the kick commands carry one.
+				const payload = 'payload' in message ? message.payload : undefined;
+				const participantIdentity = payload?.participantIdentity;
 
 				if (!participantIdentity) {
-					this.log.e('kickParticipant command received without a participantIdentity');
+					this.log.e('participantKick command received without a participantIdentity');
 					return;
 				}
 
-				await this.commandService.kickParticipant(participantIdentity);
+				await this.commandService.participantKick(participantIdentity);
 				break;
 			}
 

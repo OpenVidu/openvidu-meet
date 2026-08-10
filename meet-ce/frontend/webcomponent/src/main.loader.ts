@@ -44,7 +44,10 @@ const toCamel = (kebab: string): string => kebab.replace(/-([a-z])/g, (_, c: str
 // Public delegation surface, from the typings registry.
 const ATTRIBUTES: readonly string[] = Object.values(EmbeddedAttribute);
 const PROPERTIES: readonly string[] = ATTRIBUTES.map(toCamel);
-const METHODS: readonly string[] = Object.values(EmbeddedCommandName); // endMeeting, leaveRoom, kickParticipant
+// meetingEnd, meetingLeave, participantKick + the deprecated 3.8.0 aliases, which the wrapper
+// still implements. Deriving from the enum means the aliases stop being proxied the day they
+// leave the typings, with no edit here.
+const METHODS: readonly string[] = Object.values(EmbeddedCommandName);
 // Only NON-composed embedded events need bridging (see _upgrade). The wrapper's
 // `ready` is dispatched `composed`, so it crosses the shadow boundary to
 // <openvidu-meet> on its own — listing it here would only add a dead bridge
@@ -362,8 +365,9 @@ for (const prop of PROPERTIES) {
 	});
 }
 
-// Proxy the imperative methods (endMeeting, leaveRoom, kickParticipant): delegate
-// once the inner element exists, otherwise buffer for replay in _upgrade().
+// Proxy the imperative methods (meetingEnd, meetingLeave, participantKick and their deprecated
+// aliases): delegate once the inner element exists, otherwise buffer for replay in _upgrade().
+// The buffered call keeps the name it was made with — resolving an alias is the wrapper's job.
 for (const method of METHODS) {
 	Object.defineProperty(OpenViduMeetLoader.prototype, method, {
 		configurable: true,

@@ -227,16 +227,18 @@ export class App {
 	}
 
 	// ── Imperative host API ──────────────────────────────────────────────────
-	endMeeting(): Promise<void> {
-		return this.commandService.endMeeting();
+	// Canonical names only. The deprecated spellings live on the custom-element wrapper
+	// (`custom-element/wrapper.ts`), which is the actual public surface, and forward here.
+	meetingEnd(): Promise<void> {
+		return this.commandService.meetingEnd();
 	}
 
-	leaveRoom(): Promise<void> {
-		return this.commandService.leaveRoom();
+	meetingLeave(): Promise<void> {
+		return this.commandService.meetingLeave();
 	}
 
-	kickParticipant(participantIdentity: string): Promise<void> {
-		return this.commandService.kickParticipant(participantIdentity);
+	participantKick(participantIdentity: string): Promise<void> {
+		return this.commandService.participantKick(participantIdentity);
 	}
 
 	// ── Internal ─────────────────────────────────────────────────────────────

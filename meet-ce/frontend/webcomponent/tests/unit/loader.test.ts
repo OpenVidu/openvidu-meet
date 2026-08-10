@@ -1,11 +1,17 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { EmbeddedCommandName } from '@openvidu-meet/typings';
 
 // The loader `import()`s the heavy ESM only when the internal `openvidu-meet-impl`
 // tag is NOT yet defined. By registering a lightweight stand-in for that tag BEFORE
 // any element connects, `importImpl()` short-circuits (see the `customElements.get`
 // guard in main.loader.ts) and the whole delegation surface can be exercised in
 // jsdom without pulling in Angular / LiveKit / the 5.6 MB bundle.
+// Mirrors the real impl (the custom-element wrapper): canonical methods plus the deprecated
+// spellings, which the loader must keep proxying for the whole deprecation window.
 class FakeImpl extends HTMLElement {
+	meetingEnd = jest.fn();
+	meetingLeave = jest.fn();
+	participantKick = jest.fn();
 	endMeeting = jest.fn();
 	leaveRoom = jest.fn();
 	kickParticipant = jest.fn();
@@ -22,6 +28,9 @@ type Loader = HTMLElement & {
 	on(name: string, cb: (detail: unknown) => void): Loader;
 	once(name: string, cb: (detail: unknown) => void): Loader;
 	off(name: string, cb?: (detail: unknown) => void): Loader;
+	meetingEnd(): void;
+	meetingLeave(): void;
+	participantKick(id: string): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(id: string): void;
@@ -110,18 +119,51 @@ describe('openvidu-meet lazy loader', () => {
 		});
 	});
 
+	describe('command delegation', () => {
+		// The loader builds its method surface from `Object.values(EmbeddedCommandName)`, so this
+		// is what makes "add a command in the typings and the loader picks it up" true — and what
+		// keeps the deprecated aliases proxied until they leave the enum in 3.12.0.
+		it('proxies every command name declared in the typings, canonical and deprecated', async () => {
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const impl = implOf(el) as unknown as Record<string, jest.Mock>;
+			const commands = Object.values(EmbeddedCommandName);
+			expect(commands.length).toBeGreaterThan(0);
+
+			for (const command of commands) {
+				(el as unknown as Record<string, () => void>)[command]();
+				expect(impl[command]).toHaveBeenCalledTimes(1);
+			}
+		});
+	});
+
 	describe('pre-load buffering', () => {
 		it('replays imperative calls made before the bundle loaded', async () => {
 			const el = createLoader();
-			el.endMeeting();
-			el.kickParticipant('user-1');
+			el.meetingEnd();
+			el.participantKick('user-1');
 
 			document.body.appendChild(el);
 			await flush();
 
 			const impl = implOf(el);
-			expect(impl.endMeeting).toHaveBeenCalledTimes(1);
-			expect(impl.kickParticipant).toHaveBeenCalledWith('user-1');
+			expect(impl.meetingEnd).toHaveBeenCalledTimes(1);
+			expect(impl.participantKick).toHaveBeenCalledWith('user-1');
+		});
+
+		it('replays a deprecated call made before the bundle loaded, under its own name', async () => {
+			const el = createLoader();
+			el.leaveRoom();
+
+			document.body.appendChild(el);
+			await flush();
+
+			// The loader is a transport: it must not rewrite the name it buffered. Resolving the
+			// alias is the wrapper's job, one layer down.
+			expect(implOf(el).leaveRoom).toHaveBeenCalledTimes(1);
+			expect(implOf(el).meetingLeave).not.toHaveBeenCalled();
 		});
 
 		it('applies properties set before the bundle loaded', async () => {

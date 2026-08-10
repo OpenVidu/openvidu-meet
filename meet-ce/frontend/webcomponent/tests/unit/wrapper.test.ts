@@ -18,16 +18,21 @@ class FakeNgElementBase extends HTMLElement {
 const TAG = 'openvidu-meet-wrapper-test';
 customElements.define(TAG, createOpenViduMeetElementClass(FakeNgElementBase as unknown as CustomElementConstructor));
 
+// The component only implements the canonical names; the deprecated element methods are expected
+// to route through their canonical twin, so a missing `endMeeting` here is deliberate.
 interface ComponentInstance {
-	endMeeting: jest.Mock;
-	leaveRoom: jest.Mock;
-	kickParticipant: jest.Mock;
+	meetingEnd: jest.Mock;
+	meetingLeave: jest.Mock;
+	participantKick: jest.Mock;
 }
 
 interface TestableElement extends FakeNgElementBase {
 	on(eventName: string, callback: (detail: unknown) => void): TestableElement;
 	once(eventName: string, callback: (detail: unknown) => void): TestableElement;
 	off(eventName: string, callback?: (detail: unknown) => void): TestableElement;
+	meetingEnd(): void;
+	meetingLeave(): void;
+	participantKick(participantIdentity: string): void;
 	endMeeting(): void;
 	leaveRoom(): void;
 	kickParticipant(participantIdentity: string): void;
@@ -36,9 +41,9 @@ interface TestableElement extends FakeNgElementBase {
 const createElement = (): TestableElement => document.createElement(TAG) as TestableElement;
 
 const componentInstance = (): ComponentInstance => ({
-	endMeeting: jest.fn(),
-	leaveRoom: jest.fn(),
-	kickParticipant: jest.fn()
+	meetingEnd: jest.fn(),
+	meetingLeave: jest.fn(),
+	participantKick: jest.fn()
 });
 
 describe('openvidu-meet custom element', () => {
@@ -143,34 +148,79 @@ describe('openvidu-meet custom element', () => {
 	});
 
 	describe('imperative commands', () => {
-		it('endMeeting() delegates to the Angular component instance', () => {
+		it('meetingEnd() delegates to the Angular component instance', () => {
+			const el = createElement();
+			const instance = componentInstance();
+			el.ngElementStrategy = { componentRef: { instance } };
+
+			el.meetingEnd();
+
+			expect(instance.meetingEnd).toHaveBeenCalledTimes(1);
+		});
+
+		it('meetingLeave() delegates to the Angular component instance', () => {
+			const el = createElement();
+			const instance = componentInstance();
+			el.ngElementStrategy = { componentRef: { instance } };
+
+			el.meetingLeave();
+
+			expect(instance.meetingLeave).toHaveBeenCalledTimes(1);
+		});
+
+		it('participantKick() passes the participant identity to the Angular component instance', () => {
+			const el = createElement();
+			const instance = componentInstance();
+			el.ngElementStrategy = { componentRef: { instance } };
+
+			el.participantKick('participant-1');
+
+			expect(instance.participantKick).toHaveBeenCalledWith('participant-1');
+		});
+
+		it('are no-ops when the Angular component instance is not yet available', () => {
+			const el = createElement();
+			el.ngElementStrategy = undefined;
+
+			expect(() => {
+				el.meetingEnd();
+				el.meetingLeave();
+				el.participantKick('participant-1');
+			}).not.toThrow();
+		});
+	});
+
+	// A host written against 3.8.0 calls these names on the element and must reach the same
+	// component method, so the deprecation window is behaviour-preserving rather than a promise.
+	describe('deprecated command aliases', () => {
+		it('endMeeting() reaches the component through meetingEnd()', () => {
 			const el = createElement();
 			const instance = componentInstance();
 			el.ngElementStrategy = { componentRef: { instance } };
 
 			el.endMeeting();
 
-			expect(instance.endMeeting).toHaveBeenCalledTimes(1);
+			expect(instance.meetingEnd).toHaveBeenCalledTimes(1);
 		});
 
-		it('leaveRoom() delegates to the Angular component instance', () => {
+		it('leaveRoom() reaches the component through meetingLeave()', () => {
 			const el = createElement();
 			const instance = componentInstance();
 			el.ngElementStrategy = { componentRef: { instance } };
 
 			el.leaveRoom();
 
-			expect(instance.leaveRoom).toHaveBeenCalledTimes(1);
+			expect(instance.meetingLeave).toHaveBeenCalledTimes(1);
 		});
 
-		it('kickParticipant() passes the participant identity to the Angular component instance', () => {
+		it('kickParticipant() reaches the component through participantKick(), identity intact', () => {
 			const el = createElement();
 			const instance = componentInstance();
 			el.ngElementStrategy = { componentRef: { instance } };
 
 			el.kickParticipant('participant-1');
 
-			expect(instance.kickParticipant).toHaveBeenCalledWith('participant-1');
+			expect(instance.participantKick).toHaveBeenCalledWith('participant-1');
 		});
 
 		it('are no-ops when the Angular component instance is not yet available', () => {

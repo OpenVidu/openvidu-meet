@@ -51,8 +51,12 @@ events are re-dispatched on the outer element.
   `show-recording`. Either `room-url` or `recording-url` is required.
 - **Events** (`CustomEvent`, `detail` = payload): `joined`, `left` (with `LeftEventReason`), `closed`,
   plus a `ready` event dispatched by the wrapper after first render.
-- **Methods**: `endMeeting()`, `leaveRoom()`, `kickParticipant(identity)`, and the convenience
-  listener API `on()` / `once()` / `off()` added in `src/app/custom-element/wrapper.ts`.
+- **Methods**: `meetingEnd()`, `meetingLeave()`, `participantKick(identity)`, and the convenience
+  listener API `on()` / `once()` / `off()` added in `src/app/custom-element/wrapper.ts`. The 3.8.0
+  spellings (`endMeeting`, `leaveRoom`, `kickParticipant`) stay as `@deprecated` aliases on the
+  wrapper until **3.12.0**; they forward to the canonical method, so `src/app/app.ts` and
+  `EmbeddedCommandService` only ever declare the canonical name. The iframe bridge accepts both wire
+  names by running `resolveEmbeddedCommandName()` from the typings.
 - No `.d.ts` is published; hosts declare the subset they use (see
   `testapp/src/app/openvidu-meet-element.ts`).
 

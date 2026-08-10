@@ -33,14 +33,16 @@ describe('IframeBridgeService', () => {
 
 	beforeEach(() => {
 		isIframeMode = signal(true);
+		// Only the canonical methods are stubbed: the bridge resolves the alias itself, so a
+		// deprecated command arriving over postMessage must still land on the canonical method.
 		commandService = jasmine.createSpyObj<EmbeddedCommandService>('EmbeddedCommandService', [
-			'endMeeting',
-			'leaveRoom',
-			'kickParticipant'
+			'meetingEnd',
+			'meetingLeave',
+			'participantKick'
 		]);
-		commandService.endMeeting.and.resolveTo();
-		commandService.leaveRoom.and.resolveTo();
-		commandService.kickParticipant.and.resolveTo();
+		commandService.meetingEnd.and.resolveTo();
+		commandService.meetingLeave.and.resolveTo();
+		commandService.participantKick.and.resolveTo();
 		meetingLiveKitService = { isConnected: jasmine.createSpy('isConnected').and.returnValue(true) };
 
 		TestBed.configureTestingModule({
@@ -100,8 +102,8 @@ describe('IframeBridgeService', () => {
 			expect(messageListenerCalls.length).toBe(0);
 
 			// With the bridge closed, inbound commands are ignored.
-			postFromHost({ command: EmbeddedCommandName.LEAVE_ROOM });
-			expect(commandService.leaveRoom).not.toHaveBeenCalled();
+			postFromHost({ command: EmbeddedCommandName.MEETING_LEAVE });
+			expect(commandService.meetingLeave).not.toHaveBeenCalled();
 		});
 
 		it('is idempotent: starting twice attaches the listener only once', () => {
@@ -119,58 +121,58 @@ describe('IframeBridgeService', () => {
 		it('ignores messages from an untrusted origin', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.END_MEETING }, 'https://evil.example.com');
+			postFromHost({ command: EmbeddedCommandName.MEETING_END }, 'https://evil.example.com');
 
-			expect(commandService.endMeeting).not.toHaveBeenCalled();
+			expect(commandService.meetingEnd).not.toHaveBeenCalled();
 		});
 
 		it('ignores commands while not connected to the room', () => {
 			meetingLiveKitService.isConnected.and.returnValue(false);
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.END_MEETING });
+			postFromHost({ command: EmbeddedCommandName.MEETING_END });
 
-			expect(commandService.endMeeting).not.toHaveBeenCalled();
+			expect(commandService.meetingEnd).not.toHaveBeenCalled();
 		});
 
-		it('forwards LEAVE_ROOM to the manager', () => {
+		it('forwards MEETING_LEAVE to the manager', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.LEAVE_ROOM });
+			postFromHost({ command: EmbeddedCommandName.MEETING_LEAVE });
 
-			expect(commandService.leaveRoom).toHaveBeenCalledTimes(1);
+			expect(commandService.meetingLeave).toHaveBeenCalledTimes(1);
 		});
 
-		it('forwards END_MEETING to the manager', () => {
+		it('forwards MEETING_END to the manager', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.END_MEETING });
+			postFromHost({ command: EmbeddedCommandName.MEETING_END });
 
-			expect(commandService.endMeeting).toHaveBeenCalledTimes(1);
+			expect(commandService.meetingEnd).toHaveBeenCalledTimes(1);
 		});
 
-		it('forwards KICK_PARTICIPANT with the participant identity', () => {
+		it('forwards PARTICIPANT_KICK with the participant identity', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.KICK_PARTICIPANT, payload: { participantIdentity: IDENTITY } });
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_KICK, payload: { participantIdentity: IDENTITY } });
 
-			expect(commandService.kickParticipant).toHaveBeenCalledOnceWith(IDENTITY);
+			expect(commandService.participantKick).toHaveBeenCalledOnceWith(IDENTITY);
 		});
 
-		it('ignores KICK_PARTICIPANT without a participant identity', () => {
+		it('ignores PARTICIPANT_KICK without a participant identity', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.KICK_PARTICIPANT });
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_KICK });
 
-			expect(commandService.kickParticipant).not.toHaveBeenCalled();
+			expect(commandService.participantKick).not.toHaveBeenCalled();
 		});
 
 		it('ignores malformed messages (no command)', () => {
 			startBridge();
 
 			expect(() => postFromHost({ foo: 'bar' })).not.toThrow();
-			expect(commandService.leaveRoom).not.toHaveBeenCalled();
-			expect(commandService.endMeeting).not.toHaveBeenCalled();
+			expect(commandService.meetingLeave).not.toHaveBeenCalled();
+			expect(commandService.meetingEnd).not.toHaveBeenCalled();
 		});
 
 		it('ignores non-object / non-string-command messages without throwing', () => {
@@ -180,33 +182,79 @@ describe('IframeBridgeService', () => {
 			// must never reach the manager or crash the handler.
 			expect(() => postFromHost(null)).not.toThrow();
 			expect(() => postFromHost(undefined)).not.toThrow();
-			expect(() => postFromHost('leaveRoom')).not.toThrow();
+			expect(() => postFromHost('meetingLeave')).not.toThrow();
 			expect(() => postFromHost(42)).not.toThrow();
 			expect(() => postFromHost({ command: 123 })).not.toThrow();
 
-			expect(commandService.leaveRoom).not.toHaveBeenCalled();
-			expect(commandService.endMeeting).not.toHaveBeenCalled();
-			expect(commandService.kickParticipant).not.toHaveBeenCalled();
+			expect(commandService.meetingLeave).not.toHaveBeenCalled();
+			expect(commandService.meetingEnd).not.toHaveBeenCalled();
+			expect(commandService.participantKick).not.toHaveBeenCalled();
 		});
 
-		it('ignores KICK_PARTICIPANT with an empty participant identity', () => {
+		it('ignores an unknown command name', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.KICK_PARTICIPANT, payload: { participantIdentity: '' } });
+			postFromHost({ command: 'meetingSelfDestruct' });
 
-			expect(commandService.kickParticipant).not.toHaveBeenCalled();
+			expect(commandService.meetingLeave).not.toHaveBeenCalled();
+			expect(commandService.meetingEnd).not.toHaveBeenCalled();
+			expect(commandService.participantKick).not.toHaveBeenCalled();
+		});
+
+		it('ignores PARTICIPANT_KICK with an empty participant identity', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_KICK, payload: { participantIdentity: '' } });
+
+			expect(commandService.participantKick).not.toHaveBeenCalled();
 		});
 
 		it('re-evaluates room connection on every command, not just the first', () => {
 			startBridge();
 
-			postFromHost({ command: EmbeddedCommandName.LEAVE_ROOM });
-			expect(commandService.leaveRoom).toHaveBeenCalledTimes(1);
+			postFromHost({ command: EmbeddedCommandName.MEETING_LEAVE });
+			expect(commandService.meetingLeave).toHaveBeenCalledTimes(1);
 
 			// Connection dropped after the first command: the next one must be rejected.
 			meetingLiveKitService.isConnected.and.returnValue(false);
+			postFromHost({ command: EmbeddedCommandName.MEETING_END });
+			expect(commandService.meetingEnd).not.toHaveBeenCalled();
+		});
+	});
+
+	// A host page written against 3.8.0 keeps posting the old strings. They must reach the same
+	// canonical handler, unchanged, for the whole deprecation window.
+	describe('deprecated command names (host → app)', () => {
+		it('resolves LEAVE_ROOM to meetingLeave()', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.LEAVE_ROOM });
+
+			expect(commandService.meetingLeave).toHaveBeenCalledTimes(1);
+		});
+
+		it('resolves END_MEETING to meetingEnd()', () => {
+			startBridge();
+
 			postFromHost({ command: EmbeddedCommandName.END_MEETING });
-			expect(commandService.endMeeting).not.toHaveBeenCalled();
+
+			expect(commandService.meetingEnd).toHaveBeenCalledTimes(1);
+		});
+
+		it('resolves KICK_PARTICIPANT to participantKick(), identity intact', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.KICK_PARTICIPANT, payload: { participantIdentity: IDENTITY } });
+
+			expect(commandService.participantKick).toHaveBeenCalledOnceWith(IDENTITY);
+		});
+
+		it('ignores KICK_PARTICIPANT without a participant identity', () => {
+			startBridge();
+
+			postFromHost({ command: EmbeddedCommandName.KICK_PARTICIPANT });
+
+			expect(commandService.participantKick).not.toHaveBeenCalled();
 		});
 	});
 

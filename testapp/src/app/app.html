@@ -65,11 +65,11 @@
 		<!-- Imperative methods -->
 		<section class="ta-section" data-testid="section-imperative">
 			<h2>Imperative API</h2>
-			<button id="end-meeting-btn" class="ta-btn" (click)="callEndMeeting()" data-testid="btn-end-meeting">
-				endMeeting()
+			<button id="end-meeting-btn" class="ta-btn" (click)="callMeetingEnd()" data-testid="btn-end-meeting">
+				meetingEnd()
 			</button>
-			<button id="leave-room-btn" class="ta-btn" (click)="callLeaveRoom()" data-testid="btn-leave-room">
-				leaveRoom()
+			<button id="leave-room-btn" class="ta-btn" (click)="callMeetingLeave()" data-testid="btn-leave-room">
+				meetingLeave()
 			</button>
 			<div class="ta-row">
 				<input
@@ -81,12 +81,43 @@
 				<button
 					id="kick-participant-btn"
 					class="ta-btn"
-					(click)="callKickParticipant()"
+					(click)="callParticipantKick()"
 					data-testid="btn-kick-participant"
 				>
-					kickParticipant()
+					participantKick()
 				</button>
 			</div>
+		</section>
+
+		<!-- Deprecated command spellings: same actions under the 3.8.0 names, so the e2e can
+		     prove a host that never migrates keeps working until 3.12.0. Shares the identity
+		     input above. -->
+		<section class="ta-section" data-testid="section-imperative-deprecated">
+			<h2>Imperative API (deprecated names)</h2>
+			<button
+				id="legacy-end-meeting-btn"
+				class="ta-btn"
+				(click)="callLegacyEndMeeting()"
+				data-testid="btn-legacy-end-meeting"
+			>
+				endMeeting()
+			</button>
+			<button
+				id="legacy-leave-room-btn"
+				class="ta-btn"
+				(click)="callLegacyLeaveRoom()"
+				data-testid="btn-legacy-leave-room"
+			>
+				leaveRoom()
+			</button>
+			<button
+				id="legacy-kick-participant-btn"
+				class="ta-btn"
+				(click)="callLegacyKickParticipant()"
+				data-testid="btn-legacy-kick-participant"
+			>
+				kickParticipant()
+			</button>
 		</section>
 
 		<!-- on / once / off API -->
@@ -124,7 +155,7 @@
 			class="ta-iframe"
 			data-testid="meet-iframe"
 			[src]="safeIframeSrc()"
-			allow="camera; microphone; display-capture; fullscreen; autoplay; compute-pressure;"
+			allow="camera; microphone; display-capture; fullscreen; autoplay; compute-pressure"
 		></iframe>
 		} } }
 	</main>
