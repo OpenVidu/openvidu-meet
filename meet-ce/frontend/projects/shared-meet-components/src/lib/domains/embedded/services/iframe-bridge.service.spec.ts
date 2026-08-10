@@ -259,55 +259,57 @@ describe('IframeBridgeService', () => {
 	});
 
 	describe('event relaying (app → host)', () => {
-		it('relays JOINED to the parent at the trusted origin', () => {
+		// The bus only ever queues canonical events (see EmbeddedEventBusService); the bridge is
+		// responsible for also posting the deprecated 3.8.0 name, since a host still on that wire
+		// format would see nothing without it. A host listening for both receives each event twice.
+		it('relays MEETING_JOINED, then its deprecated JOINED alias, to the parent at the trusted origin', () => {
 			startBridge();
 
 			eventBus.emit({
-				event: EmbeddedEventName.JOINED,
+				event: EmbeddedEventName.MEETING_JOINED,
 				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
 			TestBed.tick();
 
-			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				{ event: EmbeddedEventName.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
-				PARENT_ORIGIN
-			);
+			expect(postMessageSpy.calls.allArgs()).toEqual([
+				[
+					{ event: EmbeddedEventName.MEETING_JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
+					PARENT_ORIGIN
+				],
+				[{ event: EmbeddedEventName.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } }, PARENT_ORIGIN]
+			]);
 		});
 
-		it('relays LEFT including the leave reason', () => {
+		it('relays MEETING_LEFT and its deprecated LEFT alias, including the leave reason', () => {
 			startBridge();
 
 			eventBus.emit({
-				event: EmbeddedEventName.LEFT,
+				event: EmbeddedEventName.MEETING_LEFT,
 				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE }
 			});
 			TestBed.tick();
 
-			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				{
-					event: EmbeddedEventName.LEFT,
-					payload: { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE }
-				},
-				PARENT_ORIGIN
-			);
+			const payload = { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE };
+			expect(postMessageSpy.calls.allArgs()).toEqual([
+				[{ event: EmbeddedEventName.MEETING_LEFT, payload }, PARENT_ORIGIN],
+				[{ event: EmbeddedEventName.LEFT, payload }, PARENT_ORIGIN]
+			]);
 		});
 
-		it('relays CLOSED', () => {
+		it('relays MEETING_CLOSED and its deprecated CLOSED alias', () => {
 			startBridge();
 
-			eventBus.emit({ event: EmbeddedEventName.CLOSED });
+			eventBus.emit({ event: EmbeddedEventName.MEETING_CLOSED });
 			TestBed.tick();
 
-			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				jasmine.objectContaining({ event: EmbeddedEventName.CLOSED }),
-				PARENT_ORIGIN
-			);
+			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
+			expect(relayed).toEqual([EmbeddedEventName.MEETING_CLOSED, EmbeddedEventName.CLOSED]);
 		});
 
-		it('buffers events emitted before the bridge starts, then flushes them', () => {
+		it('buffers events emitted before the bridge starts, then flushes canonical and legacy once it does', () => {
 			// Emitted before the parent origin is known: must stay queued.
 			eventBus.emit({
-				event: EmbeddedEventName.JOINED,
+				event: EmbeddedEventName.MEETING_JOINED,
 				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
 			TestBed.tick();
@@ -317,37 +319,40 @@ describe('IframeBridgeService', () => {
 			startBridge();
 			TestBed.tick();
 
-			expect(postMessageSpy).toHaveBeenCalledOnceWith(
-				{ event: EmbeddedEventName.JOINED, payload: { roomId: ROOM_ID, participantIdentity: IDENTITY } },
-				PARENT_ORIGIN
-			);
+			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
+			expect(relayed).toEqual([EmbeddedEventName.MEETING_JOINED, EmbeddedEventName.JOINED]);
 		});
 
-		it('relays every event emitted within a single tick, in order (no signal coalescing)', () => {
+		it('relays every queued event within a single tick, in order, each with its legacy pair (no signal coalescing)', () => {
 			// The whole reason the bridge uses a FIFO queue instead of a single signal
 			// slot: two emits in the same tick would otherwise collapse to the latest
 			// value when the effect flushes, silently dropping the first event.
 			startBridge();
 
 			eventBus.emit({
-				event: EmbeddedEventName.JOINED,
+				event: EmbeddedEventName.MEETING_JOINED,
 				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
-			eventBus.emit({ event: EmbeddedEventName.CLOSED });
+			eventBus.emit({ event: EmbeddedEventName.MEETING_CLOSED });
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
-			expect(relayed).toEqual([EmbeddedEventName.JOINED, EmbeddedEventName.CLOSED]);
+			expect(relayed).toEqual([
+				EmbeddedEventName.MEETING_JOINED,
+				EmbeddedEventName.JOINED,
+				EmbeddedEventName.MEETING_CLOSED,
+				EmbeddedEventName.CLOSED
+			]);
 		});
 
-		it('flushes multiple buffered events in FIFO order once the bridge starts', () => {
+		it('flushes multiple buffered events in FIFO order once the bridge starts, each with its legacy pair', () => {
 			// Queued before the parent origin is known.
 			eventBus.emit({
-				event: EmbeddedEventName.JOINED,
+				event: EmbeddedEventName.MEETING_JOINED,
 				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY }
 			});
 			eventBus.emit({
-				event: EmbeddedEventName.LEFT,
+				event: EmbeddedEventName.MEETING_LEFT,
 				payload: { roomId: ROOM_ID, participantIdentity: IDENTITY, reason: LeftEventReason.VOLUNTARY_LEAVE }
 			});
 			TestBed.tick();
@@ -357,7 +362,12 @@ describe('IframeBridgeService', () => {
 			TestBed.tick();
 
 			const relayed = postMessageSpy.calls.allArgs().map(([msg]) => msg.event);
-			expect(relayed).toEqual([EmbeddedEventName.JOINED, EmbeddedEventName.LEFT]);
+			expect(relayed).toEqual([
+				EmbeddedEventName.MEETING_JOINED,
+				EmbeddedEventName.JOINED,
+				EmbeddedEventName.MEETING_LEFT,
+				EmbeddedEventName.LEFT
+			]);
 		});
 	});
 

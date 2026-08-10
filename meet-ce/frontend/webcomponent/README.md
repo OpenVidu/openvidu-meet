@@ -65,13 +65,16 @@ generated type/manifest artifacts were removed in favor of this single deliverab
 <script>
   const meet = document.querySelector('openvidu-meet');
 
-  meet.addEventListener('joined', (e) => {
+  meet.addEventListener('meetingJoined', (e) => {
     console.log('Joined room:', e.detail.roomId, 'as', e.detail.participantIdentity);
   });
 
-  meet.addEventListener('left', (e) => {
+  meet.addEventListener('meetingLeft', (e) => {
     console.log('Left room, reason:', e.detail.reason);
   });
+
+  // The 3.8.0 event names ('joined', 'left', 'closed') are dispatched alongside the
+  // canonical ones above until 3.12.0 — listening to both delivers the event twice.
 
   // Imperative API
   // meet.meetingEnd();

@@ -90,8 +90,18 @@ export class App {
 	readonly showRecording = input<string | undefined>(undefined);
 
 	// ── Host outputs (element events) ────────────────────────────────────────
+	// Canonical names, plus their deprecated 3.8.0 spellings dispatched alongside them (Angular
+	// Elements derives each CustomEvent's name from its output() property name) — a host listening
+	// to both receives the event twice until the alias is removed in 3.12.0.
+	readonly meetingJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_JOINED>>();
+	readonly meetingLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>();
+	readonly meetingClosed = output<void>();
+
+	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly joined = output<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>();
+	/** @deprecated Renamed to `meetingLeft`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly left = output<EmbeddedEventPayloadFor<EmbeddedEventName.LEFT>>();
+	/** @deprecated Renamed to `meetingClosed`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly closed = output<void>();
 
 	// ── Internal state ───────────────────────────────────────────────────────
@@ -242,15 +252,21 @@ export class App {
 	}
 
 	// ── Internal ─────────────────────────────────────────────────────────────
+	// The bus only ever queues canonical events (see EmbeddedEventBusService), so this switch
+	// only ever handles canonical names; emitting the deprecated output alongside the canonical
+	// one is this method's job, not the bus's.
 	private handleWebComponentEvent(event: EmbeddedEvent): void {
 		switch (event.event) {
-			case EmbeddedEventName.JOINED:
+			case EmbeddedEventName.MEETING_JOINED:
+				this.meetingJoined.emit(event.payload);
 				this.joined.emit(event.payload);
 				break;
-			case EmbeddedEventName.LEFT:
+			case EmbeddedEventName.MEETING_LEFT:
+				this.meetingLeft.emit(event.payload);
 				this.left.emit(event.payload);
 				break;
-			case EmbeddedEventName.CLOSED:
+			case EmbeddedEventName.MEETING_CLOSED:
+				this.meetingClosed.emit();
 				this.closed.emit();
 				break;
 		}

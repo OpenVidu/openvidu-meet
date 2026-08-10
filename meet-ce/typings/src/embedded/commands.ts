@@ -84,6 +84,9 @@ export interface EmbeddedCommandPayloads {
  * Maps every deprecated command alias to the canonical command it forwards to. Consumers that must
  * accept both spellings (the iframe bridge, the webcomponent shell) derive their handling from this
  * map instead of hardcoding pairs.
+ *
+ * @deprecated This map, {@link EmbeddedDeprecatedCommandName} and {@link resolveEmbeddedCommandName}
+ * only exist to support the 3.8.0 aliases below and are removed together with them in **3.12.0**.
  * @category Communication
  */
 export const EMBEDDED_COMMAND_ALIASES = {
@@ -94,12 +97,15 @@ export const EMBEDDED_COMMAND_ALIASES = {
 
 /**
  * A deprecated command name that aliases a canonical one.
+ * @deprecated Removed in 3.12.0, together with {@link EMBEDDED_COMMAND_ALIASES}.
  * @category Type Helpers
  */
 export type EmbeddedDeprecatedCommandName = keyof typeof EMBEDDED_COMMAND_ALIASES;
 
 /**
  * Resolves a command name to its canonical form, leaving canonical names untouched.
+ * @deprecated Once the 3.8.0 aliases are removed in 3.12.0 every command is already canonical, so
+ * this becomes a no-op identity function and is removed along with them.
  * @category Type Helpers
  */
 export function resolveEmbeddedCommandName(command: EmbeddedCommandName): EmbeddedCommandName {

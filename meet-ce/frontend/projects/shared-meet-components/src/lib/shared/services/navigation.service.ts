@@ -401,15 +401,16 @@ export class NavigationService {
 	// WcRouterService, or `closed` to end a flow), so callers never branch on mode.
 
 	/**
-	 * End the current flow. Embedded modes always emit `closed` first so the host
-	 * can tear down the integration, then redirect if a leave-redirect URL is
-	 * configured. Otherwise, the SPA navigates to `fallbackRoute` if given.
+	 * End the current flow. Embedded modes always emit `meetingClosed` first so the host
+	 * can tear down the integration (the deprecated `closed` alias is dispatched alongside it
+	 * by each shell), then redirect if a leave-redirect URL is configured. Otherwise, the SPA
+	 * navigates to `fallbackRoute` if given.
 	 */
 	private async closeOrLeave(fallbackRoute?: string, replaceUrl = false): Promise<void> {
 		const isEmbeddedMode = this.runtimeConfigService.isEmbeddedMode();
 
 		if (isEmbeddedMode) {
-			this.eventBus.emit({ event: EmbeddedEventName.CLOSED });
+			this.eventBus.emit({ event: EmbeddedEventName.MEETING_CLOSED });
 		}
 
 		const leaveRedirectUrl = this.leaveRedirect.getLeaveRedirectURL();

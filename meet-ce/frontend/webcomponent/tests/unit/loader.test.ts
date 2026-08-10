@@ -1,5 +1,5 @@
 import { beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { EmbeddedCommandName } from '@openvidu-meet/typings';
+import { EmbeddedCommandName, EmbeddedEventName } from '@openvidu-meet/typings';
 
 // The loader `import()`s the heavy ESM only when the internal `openvidu-meet-impl`
 // tag is NOT yet defined. By registering a lightweight stand-in for that tag BEFORE
@@ -102,6 +102,27 @@ describe('openvidu-meet lazy loader', () => {
 
 			expect(onJoined).toHaveBeenCalledTimes(1);
 			expect(onJoined.mock.calls[0][0]).toEqual({ name: 'Ada' });
+		});
+
+		it('forwards every event name declared in the typings, canonical and deprecated', async () => {
+			// EVENTS is built from Object.values(EmbeddedEventName), same as the command surface —
+			// this is what makes "add an event in the typings and the loader picks it up" true, and
+			// what keeps the deprecated aliases bridged until they leave the enum in 3.12.0.
+			const el = createLoader();
+			document.body.appendChild(el);
+			await flush();
+
+			const events = Object.values(EmbeddedEventName);
+			expect(events.length).toBeGreaterThan(0);
+
+			for (const name of events) {
+				const handler = jest.fn();
+				el.on(name, handler);
+
+				implOf(el).dispatchEvent(new CustomEvent(name, { bubbles: false, detail: { name: 'Ada' } }));
+
+				expect(handler).toHaveBeenCalledTimes(1);
+			}
 		});
 
 		it('stops delivering after off()', async () => {

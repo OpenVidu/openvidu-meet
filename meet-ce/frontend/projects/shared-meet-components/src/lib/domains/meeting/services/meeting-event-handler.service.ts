@@ -111,14 +111,18 @@ export class MeetingEventHandlerService {
 		);
 	}
 
-	/** Forwards the participant-connected event to the host as a `joined` DOM event (embedded modes only). */
+	/**
+	 * Forwards the participant-connected event to the host as a `meetingJoined` lifecycle event
+	 * (embedded modes only). The bus only ever queues the canonical name; each shell is
+	 * responsible for also dispatching the deprecated `joined` alias alongside it.
+	 */
 	onParticipantConnected = (event: ParticipantModel): void => {
 		if (!this.runtimeConfigService.isEmbeddedMode()) {
 			return;
 		}
 
 		this.eventBus.emit({
-			event: EmbeddedEventName.JOINED,
+			event: EmbeddedEventName.MEETING_JOINED,
 			payload: {
 				roomId: event.roomName ?? '',
 				participantIdentity: event.identity
@@ -128,8 +132,9 @@ export class MeetingEventHandlerService {
 
 	/**
 	 * Maps the technical leave reason to a {@link LeftEventReason}, clears context, emits the
-	 * host `left` lifecycle event (paired with the `joined` emit in {@link onParticipantConnected}),
-	 * and delegates the post-leave view transition to {@link NavigationService.goToDisconnected}.
+	 * host `meetingLeft` lifecycle event (paired with the `meetingJoined` emit in
+	 * {@link onParticipantConnected}), and delegates the post-leave view transition to
+	 * {@link NavigationService.goToDisconnected}.
 	 */
 	onParticipantLeft = async (event: ParticipantLeftEvent): Promise<void> => {
 		let leftReason = this.mapLeftReason(event.reason);
@@ -148,7 +153,7 @@ export class MeetingEventHandlerService {
 		// Notify the host that the local participant left (embedded modes only; the bus is drained there).
 		if (this.runtimeConfigService.isEmbeddedMode()) {
 			this.eventBus.emit({
-				event: EmbeddedEventName.LEFT,
+				event: EmbeddedEventName.MEETING_LEFT,
 				payload: {
 					roomId: event.roomName,
 					participantIdentity: event.identity,

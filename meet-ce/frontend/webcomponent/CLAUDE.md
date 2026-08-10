@@ -49,8 +49,13 @@ events are re-dispatched on the outer element.
 - **Attributes/properties** — kebab-case attribute ⇄ camelCase property: `room-url`,
   `recording-url`, `participant-name`, `e2ee-key`, `leave-redirect-url`, `show-only-recordings`,
   `show-recording`. Either `room-url` or `recording-url` is required.
-- **Events** (`CustomEvent`, `detail` = payload): `joined`, `left` (with `LeftEventReason`), `closed`,
-  plus a `ready` event dispatched by the wrapper after first render.
+- **Events** (`CustomEvent`, `detail` = payload): `meetingJoined`, `meetingLeft` (with
+  `LeftEventReason`), `meetingClosed`, plus a `ready` event dispatched by the wrapper after first
+  render. The 3.8.0 spellings (`joined`, `left`, `closed`) are dispatched **alongside** their
+  canonical twin until **3.12.0** — a host listening to both names receives the event twice.
+  `EmbeddedEventBusService`'s queue only ever carries canonical names; `src/app/app.ts` emits both
+  outputs from a single switch on the canonical name, and the iframe bridge posts a second
+  `postMessage` under the deprecated name via `deprecatedEmbeddedEventAliasOf()` from the typings.
 - **Methods**: `meetingEnd()`, `meetingLeave()`, `participantKick(identity)`, and the convenience
   listener API `on()` / `once()` / `off()` added in `src/app/custom-element/wrapper.ts`. The 3.8.0
   spellings (`endMeeting`, `leaveRoom`, `kickParticipant`) stay as `@deprecated` aliases on the

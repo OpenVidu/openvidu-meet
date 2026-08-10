@@ -99,6 +99,9 @@ export interface EmbeddedEventPayloads {
 /**
  * Maps every deprecated event alias to the canonical event it mirrors. The embedding shells derive
  * the parallel dispatch from this map instead of hardcoding pairs.
+ *
+ * @deprecated This map, {@link EmbeddedDeprecatedEventName} and {@link deprecatedEmbeddedEventAliasOf}
+ * only exist to support the 3.8.0 aliases below and are removed together with them in **3.12.0**.
  * @category Communication
  */
 export const EMBEDDED_EVENT_ALIASES = {
@@ -109,12 +112,15 @@ export const EMBEDDED_EVENT_ALIASES = {
 
 /**
  * A deprecated event name that aliases a canonical one.
+ * @deprecated Removed in 3.12.0, together with {@link EMBEDDED_EVENT_ALIASES}.
  * @category Type Helpers
  */
 export type EmbeddedDeprecatedEventName = keyof typeof EMBEDDED_EVENT_ALIASES;
 
 /**
  * The deprecated alias of a canonical event name, or `undefined` when it has none.
+ * @deprecated Once the 3.8.0 aliases are removed in 3.12.0 no canonical event has an alias, so this
+ * always returns `undefined` and is removed along with them.
  * @category Type Helpers
  */
 export function deprecatedEmbeddedEventAliasOf(event: EmbeddedEventName): EmbeddedDeprecatedEventName | undefined {
