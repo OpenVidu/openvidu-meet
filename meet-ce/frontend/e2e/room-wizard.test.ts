@@ -112,6 +112,28 @@ test.describe('Room wizard E2E Tests', () => {
 		}
 	});
 
+	test('recording split: the five recording permission switches are present and interactive', async ({ page }) => {
+		// The old canRetrieveRecordings checkbox became three (list / play / download); this pins the
+		// full five-switch group so a permission dropped from PERMISSION_GROUPS loses its checkbox
+		// loudly here instead of silently in production.
+		const RECORDING_PERMISSION_KEYS = [
+			'recordingControl',
+			'recordingList',
+			'recordingPlay',
+			'recordingDownload',
+			'recordingDelete'
+		] as const;
+
+		await openWizardAtFeatures(page);
+		await gotoRoomAccess(page);
+
+		for (const role of ROLES) {
+			for (const key of RECORDING_PERMISSION_KEYS) {
+				await expect(permissionSwitch(page, role, key)).toBeEnabled();
+			}
+		}
+	});
+
 	test('re-enabling a feature restores its role permissions', async ({ page }) => {
 		await openWizardAtFeatures(page);
 		await setFeature(page, 'room-feature-chat', false);

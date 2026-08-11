@@ -40,6 +40,11 @@ jobs:
       - name: Build webcomponent
         run: ./meet.sh build-webcomponent --skip-install --skip-typings
 
+      # ts-jest runs with isolatedModules (transpile-only), so this is the sole type-check the
+      # webcomponent test suites ever get (same hole test:types closes for the backend's tests/**).
+      - name: Type-check tests
+        run: pnpm --filter @openvidu-meet/webcomponent run test:types
+
       - name: Run tests
         run: ./meet.sh test-unit-webcomponent --skip-install
 

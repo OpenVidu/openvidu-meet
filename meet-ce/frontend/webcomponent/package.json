@@ -12,6 +12,7 @@
 		"build:wc:bundle": "pnpm run build:wc:angular && pnpm run build:wc:post",
 		"dev": "node scripts/dev.js",
 		"test:unit": "jest --forceExit --testPathPatterns \"tests/unit\" --ci",
+		"test:types": "tsc --noEmit -p tsconfig.test.json",
 		"test:e2e": "playwright test --project=webcomponent"
 	},
 	"dependencies": {

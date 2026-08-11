@@ -5,7 +5,7 @@ const isCI = process.env['RUN_MODE'] === 'CI';
 const commonArgs = ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'];
 
 export default defineConfig({
-	tsconfig: '../tsconfig.test.json',
+	tsconfig: './tsconfig.test.json',
 	fullyParallel: false,
 	retries: 0,
 	workers: 1,
