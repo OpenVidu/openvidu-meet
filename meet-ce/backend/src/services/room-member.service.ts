@@ -1201,9 +1201,9 @@ export class RoomMemberService {
 			...parsed,
 			...normalized,
 			// A promotion recorded before the permission-key rename stored originalPermissions under
-			// the legacy names (it lives outside the token metadata schema, so the line above does not
-			// touch it); normalize here so a later demotion restores canonical keys instead of feeding
-			// legacy-keyed permissions back into grants and metadata.
+			// the deprecated names (it lives outside the token metadata schema, so the line above does not
+			// touch it); normalize here so a later demotion restores the current keys instead of feeding
+			// deprecated-keyed permissions back into grants and metadata.
 			...(parsed.originalPermissions
 				? { originalPermissions: normalizePermissions(parsed.originalPermissions) as MeetRoomMemberPermissions }
 				: {})

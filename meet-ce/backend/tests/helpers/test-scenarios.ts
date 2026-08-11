@@ -387,8 +387,9 @@ export const setupRoomMember = async (
 export const updateRoomMemberPermissions = async (
 	roomId: string,
 	memberId: string,
-	// Wire-level type on purpose: the API accepts canonical and legacy (`can*`) spellings during the
-	// deprecation window, and several suites exercise the legacy wire. Removed in 3.12.0.
+	// Wire-level type on purpose: in compatibility mode the API accepts the current and the
+	// deprecated (`can*`) spellings, and several suites exercise the deprecated wire. Removed in
+	// 3.12.0.
 	permissions: MeetPermissionsInput,
 	accessToken?: string
 ): Promise<RoomMemberData> => {

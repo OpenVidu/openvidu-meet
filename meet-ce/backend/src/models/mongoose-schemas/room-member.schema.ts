@@ -24,7 +24,7 @@ export const MEET_ROOM_MEMBER_DOCUMENT_ONLY_FIELDS = [
 	'schemaVersion'
 ] as const satisfies readonly MeetRoomMemberDocumentOnlyField[];
 
-// Permissions are persisted under their canonical keys (the legacy `can*` documents are renamed by
+// Permissions are persisted under their current keys (the deprecated `can*` documents are renamed by
 // the room v3→v4 and roomMember v1→v2 migrations, which ship in the same commit as this schema —
 // Mongoose silently drops keys the schema does not declare, so schema and migration cannot be split).
 function createPermissionsSchema(required: boolean) {

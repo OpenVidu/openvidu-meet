@@ -30,7 +30,6 @@ import {
 	withValidRoomId
 } from '../middlewares/request-validators/room-validator.middleware.js';
 import { apiLimiter, tokenIssuanceLimiter } from '../middlewares/rate-limit.middleware.js';
-import { parsePermissionNamingHeader } from '../middlewares/permission-naming.middleware.js';
 import {
 	authorizeRoomMemberAccess,
 	authorizeRoomMemberTokenGeneration,
@@ -47,9 +46,6 @@ export const roomRouter: Router = Router();
 roomRouter.use(bodyParser.urlencoded({ extended: true }));
 roomRouter.use(bodyParser.json());
 roomRouter.use(apiLimiter);
-// Permission-bearing responses (rooms.roles, member permissions) serialize their key set per the
-// X-Meet-Permission-Names request header; parse it once for every room/member route.
-roomRouter.use(parsePermissionNamingHeader);
 
 // Room Routes
 roomRouter.post(
@@ -60,7 +56,10 @@ roomRouter.post(
 );
 roomRouter.get(
 	'/',
-	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)),
+	withAuth(
+		apiKeyValidator,
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
+	),
 	validateGetRoomsReq,
 	applyRoomListAccessFilters,
 	roomCtrl.getRooms
@@ -166,7 +165,11 @@ roomRouter.delete(
 
 roomRouter.get(
 	'/:roomId/members/:memberId',
-	withAuth(apiKeyValidator, roomMemberTokenValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER)),
+	withAuth(
+		apiKeyValidator,
+		roomMemberTokenValidator,
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER)
+	),
 	withValidRoomId,
 	validateGetRoomMemberReq,
 	authorizeRoomMemberAccess,

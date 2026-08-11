@@ -65,7 +65,7 @@ const buildLegacyRoomV2 = (roomId: string) => ({
 	speakerUrl: `/room/${roomId}?secret=abcdef`
 });
 
-// v3 stored role permissions under the legacy `can*` keys; v3→v4 renames them to the canonical
+// v3 stored role permissions under the deprecated `can*` keys; v3→v4 renames them to the canonical
 // moduleAbility scheme (and splits canRetrieveRecordings into list/play/download).
 const buildLegacyRoomV3 = (roomId: string) => ({
 	schemaVersion: 3,
@@ -131,9 +131,9 @@ const buildLegacyRoomV3 = (roomId: string) => ({
 	rolesUpdatedAt: Date.now()
 });
 
-// Canonical permission sets every legacy room must end up with after the chain reaches the current
+// Current-keyed permission sets every old room must end up with after the chain reaches the current
 // version (they descend from the v2→v3 defaults, renamed by v3→v4).
-const expectedCanonicalModeratorPermissions = {
+const expectedCurrentModeratorPermissions = {
 	recordingControl: true,
 	recordingList: true,
 	recordingPlay: true,
@@ -152,7 +152,7 @@ const expectedCanonicalModeratorPermissions = {
 	mediaChangeVirtualBackground: true
 };
 
-const expectedCanonicalSpeakerPermissions = {
+const expectedCurrentSpeakerPermissions = {
 	recordingControl: false,
 	recordingList: true,
 	recordingPlay: true,
@@ -200,10 +200,10 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 		},
 		roles: {
 			moderator: {
-				permissions: expectedCanonicalModeratorPermissions
+				permissions: expectedCurrentModeratorPermissions
 			},
 			speaker: {
-				permissions: expectedCanonicalSpeakerPermissions
+				permissions: expectedCurrentSpeakerPermissions
 			}
 		},
 		access: {
@@ -234,7 +234,7 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 	expect(migratedRoom).not.toHaveProperty('moderatorUrl');
 	expect(migratedRoom).not.toHaveProperty('speakerUrl');
 	expect(migratedRoom).not.toHaveProperty('config.recording.allowAccessTo');
-	// The rename must leave no legacy `can*` key behind in either role.
+	// The rename must leave no deprecated `can*` key behind in either role.
 	expect(migratedRoom).not.toHaveProperty('roles.moderator.permissions.canRecord');
 	expect(migratedRoom).not.toHaveProperty('roles.moderator.permissions.canRetrieveRecordings');
 	expect(migratedRoom).not.toHaveProperty('roles.speaker.permissions.canRecord');
@@ -408,7 +408,7 @@ describe('Room Schema Migrations', () => {
 			expect(migratedRoom).not.toHaveProperty('config.recording.allowAccessTo');
 		});
 
-		it('should transform room schema from v3 to v4 renaming permission keys to the canonical scheme', () => {
+		it('should transform room schema from v3 to v4 renaming permission keys to the current scheme', () => {
 			const migrationName = generateSchemaMigrationName(meetRoomCollectionName, 3, 4);
 			const transform = roomMigrations.get(migrationName);
 			expect(transform).toBeDefined();
@@ -416,8 +416,8 @@ describe('Room Schema Migrations', () => {
 			const roomV3 = buildLegacyRoomV3('room-v3') as unknown as MeetRoomDocument;
 			const migratedRoom = transform!(roomV3);
 
-			expect(migratedRoom.roles.moderator.permissions).toEqual(expectedCanonicalModeratorPermissions);
-			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCanonicalSpeakerPermissions);
+			expect(migratedRoom.roles.moderator.permissions).toEqual(expectedCurrentModeratorPermissions);
+			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCurrentSpeakerPermissions);
 		});
 	});
 

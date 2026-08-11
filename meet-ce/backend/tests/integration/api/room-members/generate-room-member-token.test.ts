@@ -8,7 +8,8 @@ import {
 	MeetRoomMemberUIBadge,
 	MeetRoomRoles,
 	MeetRoomStatus,
-	MeetUserRole
+	MeetUserRole,
+	normalizePermissions
 } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
@@ -38,8 +39,8 @@ import {
 import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom, setupUser } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
-// Token metadata carries canonical permission keys from this phase on (the API accepts the legacy
-// spellings on input, but never emits them inside tokens).
+// Token metadata carries the current permission keys from this phase on (the API accepts the
+// deprecated spellings on input, but never emits them inside tokens).
 const allPermissions: MeetRoomMemberPermissions = {
 	recordingControl: true,
 	recordingList: true,
@@ -904,9 +905,17 @@ describe('Room Members API Tests', () => {
 			const participantMetadata = JSON.parse(participant.metadata || '{}');
 			expect(participantMetadata).toHaveProperty('roomId', roomId);
 			expect(participantMetadata).toHaveProperty('badge', MeetRoomMemberUIBadge.MODERATOR);
-			expect(participantMetadata).toHaveProperty('permissions', roomRoles.moderator.permissions);
+			// Participant metadata carries only the current keys; roomRoles came off the wire, which in
+			// compatibility mode also carries the deprecated aliases.
+			expect(participantMetadata).toHaveProperty(
+				'permissions',
+				normalizePermissions(roomRoles.moderator.permissions)
+			);
 			expect(participantMetadata).toHaveProperty('isPromotedModerator', true);
-			expect(participantMetadata).toHaveProperty('originalPermissions', roomRoles.speaker.permissions);
+			expect(participantMetadata).toHaveProperty(
+				'originalPermissions',
+				normalizePermissions(roomRoles.speaker.permissions)
+			);
 		});
 
 		it('should regenerate token with admin permissions ignoring moderator promotion', async () => {
@@ -977,7 +986,7 @@ describe('Room Members API Tests', () => {
 			const participantMetadata = JSON.parse(participant.metadata || '{}');
 			expect(participantMetadata).toHaveProperty('roomId', roomId);
 			expect(participantMetadata).toHaveProperty('badge', MeetRoomMemberUIBadge.ADMIN);
-			expect(participantMetadata).toHaveProperty('permissions', allPermissions);
+			expect(participantMetadata).toHaveProperty('permissions', normalizePermissions(allPermissions));
 			expect(participantMetadata).not.toHaveProperty('isPromotedModerator');
 			expect(participantMetadata).not.toHaveProperty('originalPermissions');
 		});

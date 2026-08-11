@@ -4,7 +4,8 @@ import {
 	MeetRoomMemberRole,
 	MeetRoomMemberTokenMetadata,
 	MeetRoomMemberUIBadge,
-	MeetSignalType
+	MeetSignalType,
+	normalizePermissions
 } from '@openvidu-meet/typings';
 import { container } from '../../../../src/config/dependency-injector.config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
@@ -76,8 +77,10 @@ describe('Meetings API Tests', () => {
 			expect(metadata).toHaveProperty('badge', MeetRoomMemberUIBadge.MODERATOR);
 			expect(metadata).toHaveProperty('isPromotedModerator', true);
 
-			const moderatorPermissions = roomData.room.roles.moderator.permissions;
-			const speakerPermissions = roomData.room.roles.speaker.permissions;
+			// Participant metadata carries only the current keys; the room roles came off the wire,
+			// which in compatibility mode also carries the deprecated aliases.
+			const moderatorPermissions = normalizePermissions(roomData.room.roles.moderator.permissions);
+			const speakerPermissions = normalizePermissions(roomData.room.roles.speaker.permissions);
 			expect(metadata).toHaveProperty('permissions', moderatorPermissions);
 			expect(metadata).toHaveProperty('originalPermissions', speakerPermissions);
 
@@ -123,7 +126,7 @@ describe('Meetings API Tests', () => {
 			const metadata = JSON.parse(participant.metadata || '{}');
 			expect(metadata).toHaveProperty('roomId', roomData.room.roomId);
 			expect(metadata).toHaveProperty('badge', MeetRoomMemberUIBadge.OTHER);
-			const permissions = roomData.room.roles.speaker.permissions;
+			const permissions = normalizePermissions(roomData.room.roles.speaker.permissions);
 			expect(metadata).toHaveProperty('permissions', permissions);
 			expect(metadata).not.toHaveProperty('originalPermissions');
 		});

@@ -1,48 +1,61 @@
-import type { MeetRoom, MeetRoomMember, MeetRoomRoles } from '@openvidu-meet/typings';
-import { toLegacyPermissions } from '@openvidu-meet/typings';
+import type {
+	MeetDeprecatedPermissionKey,
+	MeetPermissionKey,
+	MeetRoom,
+	MeetRoomMember,
+	MeetRoomRoles
+} from '@openvidu-meet/typings';
+import { toDeprecatedPermissions } from '@openvidu-meet/typings';
 import type { Response } from 'express';
+import { isCompatibilityMode } from '../environment.js';
 
 /**
- * Which key set a response serializes room-member permissions with. Requests choose through the
- * `X-Meet-Permission-Names` header; `legacy` is the default during the 3.8/3.9 deprecation window
- * so existing clients never see the canonical names until they ask for them. The header, this type
- * and the whole legacy branch are removed in 3.12.0.
+ * A permission object as it travels on the wire in compatibility mode: the current keys plus the
+ * deprecated `can*` spellings derived from them. With `MEET_MODE='3.9.0'` the wire shape is just the
+ * current keys and this type is not produced.
  */
-export type PermissionNaming = 'legacy' | 'canonical';
-
-/** Request header selecting the permission naming of the response (see {@link PermissionNaming}). */
-export const PERMISSION_NAMING_HEADER = 'X-Meet-Permission-Names';
+export type MeetPermissionsWire = Partial<Record<MeetPermissionKey | MeetDeprecatedPermissionKey, boolean>>;
 
 /**
- * Serializes permission objects to the key set the request selected. Exactly one naming per response
- * (never both): returning the two key sets at once breaks the GET → mutate → PUT round-trip, because
- * the PUT would carry a conflicting mixed payload (see D3 in the migration plan).
+ * Adds the deprecated `can*` spellings next to the current keys of a permission object. Pure — used
+ * by both the REST serialization below and the webhook payloads, which have no `Response` to stamp.
  *
- * Storage and tokens are canonical, so `canonical` is the identity and `legacy` maps through
- * `toLegacyPermissions()` — the split recording group collapses with AND and is omitted when
- * incomplete, so a legacy client hides a half-granted feature instead of offering a button that
- * would be rejected.
+ * The split recording group collapses with AND and its deprecated flag is omitted when the group is
+ * incomplete (see `toDeprecatedPermissions`); every other alias mirrors its replacement's value, so
+ * echoing a compatibility-mode response back at the API never trips the conflict check.
+ */
+export function withDeprecatedPermissionAliases(
+	permissions: Readonly<Partial<Record<MeetPermissionKey, boolean>>>
+): MeetPermissionsWire {
+	return { ...permissions, ...toDeprecatedPermissions(permissions) };
+}
+
+/**
+ * Serializes permission objects to the key set the deployment's `MEET_MODE` selects:
  *
- * Every `*ToWire` method reads the naming parsed by `parsePermissionNamingHeader` from `res.locals`
- * and, when it actually rewrites permissions to the legacy names, stamps `Deprecation: true` on the
- * response as the machine-readable signal (its `Sunset` companion, RFC 8594, needs the 3.12.0
- * release date, which is not scheduled yet — it ships with the OpenAPI phase once that date exists).
+ * - `compatibility` (default): responses carry **both** key sets — the current keys plus the
+ *   deprecated `can*` spellings — so a not-yet-migrated client keeps reading the names it knows
+ *   while a migrated one already reads the new ones, endpoint by endpoint.
+ * - `'3.9.0'`: responses carry only the current keys; the deprecated surface is off.
+ *
+ * Storage and tokens always hold the current keys, so the `3.9.0` branch is the identity and the
+ * compatibility branch adds the deprecated spellings through `toDeprecatedPermissions()` — the split
+ * recording group collapses with AND and is omitted when incomplete, so an old client hides a
+ * half-granted feature instead of offering a button that would be rejected.
+ *
+ * Every `*ToWire` method stamps `Deprecation: true` when it actually added deprecated spellings, as
+ * the machine-readable signal that the response leans on a surface that goes away. We don't send a
+ * `Sunset` header (RFC 8594): it requires a real calendar date, and 3.12.0 is a release number, not
+ * a date. The removal release is documented in the contract instead — the `@deprecated` tags and the
+ * OpenAPI descriptions all say "Removed in 3.12.0".
  */
 export class PermissionNamingHelper {
 	/**
-	 * Resolves the naming selected by the request. Defaults to `legacy` while the deprecation window
-	 * is open.
-	 */
-	static getNaming(res: Response): PermissionNaming {
-		return (res.locals.permissionNaming as PermissionNaming | undefined) ?? 'legacy';
-	}
-
-	/**
-	 * Returns a copy of the room with `roles.*.permissions` in the requested naming.
+	 * Returns a copy of the room with `roles.*.permissions` in the wire shape of the current mode.
 	 * Rooms without roles (field-filtered responses) pass through untouched.
 	 */
 	static roomToWire<T extends Partial<MeetRoom>>(room: T, res: Response): T {
-		if (PermissionNamingHelper.getNaming(res) === 'canonical' || !room.roles) {
+		if (!isCompatibilityMode() || !room.roles) {
 			return room;
 		}
 
@@ -50,32 +63,31 @@ export class PermissionNamingHelper {
 	}
 
 	/**
-	 * Returns a copy of the roles config with each role's permissions in the requested naming.
+	 * Returns a copy of the roles config with each role's permissions in the wire shape of the
+	 * current mode.
 	 */
 	static rolesToWire(roles: MeetRoomRoles, res: Response): MeetRoomRoles {
-		if (PermissionNamingHelper.getNaming(res) === 'canonical') {
+		if (!isCompatibilityMode()) {
 			return roles;
 		}
 
 		PermissionNamingHelper.markDeprecatedNaming(res);
 
-		// The legacy wire shape no longer matches the canonical MeetRoomRoles type; the cast is
-		// confined to this JSON boundary.
+		// The compatibility wire shape is wider than the MeetRoomRoles type; the cast is confined to
+		// this JSON boundary.
 		return {
-			moderator: { permissions: toLegacyPermissions(roles.moderator.permissions) },
-			speaker: { permissions: toLegacyPermissions(roles.speaker.permissions) }
+			moderator: { permissions: withDeprecatedPermissionAliases(roles.moderator.permissions) },
+			speaker: { permissions: withDeprecatedPermissionAliases(roles.speaker.permissions) }
 		} as unknown as MeetRoomRoles;
 	}
 
 	/**
-	 * Returns a copy of the member with `customPermissions`/`effectivePermissions` in the requested
-	 * naming. Members without permission fields (field-filtered responses) pass through untouched.
+	 * Returns a copy of the member with `customPermissions`/`effectivePermissions` in the wire shape
+	 * of the current mode. Members without permission fields (field-filtered responses) pass through
+	 * untouched.
 	 */
 	static memberToWire<T extends Partial<MeetRoomMember>>(member: T, res: Response): T {
-		if (
-			PermissionNamingHelper.getNaming(res) === 'canonical' ||
-			(!member.customPermissions && !member.effectivePermissions)
-		) {
+		if (!isCompatibilityMode() || (!member.customPermissions && !member.effectivePermissions)) {
 			return member;
 		}
 
@@ -84,11 +96,11 @@ export class PermissionNamingHelper {
 		const wire = { ...member } as Record<string, unknown>;
 
 		if (member.customPermissions) {
-			wire.customPermissions = toLegacyPermissions(member.customPermissions);
+			wire.customPermissions = withDeprecatedPermissionAliases(member.customPermissions);
 		}
 
 		if (member.effectivePermissions) {
-			wire.effectivePermissions = toLegacyPermissions(member.effectivePermissions);
+			wire.effectivePermissions = withDeprecatedPermissionAliases(member.effectivePermissions);
 		}
 
 		return wire as T;

@@ -1,4 +1,4 @@
-import type { MeetLegacyPermissionKey, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import type { MeetDeprecatedPermissionKey, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MeetRecordingEncodingPreset, MeetRecordingLayout, normalizePermissions } from '@openvidu-meet/typings';
 import { uid as secureUid } from 'uid/secure';
 import { MEET_ENV } from '../environment.js';
@@ -18,12 +18,12 @@ const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return room;
 };
 
-// v3 stored the role permissions under the legacy `can*` keys, so this transform keeps producing that
-// historical shape (typed through MeetLegacyPermissionKey, which the current MeetRoomMemberPermissions
+// v3 stored the role permissions under the deprecated `can*` keys, so this transform keeps producing that
+// historical shape (typed through MeetDeprecatedPermissionKey, which the current MeetRoomMemberPermissions
 // no longer declares). The migration runner chains it with v3→v4 in memory, so a v1/v2 document still
-// lands canonical — only the final shape is written back.
+// lands in the current shape — only the final shape is written back.
 const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) => {
-	const legacyRoom = room as unknown as {
+	const v2Room = room as unknown as {
 		moderatorUrl?: string;
 		speakerUrl?: string;
 		config: {
@@ -33,7 +33,7 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 		};
 	};
 
-	const v3ModeratorPermissions: Record<MeetLegacyPermissionKey, boolean> = {
+	const v3ModeratorPermissions: Record<MeetDeprecatedPermissionKey, boolean> = {
 		canRecord: true,
 		canRetrieveRecordings: true,
 		canDeleteRecordings: true,
@@ -49,7 +49,7 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 		canWriteChat: true,
 		canChangeVirtualBackground: true
 	};
-	const v3SpeakerPermissions: Record<MeetLegacyPermissionKey, boolean> = {
+	const v3SpeakerPermissions: Record<MeetDeprecatedPermissionKey, boolean> = {
 		canRecord: false,
 		canRetrieveRecordings: true,
 		canDeleteRecordings: false,
@@ -75,11 +75,11 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 		anonymous: {
 			moderator: {
 				enabled: true,
-				url: legacyRoom.moderatorUrl!
+				url: v2Room.moderatorUrl!
 			},
 			speaker: {
 				enabled: true,
-				url: legacyRoom.speakerUrl!
+				url: v2Room.speakerUrl!
 			},
 			recording: {
 				enabled: true,
@@ -93,17 +93,17 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	};
 	room.rolesUpdatedAt = Date.now();
 
-	delete legacyRoom.moderatorUrl;
-	delete legacyRoom.speakerUrl;
-	delete legacyRoom.config.recording.allowAccessTo;
+	delete v2Room.moderatorUrl;
+	delete v2Room.speakerUrl;
+	delete v2Room.config.recording.allowAccessTo;
 
 	return room;
 };
 
-// v3→v4: rename the role permission keys from the legacy `can*` spellings to the canonical
+// v3→v4: rename the role permission keys from the deprecated `can*` spellings to the current
 // moduleAbility scheme, deriving the mapping from MEET_PERMISSION_ALIASES via normalizePermissions()
 // (which also splits canRetrieveRecordings into recordingList/recordingPlay/recordingDownload,
-// granting the whole group whatever the old flag granted). Without this rename the canonical Mongoose
+// granting the whole group whatever the old flag granted). Without this rename the current-keyed Mongoose
 // schema would silently drop every stored permission on the next write (see B1 in the migration plan).
 const roomMigrationV3ToV4Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	for (const role of ['moderator', 'speaker'] as const) {

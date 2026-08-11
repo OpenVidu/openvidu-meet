@@ -61,6 +61,47 @@ Coarse role checks happen in `withAuth`; fine-grained checks live in `room.middl
 permissions (`MeetRoomMemberPermissions`) are also pushed into LiveKit grants, so a permission must
 be enforced **both** at the API and in the token grant to be real.
 
+## Permission names are being renamed (old names removed in 3.12.0)
+
+All 14 permission flags are being renamed to a clearer scheme — e.g. `canRecord` is becoming
+`recordingControl`. The old names are being phased out and disappear once release 3.12.0 ships.
+`MEET_PERMISSION_ALIASES` in the typings package is the one place that maps each old name to its new
+name — never hardcode a pair anywhere else.
+
+Which key sets the API speaks is a **deployment-wide** setting: the `MEET_MODE` environment variable
+(`src/environment.ts`, validated at boot), with two values. It is read lazily (per request/parse, not
+frozen at import) so the integration tests can exercise both modes against one in-process app by
+flipping `process.env.MEET_MODE`.
+
+- **`compatibility` (the default)**: requests accept old names, new names, or a mix — everything gets
+  normalized to the new names before business logic runs, and a request sending both spellings of the
+  same permission with conflicting values is a `422` naming both, never a silent "one wins".
+  Responses and webhook payloads carry **both** key sets, so integrations migrate endpoint by
+  endpoint; any response carrying old names also gets a `Deprecation: true` header. There's no
+  `Sunset` header, because that needs a real calendar date and 3.12.0 is only a release number.
+- **`'3.9.0'`**: the old names are gone from the API — a request using one is a `422` naming its
+  replacement (not silently stripped: a stripped key would just read as "denied"), and responses and
+  webhooks carry only the new names.
+
+The serialization goes through `helpers/permission-naming.helper.ts`; several response paths bypass
+the more obvious `applyFieldFilters` helper, so don't assume that one already covers it.
+- **Recording access used to be one permission, now it's three.** Viewing the list of recordings,
+  playing one back, and downloading one are now separate permissions (`recordingList`,
+  `recordingPlay`, `recordingDownload`). The old flag (`canRetrieveRecordings`) still works and now
+  grants or denies all three at once. That's why `recording.middleware.ts` checks three things where
+  it used to check one, and why `GET /recordings/{recordingId}/download` is a new endpoint: it used to
+  share `/media` with playback, and the server had no way to tell "play" from "download" apart there.
+- **The database already stores the new names** — two migrations (`room` v3→v4, `roomMember` v1→v2)
+  rewrote existing data. If you add a new permission, add it to `MEET_PERMISSION_KEYS` too: Mongoose
+  silently drops any key it doesn't recognize, so a missed entry means the permission quietly reads as
+  `false` instead of raising an error.
+- **Login tokens carry permissions too.** Renaming a permission doesn't invalidate tokens already
+  issued — that would kick everyone out of an ongoing meeting — so decoding a token normalizes old
+  names to new ones instead, in **both** modes (`MeetTokenPermissionsSchema`): tokens are our own
+  artifacts, not API requests, so `MEET_MODE='3.9.0'` must not reject one issued before the switch.
+
+Full migration plan: `../openvidu-competitors/meet-update-plan/api-naming-migration-phase.md`.
+
 ## Cross-cutting infrastructure
 
 - **DI (Inversify 8)** — `src/config/dependency-injector.config.ts`. Bindings are grouped in

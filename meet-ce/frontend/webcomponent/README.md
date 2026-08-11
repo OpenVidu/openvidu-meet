@@ -102,7 +102,7 @@ interface OpenViduMeetElement extends HTMLElement {
 }
 
 const meet = document.querySelector<OpenViduMeetElement>('openvidu-meet')!;
-meet.addEventListener('joined', (e) => console.log((e as CustomEvent).detail.roomId));
+meet.addEventListener('meetingJoined', (e) => console.log((e as CustomEvent).detail.roomId));
 meet.roomUrl = 'https://your-server.com/room/my-room';
 ```
 

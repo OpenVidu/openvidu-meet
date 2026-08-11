@@ -7,11 +7,11 @@ import { meetRoomMemberCollectionName } from '../models/mongoose-schemas/room-me
 
 const roomMemberMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2);
 
-// v1→v2: rename the permission keys of customPermissions and effectivePermissions from the legacy
-// `can*` spellings to the canonical moduleAbility scheme, deriving the mapping from
+// v1→v2: rename the permission keys of customPermissions and effectivePermissions from the deprecated
+// `can*` spellings to the current moduleAbility scheme, deriving the mapping from
 // MEET_PERMISSION_ALIASES via normalizePermissions() (which also splits canRetrieveRecordings into
 // recordingList/recordingPlay/recordingDownload, granting the whole group whatever the old flag
-// granted). Without this rename the canonical Mongoose schema would silently drop every stored
+// granted). Without this rename the current-keyed Mongoose schema would silently drop every stored
 // permission on the next write, leaving the required effectivePermissions empty (see B1 in the
 // migration plan). customPermissions is a partial overlay, so a partial result is expected there.
 const roomMemberMigrationV1ToV2Transform: SchemaTransform<MeetRoomMemberDocument> = (roomMember) => {

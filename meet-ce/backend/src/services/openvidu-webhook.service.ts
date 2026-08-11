@@ -5,12 +5,11 @@ import type {
 	MeetWebhookEvent,
 	MeetWebhookPayload
 } from '@openvidu-meet/typings';
-import {
-	MeetWebhookEventType,
-	toLegacyPermissions
-} from '@openvidu-meet/typings';
+import { MeetWebhookEventType } from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
+import { isCompatibilityMode } from '../environment.js';
+import { withDeprecatedPermissionAliases } from '../helpers/permission-naming.helper.js';
 import {
 	errorApiKeyNotConfiguredForWebhooks,
 	errorInvalidWebhookUrl,
@@ -39,7 +38,7 @@ export class OpenViduWebhookService {
 	sendMeetingStartedWebhook(room: MeetRoom) {
 		this.sendWebhookEventInBackground(
 			MeetWebhookEventType.MEETING_STARTED,
-			this.roomWithLegacyPermissionNames(room),
+			this.roomToWirePermissions(room),
 			`Room ID: ${room.roomId}`
 		);
 	}
@@ -55,29 +54,29 @@ export class OpenViduWebhookService {
 	sendMeetingEndedWebhook(room: MeetRoom) {
 		this.sendWebhookEventInBackground(
 			MeetWebhookEventType.MEETING_ENDED,
-			this.roomWithLegacyPermissionNames(room),
+			this.roomToWirePermissions(room),
 			`Room ID: ${room.roomId}`
 		);
 	}
 
 	/**
-	 * Serializes the room's role permissions under the legacy `can*` names. Webhook payloads have no
-	 * request header to select a naming, so during the deprecation window they follow the same
-	 * default as REST responses (legacy); this branch is removed in 3.12.0 and webhooks then ship
-	 * canonical keys.
+	 * Serializes the room's role permissions the same way REST responses do: with
+	 * `MEET_MODE=compatibility` the payload carries both key sets (the current names plus the
+	 * deprecated `can*` spellings), with `'3.9.0'` only the current names. The compatibility branch
+	 * is removed in 3.12.0.
 	 */
-	protected roomWithLegacyPermissionNames(room: MeetRoom): MeetRoom {
-		if (!room.roles) {
+	protected roomToWirePermissions(room: MeetRoom): MeetRoom {
+		if (!isCompatibilityMode() || !room.roles) {
 			return room;
 		}
 
-		// The legacy wire shape no longer matches the canonical type; the cast is confined to this
-		// JSON boundary.
+		// The compatibility wire shape is wider than the MeetRoomRoles type; the cast is confined to
+		// this JSON boundary.
 		return {
 			...room,
 			roles: {
-				moderator: { permissions: toLegacyPermissions(room.roles.moderator.permissions) },
-				speaker: { permissions: toLegacyPermissions(room.roles.speaker.permissions) }
+				moderator: { permissions: withDeprecatedPermissionAliases(room.roles.moderator.permissions) },
+				speaker: { permissions: withDeprecatedPermissionAliases(room.roles.speaker.permissions) }
 			}
 		} as unknown as MeetRoom;
 	}

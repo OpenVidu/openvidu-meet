@@ -13,6 +13,8 @@ import {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
+	normalizePermissions,
+	toDeprecatedPermissions,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { Response } from 'supertest';
@@ -23,6 +25,17 @@ import { getFullPath } from './request-helpers.js';
 
 export const DEFAULT_RECORDING_ENCODING_PRESET = MeetRecordingEncodingPreset.H264_720P_30;
 export const DEFAULT_RECORDING_LAYOUT = MeetRecordingLayout.GRID;
+
+/**
+ * The wire shape of a permission object in compatibility mode (the default the suites run under):
+ * the current keys plus the deprecated `can*` spellings derived from them. Use it to compare an
+ * API response against an expected current-keys object; token metadata and stored documents carry
+ * only the current keys and need no wrapping. Removed in 3.12.0 with the compatibility mode.
+ */
+export const wirePermissions = (permissions: Readonly<Partial<MeetRoomMemberPermissions>>) => ({
+	...permissions,
+	...toDeprecatedPermissions(permissions)
+});
 
 export const expectErrorResponse = (
 	response: Response,
@@ -674,7 +687,9 @@ export const expectValidRoomMemberTokenResponse = (
 	const metadata = JSON.parse(decodedToken.metadata || '{}');
 	expect(metadata).toHaveProperty('iat');
 	expect(metadata).toHaveProperty('roomId', roomId);
-	expect(metadata).toHaveProperty('permissions', permissions);
+	// Token metadata always carries only the current keys, while callers often source the expected
+	// object from a wire response, which in compatibility mode also carries the deprecated aliases.
+	expect(metadata).toHaveProperty('permissions', normalizePermissions(permissions));
 	expect(metadata).toHaveProperty('badge', badge);
 
 	if (memberId) {

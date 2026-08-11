@@ -11,9 +11,9 @@ export interface DecodedRoomMemberToken extends Omit<LiveKitJwtClaims, 'metadata
 
 /**
  * Decodes a room member token. This is the only JWT decode in the frontend, so it is also the single
- * point where permissions are normalized to their canonical keys: a token cached in browser storage
- * from before the permission-key rename still carries the legacy `can*` names, and every consumer
- * downstream reads canonical ones. The normalization branch is removed in 3.12.0.
+ * point where permissions are normalized to their current keys: a token cached in browser storage
+ * from before the permission-key rename still carries the deprecated `can*` names, and every
+ * consumer downstream reads the current ones. The normalization branch is removed in 3.12.0.
  */
 export const decodeToken = (token: string): DecodedRoomMemberToken => {
 	const decodedToken = jwtDecode<LiveKitJwtClaims>(token);

@@ -1,12 +1,14 @@
 /**
- * List of permissions for a room member, keyed with the canonical `moduleAbility` scheme (module
- * first, no `can` prefix). This is the shape the API accepts and stores; during the deprecation
- * window the legacy `can*` spellings ({@link MeetRoomMemberLegacyPermissions}) are still accepted on
- * input and are the default naming on output — see {@link MEET_PERMISSION_ALIASES} for the mapping.
+ * List of permissions for a room member, keyed with the current `moduleAbility` scheme (module
+ * first, no `can` prefix). This is the shape the API stores and, from 3.9.0 on, the one it speaks.
+ * While a deployment runs in **compatibility mode** (`MEET_MODE=compatibility`, the default) the
+ * deprecated `can*` spellings ({@link MeetRoomMemberDeprecatedPermissions}) are still accepted on
+ * input and served alongside these keys on output — see {@link MEET_PERMISSION_ALIASES} for the
+ * mapping.
  *
  * `canRetrieveRecordings` was **split into three** keys (`recordingList`, `recordingPlay`,
  * `recordingDownload`): enumerating recordings, playing one and downloading a copy are different
- * capabilities. Granting the legacy flag grants the whole group.
+ * capabilities. Granting the deprecated flag grants the whole group.
  */
 export interface MeetRoomMemberPermissions {
 	/**
@@ -76,13 +78,14 @@ export interface MeetRoomMemberPermissions {
 }
 
 /**
- * The deprecated `can*` spellings of {@link MeetRoomMemberPermissions}. Requests may still use these
- * keys (they are normalized through {@link MEET_PERMISSION_ALIASES}) and responses serve them by
- * default during the deprecation window.
+ * The deprecated `can*` spellings of {@link MeetRoomMemberPermissions}. In compatibility mode
+ * (`MEET_MODE=compatibility`) requests may still use these keys (they are normalized through
+ * {@link MEET_PERMISSION_ALIASES}) and responses carry them alongside the current keys; with
+ * `MEET_MODE='3.9.0'` they are neither accepted nor served.
  *
- * @deprecated Use the canonical keys of {@link MeetRoomMemberPermissions}. Removed in 3.12.0.
+ * @deprecated Use the current keys of {@link MeetRoomMemberPermissions}. Removed in 3.12.0.
  */
-export interface MeetRoomMemberLegacyPermissions {
+export interface MeetRoomMemberDeprecatedPermissions {
 	/**
 	 * Can start/stop recording the meeting.
 	 * @deprecated Renamed to `recordingControl`. Removed in 3.12.0.
@@ -156,13 +159,13 @@ export interface MeetRoomMemberLegacyPermissions {
 }
 
 /**
- * Maps every legacy permission key to the canonical `moduleAbility` key(s) that replace it.
+ * Maps every deprecated permission key to the current `moduleAbility` key(s) that replace it.
  *
  * This map is the **single source of truth** for the rename: request validation, response
  * serialization, the schema migrations, the UI and the naming lint all derive their behaviour from it
  * instead of hardcoding pairs.
  *
- * Most entries are a straight rename (one canonical key). `canRetrieveRecordings` is **split into
+ * Most entries are a straight rename (one replacement key). `canRetrieveRecordings` is **split into
  * three**, because enumerating a room's recordings, playing one you already know and downloading a
  * copy are different capabilities that deployments need to grant separately (a share link that plays
  * but does not download, for instance). Whoever wants the old behaviour grants the three.
@@ -172,8 +175,8 @@ export interface MeetRoomMemberLegacyPermissions {
  * a module that is fully split like `recording`, the verb always precedes the object, and the keys
  * stay flat — never nested per module.
  *
- * The legacy keys keep working —accepted on input, available on output— until they are **removed in
- * 3.12.0**.
+ * The deprecated keys keep working while `MEET_MODE=compatibility` — accepted on input, served on
+ * output alongside the current keys — until they are **removed in 3.12.0**.
  */
 export const MEET_PERMISSION_ALIASES = {
 	canRecord: ['recordingControl'],
@@ -191,24 +194,24 @@ export const MEET_PERMISSION_ALIASES = {
 	canWriteChat: ['chatWrite'],
 	canChangeVirtualBackground: ['mediaChangeVirtualBackground']
 } as const satisfies Readonly<
-	Record<keyof MeetRoomMemberLegacyPermissions, readonly (keyof MeetRoomMemberPermissions)[]>
+	Record<keyof MeetRoomMemberDeprecatedPermissions, readonly (keyof MeetRoomMemberPermissions)[]>
 >;
 
 /**
- * A legacy (`can*`) permission key, deprecated in favour of its canonical replacement(s).
+ * A deprecated (`can*`) permission key, replaced by its current `moduleAbility` key(s).
  */
-export type MeetLegacyPermissionKey = keyof typeof MEET_PERMISSION_ALIASES;
+export type MeetDeprecatedPermissionKey = keyof typeof MEET_PERMISSION_ALIASES;
 
 /**
- * A canonical `moduleAbility` permission key.
+ * A current `moduleAbility` permission key.
  */
-export type MeetPermissionKey = (typeof MEET_PERMISSION_ALIASES)[MeetLegacyPermissionKey][number];
+export type MeetPermissionKey = (typeof MEET_PERMISSION_ALIASES)[MeetDeprecatedPermissionKey][number];
 
-// Compile-time guard: every canonical key declared on the interface must be reachable through the
-// alias map (the reverse direction — map values being valid keys — is enforced by the `satisfies`
-// clause above). If a new permission is ever added to the interface without an alias entry, the
-// constraint below is violated and this file stops compiling, forcing the author to decide how the
-// legacy surface represents the new key.
+// Compile-time guard: every key declared on the interface must be reachable through the alias map
+// (the reverse direction — map values being valid keys — is enforced by the `satisfies` clause
+// above). If a new permission is ever added to the interface without an alias entry, the constraint
+// below is violated and this file stops compiling, forcing the author to decide how the deprecated
+// surface represents the new key.
 type _RequireTrue<T extends true> = T;
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 type _AssertAliasMapCoversPermissions = _RequireTrue<
@@ -216,43 +219,43 @@ type _AssertAliasMapCoversPermissions = _RequireTrue<
 >;
 
 /**
- * Every legacy permission key, in the order they are documented.
+ * Every deprecated permission key, in the order they are documented.
  *
- * Removed in **3.12.0** together with the legacy aliases. Not tagged `@deprecated` on purpose: the
- * backend enforces `no-deprecated` as an error and every deprecation-window code path (request
- * normalization, legacy response serialization, the schema migrations) legitimately calls the alias
+ * Removed in **3.12.0** together with the deprecated aliases. Not tagged `@deprecated` on purpose:
+ * the backend enforces `no-deprecated` as an error and every compatibility-mode code path (request
+ * normalization, response serialization, the schema migrations) legitimately calls the alias
  * helpers until the window closes.
  */
-export const MEET_LEGACY_PERMISSION_KEYS = Object.keys(
+export const MEET_DEPRECATED_PERMISSION_KEYS = Object.keys(
 	MEET_PERMISSION_ALIASES
-) as readonly MeetLegacyPermissionKey[];
+) as readonly MeetDeprecatedPermissionKey[];
 
 // Flattens the alias groups. Written with `concat` because this package targets `lib: es2017`, where
 // `Array.prototype.flat` does not exist yet.
 function flattenPermissionAliases(): readonly MeetPermissionKey[] {
 	let flattened: MeetPermissionKey[] = [];
 
-	for (const canonicalKeys of Object.values(MEET_PERMISSION_ALIASES)) {
-		flattened = flattened.concat(canonicalKeys as readonly MeetPermissionKey[]);
+	for (const replacementKeys of Object.values(MEET_PERMISSION_ALIASES)) {
+		flattened = flattened.concat(replacementKeys as readonly MeetPermissionKey[]);
 	}
 
 	return flattened;
 }
 
 /**
- * Every canonical permission key, in the order they are documented.
+ * Every current permission key, in the order they are documented.
  */
 export const MEET_PERMISSION_KEYS = flattenPermissionAliases();
 
 // Inverts MEET_PERMISSION_ALIASES. Written as a loop because this package targets `lib: es2017`,
 // where `Object.fromEntries` does not exist yet. Many-to-one: the three recording retrieval keys all
 // point back at `canRetrieveRecordings`.
-function invertPermissionAliases(): Record<MeetPermissionKey, MeetLegacyPermissionKey> {
-	const inverted = {} as Record<MeetPermissionKey, MeetLegacyPermissionKey>;
+function invertPermissionAliases(): Record<MeetPermissionKey, MeetDeprecatedPermissionKey> {
+	const inverted = {} as Record<MeetPermissionKey, MeetDeprecatedPermissionKey>;
 
-	for (const [legacyKey, canonicalKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
-		for (const canonicalKey of canonicalKeys as readonly MeetPermissionKey[]) {
-			inverted[canonicalKey] = legacyKey as MeetLegacyPermissionKey;
+	for (const [deprecatedKey, replacementKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
+		for (const replacementKey of replacementKeys as readonly MeetPermissionKey[]) {
+			inverted[replacementKey] = deprecatedKey as MeetDeprecatedPermissionKey;
 		}
 	}
 
@@ -260,19 +263,20 @@ function invertPermissionAliases(): Record<MeetPermissionKey, MeetLegacyPermissi
 }
 
 /**
- * Reverse of {@link MEET_PERMISSION_ALIASES}: canonical key → the legacy key it came from. Several
- * canonical keys can share one legacy key (the recording retrieval split).
+ * Reverse of {@link MEET_PERMISSION_ALIASES}: current key → the deprecated key it replaces. Several
+ * current keys can share one deprecated key (the recording retrieval split).
  *
- * Removed in **3.12.0** together with the legacy aliases.
+ * Removed in **3.12.0** together with the deprecated aliases.
  */
-export const MEET_CANONICAL_PERMISSION_KEYS: Readonly<Record<MeetPermissionKey, MeetLegacyPermissionKey>> =
+export const MEET_PERMISSION_DEPRECATED_ALIASES: Readonly<Record<MeetPermissionKey, MeetDeprecatedPermissionKey>> =
 	Object.freeze(invertPermissionAliases());
 
 /**
  * A permission object as it arrives from an untrusted source (an HTTP body, a decoded token), where
- * legacy and canonical keys may be mixed and values are not yet validated. Objects already typed as
- * {@link MeetRoomMemberPermissions} are accepted too, so migration/normalization call sites can pass
- * typed values whose runtime keys may still be legacy (a lean Mongo document, a cached token).
+ * deprecated and current keys may be mixed and values are not yet validated. Objects already typed
+ * as {@link MeetRoomMemberPermissions} are accepted too, so migration/normalization call sites can
+ * pass typed values whose runtime keys may still be the deprecated ones (a lean Mongo document, a
+ * cached token).
  */
 export type MeetPermissionsInput = Readonly<Record<string, unknown>> | Readonly<Partial<MeetRoomMemberPermissions>>;
 
@@ -280,45 +284,46 @@ export type MeetPermissionsInput = Readonly<Record<string, unknown>> | Readonly<
  * A permission alias pair present in the same input with **conflicting** values.
  */
 export interface MeetPermissionAliasConflict {
-	/** The legacy key that was supplied. */
-	legacyKey: MeetLegacyPermissionKey;
-	/** The canonical key that was supplied alongside it. */
-	canonicalKey: MeetPermissionKey;
-	/** Value supplied under the legacy key. */
-	legacyValue: boolean;
-	/** Value supplied under the canonical key. */
-	canonicalValue: boolean;
+	/** The deprecated key that was supplied. */
+	deprecatedKey: MeetDeprecatedPermissionKey;
+	/** The replacement key that was supplied alongside it. */
+	replacementKey: MeetPermissionKey;
+	/** Value supplied under the deprecated key. */
+	deprecatedValue: boolean;
+	/** Value supplied under the replacement key. */
+	replacementValue: boolean;
 }
 
 /**
- * Rewrites a permission object to canonical keys, dropping anything that is neither a known key nor a
- * boolean. Legacy keys are applied first, so an explicit canonical key always wins over its alias —
- * callers that must reject a contradiction should run {@link findPermissionAliasConflicts} first.
+ * Rewrites a permission object to the current keys, dropping anything that is neither a known key
+ * nor a boolean. Deprecated keys are applied first, so an explicit current key always wins over its
+ * alias — callers that must reject a contradiction should run {@link findPermissionAliasConflicts}
+ * first.
  *
- * @param input - A permission object with legacy keys, canonical keys, or a mix of both
- * @returns The same permissions keyed canonically
+ * @param input - A permission object with deprecated keys, current keys, or a mix of both
+ * @returns The same permissions under the current keys
  */
 export function normalizePermissions(input: MeetPermissionsInput): Partial<Record<MeetPermissionKey, boolean>> {
 	const record = input as Readonly<Record<string, unknown>>;
 	const normalized: Partial<Record<MeetPermissionKey, boolean>> = {};
 
-	for (const [legacyKey, canonicalKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
-		const value = record[legacyKey];
+	for (const [deprecatedKey, replacementKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
+		const value = record[deprecatedKey];
 
 		if (typeof value === 'boolean') {
 			// A split alias grants (or denies) its whole group: `canRetrieveRecordings: true` means
 			// list + play + download, which is exactly what that flag allowed before the split.
-			for (const canonicalKey of canonicalKeys as readonly MeetPermissionKey[]) {
-				normalized[canonicalKey] = value;
+			for (const replacementKey of replacementKeys as readonly MeetPermissionKey[]) {
+				normalized[replacementKey] = value;
 			}
 		}
 	}
 
-	for (const canonicalKey of MEET_PERMISSION_KEYS) {
-		const value = record[canonicalKey];
+	for (const permissionKey of MEET_PERMISSION_KEYS) {
+		const value = record[permissionKey];
 
 		if (typeof value === 'boolean') {
-			normalized[canonicalKey] = value;
+			normalized[permissionKey] = value;
 		}
 	}
 
@@ -326,30 +331,30 @@ export function normalizePermissions(input: MeetPermissionsInput): Partial<Recor
 }
 
 /**
- * Rewrites a canonically-keyed permission object back to the legacy key names, for clients that have
- * not migrated yet. Keys with no boolean value are omitted.
+ * Derives the deprecated `can*` spellings of a permission object keyed with the current names, for
+ * compatibility-mode responses and webhooks. Keys with no boolean value are omitted.
  *
  * A **split** alias collapses with AND: `canRetrieveRecordings` is true only when list, play and
  * download are all granted, and is omitted when any of the three is missing from the input. The old
  * flag cannot express "play but not download", so the conservative reading is the safe one — an old
  * client then hides the feature instead of offering a button that would be rejected with a 403.
  *
- * Removed in **3.12.0** together with the legacy aliases (see {@link MEET_LEGACY_PERMISSION_KEYS}
- * for why it is not tagged `@deprecated`).
+ * Removed in **3.12.0** together with the deprecated aliases (see
+ * {@link MEET_DEPRECATED_PERMISSION_KEYS} for why it is not tagged `@deprecated`).
  *
- * @param permissions - Permissions keyed canonically
- * @returns The same permissions keyed with the deprecated `can*` names
+ * @param permissions - Permissions under the current keys
+ * @returns The same permissions under the deprecated `can*` names
  */
-export function toLegacyPermissions(
+export function toDeprecatedPermissions(
 	permissions: Readonly<Partial<Record<MeetPermissionKey, boolean>>>
-): Partial<Record<MeetLegacyPermissionKey, boolean>> {
-	const legacy: Partial<Record<MeetLegacyPermissionKey, boolean>> = {};
+): Partial<Record<MeetDeprecatedPermissionKey, boolean>> {
+	const deprecated: Partial<Record<MeetDeprecatedPermissionKey, boolean>> = {};
 
-	for (const [legacyKey, canonicalKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
+	for (const [deprecatedKey, replacementKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
 		let collapsed: boolean | undefined = true;
 
-		for (const canonicalKey of canonicalKeys as readonly MeetPermissionKey[]) {
-			const value = permissions[canonicalKey];
+		for (const replacementKey of replacementKeys as readonly MeetPermissionKey[]) {
+			const value = permissions[replacementKey];
 
 			if (typeof value !== 'boolean') {
 				collapsed = undefined;
@@ -360,46 +365,46 @@ export function toLegacyPermissions(
 		}
 
 		if (typeof collapsed === 'boolean') {
-			legacy[legacyKey as MeetLegacyPermissionKey] = collapsed;
+			deprecated[deprecatedKey as MeetDeprecatedPermissionKey] = collapsed;
 		}
 	}
 
-	return legacy;
+	return deprecated;
 }
 
 /**
- * Finds alias keys supplied together with a canonical replacement that contradicts them. An empty
- * array means the input is unambiguous and safe to {@link normalizePermissions}.
+ * Finds alias keys supplied together with a replacement key that contradicts them. An empty array
+ * means the input is unambiguous and safe to {@link normalizePermissions}.
  *
  * A split alias is checked against **every** key of its group, so
  * `{ canRetrieveRecordings: true, recordingDownload: false }` is reported: the caller is asking for
  * two different things at once and the request should be rejected rather than silently resolved.
  *
- * Removed in **3.12.0** together with the legacy aliases.
+ * Removed in **3.12.0** together with the deprecated aliases.
  *
- * @param input - A permission object with legacy keys, canonical keys, or a mix of both
+ * @param input - A permission object with deprecated keys, current keys, or a mix of both
  * @returns One entry per contradicting pair
  */
 export function findPermissionAliasConflicts(input: MeetPermissionsInput): MeetPermissionAliasConflict[] {
 	const record = input as Readonly<Record<string, unknown>>;
 	const conflicts: MeetPermissionAliasConflict[] = [];
 
-	for (const [legacyKey, canonicalKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
-		const legacyValue = record[legacyKey];
+	for (const [deprecatedKey, replacementKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
+		const deprecatedValue = record[deprecatedKey];
 
-		if (typeof legacyValue !== 'boolean') {
+		if (typeof deprecatedValue !== 'boolean') {
 			continue;
 		}
 
-		for (const canonicalKey of canonicalKeys as readonly MeetPermissionKey[]) {
-			const canonicalValue = record[canonicalKey];
+		for (const replacementKey of replacementKeys as readonly MeetPermissionKey[]) {
+			const replacementValue = record[replacementKey];
 
-			if (typeof canonicalValue === 'boolean' && canonicalValue !== legacyValue) {
+			if (typeof replacementValue === 'boolean' && replacementValue !== deprecatedValue) {
 				conflicts.push({
-					legacyKey: legacyKey as MeetLegacyPermissionKey,
-					canonicalKey,
-					legacyValue,
-					canonicalValue
+					deprecatedKey: deprecatedKey as MeetDeprecatedPermissionKey,
+					replacementKey,
+					deprecatedValue,
+					replacementValue
 				});
 			}
 		}

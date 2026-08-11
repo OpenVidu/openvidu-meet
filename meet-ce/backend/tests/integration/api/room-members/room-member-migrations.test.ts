@@ -12,9 +12,9 @@ import {
 import { MigrationService } from '../../../../src/services/migration.service.js';
 import { startTestServer } from '../../../helpers/request-helpers.js';
 
-// v1 stored permissions under the legacy `can*` keys; v1→v2 renames them to the canonical
+// v1 stored permissions under the deprecated `can*` keys; v1→v2 renames them to the canonical
 // moduleAbility scheme (splitting canRetrieveRecordings into list/play/download). Without the
-// rename, the canonical Mongoose schema would drop every stored key and the required
+// rename, the current-keyed Mongoose schema would drop every stored key and the required
 // effectivePermissions would come back empty (silent permission loss).
 const buildLegacyRoomMemberV1 = (roomId: string, memberId: string) => ({
 	schemaVersion: 1,
@@ -48,7 +48,7 @@ const buildLegacyRoomMemberV1 = (roomId: string, memberId: string) => ({
 	permissionsUpdatedAt: Date.now()
 });
 
-const expectedCanonicalEffectivePermissions = {
+const expectedCurrentEffectivePermissions = {
 	recordingControl: true,
 	recordingList: false,
 	recordingPlay: false,
@@ -69,7 +69,7 @@ const expectedCanonicalEffectivePermissions = {
 
 // The partial custom overlay stays partial: the legacy flags rename (and the retrieval flag expands
 // to its whole group), but no key the member never overrode is invented.
-const expectedCanonicalCustomPermissions = {
+const expectedCurrentCustomPermissions = {
 	recordingControl: true,
 	recordingList: false,
 	recordingPlay: false,
@@ -78,7 +78,7 @@ const expectedCanonicalCustomPermissions = {
 
 describe('Room Member Schema Migrations', () => {
 	describe('Room Member Migration Transforms', () => {
-		it('should transform room member schema from v1 to v2 renaming permission keys to the canonical scheme', () => {
+		it('should transform room member schema from v1 to v2 renaming permission keys to the current scheme', () => {
 			const migrationName = generateSchemaMigrationName(meetRoomMemberCollectionName, 1, 2);
 			const transform = roomMemberMigrations.get(migrationName);
 			expect(transform).toBeDefined();
@@ -86,8 +86,8 @@ describe('Room Member Schema Migrations', () => {
 			const memberV1 = buildLegacyRoomMemberV1('room-v1', 'member-v1') as unknown as MeetRoomMemberDocument;
 			const migratedMember = transform!(memberV1);
 
-			expect(migratedMember.effectivePermissions).toEqual(expectedCanonicalEffectivePermissions);
-			expect(migratedMember.customPermissions).toEqual(expectedCanonicalCustomPermissions);
+			expect(migratedMember.effectivePermissions).toEqual(expectedCurrentEffectivePermissions);
+			expect(migratedMember.customPermissions).toEqual(expectedCurrentCustomPermissions);
 		});
 
 		it('should leave an absent customPermissions untouched', () => {
@@ -99,7 +99,7 @@ describe('Room Member Schema Migrations', () => {
 
 			const migratedMember = transform!(memberV1);
 			expect(migratedMember.customPermissions).toBeUndefined();
-			expect(migratedMember.effectivePermissions).toEqual(expectedCanonicalEffectivePermissions);
+			expect(migratedMember.effectivePermissions).toEqual(expectedCurrentEffectivePermissions);
 		});
 	});
 
@@ -131,8 +131,8 @@ describe('Room Member Schema Migrations', () => {
 				memberId,
 				roomId,
 				baseRole: MeetRoomMemberRole.SPEAKER,
-				effectivePermissions: expectedCanonicalEffectivePermissions,
-				customPermissions: expectedCanonicalCustomPermissions
+				effectivePermissions: expectedCurrentEffectivePermissions,
+				customPermissions: expectedCurrentCustomPermissions
 			});
 			expect(migratedMember).not.toHaveProperty('effectivePermissions.canRecord');
 			expect(migratedMember).not.toHaveProperty('effectivePermissions.canRetrieveRecordings');
