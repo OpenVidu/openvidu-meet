@@ -1342,6 +1342,90 @@ describe('Recording API Security Tests', () => {
 				expect(response.status).toBe(401);
 			});
 		});
+
+		// The old canRetrieveRecordings flag split into recordingList / recordingPlay /
+		// recordingDownload, each guarding a different route. Every other block in this suite seeds
+		// the whole group at once, which would stay green if two routes swapped their permission
+		// argument — these tests grant exactly one capability at a time so each gate is asserted
+		// independently. Permanent (the split outlives the deprecation window).
+		describe('Split Recording Permission Gates', () => {
+			it('should allow playback but reject download with recordingPlay and no recordingDownload', async () => {
+				roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+					recordingList: true,
+					recordingPlay: true,
+					recordingDownload: false
+				});
+
+				const getResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(getResponse.status).toBe(200);
+
+				const mediaResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(mediaResponse.status).toBe(200);
+
+				const downloadResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/download`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(downloadResponse.status).toBe(403);
+
+				const zipResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/download`)
+					.query({ recordingIds: recordingId })
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(zipResponse.status).toBe(400);
+			});
+
+			it('should serve the download as an attachment but reject playback with recordingDownload and no recordingPlay', async () => {
+				roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+					recordingList: false,
+					recordingPlay: false,
+					recordingDownload: true
+				});
+
+				const downloadResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/download`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(downloadResponse.status).toBe(200);
+				expect(downloadResponse.headers['content-disposition']).toContain('attachment');
+
+				const zipResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/download`)
+					.query({ recordingIds: recordingId })
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(zipResponse.status).toBe(200);
+
+				const mediaResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(mediaResponse.status).toBe(403);
+
+				const getResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(getResponse.status).toBe(403);
+			});
+
+			it('should hide the recording list while playback still works with recordingPlay and no recordingList', async () => {
+				roomMember = await updateRoomMemberPermissions(roomId, roomMember.member.memberId, {
+					recordingList: false,
+					recordingPlay: true,
+					recordingDownload: false
+				});
+
+				const listResponse = await request(app)
+					.get(RECORDINGS_PATH)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(listResponse.status).toBe(403);
+
+				const mediaResponse = await request(app)
+					.get(`${RECORDINGS_PATH}/${recordingId}/media`)
+					.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMember.memberToken);
+				expect(mediaResponse.status).toBe(200);
+			});
+		});
 	});
 
 	describe('User Access Recording Resource Operations', () => {
