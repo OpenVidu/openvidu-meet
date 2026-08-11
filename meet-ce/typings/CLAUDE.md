@@ -65,6 +65,36 @@ or through the folder's `index.ts`).
   so the two cannot drift. The plan behind this lives in
   `../openvidu-competitors/meet-update-plan/api-naming-migration-phase.md`.
 
+## API naming charter
+
+Every public identifier follows one scheme — learn a module once and you can predict its name on
+every surface. `src/api-registry.ts` is the registry (`MEET_API_MODULES`, `MEET_API_REST_GROUPS`,
+`meetApiModuleOf()`) **and the enforcement point**: `scripts/lint-api-naming.mjs` (repo root, run by
+`./meet.sh lint-backend`, CI-gated) fails on any identifier that doesn't start with a registered
+token.
+
+- **Module token**: a singular, single-word lowerCamelCase noun, registered exactly once, never a
+  prefix of another token. A concept needing two words is not a module — fold it into the closest
+  one and put the extra word in the action (`mediaChangeVirtualBackground`, not a
+  `virtualBackground` module).
+- **Command** `moduleAction`: module first, then an imperative verb (`meetingLeave`,
+  `participantKick`); bulk variants suffix `All`. **Event/webhook** `moduleEvent`: module first,
+  past tense (`meetingJoined`, `recordingEnded`), same string on both surfaces.
+- **Permission** `moduleAbility`: flat boolean, no `can` prefix, **flat forever** (nesting is
+  rejected, not deferred — the prefix already groups). `Admin` is the only administrative verb
+  (never `Manage`); a fully split module (like `recording`) has no `Admin`. **Split rather than
+  lump**: if an operator would grant one half and withhold the other, they are two permissions.
+  **Verb before object**, no exceptions. A permission may share its string with the command it
+  gates (`participantKick`) — intentional.
+- **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts
+  and platform groups are top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
+  singular. `operationId` = `moduleAction`.
+- **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only.
+- **Known exceptions** the lint allows on purpose: the 3.8.0 deprecated aliases (derived from the
+  alias maps, gone in 3.12.0) and the wrapper's `ready` event (outside the scheme, pending
+  sign-off). `lobbyKnocked`/`participantKnocked` will be a deliberate cross-module alias when the
+  lobby module lands.
+
 ## Change discipline
 
 - `src/embedded/` and everything reachable from the **public** REST API (`/api/v1`) are external

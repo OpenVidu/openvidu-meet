@@ -312,6 +312,9 @@ lint_backend() {
 
   echo -e "${GREEN}Running ESLint on the backend...${NC}"
   pnpm --filter @openvidu-meet/backend run lint
+
+  echo -e "${GREEN}Running the API naming lint...${NC}"
+  node scripts/lint-api-naming.mjs
 }
 
 # Run ESLint over the frontend project
