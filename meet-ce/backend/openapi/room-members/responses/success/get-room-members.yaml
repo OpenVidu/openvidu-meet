@@ -31,7 +31,7 @@ content:
                           accessUrl: 'https://example.com/room/room-123'
                           baseRole: 'moderator'
                           customPermissions:
-                              canEndMeeting: false
+                              meetingEnd: false
                           permissionsUpdatedAt: 1620000000000
                         - memberId: 'guest-abc123'
                           roomId: 'room-123'
@@ -41,8 +41,8 @@ content:
                           accessUrl: 'https://example.com/room/room-123?secret=guest-abc123'
                           baseRole: 'speaker'
                           customPermissions:
-                              canShareScreen: false
-                              canRecord: true
+                              mediaShareScreen: false
+                              recordingControl: true
                           permissionsUpdatedAt: 1620003600000
                     _extraFields:
                         - effectivePermissions
@@ -61,22 +61,24 @@ content:
                           accessUrl: 'https://example.com/room/room-123'
                           baseRole: 'moderator'
                           customPermissions:
-                              canEndMeeting: false
+                              meetingEnd: false
                           effectivePermissions:
-                              canRecord: true
-                              canRetrieveRecordings: true
-                              canDeleteRecordings: true
-                              canJoinMeeting: true
-                              canShareAccessLinks: true
-                              canMakeModerator: true
-                              canKickParticipants: true
-                              canEndMeeting: false
-                              canPublishVideo: true
-                              canPublishAudio: true
-                              canShareScreen: true
-                              canReadChat: true
-                              canWriteChat: true
-                              canChangeVirtualBackground: true
+                              recordingControl: true
+                              recordingList: true
+                              recordingPlay: true
+                              recordingDownload: true
+                              recordingDelete: true
+                              meetingJoin: true
+                              roomShareAccessLinks: true
+                              participantPromote: true
+                              participantKick: true
+                              meetingEnd: false
+                              mediaPublishVideo: true
+                              mediaPublishAudio: true
+                              mediaShareScreen: true
+                              chatRead: true
+                              chatWrite: true
+                              mediaChangeVirtualBackground: true
                           permissionsUpdatedAt: 1620000000000
                         - memberId: 'guest-abc123'
                           roomId: 'room-123'
@@ -86,23 +88,25 @@ content:
                           accessUrl: 'https://example.com/room/room-123?secret=guest-abc123'
                           baseRole: 'speaker'
                           customPermissions:
-                              canShareScreen: false
-                              canRecord: true
+                              mediaShareScreen: false
+                              recordingControl: true
                           effectivePermissions:
-                              canRecord: true
-                              canRetrieveRecordings: true
-                              canDeleteRecordings: false
-                              canJoinMeeting: true
-                              canShareAccessLinks: false
-                              canMakeModerator: false
-                              canKickParticipants: false
-                              canEndMeeting: false
-                              canPublishVideo: true
-                              canPublishAudio: true
-                              canShareScreen: false
-                              canReadChat: true
-                              canWriteChat: true
-                              canChangeVirtualBackground: true
+                              recordingControl: true
+                              recordingList: true
+                              recordingPlay: true
+                              recordingDownload: true
+                              recordingDelete: false
+                              meetingJoin: true
+                              roomShareAccessLinks: false
+                              participantPromote: false
+                              participantKick: false
+                              meetingEnd: false
+                              mediaPublishVideo: true
+                              mediaPublishAudio: true
+                              mediaShareScreen: false
+                              chatRead: true
+                              chatWrite: true
+                              mediaChangeVirtualBackground: true
                           permissionsUpdatedAt: 1620003600000
                     _extraFields:
                         - effectivePermissions

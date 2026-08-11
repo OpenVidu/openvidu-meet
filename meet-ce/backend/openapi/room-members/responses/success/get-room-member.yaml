@@ -25,7 +25,7 @@ content:
                     accessUrl: 'https://example.com/room/room-123'
                     baseRole: 'moderator'
                     customPermissions:
-                        canEndMeeting: false
+                        meetingEnd: false
                     permissionsUpdatedAt: 1620000000000
                     _extraFields: ['effectivePermissions']
             extraFields=effectivePermissions:
@@ -39,22 +39,24 @@ content:
                     accessUrl: 'https://example.com/room/room-123'
                     baseRole: 'moderator'
                     customPermissions:
-                        canEndMeeting: false
+                        meetingEnd: false
                     effectivePermissions:
-                        canRecord: true
-                        canRetrieveRecordings: true
-                        canDeleteRecordings: true
-                        canJoinMeeting: true
-                        canShareAccessLinks: true
-                        canMakeModerator: true
-                        canKickParticipants: true
-                        canEndMeeting: false
-                        canPublishVideo: true
-                        canPublishAudio: true
-                        canShareScreen: true
-                        canReadChat: true
-                        canWriteChat: true
-                        canChangeVirtualBackground: true
+                        recordingControl: true
+                        recordingList: true
+                        recordingPlay: true
+                        recordingDownload: true
+                        recordingDelete: true
+                        meetingJoin: true
+                        roomShareAccessLinks: true
+                        participantPromote: true
+                        participantKick: true
+                        meetingEnd: false
+                        mediaPublishVideo: true
+                        mediaPublishAudio: true
+                        mediaShareScreen: true
+                        chatRead: true
+                        chatWrite: true
+                        mediaChangeVirtualBackground: true
                     permissionsUpdatedAt: 1620000000000
                     _extraFields: ['effectivePermissions']
             fields=memberId,accessUrl:

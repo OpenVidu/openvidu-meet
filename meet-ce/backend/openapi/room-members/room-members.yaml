@@ -15,6 +15,7 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/room-member-x-fields-header.yaml'
             - $ref: './parameters/room-member-x-extra-fields-header.yaml'
@@ -51,6 +52,7 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/room-member-name.yaml'
             - $ref: './parameters/room-member-name-match-mode.yaml'
@@ -121,6 +123,7 @@
             - accessTokenHeader: []
             - roomMemberTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/room-member-id.yaml'
             - $ref: './parameters/room-member-fields.yaml'
@@ -154,6 +157,7 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: '../rooms/parameters/room-id-path.yaml'
             - $ref: './parameters/room-member-id.yaml'
             - $ref: './parameters/room-member-x-fields-header.yaml'

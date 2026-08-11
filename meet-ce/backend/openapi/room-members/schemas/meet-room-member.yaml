@@ -60,8 +60,8 @@ properties:
         additionalProperties:
             type: boolean
         example:
-            canShareScreen: false
-            canRecord: true
+            mediaShareScreen: false
+            recordingControl: true
         description: |
             Custom permission overrides for this member. This object contains only the permissions that differ from the base role defaults.
 

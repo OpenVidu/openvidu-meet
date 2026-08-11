@@ -1,6 +1,6 @@
 /meetings/{roomId}:
     delete:
-        operationId: endMeeting
+        operationId: meetingEnd
         summary: End a meeting
         description: |
             Ends the current meeting in an OpenVidu Meet room. This will stop all recordings and disconnect all participants.
@@ -27,7 +27,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /meetings/{roomId}/participants/{participantIdentity}:
     delete:
-        operationId: kickParticipant
+        operationId: participantKick
         summary: Kick a participant from a meeting
         description: >
             Kicks a participant from the current meeting in an OpenVidu Meet room.
@@ -52,7 +52,7 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
 /meetings/{roomId}/participants/{participantIdentity}/role:
     put:
-        operationId: updateParticipantRole
+        operationId: participantRoleUpdate
         summary: Update participant role in a meeting
         description: >
             Applies a moderation action to a participant in the current meeting in an OpenVidu Meet room.

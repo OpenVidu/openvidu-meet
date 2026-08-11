@@ -10,6 +10,7 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: './parameters/room-x-fields-header.yaml'
             - $ref: './parameters/room-x-extra-fields-header.yaml'
         requestBody:
@@ -41,6 +42,7 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: './parameters/room-x-extra-fields-header.yaml'
             - $ref: './parameters/room-x-fields-header.yaml'
             - $ref: './parameters/room-name.yaml'
@@ -123,6 +125,7 @@
             - accessTokenHeader: []
             - roomMemberTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: './parameters/room-id-path.yaml'
             - $ref: './parameters/room-x-fields-header.yaml'
             - $ref: './parameters/room-x-extra-fields-header.yaml'
@@ -258,6 +261,7 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: './parameters/room-id-path.yaml'
             - $ref: './parameters/room-x-fields-header.yaml'
             - $ref: './parameters/room-x-extra-fields-header.yaml'
@@ -295,6 +299,7 @@
             - apiKeyHeader: []
             - accessTokenHeader: []
         parameters:
+            - $ref: '../shared/parameters/permission-names.yaml'
             - $ref: './parameters/room-id-path.yaml'
         requestBody:
             $ref: './requests/update-room-roles.yaml'

@@ -309,6 +309,57 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+/recordings/{recordingId}/download:
+    get:
+        operationId: downloadRecording
+        summary: Download recording media
+        description: |
+            Downloads the media of a recording with the specified recording ID: the same stream as
+            `GET /recordings/{recordingId}/media`, served with a `Content-Disposition: attachment` header so
+            browsers save the file instead of playing it inline.
+
+            Playing and downloading are gated by different permissions (`recordingPlay` vs `recordingDownload`),
+            which is why they are separate endpoints — the server cannot tell the intent apart on a shared one.
+        tags:
+            - OpenVidu Meet - Recordings
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: './parameters/recording-id.yaml'
+            - $ref: './parameters/recording-secret.yaml'
+        responses:
+            '200':
+                description: Successfully downloaded the recording media
+                headers:
+                    Accept-Ranges:
+                        $ref: './headers/accept-ranges.yaml'
+                    Content-Length:
+                        $ref: './headers/content-length.yaml'
+                    Cache-Control:
+                        $ref: './headers/cache-control.yaml'
+                content:
+                    video/mp4:
+                        schema:
+                            type: string
+                            format: binary
+            '400':
+                $ref: './responses/errors/invalid-recording-secret.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/recording-not-found.yaml'
+            '409':
+                $ref: './responses/errors/recording-not-streamable.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
 /recordings/{recordingId}/stop:
     post:
         operationId: stopRecording

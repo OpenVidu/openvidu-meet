@@ -1,58 +1,137 @@
 type: object
+description: |
+    Permissions of a room member, keyed with the canonical `moduleAction` scheme (module first, no `can` prefix).
+
+    During the deprecation window (until **3.12.0**) the former `can*` spellings remain available:
+
+    - **Requests** accept any mix of canonical and deprecated keys. Sending a deprecated key together with one of
+      its canonical replacements with a contradicting value is rejected with a `422`.
+    - **Responses** carry exactly **one** key set, selected per request with the `X-Meet-Permission-Names` header
+      (`legacy` is the default until 4.0). Responses serialized with the deprecated names include a
+      `Deprecation: true` header.
+    - `canRetrieveRecordings` was **split into three** capabilities (`recordingList`, `recordingPlay`,
+      `recordingDownload`). Granting or denying the deprecated flag applies to the whole group; when read back as
+      `canRetrieveRecordings`, the group collapses with AND (it is `true` only when the three are granted).
 properties:
-    canRecord:
+    recordingControl:
         type: boolean
         example: true
-        description: Can start/stop recording the meeting.
-    canRetrieveRecordings:
+        description: Can start and stop recordings of the meeting.
+    recordingList:
         type: boolean
         example: true
-        description: Can list and play recordings.
-    canDeleteRecordings:
+        description: Can enumerate the room's recordings.
+    recordingPlay:
+        type: boolean
+        example: true
+        description: Can open and play back a recording.
+    recordingDownload:
+        type: boolean
+        example: true
+        description: Can download a copy of a recording (individually or as a ZIP).
+    recordingDelete:
         type: boolean
         example: false
         description: Can delete recordings.
-    canJoinMeeting:
+    meetingJoin:
         type: boolean
         example: true
         description: Can join the meeting.
-    canShareAccessLinks:
+    roomShareAccessLinks:
         type: boolean
         example: false
-        description: Can share access links to invite others.
-    canMakeModerator:
+        description: Can share room access links to invite others.
+    participantPromote:
         type: boolean
         example: false
-        description: Can promote other participants to moderator role.
-    canKickParticipants:
+        description: Can promote other participants to the moderator role.
+    participantKick:
         type: boolean
         example: false
         description: Can remove other participants from the meeting.
-    canEndMeeting:
+    meetingEnd:
         type: boolean
         example: false
         description: Can end the meeting for all participants.
-    canPublishVideo:
+    mediaPublishVideo:
         type: boolean
         example: true
-        description: Can publish video in the meeting.
-    canPublishAudio:
+        description: Can publish camera video in the meeting.
+    mediaPublishAudio:
         type: boolean
         example: true
-        description: Can publish audio in the meeting.
-    canShareScreen:
+        description: Can publish microphone audio in the meeting.
+    mediaShareScreen:
         type: boolean
         example: false
-        description: Can share screen in the meeting.
-    canReadChat:
+        description: Can share the screen in the meeting.
+    chatRead:
         type: boolean
         example: true
         description: Can read chat messages in the meeting.
-    canWriteChat:
+    chatWrite:
         type: boolean
         example: true
         description: Can send chat messages in the meeting.
-    canChangeVirtualBackground:
+    mediaChangeVirtualBackground:
         type: boolean
         example: true
         description: Can change the virtual background.
+    canRecord:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `recordingControl`. Removed in 3.12.0.
+    canRetrieveRecordings:
+        type: boolean
+        deprecated: true
+        description: >
+            Deprecated flag split into `recordingList` + `recordingPlay` + `recordingDownload`: granting it grants
+            the three; reading it back collapses the group with AND. Removed in 3.12.0.
+    canDeleteRecordings:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `recordingDelete`. Removed in 3.12.0.
+    canJoinMeeting:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `meetingJoin`. Removed in 3.12.0.
+    canShareAccessLinks:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `roomShareAccessLinks`. Removed in 3.12.0.
+    canMakeModerator:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `participantPromote`. Removed in 3.12.0.
+    canKickParticipants:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `participantKick`. Removed in 3.12.0.
+    canEndMeeting:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `meetingEnd`. Removed in 3.12.0.
+    canPublishVideo:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `mediaPublishVideo`. Removed in 3.12.0.
+    canPublishAudio:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `mediaPublishAudio`. Removed in 3.12.0.
+    canShareScreen:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `mediaShareScreen`. Removed in 3.12.0.
+    canReadChat:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `chatRead`. Removed in 3.12.0.
+    canWriteChat:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `chatWrite`. Removed in 3.12.0.
+    canChangeVirtualBackground:
+        type: boolean
+        deprecated: true
+        description: Deprecated spelling of `mediaChangeVirtualBackground`. Removed in 3.12.0.

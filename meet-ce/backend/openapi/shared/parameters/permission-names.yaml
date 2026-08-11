@@ -1,0 +1,20 @@
+name: X-Meet-Permission-Names
+in: header
+required: false
+description: |
+    Selects which permission key set this response serializes: the canonical `moduleAction` names
+    (`recordingControl`, `chatWrite`, …) or the deprecated `can*` spellings (`canRecord`, `canWriteChat`, …).
+
+    Defaults to `legacy` during the deprecation window, so existing clients keep receiving the names they were
+    built against; new integrations should send `canonical`. Every response carries exactly **one** key set —
+    never both — so a GET → modify → PUT round-trip is always internally consistent. Responses serialized with the
+    deprecated names include a `Deprecation: true` header.
+
+    An unknown value is rejected with a `422`. This header (and the `legacy` key set) is removed in **3.12.0**.
+schema:
+    type: string
+    enum:
+        - legacy
+        - canonical
+    default: legacy
+example: canonical
