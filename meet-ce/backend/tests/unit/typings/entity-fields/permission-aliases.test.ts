@@ -14,17 +14,17 @@ import { AssertReadonlyArrayCoversUnion } from '../type-assertions.utils.js';
 
 describe('Permission alias map', () => {
 	it('should cover every MeetRoomMemberPermissions property', () => {
-		// Runtime check: nothing type-checks tests/**, so the compile-time assertion below cannot be
-		// the only guard. MEET_ROOM_MEMBER_PERMISSIONS_FIELDS is the runtime mirror of the interface,
-		// so a permission added there without an alias fails here.
-		expect([...MEET_LEGACY_PERMISSION_KEYS].sort()).toEqual([...MEET_ROOM_MEMBER_PERMISSIONS_FIELDS].sort());
+		// Runtime check on top of the compile-time one: MEET_ROOM_MEMBER_PERMISSIONS_FIELDS is the
+		// runtime mirror of the (now canonical) interface, so a canonical key added there without an
+		// alias-map entry fails here. The legacy set stays frozen at 14 until it is removed in 3.12.0.
+		expect([...MEET_PERMISSION_KEYS].sort()).toEqual([...MEET_ROOM_MEMBER_PERMISSIONS_FIELDS].sort());
 		expect(MEET_LEGACY_PERMISSION_KEYS).toHaveLength(14);
 
-		const assertLegacyKeysCoverage: AssertReadonlyArrayCoversUnion<
+		const assertCanonicalKeysCoverage: AssertReadonlyArrayCoversUnion<
 			keyof MeetRoomMemberPermissions,
-			typeof MEET_LEGACY_PERMISSION_KEYS
+			typeof MEET_PERMISSION_KEYS
 		> = true;
-		expect(assertLegacyKeysCoverage).toBe(true);
+		expect(assertCanonicalKeysCoverage).toBe(true);
 	});
 
 	it('should never reuse a canonical name across modules', () => {

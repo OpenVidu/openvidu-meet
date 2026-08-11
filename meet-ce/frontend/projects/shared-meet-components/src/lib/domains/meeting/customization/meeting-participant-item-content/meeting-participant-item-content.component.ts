@@ -52,8 +52,8 @@ export class MeetingParticipantItemContentComponent {
 			return displayProperties;
 		}
 
-		const canMakeModerator = this.roomMemberContextService.hasPermission('canMakeModerator');
-		const canKickParticipants = this.roomMemberContextService.hasPermission('canKickParticipants');
+		const canMakeModerator = this.roomMemberContextService.hasPermission('participantPromote');
+		const canKickParticipants = this.roomMemberContextService.hasPermission('participantKick');
 
 		// If the user doesn't have any moderation permissions, no need to compute further.
 		if (!canMakeModerator && !canKickParticipants) {
@@ -81,7 +81,7 @@ export class MeetingParticipantItemContentComponent {
 	});
 
 	async onMakeModeratorClick(): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('canMakeModerator')) return;
+		if (!this.roomMemberContextService.hasPermission('participantPromote')) return;
 
 		const roomId = this.meetingContextService.roomId();
 
@@ -103,7 +103,7 @@ export class MeetingParticipantItemContentComponent {
 	}
 
 	async onUnmakeModeratorClick(): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('canMakeModerator')) return;
+		if (!this.roomMemberContextService.hasPermission('participantPromote')) return;
 
 		const roomId = this.meetingContextService.roomId();
 
@@ -125,7 +125,7 @@ export class MeetingParticipantItemContentComponent {
 	}
 
 	async onKickParticipantClick(): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('canKickParticipants')) return;
+		if (!this.roomMemberContextService.hasPermission('participantKick')) return;
 
 		const roomId = this.meetingContextService.roomId();
 

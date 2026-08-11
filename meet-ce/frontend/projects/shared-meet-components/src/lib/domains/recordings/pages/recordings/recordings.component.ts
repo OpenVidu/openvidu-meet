@@ -62,8 +62,12 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 	protected currentUserRole = signal<MeetUserRole | undefined>(undefined);
 	canDeleteRecordings = computed(() => this.currentUserRole() === MeetUserRole.ADMIN);
 	deletableRoomIds = signal<Set<string>>(new Set());
-	// Cache: roomId → canDelete (avoids re-fetching tokens for already-seen rooms)
+	canDownloadRecordings = computed(() => this.currentUserRole() === MeetUserRole.ADMIN);
+	downloadableRoomIds = signal<Set<string>>(new Set());
+	// Cache: roomId → permissions decoded from the room member token (avoids re-fetching tokens for
+	// already-seen rooms)
 	private roomDeletePermissionCache = new Map<string, boolean>();
+	private roomDownloadPermissionCache = new Map<string, boolean>();
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
@@ -182,17 +186,23 @@ export class RecordingsComponent implements OnInit, OnDestroy {
 						joinMeeting: false
 					});
 					const decoded = decodeToken(token);
-					this.roomDeletePermissionCache.set(roomId, decoded.metadata.permissions.canDeleteRecordings);
+					this.roomDeletePermissionCache.set(roomId, decoded.metadata.permissions.recordingDelete);
+					this.roomDownloadPermissionCache.set(roomId, decoded.metadata.permissions.recordingDownload);
 				} catch {
 					this.roomDeletePermissionCache.set(roomId, false);
+					this.roomDownloadPermissionCache.set(roomId, false);
 				}
 			})
 		);
 
-		// Rebuild signal from updated cache
+		// Rebuild signals from updated caches
 		const deletable = new Set(
 			[...this.roomDeletePermissionCache.entries()].filter(([, canDelete]) => canDelete).map(([id]) => id)
 		);
 		this.deletableRoomIds.set(deletable);
+		const downloadable = new Set(
+			[...this.roomDownloadPermissionCache.entries()].filter(([, canDownload]) => canDownload).map(([id]) => id)
+		);
+		this.downloadableRoomIds.set(downloadable);
 	}
 }

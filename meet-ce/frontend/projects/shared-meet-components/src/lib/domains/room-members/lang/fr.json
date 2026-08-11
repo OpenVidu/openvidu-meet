@@ -118,59 +118,67 @@
         "CHAT": "Chat"
       },
       "ITEMS": {
-        "canJoinMeeting": {
+        "meetingJoin": {
           "LABEL": "Peut rejoindre la réunion",
           "DESCRIPTION": "Autoriser à rejoindre la réunion"
         },
-        "canEndMeeting": {
+        "meetingEnd": {
           "LABEL": "Peut terminer la réunion",
           "DESCRIPTION": "Autoriser à terminer la réunion pour tous les participants"
         },
-        "canMakeModerator": {
+        "participantPromote": {
           "LABEL": "Peut nommer modérateur",
           "DESCRIPTION": "Autoriser à promouvoir des participants au rôle de modérateur"
         },
-        "canKickParticipants": {
+        "participantKick": {
           "LABEL": "Peut expulser des participants",
           "DESCRIPTION": "Autoriser à retirer des participants de la réunion"
         },
-        "canShareAccessLinks": {
+        "roomShareAccessLinks": {
           "LABEL": "Peut partager des liens d'accès",
           "DESCRIPTION": "Autoriser à partager des liens d'invitation avec d'autres personnes"
         },
-        "canPublishVideo": {
+        "mediaPublishVideo": {
           "LABEL": "Peut publier de la vidéo",
           "DESCRIPTION": "Autoriser le partage de la vidéo de la caméra"
         },
-        "canPublishAudio": {
+        "mediaPublishAudio": {
           "LABEL": "Peut publier de l'audio",
           "DESCRIPTION": "Autoriser le partage de l'audio du microphone"
         },
-        "canShareScreen": {
+        "mediaShareScreen": {
           "LABEL": "Peut partager l'écran",
           "DESCRIPTION": "Autoriser le partage du bureau ou des onglets du navigateur"
         },
-        "canChangeVirtualBackground": {
+        "mediaChangeVirtualBackground": {
           "LABEL": "Peut changer l'arrière-plan virtuel",
           "DESCRIPTION": "Autoriser à changer l'arrière-plan virtuel"
         },
-        "canRecord": {
+        "recordingControl": {
           "LABEL": "Peut enregistrer",
           "DESCRIPTION": "Autoriser à démarrer et arrêter les enregistrements"
         },
-        "canRetrieveRecordings": {
-          "LABEL": "Peut récupérer les enregistrements",
-          "DESCRIPTION": "Autoriser à lister et lire les enregistrements"
+        "recordingList": {
+          "LABEL": "Peut lister les enregistrements",
+          "DESCRIPTION": "Autoriser à lister les enregistrements"
         },
-        "canDeleteRecordings": {
+        "recordingPlay": {
+          "LABEL": "Peut lire les enregistrements",
+          "DESCRIPTION": "Autoriser à lire les enregistrements"
+        },
+        "recordingDownload": {
+          "LABEL": "Peut télécharger les enregistrements",
+          "DESCRIPTION": "Autoriser à télécharger les enregistrements"
+        },
+        "recordingDelete": {
           "LABEL": "Peut supprimer les enregistrements",
           "DESCRIPTION": "Autoriser à supprimer les enregistrements"
         },
-        "canReadChat": {
+        "chatRead": {
           "LABEL": "Peut lire le chat",
           "DESCRIPTION": "Autoriser à lire les messages du chat"
         },
-        "canWriteChat": {
+        "chatWrite": {
           "LABEL": "Peut écrire dans le chat",
           "DESCRIPTION": "Autoriser à envoyer des messages dans le chat"
         }

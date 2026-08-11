@@ -3,6 +3,7 @@ import {
 	MeetAppearanceConfig,
 	MeetAssistantCapabilityName,
 	MeetParticipantModerationAction,
+	MeetPermissionsInput,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
@@ -28,6 +29,7 @@ import ms, { StringValue } from 'ms';
 import request, { Response } from 'supertest';
 import { container, initializeEagerServices } from '../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
+import { PERMISSION_NAMING_HEADER } from '../../src/helpers/permission-naming.helper.js';
 import { MEET_ENV } from '../../src/environment.js';
 import { GlobalConfigRepository } from '../../src/repositories/global-config.repository.js';
 import { RoomRepository } from '../../src/repositories/room.repository.js';
@@ -414,6 +416,9 @@ export const deleteAllUsers = async () => {
  * const room = await createRoom({ roomName: 'Test' }, undefined, { xExtraFields: 'config' });
  * ```
  */
+// Room/member helpers select the CANONICAL permission naming, so API-derived permission objects in
+// tests compare 1:1 against token metadata and stored documents (both canonical). The legacy default
+// wire (no header) is covered explicitly by permission-naming.test.ts. Removed in 3.12.0.
 export const createRoom = async (
 	options: MeetRoomOptions = {},
 	accessToken?: string,
@@ -423,6 +428,7 @@ export const createRoom = async (
 
 	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
+		.set(PERMISSION_NAMING_HEADER, 'canonical')
 		.send(options)
 		.expect(201);
 
@@ -454,6 +460,7 @@ export const getRooms = async (
 
 	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`))
+		.set(PERMISSION_NAMING_HEADER, 'canonical')
 		.query(query);
 
 	if (accessToken) {
@@ -500,6 +507,7 @@ export const getRoom = async (
 
 	const req = request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}`))
+		.set(PERMISSION_NAMING_HEADER, 'canonical')
 		.query(queryParams);
 
 	if (roomMemberToken) {
@@ -546,7 +554,8 @@ export const updateRoomStatus = async (
 
 	const req = request(app)
 		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/status`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.set(PERMISSION_NAMING_HEADER, 'canonical');
 
 	if (headers?.xFields) {
 		req.set('x-fields', headers.xFields);
@@ -559,12 +568,22 @@ export const updateRoomStatus = async (
 	return await req.send({ status });
 };
 
-export const updateRoomRoles = async (roomId: string, rolesConfig: MeetRoomRolesConfig) => {
+// Wire-level roles type: each role's permissions may use canonical or legacy (`can*`) spellings
+// during the deprecation window. Removed in 3.12.0.
+export type RoomRolesWireConfig =
+	| MeetRoomRolesConfig
+	| {
+			moderator?: { permissions: MeetPermissionsInput };
+			speaker?: { permissions: MeetPermissionsInput };
+	  };
+
+export const updateRoomRoles = async (roomId: string, rolesConfig: RoomRolesWireConfig) => {
 	checkAppIsRunning();
 
 	return await request(app)
 		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/roles`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.set(PERMISSION_NAMING_HEADER, 'canonical')
 		.send({ roles: rolesConfig });
 };
 
@@ -721,7 +740,8 @@ export const createRoomMember = async (
 
 	const req = request(app)
 		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.set(PERMISSION_NAMING_HEADER, 'canonical');
 
 	if (extraFields) {
 		req.set('x-extrafields', extraFields);
@@ -736,6 +756,7 @@ export const getRoomMembers = async (roomId: string, query: Record<string, unkno
 	return await request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.set(PERMISSION_NAMING_HEADER, 'canonical')
 		.query(query);
 };
 
@@ -756,6 +777,7 @@ export const getRoomMember = async (
 	return await request(app)
 		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
 		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.set(PERMISSION_NAMING_HEADER, 'canonical')
 		.query(queryParams);
 };
 
@@ -770,7 +792,8 @@ export const updateRoomMember = async (
 
 	const req = request(app)
 		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${roomId}/members/${memberId}`))
-		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.set(PERMISSION_NAMING_HEADER, 'canonical');
 
 	if (extraFields) {
 		req.set('x-extrafields', extraFields);

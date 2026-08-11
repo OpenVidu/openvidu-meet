@@ -33,38 +33,42 @@ describe('Room API Tests', () => {
 			const updatedRoles = {
 				moderator: {
 					permissions: {
-						canRecord: false,
-						canRetrieveRecordings: true,
-						canDeleteRecordings: true,
-						canJoinMeeting: true,
-						canShareAccessLinks: false,
-						canMakeModerator: false,
-						canKickParticipants: true,
-						canEndMeeting: true,
-						canPublishVideo: true,
-						canPublishAudio: true,
-						canShareScreen: false,
-						canReadChat: true,
-						canWriteChat: false,
-						canChangeVirtualBackground: true
+						recordingControl: false,
+						recordingList: true,
+						recordingPlay: true,
+						recordingDownload: true,
+						recordingDelete: true,
+						meetingJoin: true,
+						roomShareAccessLinks: false,
+						participantPromote: false,
+						participantKick: true,
+						meetingEnd: true,
+						mediaPublishVideo: true,
+						mediaPublishAudio: true,
+						mediaShareScreen: false,
+						chatRead: true,
+						chatWrite: false,
+						mediaChangeVirtualBackground: true
 					}
 				},
 				speaker: {
 					permissions: {
-						canRecord: true,
-						canRetrieveRecordings: true,
-						canDeleteRecordings: true,
-						canJoinMeeting: true,
-						canShareAccessLinks: true,
-						canMakeModerator: true,
-						canKickParticipants: true,
-						canEndMeeting: true,
-						canPublishVideo: false,
-						canPublishAudio: false,
-						canShareScreen: false,
-						canReadChat: false,
-						canWriteChat: false,
-						canChangeVirtualBackground: true
+						recordingControl: true,
+						recordingList: true,
+						recordingPlay: true,
+						recordingDownload: true,
+						recordingDelete: true,
+						meetingJoin: true,
+						roomShareAccessLinks: true,
+						participantPromote: true,
+						participantKick: true,
+						meetingEnd: true,
+						mediaPublishVideo: false,
+						mediaPublishAudio: false,
+						mediaShareScreen: false,
+						chatRead: false,
+						chatWrite: false,
+						mediaChangeVirtualBackground: true
 					}
 				}
 			};
@@ -84,15 +88,17 @@ describe('Room API Tests', () => {
 			const updatedRoles = {
 				moderator: {
 					permissions: {
-						canRecord: false,
-						canKickParticipants: false,
-						canDeleteRecordings: false
+						recordingControl: false,
+						participantKick: false,
+						recordingDelete: false
 					}
 				},
 				speaker: {
 					permissions: {
-						canRetrieveRecordings: false,
-						canWriteChat: false
+						recordingList: false,
+						recordingPlay: false,
+						recordingDownload: false,
+						chatWrite: false
 					}
 				}
 			};
@@ -114,20 +120,22 @@ describe('Room API Tests', () => {
 			const partialRoles = {
 				speaker: {
 					permissions: {
-						canRecord: true,
-						canRetrieveRecordings: true,
-						canDeleteRecordings: true,
-						canJoinMeeting: true,
-						canShareAccessLinks: true,
-						canMakeModerator: true,
-						canKickParticipants: true,
-						canEndMeeting: true,
-						canPublishVideo: false,
-						canPublishAudio: false,
-						canShareScreen: false,
-						canReadChat: false,
-						canWriteChat: false,
-						canChangeVirtualBackground: true
+						recordingControl: true,
+						recordingList: true,
+						recordingPlay: true,
+						recordingDownload: true,
+						recordingDelete: true,
+						meetingJoin: true,
+						roomShareAccessLinks: true,
+						participantPromote: true,
+						participantKick: true,
+						meetingEnd: true,
+						mediaPublishVideo: false,
+						mediaPublishAudio: false,
+						mediaShareScreen: false,
+						chatRead: false,
+						chatWrite: false,
+						mediaChangeVirtualBackground: true
 					}
 				}
 			};
@@ -151,7 +159,7 @@ describe('Room API Tests', () => {
 			const partialRoles = {
 				speaker: {
 					permissions: {
-						canWriteChat: false
+						chatWrite: false
 					}
 				}
 			};
@@ -161,7 +169,7 @@ describe('Room API Tests', () => {
 
 			const getResponse = await getRoom(createdRoom.roomId, undefined, 'roles');
 			expect(getResponse.status).toBe(200);
-			expect(getResponse.body.roles.speaker.permissions.canWriteChat).toBe(false);
+			expect(getResponse.body.roles.speaker.permissions.chatWrite).toBe(false);
 			expect(getResponse.body.roles.moderator.permissions).toMatchObject(
 				createdRoom.roles.moderator.permissions as unknown as Record<string, boolean>
 			);
@@ -178,7 +186,9 @@ describe('Room API Tests', () => {
 				roles: {
 					speaker: {
 						permissions: {
-							canRetrieveRecordings: true
+							recordingList: true,
+							recordingPlay: true,
+							recordingDownload: true
 						}
 					}
 				}
@@ -219,7 +229,9 @@ describe('Room API Tests', () => {
 				roles: {
 					speaker: {
 						permissions: {
-							canRetrieveRecordings: false
+							recordingList: false,
+							recordingPlay: false,
+							recordingDownload: false
 						}
 					}
 				}
@@ -264,7 +276,7 @@ describe('Room API Tests', () => {
 				name: 'Member 2',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canWriteChat: true
+					chatWrite: true
 				}
 			});
 			expect(memberResponse.status).toBe(201);
@@ -277,24 +289,24 @@ describe('Room API Tests', () => {
 			expect(memberResponse.status).toBe(201);
 			const memberId3 = memberResponse.body.memberId;
 
-			// Verify initial canWriteChat permission for all members is true
+			// Verify initial chatWrite permission for all members is true
 			let beforeResponse = await getRoomMember(room.roomId, memberId1);
 			expect(beforeResponse.status).toBe(200);
-			expect(beforeResponse.body.effectivePermissions.canWriteChat).toBe(true);
+			expect(beforeResponse.body.effectivePermissions.chatWrite).toBe(true);
 
 			beforeResponse = await getRoomMember(room.roomId, memberId2);
 			expect(beforeResponse.status).toBe(200);
-			expect(beforeResponse.body.effectivePermissions.canWriteChat).toBe(true);
+			expect(beforeResponse.body.effectivePermissions.chatWrite).toBe(true);
 
 			beforeResponse = await getRoomMember(room.roomId, memberId3);
 			expect(beforeResponse.status).toBe(200);
-			expect(beforeResponse.body.effectivePermissions.canWriteChat).toBe(true);
+			expect(beforeResponse.body.effectivePermissions.chatWrite).toBe(true);
 
-			// Update canWriteChat permission for speaker role to false
+			// Update chatWrite permission for speaker role to false
 			const updateResponse = await updateRoomRoles(room.roomId, {
 				speaker: {
 					permissions: {
-						canWriteChat: false
+						chatWrite: false
 					}
 				}
 			});
@@ -304,15 +316,15 @@ describe('Room API Tests', () => {
 			// while moderator member's permissions remain unchanged
 			let afterResponse = await getRoomMember(room.roomId, memberId1);
 			expect(afterResponse.status).toBe(200);
-			expect(afterResponse.body.effectivePermissions.canWriteChat).toBe(false);
+			expect(afterResponse.body.effectivePermissions.chatWrite).toBe(false);
 
 			afterResponse = await getRoomMember(room.roomId, memberId2);
 			expect(afterResponse.status).toBe(200);
-			expect(afterResponse.body.effectivePermissions.canWriteChat).toBe(true); // custom permission should override role permission
+			expect(afterResponse.body.effectivePermissions.chatWrite).toBe(true); // custom permission should override role permission
 
 			afterResponse = await getRoomMember(room.roomId, memberId3);
 			expect(afterResponse.status).toBe(200);
-			expect(afterResponse.body.effectivePermissions.canWriteChat).toBe(true);
+			expect(afterResponse.body.effectivePermissions.chatWrite).toBe(true);
 		});
 
 		it('should update moderator members effectivePermissions when moderator base role changes', async () => {
@@ -330,7 +342,7 @@ describe('Room API Tests', () => {
 				name: 'Member 2',
 				baseRole: MeetRoomMemberRole.MODERATOR,
 				customPermissions: {
-					canKickParticipants: true
+					participantKick: true
 				}
 			});
 			expect(memberResponse.status).toBe(201);
@@ -343,24 +355,24 @@ describe('Room API Tests', () => {
 			expect(memberResponse.status).toBe(201);
 			const memberId3 = memberResponse.body.memberId;
 
-			// Verify initial canKickParticipants permission for all members is true
+			// Verify initial participantKick permission for all members is true
 			let beforeResponse = await getRoomMember(room.roomId, memberId1);
 			expect(beforeResponse.status).toBe(200);
-			expect(beforeResponse.body.effectivePermissions.canKickParticipants).toBe(true);
+			expect(beforeResponse.body.effectivePermissions.participantKick).toBe(true);
 
 			beforeResponse = await getRoomMember(room.roomId, memberId2);
 			expect(beforeResponse.status).toBe(200);
-			expect(beforeResponse.body.effectivePermissions.canKickParticipants).toBe(true);
+			expect(beforeResponse.body.effectivePermissions.participantKick).toBe(true);
 
 			beforeResponse = await getRoomMember(room.roomId, memberId3);
 			expect(beforeResponse.status).toBe(200);
-			expect(beforeResponse.body.effectivePermissions.canKickParticipants).toBe(false);
+			expect(beforeResponse.body.effectivePermissions.participantKick).toBe(false);
 
-			// Update canKickParticipants permission for moderator role to false
+			// Update participantKick permission for moderator role to false
 			const updateResponse = await updateRoomRoles(room.roomId, {
 				moderator: {
 					permissions: {
-						canKickParticipants: false
+						participantKick: false
 					}
 				}
 			});
@@ -370,15 +382,15 @@ describe('Room API Tests', () => {
 			// while speaker member's permissions remain unchanged
 			let afterResponse = await getRoomMember(room.roomId, memberId1);
 			expect(afterResponse.status).toBe(200);
-			expect(afterResponse.body.effectivePermissions.canKickParticipants).toBe(false);
+			expect(afterResponse.body.effectivePermissions.participantKick).toBe(false);
 
 			afterResponse = await getRoomMember(room.roomId, memberId2);
 			expect(afterResponse.status).toBe(200);
-			expect(afterResponse.body.effectivePermissions.canKickParticipants).toBe(true); // custom permission should override role permission
+			expect(afterResponse.body.effectivePermissions.participantKick).toBe(true); // custom permission should override role permission
 
 			afterResponse = await getRoomMember(room.roomId, memberId3);
 			expect(afterResponse.status).toBe(200);
-			expect(afterResponse.body.effectivePermissions.canKickParticipants).toBe(false);
+			expect(afterResponse.body.effectivePermissions.participantKick).toBe(false);
 		});
 
 		it('should reject room roles update when there is an active meeting', async () => {
@@ -387,7 +399,7 @@ describe('Room API Tests', () => {
 			const response = await updateRoomRoles(roomData.room.roomId, {
 				speaker: {
 					permissions: {
-						canWriteChat: false
+						chatWrite: false
 					}
 				}
 			});
@@ -403,7 +415,7 @@ describe('Room API Tests', () => {
 			const response = await updateRoomRoles(nonExistentRoomId, {
 				speaker: {
 					permissions: {
-						canWriteChat: false
+						chatWrite: false
 					}
 				}
 			});
@@ -420,13 +432,13 @@ describe('Room API Tests', () => {
 			const invalidRoles = {
 				moderator: {
 					permissions: {
-						canRecord: 'true'
+						recordingControl: 'true'
 					}
 				}
 			};
 
 			const response = await updateRoomRoles(createdRoom.roomId, invalidRoles as unknown as MeetRoomRolesConfig);
-			expectValidationError(response, 'roles.moderator.permissions.canRecord', 'Expected boolean');
+			expectValidationError(response, 'roles.moderator.permissions.recordingControl', 'Expected boolean');
 		});
 
 		it('should fail when roles object is missing', async () => {

@@ -38,55 +38,63 @@ import {
 import { setupSingleRoom, setupTestUsers, setupTestUsersForRoom, setupUser } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomTestUsers, TestUsers } from '../../../interfaces/scenarios.js';
 
+// Token metadata carries canonical permission keys from this phase on (the API accepts the legacy
+// spellings on input, but never emits them inside tokens).
 const allPermissions: MeetRoomMemberPermissions = {
-	canRecord: true,
-	canRetrieveRecordings: true,
-	canDeleteRecordings: true,
-	canJoinMeeting: true,
-	canShareAccessLinks: true,
-	canMakeModerator: true,
-	canKickParticipants: true,
-	canEndMeeting: true,
-	canPublishVideo: true,
-	canPublishAudio: true,
-	canShareScreen: true,
-	canReadChat: true,
-	canWriteChat: true,
-	canChangeVirtualBackground: true
+	recordingControl: true,
+	recordingList: true,
+	recordingPlay: true,
+	recordingDownload: true,
+	recordingDelete: true,
+	meetingJoin: true,
+	roomShareAccessLinks: true,
+	participantPromote: true,
+	participantKick: true,
+	meetingEnd: true,
+	mediaPublishVideo: true,
+	mediaPublishAudio: true,
+	mediaShareScreen: true,
+	chatRead: true,
+	chatWrite: true,
+	mediaChangeVirtualBackground: true
 };
 
 const recordingReadOnlyPermissions: MeetRoomMemberPermissions = {
-	canRecord: false,
-	canRetrieveRecordings: true,
-	canDeleteRecordings: false,
-	canJoinMeeting: false,
-	canShareAccessLinks: false,
-	canMakeModerator: false,
-	canKickParticipants: false,
-	canEndMeeting: false,
-	canPublishVideo: false,
-	canPublishAudio: false,
-	canShareScreen: false,
-	canReadChat: false,
-	canWriteChat: false,
-	canChangeVirtualBackground: false
+	recordingControl: false,
+	recordingList: true,
+	recordingPlay: true,
+	recordingDownload: true,
+	recordingDelete: false,
+	meetingJoin: false,
+	roomShareAccessLinks: false,
+	participantPromote: false,
+	participantKick: false,
+	meetingEnd: false,
+	mediaPublishVideo: false,
+	mediaPublishAudio: false,
+	mediaShareScreen: false,
+	chatRead: false,
+	chatWrite: false,
+	mediaChangeVirtualBackground: false
 };
 
 const noPermissions: MeetRoomMemberPermissions = {
-	canRecord: false,
-	canRetrieveRecordings: false,
-	canDeleteRecordings: false,
-	canJoinMeeting: false,
-	canShareAccessLinks: false,
-	canMakeModerator: false,
-	canKickParticipants: false,
-	canEndMeeting: false,
-	canPublishVideo: false,
-	canPublishAudio: false,
-	canShareScreen: false,
-	canReadChat: false,
-	canWriteChat: false,
-	canChangeVirtualBackground: false
+	recordingControl: false,
+	recordingList: false,
+	recordingPlay: false,
+	recordingDownload: false,
+	recordingDelete: false,
+	meetingJoin: false,
+	roomShareAccessLinks: false,
+	participantPromote: false,
+	participantKick: false,
+	meetingEnd: false,
+	mediaPublishVideo: false,
+	mediaPublishAudio: false,
+	mediaShareScreen: false,
+	chatRead: false,
+	chatWrite: false,
+	mediaChangeVirtualBackground: false
 };
 
 const mergePermissions = (
@@ -366,9 +374,9 @@ describe('Room Members API Tests', () => {
 				name: 'Custom Member',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canRecord: true,
-					canDeleteRecordings: true,
-					canKickParticipants: true
+					recordingControl: true,
+					recordingDelete: true,
+					participantKick: true
 				}
 			});
 			const memberId = createResponse.body.memberId;
@@ -385,13 +393,13 @@ describe('Room Members API Tests', () => {
 			});
 		});
 
-		it('should grant LiveKit canPublishData when canWriteChat is enabled', async () => {
-			// Chat is the only thing participants publish over the data channel, so canWriteChat is
+		it('should grant LiveKit canPublishData when chatWrite is enabled', async () => {
+			// Chat is the only thing participants publish over the data channel, so chatWrite is
 			// enforced server-side through the LiveKit canPublishData grant, not just the frontend UI.
 			const createResponse = await createRoomMember(roomId, {
 				name: 'Chat Writer',
 				baseRole: MeetRoomMemberRole.SPEAKER,
-				customPermissions: { canReadChat: true, canWriteChat: true }
+				customPermissions: { chatRead: true, chatWrite: true }
 			});
 			const memberId = createResponse.body.memberId as string;
 
@@ -404,13 +412,13 @@ describe('Room Members API Tests', () => {
 			expect(claims.video?.canPublishData).toBe(true);
 		});
 
-		it('should deny LiveKit canPublishData when canWriteChat is disabled', async () => {
+		it('should deny LiveKit canPublishData when chatWrite is disabled', async () => {
 			// The read-only member can still receive chat (subscribe), but the SFU rejects any data it
 			// tries to publish — closing the client-side bypass of publishing chat directly.
 			const createResponse = await createRoomMember(roomId, {
 				name: 'Chat Reader',
 				baseRole: MeetRoomMemberRole.SPEAKER,
-				customPermissions: { canReadChat: true, canWriteChat: false }
+				customPermissions: { chatRead: true, chatWrite: false }
 			});
 			const memberId = createResponse.body.memberId as string;
 
@@ -450,8 +458,8 @@ describe('Room Members API Tests', () => {
 				name: 'Identified Guest',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canKickParticipants: true,
-					canDeleteRecordings: true
+					participantKick: true,
+					recordingDelete: true
 				}
 			});
 			const guestMemberId = createResponse.body.memberId as string;
@@ -482,15 +490,17 @@ describe('Room Members API Tests', () => {
 				userId: userData.user.userId,
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canRetrieveRecordings: false,
-					canDeleteRecordings: true,
-					canJoinMeeting: false,
-					canPublishVideo: false,
-					canPublishAudio: false,
-					canShareScreen: false,
-					canReadChat: false,
-					canWriteChat: false,
-					canChangeVirtualBackground: false
+					recordingList: false,
+					recordingPlay: false,
+					recordingDownload: false,
+					recordingDelete: true,
+					meetingJoin: false,
+					mediaPublishVideo: false,
+					mediaPublishAudio: false,
+					mediaShareScreen: false,
+					chatRead: false,
+					chatWrite: false,
+					mediaChangeVirtualBackground: false
 				}
 			});
 			const memberPermissions = createResponse.body.effectivePermissions as MeetRoomMemberPermissions;
@@ -523,12 +533,12 @@ describe('Room Members API Tests', () => {
 				userId: userData.user.userId,
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canRecord: true,
-					canDeleteRecordings: true,
-					canShareAccessLinks: true,
-					canMakeModerator: true,
-					canKickParticipants: true,
-					canEndMeeting: true
+					recordingControl: true,
+					recordingDelete: true,
+					roomShareAccessLinks: true,
+					participantPromote: true,
+					participantKick: true,
+					meetingEnd: true
 				}
 			});
 			const roomManagerMemberPermissions = createRoomManagerMemberResponse.body
@@ -538,8 +548,8 @@ describe('Room Members API Tests', () => {
 				name: 'Guest Merge Source',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canRecord: true,
-					canPublishAudio: false
+					recordingControl: true,
+					mediaPublishAudio: false
 				}
 			});
 			const guestMemberId = createGuestResponse.body.memberId as string;
@@ -625,12 +635,12 @@ describe('Room Members API Tests', () => {
 			});
 		});
 
-		it('should fail to generate token when anonymous user tries to join meeting without canJoinMeeting permission', async () => {
-			// Disable canJoinMeeting permission for anonymous speakers
+		it('should fail to generate token when anonymous user tries to join meeting without meetingJoin permission', async () => {
+			// Disable meetingJoin permission for anonymous speakers
 			await updateRoomRoles(roomId, {
 				speaker: {
 					permissions: {
-						canJoinMeeting: false
+						meetingJoin: false
 					}
 				}
 			});
@@ -646,19 +656,19 @@ describe('Room Members API Tests', () => {
 			await updateRoomRoles(roomId, {
 				speaker: {
 					permissions: {
-						canJoinMeeting: true
+						meetingJoin: true
 					}
 				}
 			});
 		});
 
-		it('should fail to generate token when room member does not have canJoinMeeting permission', async () => {
-			// Create room member without canJoinMeeting permission
+		it('should fail to generate token when room member does not have meetingJoin permission', async () => {
+			// Create room member without meetingJoin permission
 			const createResponse = await createRoomMember(roomId, {
 				name: 'No Join Member',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canJoinMeeting: false
+					meetingJoin: false
 				}
 			});
 			const member = createResponse.body as MeetRoomMember;
@@ -760,12 +770,12 @@ describe('Room Members API Tests', () => {
 			});
 		});
 
-		it('should apply the LiveKit canPublishData grant live when canWriteChat changes mid-meeting', async () => {
+		it('should apply the LiveKit canPublishData grant live when chatWrite changes mid-meeting', async () => {
 			// Identified guest speaker joins the meeting with chat-write enabled
 			const createResponse = await createRoomMember(roomId, {
 				name: 'Live Chat Writer',
 				baseRole: MeetRoomMemberRole.SPEAKER,
-				customPermissions: { canReadChat: true, canWriteChat: true }
+				customPermissions: { chatRead: true, chatWrite: true }
 			});
 			const memberId = createResponse.body.memberId as string;
 
@@ -785,7 +795,7 @@ describe('Room Members API Tests', () => {
 			// Revoke chat-write while in the meeting. The client reacts to the permissions-updated signal
 			// by regenerating its token, and that refresh is what pushes the new grant to the SFU.
 			let updateResponse = await updateRoomMember(roomId, memberId, {
-				customPermissions: { canReadChat: true, canWriteChat: false }
+				customPermissions: { chatRead: true, chatWrite: false }
 			});
 			expect(updateResponse.status).toBe(200);
 
@@ -804,7 +814,7 @@ describe('Room Members API Tests', () => {
 			// Re-granting chat-write restores the grant the same way — proving it tracks the permission
 			// through our refresh flow in both directions (not a fixed join-time value).
 			updateResponse = await updateRoomMember(roomId, memberId, {
-				customPermissions: { canReadChat: true, canWriteChat: true }
+				customPermissions: { chatRead: true, chatWrite: true }
 			});
 			expect(updateResponse.status).toBe(200);
 

@@ -6,7 +6,8 @@ import type {
 	MeetWebhookPayload
 } from '@openvidu-meet/typings';
 import {
-	MeetWebhookEventType
+	MeetWebhookEventType,
+	toLegacyPermissions
 } from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
@@ -36,7 +37,11 @@ export class OpenViduWebhookService {
 	 * @param room - The meeting room object containing room details
 	 */
 	sendMeetingStartedWebhook(room: MeetRoom) {
-		this.sendWebhookEventInBackground(MeetWebhookEventType.MEETING_STARTED, room, `Room ID: ${room.roomId}`);
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.MEETING_STARTED,
+			this.roomWithLegacyPermissionNames(room),
+			`Room ID: ${room.roomId}`
+		);
 	}
 
 	/**
@@ -48,7 +53,33 @@ export class OpenViduWebhookService {
 	 * @param room - The MeetRoom object containing details of the ended meeting
 	 */
 	sendMeetingEndedWebhook(room: MeetRoom) {
-		this.sendWebhookEventInBackground(MeetWebhookEventType.MEETING_ENDED, room, `Room ID: ${room.roomId}`);
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.MEETING_ENDED,
+			this.roomWithLegacyPermissionNames(room),
+			`Room ID: ${room.roomId}`
+		);
+	}
+
+	/**
+	 * Serializes the room's role permissions under the legacy `can*` names. Webhook payloads have no
+	 * request header to select a naming, so during the deprecation window they follow the same
+	 * default as REST responses (legacy); this branch is removed in 3.12.0 and webhooks then ship
+	 * canonical keys.
+	 */
+	protected roomWithLegacyPermissionNames(room: MeetRoom): MeetRoom {
+		if (!room.roles) {
+			return room;
+		}
+
+		// The legacy wire shape no longer matches the canonical type; the cast is confined to this
+		// JSON boundary.
+		return {
+			...room,
+			roles: {
+				moderator: { permissions: toLegacyPermissions(room.roles.moderator.permissions) },
+				speaker: { permissions: toLegacyPermissions(room.roles.speaker.permissions) }
+			}
+		} as unknown as MeetRoom;
 	}
 
 	/**

@@ -74,7 +74,7 @@ export class RecordingShareDialogComponent implements OnInit {
 	async ngOnInit() {
 		const hasRecordingAccess = this.data.hasRecordingAccess ?? true;
 		this.canGenerateUrls.set(
-			this.roomMemberContextService.hasPermission('canRetrieveRecordings') || hasRecordingAccess
+			this.roomMemberContextService.hasPermission('recordingPlay') || hasRecordingAccess
 		);
 
 		// If the user cannot generate URLs, we can't request a signed URL from the

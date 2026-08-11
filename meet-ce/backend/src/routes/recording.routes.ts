@@ -80,7 +80,7 @@ recordingRouter.get(
 	'/:recordingId',
 	validateGetRecordingReq,
 	setupRecordingAuthentication,
-	authorizeRecordingAccess('canRetrieveRecordings', true),
+	authorizeRecordingAccess('recordingPlay', true),
 	recordingCtrl.getRecording
 );
 recordingRouter.delete(
@@ -91,7 +91,7 @@ recordingRouter.delete(
 		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 	),
 	withValidRecordingId,
-	authorizeRecordingAccess('canDeleteRecordings'),
+	authorizeRecordingAccess('recordingDelete'),
 	recordingCtrl.deleteRecording
 );
 recordingRouter.post(
@@ -105,8 +105,17 @@ recordingRouter.get(
 	'/:recordingId/media',
 	validateGetRecordingMediaReq,
 	setupRecordingAuthentication,
-	authorizeRecordingAccess('canRetrieveRecordings', true),
+	authorizeRecordingAccess('recordingPlay', true),
 	recordingCtrl.getRecordingMedia
+);
+// Same media stream as /media but served as an attachment and gated by recordingDownload instead of
+// recordingPlay: the split lets a deployment grant playback without granting copies (D9).
+recordingRouter.get(
+	'/:recordingId/download',
+	validateGetRecordingMediaReq,
+	setupRecordingAuthentication,
+	authorizeRecordingAccess('recordingDownload', true),
+	recordingCtrl.downloadRecordingMedia
 );
 recordingRouter.get(
 	'/:recordingId/url',
@@ -116,6 +125,6 @@ recordingRouter.get(
 		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
 	),
 	validateGetRecordingUrlReq,
-	authorizeRecordingAccess('canRetrieveRecordings'),
+	authorizeRecordingAccess('recordingPlay'),
 	recordingCtrl.getRecordingUrl
 );

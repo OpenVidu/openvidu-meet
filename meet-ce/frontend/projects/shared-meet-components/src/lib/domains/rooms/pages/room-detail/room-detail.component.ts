@@ -56,6 +56,7 @@ interface RoomDetailCachedState {
 	room: MeetRoom;
 	canViewRecordings: boolean;
 	canDeleteRecordings: boolean;
+	canDownloadRecordings: boolean;
 	selectedTabIndex: number;
 	members: EntityListSnapshot<MeetRoomMember, MemberTableFilter>;
 	recordings: EntityListSnapshot<MeetRecordingInfo, RecordingTableFilter>;
@@ -120,6 +121,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 	});
 	canViewRecordings = signal(false);
 	canDeleteRecordings = signal(false);
+	canDownloadRecordings = signal(false);
 
 	roomId = signal('');
 	room = signal<MeetRoom | undefined>(undefined);
@@ -207,6 +209,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			this.room.set(cached.room);
 			this.canViewRecordings.set(cached.canViewRecordings);
 			this.canDeleteRecordings.set(cached.canDeleteRecordings);
+			this.canDownloadRecordings.set(cached.canDownloadRecordings ?? true);
 			this.memberList.restore(cached.members);
 			this.initialMemberFilters.set(cached.members.filters);
 			this.recordingList.restore(cached.recordings);
@@ -250,6 +253,7 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			room,
 			canViewRecordings: this.canViewRecordings(),
 			canDeleteRecordings: this.canDeleteRecordings(),
+			canDownloadRecordings: this.canDownloadRecordings(),
 			selectedTabIndex: this.selectedTabIndex(),
 			members: this.memberList.snapshot(),
 			recordings: this.recordingList.snapshot(),
@@ -272,17 +276,20 @@ export class RoomDetailComponent implements OnInit, OnDestroy {
 			if (this.canManageRoom()) {
 				this.canViewRecordings.set(true);
 				this.canDeleteRecordings.set(true);
+				this.canDownloadRecordings.set(true);
 			} else {
 				try {
 					const { token } = await this.roomMemberService.generateRoomMemberToken(this.roomId(), {
 						joinMeeting: false
 					});
 					const decoded = decodeToken(token);
-					this.canViewRecordings.set(decoded.metadata.permissions.canRetrieveRecordings);
-					this.canDeleteRecordings.set(decoded.metadata.permissions.canDeleteRecordings);
+					this.canViewRecordings.set(decoded.metadata.permissions.recordingList);
+					this.canDeleteRecordings.set(decoded.metadata.permissions.recordingDelete);
+					this.canDownloadRecordings.set(decoded.metadata.permissions.recordingDownload);
 				} catch {
 					this.canViewRecordings.set(false);
 					this.canDeleteRecordings.set(false);
+					this.canDownloadRecordings.set(false);
 				}
 			}
 

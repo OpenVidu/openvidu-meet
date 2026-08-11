@@ -32,7 +32,7 @@ export type RoomRecordingsEntryOutcome =
  * chain, but route-agnostic so non-router callers can reuse it.
  *
  * Smaller than its meeting/single-recording siblings because the flow only
- * needs context seeding and a room-permission check with `canRetrieveRecordings`.
+ * needs context seeding and a room-permission check with `recordingList`.
  */
 @Service()
 export class RoomRecordingsEntryService {

@@ -26,6 +26,12 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 		? (injector.get(WcRouterService).currentPath() ?? '')
 		: (router.currentNavigation()?.finalUrl?.toString() || router.url);
 
+	// This frontend is a canonical-naming client: permission-bearing responses (room roles, member
+	// permissions) must arrive under the canonical keys the library reads — the server default is
+	// still the deprecated legacy naming during the deprecation window. Endpoints without permission
+	// payloads ignore the header. Removed in 3.12.0, when canonical becomes the only naming.
+	req = req.clone({ setHeaders: { 'X-Meet-Permission-Names': 'canonical' } });
+
 	// Collect headers from all registered providers
 	const headers = httpHeaderProvider.collectHeaders({ request: req, pageUrl });
 

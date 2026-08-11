@@ -712,15 +712,15 @@ export const expectValidAssistantResponse = (response: Response, expectedId = 'd
 const getLiveKitPermissions = (roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions => {
 	const canPublishSources: TrackSource[] = [];
 
-	if (permissions.canPublishAudio) {
+	if (permissions.mediaPublishAudio) {
 		canPublishSources.push('microphone' as unknown as TrackSource);
 	}
 
-	if (permissions.canPublishVideo) {
+	if (permissions.mediaPublishVideo) {
 		canPublishSources.push('camera' as unknown as TrackSource);
 	}
 
-	if (permissions.canShareScreen) {
+	if (permissions.mediaShareScreen) {
 		canPublishSources.push('screen_share' as unknown as TrackSource);
 		canPublishSources.push('screen_share_audio' as unknown as TrackSource);
 	}
@@ -728,7 +728,7 @@ const getLiveKitPermissions = (roomId: string, permissions: MeetRoomMemberPermis
 	const livekitPermissions: LiveKitPermissions = {
 		room: roomId,
 		roomJoin: true,
-		canPublish: permissions.canPublishAudio || permissions.canPublishVideo || permissions.canShareScreen,
+		canPublish: permissions.mediaPublishAudio || permissions.mediaPublishVideo || permissions.mediaShareScreen,
 		canPublishSources,
 		canSubscribe: true,
 		canPublishData: true,

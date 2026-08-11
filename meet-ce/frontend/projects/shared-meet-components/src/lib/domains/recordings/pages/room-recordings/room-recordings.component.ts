@@ -57,6 +57,7 @@ export class RoomRecordingsComponent implements OnInit {
 	roomId = '';
 	roomName = signal('');
 	canDeleteRecordings = signal(false);
+	canDownloadRecordings = signal(false);
 
 	initialFilters = signal<RecordingTableFilter>({
 		nameFilter: '',
@@ -80,7 +81,8 @@ export class RoomRecordingsComponent implements OnInit {
 
 	async ngOnInit() {
 		this.roomId = this.roomIdInput() || this.route.snapshot.paramMap.get('room-id')!;
-		this.canDeleteRecordings.set(this.roomMemberContextService.hasPermission('canDeleteRecordings'));
+		this.canDeleteRecordings.set(this.roomMemberContextService.hasPermission('recordingDelete'));
+		this.canDownloadRecordings.set(this.roomMemberContextService.hasPermission('recordingDownload'));
 
 		await this.list.initialize(this.initialFilters(), () => this.resolveRoomName());
 	}

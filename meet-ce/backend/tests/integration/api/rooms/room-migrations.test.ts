@@ -65,6 +65,112 @@ const buildLegacyRoomV2 = (roomId: string) => ({
 	speakerUrl: `/room/${roomId}?secret=abcdef`
 });
 
+// v3 stored role permissions under the legacy `can*` keys; v3→v4 renames them to the canonical
+// moduleAbility scheme (and splits canRetrieveRecordings into list/play/download).
+const buildLegacyRoomV3 = (roomId: string) => ({
+	schemaVersion: 3,
+	...buildLegacyRoomBase(roomId),
+	owner: MEET_ENV.INITIAL_ADMIN_USER,
+	config: {
+		chat: { enabled: true },
+		recording: {
+			enabled: true,
+			layout: MeetRecordingLayout.GRID,
+			encoding: MeetRecordingEncodingPreset.H264_720P_30
+		},
+		virtualBackground: { enabled: true },
+		e2ee: { enabled: false },
+		captions: { enabled: true }
+	},
+	roles: {
+		moderator: {
+			permissions: {
+				canRecord: true,
+				canRetrieveRecordings: true,
+				canDeleteRecordings: true,
+				canJoinMeeting: true,
+				canShareAccessLinks: true,
+				canMakeModerator: true,
+				canKickParticipants: true,
+				canEndMeeting: true,
+				canPublishVideo: true,
+				canPublishAudio: true,
+				canShareScreen: true,
+				canReadChat: true,
+				canWriteChat: true,
+				canChangeVirtualBackground: true
+			}
+		},
+		speaker: {
+			permissions: {
+				canRecord: false,
+				canRetrieveRecordings: true,
+				canDeleteRecordings: false,
+				canJoinMeeting: true,
+				canShareAccessLinks: false,
+				canMakeModerator: false,
+				canKickParticipants: false,
+				canEndMeeting: false,
+				canPublishVideo: true,
+				canPublishAudio: true,
+				canShareScreen: true,
+				canReadChat: true,
+				canWriteChat: true,
+				canChangeVirtualBackground: true
+			}
+		}
+	},
+	access: {
+		anonymous: {
+			moderator: { enabled: true, url: `/room/${roomId}?secret=123456` },
+			speaker: { enabled: true, url: `/room/${roomId}?secret=abcdef` },
+			recording: { enabled: true, url: `/room/${roomId}/recordings?secret=fedcba` }
+		},
+		user: { enabled: false, url: `/room/${roomId}` }
+	},
+	rolesUpdatedAt: Date.now()
+});
+
+// Canonical permission sets every legacy room must end up with after the chain reaches the current
+// version (they descend from the v2→v3 defaults, renamed by v3→v4).
+const expectedCanonicalModeratorPermissions = {
+	recordingControl: true,
+	recordingList: true,
+	recordingPlay: true,
+	recordingDownload: true,
+	recordingDelete: true,
+	meetingJoin: true,
+	roomShareAccessLinks: true,
+	participantPromote: true,
+	participantKick: true,
+	meetingEnd: true,
+	mediaPublishVideo: true,
+	mediaPublishAudio: true,
+	mediaShareScreen: true,
+	chatRead: true,
+	chatWrite: true,
+	mediaChangeVirtualBackground: true
+};
+
+const expectedCanonicalSpeakerPermissions = {
+	recordingControl: false,
+	recordingList: true,
+	recordingPlay: true,
+	recordingDownload: true,
+	recordingDelete: false,
+	meetingJoin: true,
+	roomShareAccessLinks: false,
+	participantPromote: false,
+	participantKick: false,
+	meetingEnd: false,
+	mediaPublishVideo: true,
+	mediaPublishAudio: true,
+	mediaShareScreen: true,
+	chatRead: true,
+	chatWrite: true,
+	mediaChangeVirtualBackground: true
+};
+
 /**
  * Single assertion function for migrated room documents in integration tests.
  * This ensures all fields are validated consistently across test cases, and serves
@@ -94,10 +200,10 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 		},
 		roles: {
 			moderator: {
-				permissions: expect.any(Object)
+				permissions: expectedCanonicalModeratorPermissions
 			},
 			speaker: {
-				permissions: expect.any(Object)
+				permissions: expectedCanonicalSpeakerPermissions
 			}
 		},
 		access: {
@@ -128,6 +234,11 @@ const expectMigratedRoomToCurrentVersion = (migratedRoom: Record<string, unknown
 	expect(migratedRoom).not.toHaveProperty('moderatorUrl');
 	expect(migratedRoom).not.toHaveProperty('speakerUrl');
 	expect(migratedRoom).not.toHaveProperty('config.recording.allowAccessTo');
+	// The rename must leave no legacy `can*` key behind in either role.
+	expect(migratedRoom).not.toHaveProperty('roles.moderator.permissions.canRecord');
+	expect(migratedRoom).not.toHaveProperty('roles.moderator.permissions.canRetrieveRecordings');
+	expect(migratedRoom).not.toHaveProperty('roles.speaker.permissions.canRecord');
+	expect(migratedRoom).not.toHaveProperty('roles.speaker.permissions.canRetrieveRecordings');
 };
 
 describe('Room Schema Migrations', () => {
@@ -296,6 +407,18 @@ describe('Room Schema Migrations', () => {
 			expect(migratedRoom).not.toHaveProperty('speakerUrl');
 			expect(migratedRoom).not.toHaveProperty('config.recording.allowAccessTo');
 		});
+
+		it('should transform room schema from v3 to v4 renaming permission keys to the canonical scheme', () => {
+			const migrationName = generateSchemaMigrationName(meetRoomCollectionName, 3, 4);
+			const transform = roomMigrations.get(migrationName);
+			expect(transform).toBeDefined();
+
+			const roomV3 = buildLegacyRoomV3('room-v3') as unknown as MeetRoomDocument;
+			const migratedRoom = transform!(roomV3);
+
+			expect(migratedRoom.roles.moderator.permissions).toEqual(expectedCanonicalModeratorPermissions);
+			expect(migratedRoom.roles.speaker.permissions).toEqual(expectedCanonicalSpeakerPermissions);
+		});
 	});
 
 	describe('Room Migration Integration', () => {
@@ -315,9 +438,10 @@ describe('Room Schema Migrations', () => {
 		// Keep one case per supported legacy version in this matrix.
 		it.each([
 			{ fromVersion: 1, buildDocument: buildLegacyRoomV1 },
-			{ fromVersion: 2, buildDocument: buildLegacyRoomV2 }
+			{ fromVersion: 2, buildDocument: buildLegacyRoomV2 },
+			{ fromVersion: 3, buildDocument: buildLegacyRoomV3 }
 		])(
-			'should migrate a legacy room document from v$fromVersion to current version (v3)',
+			'should migrate a legacy room document from v$fromVersion to the current version',
 			async ({ buildDocument }) => {
 				const roomId = `legacy-room-${Date.now()}`;
 				testRoomIds.push(roomId);

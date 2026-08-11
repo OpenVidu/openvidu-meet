@@ -100,6 +100,10 @@ export class RecordingListsComponent implements OnInit {
 	recordings = input<MeetRecordingInfo[]>([]);
 	canDeleteRecordings = input(false);
 	deletableRoomIds = input<Set<string>>(new Set());
+	// Downloads default to allowed (they were never permission-gated before the recordingDownload
+	// split); hosts that know the member's permissions pass the real value.
+	canDownloadRecordings = input(true);
+	downloadableRoomIds = input<Set<string>>(new Set());
 	showSearchBox = input(true);
 	showFilters = input(true);
 	showSelection = input(true);
@@ -226,7 +230,10 @@ export class RecordingListsComponent implements OnInit {
 	downloadableSelected = computed(() => {
 		const selected = this.selectedRecordings();
 		return this.recordings().filter(
-			(r) => selected.has(r.recordingId) && RecordingUiUtils.isDownloadable(r.status)
+			(r) =>
+				selected.has(r.recordingId) &&
+				RecordingUiUtils.isDownloadable(r.status) &&
+				this.canDownloadRecordingItem(r)
 		);
 	});
 
@@ -378,6 +385,12 @@ export class RecordingListsComponent implements OnInit {
 		if (this.canDeleteRecordings()) return true;
 
 		return this.deletableRoomIds().has(recording.roomId);
+	}
+
+	canDownloadRecordingItem(recording: MeetRecordingInfo): boolean {
+		if (this.canDownloadRecordings()) return true;
+
+		return this.downloadableRoomIds().has(recording.roomId);
 	}
 
 	getSelectedRecordings(): MeetRecordingInfo[] {

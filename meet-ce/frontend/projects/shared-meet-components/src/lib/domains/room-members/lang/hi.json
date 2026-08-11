@@ -118,59 +118,67 @@
         "CHAT": "बातचीत"
       },
       "ITEMS": {
-        "canJoinMeeting": {
+        "meetingJoin": {
           "LABEL": "मीटिंग में शामिल हो सकते हैं",
           "DESCRIPTION": "मीटिंग में शामिल होने की अनुमति दें"
         },
-        "canEndMeeting": {
+        "meetingEnd": {
           "LABEL": "मीटिंग समाप्त कर सकते हैं",
           "DESCRIPTION": "सभी सदस्यों के लिए मीटिंग समाप्त करने की अनुमति दें"
         },
-        "canMakeModerator": {
+        "participantPromote": {
           "LABEL": "मॉडरेटर बना सकते हैं",
           "DESCRIPTION": "सदस्यों को मॉडरेटर भूमिका में पदोन्नत करने की अनुमति दें"
         },
-        "canKickParticipants": {
+        "participantKick": {
           "LABEL": "सदस्यों को निकाल सकते हैं",
           "DESCRIPTION": "मीटिंग से सदस्यों को हटाने की अनुमति दें"
         },
-        "canShareAccessLinks": {
+        "roomShareAccessLinks": {
           "LABEL": "पहुंच लिंक साझा कर सकते हैं",
           "DESCRIPTION": "दूसरों के साथ आमंत्रण लिंक साझा करने की अनुमति दें"
         },
-        "canPublishVideo": {
+        "mediaPublishVideo": {
           "LABEL": "वीडियो प्रकाशित कर सकते हैं",
           "DESCRIPTION": "कैमरा वीडियो साझा करने की अनुमति दें"
         },
-        "canPublishAudio": {
+        "mediaPublishAudio": {
           "LABEL": "ऑडियो प्रकाशित कर सकते हैं",
           "DESCRIPTION": "माइक्रोफ़ोन ऑडियो साझा करने की अनुमति दें"
         },
-        "canShareScreen": {
+        "mediaShareScreen": {
           "LABEL": "स्क्रीन साझा कर सकते हैं",
           "DESCRIPTION": "डेस्कटॉप या ब्राउज़र टैब साझा करने की अनुमति दें"
         },
-        "canChangeVirtualBackground": {
+        "mediaChangeVirtualBackground": {
           "LABEL": "वर्चुअल बैकग्राउंड बदल सकते हैं",
           "DESCRIPTION": "वर्चुअल बैकग्राउंड बदलने की अनुमति दें"
         },
-        "canRecord": {
+        "recordingControl": {
           "LABEL": "रिकॉर्ड कर सकते हैं",
           "DESCRIPTION": "रिकॉर्डिंग शुरू और बंद करने की अनुमति दें"
         },
-        "canRetrieveRecordings": {
-          "LABEL": "रिकॉर्डिंग प्राप्त कर सकते हैं",
-          "DESCRIPTION": "रिकॉर्डिंग सूचीबद्ध और चलाने की अनुमति दें"
+        "recordingList": {
+          "LABEL": "रिकॉर्डिंग सूचीबद्ध कर सकते हैं",
+          "DESCRIPTION": "रिकॉर्डिंग सूचीबद्ध करने की अनुमति दें"
         },
-        "canDeleteRecordings": {
+        "recordingPlay": {
+          "LABEL": "रिकॉर्डिंग चला सकते हैं",
+          "DESCRIPTION": "रिकॉर्डिंग चलाने की अनुमति दें"
+        },
+        "recordingDownload": {
+          "LABEL": "रिकॉर्डिंग डाउनलोड कर सकते हैं",
+          "DESCRIPTION": "रिकॉर्डिंग डाउनलोड करने की अनुमति दें"
+        },
+        "recordingDelete": {
           "LABEL": "रिकॉर्डिंग हटा सकते हैं",
           "DESCRIPTION": "रिकॉर्डिंग हटाने की अनुमति दें"
         },
-        "canReadChat": {
+        "chatRead": {
           "LABEL": "बातचीत पढ़ सकते हैं",
           "DESCRIPTION": "बातचीत संदेश पढ़ने की अनुमति दें"
         },
-        "canWriteChat": {
+        "chatWrite": {
           "LABEL": "बातचीत लिख सकते हैं",
           "DESCRIPTION": "बातचीत संदेश भेजने की अनुमति दें"
         }

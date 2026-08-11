@@ -78,7 +78,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 			...recording,
 			roomOwner: room.owner,
 			roomUserAccess:
-				room.access.user.enabled && room.roles.speaker.permissions.canRetrieveRecordings,
+				room.access.user.enabled && room.roles.speaker.permissions.recordingList,
 			accessSecrets: {
 				public: secureUid(10),
 				private: secureUid(10)
@@ -180,7 +180,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 	 * @param options.roomNameMatchMode - Optional room name match mode (default: exact)
 	 * @param options.roomNameCaseInsensitive - Optional room name case-insensitive flag (default: false)
 	 * @param options.roomOwner - Optional room owner ID for access control filtering
-	 * @param options.roomMember - Optional room member ID for access control filtering (requires 'canRetrieveRecordings' permission)
+	 * @param options.roomMember - Optional room member ID for access control filtering (requires 'recordingList' permission)
 	 * @param options.roomUserAccess - Optional flag to include recordings from rooms with user access enabled
 	 * @param options.status - Optional recording status to filter by
 	 * @param options.fields - Array of field names to include in the result
@@ -231,7 +231,7 @@ export class RecordingRepository extends BaseRepository<MeetRecordingInfo, MeetR
 		if (roomMember) {
 			const memberRoomIds = await this.roomMemberRepository.getRoomIdsByMemberId(
 				roomMember,
-				'canRetrieveRecordings'
+				'recordingList'
 			);
 			accessScopeOrFilters.push({ roomId: { $in: memberRoomIds } });
 		}

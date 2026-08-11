@@ -31,11 +31,11 @@ export class EmbeddedCommandService {
 
 	/**
 	 * Ends the meeting for all participants. Requires the local participant
-	 * to hold the `canEndMeeting` permission; otherwise the call is a no-op.
+	 * to hold the `meetingEnd` permission; otherwise the call is a no-op.
 	 */
 	async meetingEnd(): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('canEndMeeting')) {
-			this.log.w('meetingEnd() called but local participant lacks canEndMeeting permission');
+		if (!this.roomMemberContextService.hasPermission('meetingEnd')) {
+			this.log.w('meetingEnd() called but local participant lacks meetingEnd permission');
 			return;
 		}
 
@@ -69,12 +69,12 @@ export class EmbeddedCommandService {
 
 	/**
 	 * Removes the named participant from the meeting. Requires the local
-	 * participant to hold the `canKickParticipants` permission; otherwise the
+	 * participant to hold the `participantKick` permission; otherwise the
 	 * call is a no-op.
 	 */
 	async participantKick(participantIdentity: string): Promise<void> {
-		if (!this.roomMemberContextService.hasPermission('canKickParticipants')) {
-			this.log.w('participantKick() called but local participant lacks canKickParticipants permission');
+		if (!this.roomMemberContextService.hasPermission('participantKick')) {
+			this.log.w('participantKick() called but local participant lacks participantKick permission');
 			return;
 		}
 

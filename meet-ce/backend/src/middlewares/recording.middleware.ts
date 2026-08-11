@@ -119,7 +119,7 @@ export const setupRecordingAuthentication = async (req: Request, res: Response, 
 /**
  * Middleware to apply recording list access filters to validated query options.
  *
- * - Room member token: can list recordings from the associated room when token has canRetrieveRecordings permission.
+ * - Room member token: can list recordings from the associated room when token has recordingList permission.
  * - ADMIN: can list all recordings.
  * - ROOM_MANAGER: defaults to owner OR member OR user-access scopes.
  * - ROOM_MEMBER: defaults to member OR user-access scopes.
@@ -131,12 +131,12 @@ export const applyRecordingListAccessFilters = (_req: Request, res: Response, ne
 	const queryOptions = res.locals.validatedQuery as RecordingQueryWithFields;
 
 	// If request is made with room member token,
-	// scope recordings to the associated room and check canRetrieveRecordings permission.
+	// scope recordings to the associated room and check recordingList permission.
 	if (memberRoomId) {
 		const permissions = requestSessionService.getRoomMemberPermissions();
 
-		// If member token does not have canRetrieveRecordings permission, reject the request
-		if (!permissions?.canRetrieveRecordings) {
+		// If member token does not have recordingList permission, reject the request
+		if (!permissions?.recordingList) {
 			const error = errorInsufficientPermissions();
 			return rejectRequestFromMeetError(res, error);
 		}
@@ -179,7 +179,7 @@ export const applyRecordingListAccessFilters = (_req: Request, res: Response, ne
  * - If no recordingSecret is provided, the recording's existence and permissions are checked
  *   based on the authenticated context (room member token or user).
  *
- * @param permission - The permission to check (canRetrieveRecordings or canDeleteRecordings).
+ * @param permission - The permission to check (recordingPlay, recordingDownload or recordingDelete).
  * @param allowAccessWithSecret - Whether to allow access based on a valid secret in the query.
  */
 export const authorizeRecordingAccess = (
@@ -192,8 +192,10 @@ export const authorizeRecordingAccess = (
 
 		// If allowAccessWithSecret is true and a recordingSecret is provided,
 		// we assume that the secret has been validated by setupRecordingAuthentication.
-		// In that case, grant access directly for retrieval requests.
-		if (allowAccessWithSecret && recordingSecret && permission === 'canRetrieveRecordings') {
+		// In that case, grant access directly for retrieval requests. A share-link secret covers the
+		// whole retrieval group (play and download), matching what the pre-split
+		// canRetrieveRecordings secret granted.
+		if (allowAccessWithSecret && recordingSecret && (permission === 'recordingPlay' || permission === 'recordingDownload')) {
 			return next();
 		}
 
@@ -211,8 +213,8 @@ export const authorizeRecordingAccess = (
 /**
  * Middleware to authorize control actions (start/stop) for recordings.
  *
- * - For starting a recording, checks if the authenticated user has 'canRecord' permission in the target room.
- * - For stopping a recording, checks if the recording exists and if the authenticated user has 'canRecord' permission.
+ * - For starting a recording, checks if the authenticated user has 'recordingControl' permission in the target room.
+ * - For stopping a recording, checks if the recording exists and if the authenticated user has 'recordingControl' permission.
  */
 export const authorizeRecordingControl = async (req: Request, res: Response, next: NextFunction) => {
 	const recordingId = req.params.recordingId as string | undefined;
@@ -222,11 +224,11 @@ export const authorizeRecordingControl = async (req: Request, res: Response, nex
 		const { roomId } = req.body as { roomId: string };
 
 		try {
-			// Check that the authenticated user has 'canRecord' permission in the target room
+			// Check that the authenticated user has 'recordingControl' permission in the target room
 			const roomService = container.get(RoomService);
 			const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
 
-			if (!permissions['canRecord']) {
+			if (!permissions['recordingControl']) {
 				throw errorInsufficientPermissions();
 			}
 
@@ -237,9 +239,9 @@ export const authorizeRecordingControl = async (req: Request, res: Response, nex
 	} else {
 		// Stop recording
 		try {
-			// Check that the recording exists and the authenticated user has 'canRecord' permission
+			// Check that the recording exists and the authenticated user has 'recordingControl' permission
 			const recordingService = container.get(RecordingService);
-			await recordingService.validateRecordingAccess(recordingId, 'canRecord', ['roomId']);
+			await recordingService.validateRecordingAccess(recordingId, 'recordingControl', ['roomId']);
 			return next();
 		} catch (error) {
 			return handleError(res, error, 'checking recording permissions');
@@ -256,7 +258,7 @@ type BulkRecordingFailed = { recordingId: string; error: string };
  * - Populates res.locals with the list of processable recording IDs and any failures.
  *
  * @param res - The Express response object.
- * @param permission - The permission to check for each recording (e.g., canRetrieveRecordings, canDeleteRecordings).
+ * @param permission - The permission to check for each recording (e.g., recordingDownload, recordingDelete).
  */
 const validateBulkRecordingAccess = async (
 	res: Response,
@@ -298,11 +300,11 @@ const validateBulkRecordingAccess = async (
 };
 
 export const validateBulkDeleteRecordingsAccess = async (_req: Request, res: Response, next: NextFunction) => {
-	await validateBulkRecordingAccess(res, 'canDeleteRecordings');
+	await validateBulkRecordingAccess(res, 'recordingDelete');
 	return next();
 };
 
 export const validateDownloadRecordingsAccess = async (_req: Request, res: Response, next: NextFunction) => {
-	await validateBulkRecordingAccess(res, 'canRetrieveRecordings');
+	await validateBulkRecordingAccess(res, 'recordingDownload');
 	return next();
 };

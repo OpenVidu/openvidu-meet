@@ -40,7 +40,7 @@ export class ChatPanelComponent implements AfterViewInit {
 	 */
 	readonly messageList = computed(() => this.chatService.chatMessages());
 	/**
-	 * Whether the local participant may send messages (gated by the `canWriteChat` permission).
+	 * Whether the local participant may send messages (gated by the `chatWrite` permission).
 	 */
 	readonly canWrite = inject(MeetingUiConfigService).chatInputEnabledSignal;
 

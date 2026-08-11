@@ -1,9 +1,9 @@
 import { expect } from '@jest/globals';
 import {
+	MeetPermissionsInput,
 	MeetRoomConfig,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
-	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetUser,
 	MeetUserOptions,
@@ -387,7 +387,9 @@ export const setupRoomMember = async (
 export const updateRoomMemberPermissions = async (
 	roomId: string,
 	memberId: string,
-	permissions: Partial<MeetRoomMemberPermissions>,
+	// Wire-level type on purpose: the API accepts canonical and legacy (`can*`) spellings during the
+	// deprecation window, and several suites exercise the legacy wire. Removed in 3.12.0.
+	permissions: MeetPermissionsInput,
 	accessToken?: string
 ): Promise<RoomMemberData> => {
 	// Update the room member

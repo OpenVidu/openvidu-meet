@@ -7,12 +7,16 @@ import type {
 	MeetRoomMemberTokenOptions
 } from '@openvidu-meet/typings';
 import {
+	findPermissionAliasConflicts,
+	MEET_LEGACY_PERMISSION_KEYS,
+	MEET_PERMISSION_KEYS,
 	MEET_ROOM_MEMBER_EXTRA_FIELDS,
 	MEET_ROOM_MEMBER_FIELDS,
 	MEET_ROOM_MEMBER_SORT_FIELDS,
 	MeetRoomMemberRole,
 	MeetRoomMemberType,
 	MeetRoomMemberUIBadge,
+	normalizePermissions,
 	SortOrder,
 	TextMatchMode
 } from '@openvidu-meet/typings';
@@ -68,39 +72,60 @@ const extraFieldsSchema = z
 
 const RoomMemberRoleSchema: z.ZodType<MeetRoomMemberRole> = z.enum(MeetRoomMemberRole);
 
-export const MeetPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = z.object({
-	canRecord: z.boolean(),
-	canRetrieveRecordings: z.boolean(),
-	canDeleteRecordings: z.boolean(),
-	canJoinMeeting: z.boolean(),
-	canShareAccessLinks: z.boolean(),
-	canMakeModerator: z.boolean(),
-	canKickParticipants: z.boolean(),
-	canEndMeeting: z.boolean(),
-	canPublishVideo: z.boolean(),
-	canPublishAudio: z.boolean(),
-	canShareScreen: z.boolean(),
-	canReadChat: z.boolean(),
-	canWriteChat: z.boolean(),
-	canChangeVirtualBackground: z.boolean()
-});
+// Both permission schemas accept any mix of canonical and legacy (`can*`) key spellings, derived
+// from MEET_PERMISSION_ALIASES so a future alias is a typings change alone. Every key is optional at
+// the shape level: requiredness ("all 16 canonical keys defined after normalization") only applies
+// to the full schema and is enforced in its superRefine, where the legacy spelling of a key can
+// stand in for the canonical one. The legacy branch is removed in 3.12.0.
+const dualNamingPermissionShape = (): Record<string, z.ZodOptional<z.ZodBoolean>> => {
+	const shape: Record<string, z.ZodOptional<z.ZodBoolean>> = {};
 
-export const PartialMeetPermissionsSchema: z.ZodType<Partial<MeetRoomMemberPermissions>> = z.object({
-	canRecord: z.boolean().optional(),
-	canRetrieveRecordings: z.boolean().optional(),
-	canDeleteRecordings: z.boolean().optional(),
-	canJoinMeeting: z.boolean().optional(),
-	canShareAccessLinks: z.boolean().optional(),
-	canMakeModerator: z.boolean().optional(),
-	canKickParticipants: z.boolean().optional(),
-	canEndMeeting: z.boolean().optional(),
-	canPublishVideo: z.boolean().optional(),
-	canPublishAudio: z.boolean().optional(),
-	canShareScreen: z.boolean().optional(),
-	canReadChat: z.boolean().optional(),
-	canWriteChat: z.boolean().optional(),
-	canChangeVirtualBackground: z.boolean().optional()
-});
+	for (const key of [...MEET_LEGACY_PERMISSION_KEYS, ...MEET_PERMISSION_KEYS]) {
+		shape[key] = z.boolean().optional();
+	}
+
+	return shape;
+};
+
+// A legacy key sent together with a canonical key of its group and a contradicting value is a 422:
+// the caller is asking for two different things at once, and any silent precedence rule would
+// discard one of them (see MEET_PERMISSION_ALIASES).
+const addPermissionConflictIssues = (input: Record<string, unknown>, ctx: z.RefinementCtx): void => {
+	for (const conflict of findPermissionAliasConflicts(input)) {
+		ctx.addIssue({
+			code: 'custom',
+			path: [conflict.legacyKey],
+			message:
+				`Conflicting values for deprecated permission '${conflict.legacyKey}' (${conflict.legacyValue}) ` +
+				`and its replacement '${conflict.canonicalKey}' (${conflict.canonicalValue}); send only one spelling`
+		});
+	}
+};
+
+export const MeetPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = z
+	.object(dualNamingPermissionShape())
+	.superRefine((input, ctx) => {
+		addPermissionConflictIssues(input, ctx);
+
+		// Completeness: every canonical key must be defined once legacy spellings are expanded.
+		const normalized = normalizePermissions(input);
+
+		for (const key of MEET_PERMISSION_KEYS) {
+			if (typeof normalized[key] !== 'boolean') {
+				ctx.addIssue({
+					code: 'custom',
+					path: [key],
+					message: `Missing permission '${key}'`
+				});
+			}
+		}
+	})
+	.transform((input) => normalizePermissions(input) as MeetRoomMemberPermissions);
+
+export const PartialMeetPermissionsSchema: z.ZodType<Partial<MeetRoomMemberPermissions>> = z
+	.object(dualNamingPermissionShape())
+	.superRefine(addPermissionConflictIssues)
+	.transform((input) => normalizePermissions(input));
 
 export const RoomMemberOptionsSchema: z.ZodType<MeetRoomMemberOptions> = z
 	.object({

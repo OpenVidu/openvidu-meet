@@ -118,59 +118,67 @@
         "CHAT": "チャット"
       },
       "ITEMS": {
-        "canJoinMeeting": {
+        "meetingJoin": {
           "LABEL": "会議に参加可能",
           "DESCRIPTION": "会議への参加を許可します"
         },
-        "canEndMeeting": {
+        "meetingEnd": {
           "LABEL": "会議を終了可能",
           "DESCRIPTION": "すべての参加者の会議を終了することを許可します"
         },
-        "canMakeModerator": {
+        "participantPromote": {
           "LABEL": "モデレーターに指定可能",
           "DESCRIPTION": "参加者をモデレーターロールに昇格させることを許可します"
         },
-        "canKickParticipants": {
+        "participantKick": {
           "LABEL": "参加者を退出させ可能",
           "DESCRIPTION": "会議から参加者を退出させることを許可します"
         },
-        "canShareAccessLinks": {
+        "roomShareAccessLinks": {
           "LABEL": "アクセスリンクを共有可能",
           "DESCRIPTION": "他の人と招待リンクを共有することを許可します"
         },
-        "canPublishVideo": {
+        "mediaPublishVideo": {
           "LABEL": "ビデオを公開可能",
           "DESCRIPTION": "カメラのビデオ共有を許可します"
         },
-        "canPublishAudio": {
+        "mediaPublishAudio": {
           "LABEL": "オーディオを公開可能",
           "DESCRIPTION": "マイクのオーディオ共有を許可します"
         },
-        "canShareScreen": {
+        "mediaShareScreen": {
           "LABEL": "画面を共有可能",
           "DESCRIPTION": "デスクトップまたはブラウザタブの共有を許可します"
         },
-        "canChangeVirtualBackground": {
+        "mediaChangeVirtualBackground": {
           "LABEL": "仮想背景を変更可能",
           "DESCRIPTION": "仮想背景の変更を許可します"
         },
-        "canRecord": {
+        "recordingControl": {
           "LABEL": "録画可能",
           "DESCRIPTION": "録画の開始と停止を許可します"
         },
-        "canRetrieveRecordings": {
-          "LABEL": "録画を取得可能",
-          "DESCRIPTION": "録画の一覧表示と再生を許可します"
+        "recordingList": {
+          "LABEL": "録画を一覧表示可能",
+          "DESCRIPTION": "録画の一覧表示を許可します"
         },
-        "canDeleteRecordings": {
+        "recordingPlay": {
+          "LABEL": "録画を再生可能",
+          "DESCRIPTION": "録画の再生を許可します"
+        },
+        "recordingDownload": {
+          "LABEL": "録画をダウンロード可能",
+          "DESCRIPTION": "録画のダウンロードを許可します"
+        },
+        "recordingDelete": {
           "LABEL": "録画を削除可能",
           "DESCRIPTION": "録画の削除を許可します"
         },
-        "canReadChat": {
+        "chatRead": {
           "LABEL": "チャットを読み取り可能",
           "DESCRIPTION": "チャットメッセージの読み取りを許可します"
         },
-        "canWriteChat": {
+        "chatWrite": {
           "LABEL": "チャットに書き込み可能",
           "DESCRIPTION": "チャットメッセージの送信を許可します"
         }
