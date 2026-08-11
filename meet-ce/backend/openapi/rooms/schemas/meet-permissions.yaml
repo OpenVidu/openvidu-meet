@@ -1,17 +1,29 @@
 type: object
 description: |
-    Permissions of a room member, keyed with the canonical `moduleAction` scheme (module first, no `can` prefix).
+    Permissions of a room member, keyed with the `moduleAction` scheme (module first, no `can` prefix).
 
-    During the deprecation window (until **3.12.0**) the former `can*` spellings remain available:
+    Which key sets the API speaks is a **deployment-wide** setting: the `MEET_MODE` environment variable of the
+    server, with two values.
 
-    - **Requests** accept any mix of canonical and deprecated keys. Sending a deprecated key together with one of
-      its canonical replacements with a contradicting value is rejected with a `422`.
-    - **Responses** carry exactly **one** key set, selected per request with the `X-Meet-Permission-Names` header
-      (`legacy` is the default until 4.0). Responses serialized with the deprecated names include a
-      `Deprecation: true` header.
+    - **`compatibility`** (the default): the former `can*` spellings remain available alongside the new keys.
+      Requests accept any mix of both key sets — sending a deprecated key together with one of its replacements
+      with a contradicting value is rejected with a `422` — and responses (and webhooks) carry **both** key sets,
+      so integrations can migrate endpoint by endpoint. Responses carrying the deprecated names include a
+      `Deprecation: true` header. When updating an object read from the API, change **both** spellings of a
+      permission (or strip one key set first): editing only one of them produces a contradiction and a `422`.
+    - **`3.9.0`**: only the new keys exist. A request using a deprecated key is rejected with a `422` naming its
+      replacement, and responses and webhooks carry only the new keys.
+
+    The rename itself:
+
     - `canRetrieveRecordings` was **split into three** capabilities (`recordingList`, `recordingPlay`,
       `recordingDownload`). Granting or denying the deprecated flag applies to the whole group; when read back as
-      `canRetrieveRecordings`, the group collapses with AND (it is `true` only when the three are granted).
+      `canRetrieveRecordings`, the group collapses with AND (it is `true` only when the three are granted, and
+      the flag is omitted when only part of the group is defined).
+    - Every other deprecated key is a straight rename of exactly one new key.
+
+    The examples in this reference show only the new keys; a `compatibility` deployment adds the deprecated
+    spellings next to them. The `compatibility` mode and the deprecated keys are removed in **3.12.0**.
 properties:
     recordingControl:
         type: boolean
@@ -24,7 +36,9 @@ properties:
     recordingPlay:
         type: boolean
         example: true
-        description: Can open and play back a recording.
+        description: |
+            Can open and play back a recording. This does not prevent copying it — it only controls whether
+            the product offers a download (see `recordingDownload`).
     recordingDownload:
         type: boolean
         example: true

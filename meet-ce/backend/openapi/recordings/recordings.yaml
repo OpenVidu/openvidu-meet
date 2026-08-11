@@ -320,6 +320,11 @@
 
             Playing and downloading are gated by different permissions (`recordingPlay` vs `recordingDownload`),
             which is why they are separate endpoints — the server cannot tell the intent apart on a shared one.
+
+            Granting `recordingPlay` without `recordingDownload` does not stop someone from copying the
+            recording — anyone who can play it back can also capture it through other means. What this
+            permission split actually controls is whether the product **offers** a download (this endpoint and
+            the bulk ZIP export), not whether the video file itself can be copied.
         tags:
             - OpenVidu Meet - Recordings
         security:
