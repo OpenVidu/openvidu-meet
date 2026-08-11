@@ -1,9 +1,9 @@
-import { MeetRoomMemberPermissions, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import { Browser, chromium, expect, type BrowserContext, type Page } from '@playwright/test';
 import { existsSync, rmSync } from 'fs';
 import path from 'path';
 import { startScreensharing } from './media-controls.helper';
-import { createRoomMember } from './meet-api.helper';
+import { createRoomMember, type WirePermissions } from './meet-api.helper';
 import { leaveMeeting, openMeeting } from './meeting-navigation.helper';
 import { waitForRemoteStream } from './stream.helper';
 
@@ -30,7 +30,8 @@ export type ParticipantConfig = {
 	/** Ignored when accessUrl is provided). */
 	baseRole?: MeetRoomMemberRole;
 	/** Ignored when accessUrl is provided). */
-	customPermissions?: Partial<MeetRoomMemberPermissions>;
+	// Wire-level on purpose: several suites seed the deprecated spellings. Removed in 3.12.0.
+	customPermissions?: WirePermissions;
 };
 
 export type JoinedParticipants = {

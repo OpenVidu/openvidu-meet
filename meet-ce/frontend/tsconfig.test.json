@@ -1,19 +1,25 @@
 {
+	// Two consumers share this file. Playwright reads it (tsconfig.test.json takes precedence over
+	// tsconfig.json for test files) and needs the `paths` mapping below to resolve the ESM-only
+	// typings package from its CommonJS transform — remove it and every suite fails to load with
+	// "No exports main defined". And `pnpm run test:types:e2e` (CI-gated) type-checks e2e/** with it:
+	// Playwright itself only transpiles, so without that pass nothing ever type-checks the suites —
+	// the previous (mocha-era) version of this file had been broken for so long that 45 latent type
+	// errors accumulated unnoticed.
 	"compilerOptions": {
-		"esModuleInterop": true,
-		"target": "es6",
-		"module": "CommonJS",
-		"strict": true,
-		"outDir": "./dist",
-		"rootDir": "./",
-		"lib": ["es6"],
-		"types": ["mocha", "node"],
-		"experimentalDecorators": true,
-		"emitDecoratorMetadata": true,
 		"paths": {
-			"@openvidu-meet/typings": ["node_modules/@openvidu-meet/typings/dist/index"]
-		}
+			"@openvidu-meet/typings": ["../typings/dist/index"]
+		},
+		"target": "es2022",
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"noEmit": true,
+		"esModuleInterop": true,
+		"skipLibCheck": true,
+		"types": ["node"],
+		"noUnusedLocals": true,
+		"noUnusedParameters": true
 	},
-	"include": ["*.test.ts", "**/*.test.ts", "e2e/**/*.ts"],
-	"exclude": ["node_modules"]
+	"include": ["e2e/**/*.ts"]
 }

@@ -57,6 +57,11 @@ jobs:
       - name: Build and Start OpenVidu Meet
         uses: OpenVidu/actions/start-openvidu-meet@070fb73fda8fe7a08e28991b1c2d276f12a009ef # v1.0.22
 
+      # Playwright only transpiles, so this is the sole type-check the e2e suites ever get
+      # (same hole test:types closes for the backend's tests/**).
+      - name: Type-check e2e suites
+        run: pnpm --filter @openvidu-meet/frontend run test:types:e2e
+
       - name: Run frontend E2E tests
         run: ./meet.sh test-e2e-frontend --skip-install
         env:

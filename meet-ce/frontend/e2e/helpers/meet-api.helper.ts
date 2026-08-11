@@ -1,16 +1,43 @@
 import {
+	MeetDeprecatedPermissionKey,
+	MeetPermissionKey,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetRoomMember,
 	MeetRoomMemberOptions,
-	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomOptions,
-	MeetRoomRolesConfig,
 	MeetUserDTO,
 	MeetUserOptions,
 	MeetUserRole
 } from '@openvidu-meet/typings';
+
+/**
+ * A permission object as the e2e suites send it over the wire: the current keys, the deprecated
+ * `can*` spellings, or a mix — everything a `MEET_MODE=compatibility` deployment accepts. The suites
+ * seed data with the deprecated spellings on purpose, simulating a 3.8.0 integrator, which keeps the
+ * old wire covered end-to-end for free. When the compatibility mode is removed in 3.12.0, the
+ * deprecated half of this type goes away and every seeding literal still using a `can*` key must
+ * flip to its current spelling (grep for the deprecated keys under e2e/).
+ */
+export type WirePermissions = Partial<Record<MeetPermissionKey | MeetDeprecatedPermissionKey, boolean>>;
+
+/**
+ * {@link MeetRoomMemberOptions} with wire-level permissions (see {@link WirePermissions}).
+ * Removed in 3.12.0.
+ */
+export type WireRoomMemberOptions = Omit<MeetRoomMemberOptions, 'customPermissions'> & {
+	customPermissions?: WirePermissions;
+};
+
+/**
+ * {@link MeetRoomRolesConfig} with wire-level permissions (see {@link WirePermissions}).
+ * Removed in 3.12.0.
+ */
+export type WireRoomRolesConfig = {
+	moderator?: { permissions: WirePermissions };
+	speaker?: { permissions: WirePermissions };
+};
 
 // ---------------------------------------------------------------------------
 // Environment / URL helpers
@@ -108,7 +135,7 @@ export const createRoomAsUser = async (accessToken: string, options: MeetRoomOpt
  * Updates a room's role permissions (partial merge). Useful to temporarily change what an anonymous
  * role can do — e.g. removing `canRetrieveRecordings` from the speaker role and restoring it after.
  */
-export const updateRoomRoles = async (roomId: string, roles: MeetRoomRolesConfig): Promise<void> => {
+export const updateRoomRoles = async (roomId: string, roles: WireRoomRolesConfig): Promise<void> => {
 	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/roles`), {
 		method: 'PUT',
 		headers: {
@@ -125,7 +152,7 @@ export const updateRoomRoles = async (roomId: string, roles: MeetRoomRolesConfig
 /**
  * Adds a member to the specified room with the given options.
  */
-export const createRoomMember = async (roomId: string, options: MeetRoomMemberOptions): Promise<MeetRoomMember> => {
+export const createRoomMember = async (roomId: string, options: WireRoomMemberOptions): Promise<MeetRoomMember> => {
 	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}/members`), {
 		method: 'POST',
 		headers: {
@@ -149,7 +176,7 @@ export const updateRoomMemberPermissions = async (
 	memberId: string,
 	updates: {
 		baseRole?: MeetRoomMemberRole;
-		customPermissions?: Partial<MeetRoomMemberPermissions>;
+		customPermissions?: WirePermissions;
 	}
 ): Promise<MeetRoomMember> => {
 	const response = await fetch(
