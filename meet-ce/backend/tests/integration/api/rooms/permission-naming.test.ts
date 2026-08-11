@@ -1,9 +1,12 @@
-import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { MeetRoomMemberRole } from '@openvidu-meet/typings';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from '@jest/globals';
+import type { MeetRoomMemberTokenMetadata } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
 import type { Express } from 'express';
 import request from 'supertest';
+import { container } from '../../../../src/config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from '../../../../src/config/internal-config.js';
 import { MEET_ENV } from '../../../../src/environment.js';
+import { TokenService } from '../../../../src/services/token.service.js';
 import { createRoom, deleteAllRooms, getFullPath, startTestServer } from '../../../helpers/request-helpers.js';
 
 let app: Express;
@@ -237,6 +240,79 @@ describe('Permission naming (MEET_MODE)', () => {
 
 			const roomResponse = await rawGetRoom(roomId);
 			expect(roomResponse.body.roles.speaker.permissions.recordingControl).toBe(true);
+		});
+
+		it('should serialize member permissions with only the current key set too', async () => {
+			const createResponse = await request(app)
+				.post(`${roomsPath()}/${roomId}/members`)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.set('x-extrafields', 'effectivePermissions')
+				.send({
+					name: 'Strict Mode Member',
+					baseRole: MeetRoomMemberRole.SPEAKER,
+					customPermissions: { recordingControl: true }
+				});
+			expect(createResponse.status).toBe(201);
+			expect(createResponse.headers.deprecation).toBeUndefined();
+			expect(createResponse.body.customPermissions).toEqual({ recordingControl: true });
+
+			for (const key of DEPRECATED_KEYS) {
+				expect(createResponse.body.effectivePermissions).not.toHaveProperty(key);
+			}
+
+			const memberId = createResponse.body.memberId as string;
+			const getResponse = await request(app)
+				.get(`${roomsPath()}/${roomId}/members/${memberId}`)
+				.query({ extraFields: 'effectivePermissions' })
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
+			expect(getResponse.status).toBe(200);
+			expect(getResponse.headers.deprecation).toBeUndefined();
+			expect(getResponse.body.effectivePermissions.recordingControl).toBe(true);
+			expect(getResponse.body.effectivePermissions).not.toHaveProperty('canRecord');
+		});
+	});
+
+	// Tokens are our own artifacts, not API requests: one minted before the rename carries the
+	// deprecated permission keys inside its metadata and must keep validating in BOTH modes —
+	// rejecting it would kick every meeting in progress (see MeetTokenPermissionsSchema).
+	describe('Tokens minted with the deprecated permission keys', () => {
+		const mintDeprecatedKeyedToken = async (): Promise<string> => {
+			const tokenService = container.get(TokenService);
+			// The 14 deprecated keys, exactly as a pre-rename deployment embedded them.
+			const deprecatedPermissions = Object.fromEntries(DEPRECATED_KEYS.map((key) => [key, true]));
+			const metadata = {
+				iat: Date.now(),
+				roomId,
+				permissions: deprecatedPermissions,
+				badge: MeetRoomMemberUIBadge.OTHER
+			} as unknown as MeetRoomMemberTokenMetadata;
+
+			return tokenService.generateRoomMemberToken({ tokenMetadata: metadata });
+		};
+
+		const getRoomWithMemberToken = (token: string) =>
+			request(app)
+				.get(`${roomsPath()}/${roomId}`)
+				.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, `Bearer ${token}`);
+
+		afterEach(() => {
+			delete process.env.MEET_MODE;
+		});
+
+		it('should accept a deprecated-keyed token in compatibility mode', async () => {
+			const token = await mintDeprecatedKeyedToken();
+			const response = await getRoomWithMemberToken(token);
+			expect(response.status).toBe(200);
+			expect(response.body.roomId).toBe(roomId);
+		});
+
+		it("should accept a deprecated-keyed token with MEET_MODE '3.9.0' (tokens are exempt)", async () => {
+			process.env.MEET_MODE = '3.9.0';
+
+			const token = await mintDeprecatedKeyedToken();
+			const response = await getRoomWithMemberToken(token);
+			expect(response.status).toBe(200);
+			expect(response.body.roomId).toBe(roomId);
 		});
 	});
 });

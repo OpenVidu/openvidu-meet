@@ -121,6 +121,13 @@ describe('Webhook Integration Tests', () => {
 			expect(room.roomId).toBe(roomData.roomId);
 			expect(room.config).toEqual(defaultRoomConfig);
 
+			// MEET_MODE compatibility (the default this deployment runs): the role permissions of the
+			// payload carry BOTH key sets, like REST responses. Removed in 3.12.0 with that mode.
+			const moderatorPermissions = room.roles.moderator.permissions as unknown as Record<string, boolean>;
+			expect(moderatorPermissions.recordingControl).toBe(true);
+			expect(moderatorPermissions.canRecord).toBe(true);
+			expect(moderatorPermissions.canRetrieveRecordings).toBe(true);
+
 			expectValidSignature(meetingStartedWebhook);
 		});
 
@@ -140,6 +147,11 @@ describe('Webhook Integration Tests', () => {
 			const room: MeetRoom = meetingEndedWebhook.body.data as MeetRoom;
 			expect(room.roomId).toBe(roomData.roomId);
 			expect(room.config).toEqual(defaultRoomConfig);
+
+			// Same dual-key-set payload as meeting_started (MEET_MODE compatibility; removed in 3.12.0).
+			const speakerPermissions = room.roles.speaker.permissions as unknown as Record<string, boolean>;
+			expect(typeof speakerPermissions.chatWrite).toBe('boolean');
+			expect(speakerPermissions.canWriteChat).toBe(speakerPermissions.chatWrite);
 
 			expectValidSignature(meetingEndedWebhook);
 		});
