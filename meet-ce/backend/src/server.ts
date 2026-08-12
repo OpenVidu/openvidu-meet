@@ -8,6 +8,7 @@ import { container, initializeEagerServices, registerDependencies } from './conf
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { getInfo } from './controllers/system-info.controller.js';
 import { checkModuleEnabled, logEnvVars, MEET_ENV } from './environment.js';
+import { apiKeyValidator, withAuth } from './middlewares/auth.middleware.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
 import { globalErrorHandler } from './middlewares/error-handler.middleware.js';
@@ -119,7 +120,7 @@ const createApp = () => {
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai`, aiAssistantRouter);
 
 	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
-	appRouter.get('/info', getInfo);
+	appRouter.get('/info', withAuth(apiKeyValidator), getInfo);
 
 
 	appRouter.get('/v1/openvidu-meet.js', staticAssetLimiter, serveWebcomponentBundle(webcomponentLoaderPath));
