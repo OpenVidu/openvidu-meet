@@ -1,5 +1,7 @@
 import type {
 	MeetApiKey,
+	MeetParticipantJoinedPayload,
+	MeetParticipantLeftPayload,
 	MeetRecordingInfo,
 	MeetRoom,
 	MeetWebhookEvent,
@@ -79,6 +81,32 @@ export class OpenViduWebhookService {
 				speaker: { permissions: withDeprecatedPermissionAliases(room.roles.speaker.permissions) }
 			}
 		} as unknown as MeetRoom;
+	}
+
+	/**
+	 * Sends a webhook notification when a participant joins a meeting.
+	 *
+	 * @param payload - The joined participant's snapshot, plus the room it joined
+	 */
+	sendParticipantJoinedWebhook(payload: MeetParticipantJoinedPayload) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.PARTICIPANT_JOINED,
+			payload,
+			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}`
+		);
+	}
+
+	/**
+	 * Sends a webhook notification when a participant leaves a meeting.
+	 *
+	 * @param payload - The departing participant's snapshot, plus the room it left and how long it stayed
+	 */
+	sendParticipantLeftWebhook(payload: MeetParticipantLeftPayload) {
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.PARTICIPANT_LEFT,
+			payload,
+			`Room ID: ${payload.roomId}, Participant: ${payload.participant.participantIdentity}`
+		);
 	}
 
 	/**

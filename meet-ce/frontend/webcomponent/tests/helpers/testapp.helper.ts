@@ -97,6 +97,8 @@ export const ensureFixture = async (page: Page): Promise<void> => {
  * @param roomId - Room ID to join (must already exist; create it with `createRoom`).
  * @param options.role - `'moderator'` or `'speaker'`. Defaults to `'speaker'`.
  * @param options.name - Participant display name (auto-generated when omitted).
+ * @param options.externalId - Value for the `participant-external-id` attribute (app↔Meet correlation key).
+ * @param options.metadata - Value for the `participant-metadata` attribute (opaque app payload).
  */
 export const openMeeting = async (
 	page: Page,
@@ -105,9 +107,11 @@ export const openMeeting = async (
 		integration?: Integration;
 		role?: 'moderator' | 'speaker';
 		name?: string;
+		externalId?: string;
+		metadata?: string;
 	}
 ): Promise<void> => {
-	const { integration = 'webcomponent', role = 'speaker', name } = options ?? {};
+	const { integration = 'webcomponent', role = 'speaker', name, externalId, metadata } = options ?? {};
 	const participantName = name ?? `pw-${Math.random().toString(36).substring(2, 9)}`;
 
 	await ensureFixture(page);
@@ -125,6 +129,15 @@ export const openMeeting = async (
 	await page.getByTestId('select-integration').selectOption(integration);
 	await page.getByTestId('input-roomUrl').fill(roomUrl);
 	await page.getByTestId('input-participantName').fill(participantName);
+
+	if (externalId) {
+		await page.getByTestId('input-participantExternalId').fill(externalId);
+	}
+
+	if (metadata) {
+		await page.getByTestId('input-participantMetadata').fill(metadata);
+	}
+
 	await page.getByTestId('btn-apply-config').click();
 
 	// Wait for the chosen transport to mount.

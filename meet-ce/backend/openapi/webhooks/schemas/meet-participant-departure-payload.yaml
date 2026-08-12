@@ -1,0 +1,32 @@
+allOf:
+    - $ref: ./meet-participant-payload.yaml
+    - type: object
+      required:
+          - leaveDate
+          - durationSeconds
+          - leaveReason
+      properties:
+          leaveDate:
+              type: number
+              example: 1620000003600
+              description: >
+                  The date when the participant left the meeting (milliseconds since the Unix epoch).
+          durationSeconds:
+              type: number
+              example: 145
+              description: >
+                  The duration in seconds the participant stayed in the meeting.
+          leaveReason:
+              type: string
+              enum:
+                  - voluntary_leave
+                  - network_disconnect
+                  - server_shutdown
+                  - participant_kicked
+                  - meeting_ended
+                  - meeting_ended_by_self
+                  - duplicate_identity
+                  - unknown
+              example: 'voluntary_leave'
+              description: >
+                  The reason why the participant left the meeting.
