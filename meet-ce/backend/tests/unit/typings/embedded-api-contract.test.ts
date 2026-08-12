@@ -58,7 +58,16 @@ describe('Embedded command names', () => {
 describe('Embedded event names', () => {
 	it('should expose exactly the canonical and deprecated events', () => {
 		expect(Object.values(EmbeddedEventName).sort()).toEqual(
-			['meetingJoined', 'meetingLeft', 'meetingClosed', 'joined', 'left', 'closed'].sort()
+			[
+				'meetingJoined',
+				'meetingLeft',
+				'meetingClosed',
+				'participantJoined',
+				'participantLeft',
+				'joined',
+				'left',
+				'closed'
+			].sort()
 		);
 	});
 

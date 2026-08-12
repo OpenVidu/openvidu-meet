@@ -1,3 +1,5 @@
+import { MeetParticipantPayload } from '../response/participant-response.js';
+
 /**
  * All available events that can be emitted by the embedded OpenVidu Meet application.
  *
@@ -21,6 +23,17 @@ export enum EmbeddedEventName {
 	 * Event emitted when the application is closed.
 	 */
 	MEETING_CLOSED = 'meetingClosed',
+	/**
+	 * Event emitted when a remote participant joins the meeting. Only live transitions are
+	 * notified: participants already in the meeting when the local one joins are not replayed.
+	 * The local participant's own join is notified through `meetingJoined` instead.
+	 */
+	PARTICIPANT_JOINED = 'participantJoined',
+	/**
+	 * Event emitted when a remote participant leaves the meeting.
+	 * The local participant's own departure is notified through `meetingLeft` instead.
+	 */
+	PARTICIPANT_LEFT = 'participantLeft',
 	/**
 	 * Event emitted when the local participant joins the meeting.
 	 * @deprecated Renamed to `meetingJoined` ({@link EmbeddedEventName.MEETING_JOINED}). Removed in 3.12.0.
@@ -83,6 +96,24 @@ export interface EmbeddedEventPayloads {
 		roomId: string;
 		participantIdentity: string;
 		reason: LeftEventReason;
+	};
+	/**
+	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_JOINED} event.
+	 */
+	[EmbeddedEventName.PARTICIPANT_JOINED]: {
+		roomId: string;
+		participant: MeetParticipantPayload;
+	};
+	/**
+	 * Payload for the {@link EmbeddedEventName.PARTICIPANT_LEFT} event.
+	 *
+	 * It carries no departure reason: the authoritative one is only known server-side and travels
+	 * on the `participantLeft` webhook, while the departed participant's own client receives it
+	 * through its local `meetingLeft` event.
+	 */
+	[EmbeddedEventName.PARTICIPANT_LEFT]: {
+		roomId: string;
+		participant: MeetParticipantPayload;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.JOINED} event.
@@ -167,6 +198,26 @@ export interface EmbeddedMeetingClosedEvent {
 }
 
 /**
+ * Event message emitted when a remote participant joins the meeting: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantJoinedEvent {
+	event: EmbeddedEventName.PARTICIPANT_JOINED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_JOINED>;
+}
+
+/**
+ * Event message emitted when a remote participant leaves the meeting: the event name plus its
+ * payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantLeftEvent {
+	event: EmbeddedEventName.PARTICIPANT_LEFT;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>;
+}
+
+/**
  * Event message emitted when the local participant joins the meeting.
  * @category Communication
  * @deprecated Use {@link EmbeddedMeetingJoinedEvent}. Removed in 3.12.0.
@@ -206,6 +257,8 @@ export type EmbeddedEvent =
 	| EmbeddedMeetingJoinedEvent
 	| EmbeddedMeetingLeftEvent
 	| EmbeddedMeetingClosedEvent
+	| EmbeddedParticipantJoinedEvent
+	| EmbeddedParticipantLeftEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent
 	| EmbeddedClosedEvent;

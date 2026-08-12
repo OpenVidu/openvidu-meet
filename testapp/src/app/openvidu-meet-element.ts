@@ -18,16 +18,7 @@ export interface OpenViduMeetElement extends HTMLElement {
 	leaveRoom(): void;
 	/** @deprecated Renamed to `participantKick()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	kickParticipant(participantIdentity: string): void;
-	on(
-		eventName: EmbeddedEventName,
-		callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
-	): this;
-	once(
-		eventName: EmbeddedEventName,
-		callback: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
-	): this;
-	off(
-		eventName: EmbeddedEventName,
-		callback?: (eventPayload: EmbeddedEventPayloadFor<EmbeddedEventName>) => void
-	): this;
+	on<E extends EmbeddedEventName>(eventName: E, callback: (eventPayload: EmbeddedEventPayloadFor<E>) => void): this;
+	once<E extends EmbeddedEventName>(eventName: E, callback: (eventPayload: EmbeddedEventPayloadFor<E>) => void): this;
+	off<E extends EmbeddedEventName>(eventName: E, callback?: (eventPayload: EmbeddedEventPayloadFor<E>) => void): this;
 }
