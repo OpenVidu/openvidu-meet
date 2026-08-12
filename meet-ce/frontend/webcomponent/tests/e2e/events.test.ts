@@ -210,6 +210,42 @@ for (const integration of INTEGRATIONS) {
 			});
 		});
 
+		test.describe('PARTICIPANT_JOINED / PARTICIPANT_LEFT Events', () => {
+			test('should receive participant events for a remote participant that joins and leaves', async ({
+				page,
+				browser
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				const speakerName = 'Remote Speaker';
+				await openMeeting(speakerPage, roomId, {
+					role: 'speaker',
+					name: speakerName,
+					externalId: 'crm-user_42',
+					metadata: '{"plan":"premium"}'
+				});
+
+				// The moderator's host observes the remote join, carrying the correlation fields the
+				// speaker's application provided through the embed attributes.
+				const joined = await expectEvent(page, EmbeddedEventName.PARTICIPANT_JOINED);
+				await expect(joined).toContainText(roomId);
+				await expect(joined).toContainText(speakerName);
+				await expect(joined).toContainText('crm-user_42');
+				await expect(joined).toContainText('"role"');
+
+				await leaveMeeting(speakerPage, { role: 'speaker' });
+
+				const left = await expectEvent(page, EmbeddedEventName.PARTICIPANT_LEFT);
+				await expect(left).toContainText(speakerName);
+				await expect(left).toContainText('crm-user_42');
+
+				await speakerContext.close();
+			});
+		});
+
 		// Every other describe block above only asserts the deprecated names (what a
 		// 3.8.0 host still listens for). This block is the canonical-name counterpart:
 		// it proves the dual dispatch actually reaches a host listening for the new

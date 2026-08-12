@@ -228,6 +228,20 @@ export class App {
 		this.emitEvent(EmbeddedEventName.MEETING_CLOSED, {});
 	}
 
+	protected handleParticipantJoined(event: Event): void {
+		this.emitEvent(
+			EmbeddedEventName.PARTICIPANT_JOINED,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_JOINED>>).detail
+		);
+	}
+
+	protected handleParticipantLeft(event: Event): void {
+		this.emitEvent(
+			EmbeddedEventName.PARTICIPANT_LEFT,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>>).detail
+		);
+	}
+
 	private handleIframeEvent(event: EmbeddedEvent): void {
 		this.emitEvent(event.event, 'payload' in event ? event.payload : {});
 	}

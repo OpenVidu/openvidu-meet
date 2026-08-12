@@ -30,6 +30,7 @@ import type {
 	Room
 } from '../openvidu-components';
 import { ParticipantLeftReason, RoomEvent, parseParticipantMetadata } from '../openvidu-components';
+import { toEmbeddedParticipantPayload } from '../utils/embedded-participant.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingStateService } from './meeting-state.service';
 
@@ -109,6 +110,54 @@ export class MeetingEventHandlerService {
 				this.handleParticipantMetadataChanged(participant.identity, participant.metadata);
 			}
 		);
+
+		// LiveKit fires these for REMOTE participants only; the local participant's own lifecycle
+		// is notified through meetingJoined/meetingLeft instead.
+		room.on(RoomEvent.ParticipantConnected, (participant: RemoteParticipant) => {
+			this.onRemoteParticipantConnected(participant);
+		});
+
+		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
+			this.onRemoteParticipantDisconnected(participant);
+		});
+	}
+
+	/**
+	 * Forwards a remote participant's join to the host as a `participantJoined` event (embedded
+	 * modes only). Only live transitions are notified: participants already in the meeting when
+	 * the local one joins are not replayed.
+	 */
+	protected onRemoteParticipantConnected(participant: RemoteParticipant): void {
+		if (!this.runtimeConfigService.isEmbeddedMode()) {
+			return;
+		}
+
+		this.eventBus.emit({
+			event: EmbeddedEventName.PARTICIPANT_JOINED,
+			payload: {
+				roomId: this.meetingContext.roomId() ?? '',
+				participant: toEmbeddedParticipantPayload(participant)
+			}
+		});
+	}
+
+	/**
+	 * Forwards a remote participant's departure to the host as a `participantLeft` event (embedded
+	 * modes only). The departure reason is not part of the payload: it is only known server-side
+	 * and travels on the `participantLeft` webhook.
+	 */
+	protected onRemoteParticipantDisconnected(participant: RemoteParticipant): void {
+		if (!this.runtimeConfigService.isEmbeddedMode()) {
+			return;
+		}
+
+		this.eventBus.emit({
+			event: EmbeddedEventName.PARTICIPANT_LEFT,
+			payload: {
+				roomId: this.meetingContext.roomId() ?? '',
+				participant: toEmbeddedParticipantPayload(participant)
+			}
+		});
 	}
 
 	/**

@@ -98,6 +98,8 @@ export class App {
 	readonly meetingJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_JOINED>>();
 	readonly meetingLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>();
 	readonly meetingClosed = output<void>();
+	readonly participantJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_JOINED>>();
+	readonly participantLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly joined = output<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>();
@@ -272,6 +274,12 @@ export class App {
 			case EmbeddedEventName.MEETING_CLOSED:
 				this.meetingClosed.emit();
 				this.closed.emit();
+				break;
+			case EmbeddedEventName.PARTICIPANT_JOINED:
+				this.participantJoined.emit(event.payload);
+				break;
+			case EmbeddedEventName.PARTICIPANT_LEFT:
+				this.participantLeft.emit(event.payload);
 				break;
 		}
 	}

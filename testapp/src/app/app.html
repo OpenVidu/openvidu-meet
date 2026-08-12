@@ -168,6 +168,8 @@
 			(meetingJoined)="handleMeetingJoined($event)"
 			(meetingLeft)="handleMeetingLeft($event)"
 			(meetingClosed)="handleMeetingClosed()"
+			(participantJoined)="handleParticipantJoined($event)"
+			(participantLeft)="handleParticipantLeft($event)"
 			data-testid="openvidu-meet"
 		></openvidu-meet>
 		} @case ('iframe') {

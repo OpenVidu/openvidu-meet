@@ -57,32 +57,42 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 			'position:fixed;top:-9999px;left:0;width:auto;height:auto;pointer-events:none;margin:0;padding:0;list-style:none;';
 		document.body.appendChild(log);
 
-		(['joined', 'left', 'closed', 'meetingJoined', 'meetingLeft', 'meetingClosed', 'error'] as const).forEach(
-			(name) => {
-				document.addEventListener(
-					name,
-					(ev) => {
-						// Only react to events the testapp re-dispatches on its event sink,
-						// not anything else that happens to share these names.
-						const target = ev.target as Element | null;
+		(
+			[
+				'joined',
+				'left',
+				'closed',
+				'meetingJoined',
+				'meetingLeft',
+				'meetingClosed',
+				'participantJoined',
+				'participantLeft',
+				'error'
+			] as const
+		).forEach((name) => {
+			document.addEventListener(
+				name,
+				(ev) => {
+					// Only react to events the testapp re-dispatches on its event sink,
+					// not anything else that happens to share these names.
+					const target = ev.target as Element | null;
 
-						if (!target || target.getAttribute?.('data-testid') !== 'event-sink') return;
+					if (!target || target.getAttribute?.('data-testid') !== 'event-sink') return;
 
-						const li = document.createElement('li');
-						li.className = `event-${name}`;
+					const li = document.createElement('li');
+					li.className = `event-${name}`;
 
-						try {
-							li.textContent = JSON.stringify((ev as CustomEvent).detail ?? {});
-						} catch {
-							li.textContent = '';
-						}
+					try {
+						li.textContent = JSON.stringify((ev as CustomEvent).detail ?? {});
+					} catch {
+						li.textContent = '';
+					}
 
-						log.appendChild(li);
-					},
-					true // capture phase, in case anything stops propagation
-				);
-			}
-		);
+					log.appendChild(li);
+				},
+				true // capture phase, in case anything stops propagation
+			);
+		});
 
 		(window as any).__wcMarkersAttached = true;
 	});
