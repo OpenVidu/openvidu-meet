@@ -14,6 +14,8 @@ MeetWebhookEvent:
                 - recordingEnded
                 - meetingStarted
                 - meetingEnded
+                - participantJoined
+                - participantLeft
             example: recordingStarted
         data:
             oneOf:
@@ -25,6 +27,14 @@ MeetWebhookEvent:
                       - title: Room Event Data
                       - description: Data for room-related events (meeting started, meeting ended)
                       - $ref: '../../rooms/schemas/meet-room.yaml'
+                - allOf:
+                      - title: Participant Joined Event Data
+                      - description: Data for the participantJoined event
+                      - $ref: './meet-participant-joined-event.yaml'
+                - allOf:
+                      - title: Participant Left Event Data
+                      - description: Data for the participantLeft event
+                      - $ref: './meet-participant-left-event.yaml'
             discriminator:
                 propertyName: eventType
                 mapping:
@@ -33,3 +43,5 @@ MeetWebhookEvent:
                     recordingEnded: '../../recordings/schemas/meet-recording.yaml'
                     meetingStarted: '../../rooms/schemas/meet-room.yaml'
                     meetingEnded: '../../rooms/schemas/meet-room.yaml'
+                    participantJoined: './meet-participant-joined-event.yaml'
+                    participantLeft: './meet-participant-left-event.yaml'

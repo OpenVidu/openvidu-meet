@@ -4,6 +4,7 @@ import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
 import { MEET_ENV } from '../environment.js';
+import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
@@ -77,9 +78,7 @@ export class LivekitWebhookService {
 				if (MeetRoomHelper.checkIfMeetingBelogsToOpenViduMeet(updatedMetadata)) return true;
 
 				const roomExists = await this.roomService.meetRoomExists(room.name);
-				this.logger.debug(
-					`Room '${room.name}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`
-				);
+				this.logger.debug(`Room '${room.name}' ${roomExists ? 'exists' : 'does not exist'} in OpenVidu Meet`);
 				return roomExists;
 			}
 
@@ -151,6 +150,9 @@ export class LivekitWebhookService {
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		try {
+			const payload = await MeetParticipantHelper.toParticipantJoinedPayload(room, participant);
+			this.openViduWebhookService.sendParticipantJoinedWebhook(payload);
+
 			const userId = this.getUserIdFromParticipant(participant);
 
 			if (userId) {
@@ -184,6 +186,9 @@ export class LivekitWebhookService {
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
 		try {
+			const payload = await MeetParticipantHelper.toParticipantLeftPayload(room, participant, Date.now());
+			this.openViduWebhookService.sendParticipantLeftWebhook(payload);
+
 			const userId = this.getUserIdFromParticipant(participant);
 
 			if (userId) {

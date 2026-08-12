@@ -1,7 +1,10 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
+	LeftEventReason,
 	MEET_DEPRECATED_PERMISSION_KEYS,
 	MEET_PERMISSION_KEYS,
+	MeetParticipantJoinedPayload,
+	MeetParticipantLeftPayload,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
@@ -9,6 +12,9 @@ import {
 	MeetRoom,
 	MeetRoomConfig,
 	MeetRoomDeletionPolicyWithMeeting,
+	MeetRoomMemberPermissions,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge,
 	MeetWebhookEvent,
 	MeetWebhookEventType
 } from '@openvidu-meet/typings';
@@ -19,9 +25,14 @@ import { container } from '../../../src/config/dependency-injector.config.js';
 import { lkWebhookHandler } from '../../../src/controllers/livekit-webhook.controller.js';
 import { MeetLock } from '../../../src/helpers/redis.helper.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
+import { LiveKitService } from '../../../src/services/livekit.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
 import { OpenViduWebhookService } from '../../../src/services/openvidu-webhook.service.js';
-import { disconnectFakeParticipants } from '../../helpers/livekit-cli-helpers.js';
+import {
+	disconnectFakeParticipants,
+	joinFakeParticipant,
+	updateParticipantMetadata
+} from '../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
 	deleteAllRooms,
@@ -228,6 +239,99 @@ describe('Webhook Integration Tests', () => {
 			expect(room.config).toEqual(defaultRoomConfig);
 
 			expectValidSignature(meetingEndedWebhook);
+		});
+
+		it('should send participantJoined webhook when a participant joins the meeting', async () => {
+			const context = await setupSingleRoom(true);
+			const roomData = context.room;
+
+			const participantJoinedWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.PARTICIPANT_JOINED,
+				{ roomId: roomData.roomId }
+			);
+			expect(participantJoinedWebhook.body.creationDate).toBeLessThanOrEqual(Date.now());
+			expect(participantJoinedWebhook.body.creationDate).toBeGreaterThanOrEqual(Date.now() - 3000);
+
+			const payload = participantJoinedWebhook.body.data as MeetParticipantJoinedPayload;
+			expect(payload.roomId).toBe(roomData.roomId);
+			expect(payload.roomName).toBe(roomData.roomName);
+			expect(payload.participant.participantIdentity).toBe('TEST_PARTICIPANT');
+			// The fake CLI participant joins without any Meet room-member token metadata, so it falls
+			// back to the same default a real anonymous non-moderator participant would get.
+			expect(payload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
+			expect(payload.participant.joinDate).toBeLessThanOrEqual(Date.now());
+
+			expectValidSignature(participantJoinedWebhook);
+		});
+
+		it('should send participantLeft webhook when a participant leaves the meeting', async () => {
+			const context = await setupSingleRoom(true);
+			const roomData = context.room;
+
+			// A second participant, kicked deliberately: TEST_PARTICIPANT stays connected so the
+			// meeting keeps running and doesn't also fire a competing meetingEnded webhook.
+			const leavingIdentity = 'TEST_PARTICIPANT_LEAVING';
+			await joinFakeParticipant(roomData.roomId, leavingIdentity);
+
+			const startDate = Date.now();
+			const livekitService = container.get(LiveKitService);
+			await livekitService.deleteParticipant(roomData.roomId, leavingIdentity);
+
+			const participantLeftWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.PARTICIPANT_LEFT,
+				{ roomId: roomData.roomId }
+			);
+			expect(participantLeftWebhook.body.creationDate).toBeGreaterThanOrEqual(startDate);
+
+			const payload = participantLeftWebhook.body.data as MeetParticipantLeftPayload;
+			expect(payload.roomId).toBe(roomData.roomId);
+			expect(payload.roomName).toBe(roomData.roomName);
+			expect(payload.participant.participantIdentity).toBe(leavingIdentity);
+			expect(payload.participant.leaveReason).toBe(LeftEventReason.PARTICIPANT_KICKED);
+			expect(payload.participant.leaveDate).toBeGreaterThanOrEqual(startDate);
+			expect(payload.participant.durationSeconds).toBeGreaterThanOrEqual(0);
+
+			expectValidSignature(participantLeftWebhook);
+		});
+
+		it('should echo the app-provided correlation fields in the participantLeft webhook', async () => {
+			const context = await setupSingleRoom(true);
+			const roomData = context.room;
+
+			const leavingIdentity = 'TEST_PARTICIPANT_CORRELATED';
+			await joinFakeParticipant(roomData.roomId, leavingIdentity);
+
+			// The CLI participant joins without Meet metadata; stamp it as a real join would have,
+			// including the app-provided correlation fields, before disconnecting it.
+			await updateParticipantMetadata(roomData.roomId, leavingIdentity, {
+				iat: Date.now(),
+				roomId: roomData.roomId,
+				permissions: Object.fromEntries(
+					MEET_PERMISSION_KEYS.map((key) => [key, true])
+				) as unknown as MeetRoomMemberPermissions,
+				badge: MeetRoomMemberUIBadge.OTHER,
+				externalId: 'crm-user_42',
+				metadata: '{"department": "cardiology"}'
+			});
+
+			const livekitService = container.get(LiveKitService);
+			await livekitService.deleteParticipant(roomData.roomId, leavingIdentity);
+
+			const participantLeftWebhook = await waitForWebhookEvent(
+				receivedWebhooks,
+				MeetWebhookEventType.PARTICIPANT_LEFT,
+				{ roomId: roomData.roomId }
+			);
+
+			const payload = participantLeftWebhook.body.data as MeetParticipantLeftPayload;
+			expect(payload.participant.participantIdentity).toBe(leavingIdentity);
+			expect(payload.participant.externalId).toBe('crm-user_42');
+			expect(payload.participant.metadata).toBe('{"department": "cardiology"}');
+			expect(payload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
+
+			expectValidSignature(participantLeftWebhook);
 		});
 
 		it('should send recordingStarted, recordingUpdated and recordingEnded webhooks when recording is started and stopped', async () => {

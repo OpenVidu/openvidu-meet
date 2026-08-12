@@ -1,0 +1,18 @@
+type: object
+required:
+    - roomId
+    - roomName
+    - participant
+properties:
+    roomId:
+        type: string
+        example: 'room-123'
+        description: >
+            The unique identifier of the room the participant left.
+    roomName:
+        type: string
+        example: 'room'
+        description: >
+            The display name of the room the participant left.
+    participant:
+        $ref: ./meet-participant-departure-payload.yaml

@@ -149,6 +149,37 @@ export class MeetRoomHelper {
 	}
 
 	/**
+	 * Extracts the room options OpenVidu Meet embeds in a LiveKit room's metadata when it creates the
+	 * room (see `RoomService.createLivekitRoom`). Lets callers read room properties straight off a
+	 * LiveKit webhook payload instead of querying the database.
+	 *
+	 * @param metadata - The raw LiveKit room metadata.
+	 * @returns The embedded room options, or undefined if the metadata is absent, malformed or was
+	 * not written by OpenVidu Meet.
+	 */
+	static extractRoomOptionsFromMetadata(metadata?: string): MeetRoomOptions | undefined {
+		if (!metadata) return undefined;
+
+		try {
+			const parsed: unknown = JSON.parse(metadata);
+
+			if (typeof parsed !== 'object' || parsed === null || !('roomOptions' in parsed)) {
+				return undefined;
+			}
+
+			const { roomOptions } = parsed;
+
+			if (typeof roomOptions !== 'object' || roomOptions === null) {
+				return undefined;
+			}
+
+			return roomOptions;
+		} catch {
+			return undefined;
+		}
+	}
+
+	/**
 	 * Calculates optimal fields to request from database for Room queries.
 	 * Minimizes data transfer by excluding unnecessary extra fields.
 	 *

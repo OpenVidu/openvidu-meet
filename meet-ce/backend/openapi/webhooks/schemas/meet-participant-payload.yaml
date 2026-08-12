@@ -1,0 +1,47 @@
+type: object
+required:
+    - participantIdentity
+    - participantName
+    - role
+    - joinDate
+properties:
+    participantIdentity:
+        type: string
+        example: 'moderator-a1b2c3'
+        description: >
+            The LiveKit identity of the participant.
+    participantName:
+        type: string
+        example: 'Alice Smith'
+        description: >
+            The display name of the participant.
+    externalId:
+        type: string
+        maxLength: 64
+        pattern: '^[A-Za-z0-9_-]+$'
+        example: 'user-42'
+        description: >
+            Application-defined identifier echoed from the `participant-external-id` embed attribute
+            / `participantExternalId` join option, so the embedding application can correlate the
+            participant with one of its own users. Absent when the application did not provide one.
+    metadata:
+        type: string
+        maxLength: 2048
+        example: '{"department": "cardiology"}'
+        description: >
+            Opaque application-defined payload echoed from the `participant-metadata` embed
+            attribute / `participantMetadata` join option. Never interpreted by OpenVidu Meet.
+            Absent when the application did not provide one.
+    role:
+        type: string
+        enum:
+            - moderator
+            - speaker
+        example: 'speaker'
+        description: >
+            The effective role of the participant, including on-the-fly promotions.
+    joinDate:
+        type: number
+        example: 1620000000000
+        description: >
+            The date when the participant joined the meeting (milliseconds since the Unix epoch).

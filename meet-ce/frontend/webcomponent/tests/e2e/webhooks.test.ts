@@ -1,8 +1,16 @@
-import { MeetRecordingInfo, MeetRoomStatus, MeetWebhookEventType } from '@openvidu-meet/typings';
+import {
+	LeftEventReason,
+	MeetParticipantJoinedPayload,
+	MeetParticipantLeftPayload,
+	MeetRecordingInfo,
+	MeetRoomMemberRole,
+	MeetRoomStatus,
+	MeetWebhookEventType
+} from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { createRoom, deleteRooms, getRecording, getRoom } from '../helpers/meet-api.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
-import { endMeetingCommand, expectWebhook, openMeeting } from '../helpers/testapp.helper';
+import { endMeetingCommand, expectWebhook, leaveMeeting, openMeeting } from '../helpers/testapp.helper';
 import { getWebhookFromStorage } from '../helpers/ui-utils.helper';
 
 test.describe('Webhooks E2E Tests', () => {
@@ -37,9 +45,61 @@ test.describe('Webhooks E2E Tests', () => {
 		expect(meetingEndedWebhook.data).toMatchObject(actualRoom as any);
 	});
 
-	test('should receive recordingStarted, recordingUpdated and recordingEnded webhooks', async ({
-		page
+	test('should receive participantJoined and participantLeft webhooks for a participant that joins and leaves', async ({
+		page,
+		browser
 	}) => {
+		await openMeeting(page, roomId, { role: 'moderator' });
+		await expectWebhook(page, MeetWebhookEventType.MEETING_STARTED);
+
+		const speakerContext = await browser.newContext();
+		const speakerPage = await speakerContext.newPage();
+		const speakerName = 'Speaker';
+		const speakerExternalId = 'crm-user_42';
+		const speakerMetadata = '{"department": "cardiology"}';
+		await openMeeting(speakerPage, roomId, {
+			role: 'speaker',
+			name: speakerName,
+			externalId: speakerExternalId,
+			metadata: speakerMetadata
+		});
+
+		// The moderator's own join also fires a participantJoined webhook, so the speaker's is the
+		// second one delivered for this room. Both pages observe the same broadcast (the webhook
+		// bridge has no room scoping), so read everything from the moderator's page.
+		await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_JOINED, { count: 2 });
+		const participantJoinedWebhook = await getWebhookFromStorage(
+			page,
+			roomId,
+			MeetWebhookEventType.PARTICIPANT_JOINED,
+			{ matchIndex: 1 }
+		);
+		const joinedPayload = participantJoinedWebhook.data as MeetParticipantJoinedPayload;
+		expect(joinedPayload.roomId).toBe(roomId);
+		expect(joinedPayload.participant.participantName).toBe(speakerName);
+		expect(joinedPayload.participant.role).toBe(MeetRoomMemberRole.SPEAKER);
+		expect(joinedPayload.participant.joinDate).toBeLessThanOrEqual(Date.now());
+		// The app-provided correlation fields ride the whole pipeline: embed attribute -> join
+		// request -> token metadata -> LiveKit participant -> webhook payload.
+		expect(joinedPayload.participant.externalId).toBe(speakerExternalId);
+		expect(joinedPayload.participant.metadata).toBe(speakerMetadata);
+
+		await leaveMeeting(speakerPage, { role: 'speaker' });
+
+		await expectWebhook(page, MeetWebhookEventType.PARTICIPANT_LEFT);
+		const participantLeftWebhook = await getWebhookFromStorage(page, roomId, MeetWebhookEventType.PARTICIPANT_LEFT);
+		const leftPayload = participantLeftWebhook.data as MeetParticipantLeftPayload;
+		expect(leftPayload.roomId).toBe(roomId);
+		expect(leftPayload.participant.participantName).toBe(speakerName);
+		expect(leftPayload.participant.leaveReason).toBe(LeftEventReason.VOLUNTARY_LEAVE);
+		expect(leftPayload.participant.durationSeconds).toBeGreaterThanOrEqual(0);
+		expect(leftPayload.participant.externalId).toBe(speakerExternalId);
+		expect(leftPayload.participant.metadata).toBe(speakerMetadata);
+
+		await speakerContext.close();
+	});
+
+	test('should receive recordingStarted, recordingUpdated and recordingEnded webhooks', async ({ page }) => {
 		await openMeeting(page, roomId, { role: 'moderator' });
 
 		await startRecording(page);

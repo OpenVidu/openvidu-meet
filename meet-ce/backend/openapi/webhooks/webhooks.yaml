@@ -173,3 +173,55 @@ meetingEnded:
         responses:
             '200':
                 $ref: ./responses/success/webhook-success.yaml
+
+participantJoined:
+    post:
+        summary: Participant joined
+        description: >
+            This webhook is triggered when a participant joins a meeting.
+        operationId: participantJoinedWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: participantJoined
+                                  data:
+                                      $ref: ./schemas/meet-participant-joined-event.yaml
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml
+
+participantLeft:
+    post:
+        summary: Participant left
+        description: >
+            This webhook is triggered when a participant leaves a meeting.
+        operationId: participantLeftWebhook
+        parameters:
+            - $ref: ./parameters/x-timestamp.yaml
+            - $ref: ./parameters/x-signature.yaml
+        requestBody:
+            required: true
+            content:
+                application/json:
+                    schema:
+                        type: object
+                        allOf:
+                            - $ref: ./schemas/webhook-base-event.yaml
+                            - properties:
+                                  event:
+                                      example: participantLeft
+                                  data:
+                                      $ref: ./schemas/meet-participant-left-event.yaml
+        responses:
+            '200':
+                $ref: ./responses/success/webhook-success.yaml

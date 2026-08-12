@@ -1,9 +1,19 @@
 import { describe, expect, it } from '@jest/globals';
-import { TrackSource } from '@livekit/protocol';
+import { DisconnectReason, TrackSource } from '@livekit/protocol';
 import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { MEET_PERMISSION_KEYS, MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
+import {
+	LeftEventReason,
+	MEET_PERMISSION_KEYS,
+	MeetRoomMemberRole,
+	MeetRoomMemberUIBadge
+} from '@openvidu-meet/typings';
 import type { ParticipantInfo } from 'livekit-server-sdk';
 import { MeetParticipantHelper } from '../../../src/helpers/participant.helper.js';
+
+// Only the container-free statics are covered here. The async webhook payload builders
+// (toParticipantJoinedPayload/toParticipantLeftPayload) resolve the RoomService through the DI
+// container to fall back to the database for the room identity, so they belong to the integration
+// suite instead.
 
 const allPermissions = Object.fromEntries(
 	MEET_PERMISSION_KEYS.map((key) => [key, true])
@@ -48,6 +58,28 @@ describe('MeetParticipantHelper.toParticipantPayload', () => {
 			metadata: '{"plan":"premium"}',
 			role: MeetRoomMemberRole.MODERATOR,
 			joinDate: 1_620_000_000_000
+		});
+	});
+});
+
+describe('MeetParticipantHelper.toDepartedParticipantPayload', () => {
+	it('extends the lifecycle payload with how and when the participant left', () => {
+		const participant = participantWith({
+			metadata: meetingMetadata({ externalId: 'crm-user_42', metadata: '{"plan":"premium"}' }),
+			joinedAtMs: 1_620_000_000_000n,
+			disconnectReason: DisconnectReason.PARTICIPANT_REMOVED
+		});
+
+		expect(MeetParticipantHelper.toDepartedParticipantPayload(participant, 1_620_000_145_400)).toEqual({
+			participantIdentity: 'participant-1',
+			participantName: 'Participant One',
+			externalId: 'crm-user_42',
+			metadata: '{"plan":"premium"}',
+			role: MeetRoomMemberRole.MODERATOR,
+			joinDate: 1_620_000_000_000,
+			leaveDate: 1_620_000_145_400,
+			durationSeconds: 145,
+			leaveReason: LeftEventReason.PARTICIPANT_KICKED
 		});
 	});
 });
@@ -136,6 +168,65 @@ describe('MeetParticipantHelper.extractJoinDate', () => {
 
 	it('returns 0 when LiveKit reports neither', () => {
 		expect(MeetParticipantHelper.extractJoinDate(participantWith({ joinedAtMs: 0n, joinedAt: 0n }))).toBe(0);
+	});
+});
+
+describe('MeetParticipantHelper.extractDuration', () => {
+	it('reports the elapsed seconds, rounded', () => {
+		expect(MeetParticipantHelper.extractDuration(1_620_000_000_000, 1_620_000_145_400)).toBe(145);
+	});
+
+	it('returns 0 when the join timestamp is missing, instead of a stay lasting since the epoch', () => {
+		expect(MeetParticipantHelper.extractDuration(0, 1_620_000_145_400)).toBe(0);
+	});
+
+	it('never reports a negative duration', () => {
+		expect(MeetParticipantHelper.extractDuration(1_620_000_145_400, 1_620_000_000_000)).toBe(0);
+	});
+});
+
+describe('MeetParticipantHelper.extractLeftReason', () => {
+	it('maps a deliberate client disconnect to a voluntary leave', () => {
+		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.CLIENT_INITIATED)).toBe(
+			LeftEventReason.VOLUNTARY_LEAVE
+		);
+	});
+
+	it('maps every transport-level failure to a network disconnect', () => {
+		const networkFailures = [
+			DisconnectReason.SIGNAL_CLOSE,
+			DisconnectReason.STATE_MISMATCH,
+			DisconnectReason.CONNECTION_TIMEOUT,
+			DisconnectReason.MEDIA_FAILURE
+		];
+
+		for (const reason of networkFailures) {
+			expect(MeetParticipantHelper.extractLeftReason(reason)).toBe(LeftEventReason.NETWORK_DISCONNECT);
+		}
+	});
+
+	it('maps a removal to a kick and a room teardown to a meeting end', () => {
+		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.PARTICIPANT_REMOVED)).toBe(
+			LeftEventReason.PARTICIPANT_KICKED
+		);
+		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.ROOM_DELETED)).toBe(
+			LeftEventReason.MEETING_ENDED
+		);
+		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.ROOM_CLOSED)).toBe(
+			LeftEventReason.MEETING_ENDED
+		);
+	});
+
+	it('maps the remaining reasons to their own value or to unknown', () => {
+		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.SERVER_SHUTDOWN)).toBe(
+			LeftEventReason.SERVER_SHUTDOWN
+		);
+		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.DUPLICATE_IDENTITY)).toBe(
+			LeftEventReason.DUPLICATE_IDENTITY
+		);
+		// Reasons Meet has no public equivalent for must degrade, never leak a raw LiveKit value.
+		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.UNKNOWN_REASON)).toBe(LeftEventReason.UNKNOWN);
+		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.MIGRATION)).toBe(LeftEventReason.UNKNOWN);
 	});
 });
 
