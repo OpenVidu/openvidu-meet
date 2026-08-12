@@ -8,6 +8,8 @@ const BASE_INPUTS: Required<WebComponentPropertyValues> = {
 	roomUrl: '',
 	recordingUrl: '',
 	participantName: '',
+	participantExternalId: '',
+	participantMetadata: '',
 	e2eeKey: '',
 	leaveRedirectUrl: '',
 	showOnlyRecordings: false,
@@ -85,6 +87,29 @@ describe('wcRouteFromAttributes', () => {
 		);
 	});
 
+	it('carries the participant correlation fields onto a meeting route, normalizing empty to absent', () => {
+		const withFields = wcRouteFromAttributes(
+			inputs({
+				roomUrl: 'https://x/room/r1',
+				participantExternalId: 'crm-user_42',
+				participantMetadata: '{"plan":"premium"}'
+			})
+		);
+		expect(withFields).toEqual(
+			jasmine.objectContaining({
+				name: WcRouteName.MEETING,
+				params: jasmine.objectContaining({
+					participantExternalId: 'crm-user_42',
+					participantMetadata: '{"plan":"premium"}'
+				})
+			})
+		);
+
+		const withoutFields = wcRouteFromAttributes(inputs({ roomUrl: 'https://x/room/r1' }));
+		expect((withoutFields as { params: Record<string, unknown> }).params['participantExternalId']).toBeUndefined();
+		expect((withoutFields as { params: Record<string, unknown> }).params['participantMetadata']).toBeUndefined();
+	});
+
 	it('resolves room-recordings when show-only-recordings is enabled', () => {
 		const route = wcRouteFromAttributes(inputs({ roomUrl: 'https://x/room/r1', showOnlyRecordings: true }));
 		expect(route).toEqual(
@@ -109,6 +134,11 @@ describe('wcRouteIdentity', () => {
 		const a = wcRouteFromAttributes(inputs({ roomUrl: 'https://x/room/r1', participantName: 'Alice' }));
 		const b = wcRouteFromAttributes(inputs({ roomUrl: 'https://x/room/r1', participantName: 'Bob' }));
 		expect(wcRouteIdentity(a)).toBe(wcRouteIdentity(b));
+
+		const c = wcRouteFromAttributes(
+			inputs({ roomUrl: 'https://x/room/r1', participantExternalId: 'u1', participantMetadata: 'm1' })
+		);
+		expect(wcRouteIdentity(a)).toBe(wcRouteIdentity(c));
 	});
 
 	it('differs when the room changes', () => {

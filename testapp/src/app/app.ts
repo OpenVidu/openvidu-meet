@@ -46,6 +46,8 @@ export class App {
 	protected roomUrlInput = 'http://localhost:6080/meet/room/room-6vnlh1ltf4ej3mh?secret=1d766d7734';
 	protected recordingUrlInput = '';
 	protected participantNameInput = 'Test User';
+	protected participantExternalIdInput = '';
+	protected participantMetadataInput = '';
 	protected e2eeKeyInput = '';
 	protected leaveRedirectUrlInput = '';
 	protected showRecordingInput = '';
@@ -56,6 +58,8 @@ export class App {
 	protected readonly roomUrl = signal<string | undefined>(undefined);
 	protected readonly recordingUrl = signal<string | undefined>(undefined);
 	protected readonly participantName = signal<string | undefined>(undefined);
+	protected readonly participantExternalId = signal<string | undefined>(undefined);
+	protected readonly participantMetadata = signal<string | undefined>(undefined);
 	protected readonly e2eeKey = signal<string | undefined>(undefined);
 	protected readonly leaveRedirectUrl = signal<string | undefined>(undefined);
 	protected readonly showRecording = signal<string | undefined>(undefined);
@@ -115,6 +119,8 @@ export class App {
 				this.roomUrl.set(this.roomUrlInput || undefined);
 				this.recordingUrl.set(this.recordingUrlInput || undefined);
 				this.participantName.set(this.participantNameInput || undefined);
+				this.participantExternalId.set(this.participantExternalIdInput || undefined);
+				this.participantMetadata.set(this.participantMetadataInput || undefined);
 				this.e2eeKey.set(this.e2eeKeyInput || undefined);
 				this.leaveRedirectUrl.set(this.leaveRedirectUrlInput || undefined);
 				this.showRecording.set(this.showRecordingInput || undefined);
@@ -155,6 +161,8 @@ export class App {
 			if (value) url.searchParams.set(key, value);
 		};
 		set(EmbeddedAttribute.PARTICIPANT_NAME, this.participantNameInput);
+		set(EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID, this.participantExternalIdInput);
+		set(EmbeddedAttribute.PARTICIPANT_METADATA, this.participantMetadataInput);
 		// The embedded app runs on the Meet server origin (the iframe `src`), NOT this
 		// host's origin, and cannot reliably reconstruct the host origin from
 		// document.referrer. So resolve a relative leave-redirect path against THIS

@@ -33,6 +33,19 @@ export interface MeetRoomMemberTokenOptions {
 	 * Required if joinMeeting is true and user is anonymous.
 	 */
 	participantName?: string;
+	/**
+	 * Application-defined identifier for the participant when joining the meeting, so the embedding
+	 * application can correlate the participant with one of its own users.
+	 * Up to 64 characters (letters, digits, `_` and `-`). Stored in the token metadata as
+	 * `externalId`; never interpreted by OpenVidu Meet.
+	 */
+	participantExternalId?: string;
+	/**
+	 * Opaque application-defined payload attached to the participant when joining the meeting
+	 * (JSON is recommended). Up to 2 KB. Stored in the token metadata as `metadata`; never
+	 * interpreted by OpenVidu Meet.
+	 */
+	participantMetadata?: string;
 }
 
 /**

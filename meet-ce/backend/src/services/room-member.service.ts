@@ -444,7 +444,13 @@ export class RoomMemberService {
 		tokenOptions: MeetRoomMemberTokenOptions,
 		previousToken?: string
 	): Promise<string> {
-		const { secret, joinMeeting = false, participantName } = tokenOptions;
+		const {
+			secret,
+			joinMeeting = false,
+			participantName,
+			participantExternalId,
+			participantMetadata
+		} = tokenOptions;
 
 		const [secretSource, authenticatedSource, room] = await Promise.all([
 			secret ? this.resolvePermissionSourceFromSecret(roomId, secret) : Promise.resolve(undefined),
@@ -469,7 +475,9 @@ export class RoomMemberService {
 			memberId: secretSource?.memberId || authenticatedSource?.memberId,
 			userId: authenticatedSource?.userId,
 			permissions: mergedPermissions,
-			badge
+			badge,
+			externalId: participantExternalId,
+			metadata: participantMetadata
 		};
 
 		if (joinMeeting) {
@@ -486,6 +494,11 @@ export class RoomMemberService {
 					participantIdentity = tokenContext.participantIdentity;
 					resolvedParticipantName = tokenContext.participantName;
 				}
+
+				// The app-provided correlation fields travel with the participant, not with the request:
+				// keep the previous token's values unless the regeneration explicitly re-provides them.
+				tokenMetadata.externalId ??= tokenContext.tokenMetadata.externalId;
+				tokenMetadata.metadata ??= tokenContext.tokenMetadata.metadata;
 			}
 
 			return this.generateTokenForJoiningMeeting(
@@ -894,7 +907,9 @@ export class RoomMemberService {
 			permissions: participantMetadata.permissions,
 			badge: participantMetadata.badge,
 			isPromotedModerator: participantMetadata.isPromotedModerator,
-			livekitUrl: participantMetadata.livekitUrl
+			livekitUrl: participantMetadata.livekitUrl,
+			externalId: participantMetadata.externalId,
+			metadata: participantMetadata.metadata
 		};
 	}
 

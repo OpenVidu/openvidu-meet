@@ -112,6 +112,8 @@ describe('extractParams', () => {
 			queryParams: {
 				secret: 'sec',
 				[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
+				[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID]: 'crm-user_42',
+				[EmbeddedAttribute.PARTICIPANT_METADATA]: '{"plan":"premium"}',
 				[EmbeddedAttribute.LEAVE_REDIRECT_URL]: 'https://back',
 				[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]: 'true',
 				[EmbeddedAttribute.SHOW_RECORDING]: 'rec-1',
@@ -123,6 +125,8 @@ describe('extractParams', () => {
 			roomId: 'r1',
 			secret: 'sec',
 			participantName: 'Alice',
+			participantExternalId: 'crm-user_42',
+			participantMetadata: '{"plan":"premium"}',
 			leaveRedirectUrl: 'https://back',
 			showOnlyRecordings: 'true',
 			showRecording: 'rec-1',
@@ -135,6 +139,8 @@ describe('extractParams', () => {
 		expect(result.showOnlyRecordings).toBe('false');
 		expect(result.secret).toBeUndefined();
 		expect(result.participantName).toBeUndefined();
+		expect(result.participantExternalId).toBeUndefined();
+		expect(result.participantMetadata).toBeUndefined();
 	});
 });
 
