@@ -22,6 +22,10 @@ export interface MeetingEntryParams {
 	e2eeKey?: string;
 	/** Optional participant display name. */
 	participantName?: string;
+	/** Optional application-defined participant identifier (correlation key; ≤ 64 chars: letters, digits, `_`, `-`). */
+	participantExternalId?: string;
+	/** Optional opaque application-defined participant payload (JSON recommended, ≤ 2 KB). */
+	participantMetadata?: string;
 	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -79,11 +83,19 @@ export class MeetingEntryService {
 		showRecording,
 		showOnlyRecordings,
 		e2eeKey,
-		participantName
+		participantName,
+		participantExternalId,
+		participantMetadata
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
 		this.meetingContextService.setRoomId(roomId);
+
+		// The app-provided correlation fields are pure passthrough: seeded (or cleared) on every
+		// entry and never restored from storage — they belong to the embedding application, not to
+		// the browser.
+		this.roomMemberContextService.setParticipantExternalId(participantExternalId);
+		this.roomMemberContextService.setParticipantMetadata(participantMetadata);
 
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
 		// persisted on this origin. Keeping the fallback here means every adapter

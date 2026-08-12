@@ -401,10 +401,15 @@ export class MeetingLobbyService {
 				tokenParticipantName = await this.e2eeService.encrypt(participantName);
 			}
 
+			// The app-provided correlation fields are deliberately NOT E2EE-encrypted: they belong to
+			// the integration plane (the embedding application already knows them and consumes them
+			// server-side), not to the user content the E2EE key protects.
 			const roomMemberToken = await this.roomMemberContextService.generateToken(roomId!, {
 				secret: roomSecret,
 				joinMeeting: true,
-				participantName: tokenParticipantName
+				participantName: tokenParticipantName,
+				participantExternalId: this.roomMemberContextService.participantExternalId(),
+				participantMetadata: this.roomMemberContextService.participantMetadata()
 			});
 
 			// Save participant name to storage only if it was chosen freely by the user

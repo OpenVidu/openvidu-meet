@@ -38,6 +38,22 @@
 				<input id="participantName" [(ngModel)]="participantNameInput" data-testid="input-participantName" />
 			</div>
 			<div class="ta-field">
+				<label for="participantExternalId">participantExternalId</label>
+				<input
+					id="participantExternalId"
+					[(ngModel)]="participantExternalIdInput"
+					data-testid="input-participantExternalId"
+				/>
+			</div>
+			<div class="ta-field">
+				<label for="participantMetadata">participantMetadata</label>
+				<input
+					id="participantMetadata"
+					[(ngModel)]="participantMetadataInput"
+					data-testid="input-participantMetadata"
+				/>
+			</div>
+			<div class="ta-field">
 				<label for="e2eeKey">e2eeKey</label>
 				<input id="e2eeKey" [(ngModel)]="e2eeKeyInput" data-testid="input-e2eeKey" />
 			</div>
@@ -140,6 +156,8 @@
 			[roomUrl]="roomUrl()"
 			[recordingUrl]="recordingUrl()"
 			[participantName]="participantName()"
+			[participantExternalId]="participantExternalId()"
+			[participantMetadata]="participantMetadata()"
 			[e2eeKey]="e2eeKey()"
 			[leaveRedirectUrl]="leaveRedirectUrl()"
 			[showOnlyRecordings]="showOnlyRecordings()"

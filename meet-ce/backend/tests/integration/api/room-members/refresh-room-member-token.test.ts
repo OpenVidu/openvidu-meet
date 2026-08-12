@@ -82,6 +82,37 @@ describe('Room Members API Tests', () => {
 			});
 		});
 
+		it('should preserve the app-provided correlation fields across a refresh', async () => {
+			// The refresh rebuilds the token metadata from the live LiveKit participant
+			// (buildTokenMetadataFromParticipant re-lists every field), so a field missing from that
+			// re-list would silently disappear from the participant here.
+			const previousToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.moderatorSecret,
+				joinMeeting: true,
+				participantName: 'Correlated Refresher',
+				participantExternalId: 'crm-user_42',
+				participantMetadata: '{"department": "cardiology"}'
+			});
+
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(previousToken));
+			const participantIdentity = claims.sub;
+			expect(participantIdentity).toBeDefined();
+			const metadata = JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			await joinFakeParticipant(roomId, participantIdentity!);
+			await updateParticipantMetadata(roomId, participantIdentity!, metadata);
+
+			const response = await refreshRoomMemberTokenRequest(roomId, previousToken);
+			expect(response.status).toBe(200);
+
+			const refreshedClaims = tokenService.getClaimsIgnoringExpiration(
+				getRawToken(response.body.token as string)
+			);
+			const refreshedMetadata = JSON.parse(refreshedClaims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+			expect(refreshedMetadata.externalId).toBe('crm-user_42');
+			expect(refreshedMetadata.metadata).toBe('{"department": "cardiology"}');
+		});
+
 		it('should fail when using valid room member token for joining meeting but participant has not joined', async () => {
 			// Generate a room member token for joining the meeting
 			const previousToken = await generateRoomMemberToken(roomId, {

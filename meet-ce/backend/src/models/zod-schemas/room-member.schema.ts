@@ -323,7 +323,14 @@ export const UpdateRoomMemberReqSchema = z.object({
 export const RoomMemberTokenOptionsSchema: z.ZodType<MeetRoomMemberTokenOptions> = z.object({
 	secret: z.string().optional(),
 	joinMeeting: z.boolean().optional().default(false),
-	participantName: z.string().optional()
+	participantName: z.string().optional(),
+	participantExternalId: z
+		.string()
+		.min(1, 'participantExternalId cannot be empty')
+		.max(64, 'participantExternalId cannot exceed 64 characters')
+		.regex(/^[A-Za-z0-9_-]+$/, 'participantExternalId must contain only letters, digits, underscores and hyphens')
+		.optional(),
+	participantMetadata: z.string().max(2048, 'participantMetadata cannot exceed 2048 characters').optional()
 });
 
 export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadata> = z.object({
@@ -334,5 +341,10 @@ export const RoomMemberTokenMetadataSchema: z.ZodType<MeetRoomMemberTokenMetadat
 	permissions: MeetTokenPermissionsSchema,
 	badge: z.enum(MeetRoomMemberUIBadge),
 	isPromotedModerator: z.boolean().optional(),
-	livekitUrl: z.url('LiveKit URL must be a valid URL').optional()
+	livekitUrl: z.url('LiveKit URL must be a valid URL').optional(),
+	// App-provided correlation fields, echoed from the join request. Lenient on purpose (tokens are
+	// our own artifacts, already validated at issuance); an undeclared key would be dropped by this
+	// schema on every refresh/promotion round trip.
+	externalId: z.string().optional(),
+	metadata: z.string().optional()
 });

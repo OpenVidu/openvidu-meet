@@ -125,6 +125,16 @@ export interface MeetRoomMemberTokenMetadata {
 	permissions: MeetRoomMemberPermissions;
 	/** Visual badge/category used in participant UI. */
 	badge: MeetRoomMemberUIBadge;
+	/**
+	 * Application-defined identifier for the participant, echoed from the join request
+	 * (`participantExternalId`). Never interpreted by OpenVidu Meet.
+	 */
+	externalId?: string;
+	/**
+	 * Opaque application-defined payload for the participant, echoed from the join request
+	 * (`participantMetadata`). Never interpreted by OpenVidu Meet.
+	 */
+	metadata?: string;
 	/** Indicates if participant has been promoted to moderator during the meeting and is not originally a moderator. */
 	isPromotedModerator?: boolean;
 	/** URL of the LiveKit server to connect to when joining the meeting */

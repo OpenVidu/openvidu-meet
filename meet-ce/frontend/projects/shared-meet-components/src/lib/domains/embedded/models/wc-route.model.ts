@@ -27,6 +27,8 @@ export interface MeetingRoute {
 		secret?: string;
 		e2eeKey?: string;
 		participantName?: string;
+		participantExternalId?: string;
+		participantMetadata?: string;
 		leaveRedirectUrl?: string;
 	};
 }

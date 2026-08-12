@@ -84,6 +84,8 @@ export class App {
 	readonly roomUrl = input<string | undefined>(undefined);
 	readonly recordingUrl = input<string | undefined>(undefined);
 	readonly participantName = input<string | undefined>(undefined);
+	readonly participantExternalId = input<string | undefined>(undefined);
+	readonly participantMetadata = input<string | undefined>(undefined);
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input<boolean>(false);
@@ -114,6 +116,8 @@ export class App {
 		roomUrl: this.roomUrl(),
 		recordingUrl: this.recordingUrl(),
 		participantName: this.participantName(),
+		participantExternalId: this.participantExternalId(),
+		participantMetadata: this.participantMetadata(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),

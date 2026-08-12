@@ -992,6 +992,85 @@ describe('Room Members API Tests', () => {
 		});
 	});
 
+	describe('Participant Identity Correlation Field Tests', () => {
+		const participantExternalId = 'crm-user_42';
+		const participantMetadata = '{"department": "cardiology"}';
+
+		const metadataOf = (token: string): MeetRoomMemberTokenMetadata => {
+			const claims = tokenService.getClaimsIgnoringExpiration(getRawToken(token));
+			return JSON.parse(claims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+		};
+
+		it('should embed externalId and metadata in the token metadata when joining a meeting', async () => {
+			const token = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Correlated Participant',
+				participantExternalId,
+				participantMetadata
+			});
+
+			const metadata = metadataOf(token);
+			expect(metadata.externalId).toBe(participantExternalId);
+			expect(metadata.metadata).toBe(participantMetadata);
+		});
+
+		it('should carry the correlation fields on non-join tokens too', async () => {
+			const token = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				participantExternalId,
+				participantMetadata
+			});
+
+			const metadata = metadataOf(token);
+			expect(metadata.externalId).toBe(participantExternalId);
+			expect(metadata.metadata).toBe(participantMetadata);
+		});
+
+		it('should omit the correlation fields when the application does not provide them', async () => {
+			const token = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Plain Participant'
+			});
+
+			const metadata = metadataOf(token);
+			expect(metadata).not.toHaveProperty('externalId');
+			expect(metadata).not.toHaveProperty('metadata');
+		});
+
+		it('should preserve the correlation fields across a regeneration that does not re-provide them', async () => {
+			const initialToken = await generateRoomMemberToken(roomId, {
+				secret: roomData.speakerSecret,
+				joinMeeting: true,
+				participantName: 'Sticky Correlation',
+				participantExternalId,
+				participantMetadata
+			});
+
+			const initialClaims = tokenService.getClaimsIgnoringExpiration(getRawToken(initialToken));
+			const participantIdentity = initialClaims.sub;
+			expect(participantIdentity).toBeDefined();
+			const initialMetadata = JSON.parse(initialClaims.metadata || '{}') as MeetRoomMemberTokenMetadata;
+
+			// The regeneration path requires the participant to actually be in the meeting
+			await joinFakeParticipant(roomId, participantIdentity!);
+			await updateParticipantMetadata(roomId, participantIdentity!, initialMetadata);
+
+			const response = await generateRoomMemberTokenRequest(
+				roomId,
+				{ secret: roomData.speakerSecret, joinMeeting: true },
+				undefined,
+				initialToken
+			);
+			expect(response.status).toBe(200);
+
+			const metadata = metadataOf(response.body.token as string);
+			expect(metadata.externalId).toBe(participantExternalId);
+			expect(metadata.metadata).toBe(participantMetadata);
+		});
+	});
+
 	describe('Generate Room Member Token Validation Tests', () => {
 		it('should fail when joinMeeting is not a boolean', async () => {
 			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
@@ -1009,6 +1088,44 @@ describe('Room Members API Tests', () => {
 			expect(response.body.message).toContain(
 				'participantName is required when joining a meeting and it cannot be inferred from member/user context'
 			);
+		});
+
+		it('should fail when participantExternalId has characters outside the documented alphabet', async () => {
+			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantExternalId: 'user 42!'
+			});
+			expectValidationError(
+				response,
+				'participantExternalId',
+				'participantExternalId must contain only letters, digits, underscores and hyphens'
+			);
+		});
+
+		it('should fail when participantExternalId is empty or too long', async () => {
+			let response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantExternalId: ''
+			});
+			expectValidationError(response, 'participantExternalId', 'participantExternalId cannot be empty');
+
+			response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantExternalId: 'a'.repeat(65)
+			});
+			expectValidationError(
+				response,
+				'participantExternalId',
+				'participantExternalId cannot exceed 64 characters'
+			);
+		});
+
+		it('should fail when participantMetadata exceeds 2 KB', async () => {
+			const response = await generateRoomMemberTokenRequest(roomData.room.roomId, {
+				secret: roomData.moderatorSecret,
+				participantMetadata: 'x'.repeat(2049)
+			});
+			expectValidationError(response, 'participantMetadata', 'participantMetadata cannot exceed 2048 characters');
 		});
 	});
 });

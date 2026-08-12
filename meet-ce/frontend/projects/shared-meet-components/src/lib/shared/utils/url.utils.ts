@@ -57,6 +57,8 @@ export const extractParams = (route: {
 		roomId: params['room-id'],
 		secret: queryParams['secret'],
 		participantName: queryParams[EmbeddedAttribute.PARTICIPANT_NAME],
+		participantExternalId: queryParams[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID],
+		participantMetadata: queryParams[EmbeddedAttribute.PARTICIPANT_METADATA],
 		leaveRedirectUrl: queryParams[EmbeddedAttribute.LEAVE_REDIRECT_URL],
 		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS] || 'false',
 		showRecording: queryParams[EmbeddedAttribute.SHOW_RECORDING],

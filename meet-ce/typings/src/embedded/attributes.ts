@@ -17,6 +17,17 @@ export enum EmbeddedAttribute {
 	 */
 	PARTICIPANT_NAME = 'participant-name',
 	/**
+	 * Application-defined identifier for the local participant, so the embedding application can
+	 * correlate the participant with one of its own users.
+	 * Up to 64 characters (letters, digits, `_` and `-`). Never interpreted by OpenVidu Meet.
+	 */
+	PARTICIPANT_EXTERNAL_ID = 'participant-external-id',
+	/**
+	 * Opaque application-defined payload attached to the local participant (JSON is recommended).
+	 * Up to 2 KB. Never interpreted by OpenVidu Meet.
+	 */
+	PARTICIPANT_METADATA = 'participant-metadata',
+	/**
 	 * Secret key for end-to-end encryption (E2EE).
 	 * If provided, the participant will join the meeting using E2EE key.
 	 */
@@ -48,6 +59,10 @@ export interface WebComponentPropertyValues {
 	recordingUrl?: string;
 	/** Display name for the local participant. */
 	participantName?: string;
+	/** Application-defined identifier for the local participant (≤ 64 chars: letters, digits, `_`, `-`). Never interpreted by Meet. */
+	participantExternalId?: string;
+	/** Opaque application-defined payload for the local participant (JSON recommended, ≤ 2 KB). Never interpreted by Meet. */
+	participantMetadata?: string;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
 	/** URL to redirect to after the `CLOSED` event fires when leaving OpenVidu Meet. */

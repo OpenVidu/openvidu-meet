@@ -17,6 +17,8 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		roomId,
 		secret,
 		participantName,
+		participantExternalId,
+		participantMetadata,
 		leaveRedirectUrl,
 		showOnlyRecordings,
 		showRecording,
@@ -29,6 +31,8 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		leaveRedirectUrl,
 		e2eeKey,
 		participantName,
+		participantExternalId,
+		participantMetadata,
 		showRecording,
 		showOnlyRecordings: showOnlyRecordings === 'true'
 	});
