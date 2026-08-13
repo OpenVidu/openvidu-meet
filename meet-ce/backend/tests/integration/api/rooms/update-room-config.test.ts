@@ -1,6 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
+	MeetRecordingAutoStartMode,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingVideoCodec,
@@ -69,6 +70,42 @@ describe('Room API Tests', () => {
 				...updatedConfig,
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
 			});
+		});
+
+		it('should update the meeting limits and the recording autoStart mode', async () => {
+			const createdRoom = await createRoom({ roomName: 'meeting-config-test' });
+
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 10,
+				maxDurationMinutes: 60,
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.FIRST_PARTICIPANT
+				}
+			});
+
+			expect(updateResponse.status).toBe(200);
+			expect(updateResponse.body.maxParticipants).toBe(10);
+			expect(updateResponse.body.maxDurationMinutes).toBe(60);
+			expect(updateResponse.body.recording).toMatchObject({
+				enabled: true,
+				autoStart: MeetRecordingAutoStartMode.FIRST_PARTICIPANT
+			});
+
+			// Config updates deep-merge, so an omitted limit/autoStart keeps its value and `null` clears it
+			const clearResponse = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 5,
+				maxDurationMinutes: null,
+				recording: {
+					enabled: true,
+					autoStart: null
+				}
+			});
+
+			expect(clearResponse.status).toBe(200);
+			expect(clearResponse.body.maxParticipants).toBe(5);
+			expect(clearResponse.body.maxDurationMinutes).toBeNull();
+			expect(clearResponse.body.recording.autoStart).toBeNull();
 		});
 
 		it('should allow partial config updates', async () => {
@@ -346,6 +383,22 @@ describe('Room API Tests', () => {
 			expect(response.status).toBe(422);
 			expect(response.body.error).toContain('Unprocessable Entity');
 			expect(JSON.stringify(response.body.details)).toContain('recording.enabled');
+		});
+
+		it('should reject non-positive or non-integer meeting limits', async () => {
+			const createdRoom = await createRoom({ roomName: 'meeting-limits-validation-test' });
+
+			let response = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 0
+			} as unknown as MeetRoomConfig);
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxParticipants');
+
+			response = await updateRoomConfig(createdRoom.roomId, {
+				maxDurationMinutes: 1.5
+			} as unknown as MeetRoomConfig);
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
 		});
 
 		it('should reject update with video-only encoding (audio required)', async () => {

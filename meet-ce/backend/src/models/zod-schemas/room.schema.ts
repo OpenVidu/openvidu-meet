@@ -20,6 +20,7 @@ import {
 	MEET_ROOM_FIELDS,
 	MEET_ROOM_SORT_FIELDS,
 	MeetRecordingAudioCodec,
+	MeetRecordingAutoStartMode,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
 	MeetRecordingVideoCodec,
@@ -165,8 +166,28 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 	}
 });
 
+/**
+ * Meeting limits (`maxParticipants`, `maxDurationMinutes`): `null` is the explicit "no limit"
+ * value, so it is stored as such. Config updates deep-merge with the stored config, which makes
+ * omitting a limit keep its current value and sending `null` lift it.
+ */
+const maxParticipantsSchema = z
+	.number('Must be a number')
+	.int('Must be an integer')
+	.min(1, 'Must allow at least one participant')
+	.nullable()
+	.optional();
+
+const maxDurationMinutesSchema = z
+	.number('Must be a number')
+	.int('Must be an integer')
+	.min(1, 'Must last at least one minute')
+	.nullable()
+	.optional();
+
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
 	enabled: z.boolean(),
+	autoStart: z.enum(MeetRecordingAutoStartMode).nullable().optional(),
 	layout: z.enum(MeetRecordingLayout).optional(),
 	encoding: encodingValidator.optional()
 });
@@ -221,6 +242,8 @@ export const AppearanceConfigSchema: z.ZodType<MeetAppearanceConfig> = z.object(
  */
 const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
+		maxParticipants: maxParticipantsSchema,
+		maxDurationMinutes: maxDurationMinutesSchema,
 		recording: RecordingConfigSchema.optional(),
 		chat: ChatConfigSchema.optional(),
 		virtualBackground: VirtualBackgroundConfigSchema.optional(),
@@ -249,6 +272,8 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
  */
 const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
+		maxParticipants: maxParticipantsSchema,
+		maxDurationMinutes: maxDurationMinutesSchema,
 		recording: RecordingConfigSchema.optional().default(() => ({
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
