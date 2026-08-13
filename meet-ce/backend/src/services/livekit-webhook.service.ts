@@ -1,5 +1,10 @@
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
-import { MeetingEndAction, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
+import {
+	MeetingEndAction,
+	MeetRecordingAutoStartMode,
+	MeetRecordingStatus,
+	MeetRoomStatus
+} from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
@@ -8,6 +13,7 @@ import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { RecordingHelper } from '../helpers/recording.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { DistributedEventType } from '../models/distributed-event.model.js';
+import { OpenViduMeetError } from '../models/error.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
@@ -17,11 +23,12 @@ import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
-import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
+import { MeetingService } from './meeting.service.js';
 import { RecordingService } from './recording.service.js';
 import { RoomMemberService } from './room-member.service.js';
 import { RoomService } from './room.service.js';
 import { TokenService } from './token.service.js';
+import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 @injectable()
 export class LivekitWebhookService {
@@ -37,6 +44,7 @@ export class LivekitWebhookService {
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
 		@inject(MeetingPresenceService) protected meetingPresenceService: MeetingPresenceService,
+		@inject(MeetingService) protected meetingService: MeetingService,
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(AiAssistantService) protected aiAssistantService: AiAssistantService,
 		@inject(TokenService) protected tokenService: TokenService,
@@ -149,6 +157,12 @@ export class LivekitWebhookService {
 		// Skip if the participant is not a standard participant
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
+		// The room's recording may be configured to start by itself. The trigger is the first
+		// standard participant join, not room_started: LiveKit creates the room before anyone is
+		// connected, and a recording cannot start in an empty room. Fire-and-forget so egress
+		// startup never delays this handler (it runs serialized under the per-event webhook lock).
+		void this.autoStartRecordingIfConfigured(room.name);
+
 		try {
 			const payload = await MeetParticipantHelper.toParticipantJoinedPayload(room, participant);
 			this.webhookDispatcherService.sendParticipantJoinedWebhook(payload);
@@ -172,6 +186,39 @@ export class LivekitWebhookService {
 				`Error sending recording state on participant join for room '${room.name}' and participant '${participant.identity}'`,
 				error
 			);
+		}
+	}
+
+	/**
+	 * Starts the room's recording when its config declares `autoStart`. The start is attributed to
+	 * the system: no participant holding `recordingControl` is involved. E2EE rooms are excluded,
+	 * exactly as recording already is.
+	 */
+	protected async autoStartRecordingIfConfigured(roomId: string): Promise<void> {
+		try {
+			const room = await this.roomRepository.findByRoomId(roomId, ['config']);
+
+			if (!room) return;
+
+			const { recording, e2ee } = room.config;
+
+			if (!recording.enabled || !recording.autoStart || e2ee.enabled) return;
+
+			if (recording.autoStart === MeetRecordingAutoStartMode.SECOND_PARTICIPANT) {
+				const participantsCount = await this.meetingService.countStandardParticipants(roomId);
+
+				if (participantsCount < 2) return;
+			}
+
+			const recordingInfo = await this.recordingService.startRecording(roomId);
+			this.logger.info(`Recording '${recordingInfo.recordingId}' auto-started in room '${roomId}'`);
+		} catch (error) {
+			if (error instanceof OpenViduMeetError && error.statusCode === 409) {
+				this.logger.verbose(`Skipping recording auto-start in room '${roomId}': ${error.message}`);
+				return;
+			}
+
+			this.logger.error(`Error auto-starting recording in room '${roomId}':`, error);
 		}
 	}
 
