@@ -1,6 +1,7 @@
 import type {
 	MeetRoom} from '@openvidu-meet/typings';
 import {
+	MeetRecordingAutoStartMode,
 	MeetRecordingLayout,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
@@ -58,6 +59,11 @@ const MeetRecordingConfigSchema = new Schema(
 		enabled: {
 			type: Boolean,
 			required: true
+		},
+		autoStart: {
+			type: String,
+			enum: Object.values(MeetRecordingAutoStartMode),
+			required: false
 		},
 		layout: {
 			type: String,
@@ -256,6 +262,14 @@ const MeetRoomAccessSchema = new Schema(
  */
 const MeetRoomConfigSchema = new Schema(
 	{
+		maxParticipants: {
+			type: Number,
+			required: false
+		},
+		maxDurationMinutes: {
+			type: Number,
+			required: false
+		},
 		chat: {
 			type: MeetChatConfigSchema,
 			required: true

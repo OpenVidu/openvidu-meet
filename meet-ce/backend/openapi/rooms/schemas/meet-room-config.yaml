@@ -1,6 +1,26 @@
 MeetRoomConfig:
     type: object
     properties:
+        maxParticipants:
+            type: [integer, 'null']
+            minimum: 1
+            example: 25
+            description: >
+                Maximum number of participants that may be in the meeting at the same time.
+                Once reached, further join attempts are rejected.
+                `null` means the number of participants is unlimited.
+                Config updates merge with the stored config, so an omitted limit keeps its
+                current value; send `null` to lift it.
+        maxDurationMinutes:
+            type: [integer, 'null']
+            minimum: 1
+            example: 60
+            description: >
+                Maximum duration of the meeting in minutes. When reached, the meeting ends for
+                every participant, exactly as if a moderator had ended it.
+                `null` means the meeting duration is unlimited.
+                Config updates merge with the stored config, so an omitted limit keeps its
+                current value; send `null` to lift it.
         chat:
             $ref: '#/MeetChatConfig'
             description: Config for the chat feature in the room.
@@ -32,6 +52,17 @@ MeetRecordingConfig:
             default: true
             example: true
             description: If true, the room will be allowed to record the video of the participants.
+        autoStart:
+            type: [string, 'null']
+            enum:
+                - first_participant
+                - second_participant
+            example: first_participant
+            description: >
+                When set, the recording starts automatically once the configured participant
+                threshold is reached: `first_participant` starts as soon as the first participant
+                joins the meeting; `second_participant` starts as soon as a second participant
+                joins.
         layout:
             type: string
             enum:
