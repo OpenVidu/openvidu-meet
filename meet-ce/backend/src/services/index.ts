@@ -10,7 +10,6 @@ export * from './livekit.service.js';
 export * from './logger.service.js';
 export * from './migration.service.js';
 export * from './mutex.service.js';
-export * from './openvidu-webhook.service.js';
 export * from './participant-name.service.js';
 export * from './recording-scheduled-tasks.service.js';
 export * from './recording.service.js';
@@ -22,7 +21,8 @@ export * from './room.service.js';
 export * from './task-scheduler.service.js';
 export * from './token.service.js';
 export * from './user.service.js';
-export * from './webhook.service.js';
+export * from './webhook-dispatcher.service.js';
+export * from './webhook-registry.service.js';
 
 // Storage
 export * from './storage/blob-storage.service.js';
@@ -41,4 +41,3 @@ export * from './storage/providers/gcp/gcs.service.js';
 export * from './storage/providers/s3/s3-storage-key.builder.js';
 export * from './storage/providers/s3/s3-storage.provider.js';
 export * from './storage/providers/s3/s3.service.js';
-
