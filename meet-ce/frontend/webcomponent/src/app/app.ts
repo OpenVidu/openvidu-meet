@@ -261,25 +261,34 @@ export class App {
 	// The bus only ever queues canonical events (see EmbeddedEventBusService), so this switch
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
 	// one is this method's job, not the bus's.
-	private handleWebComponentEvent(event: EmbeddedEvent): void {
-		switch (event.event) {
+	private handleWebComponentEvent(embeddedEvent: EmbeddedEvent): void {
+		// The closed events carry no payload, so they are handled before the destructuring below
+		// (the deprecated CLOSED never actually reaches here — the bus is canonical-only).
+		if (
+			embeddedEvent.event === EmbeddedEventName.MEETING_CLOSED ||
+			embeddedEvent.event === EmbeddedEventName.CLOSED
+		) {
+			this.meetingClosed.emit();
+			this.closed.emit();
+			return;
+		}
+
+		const { event, payload } = embeddedEvent;
+
+		switch (event) {
 			case EmbeddedEventName.MEETING_JOINED:
-				this.meetingJoined.emit(event.payload);
-				this.joined.emit(event.payload);
+				this.meetingJoined.emit(payload);
+				this.joined.emit(payload);
 				break;
 			case EmbeddedEventName.MEETING_LEFT:
-				this.meetingLeft.emit(event.payload);
-				this.left.emit(event.payload);
-				break;
-			case EmbeddedEventName.MEETING_CLOSED:
-				this.meetingClosed.emit();
-				this.closed.emit();
+				this.meetingLeft.emit(payload);
+				this.left.emit(payload);
 				break;
 			case EmbeddedEventName.PARTICIPANT_JOINED:
-				this.participantJoined.emit(event.payload);
+				this.participantJoined.emit(payload);
 				break;
 			case EmbeddedEventName.PARTICIPANT_LEFT:
-				this.participantLeft.emit(event.payload);
+				this.participantLeft.emit(payload);
 				break;
 		}
 	}

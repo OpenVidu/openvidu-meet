@@ -2,12 +2,8 @@
     get:
         operationId: meetingGet
         summary: Get the live meeting info
-        description: |
-            Returns the live info of the meeting currently running in an OpenVidu Meet room:
-            when it started, how many participants it has and whether it is being recorded.
-
-            The meeting only exists while it is active: when nobody has joined the room (or the
-            meeting already ended), this endpoint returns a 404.
+        description: >
+            Returns the live info of the meeting currently running in an OpenVidu Meet room.
         tags:
             - Internal API - Meetings
         security:
@@ -57,13 +53,10 @@
     get:
         operationId: participantList
         summary: List the participants of a meeting
-        description: |
+        description: >
             Lists the participants currently in the meeting of an OpenVidu Meet room, as live
             snapshots: identity, the application-provided correlation fields (`externalId`,
             `metadata`), effective role, join date and current media state.
-
-            Only standard participants are listed; internal ones (such as recording egress) are
-            hidden. Returns a 404 when the room has no active meeting.
         tags:
             - Internal API - Meetings
         security:
@@ -89,7 +82,6 @@
         summary: Get one participant of a meeting
         description: >
             Returns the live snapshot of one participant in the meeting of an OpenVidu Meet room.
-            Internal participants (such as recording egress) are hidden and answered with a 404.
         tags:
             - Internal API - Meetings
         security:

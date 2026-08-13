@@ -191,7 +191,7 @@ export class App {
 
 	/** @deprecated Handles the 3.8.0 `joined` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleJoined(event: Event): void {
-		this.emitEvent(
+		this.logReceivedEvent(
 			EmbeddedEventName.JOINED,
 			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>).detail
 		);
@@ -199,7 +199,7 @@ export class App {
 
 	/** @deprecated Handles the 3.8.0 `left` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleLeft(event: Event): void {
-		this.emitEvent(
+		this.logReceivedEvent(
 			EmbeddedEventName.LEFT,
 			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.LEFT>>).detail
 		);
@@ -207,47 +207,47 @@ export class App {
 
 	/** @deprecated Handles the 3.8.0 `closed` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleClosed(): void {
-		this.emitEvent(EmbeddedEventName.CLOSED, {});
+		this.logReceivedEvent(EmbeddedEventName.CLOSED, {});
 	}
 
 	protected handleMeetingJoined(event: Event): void {
-		this.emitEvent(
+		this.logReceivedEvent(
 			EmbeddedEventName.MEETING_JOINED,
 			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_JOINED>>).detail
 		);
 	}
 
 	protected handleMeetingLeft(event: Event): void {
-		this.emitEvent(
+		this.logReceivedEvent(
 			EmbeddedEventName.MEETING_LEFT,
 			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>).detail
 		);
 	}
 
 	protected handleMeetingClosed(): void {
-		this.emitEvent(EmbeddedEventName.MEETING_CLOSED, {});
+		this.logReceivedEvent(EmbeddedEventName.MEETING_CLOSED, {});
 	}
 
 	protected handleParticipantJoined(event: Event): void {
-		this.emitEvent(
+		this.logReceivedEvent(
 			EmbeddedEventName.PARTICIPANT_JOINED,
 			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_JOINED>>).detail
 		);
 	}
 
 	protected handleParticipantLeft(event: Event): void {
-		this.emitEvent(
+		this.logReceivedEvent(
 			EmbeddedEventName.PARTICIPANT_LEFT,
 			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>>).detail
 		);
 	}
 
 	private handleIframeEvent(event: EmbeddedEvent): void {
-		this.emitEvent(event.event, 'payload' in event ? event.payload : {});
+		this.logReceivedEvent(event.event, 'payload' in event ? event.payload : {});
 	}
 
 	/** Log the event and re-dispatch it on the integration-agnostic event sink for e2e. */
-	private emitEvent(name: EmbeddedEventName, detail: unknown): void {
+	private logReceivedEvent(name: EmbeddedEventName, detail: unknown): void {
 		this.log.log(`[event] ${name} — ${this.stringify(detail)}`);
 		this.eventSink()?.nativeElement.dispatchEvent(new CustomEvent(name, { detail: detail ?? {}, bubbles: true }));
 	}
