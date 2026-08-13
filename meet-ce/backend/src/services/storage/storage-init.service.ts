@@ -9,6 +9,7 @@ import { GlobalConfigService } from '../global-config.service.js';
 import { LoggerService } from '../logger.service.js';
 import { MutexService } from '../mutex.service.js';
 import { UserService } from '../user.service.js';
+import { WebhookRegistryService } from '../webhook-registry.service.js';
 
 /**
  * Service responsible for storage initialization.
@@ -23,7 +24,8 @@ export class StorageInitService {
 		@inject(GlobalConfigService) private globalConfigService: GlobalConfigService,
 		@inject(GlobalConfigRepository) private globalConfigRepository: GlobalConfigRepository,
 		@inject(UserService) private userService: UserService,
-		@inject(ApiKeyService) private apiKeyService: ApiKeyService
+		@inject(ApiKeyService) private apiKeyService: ApiKeyService,
+		@inject(WebhookRegistryService) private webhookRegistryService: WebhookRegistryService
 	) {}
 
 	/**
@@ -48,7 +50,8 @@ export class StorageInitService {
 				await Promise.all([
 					this.globalConfigService.initializeGlobalConfig(),
 					this.userService.initializeAdminUser(),
-					this.apiKeyService.initializeApiKey()
+					this.apiKeyService.initializeApiKey(),
+					this.webhookRegistryService.initializeDefaultWebhook()
 				]);
 
 				this.logger.info('Storage initialization completed successfully');

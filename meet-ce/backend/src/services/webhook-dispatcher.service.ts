@@ -10,22 +10,25 @@ import type {
 import { MeetWebhookEventType } from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { isCompatibilityMode } from '../environment.js';
 import { withDeprecatedPermissionAliases } from '../helpers/permission-naming.helper.js';
+import { extractWebhookRoomId, webhookMatchesEvent } from '../helpers/webhook.helper.js';
 import {
 	errorApiKeyNotConfiguredForWebhooks,
 	errorInvalidWebhookUrl,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import { WebhookRepository } from '../repositories/webhook.repository.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
 import { ApiKeyService } from './api-key.service.js';
-import { GlobalConfigService } from './global-config.service.js';
 import { LoggerService } from './logger.service.js';
 
 @injectable()
 export class WebhookDispatcherService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
-		@inject(GlobalConfigService) protected configService: GlobalConfigService,
+		@inject(WebhookRepository) protected webhookRepository: WebhookRepository,
 		@inject(ApiKeyService) protected apiKeyService: ApiKeyService
 	) {}
 
@@ -177,7 +180,8 @@ export class WebhookDispatcherService {
 		};
 
 		try {
-			const signature = await this.generateWebhookSignature(creationDate, data);
+			const body = JSON.stringify(data);
+			const signature = await this.generateWebhookSignature(creationDate, body);
 
 			await this.sendTestRequest(url, {
 				method: 'POST',
@@ -186,7 +190,7 @@ export class WebhookDispatcherService {
 					'X-Timestamp': creationDate.toString(),
 					'X-Signature': signature
 				},
-				body: JSON.stringify(data)
+				body
 			});
 		} catch (error) {
 			this.logger.warn(`Error sending test webhook to URL '${url}'`, error);
@@ -213,10 +217,21 @@ export class WebhookDispatcherService {
 		});
 	}
 
+	/**
+	 * Delivers an event to every registered webhook that matches it (enabled, event-type filter,
+	 * room scope). The envelope and its signature are computed once and shared: the HMAC secret is
+	 * global (the deployment's first API key), so per-endpoint signatures would be identical.
+	 *
+	 * Deliveries run concurrently and each endpoint retries in isolation: one endpoint being slow or
+	 * down never delays or drops the others, and its failure is logged per webhook instead of
+	 * rejecting the whole send.
+	 */
 	protected async sendWebhookEvent(event: MeetWebhookEventType, payload: MeetWebhookPayload) {
-		const webhookConfig = await this.configService.getWebhookConfig();
+		const enabledWebhooks = await this.webhookRepository.findEnabled();
+		const roomId = extractWebhookRoomId(payload);
+		const webhooks = enabledWebhooks.filter((webhook) => webhookMatchesEvent(webhook, event, roomId));
 
-		if (!webhookConfig.enabled) return;
+		if (webhooks.length === 0) return;
 
 		const creationDate = Date.now();
 		const data: MeetWebhookEvent = {
@@ -224,36 +239,48 @@ export class WebhookDispatcherService {
 			creationDate,
 			data: payload
 		};
+		const body = JSON.stringify(data);
+		const signature = await this.generateWebhookSignature(creationDate, body);
 
-		this.logger.info(`Sending webhook event ${data.event}`);
+		this.logger.info(`Sending webhook event ${data.event} to ${webhooks.length} endpoint(s)`);
 
-		try {
-			const signature = await this.generateWebhookSignature(creationDate, data);
+		const requestInit: RequestInit = {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				'X-Timestamp': creationDate.toString(),
+				'X-Signature': signature
+			},
+			body
+		};
+		const deliveries = await runConcurrently(webhooks, (webhook) => this.fetchWithRetry(webhook.url, requestInit));
 
-			await this.fetchWithRetry(webhookConfig.url!, {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					'X-Timestamp': creationDate.toString(),
-					'X-Signature': signature
-				},
-				body: JSON.stringify(data)
-			});
-		} catch (error) {
-			this.logger.debug(`Error sending webhook event ${data.event} to '${webhookConfig.url}'`, error);
-			throw error;
-		}
+		deliveries.forEach((delivery, index) => {
+			if (delivery.status === 'rejected') {
+				const { webhookId, url } = webhooks[index];
+				this.logger.warn(
+					`Webhook event ${data.event} could not be delivered to '${webhookId}' (${url})`,
+					delivery.reason
+				);
+			}
+		});
 	}
 
-	protected async generateWebhookSignature(timestamp: number, payload: object): Promise<string> {
+	/**
+	 * Signs the serialized event envelope with the global webhook secret (the deployment's first
+	 * API key). Takes the payload already serialized so the signed bytes are exactly the bytes sent.
+	 */
+	protected async generateWebhookSignature(timestamp: number, serializedPayload: string): Promise<string> {
 		const apiKey = await this.getApiKey();
-		return crypto
-			.createHmac('sha256', apiKey)
-			.update(`${timestamp}.${JSON.stringify(payload)}`)
-			.digest('hex');
+		return crypto.createHmac('sha256', apiKey).update(`${timestamp}.${serializedPayload}`).digest('hex');
 	}
 
-	protected async fetchWithRetry(url: string, options: RequestInit, retries = 5, delay = 300): Promise<void> {
+	protected async fetchWithRetry(
+		url: string,
+		options: RequestInit,
+		retries = INTERNAL_CONFIG.WEBHOOK_RETRY_ATTEMPTS,
+		delay = INTERNAL_CONFIG.WEBHOOK_RETRY_INITIAL_DELAY
+	): Promise<void> {
 		try {
 			await this.sendRequest(url, options);
 		} catch (error) {
@@ -272,7 +299,7 @@ export class WebhookDispatcherService {
 
 	protected async sendRequest(url: string, options: RequestInit): Promise<void> {
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
+		const timeoutId = setTimeout(() => controller.abort(), INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT);
 
 		try {
 			const response = await fetch(url, {
@@ -290,7 +317,7 @@ export class WebhookDispatcherService {
 
 			// Handle timeout error specifically
 			if (error instanceof Error && error.name === 'AbortError') {
-				throw new Error('Request timed out after 5 seconds', { cause: error });
+				throw new Error(`Request timed out after  seconds`, { cause: error });
 			}
 
 			// Re-throw other errors
@@ -306,7 +333,7 @@ export class WebhookDispatcherService {
 	 */
 	protected async sendTestRequest(url: string, options: RequestInit): Promise<void> {
 		const controller = new AbortController();
-		const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 seconds timeout
+		const timeoutId = setTimeout(() => controller.abort(), INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT);
 
 		try {
 			const response = await fetch(url, {
@@ -343,7 +370,7 @@ export class WebhookDispatcherService {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (errorName === 'AbortError') {
-				reason = 'Request timed out after 5 seconds';
+				reason = `Request timed out after  seconds`;
 			} else if (errorName === 'TypeError' && errorMessage.includes('fetch')) {
 				// Network errors
 				const errorCode =
