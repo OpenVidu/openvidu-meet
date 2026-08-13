@@ -22,6 +22,7 @@ export * from './room.service.js';
 export * from './task-scheduler.service.js';
 export * from './token.service.js';
 export * from './user.service.js';
+export * from './webhook.service.js';
 
 // Storage
 export * from './storage/blob-storage.service.js';

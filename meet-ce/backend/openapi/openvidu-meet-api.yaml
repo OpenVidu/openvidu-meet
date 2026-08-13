@@ -47,6 +47,12 @@ paths:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1url'
     /recordings/{recordingId}/stop:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1stop'
+    /webhooks:
+        $ref: './webhooks/webhooks-api.yaml#/~1webhooks'
+    /webhooks/{webhookId}:
+        $ref: './webhooks/webhooks-api.yaml#/~1webhooks~1{webhookId}'
+    /webhooks/{webhookId}/test:
+        $ref: './webhooks/webhooks-api.yaml#/~1webhooks~1{webhookId}~1test'
 components:
     securitySchemes:
         $ref: './shared/security.yaml'
@@ -67,6 +73,8 @@ components:
             $ref: ./rooms/schemas/meet-permissions.yaml
         MeetRecording:
             $ref: ./recordings/schemas/meet-recording.yaml
+        MeetWebhook:
+            $ref: ./webhooks/schemas/meet-webhook-endpoint.yaml
         MeetWebhookEvent:
             $ref: ./webhooks/schemas/meet-webhook.yaml#/MeetWebhookEvent
         Error:

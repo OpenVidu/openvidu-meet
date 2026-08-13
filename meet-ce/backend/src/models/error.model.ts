@@ -398,6 +398,18 @@ export const errorApiKeyNotConfiguredForWebhooks = (): OpenViduMeetError => {
 	);
 };
 
+export const errorWebhookNotFound = (webhookId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', `Webhook '${webhookId}' does not exist`, 404);
+};
+
+export const errorMaxWebhooksReached = (max: number): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Webhook Error',
+		`The maximum number of registered webhooks (${max}) has been reached`,
+		409
+	);
+};
+
 // Handlers
 
 export const handleError = (res: Response, error: unknown, operationDescription: string) => {

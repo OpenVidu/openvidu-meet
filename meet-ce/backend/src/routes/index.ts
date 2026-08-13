@@ -8,4 +8,5 @@ export * from './meeting.routes.js';
 export * from './recording.routes.js';
 export * from './room.routes.js';
 export * from './user.routes.js';
+export * from './webhook.routes.js';
 

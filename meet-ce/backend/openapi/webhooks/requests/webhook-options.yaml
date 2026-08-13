@@ -1,0 +1,42 @@
+description: >
+    Webhook definition. On update the definition is replaced as a whole: an omitted optional
+    field is cleared, not preserved.
+required: true
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - url
+            properties:
+                url:
+                    type: string
+                    description: The URL event notifications are POSTed to. Must be an `http(s)` URL.
+                    example: 'https://example.com/webhooks/openvidu-meet'
+                events:
+                    type: array
+                    description: >
+                        Event types delivered to the webhook. When omitted, every event type is
+                        delivered. Must contain at least one event type when present.
+                    minItems: 1
+                    items:
+                        type: string
+                        enum:
+                            - meetingStarted
+                            - meetingEnded
+                            - participantJoined
+                            - participantLeft
+                            - recordingStarted
+                            - recordingUpdated
+                            - recordingEnded
+                    example: ['participantJoined', 'participantLeft']
+                roomId:
+                    type: string
+                    description: >
+                        Room to scope the webhook to: only events of that room are delivered.
+                        When omitted, events of every room are delivered.
+                    example: 'room-123'
+                enabled:
+                    type: boolean
+                    description: Whether the webhook receives events.
+                    default: true

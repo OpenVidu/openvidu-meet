@@ -6,6 +6,8 @@
   description: Operations related to managing members within OpenVidu Meet rooms
 - name: OpenVidu Meet - Recordings
   description: Operations related to managing OpenVidu Meet recordings
+- name: OpenVidu Meet - Webhooks
+  description: Operations related to managing the webhooks OpenVidu Meet delivers event notifications to
 - name: Internal API - Authentication
   description: Authentication operations
 - name: Internal API - API Keys

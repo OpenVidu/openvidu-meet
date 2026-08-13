@@ -6,3 +6,4 @@ export * from './room-member-permissions.js';
 export * from './room-member.entity.js';
 export * from './room.entity.js';
 export * from './user.entity.js';
+export * from './webhook.entity.js';

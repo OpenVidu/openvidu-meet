@@ -1,0 +1,12 @@
+description: The registered webhooks
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - webhooks
+            properties:
+                webhooks:
+                    type: array
+                    items:
+                        $ref: '../../schemas/meet-webhook-endpoint.yaml'
