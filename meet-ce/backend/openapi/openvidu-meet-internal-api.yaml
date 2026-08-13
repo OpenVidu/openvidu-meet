@@ -20,10 +20,6 @@ paths:
         $ref: './users/internal/users.yaml#/~1users~1me'
     /users/change-password:
         $ref: './users/internal/users.yaml#/~1users~1change-password'
-    /config/webhooks:
-        $ref: './config/config.yaml#/~1config~1webhooks'
-    /config/webhooks/test:
-        $ref: './config/config.yaml#/~1config~1webhooks~1test'
     /config/security:
         $ref: './config/config.yaml#/~1config~1security'
     /config/rooms/appearance:
@@ -57,8 +53,6 @@ components:
             $ref: ./api-keys/schemas/meet-api-key.yaml
         MeetUser:
             $ref: ./users/schemas/meet-user.yaml
-        WebhooksConfig:
-            $ref: ./config/schemas/webhooks-config.yaml
         SecurityConfig:
             $ref: ./config/schemas/global-security-config.yaml
         RoomsAppearanceConfig:

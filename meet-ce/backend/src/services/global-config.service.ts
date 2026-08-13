@@ -1,4 +1,4 @@
-import type { GlobalConfig, MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import type { GlobalConfig, MeetAppearanceConfig, SecurityConfig } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import { MEET_ENV } from '../environment.js';
 import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
@@ -26,44 +26,6 @@ export class GlobalConfigService {
 			this.logger.info('Global config initialized with default values');
 		} catch (error) {
 			this.logger.error('Error initializing global config:', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Retrieves the webhook configuration.
-	 *
-	 * @returns The webhook configuration
-	 */
-	async getWebhookConfig(): Promise<WebhookConfig> {
-		try {
-			const webhookConfig = await this.getGlobalConfigField('webhooksConfig');
-			return webhookConfig;
-		} catch (error) {
-			this.logger.debug('Error retrieving webhook config:', error);
-			throw error;
-		}
-	}
-
-	/**
-	 * Updates the webhook configuration.
-	 *
-	 * @param webhookConfig - The webhook configuration to update
-	 * @returns The updated webhook configuration
-	 */
-	async updateWebhookConfig(webhookConfig: WebhookConfig): Promise<WebhookConfig> {
-		try {
-			const webhookConfigDB = await this.getGlobalConfigField('webhooksConfig');
-			const updatedConfig = await this.globalConfigRepository.updatePartial({
-				webhooksConfig: {
-					enabled: webhookConfig.enabled,
-					url: webhookConfig.url ?? webhookConfigDB.url
-				}
-			});
-			this.logger.info('Webhook config updated successfully');
-			return updatedConfig.webhooksConfig;
-		} catch (error) {
-			this.logger.debug('Error updating webhook config:', error);
 			throw error;
 		}
 	}
@@ -180,12 +142,6 @@ export class GlobalConfigService {
 	protected getDefaultConfig(): GlobalConfig {
 		const defaultConfig: GlobalConfig = {
 			projectId: MEET_ENV.NAME_ID,
-			// Webhook delivery is configured through the webhook resource (the initial entry is
-			// seeded by WebhookRegistryService.initializeDefaultWebhook); this legacy field is dead
-			// weight until the console cutover removes it.
-			webhooksConfig: {
-				enabled: false
-			},
 			securityConfig: {
 				authentication: {
 					oauthProviders: []

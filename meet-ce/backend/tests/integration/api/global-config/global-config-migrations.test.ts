@@ -37,6 +37,25 @@ const buildLegacyGlobalConfigV1 = (projectId: string) => ({
 	}
 });
 
+const buildLegacyGlobalConfigV2 = (projectId: string) => ({
+	schemaVersion: 2,
+	projectId,
+	securityConfig: {
+		authentication: {
+			oauthProviders: []
+		}
+	},
+	webhooksConfig: {
+		enabled: true,
+		url: 'https://example.com/webhook'
+	},
+	roomsConfig: {
+		appearance: {
+			themes: []
+		}
+	}
+});
+
 /**
  * Single assertion function for migrated global config documents in integration tests.
  * This ensures all fields are validated consistently across test cases, and serves
@@ -53,10 +72,6 @@ const expectMigratedGlobalConfigToCurrentVersion = (migratedConfig: Record<strin
 				oauthProviders: []
 			}
 		},
-		webhooksConfig: {
-			enabled: true,
-			url: 'https://example.com/webhook'
-		},
 		roomsConfig: {
 			appearance: {
 				themes: []
@@ -66,6 +81,9 @@ const expectMigratedGlobalConfigToCurrentVersion = (migratedConfig: Record<strin
 
 	expect(migratedConfig).not.toHaveProperty('securityConfig.authentication.authMethod');
 	expect(migratedConfig).not.toHaveProperty('securityConfig.authentication.authModeToAccessRoom');
+	// Webhooks became a resource of their own; the startup step migrates the URL before the schema
+	// migration drops the field (see WebhookRegistryService.migrateLegacyWebhookConfig)
+	expect(migratedConfig).not.toHaveProperty('webhooksConfig');
 };
 
 describe('GlobalConfig Schema Migrations', () => {
@@ -107,6 +125,7 @@ describe('GlobalConfig Schema Migrations', () => {
 						oauthProviders: []
 					}
 				},
+				// v1→v2 predates the webhook resource: the field survives until v2→v3 drops it
 				webhooksConfig: {
 					enabled: true,
 					url: 'https://example.com/webhook'
@@ -119,6 +138,30 @@ describe('GlobalConfig Schema Migrations', () => {
 			});
 			expect(migratedConfig).not.toHaveProperty('securityConfig.authentication.authMethod');
 			expect(migratedConfig).not.toHaveProperty('securityConfig.authentication.authModeToAccessRoom');
+		});
+
+		it('should transform global config schema from v2 to v3 dropping the legacy webhook config', () => {
+			const migrationName = generateSchemaMigrationName(meetGlobalConfigCollectionName, 2, 3);
+			const transform = globalConfigMigrations.get(migrationName);
+			expect(transform).toBeDefined();
+
+			const configV2 = buildLegacyGlobalConfigV2('project_v2') as unknown as MeetGlobalConfigDocument;
+
+			const migratedConfig = transform!(configV2);
+			expect(migratedConfig).toMatchObject({
+				projectId: 'project_v2',
+				securityConfig: {
+					authentication: {
+						oauthProviders: []
+					}
+				},
+				roomsConfig: {
+					appearance: {
+						themes: []
+					}
+				}
+			});
+			expect(migratedConfig).not.toHaveProperty('webhooksConfig');
 		});
 	});
 
@@ -139,7 +182,10 @@ describe('GlobalConfig Schema Migrations', () => {
 		 * Integration tests validate that any legacy version reaches the CURRENT version.
 		 * Keep one case per supported legacy version in this matrix.
 		 */
-		it.each([{ fromVersion: 1, buildDocument: buildLegacyGlobalConfigV1 }])(
+		it.each([
+			{ fromVersion: 1, buildDocument: buildLegacyGlobalConfigV1 },
+			{ fromVersion: 2, buildDocument: buildLegacyGlobalConfigV2 }
+		])(
 			'should migrate a legacy global config document from v$fromVersion to current version',
 			async ({ buildDocument }) => {
 				const legacyProjectId = `legacy_project_${Date.now()}`;

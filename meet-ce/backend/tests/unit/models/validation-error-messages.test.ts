@@ -2,7 +2,8 @@ import { beforeAll, describe, expect, it } from '@jest/globals';
 import { z } from 'zod';
 import { configureZodErrorMessages } from '../../../src/config/zod-config.js';
 import { AppearanceConfigSchema, RoomFiltersSchema } from '../../../src/models/zod-schemas/room.schema.js';
-import { SecurityConfigSchema, TestWebhookReqSchema } from '../../../src/models/zod-schemas/global-config.schema.js';
+import { SecurityConfigSchema } from '../../../src/models/zod-schemas/global-config.schema.js';
+import { MeetWebhookOptionsSchema } from '../../../src/models/zod-schemas/webhook.schema.js';
 import {
 	UpdateUserRoleReqSchema,
 	UserFiltersSchema,
@@ -150,7 +151,7 @@ describe('Validation error messages (public 422 contract)', () => {
 		});
 
 		it('keeps a z.url message', () => {
-			expect(messageFor(TestWebhookReqSchema, { url: 'not a url' }, 'url')).toBe('Must be a valid URL');
+			expect(messageFor(MeetWebhookOptionsSchema, { url: 'not a url' }, 'url')).toBe('Must be a valid URL');
 		});
 
 		it('keeps a schema-level error message', () => {

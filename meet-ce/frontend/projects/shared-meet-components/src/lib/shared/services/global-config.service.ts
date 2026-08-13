@@ -1,5 +1,5 @@
 import { inject, Service, signal } from '@angular/core';
-import { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import { MeetAppearanceConfig, SecurityConfig } from '@openvidu-meet/typings';
 import { HttpService } from './http.service';
 import { LoggerService } from './logger.service';
 import type { ILogger } from '../models/logger.model';
@@ -31,21 +31,6 @@ export class GlobalConfigService {
 	async saveSecurityConfig(config: SecurityConfig) {
 		const path = `${this.GLOBAL_CONFIG_API}/security`;
 		await this.httpService.putRequest(path, config);
-	}
-
-	async getWebhookConfig(): Promise<WebhookConfig> {
-		const path = `${this.GLOBAL_CONFIG_API}/webhooks`;
-		return await this.httpService.getRequest<WebhookConfig>(path);
-	}
-
-	async saveWebhookConfig(config: WebhookConfig) {
-		const path = `${this.GLOBAL_CONFIG_API}/webhooks`;
-		await this.httpService.putRequest(path, config);
-	}
-
-	async testWebhookUrl(url: string): Promise<void> {
-		const path = `${this.GLOBAL_CONFIG_API}/webhooks/test`;
-		await this.httpService.postRequest(path, { url });
 	}
 
 	async getRoomsAppearanceConfig(): Promise<{ appearance: MeetAppearanceConfig }> {
