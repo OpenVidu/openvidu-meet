@@ -122,6 +122,10 @@
           "LABEL": "Peut rejoindre la réunion",
           "DESCRIPTION": "Autoriser à rejoindre la réunion"
         },
+        "meetingRead": {
+          "LABEL": "Peut consulter la réunion",
+          "DESCRIPTION": "Autoriser à consulter l'état en direct de la réunion et de ses participants sans la rejoindre"
+        },
         "meetingEnd": {
           "LABEL": "Peut terminer la réunion",
           "DESCRIPTION": "Autoriser à terminer la réunion pour tous les participants"

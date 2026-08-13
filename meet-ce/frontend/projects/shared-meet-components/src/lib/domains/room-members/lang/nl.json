@@ -122,6 +122,10 @@
           "LABEL": "Kan deelnemen aan meeting",
           "DESCRIPTION": "Deelnemen aan de meeting toestaan"
         },
+        "meetingRead": {
+          "LABEL": "Kan meeting bekijken",
+          "DESCRIPTION": "De live status van de meeting en de deelnemers bekijken zonder deel te nemen toestaan"
+        },
         "meetingEnd": {
           "LABEL": "Kan meeting beëindigen",
           "DESCRIPTION": "De meeting voor alle deelnemers beëindigen toestaan"

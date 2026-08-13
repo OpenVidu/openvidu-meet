@@ -122,6 +122,10 @@
           "LABEL": "Can join meeting",
           "DESCRIPTION": "Allow joining the meeting"
         },
+        "meetingRead": {
+          "LABEL": "Can read meeting",
+          "DESCRIPTION": "Allow reading the live state of the meeting and its participants without joining"
+        },
         "meetingEnd": {
           "LABEL": "Can end meeting",
           "DESCRIPTION": "Allow ending the meeting for all participants"

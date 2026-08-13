@@ -13,7 +13,8 @@ import {
 	deleteAllRooms,
 	generateRoomMemberToken,
 	getFullPath,
-	startTestServer
+	startTestServer,
+	updateRoomRoles
 } from '../../../helpers/request-helpers.js';
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
@@ -104,7 +105,7 @@ describe('Meetings API Tests', () => {
 			expect(response.status).toBe(403);
 		});
 
-		it('should reject a token without the meetingJoin permission', async () => {
+		it('should reject a token without the meetingRead permission', async () => {
 			// The recording secret mints a read-only token (recording permissions only): it can view
 			// recordings but must not observe the live meeting.
 			expect(meetingRoom.recordingSecret).toBeDefined();
@@ -114,6 +115,32 @@ describe('Meetings API Tests', () => {
 
 			const response = await getMeeting(meetingRoom.room.roomId, recordingToken);
 			expect(response.status).toBe(403);
+		});
+
+		it('should gate on meetingRead and not on meetingJoin', async () => {
+			// Own room: updating the roles bumps rolesUpdatedAt, which invalidates the tokens the
+			// other tests minted for their rooms.
+			const gatedRoom = await setupSingleRoom(false, 'MEETING_READ_ROOM');
+			const { roomId, roles } = gatedRoom.room;
+
+			// A speaker who may still enter the meeting, but not observe it.
+			const rolesResponse = await updateRoomRoles(roomId, {
+				moderator: { permissions: roles!.moderator.permissions },
+				speaker: { permissions: { ...roles!.speaker.permissions, meetingRead: false } }
+			});
+			expect(rolesResponse.status).toBe(200);
+
+			const [speakerToken, moderatorToken] = await Promise.all([
+				generateRoomMemberToken(roomId, { secret: gatedRoom.speakerSecret }),
+				generateRoomMemberToken(roomId, { secret: gatedRoom.moderatorSecret })
+			]);
+
+			expect((await getMeeting(roomId, speakerToken)).status).toBe(403);
+			expect((await getParticipants(roomId, speakerToken)).status).toBe(403);
+
+			// The moderator keeps meetingRead and gets past the gate — 404 because this room has no
+			// active meeting, which is the answer the permission check no longer preempts.
+			expect((await getMeeting(roomId, moderatorToken)).status).toBe(404);
 		});
 	});
 

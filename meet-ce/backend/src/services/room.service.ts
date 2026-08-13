@@ -107,6 +107,7 @@ export class RoomService {
 			recordingDownload: true,
 			recordingDelete: true,
 			meetingJoin: true,
+			meetingRead: true,
 			roomShareAccessLinks: true,
 			participantPromote: true,
 			participantKick: true,
@@ -119,7 +120,8 @@ export class RoomService {
 			mediaChangeVirtualBackground: true
 		};
 		// The three recording retrieval keys mirror the pre-split `canRetrieveRecordings: true` default,
-		// so rooms created after the split behave exactly like the ones that existed before it.
+		// so rooms created after the split behave exactly like the ones that existed before it; for the
+		// same reason `meetingRead` mirrors `meetingJoin`, which used to gate the live meeting reads.
 		const defaultSpeakerPermissions: MeetRoomMemberPermissions = {
 			recordingControl: false,
 			recordingList: true,
@@ -127,6 +129,7 @@ export class RoomService {
 			recordingDownload: true,
 			recordingDelete: false,
 			meetingJoin: true,
+			meetingRead: true,
 			roomShareAccessLinks: false,
 			participantPromote: false,
 			participantKick: false,
