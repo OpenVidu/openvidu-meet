@@ -65,11 +65,18 @@ export class WebhookRegistryService {
 	 * the URL still present can only be a crash between the copy and the clearing, where the copy
 	 * already happened.
 	 *
+	 * It runs under the **schema migration lock** on purpose: with a dedicated lock, a replica that
+	 * loses this step's lock would move on to `runMigrations()` and could strip the legacy field
+	 * while the winning replica is still between reading the config and copying the URL — losing
+	 * it. Sharing the lock makes that interleaving impossible: while one replica copies, the
+	 * others skip both this step and the migrations, and whoever migrates later finds the copy
+	 * already finished.
+	 *
 	 * The document is read and written through the native driver: the schema no longer needs to
 	 * declare the legacy field for this step to find it.
 	 */
 	async migrateLegacyWebhookConfig(): Promise<void> {
-		const lockKey = MeetLock.getWebhookConfigMigrationLock();
+		const lockKey = MeetLock.getMigrationLock();
 		const executed = await this.mutexService.withLock(lockKey, ms('30s'), async () => {
 			// The global config is a single-document collection, so the empty filter is the document
 			const collection = MeetGlobalConfigModel.collection;
