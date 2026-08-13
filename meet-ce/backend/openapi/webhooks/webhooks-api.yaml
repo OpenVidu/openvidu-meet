@@ -1,0 +1,163 @@
+/webhooks:
+    post:
+        operationId: webhookCreate
+        summary: Register a new webhook
+        description: |
+            Registers a new webhook: OpenVidu Meet will POST every matching event notification to
+            its URL, with the same envelope, signature and retry policy as every other webhook.
+
+            The delivery can be narrowed with `events` (only these event types) and `roomId`
+            (only events of this room); omitting them delivers every event.
+        tags:
+            - OpenVidu Meet - Webhooks
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        requestBody:
+            $ref: './requests/webhook-options.yaml'
+        responses:
+            '201':
+                $ref: './responses/success/create-webhook.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '409':
+                $ref: './responses/errors/max-webhooks-reached.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+    get:
+        operationId: webhookList
+        summary: List the registered webhooks
+        description: >
+            Lists every registered webhook.
+        tags:
+            - OpenVidu Meet - Webhooks
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        responses:
+            '200':
+                $ref: './responses/success/get-webhooks.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+/webhooks/{webhookId}:
+    get:
+        operationId: webhookGet
+        summary: Get a webhook
+        description: >
+            Returns a registered webhook.
+        tags:
+            - OpenVidu Meet - Webhooks
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: './parameters/webhook-id-path.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/get-webhook.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/webhook-not-found.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+    put:
+        operationId: webhookUpdate
+        summary: Update a webhook
+        description: >
+            Replaces the definition of a registered webhook. The definition is replaced as a
+            whole: an omitted optional field is cleared, not preserved.
+        tags:
+            - OpenVidu Meet - Webhooks
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: './parameters/webhook-id-path.yaml'
+        requestBody:
+            $ref: './requests/webhook-options.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/update-webhook.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/webhook-not-found.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+    delete:
+        operationId: webhookDelete
+        summary: Delete a webhook
+        description: >
+            Deletes a registered webhook. Events stop being delivered to its URL immediately.
+        tags:
+            - OpenVidu Meet - Webhooks
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: './parameters/webhook-id-path.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/delete-webhook.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/webhook-not-found.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+/webhooks/{webhookId}/test:
+    post:
+        operationId: webhookTest
+        summary: Test a webhook
+        description: >
+            Sends a test event to the stored URL of a registered webhook, to verify it is
+            reachable and answers successfully.
+        tags:
+            - OpenVidu Meet - Webhooks
+        security:
+            - apiKeyHeader: []
+            - accessTokenHeader: []
+        parameters:
+            - $ref: './parameters/webhook-id-path.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/test-webhook.yaml'
+            '400':
+                $ref: '../config/responses/errors/webhook-url-unreachable.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/webhook-not-found.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'

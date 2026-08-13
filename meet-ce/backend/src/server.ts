@@ -25,6 +25,7 @@ import { internalMeetingRouter } from './routes/meeting.routes.js';
 import { recordingRouter } from './routes/recording.routes.js';
 import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
 import { internalUserRouter, userRouter } from './routes/user.routes.js';
+import { webhookRouter } from './routes/webhook.routes.js';
 import { LoggerService } from './services/logger.service.js';
 import { getBasePath, getHtmlWithBasePath, getOpenApiHtmlWithBasePath } from './utils/html-dynamic-base-path.utils.js';
 import {
@@ -98,6 +99,7 @@ const createApp = () => {
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`, userRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`, webhookRouter);
 
 	// Internal API routes
 	if (process.env.NODE_ENV === 'development') {

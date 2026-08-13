@@ -8,6 +8,7 @@ import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
+import { WebhookRepository } from '../repositories/webhook.repository.js';
 
 import { LoggerService } from '../services/logger.service.js';
 import { RedisService } from '../services/redis.service.js';
@@ -46,6 +47,7 @@ import { ParticipantNameService } from '../services/participant-name.service.js'
 import { MeetingPresenceService } from '../services/meeting-presence.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
+import { WebhookService } from '../services/webhook.service.js';
 import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
 import { RoomScheduledTasksService } from '../services/room-scheduled-tasks.service.js';
 import { RecordingScheduledTasksService } from '../services/recording-scheduled-tasks.service.js';
@@ -101,6 +103,7 @@ const persistenceModule = new ContainerModule(({ bind }) => {
 	bind(ApiKeyRepository).toSelf().inSingletonScope();
 	bind(GlobalConfigRepository).toSelf().inSingletonScope();
 	bind(RecordingRepository).toSelf().inSingletonScope();
+	bind(WebhookRepository).toSelf().inSingletonScope();
 	bind(MigrationRepository).toSelf().inSingletonScope();
 });
 
@@ -155,6 +158,7 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(MeetingPresenceService).toSelf().inSingletonScope();
 	bind(RoomMemberService).toSelf().inSingletonScope();
 	bind(OpenViduWebhookService).toSelf().inSingletonScope();
+	bind(WebhookService).toSelf().inSingletonScope();
 	bind(LivekitWebhookService).toSelf().inSingletonScope();
 	bind(RoomScheduledTasksService).toSelf().inSingletonScope();
 	bind(RecordingScheduledTasksService).toSelf().inSingletonScope();

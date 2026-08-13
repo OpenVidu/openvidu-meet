@@ -45,6 +45,9 @@ export const INTERNAL_CONFIG = {
 	
 	MEETING_PRESENCE_TTL: '32d' as StringValue, // Time-to-live for user/room presence mappings used to kick users from meetings
 
+	// Webhooks
+	WEBHOOK_MAX_ENDPOINTS: 20, // Maximum number of registered webhooks per deployment (caps the delivery fan-out)
+
 	CAPTIONS_AGENT_NAME: 'speech-processing',
 	ASSISTANT_STATE_LOCK_TTL: '60s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 
@@ -78,7 +81,8 @@ export const INTERNAL_CONFIG = {
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
 	ROOM_SCHEMA_VERSION: 4 as SchemaVersion, // MIGRATION_REV: 1786381454949
 	ROOM_MEMBER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1786381454949
-	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion // MIGRATION_REV: 1781616231619
+	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1781616231619
+	WEBHOOK_SCHEMA_VERSION: 1 as SchemaVersion // MIGRATION_REV: 1786634401242
 };
 
 // This function is used to set private configuration values for testing purposes.

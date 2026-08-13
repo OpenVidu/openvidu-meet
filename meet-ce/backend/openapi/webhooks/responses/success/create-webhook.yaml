@@ -1,0 +1,5 @@
+description: The registered webhook
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-webhook-endpoint.yaml'

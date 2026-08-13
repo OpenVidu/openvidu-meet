@@ -1,0 +1,8 @@
+description: The maximum number of registered webhooks has been reached
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        example:
+            error: 'Webhook Error'
+            message: 'The maximum number of registered webhooks (20) has been reached'
