@@ -315,6 +315,42 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
+	 * Finds the rooms whose meeting is subject to a duration limit: active meeting and a
+	 * configured `maxDurationMinutes`. Projects the config alongside the roomId so the caller can
+	 * evaluate the limit without a second read.
+	 *
+	 * @param batchSize - Number of rooms to retrieve per page
+	 * @param pageToken - Optional cursor token from a previous call
+	 * @returns A paginated page of duration-limited active rooms
+	 */
+	async findActiveRoomsWithMaxDuration(
+		batchSize = 100,
+		pageToken?: string
+	): Promise<MeetRoomPage<Pick<MeetRoom, 'roomId' | 'config'>>> {
+		const { items, isTruncated, nextPageToken } = await this.findMany(
+			{
+				status: MeetRoomStatus.ACTIVE_MEETING,
+				// `$ne: null` and not `$exists`: it rules out both the absent key and the stored
+				// `null`, the two spellings of "no limit"
+				'config.maxDurationMinutes': { $ne: null }
+			},
+			{
+				maxItems: batchSize,
+				nextPageToken: pageToken,
+				sortField: 'creationDate',
+				sortOrder: SortOrder.DESC
+			},
+			['roomId', 'config']
+		);
+
+		return {
+			rooms: items,
+			isTruncated,
+			nextPageToken
+		};
+	}
+
+	/**
 	 * Deletes a room by its roomId.
 	 *
 	 * @param roomId - The unique room identifier

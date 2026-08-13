@@ -16,6 +16,10 @@
       "TITLE": "Sala cerrada",
       "MESSAGE": "Las reuniones de esta sala no están disponibles mientras está cerrada"
     },
+    "MEETING_FULL": {
+      "TITLE": "Reunión completa",
+      "MESSAGE": "Esta reunión ha alcanzado su número máximo de participantes"
+    },
     "ANONYMOUS_ACCESS_DISABLED": {
       "TITLE": "Acceso anónimo desactivado",
       "MESSAGE": "El acceso anónimo para tu rol se ha desactivado en esta sala (y sus grabaciones)"

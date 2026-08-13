@@ -289,6 +289,10 @@ export const errorRoomClosed = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' is closed and cannot be joined`, 409);
 };
 
+export const errorMeetingFull = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Room Error', `Room '${roomId}' has reached its maximum number of participants`, 409);
+};
+
 export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
 };

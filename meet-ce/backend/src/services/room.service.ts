@@ -209,6 +209,7 @@ export class RoomService {
 
 		const meetRoom: MeetRoom = await this.getMeetRoom(roomId);
 		const { MEETING_DEPARTURE_TIMEOUT, MEETING_EMPTY_TIMEOUT } = INTERNAL_CONFIG;
+		const { maxParticipants } = meetRoom.config;
 		const livekitRoomOptions: CreateOptions = {
 			name: roomId,
 			metadata: JSON.stringify({
@@ -216,8 +217,8 @@ export class RoomService {
 				roomOptions: MeetRoomHelper.toRoomOptions(meetRoom)
 			}),
 			emptyTimeout: MEETING_EMPTY_TIMEOUT ? ms(MEETING_EMPTY_TIMEOUT) / 1000 : undefined,
-			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined
-			// maxParticipants: maxParticipants || undefined,
+			departureTimeout: MEETING_DEPARTURE_TIMEOUT ? ms(MEETING_DEPARTURE_TIMEOUT) / 1000 : undefined,
+			maxParticipants: maxParticipants || undefined
 		};
 
 		const room = await this.livekitService.createRoom(livekitRoomOptions);

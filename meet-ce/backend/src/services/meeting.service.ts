@@ -113,9 +113,29 @@ export class MeetingService {
 		}
 	}
 
+	/**
+	 * Returns the standard participants currently in the meeting of a room, filtering out LiveKit's
+	 * internal participants (egress, ingress, agents) from the API surface.
+	 * @param roomId
+	 * @returns
+	 */
 	protected async getStandardParticipants(roomId: string): Promise<ParticipantInfo[]> {
 		const participants = await this.livekitService.listRoomParticipants(roomId);
 		return participants.filter((participant) => this.livekitService.isStandardParticipant(participant));
+	}
+
+	/**
+	 * Counts the standard participants currently in the meeting of a room — the same population
+	 * `getParticipants` lists and `maxParticipants` limits.
+	 *
+	 * @param roomId - The ID of the room
+	 * @returns The number of standard participants; 0 if the meeting hasn't started
+	 * @throws Any failure other than a not-yet-started meeting (e.g. LiveKit unreachable) — it must
+	 * not be swallowed as empty, or `maxParticipants` would silently stop being enforced
+	 */
+	async countStandardParticipants(roomId: string): Promise<number> {
+		const participants = await this.getStandardParticipants(roomId);
+		return participants.length;
 	}
 
 	/**

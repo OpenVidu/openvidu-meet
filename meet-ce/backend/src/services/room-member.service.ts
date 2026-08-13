@@ -33,6 +33,7 @@ import {
 	errorInsufficientPermissions,
 	errorInvalidRoomSecret,
 	errorInvalidToken,
+	errorMeetingFull,
 	errorParticipantCannotBeDemotedFromModerator,
 	errorParticipantCannotBePromotedToModerator,
 	errorParticipantNameRequiredForMeetingJoin,
@@ -55,6 +56,7 @@ import { runConcurrently } from '../utils/concurrency.utils.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
+import { MeetingService } from './meeting.service.js';
 import { ParticipantNameService } from './participant-name.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
@@ -87,7 +89,8 @@ export class RoomMemberService {
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(TokenService) protected tokenService: TokenService,
-		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
+		@inject(MeetingService) protected meetingService: MeetingService
 	) {}
 
 	/**
@@ -532,7 +535,7 @@ export class RoomMemberService {
 		participantIdentity?: string
 	): Promise<string> {
 		// Check that room is open
-		const { status, roles } = await this.roomService.getMeetRoom(roomId, ['status', 'roles']);
+		const { status, roles, config } = await this.roomService.getMeetRoom(roomId, ['status', 'roles', 'config']);
 
 		if (status === MeetRoomStatus.CLOSED) {
 			throw errorRoomClosed(roomId);
@@ -551,6 +554,15 @@ export class RoomMemberService {
 			// Name is required for joining a meeting
 			if (!participantName) {
 				throw errorParticipantNameRequiredForMeetingJoin();
+			}
+
+			const { maxParticipants } = config;
+
+			if (maxParticipants) {
+				const currentParticipantsCount = await this.meetingService.countStandardParticipants(roomId);
+				const isMeetingFull = currentParticipantsCount >= maxParticipants;
+
+				if (isMeetingFull) throw errorMeetingFull(roomId);
 			}
 
 			this.logger.verbose(

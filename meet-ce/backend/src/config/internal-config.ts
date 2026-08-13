@@ -25,6 +25,7 @@ export const INTERNAL_CONFIG = {
 	// Timing and cleanup settings for room lifecycle management
 	ROOM_EXPIRED_GC_INTERVAL: '1h' as StringValue, // Interval for processing and deleting expired rooms
 	ROOM_ACTIVE_VERIFICATION_GC_INTERVAL: '15m' as StringValue, // Interval for checking room 'active_meeting' status consistency
+	MEETING_MAX_DURATION_GC_INTERVAL: '1m' as StringValue, // Interval for ending meetings that exceeded their room's maxDurationMinutes (bounds how far a meeting can overrun its limit)
 
 	// Timing and cleanup settings for recording lifecycle management
 	RECORDING_STARTED_TIMEOUT: '20s' as StringValue, // Timeout for recording to be marked as started
@@ -58,11 +59,13 @@ export const INTERNAL_CONFIG = {
 	DEFAULT_CONCURRENCY: 10, // Default concurrency limit for concurrent operations
 	BATCH_SIZE_ROOMS_EXPIRED_GC: 100, // Number of expired rooms to process per batch during GC
 	BATCH_SIZE_ROOMS_STATUS_VALIDATION_GC: 100, // Number of active rooms to validate per batch during status consistency GC
+	BATCH_SIZE_MEETING_MAX_DURATION_GC: 100, // Number of duration-limited active rooms to evaluate per batch during max-duration GC
 	BATCH_SIZE_RECORDINGS: 100, // Process 100 recordings at a time to balance throughput and memory
 	BATCH_SIZE_REGISTRY_LOCKS_RETRIEVAL: 100, // Number of recording locks to retrieve from registry in each batch during orphaned locks GC
 	CONCURRENCY_STALE_RECORDINGS_GC: 20, // Concurrency limit for processing stale recordings garbage collection
 	CONCURRENCY_ORPHANED_LOCKS_GC: 10, // Concurrency limit for processing orphaned recording locks with failFast enabled
 	CONCURRENCY_VALIDATE_ROOMS_STATUS: 10, // Concurrency limit for validating and cleaning up inconsistent rooms
+	CONCURRENCY_MEETING_MAX_DURATION_GC: 10, // Concurrency limit for ending meetings that exceeded their duration limit
 	CONCURRENCY_BULK_DELETE_ROOMS: 10, // Concurrency limit for bulk deleting rooms
 	CONCURRENCY_BULK_RETRIEVE_ROOMS: 20, // Concurrency limit for bulk retrieving room info
 	CONCURRENCY_BULK_DELETE_RECORDINGS: 20, // Concurrency limit for bulk deleting recordings

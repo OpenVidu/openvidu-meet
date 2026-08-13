@@ -729,6 +729,14 @@ export const executeRoomStatusValidationGC = async () => {
 	await sleep('1s');
 };
 
+export const executeMeetingMaxDurationGC = async () => {
+	checkAppIsRunning();
+
+	const roomTaskScheduler = container.get(RoomScheduledTasksService);
+	await roomTaskScheduler['enforceMeetingMaxDurationGC']();
+	await sleep('1s');
+};
+
 // ROOM MEMBER HELPERS
 
 export const createRoomMember = async (
