@@ -1,0 +1,34 @@
+type: object
+required:
+    - roomId
+    - roomName
+    - startDate
+    - participantCount
+    - recordingActive
+properties:
+    roomId:
+        type: string
+        example: 'room-123'
+        description: >
+            The identifier of the room hosting the meeting.
+    roomName:
+        type: string
+        example: 'Daily Standup'
+        description: >
+            The name of the room hosting the meeting.
+    startDate:
+        type: number
+        example: 1620000000000
+        description: >
+            The date when the meeting started (milliseconds since the Unix epoch).
+    participantCount:
+        type: number
+        example: 3
+        description: >
+            The number of participants currently in the meeting (standard participants only;
+            internal ones such as recording egress are not counted).
+    recordingActive:
+        type: boolean
+        example: false
+        description: >
+            Whether a recording is currently in progress in the meeting.

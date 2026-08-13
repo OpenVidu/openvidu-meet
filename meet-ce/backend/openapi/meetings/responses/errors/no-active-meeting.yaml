@@ -1,0 +1,16 @@
+description: Room not found or no active meeting in it
+content:
+    application/json:
+        schema:
+            $ref: '../../../shared/schemas/error.yaml'
+        examples:
+            no_active_meeting:
+                summary: No active meeting
+                value:
+                    error: 'Meeting Error'
+                    message: "Room 'room-123' has no active meeting"
+            room_not_found:
+                summary: Room not found
+                value:
+                    error: 'Room Error'
+                    message: "Room 'room-123' not found"

@@ -36,6 +36,8 @@ paths:
         $ref: './room-members/internal/room-members.yaml#/~1rooms~1{roomId}~1members~1token~1refresh'
     /meetings/{roomId}:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}'
+    /meetings/{roomId}/participants:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants'
     /meetings/{roomId}/participants/{participantIdentity}:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
     /meetings/{roomId}/participants/{participantIdentity}/role:
