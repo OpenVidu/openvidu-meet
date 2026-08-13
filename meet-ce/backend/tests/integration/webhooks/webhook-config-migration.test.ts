@@ -17,6 +17,11 @@ const setLegacyWebhookConfig = async (config: { enabled: boolean; url?: string }
 	await MeetGlobalConfigModel.collection.updateOne({}, { $set: { webhooksConfig: config } });
 };
 
+// The current schema no longer declares the field, so tests must not leave it behind
+const removeLegacyWebhookConfig = async () => {
+	await MeetGlobalConfigModel.collection.updateOne({}, { $unset: { webhooksConfig: '' } });
+};
+
 const getRawWebhooksConfig = async (): Promise<{ enabled?: boolean; url?: string } | undefined> => {
 	const rawConfig = await MeetGlobalConfigModel.collection.findOne<{
 		webhooksConfig?: { enabled?: boolean; url?: string };
@@ -39,12 +44,12 @@ describe('Webhook Config Migration Integration Tests', () => {
 
 	afterEach(async () => {
 		await deleteAllWebhooks();
-		await setLegacyWebhookConfig({ enabled: false });
+		await removeLegacyWebhookConfig();
 	});
 
 	afterAll(async () => {
 		await deleteAllWebhooks();
-		await setLegacyWebhookConfig({ enabled: false });
+		await removeLegacyWebhookConfig();
 	});
 
 	describe('Legacy webhook config migration', () => {
