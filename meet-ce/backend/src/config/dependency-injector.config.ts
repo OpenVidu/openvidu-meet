@@ -40,6 +40,7 @@ import { MigrationService } from '../services/migration.service.js';
 import { LiveKitService } from '../services/livekit.service.js';
 import { FrontendEventService } from '../services/frontend-event.service.js';
 import { RecordingService } from '../services/recording.service.js';
+import { MeetingService } from '../services/meeting.service.js';
 import { RoomService } from '../services/room.service.js';
 import { ParticipantNameService } from '../services/participant-name.service.js';
 import { MeetingPresenceService } from '../services/meeting-presence.service.js';
@@ -149,6 +150,7 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(LiveKitService).toSelf().inSingletonScope();
 	bind(RecordingService).toSelf().inSingletonScope();
 	bind(RoomService).toSelf().inSingletonScope();
+	bind(MeetingService).toSelf().inSingletonScope();
 	bind(ParticipantNameService).toSelf().inSingletonScope();
 	bind(MeetingPresenceService).toSelf().inSingletonScope();
 	bind(RoomMemberService).toSelf().inSingletonScope();

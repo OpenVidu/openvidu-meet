@@ -1,0 +1,12 @@
+description: Participants currently in the meeting
+content:
+    application/json:
+        schema:
+            type: object
+            required:
+                - participants
+            properties:
+                participants:
+                    type: array
+                    items:
+                        $ref: '../../schemas/meet-participant-info.yaml'

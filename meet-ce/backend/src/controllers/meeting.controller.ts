@@ -4,8 +4,45 @@ import { container } from '../config/dependency-injector.config.js';
 import { handleError } from '../models/error.model.js';
 import { LiveKitService } from '../services/livekit.service.js';
 import { LoggerService } from '../services/logger.service.js';
+import { MeetingService } from '../services/meeting.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
 import { RoomService } from '../services/room.service.js';
+
+export const getMeeting = async (req: Request, res: Response) => {
+	const meetingService = container.get(MeetingService);
+	const { roomId } = req.params as Record<string, string>;
+
+	try {
+		const meeting = await meetingService.getMeetingInfo(roomId);
+		res.status(200).json(meeting);
+	} catch (error) {
+		handleError(res, error, `getting meeting in room '${roomId}'`);
+	}
+};
+
+export const getMeetingParticipants = async (req: Request, res: Response) => {
+	const meetingService = container.get(MeetingService);
+	const { roomId } = req.params as Record<string, string>;
+
+	try {
+		const participants = await meetingService.getParticipants(roomId);
+		res.status(200).json({ participants });
+	} catch (error) {
+		handleError(res, error, `getting participants of meeting in room '${roomId}'`);
+	}
+};
+
+export const getMeetingParticipant = async (req: Request, res: Response) => {
+	const meetingService = container.get(MeetingService);
+	const { roomId, participantIdentity } = req.params as Record<string, string>;
+
+	try {
+		const participant = await meetingService.getParticipant(roomId, participantIdentity);
+		res.status(200).json(participant);
+	} catch (error) {
+		handleError(res, error, `getting participant '${participantIdentity}' of meeting in room '${roomId}'`);
+	}
+};
 
 export const endMeeting = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

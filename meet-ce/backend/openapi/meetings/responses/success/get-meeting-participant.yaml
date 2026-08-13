@@ -1,0 +1,5 @@
+description: Live snapshot of the requested participant
+content:
+    application/json:
+        schema:
+            $ref: '../../schemas/meet-participant-info.yaml'

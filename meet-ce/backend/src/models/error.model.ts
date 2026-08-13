@@ -293,6 +293,12 @@ export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
 };
 
+// Meeting errors
+
+export const errorNoActiveMeeting = (roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Meeting Error', `Room '${roomId}' has no active meeting`, 404);
+};
+
 export const errorInvalidRoomSecret = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Provided secret is not recognized for room '${roomId}'`, 400);
 };

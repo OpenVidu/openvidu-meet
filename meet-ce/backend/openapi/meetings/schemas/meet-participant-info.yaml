@@ -1,0 +1,24 @@
+allOf:
+    - $ref: '../../webhooks/schemas/meet-participant-payload.yaml'
+    - type: object
+      required:
+          - audioEnabled
+          - videoEnabled
+          - screenSharing
+      properties:
+          audioEnabled:
+              type: boolean
+              example: true
+              description: >
+                  Whether the participant's microphone is currently publishing (present and not
+                  muted).
+          videoEnabled:
+              type: boolean
+              example: false
+              description: >
+                  Whether the participant's camera is currently publishing (present and not muted).
+          screenSharing:
+              type: boolean
+              example: false
+              description: >
+                  Whether the participant is currently sharing their screen.
