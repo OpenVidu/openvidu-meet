@@ -7,7 +7,7 @@ import { MEET_ENV } from '../environment.js';
 import { handleError } from '../models/error.model.js';
 import { GlobalConfigService } from '../services/global-config.service.js';
 import { LoggerService } from '../services/logger.service.js';
-import { OpenViduWebhookService } from '../services/openvidu-webhook.service.js';
+import { WebhookDispatcherService } from '../services/webhook-dispatcher.service.js';
 
 export const updateWebhookConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
@@ -40,13 +40,13 @@ export const getWebhookConfig = async (_req: Request, res: Response) => {
 
 export const testWebhook = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);
-	const webhookService = container.get(OpenViduWebhookService);
+	const webhookDispatcherService = container.get(WebhookDispatcherService);
 
 	const { url } = req.body as z.infer<typeof TestWebhookReqSchema>;
 	logger.verbose(`Testing webhook URL: ${url}`);
 
 	try {
-		await webhookService.testWebhookUrl(url);
+		await webhookDispatcherService.testWebhookUrl(url);
 		logger.verbose(`Webhook URL '${url}' is valid`);
 		return res.status(200).json({ message: 'Webhook URL is valid' });
 	} catch (error) {

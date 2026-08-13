@@ -6,25 +6,25 @@ import { DocumentNotFoundError } from '../models/database.model.js';
 import { errorMaxWebhooksReached, errorWebhookNotFound } from '../models/error.model.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 import { LoggerService } from './logger.service.js';
-import { OpenViduWebhookService } from './openvidu-webhook.service.js';
+import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 /**
  * Owns the `webhook` resource: the registered endpoints OpenVidu Meet delivers event
  * notifications to, each optionally filtered by event type and scoped to a single room.
  *
  * This service is the CRUD surface only. Delivery (envelope, signature, retries) lives in
- * {@link OpenViduWebhookService}, which reads this collection to fan events out.
+ * {@link WebhookDispatcherService}, which reads this collection to fan events out.
  *
  * A webhook's `roomId` is an opaque scope filter: it is not validated against existing rooms, so
  * it can be registered before its room is created, and it simply never matches once the room is
  * gone (the lifecycle-on-room-deletion policy is roadmap open decision #17).
  */
 @injectable()
-export class WebhookService {
+export class WebhookRegistryService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(WebhookRepository) protected webhookRepository: WebhookRepository,
-		@inject(OpenViduWebhookService) protected openviduWebhookService: OpenViduWebhookService
+		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService
 	) {}
 
 	/**
@@ -126,6 +126,6 @@ export class WebhookService {
 	 */
 	async testWebhook(webhookId: string): Promise<void> {
 		const webhook = await this.getWebhook(webhookId);
-		await this.openviduWebhookService.testWebhookUrl(webhook.url);
+		await this.webhookDispatcherService.testWebhookUrl(webhook.url);
 	}
 }

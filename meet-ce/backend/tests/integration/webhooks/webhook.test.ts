@@ -27,7 +27,7 @@ import { MeetLock } from '../../../src/helpers/redis.helper.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../src/services/livekit.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
-import { OpenViduWebhookService } from '../../../src/services/openvidu-webhook.service.js';
+import { WebhookDispatcherService } from '../../../src/services/webhook-dispatcher.service.js';
 import {
 	disconnectFakeParticipants,
 	joinFakeParticipant,
@@ -184,9 +184,9 @@ describe('Webhook Integration Tests', () => {
 				// Created under '3.9.0' too, so the REST response seeds only current keys
 				const context = await setupSingleRoom();
 				const room = context.room;
-				const webhookService = container.get(OpenViduWebhookService);
+				const webhookDispatcherService = container.get(WebhookDispatcherService);
 
-				webhookService.sendMeetingStartedWebhook(room);
+				webhookDispatcherService.sendMeetingStartedWebhook(room);
 				const meetingStartedWebhook = await waitForWebhookEvent(
 					receivedWebhooks,
 					MeetWebhookEventType.MEETING_STARTED,
@@ -207,7 +207,7 @@ describe('Webhook Integration Tests', () => {
 				}
 
 				// meeting_ended flows through the same serializer — verify the negative branch there too
-				webhookService.sendMeetingEndedWebhook(room);
+				webhookDispatcherService.sendMeetingEndedWebhook(room);
 				const meetingEndedWebhook = await waitForWebhookEvent(
 					receivedWebhooks,
 					MeetWebhookEventType.MEETING_ENDED,

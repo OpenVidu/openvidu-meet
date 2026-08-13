@@ -22,7 +22,7 @@ import { GlobalConfigService } from './global-config.service.js';
 import { LoggerService } from './logger.service.js';
 
 @injectable()
-export class OpenViduWebhookService {
+export class WebhookDispatcherService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(GlobalConfigService) protected configService: GlobalConfigService,

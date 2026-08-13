@@ -4,7 +4,7 @@ import type { Response } from 'express';
 import { PermissionNamingHelper, withDeprecatedPermissionAliases } from '../../src/helpers/permission-naming.helper.js';
 
 // withDeprecatedPermissionAliases() is the single serializer shared by the REST exit points
-// (PermissionNamingHelper) and the outgoing webhook payloads (OpenViduWebhookService.
+// (PermissionNamingHelper) and the outgoing webhook payloads (WebhookDispatcherService.
 // roomToWirePermissions guards on the same isCompatibilityMode() and delegates here) — the webhook
 // service itself cannot be imported standalone, its module graph is cyclic outside the DI container.
 

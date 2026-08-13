@@ -17,7 +17,7 @@ import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
-import { OpenViduWebhookService } from './openvidu-webhook.service.js';
+import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 import { RecordingService } from './recording.service.js';
 import { RoomMemberService } from './room-member.service.js';
 import { RoomService } from './room.service.js';
@@ -32,7 +32,7 @@ export class LivekitWebhookService {
 		@inject(LiveKitService) protected livekitService: LiveKitService,
 		@inject(RoomService) protected roomService: RoomService,
 		@inject(RoomRepository) protected roomRepository: RoomRepository,
-		@inject(OpenViduWebhookService) protected openViduWebhookService: OpenViduWebhookService,
+		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
 		@inject(DistributedEventService) protected distributedEventService: DistributedEventService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
 		@inject(RoomMemberService) protected roomMemberService: RoomMemberService,
@@ -151,7 +151,7 @@ export class LivekitWebhookService {
 
 		try {
 			const payload = await MeetParticipantHelper.toParticipantJoinedPayload(room, participant);
-			this.openViduWebhookService.sendParticipantJoinedWebhook(payload);
+			this.webhookDispatcherService.sendParticipantJoinedWebhook(payload);
 
 			const userId = this.getUserIdFromParticipant(participant);
 
@@ -187,7 +187,7 @@ export class LivekitWebhookService {
 
 		try {
 			const payload = await MeetParticipantHelper.toParticipantLeftPayload(room, participant, Date.now());
-			this.openViduWebhookService.sendParticipantLeftWebhook(payload);
+			this.webhookDispatcherService.sendParticipantLeftWebhook(payload);
 
 			const userId = this.getUserIdFromParticipant(participant);
 
@@ -227,7 +227,7 @@ export class LivekitWebhookService {
 			});
 
 			// Send webhook notification
-			this.openViduWebhookService.sendMeetingStartedWebhook(updatedRoom);
+			this.webhookDispatcherService.sendMeetingStartedWebhook(updatedRoom);
 		} catch (error) {
 			this.logger.error(`Error handling room started event for room '${roomId}'`, error);
 		}
@@ -286,7 +286,7 @@ export class LivekitWebhookService {
 			}
 
 			// Send webhook notification
-			this.openViduWebhookService.sendMeetingEndedWebhook(meetRoom);
+			this.webhookDispatcherService.sendMeetingEndedWebhook(meetRoom);
 
 			tasks.push(
 				this.meetingPresenceService.removeRoomFromAllUsers(roomId),
@@ -339,10 +339,10 @@ export class LivekitWebhookService {
 			// Send webhook notification
 			switch (webhookAction) {
 				case 'started':
-					this.openViduWebhookService.sendRecordingStartedWebhook(recordingInfo);
+					this.webhookDispatcherService.sendRecordingStartedWebhook(recordingInfo);
 					break;
 				case 'updated':
-					this.openViduWebhookService.sendRecordingUpdatedWebhook(recordingInfo);
+					this.webhookDispatcherService.sendRecordingUpdatedWebhook(recordingInfo);
 
 					if (recordingInfo.status === MeetRecordingStatus.ACTIVE) {
 						// Send system event for active recording with the aim of cancelling the cleanup timer
@@ -362,7 +362,7 @@ export class LivekitWebhookService {
 						this.recordingService.releaseRecordingLockIfNoEgress(roomId),
 						this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo)
 					);
-					this.openViduWebhookService.sendRecordingEndedWebhook(recordingInfo);
+					this.webhookDispatcherService.sendRecordingEndedWebhook(recordingInfo);
 					break;
 			}
 
