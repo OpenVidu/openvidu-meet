@@ -28,11 +28,17 @@ export class MeetingService {
 	 * @throws A 404 error when the room has no active meeting
 	 */
 	async getMeetingInfo(roomId: string): Promise<MeetMeetingInfo> {
-		const room = await this.getActiveMeetingRoom(roomId);
-		const [participants, activeRecordings] = await Promise.all([
-			this.getStandardParticipants(roomId),
-			this.livekitService.getInProgressRecordingsEgress(roomId)
-		]);
+		// The room's own `numParticipants`/`activeRecording` counters are not used on purpose:
+		// the former counts non-hidden participants (not Meet's kind-STANDARD filter, so it could
+		// diverge from the /participants listing) and the latter flips for ANY egress on the room,
+		// not just Meet recordings.
+		const [room, [participants, activeRecordings]] = await this.withActiveMeetingRoom(
+			roomId,
+			Promise.all([
+				this.getStandardParticipants(roomId),
+				this.livekitService.getInProgressRecordingsEgress(roomId)
+			])
+		);
 
 		return {
 			roomId,
@@ -50,8 +56,7 @@ export class MeetingService {
 	 * @throws A 404 error when the room has no active meeting
 	 */
 	async getParticipants(roomId: string): Promise<MeetParticipantInfo[]> {
-		await this.getActiveMeetingRoom(roomId);
-		const participants = await this.getStandardParticipants(roomId);
+		const [, participants] = await this.withActiveMeetingRoom(roomId, this.getStandardParticipants(roomId));
 		return participants.map((participant) => MeetParticipantHelper.toParticipantInfo(participant));
 	}
 
@@ -71,6 +76,25 @@ export class MeetingService {
 		}
 
 		return MeetParticipantHelper.toParticipantInfo(participant);
+	}
+
+	/**
+	 * Runs a LiveKit read concurrently with the active-meeting room lookup instead of behind it.
+	 * The room lookup stays the error authority: when the room is gone, its meeting-scoped 404
+	 * wins over whatever error the sibling read produces for a vanished room.
+	 */
+	protected async withActiveMeetingRoom<T>(roomId: string, read: Promise<T>): Promise<[Room, T]> {
+		const [roomResult, readResult] = await Promise.allSettled([this.getActiveMeetingRoom(roomId), read]);
+
+		if (roomResult.status === 'rejected') {
+			throw roomResult.reason;
+		}
+
+		if (readResult.status === 'rejected') {
+			throw readResult.reason;
+		}
+
+		return [roomResult.value, readResult.value];
 	}
 
 	/**
