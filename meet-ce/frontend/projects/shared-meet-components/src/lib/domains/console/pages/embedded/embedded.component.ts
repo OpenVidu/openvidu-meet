@@ -1,21 +1,24 @@
 import { Clipboard } from '@angular/cdk/clipboard';
-import { Component, effect, inject, OnInit, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatChipsModule } from '@angular/material/chips';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetApiKey } from '@openvidu-meet/typings';
+import { MeetApiKey, MeetWebhook, MeetWebhookEventType, MeetWebhookOptions } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { ApiKeyService } from '../../../../shared/services/api-key.service';
-import { GlobalConfigService } from '../../../../shared/services/global-config.service';
+import { DialogPresetsService } from '../../../../shared/services/dialog-presets.service';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { RuntimeConfigService } from '../../../../shared/services/runtime-config.service';
+import { WebhookService } from '../../../../shared/services/webhook.service';
 
 @Component({
 	selector: 'ov-embedded',
@@ -25,6 +28,8 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 		MatIconModule,
 		MatInputModule,
 		MatFormFieldModule,
+		MatChipsModule,
+		MatSelectModule,
 		MatSlideToggleModule,
 		MatTooltipModule,
 		ReactiveFormsModule,
@@ -37,60 +42,37 @@ import { RuntimeConfigService } from '../../../../shared/services/runtime-config
 export class EmbeddedComponent implements OnInit {
 	private runtimeConfigService = inject(RuntimeConfigService);
 	protected apiKeyService = inject(ApiKeyService);
-	protected configService = inject(GlobalConfigService);
+	protected webhookService = inject(WebhookService);
 	protected notificationService = inject(NotificationService);
+	protected dialogPresetsService = inject(DialogPresetsService);
 	protected clipboard = inject(Clipboard);
 	private readonly translateService = inject(TranslateService);
 
 	restApiDocsUrl = signal<string>('');
 
 	isLoading = signal(true);
-	hasWebhookChanges = signal(false);
 
 	apiKeyData = signal<MeetApiKey | undefined>(undefined);
 	showApiKey = signal(false);
 
+	webhooks = signal<MeetWebhook[]>([]);
+	/** `null` = editor closed; `'new'` = creating; otherwise the id of the webhook being edited */
+	editingWebhookId = signal<string | 'new' | null>(null);
+	savingWebhook = signal(false);
+
+	/** Event types offered by the filter selector, in the order the contract declares them */
+	readonly webhookEventTypes = Object.values(MeetWebhookEventType);
+
 	webhookForm = new FormGroup({
-		isEnabled: new FormControl(false),
-		url: new FormControl('', [Validators.required, Validators.pattern(/^https?:\/\/.+/)])
-		// roomCreated: [true],
-		// roomDeleted: [true],
-		// participantJoined: [false],
-		// participantLeft: [false],
-		// recordingStarted: [true],
-		// recordingFinished: [true]
+		url: new FormControl('', {
+			nonNullable: true,
+			validators: [Validators.required, Validators.pattern(/^https?:\/\/.+/)]
+		}),
+		// An empty selection means "every event type"
+		events: new FormControl<MeetWebhookEventType[]>([], { nonNullable: true }),
+		roomId: new FormControl('', { nonNullable: true }),
+		enabled: new FormControl(true, { nonNullable: true })
 	});
-
-	private initialWebhookFormValue: any = null;
-
-	constructor() {
-		// Disable url field initially and enable/disable based on isEnabled toggle
-		const urlControl = this.webhookForm.get('url');
-		urlControl?.disable();
-		this.webhookForm.get('isEnabled')?.valueChanges.subscribe((isEnabled) => {
-			if (isEnabled) {
-				urlControl?.enable();
-			} else {
-				urlControl?.disable();
-			}
-		});
-
-		// Disable webhook toggle initially and enable/disable based on API key presence
-		const webhookToggle = this.webhookForm.get('isEnabled');
-		webhookToggle?.disable();
-		effect(() => {
-			if (this.apiKeyData()) {
-				webhookToggle?.enable();
-			} else {
-				webhookToggle?.disable();
-			}
-		});
-
-		// Track form changes
-		this.webhookForm.valueChanges.subscribe(() => {
-			this.checkForWebhookChanges();
-		});
-	}
 
 	async ngOnInit() {
 		// Build the REST API documentation URL with the deployment base path
@@ -98,8 +80,7 @@ export class EmbeddedComponent implements OnInit {
 		this.restApiDocsUrl.set(this.runtimeConfigService.resolveUrl(docsPath));
 
 		this.isLoading.set(true);
-		await this.loadApiKeyData();
-		await this.loadWebhookConfig();
+		await Promise.all([this.loadApiKeyData(), this.loadWebhooks()]);
 		this.isLoading.set(false);
 	}
 
@@ -130,7 +111,9 @@ export class EmbeddedComponent implements OnInit {
 			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_GENERATED'));
 		} catch (error) {
 			console.error('Error generating API key:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_GENERATE_FAILED'));
+			this.notificationService.showSnackbar(
+				this.translateService.translate('EMBEDDED.ERRORS.API_GENERATE_FAILED')
+			);
 		}
 	}
 
@@ -156,15 +139,6 @@ export class EmbeddedComponent implements OnInit {
 			await this.apiKeyService.deleteApiKeys();
 			this.apiKeyData.set(undefined);
 			this.showApiKey.set(false);
-
-			// Disable webhooks when API key is revoked
-			const webhookToggle = this.webhookForm.get('isEnabled');
-
-			if (webhookToggle?.value) {
-				webhookToggle.setValue(false);
-				await this.saveWebhookConfig();
-			}
-
 			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.API_REVOKED'));
 		} catch (error) {
 			console.error('Error revoking API key:', error);
@@ -172,87 +146,136 @@ export class EmbeddedComponent implements OnInit {
 		}
 	}
 
-	// ===== WEBHOOK CONFIGURATION METHODS =====
+	// ===== WEBHOOK METHODS =====
 
-	get canEnableWebhooks(): boolean {
+	/**
+	 * Webhook deliveries are signed with the deployment's API key, so managing webhooks without
+	 * one would only register endpoints whose deliveries fail.
+	 */
+	get canManageWebhooks(): boolean {
 		return !!this.apiKeyData();
 	}
 
-	private async loadWebhookConfig() {
+	private async loadWebhooks() {
 		try {
-			const webhookConfig = await this.configService.getWebhookConfig();
-			this.webhookForm.patchValue({
-				isEnabled: webhookConfig.enabled,
-				url: webhookConfig.url
-				// roomCreated: webhookConfig.events.roomCreated,
-				// roomDeleted: webhookConfig.events.roomDeleted,
-				// participantJoined: webhookConfig.events.participantJoined,
-				// participantLeft: webhookConfig.events.participantLeft,
-				// recordingStarted: webhookConfig.events.recordingStarted,
-				// recordingFinished: webhookConfig.events.recordingFinished
-			});
-
-			// Store initial values after loading
-			this.initialWebhookFormValue = this.webhookForm.getRawValue();
-			this.hasWebhookChanges.set(false);
+			this.webhooks.set(await this.webhookService.getWebhooks());
 		} catch (error) {
-			console.error('Error loading webhook configuration:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.LOAD_WEBHOOK_FAILED'));
+			console.error('Error loading webhooks:', error);
+			this.notificationService.showSnackbar(
+				this.translateService.translate('EMBEDDED.ERRORS.LOAD_WEBHOOKS_FAILED')
+			);
 		}
 	}
 
-	private checkForWebhookChanges() {
-		if (!this.initialWebhookFormValue) {
-			return;
-		}
-
-		const currentValue = this.webhookForm.getRawValue();
-		const hasChanges = JSON.stringify(currentValue) !== JSON.stringify(this.initialWebhookFormValue);
-		this.hasWebhookChanges.set(hasChanges);
+	openWebhookCreator() {
+		this.webhookForm.reset();
+		this.editingWebhookId.set('new');
 	}
 
-	async saveWebhookConfig() {
-		if (!this.webhookForm.valid) return;
+	openWebhookEditor(webhook: MeetWebhook) {
+		this.webhookForm.reset({
+			url: webhook.url,
+			events: webhook.events ?? [],
+			roomId: webhook.roomId ?? '',
+			enabled: webhook.enabled
+		});
+		this.editingWebhookId.set(webhook.webhookId);
+	}
 
-		const formValue = this.webhookForm.value;
-		const webhookConfig = {
-			enabled: formValue.isEnabled!,
-			url: formValue.url ?? undefined
-			// events: {
-			// 	roomCreated: formValue.roomCreated,
-			// 	roomDeleted: formValue.roomDeleted,
-			// 	participantJoined: formValue.participantJoined,
-			// 	participantLeft: formValue.participantLeft,
-			// 	recordingStarted: formValue.recordingStarted,
-			// 	recordingFinished: formValue.recordingFinished
-			// }
+	closeWebhookEditor() {
+		this.editingWebhookId.set(null);
+		this.webhookForm.reset();
+	}
+
+	async saveWebhook() {
+		if (this.webhookForm.invalid || this.savingWebhook()) return;
+
+		const { url, events, roomId, enabled } = this.webhookForm.getRawValue();
+		const options: MeetWebhookOptions = {
+			url,
+			events: events.length > 0 ? events : undefined,
+			roomId: roomId.trim() || undefined,
+			enabled
 		};
+		const editingId = this.editingWebhookId();
+
+		this.savingWebhook.set(true);
 
 		try {
-			await this.configService.saveWebhookConfig(webhookConfig);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVED'));
+			if (editingId === 'new') {
+				await this.webhookService.createWebhook(options);
+			} else if (editingId) {
+				await this.webhookService.updateWebhook(editingId, options);
+			}
 
-			// Update initial values after successful save
-			this.initialWebhookFormValue = this.webhookForm.getRawValue();
-			this.hasWebhookChanges.set(false);
-		} catch (error) {
-			console.error('Error saving webhook configuration:', error);
-			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVE_FAILED'));
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVED'));
+			this.closeWebhookEditor();
+			await this.loadWebhooks();
+		} catch (error: any) {
+			console.error('Error saving webhook:', error);
+			const errorMessage = error.error?.message || error.message || '';
+			this.notificationService.showSnackbar(
+				`${this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVE_FAILED')} ${errorMessage}`.trim()
+			);
+		} finally {
+			this.savingWebhook.set(false);
 		}
 	}
 
-	async testWebhook() {
-		const url = this.webhookForm.get('url')?.value;
+	async toggleWebhookEnabled(webhook: MeetWebhook, enabled: boolean) {
+		try {
+			await this.webhookService.updateWebhook(webhook.webhookId, {
+				url: webhook.url,
+				events: webhook.events,
+				roomId: webhook.roomId,
+				enabled
+			});
+			await this.loadWebhooks();
+		} catch (error) {
+			console.error('Error updating webhook:', error);
+			this.notificationService.showSnackbar(
+				this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_SAVE_FAILED')
+			);
+			await this.loadWebhooks();
+		}
+	}
 
-		if (url) {
-			try {
-				await this.configService.testWebhookUrl(url);
-				this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.TEST_SENT'));
-			} catch (error: any) {
-				const errorMessage = error.error?.message || error.message || 'Unknown error';
-				this.notificationService.showSnackbar(`${this.translateService.translate('EMBEDDED.ERRORS.TEST_FAILED')} ${errorMessage}`);
-				console.error(`Error sending test webhook. ${errorMessage}`);
+	deleteWebhook(webhook: MeetWebhook) {
+		this.notificationService.showDialog({
+			...this.dialogPresetsService.getDeleteWebhookDialogPreset(webhook.url),
+			confirmCallback: async () => {
+				try {
+					await this.webhookService.deleteWebhook(webhook.webhookId);
+
+					if (this.editingWebhookId() === webhook.webhookId) {
+						this.closeWebhookEditor();
+					}
+
+					this.notificationService.showSnackbar(
+						this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_DELETED')
+					);
+				} catch (error) {
+					console.error('Error deleting webhook:', error);
+					this.notificationService.showSnackbar(
+						this.translateService.translate('EMBEDDED.ERRORS.WEBHOOK_DELETE_FAILED')
+					);
+				}
+
+				await this.loadWebhooks();
 			}
+		});
+	}
+
+	async testWebhook(webhook: MeetWebhook) {
+		try {
+			await this.webhookService.testWebhook(webhook.webhookId);
+			this.notificationService.showSnackbar(this.translateService.translate('EMBEDDED.ERRORS.TEST_SENT'));
+		} catch (error: any) {
+			const errorMessage = error.error?.message || error.message || 'Unknown error';
+			this.notificationService.showSnackbar(
+				`${this.translateService.translate('EMBEDDED.ERRORS.TEST_FAILED')} ${errorMessage}`
+			);
+			console.error(`Error sending test webhook. ${errorMessage}`);
 		}
 	}
 }

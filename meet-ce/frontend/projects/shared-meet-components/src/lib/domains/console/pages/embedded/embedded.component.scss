@@ -81,6 +81,122 @@
 
 // Webhooks Section - simplified with utilities
 .webhooks-section {
+	.webhook-warning {
+		display: flex;
+		align-items: center;
+		gap: var(--ov-meet-spacing-sm);
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+		margin-bottom: var(--ov-meet-spacing-md);
+		border: 1px solid var(--ov-meet-color-warning, #b26a00);
+		border-radius: var(--ov-meet-border-radius-sm);
+		color: var(--ov-meet-text-primary);
+
+		.warning-icon {
+			color: var(--ov-meet-color-warning, #b26a00);
+			flex-shrink: 0;
+		}
+	}
+
+	.no-webhooks {
+		text-align: center;
+		padding: var(--ov-meet-spacing-sm);
+
+		h3 {
+			color: var(--ov-meet-text-primary);
+			font-size: var(--ov-meet-font-size-xl);
+			margin-bottom: var(--ov-meet-spacing-md);
+		}
+
+		p {
+			color: var(--ov-meet-text-secondary);
+			font-size: var(--ov-meet-font-size-md);
+			max-width: 450px;
+			margin: 0 auto;
+		}
+	}
+
+	.webhook-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--ov-meet-spacing-sm);
+
+		.webhook-row {
+			display: flex;
+			align-items: center;
+			gap: var(--ov-meet-spacing-md);
+			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+			border: 1px solid var(--ov-meet-border-color);
+			border-radius: var(--ov-meet-border-radius-sm);
+
+			.webhook-enabled-toggle {
+				flex-shrink: 0;
+			}
+
+			.webhook-info {
+				flex: 1;
+				min-width: 0;
+				display: flex;
+				flex-direction: column;
+				gap: var(--ov-meet-spacing-xs);
+
+				.webhook-url {
+					color: var(--ov-meet-text-primary);
+					font-size: var(--ov-meet-font-size-md);
+					overflow: hidden;
+					text-overflow: ellipsis;
+					white-space: nowrap;
+				}
+
+				.webhook-filters {
+					display: flex;
+					flex-wrap: wrap;
+					gap: var(--ov-meet-spacing-xs);
+
+					.webhook-chip {
+						display: inline-flex;
+						align-items: center;
+						gap: 2px;
+						padding: 2px var(--ov-meet-spacing-sm);
+						border-radius: var(--ov-meet-border-radius-sm);
+						background-color: var(--ov-meet-surface-variant);
+						color: var(--ov-meet-text-secondary);
+						font-size: var(--ov-meet-font-size-sm);
+						font-family: monospace;
+
+						.chip-icon {
+							font-size: var(--ov-meet-font-size-md);
+							width: var(--ov-meet-font-size-md);
+							height: var(--ov-meet-font-size-md);
+						}
+					}
+				}
+			}
+
+			.webhook-actions {
+				display: flex;
+				flex-shrink: 0;
+
+				button {
+					padding: var(--ov-meet-spacing-sm);
+				}
+			}
+
+			@include design-tokens.ov-mobile-down {
+				flex-wrap: wrap;
+
+				.webhook-info {
+					order: 3;
+					flex-basis: 100%;
+				}
+			}
+		}
+	}
+
+	.webhook-editor-actions {
+		display: flex;
+		gap: var(--ov-meet-spacing-sm);
+	}
+
 	.webhook-form {
 		@extend %ov-settings-form-section;
 

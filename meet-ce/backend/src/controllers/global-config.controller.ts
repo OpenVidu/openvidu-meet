@@ -1,58 +1,10 @@
-import type { MeetAppearanceConfig, SecurityConfig, WebhookConfig } from '@openvidu-meet/typings';
+import type { MeetAppearanceConfig, SecurityConfig } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
-import type { z } from 'zod';
 import { container } from '../config/dependency-injector.config.js';
-import type { TestWebhookReqSchema } from '../models/zod-schemas/global-config.schema.js';
 import { MEET_ENV } from '../environment.js';
 import { handleError } from '../models/error.model.js';
 import { GlobalConfigService } from '../services/global-config.service.js';
 import { LoggerService } from '../services/logger.service.js';
-import { WebhookDispatcherService } from '../services/webhook-dispatcher.service.js';
-
-export const updateWebhookConfig = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const configService = container.get(GlobalConfigService);
-
-	logger.verbose('Updating webhooks config');
-	const webhookConfig = req.body as WebhookConfig;
-
-	try {
-		const updatedConfig = await configService.updateWebhookConfig(webhookConfig);
-		return res.status(200).json(updatedConfig);
-	} catch (error) {
-		handleError(res, error, 'updating webhooks config');
-	}
-};
-
-export const getWebhookConfig = async (_req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const configService = container.get(GlobalConfigService);
-
-	logger.verbose('Getting webhooks config');
-
-	try {
-		const webhookConfig = await configService.getWebhookConfig();
-		return res.status(200).json(webhookConfig);
-	} catch (error) {
-		handleError(res, error, 'getting webhooks config');
-	}
-};
-
-export const testWebhook = async (req: Request, res: Response) => {
-	const logger = container.get(LoggerService);
-	const webhookDispatcherService = container.get(WebhookDispatcherService);
-
-	const { url } = req.body as z.infer<typeof TestWebhookReqSchema>;
-	logger.verbose(`Testing webhook URL: ${url}`);
-
-	try {
-		await webhookDispatcherService.testWebhookUrl(url);
-		logger.verbose(`Webhook URL '${url}' is valid`);
-		return res.status(200).json({ message: 'Webhook URL is valid' });
-	} catch (error) {
-		handleError(res, error, 'testing webhook URL');
-	}
-};
 
 export const updateSecurityConfig = async (req: Request, res: Response) => {
 	const logger = container.get(LoggerService);

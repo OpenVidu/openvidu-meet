@@ -43,6 +43,16 @@ export class DialogPresetsService {
 		};
 	}
 
+	getDeleteWebhookDialogPreset(url: string): DialogPreset {
+		return {
+			title: 'Delete Webhook',
+			icon: 'delete_outline',
+			message: `Are you sure you want to delete the webhook pointing to <b>${url}</b>? It will stop receiving event notifications immediately.`,
+			confirmText: 'Delete',
+			cancelText: 'Cancel'
+		};
+	}
+
 	getBulkDeleteRoomsDialogPreset(count: number): DialogPreset {
 		return {
 			title: 'Delete Rooms',

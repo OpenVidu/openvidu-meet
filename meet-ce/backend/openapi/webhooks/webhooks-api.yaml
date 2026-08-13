@@ -150,7 +150,7 @@
             '200':
                 $ref: './responses/success/test-webhook.yaml'
             '400':
-                $ref: '../config/responses/errors/webhook-url-unreachable.yaml'
+                $ref: './responses/errors/webhook-url-unreachable.yaml'
             '401':
                 $ref: '../shared/responses/errors/unauthorized.yaml'
             '403':

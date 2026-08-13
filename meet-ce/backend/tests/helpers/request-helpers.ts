@@ -23,8 +23,7 @@ import {
 	MeetUserOptions,
 	MeetWebhook,
 	MeetWebhookOptions,
-	SecurityConfig,
-	WebhookConfig
+	SecurityConfig
 } from '@openvidu-meet/typings';
 import { Express } from 'express';
 import ms, { StringValue } from 'ms';
@@ -148,38 +147,6 @@ export const updateRoomsAppearanceConfig = async (config: { appearance: MeetAppe
 		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/rooms/appearance`))
 		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
 		.send(config);
-	return response;
-};
-
-export const getWebhookConfig = async () => {
-	checkAppIsRunning();
-
-	const { accessToken } = await loginRootAdmin();
-	const response = await request(app)
-		.get(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
-		.send();
-	return response;
-};
-
-export const updateWebhookConfig = async (config: WebhookConfig) => {
-	checkAppIsRunning();
-
-	const { accessToken } = await loginRootAdmin();
-	const response = await request(app)
-		.put(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks`))
-		.set(INTERNAL_CONFIG.ACCESS_TOKEN_HEADER, accessToken)
-		.send(config);
-
-	return response;
-};
-
-export const testWebhookUrl = async (url: string) => {
-	checkAppIsRunning();
-
-	const response = await request(app)
-		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks/test`))
-		.send({ url });
 	return response;
 };
 

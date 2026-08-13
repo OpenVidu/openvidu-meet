@@ -78,23 +78,6 @@ const SecurityConfigSchema = new Schema(
 );
 
 /**
- * Sub-schema for webhook configuration.
- */
-const WebhookConfigSchema = new Schema(
-	{
-		enabled: {
-			type: Boolean,
-			required: true
-		},
-		url: {
-			type: String,
-			required: false
-		}
-	},
-	{ _id: false }
-);
-
-/**
  * Sub-schema for rooms configuration.
  */
 const RoomsConfigSchema = new Schema(
@@ -124,10 +107,6 @@ const MeetGlobalConfigSchema = new Schema<MeetGlobalConfigDocument>(
 		},
 		securityConfig: {
 			type: SecurityConfigSchema,
-			required: true
-		},
-		webhooksConfig: {
-			type: WebhookConfigSchema,
 			required: true
 		},
 		roomsConfig: {
