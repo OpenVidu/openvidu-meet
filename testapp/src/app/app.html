@@ -74,6 +74,14 @@
 					/>
 					showOnlyRecordings
 				</label>
+				<label>
+					<input type="checkbox" [(ngModel)]="initialAudioMutedInput" data-testid="input-initialAudioMuted" />
+					initialAudioMuted
+				</label>
+				<label>
+					<input type="checkbox" [(ngModel)]="initialVideoMutedInput" data-testid="input-initialVideoMuted" />
+					initialVideoMuted
+				</label>
 			</div>
 			<button class="ta-btn" (click)="applyConfig()" data-testid="btn-apply-config">Apply config</button>
 		</section>
@@ -103,6 +111,30 @@
 					participantKick()
 				</button>
 			</div>
+			<button
+				id="media-toggle-audio-btn"
+				class="ta-btn"
+				(click)="callMediaToggleAudio()"
+				data-testid="btn-media-toggle-audio"
+			>
+				mediaToggleAudio()
+			</button>
+			<button
+				id="media-toggle-video-btn"
+				class="ta-btn"
+				(click)="callMediaToggleVideo()"
+				data-testid="btn-media-toggle-video"
+			>
+				mediaToggleVideo()
+			</button>
+			<button
+				id="media-toggle-screen-share-btn"
+				class="ta-btn"
+				(click)="callMediaToggleScreenShare()"
+				data-testid="btn-media-toggle-screen-share"
+			>
+				mediaToggleScreenShare()
+			</button>
 		</section>
 
 		<!-- Deprecated command spellings: same actions under the 3.8.0 names, so the e2e can
@@ -158,6 +190,8 @@
 			[participantName]="participantName()"
 			[participantExternalId]="participantExternalId()"
 			[participantMetadata]="participantMetadata()"
+			[initialAudioMuted]="initialAudioMuted()"
+			[initialVideoMuted]="initialVideoMuted()"
 			[e2eeKey]="e2eeKey()"
 			[leaveRedirectUrl]="leaveRedirectUrl()"
 			[showOnlyRecordings]="showOnlyRecordings()"
@@ -170,6 +204,9 @@
 			(meetingClosed)="handleMeetingClosed()"
 			(participantJoined)="handleParticipantJoined($event)"
 			(participantLeft)="handleParticipantLeft($event)"
+			(mediaAudioStatusChanged)="handleMediaAudioStatusChanged($event)"
+			(mediaVideoStatusChanged)="handleMediaVideoStatusChanged($event)"
+			(mediaScreenShareStatusChanged)="handleMediaScreenShareStatusChanged($event)"
 			data-testid="openvidu-meet"
 		></openvidu-meet>
 		} @case ('iframe') {

@@ -50,6 +50,8 @@ export class App {
 	protected participantMetadataInput = '';
 	protected e2eeKeyInput = '';
 	protected leaveRedirectUrlInput = '';
+	protected initialAudioMutedInput = false;
+	protected initialVideoMutedInput = false;
 	protected showRecordingInput = '';
 	protected showOnlyRecordingsInput = false;
 	protected kickIdentityInput = 'test-participant-1';
@@ -60,6 +62,8 @@ export class App {
 	protected readonly participantName = signal<string | undefined>(undefined);
 	protected readonly participantExternalId = signal<string | undefined>(undefined);
 	protected readonly participantMetadata = signal<string | undefined>(undefined);
+	protected readonly initialAudioMuted = signal<boolean | undefined>(undefined);
+	protected readonly initialVideoMuted = signal<boolean | undefined>(undefined);
 	protected readonly e2eeKey = signal<string | undefined>(undefined);
 	protected readonly leaveRedirectUrl = signal<string | undefined>(undefined);
 	protected readonly showRecording = signal<string | undefined>(undefined);
@@ -121,6 +125,8 @@ export class App {
 				this.participantName.set(this.participantNameInput || undefined);
 				this.participantExternalId.set(this.participantExternalIdInput || undefined);
 				this.participantMetadata.set(this.participantMetadataInput || undefined);
+				this.initialAudioMuted.set(this.initialAudioMutedInput);
+				this.initialVideoMuted.set(this.initialVideoMutedInput);
 				this.e2eeKey.set(this.e2eeKeyInput || undefined);
 				this.leaveRedirectUrl.set(this.leaveRedirectUrlInput || undefined);
 				this.showRecording.set(this.showRecordingInput || undefined);
@@ -171,6 +177,12 @@ export class App {
 		set(EmbeddedAttribute.LEAVE_REDIRECT_URL, this.resolveLeaveRedirectUrl(this.leaveRedirectUrlInput));
 		set(EmbeddedAttribute.E2EE_KEY, this.e2eeKeyInput);
 		set(EmbeddedAttribute.SHOW_RECORDING, this.showRecordingInput);
+		if (this.initialAudioMutedInput) {
+			url.searchParams.set(EmbeddedAttribute.INITIAL_AUDIO_MUTED, 'true');
+		}
+		if (this.initialVideoMutedInput) {
+			url.searchParams.set(EmbeddedAttribute.INITIAL_VIDEO_MUTED, 'true');
+		}
 		if (this.showOnlyRecordingsInput) {
 			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');
 		}
@@ -242,6 +254,27 @@ export class App {
 		);
 	}
 
+	protected handleMediaAudioStatusChanged(event: Event): void {
+		this.logReceivedEvent(
+			EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED>>).detail
+		);
+	}
+
+	protected handleMediaVideoStatusChanged(event: Event): void {
+		this.logReceivedEvent(
+			EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>>).detail
+		);
+	}
+
+	protected handleMediaScreenShareStatusChanged(event: Event): void {
+		this.logReceivedEvent(
+			EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>>).detail
+		);
+	}
+
 	private handleIframeEvent(event: EmbeddedEvent): void {
 		this.logReceivedEvent(event.event, 'payload' in event ? event.payload : {});
 	}
@@ -287,6 +320,33 @@ export class App {
 			this.meetRef()?.nativeElement.participantKick(this.kickIdentityInput);
 		}
 		this.log.log(`→ participantKick("${this.kickIdentityInput}")`);
+	}
+
+	protected callMediaToggleAudio(): void {
+		if (this.integration() === 'iframe') {
+			this.iframeHost.mediaToggleAudio();
+		} else {
+			this.meetRef()?.nativeElement.mediaToggleAudio();
+		}
+		this.log.log('→ mediaToggleAudio()');
+	}
+
+	protected callMediaToggleVideo(): void {
+		if (this.integration() === 'iframe') {
+			this.iframeHost.mediaToggleVideo();
+		} else {
+			this.meetRef()?.nativeElement.mediaToggleVideo();
+		}
+		this.log.log('→ mediaToggleVideo()');
+	}
+
+	protected callMediaToggleScreenShare(): void {
+		if (this.integration() === 'iframe') {
+			this.iframeHost.mediaToggleScreenShare();
+		} else {
+			this.meetRef()?.nativeElement.mediaToggleScreenShare();
+		}
+		this.log.log('→ mediaToggleScreenShare()');
 	}
 
 	// ── Deprecated command spellings (kept so the e2e covers the 3.8.0 surface) ──

@@ -153,9 +153,10 @@ export class IframeBridgeService {
 
 			case EmbeddedCommandName.PARTICIPANT_KICK: {
 				// Resolving the name discards the discriminant, so narrow on the payload's presence
-				// instead — only the kick commands carry one.
+				// instead — only the payload-carrying commands have one.
 				const payload = 'payload' in message ? message.payload : undefined;
-				const participantIdentity = payload?.participantIdentity;
+				const participantIdentity =
+					payload && 'participantIdentity' in payload ? payload.participantIdentity : undefined;
 
 				if (!participantIdentity) {
 					this.log.e('participantKick command received without a participantIdentity');
@@ -166,9 +167,30 @@ export class IframeBridgeService {
 				break;
 			}
 
+			case EmbeddedCommandName.MEDIA_TOGGLE_AUDIO:
+				await this.commandService.mediaToggleAudio(this.extractEnabledPayload(message));
+				break;
+
+			case EmbeddedCommandName.MEDIA_TOGGLE_VIDEO:
+				await this.commandService.mediaToggleVideo(this.extractEnabledPayload(message));
+				break;
+
+			case EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE:
+				await this.commandService.mediaToggleScreenShare(this.extractEnabledPayload(message));
+				break;
+
 			default:
 				break;
 		}
+	}
+
+	/**
+	 * Reads the optional `enabled` flag of a media toggle command message: absent payload (or
+	 * flag) means "toggle".
+	 */
+	private extractEnabledPayload(message: EmbeddedCommand): boolean | undefined {
+		const payload = 'payload' in message ? message.payload : undefined;
+		return payload && 'enabled' in payload ? payload.enabled : undefined;
 	}
 
 	/**

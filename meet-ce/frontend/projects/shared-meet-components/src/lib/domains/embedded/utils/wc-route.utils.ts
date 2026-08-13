@@ -62,6 +62,8 @@ export const wcRouteFromAttributes = (inputs: WebComponentPropertyValues): WcRou
 				participantName: inputs.participantName || undefined,
 				participantExternalId: inputs.participantExternalId || undefined,
 				participantMetadata: inputs.participantMetadata || undefined,
+				initialAudioMuted: inputs.initialAudioMuted || undefined,
+				initialVideoMuted: inputs.initialVideoMuted || undefined,
 				leaveRedirectUrl: inputs.leaveRedirectUrl || undefined
 			}
 		};

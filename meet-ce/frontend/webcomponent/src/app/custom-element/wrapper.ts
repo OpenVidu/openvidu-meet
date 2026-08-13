@@ -99,6 +99,18 @@ export function createOpenViduMeetElementClass(
 			this._getComponentInstance()?.participantKick(participantIdentity);
 		}
 
+		mediaToggleAudio(enabled?: boolean): void {
+			this._getComponentInstance()?.mediaToggleAudio(enabled);
+		}
+
+		mediaToggleVideo(enabled?: boolean): void {
+			this._getComponentInstance()?.mediaToggleVideo(enabled);
+		}
+
+		mediaToggleScreenShare(enabled?: boolean): void {
+			this._getComponentInstance()?.mediaToggleScreenShare(enabled);
+		}
+
 		// ── Deprecated method aliases ────────────────────────────────────────
 		// Kept on the element (the public surface) rather than on the component, and routed
 		// through the canonical method so both spellings share exactly one path.

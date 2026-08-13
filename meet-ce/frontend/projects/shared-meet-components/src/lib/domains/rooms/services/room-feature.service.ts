@@ -3,7 +3,7 @@ import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from 
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
-import { RoomFeatures } from '../models/features.model';
+import { InitialMediaMutedPreferences, RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from '../utils/features.utils';
 import { LoggerService } from '../../../shared/services/logger.service';
 import type { ILogger } from '../../../shared/models/logger.model';
@@ -50,6 +50,9 @@ export class RoomFeatureService {
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
+	// Client preference from the initial-audio-muted / initial-video-muted embed attributes (and
+	// their URL query params): the participant's initial media state, not a permission.
+	protected initialMediaMuted = signal<InitialMediaMutedPreferences>({ audioMuted: false, videoMuted: false });
 	permissions = this.roomMemberContextService.permissions;
 
 	// Computed signal to derive features based on current configurations
@@ -58,7 +61,8 @@ export class RoomFeatureService {
 			this.roomConfig(),
 			this.permissions(),
 			this.globalConfigService.roomAppearanceConfig(),
-			this.globalConfigService.captionsGlobalEnabled()
+			this.globalConfigService.captionsGlobalEnabled(),
+			this.initialMediaMuted()
 		)
 	);
 
@@ -80,6 +84,16 @@ export class RoomFeatureService {
 	setRoomConfig(config: MeetRoomConfig): void {
 		this.log.d('Updating room config', config);
 		this.roomConfig.set(config);
+	}
+
+	/**
+	 * Updates the initial media state the embedding application asked for (initial-audio-muted /
+	 * initial-video-muted). It only lowers the initial state — the permissions always win — and
+	 * the participant may re-enable the device afterwards.
+	 */
+	setInitialMediaMuted(preferences: InitialMediaMutedPreferences): void {
+		this.log.d('Updating initial media muted preferences', preferences);
+		this.initialMediaMuted.set(preferences);
 	}
 
 	protected async loadGlobalFeatureConfigs(): Promise<void> {
@@ -104,7 +118,8 @@ export class RoomFeatureService {
 		roomConfig?: MeetRoomConfig,
 		permissions?: MeetRoomMemberPermissions,
 		appearanceConfig?: MeetAppearanceConfig,
-		captionsGlobalEnabled = false
+		captionsGlobalEnabled = false,
+		initialMediaMuted?: InitialMediaMutedPreferences
 	): RoomFeatures {
 		const features = structuredClone(DEFAULT_FEATURES);
 
@@ -114,6 +129,10 @@ export class RoomFeatureService {
 
 		if (permissions) {
 			FeatureCalculator.applyPermissions(features, permissions);
+		}
+
+		if (initialMediaMuted) {
+			FeatureCalculator.applyInitialMediaMuted(features, initialMediaMuted);
 		}
 
 		if (appearanceConfig) {

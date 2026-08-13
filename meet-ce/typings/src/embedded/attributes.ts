@@ -28,6 +28,18 @@ export enum EmbeddedAttribute {
 	 */
 	PARTICIPANT_METADATA = 'participant-metadata',
 	/**
+	 * Join the meeting with the microphone muted (`false` by default). This is the participant's
+	 * initial state only: they may unmute afterwards, unlike when the `mediaPublishAudio`
+	 * permission is denied.
+	 */
+	INITIAL_AUDIO_MUTED = 'initial-audio-muted',
+	/**
+	 * Join the meeting with the camera off (`false` by default). This is the participant's
+	 * initial state only: they may enable it afterwards, unlike when the `mediaPublishVideo`
+	 * permission is denied.
+	 */
+	INITIAL_VIDEO_MUTED = 'initial-video-muted',
+	/**
 	 * Secret key for end-to-end encryption (E2EE).
 	 * If provided, the participant will join the meeting using E2EE key.
 	 */
@@ -63,6 +75,10 @@ export interface WebComponentPropertyValues {
 	participantExternalId?: string;
 	/** Opaque application-defined payload for the local participant (JSON recommended, ≤ 2 KB). Never interpreted by Meet. */
 	participantMetadata?: string;
+	/** When true, the participant joins the meeting with the microphone muted (initial state only; they may unmute afterwards). */
+	initialAudioMuted?: boolean;
+	/** When true, the participant joins the meeting with the camera off (initial state only; they may enable it afterwards). */
+	initialVideoMuted?: boolean;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
 	/** URL to redirect to after the `CLOSED` event fires when leaving OpenVidu Meet. */

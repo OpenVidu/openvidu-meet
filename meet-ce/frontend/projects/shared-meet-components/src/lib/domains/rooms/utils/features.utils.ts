@@ -4,7 +4,7 @@ import {
 	MeetRoomConfig,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
-import { CaptionsStatus, RoomFeatures } from '../models/features.model';
+import { CaptionsStatus, InitialMediaMutedPreferences, RoomFeatures } from '../models/features.model';
 
 /**
  * Utility class responsible for calculating the enabled features in the meeting based on room configuration, participant permissions, and global appearance settings.
@@ -51,6 +51,22 @@ export class FeatureCalculator {
 		features.showKickParticipants = permissions.participantKick;
 		features.showViewRecordings = permissions.recordingList;
 		features.showJoinMeeting = permissions.meetingJoin;
+	}
+
+	/**
+	 * Applies the embedding application's initial media state (initial-audio-muted /
+	 * initial-video-muted). It only ever lowers `audioEnabled`/`videoEnabled`, so a permission
+	 * that already denies the device always wins, and it leaves the `show*` controls untouched:
+	 * this is the initial state, not a capability — the participant may re-enable the device.
+	 */
+	static applyInitialMediaMuted(features: RoomFeatures, initialMediaMuted: InitialMediaMutedPreferences): void {
+		if (initialMediaMuted.audioMuted) {
+			features.audioEnabled = false;
+		}
+
+		if (initialMediaMuted.videoMuted) {
+			features.videoEnabled = false;
+		}
 	}
 
 	static applyAppearanceConfig(features: RoomFeatures, appearanceConfig: MeetAppearanceConfig): void {

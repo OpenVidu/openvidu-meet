@@ -35,6 +35,18 @@ export enum EmbeddedEventName {
 	 */
 	PARTICIPANT_LEFT = 'participantLeft',
 	/**
+	 * Event emitted to the local participant when their microphone state changes.
+	 */
+	MEDIA_AUDIO_STATUS_CHANGED = 'mediaAudioStatusChanged',
+	/**
+	 * Event emitted to the local participant when their camera state changes.
+	 */
+	MEDIA_VIDEO_STATUS_CHANGED = 'mediaVideoStatusChanged',
+	/**
+	 * Event emitted to the local participant when their screen share state changes.
+	 */
+	MEDIA_SCREEN_SHARE_STATUS_CHANGED = 'mediaScreenShareStatusChanged',
+	/**
 	 * Event emitted when the local participant joins the meeting.
 	 * @deprecated Renamed to `meetingJoined` ({@link EmbeddedEventName.MEETING_JOINED}). Removed in 3.12.0.
 	 */
@@ -130,6 +142,30 @@ export interface EmbeddedEventPayloads {
 	[EmbeddedEventName.PARTICIPANT_LEFT]: {
 		roomId: string;
 		participant: MeetParticipantPayload;
+	};
+	/**
+	 * Payload for the {@link EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED} event.
+	 * `origin` says who caused the change (see {@link MeetEventOrigin}).
+	 */
+	[EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED]: {
+		enabled: boolean;
+		origin: MeetEventOrigin;
+	};
+	/**
+	 * Payload for the {@link EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED} event.
+	 * `origin` says who caused the change (see {@link MeetEventOrigin}).
+	 */
+	[EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED]: {
+		enabled: boolean;
+		origin: MeetEventOrigin;
+	};
+	/**
+	 * Payload for the {@link EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED} event.
+	 * `origin` says who caused the change (see {@link MeetEventOrigin}).
+	 */
+	[EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED]: {
+		enabled: boolean;
+		origin: MeetEventOrigin;
 	};
 	/**
 	 * Payload for the {@link EmbeddedEventName.JOINED} event.
@@ -234,6 +270,36 @@ export interface EmbeddedParticipantLeftEvent {
 }
 
 /**
+ * Event message emitted to the local participant when their microphone state changes: the event
+ * name plus its payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedMediaAudioStatusChangedEvent {
+	event: EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED>;
+}
+
+/**
+ * Event message emitted to the local participant when their camera state changes: the event name
+ * plus its payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedMediaVideoStatusChangedEvent {
+	event: EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>;
+}
+
+/**
+ * Event message emitted to the local participant when their screen share state changes: the event
+ * name plus its payload, derived from {@link EmbeddedEventPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedMediaScreenShareStatusChangedEvent {
+	event: EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED;
+	payload: EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>;
+}
+
+/**
  * Event message emitted when the local participant joins the meeting.
  * @category Communication
  * @deprecated Use {@link EmbeddedMeetingJoinedEvent}. Removed in 3.12.0.
@@ -275,6 +341,9 @@ export type EmbeddedEvent =
 	| EmbeddedMeetingClosedEvent
 	| EmbeddedParticipantJoinedEvent
 	| EmbeddedParticipantLeftEvent
+	| EmbeddedMediaAudioStatusChangedEvent
+	| EmbeddedMediaVideoStatusChangedEvent
+	| EmbeddedMediaScreenShareStatusChangedEvent
 	| EmbeddedJoinedEvent
 	| EmbeddedLeftEvent
 	| EmbeddedClosedEvent;

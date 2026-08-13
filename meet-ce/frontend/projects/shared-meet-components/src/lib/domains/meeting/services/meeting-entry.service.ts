@@ -3,6 +3,7 @@ import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { LeaveRedirectService } from '../../../shared/services/leave-redirect.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
 import { RoomAccessService } from '../../rooms/services/room-access.service';
+import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import { MeetingContextService } from './meeting-context.service';
 
 /**
@@ -26,6 +27,10 @@ export interface MeetingEntryParams {
 	participantExternalId?: string;
 	/** Optional opaque application-defined participant payload (JSON recommended, ≤ 2 KB). */
 	participantMetadata?: string;
+	/** Join with the microphone muted (initial state only; the participant may unmute afterwards). */
+	initialAudioMuted?: boolean;
+	/** Join with the camera off (initial state only; the participant may enable it afterwards). */
+	initialVideoMuted?: boolean;
 	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -63,6 +68,7 @@ export class MeetingEntryService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly roomAccessService = inject(RoomAccessService);
+	private readonly roomFeatureService = inject(RoomFeatureService);
 	private readonly leaveRedirect = inject(LeaveRedirectService);
 
 	/**
@@ -85,7 +91,9 @@ export class MeetingEntryService {
 		e2eeKey,
 		participantName,
 		participantExternalId,
-		participantMetadata
+		participantMetadata,
+		initialAudioMuted,
+		initialVideoMuted
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
@@ -96,6 +104,13 @@ export class MeetingEntryService {
 		// the browser.
 		this.roomMemberContextService.setParticipantExternalId(participantExternalId);
 		this.roomMemberContextService.setParticipantMetadata(participantMetadata);
+
+		// Initial media state asked by the embedding application; seeded (or cleared) on every
+		// entry, like the correlation fields above
+		this.roomFeatureService.setInitialMediaMuted({
+			audioMuted: initialAudioMuted === true,
+			videoMuted: initialVideoMuted === true
+		});
 
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one
 		// persisted on this origin. Keeping the fallback here means every adapter
