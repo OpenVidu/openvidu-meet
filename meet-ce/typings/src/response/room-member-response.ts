@@ -22,6 +22,7 @@ export const MEET_ROOM_MEMBER_PERMISSIONS_FIELDS = [
 	'recordingDownload',
 	'recordingDelete',
 	'meetingJoin',
+	'meetingRead',
 	'roomShareAccessLinks',
 	'participantPromote',
 	'participantKick',

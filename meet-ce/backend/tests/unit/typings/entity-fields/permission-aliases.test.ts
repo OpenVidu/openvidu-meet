@@ -7,6 +7,7 @@ import {
 	MEET_PERMISSION_DEPRECATED_ALIASES,
 	MEET_PERMISSION_KEYS,
 	MEET_ROOM_MEMBER_PERMISSIONS_FIELDS,
+	MEET_UNALIASED_PERMISSION_KEYS,
 	normalizePermissions,
 	toDeprecatedPermissions
 } from '@openvidu-meet/typings';
@@ -29,7 +30,10 @@ describe('Permission alias map', () => {
 
 	it('should never reuse a permission name across modules', () => {
 		expect(new Set(MEET_PERMISSION_KEYS).size).toBe(MEET_PERMISSION_KEYS.length);
-		expect(Object.keys(MEET_PERMISSION_DEPRECATED_ALIASES)).toHaveLength(MEET_PERMISSION_KEYS.length);
+		// Every key except the ones born after the rename maps back to a deprecated spelling.
+		expect(Object.keys(MEET_PERMISSION_DEPRECATED_ALIASES)).toHaveLength(
+			MEET_PERMISSION_KEYS.length - MEET_UNALIASED_PERMISSION_KEYS.length
+		);
 	});
 
 	it('should split recording retrieval into list, play and download', () => {
@@ -41,7 +45,28 @@ describe('Permission alias map', () => {
 		expect(MEET_PERMISSION_ALIASES.canRecord).toEqual(['recordingControl']);
 		expect(MEET_PERMISSION_ALIASES.canDeleteRecordings).toEqual(['recordingDelete']);
 		// 14 deprecated flags become 16 current ones: only recording retrieval is split.
-		expect(MEET_PERMISSION_KEYS).toHaveLength(16);
+		expect(MEET_PERMISSION_KEYS).toHaveLength(16 + MEET_UNALIASED_PERMISSION_KEYS.length);
+	});
+
+	it('should keep the permissions born after the rename out of the deprecated surface', () => {
+		// They are contract keys like any other, they simply have no `can*` spelling: a deployment
+		// must never invent one, so they appear in neither direction of the alias map.
+		expect(MEET_UNALIASED_PERMISSION_KEYS).toEqual(['meetingRead']);
+
+		for (const permissionKey of MEET_UNALIASED_PERMISSION_KEYS) {
+			expect(MEET_PERMISSION_KEYS).toContain(permissionKey);
+			expect(MEET_PERMISSION_DEPRECATED_ALIASES[permissionKey]).toBeUndefined();
+			expect(Object.values(MEET_PERMISSION_ALIASES).flat()).not.toContain(permissionKey);
+		}
+
+		// ...and therefore never travel back to a client that speaks the deprecated names.
+		const deprecated = toDeprecatedPermissions(
+			Object.fromEntries(MEET_PERMISSION_KEYS.map((key) => [key, true])) as Record<MeetPermissionKey, boolean>
+		);
+
+		for (const permissionKey of MEET_UNALIASED_PERMISSION_KEYS) {
+			expect(deprecated).not.toHaveProperty(permissionKey);
+		}
 	});
 
 	it('should map every current key back to the deprecated key it replaces', () => {
@@ -142,6 +167,28 @@ describe('normalizePermissions', () => {
 		const deprecatedInput = Object.fromEntries(MEET_DEPRECATED_PERMISSION_KEYS.map((key) => [key, true]));
 		const normalized = normalizePermissions(deprecatedInput);
 		expect(Object.keys(normalized).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+	});
+
+	// A permission that did not exist when an input was produced must not read as denied: it inherits
+	// the permission that governed the same capability before it was split out, so behaviour is
+	// identical until someone sets the new key explicitly.
+	it('should inherit meetingRead from meetingJoin when it is absent', () => {
+		expect(normalizePermissions({ meetingJoin: true })).toEqual({ meetingJoin: true, meetingRead: true });
+		expect(normalizePermissions({ meetingJoin: false })).toEqual({ meetingJoin: false, meetingRead: false });
+		// The deprecated spelling cannot name it either, and reaches it through meetingJoin.
+		expect(normalizePermissions({ canJoinMeeting: true })).toEqual({ meetingJoin: true, meetingRead: true });
+	});
+
+	it('should keep an explicit meetingRead that diverges from meetingJoin', () => {
+		expect(normalizePermissions({ meetingJoin: true, meetingRead: false })).toEqual({
+			meetingJoin: true,
+			meetingRead: false
+		});
+		expect(normalizePermissions({ meetingRead: true })).toEqual({ meetingRead: true });
+	});
+
+	it('should not inherit into an overlay that says nothing about meetingJoin', () => {
+		expect(normalizePermissions({ chatRead: true })).toEqual({ chatRead: true });
 	});
 });
 

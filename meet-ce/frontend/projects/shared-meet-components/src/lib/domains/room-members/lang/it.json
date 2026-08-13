@@ -122,6 +122,10 @@
           "LABEL": "Può partecipare alla riunione",
           "DESCRIPTION": "Consenti di partecipare alla riunione"
         },
+        "meetingRead": {
+          "LABEL": "Può consultare la riunione",
+          "DESCRIPTION": "Consenti di consultare lo stato in tempo reale della riunione e dei suoi partecipanti senza parteciparvi"
+        },
         "meetingEnd": {
           "LABEL": "Può terminare la riunione",
           "DESCRIPTION": "Consenti di terminare la riunione per tutti i partecipanti"

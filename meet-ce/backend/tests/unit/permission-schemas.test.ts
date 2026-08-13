@@ -30,6 +30,7 @@ const fullCurrentInput = {
 	recordingDownload: true,
 	recordingDelete: false,
 	meetingJoin: true,
+	meetingRead: true,
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
@@ -49,7 +50,7 @@ const fullCurrentInput = {
  * always keyed with the current names. Removed in 3.12.0 together with the compatibility mode.
  */
 describe('MeetPermissionsSchema (full, compatibility mode)', () => {
-	it('should accept a full deprecated input and normalize it to the 16 current keys', () => {
+	it('should accept a full deprecated input and normalize it to every current key', () => {
 		const result = MeetPermissionsSchema.safeParse(fullDeprecatedInput);
 		expect(result.success).toBe(true);
 
@@ -175,5 +176,47 @@ describe("Permission schemas with MEET_MODE '3.9.0'", () => {
 		expect(result.success).toBe(true);
 		expect(result.data!.recordingControl).toBe(true);
 		expect(Object.keys(result.data!).sort()).toEqual([...MEET_PERMISSION_KEYS].sort());
+	});
+});
+
+/**
+ * Permissions introduced after the rename (MEET_UNALIASED_PERMISSION_KEYS) are missing from every
+ * input produced before they shipped. The schemas must complete them from the permission that used
+ * to govern the same capability instead of failing the completeness check — otherwise a deployment
+ * would 422 the requests of an unmodified integration and reject the tokens of meetings in progress.
+ */
+describe('Permissions introduced after the rename', () => {
+	const { meetingRead, ...currentInputWithoutMeetingRead } = fullCurrentInput;
+	void meetingRead;
+
+	it('should complete meetingRead from meetingJoin when a full request omits it', () => {
+		const result = MeetPermissionsSchema.safeParse(currentInputWithoutMeetingRead);
+		expect(result.success).toBe(true);
+		expect(result.data!.meetingRead).toBe(true);
+	});
+
+	it('should deny meetingRead when the omitted meetingJoin is denied', () => {
+		const result = MeetPermissionsSchema.safeParse({ ...currentInputWithoutMeetingRead, meetingJoin: false });
+		expect(result.success).toBe(true);
+		expect(result.data!.meetingRead).toBe(false);
+	});
+
+	it('should complete meetingRead in the token of a meeting in progress', () => {
+		const result = MeetTokenPermissionsSchema.safeParse(currentInputWithoutMeetingRead);
+		expect(result.success).toBe(true);
+		expect(result.data!.meetingRead).toBe(true);
+	});
+
+	it('should let an explicit meetingRead diverge from meetingJoin', () => {
+		const result = MeetPermissionsSchema.safeParse({ ...fullCurrentInput, meetingRead: false });
+		expect(result.success).toBe(true);
+		expect(result.data!.meetingJoin).toBe(true);
+		expect(result.data!.meetingRead).toBe(false);
+	});
+
+	it('should not invent meetingRead in a partial overlay that does not touch meetingJoin', () => {
+		const result = PartialMeetPermissionsSchema.safeParse({ chatWrite: false });
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual({ chatWrite: false });
 	});
 });

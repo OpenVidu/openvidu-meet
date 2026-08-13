@@ -122,6 +122,10 @@
           "LABEL": "会議に参加可能",
           "DESCRIPTION": "会議への参加を許可します"
         },
+        "meetingRead": {
+          "LABEL": "会議を参照可能",
+          "DESCRIPTION": "参加せずに会議のライブ状態と参加者の参照を許可します"
+        },
         "meetingEnd": {
           "LABEL": "会議を終了可能",
           "DESCRIPTION": "すべての参加者の会議を終了することを許可します"

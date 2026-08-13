@@ -48,6 +48,8 @@ const buildLegacyRoomMemberV1 = (roomId: string, memberId: string) => ({
 	permissionsUpdatedAt: Date.now()
 });
 
+// `meetingRead` is not a rename of anything: it was added after the deprecated spellings froze, so
+// no `can*` key names it and the transforms complete it from `meetingJoin`.
 const expectedCurrentEffectivePermissions = {
 	recordingControl: true,
 	recordingList: false,
@@ -55,6 +57,7 @@ const expectedCurrentEffectivePermissions = {
 	recordingDownload: false,
 	recordingDelete: false,
 	meetingJoin: true,
+	meetingRead: true,
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,

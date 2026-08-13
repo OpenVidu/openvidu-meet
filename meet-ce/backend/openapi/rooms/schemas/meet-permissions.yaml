@@ -51,6 +51,14 @@ properties:
         type: boolean
         example: true
         description: Can join the meeting.
+    meetingRead:
+        type: boolean
+        example: true
+        description: >
+            Can read the live state of the meeting (its info and the participants currently in it)
+            without necessarily joining it. Introduced after the deprecated spellings were frozen, so
+            it has none of its own; when omitted from a request it takes the value of `meetingJoin`,
+            which gated this capability before the permission existed.
     roomShareAccessLinks:
         type: boolean
         example: false

@@ -122,6 +122,10 @@
           "LABEL": "Kann am Meeting teilnehmen",
           "DESCRIPTION": "Erlaubt das Beitreten zum Meeting"
         },
+        "meetingRead": {
+          "LABEL": "Kann Meeting einsehen",
+          "DESCRIPTION": "Erlaubt das Einsehen des Live-Status des Meetings und seiner Teilnehmer, ohne beizutreten"
+        },
         "meetingEnd": {
           "LABEL": "Kann Meeting beenden",
           "DESCRIPTION": "Erlaubt das Beenden des Meetings für alle Teilnehmer"

@@ -122,6 +122,10 @@
           "LABEL": "可加入会议",
           "DESCRIPTION": "允许加入会议"
         },
+        "meetingRead": {
+          "LABEL": "可查看会议",
+          "DESCRIPTION": "允许查看会议的实时状态及其参与者，无需加入"
+        },
         "meetingEnd": {
           "LABEL": "可结束会议",
           "DESCRIPTION": "允许为所有参与者结束会议"

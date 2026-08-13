@@ -122,6 +122,10 @@
           "LABEL": "Puede unirse a la reunión",
           "DESCRIPTION": "Permite unirse a la reunión"
         },
+        "meetingRead": {
+          "LABEL": "Puede consultar la reunión",
+          "DESCRIPTION": "Permite consultar el estado en vivo de la reunión y sus participantes sin unirse"
+        },
         "meetingEnd": {
           "LABEL": "Puede finalizar la reunión",
           "DESCRIPTION": "Permite finalizar la reunión para todos los participantes"

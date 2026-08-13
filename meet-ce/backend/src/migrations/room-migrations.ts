@@ -100,11 +100,16 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return room;
 };
 
-// v3→v4: rename the role permission keys from the deprecated `can*` spellings to the current
-// moduleAbility scheme, deriving the mapping from MEET_PERMISSION_ALIASES via normalizePermissions()
-// (which also splits canRetrieveRecordings into recordingList/recordingPlay/recordingDownload,
-// granting the whole group whatever the old flag granted). Without this rename the current-keyed Mongoose
-// schema would silently drop every stored permission on the next write (see B1 in the migration plan).
+// v3→v4: bring the stored role permissions to the current key set through normalizePermissions(), which
+// does both halves of the job. It renames the deprecated `can*` spellings to the current moduleAbility
+// scheme, deriving the mapping from MEET_PERMISSION_ALIASES (splitting canRetrieveRecordings into
+// recordingList/recordingPlay/recordingDownload, which each inherit whatever the old flag granted), and it
+// fills in the keys added after that rename from the permission that used to govern the same capability
+// (MEET_UNALIASED_PERMISSION_KEYS: `meetingRead` inherits `meetingJoin`). Both halves are mandatory
+// because the Mongoose schema is keyed on the current names and marks every one of them required: an
+// unrenamed key is silently dropped on the next write and a missing one fails validation (see B1 in the
+// migration plan). Keeping them in a single step is only correct while v4 is unreleased — once a release
+// ships it, a later permission needs its own v4→v5 step or the documents already at v4 never get it.
 const roomMigrationV3ToV4Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	for (const role of ['moderator', 'speaker'] as const) {
 		const roleConfig = room.roles?.[role];

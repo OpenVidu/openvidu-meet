@@ -30,6 +30,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				icon: 'login'
 			},
 			{
+				key: 'meetingRead',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingRead.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingRead.DESCRIPTION',
+				icon: 'monitoring'
+			},
+			{
 				key: 'meetingEnd',
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingEnd.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingEnd.DESCRIPTION',
