@@ -16,6 +16,10 @@
       "TITLE": "Geschlossener Raum",
       "MESSAGE": "Meetings in diesem Raum sind nicht verfügbar, solange er geschlossen ist"
     },
+    "MEETING_FULL": {
+      "TITLE": "Meeting voll",
+      "MESSAGE": "Dieses Meeting hat seine maximale Teilnehmerzahl erreicht"
+    },
     "ANONYMOUS_ACCESS_DISABLED": {
       "TITLE": "Anonymer Zugriff deaktiviert",
       "MESSAGE": "Der anonyme Zugriff für Ihre Rolle wurde in diesem Raum (und seinen Aufnahmen) deaktiviert"

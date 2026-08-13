@@ -1,5 +1,6 @@
 export enum NavigationErrorReason {
 	CLOSED_ROOM = 'closed-room',
+	MEETING_FULL = 'meeting-full',
 	ANONYMOUS_ACCESS_DISABLED = 'anonymous-access-disabled',
 	ANONYMOUS_RECORDING_ACCESS_DISABLED = 'anonymous-recording-access-disabled',
 	INVALID_ROOM_SECRET = 'invalid-room-secret',

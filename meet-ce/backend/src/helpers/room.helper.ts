@@ -66,6 +66,15 @@ export class MeetRoomHelper {
 	}
 
 	/**
+	 * Decides whether a meeting has exceeded its room's duration limit. The meeting's start is the
+	 * LiveKit room creation time (in seconds, as LiveKit reports it).
+	 */
+	static isMeetingOverMaxDuration(creationTimeSeconds: number, maxDurationMinutes: number, nowMs: number): boolean {
+		const deadlineMs = creationTimeSeconds * 1000 + maxDurationMinutes * 60_000;
+		return nowMs >= deadlineMs;
+	}
+
+	/**
 	 * Converts an MeetRoom object to an MeetRoomOptions object.
 	 *
 	 * @param room - The MeetRoom object to convert.

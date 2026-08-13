@@ -453,8 +453,13 @@ export class MeetingLobbyService {
 
 					break;
 				case 409:
-					// Room is closed
-					await this.navigationService.redirectToErrorPage(NavigationErrorReason.CLOSED_ROOM, true);
+					// Meeting at its maxParticipants limit, or the room is closed
+					if (message.includes('maximum number of participants')) {
+						await this.navigationService.redirectToErrorPage(NavigationErrorReason.MEETING_FULL, true);
+					} else {
+						await this.navigationService.redirectToErrorPage(NavigationErrorReason.CLOSED_ROOM, true);
+					}
+
 					break;
 				case 429:
 					// Too many requests (rate limited)

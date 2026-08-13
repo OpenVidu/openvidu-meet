@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import type { Room } from 'livekit-server-sdk';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
+import { MeetRoomHelper } from '../helpers/room.helper.js';
 import type { IScheduledTask } from '../models/task-scheduler.model.js';
 import { RoomRepository } from '../repositories/room.repository.js';
 import { runConcurrently } from '../utils/concurrency.utils.js';
@@ -48,6 +49,14 @@ export class RoomScheduledTasksService {
 			callback: this.validateRoomsStatusGC.bind(this)
 		};
 		this.taskSchedulerService.registerTask(validateRoomsStatusGCTask);
+
+		const meetingMaxDurationGCTask: IScheduledTask = {
+			name: 'meetingMaxDurationGC',
+			type: 'cron',
+			scheduleOrDelay: INTERNAL_CONFIG.MEETING_MAX_DURATION_GC_INTERVAL,
+			callback: this.enforceMeetingMaxDurationGC.bind(this)
+		};
+		this.taskSchedulerService.registerTask(meetingMaxDurationGCTask);
 	}
 
 	/**
@@ -167,6 +176,87 @@ export class RoomScheduledTasksService {
 			this.logger.warn(`Room consistency check finished. Total inconsistent rooms processed: ${totalInconsistentRooms}`);
 		} catch (error) {
 			this.logger.error('Error checking inconsistent rooms:', error);
+		}
+	}
+
+	/**
+	 * Ends the meetings that have exceeded their room's `maxDurationMinutes`.
+	 *
+	 * LiveKit has no native duration limit, so this periodic sweep is the enforcement: it walks
+	 * the active rooms that declare a limit, compares the LiveKit room's creation time against it,
+	 * and ends the expired ones by deleting the LiveKit room — the exact flow a moderator's
+	 * `meetingEnd` triggers, so participants leave with the `meeting_ended` reason and the
+	 * `meetingEnded` webhook fires. A meeting can overrun its limit by up to the sweep interval.
+	 */
+	protected async enforceMeetingMaxDurationGC(): Promise<void> {
+		this.logger.verbose(`Checking meetings over their duration limit at ${new Date(Date.now()).toISOString()}`);
+
+		try {
+			const BATCH_SIZE = INTERNAL_CONFIG.BATCH_SIZE_MEETING_MAX_DURATION_GC;
+			let nextPageToken: string | undefined;
+			let hasMore = true;
+			let totalEndedMeetings = 0;
+
+			while (hasMore) {
+				const limitedRoomsPage = await this.roomRepository.findActiveRoomsWithMaxDuration(
+					BATCH_SIZE,
+					nextPageToken
+				);
+
+				if (limitedRoomsPage.rooms.length === 0) {
+					break;
+				}
+
+				const results = await runConcurrently(
+					limitedRoomsPage.rooms,
+					async (room) => {
+						const maxDurationMinutes = room.config.maxDurationMinutes;
+
+						if (!maxDurationMinutes) {
+							return false;
+						}
+
+						try {
+							// The meeting start is the LiveKit room's creation time. A room that is
+							// gone by now simply ended on its own; the status GC reconciles it.
+							const livekitRoom = await this.livekitService.getRoom(room.roomId);
+							const creationTimeSeconds = Number(livekitRoom.creationTime);
+
+							if (
+								!MeetRoomHelper.isMeetingOverMaxDuration(
+									creationTimeSeconds,
+									maxDurationMinutes,
+									Date.now()
+								)
+							) {
+								return false;
+							}
+
+							this.logger.info(
+								`Meeting in room '${room.roomId}' exceeded its ${maxDurationMinutes}-minute limit. Ending it.`
+							);
+							await this.livekitService.deleteRoom(room.roomId);
+							return true;
+						} catch (error) {
+							this.logger.error(`Error enforcing the duration limit of room '${room.roomId}':`, error);
+							// Continue with other rooms even if one fails
+							return false;
+						}
+					},
+					{ concurrency: INTERNAL_CONFIG.CONCURRENCY_MEETING_MAX_DURATION_GC, failFast: true }
+				);
+
+				totalEndedMeetings += results.filter(Boolean).length;
+
+				hasMore = limitedRoomsPage.isTruncated;
+				nextPageToken = limitedRoomsPage.nextPageToken;
+			}
+
+			if (totalEndedMeetings > 0) {
+				this.logger.info(`Meeting duration sweep finished. Meetings ended: ${totalEndedMeetings}`);
+			}
+		} catch (error) {
+			this.logger.error('Error checking meetings over their duration limit:', error);
 		}
 	}
 }
