@@ -72,6 +72,27 @@ export class IframeHostService {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_KICK, payload: { participantIdentity } });
 	}
 
+	mediaToggleAudio(enabled?: boolean): void {
+		this.post({
+			command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO,
+			payload: enabled === undefined ? undefined : { enabled }
+		});
+	}
+
+	mediaToggleVideo(enabled?: boolean): void {
+		this.post({
+			command: EmbeddedCommandName.MEDIA_TOGGLE_VIDEO,
+			payload: enabled === undefined ? undefined : { enabled }
+		});
+	}
+
+	mediaToggleScreenShare(enabled?: boolean): void {
+		this.post({
+			command: EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE,
+			payload: enabled === undefined ? undefined : { enabled }
+		});
+	}
+
 	// ── Deprecated command names ────────────────────────────────────────────
 	// These post the OLD wire strings on purpose: they are how the e2e checks that a host
 	// still on 3.8.0 keeps working. They are not forwarders to the canonical methods, since

@@ -23,7 +23,17 @@ const EVENTS_SHIPPED_IN_3_8_0 = ['joined', 'left', 'closed'] as const;
 describe('Embedded command names', () => {
 	it('should expose exactly the canonical and deprecated commands', () => {
 		expect(Object.values(EmbeddedCommandName).sort()).toEqual(
-			['meetingLeave', 'meetingEnd', 'participantKick', 'endMeeting', 'leaveRoom', 'kickParticipant'].sort()
+			[
+				'meetingLeave',
+				'meetingEnd',
+				'participantKick',
+				'mediaToggleAudio',
+				'mediaToggleVideo',
+				'mediaToggleScreenShare',
+				'endMeeting',
+				'leaveRoom',
+				'kickParticipant'
+			].sort()
 		);
 	});
 
@@ -64,6 +74,9 @@ describe('Embedded event names', () => {
 				'meetingClosed',
 				'participantJoined',
 				'participantLeft',
+				'mediaAudioStatusChanged',
+				'mediaVideoStatusChanged',
+				'mediaScreenShareStatusChanged',
 				'joined',
 				'left',
 				'closed'

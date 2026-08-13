@@ -1,5 +1,6 @@
 import {
 	afterNextRender,
+	booleanAttribute,
 	Component,
 	computed,
 	DestroyRef,
@@ -86,6 +87,9 @@ export class App {
 	readonly participantName = input<string | undefined>(undefined);
 	readonly participantExternalId = input<string | undefined>(undefined);
 	readonly participantMetadata = input<string | undefined>(undefined);
+	// booleanAttribute makes the DOM-attribute strings behave like real booleans ("false" → false)
+	readonly initialAudioMuted = input(false, { transform: booleanAttribute });
+	readonly initialVideoMuted = input(false, { transform: booleanAttribute });
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input<boolean>(false);
@@ -100,6 +104,10 @@ export class App {
 	readonly meetingClosed = output<void>();
 	readonly participantJoined = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_JOINED>>();
 	readonly participantLeft = output<EmbeddedEventPayloadFor<EmbeddedEventName.PARTICIPANT_LEFT>>();
+	readonly mediaAudioStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED>>();
+	readonly mediaVideoStatusChanged = output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED>>();
+	readonly mediaScreenShareStatusChanged =
+		output<EmbeddedEventPayloadFor<EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED>>();
 
 	/** @deprecated Renamed to `meetingJoined`. Removed in 3.12.0. Dispatched alongside it. */
 	readonly joined = output<EmbeddedEventPayloadFor<EmbeddedEventName.JOINED>>();
@@ -120,6 +128,8 @@ export class App {
 		participantName: this.participantName(),
 		participantExternalId: this.participantExternalId(),
 		participantMetadata: this.participantMetadata(),
+		initialAudioMuted: this.initialAudioMuted(),
+		initialVideoMuted: this.initialVideoMuted(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),
@@ -257,6 +267,18 @@ export class App {
 		return this.commandService.participantKick(participantIdentity);
 	}
 
+	mediaToggleAudio(enabled?: boolean): Promise<void> {
+		return this.commandService.mediaToggleAudio(enabled);
+	}
+
+	mediaToggleVideo(enabled?: boolean): Promise<void> {
+		return this.commandService.mediaToggleVideo(enabled);
+	}
+
+	mediaToggleScreenShare(enabled?: boolean): Promise<void> {
+		return this.commandService.mediaToggleScreenShare(enabled);
+	}
+
 	// ── Internal ─────────────────────────────────────────────────────────────
 	// The bus only ever queues canonical events (see EmbeddedEventBusService), so this switch
 	// only ever handles canonical names; emitting the deprecated output alongside the canonical
@@ -289,6 +311,15 @@ export class App {
 				break;
 			case EmbeddedEventName.PARTICIPANT_LEFT:
 				this.participantLeft.emit(payload);
+				break;
+			case EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED:
+				this.mediaAudioStatusChanged.emit(payload);
+				break;
+			case EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED:
+				this.mediaVideoStatusChanged.emit(payload);
+				break;
+			case EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED:
+				this.mediaScreenShareStatusChanged.emit(payload);
 				break;
 		}
 	}

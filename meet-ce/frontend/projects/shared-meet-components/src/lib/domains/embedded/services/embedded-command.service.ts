@@ -1,5 +1,5 @@
 import { inject, Service } from '@angular/core';
-import { MeetingLiveKitService } from '../../meeting/openvidu-components';
+import { LocalMediaControlService, MeetingLiveKitService } from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -27,6 +27,7 @@ export class EmbeddedCommandService {
 	private readonly meetingContextService = inject(MeetingContextService);
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
+	private readonly localMediaControlService = inject(LocalMediaControlService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 
 	/**
@@ -95,6 +96,63 @@ export class EmbeddedCommandService {
 			await this.meetingModerationService.kickParticipant(roomId, participantIdentity);
 		} catch (error) {
 			this.log.e(`Error kicking participant ${participantIdentity}:`, error);
+		}
+	}
+
+	/**
+	 * Toggles the local participant's microphone, or sets it when `enabled` is provided.
+	 * Requires the `mediaPublishAudio` permission; otherwise the call is a no-op.
+	 */
+	async mediaToggleAudio(enabled?: boolean): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('mediaPublishAudio')) {
+			this.log.w('mediaToggleAudio() called but local participant lacks mediaPublishAudio permission');
+			return;
+		}
+
+		try {
+			const targetEnabled = enabled ?? !this.localMediaControlService.isMyMicrophoneEnabled();
+			this.log.d(`Setting microphone enabled to ${targetEnabled}...`);
+			await this.localMediaControlService.setMicrophoneEnabled(targetEnabled);
+		} catch (error) {
+			this.log.e('Error toggling microphone:', error);
+		}
+	}
+
+	/**
+	 * Toggles the local participant's camera, or sets it when `enabled` is provided.
+	 * Requires the `mediaPublishVideo` permission; otherwise the call is a no-op.
+	 */
+	async mediaToggleVideo(enabled?: boolean): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('mediaPublishVideo')) {
+			this.log.w('mediaToggleVideo() called but local participant lacks mediaPublishVideo permission');
+			return;
+		}
+
+		try {
+			const targetEnabled = enabled ?? !this.localMediaControlService.isMyCameraEnabled();
+			this.log.d(`Setting camera enabled to ${targetEnabled}...`);
+			await this.localMediaControlService.setCameraEnabled(targetEnabled);
+		} catch (error) {
+			this.log.e('Error toggling camera:', error);
+		}
+	}
+
+	/**
+	 * Toggles the local participant's screen share, or sets it when `enabled` is provided.
+	 * Requires the `mediaShareScreen` permission; otherwise the call is a no-op.
+	 */
+	async mediaToggleScreenShare(enabled?: boolean): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('mediaShareScreen')) {
+			this.log.w('mediaToggleScreenShare() called but local participant lacks mediaShareScreen permission');
+			return;
+		}
+
+		try {
+			const targetEnabled = enabled ?? !this.localMediaControlService.isMyScreenShareEnabled();
+			this.log.d(`Setting screen share enabled to ${targetEnabled}...`);
+			await this.localMediaControlService.setScreenShareEnabled(targetEnabled);
+		} catch (error) {
+			this.log.e('Error toggling screen share:', error);
 		}
 	}
 

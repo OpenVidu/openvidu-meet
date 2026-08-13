@@ -22,15 +22,18 @@ import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import type {
 	DataPacket_Kind,
 	LocalParticipant,
+	Participant,
 	ParticipantLeftEvent,
 	ParticipantModel,
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent,
 	RemoteParticipant,
-	Room
+	Room,
+	TrackPublication
 } from '../openvidu-components';
 import { ParticipantLeftReason, RoomEvent, parseParticipantMetadata } from '../openvidu-components';
 import { toEmbeddedParticipantPayload } from '../utils/embedded-participant.utils';
+import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
 import { MeetingContextService } from './meeting-context.service';
 import { MeetingStateService } from './meeting-state.service';
 
@@ -120,6 +123,55 @@ export class MeetingEventHandlerService {
 		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
 			this.onRemoteParticipantDisconnected(participant);
 		});
+
+		// Local media status → host media*StatusChanged events. Mute/unmute cover the camera and
+		// microphone (their publications survive being disabled); publish/unpublish cover the
+		// initial publications and the screen share, which has no muted state.
+		this.lastLocalMediaStatus.clear();
+
+		room.on(RoomEvent.TrackMuted, (publication: TrackPublication, participant: Participant) => {
+			this.onLocalMediaStatusChanged(publication, participant, false);
+		});
+
+		room.on(RoomEvent.TrackUnmuted, (publication: TrackPublication, participant: Participant) => {
+			this.onLocalMediaStatusChanged(publication, participant, true);
+		});
+
+		room.on(RoomEvent.LocalTrackPublished, (publication: TrackPublication, participant: LocalParticipant) => {
+			this.onLocalMediaStatusChanged(publication, participant, !publication.isMuted);
+		});
+
+		room.on(RoomEvent.LocalTrackUnpublished, (publication: TrackPublication, participant: LocalParticipant) => {
+			this.onLocalMediaStatusChanged(publication, participant, false);
+		});
+	}
+
+	// Last state notified to the host per media event, so LiveKit surfacing one user action as
+	// several track events (a publish plus an unmute) reaches the host as a single transition
+	private readonly lastLocalMediaStatus = new Map<EmbeddedEventName, boolean>();
+
+	/**
+	 * Forwards a local participant's media state change to the host as the matching
+	 * `media*StatusChanged` event (embedded modes only). Remote participants' tracks are ignored:
+	 * these events describe the local participant, like `meetingJoined`/`meetingLeft`.
+	 */
+	protected onLocalMediaStatusChanged(
+		publication: TrackPublication,
+		participant: Participant,
+		enabled: boolean
+	): void {
+		if (!this.runtimeConfigService.isEmbeddedMode() || !participant.isLocal) {
+			return;
+		}
+
+		const embeddedEvent = toMediaStatusChangedEvent(publication.source, enabled);
+
+		if (!embeddedEvent || this.lastLocalMediaStatus.get(embeddedEvent.event) === enabled) {
+			return;
+		}
+
+		this.lastLocalMediaStatus.set(embeddedEvent.event, enabled);
+		this.eventBus.emit(embeddedEvent);
 	}
 
 	/**

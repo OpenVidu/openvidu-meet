@@ -59,6 +59,8 @@ export const extractParams = (route: {
 		participantName: queryParams[EmbeddedAttribute.PARTICIPANT_NAME],
 		participantExternalId: queryParams[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID],
 		participantMetadata: queryParams[EmbeddedAttribute.PARTICIPANT_METADATA],
+		initialAudioMuted: queryParams[EmbeddedAttribute.INITIAL_AUDIO_MUTED],
+		initialVideoMuted: queryParams[EmbeddedAttribute.INITIAL_VIDEO_MUTED],
 		leaveRedirectUrl: queryParams[EmbeddedAttribute.LEAVE_REDIRECT_URL],
 		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS] || 'false',
 		showRecording: queryParams[EmbeddedAttribute.SHOW_RECORDING],

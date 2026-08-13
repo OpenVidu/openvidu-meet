@@ -22,6 +22,18 @@ export enum EmbeddedCommandName {
 	 */
 	PARTICIPANT_KICK = 'participantKick',
 	/**
+	 * Toggles the local participant's microphone, or sets it when `enabled` is provided.
+	 */
+	MEDIA_TOGGLE_AUDIO = 'mediaToggleAudio',
+	/**
+	 * Toggles the local participant's camera, or sets it when `enabled` is provided.
+	 */
+	MEDIA_TOGGLE_VIDEO = 'mediaToggleVideo',
+	/**
+	 * Toggles the local participant's screen share, or sets it when `enabled` is provided.
+	 */
+	MEDIA_TOGGLE_SCREEN_SHARE = 'mediaToggleScreenShare',
+	/**
 	 * Ends the current meeting for all participants.
 	 * @moderator
 	 * @deprecated Renamed to `meetingEnd` ({@link EmbeddedCommandName.MEETING_END}). Removed in 3.12.0.
@@ -62,6 +74,27 @@ export interface EmbeddedCommandPayloads {
 	 */
 	[EmbeddedCommandName.PARTICIPANT_KICK]: {
 		participantIdentity: string;
+	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO} command.
+	 * When `enabled` is omitted, the microphone state is toggled.
+	 */
+	[EmbeddedCommandName.MEDIA_TOGGLE_AUDIO]: {
+		enabled?: boolean;
+	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_VIDEO} command.
+	 * When `enabled` is omitted, the camera state is toggled.
+	 */
+	[EmbeddedCommandName.MEDIA_TOGGLE_VIDEO]: {
+		enabled?: boolean;
+	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE} command.
+	 * When `enabled` is omitted, the screen share state is toggled.
+	 */
+	[EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE]: {
+		enabled?: boolean;
 	};
 	/**
 	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
@@ -183,10 +216,43 @@ export interface EmbeddedKickParticipantCommand {
  * Includes the deprecated aliases, which hosts written against 3.8.0 still send.
  * @category Communication
  */
+/**
+ * Command message for {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO}: the command name plus its
+ * optional payload (omitted payload or `enabled` = toggle), derived from
+ * {@link EmbeddedCommandPayloadFor}.
+ */
+export interface EmbeddedMediaToggleAudioCommand {
+	command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.MEDIA_TOGGLE_AUDIO>;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.MEDIA_TOGGLE_VIDEO}: the command name plus its
+ * optional payload (omitted payload or `enabled` = toggle), derived from
+ * {@link EmbeddedCommandPayloadFor}.
+ */
+export interface EmbeddedMediaToggleVideoCommand {
+	command: EmbeddedCommandName.MEDIA_TOGGLE_VIDEO;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.MEDIA_TOGGLE_VIDEO>;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE}: the command name plus
+ * its optional payload (omitted payload or `enabled` = toggle), derived from
+ * {@link EmbeddedCommandPayloadFor}.
+ */
+export interface EmbeddedMediaToggleScreenShareCommand {
+	command: EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE;
+	payload?: EmbeddedCommandPayloadFor<EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE>;
+}
+
 export type EmbeddedCommand =
 	| EmbeddedMeetingLeaveCommand
 	| EmbeddedMeetingEndCommand
 	| EmbeddedParticipantKickCommand
+	| EmbeddedMediaToggleAudioCommand
+	| EmbeddedMediaToggleVideoCommand
+	| EmbeddedMediaToggleScreenShareCommand
 	| EmbeddedEndMeetingCommand
 	| EmbeddedLeaveRoomCommand
 	| EmbeddedKickParticipantCommand;

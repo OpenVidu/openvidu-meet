@@ -10,6 +10,8 @@ const BASE_INPUTS: Required<WebComponentPropertyValues> = {
 	participantName: '',
 	participantExternalId: '',
 	participantMetadata: '',
+	initialAudioMuted: false,
+	initialVideoMuted: false,
 	e2eeKey: '',
 	leaveRedirectUrl: '',
 	showOnlyRecordings: false,
