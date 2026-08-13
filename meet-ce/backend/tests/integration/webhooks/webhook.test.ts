@@ -34,14 +34,15 @@ import {
 	updateParticipantMetadata
 } from '../../helpers/livekit-cli-helpers.js';
 import {
+	createWebhook,
 	deleteAllRecordings,
 	deleteAllRooms,
+	deleteAllWebhooks,
 	deleteRoom,
 	endMeeting,
 	restoreDefaultGlobalConfig,
 	sleep,
-	startTestServer,
-	updateWebhookConfig
+	startTestServer
 } from '../../helpers/request-helpers.js';
 import {
 	setupSingleRoom,
@@ -86,11 +87,9 @@ describe('Webhook Integration Tests', () => {
 
 	beforeEach(async () => {
 		receivedWebhooks = [];
-		// Enable webhooks in global config
-		await updateWebhookConfig({
-			enabled: true,
-			url: `http://localhost:5080/webhook`
-		});
+		// Register the receiver as the only webhook of the deployment
+		await deleteAllWebhooks();
+		await createWebhook({ url: `http://localhost:5080/webhook` });
 	});
 
 	afterAll(async () => {
@@ -100,6 +99,7 @@ describe('Webhook Integration Tests', () => {
 		await disconnectFakeParticipants();
 		await deleteAllRooms();
 		await deleteAllRecordings();
+		await deleteAllWebhooks();
 	});
 
 	const expectValidSignature = (webhook: { headers: http.IncomingHttpHeaders; body: MeetWebhookEvent }) => {
@@ -108,10 +108,9 @@ describe('Webhook Integration Tests', () => {
 	};
 
 	describe('Webhook sending', () => {
-		it('should not send webhooks when disabled', async () => {
-			await updateWebhookConfig({
-				enabled: false
-			});
+		it('should not send webhooks when the registered webhook is disabled', async () => {
+			await deleteAllWebhooks();
+			await createWebhook({ url: `http://localhost:5080/webhook`, enabled: false });
 
 			await setupSingleRoom(true);
 

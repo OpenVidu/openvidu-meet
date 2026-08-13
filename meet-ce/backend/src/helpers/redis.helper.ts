@@ -38,6 +38,10 @@ export class MeetLock {
 		return `${RedisLockPrefix.BASE}${RedisLockName.MIGRATION}`;
 	}
 
+	static getWebhookConfigMigrationLock(): string {
+		return `${RedisLockPrefix.BASE}${RedisLockName.WEBHOOK_CONFIG_MIGRATION}`;
+	}
+
 	static getWebhookLock(webhookEvent: WebhookEvent) {
 		if (!webhookEvent || !webhookEvent.event) {
 			throw new Error('event must be a non-empty string');

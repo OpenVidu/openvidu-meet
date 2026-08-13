@@ -21,6 +21,8 @@ import {
 	MeetRoomRolesConfig,
 	MeetRoomStatus,
 	MeetUserOptions,
+	MeetWebhook,
+	MeetWebhookOptions,
 	SecurityConfig,
 	WebhookConfig
 } from '@openvidu-meet/typings';
@@ -179,6 +181,42 @@ export const testWebhookUrl = async (url: string) => {
 		.post(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config/webhooks/test`))
 		.send({ url });
 	return response;
+};
+
+export const createWebhook = async (options: MeetWebhookOptions) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.post(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send(options);
+	return response;
+};
+
+export const getWebhooks = async () => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.get(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`))
+		.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+		.send();
+	return response;
+};
+
+export const deleteAllWebhooks = async () => {
+	checkAppIsRunning();
+
+	const response = await getWebhooks();
+	const { webhooks } = response.body as { webhooks: MeetWebhook[] };
+
+	await Promise.all(
+		webhooks.map((webhook) =>
+			request(app)
+				.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks/${webhook.webhookId}`))
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send()
+		)
+	);
 };
 
 export const getSecurityConfig = async () => {

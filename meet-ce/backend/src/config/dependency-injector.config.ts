@@ -195,6 +195,11 @@ export const initializeEagerServices = async () => {
 	const blobStorageService = container.get(BlobStorageService);
 	await blobStorageService.checkHealth();
 
+	// Move the legacy global-config webhook URL into the webhook collection. Must run before the
+	// schema migrations, which remove that field from the global config document
+	const webhookRegistryService = container.get(WebhookRegistryService);
+	await webhookRegistryService.migrateLegacyWebhookConfig();
+
 	// Run migrations
 	const migrationService = container.get(MigrationService);
 	await migrationService.runMigrations();

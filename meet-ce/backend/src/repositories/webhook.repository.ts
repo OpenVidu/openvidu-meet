@@ -44,6 +44,14 @@ export class WebhookRepository extends BaseRepository<MeetWebhook, MeetWebhookDo
 	}
 
 	/**
+	 * Returns the webhooks that currently receive events. The collection is capped at
+	 * `WEBHOOK_MAX_ENDPOINTS`, so reading it whole per delivery stays cheap.
+	 */
+	findEnabled(): Promise<MeetWebhook[]> {
+		return super.findAll({ enabled: true });
+	}
+
+	/**
 	 * Finds a webhook by its ID, or returns null if it does not exist.
 	 */
 	findById(webhookId: string): Promise<MeetWebhook | null> {

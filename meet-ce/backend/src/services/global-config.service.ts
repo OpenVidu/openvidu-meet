@@ -180,9 +180,11 @@ export class GlobalConfigService {
 	protected getDefaultConfig(): GlobalConfig {
 		const defaultConfig: GlobalConfig = {
 			projectId: MEET_ENV.NAME_ID,
+			// Webhook delivery is configured through the webhook resource (the initial entry is
+			// seeded by WebhookRegistryService.initializeDefaultWebhook); this legacy field is dead
+			// weight until the console cutover removes it.
 			webhooksConfig: {
-				enabled: MEET_ENV.INITIAL_WEBHOOK_ENABLED === 'true' && !!MEET_ENV.INITIAL_API_KEY,
-				url: MEET_ENV.INITIAL_WEBHOOK_URL
+				enabled: false
 			},
 			securityConfig: {
 				authentication: {
