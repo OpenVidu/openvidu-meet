@@ -101,36 +101,42 @@ export class RoomService {
 		}
 
 		const defaultModeratorPermissions: MeetRoomMemberPermissions = {
-			canRecord: true,
-			canRetrieveRecordings: true,
-			canDeleteRecordings: true,
-			canJoinMeeting: true,
-			canShareAccessLinks: true,
-			canMakeModerator: true,
-			canKickParticipants: true,
-			canEndMeeting: true,
-			canPublishVideo: true,
-			canPublishAudio: true,
-			canShareScreen: true,
-			canReadChat: true,
-			canWriteChat: true,
-			canChangeVirtualBackground: true
+			recordingControl: true,
+			recordingList: true,
+			recordingPlay: true,
+			recordingDownload: true,
+			recordingDelete: true,
+			meetingJoin: true,
+			roomShareAccessLinks: true,
+			participantPromote: true,
+			participantKick: true,
+			meetingEnd: true,
+			mediaPublishVideo: true,
+			mediaPublishAudio: true,
+			mediaShareScreen: true,
+			chatRead: true,
+			chatWrite: true,
+			mediaChangeVirtualBackground: true
 		};
+		// The three recording retrieval keys mirror the pre-split `canRetrieveRecordings: true` default,
+		// so rooms created after the split behave exactly like the ones that existed before it.
 		const defaultSpeakerPermissions: MeetRoomMemberPermissions = {
-			canRecord: false,
-			canRetrieveRecordings: true,
-			canDeleteRecordings: false,
-			canJoinMeeting: true,
-			canShareAccessLinks: false,
-			canMakeModerator: false,
-			canKickParticipants: false,
-			canEndMeeting: false,
-			canPublishVideo: true,
-			canPublishAudio: true,
-			canShareScreen: true,
-			canReadChat: true,
-			canWriteChat: true,
-			canChangeVirtualBackground: true
+			recordingControl: false,
+			recordingList: true,
+			recordingPlay: true,
+			recordingDownload: true,
+			recordingDelete: false,
+			meetingJoin: true,
+			roomShareAccessLinks: false,
+			participantPromote: false,
+			participantKick: false,
+			meetingEnd: false,
+			mediaPublishVideo: true,
+			mediaPublishAudio: true,
+			mediaShareScreen: true,
+			chatRead: true,
+			chatWrite: true,
+			mediaChangeVirtualBackground: true
 		};
 
 		const roomRoles: MeetRoomRoles = {
@@ -303,13 +309,14 @@ export class RoomService {
 		const roomMemberService = await this.getRoomMemberService();
 		await roomMemberService.updateAllRoomMemberPermissions(roomId, updatedRoom.roles);
 
-		// If speaker role's canRetrieveRecordings permission has changed, update recordings access scope metadata
-		const previousSpeakerCanRetrieveRecordings = room.roles.speaker.permissions.canRetrieveRecordings;
-		const updatedSpeakerCanRetrieveRecordings = updatedRoom.roles.speaker.permissions.canRetrieveRecordings;
+		// If speaker role's recordingList permission has changed, update recordings access scope metadata
+		// (listing is the capability that scopes recording visibility for room users).
+		const previousSpeakerRecordingList = room.roles.speaker.permissions.recordingList;
+		const updatedSpeakerRecordingList = updatedRoom.roles.speaker.permissions.recordingList;
 
-		if (updatedSpeakerCanRetrieveRecordings !== previousSpeakerCanRetrieveRecordings) {
+		if (updatedSpeakerRecordingList !== previousSpeakerRecordingList) {
 			await this.recordingService.updateRoomRecordingsAccessScopeMetadata(roomId, {
-				roomUserAccess: updatedRoom.access.user.enabled && updatedSpeakerCanRetrieveRecordings
+				roomUserAccess: updatedRoom.access.user.enabled && updatedSpeakerRecordingList
 			});
 		}
 
@@ -344,7 +351,7 @@ export class RoomService {
 		if (updatedUserAccessEnabled !== previousUserAccessEnabled) {
 			await this.recordingService.updateRoomRecordingsAccessScopeMetadata(roomId, {
 				roomUserAccess:
-					updatedRoom.access.user.enabled && updatedRoom.roles.speaker.permissions.canRetrieveRecordings
+					updatedRoom.access.user.enabled && updatedRoom.roles.speaker.permissions.recordingList
 			});
 		}
 

@@ -21,39 +21,43 @@ import {
 	RoomDetailsFormGroup
 } from '../models/wizard-forms.model';
 
-// Default permissions for each role
+// Default permissions for each role (kept in sync with the backend's room.service defaults)
 const DEFAULT_MODERATOR_PERMISSIONS: MeetRoomMemberPermissions = {
-	canRecord: true,
-	canRetrieveRecordings: true,
-	canDeleteRecordings: true,
-	canJoinMeeting: true,
-	canShareAccessLinks: true,
-	canMakeModerator: true,
-	canKickParticipants: true,
-	canEndMeeting: true,
-	canPublishVideo: true,
-	canPublishAudio: true,
-	canShareScreen: true,
-	canReadChat: true,
-	canWriteChat: true,
-	canChangeVirtualBackground: true
+	recordingControl: true,
+	recordingList: true,
+	recordingPlay: true,
+	recordingDownload: true,
+	recordingDelete: true,
+	meetingJoin: true,
+	roomShareAccessLinks: true,
+	participantPromote: true,
+	participantKick: true,
+	meetingEnd: true,
+	mediaPublishVideo: true,
+	mediaPublishAudio: true,
+	mediaShareScreen: true,
+	chatRead: true,
+	chatWrite: true,
+	mediaChangeVirtualBackground: true
 };
 
 const DEFAULT_SPEAKER_PERMISSIONS: MeetRoomMemberPermissions = {
-	canRecord: false,
-	canRetrieveRecordings: true,
-	canDeleteRecordings: false,
-	canJoinMeeting: true,
-	canShareAccessLinks: false,
-	canMakeModerator: false,
-	canKickParticipants: false,
-	canEndMeeting: false,
-	canPublishVideo: true,
-	canPublishAudio: true,
-	canShareScreen: true,
-	canReadChat: true,
-	canWriteChat: true,
-	canChangeVirtualBackground: true
+	recordingControl: false,
+	recordingList: true,
+	recordingPlay: true,
+	recordingDownload: true,
+	recordingDelete: false,
+	meetingJoin: true,
+	roomShareAccessLinks: false,
+	participantPromote: false,
+	participantKick: false,
+	meetingEnd: false,
+	mediaPublishVideo: true,
+	mediaPublishAudio: true,
+	mediaShareScreen: true,
+	chatRead: true,
+	chatWrite: true,
+	mediaChangeVirtualBackground: true
 };
 
 // Default room config following the app's defaults

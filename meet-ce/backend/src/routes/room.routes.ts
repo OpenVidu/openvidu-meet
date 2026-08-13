@@ -56,7 +56,10 @@ roomRouter.post(
 );
 roomRouter.get(
 	'/',
-	withAuth(apiKeyValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)),
+	withAuth(
+		apiKeyValidator,
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER, MeetUserRole.ROOM_MEMBER)
+	),
 	validateGetRoomsReq,
 	applyRoomListAccessFilters,
 	roomCtrl.getRooms
@@ -162,7 +165,11 @@ roomRouter.delete(
 
 roomRouter.get(
 	'/:roomId/members/:memberId',
-	withAuth(apiKeyValidator, roomMemberTokenValidator, accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER)),
+	withAuth(
+		apiKeyValidator,
+		roomMemberTokenValidator,
+		accessTokenValidator(MeetUserRole.ADMIN, MeetUserRole.ROOM_MANAGER)
+	),
 	withValidRoomId,
 	validateGetRoomMemberReq,
 	authorizeRoomMemberAccess,

@@ -46,7 +46,7 @@ export type RecordingEntryOutcome =
  * modes that must be tried in sequence:
  *
  * 1. **Room-permission path**: try to generate a room member token with the
- *    `canRetrieveRecordings` permission. Honors normal auth flows.
+ *    `recordingList` permission. Honors normal auth flows.
  * 2. **Recording-secret path**: when a `recordingSecret` is supplied, validate
  *    it by fetching the recording with the secret as proof. This is the path
  *    used by anonymous users with a shared recording link.

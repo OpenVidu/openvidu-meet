@@ -13,6 +13,7 @@
 		"test:unit:lib": "ng test shared-meet-components --watch=false --browsers=ChromeHeadlessCI",
 		"e2e:playwright:all": "pnpm run e2e:playwright:spa && pnpm run e2e:playwright:wc",
 		"e2e:playwright:spa": "playwright test --project=spa",
+		"test:types:e2e": "tsc --noEmit -p tsconfig.test.json",
 		"e2e:playwright:wc": "playwright test --config=webcomponent/playwright.config.ts --project=webcomponent",
 		"lint": "eslint src projects/shared-meet-components/src webcomponent/src webcomponent/tests e2e --max-warnings 0",
 		"lint:fix": "eslint src projects/shared-meet-components/src --fix --max-warnings 0",

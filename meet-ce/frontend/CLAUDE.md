@@ -99,7 +99,9 @@ recording UI.
   `isReadyForRequests`.
 - **i18n**: custom engine (not Transloco). Per-scope JSON bundles under each domain's `lang/`,
   registered with `provideTranslations(<DOMAIN>_TRANSLATIONS)`; one shared language preference. Add
-  keys to every locale file in the bundle.
+  keys to every locale file in the bundle. Permission label keys were renamed to match the new
+  permission names (`ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingPlay.LABEL` instead of the old `can*`
+  one) — a deployment or PRO with translation overrides for these keys needs the same rename.
 
 ## Commands
 
@@ -127,6 +129,13 @@ backend serves it at `<basePath>/`.
 
 ## Gotchas
 
+- **The library reads only the new-style permission names.** The backend's `MEET_MODE` deployment
+  variable decides what responses carry: in `compatibility` mode (the default) permission objects
+  include both the new keys and the deprecated `can*` ones, and with `MEET_MODE='3.9.0'` only the new
+  keys — either way the new keys are always present, so the library needs no request header and never
+  looks at the `can*` spellings. Cached room-member tokens can still carry old-style permission
+  names; `shared/utils/token.utils.ts` is the one place that fixes those up when a token is decoded —
+  don't add a second decode path. That normalization goes away once the old names are fully removed.
 - `scripts/copy-livekit-assets.mjs` runs on `postinstall` and before every build/serve; it vendors the
   livekit-client E2EE worker and the MediaPipe WASM into `src/assets/` (git-ignored, version-coupled).
   If E2EE or virtual background breaks after a dependency bump, re-run `pnpm run assets:livekit`. The

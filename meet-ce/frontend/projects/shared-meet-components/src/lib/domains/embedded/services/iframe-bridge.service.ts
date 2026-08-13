@@ -1,5 +1,11 @@
 import { DestroyRef, effect, inject, Service, signal } from '@angular/core';
-import { EmbeddedCommand, EmbeddedCommandName, EmbeddedEvent } from '@openvidu-meet/typings';
+import {
+	deprecatedEmbeddedEventAliasOf,
+	EmbeddedCommand,
+	EmbeddedCommandName,
+	EmbeddedEvent,
+	resolveEmbeddedCommandName
+} from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { MeetingLiveKitService } from '../../meeting/openvidu-components';
@@ -18,7 +24,9 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
  * - **Commands** (host → app) are forwarded to {@link EmbeddedCommandService}
  *   (the shared, permission-checked command bridge).
  * - **Events** (app → host) are drained from {@link EmbeddedEventBusService.events}
- *   (the shared lifecycle-event queue) and relayed as `postMessage` events.
+ *   (the shared lifecycle-event queue, canonical names only) and relayed as `postMessage` events —
+ *   each canonical event is followed by a second post under its deprecated 3.8.0 name, if it has
+ *   one, so a host on the old wire format keeps working during the deprecation window.
  */
 @Service()
 export class IframeBridgeService {
@@ -131,23 +139,30 @@ export class IframeBridgeService {
 			return;
 		}
 
-		switch (message.command) {
-			case EmbeddedCommandName.END_MEETING:
-				await this.commandService.endMeeting();
+		// Hosts written against 3.8.0 post the deprecated names; resolving up front means the
+		// switch only ever deals with canonical ones, and adding a future alias is a typings
+		// change alone. This resolve call is itself removed in 3.12.0 along with the aliases —
+		// see resolveEmbeddedCommandName's own @deprecated tag.
+		switch (resolveEmbeddedCommandName(message.command)) {
+			case EmbeddedCommandName.MEETING_END:
+				await this.commandService.meetingEnd();
 				break;
-			case EmbeddedCommandName.LEAVE_ROOM:
-				await this.commandService.leaveRoom();
+			case EmbeddedCommandName.MEETING_LEAVE:
+				await this.commandService.meetingLeave();
 				break;
 
-			case EmbeddedCommandName.KICK_PARTICIPANT: {
-				const participantIdentity = message.payload?.participantIdentity;
+			case EmbeddedCommandName.PARTICIPANT_KICK: {
+				// Resolving the name discards the discriminant, so narrow on the payload's presence
+				// instead — only the kick commands carry one.
+				const payload = 'payload' in message ? message.payload : undefined;
+				const participantIdentity = payload?.participantIdentity;
 
 				if (!participantIdentity) {
-					this.log.e('kickParticipant command received without a participantIdentity');
+					this.log.e('participantKick command received without a participantIdentity');
 					return;
 				}
 
-				await this.commandService.kickParticipant(participantIdentity);
+				await this.commandService.participantKick(participantIdentity);
 				break;
 			}
 
@@ -157,7 +172,10 @@ export class IframeBridgeService {
 	}
 
 	/**
-	 * Posts a lifecycle event verbatim to the trusted parent origin.
+	 * Posts a lifecycle event to the trusted parent origin, then posts it again under its
+	 * deprecated 3.8.0 name if it has one. The event bus only ever queues canonical events, so a
+	 * host still on the old wire format would see nothing without this second post; a host
+	 * listening for both names receives the event twice (documented in `webcomponent/CLAUDE.md`).
 	 */
 	private relayEventToParent(event: EmbeddedEvent): void {
 		const targetOrigin = this.parentDomain();
@@ -168,5 +186,14 @@ export class IframeBridgeService {
 
 		this.log.d('Relaying event to parent:', event);
 		window.parent.postMessage(event, targetOrigin);
+
+		// Removed in 3.12.0 along with EMBEDDED_EVENT_ALIASES: deprecatedEmbeddedEventAliasOf will
+		// always return undefined once the 3.8.0 event names leave the typings, so this whole
+		// second post goes away with it.
+		const legacyEventName = deprecatedEmbeddedEventAliasOf(event.event);
+
+		if (legacyEventName) {
+			window.parent.postMessage({ ...event, event: legacyEventName }, targetOrigin);
+		}
 	}
 }

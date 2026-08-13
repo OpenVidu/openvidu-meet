@@ -51,6 +51,10 @@ jobs:
           fail_on_failure: true
           require_tests: true
 
+      - name: Type-check tests
+        if: always()
+        run: pnpm --filter @openvidu-meet/backend run test:types
+
       - name: Run ESLint
         if: always()
         run: ./meet.sh lint-backend --skip-install

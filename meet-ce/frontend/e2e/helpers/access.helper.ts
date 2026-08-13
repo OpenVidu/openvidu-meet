@@ -1,7 +1,7 @@
-import { MeetRoomMember, MeetRoomMemberPermissions, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
+import { MeetRoomMember, MeetRoomMemberRole, MeetUserRole } from '@openvidu-meet/typings';
 import { expect, type Page } from '@playwright/test';
 import { createReadyUser, type ReadyUser } from './auth.helper';
-import { createRoomMember } from './meet-api.helper';
+import { createRoomMember, type WirePermissions } from './meet-api.helper';
 
 // ─── Member users ─────────────────────────────────────────────────────────────
 
@@ -16,7 +16,8 @@ export const createReadyMemberUser = async (
 		name?: string;
 		role?: MeetUserRole;
 		baseRole?: MeetRoomMemberRole;
-		customPermissions?: Partial<MeetRoomMemberPermissions>;
+		// Wire-level on purpose: several suites seed the deprecated spellings. Removed in 3.12.0.
+		customPermissions?: WirePermissions;
 	} = {}
 ): Promise<{ user: ReadyUser; member: MeetRoomMember }> => {
 	const {

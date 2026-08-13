@@ -459,7 +459,7 @@ describe('Token Validation Tests', () => {
 			await updateRoomRoles(roomData.room.roomId, {
 				moderator: {
 					permissions: {
-						canMakeModerator: false
+						participantPromote: false
 					}
 				}
 			});
@@ -488,7 +488,7 @@ describe('Token Validation Tests', () => {
 			await updateRoomRoles(roomData.room.roomId, {
 				moderator: {
 					permissions: {
-						canMakeModerator: false
+						participantPromote: false
 					}
 				}
 			});

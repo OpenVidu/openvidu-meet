@@ -118,59 +118,67 @@
         "CHAT": "聊天"
       },
       "ITEMS": {
-        "canJoinMeeting": {
+        "meetingJoin": {
           "LABEL": "可加入会议",
           "DESCRIPTION": "允许加入会议"
         },
-        "canEndMeeting": {
+        "meetingEnd": {
           "LABEL": "可结束会议",
           "DESCRIPTION": "允许为所有参与者结束会议"
         },
-        "canMakeModerator": {
+        "participantPromote": {
           "LABEL": "可设为主持人",
           "DESCRIPTION": "允许将参与者提升为主持人角色"
         },
-        "canKickParticipants": {
+        "participantKick": {
           "LABEL": "可踢出参与者",
           "DESCRIPTION": "允许将参与者移出会议"
         },
-        "canShareAccessLinks": {
+        "roomShareAccessLinks": {
           "LABEL": "可共享访问链接",
           "DESCRIPTION": "允许与他人共享邀请链接"
         },
-        "canPublishVideo": {
+        "mediaPublishVideo": {
           "LABEL": "可发布视频",
           "DESCRIPTION": "允许共享摄像头视频"
         },
-        "canPublishAudio": {
+        "mediaPublishAudio": {
           "LABEL": "可发布音频",
           "DESCRIPTION": "允许共享麦克风音频"
         },
-        "canShareScreen": {
+        "mediaShareScreen": {
           "LABEL": "可共享屏幕",
           "DESCRIPTION": "允许共享桌面或浏览器标签页"
         },
-        "canChangeVirtualBackground": {
+        "mediaChangeVirtualBackground": {
           "LABEL": "可更改虚拟背景",
           "DESCRIPTION": "允许更改虚拟背景"
         },
-        "canRecord": {
+        "recordingControl": {
           "LABEL": "可录制",
           "DESCRIPTION": "允许开始和停止录制"
         },
-        "canRetrieveRecordings": {
-          "LABEL": "可获取录像",
-          "DESCRIPTION": "允许列出和播放录像"
+        "recordingList": {
+          "LABEL": "可列出录像",
+          "DESCRIPTION": "允许列出录像"
         },
-        "canDeleteRecordings": {
+        "recordingPlay": {
+          "LABEL": "可播放录像",
+          "DESCRIPTION": "允许播放录像"
+        },
+        "recordingDownload": {
+          "LABEL": "可下载录像",
+          "DESCRIPTION": "允许下载录像"
+        },
+        "recordingDelete": {
           "LABEL": "可删除录像",
           "DESCRIPTION": "允许删除录像"
         },
-        "canReadChat": {
+        "chatRead": {
           "LABEL": "可阅读聊天",
           "DESCRIPTION": "允许阅读聊天消息"
         },
-        "canWriteChat": {
+        "chatWrite": {
           "LABEL": "可发送聊天",
           "DESCRIPTION": "允许发送聊天消息"
         }

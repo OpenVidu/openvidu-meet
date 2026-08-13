@@ -110,7 +110,58 @@ export const MEET_ENV = {
 	ENABLED_MODULES: process.env.ENABLED_MODULES ?? ''
 };
 
-export function checkModuleEnabled() {
+/**
+ * Valid values of the `MEET_MODE` deployment variable, which selects the permission-name surface the
+ * REST API (and webhooks) expose:
+ *
+ * - `'compatibility'` (default) — both worlds at once: requests accept the deprecated `can*` keys,
+ *   the current `moduleAbility` keys, or a mix (a contradiction between a deprecated key and its
+ *   replacement is a 422), and responses/webhooks carry **both** key sets so integrations can
+ *   migrate endpoint by endpoint.
+ * - `'3.9.0'` — the new API only: responses/webhooks carry only the current keys, and a request
+ *   using a deprecated key is rejected with a 422 naming its replacement.
+ *
+ * The `compatibility` mode is removed in 3.12.0 together with the deprecated names.
+ */
+export const MEET_API_MODES = ['compatibility', '3.9.0'] as const;
+
+export type MeetApiMode = (typeof MEET_API_MODES)[number];
+
+/**
+ * Resolves the current {@link MeetApiMode}. Reads `process.env` on every call instead of being
+ * frozen into {@link MEET_ENV}: the value never changes in production, but tests exercise both modes
+ * against one in-process app by flipping `process.env.MEET_MODE` between suites. An invalid value
+ * resolves to `compatibility` here; {@link validateMeetMode} makes that a boot-time failure instead
+ * of a silent fallback.
+ */
+export const getMeetMode = (): MeetApiMode => {
+	return process.env.MEET_MODE?.trim() === '3.9.0' ? '3.9.0' : 'compatibility';
+};
+
+/**
+ * Whether the deployment still exposes the deprecated permission-name surface (see
+ * {@link MEET_API_MODES}).
+ */
+export const isCompatibilityMode = (): boolean => {
+	return getMeetMode() === 'compatibility';
+};
+
+/**
+ * Fails fast at boot on a MEET_MODE typo: silently running in `compatibility` when the operator
+ * asked for `3.9.0` (or mistyped it) would quietly expose the API surface they meant to turn off.
+ */
+export const validateMeetMode = (): void => {
+	const raw = process.env.MEET_MODE?.trim();
+
+	if (raw && !MEET_API_MODES.includes(raw as MeetApiMode)) {
+		console.error(
+			`Invalid MEET_MODE '${raw}'. Valid values: ${MEET_API_MODES.map((mode) => `'${mode}'`).join(', ')}. Exiting.`
+		);
+		process.exit(1);
+	}
+};
+
+export const checkModuleEnabled = () => {
 	if (MEET_ENV.MODULES_FILE) {
 		const moduleName = MEET_ENV.MODULE_NAME;
 		const enabledModules = MEET_ENV.ENABLED_MODULES.split(',').map((module) => module.trim());
@@ -126,7 +177,7 @@ export function checkModuleEnabled() {
 		console.warn('MongoDB integration is not enabled. Exiting.');
 		process.exit(0);
 	}
-}
+};
 
 export const logEnvVars = () => {
 	const credential = chalk.yellow;
@@ -137,6 +188,7 @@ export const logEnvVars = () => {
 	console.log(`OpenVidu Meet ${MEET_ENV.EDITION} Server Configuration`);
 	console.log('---------------------------------------------------------');
 	console.log('SERVICE NAME ID: ', text(MEET_ENV.NAME_ID));
+	console.log('MEET MODE: ', text(getMeetMode()));
 	console.log('CORS ORIGIN:', text(MEET_ENV.SERVER_CORS_ORIGIN));
 	console.log('TRUST PROXY:', text(MEET_ENV.SERVER_TRUST_PROXY));
 	console.log('LOG LEVEL: ', text(MEET_ENV.LOG_LEVEL));

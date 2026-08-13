@@ -310,9 +310,9 @@ export class MeetingLobbyService {
 	 */
 	protected async checkForRecordings(): Promise<void> {
 		try {
-			const canRetrieveRecordings = this.roomMemberContextService.hasPermission('canRetrieveRecordings');
+			const canListRecordings = this.roomMemberContextService.hasPermission('recordingList');
 
-			if (!canRetrieveRecordings) {
+			if (!canListRecordings) {
 				this._showRecordingCard.set(false);
 				return;
 			}

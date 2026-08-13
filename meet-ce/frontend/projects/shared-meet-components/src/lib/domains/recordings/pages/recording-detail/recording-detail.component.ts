@@ -66,6 +66,7 @@ export class RecordingDetailComponent implements OnInit {
 
 	currentUserRole = signal<MeetUserRole | undefined>(undefined);
 	canDeleteRecording = signal(false);
+	canDownloadRecording = signal(true);
 
 	isInitializing = signal(true);
 	showInitialLoader = signal(false);
@@ -117,15 +118,18 @@ export class RecordingDetailComponent implements OnInit {
 			// Determine delete permission: ADMIN can always delete; others need token-based check
 			if (this.currentUserRole() === MeetUserRole.ADMIN) {
 				this.canDeleteRecording.set(true);
+				this.canDownloadRecording.set(true);
 			} else {
 				try {
 					const { token } = await this.roomMemberService.generateRoomMemberToken(recording.roomId, {
 						joinMeeting: false
 					});
 					const decoded = decodeToken(token);
-					this.canDeleteRecording.set(decoded.metadata.permissions.canDeleteRecordings);
+					this.canDeleteRecording.set(decoded.metadata.permissions.recordingDelete);
+					this.canDownloadRecording.set(decoded.metadata.permissions.recordingDownload);
 				} catch {
 					this.canDeleteRecording.set(false);
+					this.canDownloadRecording.set(false);
 				}
 			}
 

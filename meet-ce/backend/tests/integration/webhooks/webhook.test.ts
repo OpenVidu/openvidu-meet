@@ -1,5 +1,7 @@
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, jest } from '@jest/globals';
 import {
+	MEET_DEPRECATED_PERMISSION_KEYS,
+	MEET_PERMISSION_KEYS,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
 	MeetRecordingLayout,
@@ -18,6 +20,7 @@ import { lkWebhookHandler } from '../../../src/controllers/livekit-webhook.contr
 import { MeetLock } from '../../../src/helpers/redis.helper.js';
 import { LivekitWebhookService } from '../../../src/services/livekit-webhook.service.js';
 import { MutexService } from '../../../src/services/mutex.service.js';
+import { OpenViduWebhookService } from '../../../src/services/openvidu-webhook.service.js';
 import { disconnectFakeParticipants } from '../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
@@ -121,6 +124,13 @@ describe('Webhook Integration Tests', () => {
 			expect(room.roomId).toBe(roomData.roomId);
 			expect(room.config).toEqual(defaultRoomConfig);
 
+			// MEET_MODE compatibility (the default this deployment runs): the role permissions of the
+			// payload carry BOTH key sets, like REST responses. Removed in 3.12.0 with that mode.
+			const moderatorPermissions = room.roles.moderator.permissions as unknown as Record<string, boolean>;
+			expect(moderatorPermissions.recordingControl).toBe(true);
+			expect(moderatorPermissions.canRecord).toBe(true);
+			expect(moderatorPermissions.canRetrieveRecordings).toBe(true);
+
 			expectValidSignature(meetingStartedWebhook);
 		});
 
@@ -141,7 +151,64 @@ describe('Webhook Integration Tests', () => {
 			expect(room.roomId).toBe(roomData.roomId);
 			expect(room.config).toEqual(defaultRoomConfig);
 
+			// Same dual-key-set payload as meeting_started (MEET_MODE compatibility; removed in 3.12.0).
+			const speakerPermissions = room.roles.speaker.permissions as unknown as Record<string, boolean>;
+			expect(typeof speakerPermissions.chatWrite).toBe('boolean');
+			expect(speakerPermissions.canWriteChat).toBe(speakerPermissions.chatWrite);
+
 			expectValidSignature(meetingEndedWebhook);
+		});
+
+		// The webhook service cannot be imported standalone (cyclic module graph outside the DI
+		// container), so this test is the only coverage of its MEET_MODE='3.9.0' branch. It invokes
+		// the service directly instead of joining a participant: the LiveKit-triggered pipeline runs
+		// in the deployment process listening on the LiveKit webhook URL, whose MEET_MODE this test
+		// cannot flip — only the in-process container sees the env change. Serialization and HTTP
+		// delivery are still the real ones. When the compatibility mode is removed in 3.12.0 this
+		// becomes the default behaviour: keep the assertions, drop the env flip.
+		it("should send only the current permission keys when MEET_MODE is '3.9.0'", async () => {
+			process.env.MEET_MODE = '3.9.0';
+
+			try {
+				// Created under '3.9.0' too, so the REST response seeds only current keys
+				const context = await setupSingleRoom();
+				const room = context.room;
+				const webhookService = container.get(OpenViduWebhookService);
+
+				webhookService.sendMeetingStartedWebhook(room);
+				const meetingStartedWebhook = await waitForWebhookEvent(
+					receivedWebhooks,
+					MeetWebhookEventType.MEETING_STARTED,
+					{ roomId: room.roomId }
+				);
+				const startedRoom = meetingStartedWebhook.body.data as MeetRoom;
+				const moderatorPermissions = startedRoom.roles.moderator.permissions as unknown as Record<
+					string,
+					boolean
+				>;
+
+				for (const key of MEET_PERMISSION_KEYS) {
+					expect(typeof moderatorPermissions[key]).toBe('boolean');
+				}
+
+				for (const key of MEET_DEPRECATED_PERMISSION_KEYS) {
+					expect(moderatorPermissions).not.toHaveProperty(key);
+				}
+
+				// meeting_ended flows through the same serializer — verify the negative branch there too
+				webhookService.sendMeetingEndedWebhook(room);
+				const meetingEndedWebhook = await waitForWebhookEvent(
+					receivedWebhooks,
+					MeetWebhookEventType.MEETING_ENDED,
+					{ roomId: room.roomId }
+				);
+				const endedRoom = meetingEndedWebhook.body.data as MeetRoom;
+				const speakerPermissions = endedRoom.roles.speaker.permissions as unknown as Record<string, boolean>;
+				expect(typeof speakerPermissions.chatWrite).toBe('boolean');
+				expect(speakerPermissions).not.toHaveProperty('canWriteChat');
+			} finally {
+				delete process.env.MEET_MODE;
+			}
 		});
 
 		it('should send meeting_ended when room is forcefully deleted', async () => {

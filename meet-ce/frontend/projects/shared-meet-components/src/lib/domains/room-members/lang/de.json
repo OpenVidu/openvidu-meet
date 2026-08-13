@@ -118,59 +118,67 @@
         "CHAT": "Chat"
       },
       "ITEMS": {
-        "canJoinMeeting": {
+        "meetingJoin": {
           "LABEL": "Kann am Meeting teilnehmen",
           "DESCRIPTION": "Erlaubt das Beitreten zum Meeting"
         },
-        "canEndMeeting": {
+        "meetingEnd": {
           "LABEL": "Kann Meeting beenden",
           "DESCRIPTION": "Erlaubt das Beenden des Meetings für alle Teilnehmer"
         },
-        "canMakeModerator": {
+        "participantPromote": {
           "LABEL": "Kann zum Moderator machen",
           "DESCRIPTION": "Erlaubt das Hochstufen von Teilnehmern zur Moderatorenrolle"
         },
-        "canKickParticipants": {
+        "participantKick": {
           "LABEL": "Kann Teilnehmer entfernen",
           "DESCRIPTION": "Erlaubt das Entfernen von Teilnehmern aus dem Meeting"
         },
-        "canShareAccessLinks": {
+        "roomShareAccessLinks": {
           "LABEL": "Kann Zugangslinks teilen",
           "DESCRIPTION": "Erlaubt das Teilen von Einladungslinks mit anderen"
         },
-        "canPublishVideo": {
+        "mediaPublishVideo": {
           "LABEL": "Kann Video übertragen",
           "DESCRIPTION": "Erlaubt das Teilen des Kameravideos"
         },
-        "canPublishAudio": {
+        "mediaPublishAudio": {
           "LABEL": "Kann Audio übertragen",
           "DESCRIPTION": "Erlaubt das Teilen des Mikrofon-Audios"
         },
-        "canShareScreen": {
+        "mediaShareScreen": {
           "LABEL": "Kann Bildschirm teilen",
           "DESCRIPTION": "Erlaubt das Teilen des Desktops oder von Browser-Tabs"
         },
-        "canChangeVirtualBackground": {
+        "mediaChangeVirtualBackground": {
           "LABEL": "Kann virtuellen Hintergrund ändern",
           "DESCRIPTION": "Erlaubt das Ändern des virtuellen Hintergrunds"
         },
-        "canRecord": {
+        "recordingControl": {
           "LABEL": "Kann aufzeichnen",
           "DESCRIPTION": "Erlaubt das Starten und Stoppen von Aufnahmen"
         },
-        "canRetrieveRecordings": {
-          "LABEL": "Kann Aufnahmen abrufen",
-          "DESCRIPTION": "Erlaubt das Auflisten und Abspielen von Aufnahmen"
+        "recordingList": {
+          "LABEL": "Kann Aufnahmen auflisten",
+          "DESCRIPTION": "Erlaubt das Auflisten von Aufnahmen"
         },
-        "canDeleteRecordings": {
+        "recordingPlay": {
+          "LABEL": "Kann Aufnahmen abspielen",
+          "DESCRIPTION": "Erlaubt das Abspielen von Aufnahmen"
+        },
+        "recordingDownload": {
+          "LABEL": "Kann Aufnahmen herunterladen",
+          "DESCRIPTION": "Erlaubt das Herunterladen von Aufnahmen"
+        },
+        "recordingDelete": {
           "LABEL": "Kann Aufnahmen löschen",
           "DESCRIPTION": "Erlaubt das Löschen von Aufnahmen"
         },
-        "canReadChat": {
+        "chatRead": {
           "LABEL": "Kann Chat lesen",
           "DESCRIPTION": "Erlaubt das Lesen von Chat-Nachrichten"
         },
-        "canWriteChat": {
+        "chatWrite": {
           "LABEL": "Kann Chat schreiben",
           "DESCRIPTION": "Erlaubt das Senden von Chat-Nachrichten"
         }

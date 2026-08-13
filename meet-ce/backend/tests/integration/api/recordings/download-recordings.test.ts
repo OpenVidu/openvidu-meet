@@ -9,9 +9,9 @@ import {
 	downloadRecordings,
 	generateRoomMemberToken,
 	startTestServer
-} from '../../../helpers/request-helpers';
+} from '../../../helpers/request-helpers.js';
 
-import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios';
+import { setupMultiRecordingsTestContext, setupSingleRoomWithRecording } from '../../../helpers/test-scenarios.js';
 
 describe('Recording API Tests', () => {
 	beforeAll(async () => {

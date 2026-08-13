@@ -1,4 +1,5 @@
-import { MeetRecordingEncodingPreset, MeetRecordingLayout } from '@openvidu-meet/typings';
+import type { MeetDeprecatedPermissionKey, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import { MeetRecordingEncodingPreset, MeetRecordingLayout, normalizePermissions } from '@openvidu-meet/typings';
 import { uid as secureUid } from 'uid/secure';
 import { MEET_ENV } from '../environment.js';
 import type { SchemaMigrationMap, SchemaTransform } from '../models/migration.model.js';
@@ -8,6 +9,7 @@ import { meetRoomCollectionName } from '../models/mongoose-schemas/room.schema.j
 
 const roomMigrationV1ToV2Name = generateSchemaMigrationName(meetRoomCollectionName, 1, 2);
 const roomMigrationV2ToV3Name = generateSchemaMigrationName(meetRoomCollectionName, 2, 3);
+const roomMigrationV3ToV4Name = generateSchemaMigrationName(meetRoomCollectionName, 3, 4);
 
 const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) => {
 	room.config.captions = { enabled: true };
@@ -16,8 +18,12 @@ const roomMigrationV1ToV2Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	return room;
 };
 
+// v3 stored the role permissions under the deprecated `can*` keys, so this transform keeps producing that
+// historical shape (typed through MeetDeprecatedPermissionKey, which the current MeetRoomMemberPermissions
+// no longer declares). The migration runner chains it with v3→v4 in memory, so a v1/v2 document still
+// lands in the current shape — only the final shape is written back.
 const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) => {
-	const legacyRoom = room as unknown as {
+	const v2Room = room as unknown as {
 		moderatorUrl?: string;
 		speakerUrl?: string;
 		config: {
@@ -27,54 +33,53 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 		};
 	};
 
+	const v3ModeratorPermissions: Record<MeetDeprecatedPermissionKey, boolean> = {
+		canRecord: true,
+		canRetrieveRecordings: true,
+		canDeleteRecordings: true,
+		canJoinMeeting: true,
+		canShareAccessLinks: true,
+		canMakeModerator: true,
+		canKickParticipants: true,
+		canEndMeeting: true,
+		canPublishVideo: true,
+		canPublishAudio: true,
+		canShareScreen: true,
+		canReadChat: true,
+		canWriteChat: true,
+		canChangeVirtualBackground: true
+	};
+	const v3SpeakerPermissions: Record<MeetDeprecatedPermissionKey, boolean> = {
+		canRecord: false,
+		canRetrieveRecordings: true,
+		canDeleteRecordings: false,
+		canJoinMeeting: true,
+		canShareAccessLinks: false,
+		canMakeModerator: false,
+		canKickParticipants: false,
+		canEndMeeting: false,
+		canPublishVideo: true,
+		canPublishAudio: true,
+		canShareScreen: true,
+		canReadChat: true,
+		canWriteChat: true,
+		canChangeVirtualBackground: true
+	};
+
 	room.owner = MEET_ENV.INITIAL_ADMIN_USER;
 	room.roles = {
-		moderator: {
-			permissions: {
-				canRecord: true,
-				canRetrieveRecordings: true,
-				canDeleteRecordings: true,
-				canJoinMeeting: true,
-				canShareAccessLinks: true,
-				canMakeModerator: true,
-				canKickParticipants: true,
-				canEndMeeting: true,
-				canPublishVideo: true,
-				canPublishAudio: true,
-				canShareScreen: true,
-				canReadChat: true,
-				canWriteChat: true,
-				canChangeVirtualBackground: true
-			}
-		},
-		speaker: {
-			permissions: {
-				canRecord: false,
-				canRetrieveRecordings: true,
-				canDeleteRecordings: false,
-				canJoinMeeting: true,
-				canShareAccessLinks: false,
-				canMakeModerator: false,
-				canKickParticipants: false,
-				canEndMeeting: false,
-				canPublishVideo: true,
-				canPublishAudio: true,
-				canShareScreen: true,
-				canReadChat: true,
-				canWriteChat: true,
-				canChangeVirtualBackground: true
-			}
-		}
-	};
+		moderator: { permissions: v3ModeratorPermissions },
+		speaker: { permissions: v3SpeakerPermissions }
+	} as unknown as MeetRoomDocument['roles'];
 	room.access = {
 		anonymous: {
 			moderator: {
 				enabled: true,
-				url: legacyRoom.moderatorUrl!
+				url: v2Room.moderatorUrl!
 			},
 			speaker: {
 				enabled: true,
-				url: legacyRoom.speakerUrl!
+				url: v2Room.speakerUrl!
 			},
 			recording: {
 				enabled: true,
@@ -88,9 +93,26 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
 	};
 	room.rolesUpdatedAt = Date.now();
 
-	delete legacyRoom.moderatorUrl;
-	delete legacyRoom.speakerUrl;
-	delete legacyRoom.config.recording.allowAccessTo;
+	delete v2Room.moderatorUrl;
+	delete v2Room.speakerUrl;
+	delete v2Room.config.recording.allowAccessTo;
+
+	return room;
+};
+
+// v3→v4: rename the role permission keys from the deprecated `can*` spellings to the current
+// moduleAbility scheme, deriving the mapping from MEET_PERMISSION_ALIASES via normalizePermissions()
+// (which also splits canRetrieveRecordings into recordingList/recordingPlay/recordingDownload,
+// granting the whole group whatever the old flag granted). Without this rename the current-keyed Mongoose
+// schema would silently drop every stored permission on the next write (see B1 in the migration plan).
+const roomMigrationV3ToV4Transform: SchemaTransform<MeetRoomDocument> = (room) => {
+	for (const role of ['moderator', 'speaker'] as const) {
+		const roleConfig = room.roles?.[role];
+
+		if (roleConfig?.permissions) {
+			roleConfig.permissions = normalizePermissions(roleConfig.permissions) as MeetRoomMemberPermissions;
+		}
+	}
 
 	return room;
 };
@@ -101,5 +123,6 @@ const roomMigrationV2ToV3Transform: SchemaTransform<MeetRoomDocument> = (room) =
  */
 export const roomMigrations: SchemaMigrationMap<MeetRoomDocument> = new Map([
 	[roomMigrationV1ToV2Name, roomMigrationV1ToV2Transform],
-	[roomMigrationV2ToV3Name, roomMigrationV2ToV3Transform]
+	[roomMigrationV2ToV3Name, roomMigrationV2ToV3Transform],
+	[roomMigrationV3ToV4Name, roomMigrationV3ToV4Transform]
 ]);

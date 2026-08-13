@@ -24,7 +24,7 @@ export const httpInterceptor: HttpInterceptorFn = (req: HttpRequest<unknown>, ne
 	// never constructs the WC-only router); otherwise read the router.
 	const pageUrl = runtimeConfig.isWebcomponentMode()
 		? (injector.get(WcRouterService).currentPath() ?? '')
-		: (router.currentNavigation()?.finalUrl?.toString() || router.url);
+		: router.currentNavigation()?.finalUrl?.toString() || router.url;
 
 	// Collect headers from all registered providers
 	const headers = httpHeaderProvider.collectHeaders({ request: req, pageUrl });

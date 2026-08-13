@@ -333,17 +333,19 @@
 								</button>
 							</span>
 
-							<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording.status)">
-								<button
-									mat-icon-button
-									(click)="downloadRecording(recording)"
-									[disabled]="loading() || !RecordingUiUtils.isDownloadable(recording.status)"
-									class="action-button download-button"
-									id="download-recording-btn-{{ recording.recordingId }}"
-								>
-									<mat-icon>download</mat-icon>
-								</button>
-							</span>
+							@if (canDownloadRecordingItem(recording)) {
+								<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording.status)">
+									<button
+										mat-icon-button
+										(click)="downloadRecording(recording)"
+										[disabled]="loading() || !RecordingUiUtils.isDownloadable(recording.status)"
+										class="action-button download-button"
+										id="download-recording-btn-{{ recording.recordingId }}"
+									>
+										<mat-icon>download</mat-icon>
+									</button>
+								</span>
+							}
 
 							@if (!canDeleteRecordingItem(recording)) {
 								<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording.status)">
@@ -543,17 +545,19 @@
 								</span>
 
 								<!-- Download Button -->
-								<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording.status)">
-									<button
-										mat-icon-button
-										class="action-button download-button"
-										(click)="$event.stopPropagation(); downloadRecording(recording)"
-										[disabled]="loading() || !RecordingUiUtils.isDownloadable(recording.status)"
-										id="download-recording-btn-{{ recording.recordingId }}"
-									>
-										<mat-icon>download</mat-icon>
-									</button>
-								</span>
+								@if (canDownloadRecordingItem(recording)) {
+									<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording.status)">
+										<button
+											mat-icon-button
+											class="action-button download-button"
+											(click)="$event.stopPropagation(); downloadRecording(recording)"
+											[disabled]="loading() || !RecordingUiUtils.isDownloadable(recording.status)"
+											id="download-recording-btn-{{ recording.recordingId }}"
+										>
+											<mat-icon>download</mat-icon>
+										</button>
+									</span>
+								}
 
 								@if (!canDeleteRecordingItem(recording)) {
 									<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording.status)">

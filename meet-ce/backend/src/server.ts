@@ -7,7 +7,7 @@ import express from 'express';
 import { container, initializeEagerServices, registerDependencies } from './config/dependency-injector.config.js';
 import { INTERNAL_CONFIG } from './config/internal-config.js';
 import { getInfo } from './controllers/system-info.controller.js';
-import { checkModuleEnabled, logEnvVars, MEET_ENV } from './environment.js';
+import { checkModuleEnabled, logEnvVars, MEET_ENV, validateMeetMode } from './environment.js';
 import { apiKeyValidator, withAuth } from './middlewares/auth.middleware.js';
 import { setBaseUrlFromRequest } from './middlewares/base-url.middleware.js';
 import { jsonSyntaxErrorHandler } from './middlewares/content-type.middleware.js';
@@ -122,7 +122,6 @@ const createApp = () => {
 	appRouter.use('/health', (_req: Request, res: Response) => res.status(200).send('OK'));
 	appRouter.get('/info', withAuth(apiKeyValidator), getInfo);
 
-
 	appRouter.get('/v1/openvidu-meet.js', staticAssetLimiter, serveWebcomponentBundle(webcomponentLoaderPath));
 	appRouter.get(
 		'/v1/openvidu-meet.esm.js',
@@ -224,6 +223,7 @@ const isMainModule = (): boolean => {
 
 if (isMainModule()) {
 	checkModuleEnabled();
+	validateMeetMode();
 	registerDependencies();
 	registerProcessErrorHandlers();
 	const app = createApp();

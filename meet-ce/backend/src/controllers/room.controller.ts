@@ -12,6 +12,7 @@ import type {
 import { MeetRoomDeletionSuccessCode } from '@openvidu-meet/typings';
 import type { Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
+import { PermissionNamingHelper } from '../helpers/permission-naming.helper.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
 import { handleError } from '../models/error.model.js';
@@ -37,6 +38,7 @@ export const createRoom = async (req: Request, res: Response) => {
 
 		let room = await roomService.createMeetRoom(options);
 		room = MeetRoomHelper.applyFieldFilters(room, fields, extraFields);
+		room = PermissionNamingHelper.roomToWire(room, res);
 		room = MeetRoomHelper.addResponseMetadata(room);
 
 		res.set('Location', `${getBaseUrl()}${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms/${room.roomId}`);
@@ -89,8 +91,10 @@ export const getRooms = async (_req: Request, res: Response) => {
 			: rooms;
 		const maxItems = Number(queryParams.maxItems);
 
+		const wireRooms = filteredRooms.map((room) => PermissionNamingHelper.roomToWire(room, res));
+
 		// Add metadata at response root level (multiple rooms strategy)
-		let response = { rooms: filteredRooms, pagination: { isTruncated, nextPageToken, maxItems } };
+		let response = { rooms: wireRooms, pagination: { isTruncated, nextPageToken, maxItems } };
 		response = MeetRoomHelper.addResponseMetadata(response);
 		return res.status(200).json(response);
 	} catch (error) {
@@ -124,6 +128,7 @@ export const getRoom = async (req: Request, res: Response) => {
 			room = MeetRoomHelper.applyPermissionFiltering(room, permissions);
 		}
 
+		room = PermissionNamingHelper.roomToWire(room, res);
 		room = MeetRoomHelper.addResponseMetadata(room);
 		return res.status(200).json(room);
 	} catch (error) {
@@ -275,6 +280,7 @@ export const updateRoomStatus = async (req: Request, res: Response) => {
 		const { room, updated } = await roomService.updateMeetRoomStatus(roomId, status);
 
 		let responseRoom = MeetRoomHelper.applyFieldFilters(room, fields, extraFields);
+		responseRoom = PermissionNamingHelper.roomToWire(responseRoom, res);
 		responseRoom = MeetRoomHelper.addResponseMetadata(responseRoom);
 
 		// 200 when the status change is applied immediately, 202 when it is scheduled
@@ -295,7 +301,7 @@ export const updateRoomRoles = async (req: Request, res: Response) => {
 
 	try {
 		const updatedRoom = await roomService.updateMeetRoomRoles(roomId, roles);
-		return res.status(200).json(updatedRoom.roles);
+		return res.status(200).json(PermissionNamingHelper.rolesToWire(updatedRoom.roles, res));
 	} catch (error) {
 		handleError(res, error, `updating roles permissions for room '${roomId}'`);
 	}

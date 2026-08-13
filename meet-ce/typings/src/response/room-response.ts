@@ -69,7 +69,7 @@ export type MeetRoomSensitiveFieldPath =
 const SENSITIVE_ROOM_FIELDS_BY_PERMISSION: Partial<
 	Record<keyof MeetRoomMemberPermissions, MeetRoomSensitiveFieldPath[]>
 > = {
-	canShareAccessLinks: [
+	roomShareAccessLinks: [
 		'access.anonymous.moderator.url',
 		'access.anonymous.speaker.url',
 		'access.anonymous.recording.url'

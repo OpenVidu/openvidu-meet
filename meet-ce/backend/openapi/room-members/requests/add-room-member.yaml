@@ -48,12 +48,12 @@ content:
                     additionalProperties:
                         type: boolean
                     example:
-                        canShareScreen: false
-                        canRecord: true
+                        mediaShareScreen: false
+                        recordingControl: true
                     description: |
                         An optional object containing custom permission overrides for the base role.
                         Only include the permissions you want to override from the base role defaults.
-                        Each property should be a permission name (e.g., 'canRecord', 'canShareScreen') with a boolean value.
+                        Each property should be a permission name (e.g., 'recordingControl', 'mediaShareScreen') with a boolean value.
 
                         For the complete list of all available permissions, see the full permissions schema:
                         [MeetPermissions](#/schemas/MeetPermissions)

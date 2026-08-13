@@ -1,7 +1,6 @@
 import {
 	MeetRoom,
 	MeetRoomMember,
-	MeetRoomMemberPermissions,
 	MeetRoomMemberRole,
 	MeetRoomMemberUIBadge,
 	MeetUserRole
@@ -34,7 +33,8 @@ import {
 	deleteUser,
 	deleteUsers,
 	updateRoomMemberPermissions,
-	updateUserRole
+	updateUserRole,
+	type WirePermissions
 } from './helpers/meet-api.helper';
 import {
 	expectEndMeetingOption,
@@ -115,17 +115,15 @@ test.describe('Permissions E2E Tests', () => {
 	 * Creates an identified-guest member of the shared room with the given base role and custom
 	 * permission overrides — the access URL requires no login, so the member can be driven directly.
 	 */
-	const createGuest = (
-		customPermissions: Partial<MeetRoomMemberPermissions>,
-		baseRole = MeetRoomMemberRole.SPEAKER
-	) => createRoomMember(room.roomId, { name: `perm-${memberSequence++}`, baseRole, customPermissions });
+	const createGuest = (customPermissions: WirePermissions, baseRole = MeetRoomMemberRole.SPEAKER) =>
+		createRoomMember(room.roomId, { name: `perm-${memberSequence++}`, baseRole, customPermissions });
 
 	/**
 	 * Joins the meeting as a fresh guest with the given custom permissions and returns the member.
 	 */
 	const joinAsGuest = async (
 		page: Page,
-		customPermissions: Partial<MeetRoomMemberPermissions>,
+		customPermissions: WirePermissions,
 		options: { baseRole?: MeetRoomMemberRole; skipPrejoinMediaCheck?: boolean } = {}
 	) => {
 		const member = await createGuest(customPermissions, options.baseRole);
@@ -281,7 +279,7 @@ test.describe('Permissions E2E Tests', () => {
 	test.describe('Meeting (moderation over another participant)', () => {
 		const withTarget = async (
 			browser: Browser,
-			actorPermissions: Partial<MeetRoomMemberPermissions>,
+			actorPermissions: WirePermissions,
 			assertion: (actorPage: Page, targetId: string) => Promise<void>
 		): Promise<void> => {
 			const { byName, removeAllParticipants } = await joinParticipants(browser, {

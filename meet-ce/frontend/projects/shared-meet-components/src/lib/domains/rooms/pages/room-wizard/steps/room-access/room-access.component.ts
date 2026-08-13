@@ -41,11 +41,11 @@ const FEATURE_DEPENDENT_PERMISSIONS: {
 	isEnabled: (config: Partial<MeetRoomConfig> | undefined) => boolean;
 }[] = [
 	{
-		permissionKeys: ['canReadChat', 'canWriteChat'],
+		permissionKeys: ['chatRead', 'chatWrite'],
 		isEnabled: (config) => config?.chat?.enabled ?? false
 	},
 	{
-		permissionKeys: ['canChangeVirtualBackground'],
+		permissionKeys: ['mediaChangeVirtualBackground'],
 		isEnabled: (config) => config?.virtualBackground?.enabled ?? false
 	}
 ];

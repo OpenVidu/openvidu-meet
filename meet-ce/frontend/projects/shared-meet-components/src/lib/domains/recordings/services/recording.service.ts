@@ -125,6 +125,23 @@ export class RecordingService {
 	 * @return The URL to access the recording media
 	 */
 	getRecordingMediaUrl(recordingId: string, recordingSecret?: string): string {
+		const params = this.buildRecordingAccessParams(recordingSecret);
+		return this.runtimeConfigService.resolveUrl(`${this.RECORDINGS_API}/${recordingId}/media?${params.toString()}`);
+	}
+
+	/**
+	 * Builds the URL of the download endpoint for a recording. Downloads no longer reuse the /media
+	 * playback URL: the server gates them with the `recordingDownload` permission (playback is
+	 * `recordingPlay`), and it can only tell the intent apart on a dedicated endpoint.
+	 */
+	getRecordingDownloadUrl(recordingId: string, recordingSecret?: string): string {
+		const params = this.buildRecordingAccessParams(recordingSecret);
+		return this.runtimeConfigService.resolveUrl(
+			`${this.RECORDINGS_API}/${recordingId}/download?${params.toString()}`
+		);
+	}
+
+	private buildRecordingAccessParams(recordingSecret?: string): URLSearchParams {
 		const params = new URLSearchParams();
 
 		// If recordingSecret is provided, use it (public/private access mode)
@@ -147,7 +164,7 @@ export class RecordingService {
 
 		const now = Date.now();
 		params.append('t', now.toString());
-		return this.runtimeConfigService.resolveUrl(`${this.RECORDINGS_API}/${recordingId}/media?${params.toString()}`);
+		return params;
 	}
 
 	/**
@@ -208,7 +225,7 @@ export class RecordingService {
 	 * @param recordingSecret - Optional recording secret for accessing the recording
 	 */
 	downloadRecording(recording: MeetRecordingInfo, recordingSecret?: string): void {
-		const recordingUrl = this.getRecordingMediaUrl(recording.recordingId, recordingSecret);
+		const recordingUrl = this.getRecordingDownloadUrl(recording.recordingId, recordingSecret);
 		const filename = recording.filename || `${recording.recordingId}.mp4`;
 
 		void this.triggerDownload(recordingUrl, filename).catch((error) => {

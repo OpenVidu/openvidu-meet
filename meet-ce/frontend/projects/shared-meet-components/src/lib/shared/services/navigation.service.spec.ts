@@ -18,8 +18,10 @@ class LoggerServiceStub {
 }
 
 /**
- * Covers `closeOrLeave`'s CLOSED host-event emission gating in embedded modes (the SPA must NOT
- * emit it) and `goToDisconnected`'s view transition. The `left` event is emitted upstream by
+ * Covers `closeOrLeave`'s MEETING_CLOSED host-event emission gating in embedded modes (the SPA
+ * must NOT emit it) and `goToDisconnected`'s view transition. The bus only ever queues the
+ * canonical name; dispatching the deprecated `closed` alias is each shell's job, not this
+ * service's. The `meetingLeft` event is emitted upstream by
  * MeetingEventHandlerService.onParticipantLeft, so `goToDisconnected` itself must NOT emit.
  */
 describe('NavigationService - hosted-mode event gates', () => {
@@ -80,16 +82,16 @@ describe('NavigationService - hosted-mode event gates', () => {
 	});
 
 	describe('goBackFromMeeting() → closeOrLeave()', () => {
-		it('iframe mode with no leave-redirect: emits CLOSED and does not navigate', async () => {
+		it('iframe mode with no leave-redirect: emits MEETING_CLOSED and does not navigate', async () => {
 			iframeMode = true;
 
 			await service.goBackFromMeeting('/rooms');
 
-			expect(eventBus.emit).toHaveBeenCalledOnceWith({ event: EmbeddedEventName.CLOSED });
+			expect(eventBus.emit).toHaveBeenCalledOnceWith({ event: EmbeddedEventName.MEETING_CLOSED });
 			expect(router.navigate).not.toHaveBeenCalled();
 		});
 
-		it('iframe mode with leave-redirect: emits CLOSED and redirects', async () => {
+		it('iframe mode with leave-redirect: emits MEETING_CLOSED and redirects', async () => {
 			iframeMode = true;
 			spyOn(leaveRedirect, 'getLeaveRedirectURL').and.returnValue('https://host.example.com/done');
 			const redirectSpy = spyOn(
@@ -99,7 +101,7 @@ describe('NavigationService - hosted-mode event gates', () => {
 
 			await service.goBackFromMeeting('/rooms');
 
-			expect(eventBus.emit).toHaveBeenCalledOnceWith({ event: EmbeddedEventName.CLOSED });
+			expect(eventBus.emit).toHaveBeenCalledOnceWith({ event: EmbeddedEventName.MEETING_CLOSED });
 			expect(redirectSpy).toHaveBeenCalledOnceWith('https://host.example.com/done');
 			expect(router.navigate).not.toHaveBeenCalled();
 		});

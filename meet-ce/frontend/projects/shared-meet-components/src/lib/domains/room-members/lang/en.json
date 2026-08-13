@@ -118,59 +118,67 @@
         "CHAT": "Chat"
       },
       "ITEMS": {
-        "canJoinMeeting": {
+        "meetingJoin": {
           "LABEL": "Can join meeting",
           "DESCRIPTION": "Allow joining the meeting"
         },
-        "canEndMeeting": {
+        "meetingEnd": {
           "LABEL": "Can end meeting",
           "DESCRIPTION": "Allow ending the meeting for all participants"
         },
-        "canMakeModerator": {
+        "participantPromote": {
           "LABEL": "Can make moderator",
           "DESCRIPTION": "Allow promoting participants to moderator role"
         },
-        "canKickParticipants": {
+        "participantKick": {
           "LABEL": "Can kick participants",
           "DESCRIPTION": "Allow removing participants from the meeting"
         },
-        "canShareAccessLinks": {
+        "roomShareAccessLinks": {
           "LABEL": "Can share access links",
           "DESCRIPTION": "Allow sharing invite links with others"
         },
-        "canPublishVideo": {
+        "mediaPublishVideo": {
           "LABEL": "Can publish video",
           "DESCRIPTION": "Allow sharing camera video"
         },
-        "canPublishAudio": {
+        "mediaPublishAudio": {
           "LABEL": "Can publish audio",
           "DESCRIPTION": "Allow sharing microphone audio"
         },
-        "canShareScreen": {
+        "mediaShareScreen": {
           "LABEL": "Can share screen",
           "DESCRIPTION": "Allow sharing desktop or browser tabs"
         },
-        "canChangeVirtualBackground": {
+        "mediaChangeVirtualBackground": {
           "LABEL": "Can change virtual background",
           "DESCRIPTION": "Allow changing the virtual background"
         },
-        "canRecord": {
+        "recordingControl": {
           "LABEL": "Can record",
           "DESCRIPTION": "Allow starting and stopping recordings"
         },
-        "canRetrieveRecordings": {
-          "LABEL": "Can retrieve recordings",
-          "DESCRIPTION": "Allow listing and playing recordings"
+        "recordingList": {
+          "LABEL": "Can list recordings",
+          "DESCRIPTION": "Allow listing recordings"
         },
-        "canDeleteRecordings": {
+        "recordingPlay": {
+          "LABEL": "Can play recordings",
+          "DESCRIPTION": "Allow playing recordings"
+        },
+        "recordingDownload": {
+          "LABEL": "Can download recordings",
+          "DESCRIPTION": "Allow downloading recordings"
+        },
+        "recordingDelete": {
           "LABEL": "Can delete recordings",
           "DESCRIPTION": "Allow deleting recordings"
         },
-        "canReadChat": {
+        "chatRead": {
           "LABEL": "Can read chat",
           "DESCRIPTION": "Allow reading chat messages"
         },
-        "canWriteChat": {
+        "chatWrite": {
           "LABEL": "Can write chat",
           "DESCRIPTION": "Allow sending chat messages"
         }

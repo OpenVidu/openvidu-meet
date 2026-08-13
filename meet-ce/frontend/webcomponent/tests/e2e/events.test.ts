@@ -209,5 +209,46 @@ for (const integration of INTEGRATIONS) {
 				await expectEvent(page, EmbeddedEventName.LEFT);
 			});
 		});
+
+		// Every other describe block above only asserts the deprecated names (what a
+		// 3.8.0 host still listens for). This block is the canonical-name counterpart:
+		// it proves the dual dispatch actually reaches a host listening for the new
+		// names too, for both transports — nothing end-to-end asserted that before.
+		test.describe('Canonical/Legacy Dual Dispatch', () => {
+			test('should dispatch both joined and meetingJoined for the same transition', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+
+				const joined = await expectEvent(page, EmbeddedEventName.JOINED);
+				const meetingJoined = await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+				await expect(joined).toContainText(roomId);
+				await expect(meetingJoined).toContainText(roomId);
+			});
+
+			test('should dispatch both left and meetingLeft with the same reason', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				await leaveRoomCommand(page);
+
+				const left = await expectEvent(page, EmbeddedEventName.LEFT);
+				const meetingLeft = await expectEvent(page, EmbeddedEventName.MEETING_LEFT);
+				await expect(left).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+				await expect(meetingLeft).toContainText(LeftEventReason.VOLUNTARY_LEAVE);
+			});
+
+			test('should dispatch both closed and meetingClosed after leaving', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				await leaveRoomCommand(page);
+				await expectEvent(page, EmbeddedEventName.LEFT);
+
+				await meetLocator(page, integration, '#back-btn').click();
+				await expect(eventLocator(page, EmbeddedEventName.CLOSED).first()).toBeVisible({ timeout: 5_000 });
+				await expect(eventLocator(page, EmbeddedEventName.MEETING_CLOSED).first()).toBeVisible({
+					timeout: 5_000
+				});
+			});
+		});
 	});
 }

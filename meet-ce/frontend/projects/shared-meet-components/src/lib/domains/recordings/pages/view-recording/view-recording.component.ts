@@ -66,8 +66,13 @@ export class ViewRecordingComponent implements OnInit {
 	recordingUrl = signal<string | undefined>(undefined);
 	isAuthenticated = signal(false);
 
-	canRetrieveRecordings = computed(() => this.roomMemberContextService.permissions()?.canRetrieveRecordings ?? false);
-	canDeleteRecordings = computed(() => this.roomMemberContextService.permissions()?.canDeleteRecordings ?? false);
+	canRetrieveRecordings = computed(() => this.roomMemberContextService.permissions()?.recordingList ?? false);
+	canDeleteRecordings = computed(() => this.roomMemberContextService.permissions()?.recordingDelete ?? false);
+	// A share-link viewer (recordingSecret) may download without a member context: the server-side
+	// secret short-circuit covers the whole retrieval group, matching the pre-split behavior.
+	canDownloadRecording = computed(
+		() => !!this.recordingSecret || (this.roomMemberContextService.permissions()?.recordingDownload ?? false)
+	);
 	backButtonText = computed(() =>
 		this.canRetrieveRecordings() && !!this.recording()?.roomId
 			? this.translateService.translate('RECORDINGS.VIEW.BACK_TO_RECORDINGS')

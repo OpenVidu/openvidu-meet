@@ -8,8 +8,8 @@ import { deleteUsers, MEET_BASE_URL } from './helpers/meet-api.helper';
  * Verifies that role permissions which only make sense when a room feature is enabled become
  * disabled (and cannot be toggled on) in the "Room Access" step when that feature is turned off in
  * the "Room Features" step — and are restored when the feature is turned back on ("keep as-is"):
- *   - Chat feature off        -> canReadChat / canWriteChat disabled for both roles.
- *   - Virtual background off  -> canChangeVirtualBackground disabled for both roles.
+ *   - Chat feature off        -> chatRead / chatWrite disabled for both roles.
+ *   - Virtual background off  -> mediaChangeVirtualBackground disabled for both roles.
  *
  * These specs drive the console UI directly (no room is created — the wizard is never finished), so
  * the only cleanup needed is the admin user created to reach the wizard.
@@ -53,7 +53,7 @@ test.describe('Room wizard E2E Tests', () => {
 		await page.locator('#wizard-next-btn').click();
 		// The role-permission toggles live in (collapsed) expansion panels, so they are attached but
 		// not visible — waiting for one confirms the Room Access step has rendered.
-		await expect(page.locator('#moderator-permission-canJoinMeeting')).toBeAttached();
+		await expect(page.locator('#moderator-permission-meetingJoin')).toBeAttached();
 	};
 
 	/** Returns the role-permission toggle switch for the given role and permission key. */
@@ -80,9 +80,9 @@ test.describe('Room wizard E2E Tests', () => {
 		await gotoRoomAccess(page);
 
 		for (const role of ROLES) {
-			await expect(permissionSwitch(page, role, 'canReadChat')).toBeEnabled();
-			await expect(permissionSwitch(page, role, 'canWriteChat')).toBeEnabled();
-			await expect(permissionSwitch(page, role, 'canChangeVirtualBackground')).toBeEnabled();
+			await expect(permissionSwitch(page, role, 'chatRead')).toBeEnabled();
+			await expect(permissionSwitch(page, role, 'chatWrite')).toBeEnabled();
+			await expect(permissionSwitch(page, role, 'mediaChangeVirtualBackground')).toBeEnabled();
 		}
 	});
 
@@ -92,10 +92,10 @@ test.describe('Room wizard E2E Tests', () => {
 		await gotoRoomAccess(page);
 
 		for (const role of ROLES) {
-			await expect(permissionSwitch(page, role, 'canReadChat')).toBeDisabled();
-			await expect(permissionSwitch(page, role, 'canWriteChat')).toBeDisabled();
+			await expect(permissionSwitch(page, role, 'chatRead')).toBeDisabled();
+			await expect(permissionSwitch(page, role, 'chatWrite')).toBeDisabled();
 			// Unrelated features stay interactive.
-			await expect(permissionSwitch(page, role, 'canChangeVirtualBackground')).toBeEnabled();
+			await expect(permissionSwitch(page, role, 'mediaChangeVirtualBackground')).toBeEnabled();
 		}
 	});
 
@@ -105,10 +105,32 @@ test.describe('Room wizard E2E Tests', () => {
 		await gotoRoomAccess(page);
 
 		for (const role of ROLES) {
-			await expect(permissionSwitch(page, role, 'canChangeVirtualBackground')).toBeDisabled();
+			await expect(permissionSwitch(page, role, 'mediaChangeVirtualBackground')).toBeDisabled();
 			// Chat stays interactive.
-			await expect(permissionSwitch(page, role, 'canReadChat')).toBeEnabled();
-			await expect(permissionSwitch(page, role, 'canWriteChat')).toBeEnabled();
+			await expect(permissionSwitch(page, role, 'chatRead')).toBeEnabled();
+			await expect(permissionSwitch(page, role, 'chatWrite')).toBeEnabled();
+		}
+	});
+
+	test('recording split: the five recording permission switches are present and interactive', async ({ page }) => {
+		// The old canRetrieveRecordings checkbox became three (list / play / download); this pins the
+		// full five-switch group so a permission dropped from PERMISSION_GROUPS loses its checkbox
+		// loudly here instead of silently in production.
+		const RECORDING_PERMISSION_KEYS = [
+			'recordingControl',
+			'recordingList',
+			'recordingPlay',
+			'recordingDownload',
+			'recordingDelete'
+		] as const;
+
+		await openWizardAtFeatures(page);
+		await gotoRoomAccess(page);
+
+		for (const role of ROLES) {
+			for (const key of RECORDING_PERMISSION_KEYS) {
+				await expect(permissionSwitch(page, role, key)).toBeEnabled();
+			}
 		}
 	});
 
@@ -117,8 +139,8 @@ test.describe('Room wizard E2E Tests', () => {
 		await setFeature(page, 'room-feature-chat', false);
 
 		await gotoRoomAccess(page);
-		await expect(permissionSwitch(page, 'moderator', 'canWriteChat')).toBeDisabled();
-		await expect(permissionSwitch(page, 'speaker', 'canWriteChat')).toBeDisabled();
+		await expect(permissionSwitch(page, 'moderator', 'chatWrite')).toBeDisabled();
+		await expect(permissionSwitch(page, 'speaker', 'chatWrite')).toBeDisabled();
 
 		// Back to Room Features and turn chat on again.
 		await page.locator('#wizard-previous-btn').click();
@@ -126,7 +148,7 @@ test.describe('Room wizard E2E Tests', () => {
 		await setFeature(page, 'room-feature-chat', true);
 
 		await gotoRoomAccess(page);
-		await expect(permissionSwitch(page, 'moderator', 'canWriteChat')).toBeEnabled();
-		await expect(permissionSwitch(page, 'speaker', 'canWriteChat')).toBeEnabled();
+		await expect(permissionSwitch(page, 'moderator', 'chatWrite')).toBeEnabled();
+		await expect(permissionSwitch(page, 'speaker', 'chatWrite')).toBeEnabled();
 	});
 });

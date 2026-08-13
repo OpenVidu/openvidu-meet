@@ -23,6 +23,12 @@
 		{
 			"name": "meet-webcomponent",
 			"path": "meet-ce/frontend/webcomponent"
+		},
+		{
+			"path": "../openvidu-meet-tutorials"
+		},
+		{
+			"path": "../openvidu-competitors"
 		}
 	],
 	"settings": {

@@ -9,6 +9,8 @@ class WebComponentDocGenerator {
         // Single source of truth for the embedding API: the documented enums in the
         // shared typings package (attributes.ts / commands.ts / events.ts).
         this.typingsPath = path.join(__dirname, '../meet-ce/typings/src/embedded');
+        // Identifiers left out of the tables (private or deprecated), reported at the end.
+        this.excluded = [];
     }
 
     /**
@@ -95,6 +97,7 @@ class WebComponentDocGenerator {
                         value: match[2],
                         description: commentLines.filter(line => !line.includes('@')).join(' '),
                         isPrivate: commentLines.some(c => c.includes('@private')),
+                        isDeprecated: commentLines.some(c => c.includes('@deprecated')),
                         isModerator: commentLines.some(c => c.includes('@moderator')),
                         isRequired: commentLines.some(c => c.includes('@required')),
                         requiredText: requiredText
@@ -194,8 +197,8 @@ class WebComponentDocGenerator {
         markdown += '|-------|-------------|------------|\n';
 
         for (const item of eventEnum.items) {
-            // Skip private events
-            if (item.isPrivate) continue;
+            // Skip private events and deprecated aliases (see isDocumented)
+            if (!this.isDocumented(item, 'event')) continue;
 
             const payload = payloads[item.name];
             const payloadInfo = payload ? this.formatPayload(payload.type) : '-';
@@ -220,8 +223,8 @@ class WebComponentDocGenerator {
         markdown += '|--------|---------|-------------|------------|-------------|\n';
 
         for (const item of commandEnum.items) {
-            // Skip private commands
-            if (item.isPrivate) continue;
+            // Skip private commands and deprecated aliases (see isDocumented)
+            if (!this.isDocumented(item, 'command')) continue;
 
             const payload = payloads[item.name];
 
@@ -290,6 +293,27 @@ class WebComponentDocGenerator {
     }
 
     /**
+     * Decides whether an enum member reaches the public documentation.
+     *
+     * `@private` members are internal. `@deprecated` members are the legacy aliases kept alive for the
+     * deprecation window: they keep working, but the docs must show only the canonical name so nobody
+     * writes new integrations against a name that is already scheduled for removal. Exclusions are
+     * reported on stdout so a rename that accidentally deprecates the wrong member is visible.
+     */
+    isDocumented(item, kind) {
+        if (item.isPrivate) {
+            return false;
+        }
+
+        if (item.isDeprecated) {
+            this.excluded.push(`${kind} \`${item.value}\` (deprecated)`);
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
      * Generates markdown table for attributes/properties
      */
     generateAttributesTable() {
@@ -302,6 +326,9 @@ class WebComponentDocGenerator {
         // Add attributes from the properties enum only
         if (propertyEnum) {
             for (const item of propertyEnum.items) {
+                // Skip private attributes and deprecated aliases (see isDocumented)
+                if (!this.isDocumented(item, 'attribute')) continue;
+
                 // Format required column with additional text if present
                 let requiredColumn = 'No';
                 if (item.isRequired) {
@@ -443,8 +470,16 @@ class WebComponentDocGenerator {
         // Display summary
         console.log('\n📊 Documentation Summary:');
         console.log('- Only public/non-private elements included');
+        console.log('- Deprecated aliases excluded (they keep working until their removal release)');
         console.log('- Three separate markdown files generated');
         console.log('- Tables only, no additional content');
+
+        if (this.excluded.length > 0) {
+            console.log(`\n🚫 Excluded from the tables (${this.excluded.length}):`);
+            for (const entry of this.excluded) {
+                console.log(`   - ${entry}`);
+            }
+        }
     }
 }
 

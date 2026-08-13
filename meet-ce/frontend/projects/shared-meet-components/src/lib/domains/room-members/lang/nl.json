@@ -118,59 +118,67 @@
         "CHAT": "Chat"
       },
       "ITEMS": {
-        "canJoinMeeting": {
+        "meetingJoin": {
           "LABEL": "Kan deelnemen aan meeting",
           "DESCRIPTION": "Deelnemen aan de meeting toestaan"
         },
-        "canEndMeeting": {
+        "meetingEnd": {
           "LABEL": "Kan meeting beëindigen",
           "DESCRIPTION": "De meeting voor alle deelnemers beëindigen toestaan"
         },
-        "canMakeModerator": {
+        "participantPromote": {
           "LABEL": "Kan moderator maken",
           "DESCRIPTION": "Deelnemers promoveren tot de rol van moderator toestaan"
         },
-        "canKickParticipants": {
+        "participantKick": {
           "LABEL": "Kan deelnemers verwijderen",
           "DESCRIPTION": "Deelnemers uit de meeting verwijderen toestaan"
         },
-        "canShareAccessLinks": {
+        "roomShareAccessLinks": {
           "LABEL": "Kan toegangslinks delen",
           "DESCRIPTION": "Uitnodigingslinks met anderen delen toestaan"
         },
-        "canPublishVideo": {
+        "mediaPublishVideo": {
           "LABEL": "Kan video publiceren",
           "DESCRIPTION": "Cameravideo delen toestaan"
         },
-        "canPublishAudio": {
+        "mediaPublishAudio": {
           "LABEL": "Kan audio publiceren",
           "DESCRIPTION": "Microfoonaudio delen toestaan"
         },
-        "canShareScreen": {
+        "mediaShareScreen": {
           "LABEL": "Kan scherm delen",
           "DESCRIPTION": "Bureaublad of browsertabbladen delen toestaan"
         },
-        "canChangeVirtualBackground": {
+        "mediaChangeVirtualBackground": {
           "LABEL": "Kan virtuele achtergrond wijzigen",
           "DESCRIPTION": "De virtuele achtergrond wijzigen toestaan"
         },
-        "canRecord": {
+        "recordingControl": {
           "LABEL": "Kan opnemen",
           "DESCRIPTION": "Opnames starten en stoppen toestaan"
         },
-        "canRetrieveRecordings": {
-          "LABEL": "Kan opnames ophalen",
-          "DESCRIPTION": "Opnames weergeven en afspelen toestaan"
+        "recordingList": {
+          "LABEL": "Kan opnames weergeven",
+          "DESCRIPTION": "Opnames weergeven toestaan"
         },
-        "canDeleteRecordings": {
+        "recordingPlay": {
+          "LABEL": "Kan opnames afspelen",
+          "DESCRIPTION": "Opnames afspelen toestaan"
+        },
+        "recordingDownload": {
+          "LABEL": "Kan opnames downloaden",
+          "DESCRIPTION": "Opnames downloaden toestaan"
+        },
+        "recordingDelete": {
           "LABEL": "Kan opnames verwijderen",
           "DESCRIPTION": "Opnames verwijderen toestaan"
         },
-        "canReadChat": {
+        "chatRead": {
           "LABEL": "Kan chat lezen",
           "DESCRIPTION": "Chatberichten lezen toestaan"
         },
-        "canWriteChat": {
+        "chatWrite": {
           "LABEL": "Kan chat schrijven",
           "DESCRIPTION": "Chatberichten versturen toestaan"
         }

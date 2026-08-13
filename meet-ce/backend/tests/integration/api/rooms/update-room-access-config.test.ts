@@ -88,7 +88,9 @@ describe('Room API Tests', () => {
 				roles: {
 					speaker: {
 						permissions: {
-							canRetrieveRecordings: true
+							recordingList: true,
+							recordingPlay: true,
+							recordingDownload: true
 						}
 					}
 				}
@@ -127,7 +129,9 @@ describe('Room API Tests', () => {
 				roles: {
 					speaker: {
 						permissions: {
-							canRetrieveRecordings: false
+							recordingList: false,
+							recordingPlay: false,
+							recordingDownload: false
 						}
 					}
 				}

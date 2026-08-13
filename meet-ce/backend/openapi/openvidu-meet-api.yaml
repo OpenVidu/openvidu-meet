@@ -41,6 +41,8 @@ paths:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}'
     /recordings/{recordingId}/media:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1media'
+    /recordings/{recordingId}/download:
+        $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1download'
     /recordings/{recordingId}/url:
         $ref: './recordings/recordings.yaml#/~1recordings~1{recordingId}~1url'
     /recordings/{recordingId}/stop:

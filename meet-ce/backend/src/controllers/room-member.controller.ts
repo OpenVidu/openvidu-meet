@@ -11,6 +11,7 @@ import { container } from '../config/dependency-injector.config.js';
 import type { UpdateRoomMemberReqSchema } from '../models/zod-schemas/room-member.schema.js';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetRoomMemberHelper } from '../helpers/room-member.helper.js';
+import { PermissionNamingHelper } from '../helpers/permission-naming.helper.js';
 import { errorRoomMemberNotFound, errorUnauthorized, handleError } from '../models/error.model.js';
 import { LoggerService } from '../services/logger.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
@@ -33,6 +34,7 @@ export const createRoomMember = async (req: Request, res: Response) => {
 
 		let member = await roomMemberService.createRoomMember(roomId, memberOptions);
 		member = MeetRoomMemberHelper.applyFieldFilters(member, fields, extraFields);
+		member = PermissionNamingHelper.memberToWire(member, res);
 		member = MeetRoomMemberHelper.addResponseMetadata(member);
 
 		res.set(
@@ -63,7 +65,9 @@ export const getRoomMembers = async (req: Request, res: Response) => {
 		});
 		const maxItems = Number(filters.maxItems);
 
-		let response = { members, pagination: { isTruncated, nextPageToken, maxItems } };
+		const wireMembers = members.map((member) => PermissionNamingHelper.memberToWire(member, res));
+
+		let response = { members: wireMembers, pagination: { isTruncated, nextPageToken, maxItems } };
 		response = MeetRoomMemberHelper.addResponseMetadata(response);
 		return res.status(200).json(response);
 	} catch (error) {
@@ -92,6 +96,7 @@ export const getRoomMember = async (req: Request, res: Response) => {
 			throw errorRoomMemberNotFound(roomId, memberId);
 		}
 
+		member = PermissionNamingHelper.memberToWire(member, res);
 		member = MeetRoomMemberHelper.addResponseMetadata(member);
 		return res.status(200).json(member);
 	} catch (error) {
@@ -115,6 +120,7 @@ export const updateRoomMember = async (req: Request, res: Response) => {
 		let member = await roomMemberService.updateRoomMember(roomId, memberId, updates);
 
 		member = MeetRoomMemberHelper.applyFieldFilters(member, fields, extraFields);
+		member = PermissionNamingHelper.memberToWire(member, res);
 		member = MeetRoomMemberHelper.addResponseMetadata(member);
 		return res.status(200).json(member);
 	} catch (error) {

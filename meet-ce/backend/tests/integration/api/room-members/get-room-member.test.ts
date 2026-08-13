@@ -140,8 +140,8 @@ describe('Room Members API Tests', () => {
 				name: 'Custom Permissions Member',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canRecord: true,
-					canDeleteRecordings: true
+					recordingControl: true,
+					recordingDelete: true
 				}
 			});
 
@@ -149,10 +149,10 @@ describe('Room Members API Tests', () => {
 			expect(response.status).toBe(200);
 
 			expect(response.body).toHaveProperty('customPermissions');
-			expect(response.body.customPermissions).toHaveProperty('canRecord', true);
-			expect(response.body.customPermissions).toHaveProperty('canDeleteRecordings', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canRecord', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canDeleteRecordings', true);
+			expect(response.body.customPermissions).toHaveProperty('recordingControl', true);
+			expect(response.body.customPermissions).toHaveProperty('recordingDelete', true);
+			expect(response.body.effectivePermissions).toHaveProperty('recordingControl', true);
+			expect(response.body.effectivePermissions).toHaveProperty('recordingDelete', true);
 		});
 
 		it('should fail when member does not exist', async () => {

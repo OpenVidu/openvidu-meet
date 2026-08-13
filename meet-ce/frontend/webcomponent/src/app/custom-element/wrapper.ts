@@ -3,8 +3,8 @@ import type { App } from '../app';
 
 /**
  * Wraps the Angular Elements base class to add: imperative methods
- * (endMeeting, leaveRoom, kickParticipant), convenience event API (on/once/off),
- * and a `ready` CustomEvent dispatched after first render.
+ * (meetingEnd, meetingLeave, participantKick — plus their deprecated 3.8.0 spellings),
+ * convenience event API (on/once/off), and a `ready` CustomEvent dispatched after first render.
  */
 export function createOpenViduMeetElementClass(
 	NgElementConstructor: CustomElementConstructor
@@ -87,16 +87,35 @@ export function createOpenViduMeetElementClass(
 			return this;
 		}
 
+		meetingEnd(): void {
+			this._getComponentInstance()?.meetingEnd();
+		}
+
+		meetingLeave(): void {
+			this._getComponentInstance()?.meetingLeave();
+		}
+
+		participantKick(participantIdentity: string): void {
+			this._getComponentInstance()?.participantKick(participantIdentity);
+		}
+
+		// ── Deprecated method aliases ────────────────────────────────────────
+		// Kept on the element (the public surface) rather than on the component, and routed
+		// through the canonical method so both spellings share exactly one path.
+
+		/** @deprecated Renamed to `meetingEnd()`. Removed in 3.12.0. */
 		endMeeting(): void {
-			this._getComponentInstance()?.endMeeting();
+			this.meetingEnd();
 		}
 
+		/** @deprecated Renamed to `meetingLeave()`. Removed in 3.12.0. */
 		leaveRoom(): void {
-			this._getComponentInstance()?.leaveRoom();
+			this.meetingLeave();
 		}
 
+		/** @deprecated Renamed to `participantKick()`. Removed in 3.12.0. */
 		kickParticipant(participantIdentity: string): void {
-			this._getComponentInstance()?.kickParticipant(participantIdentity);
+			this.participantKick(participantIdentity);
 		}
 
 		private _getComponentInstance(): App | null {

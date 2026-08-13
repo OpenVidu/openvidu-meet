@@ -5,11 +5,11 @@ import type {
 	MeetWebhookEvent,
 	MeetWebhookPayload
 } from '@openvidu-meet/typings';
-import {
-	MeetWebhookEventType
-} from '@openvidu-meet/typings';
+import { MeetWebhookEventType } from '@openvidu-meet/typings';
 import crypto from 'crypto';
 import { inject, injectable } from 'inversify';
+import { isCompatibilityMode } from '../environment.js';
+import { withDeprecatedPermissionAliases } from '../helpers/permission-naming.helper.js';
 import {
 	errorApiKeyNotConfiguredForWebhooks,
 	errorInvalidWebhookUrl,
@@ -36,7 +36,11 @@ export class OpenViduWebhookService {
 	 * @param room - The meeting room object containing room details
 	 */
 	sendMeetingStartedWebhook(room: MeetRoom) {
-		this.sendWebhookEventInBackground(MeetWebhookEventType.MEETING_STARTED, room, `Room ID: ${room.roomId}`);
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.MEETING_STARTED,
+			this.roomToWirePermissions(room),
+			`Room ID: ${room.roomId}`
+		);
 	}
 
 	/**
@@ -48,7 +52,33 @@ export class OpenViduWebhookService {
 	 * @param room - The MeetRoom object containing details of the ended meeting
 	 */
 	sendMeetingEndedWebhook(room: MeetRoom) {
-		this.sendWebhookEventInBackground(MeetWebhookEventType.MEETING_ENDED, room, `Room ID: ${room.roomId}`);
+		this.sendWebhookEventInBackground(
+			MeetWebhookEventType.MEETING_ENDED,
+			this.roomToWirePermissions(room),
+			`Room ID: ${room.roomId}`
+		);
+	}
+
+	/**
+	 * Serializes the room's role permissions the same way REST responses do: with
+	 * `MEET_MODE=compatibility` the payload carries both key sets (the current names plus the
+	 * deprecated `can*` spellings), with `'3.9.0'` only the current names. The compatibility branch
+	 * is removed in 3.12.0.
+	 */
+	protected roomToWirePermissions(room: MeetRoom): MeetRoom {
+		if (!isCompatibilityMode() || !room.roles) {
+			return room;
+		}
+
+		// The compatibility wire shape is wider than the MeetRoomRoles type; the cast is confined to
+		// this JSON boundary.
+		return {
+			...room,
+			roles: {
+				moderator: { permissions: withDeprecatedPermissionAliases(room.roles.moderator.permissions) },
+				speaker: { permissions: withDeprecatedPermissionAliases(room.roles.speaker.permissions) }
+			}
+		} as unknown as MeetRoom;
 	}
 
 	/**

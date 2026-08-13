@@ -49,7 +49,7 @@ export class RoomAccessService {
 			);
 
 			// If recordings permission is required, check it explicitly as token generation may succeed without it
-			if (requireRecordingsPermission && !this.roomMemberContextService.hasPermission('canRetrieveRecordings')) {
+			if (requireRecordingsPermission && !this.roomMemberContextService.hasPermission('recordingList')) {
 				return { allowed: false, reason: NavigationErrorReason.FORBIDDEN_ROOM_RECORDINGS_ACCESS };
 			}
 

@@ -17,6 +17,7 @@ import {
 	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
 	MeetUserRole,
+	normalizePermissions,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
@@ -283,7 +284,7 @@ export class RoomMemberService {
 			permissionsUpdatedAt: Date.now()
 		});
 
-		if (!effectivePermissions.canJoinMeeting) {
+		if (!effectivePermissions.meetingJoin) {
 			// If member lost permission to join meeting, kick them out if they are currently in a meeting
 			await this.kickMembersFromMeetingInBatches(roomId, [memberId]);
 		} else {
@@ -525,7 +526,7 @@ export class RoomMemberService {
 		}
 
 		// Check that member has permission to join meeting
-		if (!tokenMetadata.permissions.canJoinMeeting) {
+		if (!tokenMetadata.permissions.meetingJoin) {
 			throw errorInsufficientPermissions();
 		}
 
@@ -600,7 +601,7 @@ export class RoomMemberService {
 
 			const permission = this.buildLiveParticipantPermission(
 				participant.permission,
-				tokenMetadata.permissions.canWriteChat
+				tokenMetadata.permissions.chatWrite
 			);
 			await this.livekitService.updateParticipant(roomId, participant.identity, metadataToApply, permission);
 		}
@@ -902,20 +903,22 @@ export class RoomMemberService {
 	 */
 	getAllPermissions(): MeetRoomMemberPermissions {
 		return {
-			canRecord: true,
-			canRetrieveRecordings: true,
-			canDeleteRecordings: true,
-			canJoinMeeting: true,
-			canShareAccessLinks: true,
-			canMakeModerator: true,
-			canKickParticipants: true,
-			canEndMeeting: true,
-			canPublishVideo: true,
-			canPublishAudio: true,
-			canShareScreen: true,
-			canReadChat: true,
-			canWriteChat: true,
-			canChangeVirtualBackground: true
+			recordingControl: true,
+			recordingList: true,
+			recordingPlay: true,
+			recordingDownload: true,
+			recordingDelete: true,
+			meetingJoin: true,
+			roomShareAccessLinks: true,
+			participantPromote: true,
+			participantKick: true,
+			meetingEnd: true,
+			mediaPublishVideo: true,
+			mediaPublishAudio: true,
+			mediaShareScreen: true,
+			chatRead: true,
+			chatWrite: true,
+			mediaChangeVirtualBackground: true
 		};
 	}
 
@@ -924,30 +927,39 @@ export class RoomMemberService {
 	 */
 	getNoPermissions(): MeetRoomMemberPermissions {
 		return {
-			canRecord: false,
-			canRetrieveRecordings: false,
-			canDeleteRecordings: false,
-			canJoinMeeting: false,
-			canShareAccessLinks: false,
-			canMakeModerator: false,
-			canKickParticipants: false,
-			canEndMeeting: false,
-			canPublishVideo: false,
-			canPublishAudio: false,
-			canShareScreen: false,
-			canReadChat: false,
-			canWriteChat: false,
-			canChangeVirtualBackground: false
+			recordingControl: false,
+			recordingList: false,
+			recordingPlay: false,
+			recordingDownload: false,
+			recordingDelete: false,
+			meetingJoin: false,
+			roomShareAccessLinks: false,
+			participantPromote: false,
+			participantKick: false,
+			meetingEnd: false,
+			mediaPublishVideo: false,
+			mediaPublishAudio: false,
+			mediaShareScreen: false,
+			chatRead: false,
+			chatWrite: false,
+			mediaChangeVirtualBackground: false
 		};
 	}
 
 	/**
 	 * Gets a permission set that only allows retrieving recordings.
+	 *
+	 * Grants the whole retrieval group (list + play + download), preserving what the pre-split
+	 * `canRetrieveRecordings: true` granted to public recording links. Narrowing the link to
+	 * `recordingPlay` only (the use case the split enables) is a behavior change for existing
+	 * deployments and needs its own sign-off — see §8.11 of the migration plan.
 	 */
 	getRecordingReadOnlyPermissions(): MeetRoomMemberPermissions {
 		return {
 			...this.getNoPermissions(),
-			canRetrieveRecordings: true
+			recordingList: true,
+			recordingPlay: true,
+			recordingDownload: true
 		};
 	}
 
@@ -960,15 +972,15 @@ export class RoomMemberService {
 	protected getLiveKitPermissions(roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions {
 		const canPublishSources: TrackSource[] = [];
 
-		if (permissions.canPublishAudio) {
+		if (permissions.mediaPublishAudio) {
 			canPublishSources.push(TrackSource.MICROPHONE);
 		}
 
-		if (permissions.canPublishVideo) {
+		if (permissions.mediaPublishVideo) {
 			canPublishSources.push(TrackSource.CAMERA);
 		}
 
-		if (permissions.canShareScreen) {
+		if (permissions.mediaShareScreen) {
 			canPublishSources.push(TrackSource.SCREEN_SHARE);
 			canPublishSources.push(TrackSource.SCREEN_SHARE_AUDIO);
 		}
@@ -976,27 +988,28 @@ export class RoomMemberService {
 		const livekitPermissions: LiveKitPermissions = {
 			room: roomId,
 			roomJoin: true,
-			canPublish: permissions.canPublishAudio || permissions.canPublishVideo || permissions.canShareScreen,
+			canPublish: permissions.mediaPublishAudio || permissions.mediaPublishVideo || permissions.mediaShareScreen,
 			canPublishSources,
 			canSubscribe: true,
-			canPublishData: permissions.canWriteChat,
+			canPublishData: permissions.chatWrite,
 			canUpdateOwnMetadata: true
 		};
 		return livekitPermissions;
 	}
 
 	/**
-	 * Builds the LiveKit grant to push when a participant's permissions change mid-meeting
+	 * Builds the LiveKit grant to push when a participant's permissions change mid-meeting.
+	 * `canPublishData` is LiveKit's name for the data-channel grant; Meet's `chatWrite` feeds it.
 	 */
 	protected buildLiveParticipantPermission(
 		currentPermission: ParticipantInfo['permission'],
-		canWriteChat: boolean
+		chatWrite: boolean
 	): Partial<ParticipantPermission> | undefined {
 		if (!currentPermission) {
 			return undefined;
 		}
 
-		return { ...currentPermission, canPublishData: canWriteChat };
+		return { ...currentPermission, canPublishData: chatWrite };
 	}
 
 	/**
@@ -1052,7 +1065,7 @@ export class RoomMemberService {
 
 			const permission = this.buildLiveParticipantPermission(
 				participant.permission,
-				metadata.permissions.canWriteChat
+				metadata.permissions.chatWrite
 			);
 			await this.livekitService.updateParticipant(roomId, participantIdentity, JSON.stringify(metadata), permission);
 			await this.frontendEventService.sendParticipantRoleUpdatedSignal(
@@ -1186,7 +1199,14 @@ export class RoomMemberService {
 
 		return {
 			...parsed,
-			...normalized
+			...normalized,
+			// A promotion recorded before the permission-key rename stored originalPermissions under
+			// the deprecated names (it lives outside the token metadata schema, so the line above does not
+			// touch it); normalize here so a later demotion restores the current keys instead of feeding
+			// deprecated-keyed permissions back into grants and metadata.
+			...(parsed.originalPermissions
+				? { originalPermissions: normalizePermissions(parsed.originalPermissions) as MeetRoomMemberPermissions }
+				: {})
 		};
 	}
 

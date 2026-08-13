@@ -1,0 +1,23 @@
+{
+	// Two consumers share this file, mirroring ../tsconfig.test.json (see the note there).
+	// playwright.config.ts points its `tsconfig` here and needs the `paths` mapping below to resolve
+	// the ESM-only typings package from its CommonJS transform — remove it and every e2e suite fails
+	// to load with "No exports main defined". And `pnpm run test:types` (CI-gated in both wc
+	// workflows) type-checks tests/** with it: ts-jest runs with `isolatedModules` (transpile-only)
+	// and Playwright only transpiles, so without this pass nothing ever type-checks these suites.
+	"extends": "./tsconfig.json",
+	"compilerOptions": {
+		// `paths` is replaced wholesale by `extends`, so the parent's mappings are repeated here.
+		"paths": {
+			"@openvidu-meet/typings": ["../../typings/dist/index"],
+			"@openvidu-meet/shared-components": ["../projects/shared-meet-components/src/public-api.ts"],
+			"projects/shared-meet-components/src/*": ["../projects/shared-meet-components/src/*"]
+		},
+		"noEmit": true,
+		// No noUnusedLocals here (unlike ../tsconfig.test.json): the unit tests import application
+		// source, so tsc checks the whole library through them — unused-symbol style there belongs
+		// to the library's own build, not to this gate.
+		"types": ["node"]
+	},
+	"include": ["tests/**/*.ts"]
+}

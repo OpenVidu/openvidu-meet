@@ -12,24 +12,26 @@ export type ProjectedMeetRoomMember<TFields extends readonly MeetRoomMemberField
 >;
 
 /**
- * List of all valid fields of MeetRoomMemberPermissions.
+ * List of all valid fields of MeetRoomMemberPermissions (canonical keys).
  * IMPORTANT: Update this list if new properties are added to the MeetRoomMemberPermissions interface.
  */
 export const MEET_ROOM_MEMBER_PERMISSIONS_FIELDS = [
-	'canRecord',
-	'canRetrieveRecordings',
-	'canDeleteRecordings',
-	'canJoinMeeting',
-	'canShareAccessLinks',
-	'canMakeModerator',
-	'canKickParticipants',
-	'canEndMeeting',
-	'canPublishVideo',
-	'canPublishAudio',
-	'canShareScreen',
-	'canReadChat',
-	'canWriteChat',
-	'canChangeVirtualBackground'
+	'recordingControl',
+	'recordingList',
+	'recordingPlay',
+	'recordingDownload',
+	'recordingDelete',
+	'meetingJoin',
+	'roomShareAccessLinks',
+	'participantPromote',
+	'participantKick',
+	'meetingEnd',
+	'mediaPublishVideo',
+	'mediaPublishAudio',
+	'mediaShareScreen',
+	'chatRead',
+	'chatWrite',
+	'mediaChangeVirtualBackground'
 ] as const satisfies readonly (keyof MeetRoomMemberPermissions)[];
 
 /**

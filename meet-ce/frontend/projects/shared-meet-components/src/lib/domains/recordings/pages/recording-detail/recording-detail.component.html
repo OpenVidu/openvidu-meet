@@ -46,16 +46,18 @@
 				<!-- Action Buttons -->
 				<div class="actions">
 					<span [matTooltip]="RecordingUiUtils.getDownloadRecordingTooltip(recording()!.status)">
-						<button
-							mat-flat-button
-							color="primary"
-							class="action-btn"
-							(click)="downloadRecording()"
-							[disabled]="!RecordingUiUtils.isDownloadable(recording()!.status)"
-						>
-							<mat-icon>download</mat-icon>
-							<span>{{ 'RECORDINGS.COMMON.DOWNLOAD' | translate }}</span>
-						</button>
+						@if (canDownloadRecording()) {
+							<button
+								mat-flat-button
+								color="primary"
+								class="action-btn"
+								(click)="downloadRecording()"
+								[disabled]="!RecordingUiUtils.isDownloadable(recording()!.status)"
+							>
+								<mat-icon>download</mat-icon>
+								<span>{{ 'RECORDINGS.COMMON.DOWNLOAD' | translate }}</span>
+							</button>
+						}
 					</span>
 
 					<span [matTooltip]="RecordingUiUtils.getShareRecordingTooltip(recording()!.status)">

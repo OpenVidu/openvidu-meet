@@ -5,7 +5,7 @@ import {
 	expectValidRecordingLocationHeader,
 	expectValidRecordingWithFields,
 	expectValidStopRecordingResponse
-} from '../../../helpers/assertion-helpers';
+} from '../../../helpers/assertion-helpers.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	deleteAllRecordings,
@@ -14,10 +14,10 @@ import {
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
-} from '../../../helpers/request-helpers';
+} from '../../../helpers/request-helpers.js';
 
-import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios';
-import { TestContext } from '../../../interfaces/scenarios';
+import { setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
+import { TestContext } from '../../../interfaces/scenarios.js';
 
 describe('Recording API Tests', () => {
 	let context: TestContext | null = null;

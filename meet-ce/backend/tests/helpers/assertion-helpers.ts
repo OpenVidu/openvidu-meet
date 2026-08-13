@@ -13,16 +13,29 @@ import {
 	MeetRoomMemberPermissions,
 	MeetRoomMemberUIBadge,
 	MeetRoomStatus,
+	normalizePermissions,
+	toDeprecatedPermissions,
 	TrackSource
 } from '@openvidu-meet/typings';
 import { Response } from 'supertest';
-import { container } from '../../src/config/dependency-injector.config';
-import { INTERNAL_CONFIG } from '../../src/config/internal-config';
-import { TokenService } from '../../src/services/token.service';
-import { getFullPath } from './request-helpers';
+import { container } from '../../src/config/dependency-injector.config.js';
+import { INTERNAL_CONFIG } from '../../src/config/internal-config.js';
+import { TokenService } from '../../src/services/token.service.js';
+import { getFullPath } from './request-helpers.js';
 
 export const DEFAULT_RECORDING_ENCODING_PRESET = MeetRecordingEncodingPreset.H264_720P_30;
 export const DEFAULT_RECORDING_LAYOUT = MeetRecordingLayout.GRID;
+
+/**
+ * The wire shape of a permission object in compatibility mode (the default the suites run under):
+ * the current keys plus the deprecated `can*` spellings derived from them. Use it to compare an
+ * API response against an expected current-keys object; token metadata and stored documents carry
+ * only the current keys and need no wrapping. Removed in 3.12.0 with the compatibility mode.
+ */
+export const wirePermissions = (permissions: Readonly<Partial<MeetRoomMemberPermissions>>) => ({
+	...permissions,
+	...toDeprecatedPermissions(permissions)
+});
 
 export const expectErrorResponse = (
 	response: Response,
@@ -674,7 +687,9 @@ export const expectValidRoomMemberTokenResponse = (
 	const metadata = JSON.parse(decodedToken.metadata || '{}');
 	expect(metadata).toHaveProperty('iat');
 	expect(metadata).toHaveProperty('roomId', roomId);
-	expect(metadata).toHaveProperty('permissions', permissions);
+	// Token metadata always carries only the current keys, while callers often source the expected
+	// object from a wire response, which in compatibility mode also carries the deprecated aliases.
+	expect(metadata).toHaveProperty('permissions', normalizePermissions(permissions));
 	expect(metadata).toHaveProperty('badge', badge);
 
 	if (memberId) {
@@ -712,15 +727,15 @@ export const expectValidAssistantResponse = (response: Response, expectedId = 'd
 const getLiveKitPermissions = (roomId: string, permissions: MeetRoomMemberPermissions): LiveKitPermissions => {
 	const canPublishSources: TrackSource[] = [];
 
-	if (permissions.canPublishAudio) {
+	if (permissions.mediaPublishAudio) {
 		canPublishSources.push('microphone' as unknown as TrackSource);
 	}
 
-	if (permissions.canPublishVideo) {
+	if (permissions.mediaPublishVideo) {
 		canPublishSources.push('camera' as unknown as TrackSource);
 	}
 
-	if (permissions.canShareScreen) {
+	if (permissions.mediaShareScreen) {
 		canPublishSources.push('screen_share' as unknown as TrackSource);
 		canPublishSources.push('screen_share_audio' as unknown as TrackSource);
 	}
@@ -728,7 +743,7 @@ const getLiveKitPermissions = (roomId: string, permissions: MeetRoomMemberPermis
 	const livekitPermissions: LiveKitPermissions = {
 		room: roomId,
 		roomJoin: true,
-		canPublish: permissions.canPublishAudio || permissions.canPublishVideo || permissions.canShareScreen,
+		canPublish: permissions.mediaPublishAudio || permissions.mediaPublishVideo || permissions.mediaShareScreen,
 		canPublishSources,
 		canSubscribe: true,
 		canPublishData: true,

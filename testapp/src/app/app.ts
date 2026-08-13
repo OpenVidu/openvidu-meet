@@ -181,6 +181,7 @@ export class App {
 
 	// ── Lifecycle events (unified across integrations) ──────────────────────
 
+	/** @deprecated Handles the 3.8.0 `joined` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleJoined(event: Event): void {
 		this.emitEvent(
 			EmbeddedEventName.JOINED,
@@ -188,6 +189,7 @@ export class App {
 		);
 	}
 
+	/** @deprecated Handles the 3.8.0 `left` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleLeft(event: Event): void {
 		this.emitEvent(
 			EmbeddedEventName.LEFT,
@@ -195,8 +197,27 @@ export class App {
 		);
 	}
 
+	/** @deprecated Handles the 3.8.0 `closed` event. Removed in 3.12.0. Kept so the e2e can listen for it. */
 	protected handleClosed(): void {
 		this.emitEvent(EmbeddedEventName.CLOSED, {});
+	}
+
+	protected handleMeetingJoined(event: Event): void {
+		this.emitEvent(
+			EmbeddedEventName.MEETING_JOINED,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_JOINED>>).detail
+		);
+	}
+
+	protected handleMeetingLeft(event: Event): void {
+		this.emitEvent(
+			EmbeddedEventName.MEETING_LEFT,
+			(event as CustomEvent<EmbeddedEventPayloadFor<EmbeddedEventName.MEETING_LEFT>>).detail
+		);
+	}
+
+	protected handleMeetingClosed(): void {
+		this.emitEvent(EmbeddedEventName.MEETING_CLOSED, {});
 	}
 
 	private handleIframeEvent(event: EmbeddedEvent): void {
@@ -219,31 +240,63 @@ export class App {
 
 	// ── Imperative API (dispatched to the active integration) ───────────────
 
-	protected callEndMeeting(): void {
+	protected callMeetingEnd(): void {
 		if (this.integration() === 'iframe') {
-			this.iframeHost.endMeeting();
+			this.iframeHost.meetingEnd();
+		} else {
+			this.meetRef()?.nativeElement.meetingEnd();
+		}
+		this.log.log('→ meetingEnd()');
+	}
+
+	protected callMeetingLeave(): void {
+		if (this.integration() === 'iframe') {
+			this.iframeHost.meetingLeave();
+		} else {
+			this.meetRef()?.nativeElement.meetingLeave();
+		}
+		this.log.log('→ meetingLeave()');
+	}
+
+	protected callParticipantKick(): void {
+		if (this.integration() === 'iframe') {
+			this.iframeHost.participantKick(this.kickIdentityInput);
+		} else {
+			this.meetRef()?.nativeElement.participantKick(this.kickIdentityInput);
+		}
+		this.log.log(`→ participantKick("${this.kickIdentityInput}")`);
+	}
+
+	// ── Deprecated command spellings (kept so the e2e covers the 3.8.0 surface) ──
+
+	/** @deprecated Sends the 3.8.0 `endMeeting` command. Removed in 3.12.0. */
+	protected callLegacyEndMeeting(): void {
+		if (this.integration() === 'iframe') {
+			this.iframeHost.legacyEndMeeting();
 		} else {
 			this.meetRef()?.nativeElement.endMeeting();
 		}
-		this.log.log('→ endMeeting()');
+		this.log.log('→ endMeeting() [deprecated]');
 	}
 
-	protected callLeaveRoom(): void {
+	/** @deprecated Sends the 3.8.0 `leaveRoom` command. Removed in 3.12.0. */
+	protected callLegacyLeaveRoom(): void {
 		if (this.integration() === 'iframe') {
-			this.iframeHost.leaveRoom();
+			this.iframeHost.legacyLeaveRoom();
 		} else {
 			this.meetRef()?.nativeElement.leaveRoom();
 		}
-		this.log.log('→ leaveRoom()');
+		this.log.log('→ leaveRoom() [deprecated]');
 	}
 
-	protected callKickParticipant(): void {
+	/** @deprecated Sends the 3.8.0 `kickParticipant` command. Removed in 3.12.0. */
+	protected callLegacyKickParticipant(): void {
 		if (this.integration() === 'iframe') {
-			this.iframeHost.kickParticipant(this.kickIdentityInput);
+			this.iframeHost.legacyKickParticipant(this.kickIdentityInput);
 		} else {
 			this.meetRef()?.nativeElement.kickParticipant(this.kickIdentityInput);
 		}
-		this.log.log(`→ kickParticipant("${this.kickIdentityInput}")`);
+		this.log.log(`→ kickParticipant("${this.kickIdentityInput}") [deprecated]`);
 	}
 
 	// ── on / once / off API (webcomponent element only) ─────────────────────

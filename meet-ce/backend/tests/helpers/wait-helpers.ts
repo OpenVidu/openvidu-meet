@@ -341,22 +341,30 @@ export type ReceivedWebhook = { headers: http.IncomingHttpHeaders; body: MeetWeb
  * @param receivedWebhooks - Mutable array populated by the test webhook server.
  * @param eventType        - The webhook event type to wait for.
  * @param options.timeoutMs - Maximum wait time in milliseconds (default: 10 000).
+ * @param options.roomId    - Only match webhooks whose payload belongs to this room. Background
+ *                            deliveries from a previous test's room can land after the suite reset
+ *                            `receivedWebhooks`, so any test asserting on the payload should pin
+ *                            the room instead of taking the first event of the type.
  */
 export const waitForWebhookEvent = async (
 	receivedWebhooks: ReceivedWebhook[],
 	eventType: MeetWebhookEventType,
-	options?: { timeoutMs?: number }
+	options?: { timeoutMs?: number; roomId?: string }
 ): Promise<ReceivedWebhook> => {
 	let found: ReceivedWebhook | undefined;
 
 	await pollUntil(
 		async () => {
-			found = receivedWebhooks.find((w) => w.body.event === eventType);
+			found = receivedWebhooks.find(
+				(w) =>
+					w.body.event === eventType &&
+					(!options?.roomId || (w.body.data as { roomId?: string }).roomId === options.roomId)
+			);
 			return !!found;
 		},
 		{
 			timeoutMs: options?.timeoutMs ?? DEFAULT_WEBHOOK_TIMEOUT_MS,
-			errorMessage: `Webhook event '${eventType}' was not received`
+			errorMessage: `Webhook event '${eventType}' was not received${options?.roomId ? ` for room '${options.roomId}'` : ''}`
 		}
 	);
 

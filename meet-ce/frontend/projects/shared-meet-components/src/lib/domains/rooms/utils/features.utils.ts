@@ -23,34 +23,34 @@ export class FeatureCalculator {
 	static applyPermissions(features: RoomFeatures, permissions: MeetRoomMemberPermissions): void {
 		// Recording
 		if (features.showStartStopRecording) {
-			features.showStartStopRecording = permissions.canRecord;
+			features.showStartStopRecording = permissions.recordingControl;
 		}
 
-		// Chat: canReadChat gates the whole panel; canWriteChat gates the message input within it.
+		// Chat: chatRead gates the whole panel; chatWrite gates the message input within it.
 		if (features.showChat) {
-			features.showChat = permissions.canReadChat;
+			features.showChat = permissions.chatRead;
 		}
 
 		// The input is writable only when the chat is visible AND the member may write.
-		features.showChatInput = features.showChat && permissions.canWriteChat;
+		features.showChatInput = features.showChat && permissions.chatWrite;
 
 		// Backgrounds
 		if (features.showBackgrounds) {
-			features.showBackgrounds = permissions.canChangeVirtualBackground;
+			features.showBackgrounds = permissions.mediaChangeVirtualBackground;
 		}
 
 		// Media features
-		features.videoEnabled = permissions.canPublishVideo;
-		features.showCamera = permissions.canPublishVideo;
-		features.audioEnabled = permissions.canPublishAudio;
-		features.showMicrophone = permissions.canPublishAudio;
-		features.showScreenShare = permissions.canShareScreen;
-		features.showShareAccessLinks = permissions.canShareAccessLinks;
-		features.showMakeModerator = permissions.canMakeModerator;
-		features.showEndMeeting = permissions.canEndMeeting;
-		features.showKickParticipants = permissions.canKickParticipants;
-		features.showViewRecordings = permissions.canRetrieveRecordings;
-		features.showJoinMeeting = permissions.canJoinMeeting;
+		features.videoEnabled = permissions.mediaPublishVideo;
+		features.showCamera = permissions.mediaPublishVideo;
+		features.audioEnabled = permissions.mediaPublishAudio;
+		features.showMicrophone = permissions.mediaPublishAudio;
+		features.showScreenShare = permissions.mediaShareScreen;
+		features.showShareAccessLinks = permissions.roomShareAccessLinks;
+		features.showMakeModerator = permissions.participantPromote;
+		features.showEndMeeting = permissions.meetingEnd;
+		features.showKickParticipants = permissions.participantKick;
+		features.showViewRecordings = permissions.recordingList;
+		features.showJoinMeeting = permissions.meetingJoin;
 	}
 
 	static applyAppearanceConfig(features: RoomFeatures, appearanceConfig: MeetAppearanceConfig): void {

@@ -1,7 +1,21 @@
 title: OpenVidu Meet REST API
-description: >
+description: |
     The OpenVidu Meet REST API provides a comprehensive set of endpoints for integrating real-time video
     conferencing capabilities into your applications.
+
+    ## API compatibility mode (`MEET_MODE`)
+
+    The permission keys of room roles and room members were renamed in 3.9.0 (for example `canRecord` became
+    `recordingControl`). Which key sets the API speaks is selected **per deployment** with the server's
+    `MEET_MODE` environment variable:
+
+    - **`compatibility`** (the default): requests accept both the new keys and the deprecated `can*` spellings
+      (a contradiction between the two is rejected with a `422`), and responses and webhooks carry **both** key
+      sets. Responses carrying the deprecated names include a `Deprecation: true` header.
+    - **`3.9.0`**: only the new keys are accepted and served.
+
+    See the `MeetPermissions` schema for the full mechanics. The `compatibility` mode and the deprecated keys
+    are removed in **3.12.0**.
 contact:
     name: OpenVidu
     email: commercial@openvidu.io

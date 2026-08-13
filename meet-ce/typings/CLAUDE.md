@@ -47,13 +47,53 @@ or through the folder's `index.ts`).
   - `scripts/generate-webcomponent-docs.js` parses the JSDoc of the enums in `src/embedded/` to
     generate `docs/webcomponent/{attributes,commands,events}.md`. It reads the raw text, so keep the
     `/** … */` block directly above each enum member and keep one member per line. Tags like
-    `@required`, `@moderator` and `@category` are meaningful to that generator.
+    `@required`, `@moderator` and `@category` are meaningful to that generator, and so is
+    **`@deprecated`**: a member carrying it is **excluded** from the generated tables (like `@private`),
+    so the public docs only ever show canonical names. The generator prints what it excluded.
   - `{@link Other}` references are used throughout; keep them valid when renaming.
 - Domain entity types describe the **API/domain shape**, not the persistence shape. Mongo-only fields
   (`_id`, `schemaVersion`) stay in the backend's document types and are stripped before responses.
 - Payload maps use the "enum key → payload" pattern (`EmbeddedCommandPayloads`,
   `EmbeddedEventPayloads`) with a `…PayloadFor<T>` helper. Add a new command/event by extending the
   enum *and* its payload map so consumers stay type-safe.
+- **Renaming** a public identifier is never a rename in place: add the new name as canonical, keep the
+  old one as a `@deprecated` alias whose text states the removal release (`Removed in 3.12.0.`), and
+  register the pair in the alias map next to the enum (`EMBEDDED_COMMAND_ALIASES`,
+  `EMBEDDED_EVENT_ALIASES`, `MEET_PERMISSION_ALIASES`). Those maps are the single source of truth every
+  consumer derives from — never hardcode a pair. Give a deprecated alias the **same** payload as its
+  canonical twin through an indexed access (`EmbeddedEventPayloads[EmbeddedEventName.MEETING_LEFT]`)
+  so the two cannot drift. The plan behind this lives in
+  `../openvidu-competitors/meet-update-plan/api-naming-migration-phase.md`.
+
+## API naming charter
+
+Every public identifier follows one scheme — learn a module once and you can predict its name on
+every surface. `src/api-registry.ts` is the registry (`MEET_API_MODULES`, `MEET_API_REST_GROUPS`,
+`meetApiModuleOf()`) **and the enforcement point**: `scripts/lint-api-naming.mjs` (repo root, run by
+`./meet.sh lint-backend`, CI-gated) fails on any identifier that doesn't start with a registered
+token.
+
+- **Module token**: a singular, single-word lowerCamelCase noun, registered exactly once, never a
+  prefix of another token. A concept needing two words is not a module — fold it into the closest
+  one and put the extra word in the action (`mediaChangeVirtualBackground`, not a
+  `virtualBackground` module).
+- **Command** `moduleAction`: module first, then an imperative verb (`meetingLeave`,
+  `participantKick`); bulk variants suffix `All`. **Event/webhook** `moduleEvent`: module first,
+  past tense (`meetingJoined`, `recordingEnded`), same string on both surfaces.
+- **Permission** `moduleAbility`: flat boolean, no `can` prefix, **flat forever** (nesting is
+  rejected, not deferred — the prefix already groups). `Admin` is the only administrative verb
+  (never `Manage`); a fully split module (like `recording`) has no `Admin`. **Split rather than
+  lump**: if an operator would grant one half and withhold the other, they are two permissions.
+  **Verb before object**, no exceptions. A permission may share its string with the command it
+  gates (`participantKick`) — intentional.
+- **REST**: live meeting state is a sub-resource of `/meetings/{roomId}`; only durable artifacts
+  and platform groups are top-level (see `MEET_API_REST_GROUPS`). Collections plural, singletons
+  singular. `operationId` = `moduleAction`.
+- **Reserved words**: `broadcast` = RTMP only, `reaction` = emoji only, `message(s)` = chat only.
+- **Known exceptions** the lint allows on purpose: the 3.8.0 deprecated aliases (derived from the
+  alias maps, gone in 3.12.0) and the wrapper's `ready` event (outside the scheme, pending
+  sign-off). `lobbyKnocked`/`participantKnocked` will be a deliberate cross-module alias when the
+  lobby module lands.
 
 ## Change discipline
 

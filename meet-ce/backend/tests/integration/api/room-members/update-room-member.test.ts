@@ -124,20 +124,20 @@ describe('Room Members API Tests', () => {
 			// Add custom permissions
 			const response = await updateRoomMember(roomId, memberId, {
 				customPermissions: {
-					canRecord: true,
-					canDeleteRecordings: true,
-					canKickParticipants: true
+					recordingControl: true,
+					recordingDelete: true,
+					participantKick: true
 				}
 			});
 			expect(response.status).toBe(200);
 
 			expect(response.body).toHaveProperty('customPermissions');
-			expect(response.body.customPermissions).toHaveProperty('canRecord', true);
-			expect(response.body.customPermissions).toHaveProperty('canDeleteRecordings', true);
-			expect(response.body.customPermissions).toHaveProperty('canKickParticipants', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canRecord', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canDeleteRecordings', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canKickParticipants', true);
+			expect(response.body.customPermissions).toHaveProperty('recordingControl', true);
+			expect(response.body.customPermissions).toHaveProperty('recordingDelete', true);
+			expect(response.body.customPermissions).toHaveProperty('participantKick', true);
+			expect(response.body.effectivePermissions).toHaveProperty('recordingControl', true);
+			expect(response.body.effectivePermissions).toHaveProperty('recordingDelete', true);
+			expect(response.body.effectivePermissions).toHaveProperty('participantKick', true);
 		});
 
 		it('should successfully update both baseRole and customPermissions', async () => {
@@ -152,14 +152,14 @@ describe('Room Members API Tests', () => {
 			const response = await updateRoomMember(roomId, memberId, {
 				baseRole: MeetRoomMemberRole.MODERATOR,
 				customPermissions: {
-					canRecord: false // Override a permission
+					recordingControl: false // Override a permission
 				}
 			});
 			expect(response.status).toBe(200);
 
 			expect(response.body).toHaveProperty('baseRole', MeetRoomMemberRole.MODERATOR);
-			expect(response.body.customPermissions).toHaveProperty('canRecord', false);
-			expect(response.body.effectivePermissions).toHaveProperty('canRecord', false);
+			expect(response.body.customPermissions).toHaveProperty('recordingControl', false);
+			expect(response.body.effectivePermissions).toHaveProperty('recordingControl', false);
 		});
 
 		it('should override existing customPermissions with new ones', async () => {
@@ -168,8 +168,8 @@ describe('Room Members API Tests', () => {
 				name: 'Test Member',
 				baseRole: MeetRoomMemberRole.SPEAKER,
 				customPermissions: {
-					canRecord: true,
-					canDeleteRecordings: true
+					recordingControl: true,
+					recordingDelete: true
 				}
 			});
 			const memberId = createResponse.body.memberId;
@@ -177,20 +177,20 @@ describe('Room Members API Tests', () => {
 			// Update with different custom permissions
 			const response = await updateRoomMember(roomId, memberId, {
 				customPermissions: {
-					canKickParticipants: true,
-					canEndMeeting: true
+					participantKick: true,
+					meetingEnd: true
 				}
 			});
 			expect(response.status).toBe(200);
 
-			expect(response.body.customPermissions).toHaveProperty('canKickParticipants', true);
-			expect(response.body.customPermissions).toHaveProperty('canEndMeeting', true);
-			expect(response.body.customPermissions).not.toHaveProperty('canRecord');
-			expect(response.body.customPermissions).not.toHaveProperty('canDeleteRecordings');
-			expect(response.body.effectivePermissions).toHaveProperty('canKickParticipants', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canEndMeeting', true);
-			expect(response.body.effectivePermissions).toHaveProperty('canRecord', false); // From base role
-			expect(response.body.effectivePermissions).toHaveProperty('canDeleteRecordings', false); // From base role
+			expect(response.body.customPermissions).toHaveProperty('participantKick', true);
+			expect(response.body.customPermissions).toHaveProperty('meetingEnd', true);
+			expect(response.body.customPermissions).not.toHaveProperty('recordingControl');
+			expect(response.body.customPermissions).not.toHaveProperty('recordingDelete');
+			expect(response.body.effectivePermissions).toHaveProperty('participantKick', true);
+			expect(response.body.effectivePermissions).toHaveProperty('meetingEnd', true);
+			expect(response.body.effectivePermissions).toHaveProperty('recordingControl', false); // From base role
+			expect(response.body.effectivePermissions).toHaveProperty('recordingDelete', false); // From base role
 		});
 
 		it('should verify member update is persisted', async () => {
@@ -311,14 +311,14 @@ describe('Room Members API Tests', () => {
 			expect(participant).toBeDefined();
 			expect(participant.identity).toBe(participantIdentity);
 
-			// Update room member to remove canJoinMeeting permission
+			// Update room member to remove meetingJoin permission
 			const response = await updateRoomMember(roomId, memberId, {
 				customPermissions: {
-					canJoinMeeting: false
+					meetingJoin: false
 				}
 			});
 			expect(response.status).toBe(200);
-			expect(response.body.effectivePermissions.canJoinMeeting).toBe(false);
+			expect(response.body.effectivePermissions.meetingJoin).toBe(false);
 
 			// Check if the participant has been removed from LiveKit
 			await expect(livekitService.getParticipant(roomId, participantIdentity)).rejects.toThrow(OpenViduMeetError);
@@ -343,7 +343,7 @@ describe('Room Members API Tests', () => {
 			// Update room member permissions
 			const response = await updateRoomMember(roomId, memberId, {
 				customPermissions: {
-					canRecord: true
+					recordingControl: true
 				}
 			});
 			expect(response.status).toBe(200);
@@ -386,10 +386,10 @@ describe('Room Members API Tests', () => {
 		it('should fail when customPermissions has invalid boolean values', async () => {
 			const response = await updateRoomMember(roomId, memberId, {
 				customPermissions: {
-					canRecord: 'not_a_boolean' as unknown as boolean
+					recordingControl: 'not_a_boolean' as unknown as boolean
 				}
 			});
-			expectValidationError(response, 'customPermissions.canRecord', 'Expected boolean');
+			expectValidationError(response, 'customPermissions.recordingControl', 'Expected boolean');
 		});
 	});
 });

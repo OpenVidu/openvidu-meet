@@ -27,7 +27,7 @@ export class RoomAccessLinkService {
 	constructor() {
 		// Keep link state synchronized with permission and room changes.
 		effect(() => {
-			const canShareAccessLinks = !!this.roomMemberContextService.permissions()?.canShareAccessLinks;
+			const canShareAccessLinks = !!this.roomMemberContextService.permissions()?.roomShareAccessLinks;
 			const roomId = this.roomMemberContextService.roomId();
 
 			if (!canShareAccessLinks || !roomId) {

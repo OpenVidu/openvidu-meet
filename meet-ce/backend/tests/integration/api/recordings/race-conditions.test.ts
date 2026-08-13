@@ -7,8 +7,8 @@ import { RecordingService } from '../../../../src/services/recording.service.js'
 import {
 	expectValidStartRecordingResponse,
 	expectValidStopRecordingResponse
-} from '../../../helpers/assertion-helpers';
-import { eventController } from '../../../helpers/event-controller';
+} from '../../../helpers/assertion-helpers.js';
+import { eventController } from '../../../helpers/event-controller.js';
 import { disconnectFakeParticipants } from '../../../helpers/livekit-cli-helpers.js';
 import {
 	bulkDeleteRecordings,
@@ -22,9 +22,9 @@ import {
 	startTestServer,
 	stopAllRecordings,
 	stopRecording
-} from '../../../helpers/request-helpers';
+} from '../../../helpers/request-helpers.js';
 
-import { setupMultiRecordingsTestContext, setupMultiRoomTestContext } from '../../../helpers/test-scenarios';
+import { setupMultiRecordingsTestContext, setupMultiRoomTestContext } from '../../../helpers/test-scenarios.js';
 import { TestContext } from '../../../interfaces/scenarios.js';
 
 describe('Recording API Race Conditions Tests', () => {

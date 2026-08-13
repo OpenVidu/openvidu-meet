@@ -51,6 +51,22 @@ Filenames keep the domain word and drop only what the folder already conveys:
 the `success-`/`error-` response prefix and the `-request` suffix. For example
 `success-create-room.yaml` → `rooms/responses/success/create-room.yaml`.
 
+### Naming new operations and paths
+
+New identifiers follow the API naming charter (full text: `meet-ce/typings/CLAUDE.md`, "API naming
+charter"; registry: `meet-ce/typings/src/api-registry.ts`), enforced by
+`scripts/lint-api-naming.mjs` at the repo root — `./meet.sh lint-backend` runs it, so CI fails on a
+violation:
+
+- Every new `operationId` is `moduleAction` camelCase (`meetingEnd`, `participantKick`), starting
+  with a registered module token. The pre-charter operations (`createRoom`, `startRecording`, …)
+  are frozen in an allowlist inside the lint script — do not add to it; public `operationId`s
+  generate SDK method names and get renamed in the next major.
+- A new **top-level path segment** must be registered in `MEET_API_REST_GROUPS` first, and that is
+  an API-design decision: live meeting features go under `/meetings/{roomId}`, only durable
+  artifacts (`/rooms`, `/recordings`) and platform groups get a top level. Collections are plural,
+  singletons singular.
+
 ## Commands (run from `meet-ce/backend`)
 
 ```bash

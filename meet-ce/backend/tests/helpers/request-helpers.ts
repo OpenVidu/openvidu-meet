@@ -3,6 +3,7 @@ import {
 	MeetAppearanceConfig,
 	MeetAssistantCapabilityName,
 	MeetParticipantModerationAction,
+	MeetPermissionsInput,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingInfo,
@@ -414,6 +415,11 @@ export const deleteAllUsers = async () => {
  * const room = await createRoom({ roomName: 'Test' }, undefined, { xExtraFields: 'config' });
  * ```
  */
+// In compatibility mode (the default the suites run under) permission objects on the wire carry the
+// current keys PLUS the deprecated `can*` spellings, so a wire object never compares 1:1 against
+// token metadata or stored documents (both current-keys only) — compare through
+// wirePermissions()/pickPermissionKeys() from assertion-helpers, or assert individual keys. The
+// mode-specific behaviour itself is covered by permission-naming.test.ts.
 export const createRoom = async (
 	options: MeetRoomOptions = {},
 	accessToken?: string,
@@ -559,7 +565,16 @@ export const updateRoomStatus = async (
 	return await req.send({ status });
 };
 
-export const updateRoomRoles = async (roomId: string, rolesConfig: MeetRoomRolesConfig) => {
+// Wire-level roles type: each role's permissions may use the current or the deprecated (`can*`)
+// spellings while compatibility mode exists. Removed in 3.12.0.
+export type RoomRolesWireConfig =
+	| MeetRoomRolesConfig
+	| {
+			moderator?: { permissions: MeetPermissionsInput };
+			speaker?: { permissions: MeetPermissionsInput };
+	  };
+
+export const updateRoomRoles = async (roomId: string, rolesConfig: RoomRolesWireConfig) => {
 	checkAppIsRunning();
 
 	return await request(app)

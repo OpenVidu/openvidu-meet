@@ -118,59 +118,67 @@
         "CHAT": "Chat"
       },
       "ITEMS": {
-        "canJoinMeeting": {
+        "meetingJoin": {
           "LABEL": "Può partecipare alla riunione",
           "DESCRIPTION": "Consenti di partecipare alla riunione"
         },
-        "canEndMeeting": {
+        "meetingEnd": {
           "LABEL": "Può terminare la riunione",
           "DESCRIPTION": "Consenti di terminare la riunione per tutti i partecipanti"
         },
-        "canMakeModerator": {
+        "participantPromote": {
           "LABEL": "Può nominare moderatore",
           "DESCRIPTION": "Consenti di promuovere i partecipanti al ruolo di moderatore"
         },
-        "canKickParticipants": {
+        "participantKick": {
           "LABEL": "Può espellere i partecipanti",
           "DESCRIPTION": "Consenti di rimuovere i partecipanti dalla riunione"
         },
-        "canShareAccessLinks": {
+        "roomShareAccessLinks": {
           "LABEL": "Può condividere i link di accesso",
           "DESCRIPTION": "Consenti di condividere i link di invito con altri"
         },
-        "canPublishVideo": {
+        "mediaPublishVideo": {
           "LABEL": "Può pubblicare il video",
           "DESCRIPTION": "Consenti di condividere il video della telecamera"
         },
-        "canPublishAudio": {
+        "mediaPublishAudio": {
           "LABEL": "Può pubblicare l'audio",
           "DESCRIPTION": "Consenti di condividere l'audio del microfono"
         },
-        "canShareScreen": {
+        "mediaShareScreen": {
           "LABEL": "Può condividere lo schermo",
           "DESCRIPTION": "Consenti di condividere il desktop o le schede del browser"
         },
-        "canChangeVirtualBackground": {
+        "mediaChangeVirtualBackground": {
           "LABEL": "Può cambiare lo sfondo virtuale",
           "DESCRIPTION": "Consenti di cambiare lo sfondo virtuale"
         },
-        "canRecord": {
+        "recordingControl": {
           "LABEL": "Può registrare",
           "DESCRIPTION": "Consenti di avviare e interrompere le registrazioni"
         },
-        "canRetrieveRecordings": {
-          "LABEL": "Può recuperare le registrazioni",
-          "DESCRIPTION": "Consenti di elencare e riprodurre le registrazioni"
+        "recordingList": {
+          "LABEL": "Può elencare le registrazioni",
+          "DESCRIPTION": "Consenti di elencare le registrazioni"
         },
-        "canDeleteRecordings": {
+        "recordingPlay": {
+          "LABEL": "Può riprodurre le registrazioni",
+          "DESCRIPTION": "Consenti di riprodurre le registrazioni"
+        },
+        "recordingDownload": {
+          "LABEL": "Può scaricare le registrazioni",
+          "DESCRIPTION": "Consenti di scaricare le registrazioni"
+        },
+        "recordingDelete": {
           "LABEL": "Può eliminare le registrazioni",
           "DESCRIPTION": "Consenti di eliminare le registrazioni"
         },
-        "canReadChat": {
+        "chatRead": {
           "LABEL": "Può leggere la chat",
           "DESCRIPTION": "Consenti di leggere i messaggi della chat"
         },
-        "canWriteChat": {
+        "chatWrite": {
           "LABEL": "Può scrivere nella chat",
           "DESCRIPTION": "Consenti di inviare messaggi nella chat"
         }

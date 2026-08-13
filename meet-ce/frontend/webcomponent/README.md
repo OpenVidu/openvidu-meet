@@ -65,18 +65,25 @@ generated type/manifest artifacts were removed in favor of this single deliverab
 <script>
   const meet = document.querySelector('openvidu-meet');
 
-  meet.addEventListener('joined', (e) => {
+  meet.addEventListener('meetingJoined', (e) => {
     console.log('Joined room:', e.detail.roomId, 'as', e.detail.participantIdentity);
   });
 
-  meet.addEventListener('left', (e) => {
+  meet.addEventListener('meetingLeft', (e) => {
     console.log('Left room, reason:', e.detail.reason);
   });
 
+  // The 3.8.0 event names ('joined', 'left', 'closed') are dispatched alongside the
+  // canonical ones above until 3.12.0 — listening to both delivers the event twice.
+
   // Imperative API
-  // meet.endMeeting();
-  // meet.leaveRoom();
-  // meet.kickParticipant('participant-id');
+  // meet.meetingEnd();
+  // meet.meetingLeave();
+  // meet.participantKick('participant-id');
+
+  // The 3.8.0 spellings still work — they forward to the canonical method above —
+  // but are deprecated and removed in 3.12.0: meet.endMeeting() / meet.leaveRoom() /
+  // meet.kickParticipant('participant-id')
 </script>
 ```
 
@@ -89,12 +96,16 @@ API it uses (see `testapp/src/app/openvidu-meet-element.ts` for a working exampl
 interface OpenViduMeetElement extends HTMLElement {
   roomUrl?: string;
   participantName?: string;
-  endMeeting(): void;
-  leaveRoom(): void;
-  kickParticipant(participantIdentity: string): void;
+  meetingEnd(): void;
+  meetingLeave(): void;
+  participantKick(participantIdentity: string): void;
 }
 
 const meet = document.querySelector<OpenViduMeetElement>('openvidu-meet')!;
-meet.addEventListener('joined', (e) => console.log((e as CustomEvent).detail.roomId));
+meet.addEventListener('meetingJoined', (e) => console.log((e as CustomEvent).detail.roomId));
 meet.roomUrl = 'https://your-server.com/room/my-room';
 ```
+
+The 3.8.0 method names (`endMeeting()`, `leaveRoom()`, `kickParticipant()`) are kept as
+`@deprecated` aliases that forward to the canonical method above, removed in **3.12.0**. New
+integrations should declare and call the canonical names only.

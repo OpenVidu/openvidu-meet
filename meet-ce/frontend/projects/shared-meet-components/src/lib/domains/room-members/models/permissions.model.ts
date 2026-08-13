@@ -24,33 +24,33 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		icon: 'groups',
 		permissions: [
 			{
-				key: 'canJoinMeeting',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canJoinMeeting.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canJoinMeeting.DESCRIPTION',
+				key: 'meetingJoin',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingJoin.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingJoin.DESCRIPTION',
 				icon: 'login'
 			},
 			{
-				key: 'canEndMeeting',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canEndMeeting.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canEndMeeting.DESCRIPTION',
+				key: 'meetingEnd',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingEnd.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.meetingEnd.DESCRIPTION',
 				icon: 'meeting_room'
 			},
 			{
-				key: 'canMakeModerator',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canMakeModerator.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canMakeModerator.DESCRIPTION',
+				key: 'participantPromote',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantPromote.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantPromote.DESCRIPTION',
 				icon: 'manage_accounts'
 			},
 			{
-				key: 'canKickParticipants',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canKickParticipants.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canKickParticipants.DESCRIPTION',
+				key: 'participantKick',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantKick.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantKick.DESCRIPTION',
 				icon: 'person_remove'
 			},
 			{
-				key: 'canShareAccessLinks',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canShareAccessLinks.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canShareAccessLinks.DESCRIPTION',
+				key: 'roomShareAccessLinks',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.roomShareAccessLinks.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.roomShareAccessLinks.DESCRIPTION',
 				icon: 'link'
 			}
 		]
@@ -60,27 +60,27 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		icon: 'perm_media',
 		permissions: [
 			{
-				key: 'canPublishVideo',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canPublishVideo.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canPublishVideo.DESCRIPTION',
+				key: 'mediaPublishVideo',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaPublishVideo.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaPublishVideo.DESCRIPTION',
 				icon: 'videocam'
 			},
 			{
-				key: 'canPublishAudio',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canPublishAudio.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canPublishAudio.DESCRIPTION',
+				key: 'mediaPublishAudio',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaPublishAudio.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaPublishAudio.DESCRIPTION',
 				icon: 'mic'
 			},
 			{
-				key: 'canShareScreen',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canShareScreen.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canShareScreen.DESCRIPTION',
+				key: 'mediaShareScreen',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaShareScreen.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaShareScreen.DESCRIPTION',
 				icon: 'screen_share'
 			},
 			{
-				key: 'canChangeVirtualBackground',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canChangeVirtualBackground.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canChangeVirtualBackground.DESCRIPTION',
+				key: 'mediaChangeVirtualBackground',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaChangeVirtualBackground.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.mediaChangeVirtualBackground.DESCRIPTION',
 				icon: 'background_replace'
 			}
 		]
@@ -90,21 +90,33 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		icon: 'video_library',
 		permissions: [
 			{
-				key: 'canRecord',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canRecord.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canRecord.DESCRIPTION',
+				key: 'recordingControl',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingControl.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingControl.DESCRIPTION',
 				icon: 'fiber_manual_record'
 			},
 			{
-				key: 'canRetrieveRecordings',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canRetrieveRecordings.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canRetrieveRecordings.DESCRIPTION',
+				key: 'recordingList',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingList.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingList.DESCRIPTION',
+				icon: 'video_library'
+			},
+			{
+				key: 'recordingPlay',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingPlay.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingPlay.DESCRIPTION',
 				icon: 'play_circle'
 			},
 			{
-				key: 'canDeleteRecordings',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canDeleteRecordings.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canDeleteRecordings.DESCRIPTION',
+				key: 'recordingDownload',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingDownload.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingDownload.DESCRIPTION',
+				icon: 'download'
+			},
+			{
+				key: 'recordingDelete',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingDelete.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.recordingDelete.DESCRIPTION',
 				icon: 'delete'
 			}
 		]
@@ -114,15 +126,15 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 		icon: 'chat',
 		permissions: [
 			{
-				key: 'canReadChat',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canReadChat.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canReadChat.DESCRIPTION',
+				key: 'chatRead',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.chatRead.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.chatRead.DESCRIPTION',
 				icon: 'visibility'
 			},
 			{
-				key: 'canWriteChat',
-				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canWriteChat.LABEL',
-				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.canWriteChat.DESCRIPTION',
+				key: 'chatWrite',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.chatWrite.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.chatWrite.DESCRIPTION',
 				icon: 'edit'
 			}
 		]

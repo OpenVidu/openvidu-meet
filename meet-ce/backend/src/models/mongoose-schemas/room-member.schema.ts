@@ -1,5 +1,5 @@
 import type { MeetRoomMember } from '@openvidu-meet/typings';
-import { MeetRoomMemberRole, MeetRoomMemberType } from '@openvidu-meet/typings';
+import { MEET_PERMISSION_KEYS, MeetRoomMemberRole, MeetRoomMemberType } from '@openvidu-meet/typings';
 import { Schema, model } from 'mongoose';
 import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import type { DocumentOnlyField } from '../database.model.js';
@@ -24,28 +24,14 @@ export const MEET_ROOM_MEMBER_DOCUMENT_ONLY_FIELDS = [
 	'schemaVersion'
 ] as const satisfies readonly MeetRoomMemberDocumentOnlyField[];
 
-const permissionFields = {
-	canRecord: { type: Boolean },
-	canRetrieveRecordings: { type: Boolean },
-	canDeleteRecordings: { type: Boolean },
-	canJoinMeeting: { type: Boolean },
-	canShareAccessLinks: { type: Boolean },
-	canMakeModerator: { type: Boolean },
-	canKickParticipants: { type: Boolean },
-	canEndMeeting: { type: Boolean },
-	canPublishVideo: { type: Boolean },
-	canPublishAudio: { type: Boolean },
-	canShareScreen: { type: Boolean },
-	canReadChat: { type: Boolean },
-	canWriteChat: { type: Boolean },
-	canChangeVirtualBackground: { type: Boolean }
-};
-
+// Permissions are persisted under their current keys (the deprecated `can*` documents are renamed by
+// the room v3→v4 and roomMember v1→v2 migrations, which ship in the same commit as this schema —
+// Mongoose silently drops keys the schema does not declare, so schema and migration cannot be split).
 function createPermissionsSchema(required: boolean) {
 	const schemaDefinition: Record<string, unknown> = {};
 
-	for (const key of Object.keys(permissionFields)) {
-		schemaDefinition[key] = { ...permissionFields[key as keyof typeof permissionFields], required };
+	for (const key of MEET_PERMISSION_KEYS) {
+		schemaDefinition[key] = { type: Boolean, required };
 	}
 
 	return new Schema(schemaDefinition, { _id: false });
@@ -125,7 +111,9 @@ MeetRoomMemberSchema.index({ roomId: 1, memberId: 1 }, { unique: true });
 MeetRoomMemberSchema.index({ roomId: 1, membershipDate: -1, _id: -1 });
 MeetRoomMemberSchema.index({ roomId: 1, name: 1, membershipDate: -1, _id: -1 });
 MeetRoomMemberSchema.index({ roomId: 1, name: 1, _id: 1 });
-MeetRoomMemberSchema.index({ memberId: 1, 'effectivePermissions.canRetrieveRecordings': 1 });
+// Renamed from 'effectivePermissions.canRetrieveRecordings' in the permission-key migration;
+// syncIndexes() drops the old index and creates this one on the startup that migrates.
+MeetRoomMemberSchema.index({ memberId: 1, 'effectivePermissions.recordingList': 1 });
 
 export const meetRoomMemberCollectionName = 'MeetRoomMember';
 

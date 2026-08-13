@@ -143,13 +143,11 @@ export const deleteRecording = async (req: Request, res: Response) => {
 };
 
 /**
- * Get recording media
- *
- * This controller endpoint retrieves a recording by its ID and streams it as a video/mp4 file.
- * It supports HTTP range requests, allowing for features like video seeking and partial downloads.
- *
+ * Streams a recording as a video/mp4 file, either inline (playback: supports HTTP range requests
+ * for seeking) or as an attachment (download: `Content-Disposition` makes the browser save the file
+ * instead of navigating to it, which is what distinguishes the `/download` endpoint from `/media`).
  */
-export const getRecordingMedia = async (req: Request, res: Response) => {
+const streamRecordingMedia = async (req: Request, res: Response, asAttachment: boolean) => {
 	const logger = container.get(LoggerService);
 
 	const recordingId = req.params.recordingId as string;
@@ -157,8 +155,15 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 	let fileStream: Readable | undefined;
 
 	try {
-		logger.debug(`Streaming recording '${recordingId}'`);
+		logger.debug(`Streaming recording '${recordingId}'${asAttachment ? ' as attachment' : ''}`);
 		const recordingService = container.get(RecordingService);
+
+		let contentDisposition: string | undefined;
+
+		if (asAttachment) {
+			const { filename } = await recordingService.getRecording(recordingId, ['filename']);
+			contentDisposition = `attachment; filename="${filename || `${recordingId}.mp4`}"`;
+		}
 
 		const result = await recordingService.getRecordingAsStream(recordingId, range);
 		const { fileSize, start, end } = result;
@@ -193,7 +198,8 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 				'Accept-Ranges': 'bytes',
 				'Content-Length': contentLength,
 				'Content-Type': 'video/mp4',
-				'Cache-Control': 'public, max-age=3600'
+				'Cache-Control': 'public, max-age=3600',
+				...(contentDisposition ? { 'Content-Disposition': contentDisposition } : {})
 			});
 		} else {
 			// Set headers for full content response
@@ -201,7 +207,8 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 				'Accept-Ranges': 'bytes',
 				'Content-Type': 'video/mp4',
 				'Content-Length': fileSize || undefined,
-				'Cache-Control': 'public, max-age=3600'
+				'Cache-Control': 'public, max-age=3600',
+				...(contentDisposition ? { 'Content-Disposition': contentDisposition } : {})
 			});
 		}
 
@@ -225,6 +232,28 @@ export const getRecordingMedia = async (req: Request, res: Response) => {
 
 		handleError(res, error, `streaming recording '${recordingId}'`);
 	}
+};
+
+/**
+ * Get recording media
+ *
+ * This controller endpoint retrieves a recording by its ID and streams it as a video/mp4 file.
+ * It supports HTTP range requests, allowing for features like video seeking and partial downloads.
+ */
+export const getRecordingMedia = async (req: Request, res: Response) => {
+	return streamRecordingMedia(req, res, false);
+};
+
+/**
+ * Download recording media
+ *
+ * Same stream as getRecordingMedia, served with `Content-Disposition: attachment` so the browser
+ * saves the file. A separate endpoint because playing and downloading are gated by different
+ * permissions (recordingPlay vs recordingDownload) and the server cannot tell the intent apart on
+ * the shared /media endpoint.
+ */
+export const downloadRecordingMedia = async (req: Request, res: Response) => {
+	return streamRecordingMedia(req, res, true);
 };
 
 export const getRecordingUrl = async (req: Request, res: Response) => {

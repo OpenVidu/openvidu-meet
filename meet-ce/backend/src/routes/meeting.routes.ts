@@ -17,14 +17,14 @@ internalMeetingRouter.delete(
 	'/:roomId',
 	withAuth(roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomMemberPermission('canEndMeeting'),
+	withRoomMemberPermission('meetingEnd'),
 	meetingCtrl.endMeeting
 );
 internalMeetingRouter.delete(
 	'/:roomId/participants/:participantIdentity',
 	withAuth(roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomMemberPermission('canKickParticipants'),
+	withRoomMemberPermission('participantKick'),
 	meetingCtrl.kickParticipantFromMeeting
 );
 internalMeetingRouter.put(
@@ -32,6 +32,6 @@ internalMeetingRouter.put(
 	withAuth(roomMemberTokenValidator),
 	withValidRoomId,
 	validateUpdateParticipantRoleReq,
-	withRoomMemberPermission('canMakeModerator'),
+	withRoomMemberPermission('participantPromote'),
 	meetingCtrl.updateParticipantRole
 );

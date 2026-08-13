@@ -33,7 +33,7 @@ let activeDispatch: { id: string; agentName: string } | null;
 
 describe('AI Assistant API Tests', () => {
 	const captionsDefaultValue = MEET_ENV.CAPTIONS_ENABLED;
-	let createAgentSpy: jest.SpyInstance;
+	let createAgentSpy: jest.SpiedFunction<LiveKitService['createAgent']>;
 	// Bypass participantIdentity resolution from token
 	beforeAll(async () => {
 		app = await startTestServer();
@@ -165,7 +165,7 @@ describe('AI Assistant API Tests', () => {
 
 			it('should return 422 when capabilities contains only unknown/invalid names', async () => {
 				const response = await createAssistant(roomData.speakerToken, {
-					capabilities: [{ name: 'non_existent_capability' }]
+					capabilities: [{ name: 'non_existent_capability' as MeetAssistantCapabilityName }]
 				});
 
 				expect(response.status).toBe(422);
@@ -175,7 +175,10 @@ describe('AI Assistant API Tests', () => {
 				MEET_ENV.CAPTIONS_ENABLED = 'true';
 
 				const response = await createAssistant(roomData.speakerToken, {
-					capabilities: [{ name: MeetAssistantCapabilityName.LIVE_CAPTIONS }, { name: 'unknown_capability' }]
+					capabilities: [
+						{ name: MeetAssistantCapabilityName.LIVE_CAPTIONS },
+						{ name: 'unknown_capability' as MeetAssistantCapabilityName }
+					]
 				});
 
 				expectValidAssistantResponse(response);
