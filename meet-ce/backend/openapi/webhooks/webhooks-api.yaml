@@ -1,9 +1,9 @@
 /webhooks:
     post:
         operationId: webhookCreate
-        summary: Register a new webhook
+        summary: Create a webhook
         description: |
-            Registers a new webhook: OpenVidu Meet will POST every matching event notification to
+            Creates a new webhook: OpenVidu Meet will POST every matching event notification to
             its URL, with the same envelope, signature and retry policy as every other webhook.
 
             The delivery can be narrowed with `events` (only these event types) and `roomId`
@@ -32,9 +32,9 @@
                 $ref: '../shared/responses/errors/internal-server.yaml'
     get:
         operationId: webhookList
-        summary: List the registered webhooks
+        summary: Get all webhooks
         description: >
-            Lists every registered webhook.
+            Retrieves the list of all registered webhooks.
         tags:
             - OpenVidu Meet - Webhooks
         security:
@@ -56,7 +56,7 @@
         operationId: webhookGet
         summary: Get a webhook
         description: >
-            Returns a registered webhook.
+            Retrieves the details of a registered webhook by its webhook ID.
         tags:
             - OpenVidu Meet - Webhooks
         security:
@@ -81,8 +81,8 @@
         operationId: webhookUpdate
         summary: Update a webhook
         description: >
-            Replaces the definition of a registered webhook. The definition is replaced as a
-            whole: an omitted optional field is cleared, not preserved.
+            Updates the definition of a registered webhook by its webhook ID. The definition is
+            replaced as a whole: an omitted optional field is cleared, not preserved.
         tags:
             - OpenVidu Meet - Webhooks
         security:
