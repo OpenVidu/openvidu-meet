@@ -52,10 +52,51 @@ src/
 │   ├── user-migrations.ts           # User-specific migrations
 │   ├── api-key-migrations.ts        # API key-specific migrations
 │   ├── global-config-migrations.ts  # Global config-specific migrations
+│   ├── webhooks-migration.ts        # Webhook-specific data migration (see below)
 │   └── index.ts                     # Exports
 └── models/
     └── migration.model.ts           # Migration types and interfaces
 ```
+
+---
+
+## Two categories of migration
+
+Both are forward-only, run at startup under the same distributed lock, and are tracked in the
+`MeetMigration` collection, so one query answers "which migrations has this deployment run".
+They differ in what they can express and in how they are invoked.
+
+| | **Schema migration** | **Data migration** |
+| --- | --- | --- |
+| Name | `schema_{collection}_v{from}_to_v{to}` | `data_{description}` |
+| Shape | pure `SchemaTransform`: `(doc) => doc` | arbitrary async step, may use services |
+| Scope | one document, one collection | may move data across collections |
+| Invoked by | the registry, driven by `schemaVersion` | `MigrationService.runMigrations()`, by name |
+| Repeats? | guarded by the document's `schemaVersion` | guarded by the state it consumes |
+
+Everything below this section describes **schema** migrations, which is what nearly every change
+needs. Reach for a data migration only when the per-document transform contract cannot express the
+change — currently the only one is `WebhookMigration` in `webhooks-migration.ts`
+(`data_legacy_webhook_config_to_collection`), which moves the legacy global-config webhook URL into
+the webhook collection, and must therefore run *before* the schema migration that drops that field.
+
+Because it needs the container (repositories, the webhook service), a data migration is an
+`@injectable()` class rather than a pure function — the only thing in this folder that is. It does
+**not** take its own lock: `MigrationService.runMigrations()` calls it by name, first, from inside
+the single lock that also covers the schema migrations, so ordering is guaranteed by call order
+rather than by comment.
+
+When adding one:
+
+1. Declare its name next to `LEGACY_WEBHOOK_CONFIG_MIGRATION_NAME` in `models/migration.model.ts`
+   (the `data_` prefix is enforced by the `MeetMigration` schema validator).
+2. Bind the class in `dependency-injector.config.ts`, inject it into `MigrationService`, and call it
+   from `runMigrations()` in the position its ordering constraint requires.
+3. Wrap the work in `markAsStarted` / `markAsCompleted` / `markAsFailed` from `MigrationRepository`,
+   recording in `metadata` whatever an operator would need to audit the run afterwards.
+4. Gate on the real data state, not on the tracking record: as in `executeMigrationChainForVersion`,
+   a deployment with nothing to migrate must not be recorded, and a record disagreeing with the data
+   is a warning plus a re-run, never a silent skip.
 
 ---
 

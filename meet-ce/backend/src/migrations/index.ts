@@ -5,3 +5,4 @@ export * from './recording-migrations.js';
 export * from './room-member-migrations.js';
 export * from './room-migrations.js';
 export * from './user-migrations.js';
+export * from './webhooks-migration.js';

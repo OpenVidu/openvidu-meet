@@ -3,6 +3,7 @@ import type { Model, QueryFilter, Require_id, Types } from 'mongoose';
 import ms from 'ms';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { runtimeMigrationRegistry } from '../migrations/migration-registry.js';
+import { WebhookMigration } from '../migrations/webhooks-migration.js';
 import type {
 	CollectionMigrationRegistry,
 	MigrationResult,
@@ -20,7 +21,8 @@ export class MigrationService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(MutexService) protected mutexService: MutexService,
-		@inject(MigrationRepository) protected migrationRepository: MigrationRepository
+		@inject(MigrationRepository) protected migrationRepository: MigrationRepository,
+		@inject(WebhookMigration) protected webhookMigration: WebhookMigration
 	) {}
 
 	/**
@@ -30,8 +32,9 @@ export class MigrationService {
 	 * Uses distributed locking to ensure only one instance runs migrations in HA mode.
 	 *
 	 * Migration flow:
-	 * 1) Schema/data migrations
-	 * 2) Index synchronization (drop obsolete + create missing indexes)
+	 * 1) Data migrations (e.g. WebhookMigration) — may depend on fields step 2 is about to remove
+	 * 2) Schema migrations
+	 * 3) Index synchronization (drop obsolete + create missing indexes)
 	 */
 	async runMigrations(): Promise<void> {
 		this.logger.info('Running migrations...');
@@ -39,6 +42,9 @@ export class MigrationService {
 
 		try {
 			const executionResult = await this.mutexService.withLock(lockKey, ms('5m'), async () => {
+				// Run data migrations that may depend on existing schema fields
+				await this.webhookMigration.run();
+
 				// Run schema migrations to upgrade document structures
 				await this.runSchemaMigrations();
 

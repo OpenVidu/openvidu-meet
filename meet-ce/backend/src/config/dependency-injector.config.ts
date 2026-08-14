@@ -5,54 +5,55 @@ import { ApiKeyRepository } from '../repositories/api-key.repository.js';
 import { GlobalConfigRepository } from '../repositories/global-config.repository.js';
 import { MigrationRepository } from '../repositories/migration.repository.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
-import { RoomRepository } from '../repositories/room.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
+import { RoomRepository } from '../repositories/room.repository.js';
 import { UserRepository } from '../repositories/user.repository.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 
-import { LoggerService } from '../services/logger.service.js';
-import { RedisService } from '../services/redis.service.js';
-import { DistributedEventService } from '../services/distributed-event.service.js';
-import { MutexService } from '../services/mutex.service.js';
-import { TaskSchedulerService } from '../services/task-scheduler.service.js';
 import { BaseUrlService } from '../services/base-url.service.js';
+import { DistributedEventService } from '../services/distributed-event.service.js';
+import { LoggerService } from '../services/logger.service.js';
+import { MutexService } from '../services/mutex.service.js';
+import { RedisService } from '../services/redis.service.js';
 import { RequestSessionService } from '../services/request-session.service.js';
+import { TaskSchedulerService } from '../services/task-scheduler.service.js';
 
-import { TokenService } from '../services/token.service.js';
-import { UserService } from '../services/user.service.js';
 import { ApiKeyService } from '../services/api-key.service.js';
 import { GlobalConfigService } from '../services/global-config.service.js';
+import { TokenService } from '../services/token.service.js';
+import { UserService } from '../services/user.service.js';
 
-import { S3Service } from '../services/storage/providers/s3/s3.service.js';
+import { ABSStorageProvider } from '../services/storage/providers/abs/abs-storage.provider.js';
+import { ABSService } from '../services/storage/providers/abs/abs.service.js';
+import { GCSStorageProvider } from '../services/storage/providers/gcp/gcs-storage.provider.js';
+import { GCSService } from '../services/storage/providers/gcp/gcs.service.js';
 import { S3KeyBuilder } from '../services/storage/providers/s3/s3-storage-key.builder.js';
 import { S3StorageProvider } from '../services/storage/providers/s3/s3-storage.provider.js';
-import { ABSService } from '../services/storage/providers/abs/abs.service.js';
-import { ABSStorageProvider } from '../services/storage/providers/abs/abs-storage.provider.js';
-import { GCSService } from '../services/storage/providers/gcp/gcs.service.js';
-import { GCSStorageProvider } from '../services/storage/providers/gcp/gcs-storage.provider.js';
+import { S3Service } from '../services/storage/providers/s3/s3.service.js';
 
+import { BlobStorageService } from '../services/storage/blob-storage.service.js';
 import { MongoDBService } from '../services/storage/mongodb.service.js';
 import { StorageInitService } from '../services/storage/storage-init.service.js';
-import type { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
 import { StorageFactory } from '../services/storage/storage.factory.js';
-import { BlobStorageService } from '../services/storage/blob-storage.service.js';
+import type { StorageKeyBuilder, StorageProvider } from '../services/storage/storage.interface.js';
 
-import { MigrationService } from '../services/migration.service.js';
-import { LiveKitService } from '../services/livekit.service.js';
+import { WebhookMigration } from '../migrations/webhooks-migration.js';
+import { AiAssistantService } from '../services/ai-assistant.service.js';
+import { AnalyticsService } from '../services/analytics.service.js';
 import { FrontendEventService } from '../services/frontend-event.service.js';
-import { RecordingService } from '../services/recording.service.js';
-import { MeetingService } from '../services/meeting.service.js';
-import { RoomService } from '../services/room.service.js';
-import { ParticipantNameService } from '../services/participant-name.service.js';
+import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
+import { LiveKitService } from '../services/livekit.service.js';
 import { MeetingPresenceService } from '../services/meeting-presence.service.js';
+import { MeetingService } from '../services/meeting.service.js';
+import { MigrationService } from '../services/migration.service.js';
+import { ParticipantNameService } from '../services/participant-name.service.js';
+import { RecordingScheduledTasksService } from '../services/recording-scheduled-tasks.service.js';
+import { RecordingService } from '../services/recording.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
+import { RoomScheduledTasksService } from '../services/room-scheduled-tasks.service.js';
+import { RoomService } from '../services/room.service.js';
 import { WebhookDispatcherService } from '../services/webhook-dispatcher.service.js';
 import { WebhookRegistryService } from '../services/webhook-registry.service.js';
-import { LivekitWebhookService } from '../services/livekit-webhook.service.js';
-import { RoomScheduledTasksService } from '../services/room-scheduled-tasks.service.js';
-import { RecordingScheduledTasksService } from '../services/recording-scheduled-tasks.service.js';
-import { AnalyticsService } from '../services/analytics.service.js';
-import { AiAssistantService } from '../services/ai-assistant.service.js';
 
 /*
  * Dependency injection is fully explicit: every service declares its collaborators with
@@ -149,6 +150,7 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(ApiKeyService).toSelf().inSingletonScope();
 	bind(GlobalConfigService).toSelf().inSingletonScope();
 	bind(MigrationService).toSelf().inSingletonScope();
+	bind(WebhookMigration).toSelf().inSingletonScope();
 	bind(FrontendEventService).toSelf().inSingletonScope();
 	bind(LiveKitService).toSelf().inSingletonScope();
 	bind(RecordingService).toSelf().inSingletonScope();
@@ -194,11 +196,6 @@ export const initializeEagerServices = async () => {
 	// Perform blob storage health check
 	const blobStorageService = container.get(BlobStorageService);
 	await blobStorageService.checkHealth();
-
-	// Move the legacy global-config webhook URL into the webhook collection. Must run before the
-	// schema migrations, which remove that field from the global config document
-	const webhookRegistryService = container.get(WebhookRegistryService);
-	await webhookRegistryService.migrateLegacyWebhookConfig();
 
 	// Run migrations
 	const migrationService = container.get(MigrationService);

@@ -5,7 +5,8 @@ import type { Model } from 'mongoose';
  */
 export interface MeetMigration {
 	/**
-	 * Unique identifier for the migration (e.g., 'legacy_storage_to_mongodb').
+	 * Unique identifier for the migration (e.g., 'schema_room_v1_to_v2',
+	 * 'data_legacy_webhook_config_to_collection').
 	 */
 	name: MigrationName;
 	/**
@@ -54,7 +55,20 @@ export enum MigrationStatus {
  * Example: 'schema_room_v1_to_v2', 'schema_recording_v2_to_v3'
  */
 export type SchemaMigrationName = `schema_${string}_v${number}_to_v${number}`;
-export type MigrationName = SchemaMigrationName;
+
+/**
+ * Data migrations follow the pattern: data_{description}
+ * Example: 'data_legacy_webhook_config_to_collection'
+ *
+ * They cover the one-shot upgrade steps a `SchemaTransform` cannot express, and are invoked
+ * explicitly at startup instead of through the registry.
+ */
+export type DataMigrationName = `data_${string}`;
+
+export type MigrationName = SchemaMigrationName | DataMigrationName;
+
+/** @see WebhookMigration in migrations/webhooks-migration.ts */
+export const LEGACY_WEBHOOK_CONFIG_MIGRATION_NAME: DataMigrationName = 'data_legacy_webhook_config_to_collection';
 
 /**
  * Generates a migration name for schema version upgrades.
@@ -82,6 +96,22 @@ export function generateSchemaMigrationName(
  */
 export function isSchemaMigrationName(name: string): name is SchemaMigrationName {
 	return /^schema_[a-z0-9_]+_v\d+_to_v\d+$/.test(name);
+}
+
+/**
+ * Checks whether a string matches the data migration naming convention.
+ */
+export function isDataMigrationName(name: string): name is DataMigrationName {
+	return /^data_[a-z0-9_]+$/.test(name);
+}
+
+/**
+ * Checks whether a string matches either category's naming convention. A pattern match only —
+ * it does not check the name against the registry or any other known-names list, so a historical
+ * name is still valid once its schema version chain no longer exists in the current registry.
+ */
+export function isValidMigrationNameFormat(name: string): name is MigrationName {
+	return isSchemaMigrationName(name) || isDataMigrationName(name);
 }
 
 /**

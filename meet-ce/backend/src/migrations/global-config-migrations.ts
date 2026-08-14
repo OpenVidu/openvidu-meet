@@ -26,7 +26,7 @@ const globalConfigMigrationV1ToV2Transform: SchemaTransform<MeetGlobalConfigDocu
 
 // v2→v3: webhooks stop being global config and become a resource of their own (the MeetWebhook
 // collection). The URL configured here was moved into that collection at startup, before this
-// migration runs (WebhookRegistryService.migrateLegacyWebhookConfig), so this transform only drops
+// migration runs (WebhookMigration, in webhooks-migration.ts), so this transform only drops
 // the leftover field.
 const globalConfigMigrationV2ToV3Transform: SchemaTransform<MeetGlobalConfigDocument> = (globalConfig) => {
 	const legacyGlobalConfig = globalConfig as unknown as { webhooksConfig?: unknown };
