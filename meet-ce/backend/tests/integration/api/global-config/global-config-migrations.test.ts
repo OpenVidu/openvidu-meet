@@ -82,7 +82,7 @@ const expectMigratedGlobalConfigToCurrentVersion = (migratedConfig: Record<strin
 	expect(migratedConfig).not.toHaveProperty('securityConfig.authentication.authMethod');
 	expect(migratedConfig).not.toHaveProperty('securityConfig.authentication.authModeToAccessRoom');
 	// Webhooks became a resource of their own; the startup step migrates the URL before the schema
-	// migration drops the field (see WebhookRegistryService.migrateLegacyWebhookConfig)
+	// migration drops the field (see WebhookMigration in migrations/webhooks-migration.ts)
 	expect(migratedConfig).not.toHaveProperty('webhooksConfig');
 };
 
