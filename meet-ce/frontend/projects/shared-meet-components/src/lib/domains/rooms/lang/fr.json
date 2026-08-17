@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "Dès que le premier participant rejoint",
         "AUTOSTART_MODE_FIRST_DESC": "Démarre dès que la réunion commence",
         "AUTOSTART_MODE_SECOND_TITLE": "Dès que le deuxième participant rejoint",
-        "AUTOSTART_MODE_SECOND_DESC": "Attend qu'une autre personne rejoigne"
+        "AUTOSTART_MODE_SECOND_DESC": "Attend qu'une autre personne rejoigne",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Dès qu'un modérateur rejoint",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Démarre dès qu'un modérateur rejoint la réunion"
       }
     },
     "ERRORS": {

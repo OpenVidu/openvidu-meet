@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "Eerste deelnemer neemt deel",
         "AUTOSTART_MODE_FIRST_DESC": "Start zodra de vergadering begint",
         "AUTOSTART_MODE_SECOND_TITLE": "Tweede deelnemer neemt deel",
-        "AUTOSTART_MODE_SECOND_DESC": "Wacht tot er nog iemand bijkomt"
+        "AUTOSTART_MODE_SECOND_DESC": "Wacht tot er nog iemand bijkomt",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Een moderator neemt deel",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Start zodra een moderator aan de vergadering deelneemt"
       }
     },
     "ERRORS": {

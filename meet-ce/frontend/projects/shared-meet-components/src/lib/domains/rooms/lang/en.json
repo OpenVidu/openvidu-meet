@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "First participant joins",
         "AUTOSTART_MODE_FIRST_DESC": "Starts as soon as the meeting begins",
         "AUTOSTART_MODE_SECOND_TITLE": "Second participant joins",
-        "AUTOSTART_MODE_SECOND_DESC": "Waits for someone else to join"
+        "AUTOSTART_MODE_SECOND_DESC": "Waits for someone else to join",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "A moderator joins",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Starts as soon as a moderator joins the meeting"
       }
     },
     "ERRORS": {

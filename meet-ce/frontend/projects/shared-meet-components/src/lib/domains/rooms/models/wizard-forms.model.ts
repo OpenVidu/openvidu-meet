@@ -111,7 +111,7 @@ export function autoStartToTriggerFormValue(
 ): RecordingTriggerFormValue {
 	return {
 		triggerMode: autoStart ? 'auto' : 'manual',
-		autoStartMode: autoStart ?? MeetRecordingAutoStartMode.FIRST_PARTICIPANT
+		autoStartMode: autoStart ?? MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
 	};
 }
 
@@ -125,7 +125,7 @@ export function triggerFormValueToAutoStart(
 ): MeetRecordingAutoStartMode | null {
 	if (formValue.triggerMode !== 'auto') return null;
 
-	return formValue.autoStartMode ?? MeetRecordingAutoStartMode.FIRST_PARTICIPANT;
+	return formValue.autoStartMode ?? MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS;
 }
 
 // Form value and group types for the recording layout step

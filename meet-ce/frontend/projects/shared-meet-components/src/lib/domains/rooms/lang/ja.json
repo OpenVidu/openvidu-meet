@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "最初の参加者が参加したとき",
         "AUTOSTART_MODE_FIRST_DESC": "ミーティング開始と同時に録画を開始します",
         "AUTOSTART_MODE_SECOND_TITLE": "2人目の参加者が参加したとき",
-        "AUTOSTART_MODE_SECOND_DESC": "もう一人参加するまで待ちます"
+        "AUTOSTART_MODE_SECOND_DESC": "もう一人参加するまで待ちます",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "モデレーターが参加したとき",
+        "AUTOSTART_MODE_MODERATOR_DESC": "モデレーターが会議に参加すると同時に録画を開始します"
       }
     },
     "ERRORS": {

@@ -69,16 +69,22 @@ export class RecordingTriggerComponent {
 	// triggers the start.
 	autoStartOptions: AutoStartOption[] = [
 		{
-			value: MeetRecordingAutoStartMode.FIRST_PARTICIPANT,
+			value: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS,
 			icon: 'person',
 			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_FIRST_TITLE'),
 			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_FIRST_DESC')
 		},
 		{
-			value: MeetRecordingAutoStartMode.SECOND_PARTICIPANT,
+			value: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS,
 			icon: 'people',
 			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_SECOND_TITLE'),
 			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_SECOND_DESC')
+		},
+		{
+			value: MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS,
+			icon: 'admin_panel_settings',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_MODERATOR_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_MODERATOR_DESC')
 		}
 	];
 

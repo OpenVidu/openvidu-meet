@@ -74,9 +74,11 @@ export interface MeetRecordingConfig {
  */
 export enum MeetRecordingAutoStartMode {
 	/** Starts as soon as the first participant joins the meeting. */
-	FIRST_PARTICIPANT = 'first_participant',
+	WHEN_FIRST_PARTICIPANT_JOINS = 'when_first_participant_joins',
 	/** Starts as soon as a second participant joins the meeting. */
-	SECOND_PARTICIPANT = 'second_participant'
+	WHEN_SECOND_PARTICIPANT_JOINS = 'when_second_participant_joins',
+	/** Starts as soon as a participant with the moderator role joins the meeting. */
+	WHEN_MODERATOR_JOINS = 'when_moderator_joins'
 }
 
 /**

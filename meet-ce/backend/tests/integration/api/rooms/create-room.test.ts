@@ -790,7 +790,7 @@ describe('Room API Tests', () => {
 					maxParticipants: 1,
 					recording: {
 						enabled: true,
-						autoStart: MeetRecordingAutoStartMode.SECOND_PARTICIPANT
+						autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
 					}
 				}
 			};
@@ -803,7 +803,7 @@ describe('Room API Tests', () => {
 
 			expect(response.body.error).toBe('Room Error');
 			expect(response.body.message).toContain(
-				`Recording auto-start '${MeetRecordingAutoStartMode.SECOND_PARTICIPANT}'`
+				`Recording auto-start '${MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS}'`
 			);
 		});
 
