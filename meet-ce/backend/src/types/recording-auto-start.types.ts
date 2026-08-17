@@ -10,10 +10,10 @@ import type { MeetRoomMemberRole } from '@openvidu-meet/typings';
 export interface MeetRecordingAutoStartPreset {
 	minParticipants: number;
 	/**
-	 * Room roles whose participants count toward `minParticipants`. `first_participant` and
-	 * `second_participant` list every {@link MeetRoomMemberRole}, so they count any standard
-	 * participant — today's behavior. A mode gated on one specific role (a moderator joining, say)
-	 * lists just that role instead of adding a separate counting mechanism.
+	 * Room roles whose participants count toward `minParticipants`. `when_first_participant_joins`
+	 * and `when_second_participant_joins` list every {@link MeetRoomMemberRole}, so they count any
+	 * standard participant — today's behavior. A mode gated on one specific role (like
+	 * `when_moderator_joins`) lists just that role instead of adding a separate counting mechanism.
 	 */
 	participantRoles: MeetRoomMemberRole[];
 }

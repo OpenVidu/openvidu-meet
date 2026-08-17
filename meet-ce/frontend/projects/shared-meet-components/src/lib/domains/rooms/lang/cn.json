@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "第一位参与者加入时",
         "AUTOSTART_MODE_FIRST_DESC": "会议开始后立即开始录制",
         "AUTOSTART_MODE_SECOND_TITLE": "第二位参与者加入时",
-        "AUTOSTART_MODE_SECOND_DESC": "等待另一人加入后才开始录制"
+        "AUTOSTART_MODE_SECOND_DESC": "等待另一人加入后才开始录制",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "主持人加入时",
+        "AUTOSTART_MODE_MODERATOR_DESC": "主持人加入会议后立即开始录制"
       }
     },
     "ERRORS": {

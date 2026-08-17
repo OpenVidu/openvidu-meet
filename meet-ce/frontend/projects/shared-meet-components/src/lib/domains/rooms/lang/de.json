@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "Erster Teilnehmer tritt bei",
         "AUTOSTART_MODE_FIRST_DESC": "Startet, sobald das Meeting beginnt",
         "AUTOSTART_MODE_SECOND_TITLE": "Zweiter Teilnehmer tritt bei",
-        "AUTOSTART_MODE_SECOND_DESC": "Wartet, bis eine weitere Person beitritt"
+        "AUTOSTART_MODE_SECOND_DESC": "Wartet, bis eine weitere Person beitritt",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Ein Moderator tritt bei",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Startet, sobald ein Moderator dem Meeting beitritt"
       }
     },
     "ERRORS": {

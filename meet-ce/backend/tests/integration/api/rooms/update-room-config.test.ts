@@ -80,7 +80,7 @@ describe('Room API Tests', () => {
 				maxDurationMinutes: 60,
 				recording: {
 					enabled: true,
-					autoStart: MeetRecordingAutoStartMode.FIRST_PARTICIPANT
+					autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
 				}
 			});
 
@@ -89,7 +89,7 @@ describe('Room API Tests', () => {
 			expect(updateResponse.body.maxDurationMinutes).toBe(60);
 			expect(updateResponse.body.recording).toMatchObject({
 				enabled: true,
-				autoStart: MeetRecordingAutoStartMode.FIRST_PARTICIPANT
+				autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
 			});
 
 			// Config updates deep-merge, so an omitted limit/autoStart keeps its value and `null` clears it
@@ -409,13 +409,13 @@ describe('Room API Tests', () => {
 				maxParticipants: 1,
 				recording: {
 					enabled: true,
-					autoStart: MeetRecordingAutoStartMode.SECOND_PARTICIPANT
+					autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
 				}
 			});
 			expect(response.status).toBe(422);
 			expect(response.body.error).toBe('Room Error');
 			expect(response.body.message).toContain(
-				`Recording auto-start '${MeetRecordingAutoStartMode.SECOND_PARTICIPANT}'`
+				`Recording auto-start '${MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS}'`
 			);
 
 			// And with each half coming from a different request: the limit is stored first, so only
@@ -426,7 +426,7 @@ describe('Room API Tests', () => {
 			response = await updateRoomConfig(createdRoom.roomId, {
 				recording: {
 					enabled: true,
-					autoStart: MeetRecordingAutoStartMode.SECOND_PARTICIPANT
+					autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
 				}
 			});
 			expect(response.status).toBe(422);
@@ -435,23 +435,23 @@ describe('Room API Tests', () => {
 			response = await updateRoomConfig(createdRoom.roomId, {
 				recording: {
 					enabled: true,
-					autoStart: MeetRecordingAutoStartMode.FIRST_PARTICIPANT
+					autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS
 				}
 			});
 			expect(response.status).toBe(200);
-			expect(response.body.recording.autoStart).toBe(MeetRecordingAutoStartMode.FIRST_PARTICIPANT);
+			expect(response.body.recording.autoStart).toBe(MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS);
 
 			// Lifting the limit makes the second-participant threshold reachable again
 			response = await updateRoomConfig(createdRoom.roomId, {
 				maxParticipants: null,
 				recording: {
 					enabled: true,
-					autoStart: MeetRecordingAutoStartMode.SECOND_PARTICIPANT
+					autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS
 				}
 			});
 			expect(response.status).toBe(200);
 			expect(response.body.maxParticipants).toBeNull();
-			expect(response.body.recording.autoStart).toBe(MeetRecordingAutoStartMode.SECOND_PARTICIPANT);
+			expect(response.body.recording.autoStart).toBe(MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS);
 		});
 
 		it('should reject update with video-only encoding (audio required)', async () => {

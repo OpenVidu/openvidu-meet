@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "Al unirse el primer participante",
         "AUTOSTART_MODE_FIRST_DESC": "Empieza en cuanto arranca la reunión",
         "AUTOSTART_MODE_SECOND_TITLE": "Al unirse el segundo participante",
-        "AUTOSTART_MODE_SECOND_DESC": "Espera a que se una otra persona"
+        "AUTOSTART_MODE_SECOND_DESC": "Espera a que se una otra persona",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Al unirse un moderador",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Empieza en cuanto se une un moderador"
       }
     },
     "ERRORS": {

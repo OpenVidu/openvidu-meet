@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "O primeiro participante entra",
         "AUTOSTART_MODE_FIRST_DESC": "Começa assim que a reunião é iniciada",
         "AUTOSTART_MODE_SECOND_TITLE": "O segundo participante entra",
-        "AUTOSTART_MODE_SECOND_DESC": "Espera que outra pessoa entre"
+        "AUTOSTART_MODE_SECOND_DESC": "Espera que outra pessoa entre",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Um moderador entra",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Começa assim que um moderador entra na reunião"
       }
     },
     "ERRORS": {

@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "पहला सदस्य शामिल होने पर",
         "AUTOSTART_MODE_FIRST_DESC": "मीटिंग शुरू होते ही रिकॉर्डिंग शुरू हो जाती है",
         "AUTOSTART_MODE_SECOND_TITLE": "दूसरा सदस्य शामिल होने पर",
-        "AUTOSTART_MODE_SECOND_DESC": "किसी अन्य सदस्य के शामिल होने का इंतज़ार करती है"
+        "AUTOSTART_MODE_SECOND_DESC": "किसी अन्य सदस्य के शामिल होने का इंतज़ार करती है",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "मॉडरेटर के शामिल होने पर",
+        "AUTOSTART_MODE_MODERATOR_DESC": "मॉडरेटर के मीटिंग में शामिल होते ही रिकॉर्डिंग शुरू हो जाती है"
       }
     },
     "ERRORS": {

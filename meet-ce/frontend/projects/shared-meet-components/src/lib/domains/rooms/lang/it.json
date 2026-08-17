@@ -283,7 +283,9 @@
         "AUTOSTART_MODE_FIRST_TITLE": "Si unisce il primo partecipante",
         "AUTOSTART_MODE_FIRST_DESC": "Si avvia non appena inizia la riunione",
         "AUTOSTART_MODE_SECOND_TITLE": "Si unisce il secondo partecipante",
-        "AUTOSTART_MODE_SECOND_DESC": "Attende che si unisca un'altra persona"
+        "AUTOSTART_MODE_SECOND_DESC": "Attende che si unisca un'altra persona",
+        "AUTOSTART_MODE_MODERATOR_TITLE": "Si unisce un moderatore",
+        "AUTOSTART_MODE_MODERATOR_DESC": "Si avvia non appena un moderatore si unisce alla riunione"
       }
     },
     "ERRORS": {

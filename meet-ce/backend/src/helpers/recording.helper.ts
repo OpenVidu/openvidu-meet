@@ -32,8 +32,18 @@ const ALL_PARTICIPANT_ROLES = Object.values(MeetRoomMemberRole);
  * instead of keeping its own copy, so the two can't drift apart.
  */
 const AUTO_START_PRESETS: Record<MeetRecordingAutoStartMode, MeetRecordingAutoStartPreset> = {
-	[MeetRecordingAutoStartMode.FIRST_PARTICIPANT]: { minParticipants: 1, participantRoles: ALL_PARTICIPANT_ROLES },
-	[MeetRecordingAutoStartMode.SECOND_PARTICIPANT]: { minParticipants: 2, participantRoles: ALL_PARTICIPANT_ROLES }
+	[MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS]: {
+		minParticipants: 1,
+		participantRoles: ALL_PARTICIPANT_ROLES
+	},
+	[MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS]: {
+		minParticipants: 2,
+		participantRoles: ALL_PARTICIPANT_ROLES
+	},
+	[MeetRecordingAutoStartMode.WHEN_MODERATOR_JOINS]: {
+		minParticipants: 1,
+		participantRoles: [MeetRoomMemberRole.MODERATOR]
+	}
 };
 
 export class RecordingHelper {
