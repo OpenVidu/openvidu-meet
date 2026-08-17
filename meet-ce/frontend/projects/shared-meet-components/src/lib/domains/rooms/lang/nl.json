@@ -277,10 +277,13 @@
         "DESCRIPTION": "Kies wanneer de opname automatisch moet starten",
         "MANUAL_TITLE": "Handmatige opname",
         "MANUAL_DESC": "Start de opname handmatig wanneer nodig",
-        "AUTO1_TITLE": "Automatisch 1 deelnemer",
-        "AUTO1_DESC": "Start de opname automatisch wanneer er 1 deelnemer deelneemt",
-        "AUTO2_TITLE": "Automatisch 2 deelnemers",
-        "AUTO2_DESC": "Start de opname automatisch wanneer er 2 deelnemers deelnemen"
+        "AUTO_TITLE": "Automatische opname",
+        "AUTO_DESC": "De opname start automatisch zodra de vergadering begint",
+        "AUTOSTART_MODE_LABEL": "Wanneer moet de opname starten?",
+        "AUTOSTART_MODE_FIRST_TITLE": "Eerste deelnemer neemt deel",
+        "AUTOSTART_MODE_FIRST_DESC": "Start zodra de vergadering begint",
+        "AUTOSTART_MODE_SECOND_TITLE": "Tweede deelnemer neemt deel",
+        "AUTOSTART_MODE_SECOND_DESC": "Wacht tot er nog iemand bijkomt"
       }
     },
     "ERRORS": {

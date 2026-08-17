@@ -4,16 +4,15 @@
 	@include design-tokens.ov-page-content;
 	@include design-tokens.ov-container;
 
-	padding: var(--ov-meet-spacing-sm);
+	justify-content: center;
 
 	.step-header {
 		display: flex;
 		align-items: flex-start;
 		gap: var(--ov-meet-spacing-sm);
-		margin-bottom: var(--ov-meet-spacing-md);
 
 		.step-icon {
-			@include design-tokens.ov-icon(lg);
+			@include design-tokens.ov-icon(xl);
 			color: var(--ov-meet-icon-recordings);
 			margin-top: var(--ov-meet-spacing-xs);
 		}
@@ -22,8 +21,8 @@
 			flex: 1;
 
 			.step-title {
-				margin: 0 0 var(--ov-meet-spacing-xs) 0;
-				font-size: var(--ov-meet-font-size-lg);
+				margin: 0 0 var(--ov-meet-spacing-sm) 0;
+				font-size: var(--ov-meet-font-size-xl);
 				font-weight: var(--ov-meet-font-weight-medium);
 				color: var(--ov-meet-text-primary);
 				line-height: var(--ov-meet-line-height-tight);
@@ -31,7 +30,7 @@
 
 			.step-description {
 				margin: 0;
-				font-size: var(--ov-meet-font-size-sm);
+				font-size: var(--ov-meet-font-size-md);
 				color: var(--ov-meet-text-secondary);
 				line-height: var(--ov-meet-line-height-normal);
 			}
@@ -46,9 +45,87 @@
 				@include design-tokens.ov-grid-responsive(260px);
 				gap: var(--ov-meet-spacing-md);
 
-				// On larger screens, limit to 3 cards per row
+				// Only two cards (manual/automatic): keep them from stretching too wide
 				@include design-tokens.ov-tablet-up {
-					justify-content: space-between;
+					grid-template-columns: repeat(2, minmax(260px, 320px));
+					justify-content: center;
+				}
+			}
+
+			.autostart-mode-section {
+				margin-top: var(--ov-meet-spacing-lg);
+
+				.autostart-mode-label {
+					display: flex;
+					align-items: center;
+					gap: var(--ov-meet-spacing-xs);
+					margin: 0 0 var(--ov-meet-spacing-sm) 0;
+					font-size: var(--ov-meet-font-size-md);
+					font-weight: var(--ov-meet-font-weight-medium);
+					color: var(--ov-meet-text-primary);
+
+					.autostart-mode-icon {
+						@include design-tokens.ov-icon(sm);
+						color: var(--ov-meet-icon-recordings);
+					}
+				}
+
+				.autostart-mode-options {
+					display: flex;
+					flex-direction: column;
+					gap: var(--ov-meet-spacing-sm);
+
+					.autostart-mode-option {
+						@include design-tokens.ov-theme-transition;
+
+						display: block;
+						border: 1px solid var(--ov-meet-border-secondary);
+						border-radius: var(--ov-meet-radius-sm);
+						padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
+						background: var(--ov-meet-surface-variant);
+
+						&:hover {
+							background: var(--ov-meet-surface-hover);
+							border-color: var(--ov-meet-color-primary);
+						}
+
+						&.mat-mdc-radio-button-checked {
+							border-color: var(--ov-meet-color-primary);
+							background: rgba(var(--ov-meet-color-primary), 0.05);
+						}
+
+						.option-content {
+							display: flex;
+							align-items: center;
+							gap: var(--ov-meet-spacing-sm);
+							margin-left: var(--ov-meet-spacing-lg);
+
+							.option-icon {
+								@include design-tokens.ov-icon(md);
+								color: var(--ov-meet-icon-primary);
+								flex-shrink: 0;
+							}
+
+							.option-details {
+								display: flex;
+								flex-direction: column;
+								gap: 2px;
+
+								.option-title {
+									font-size: var(--ov-meet-font-size-md);
+									font-weight: var(--ov-meet-font-weight-medium);
+									color: var(--ov-meet-text-primary);
+									line-height: var(--ov-meet-line-height-tight);
+								}
+
+								.option-description {
+									font-size: var(--ov-meet-font-size-sm);
+									color: var(--ov-meet-text-secondary);
+									line-height: var(--ov-meet-line-height-normal);
+								}
+							}
+						}
+					}
 				}
 			}
 		}
@@ -69,7 +146,7 @@
 		}
 
 		.step-content .trigger-form .options-grid {
-			flex-direction: column;
+			grid-template-columns: 1fr;
 			gap: var(--ov-meet-spacing-sm);
 		}
 	}

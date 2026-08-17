@@ -277,10 +277,13 @@
         "DESCRIPTION": "録画を自動的に開始するタイミングを選択します",
         "MANUAL_TITLE": "手動録画",
         "MANUAL_DESC": "必要に応じて手動で録画を開始します",
-        "AUTO1_TITLE": "自動（参加者 1 人）",
-        "AUTO1_DESC": "参加者が 1 人参加すると自動的に録画を開始します",
-        "AUTO2_TITLE": "自動（参加者 2 人）",
-        "AUTO2_DESC": "参加者が 2 人参加すると自動的に録画を開始します"
+        "AUTO_TITLE": "自動録画",
+        "AUTO_DESC": "ミーティングが始まると自動的に録画を開始します",
+        "AUTOSTART_MODE_LABEL": "録画はいつ開始しますか？",
+        "AUTOSTART_MODE_FIRST_TITLE": "最初の参加者が参加したとき",
+        "AUTOSTART_MODE_FIRST_DESC": "ミーティング開始と同時に録画を開始します",
+        "AUTOSTART_MODE_SECOND_TITLE": "2人目の参加者が参加したとき",
+        "AUTOSTART_MODE_SECOND_DESC": "もう一人参加するまで待ちます"
       }
     },
     "ERRORS": {

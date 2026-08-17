@@ -277,10 +277,13 @@
         "DESCRIPTION": "Choisissez quand l'enregistrement doit démarrer automatiquement",
         "MANUAL_TITLE": "Enregistrement manuel",
         "MANUAL_DESC": "Démarrer l'enregistrement manuellement si nécessaire",
-        "AUTO1_TITLE": "Auto 1 participant",
-        "AUTO1_DESC": "Démarrer automatiquement l'enregistrement lorsque 1 participant rejoint",
-        "AUTO2_TITLE": "Auto 2 participants",
-        "AUTO2_DESC": "Démarrer automatiquement l'enregistrement lorsque 2 participants rejoignent"
+        "AUTO_TITLE": "Enregistrement automatique",
+        "AUTO_DESC": "L'enregistrement démarre automatiquement dès que la réunion commence",
+        "AUTOSTART_MODE_LABEL": "Quand doit-il démarrer ?",
+        "AUTOSTART_MODE_FIRST_TITLE": "Dès que le premier participant rejoint",
+        "AUTOSTART_MODE_FIRST_DESC": "Démarre dès que la réunion commence",
+        "AUTOSTART_MODE_SECOND_TITLE": "Dès que le deuxième participant rejoint",
+        "AUTOSTART_MODE_SECOND_DESC": "Attend qu'une autre personne rejoigne"
       }
     },
     "ERRORS": {

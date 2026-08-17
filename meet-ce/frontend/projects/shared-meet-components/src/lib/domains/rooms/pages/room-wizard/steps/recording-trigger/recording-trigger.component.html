@@ -11,21 +11,41 @@
 	<!-- Form Section -->
 	<main class="step-content">
 		<form [formGroup]="triggerForm" class="trigger-form">
-			<!-- Options Cards -->
+			<!-- Top-level choice: manual vs. automatic -->
 			<div class="options-grid">
-				@for (option of triggerOptions; track option.id) {
+				@for (option of modeOptions; track option.id) {
 					<ov-selectable-card
 						[option]="option"
-						[selectedValue]="selectedOption"
+						[selectedValue]="selectedMode"
 						[allowMultiSelect]="false"
 						[showSelectionIndicator]="true"
-						[showProBadge]="option.isPro ?? false"
-						[showRecommendedBadge]="option.recommended ?? false"
-						[enableHover]="!option.disabled"
-						(optionSelected)="onOptionChange($event)"
+						(optionSelected)="onModeChange($event)"
 					/>
 				}
 			</div>
+
+			<!-- Secondary choice: only relevant once "Automatic" is picked -->
+			@if (isAutoMode) {
+				<div class="autostart-mode-section fade-in">
+					<h4 class="autostart-mode-label">
+						<mat-icon class="autostart-mode-icon">schedule</mat-icon>
+						{{ 'ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_LABEL' | translate }}
+					</h4>
+					<mat-radio-group formControlName="autoStartMode" class="autostart-mode-options">
+						@for (option of autoStartOptions; track option.value) {
+							<mat-radio-button [value]="option.value" class="autostart-mode-option">
+								<div class="option-content">
+									<mat-icon class="option-icon">{{ option.icon }}</mat-icon>
+									<div class="option-details">
+										<span class="option-title">{{ option.title }}</span>
+										<span class="option-description">{{ option.description }}</span>
+									</div>
+								</div>
+							</mat-radio-button>
+						}
+					</mat-radio-group>
+				</div>
+			}
 		</form>
 	</main>
 </div>

@@ -1,5 +1,6 @@
 import { FormControl, FormGroup } from '@angular/forms';
 import {
+	MeetRecordingAutoStartMode,
 	MeetRecordingLayout,
 	MeetRoomDeletionPolicyWithMeeting,
 	MeetRoomDeletionPolicyWithRecordings,
@@ -82,16 +83,50 @@ export type RecordingFormGroup = FormGroup<{
 }>;
 
 // Form value and group types for the recording trigger step
+//
+// The trigger is a two-level decision: the top-level card picks manual vs. automatic, and only
+// when automatic is chosen does a second, secondary choice appear for the participant threshold.
+// `autoStartMode` is kept in the form even while `triggerMode` is `manual`, so a user who switches
+// to automatic and back keeps their previous threshold selection instead of losing it.
 
-export type RecordingTriggerType = 'manual' | 'auto1' | 'auto2';
+export type RecordingTriggerMode = 'manual' | 'auto';
 
 export interface RecordingTriggerFormValue {
-	triggerType: RecordingTriggerType;
+	triggerMode: RecordingTriggerMode;
+	autoStartMode: MeetRecordingAutoStartMode;
 }
 
 export type RecordingTriggerFormGroup = FormGroup<{
-	triggerType: FormControl<RecordingTriggerType>;
+	triggerMode: FormControl<RecordingTriggerMode>;
+	autoStartMode: FormControl<MeetRecordingAutoStartMode>;
 }>;
+
+/**
+ * Maps a persisted `config.recording.autoStart` value to the wizard's two-level trigger selection:
+ * the top-level manual/automatic mode, and the threshold to preselect if the user switches to
+ * automatic (defaults to the first-participant threshold).
+ */
+export function autoStartToTriggerFormValue(
+	autoStart: MeetRecordingAutoStartMode | null | undefined
+): RecordingTriggerFormValue {
+	return {
+		triggerMode: autoStart ? 'auto' : 'manual',
+		autoStartMode: autoStart ?? MeetRecordingAutoStartMode.FIRST_PARTICIPANT
+	};
+}
+
+/**
+ * Maps the wizard's two-level trigger selection back to the persisted `config.recording.autoStart`
+ * value. `manual` maps to `null` (not `undefined`) so the wizard's own deep-merge of step data can
+ * distinguish "explicitly turned off" from "field not touched by this step".
+ */
+export function triggerFormValueToAutoStart(
+	formValue: Partial<RecordingTriggerFormValue>
+): MeetRecordingAutoStartMode | null {
+	if (formValue.triggerMode !== 'auto') return null;
+
+	return formValue.autoStartMode ?? MeetRecordingAutoStartMode.FIRST_PARTICIPANT;
+}
 
 // Form value and group types for the recording layout step
 

@@ -277,10 +277,13 @@
         "DESCRIPTION": "Choose when recording should start automatically",
         "MANUAL_TITLE": "Manual Recording",
         "MANUAL_DESC": "Start recording manually when needed",
-        "AUTO1_TITLE": "Auto 1 Participant",
-        "AUTO1_DESC": "Auto-start recording when 1 participant joins",
-        "AUTO2_TITLE": "Auto 2 Participants",
-        "AUTO2_DESC": "Auto-start recording when 2 participants join"
+        "AUTO_TITLE": "Automatic Recording",
+        "AUTO_DESC": "Recording starts automatically once the meeting begins",
+        "AUTOSTART_MODE_LABEL": "When should it start recording?",
+        "AUTOSTART_MODE_FIRST_TITLE": "First participant joins",
+        "AUTOSTART_MODE_FIRST_DESC": "Starts as soon as the meeting begins",
+        "AUTOSTART_MODE_SECOND_TITLE": "Second participant joins",
+        "AUTOSTART_MODE_SECOND_DESC": "Waits for someone else to join"
       }
     },
     "ERRORS": {

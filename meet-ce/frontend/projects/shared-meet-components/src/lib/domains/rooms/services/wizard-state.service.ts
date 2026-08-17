@@ -15,8 +15,8 @@ import { deepMerge } from '../../../shared/utils/object.utils';
 import { WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
+	autoStartToTriggerFormValue,
 	RecordingEnabledOption,
-	RecordingTriggerType,
 	RoomAccessPermissionsControls,
 	RoomDetailsFormGroup
 } from '../models/wizard-forms.model';
@@ -147,6 +147,8 @@ export class RoomWizardStateService {
 
 		this._roomOptions.set(initialRoomOptions);
 		this._pendingMembers.set([]);
+
+		const recordingTriggerFormValue = autoStartToTriggerFormValue(initialRoomOptions.config!.recording!.autoStart);
 
 		// Define wizard steps
 		const baseSteps: AnyWizardStep[] = [
@@ -287,7 +289,8 @@ export class RoomWizardStateService {
 				isActive: false,
 				isVisible: false, // Initially hidden, will be shown based on recording settings
 				formGroup: this.formBuilder.group({
-					triggerType: this.formBuilder.nonNullable.control<RecordingTriggerType>('manual')
+					triggerMode: this.formBuilder.nonNullable.control(recordingTriggerFormValue.triggerMode),
+					autoStartMode: this.formBuilder.nonNullable.control(recordingTriggerFormValue.autoStartMode)
 				})
 			},
 			{
@@ -347,17 +350,10 @@ export class RoomWizardStateService {
 
 		// Update recording steps visibility based on recordingEnabled
 		const updatedSteps = currentSteps.map((step) => {
-			if (step.id === WizardStepId.RECORDING_LAYOUT) {
+			if (step.id === WizardStepId.RECORDING_LAYOUT || step.id === WizardStepId.RECORDING_TRIGGER) {
 				return {
 					...step,
 					isVisible: recordingEnabled // Only show if recording is enabled
-				};
-			}
-
-			if (step.id === WizardStepId.RECORDING_TRIGGER) {
-				return {
-					...step,
-					isVisible: false // TODO: Change to 'recordingEnabled' when recording trigger config is implemented
 				};
 			}
 
