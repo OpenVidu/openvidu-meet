@@ -401,6 +401,59 @@ describe('Room API Tests', () => {
 			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
 		});
 
+		it('should reject an auto-start threshold that the participant limit can never reach', async () => {
+			const createdRoom = await createRoom({ roomName: 'unreachable-autostart-test' });
+
+			// Both halves of the contradiction in the same request
+			let response = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 1,
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.SECOND_PARTICIPANT
+				}
+			});
+			expect(response.status).toBe(422);
+			expect(response.body.error).toBe('Room Error');
+			expect(response.body.message).toContain(
+				`Recording auto-start '${MeetRecordingAutoStartMode.SECOND_PARTICIPANT}'`
+			);
+
+			// And with each half coming from a different request: the limit is stored first, so only
+			// the merged config exposes the contradiction
+			response = await updateRoomConfig(createdRoom.roomId, { maxParticipants: 1 });
+			expect(response.status).toBe(200);
+
+			response = await updateRoomConfig(createdRoom.roomId, {
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.SECOND_PARTICIPANT
+				}
+			});
+			expect(response.status).toBe(422);
+
+			// A single-participant room does reach the first-participant threshold
+			response = await updateRoomConfig(createdRoom.roomId, {
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.FIRST_PARTICIPANT
+				}
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.recording.autoStart).toBe(MeetRecordingAutoStartMode.FIRST_PARTICIPANT);
+
+			// Lifting the limit makes the second-participant threshold reachable again
+			response = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: null,
+				recording: {
+					enabled: true,
+					autoStart: MeetRecordingAutoStartMode.SECOND_PARTICIPANT
+				}
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.maxParticipants).toBeNull();
+			expect(response.body.recording.autoStart).toBe(MeetRecordingAutoStartMode.SECOND_PARTICIPANT);
+		});
+
 		it('should reject update with video-only encoding (audio required)', async () => {
 			const createdRoom = await createRoom({
 				roomName: 'video-only-update',

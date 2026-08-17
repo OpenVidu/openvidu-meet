@@ -1,5 +1,10 @@
 import { EgressStatus } from '@livekit/protocol';
-import { MeetRecordingLayout, MeetRecordingStatus } from '@openvidu-meet/typings';
+import {
+	MeetRecordingAutoStartMode,
+	MeetRecordingLayout,
+	MeetRecordingStatus,
+	MeetRoomMemberRole
+} from '@openvidu-meet/typings';
 import type {
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
@@ -9,8 +14,27 @@ import type {
 import type { EgressInfo } from 'livekit-server-sdk';
 import { container } from '../config/dependency-injector.config.js';
 import { RoomService } from '../services/room.service.js';
+import type { MeetRecordingAutoStartPreset } from '../types/recording-auto-start.types.js';
 import { EncodingConverter } from './encoding-converter.helper.js';
 import { applyHttpFieldFiltering } from './field-filter.helper.js';
+
+/** Every room role — read from the enum so a future addition to it is automatically included. */
+const ALL_PARTICIPANT_ROLES = Object.values(MeetRoomMemberRole);
+
+/**
+ * One preset per {@link MeetRecordingAutoStartMode}. A `Record` keyed by the full enum rather than a
+ * switch: TypeScript already requires every key to be present in the object literal, so a mode added
+ * to the enum without a matching row here is a compile error, the same guarantee a switch's missing
+ * `default` gives, for a plain data table.
+ *
+ * This is also the single source of truth for the numbers: `MeetRoomHelper.minParticipantsForAutoStart`
+ * (used to validate `maxParticipants` against the configured mode) reads `minParticipants` from here
+ * instead of keeping its own copy, so the two can't drift apart.
+ */
+const AUTO_START_PRESETS: Record<MeetRecordingAutoStartMode, MeetRecordingAutoStartPreset> = {
+	[MeetRecordingAutoStartMode.FIRST_PARTICIPANT]: { minParticipants: 1, participantRoles: ALL_PARTICIPANT_ROLES },
+	[MeetRecordingAutoStartMode.SECOND_PARTICIPANT]: { minParticipants: 2, participantRoles: ALL_PARTICIPANT_ROLES }
+};
 
 export class RecordingHelper {
 	private constructor() {
@@ -73,6 +97,15 @@ export class RecordingHelper {
 	static isRecordingEgress(egress: EgressInfo): boolean {
 		const { streamResults = [], fileResults = [] } = egress;
 		return fileResults.length > 0 && streamResults.length === 0;
+	}
+
+	/**
+	 * The preset that makes the recording auto-start `mode` fire, returned as data instead of a
+	 * verdict: the rule belongs to the recording domain, but only the caller holds the live meeting
+	 * state that answers it, so this stays pure and never calls `MeetingService`.
+	 */
+	static getAutoStartConfig(mode: MeetRecordingAutoStartMode): MeetRecordingAutoStartPreset {
+		return AUTO_START_PRESETS[mode];
 	}
 
 	static canBeDeleted(status: MeetRecordingStatus): boolean {

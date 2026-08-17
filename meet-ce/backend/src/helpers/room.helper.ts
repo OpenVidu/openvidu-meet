@@ -6,9 +6,15 @@ import type {
 	MeetRoomMemberPermissions,
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
-import { MEET_ROOM_EXTRA_FIELDS, MEET_ROOM_FIELDS, SENSITIVE_ROOM_FIELDS_ENTRIES } from '@openvidu-meet/typings';
+import {
+	MEET_ROOM_EXTRA_FIELDS,
+	MEET_ROOM_FIELDS,
+	MeetRecordingAutoStartMode,
+	SENSITIVE_ROOM_FIELDS_ENTRIES
+} from '@openvidu-meet/typings';
 import { MEET_ENV } from '../environment.js';
 import { addHttpResponseMetadata, applyHttpFieldFiltering, buildFieldsForDbQuery } from './field-filter.helper.js';
+import { RecordingHelper } from './recording.helper.js';
 
 // Path segments that could walk into the prototype chain instead of a data property.
 const UNSAFE_PATH_SEGMENTS = new Set(['__proto__', 'constructor', 'prototype']);
@@ -72,6 +78,18 @@ export class MeetRoomHelper {
 	static isMeetingOverMaxDuration(creationTimeSeconds: number, maxDurationMinutes: number, nowMs: number): boolean {
 		const deadlineMs = creationTimeSeconds * 1000 + maxDurationMinutes * 60_000;
 		return nowMs >= deadlineMs;
+	}
+
+	/**
+	 * Participants a room must be able to hold for the recording auto-start `mode` to ever fire, so
+	 * that a `maxParticipants` limit below it can be rejected instead of stored as a recording that
+	 * never starts.
+	 *
+	 * Reads `RecordingHelper`'s auto-start presets rather than keeping its own numbers, so this and
+	 * the live auto-start evaluation can't drift apart.
+	 */
+	static minParticipantsForAutoStart(mode: MeetRecordingAutoStartMode): number {
+		return RecordingHelper.getAutoStartConfig(mode).minParticipants;
 	}
 
 	/**

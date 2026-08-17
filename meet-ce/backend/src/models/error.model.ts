@@ -297,6 +297,22 @@ export const errorRoomActiveMeeting = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Room Error', `Room '${roomId}' has an active meeting`, 409);
 };
 
+/**
+ * A recording auto-start threshold that the room's participant limit can never reach: storing it
+ * would configure a recording that is guaranteed never to start.
+ */
+export const errorUnreachableRecordingAutoStart = (
+	mode: string,
+	maxParticipants: number,
+	minParticipants: number
+): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Room Error',
+		`Recording auto-start '${mode}' can never trigger in a room whose 'maxParticipants' is ${maxParticipants}: it requires the room to admit at least ${minParticipants} participants`,
+		422
+	);
+};
+
 // Meeting errors
 
 export const errorNoActiveMeeting = (roomId: string): OpenViduMeetError => {

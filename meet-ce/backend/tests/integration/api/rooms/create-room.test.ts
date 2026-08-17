@@ -2,6 +2,7 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import {
 	MeetRecordingAudioCodec,
+	MeetRecordingAutoStartMode,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
 	MeetRecordingLayout,
@@ -780,6 +781,30 @@ describe('Room API Tests', () => {
 				.expect(422);
 
 			expect(JSON.stringify(response.body.details)).toContain('Expected boolean');
+		});
+
+		it('should fail when the auto-start threshold is unreachable for maxParticipants', async () => {
+			const payload = {
+				roomName: 'TestRoom',
+				config: {
+					maxParticipants: 1,
+					recording: {
+						enabled: true,
+						autoStart: MeetRecordingAutoStartMode.SECOND_PARTICIPANT
+					}
+				}
+			};
+
+			const response = await request(app)
+				.post(ROOMS_PATH)
+				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
+				.send(payload)
+				.expect(422);
+
+			expect(response.body.error).toBe('Room Error');
+			expect(response.body.message).toContain(
+				`Recording auto-start '${MeetRecordingAutoStartMode.SECOND_PARTICIPANT}'`
+			);
 		});
 
 		it('should fail with invalid JSON payload', async () => {
