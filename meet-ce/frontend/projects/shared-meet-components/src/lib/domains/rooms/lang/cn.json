@@ -277,10 +277,13 @@
         "DESCRIPTION": "选择何时自动开始录制",
         "MANUAL_TITLE": "手动录制",
         "MANUAL_DESC": "需要时手动开始录制",
-        "AUTO1_TITLE": "1 名参与者自动录制",
-        "AUTO1_DESC": "当 1 名参与者加入时自动开始录制",
-        "AUTO2_TITLE": "2 名参与者自动录制",
-        "AUTO2_DESC": "当 2 名参与者加入时自动开始录制"
+        "AUTO_TITLE": "自动录制",
+        "AUTO_DESC": "会议开始后自动开始录制",
+        "AUTOSTART_MODE_LABEL": "录制应在何时开始？",
+        "AUTOSTART_MODE_FIRST_TITLE": "第一位参与者加入时",
+        "AUTOSTART_MODE_FIRST_DESC": "会议开始后立即开始录制",
+        "AUTOSTART_MODE_SECOND_TITLE": "第二位参与者加入时",
+        "AUTOSTART_MODE_SECOND_DESC": "等待另一人加入后才开始录制"
       }
     },
     "ERRORS": {

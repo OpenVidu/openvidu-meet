@@ -277,10 +277,13 @@
         "DESCRIPTION": "Wählen Sie, wann die Aufnahme automatisch starten soll",
         "MANUAL_TITLE": "Manuelle Aufnahme",
         "MANUAL_DESC": "Aufnahme bei Bedarf manuell starten",
-        "AUTO1_TITLE": "Auto 1 Teilnehmer",
-        "AUTO1_DESC": "Aufnahme automatisch starten, wenn 1 Teilnehmer beitritt",
-        "AUTO2_TITLE": "Auto 2 Teilnehmer",
-        "AUTO2_DESC": "Aufnahme automatisch starten, wenn 2 Teilnehmer beitreten"
+        "AUTO_TITLE": "Automatische Aufnahme",
+        "AUTO_DESC": "Die Aufnahme startet automatisch, sobald das Meeting beginnt",
+        "AUTOSTART_MODE_LABEL": "Wann soll die Aufnahme starten?",
+        "AUTOSTART_MODE_FIRST_TITLE": "Erster Teilnehmer tritt bei",
+        "AUTOSTART_MODE_FIRST_DESC": "Startet, sobald das Meeting beginnt",
+        "AUTOSTART_MODE_SECOND_TITLE": "Zweiter Teilnehmer tritt bei",
+        "AUTOSTART_MODE_SECOND_DESC": "Wartet, bis eine weitere Person beitritt"
       }
     },
     "ERRORS": {

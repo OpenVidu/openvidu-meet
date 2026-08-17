@@ -277,10 +277,13 @@
         "DESCRIPTION": "Scegli quando la registrazione deve avviarsi automaticamente",
         "MANUAL_TITLE": "Registrazione manuale",
         "MANUAL_DESC": "Avvia la registrazione manualmente quando necessario",
-        "AUTO1_TITLE": "Auto 1 partecipante",
-        "AUTO1_DESC": "Avvia automaticamente la registrazione quando si unisce 1 partecipante",
-        "AUTO2_TITLE": "Auto 2 partecipanti",
-        "AUTO2_DESC": "Avvia automaticamente la registrazione quando si uniscono 2 partecipanti"
+        "AUTO_TITLE": "Registrazione automatica",
+        "AUTO_DESC": "La registrazione si avvia automaticamente non appena inizia la riunione",
+        "AUTOSTART_MODE_LABEL": "Quando deve avviarsi la registrazione?",
+        "AUTOSTART_MODE_FIRST_TITLE": "Si unisce il primo partecipante",
+        "AUTOSTART_MODE_FIRST_DESC": "Si avvia non appena inizia la riunione",
+        "AUTOSTART_MODE_SECOND_TITLE": "Si unisce il secondo partecipante",
+        "AUTOSTART_MODE_SECOND_DESC": "Attende che si unisca un'altra persona"
       }
     },
     "ERRORS": {

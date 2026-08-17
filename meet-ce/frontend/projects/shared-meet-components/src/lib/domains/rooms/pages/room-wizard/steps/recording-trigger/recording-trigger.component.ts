@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatRadioModule } from '@angular/material/radio';
+import { MeetRecordingAutoStartMode, MeetRoomOptions } from '@openvidu-meet/typings';
 import {
 	SelectableCardComponent,
 	SelectableCardOption,
@@ -12,9 +13,21 @@ import {
 } from '../../../../../../shared//components/selectable-card/selectable-card.component';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
-import { RecordingTriggerFormGroup, RecordingTriggerType } from '../../../../models/wizard-forms.model';
+import {
+	RecordingTriggerFormGroup,
+	RecordingTriggerFormValue,
+	RecordingTriggerMode,
+	triggerFormValueToAutoStart
+} from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
+
+interface AutoStartOption {
+	value: MeetRecordingAutoStartMode;
+	icon: string;
+	title: string;
+	description: string;
+}
 
 @Component({
 	selector: 'ov-recording-trigger',
@@ -35,29 +48,37 @@ export class RecordingTriggerComponent {
 	private readonly translateService = inject(TranslateService);
 
 	triggerForm: RecordingTriggerFormGroup;
-	triggerOptions: SelectableCardOption[] = [
+
+	// Top-level decision: whether recording starts by itself at all.
+	modeOptions: SelectableCardOption[] = [
 		{
 			id: 'manual',
 			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.MANUAL_TITLE'),
 			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.MANUAL_DESC'),
 			icon: 'touch_app'
-			// recommended: true
 		},
 		{
-			id: 'auto1',
-			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO1_TITLE'),
-			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO1_DESC'),
+			id: 'auto',
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO_DESC'),
+			icon: 'smart_display'
+		}
+	];
+
+	// Secondary decision, only shown once "Automatic" is picked: which participant threshold
+	// triggers the start.
+	autoStartOptions: AutoStartOption[] = [
+		{
+			value: MeetRecordingAutoStartMode.FIRST_PARTICIPANT,
 			icon: 'person',
-			isPro: true,
-			disabled: true
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_FIRST_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_FIRST_DESC')
 		},
 		{
-			id: 'auto2',
-			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO2_TITLE'),
-			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTO2_DESC'),
+			value: MeetRecordingAutoStartMode.SECOND_PARTICIPANT,
 			icon: 'people',
-			isPro: true,
-			disabled: true
+			title: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_SECOND_TITLE'),
+			description: this.translateService.translate('ROOMS.WIZARD.RECORDING_TRIGGER.AUTOSTART_MODE_SECOND_DESC')
 		}
 	];
 
@@ -75,24 +96,40 @@ export class RecordingTriggerComponent {
 		});
 	}
 
-	private saveFormData(_formValue: unknown) {
-		// Note: Recording trigger type is not part of MeetRoomOptions
-		// For now, just keep the form state
+	private saveFormData(formValue: Partial<RecordingTriggerFormValue>) {
+		const roomOptions = this.wizardService.roomOptions();
+		const stepData: Partial<MeetRoomOptions> = {
+			config: {
+				recording: {
+					enabled: roomOptions.config?.recording?.enabled ?? false,
+					autoStart: triggerFormValueToAutoStart(formValue)
+				}
+			}
+		};
+
+		this.wizardService.updateStepData(stepData);
 	}
 
 	/**
-	 * Handle option selection from the SelectableCardComponent
+	 * Handle the top-level Manual/Automatic selection from the SelectableCardComponent.
 	 */
-	onOptionChange(event: SelectionCardEvent): void {
+	onModeChange(event: SelectionCardEvent): void {
 		this.triggerForm.patchValue({
-			triggerType: event.optionId as RecordingTriggerType
+			triggerMode: event.optionId as RecordingTriggerMode
 		});
 	}
 
 	/**
-	 * Get the currently selected option ID for the SelectableCardComponent
+	 * Currently selected top-level mode, for the SelectableCardComponent.
 	 */
-	get selectedOption(): string {
-		return this.triggerForm.value.triggerType ?? 'manual';
+	get selectedMode(): string {
+		return this.triggerForm.value.triggerMode ?? 'manual';
+	}
+
+	/**
+	 * Whether the secondary participant-threshold choice should be shown.
+	 */
+	get isAutoMode(): boolean {
+		return this.selectedMode === 'auto';
 	}
 }

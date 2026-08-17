@@ -277,10 +277,13 @@
         "DESCRIPTION": "Elige cuándo debe iniciarse la grabación automáticamente",
         "MANUAL_TITLE": "Grabación manual",
         "MANUAL_DESC": "Inicia la grabación manualmente cuando sea necesario",
-        "AUTO1_TITLE": "Auto 1 participante",
-        "AUTO1_DESC": "Inicia la grabación automáticamente cuando se une 1 participante",
-        "AUTO2_TITLE": "Auto 2 participantes",
-        "AUTO2_DESC": "Inicia la grabación automáticamente cuando se unen 2 participantes"
+        "AUTO_TITLE": "Grabación automática",
+        "AUTO_DESC": "La grabación se inicia automáticamente en cuanto empieza la reunión",
+        "AUTOSTART_MODE_LABEL": "¿Cuándo debe empezar a grabar?",
+        "AUTOSTART_MODE_FIRST_TITLE": "Al unirse el primer participante",
+        "AUTOSTART_MODE_FIRST_DESC": "Empieza en cuanto arranca la reunión",
+        "AUTOSTART_MODE_SECOND_TITLE": "Al unirse el segundo participante",
+        "AUTOSTART_MODE_SECOND_DESC": "Espera a que se una otra persona"
       }
     },
     "ERRORS": {
