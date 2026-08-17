@@ -1,10 +1,5 @@
 import type { MeetRecordingInfo } from '@openvidu-meet/typings';
-import {
-	MeetingEndAction,
-	MeetRecordingAutoStartMode,
-	MeetRecordingStatus,
-	MeetRoomStatus
-} from '@openvidu-meet/typings';
+import { MeetingEndAction, MeetRecordingStatus, MeetRoomStatus } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { EgressInfo, ParticipantInfo, Room, WebhookEvent } from 'livekit-server-sdk';
 import { WebhookReceiver } from 'livekit-server-sdk';
@@ -17,6 +12,7 @@ import { OpenViduMeetError } from '../models/error.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import { RoomMemberRepository } from '../repositories/room-member.repository.js';
 import { RoomRepository } from '../repositories/room.repository.js';
+import type { MeetRecordingAutoStartPreset } from '../types/recording-auto-start.types.js';
 import { AiAssistantService } from './ai-assistant.service.js';
 import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
@@ -204,11 +200,10 @@ export class LivekitWebhookService {
 
 			if (!recording.enabled || !recording.autoStart || e2ee.enabled) return;
 
-			if (recording.autoStart === MeetRecordingAutoStartMode.SECOND_PARTICIPANT) {
-				const participantsCount = await this.meetingService.countStandardParticipants(roomId);
+			const autoStartConfig = RecordingHelper.getAutoStartConfig(recording.autoStart);
+			const thresholdReached = await this.isAutoStartThresholdReached(roomId, autoStartConfig);
 
-				if (participantsCount < 2) return;
-			}
+			if (!thresholdReached) return;
 
 			const recordingInfo = await this.recordingService.startRecording(roomId);
 			this.logger.info(`Recording '${recordingInfo.recordingId}' auto-started in room '${roomId}'`);
@@ -220,6 +215,19 @@ export class LivekitWebhookService {
 
 			this.logger.error(`Error auto-starting recording in room '${roomId}':`, error);
 		}
+	}
+
+	/**
+	 * Evaluates a recording auto-start preset against the meeting's live state. The preset itself
+	 * comes from {@link RecordingHelper.getAutoStartConfig}; this only holds the meeting state
+	 * (`MeetingService`) that answers it.
+	 */
+	protected async isAutoStartThresholdReached(
+		roomId: string,
+		preset: MeetRecordingAutoStartPreset
+	): Promise<boolean> {
+		const currentCount = await this.meetingService.countStandardParticipants(roomId, preset.participantRoles);
+		return currentCount >= preset.minParticipants;
 	}
 
 	/**

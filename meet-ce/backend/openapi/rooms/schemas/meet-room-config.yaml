@@ -11,6 +11,8 @@ MeetRoomConfig:
                 `null` means the number of participants is unlimited.
                 Config updates merge with the stored config, so an omitted limit keeps its
                 current value; send `null` to lift it.
+                A limit of `1` is incompatible with the `second_participant` recording auto-start
+                mode, which such a room could never reach.
         maxDurationMinutes:
             type: [integer, 'null']
             minimum: 1
@@ -57,12 +59,19 @@ MeetRecordingConfig:
             enum:
                 - first_participant
                 - second_participant
+                - null
+            default: null
             example: first_participant
             description: >
                 When set, the recording starts automatically once the configured participant
                 threshold is reached: `first_participant` starts as soon as the first participant
                 joins the meeting; `second_participant` starts as soon as a second participant
                 joins.
+                `null` (the default) means recordings only start on demand.
+                Config updates merge with the stored config, so an omitted value keeps its current
+                setting; send `null` to turn auto-start off.
+                `second_participant` needs a room that admits at least two participants, so pairing
+                it with `maxParticipants: 1` is rejected with a `422`.
         layout:
             type: string
             enum:

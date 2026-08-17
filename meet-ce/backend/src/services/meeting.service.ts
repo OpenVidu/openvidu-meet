@@ -1,4 +1,4 @@
-import type { MeetMeetingInfo, MeetParticipantInfo } from '@openvidu-meet/typings';
+import type { MeetMeetingInfo, MeetParticipantInfo, MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
@@ -129,13 +129,21 @@ export class MeetingService {
 	 * `getParticipants` lists and `maxParticipants` limits.
 	 *
 	 * @param roomId - The ID of the room
-	 * @returns The number of standard participants; 0 if the meeting hasn't started
+	 * @param roles - When given, only participants whose effective room role (see
+	 * `MeetParticipantHelper.extractRole`) is in this list are counted — used by the recording
+	 * auto-start presets, which always pass every role they mean to match instead of relying on an
+	 * "unfiltered" default that a new role could silently exclude.
+	 * @returns The number of matching standard participants; 0 if the meeting hasn't started
 	 * @throws Any failure other than a not-yet-started meeting (e.g. LiveKit unreachable) — it must
 	 * not be swallowed as empty, or `maxParticipants` would silently stop being enforced
 	 */
-	async countStandardParticipants(roomId: string): Promise<number> {
+	async countStandardParticipants(roomId: string, roles?: MeetRoomMemberRole[]): Promise<number> {
 		const participants = await this.getStandardParticipants(roomId);
-		return participants.length;
+
+		if (!roles) return participants.length;
+
+		return participants.filter((participant) => roles.includes(MeetParticipantHelper.extractRole(participant)))
+			.length;
 	}
 
 	/**

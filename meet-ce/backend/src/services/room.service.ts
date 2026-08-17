@@ -34,6 +34,7 @@ import {
 	errorDeletingRoom,
 	errorRoomActiveMeeting,
 	errorRoomNotFound,
+	errorUnreachableRecordingAutoStart,
 	internalError,
 	OpenViduMeetError
 } from '../models/error.model.js';
@@ -89,6 +90,8 @@ export class RoomService {
 	 */
 	async createMeetRoom(roomOptions: MeetRoomOptions): Promise<MeetRoom> {
 		const { roomName, autoDeletionDate, autoDeletionPolicy, config, roles, access } = roomOptions;
+
+		this.validateRecordingAutoStartIsReachable(config ?? {});
 
 		// Generate a unique room ID based on the room name
 		const roomIdPrefix = MeetRoomHelper.createRoomIdPrefixFromRoomName(roomName!) || 'room';
@@ -250,12 +253,32 @@ export class RoomService {
 			updatedConfig.recording.enabled = false;
 		}
 
+		this.validateRecordingAutoStartIsReachable(updatedConfig);
+
 		const updatedRoom = await this.roomRepository.updatePartial(roomId, { config: updatedConfig });
 		// Send signal to frontend.
 		// Note: Rooms updates are not allowed during active meetings, so we don't need to send an immediate update signal to participants,
 		// as they will receive the updated config when they join the meeting or when the meeting is restarted.
 		// await this.frontendEventService.sendRoomConfigUpdatedSignal(roomId, updatedRoom);
 		return updatedRoom;
+	}
+
+	/**
+	 * Checks if a recording `autoStart` property is reachable.
+	 * @throws Error when maxParticipants is lower than the required participants for auto start recording.
+	 */
+	protected validateRecordingAutoStartIsReachable(config: Partial<MeetRoomConfig>): void {
+		const { maxParticipants } = config;
+		const autoStart = config.recording?.autoStart;
+
+		// `null` (and an absent limit) mean unlimited, which reaches every threshold
+		if (!autoStart || typeof maxParticipants !== 'number') return;
+
+		const minParticipantsAutoStart = MeetRoomHelper.minParticipantsForAutoStart(autoStart);
+
+		if (maxParticipants < minParticipantsAutoStart) {
+			throw errorUnreachableRecordingAutoStart(autoStart, maxParticipants, minParticipantsAutoStart);
+		}
 	}
 
 	/**
