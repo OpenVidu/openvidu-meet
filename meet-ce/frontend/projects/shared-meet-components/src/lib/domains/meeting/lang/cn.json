@@ -3,7 +3,9 @@
 		"JOINING": "正在加入会议...",
 		"LANDSCAPE_WARNING": "请将设备旋转到纵向以获得最佳体验",
 		"DISCONNECTED": "您已离开会议",
-		"DISCONNECTED_SUBTITLE": "会议已结束"
+		"DISCONNECTED_SUBTITLE": "会议已结束",
+		"ENDING_SOON_ONE_MINUTE": "会议将在约 1 分钟后结束",
+		"ENDING_SOON_MANY_MINUTES": "会议将在约 {minutes} 分钟后结束"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "加入会议",

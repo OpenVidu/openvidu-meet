@@ -3,7 +3,9 @@
 		"JOINING": "Partecipazione alla riunione in corso...",
 		"LANDSCAPE_WARNING": "Per una migliore esperienza, ruota il dispositivo in modalità verticale",
 		"DISCONNECTED": "Hai lasciato la riunione",
-		"DISCONNECTED_SUBTITLE": "La riunione è terminata"
+		"DISCONNECTED_SUBTITLE": "La riunione è terminata",
+		"ENDING_SOON_ONE_MINUTE": "La riunione terminerà tra circa 1 minuto",
+		"ENDING_SOON_MANY_MINUTES": "La riunione terminerà tra circa {minutes} minuti"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Partecipa alla riunione",

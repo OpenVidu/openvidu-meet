@@ -3,7 +3,9 @@
 		"JOINING": "会議に参加しています...",
 		"LANDSCAPE_WARNING": "より良い体験のために、デバイスを縦向きに回転させてください",
 		"DISCONNECTED": "会議から退出しました",
-		"DISCONNECTED_SUBTITLE": "会議が終了しました"
+		"DISCONNECTED_SUBTITLE": "会議が終了しました",
+		"ENDING_SOON_ONE_MINUTE": "会議はあと約1分で終了します",
+		"ENDING_SOON_MANY_MINUTES": "会議はあと約{minutes}分で終了します"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "会議に参加する",

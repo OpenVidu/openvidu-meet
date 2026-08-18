@@ -3,7 +3,9 @@
 		"JOINING": "Entrando na reunião...",
 		"LANDSCAPE_WARNING": "Por favor, gire seu dispositivo para o modo retrato para uma melhor experiência",
 		"DISCONNECTED": "Você saiu da reunião",
-		"DISCONNECTED_SUBTITLE": "A reunião foi encerrada"
+		"DISCONNECTED_SUBTITLE": "A reunião foi encerrada",
+		"ENDING_SOON_ONE_MINUTE": "A reunião terminará em cerca de 1 minuto",
+		"ENDING_SOON_MANY_MINUTES": "A reunião terminará em cerca de {minutes} minutos"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Entrar na reunião",

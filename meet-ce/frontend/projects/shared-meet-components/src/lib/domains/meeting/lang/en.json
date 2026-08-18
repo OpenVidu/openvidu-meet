@@ -12,7 +12,9 @@
 		"JOINING": "Joining meeting...",
 		"LANDSCAPE_WARNING": "Please rotate your device to portrait for a better experience",
 		"DISCONNECTED": "You have left the meeting",
-		"DISCONNECTED_SUBTITLE": "The meeting has ended"
+		"DISCONNECTED_SUBTITLE": "The meeting has ended",
+		"ENDING_SOON_ONE_MINUTE": "This meeting will end in about 1 minute",
+		"ENDING_SOON_MANY_MINUTES": "This meeting will end in about {minutes} minutes"
 	},
 	"TOOLBAR": {
 		"MUTE_AUDIO": "Mute your audio",

@@ -3,7 +3,9 @@
 		"JOINING": "Deelnemen aan meeting...",
 		"LANDSCAPE_WARNING": "Draai uw apparaat voor een betere ervaring naar portretmodus",
 		"DISCONNECTED": "U heeft de meeting verlaten",
-		"DISCONNECTED_SUBTITLE": "De meeting is beëindigd"
+		"DISCONNECTED_SUBTITLE": "De meeting is beëindigd",
+		"ENDING_SOON_ONE_MINUTE": "De meeting eindigt over ongeveer 1 minuut",
+		"ENDING_SOON_MANY_MINUTES": "De meeting eindigt over ongeveer {minutes} minuten"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Deelnemen aan meeting",
