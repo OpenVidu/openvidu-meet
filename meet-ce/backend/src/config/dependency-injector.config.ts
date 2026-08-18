@@ -47,6 +47,7 @@ import { MeetingPresenceService } from '../services/meeting-presence.service.js'
 import { MeetingService } from '../services/meeting.service.js';
 import { MigrationService } from '../services/migration.service.js';
 import { ParticipantNameService } from '../services/participant-name.service.js';
+import { RecordingAutoStartStateService } from '../services/recording-auto-start-state.service.js';
 import { RecordingScheduledTasksService } from '../services/recording-scheduled-tasks.service.js';
 import { RecordingService } from '../services/recording.service.js';
 import { RoomMemberService } from '../services/room-member.service.js';
@@ -153,6 +154,7 @@ const domainModule = new ContainerModule(({ bind }) => {
 	bind(WebhookMigration).toSelf().inSingletonScope();
 	bind(FrontendEventService).toSelf().inSingletonScope();
 	bind(LiveKitService).toSelf().inSingletonScope();
+	bind(RecordingAutoStartStateService).toSelf().inSingletonScope();
 	bind(RecordingService).toSelf().inSingletonScope();
 	bind(RoomService).toSelf().inSingletonScope();
 	bind(MeetingService).toSelf().inSingletonScope();
