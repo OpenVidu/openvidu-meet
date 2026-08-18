@@ -1,5 +1,9 @@
 import { inject, Service } from '@angular/core';
-import { LocalMediaControlService, MeetingLiveKitService } from '../../meeting/openvidu-components';
+import {
+	LocalMediaControlService,
+	LocalMediaStateService,
+	MeetingLiveKitService
+} from '../../meeting/openvidu-components';
 import { MeetingContextService } from '../../meeting/services/meeting-context.service';
 import { MeetingModerationService } from '../../meeting/services/meeting-moderation.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
@@ -28,6 +32,7 @@ export class EmbeddedCommandService {
 	private readonly roomMemberContextService = inject(RoomMemberContextService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localMediaControlService = inject(LocalMediaControlService);
+	private readonly localMediaState = inject(LocalMediaStateService);
 	private readonly log = inject(LoggerService).get('EmbeddedCommandService');
 
 	/**
@@ -110,7 +115,7 @@ export class EmbeddedCommandService {
 		}
 
 		try {
-			const targetEnabled = enabled ?? !this.localMediaControlService.isMyMicrophoneEnabled();
+			const targetEnabled = enabled ?? !this.localMediaState.microphoneEnabled();
 			this.log.d(`Setting microphone enabled to ${targetEnabled}...`);
 			await this.localMediaControlService.setMicrophoneEnabled(targetEnabled);
 		} catch (error) {
@@ -129,7 +134,7 @@ export class EmbeddedCommandService {
 		}
 
 		try {
-			const targetEnabled = enabled ?? !this.localMediaControlService.isMyCameraEnabled();
+			const targetEnabled = enabled ?? !this.localMediaState.cameraEnabled();
 			this.log.d(`Setting camera enabled to ${targetEnabled}...`);
 			await this.localMediaControlService.setCameraEnabled(targetEnabled);
 		} catch (error) {
@@ -148,7 +153,7 @@ export class EmbeddedCommandService {
 		}
 
 		try {
-			const targetEnabled = enabled ?? !this.localMediaControlService.isMyScreenShareEnabled();
+			const targetEnabled = enabled ?? !this.localMediaState.screenShareEnabled();
 			this.log.d(`Setting screen share enabled to ${targetEnabled}...`);
 			await this.localMediaControlService.setScreenShareEnabled(targetEnabled);
 		} catch (error) {

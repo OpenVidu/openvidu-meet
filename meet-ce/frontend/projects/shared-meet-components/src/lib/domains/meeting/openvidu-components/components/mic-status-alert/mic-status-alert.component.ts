@@ -16,6 +16,7 @@ import {
 } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 import { TranslatePipe } from '../../pipes/translate.pipe';
+import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
 import { MicActivityService } from '../../services/mic-activity/mic-activity.service';
 
 type MicAlertKind = 'system-muted' | 'muted-speaking';
@@ -27,8 +28,6 @@ type MicAlertKind = 'system-muted' | 'muted-speaking';
 	styleUrl: './mic-status-alert.component.scss'
 })
 export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
-	/** Whether the microphone is enabled in-app (i.e. not muted by the user). */
-	readonly micEnabled = input<boolean>(true);
 	/**
 	 * CSS selector (within this component's anchor) for the mic button the popup points at. The
 	 * overlay connects to that element and the pointer is aligned to its center, so the bubble
@@ -38,6 +37,9 @@ export class MicStatusAlertComponent implements AfterViewInit, OnDestroy {
 	readonly originSelector = input<string>();
 
 	private readonly popupTpl = viewChild<TemplateRef<unknown>>('popupTpl');
+
+	/** Whether the microphone is enabled in-app (i.e. not muted by the user). */
+	private readonly micEnabled = inject(LocalMediaStateService).microphoneEnabled;
 
 	private readonly micActivity = inject(MicActivityService);
 	private readonly overlay = inject(Overlay);

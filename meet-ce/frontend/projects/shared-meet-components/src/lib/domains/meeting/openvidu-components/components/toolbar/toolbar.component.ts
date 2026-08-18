@@ -38,7 +38,8 @@ import { DocumentService } from '../../services/document/document.service';
 import { Room } from '../../services/livekit';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
-import { LocalMediaService } from '../../services/local-media/local-media.service';
+import { LocalMediaControlService } from '../../services/local-media-control/local-media-control.service';
+import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
 import { ParticipantService } from '../../services/participant/participant.service';
 import { PlatformService } from '../../services/platform/platform.service';
 import { RecordingService } from '../../services/recording/recording.service';
@@ -73,7 +74,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly chatService = inject(ChatService);
 	private readonly panelService = inject(PanelService);
 	private readonly participantService = inject(ParticipantService);
-	private readonly localMediaService = inject(LocalMediaService);
+	private readonly localMediaControlService = inject(LocalMediaControlService);
+	private readonly localMediaState = inject(LocalMediaStateService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly deviceService = inject(DeviceService);
 	private readonly actionService = inject(ActionService);
@@ -97,24 +99,9 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	readonly onParticipantLeft = output<ParticipantLeftEvent>();
 
 	/**
-	 * This event is emitted when the video state changes, providing information about if the video is enabled (true) or disabled (false).
-	 */
-	readonly onVideoEnabledChanged = output<boolean>();
-
-	/**
-	 * This event is emitted when the video state changes, providing information about if the video is enabled (true) or disabled (false).
-	 */
-	readonly onAudioEnabledChanged = output<boolean>();
-
-	/**
 	 * This event is emitted when the fullscreen state changes, providing information about if the fullscreen is enabled (true) or disabled (false).
 	 */
 	readonly onFullscreenEnabledChanged = output<boolean>();
-
-	/**
-	 * This event is emitted when the screen share state changes, providing information about if the screen share is enabled (true) or disabled (false).
-	 */
-	readonly onScreenShareEnabledChanged = output<boolean>();
 
 	/**
 	 * This event is fired when the user clicks on the start recording button.
@@ -157,16 +144,18 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	private readonly lastKnownChatMessageCount = signal(0);
 	/**
 	 * @ignore
+	 * Local media state, read from its single owner. These used to be local signals synced against
+	 * the participant by an effect that also compared the previous value by hand.
 	 */
-	readonly isScreenShareEnabled = signal(false);
+	readonly isScreenShareEnabled = this.localMediaState.screenShareEnabled;
 	/**
 	 * @ignore
 	 */
-	readonly isCameraEnabled = signal(true);
+	readonly isCameraEnabled = this.localMediaState.cameraEnabled;
 	/**
 	 * @ignore
 	 */
-	readonly isMicrophoneEnabled = signal(true);
+	readonly isMicrophoneEnabled = this.localMediaState.microphoneEnabled;
 	/**
 	 * @ignore
 	 * Read straight off the connection owner instead of mirroring `RoomEvent.Reconnecting`/`Reconnected`
@@ -389,42 +378,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 
 		document.addEventListener('keydown', onDocumentKeyDown);
 		this.destroyRef.onDestroy(() => document.removeEventListener('keydown', onDocumentKeyDown));
-
-		// Effect to react to local participant changes
-		effect(() => {
-			const p = this.participantService.localParticipant();
-
-			if (!p) return;
-
-			// Read current state into local variables first
-			const currentCameraEnabled = this.isCameraEnabled();
-			const currentMicEnabled = this.isMicrophoneEnabled();
-			const currentScreenShareEnabled = this.isScreenShareEnabled();
-
-			// Compare with participant state
-			const cameraChanged = currentCameraEnabled !== p.isCameraEnabled;
-			const micChanged = currentMicEnabled !== p.isMicrophoneEnabled;
-			const screenShareChanged = currentScreenShareEnabled !== p.isScreenShareEnabled;
-
-			// Only emit and update if there's an actual change. Persistence of the camera/mic
-			// preference is owned by LocalMediaService — this effect only mirrors
-			// participant state into local signals + emits API events; it must NOT write storage, or
-			// a non-user state change (e.g. moderator force-mute) would clobber the user's preference.
-			if (cameraChanged) {
-				this.onVideoEnabledChanged.emit(p.isCameraEnabled);
-				this.isCameraEnabled.set(p.isCameraEnabled);
-			}
-
-			if (micChanged) {
-				this.onAudioEnabledChanged.emit(p.isMicrophoneEnabled);
-				this.isMicrophoneEnabled.set(p.isMicrophoneEnabled);
-			}
-
-			if (screenShareChanged) {
-				this.onScreenShareEnabledChanged.emit(p.isScreenShareEnabled);
-				this.isScreenShareEnabled.set(p.isScreenShareEnabled);
-			}
-		});
 	}
 
 	async ngOnInit() {
@@ -455,8 +408,8 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	async toggleMicrophone() {
 		try {
 			this.microphoneMuteChanging.set(false);
-			const isMicrophoneEnabled = this.localMediaService.isMyMicrophoneEnabled();
-			await this.localMediaService.setMicrophoneEnabled(!isMicrophoneEnabled);
+			const isMicrophoneEnabled = this.isMicrophoneEnabled();
+			await this.localMediaControlService.setMicrophoneEnabled(!isMicrophoneEnabled);
 		} catch (error: unknown) {
 			this.log.e('There was an error toggling microphone:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
@@ -474,13 +427,13 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	async toggleCamera() {
 		try {
 			this.cameraMuteChanging.set(true);
-			const isCameraEnabled = this.localMediaService.isMyCameraEnabled();
+			const isCameraEnabled = this.isCameraEnabled();
 
 			if (this.panelService.isBackgroundEffectsPanelOpened() && isCameraEnabled) {
 				this.panelService.togglePanel(PanelType.BACKGROUND_EFFECTS);
 			}
 
-			await this.localMediaService.setCameraEnabled(!isCameraEnabled);
+			await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
 		} catch (error) {
 			this.log.e('There was an error toggling camera:', (error as any).code, (error as any).message);
 			this.actionService.openDialog(
@@ -496,15 +449,15 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 * @ignore
 	 */
 	async toggleScreenShare() {
-		const isScreenShareEnabled = this.localMediaService.isMyScreenShareEnabled();
-		await this.localMediaService.setScreenShareEnabled(!isScreenShareEnabled);
+		const isScreenShareEnabled = this.isScreenShareEnabled();
+		await this.localMediaControlService.setScreenShareEnabled(!isScreenShareEnabled);
 	}
 
 	/**
 	 * @ignore
 	 */
 	async replaceScreenTrack() {
-		await this.localMediaService.switchScreenShare();
+		await this.localMediaControlService.switchScreenShare();
 	}
 
 	/**

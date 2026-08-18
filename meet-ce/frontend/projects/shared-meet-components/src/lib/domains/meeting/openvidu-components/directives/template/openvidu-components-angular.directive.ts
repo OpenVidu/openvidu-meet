@@ -82,14 +82,14 @@ import { Directive, TemplateRef, ViewContainerRef, inject } from '@angular/core'
  *
  *   // Toggles the camera on and off.
  *   async toggleVideo() {
- *     const isCameraEnabled = this.localMediaService.isMyCameraEnabled();
- *     await this.localMediaService.setCameraEnabled(!isCameraEnabled);
+ *     const isCameraEnabled = this.localMediaStateService.cameraEnabled();
+ *     await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
  *   }
  *
  *   // Toggles the microphone on and off.
  *   async toggleAudio() {
- *     const isMicrophoneEnabled = this.localMediaService.isMyMicrophoneEnabled();
- *     await this.localMediaService.setMicrophoneEnabled(!isMicrophoneEnabled);
+ *     const isMicrophoneEnabled = this.localMediaStateService.microphoneEnabled();
+ *     await this.localMediaControlService.setMicrophoneEnabled(!isMicrophoneEnabled);
  *   }
  *
  *   // Gets a token for a participant.
@@ -218,14 +218,14 @@ export class ToolbarDirective {
  *
  * 	// Toggles the camera on/off.
  * 	async toggleVideo() {
- * 		const isCameraEnabled = this.localMediaService.isMyCameraEnabled();
- * 		await this.localMediaService.setCameraEnabled(!isCameraEnabled);
+ * 		const isCameraEnabled = this.localMediaStateService.cameraEnabled();
+ * 		await this.localMediaControlService.setCameraEnabled(!isCameraEnabled);
  * 	}
  *
  * 	// Toggles the microphone on/off.
  * 	async toggleAudio() {
- * 		const isMicrophoneEnabled = this.localMediaService.isMyMicrophoneEnabled();
- * 		await this.localMediaService.setMicrophoneEnabled(!isMicrophoneEnabled);
+ * 		const isMicrophoneEnabled = this.localMediaStateService.microphoneEnabled();
+ * 		await this.localMediaControlService.setMicrophoneEnabled(!isMicrophoneEnabled);
  * 	}
  *
  * 	// Retrieves a token from the server to authenticate the user.
