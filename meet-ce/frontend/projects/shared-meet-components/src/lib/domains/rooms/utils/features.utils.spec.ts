@@ -1,4 +1,4 @@
-import { MEET_PERMISSION_KEYS, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import { MEET_PERMISSION_KEYS, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from './features.utils';
 
@@ -130,6 +130,46 @@ describe('FeatureCalculator.applyPermissions', () => {
 			const features = featuresFor({ mediaPublishVideo: false });
 			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true, videoEnabled: true });
 
+			expect(features.videoEnabled).toBeFalse();
+		});
+
+		it('should lower the initial state from the room-wide *OnJoin config', () => {
+			const features = featuresFor();
+			FeatureCalculator.applyInitialMediaEnabled(
+				features,
+				{ audioEnabled: true, videoEnabled: true },
+				{ audioEnabledOnJoin: false, videoEnabledOnJoin: false } as MeetRoomConfig
+			);
+
+			expect(features.audioEnabled).toBeFalse();
+			expect(features.videoEnabled).toBeFalse();
+			// Initial state, not a capability: the participant may re-enable the devices
+			expect(features.showMicrophone).toBeTrue();
+			expect(features.showCamera).toBeTrue();
+		});
+
+		it('should treat an absent *OnJoin config as enabled', () => {
+			const features = featuresFor();
+			FeatureCalculator.applyInitialMediaEnabled(
+				features,
+				{ audioEnabled: true, videoEnabled: true },
+				{} as MeetRoomConfig
+			);
+
+			expect(features.audioEnabled).toBeTrue();
+			expect(features.videoEnabled).toBeTrue();
+		});
+
+		it('should AND the attributes with the *OnJoin config', () => {
+			// Attribute lowers audio, config lowers video: both end up disabled
+			const features = featuresFor();
+			FeatureCalculator.applyInitialMediaEnabled(
+				features,
+				{ audioEnabled: false, videoEnabled: true },
+				{ audioEnabledOnJoin: true, videoEnabledOnJoin: false } as MeetRoomConfig
+			);
+
+			expect(features.audioEnabled).toBeFalse();
 			expect(features.videoEnabled).toBeFalse();
 		});
 	});

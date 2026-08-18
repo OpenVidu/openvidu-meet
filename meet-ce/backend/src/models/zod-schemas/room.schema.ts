@@ -185,6 +185,11 @@ const maxDurationMinutesSchema = z
 	.nullable()
 	.optional();
 
+// Room-wide initial media state (audioEnabledOnJoin/videoEnabledOnJoin): plain booleans, since
+// unlike the limits above `false` is the explicit "off" value and an absent key already reads as
+// the default (`true`) — no `null` spelling is needed.
+const mediaEnabledOnJoinSchema = z.boolean('Must be a boolean').optional();
+
 const RecordingConfigSchema: z.ZodType<MeetRecordingConfig> = z.object({
 	enabled: z.boolean(),
 	autoStart: z.enum(MeetRecordingAutoStartMode).nullable().optional(),
@@ -244,6 +249,8 @@ const UpdateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
 		maxParticipants: maxParticipantsSchema,
 		maxDurationMinutes: maxDurationMinutesSchema,
+		audioEnabledOnJoin: mediaEnabledOnJoinSchema,
+		videoEnabledOnJoin: mediaEnabledOnJoinSchema,
 		recording: RecordingConfigSchema.optional(),
 		chat: ChatConfigSchema.optional(),
 		virtualBackground: VirtualBackgroundConfigSchema.optional(),
@@ -274,6 +281,8 @@ const CreateRoomConfigSchema: z.ZodType<Partial<MeetRoomConfig>> = z
 	.object({
 		maxParticipants: maxParticipantsSchema,
 		maxDurationMinutes: maxDurationMinutesSchema,
+		audioEnabledOnJoin: mediaEnabledOnJoinSchema.default(true),
+		videoEnabledOnJoin: mediaEnabledOnJoinSchema.default(true),
 		recording: RecordingConfigSchema.optional().default(() => ({
 			enabled: true,
 			layout: MeetRecordingLayout.GRID,
@@ -407,7 +416,9 @@ export const RoomOptionsSchema: z.ZodType<MeetRoomOptions> = z.object({
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: true }
+		captions: { enabled: true },
+		audioEnabledOnJoin: true,
+		videoEnabledOnJoin: true
 	}),
 	roles: RoomRolesConfigSchema.optional(),
 	access: RoomAccessConfigSchema.optional().default({

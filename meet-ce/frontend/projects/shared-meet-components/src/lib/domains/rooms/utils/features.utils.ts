@@ -54,17 +54,23 @@ export class FeatureCalculator {
 	}
 
 	/**
-	 * Applies the embedding application's initial media state (initial-audio-enabled /
-	 * initial-video-enabled). It only ever lowers `audioEnabled`/`videoEnabled`, so a permission
-	 * that already denies the device always wins, and it leaves the `show*` controls untouched:
-	 * this is the initial state, not a capability — the participant may re-enable the device.
+	 * Applies the participant's initial media state: the embedding application's
+	 * initial-audio-enabled / initial-video-enabled attributes combined (logical AND) with the
+	 * room-wide `config.audioEnabledOnJoin` / `config.videoEnabledOnJoin` (absent = enabled).
+	 * It only ever lowers `audioEnabled`/`videoEnabled`, so a permission that already denies the
+	 * device always wins, and it leaves the `show*` controls untouched: this is the initial state,
+	 * not a capability — the participant may re-enable the device.
 	 */
-	static applyInitialMediaEnabled(features: RoomFeatures, initialMediaEnabled: InitialMediaEnabledPreferences): void {
-		if (!initialMediaEnabled.audioEnabled) {
+	static applyInitialMediaEnabled(
+		features: RoomFeatures,
+		initialMediaEnabled: InitialMediaEnabledPreferences,
+		roomConfig?: MeetRoomConfig
+	): void {
+		if (!initialMediaEnabled.audioEnabled || roomConfig?.audioEnabledOnJoin === false) {
 			features.audioEnabled = false;
 		}
 
-		if (!initialMediaEnabled.videoEnabled) {
+		if (!initialMediaEnabled.videoEnabled || roomConfig?.videoEnabledOnJoin === false) {
 			features.videoEnabled = false;
 		}
 	}

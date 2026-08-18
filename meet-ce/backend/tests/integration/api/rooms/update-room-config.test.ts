@@ -60,6 +60,8 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 			expect(updateResponse.body).toEqual({
 				...updatedConfig,
+				audioEnabledOnJoin: true, // Creation default, unchanged
+				videoEnabledOnJoin: true, // Creation default, unchanged
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
 			});
 
@@ -68,6 +70,8 @@ describe('Room API Tests', () => {
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config).toEqual({
 				...updatedConfig,
+				audioEnabledOnJoin: true, // Creation default, unchanged
+				videoEnabledOnJoin: true, // Creation default, unchanged
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
 			});
 		});
@@ -106,6 +110,33 @@ describe('Room API Tests', () => {
 			expect(clearResponse.body.maxParticipants).toBe(5);
 			expect(clearResponse.body.maxDurationMinutes).toBeNull();
 			expect(clearResponse.body.recording.autoStart).toBeNull();
+		});
+
+		it('should update the room-wide initial media state', async () => {
+			// Creation defaults both *OnJoin fields to true
+			const createdRoom = await createRoom({ roomName: 'media-on-join-test' }, undefined, {
+				xExtraFields: 'config'
+			});
+			expect(createdRoom.config.audioEnabledOnJoin).toBe(true);
+			expect(createdRoom.config.videoEnabledOnJoin).toBe(true);
+
+			const updateResponse = await updateRoomConfig(createdRoom.roomId, {
+				audioEnabledOnJoin: false
+			});
+
+			expect(updateResponse.status).toBe(200);
+			expect(updateResponse.body.audioEnabledOnJoin).toBe(false);
+			// Config updates deep-merge, so the omitted sibling keeps its value
+			expect(updateResponse.body.videoEnabledOnJoin).toBe(true);
+
+			const restoreResponse = await updateRoomConfig(createdRoom.roomId, {
+				audioEnabledOnJoin: true,
+				videoEnabledOnJoin: false
+			});
+
+			expect(restoreResponse.status).toBe(200);
+			expect(restoreResponse.body.audioEnabledOnJoin).toBe(true);
+			expect(restoreResponse.body.videoEnabledOnJoin).toBe(false);
 		});
 
 		it('should allow partial config updates', async () => {
@@ -149,7 +180,9 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				audioEnabledOnJoin: true, // Creation default
+				videoEnabledOnJoin: true // Creation default
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
 		});
@@ -358,7 +391,9 @@ describe('Room API Tests', () => {
 				chat: { enabled: true },
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
-				captions: { enabled: true }
+				captions: { enabled: true },
+				audioEnabledOnJoin: true, // Creation default
+				videoEnabledOnJoin: true // Creation default
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
 		});

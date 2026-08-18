@@ -17,6 +17,20 @@ export interface MeetRoomConfig {
 	 */
 	maxDurationMinutes?: number | null;
 	/**
+	 * Whether participants join the meeting with their microphone initially enabled.
+	 * This is the initial state, not a capability: the participant may re-enable the device
+	 * afterwards, and a denying permission always wins. Combined (logical AND) with the embedding
+	 * application's `initial-audio-enabled` attribute. `true` when absent.
+	 */
+	audioEnabledOnJoin?: boolean;
+	/**
+	 * Whether participants join the meeting with their camera initially enabled.
+	 * This is the initial state, not a capability: the participant may re-enable the device
+	 * afterwards, and a denying permission always wins. Combined (logical AND) with the embedding
+	 * application's `initial-video-enabled` attribute. `true` when absent.
+	 */
+	videoEnabledOnJoin?: boolean;
+	/**
 	 * Configuration for chat feature. See {@link MeetChatConfig} for details.
 	 */
 	chat: MeetChatConfig;

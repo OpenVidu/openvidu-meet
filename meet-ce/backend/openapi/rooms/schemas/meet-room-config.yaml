@@ -23,6 +23,22 @@ MeetRoomConfig:
                 `null` means the meeting duration is unlimited.
                 Config updates merge with the stored config, so an omitted limit keeps its
                 current value; send `null` to lift it.
+        audioEnabledOnJoin:
+            type: boolean
+            default: true
+            description: >
+                Whether participants join the meeting with their microphone initially enabled.
+                This is the initial state, not a capability: the participant may re-enable the
+                device afterwards, and a denying permission always wins. Combined (logical AND)
+                with the embedding application's `initial-audio-enabled` attribute.
+        videoEnabledOnJoin:
+            type: boolean
+            default: true
+            description: >
+                Whether participants join the meeting with their camera initially enabled.
+                This is the initial state, not a capability: the participant may re-enable the
+                device afterwards, and a denying permission always wins. Combined (logical AND)
+                with the embedding application's `initial-video-enabled` attribute.
         chat:
             $ref: '#/MeetChatConfig'
             description: Config for the chat feature in the room.

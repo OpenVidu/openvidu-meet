@@ -270,6 +270,14 @@ const MeetRoomConfigSchema = new Schema(
 			type: Number,
 			required: false
 		},
+		audioEnabledOnJoin: {
+			type: Boolean,
+			required: false
+		},
+		videoEnabledOnJoin: {
+			type: Boolean,
+			required: false
+		},
 		chat: {
 			type: MeetChatConfigSchema,
 			required: true
