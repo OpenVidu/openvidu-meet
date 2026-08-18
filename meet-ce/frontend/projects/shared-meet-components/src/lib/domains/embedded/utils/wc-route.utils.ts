@@ -62,8 +62,10 @@ export const wcRouteFromAttributes = (inputs: WebComponentPropertyValues): WcRou
 				participantName: inputs.participantName || undefined,
 				participantExternalId: inputs.participantExternalId || undefined,
 				participantMetadata: inputs.participantMetadata || undefined,
-				initialAudioMuted: inputs.initialAudioMuted || undefined,
-				initialVideoMuted: inputs.initialVideoMuted || undefined,
+				// No `|| undefined` collapse here: unlike the other optional fields above, `false` is
+				// a meaningful, non-default value for these two (explicitly disabled), not an absence.
+				initialAudioEnabled: inputs.initialAudioEnabled,
+				initialVideoEnabled: inputs.initialVideoEnabled,
 				leaveRedirectUrl: inputs.leaveRedirectUrl || undefined
 			}
 		};

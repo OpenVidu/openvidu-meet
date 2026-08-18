@@ -1,5 +1,77 @@
-import { expect, Page } from '@playwright/test';
-import { wcLocator } from './webcomponent.helper';
+import { expect, Locator, Page } from '@playwright/test';
+import { Integration, meetLocator, wcLocator } from './webcomponent.helper';
+
+// ─── Local media state (mic/camera) ────────────────────────────────────────
+//
+// Both the prejoin (media-setup) screen and the in-meeting toolbar bind their
+// mic/camera button's enabled/disabled class straight off the participant's
+// real device state (`isMicrophoneEnabled()`/`isCameraEnabled()` computed
+// independently per screen) — reading it is a ground-truth check that the
+// device is actually on or off, independent of any internal bookkeeping.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** The prejoin (media-setup) mic toggle button — `device-enabled`/`device-disabled` class. */
+export const prejoinMicButton = (page: Page, integration: Integration): Locator =>
+	meetLocator(page, integration, '#microphone-button');
+
+/** The prejoin (media-setup) camera toggle button — `device-enabled`/`device-disabled` class. */
+export const prejoinCameraButton = (page: Page, integration: Integration): Locator =>
+	meetLocator(page, integration, '#camera-button');
+
+/** The in-meeting toolbar mic button — `disabled` class when muted. */
+export const toolbarMicButton = (page: Page, integration: Integration): Locator =>
+	meetLocator(page, integration, '#mic-btn');
+
+/** The in-meeting toolbar camera button — `disabled` class when off. */
+export const toolbarCameraButton = (page: Page, integration: Integration): Locator =>
+	meetLocator(page, integration, '#camera-btn');
+
+/** Asserts the prejoin mic button reflects `enabled` (`device-enabled` vs. `device-disabled`). */
+export const expectPrejoinMicEnabled = async (
+	page: Page,
+	integration: Integration,
+	enabled: boolean,
+	options: { timeout?: number } = {}
+): Promise<void> => {
+	const button = prejoinMicButton(page, integration);
+	await expect(button).toHaveClass(enabled ? /device-enabled/ : /device-disabled/, options);
+};
+
+/** Asserts the prejoin camera button reflects `enabled` (`device-enabled` vs. `device-disabled`). */
+export const expectPrejoinCameraEnabled = async (
+	page: Page,
+	integration: Integration,
+	enabled: boolean,
+	options: { timeout?: number } = {}
+): Promise<void> => {
+	const button = prejoinCameraButton(page, integration);
+	await expect(button).toHaveClass(enabled ? /device-enabled/ : /device-disabled/, options);
+};
+
+/**
+ * Asserts the in-meeting toolbar mic button reflects `enabled` (the `.disabled` visual class,
+ * distinct from the HTML `disabled` attribute the button also carries when there is no device).
+ */
+export const expectToolbarMicEnabled = async (
+	page: Page,
+	integration: Integration,
+	enabled: boolean,
+	options: { timeout?: number } = {}
+): Promise<void> => {
+	const button = toolbarMicButton(page, integration);
+	await (enabled ? expect(button).not.toHaveClass(/disabled/, options) : expect(button).toHaveClass(/disabled/, options));
+};
+
+/** Asserts the in-meeting toolbar camera button reflects `enabled` (see {@link expectToolbarMicEnabled}). */
+export const expectToolbarCameraEnabled = async (
+	page: Page,
+	integration: Integration,
+	enabled: boolean,
+	options: { timeout?: number } = {}
+): Promise<void> => {
+	const button = toolbarCameraButton(page, integration);
+	await (enabled ? expect(button).not.toHaveClass(/disabled/, options) : expect(button).toHaveClass(/disabled/, options));
+};
 
 // ─── Screen sharing ─────────────────────────────────────────────────────────
 

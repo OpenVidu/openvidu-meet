@@ -29,8 +29,8 @@ export interface MeetingRoute {
 		participantName?: string;
 		participantExternalId?: string;
 		participantMetadata?: string;
-		initialAudioMuted?: boolean;
-		initialVideoMuted?: boolean;
+		initialAudioEnabled?: boolean;
+		initialVideoEnabled?: boolean;
 		leaveRedirectUrl?: string;
 	};
 }

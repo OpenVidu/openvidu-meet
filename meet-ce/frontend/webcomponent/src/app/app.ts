@@ -88,8 +88,8 @@ export class App {
 	readonly participantExternalId = input<string | undefined>(undefined);
 	readonly participantMetadata = input<string | undefined>(undefined);
 	// booleanAttribute makes the DOM-attribute strings behave like real booleans ("false" → false)
-	readonly initialAudioMuted = input(false, { transform: booleanAttribute });
-	readonly initialVideoMuted = input(false, { transform: booleanAttribute });
+	readonly initialAudioEnabled = input(true, { transform: booleanAttribute });
+	readonly initialVideoEnabled = input(true, { transform: booleanAttribute });
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input<boolean>(false);
@@ -128,8 +128,8 @@ export class App {
 		participantName: this.participantName(),
 		participantExternalId: this.participantExternalId(),
 		participantMetadata: this.participantMetadata(),
-		initialAudioMuted: this.initialAudioMuted(),
-		initialVideoMuted: this.initialVideoMuted(),
+		initialAudioEnabled: this.initialAudioEnabled(),
+		initialVideoEnabled: this.initialVideoEnabled(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),

@@ -106,10 +106,10 @@ describe('FeatureCalculator.applyPermissions', () => {
 		expect(featuresFor({ mediaChangeVirtualBackground: false }).showBackgrounds).toBeFalse();
 	});
 
-	describe('applyInitialMediaMuted', () => {
+	describe('applyInitialMediaEnabled', () => {
 		it('should lower the initial media state without touching the controls', () => {
 			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaMuted(features, { audioMuted: true, videoMuted: true });
+			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: false, videoEnabled: false });
 
 			expect(features.audioEnabled).toBeFalse();
 			expect(features.videoEnabled).toBeFalse();
@@ -118,9 +118,9 @@ describe('FeatureCalculator.applyPermissions', () => {
 			expect(features.showCamera).toBeTrue();
 		});
 
-		it('should leave an unmuted preference alone', () => {
+		it('should leave an enabled preference alone', () => {
 			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaMuted(features, { audioMuted: false, videoMuted: false });
+			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true, videoEnabled: true });
 
 			expect(features.audioEnabled).toBeTrue();
 			expect(features.videoEnabled).toBeTrue();
@@ -128,7 +128,7 @@ describe('FeatureCalculator.applyPermissions', () => {
 
 		it('should never raise a state a permission already denied', () => {
 			const features = featuresFor({ mediaPublishVideo: false });
-			FeatureCalculator.applyInitialMediaMuted(features, { audioMuted: false, videoMuted: false });
+			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true, videoEnabled: true });
 
 			expect(features.videoEnabled).toBeFalse();
 		});

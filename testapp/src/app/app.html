@@ -75,12 +75,12 @@
 					showOnlyRecordings
 				</label>
 				<label>
-					<input type="checkbox" [(ngModel)]="initialAudioMutedInput" data-testid="input-initialAudioMuted" />
-					initialAudioMuted
+					<input type="checkbox" [(ngModel)]="initialAudioEnabledInput" data-testid="input-initialAudioEnabled" />
+					initialAudioEnabled
 				</label>
 				<label>
-					<input type="checkbox" [(ngModel)]="initialVideoMutedInput" data-testid="input-initialVideoMuted" />
-					initialVideoMuted
+					<input type="checkbox" [(ngModel)]="initialVideoEnabledInput" data-testid="input-initialVideoEnabled" />
+					initialVideoEnabled
 				</label>
 			</div>
 			<button class="ta-btn" (click)="applyConfig()" data-testid="btn-apply-config">Apply config</button>
@@ -110,6 +110,14 @@
 				>
 					participantKick()
 				</button>
+			</div>
+			<div class="ta-field">
+				<label for="mediaEnabled">enabled</label>
+				<select id="mediaEnabled" data-testid="select-media-enabled" [(ngModel)]="mediaEnabledInput">
+					<option value="">omitted (toggle)</option>
+					<option value="true">true</option>
+					<option value="false">false</option>
+				</select>
 			</div>
 			<button
 				id="media-toggle-audio-btn"
@@ -190,8 +198,8 @@
 			[participantName]="participantName()"
 			[participantExternalId]="participantExternalId()"
 			[participantMetadata]="participantMetadata()"
-			[initialAudioMuted]="initialAudioMuted()"
-			[initialVideoMuted]="initialVideoMuted()"
+			[initialAudioEnabled]="initialAudioEnabled()"
+			[initialVideoEnabled]="initialVideoEnabled()"
 			[e2eeKey]="e2eeKey()"
 			[leaveRedirectUrl]="leaveRedirectUrl()"
 			[showOnlyRecordings]="showOnlyRecordings()"

@@ -296,8 +296,8 @@ export class LocalTrackService {
 
 	/**
 	 * Turns the prejoin track of the given kind on or off. Enabling a device that was never opened —
-	 * joined with `initial-video-muted`, or the stored preference was off, so `createLocalTracks()`
-	 * skipped it — acquires it here.
+	 * joined with `initial-video-enabled="false"`, or the stored preference was off, so
+	 * `createLocalTracks()` skipped it — acquires it here.
 	 *
 	 * That acquisition used to live in the prejoin component's `onVideoEnabledChanged` handler, i.e.
 	 * behind a UI click: an embedded host calling `mediaToggleVideo(true)` reached only the

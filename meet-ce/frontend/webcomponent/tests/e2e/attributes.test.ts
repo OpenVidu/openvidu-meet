@@ -1,9 +1,13 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { createRoom, deleteRooms, getRecordingUrl, listRecordingsByRoomId } from '../helpers/meet-api.helper';
+import { expectPrejoinCameraEnabled, expectPrejoinMicEnabled } from '../helpers/media-controls.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
 import { endMeetingCommand, openMeeting } from '../helpers/testapp.helper';
-import { openWebcomponentWithAttributes } from '../helpers/webcomponent-attributes.helper';
+import {
+	openWebcomponentWithAttributes,
+	type WebComponentAttributes
+} from '../helpers/webcomponent-attributes.helper';
 import { waitForPageRedirect, wcLocator } from '../helpers/webcomponent.helper';
 
 // ─── WebComponent attribute coverage ────────────────────────────────────────
@@ -92,6 +96,56 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(wcLocator(page, '#participant-e2eekey-input')).toHaveCount(0);
 
 				await expect(wcLocator(page, '#participant-name-submit')).toBeEnabled();
+			});
+		});
+
+		test.describe('with initial-audio-enabled / initial-video-enabled', () => {
+			// Its own room rather than reusing the outer `accessUrl`: the E2EE sibling block
+			// above reassigns that shared variable in ITS `beforeAll`, and describe blocks run
+			// in file order, so relying on it here would silently join an E2EE room instead.
+			let mediaEnabledAccessUrl: string;
+
+			test.beforeAll(async () => {
+				const room = await createRoom();
+				createdRoomIds.push(room.roomId);
+				mediaEnabledAccessUrl = room.access.anonymous.moderator.url;
+			});
+
+			/** Mounts the WC with `attributes` and advances the lobby to the media-setup screen. */
+			const openMediaSetup = async (page: Page, attributes: WebComponentAttributes): Promise<void> => {
+				await openWebcomponentWithAttributes(page, {
+					[EmbeddedAttribute.ROOM_URL]: mediaEnabledAccessUrl,
+					[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
+					...attributes
+				});
+
+				await expect(wcLocator(page, '#participant-name-submit')).toBeVisible({ timeout: 15_000 });
+				await wcLocator(page, '#participant-name-submit').click();
+				await expect(wcLocator(page, 'ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
+			};
+
+			test('should join with the microphone muted when initial-audio-enabled is false', async ({ page }) => {
+				await openMediaSetup(page, { [EmbeddedAttribute.INITIAL_AUDIO_ENABLED]: 'false' });
+
+				await expectPrejoinMicEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+
+				// Not a capability: the control stays visible and enabled so the participant
+				// can override the initial state before joining.
+				await expect(wcLocator(page, '#microphone-button')).toBeEnabled();
+			});
+
+			test('should join with the camera off when initial-video-enabled is false', async ({ page }) => {
+				await openMediaSetup(page, { [EmbeddedAttribute.INITIAL_VIDEO_ENABLED]: 'false' });
+
+				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+				await expect(wcLocator(page, '#camera-button')).toBeEnabled();
+			});
+
+			test('should join with both devices enabled when neither attribute is set', async ({ page }) => {
+				await openMediaSetup(page, {});
+
+				await expectPrejoinMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 			});
 		});
 

@@ -27,10 +27,10 @@ export interface MeetingEntryParams {
 	participantExternalId?: string;
 	/** Optional opaque application-defined participant payload (JSON recommended, ≤ 2 KB). */
 	participantMetadata?: string;
-	/** Join with the microphone muted (initial state only; the participant may unmute afterwards). */
-	initialAudioMuted?: boolean;
-	/** Join with the camera off (initial state only; the participant may enable it afterwards). */
-	initialVideoMuted?: boolean;
+	/** Join with the microphone enabled (initial state only; the participant may mute afterwards). Defaults to true. */
+	initialAudioEnabled?: boolean;
+	/** Join with the camera enabled (initial state only; the participant may disable it afterwards). Defaults to true. */
+	initialVideoEnabled?: boolean;
 	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -92,8 +92,8 @@ export class MeetingEntryService {
 		participantName,
 		participantExternalId,
 		participantMetadata,
-		initialAudioMuted,
-		initialVideoMuted
+		initialAudioEnabled,
+		initialVideoEnabled
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
@@ -106,10 +106,11 @@ export class MeetingEntryService {
 		this.roomMemberContextService.setParticipantMetadata(participantMetadata);
 
 		// Initial media state asked by the embedding application; seeded (or cleared) on every
-		// entry, like the correlation fields above
-		this.roomFeatureService.setInitialMediaMuted({
-			audioMuted: initialAudioMuted === true,
-			videoMuted: initialVideoMuted === true
+		// entry, like the correlation fields above. Defaults to enabled: only an explicit `false`
+		// lowers it, so an unset attribute never disables the device.
+		this.roomFeatureService.setInitialMediaEnabled({
+			audioEnabled: initialAudioEnabled !== false,
+			videoEnabled: initialVideoEnabled !== false
 		});
 
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one

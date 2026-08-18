@@ -4,13 +4,13 @@
 export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
 
 /**
- * Client preference from the initial-audio-muted / initial-video-muted embed attributes (or their
- * URL query params): the local participant's initial media state when joining. Initial state only —
- * the permissions always win, and the participant may re-enable a muted device afterwards.
+ * Client preference from the initial-audio-enabled / initial-video-enabled embed attributes (or
+ * their URL query params): the local participant's initial media state when joining. Initial state
+ * only — the permissions always win, and the participant may re-enable a disabled device afterwards.
  */
-export interface InitialMediaMutedPreferences {
-	audioMuted: boolean;
-	videoMuted: boolean;
+export interface InitialMediaEnabledPreferences {
+	audioEnabled: boolean;
+	videoEnabled: boolean;
 }
 
 /**

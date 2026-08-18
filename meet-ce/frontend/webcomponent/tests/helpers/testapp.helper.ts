@@ -67,6 +67,9 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 				'meetingClosed',
 				'participantJoined',
 				'participantLeft',
+				'mediaAudioStatusChanged',
+				'mediaVideoStatusChanged',
+				'mediaScreenShareStatusChanged',
 				'error'
 			] as const
 		).forEach((name) => {
@@ -98,30 +101,42 @@ export const ensureFixture = async (page: Page): Promise<void> => {
 	});
 };
 
+type OpenMeetingOptions = {
+	integration?: Integration;
+	role?: 'moderator' | 'speaker';
+	name?: string;
+	externalId?: string;
+	metadata?: string;
+	/** Sets the `initial-audio-enabled` attribute/query param. Defaults to true (omitted). */
+	initialAudioEnabled?: boolean;
+	/** Sets the `initial-video-enabled` attribute/query param. Defaults to true (omitted). */
+	initialVideoEnabled?: boolean;
+};
+
 /**
- * Joins a room by mounting `<openvidu-meet>` directly with the role's
- * anonymous-access URL fetched from the REST API, then driving the WC's own
- * pre-join flow until the meeting is active.
+ * Mounts `<openvidu-meet>` with the role's anonymous-access URL fetched from the
+ * REST API and drives the lobby until the media-setup (prejoin) screen renders,
+ * WITHOUT clicking "Join" — the room is not connected yet, so imperative commands
+ * sent from this point on exercise the pre-connect path (`PrejoinTarget`, and the
+ * iframe bridge's `isConnected()` guard). Returns the integration-scoped `meet`
+ * locator factory so callers can keep driving the same page.
  *
- * @param page - Playwright page.
- * @param roomId - Room ID to join (must already exist; create it with `createRoom`).
- * @param options.role - `'moderator'` or `'speaker'`. Defaults to `'speaker'`.
- * @param options.name - Participant display name (auto-generated when omitted).
- * @param options.externalId - Value for the `participant-external-id` attribute (app↔Meet correlation key).
- * @param options.metadata - Value for the `participant-metadata` attribute (opaque app payload).
+ * `openMeeting` (below) is this same flow plus the "Join" click.
  */
-export const openMeeting = async (
+export const openMeetingAtMediaSetup = async (
 	page: Page,
 	roomId: string,
-	options?: {
-		integration?: Integration;
-		role?: 'moderator' | 'speaker';
-		name?: string;
-		externalId?: string;
-		metadata?: string;
-	}
-): Promise<void> => {
-	const { integration = 'webcomponent', role = 'speaker', name, externalId, metadata } = options ?? {};
+	options?: OpenMeetingOptions
+): Promise<{ meet: (selector: string) => Locator; participantName: string }> => {
+	const {
+		integration = 'webcomponent',
+		role = 'speaker',
+		name,
+		externalId,
+		metadata,
+		initialAudioEnabled,
+		initialVideoEnabled
+	} = options ?? {};
 	const participantName = name ?? `pw-${Math.random().toString(36).substring(2, 9)}`;
 
 	await ensureFixture(page);
@@ -146,6 +161,20 @@ export const openMeeting = async (
 
 	if (metadata) {
 		await page.getByTestId('input-participantMetadata').fill(metadata);
+	}
+
+	// Defaults to checked (the attribute itself defaults to `true`): only an explicit `false`
+	// unchecks it.
+	const initialAudioEnabledCheckbox = page.getByTestId('input-initialAudioEnabled');
+
+	if ((await initialAudioEnabledCheckbox.isChecked()) !== (initialAudioEnabled ?? true)) {
+		await initialAudioEnabledCheckbox.click();
+	}
+
+	const initialVideoEnabledCheckbox = page.getByTestId('input-initialVideoEnabled');
+
+	if ((await initialVideoEnabledCheckbox.isChecked()) !== (initialVideoEnabled ?? true)) {
+		await initialVideoEnabledCheckbox.click();
 	}
 
 	await page.getByTestId('btn-apply-config').click();
@@ -176,6 +205,27 @@ export const openMeeting = async (
 	}
 
 	await expect(meet('ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
+
+	return { meet, participantName };
+};
+
+/**
+ * Joins a room by mounting `<openvidu-meet>` directly with the role's
+ * anonymous-access URL fetched from the REST API, then driving the WC's own
+ * pre-join flow until the meeting is active.
+ *
+ * @param page - Playwright page.
+ * @param roomId - Room ID to join (must already exist; create it with `createRoom`).
+ * @param options.role - `'moderator'` or `'speaker'`. Defaults to `'speaker'`.
+ * @param options.name - Participant display name (auto-generated when omitted).
+ * @param options.externalId - Value for the `participant-external-id` attribute (app↔Meet correlation key).
+ * @param options.metadata - Value for the `participant-metadata` attribute (opaque app payload).
+ * @param options.initialAudioEnabled - Sets the `initial-audio-enabled` attribute/query param.
+ * @param options.initialVideoEnabled - Sets the `initial-video-enabled` attribute/query param.
+ */
+export const openMeeting = async (page: Page, roomId: string, options?: OpenMeetingOptions): Promise<void> => {
+	const { meet } = await openMeetingAtMediaSetup(page, roomId, options);
+
 	await meet('#join-button').click();
 	// Gate on the live stage, not on the host component: `ov-meeting-view` exists from the first
 	// render (device setup, prejoin, …), so waiting for it would return before the room is
@@ -246,6 +296,29 @@ export const endMeetingCommand = async (page: Page): Promise<void> => {
 export const kickParticipantCommand = async (page: Page, participantIdentity: string): Promise<void> => {
 	await page.getByTestId('input-kick-identity').fill(participantIdentity);
 	await page.getByTestId('btn-kick-participant').click();
+};
+
+/** Sets the shared `enabled` selector the three media-toggle buttons below read from. */
+const selectMediaEnabled = async (page: Page, enabled?: boolean): Promise<void> => {
+	await page.getByTestId('select-media-enabled').selectOption(enabled === undefined ? '' : String(enabled));
+};
+
+/** Clicks the testapp's `mediaToggleAudio()` button. Omitted `enabled` = toggle. */
+export const mediaToggleAudioCommand = async (page: Page, enabled?: boolean): Promise<void> => {
+	await selectMediaEnabled(page, enabled);
+	await page.getByTestId('btn-media-toggle-audio').click();
+};
+
+/** Clicks the testapp's `mediaToggleVideo()` button. Omitted `enabled` = toggle. */
+export const mediaToggleVideoCommand = async (page: Page, enabled?: boolean): Promise<void> => {
+	await selectMediaEnabled(page, enabled);
+	await page.getByTestId('btn-media-toggle-video').click();
+};
+
+/** Clicks the testapp's `mediaToggleScreenShare()` button. Omitted `enabled` = toggle. */
+export const mediaToggleScreenShareCommand = async (page: Page, enabled?: boolean): Promise<void> => {
+	await selectMediaEnabled(page, enabled);
+	await page.getByTestId('btn-media-toggle-screen-share').click();
 };
 
 /** Clicks the testapp's deprecated `leaveRoom()` button. Removed in 3.12.0. */
