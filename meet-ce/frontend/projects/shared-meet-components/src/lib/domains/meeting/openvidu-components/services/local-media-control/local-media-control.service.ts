@@ -1,6 +1,5 @@
 import { Injector, Service, inject } from '@angular/core';
 import { ParticipantModel } from '../../models/participant.model';
-import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import type { AudioCaptureOptions, ScreenShareCaptureOptions, VideoCaptureOptions } from '../livekit';
 import { VideoPresets } from '../livekit';
@@ -17,14 +16,15 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
  * {@link ParticipantModel}). This branching used to be copy-pasted across 6 methods of
  * ParticipantService; it now lives in exactly one place — the {@link target} getter — behind a
  * minimal {@link LocalMediaTarget} Strategy.
+ *
+ * Only the *write* side branches. Reading whether a device is on is the same question in both phases
+ * and belongs to `LocalMediaStateService`, which answers it as a signal.
  */
 interface LocalMediaTarget {
 	setCameraEnabled(enabled: boolean): Promise<void>;
 	setMicrophoneEnabled(enabled: boolean): Promise<void>;
 	switchCamera(deviceId: string): Promise<void>;
 	switchMicrophone(deviceId: string): Promise<void>;
-	isCameraEnabled(): boolean;
-	isMicrophoneEnabled(): boolean;
 }
 
 /**
@@ -75,33 +75,20 @@ class RoomTarget implements LocalMediaTarget {
 		await this.participant.switchMicrophone(deviceId);
 		this.participant.bump();
 	}
-
-	isCameraEnabled(): boolean {
-		return this.participant.isCameraEnabled;
-	}
-
-	isMicrophoneEnabled(): boolean {
-		return this.participant.isMicrophoneEnabled;
-	}
 }
 
 /**
- * Prejoin phase (Room not yet connected): operate on the temporary local tracks. The enabled state
- * also honours the embedding app's directive inputs and the stored preference.
+ * Prejoin phase (Room not yet connected): operate on the temporary local tracks.
  */
 class PrejoinTarget implements LocalMediaTarget {
-	constructor(
-		private readonly localTrackService: LocalTrackService,
-		private readonly directiveService: MeetingUiConfigService,
-		private readonly storageSrv: MediaStorageService
-	) {}
+	constructor(private readonly localTrackService: LocalTrackService) {}
 
 	async setCameraEnabled(enabled: boolean): Promise<void> {
 		await this.localTrackService.setVideoTrackEnabled(enabled);
 	}
 
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		this.localTrackService.setAudioTrackEnabled(enabled);
+		await this.localTrackService.setAudioTrackEnabled(enabled);
 	}
 
 	async switchCamera(deviceId: string): Promise<void> {
@@ -110,18 +97,6 @@ class PrejoinTarget implements LocalMediaTarget {
 
 	async switchMicrophone(deviceId: string): Promise<void> {
 		await this.localTrackService.switchMicrophone(deviceId);
-	}
-
-	isCameraEnabled(): boolean {
-		if (!this.directiveService.isVideoEnabled()) return false;
-
-		return this.localTrackService.isVideoTrackEnabled() && this.storageSrv.isCameraEnabled();
-	}
-
-	isMicrophoneEnabled(): boolean {
-		if (!this.directiveService.isAudioEnabled()) return false;
-
-		return this.localTrackService.isAudioTrackEnabled() && this.storageSrv.isMicrophoneEnabled();
 	}
 }
 
@@ -133,6 +108,8 @@ class PrejoinTarget implements LocalMediaTarget {
  *
  * Screen share is room-only (no prejoin equivalent), so it is handled directly rather than through
  * the {@link LocalMediaTarget} Strategy.
+ *
+ * Write-only: to read whether a device is on, inject `LocalMediaStateService`.
  */
 @Service()
 export class LocalMediaControlService {
@@ -140,7 +117,6 @@ export class LocalMediaControlService {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly storageSrv = inject(MediaStorageService);
-	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
 	private readonly log = inject(LoggerService).get('LocalMediaControlService');
 
@@ -157,27 +133,29 @@ export class LocalMediaControlService {
 		const local = this.participantService.localParticipant();
 		return this.meetingLiveKitService.isConnected() && local
 			? new RoomTarget(local, this.storageSrv)
-			: new PrejoinTarget(this.localTrackService, this.directiveService, this.storageSrv);
+			: new PrejoinTarget(this.localTrackService);
 	}
 
 	/**
 	 * Sets the local participant camera enabled or disabled.
 	 */
 	async setCameraEnabled(enabled: boolean): Promise<void> {
-		await this.target.setCameraEnabled(enabled);
 		// Single writer of the camera preference: a call here always represents user/app intent.
 		// The only other legitimate writer is CameraEnabledDirective (embedding-app default).
+		// Recorded BEFORE acting, because opening a camera that was never acquired reads the
+		// preference to decide whether the fresh track starts muted.
 		this.storageSrv.setCameraEnabled(enabled);
+		await this.target.setCameraEnabled(enabled);
 	}
 
 	/**
 	 * Sets the local participant microphone enabled or disabled.
 	 */
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		await this.target.setMicrophoneEnabled(enabled);
 		// Single writer of the microphone preference. See setCameraEnabled; the only other
 		// legitimate writer is AudioEnabledDirective (embedding-app default).
 		this.storageSrv.setMicrophoneEnabled(enabled);
+		await this.target.setMicrophoneEnabled(enabled);
 	}
 
 	/**
@@ -192,27 +170,6 @@ export class LocalMediaControlService {
 	 */
 	async switchMicrophone(deviceId: string): Promise<void> {
 		await this.target.switchMicrophone(deviceId);
-	}
-
-	/**
-	 * Returns if the local participant camera is enabled.
-	 */
-	isMyCameraEnabled(): boolean {
-		return this.target.isCameraEnabled();
-	}
-
-	/**
-	 * Returns if the local participant microphone is enabled.
-	 */
-	isMyMicrophoneEnabled(): boolean {
-		return this.target.isMicrophoneEnabled();
-	}
-
-	/**
-	 * Returns if the local participant screen is enabled.
-	 */
-	isMyScreenShareEnabled(): boolean {
-		return this.participantService.localParticipant()?.isScreenShareEnabled || false;
 	}
 
 	/**

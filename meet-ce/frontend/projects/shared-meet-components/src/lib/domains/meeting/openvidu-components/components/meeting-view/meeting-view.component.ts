@@ -290,11 +290,6 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	readonly onLangChanged = output<LangOption>();
 
 	/**
-	 * This event is emitted when the screen share state changes, providing information about if the screen share is enabled (true) or disabled (false).
-	 */
-	readonly onScreenShareEnabledChanged = output<boolean>();
-
-	/**
 	 * The event is emitted when the fullscreen state changes, providing information about if the fullscreen is enabled (true) or disabled (false).
 	 */
 	readonly onFullscreenEnabledChanged = output<boolean>();

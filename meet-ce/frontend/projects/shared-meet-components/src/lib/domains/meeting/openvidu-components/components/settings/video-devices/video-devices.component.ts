@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, OnInit, output, Signal, signal, WritableSignal } from '@angular/core';
+import { Component, inject, input, output, Signal, signal, WritableSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -7,7 +7,7 @@ import { CustomDevice } from '../../../models/device.model';
 import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { DeviceService } from '../../../services/device/device.service';
 import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
-import { ParticipantService } from '../../../services/participant/participant.service';
+import { LocalMediaStateService } from '../../../services/local-media-state/local-media-state.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
 
@@ -20,13 +20,14 @@ import type { ILogger } from '../../../../../../shared/models/logger.model';
 	templateUrl: './video-devices.component.html',
 	styleUrl: './video-devices.component.scss'
 })
-export class VideoDevicesComponent implements OnInit {
+export class VideoDevicesComponent {
 	readonly compact = input(false);
 	readonly onVideoDeviceChanged = output<CustomDevice>();
 	readonly onVideoEnabledChanged = output<boolean>();
 
 	readonly cameraStatusChanging = signal(false);
-	readonly isCameraEnabled = signal(false);
+	/** Single source of truth for the device state — valid in prejoin and in the meeting alike. */
+	readonly isCameraEnabled = inject(LocalMediaStateService).cameraEnabled;
 
 	protected readonly cameras: WritableSignal<CustomDevice[]>;
 	protected readonly cameraSelected: WritableSignal<CustomDevice | undefined>;
@@ -40,7 +41,6 @@ export class VideoDevicesComponent implements OnInit {
 	};
 
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly participantService = inject(ParticipantService);
 	private readonly localMediaControlService = inject(LocalMediaControlService);
 	private readonly loggerSrv = inject(LoggerService);
 
@@ -49,27 +49,12 @@ export class VideoDevicesComponent implements OnInit {
 		this.cameras = this.deviceSrv.cameras;
 		this.cameraSelected = this.deviceSrv.cameraSelected;
 		this.hasVideoDevices = this.deviceSrv.hasVideoDevices;
-
-		// Keep the local flag in sync with the participant state. Persistence of the preference is
-		// owned by the media-control service — do NOT write storage here.
-		effect(() => {
-			const participant = this.participantService.localParticipant();
-
-			if (participant) {
-				this.isCameraEnabled.set(participant.isCameraEnabled);
-			}
-		});
-	}
-
-	async ngOnInit() {
-		this.isCameraEnabled.set(this.localMediaControlService.isMyCameraEnabled());
 	}
 
 	async toggleCam(event: MouseEvent) {
 		event.stopPropagation();
 		this.cameraStatusChanging.set(true);
 		const enabled = !this.isCameraEnabled();
-		this.isCameraEnabled.set(enabled);
 		await this.localMediaControlService.setCameraEnabled(enabled);
 		this.onVideoEnabledChanged.emit(enabled);
 		this.cameraStatusChanging.set(false);

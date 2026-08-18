@@ -10,7 +10,7 @@ import { TranslatePipe } from '../../pipes/translate.pipe';
 import { CdkOverlayService } from '../../services/cdk-overlay/cdk-overlay.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
-import { LocalTrack, Track } from '../../services/livekit';
+import { LocalMediaStateService } from '../../services/local-media-state/local-media-state.service';
 import { LocalTrackService } from '../../services/local-track/local-track.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
@@ -55,6 +55,8 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	readonly onReadyToJoin = output<void>();
 	private readonly libService = inject(MeetingUiConfigService);
 	private readonly deviceSrv = inject(DeviceService);
+	private readonly localTrackService = inject(LocalTrackService);
+	private readonly localMediaState = inject(LocalMediaStateService);
 
 	readonly errorMessage = signal<string | undefined>(undefined);
 	readonly isLoading = signal(true);
@@ -70,9 +72,13 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 
 	readonly showBackgroundPanel = signal(false);
 
-	readonly videoTrack = signal<LocalTrack | undefined>(undefined);
-	audioTrack: LocalTrack | undefined;
-	readonly isVideoEnabled = signal(false);
+	/** Preview track, read from the media layer so a device switch or a fresh camera lands here too. */
+	readonly videoTrack = this.localTrackService.cameraTrack;
+	/**
+	 * Single source of truth for the camera state, so a host `mediaToggleVideo` command lands on this
+	 * screen too — it used to be a local snapshot only the local click could move.
+	 */
+	readonly isVideoEnabled = this.localMediaState.cameraEnabled;
 	readonly hasVideoDevices = this.deviceSrv.hasVideoDevices;
 
 	/**
@@ -86,9 +92,7 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		isSpeaking: false,
 		hasEncryptionError: false
 	}));
-	private tracks: LocalTrack[] = [];
 	private readonly cdkSrv = inject(CdkOverlayService);
-	private readonly localTrackService = inject(LocalTrackService);
 	private readonly virtualBackgroundService = inject(VirtualBackgroundService);
 	private readonly translateService = inject(MeetingTranslateService);
 	protected readonly viewportService = inject(ViewportService);
@@ -153,74 +157,27 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 		}
 	}
 
-	async videoEnabledChanged(enabled: boolean) {
-		this.isVideoEnabled.set(enabled);
-
+	videoEnabledChanged(enabled: boolean) {
 		if (!enabled) {
 			this.closeBackgroundPanel();
-		} else if (!this.videoTrack()) {
-			const newVideoTrack = await this.localTrackService.createLocalTracks(true, false);
-			this.videoTrack.set(newVideoTrack[0]);
-			this.tracks.push(newVideoTrack[0]);
-			this.localTrackService.setLocalTracks(this.tracks);
 		}
 
 		this.onVideoEnabledChanged.emit(enabled);
 	}
 
-	async videoDeviceChanged(device: CustomDevice) {
-		try {
-			this.log.d('Video device changed to:', device);
-
-			// Get the updated tracks from the service
-			const updatedTracks = this.localTrackService.getLocalTracks();
-
-			// Find the new video track
-			const newVideoTrack = updatedTracks.find((track) => track.kind === Track.Kind.Video);
-
-			this.tracks = updatedTracks;
-			this.videoTrack.set(newVideoTrack);
-
-			this.onVideoDeviceChanged.emit(device);
-		} catch (error) {
-			this.log.e('Error handling video device change:', error);
-			this.handleError(error);
-		}
+	videoDeviceChanged(device: CustomDevice) {
+		this.log.d('Video device changed to:', device);
+		this.onVideoDeviceChanged.emit(device);
 	}
 
 	audioDeviceChanged(device: CustomDevice) {
-		try {
-			this.log.d('Audio device changed to:', device);
-
-			// Get the updated tracks from the service
-			const updatedTracks = this.localTrackService.getLocalTracks();
-
-			// Find the new audio track
-			const newAudioTrack = updatedTracks.find((track) => track.kind === Track.Kind.Audio);
-
-			this.tracks = updatedTracks;
-			this.audioTrack = newAudioTrack;
-
-			// The device switch replaced the underlying MediaStreamTrack; the mic-activity monitor
-			// re-clones automatically via the local-media state — see LocalTrackService.switchMicrophone.
-
-			this.onAudioDeviceChanged.emit(device);
-		} catch (error) {
-			this.log.e('Error handling audio device change:', error);
-			this.handleError(error);
-		}
+		// The device switch replaced the underlying MediaStreamTrack; the mic-activity monitor
+		// re-clones automatically via the local-media state — see LocalTrackService.switchMicrophone.
+		this.log.d('Audio device changed to:', device);
+		this.onAudioDeviceChanged.emit(device);
 	}
 
-	async audioEnabledChanged(enabled: boolean) {
-		if (enabled && !this.audioTrack) {
-			const newAudioTrack = await this.localTrackService.createLocalTracks(false, true);
-			this.audioTrack = newAudioTrack[0];
-			this.tracks.push(this.audioTrack);
-			// Publishing the new track to the signal is what drives the mic-activity monitor to attach
-			// — no explicit attach() call needed.
-			this.localTrackService.setLocalTracks(this.tracks);
-		}
-
+	audioEnabledChanged(enabled: boolean) {
 		this.onAudioEnabledChanged.emit(enabled);
 	}
 
@@ -264,16 +221,12 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	private async initializeDevicesWithRetry(maxRetries = 3): Promise<void> {
 		for (let attempt = 1; attempt <= maxRetries; attempt++) {
 			try {
-				this.tracks = await this.localTrackService.createLocalTracks();
-				this.localTrackService.setLocalTracks(this.tracks);
+				const tracks = await this.localTrackService.createLocalTracks();
+				this.localTrackService.setLocalTracks(tracks);
 
 				// Creating the tracks above is what grants media permission on first visit; only then
 				// are device labels available. Populate the list and align the selection accordingly.
-				await this.deviceSrv.syncDevicesAfterTrackCreation(this.tracks);
-
-				this.videoTrack.set(this.tracks.find((track) => track.kind === Track.Kind.Video));
-				this.audioTrack = this.tracks.find((track) => track.kind === Track.Kind.Audio);
-				this.isVideoEnabled.set(this.localTrackService.isVideoTrackEnabled());
+				await this.deviceSrv.syncDevicesAfterTrackCreation(tracks);
 
 				// The mic-activity monitor starts automatically: setLocalTracks above populated the
 				// local-media state, whose signal the MicActivityService effect follows.

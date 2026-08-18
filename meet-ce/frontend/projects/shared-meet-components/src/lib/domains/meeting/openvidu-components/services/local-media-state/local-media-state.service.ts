@@ -17,18 +17,22 @@ function sameMediaStreamTrack(
 }
 
 /**
- * Reactive state of the local participant's current microphone/camera track across both
- * phases of the app. No mutation logic — it only *reads* from the two underlying sources of
- * truth and exposes a single signal per kind:
+ * Reactive state of the local participant's microphone/camera/screen share across both phases of the
+ * app: which track is in effect, and whether the device is on. No mutation logic — it only *reads*
+ * from the two underlying sources of truth and exposes a single signal per question:
  *
- * - Prejoin (room not yet connected): {@link LocalTrackService}'s track signals.
- * - Meeting (connected): the {@link ParticipantModel}'s published tracks, kept reactive through
- * its `_revision`/`bump()` mechanism.
+ * - Prejoin (room not yet connected): {@link LocalTrackService}'s signals.
+ * - Meeting (connected): the {@link ParticipantModel}, kept reactive through its `_revision`/`bump()`
+ * mechanism.
  *
  * When the participant connects, `localParticipant()` becomes defined and the model takes over;
  * once the prejoin reference is released (see `LocalTrackService.clearLocalTracksReference`) the
- * two never disagree. Consumers such as {@link MicActivityService} depend on these signals instead
- * of coordinating attach/detach calls at every media call-site.
+ * two never disagree.
+ *
+ * **This is the single source of truth for "is my camera/microphone on?"** — the question used to
+ * have one answer per consumer (a component-local signal seeded once, a Strategy that also folded in
+ * the embedding app's config, the stored preference…), which is how a host command could mute the
+ * device without the prejoin button noticing. Read these signals; never mirror them into a local one.
  */
 @Service()
 export class LocalMediaStateService {
@@ -59,5 +63,22 @@ export class LocalMediaStateService {
 			return this.localTrackService.cameraTrack();
 		},
 		{ equal: sameMediaStreamTrack }
+	);
+
+	/** Whether the local microphone is on right now (prejoin or meeting). */
+	readonly microphoneEnabled: Signal<boolean> = computed(() => {
+		const local = this.participantService.localParticipant();
+		return local ? local.isMicrophoneEnabled : this.localTrackService.microphoneEnabled();
+	});
+
+	/** Whether the local camera is on right now (prejoin or meeting). */
+	readonly cameraEnabled: Signal<boolean> = computed(() => {
+		const local = this.participantService.localParticipant();
+		return local ? local.isCameraEnabled : this.localTrackService.cameraEnabled();
+	});
+
+	/** Whether the local participant is sharing their screen. Room-only: there is no prejoin sharing. */
+	readonly screenShareEnabled: Signal<boolean> = computed(
+		() => this.participantService.localParticipant()?.isScreenShareEnabled ?? false
 	);
 }

@@ -72,6 +72,21 @@ export class LocalTrackService {
 		{ equal: sameMediaStreamTrack }
 	);
 
+	/**
+	 * Whether the prejoin microphone is on. This deliberately reads `_localTracks` instead of
+	 * {@link microphoneTrack}: that signal compares by MediaStreamTrack id so a mute does not churn
+	 * the mic monitor, which is exactly the transition this one has to report. Every mutation of the
+	 * enabled state therefore emits a new array reference — see {@link setAudioTrackEnabled}.
+	 * @internal
+	 */
+	readonly microphoneEnabled: Signal<boolean> = computed(() => this.isTrackEnabled(Track.Kind.Audio));
+
+	/**
+	 * Whether the prejoin camera is on. See {@link microphoneEnabled}.
+	 * @internal
+	 */
+	readonly cameraEnabled: Signal<boolean> = computed(() => this.isTrackEnabled(Track.Kind.Video));
+
 	private log: ILogger = inject(LoggerService).get('LocalTrackService');
 
 	/**
@@ -267,14 +282,7 @@ export class LocalTrackService {
 	 * This method must be only called from the prejoin component.
 	 **/
 	async setVideoTrackEnabled(enabled: boolean) {
-		const videoTrack = this._localTracks().find((track) => track.kind === Track.Kind.Video);
-
-		// Room is not connected, so we can't enable/disable the camera
-		if (enabled) {
-			await videoTrack?.unmute();
-		} else {
-			await videoTrack?.mute();
-		}
+		await this.setTrackEnabled(Track.Kind.Video, enabled);
 	}
 
 	/**
@@ -283,42 +291,79 @@ export class LocalTrackService {
 	 * This method must be only called from the prejoin component.
 	 **/
 	async setAudioTrackEnabled(enabled: boolean) {
-		const audioTrack = this._localTracks().find((track) => track.kind === Track.Kind.Audio);
-
-		// Session is not connected, so we can't enable/disable the camera
-		if (enabled) {
-			await audioTrack?.unmute();
-		} else {
-			await audioTrack?.mute();
-		}
+		await this.setTrackEnabled(Track.Kind.Audio, enabled);
 	}
 
 	/**
-	 * @internal
-	 * As the Room is not created yet, we need to handle the media tracks with a temporary array of tracks.
-	 * This method must be only called before connect to room.
-	 **/
-	isVideoTrackEnabled(): boolean {
-		if (this._localTracks().length === 0) {
-			return this.deviceService.isCameraEnabled();
+	 * Turns the prejoin track of the given kind on or off. Enabling a device that was never opened —
+	 * joined with `initial-video-muted`, or the stored preference was off, so `createLocalTracks()`
+	 * skipped it — acquires it here.
+	 *
+	 * That acquisition used to live in the prejoin component's `onVideoEnabledChanged` handler, i.e.
+	 * behind a UI click: an embedded host calling `mediaToggleVideo(true)` reached only the
+	 * mute/unmute branch, found no track, and silently did nothing.
+	 */
+	private async setTrackEnabled(kind: Track.Kind, enabled: boolean): Promise<void> {
+		const track = this._localTracks().find((t) => t.kind === kind);
+
+		if (!enabled) {
+			await track?.mute();
+			this.notifyEnabledStateChanged();
+			return;
 		}
 
-		const videoTrack = this._localTracks().find((track) => track.kind === Track.Kind.Video);
-		return !!videoTrack && !videoTrack.isMuted && videoTrack?.mediaStreamTrack?.enabled;
+		if (track) {
+			await track.unmute();
+			this.notifyEnabledStateChanged();
+			return;
+		}
+
+		await this.openTrack(kind);
 	}
 
 	/**
-	 * @internal
-	 * As the Room is not created yet, we need to handle the media tracks with a temporary array of tracks.
-	 * This method must be only called before connect to room.
-	 **/
-	isAudioTrackEnabled(): boolean {
-		if (this._localTracks().length === 0) {
-			return this.deviceService.isMicrophoneEnabled();
+	 * Opens the device of the given kind and adds it to the prejoin tracks. Whether the fresh track
+	 * starts muted is decided by `createLocalTracks` from the stored preference, which is why the
+	 * media-control facade records the preference before asking for the change.
+	 */
+	private async openTrack(kind: Track.Kind): Promise<void> {
+		const isAudio = kind === Track.Kind.Audio;
+		const created = await this.createLocalTracks(!isAudio, isAudio);
+		const track = created.find((t) => t.kind === kind);
+
+		if (!track) {
+			this.log.w(`Could not open the ${isAudio ? 'microphone' : 'camera'}: no track was created`);
+			return;
 		}
 
-		const audioTrack = this._localTracks().find((track) => track.kind === Track.Kind.Audio);
-		return !!audioTrack && !audioTrack.isMuted && audioTrack?.mediaStreamTrack?.enabled;
+		this._localTracks.update((tracks) => [...tracks, track]);
+	}
+
+	/**
+	 * Enabled state of the prejoin track of the given kind. With no tracks at all — still
+	 * initializing, or the device was unavailable — it falls back to what the participant asked for,
+	 * device availability included.
+	 */
+	private isTrackEnabled(kind: Track.Kind): boolean {
+		const tracks = this._localTracks();
+
+		if (tracks.length === 0) {
+			return kind === Track.Kind.Audio
+				? this.deviceService.isMicrophoneEnabled()
+				: this.deviceService.isCameraEnabled();
+		}
+
+		const track = tracks.find((t) => t.kind === kind);
+		return !!track && !track.isMuted && !!track.mediaStreamTrack?.enabled;
+	}
+
+	/**
+	 * Re-emits the track array so {@link microphoneEnabled}/{@link cameraEnabled} re-evaluate.
+	 * `mute()`/`unmute()` flip `isMuted` on the track object in place, which the array signal cannot
+	 * see on its own.
+	 */
+	private notifyEnabledStateChanged(): void {
+		this._localTracks.update((tracks) => [...tracks]);
 	}
 
 	/**

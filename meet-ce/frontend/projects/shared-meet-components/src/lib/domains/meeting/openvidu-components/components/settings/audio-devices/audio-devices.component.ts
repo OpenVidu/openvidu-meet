@@ -1,4 +1,4 @@
-import { Component, effect, inject, input, OnInit, output, Signal, signal, WritableSignal } from '@angular/core';
+import { Component, inject, input, output, Signal, signal, WritableSignal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
@@ -8,7 +8,7 @@ import { TranslatePipe } from '../../../pipes/translate.pipe';
 import { MicStatusAlertComponent } from '../../mic-status-alert/mic-status-alert.component';
 import { DeviceService } from '../../../services/device/device.service';
 import { LocalMediaControlService } from '../../../services/local-media-control/local-media-control.service';
-import { ParticipantService } from '../../../services/participant/participant.service';
+import { LocalMediaStateService } from '../../../services/local-media-state/local-media-state.service';
 import { LoggerService } from '../../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../../shared/models/logger.model';
 
@@ -21,13 +21,14 @@ import type { ILogger } from '../../../../../../shared/models/logger.model';
 	templateUrl: './audio-devices.component.html',
 	styleUrl: './audio-devices.component.scss'
 })
-export class AudioDevicesComponent implements OnInit {
+export class AudioDevicesComponent {
 	readonly compact = input(false);
 	readonly onAudioDeviceChanged = output<CustomDevice>();
 	readonly onAudioEnabledChanged = output<boolean>();
 
 	readonly microphoneStatusChanging = signal(false);
-	readonly isMicrophoneEnabled = signal(false);
+	/** Single source of truth for the device state — valid in prejoin and in the meeting alike. */
+	readonly isMicrophoneEnabled = inject(LocalMediaStateService).microphoneEnabled;
 	private log: ILogger = {
 		d: () => {},
 		v: () => {},
@@ -41,7 +42,6 @@ export class AudioDevicesComponent implements OnInit {
 	protected readonly hasAudioDevices: Signal<boolean>;
 
 	private readonly deviceSrv = inject(DeviceService);
-	private readonly participantService = inject(ParticipantService);
 	private readonly localMediaControlService = inject(LocalMediaControlService);
 	private readonly loggerSrv = inject(LoggerService);
 
@@ -50,28 +50,12 @@ export class AudioDevicesComponent implements OnInit {
 		this.microphones = this.deviceSrv.microphones;
 		this.microphoneSelected = this.deviceSrv.microphoneSelected;
 		this.hasAudioDevices = this.deviceSrv.hasAudioDevices;
-
-		// Keep the local flag in sync with the participant state. Persistence of the preference is
-		// owned by the media-control service — do NOT write storage here, or a
-		// non-user mute (e.g. moderator force-mute) would overwrite the user's preference.
-		effect(() => {
-			const participant = this.participantService.localParticipant();
-
-			if (participant) {
-				this.isMicrophoneEnabled.set(participant.isMicrophoneEnabled);
-			}
-		});
-	}
-
-	async ngOnInit() {
-		this.isMicrophoneEnabled.set(this.localMediaControlService.isMyMicrophoneEnabled());
 	}
 
 	async toggleMic(event: MouseEvent) {
 		event.stopPropagation();
 		this.microphoneStatusChanging.set(true);
 		const enabled = !this.isMicrophoneEnabled();
-		this.isMicrophoneEnabled.set(enabled);
 		await this.localMediaControlService.setMicrophoneEnabled(enabled);
 		this.microphoneStatusChanging.set(false);
 		this.onAudioEnabledChanged.emit(enabled);
