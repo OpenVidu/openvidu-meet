@@ -28,17 +28,17 @@ export enum EmbeddedAttribute {
 	 */
 	PARTICIPANT_METADATA = 'participant-metadata',
 	/**
-	 * Join the meeting with the microphone muted (`false` by default). This is the participant's
-	 * initial state only: they may unmute afterwards, unlike when the `mediaPublishAudio`
-	 * permission is denied.
+	 * Join the meeting with the microphone enabled (`true` by default). This is the participant's
+	 * initial state only: they may mute afterwards, and it is lowered — never raised — by the
+	 * `mediaPublishAudio` permission, which always wins when denied.
 	 */
-	INITIAL_AUDIO_MUTED = 'initial-audio-muted',
+	INITIAL_AUDIO_ENABLED = 'initial-audio-enabled',
 	/**
-	 * Join the meeting with the camera off (`false` by default). This is the participant's
-	 * initial state only: they may enable it afterwards, unlike when the `mediaPublishVideo`
-	 * permission is denied.
+	 * Join the meeting with the camera enabled (`true` by default). This is the participant's
+	 * initial state only: they may disable it afterwards, and it is lowered — never raised — by
+	 * the `mediaPublishVideo` permission, which always wins when denied.
 	 */
-	INITIAL_VIDEO_MUTED = 'initial-video-muted',
+	INITIAL_VIDEO_ENABLED = 'initial-video-enabled',
 	/**
 	 * Secret key for end-to-end encryption (E2EE).
 	 * If provided, the participant will join the meeting using E2EE key.
@@ -75,10 +75,10 @@ export interface WebComponentPropertyValues {
 	participantExternalId?: string;
 	/** Opaque application-defined payload for the local participant (JSON recommended, ≤ 2 KB). Never interpreted by Meet. */
 	participantMetadata?: string;
-	/** When true, the participant joins the meeting with the microphone muted (initial state only; they may unmute afterwards). */
-	initialAudioMuted?: boolean;
-	/** When true, the participant joins the meeting with the camera off (initial state only; they may enable it afterwards). */
-	initialVideoMuted?: boolean;
+	/** When false, the participant joins the meeting with the microphone muted (initial state only; they may unmute afterwards). Defaults to true. */
+	initialAudioEnabled?: boolean;
+	/** When false, the participant joins the meeting with the camera off (initial state only; they may enable it afterwards). Defaults to true. */
+	initialVideoEnabled?: boolean;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
 	/** URL to redirect to after the `CLOSED` event fires when leaving OpenVidu Meet. */

@@ -50,11 +50,13 @@ export class App {
 	protected participantMetadataInput = '';
 	protected e2eeKeyInput = '';
 	protected leaveRedirectUrlInput = '';
-	protected initialAudioMutedInput = false;
-	protected initialVideoMutedInput = false;
+	protected initialAudioEnabledInput = true;
+	protected initialVideoEnabledInput = true;
 	protected showRecordingInput = '';
 	protected showOnlyRecordingsInput = false;
 	protected kickIdentityInput = 'test-participant-1';
+	/** `''` = omitted (toggle); `'true'`/`'false'` = explicit `enabled` for the media commands below. */
+	protected mediaEnabledInput: '' | 'true' | 'false' = '';
 
 	// ── Applied signals (bound to the WC via Angular wrapper inputs) ────────
 	protected readonly roomUrl = signal<string | undefined>(undefined);
@@ -62,8 +64,8 @@ export class App {
 	protected readonly participantName = signal<string | undefined>(undefined);
 	protected readonly participantExternalId = signal<string | undefined>(undefined);
 	protected readonly participantMetadata = signal<string | undefined>(undefined);
-	protected readonly initialAudioMuted = signal<boolean | undefined>(undefined);
-	protected readonly initialVideoMuted = signal<boolean | undefined>(undefined);
+	protected readonly initialAudioEnabled = signal<boolean | undefined>(undefined);
+	protected readonly initialVideoEnabled = signal<boolean | undefined>(undefined);
 	protected readonly e2eeKey = signal<string | undefined>(undefined);
 	protected readonly leaveRedirectUrl = signal<string | undefined>(undefined);
 	protected readonly showRecording = signal<string | undefined>(undefined);
@@ -125,8 +127,8 @@ export class App {
 				this.participantName.set(this.participantNameInput || undefined);
 				this.participantExternalId.set(this.participantExternalIdInput || undefined);
 				this.participantMetadata.set(this.participantMetadataInput || undefined);
-				this.initialAudioMuted.set(this.initialAudioMutedInput);
-				this.initialVideoMuted.set(this.initialVideoMutedInput);
+				this.initialAudioEnabled.set(this.initialAudioEnabledInput);
+				this.initialVideoEnabled.set(this.initialVideoEnabledInput);
 				this.e2eeKey.set(this.e2eeKeyInput || undefined);
 				this.leaveRedirectUrl.set(this.leaveRedirectUrlInput || undefined);
 				this.showRecording.set(this.showRecordingInput || undefined);
@@ -177,11 +179,11 @@ export class App {
 		set(EmbeddedAttribute.LEAVE_REDIRECT_URL, this.resolveLeaveRedirectUrl(this.leaveRedirectUrlInput));
 		set(EmbeddedAttribute.E2EE_KEY, this.e2eeKeyInput);
 		set(EmbeddedAttribute.SHOW_RECORDING, this.showRecordingInput);
-		if (this.initialAudioMutedInput) {
-			url.searchParams.set(EmbeddedAttribute.INITIAL_AUDIO_MUTED, 'true');
+		if (!this.initialAudioEnabledInput) {
+			url.searchParams.set(EmbeddedAttribute.INITIAL_AUDIO_ENABLED, 'false');
 		}
-		if (this.initialVideoMutedInput) {
-			url.searchParams.set(EmbeddedAttribute.INITIAL_VIDEO_MUTED, 'true');
+		if (!this.initialVideoEnabledInput) {
+			url.searchParams.set(EmbeddedAttribute.INITIAL_VIDEO_ENABLED, 'false');
 		}
 		if (this.showOnlyRecordingsInput) {
 			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');
@@ -322,31 +324,47 @@ export class App {
 		this.log.log(`→ participantKick("${this.kickIdentityInput}")`);
 	}
 
+	/** Resolves the shared `enabled` selector to the argument the media commands below pass on. */
+	private resolveMediaEnabled(): boolean | undefined {
+		if (this.mediaEnabledInput === 'true') return true;
+		if (this.mediaEnabledInput === 'false') return false;
+		return undefined;
+	}
+
 	protected callMediaToggleAudio(): void {
+		const enabled = this.resolveMediaEnabled();
+
 		if (this.integration() === 'iframe') {
-			this.iframeHost.mediaToggleAudio();
+			this.iframeHost.mediaToggleAudio(enabled);
 		} else {
-			this.meetRef()?.nativeElement.mediaToggleAudio();
+			this.meetRef()?.nativeElement.mediaToggleAudio(enabled);
 		}
-		this.log.log('→ mediaToggleAudio()');
+
+		this.log.log(`→ mediaToggleAudio(${enabled === undefined ? '' : enabled})`);
 	}
 
 	protected callMediaToggleVideo(): void {
+		const enabled = this.resolveMediaEnabled();
+
 		if (this.integration() === 'iframe') {
-			this.iframeHost.mediaToggleVideo();
+			this.iframeHost.mediaToggleVideo(enabled);
 		} else {
-			this.meetRef()?.nativeElement.mediaToggleVideo();
+			this.meetRef()?.nativeElement.mediaToggleVideo(enabled);
 		}
-		this.log.log('→ mediaToggleVideo()');
+
+		this.log.log(`→ mediaToggleVideo(${enabled === undefined ? '' : enabled})`);
 	}
 
 	protected callMediaToggleScreenShare(): void {
+		const enabled = this.resolveMediaEnabled();
+
 		if (this.integration() === 'iframe') {
-			this.iframeHost.mediaToggleScreenShare();
+			this.iframeHost.mediaToggleScreenShare(enabled);
 		} else {
-			this.meetRef()?.nativeElement.mediaToggleScreenShare();
+			this.meetRef()?.nativeElement.mediaToggleScreenShare(enabled);
 		}
-		this.log.log('→ mediaToggleScreenShare()');
+
+		this.log.log(`→ mediaToggleScreenShare(${enabled === undefined ? '' : enabled})`);
 	}
 
 	// ── Deprecated command spellings (kept so the e2e covers the 3.8.0 surface) ──

@@ -53,11 +53,21 @@ export const openWebcomponentWithAttributes = async (
 		await page.getByTestId(testId).fill(filled);
 	}
 
-	const showOnlyRecordingsCheckbox = page.getByTestId('input-showOnlyRecordings');
-	const desired = toBoolean(attributes[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]);
+	// [attribute, testId, default checkbox state when the attribute is omitted]. The media-enabled
+	// pair defaults to checked (the attribute itself defaults to `true`), unlike the others.
+	const CHECKBOX_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string, boolean]> = [
+		[EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'input-showOnlyRecordings', false],
+		[EmbeddedAttribute.INITIAL_AUDIO_ENABLED, 'input-initialAudioEnabled', true],
+		[EmbeddedAttribute.INITIAL_VIDEO_ENABLED, 'input-initialVideoEnabled', true]
+	];
 
-	if ((await showOnlyRecordingsCheckbox.isChecked()) !== desired) {
-		await showOnlyRecordingsCheckbox.click();
+	for (const [property, testId, defaultValue] of CHECKBOX_TESTIDS) {
+		const checkbox = page.getByTestId(testId);
+		const desired = attributes[property] === undefined ? defaultValue : toBoolean(attributes[property]);
+
+		if ((await checkbox.isChecked()) !== desired) {
+			await checkbox.click();
+		}
 	}
 
 	await page.getByTestId('btn-apply-config').click();

@@ -3,6 +3,12 @@ import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
 import {
+	expectPrejoinCameraEnabled,
+	expectPrejoinMicEnabled,
+	expectToolbarCameraEnabled,
+	expectToolbarMicEnabled
+} from '../helpers/media-controls.helper';
+import {
 	endMeetingCommand,
 	endMeetingLegacyCommand,
 	eventLocator,
@@ -13,7 +19,11 @@ import {
 	leaveMeeting,
 	leaveRoomCommand,
 	leaveRoomLegacyCommand,
-	openMeeting
+	mediaToggleAudioCommand,
+	mediaToggleScreenShareCommand,
+	mediaToggleVideoCommand,
+	openMeeting,
+	openMeetingAtMediaSetup
 } from '../helpers/testapp.helper';
 
 // The command/event API is identical across embedding transports — only the
@@ -206,6 +216,220 @@ for (const integration of INTEGRATIONS) {
 
 				await leaveMeeting(page, { integration, role: 'moderator' });
 				await speakerContext.close();
+			});
+		});
+
+		// The media commands are the first ones meant to work BEFORE the room is
+		// connected too (the prejoin screen has real local tracks), and the first with an
+		// optional boolean: omitted = toggle, provided = set. Both halves of that contract
+		// are asserted here against the participant's real device state.
+		test.describe('MEDIA_TOGGLE Commands', () => {
+			test('should mute and unmute the microphone by setting enabled explicitly', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
+
+				await mediaToggleAudioCommand(page, false);
+				await expectToolbarMicEnabled(page, integration, false, { timeout: 10_000 });
+
+				await mediaToggleAudioCommand(page, true);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
+			});
+
+			test('should disable and enable the camera by setting enabled explicitly', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+				await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
+
+				await mediaToggleVideoCommand(page, false);
+				await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
+
+				await mediaToggleVideoCommand(page, true);
+				await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
+			});
+
+			test('should invert the microphone state when enabled is omitted', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
+
+				await mediaToggleAudioCommand(page);
+				await expectToolbarMicEnabled(page, integration, false, { timeout: 10_000 });
+
+				// The second toggle must read the CURRENT state, not a stale snapshot.
+				await mediaToggleAudioCommand(page);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
+			});
+
+			test('should invert the camera state when enabled is omitted', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+				await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
+
+				await mediaToggleVideoCommand(page);
+				await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
+
+				await mediaToggleVideoCommand(page);
+				await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
+			});
+
+			test('should keep toggling after the participant changed the state from the UI', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				// The host and the in-meeting UI must share one source of truth: a UI mute
+				// followed by a host toggle has to unmute, not re-mute.
+				await meetLocator(page, integration, '#mic-btn').click();
+				await expectToolbarMicEnabled(page, integration, false, { timeout: 10_000 });
+
+				await mediaToggleAudioCommand(page);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
+			});
+
+			test('should start and stop screen sharing by setting enabled explicitly', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				await mediaToggleScreenShareCommand(page, true);
+				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toBeVisible({ timeout: 15_000 });
+
+				await mediaToggleScreenShareCommand(page, false);
+				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toHaveCount(0, {
+					timeout: 15_000
+				});
+			});
+
+			test('should toggle screen sharing on and off when enabled is omitted', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				await mediaToggleScreenShareCommand(page);
+				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toBeVisible({ timeout: 15_000 });
+
+				await mediaToggleScreenShareCommand(page);
+				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toHaveCount(0, {
+					timeout: 15_000
+				});
+			});
+
+			test('should be idempotent when setting the state it is already in', async ({ page }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
+
+				await mediaToggleAudioCommand(page, true);
+				await expectToolbarMicEnabled(page, integration, true, { timeout: 5_000 });
+				// A no-op set must not surface as a transition to the host either.
+				await expect(eventLocator(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED)).toHaveCount(0);
+			});
+
+			// The commands are documented as controlling the local devices, and the prejoin
+			// screen owns real local tracks — a host that mutes before the participant joins
+			// must be obeyed on both transports, not silently dropped by one of them.
+			test.describe('before joining the meeting (prejoin)', () => {
+				/**
+				 * Joins the rest of the way and reads the toolbar — the ground truth for what the
+				 * command actually did to the real device. Distinct from the prejoin screen's OWN
+				 * mic/camera button, which keeps its own display state and does not repaint on an
+				 * external change (see the "prejoin screen indicator" tests below): asserting against
+				 * it here would fail even when the command worked, and pass even when it didn't.
+				 */
+				const joinAndReadToolbar = async (
+					meet: (selector: string) => import('@playwright/test').Locator
+				): Promise<void> => {
+					await meet('#join-button').click();
+					await meet('#layout-container').waitFor({ state: 'visible', timeout: 15_000 });
+				};
+
+				test('should mute the microphone sent before joining the room', async ({ page }) => {
+					const { meet } = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+
+					await mediaToggleAudioCommand(page, false);
+					await joinAndReadToolbar(meet);
+
+					await expectToolbarMicEnabled(page, integration, false, { timeout: 10_000 });
+				});
+
+				test('should disable the camera sent before joining the room', async ({ page }) => {
+					const { meet } = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+
+					await mediaToggleVideoCommand(page, false);
+					await joinAndReadToolbar(meet);
+
+					await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
+				});
+
+				test('should invert the microphone state when enabled is omitted before joining', async ({ page }) => {
+					const { meet } = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+
+					// An ODD number of toggles, all still in prejoin: a real toggle ends up flipped
+					// from the start (enabled); a dropped/no-op command would leave it unchanged, so
+					// this — unlike a round trip — can tell the two apart with a single join at the end.
+					await mediaToggleAudioCommand(page);
+					await mediaToggleAudioCommand(page);
+					await mediaToggleAudioCommand(page);
+					await joinAndReadToolbar(meet);
+
+					await expectToolbarMicEnabled(page, integration, false, { timeout: 10_000 });
+				});
+
+				// The attribute only lowers the initial state (permissions still win, the control
+				// stays live) — so the participant must be able to unmute from the prejoin screen and
+				// have a later host toggle correctly mute them back, not just repeat "enable".
+				test('should mute back a participant who unmuted from initial-audio-enabled=false, on a later omitted toggle', async ({
+					page
+				}) => {
+					const { meet } = await openMeetingAtMediaSetup(page, roomId, {
+						integration,
+						role: 'moderator',
+						initialAudioEnabled: false
+					});
+
+					await meet('#microphone-button').click(); // participant unmutes themselves
+					await mediaToggleAudioCommand(page); // host toggle: must read the mic as ON and mute it
+					await joinAndReadToolbar(meet);
+
+					await expectToolbarMicEnabled(page, integration, false, { timeout: 10_000 });
+				});
+
+				test('should turn the camera back off for a participant who unmuted from initial-video-enabled=false, on a later omitted toggle', async ({
+					page
+				}) => {
+					const { meet } = await openMeetingAtMediaSetup(page, roomId, {
+						integration,
+						role: 'moderator',
+						initialVideoEnabled: false
+					});
+
+					await meet('#camera-button').click();
+					await mediaToggleVideoCommand(page);
+					await joinAndReadToolbar(meet);
+
+					await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
+				});
+
+				// The prejoin screen's OWN mic/camera button is a live indicator the participant looks
+				// at while deciding whether to join — it must repaint on a host-driven change too, not
+				// only on the participant's own click.
+				test.describe('prejoin screen indicator', () => {
+					test('should repaint the prejoin mic button when muted from outside', async ({ page }) => {
+						await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+						await expectPrejoinMicEnabled(page, integration, true, { timeout: 10_000 });
+
+						await mediaToggleAudioCommand(page, false);
+
+						await expectPrejoinMicEnabled(page, integration, false, { timeout: 10_000 });
+					});
+
+					test('should repaint the prejoin camera button when disabled from outside', async ({ page }) => {
+						await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+						await expectPrejoinCameraEnabled(page, integration, true, { timeout: 10_000 });
+
+						await mediaToggleVideoCommand(page, false);
+
+						await expectPrejoinCameraEnabled(page, integration, false, { timeout: 10_000 });
+					});
+				});
 			});
 		});
 

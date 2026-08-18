@@ -3,7 +3,7 @@ import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from 
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
-import { InitialMediaMutedPreferences, RoomFeatures } from '../models/features.model';
+import { InitialMediaEnabledPreferences, RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from '../utils/features.utils';
 import { LoggerService } from '../../../shared/services/logger.service';
 import type { ILogger } from '../../../shared/models/logger.model';
@@ -50,9 +50,9 @@ export class RoomFeatureService {
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
-	// Client preference from the initial-audio-muted / initial-video-muted embed attributes (and
+	// Client preference from the initial-audio-enabled / initial-video-enabled embed attributes (and
 	// their URL query params): the participant's initial media state, not a permission.
-	protected initialMediaMuted = signal<InitialMediaMutedPreferences>({ audioMuted: false, videoMuted: false });
+	protected initialMediaEnabled = signal<InitialMediaEnabledPreferences>({ audioEnabled: true, videoEnabled: true });
 	permissions = this.roomMemberContextService.permissions;
 
 	// Computed signal to derive features based on current configurations
@@ -62,7 +62,7 @@ export class RoomFeatureService {
 			this.permissions(),
 			this.globalConfigService.roomAppearanceConfig(),
 			this.globalConfigService.captionsGlobalEnabled(),
-			this.initialMediaMuted()
+			this.initialMediaEnabled()
 		)
 	);
 
@@ -87,13 +87,13 @@ export class RoomFeatureService {
 	}
 
 	/**
-	 * Updates the initial media state the embedding application asked for (initial-audio-muted /
-	 * initial-video-muted). It only lowers the initial state — the permissions always win — and
+	 * Updates the initial media state the embedding application asked for (initial-audio-enabled /
+	 * initial-video-enabled). It only lowers the initial state — the permissions always win — and
 	 * the participant may re-enable the device afterwards.
 	 */
-	setInitialMediaMuted(preferences: InitialMediaMutedPreferences): void {
-		this.log.d('Updating initial media muted preferences', preferences);
-		this.initialMediaMuted.set(preferences);
+	setInitialMediaEnabled(preferences: InitialMediaEnabledPreferences): void {
+		this.log.d('Updating initial media enabled preferences', preferences);
+		this.initialMediaEnabled.set(preferences);
 	}
 
 	protected async loadGlobalFeatureConfigs(): Promise<void> {
@@ -119,7 +119,7 @@ export class RoomFeatureService {
 		permissions?: MeetRoomMemberPermissions,
 		appearanceConfig?: MeetAppearanceConfig,
 		captionsGlobalEnabled = false,
-		initialMediaMuted?: InitialMediaMutedPreferences
+		initialMediaEnabled?: InitialMediaEnabledPreferences
 	): RoomFeatures {
 		const features = structuredClone(DEFAULT_FEATURES);
 
@@ -131,8 +131,8 @@ export class RoomFeatureService {
 			FeatureCalculator.applyPermissions(features, permissions);
 		}
 
-		if (initialMediaMuted) {
-			FeatureCalculator.applyInitialMediaMuted(features, initialMediaMuted);
+		if (initialMediaEnabled) {
+			FeatureCalculator.applyInitialMediaEnabled(features, initialMediaEnabled);
 		}
 
 		if (appearanceConfig) {
