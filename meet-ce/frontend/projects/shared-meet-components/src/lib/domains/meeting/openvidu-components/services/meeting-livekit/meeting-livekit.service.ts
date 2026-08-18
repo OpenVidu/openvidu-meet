@@ -1,4 +1,4 @@
-import { inject, Service } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
 import type { ILogger } from '../../../../../shared/models/logger.model';
 import { AssetsService } from '../../../../../shared/services/assets.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -9,6 +9,7 @@ import {
 	E2EEOptions,
 	ExternalE2EEKeyProvider,
 	Room,
+	RoomEvent,
 	RoomOptions,
 	VideoPresets
 } from '../livekit';
@@ -30,6 +31,31 @@ export class MeetingLiveKitService {
 
 	private room: Room | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
+
+	private readonly _connectionState = signal<ConnectionState>(ConnectionState.Disconnected);
+
+	/**
+	 * Reactive mirror of the Room's `ConnectionState`, with a single writer: the
+	 * `ConnectionStateChanged` subscription registered when the Room is created. It exists so
+	 * consumers can be `computed()` over the connection instead of probing the mutable `Room.state`
+	 * and mirroring it into a local signal kept in sync by an effect.
+	 *
+	 * This is the *connection* state only. Which screen the meeting shows (loading / prejoin /
+	 * error…) is a separate concern owned by `MeetingViewComponent`'s `MeetingViewPhase`.
+	 */
+	readonly connectionState = this._connectionState.asReadonly();
+
+	/**
+	 * Whether the local participant is connected to the room. While connecting or reconnecting the
+	 * room is initialized but not connected, so this is false.
+	 */
+	readonly isConnected = computed(() => this._connectionState() === ConnectionState.Connected);
+
+	/**
+	 * Whether the connection dropped and the client is performing a full reconnect. A
+	 * signal-only reconnect (`SignalReconnecting`) keeps media flowing and is deliberately excluded.
+	 */
+	readonly isReconnecting = computed(() => this._connectionState() === ConnectionState.Reconnecting);
 
 	/**
 	 * @internal
@@ -94,7 +120,18 @@ export class MeetingLiveKitService {
 		}
 
 		this.room = this.livekitSdkService.createRoom(roomOptions);
+		this.trackConnectionState(this.room);
 		this.log.d('Room initialized successfully');
+	}
+
+	/**
+	 * Publishes the Room's connection state into {@link connectionState}. Subscribed once per Room
+	 * instance, right where it is created, so that signal has exactly one writer. The state is seeded
+	 * from the fresh Room rather than assumed, because `init()` also recreates the Room to apply E2EE.
+	 */
+	private trackConnectionState(room: Room): void {
+		this._connectionState.set(room.state);
+		room.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => this._connectionState.set(state));
 	}
 
 	private buildE2EEOptions(): E2EEOptions {
@@ -211,15 +248,6 @@ export class MeetingLiveKitService {
 	 */
 	getRoomName(): string {
 		return this.room?.name ?? '';
-	}
-
-	/**
-	 * Returns if local participant is connected to the room.
-	 * When reconnecting, the room is initialized but not connected yet, so this method will return false.
-	 * @returns true if local participant is connected to the room, false otherwise
-	 */
-	isConnected(): boolean {
-		return this.room?.state === ConnectionState.Connected;
 	}
 
 	hasRoomTracksPublished(): boolean {

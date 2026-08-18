@@ -35,7 +35,7 @@ import { ChatService } from '../../services/chat/chat.service';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
 import { DeviceService } from '../../services/device/device.service';
 import { DocumentService } from '../../services/document/document.service';
-import { Room, RoomEvent } from '../../services/livekit';
+import { Room } from '../../services/livekit';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { LocalMediaControlService } from '../../services/local-media-control/local-media-control.service';
@@ -169,8 +169,10 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	readonly isMicrophoneEnabled = signal(true);
 	/**
 	 * @ignore
+	 * Read straight off the connection owner instead of mirroring `RoomEvent.Reconnecting`/`Reconnected`
+	 * into a local signal — that duplicated a subscription MeetingEventsService already holds.
 	 */
-	readonly isConnectionLost = signal(false);
+	readonly isConnectionLost = this.meetingLiveKitService.isReconnecting;
 	/**
 	 * @ignore
 	 */
@@ -360,6 +362,16 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 			this.recordingTime.set(startedAt);
 		}
 	});
+	/**
+	 * Closes any open panel when the connection drops. `isConnectionLost` is a boolean signal, so this
+	 * runs on the transition into the reconnecting state — the same moment the old
+	 * `RoomEvent.Reconnecting` listener fired.
+	 */
+	private readonly connectionLostEffect = effect(() => {
+		if (this.isConnectionLost() && this.panelService.isPanelOpened()) {
+			this.panelService.closePanel();
+		}
+	});
 
 	constructor() {
 		this.isFirefoxBrowser.set(this.platformService.isFirefox());
@@ -418,8 +430,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	async ngOnInit() {
 		const roomValue = this.meetingLiveKitService.getRoom();
 		this.room.set(roomValue);
-
-		this.subscribeToReconnection();
 	}
 
 	ngAfterViewInit() {
@@ -595,21 +605,6 @@ export class ToolbarComponent implements OnInit, OnDestroy, AfterViewInit {
 	 */
 	toggleActivitiesPanel(expandPanel: string) {
 		this.panelService.togglePanel(PanelType.ACTIVITIES, expandPanel);
-	}
-
-	private subscribeToReconnection() {
-		const roomValue = this.room();
-
-		if (!roomValue) return;
-
-		roomValue.on(RoomEvent.Reconnecting, () => {
-			if (this.panelService.isPanelOpened()) {
-				this.panelService.closePanel();
-			}
-
-			this.isConnectionLost.set(true);
-		});
-		roomValue.on(RoomEvent.Reconnected, () => this.isConnectionLost.set(false));
 	}
 
 	private subscribeToFullscreenChanged() {
