@@ -2,6 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import {
 	EmbeddedEventName,
 	LeftEventReason,
+	MeetMeetingEndingSoonPayload,
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingStatus,
@@ -13,6 +14,7 @@ import {
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
+import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../shared/services/sound.service';
 import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
@@ -55,6 +57,10 @@ export class MeetingEventHandlerService {
 	protected notificationService = inject(NotificationService);
 	protected soundService = inject(SoundService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
+	protected translateService = inject(TranslateService);
+
+	// Shown longer than the 3s default: this warning is the only notice before the meeting ends
+	private readonly MEETING_ENDING_SOON_SNACKBAR_DURATION = 10_000;
 
 	// ============================================
 	// PUBLIC METHODS - Room Event Handlers
@@ -74,7 +80,8 @@ export class MeetingEventHandlerService {
 				const relevantTopics: string[] = [
 					MeetSignalType.MEET_RECORDING_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
-					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED
+					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
+					MeetSignalType.MEET_MEETING_ENDING_SOON
 				];
 
 				if (!topic || !relevantTopics.includes(topic)) {
@@ -100,6 +107,10 @@ export class MeetingEventHandlerService {
 							await this.handleParticipantPermissionsUpdated(permissionsUpdateEvent);
 							break;
 						}
+
+						case MeetSignalType.MEET_MEETING_ENDING_SOON:
+							this.handleMeetingEndingSoon(event as MeetMeetingEndingSoonPayload);
+							break;
 					}
 				} catch (error) {
 					console.warn(`Failed to parse data message for topic: ${topic}`, error);
@@ -327,6 +338,27 @@ export class MeetingEventHandlerService {
 			console.error('Error refreshing room member token after role update:', error);
 			await this.navigationService.redirectToErrorPage(NavigationErrorReason.ROOM_ACCESS_REVOKED, true);
 		}
+	}
+
+	/**
+	 * Warns the user that the meeting is about to reach its room's duration limit
+	 * (`maxDurationMinutes`) and will be ended for every participant. The backend sends this signal
+	 * once per meeting to the whole room, so everyone sees the same warning.
+	 */
+	private handleMeetingEndingSoon(event: MeetMeetingEndingSoonPayload): void {
+		const roomId = this.meetingContext.roomId();
+
+		if (roomId && event.roomId !== roomId) {
+			return;
+		}
+
+		const message =
+			event.remainingMinutes === 1
+				? this.translateService.translate('ROOM.ENDING_SOON_ONE_MINUTE')
+				: this.translateService
+						.translate('ROOM.ENDING_SOON_MANY_MINUTES')
+						.replace('{minutes}', `${event.remainingMinutes}`);
+		this.notificationService.showSnackbar(message, this.MEETING_ENDING_SOON_SNACKBAR_DURATION);
 	}
 
 	private handleRecordingUpdated(event: MeetRecordingUpdatedPayload): void {

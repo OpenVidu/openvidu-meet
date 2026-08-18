@@ -3,7 +3,9 @@
 		"JOINING": "मीटिंग में शामिल हो रहे हैं...",
 		"LANDSCAPE_WARNING": "कृपया बेहतर अनुभव के लिए अपने डिवाइस को पोर्ट्रेट मोड में घुमाएं",
 		"DISCONNECTED": "आपने मीटिंग छोड़ दी है",
-		"DISCONNECTED_SUBTITLE": "मीटिंग समाप्त हो गई है"
+		"DISCONNECTED_SUBTITLE": "मीटिंग समाप्त हो गई है",
+		"ENDING_SOON_ONE_MINUTE": "मीटिंग लगभग 1 मिनट में समाप्त हो जाएगी",
+		"ENDING_SOON_MANY_MINUTES": "मीटिंग लगभग {minutes} मिनट में समाप्त हो जाएगी"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "मीटिंग में शामिल हों",

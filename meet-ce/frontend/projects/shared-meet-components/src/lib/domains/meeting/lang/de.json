@@ -3,7 +3,9 @@
 		"JOINING": "Meeting wird betreten...",
 		"LANDSCAPE_WARNING": "Bitte drehen Sie Ihr Gerät für eine bessere Erfahrung in den Hochformatmodus",
 		"DISCONNECTED": "Sie haben das Meeting verlassen",
-		"DISCONNECTED_SUBTITLE": "Das Meeting wurde beendet"
+		"DISCONNECTED_SUBTITLE": "Das Meeting wurde beendet",
+		"ENDING_SOON_ONE_MINUTE": "Das Meeting endet in etwa 1 Minute",
+		"ENDING_SOON_MANY_MINUTES": "Das Meeting endet in etwa {minutes} Minuten"
 	},
 	"MEDIA_SETUP": {
 		"JOIN": "Meeting beitreten",

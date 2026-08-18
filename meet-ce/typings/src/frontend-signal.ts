@@ -13,7 +13,9 @@ export enum MeetSignalType {
 	/** Emitted when a participant's role in a meeting room is updated */
 	MEET_PARTICIPANT_ROLE_UPDATED = 'meet_participant_role_updated',
 	/** Emitted when a participant must regenerate their room member token to sync updated permissions */
-	MEET_PARTICIPANT_PERMISSIONS_UPDATED = 'meet_participant_permissions_updated'
+	MEET_PARTICIPANT_PERMISSIONS_UPDATED = 'meet_participant_permissions_updated',
+	/** Emitted once per meeting when a duration-limited meeting is about to reach its limit and be force-ended */
+	MEET_MEETING_ENDING_SOON = 'meet_meeting_ending_soon'
 }
 
 /**
@@ -70,6 +72,20 @@ export interface MeetParticipantPermissionsUpdatedPayload {
 	timestamp: number;
 }
 
+/**
+ * Payload for MEET_MEETING_ENDING_SOON signal,
+ * warning every participant that the meeting is about to reach its duration limit
+ * (`maxDurationMinutes`) and will be ended for everyone.
+ */
+export interface MeetMeetingEndingSoonPayload {
+	/** ID of the room whose meeting is about to be ended */
+	roomId: string;
+	/** Approximate minutes (rounded up, always >= 1) until the meeting is force-ended */
+	remainingMinutes: number;
+	/** Timestamp in milliseconds when the warning was emitted */
+	timestamp: number;
+}
+
 export interface MeetingChatSignalPayload {
 	message: string;
 }
@@ -77,11 +93,12 @@ export interface MeetingChatSignalPayload {
 /**
  * Union type representing the payload of a MeetSignal.
  * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetRoomConfigUpdatedPayload},
- * {@link MeetParticipantRoleUpdatedPayload} or {@link MeetParticipantPermissionsUpdatedPayload},
- * depending on the signal type.
+ * {@link MeetParticipantRoleUpdatedPayload}, {@link MeetParticipantPermissionsUpdatedPayload}
+ * or {@link MeetMeetingEndingSoonPayload}, depending on the signal type.
  */
 export type MeetSignalPayload =
 	| MeetRecordingUpdatedPayload
 	| MeetRoomConfigUpdatedPayload
 	| MeetParticipantRoleUpdatedPayload
-	| MeetParticipantPermissionsUpdatedPayload;
+	| MeetParticipantPermissionsUpdatedPayload
+	| MeetMeetingEndingSoonPayload;

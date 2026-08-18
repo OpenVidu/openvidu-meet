@@ -72,12 +72,21 @@ export class MeetRoomHelper {
 	}
 
 	/**
+	 * Milliseconds left until a meeting reaches its room's duration limit (zero or negative once the
+	 * limit is exceeded). The meeting's start is the LiveKit room creation time (in seconds, as
+	 * LiveKit reports it).
+	 */
+	static meetingRemainingMs(creationTimeSeconds: number, maxDurationMinutes: number, nowMs: number): number {
+		const deadlineMs = creationTimeSeconds * 1000 + maxDurationMinutes * 60_000;
+		return deadlineMs - nowMs;
+	}
+
+	/**
 	 * Decides whether a meeting has exceeded its room's duration limit. The meeting's start is the
 	 * LiveKit room creation time (in seconds, as LiveKit reports it).
 	 */
 	static isMeetingOverMaxDuration(creationTimeSeconds: number, maxDurationMinutes: number, nowMs: number): boolean {
-		const deadlineMs = creationTimeSeconds * 1000 + maxDurationMinutes * 60_000;
-		return nowMs >= deadlineMs;
+		return this.meetingRemainingMs(creationTimeSeconds, maxDurationMinutes, nowMs) <= 0;
 	}
 
 	/**
