@@ -39,6 +39,7 @@ import {
 	isErrorRecordingNotFound,
 	OpenViduMeetError
 } from '../models/error.model.js';
+import type { RedisLock } from '../models/redis-lock.model.js';
 import { RecordingRepository } from '../repositories/recording.repository.js';
 import type {
 	MeetRecordingPage,
@@ -53,8 +54,8 @@ import { DistributedEventService } from './distributed-event.service.js';
 import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
-import type { RedisLock } from '../models/redis-lock.model.js';
 import { MutexService } from './mutex.service.js';
+import { RecordingAutoStartStateService } from './recording-auto-start-state.service.js';
 import { RequestSessionService } from './request-session.service.js';
 import type { RoomService } from './room.service.js';
 import { BlobStorageService } from './storage/blob-storage.service.js';
@@ -69,6 +70,7 @@ export class RecordingService {
 		@inject(RequestSessionService) protected requestSessionService: RequestSessionService,
 		@inject(BlobStorageService) protected blobStorageService: BlobStorageService,
 		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
+		@inject(RecordingAutoStartStateService) protected recAutoStartStateService: RecordingAutoStartStateService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {}
 
@@ -213,7 +215,23 @@ export class RecordingService {
 		}
 	}
 
+	/**
+	 * Stops a recording on behalf of a user (the REST surface). A stop through here is a deliberate
+	 * decision, so it also disables the room's recording auto-start for the rest of the meeting.
+	 */
 	async stopRecording(recordingId: string): Promise<MeetRecordingInfo> {
+		return this.stopRecordingEgress(recordingId, true);
+	}
+
+	/**
+	 * Stops a recording's egress. `disableAutoStart` distinguishes a deliberate stop (REST surface)
+	 * from a system cleanup ({@link handleRecordingTimeout}), which must keep auto-start armed so a
+	 * later join can retry a recording that never managed to start.
+	 */
+	protected async stopRecordingEgress(recordingId: string, disableAutoStart: boolean): Promise<MeetRecordingInfo> {
+		let disabledRoomId: string | undefined;
+		let egressStopped = false;
+
 		try {
 			const { roomId, egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
 
@@ -223,6 +241,15 @@ export class RecordingService {
 				throw errorRecordingNotFound(egressId);
 			}
 
+			const isStoppable = [EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_STARTING].includes(egress.status);
+
+			if (disableAutoStart && isStoppable) {
+				// Written BEFORE stopping the egress: the flag is guaranteed to be visible on every
+				// replica before the egress_ended webhook releases the recording-active lock.
+				await this.recAutoStartStateService.markDisabled(roomId, egress.roomId);
+				disabledRoomId = roomId;
+			}
+
 			switch (egress.status) {
 				case EgressStatus.EGRESS_ACTIVE:
 					// Everything is fine, the recording can be stopped.
@@ -230,6 +257,7 @@ export class RecordingService {
 				case EgressStatus.EGRESS_STARTING:
 					// Avoid pending egress after timeout, stop it immediately
 					await this.livekitService.stopEgress(egressId);
+					egressStopped = true;
 					// The recording is still starting, it cannot be stopped yet.
 					throw errorRecordingCannotBeStoppedWhileStarting(recordingId);
 				default:
@@ -238,10 +266,16 @@ export class RecordingService {
 			}
 
 			const egressInfo = await this.livekitService.stopEgress(egressId);
+			egressStopped = true;
 
 			this.logger.info(`Recording stopped successfully for room '${roomId}'`);
 			return await RecordingHelper.toRecordingInfo(egressInfo);
 		} catch (error) {
+			if (disabledRoomId && !egressStopped) {
+				// The stop itself failed and the egress is still running: re-arm the auto-start
+				await this.recAutoStartStateService.clearDisabled(disabledRoomId);
+			}
+
 			this.logger.debug(`Error stopping recording '${recordingId}'`, error);
 			throw error;
 		}
@@ -847,7 +881,9 @@ export class RecordingService {
 				await this.frontendEventService.sendRecordingUpdatedSignal(roomId, recordingInfo);
 			} else {
 				await this.updateRecordingStatus(recordingId, MeetRecordingStatus.FAILED);
-				await this.stopRecording(recordingId);
+				// System cleanup of a recording that never went active — not a deliberate stop, so
+				// auto-start stays armed and a later join can retry.
+				await this.stopRecordingEgress(recordingId, false);
 				// The recording was stopped successfully
 				// the cleanup timer will be cancelled when the egress_ended event is received.
 			}

@@ -10,6 +10,7 @@ import { container } from '../../../../src/config/dependency-injector.config.js'
 import { RecordingRepository } from '../../../../src/repositories/recording.repository.js';
 import { LivekitWebhookService } from '../../../../src/services/livekit-webhook.service.js';
 import { LiveKitService } from '../../../../src/services/livekit.service.js';
+import { RecordingAutoStartStateService } from '../../../../src/services/recording-auto-start-state.service.js';
 import { RecordingService } from '../../../../src/services/recording.service.js';
 import {
 	disconnectFakeParticipants,
@@ -37,6 +38,7 @@ describe('Recording Auto-Start Tests', () => {
 	let livekitWebhookService: LivekitWebhookService;
 	let recordingRepository: RecordingRepository;
 	let recordingService: RecordingService;
+	let recAutoStartStateService: RecordingAutoStartStateService;
 
 	beforeAll(async () => {
 		await startTestServer();
@@ -44,6 +46,7 @@ describe('Recording Auto-Start Tests', () => {
 		livekitWebhookService = container.get(LivekitWebhookService);
 		recordingRepository = container.get(RecordingRepository);
 		recordingService = container.get(RecordingService);
+		recAutoStartStateService = container.get(RecordingAutoStartStateService);
 	});
 
 	afterAll(async () => {
@@ -73,6 +76,25 @@ describe('Recording Auto-Start Tests', () => {
 	const findRoomRecordings = async (roomId: string) => {
 		const { recordings } = await recordingRepository.find({ roomId });
 		return recordings;
+	};
+
+	/**
+	 * Waits for LiveKit to report no active egress left in the room. The 'egress_ended' webhook
+	 * that releases the recording-active lock is delivered to the real deployment, not to this
+	 * in-process app (see file docstring above), so tests poll LiveKit directly and then release
+	 * the lock the same way the webhook handler would — the same direct-invocation technique
+	 * `simulateParticipantJoined` uses.
+	 */
+	const waitForEgressToEnd = async (roomId: string) => {
+		let activeEgress = await livekitService.getActiveEgress(roomId);
+		const deadline = Date.now() + 30_000;
+
+		while (activeEgress.length > 0 && Date.now() < deadline) {
+			await sleep('1s');
+			activeEgress = await livekitService.getActiveEgress(roomId);
+		}
+
+		expect(activeEgress.length).toBe(0);
 	};
 
 	it('should auto-start the recording when the first participant joins', async () => {
@@ -229,19 +251,7 @@ describe('Recording Auto-Start Tests', () => {
 
 		await stopRecording(recordings[0].recordingId);
 
-		// The 'egress_ended' webhook that releases the recording-active lock is delivered to the
-		// real deployment, not to this in-process app (see file docstring above), so poll LiveKit
-		// directly for the egress to actually end, then release the lock the same way the webhook
-		// handler would — the same direct-invocation technique `simulateParticipantJoined` uses.
-		let activeEgress = await livekitService.getActiveEgress(room.roomId);
-		const stopDeadline = Date.now() + 30_000;
-
-		while (activeEgress.length > 0 && Date.now() < stopDeadline) {
-			await sleep('1s');
-			activeEgress = await livekitService.getActiveEgress(room.roomId);
-		}
-
-		expect(activeEgress.length).toBe(0);
+		await waitForEgressToEnd(room.roomId);
 		await recordingService.releaseRecordingLockIfNoEgress(room.roomId);
 
 		// A manual stop is a deliberate decision: a later join reaching the same threshold again
@@ -251,5 +261,116 @@ describe('Recording Auto-Start Tests', () => {
 		await sleep('5s');
 
 		expect((await findRoomRecordings(room.roomId)).length).toBe(1);
+
+		// The disarm is keyed to this very meeting through its LiveKit room sid
+		const lkRoom = await livekitService.getRoom(room.roomId);
+		expect(await recAutoStartStateService.isDisabled(room.roomId, lkRoom.sid)).toBe(true);
 	}, 90_000);
+
+	it('should auto-start a recording again in the next meeting after a manual stop', async () => {
+		const { room } = await setupSingleRoom(false, 'REARM_NEXT_MEETING_ROOM', {
+			recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS }
+		});
+
+		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
+		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
+
+		// The handler fires the start in the background; poll until the recording shows up
+		let recordings = await findRoomRecordings(room.roomId);
+		const startDeadline = Date.now() + 30_000;
+
+		while (recordings.length === 0 && Date.now() < startDeadline) {
+			await sleep('1s');
+			recordings = await findRoomRecordings(room.roomId);
+		}
+
+		expect(recordings.length).toBe(1);
+		const firstRecordingId = recordings[0].recordingId;
+
+		await stopRecording(firstRecordingId);
+		await waitForEgressToEnd(room.roomId);
+		await recordingService.releaseRecordingLockIfNoEgress(room.roomId);
+
+		// The disarm is scoped to the meeting, not to the room: once the meeting ends
+		// (room_finished, invoked directly like the joins above), a join in the next meeting
+		// auto-starts a recording again.
+		const lkRoom = await livekitService.getRoom(room.roomId);
+		await livekitWebhookService.handleRoomFinished(lkRoom);
+
+		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
+		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
+
+		recordings = await findRoomRecordings(room.roomId);
+		const restartDeadline = Date.now() + 30_000;
+
+		while (recordings.length < 2 && Date.now() < restartDeadline) {
+			await sleep('1s');
+			recordings = await findRoomRecordings(room.roomId);
+		}
+
+		expect(recordings.length).toBe(2);
+
+		// Target the restarted recording explicitly by id: the first one's final status is written
+		// by the deployment processing the real egress webhooks, so filtering by status races it
+		const restartedRecording = recordings.find((recording) => recording.recordingId !== firstRecordingId);
+		expect(restartedRecording).toBeDefined();
+		await stopRecording(restartedRecording!.recordingId);
+	}, 120_000);
+
+	it('should keep the auto-start armed after a system stop', async () => {
+		const { room } = await setupSingleRoom(false, 'SYSTEM_STOP_ROOM', {
+			recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS }
+		});
+
+		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
+		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
+
+		// Wait until the recording is ACTIVE so the system stop below takes the regular stop path
+		let recordings = await findRoomRecordings(room.roomId);
+		const activeDeadline = Date.now() + 30_000;
+
+		while (
+			(recordings.length === 0 || recordings[0].status !== MeetRecordingStatus.ACTIVE) &&
+			Date.now() < activeDeadline
+		) {
+			await sleep('1s');
+			recordings = await findRoomRecordings(room.roomId);
+		}
+
+		expect(recordings.length).toBe(1);
+		expect(recordings[0].status).toBe(MeetRecordingStatus.ACTIVE);
+		const firstRecordingId = recordings[0].recordingId;
+
+		// A system cleanup (RecordingService.handleRecordingTimeout) is NOT a deliberate stop: it
+		// must keep the auto-start armed so a later join can retry the recording that failed.
+		await (
+			recordingService as unknown as {
+				handleRecordingTimeout(recordingId: string, roomId: string): Promise<void>;
+			}
+		).handleRecordingTimeout(firstRecordingId, room.roomId);
+
+		const lkRoom = await livekitService.getRoom(room.roomId);
+		expect(await recAutoStartStateService.isDisabled(room.roomId, lkRoom.sid)).toBe(false);
+
+		await waitForEgressToEnd(room.roomId);
+		await recordingService.releaseRecordingLockIfNoEgress(room.roomId);
+
+		// The threshold is still met, so the next join relaunches the recording
+		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
+		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
+
+		recordings = await findRoomRecordings(room.roomId);
+		const restartDeadline = Date.now() + 30_000;
+
+		while (recordings.length < 2 && Date.now() < restartDeadline) {
+			await sleep('1s');
+			recordings = await findRoomRecordings(room.roomId);
+		}
+
+		expect(recordings.length).toBe(2);
+
+		const restartedRecording = recordings.find((recording) => recording.recordingId !== firstRecordingId);
+		expect(restartedRecording).toBeDefined();
+		await stopRecording(restartedRecording!.recordingId);
+	}, 120_000);
 });

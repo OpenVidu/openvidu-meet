@@ -20,6 +20,7 @@ import { LiveKitService } from './livekit.service.js';
 import { LoggerService } from './logger.service.js';
 import { MeetingPresenceService } from './meeting-presence.service.js';
 import { MeetingService } from './meeting.service.js';
+import { RecordingAutoStartStateService } from './recording-auto-start-state.service.js';
 import { RecordingService } from './recording.service.js';
 import { RoomMemberService } from './room-member.service.js';
 import { RoomService } from './room.service.js';
@@ -44,6 +45,7 @@ export class LivekitWebhookService {
 		@inject(RoomMemberRepository) protected roomMemberRepository: RoomMemberRepository,
 		@inject(AiAssistantService) protected aiAssistantService: AiAssistantService,
 		@inject(TokenService) protected tokenService: TokenService,
+		@inject(RecordingAutoStartStateService) protected recAutoStartStateService: RecordingAutoStartStateService,
 		@inject(LoggerService) protected logger: LoggerService
 	) {
 		this.webhookReceiver = new WebhookReceiver(MEET_ENV.LIVEKIT_API_KEY, MEET_ENV.LIVEKIT_API_SECRET);
@@ -153,11 +155,8 @@ export class LivekitWebhookService {
 		// Skip if the participant is not a standard participant
 		if (!this.livekitService.isStandardParticipant(participant)) return;
 
-		// The room's recording may be configured to start by itself. The trigger is the first
-		// standard participant join, not room_started: LiveKit creates the room before anyone is
-		// connected, and a recording cannot start in an empty room. Fire-and-forget so egress
-		// startup never delays this handler (it runs serialized under the per-event webhook lock).
-		void this.autoStartRecordingIfConfigured(room.name);
+		// The room's recording may be configured to start by itself.
+		void this.autoStartRecordingIfConfigured(room);
 
 		try {
 			const payload = await MeetParticipantHelper.toParticipantJoinedPayload(room, participant);
@@ -190,7 +189,7 @@ export class LivekitWebhookService {
 	 * the system: no participant holding `recordingControl` is involved. E2EE rooms are excluded,
 	 * exactly as recording already is.
 	 */
-	protected async autoStartRecordingIfConfigured(roomId: string): Promise<void> {
+	protected async autoStartRecordingIfConfigured({ name: roomId, sid: meetingId }: Room): Promise<void> {
 		try {
 			const room = await this.roomRepository.findByRoomId(roomId, ['config']);
 
@@ -199,6 +198,16 @@ export class LivekitWebhookService {
 			const { recording, e2ee } = room.config;
 
 			if (!recording.enabled || !recording.autoStart || e2ee.enabled) return;
+
+			// A deliberate stop during this meeting disarms the auto-start until the meeting ends
+			const isAutoStartDisabled = await this.recAutoStartStateService.isDisabled(roomId, meetingId);
+
+			if (isAutoStartDisabled) {
+				this.logger.verbose(
+					`Skipping recording auto-start in room '${roomId}': disabled by a deliberate stop during this meeting`
+				);
+				return;
+			}
 
 			const autoStartConfig = RecordingHelper.getAutoStartConfig(recording.autoStart);
 			const thresholdReached = await this.isAutoStartThresholdReached(roomId, autoStartConfig);
@@ -305,6 +314,9 @@ export class LivekitWebhookService {
 	 */
 	async handleRoomFinished({ name: roomId }: Room): Promise<void> {
 		try {
+			// Re-arm the recording auto-start before anything else
+			await this.recAutoStartStateService.clearDisabled(roomId);
+
 			const meetRoom = await this.roomService.getMeetRoom(roomId);
 
 			this.logger.info(`Processing room_finished event for room '${roomId}'`);

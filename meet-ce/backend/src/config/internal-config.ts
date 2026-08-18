@@ -34,6 +34,7 @@ export const INTERNAL_CONFIG = {
 	RECORDING_ORPHANED_ACTIVE_LOCK_GRACE_PERIOD: '30s' as StringValue, // Grace period to consider an active recording lock as orphaned (should be greater than RECORDING_STARTED_TIMEOUT)
 	RECORDING_STALE_GC_INTERVAL: '14m' as StringValue, // Interval for cleaning up stale recordings (not updated recently)
 	RECORDING_STALE_GRACE_PERIOD: '5m' as StringValue, // Maximum allowed time since the last recording update before marking it as stale
+	RECORDING_AUTO_START_DISABLED_TTL: '24h' as StringValue, // Redis TTL for the per-room "auto-start disabled after a manual stop" flag; cleared on room_finished and refreshed on every hit, this is only a last-resort safety net against leaked flags
 
 	// Additional intervals
 	MIN_ROOM_AUTO_DELETE_DURATION: '1h' as StringValue, // Minimum duration before a room can be auto-deleted
@@ -43,7 +44,7 @@ export const INTERNAL_CONFIG = {
 	// Participant name reservation
 	PARTICIPANT_MAX_CONCURRENT_NAME_REQUESTS: 20, // Maximum number of request by the same name at the same time allowed
 	PARTICIPANT_NAME_RESERVATION_TTL: '12h' as StringValue, // Time-to-live for participant name reservations
-	
+
 	MEETING_PRESENCE_TTL: '32d' as StringValue, // Time-to-live for user/room presence mappings used to kick users from meetings
 
 	// Webhooks

@@ -1096,7 +1096,12 @@ export class RoomMemberService {
 				participant.permission,
 				metadata.permissions.chatWrite
 			);
-			await this.livekitService.updateParticipant(roomId, participantIdentity, JSON.stringify(metadata), permission);
+			await this.livekitService.updateParticipant(
+				roomId,
+				participantIdentity,
+				JSON.stringify(metadata),
+				permission
+			);
 			await this.frontendEventService.sendParticipantRoleUpdatedSignal(
 				roomId,
 				participantIdentity,
