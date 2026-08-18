@@ -4,7 +4,7 @@ import type { MeetRoomMemberRole } from '@openvidu-meet/typings';
  * The trigger condition for a recording auto-start mode, expressed as data rather than a verdict:
  * how many participants of which room roles the meeting must already hold. Evaluating it against
  * the live meeting state is the caller's job (see
- * `LivekitWebhookService.isAutoStartThresholdReached`), so `RecordingHelper.getAutoStartConfig`
+ * `RecordingAutoStartStateService.hasReachedAutoStartThreshold`), so `RecordingHelper.getAutoStartConfig`
  * stays pure and never touches `MeetingService`.
  */
 export interface MeetRecordingAutoStartPreset {

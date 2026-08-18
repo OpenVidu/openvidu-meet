@@ -1,4 +1,4 @@
-import type { MeetMeetingInfo, MeetParticipantInfo, MeetRoomMemberRole } from '@openvidu-meet/typings';
+import type { MeetMeetingInfo, MeetParticipantInfo } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
@@ -119,9 +119,8 @@ export class MeetingService {
 	 * @param roomId
 	 * @returns
 	 */
-	protected async getStandardParticipants(roomId: string): Promise<ParticipantInfo[]> {
-		const participants = await this.livekitService.listRoomParticipants(roomId);
-		return participants.filter((participant) => this.livekitService.isStandardParticipant(participant));
+	async getStandardParticipants(roomId: string): Promise<ParticipantInfo[]> {
+		return this.livekitService.listStandardParticipants(roomId);
 	}
 
 	/**
@@ -129,21 +128,13 @@ export class MeetingService {
 	 * `getParticipants` lists and `maxParticipants` limits.
 	 *
 	 * @param roomId - The ID of the room
-	 * @param roles - When given, only participants whose effective room role (see
-	 * `MeetParticipantHelper.extractRole`) is in this list are counted — used by the recording
-	 * auto-start presets, which always pass every role they mean to match instead of relying on an
-	 * "unfiltered" default that a new role could silently exclude.
-	 * @returns The number of matching standard participants; 0 if the meeting hasn't started
+	 * @returns The number of standard participants; 0 if the meeting hasn't started
 	 * @throws Any failure other than a not-yet-started meeting (e.g. LiveKit unreachable) — it must
 	 * not be swallowed as empty, or `maxParticipants` would silently stop being enforced
 	 */
-	async countStandardParticipants(roomId: string, roles?: MeetRoomMemberRole[]): Promise<number> {
+	async countStandardParticipants(roomId: string): Promise<number> {
 		const participants = await this.getStandardParticipants(roomId);
-
-		if (!roles) return participants.length;
-
-		return participants.filter((participant) => roles.includes(MeetParticipantHelper.extractRole(participant)))
-			.length;
+		return participants.length;
 	}
 
 	/**

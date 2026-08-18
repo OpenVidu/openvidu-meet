@@ -11,7 +11,7 @@ import { MeetRecordingStatus } from '@openvidu-meet/typings';
 import type { Archiver } from 'archiver';
 import { ZipArchive } from 'archiver';
 import { inject, injectable } from 'inversify';
-import type { RoomCompositeOptions } from 'livekit-server-sdk';
+import type { ParticipantInfo, Room, RoomCompositeOptions } from 'livekit-server-sdk';
 import { EgressStatus, EncodedFileOutput, EncodedFileType } from 'livekit-server-sdk';
 import ms from 'ms';
 import type { Readable } from 'stream';
@@ -216,6 +216,62 @@ export class RecordingService {
 	}
 
 	/**
+	 * Starts the room's recording when its config declares `autoStart` and the meeting's live state
+	 * meets the configured threshold.
+	 */
+	async startAutoRecordingIfNeeded({ name: roomId, sid: meetingId }: Room, joiner: ParticipantInfo): Promise<void> {
+		try {
+			const roomService = await this.getRoomService();
+			const room = await roomService.getMeetRoom(roomId, ['config']);
+			const { recording, e2ee } = room.config;
+
+			if (!recording.enabled || !recording.autoStart || e2ee.enabled) return;
+
+			// A deliberate stop during this meeting disarms the auto-start until the meeting ends
+			const recWasStoppedManually = await this.recAutoStartStateService.isDisabled(roomId, meetingId);
+
+			if (recWasStoppedManually) {
+				this.logger.verbose(
+					`Skipping recording auto-start in room '${roomId}': disabled by a deliberate stop during this meeting`
+				);
+				return;
+			}
+
+			const autoStartConfig = RecordingHelper.getAutoStartConfig(recording.autoStart);
+			const participants = await this.livekitService.listStandardParticipants(roomId);
+			const thresholdReached = this.recAutoStartStateService.hasReachedAutoStartThreshold(
+				roomId,
+				autoStartConfig,
+				joiner,
+				participants
+			);
+
+			if (!thresholdReached) return;
+
+			const recordingInfo = await this.startRecording(roomId);
+			this.logger.info(`Recording '${recordingInfo.recordingId}' auto-started in room '${roomId}'`);
+		} catch (error) {
+			// 404: the room was deleted between the webhook firing and this check running.
+			// 409: the recording is already active (started by another join in the meantime).
+			if (error instanceof OpenViduMeetError && [404, 409].includes(error.statusCode)) {
+				this.logger.verbose(`Skipping recording auto-start in room '${roomId}': ${error.message}`);
+				return;
+			}
+
+			this.logger.error(`Error auto-starting recording in room '${roomId}':`, error);
+		}
+	}
+
+	/**
+	 * Reactivates the room's recording auto-start. Called when the meeting ends (`room_finished`), so
+	 * the next meeting in the same room auto-starts its recording again. Never throws: the
+	 * `room_finished` handler must not be aborted by flag bookkeeping.
+	 */
+	async reactivateAutoRecording(roomId: string): Promise<void> {
+		await this.recAutoStartStateService.activateAutoStart(roomId);
+	}
+
+	/**
 	 * Stops a recording on behalf of a user (the REST surface). A stop through here is a deliberate
 	 * decision, so it also disables the room's recording auto-start for the rest of the meeting.
 	 */
@@ -272,8 +328,8 @@ export class RecordingService {
 			return await RecordingHelper.toRecordingInfo(egressInfo);
 		} catch (error) {
 			if (disabledRoomId && !egressStopped) {
-				// The stop itself failed and the egress is still running: re-arm the auto-start
-				await this.recAutoStartStateService.clearDisabled(disabledRoomId);
+				// The stop itself failed and the egress is still running: reactivate the auto-start
+				await this.recAutoStartStateService.activateAutoStart(disabledRoomId);
 			}
 
 			this.logger.debug(`Error stopping recording '${recordingId}'`, error);
