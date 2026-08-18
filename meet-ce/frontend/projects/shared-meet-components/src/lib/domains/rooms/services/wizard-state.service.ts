@@ -229,25 +229,10 @@ export class RoomWizardStateService {
 				)
 			},
 			{
-				id: WizardStepId.ROOM_CONFIG,
-				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_FEATURES'),
-				isCompleted: editMode,
-				isActive: editMode, // Start with Room Features step active in edit mode
-				isVisible: true,
-				formGroup: this.formBuilder.group({
-					chatEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.chat!.enabled),
-					virtualBackgroundEnabled: this.formBuilder.nonNullable.control(
-						initialRoomOptions.config!.virtualBackground!.enabled
-					),
-					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
-					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled)
-				})
-			},
-			{
 				id: WizardStepId.ROOM_ACCESS,
 				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_ACCESS'),
 				isCompleted: editMode,
-				isActive: false,
+				isActive: editMode, // Start with Room Access step active in edit mode
 				isVisible: true,
 				formGroup: this.formBuilder.group({
 					anonymousModeratorEnabled: this.formBuilder.nonNullable.control(
@@ -265,6 +250,21 @@ export class RoomWizardStateService {
 					speaker: this.formBuilder.group({
 						...this.buildPermissionsFormConfig(initialRoomOptions.roles!.speaker!.permissions)
 					})
+				})
+			},
+			{
+				id: WizardStepId.ROOM_CONFIG,
+				label: this.translateService.translate('ROOMS.WIZARD.STEP_ROOM_FEATURES'),
+				isCompleted: editMode,
+				isActive: false,
+				isVisible: true,
+				formGroup: this.formBuilder.group({
+					chatEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.chat!.enabled),
+					virtualBackgroundEnabled: this.formBuilder.nonNullable.control(
+						initialRoomOptions.config!.virtualBackground!.enabled
+					),
+					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
+					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled)
 				})
 			},
 			{

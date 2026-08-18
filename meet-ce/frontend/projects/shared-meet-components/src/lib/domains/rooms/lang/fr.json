@@ -154,7 +154,7 @@
       "UPDATE_ROOM": "Mettre à jour la salle",
       "CREATE_ROOM": "Créer une salle",
       "STEP_ROOM_DETAILS": "Détails de la salle",
-      "STEP_ROOM_FEATURES": "Fonctionnalités de la salle",
+      "STEP_ROOM_FEATURES": "Fonctionnalités de la réunion",
       "STEP_ROOM_ACCESS": "Accès à la salle",
       "STEP_RECORDING_SETTINGS": "Paramètres d'enregistrement",
       "STEP_RECORDING_TRIGGER": "Déclencheur d'enregistrement",
@@ -225,11 +225,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Modifier le membre",
         "REMOVE_MEMBER": "Retirer le membre",
-        "FEATURE_DISABLED_PERMISSION": "Activez la fonctionnalité correspondante dans Fonctionnalités de la salle pour configurer cette autorisation."
+        "FEATURE_DISABLED_PERMISSION": "Activez la fonctionnalité correspondante dans Fonctionnalités de la réunion pour configurer cette autorisation."
       },
       "FEATURES": {
-        "TITLE": "Fonctionnalités de la salle",
-        "DESCRIPTION": "Configurez des fonctionnalités supplémentaires pour votre salle",
+        "TITLE": "Fonctionnalités de la réunion",
+        "DESCRIPTION": "Configurez des fonctionnalités supplémentaires pour vos réunions",
         "SECURITY": "Sécurité",
         "E2EE": "Chiffrement de bout en bout",
         "E2EE_DESC": "Ajoutez une couche de sécurité supplémentaire à vos réunions. Personne en dehors de la réunion, pas même une personne disposant d'un accès au serveur, ne peut voir ou entendre la conversation.",

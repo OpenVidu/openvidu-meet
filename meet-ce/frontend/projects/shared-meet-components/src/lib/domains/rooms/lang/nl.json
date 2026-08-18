@@ -154,7 +154,7 @@
       "UPDATE_ROOM": "Kamer bijwerken",
       "CREATE_ROOM": "Kamer aanmaken",
       "STEP_ROOM_DETAILS": "Kamerdetails",
-      "STEP_ROOM_FEATURES": "Kamerfuncties",
+      "STEP_ROOM_FEATURES": "Meetingfuncties",
       "STEP_ROOM_ACCESS": "Kamertoegang",
       "STEP_RECORDING_SETTINGS": "Opname-instellingen",
       "STEP_RECORDING_TRIGGER": "Opnametrigger",
@@ -225,11 +225,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Lid bewerken",
         "REMOVE_MEMBER": "Lid verwijderen",
-        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij Kamerfuncties om deze machtiging te configureren."
+        "FEATURE_DISABLED_PERMISSION": "Schakel de betreffende functie in bij Meetingfuncties om deze machtiging te configureren."
       },
       "FEATURES": {
-        "TITLE": "Kamerfuncties",
-        "DESCRIPTION": "Configureer aanvullende functies en functionaliteit voor uw kamer",
+        "TITLE": "Meetingfuncties",
+        "DESCRIPTION": "Configureer aanvullende functies en functionaliteit voor uw meetings",
         "SECURITY": "Beveiliging",
         "E2EE": "End-to-end-versleuteling",
         "E2EE_DESC": "Voeg een extra beveiligingslaag toe aan uw meetings. Niemand buiten de meeting, zelfs niet iemand met servertoegang, kan het gesprek zien of horen.",

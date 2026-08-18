@@ -80,7 +80,7 @@
 		gap: var(--ov-meet-spacing-xs);
 	}
 
-	// ─── Feature Row (mirrors access-row but slightly larger) ─────────────────────
+	// ─── Feature Row (mirrors access-row) ─────────────────────────────────────────
 
 	.feature-row-wrapper {
 		display: flex;
@@ -92,8 +92,8 @@
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: var(--ov-meet-spacing-md);
-		padding: var(--ov-meet-spacing-md) var(--ov-meet-spacing-lg);
+		gap: var(--ov-meet-spacing-sm);
+		padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
 		border-radius: var(--ov-meet-radius-sm);
 		border: 1px solid var(--ov-meet-border-secondary);
 		background: var(--ov-meet-surface-variant);
@@ -110,12 +110,12 @@
 		.feature-info {
 			display: flex;
 			align-items: center;
-			gap: var(--ov-meet-spacing-md);
+			gap: var(--ov-meet-spacing-sm);
 			flex: 1;
 			min-width: 0;
 
 			.feature-icon {
-				@include design-tokens.ov-icon(lg);
+				@include design-tokens.ov-icon(md);
 				color: var(--ov-meet-icon-settings);
 				flex-shrink: 0;
 			}
@@ -123,18 +123,18 @@
 			.feature-text {
 				display: flex;
 				flex-direction: column;
-				gap: 3px;
+				gap: 2px;
 				min-width: 0;
 
 				.feature-label {
-					font-size: var(--ov-meet-font-size-lg);
+					font-size: var(--ov-meet-font-size-md);
 					font-weight: var(--ov-meet-font-weight-medium);
 					color: var(--ov-meet-text-primary);
 					line-height: var(--ov-meet-line-height-tight);
 				}
 
 				.feature-description {
-					font-size: var(--ov-meet-font-size-md);
+					font-size: var(--ov-meet-font-size-sm);
 					color: var(--ov-meet-text-secondary);
 					line-height: var(--ov-meet-line-height-normal);
 				}
@@ -161,20 +161,6 @@
 				}
 
 				.step-description {
-					font-size: var(--ov-meet-font-size-sm);
-				}
-			}
-		}
-
-		.feature-row {
-			padding: var(--ov-meet-spacing-sm) var(--ov-meet-spacing-md);
-
-			.feature-info .feature-text {
-				.feature-label {
-					font-size: var(--ov-meet-font-size-md);
-				}
-
-				.feature-description {
 					font-size: var(--ov-meet-font-size-sm);
 				}
 			}

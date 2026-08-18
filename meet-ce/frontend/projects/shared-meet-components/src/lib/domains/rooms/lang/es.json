@@ -154,7 +154,7 @@
       "UPDATE_ROOM": "Actualizar sala",
       "CREATE_ROOM": "Crear sala",
       "STEP_ROOM_DETAILS": "Detalles de la sala",
-      "STEP_ROOM_FEATURES": "Funciones de la sala",
+      "STEP_ROOM_FEATURES": "Funciones de la reunión",
       "STEP_ROOM_ACCESS": "Acceso a la sala",
       "STEP_RECORDING_SETTINGS": "Ajustes de grabación",
       "STEP_RECORDING_TRIGGER": "Activador de grabación",
@@ -225,11 +225,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Editar miembro",
         "REMOVE_MEMBER": "Eliminar miembro",
-        "FEATURE_DISABLED_PERMISSION": "Habilita la función correspondiente en Funciones de la sala para configurar este permiso."
+        "FEATURE_DISABLED_PERMISSION": "Habilita la función correspondiente en Funciones de la reunión para configurar este permiso."
       },
       "FEATURES": {
-        "TITLE": "Funciones de la sala",
-        "DESCRIPTION": "Configura funciones y funcionalidades adicionales para tu sala",
+        "TITLE": "Funciones de la reunión",
+        "DESCRIPTION": "Configura funciones y funcionalidades adicionales para tus reuniones",
         "SECURITY": "Seguridad",
         "E2EE": "Cifrado de extremo a extremo",
         "E2EE_DESC": "Añade una capa adicional de seguridad a tus reuniones. Nadie fuera de la reunión, ni siquiera quien tenga acceso al servidor, puede ver ni oír la conversación.",
