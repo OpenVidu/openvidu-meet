@@ -70,7 +70,9 @@ describe('Webhook Integration Tests', () => {
 		chat: { enabled: true },
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
-		captions: { enabled: true }
+		captions: { enabled: true },
+		audioEnabledOnJoin: true,
+		videoEnabledOnJoin: true
 	};
 
 	beforeAll(async () => {

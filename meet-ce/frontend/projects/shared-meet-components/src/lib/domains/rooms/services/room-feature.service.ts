@@ -131,9 +131,12 @@ export class RoomFeatureService {
 			FeatureCalculator.applyPermissions(features, permissions);
 		}
 
-		if (initialMediaEnabled) {
-			FeatureCalculator.applyInitialMediaEnabled(features, initialMediaEnabled);
-		}
+		// Also covers the room-wide *OnJoin config: lowering with all-true attributes is a no-op
+		FeatureCalculator.applyInitialMediaEnabled(
+			features,
+			initialMediaEnabled ?? { audioEnabled: true, videoEnabled: true },
+			roomConfig
+		);
 
 		if (appearanceConfig) {
 			FeatureCalculator.applyAppearanceConfig(features, appearanceConfig);
