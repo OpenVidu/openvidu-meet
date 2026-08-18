@@ -35,6 +35,9 @@ export interface RoomConfigFormValue {
 	virtualBackgroundEnabled: boolean;
 	e2eeEnabled: boolean;
 	captionsEnabled: boolean;
+	// `null` mirrors the stored "unlimited" value of the meeting limits (an empty input)
+	maxParticipants: number | null;
+	maxDurationMinutes: number | null;
 }
 
 export type RoomConfigFormGroup = FormGroup<{
@@ -42,6 +45,8 @@ export type RoomConfigFormGroup = FormGroup<{
 	virtualBackgroundEnabled: FormControl<boolean>;
 	e2eeEnabled: FormControl<boolean>;
 	captionsEnabled: FormControl<boolean>;
+	maxParticipants: FormControl<number | null>;
+	maxDurationMinutes: FormControl<number | null>;
 }>;
 
 // Form value and group types for the room access step

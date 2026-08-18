@@ -264,7 +264,16 @@ export class RoomWizardStateService {
 						initialRoomOptions.config!.virtualBackground!.enabled
 					),
 					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
-					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled)
+					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled),
+					// Empty (null) means unlimited; the backend accepts integers >= 1 or null
+					maxParticipants: this.formBuilder.control<number | null>(
+						initialRoomOptions.config!.maxParticipants ?? null,
+						[Validators.min(1), Validators.pattern(/^\d+$/)]
+					),
+					maxDurationMinutes: this.formBuilder.control<number | null>(
+						initialRoomOptions.config!.maxDurationMinutes ?? null,
+						[Validators.min(1), Validators.pattern(/^\d+$/)]
+					)
 				})
 			},
 			{
