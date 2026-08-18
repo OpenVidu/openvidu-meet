@@ -246,7 +246,18 @@
         "CHAT_DESC": "Permite que los participantes envíen mensajes durante la reunión",
         "EXPERIENCE": "Experiencia",
         "VIRTUAL_BACKGROUNDS": "Fondos virtuales",
-        "VIRTUAL_BACKGROUNDS_DESC": "Activa los fondos virtuales y los efectos de desenfoque para los participantes"
+        "VIRTUAL_BACKGROUNDS_DESC": "Activa los fondos virtuales y los efectos de desenfoque para los participantes",
+        "LIMITS": "Límites",
+        "MAX_DURATION": "Duración máxima de la reunión",
+        "MAX_DURATION_DESC": "Finaliza la reunión automáticamente pasado este tiempo. Déjalo vacío para duración ilimitada",
+        "MAX_DURATION_LABEL": "Minutos",
+        "MAX_DURATION_PLACEHOLDER": "Ilimitada",
+        "MAX_DURATION_INVALID": "Introduce un número entero de minutos (1 o más)",
+        "MAX_PARTICIPANTS": "Límite de participantes",
+        "MAX_PARTICIPANTS_DESC": "Número máximo de participantes que pueden unirse a la reunión. Déjalo vacío para no poner límite",
+        "MAX_PARTICIPANTS_LABEL": "Participantes",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "Ilimitado",
+        "MAX_PARTICIPANTS_INVALID": "Introduce un número entero de participantes (1 o más)"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Configuración de grabación",

@@ -246,7 +246,18 @@
         "CHAT_DESC": "会議中に参加者がメッセージを送信できるようにします",
         "EXPERIENCE": "エクスペリエンス",
         "VIRTUAL_BACKGROUNDS": "仮想背景",
-        "VIRTUAL_BACKGROUNDS_DESC": "参加者向けに仮想背景とぼかし効果を有効にします"
+        "VIRTUAL_BACKGROUNDS_DESC": "参加者向けに仮想背景とぼかし効果を有効にします",
+        "LIMITS": "制限",
+        "MAX_DURATION": "会議の最大時間",
+        "MAX_DURATION_DESC": "この時間が経過すると会議は自動的に終了します。空欄の場合は無制限です",
+        "MAX_DURATION_LABEL": "分",
+        "MAX_DURATION_PLACEHOLDER": "無制限",
+        "MAX_DURATION_INVALID": "1以上の整数（分）を入力してください",
+        "MAX_PARTICIPANTS": "参加者数の上限",
+        "MAX_PARTICIPANTS_DESC": "会議に参加できる最大人数です。空欄の場合は無制限です",
+        "MAX_PARTICIPANTS_LABEL": "人数",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "無制限",
+        "MAX_PARTICIPANTS_INVALID": "1以上の整数（人数）を入力してください"
       },
       "RECORDING_CONFIG": {
         "TITLE": "録画設定",

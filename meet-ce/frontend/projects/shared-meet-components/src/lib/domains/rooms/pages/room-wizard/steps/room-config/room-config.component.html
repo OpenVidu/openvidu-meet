@@ -11,6 +11,65 @@
 	<!-- Form Section -->
 	<main class="step-content">
 		<form [formGroup]="roomConfigForm" class="config-form">
+			<!-- ── Limits ───────────────────────────────── -->
+			<div class="feature-category">
+				<div class="category-header">
+					<mat-icon class="category-icon">timer</mat-icon>
+					<span class="category-label">{{ 'ROOMS.WIZARD.FEATURES.LIMITS' | translate }}</span>
+				</div>
+				<div class="config-grid">
+					<!-- Participant limit -->
+					<div class="feature-row" id="room-feature-max-participants">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">group</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS' | translate }}</span>
+								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_DESC' | translate }}</span>
+							</div>
+						</div>
+						<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
+							<mat-label>{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_LABEL' | translate }}</mat-label>
+							<input
+								matInput
+								type="number"
+								min="1"
+								step="1"
+								formControlName="maxParticipants"
+								[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_PLACEHOLDER' | translate"
+							/>
+							@if (roomConfigForm.controls.maxParticipants.invalid) {
+								<mat-error>{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_INVALID' | translate }}</mat-error>
+							}
+						</mat-form-field>
+					</div>
+
+					<!-- Meeting duration limit -->
+					<div class="feature-row" id="room-feature-max-duration">
+						<div class="feature-info">
+							<mat-icon class="feature-icon">hourglass_bottom</mat-icon>
+							<div class="feature-text">
+								<span class="feature-label">{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION' | translate }}</span>
+								<span class="feature-description">{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_DESC' | translate }}</span>
+							</div>
+						</div>
+						<mat-form-field appearance="outline" class="limit-field" subscriptSizing="dynamic">
+							<mat-label>{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_LABEL' | translate }}</mat-label>
+							<input
+								matInput
+								type="number"
+								min="1"
+								step="1"
+								formControlName="maxDurationMinutes"
+								[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_DURATION_PLACEHOLDER' | translate"
+							/>
+							@if (roomConfigForm.controls.maxDurationMinutes.invalid) {
+								<mat-error>{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_INVALID' | translate }}</mat-error>
+							}
+						</mat-form-field>
+					</div>
+				</div>
+			</div>
+
 			<!-- ── Security ─────────────────────────────── -->
 			<div class="feature-category">
 				<div class="category-header">

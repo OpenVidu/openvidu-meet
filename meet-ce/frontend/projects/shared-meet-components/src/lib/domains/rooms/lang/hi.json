@@ -246,7 +246,18 @@
         "CHAT_DESC": "सदस्यों को मीटिंग के दौरान संदेश भेजने की अनुमति दें",
         "EXPERIENCE": "अनुभव",
         "VIRTUAL_BACKGROUNDS": "वर्चुअल पृष्ठभूमि",
-        "VIRTUAL_BACKGROUNDS_DESC": "सदस्यों के लिए वर्चुअल पृष्ठभूमि और ब्लर प्रभाव सक्षम करें"
+        "VIRTUAL_BACKGROUNDS_DESC": "सदस्यों के लिए वर्चुअल पृष्ठभूमि और ब्लर प्रभाव सक्षम करें",
+        "LIMITS": "सीमाएँ",
+        "MAX_DURATION": "मीटिंग की अधिकतम अवधि",
+        "MAX_DURATION_DESC": "इस समय के बाद मीटिंग अपने आप समाप्त हो जाएगी। असीमित अवधि के लिए खाली छोड़ें",
+        "MAX_DURATION_LABEL": "मिनट",
+        "MAX_DURATION_PLACEHOLDER": "असीमित",
+        "MAX_DURATION_INVALID": "मिनटों की पूर्ण संख्या दर्ज करें (1 या अधिक)",
+        "MAX_PARTICIPANTS": "प्रतिभागियों की सीमा",
+        "MAX_PARTICIPANTS_DESC": "मीटिंग में शामिल हो सकने वाले प्रतिभागियों की अधिकतम संख्या। बिना सीमा के लिए खाली छोड़ें",
+        "MAX_PARTICIPANTS_LABEL": "प्रतिभागी",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "असीमित",
+        "MAX_PARTICIPANTS_INVALID": "प्रतिभागियों की पूर्ण संख्या दर्ज करें (1 या अधिक)"
       },
       "RECORDING_CONFIG": {
         "TITLE": "रिकॉर्डिंग कॉन्फ़िगरेशन",

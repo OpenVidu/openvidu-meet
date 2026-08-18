@@ -246,7 +246,18 @@
         "CHAT_DESC": "Autorisez les participants à envoyer des messages pendant la réunion",
         "EXPERIENCE": "Expérience",
         "VIRTUAL_BACKGROUNDS": "Arrière-plans virtuels",
-        "VIRTUAL_BACKGROUNDS_DESC": "Activez les arrière-plans virtuels et les effets de flou pour les participants"
+        "VIRTUAL_BACKGROUNDS_DESC": "Activez les arrière-plans virtuels et les effets de flou pour les participants",
+        "LIMITS": "Limites",
+        "MAX_DURATION": "Durée maximale de la réunion",
+        "MAX_DURATION_DESC": "Met fin à la réunion automatiquement après ce délai. Laissez vide pour une durée illimitée",
+        "MAX_DURATION_LABEL": "Minutes",
+        "MAX_DURATION_PLACEHOLDER": "Illimitée",
+        "MAX_DURATION_INVALID": "Saisissez un nombre entier de minutes (1 ou plus)",
+        "MAX_PARTICIPANTS": "Limite de participants",
+        "MAX_PARTICIPANTS_DESC": "Nombre maximum de participants pouvant rejoindre la réunion. Laissez vide pour aucune limite",
+        "MAX_PARTICIPANTS_LABEL": "Participants",
+        "MAX_PARTICIPANTS_PLACEHOLDER": "Illimité",
+        "MAX_PARTICIPANTS_INVALID": "Saisissez un nombre entier de participants (1 ou plus)"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Configuration de l'enregistrement",
