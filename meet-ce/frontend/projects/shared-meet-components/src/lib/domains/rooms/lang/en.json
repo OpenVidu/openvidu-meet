@@ -154,7 +154,7 @@
       "UPDATE_ROOM": "Update Room",
       "CREATE_ROOM": "Create Room",
       "STEP_ROOM_DETAILS": "Room Details",
-      "STEP_ROOM_FEATURES": "Room Features",
+      "STEP_ROOM_FEATURES": "Meeting Features",
       "STEP_ROOM_ACCESS": "Room Access",
       "STEP_RECORDING_SETTINGS": "Recording Settings",
       "STEP_RECORDING_TRIGGER": "Recording Trigger",
@@ -225,11 +225,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Edit member",
         "REMOVE_MEMBER": "Remove member",
-        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in Room Features to configure this permission."
+        "FEATURE_DISABLED_PERMISSION": "Enable the related feature in Meeting Features to configure this permission."
       },
       "FEATURES": {
-        "TITLE": "Room Features",
-        "DESCRIPTION": "Configure additional features and functionality for your room",
+        "TITLE": "Meeting Features",
+        "DESCRIPTION": "Configure additional features and functionality for your meetings",
         "SECURITY": "Security",
         "E2EE": "End-to-End Encryption",
         "E2EE_DESC": "Add an extra layer of security to your meetings. No one outside the meeting, not even anyone with server access, can see or hear the conversation.",

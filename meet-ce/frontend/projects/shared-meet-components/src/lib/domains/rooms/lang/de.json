@@ -154,7 +154,7 @@
       "UPDATE_ROOM": "Raum aktualisieren",
       "CREATE_ROOM": "Raum erstellen",
       "STEP_ROOM_DETAILS": "Raumdetails",
-      "STEP_ROOM_FEATURES": "Raumfunktionen",
+      "STEP_ROOM_FEATURES": "Meeting-Funktionen",
       "STEP_ROOM_ACCESS": "Raumzugriff",
       "STEP_RECORDING_SETTINGS": "Aufnahmeeinstellungen",
       "STEP_RECORDING_TRIGGER": "Aufnahme-Auslöser",
@@ -225,11 +225,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Mitglied bearbeiten",
         "REMOVE_MEMBER": "Mitglied entfernen",
-        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion unter Raumfunktionen, um diese Berechtigung zu konfigurieren."
+        "FEATURE_DISABLED_PERMISSION": "Aktivieren Sie die zugehörige Funktion unter Meeting-Funktionen, um diese Berechtigung zu konfigurieren."
       },
       "FEATURES": {
-        "TITLE": "Raumfunktionen",
-        "DESCRIPTION": "Konfigurieren Sie zusätzliche Funktionen und Funktionalitäten für Ihren Raum",
+        "TITLE": "Meeting-Funktionen",
+        "DESCRIPTION": "Konfigurieren Sie zusätzliche Funktionen und Funktionalitäten für Ihre Meetings",
         "SECURITY": "Sicherheit",
         "E2EE": "Ende-zu-Ende-Verschlüsselung",
         "E2EE_DESC": "Fügen Sie Ihren Meetings eine zusätzliche Sicherheitsebene hinzu. Niemand außerhalb des Meetings, nicht einmal jemand mit Serverzugriff, kann das Gespräch sehen oder hören.",

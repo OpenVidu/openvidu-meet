@@ -154,7 +154,7 @@
       "UPDATE_ROOM": "ルームを更新",
       "CREATE_ROOM": "ルームを作成",
       "STEP_ROOM_DETAILS": "ルームの詳細",
-      "STEP_ROOM_FEATURES": "ルームの機能",
+      "STEP_ROOM_FEATURES": "会議の機能",
       "STEP_ROOM_ACCESS": "ルームのアクセス",
       "STEP_RECORDING_SETTINGS": "録画設定",
       "STEP_RECORDING_TRIGGER": "録画のトリガー",
@@ -225,11 +225,11 @@
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "メンバーを編集",
         "REMOVE_MEMBER": "メンバーを削除",
-        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「ルームの機能」で対応する機能を有効にしてください。"
+        "FEATURE_DISABLED_PERMISSION": "この権限を設定するには、「会議の機能」で対応する機能を有効にしてください。"
       },
       "FEATURES": {
-        "TITLE": "ルームの機能",
-        "DESCRIPTION": "ルームの追加機能を設定します",
+        "TITLE": "会議の機能",
+        "DESCRIPTION": "会議の追加機能を設定します",
         "SECURITY": "セキュリティ",
         "E2EE": "エンドツーエンド暗号化",
         "E2EE_DESC": "会議にさらなるセキュリティ層を追加します。会議の外部にいる人は、サーバーにアクセスできる人であっても、会話を見たり聞いたりすることはできません。",

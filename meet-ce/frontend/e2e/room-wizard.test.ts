@@ -7,9 +7,13 @@ import { deleteUsers, MEET_BASE_URL } from './helpers/meet-api.helper';
  *
  * Verifies that role permissions which only make sense when a room feature is enabled become
  * disabled (and cannot be toggled on) in the "Room Access" step when that feature is turned off in
- * the "Room Features" step — and are restored when the feature is turned back on ("keep as-is"):
+ * the "Meeting Features" step — and are restored when the feature is turned back on ("keep as-is"):
  *   - Chat feature off        -> chatRead / chatWrite disabled for both roles.
  *   - Virtual background off  -> mediaChangeVirtualBackground disabled for both roles.
+ *
+ * The wizard's step order is Room Details -> Room Access -> Meeting Features, so these specs visit
+ * Room Access first, hop forward to Meeting Features to set a toggle, then step back to Room Access
+ * to assert on the role-permission switches.
  *
  * These specs drive the console UI directly (no room is created — the wizard is never finished), so
  * the only cleanup needed is the admin user created to reach the wizard.
@@ -39,18 +43,19 @@ test.describe('Room wizard E2E Tests', () => {
 
 	/**
 	 * Opens the create wizard, switches to advanced (multi-step) mode and advances to the
-	 * "Room Features" step.
+	 * "Meeting Features" step (Room Details -> Room Access -> Meeting Features).
 	 */
 	const openWizardAtFeatures = async (page: Page): Promise<void> => {
 		await page.goto(`${MEET_BASE_URL}/rooms/new`, { waitUntil: 'domcontentloaded' });
 		await page.locator('#wizard-advanced-mode-btn').click(); // basic -> advanced (Room Details)
-		await page.locator('#wizard-next-btn').click(); // Room Details -> Room Features
+		await page.locator('#wizard-next-btn').click(); // Room Details -> Room Access
+		await page.locator('#wizard-next-btn').click(); // Room Access -> Meeting Features
 		await expect(page.locator('#room-feature-chat')).toBeVisible();
 	};
 
-	/** Advances from "Room Features" to the "Room Access" step. */
+	/** Steps back from "Meeting Features" to the "Room Access" step. */
 	const gotoRoomAccess = async (page: Page): Promise<void> => {
-		await page.locator('#wizard-next-btn').click();
+		await page.locator('#wizard-previous-btn').click();
 		// The role-permission toggles live in (collapsed) expansion panels, so they are attached but
 		// not visible — waiting for one confirms the Room Access step has rendered.
 		await expect(page.locator('#moderator-permission-meetingJoin')).toBeAttached();
@@ -142,8 +147,8 @@ test.describe('Room wizard E2E Tests', () => {
 		await expect(permissionSwitch(page, 'moderator', 'chatWrite')).toBeDisabled();
 		await expect(permissionSwitch(page, 'speaker', 'chatWrite')).toBeDisabled();
 
-		// Back to Room Features and turn chat on again.
-		await page.locator('#wizard-previous-btn').click();
+		// Forward to Meeting Features again and turn chat on.
+		await page.locator('#wizard-next-btn').click();
 		await expect(page.locator('#room-feature-chat')).toBeVisible();
 		await setFeature(page, 'room-feature-chat', true);
 

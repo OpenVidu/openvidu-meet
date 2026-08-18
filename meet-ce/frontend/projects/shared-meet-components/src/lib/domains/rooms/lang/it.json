@@ -154,7 +154,7 @@
       "UPDATE_ROOM": "Aggiorna stanza",
       "CREATE_ROOM": "Crea stanza",
       "STEP_ROOM_DETAILS": "Dettagli della stanza",
-      "STEP_ROOM_FEATURES": "Funzionalità della stanza",
+      "STEP_ROOM_FEATURES": "Funzionalità della riunione",
       "STEP_ROOM_ACCESS": "Accesso alla stanza",
       "STEP_RECORDING_SETTINGS": "Impostazioni di registrazione",
       "STEP_RECORDING_TRIGGER": "Attivazione della registrazione",
@@ -225,11 +225,11 @@
         "MEMBERS_TO_ADD_SUFFIX": ")",
         "EDIT_MEMBER": "Modifica membro",
         "REMOVE_MEMBER": "Rimuovi membro",
-        "FEATURE_DISABLED_PERMISSION": "Abilita la funzionalità corrispondente in Funzionalità della stanza per configurare questa autorizzazione."
+        "FEATURE_DISABLED_PERMISSION": "Abilita la funzionalità corrispondente in Funzionalità della riunione per configurare questa autorizzazione."
       },
       "FEATURES": {
-        "TITLE": "Funzionalità della stanza",
-        "DESCRIPTION": "Configura funzionalità aggiuntive per la tua stanza",
+        "TITLE": "Funzionalità della riunione",
+        "DESCRIPTION": "Configura funzionalità aggiuntive per le tue riunioni",
         "SECURITY": "Sicurezza",
         "E2EE": "Crittografia end-to-end",
         "E2EE_DESC": "Aggiungi un ulteriore livello di sicurezza alle tue riunioni. Nessuno al di fuori della riunione, nemmeno chi ha accesso al server, può vedere o ascoltare la conversazione.",

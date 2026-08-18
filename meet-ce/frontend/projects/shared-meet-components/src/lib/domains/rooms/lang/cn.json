@@ -154,7 +154,7 @@
       "UPDATE_ROOM": "更新房间",
       "CREATE_ROOM": "创建房间",
       "STEP_ROOM_DETAILS": "房间详情",
-      "STEP_ROOM_FEATURES": "房间功能",
+      "STEP_ROOM_FEATURES": "会议功能",
       "STEP_ROOM_ACCESS": "房间访问",
       "STEP_RECORDING_SETTINGS": "录制设置",
       "STEP_RECORDING_TRIGGER": "录制触发",
@@ -225,11 +225,11 @@
         "MEMBERS_TO_ADD_SUFFIX": "）",
         "EDIT_MEMBER": "编辑成员",
         "REMOVE_MEMBER": "移除成员",
-        "FEATURE_DISABLED_PERMISSION": "在“房间功能”中启用相应功能以配置此权限。"
+        "FEATURE_DISABLED_PERMISSION": "在“会议功能”中启用相应功能以配置此权限。"
       },
       "FEATURES": {
-        "TITLE": "房间功能",
-        "DESCRIPTION": "为您的房间配置附加功能",
+        "TITLE": "会议功能",
+        "DESCRIPTION": "为您的会议配置附加功能",
         "SECURITY": "安全",
         "E2EE": "端到端加密",
         "E2EE_DESC": "为您的会议添加额外的安全保护。会议之外的任何人，即使是拥有服务器访问权限的人，也无法看到或听到对话内容。",
