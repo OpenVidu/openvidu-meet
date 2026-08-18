@@ -233,6 +233,17 @@ export class LiveKitService {
 		}
 	}
 
+	/**
+	 * Lists the standard participants (web clients) currently in a LiveKit room, filtering out its
+	 * internal participants (egress, ingress, agents) from the API surface.
+	 *
+	 * @param roomName - The name of the room to list participants from
+	 */
+	async listStandardParticipants(roomName: string): Promise<ParticipantInfo[]> {
+		const participants = await this.listRoomParticipants(roomName);
+		return participants.filter((participant) => this.isStandardParticipant(participant));
+	}
+
 	async participantExists(roomName: string, participantIdentity: string): Promise<boolean> {
 		try {
 			const participants: ParticipantInfo[] = await this.listRoomParticipants(roomName);

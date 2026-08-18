@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
+import { ParticipantInfo, ParticipantInfo_Kind } from '@livekit/protocol';
 import {
 	MEET_PERMISSION_KEYS,
 	MeetRecordingAutoStartMode,
@@ -69,6 +70,18 @@ describe('Recording Auto-Start Tests', () => {
 		if (!participant) {
 			throw new Error(`Participant '${identity}' not found in room '${roomId}'`);
 		}
+
+		await livekitWebhookService.handleParticipantJoined(room, participant);
+	};
+
+	/**
+	 * Delivers the `participant_joined` webhook for a participant that is NOT connected to the
+	 * room, reproducing deterministically a listing that lags behind the webhook (or a joiner
+	 * that already left): the handler must not depend on the listing including the joiner.
+	 */
+	const simulateUnlistedParticipantJoined = async (roomId: string, identity: string) => {
+		const room = await livekitService.getRoom(roomId);
+		const participant = new ParticipantInfo({ identity, name: identity, kind: ParticipantInfo_Kind.STANDARD });
 
 		await livekitWebhookService.handleParticipantJoined(room, participant);
 	};
@@ -167,6 +180,13 @@ describe('Recording Auto-Start Tests', () => {
 		// A speaker joining must not reach the moderator-only threshold
 		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
 
+		// Neither must an unlisted speaker: the joiner is counted explicitly when the listing
+		// misses them, but only when their role matches the preset
+		await simulateUnlistedParticipantJoined(room.roomId, 'UNLISTED_SPEAKER');
+		await sleep('3s');
+
+		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
+
 		await joinFakeParticipant(room.roomId, 'MODERATOR_PARTICIPANT');
 		await updateParticipantMetadata(room.roomId, 'MODERATOR_PARTICIPANT', {
 			iat: Date.now(),
@@ -227,6 +247,35 @@ describe('Recording Auto-Start Tests', () => {
 
 		expect((await findRoomRecordings(room.roomId)).length).toBe(1);
 
+		await stopRecording(recordings[0].recordingId);
+	}, 90_000);
+
+	it('should count the joining participant even when the listing does not include them yet', async () => {
+		const { room } = await setupSingleRoom(false, 'LAGGED_LISTING_ROOM', {
+			recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_SECOND_PARTICIPANT_JOINS }
+		});
+
+		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
+		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
+		await sleep('3s');
+
+		expect((await findRoomRecordings(room.roomId)).length).toBe(0);
+
+		// The second join webhook arrives but the listing does not include the joiner yet: the
+		// handler must count the joiner itself, or a two-person meeting whose second join hits a
+		// stale listing would never start its recording (no later join corrects the under-count).
+		await simulateUnlistedParticipantJoined(room.roomId, 'UNLISTED_SECOND_PARTICIPANT');
+
+		// The handler fires the start in the background; poll until the recording shows up
+		let recordings = await findRoomRecordings(room.roomId);
+		const deadline = Date.now() + 30_000;
+
+		while (recordings.length === 0 && Date.now() < deadline) {
+			await sleep('1s');
+			recordings = await findRoomRecordings(room.roomId);
+		}
+
+		expect(recordings.length).toBe(1);
 		await stopRecording(recordings[0].recordingId);
 	}, 90_000);
 
