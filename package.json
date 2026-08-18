@@ -36,10 +36,10 @@
 		"test:unit-webcomponent": "pnpm --filter @openvidu-meet/webcomponent run test:unit"
 	},
 	"devDependencies": {
-		"concurrently": "9.2.1",
+		"concurrently": "10.0.5",
 		"identity-obj-proxy": "3.0.0",
 		"nodemon": "3.1.14",
 		"tree-kill": "1.2.2",
-		"wait-on": "9.0.10"
+		"wait-on": "9.1.0"
 	}
 }
