@@ -861,7 +861,8 @@ set_version() {
     --filter openvidu-meet-workspace \
     --filter @openvidu-meet/backend \
     --filter @openvidu-meet/frontend \
-    --no-git-tag-version
+    --no-git-tag-version \
+    --no-git-checks
 
   local resolved_version
   resolved_version=$(node -pe "require('./package.json').version")
