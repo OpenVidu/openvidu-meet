@@ -65,8 +65,8 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	/**
 	 * @ignore
 	 */
-	readonly showCameraButton = this.libService.cameraButtonSignal;
-	readonly showMicrophoneButton = this.libService.microphoneButtonSignal;
+	readonly showCameraControls = this.libService.showCameraControlsSignal;
+	readonly showMicrophoneControls = this.libService.showMicrophoneControlsSignal;
 	readonly showBackgroundsButton = this.libService.backgroundEffectsButtonSignal;
 	readonly showLogo = this.libService.displayLogoSignal;
 

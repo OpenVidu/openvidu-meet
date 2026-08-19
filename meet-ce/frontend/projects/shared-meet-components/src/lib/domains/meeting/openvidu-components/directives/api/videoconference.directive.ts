@@ -570,3 +570,81 @@ export class ChatWritableDirective implements OnDestroy {
 		this.libService.setChatInputEnabled(true);
 	}
 }
+
+/**
+ * The **showCameraControls** directive shows/hides every camera control: the toolbar button, the
+ * prejoin screen and the settings panel. It is a capability — whether the participant may use the
+ * camera at all — and not a toolbar decoration, which is why it lives here and not with the
+ * toolbar directives. Whether the camera *starts* enabled is a separate axis.
+ *
+ * It is only available for {@link MeetingViewComponent}.
+ *
+ * Default: `true`
+ *
+ * @example
+ * <ov-meeting-view [showCameraControls]="false"></ov-meeting-view>
+ */
+@Directive({
+	selector: 'ov-meeting-view[showCameraControls]'
+})
+export class ShowCameraControlsDirective implements OnDestroy {
+	/**
+	 * @ignore
+	 */
+	readonly showCameraControls = input<boolean | undefined>(undefined);
+
+	/**
+	 * @ignore
+	 */
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(MeetingUiConfigService);
+	private readonly showCameraControlsEffect = effect(() => {
+		this.libService.setShowCameraControls(this.showCameraControls() ?? true);
+	});
+
+	/**
+	 * @ignore
+	 */
+	ngOnDestroy(): void {
+		this.libService.setShowCameraControls(true);
+	}
+}
+
+/**
+ * The **showMicrophoneControls** directive shows/hides every microphone control: the toolbar button,
+ * the prejoin screen and the settings panel. It is a capability — whether the participant may use
+ * the microphone at all — and not a toolbar decoration, which is why it lives here and not with the
+ * toolbar directives. Whether the microphone *starts* enabled is a separate axis.
+ *
+ * It is only available for {@link MeetingViewComponent}.
+ *
+ * Default: `true`
+ *
+ * @example
+ * <ov-meeting-view [showMicrophoneControls]="false"></ov-meeting-view>
+ */
+@Directive({
+	selector: 'ov-meeting-view[showMicrophoneControls]'
+})
+export class ShowMicrophoneControlsDirective implements OnDestroy {
+	/**
+	 * @ignore
+	 */
+	readonly showMicrophoneControls = input<boolean | undefined>(undefined);
+
+	/**
+	 * @ignore
+	 */
+	public elementRef = inject(ElementRef);
+	private readonly libService = inject(MeetingUiConfigService);
+	private readonly showMicrophoneControlsEffect = effect(() => {
+		this.libService.setShowMicrophoneControls(this.showMicrophoneControls() ?? true);
+	});
+
+	/**
+	 * @ignore
+	 */
+	ngOnDestroy(): void {
+		this.libService.setShowMicrophoneControls(true);
+	}
+}

@@ -40,7 +40,7 @@
 						<div class="option-text">{{ 'PANEL.SETTINGS.GENERAL' | translate }}</div>
 					}
 				</mat-list-option>
-				@if (showCameraButton()) {
+				@if (showCameraControls()) {
 					<mat-list-option
 						class="option"
 						id="video-opt"
@@ -55,7 +55,7 @@
 						}
 					</mat-list-option>
 				}
-				@if (showMicrophoneButton()) {
+				@if (showMicrophoneControls()) {
 					<mat-list-option
 						class="option"
 						id="audio-opt"
@@ -110,7 +110,7 @@
 					}
 				</div>
 			}
-			@if (showCameraButton() && selectedOption() === settingsOptions.VIDEO) {
+			@if (showCameraControls() && selectedOption() === settingsOptions.VIDEO) {
 				<div class="video-settings">
 					<ov-video-devices-select
 						(onVideoDeviceChanged)="onVideoDeviceChanged.emit($event)"
@@ -118,7 +118,7 @@
 					/>
 				</div>
 			}
-			@if (showMicrophoneButton() && selectedOption() === settingsOptions.AUDIO) {
+			@if (showMicrophoneControls() && selectedOption() === settingsOptions.AUDIO) {
 				<div class="audio-settings">
 					<ov-audio-devices-select
 						(onAudioDeviceChanged)="onAudioDeviceChanged.emit($event)"
