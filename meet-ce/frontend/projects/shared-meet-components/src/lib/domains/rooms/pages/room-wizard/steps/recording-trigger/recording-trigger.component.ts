@@ -13,6 +13,7 @@ import {
 } from '../../../../../../shared//components/selectable-card/selectable-card.component';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
+import { DeepPartial } from '../../../../../../shared/utils/object.utils';
 import {
 	RecordingTriggerFormGroup,
 	RecordingTriggerFormValue,
@@ -103,11 +104,9 @@ export class RecordingTriggerComponent {
 	}
 
 	private saveFormData(formValue: RecordingTriggerFormValue) {
-		const roomOptions = this.wizardService.roomOptions();
-		const stepData: Partial<MeetRoomOptions> = {
+		const stepData: DeepPartial<MeetRoomOptions> = {
 			config: {
 				recording: {
-					enabled: roomOptions.config?.recording?.enabled ?? false,
 					autoStart: triggerFormValueToAutoStart(formValue)
 				}
 			}
