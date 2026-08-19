@@ -7,6 +7,6 @@ export interface SystemInfo {
 	gitCommit: string;
 	buildDate: string;
 	edition: string;
-	environment: string;
+	// environment: string;
 	apiVersion: string;
 }
