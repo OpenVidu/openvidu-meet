@@ -141,11 +141,11 @@ describe('FeatureCalculator.applyPermissions', () => {
 			expect(features.videoEnabled).toBeFalse();
 		});
 
-		it('should apply the room-wide *OnJoin config when the attribute says nothing', () => {
+		it('should apply the room-wide config.initial*Enabled when the attribute says nothing', () => {
 			const features = featuresFor();
 			FeatureCalculator.applyInitialMediaEnabled(features, {}, {
-				audioEnabledOnJoin: false,
-				videoEnabledOnJoin: false
+				initialAudioEnabled: false,
+				initialVideoEnabled: false
 			} as MeetRoomConfig);
 
 			expect(features.audioEnabled).toBeFalse();
@@ -155,7 +155,7 @@ describe('FeatureCalculator.applyPermissions', () => {
 			expect(features.showCamera).toBeTrue();
 		});
 
-		it('should treat an absent *OnJoin config as enabled', () => {
+		it('should treat an absent room-wide initial media config as enabled', () => {
 			const features = featuresFor();
 			FeatureCalculator.applyInitialMediaEnabled(features, {}, {} as MeetRoomConfig);
 
@@ -169,8 +169,8 @@ describe('FeatureCalculator.applyPermissions', () => {
 		it('should let an explicit attribute raise a room default of false', () => {
 			const features = featuresFor();
 			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true, videoEnabled: true }, {
-				audioEnabledOnJoin: false,
-				videoEnabledOnJoin: false
+				initialAudioEnabled: false,
+				initialVideoEnabled: false
 			} as MeetRoomConfig);
 
 			expect(features.audioEnabled).toBeTrue();
@@ -180,8 +180,8 @@ describe('FeatureCalculator.applyPermissions', () => {
 		it('should let an explicit attribute lower a room default of true', () => {
 			const features = featuresFor();
 			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: false, videoEnabled: false }, {
-				audioEnabledOnJoin: true,
-				videoEnabledOnJoin: true
+				initialAudioEnabled: true,
+				initialVideoEnabled: true
 			} as MeetRoomConfig);
 
 			expect(features.audioEnabled).toBeFalse();
@@ -193,8 +193,8 @@ describe('FeatureCalculator.applyPermissions', () => {
 			// Video: the attribute says nothing, so the room decides (off).
 			const features = featuresFor();
 			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true }, {
-				audioEnabledOnJoin: false,
-				videoEnabledOnJoin: false
+				initialAudioEnabled: false,
+				initialVideoEnabled: false
 			} as MeetRoomConfig);
 
 			expect(features.audioEnabled).toBeTrue();
@@ -204,7 +204,7 @@ describe('FeatureCalculator.applyPermissions', () => {
 		it('should keep a denying permission above an explicit attribute and the room config', () => {
 			const features = featuresFor({ mediaPublishAudio: false });
 			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true }, {
-				audioEnabledOnJoin: true
+				initialAudioEnabled: true
 			} as MeetRoomConfig);
 
 			expect(features.audioEnabled).toBeFalse();

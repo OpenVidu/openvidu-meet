@@ -91,7 +91,7 @@ export class RoomFeatureService {
 	/**
 	 * Updates the initial media state the embedding application asked for (initial-audio-enabled /
 	 * initial-video-enabled). A device set here takes precedence over the room's own
-	 * `config.*EnabledOnJoin`; one left `undefined` leaves that decision to the room. Either way the
+	 * `config.initial*Enabled`; one left `undefined` leaves that decision to the room. Either way the
 	 * permissions win, and the participant may re-enable the device afterwards.
 	 */
 	setInitialMediaEnabled(preferences: InitialMediaEnabledPreferences): void {
@@ -134,7 +134,7 @@ export class RoomFeatureService {
 			FeatureCalculator.applyPermissions(features, permissions);
 		}
 
-		// Always applied: it is the only place that reads the room-wide *OnJoin config, and with nothing
+		// Always applied: it is the only place that reads the room-wide `config.initial*Enabled`, and with nothing
 		// set anywhere it resolves to the product default.
 		FeatureCalculator.applyInitialMediaEnabled(features, initialMediaEnabled ?? {}, roomConfig);
 

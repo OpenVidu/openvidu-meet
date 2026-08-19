@@ -23,7 +23,7 @@ MeetRoomConfig:
                 `null` means the meeting duration is unlimited.
                 Config updates merge with the stored config, so an omitted limit keeps its
                 current value; send `null` to lift it.
-        audioEnabledOnJoin:
+        initialAudioEnabled:
             type: boolean
             default: true
             description: >
@@ -33,7 +33,7 @@ MeetRoomConfig:
                 It is a default, not a policy — the embedding application's `initial-audio-enabled`
                 attribute takes precedence whenever it is set, to either value. To *enforce*
                 silence, deny the permission instead.
-        videoEnabledOnJoin:
+        initialVideoEnabled:
             type: boolean
             default: true
             description: >

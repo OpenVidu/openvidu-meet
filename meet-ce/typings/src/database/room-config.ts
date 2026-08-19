@@ -25,7 +25,7 @@ export interface MeetRoomConfig {
 	 * takes precedence whenever it is set (to either value). To *enforce* silence, deny the
 	 * permission instead. `true` when absent.
 	 */
-	audioEnabledOnJoin?: boolean;
+	initialAudioEnabled?: boolean;
 	/**
 	 * Room-wide **default** for whether participants join with their camera enabled. This is the
 	 * initial state, not a capability: the participant may re-enable the device afterwards, and a
@@ -35,7 +35,7 @@ export interface MeetRoomConfig {
 	 * takes precedence whenever it is set (to either value). To *enforce* a camera-off meeting, deny
 	 * the permission instead. `true` when absent.
 	 */
-	videoEnabledOnJoin?: boolean;
+	initialVideoEnabled?: boolean;
 	/**
 	 * Configuration for chat feature. See {@link MeetChatConfig} for details.
 	 */

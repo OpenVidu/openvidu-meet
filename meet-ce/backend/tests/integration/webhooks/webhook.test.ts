@@ -71,8 +71,8 @@ describe('Webhook Integration Tests', () => {
 		virtualBackground: { enabled: true },
 		e2ee: { enabled: false },
 		captions: { enabled: true },
-		audioEnabledOnJoin: true,
-		videoEnabledOnJoin: true
+		initialAudioEnabled: true,
+		initialVideoEnabled: true
 	};
 
 	beforeAll(async () => {
