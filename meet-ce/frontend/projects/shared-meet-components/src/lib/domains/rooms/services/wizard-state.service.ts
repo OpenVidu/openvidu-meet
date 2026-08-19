@@ -11,7 +11,7 @@ import {
 	MeetRoomOptions
 } from '@openvidu-meet/typings';
 import { TranslateService } from '../../../shared/services/i18n/translate.service';
-import { deepMerge } from '../../../shared/utils/object.utils';
+import { deepMerge, DeepPartial } from '../../../shared/utils/object.utils';
 import { WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
@@ -339,7 +339,7 @@ export class RoomWizardStateService {
 	 * This method merges the provided data with the current room options.
 	 * @param stepData - The data to update in the room options
 	 */
-	updateStepData(stepData: Partial<MeetRoomOptions>): void {
+	updateStepData(stepData: DeepPartial<MeetRoomOptions>): void {
 		const currentOptions = this._roomOptions();
 		const updatedOptions = deepMerge(currentOptions, stepData);
 

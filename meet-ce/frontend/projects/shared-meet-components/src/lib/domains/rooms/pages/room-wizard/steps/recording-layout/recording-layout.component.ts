@@ -14,6 +14,7 @@ import {
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../../../shared/services/i18n/translate.service';
 import { ThemeService } from '../../../../../../shared/services/theme.service';
+import { DeepPartial } from '../../../../../../shared/utils/object.utils';
 import { RecordingLayoutFormGroup, RecordingLayoutFormValue } from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services/wizard-state.service';
@@ -98,11 +99,9 @@ export class RecordingLayoutComponent {
 	}
 
 	private saveFormData(formValue: Partial<RecordingLayoutFormValue>): void {
-		const roomOptions = this.wizardService.roomOptions();
-		const stepData: Partial<MeetRoomOptions> = {
+		const stepData: DeepPartial<MeetRoomOptions> = {
 			config: {
 				recording: {
-					enabled: roomOptions.config?.recording?.enabled ?? false,
 					layout: formValue.layout ?? MeetRecordingLayout.GRID
 				}
 			}
