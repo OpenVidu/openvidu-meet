@@ -58,6 +58,7 @@ import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.
 import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
+import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -117,6 +118,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceSrv = inject(DeviceService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(MeetingUiConfigService);
@@ -432,6 +434,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 		this.participantService.clear();
 		this.deviceSrv.clear();
+		// Per entry: the next meeting resolves its own instead of inheriting this one's toggles.
+		this.mediaIntent.reset();
 	}
 
 	/**

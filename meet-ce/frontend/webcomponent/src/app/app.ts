@@ -42,6 +42,14 @@ import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
 import { ShadowStylesService } from './shadow-dom/styles.service';
 
 /**
+ * `booleanAttribute` with the third state kept: an attribute that was never set stays `undefined`
+ * instead of collapsing to a default, so "the host said nothing" reaches whoever resolves precedence
+ * as its own value. Otherwise identical, DOM strings included (`"false"` → `false`, bare → `true`).
+ */
+const optionalBooleanAttribute = (value: unknown): boolean | undefined =>
+	value === undefined || value === null ? undefined : booleanAttribute(value);
+
+/**
  * Root component of the OpenVidu Meet web component. It maps host attributes/properties to a
  * {@link WcRoute}, drives the {@link WcRouterService} (which runs that route's guard and may
  * redirect), renders the route's component inside a shadow root, and bridges host events both ways.
@@ -87,9 +95,10 @@ export class App {
 	readonly participantName = input<string | undefined>(undefined);
 	readonly participantExternalId = input<string | undefined>(undefined);
 	readonly participantMetadata = input<string | undefined>(undefined);
-	// booleanAttribute makes the DOM-attribute strings behave like real booleans ("false" → false)
-	readonly initialAudioEnabled = input(true, { transform: booleanAttribute });
-	readonly initialVideoEnabled = input(true, { transform: booleanAttribute });
+	// Tri-state: unset means "no opinion", so the room's own default applies; either value set takes
+	// precedence over it. A plain `input(true, …)` cannot tell those two apart.
+	readonly initialAudioEnabled = input(undefined, { transform: optionalBooleanAttribute });
+	readonly initialVideoEnabled = input(undefined, { transform: optionalBooleanAttribute });
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input<boolean>(false);

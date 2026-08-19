@@ -74,14 +74,30 @@
 					/>
 					showOnlyRecordings
 				</label>
-				<label>
-					<input type="checkbox" [(ngModel)]="initialAudioEnabledInput" data-testid="input-initialAudioEnabled" />
-					initialAudioEnabled
-				</label>
-				<label>
-					<input type="checkbox" [(ngModel)]="initialVideoEnabledInput" data-testid="input-initialVideoEnabled" />
-					initialVideoEnabled
-				</label>
+			</div>
+			<div class="ta-field">
+				<label for="initialAudioEnabled">initialAudioEnabled</label>
+				<select
+					id="initialAudioEnabled"
+					data-testid="select-initialAudioEnabled"
+					[(ngModel)]="initialAudioEnabledInput"
+				>
+					<option value="">omitted (room default)</option>
+					<option value="true">true</option>
+					<option value="false">false</option>
+				</select>
+			</div>
+			<div class="ta-field">
+				<label for="initialVideoEnabled">initialVideoEnabled</label>
+				<select
+					id="initialVideoEnabled"
+					data-testid="select-initialVideoEnabled"
+					[(ngModel)]="initialVideoEnabledInput"
+				>
+					<option value="">omitted (room default)</option>
+					<option value="true">true</option>
+					<option value="false">false</option>
+				</select>
 			</div>
 			<button class="ta-btn" (click)="applyConfig()" data-testid="btn-apply-config">Apply config</button>
 		</section>

@@ -27,8 +27,6 @@ interface ToolbarConfig {
  * Stream/Video configuration
  */
 interface StreamConfig {
-	videoEnabled: boolean;
-	audioEnabled: boolean;
 	displayParticipantName: boolean;
 	displayAudioDetection: boolean;
 	videoControls: boolean;
@@ -92,8 +90,6 @@ export class MeetingUiConfigService {
 	});
 
 	private readonly streamConfig = signal<StreamConfig>({
-		videoEnabled: true,
-		audioEnabled: true,
 		displayParticipantName: true,
 		displayAudioDetection: true,
 		videoControls: true,
@@ -111,9 +107,9 @@ export class MeetingUiConfigService {
 	// Whether the chat message input is enabled (the participant may send messages). The chat panel
 	// visibility is a separate concern (chatPanel above); this only gates writing.
 	private readonly chatInputEnabledConfig = signal<boolean>(true);
-	// Whether the camera / microphone controls are shown. Deliberately NOT in ToolbarConfig: each one
-	// gates every control of its device — the toolbar button, the prejoin screen and the settings
-	// panel — so it is a meeting-wide capability rather than a toolbar decoration.
+	// Whether the camera / microphone controls are shown. Deliberately NOT in ToolbarConfig: each gates
+	// every control of its device — toolbar button, prejoin screen and settings panel — so it is a
+	// meeting-wide capability, not a toolbar decoration.
 	private readonly showCameraControlsConfig = signal<boolean>(true);
 	private readonly showMicrophoneControlsConfig = signal<boolean>(true);
 
@@ -233,16 +229,6 @@ export class MeetingUiConfigService {
 
 	getE2EEKey(): string | undefined {
 		return this.generalConfig().e2eeKey;
-	}
-
-	// Stream configuration methods
-
-	isVideoEnabled(): boolean {
-		return this.streamConfig().videoEnabled;
-	}
-
-	isAudioEnabled(): boolean {
-		return this.streamConfig().audioEnabled;
 	}
 
 	// Toolbar configuration methods

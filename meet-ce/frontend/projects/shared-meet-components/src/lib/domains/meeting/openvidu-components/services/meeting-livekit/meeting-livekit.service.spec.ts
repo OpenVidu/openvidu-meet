@@ -37,10 +37,7 @@ class FakeRoom {
 		return this;
 	}
 
-	/**
-	 * What `MeetingViewComponent.ngOnDestroy` used to do from outside the service, taking its
-	 * connection-state subscription down with everyone else's.
-	 */
+	/** What a third party doing `getRoom().removeAllListeners()` leaves behind. */
 	removeAllListeners(): this {
 		this.handlers.clear();
 		return this;
@@ -156,8 +153,8 @@ describe('MeetingLiveKitService', () => {
 			expect(room.listenerCount(RoomEvent.ConnectionStateChanged)).toBe(1);
 		});
 
-		// Defence in depth for the bug teardown() fixes: even if some other code strips the room's
-		// listeners, reusing that room must not leave the state frozen for the rest of the meeting.
+		// Defence in depth: even if some other code strips the room's listeners, reusing that room must
+		// not leave the state frozen for the rest of the meeting.
 		it('re-arms its own subscription when it reuses a room whose listeners were stripped', () => {
 			service.init();
 			room.emitConnectionState(ConnectionState.Connected);
@@ -195,10 +192,9 @@ describe('MeetingLiveKitService', () => {
 		});
 	});
 
-	// The Room's lifecycle belongs to this service alone. Before teardown() existed, the meeting view
-	// released the outgoing Room with `getRoom().removeAllListeners()` and left `this.room` in place:
-	// the next meeting reused a Room nobody was listening to any more and ran with the connection
-	// state frozen at 'disconnected', which silently disabled every media command and toolbar click.
+	// The Room's lifecycle belongs to this service alone: releasing it from outside with
+	// `removeAllListeners()` while leaving `this.room` in place is what left the next meeting reusing a
+	// Room nobody listened to, with its connection state frozen at 'disconnected'.
 	describe('teardown()', () => {
 		it('is a no-op when no room was ever created', async () => {
 			await service.teardown();
@@ -248,9 +244,8 @@ describe('MeetingLiveKitService', () => {
 			await service.teardown();
 			room.emitConnectionState(ConnectionState.Connected);
 
-			// The outgoing room can no longer write the state...
 			expect(service.connectionState()).toBe(ConnectionState.Disconnected);
-			// ...but whoever else was listening to it still hears it.
+			// The other subscriber of that same Room keeps hearing it.
 			expect(otherSubscriber).toHaveBeenCalledTimes(2);
 		});
 

@@ -326,7 +326,7 @@ for (const integration of INTEGRATIONS) {
 			test('should invert the camera state correctly after a device was toggled across a leave and rejoin cycle', async ({
 				page
 			}) => {
-				// Camera off in prejoin, join, leave — the stored preference survives the cycle.
+				// Camera off in prejoin, join, leave.
 				const first = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
 				await first.meet('#camera-button').click();
 				await expectPrejoinCameraEnabled(page, integration, false, { timeout: 10_000 });
@@ -334,8 +334,11 @@ for (const integration of INTEGRATIONS) {
 				await first.meet('#layout-container').waitFor({ state: 'visible', timeout: 15_000 });
 				await leaveMeeting(page, { integration });
 
-				// Re-entering the same tab: turn the camera back ON in prejoin, then join.
+				// Re-entering starts from the room's default again. Toggle the camera off and back on so a
+				// latched flag would be stale, then join.
 				const second = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+				await expectPrejoinCameraEnabled(page, integration, true, { timeout: 10_000 });
+				await second.meet('#camera-button').click();
 				await expectPrejoinCameraEnabled(page, integration, false, { timeout: 10_000 });
 				await second.meet('#camera-button').click();
 				await expectPrejoinCameraEnabled(page, integration, true, { timeout: 10_000 });

@@ -11,7 +11,7 @@ import {
 } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
-import { MediaStorageService } from '../storage/storage.service';
+import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
@@ -36,7 +36,7 @@ function sameMediaStreamTrack(
 @Service()
 export class LocalTrackService {
 	private readonly deviceService = inject(DeviceService);
-	private readonly storageService = inject(MediaStorageService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly videoTrackProcessorService = inject(VideoTrackProcessorService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
@@ -152,11 +152,11 @@ export class LocalTrackService {
 		audioDeviceId: string | boolean | undefined = undefined,
 		allowPartialCreation = true
 	): Promise<LocalTrack[]> {
-		// Default to the user's stored preference (availability-independent). Whether a device is
-		// actually opened — and which one — is resolved by the per-kind logic below; on first visit
-		// the device list is still empty, so a default-device request is issued to obtain permission.
-		videoDeviceId ??= this.storageService.isCameraEnabled();
-		audioDeviceId ??= this.storageService.isMicrophoneEnabled();
+		// Default to the participant's current intent (availability-independent). Whether a device is
+		// actually opened — and which one — is resolved by the per-kind logic below; on first visit the
+		// device list is still empty, so a default-device request is issued to obtain permission.
+		videoDeviceId ??= this.mediaIntent.cameraEnabled();
+		audioDeviceId ??= this.mediaIntent.microphoneEnabled();
 
 		const options: CreateLocalTracksOptions = {
 			audio: { echoCancellation: true, noiseSuppression: true },
@@ -219,13 +219,13 @@ export class LocalTrackService {
 				await this.videoTrackProcessorService.applyToVideoTrack(videoTrack);
 			}
 
-			// Mute tracks when the user's stored preference is "off". This is availability-independent
-			// so a freshly created track isn't muted before devices have been enumerated.
-			if (!this.storageService.isCameraEnabled()) {
+			// Mute tracks when the intent is "off". This is availability-independent so a freshly
+			// created track isn't muted before devices have been enumerated.
+			if (!this.mediaIntent.cameraEnabled()) {
 				newLocalTracks.find((t) => t.kind === Track.Kind.Video)?.mute();
 			}
 
-			if (!this.storageService.isMicrophoneEnabled()) {
+			if (!this.mediaIntent.microphoneEnabled()) {
 				newLocalTracks.find((t) => t.kind === Track.Kind.Audio)?.mute();
 			}
 		}
@@ -341,8 +341,8 @@ export class LocalTrackService {
 
 	/**
 	 * Enabled state of the prejoin track of the given kind. With no tracks at all — still
-	 * initializing, or the device was unavailable — it falls back to what the participant asked for,
-	 * device availability included.
+	 * initializing, or the device was unavailable — it falls back to the intent, device availability
+	 * included.
 	 */
 	private isTrackEnabled(kind: Track.Kind): boolean {
 		const tracks = this._localTracks();

@@ -214,22 +214,19 @@ test.describe('Media Devices E2E Tests', () => {
 			await expect.poll(() => getFirstVideoTrackDeviceId(page), { timeout: 15_000 }).toBe(switchedDeviceId);
 		});
 
-		test('remembers a disabled-camera preference on reload', async ({ page }) => {
+		// The enabled state is resolved per entry, never remembered. The device *selection* (which
+		// camera) is remembered — that is the test above.
+		test('does not remember a disabled camera across a reload', async ({ page }) => {
 			await openPrejoin(page, accessUrl);
 			await expect.poll(() => getFirstVideoTrackLabel(page), { timeout: 15_000 }).not.toBeNull();
 
 			await ensurePrejoinVideoState(page, false);
 			expect(await isPrejoinVideoEnabled(page)).toBe(false);
 
-			// Give the async "camera off" preference write time to reach storage before reloading.
-			await page.waitForTimeout(500);
-
-			// Reopen: the stored "camera off" preference must survive, and the freshly created track
-			// must arrive muted — the camera stays off without the user toggling it again.
+			// Reopen: the choice was per-entry, so the camera comes back on with the room's default.
 			await reopenPrejoin(page, accessUrl);
-			await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: 15_000 }).toBe(false);
+			await expect.poll(() => isPrejoinVideoEnabled(page), { timeout: 15_000 }).toBe(true);
 
-			// Cameras are still present — this is "camera off", not "no camera available".
 			await expect(page.locator('#no-video-device-message')).toHaveCount(0);
 		});
 

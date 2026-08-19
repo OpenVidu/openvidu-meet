@@ -17,17 +17,23 @@ export interface MeetRoomConfig {
 	 */
 	maxDurationMinutes?: number | null;
 	/**
-	 * Whether participants join the meeting with their microphone initially enabled.
-	 * This is the initial state, not a capability: the participant may re-enable the device
-	 * afterwards, and a denying permission always wins. Combined (logical AND) with the embedding
-	 * application's `initial-audio-enabled` attribute. `true` when absent.
+	 * Room-wide **default** for whether participants join with their microphone enabled. This is the
+	 * initial state, not a capability: the participant may re-enable the device afterwards, and a
+	 * denying `mediaPublishAudio` permission always wins.
+	 *
+	 * It is a default, not a policy: the embedding application's `initial-audio-enabled` attribute
+	 * takes precedence whenever it is set (to either value). To *enforce* silence, deny the
+	 * permission instead. `true` when absent.
 	 */
 	audioEnabledOnJoin?: boolean;
 	/**
-	 * Whether participants join the meeting with their camera initially enabled.
-	 * This is the initial state, not a capability: the participant may re-enable the device
-	 * afterwards, and a denying permission always wins. Combined (logical AND) with the embedding
-	 * application's `initial-video-enabled` attribute. `true` when absent.
+	 * Room-wide **default** for whether participants join with their camera enabled. This is the
+	 * initial state, not a capability: the participant may re-enable the device afterwards, and a
+	 * denying `mediaPublishVideo` permission always wins.
+	 *
+	 * It is a default, not a policy: the embedding application's `initial-video-enabled` attribute
+	 * takes precedence whenever it is set (to either value). To *enforce* a camera-off meeting, deny
+	 * the permission instead. `true` when absent.
 	 */
 	videoEnabledOnJoin?: boolean;
 	/**

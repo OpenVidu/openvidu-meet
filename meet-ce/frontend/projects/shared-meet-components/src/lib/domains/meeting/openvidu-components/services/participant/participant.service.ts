@@ -1,6 +1,5 @@
 import { Service, Signal, WritableSignal, computed, inject, signal } from '@angular/core';
 import { ParticipantModel, ParticipantProperties } from '../../models/participant.model';
-import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { E2eeService } from '../e2ee/e2ee.service';
 import type {
 	DataPublishOptions,
@@ -11,19 +10,18 @@ import type {
 } from '../livekit';
 import { DeviceService } from '../device/device.service';
 import { ConnectionQuality, Track } from '../livekit';
+import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
-import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 
 @Service()
 export class ParticipantService {
-	private readonly directiveService = inject(MeetingUiConfigService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
-	private readonly storageSrv = inject(MediaStorageService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
 	private readonly log = inject(LoggerService).get('ParticipantService');
@@ -91,11 +89,11 @@ export class ParticipantService {
 
 		if (prejoinTracks.length === 0) {
 			// No prejoin page ran, so the local tracks have not been created yet. Decide what to open
-			// from the user's stored preferences (availability-independent: on first visit the device
-			// list is empty until permission is granted by this very call). This is the single
-			// getUserMedia of the no-prejoin path.
-			const wantCamera = this.directiveService.isVideoEnabled() && this.storageSrv.isCameraEnabled();
-			const wantMicrophone = this.directiveService.isAudioEnabled() && this.storageSrv.isMicrophoneEnabled();
+			// from the participant's intent — the same value the prejoin path reads, so both paths open
+			// exactly the same devices (availability-independent: on first visit the device list is
+			// empty until permission is granted by this very call). Single getUserMedia of this path.
+			const wantCamera = this.mediaIntent.cameraEnabled();
+			const wantMicrophone = this.mediaIntent.microphoneEnabled();
 
 			if (wantCamera || wantMicrophone) {
 				prejoinTracks = await this.localTrackService.createLocalTracks(wantCamera, wantMicrophone);

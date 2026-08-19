@@ -154,7 +154,107 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			});
 		});
 
-		test.describe('persistence of initial-audio-enabled / initial-video-enabled across meetings', () => {
+		// The room's `*EnabledOnJoin` is a default; an attribute that is set outranks it, in both
+		// directions. Not parametrized over INTEGRATIONS, like the rest of this file.
+		test.describe('precedence of initial-*-enabled over the room-wide *EnabledOnJoin default', () => {
+			let mediaDisabledByRoomUrl: string;
+			let mediaDisabledByRoomId: string;
+
+			test.beforeAll(async () => {
+				const room = await createRoom({
+					config: { audioEnabledOnJoin: false, videoEnabledOnJoin: false }
+				});
+				createdRoomIds.push(room.roomId);
+				mediaDisabledByRoomId = room.roomId;
+				mediaDisabledByRoomUrl = room.access.anonymous.moderator.url;
+			});
+
+			const openMediaSetupInRoom = async (page: Page, attributes: WebComponentAttributes): Promise<void> => {
+				await openWebcomponentWithAttributes(page, {
+					[EmbeddedAttribute.ROOM_URL]: mediaDisabledByRoomUrl,
+					[EmbeddedAttribute.PARTICIPANT_NAME]: 'Alice',
+					...attributes
+				});
+
+				await expect(wcLocator(page, '#participant-name-submit')).toBeVisible({ timeout: 15_000 });
+				await wcLocator(page, '#participant-name-submit').click();
+				await expect(wcLocator(page, 'ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
+			};
+
+			test('should apply the room default when neither attribute is set', async ({ page }) => {
+				await openMediaSetupInRoom(page, {});
+
+				await expectPrejoinMicEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+			});
+
+			test('should let an explicit true override a room default of false', async ({ page }) => {
+				await openMediaSetupInRoom(page, {
+					[EmbeddedAttribute.INITIAL_AUDIO_ENABLED]: 'true',
+					[EmbeddedAttribute.INITIAL_VIDEO_ENABLED]: 'true'
+				});
+
+				await expectPrejoinMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+
+				// And it survives the join: the resolved value is what the meeting starts with, not just
+				// what the prejoin screen painted.
+				await wcLocator(page, '#join-button').click();
+				await expect(wcLocator(page, '#layout-container')).toBeVisible({ timeout: 15_000 });
+				await expectToolbarMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+				await expectToolbarCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+			});
+
+			// The iframe transport reaches the same resolver through a different parser: a URL query param
+			// read by the SPA route guard, not a DOM attribute read by `booleanAttribute`.
+			test('should let an explicit true override a room default of false on the iframe transport', async ({
+				page
+			}) => {
+				await openMeetingAtMediaSetup(page, mediaDisabledByRoomId, {
+					integration: 'iframe',
+					role: 'moderator',
+					initialAudioEnabled: true,
+					initialVideoEnabled: true
+				});
+
+				await expectPrejoinMicEnabled(page, 'iframe', true, { timeout: 10_000 });
+				await expectPrejoinCameraEnabled(page, 'iframe', true, { timeout: 10_000 });
+			});
+
+			test('should apply the room default on the iframe transport when neither param is set', async ({ page }) => {
+				await openMeetingAtMediaSetup(page, mediaDisabledByRoomId, {
+					integration: 'iframe',
+					role: 'moderator'
+				});
+
+				await expectPrejoinMicEnabled(page, 'iframe', false, { timeout: 10_000 });
+				await expectPrejoinCameraEnabled(page, 'iframe', false, { timeout: 10_000 });
+			});
+
+			// The lobby must have the room config before it renders the meeting view: the prejoin opens
+			// the devices from the resolved state, and nothing mutes a track that already exists.
+			test('should honor the room default even when its config response is slow', async ({ page }) => {
+				await page.route('**/api/v1/rooms/*/config**', async (route) => {
+					await new Promise((resolve) => setTimeout(resolve, 5_000));
+					await route.continue();
+				});
+
+				await openMediaSetupInRoom(page, {});
+
+				await expectPrejoinMicEnabled(page, 'webcomponent', false, { timeout: 15_000 });
+				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 15_000 });
+			});
+
+			test('should resolve each device independently', async ({ page }) => {
+				// Audio set explicitly (wins over the room), video left out (the room decides).
+				await openMediaSetupInRoom(page, { [EmbeddedAttribute.INITIAL_AUDIO_ENABLED]: 'true' });
+
+				await expectPrejoinMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+			});
+		});
+
+		test.describe('the initial media state is resolved per entry, never remembered', () => {
 			// Own room for the same reason as the sibling block above: describe blocks run in
 			// file order, and reusing the outer `accessUrl` would risk joining whatever room a
 			// later-declared block's `beforeAll` has since assigned it to.
@@ -190,10 +290,28 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expectToolbarCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 			});
 
-			test('should keep the stored camera preference across meetings when the attribute is absent', async ({
+			// An explicit request must win over what the participant did in an earlier meeting of the
+			// same tab: nothing from that meeting is kept, so nothing from it can outrank the request.
+			test('should let an explicit initial-video-enabled=true override an earlier camera-off choice', async ({
 				page
 			}) => {
-				// The participant turns the camera off themselves in prejoin: that IS a preference.
+				const { meet } = await openMeetingAtMediaSetup(page, persistenceRoomId, { role: 'moderator' });
+				await meet('#camera-button').click();
+				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+				await meet('#join-button').click();
+				await meet('#layout-container').waitFor({ state: 'visible', timeout: 15_000 });
+				await leaveMeeting(page);
+
+				// Re-entering the same tab with the host asking explicitly for the camera: the request is
+				// explicit, so it must win over what the previous meeting left stored.
+				await openMeetingAtMediaSetup(page, persistenceRoomId, {
+					role: 'moderator',
+					initialVideoEnabled: true
+				});
+				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+			});
+
+			test('should not carry the participant camera choice into the next meeting', async ({ page }) => {
 				const { meet } = await openMeetingAtMediaSetup(page, persistenceRoomId, { role: 'moderator' });
 				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 				await meet('#camera-button').click();
@@ -203,9 +321,9 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await meet('#layout-container').waitFor({ state: 'visible', timeout: 15_000 });
 				await leaveMeeting(page);
 
-				// Re-entering the same tab: the stored preference must hold.
+				// Re-entering the same tab: nothing was persisted, so the room's own default decides again.
 				await openMeetingAtMediaSetup(page, persistenceRoomId, { role: 'moderator' });
-				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 			});
 		});
 

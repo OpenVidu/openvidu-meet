@@ -275,8 +275,14 @@ export class MeetingLobbyService {
 			this.meetingContextService.setE2eeKey(e2eeKey);
 		}
 
+		// Order matters: the room config carries the initial media state, and setting the room-member
+		// token is what hides the lobby and renders the meeting view, whose prejoin opens the devices
+		// from that state. Loading it second lets a slow response reach the prejoin too late, and nothing
+		// mutes a track that already exists. A failure must not block the join, though.
+		await this.roomService.loadRoomConfig(this._roomId()!).catch((error) => {
+			this.log.w('Could not load the room config before joining; its initial media state will not apply', error);
+		});
 		await this.generateRoomMemberToken();
-		await this.roomService.loadRoomConfig(this._roomId()!);
 	}
 
 	/**

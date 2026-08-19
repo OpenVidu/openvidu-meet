@@ -5,7 +5,7 @@ import { DeviceService } from '../device/device.service';
 import { LocalTrack, Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
-import { MediaStorageService } from '../storage/storage.service';
+import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { VideoTrackProcessorService } from '../track-processor/video-track-processor.service';
 import { LocalTrackService } from './local-track.service';
 
@@ -55,7 +55,7 @@ describe('LocalTrackService', () => {
 		cameraSelected: jasmine.Spy;
 		microphoneSelected: jasmine.Spy;
 	};
-	let storageService: { isCameraEnabled: jasmine.Spy; isMicrophoneEnabled: jasmine.Spy };
+	let mediaIntent: { cameraEnabled: jasmine.Spy; microphoneEnabled: jasmine.Spy };
 	let livekitSdkService: jasmine.SpyObj<LivekitSdkService>;
 
 	const asTrack = (track: FakeLocalTrack) => track as unknown as LocalTrack;
@@ -73,9 +73,9 @@ describe('LocalTrackService', () => {
 			cameraSelected: jasmine.createSpy('cameraSelected').and.returnValue(undefined),
 			microphoneSelected: jasmine.createSpy('microphoneSelected').and.returnValue(undefined)
 		};
-		storageService = {
-			isCameraEnabled: jasmine.createSpy('isCameraEnabled').and.returnValue(true),
-			isMicrophoneEnabled: jasmine.createSpy('isMicrophoneEnabled').and.returnValue(true)
+		mediaIntent = {
+			cameraEnabled: jasmine.createSpy('cameraEnabled').and.returnValue(true),
+			microphoneEnabled: jasmine.createSpy('microphoneEnabled').and.returnValue(true)
 		};
 		livekitSdkService = jasmine.createSpyObj<LivekitSdkService>('LivekitSdkService', ['createLocalTracks']);
 		livekitSdkService.createLocalTracks.and.resolveTo([]);
@@ -86,7 +86,7 @@ describe('LocalTrackService', () => {
 				LocalTrackService,
 				{ provide: LoggerService, useClass: LoggerServiceStub },
 				{ provide: DeviceService, useValue: deviceService as unknown as DeviceService },
-				{ provide: MediaStorageService, useValue: storageService as unknown as MediaStorageService },
+				{ provide: LocalMediaIntentService, useValue: mediaIntent as unknown as LocalMediaIntentService },
 				{ provide: LivekitSdkService, useValue: livekitSdkService },
 				{
 					provide: VideoTrackProcessorService,
@@ -191,10 +191,10 @@ describe('LocalTrackService', () => {
 			expect(service.microphoneEnabled()).toBeTrue();
 		});
 
-		it('leaves the fresh track muted while the preference still says off', async () => {
-			// Why the media-control facade records the preference BEFORE asking for the change:
-			// createLocalTracks mutes what it opens when the preference is off.
-			storageService.isCameraEnabled.and.returnValue(false);
+		it('leaves the fresh track muted while the intent still says off', async () => {
+			// Why the media-control facade records the intent BEFORE asking for the change:
+			// createLocalTracks mutes what it opens when the intent is off.
+			mediaIntent.cameraEnabled.and.returnValue(false);
 			livekitSdkService.createLocalTracks.and.resolveTo([asTrack(video)]);
 
 			await service.setVideoTrackEnabled(true);

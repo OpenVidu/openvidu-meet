@@ -91,9 +91,8 @@ export class MeetingLiveKitService {
 		// If room already exists and doesn't need E2EE reconfiguration, don't recreate it
 		if (this.room && !needsE2EEConfig) {
 			this.log.d('Room already initialized, skipping re-initialization');
-			// Re-arm the subscription instead of trusting it: it is idempotent (removed before it is
-			// added), so a Room whose listeners were stripped from outside still ends up with exactly
-			// one writer for `connectionState` rather than a signal frozen for the whole meeting.
+			// Re-arm rather than trust: the subscription is idempotent (removed before it is added), so a
+			// Room whose listeners were stripped from outside still ends up with exactly one writer.
 			this.trackConnectionState(this.room);
 			return;
 		}
@@ -256,9 +255,7 @@ export class MeetingLiveKitService {
 	 * The Room's lifecycle belongs to this service alone, so this is the only way out: it removes the
 	 * listener it registered itself — never the caller's, and never `removeAllListeners()` — makes sure
 	 * the connection is closed, and clears `this.room` so the next `init()` builds a fresh Room with a
-	 * fresh connection-state subscription instead of silently reusing the outgoing one. Called from
-	 * outside with `removeAllListeners()` instead, as it used to be, this service's own subscription
-	 * went down with it and `connectionState` stayed frozen for the whole next meeting.
+	 * fresh connection-state subscription instead of silently reusing the outgoing one.
 	 */
 	async teardown(): Promise<void> {
 		const room = this.room;
@@ -274,9 +271,8 @@ export class MeetingLiveKitService {
 				// Not a client-initiated leave: whoever ended the meeting emitted its own event already.
 				await this.disconnect(undefined, false);
 			} else if (state !== ConnectionState.Disconnected) {
-				// Connecting / reconnecting: `disconnect()` guards on `isConnected()` and would skip
-				// this Room, leaving it negotiating in the background with the local tracks attached to
-				// a meeting nobody can see any more.
+				// Connecting / reconnecting: `disconnect()` guards on `isConnected()` and would skip this
+				// Room, leaving it negotiating in the background with the local tracks still attached.
 				this.log.d(`Closing a room left in state '${state}'`);
 				this.shouldHandleClientInitiatedDisconnectEvent = false;
 				await this.livekitSdkService.disconnectRoom(room);

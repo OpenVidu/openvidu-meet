@@ -46,6 +46,15 @@ export const queryParam = (rawUrl: string, name: string): string | null => {
 };
 
 /**
+ * Parses a boolean query param with three meaningful states: absent ("no opinion", so a
+ * lower-precedence source decides), `'false'`, and anything else (`true`). Collapsing the absent case
+ * to a default would make it indistinguishable from an explicit `true`, and for
+ * `initial-audio-enabled` / `initial-video-enabled` only the latter outranks the room's own default.
+ */
+export const parseOptionalBoolean = (value: string | undefined): boolean | undefined =>
+	value === undefined ? undefined : value !== 'false';
+
+/**
  * Extracts the meeting/recording entry parameters from a route snapshot's `params` + `queryParams`.
  */
 export const extractParams = (route: {

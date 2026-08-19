@@ -50,8 +50,12 @@ export class App {
 	protected participantMetadataInput = '';
 	protected e2eeKeyInput = '';
 	protected leaveRedirectUrlInput = '';
-	protected initialAudioEnabledInput = true;
-	protected initialVideoEnabledInput = true;
+	/**
+	 * `''` = attribute omitted (no opinion, so the room's own `*EnabledOnJoin` default decides);
+	 * `'true'`/`'false'` = set explicitly, which takes precedence over that room default.
+	 */
+	protected initialAudioEnabledInput: '' | 'true' | 'false' = '';
+	protected initialVideoEnabledInput: '' | 'true' | 'false' = '';
 	protected showRecordingInput = '';
 	protected showOnlyRecordingsInput = false;
 	protected kickIdentityInput = 'test-participant-1';
@@ -127,8 +131,8 @@ export class App {
 				this.participantName.set(this.participantNameInput || undefined);
 				this.participantExternalId.set(this.participantExternalIdInput || undefined);
 				this.participantMetadata.set(this.participantMetadataInput || undefined);
-				this.initialAudioEnabled.set(this.initialAudioEnabledInput);
-				this.initialVideoEnabled.set(this.initialVideoEnabledInput);
+				this.initialAudioEnabled.set(this.toOptionalBoolean(this.initialAudioEnabledInput));
+				this.initialVideoEnabled.set(this.toOptionalBoolean(this.initialVideoEnabledInput));
 				this.e2eeKey.set(this.e2eeKeyInput || undefined);
 				this.leaveRedirectUrl.set(this.leaveRedirectUrlInput || undefined);
 				this.showRecording.set(this.showRecordingInput || undefined);
@@ -179,11 +183,13 @@ export class App {
 		set(EmbeddedAttribute.LEAVE_REDIRECT_URL, this.resolveLeaveRedirectUrl(this.leaveRedirectUrlInput));
 		set(EmbeddedAttribute.E2EE_KEY, this.e2eeKeyInput);
 		set(EmbeddedAttribute.SHOW_RECORDING, this.showRecordingInput);
-		if (!this.initialAudioEnabledInput) {
-			url.searchParams.set(EmbeddedAttribute.INITIAL_AUDIO_ENABLED, 'false');
+		// Omitted stays omitted: the query param is only written when the form sets a value, so the
+		// iframe transport carries the same three states as the webcomponent one.
+		if (this.initialAudioEnabledInput) {
+			url.searchParams.set(EmbeddedAttribute.INITIAL_AUDIO_ENABLED, this.initialAudioEnabledInput);
 		}
-		if (!this.initialVideoEnabledInput) {
-			url.searchParams.set(EmbeddedAttribute.INITIAL_VIDEO_ENABLED, 'false');
+		if (this.initialVideoEnabledInput) {
+			url.searchParams.set(EmbeddedAttribute.INITIAL_VIDEO_ENABLED, this.initialVideoEnabledInput);
 		}
 		if (this.showOnlyRecordingsInput) {
 			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');
@@ -322,6 +328,11 @@ export class App {
 			this.meetRef()?.nativeElement.participantKick(this.kickIdentityInput);
 		}
 		this.log.log(`→ participantKick("${this.kickIdentityInput}")`);
+	}
+
+	/** Maps a tri-state form selector (`'' | 'true' | 'false'`) to the value the WC input expects. */
+	private toOptionalBoolean(value: '' | 'true' | 'false'): boolean | undefined {
+		return value === '' ? undefined : value === 'true';
 	}
 
 	/** Resolves the shared `enabled` selector to the argument the media commands below pass on. */

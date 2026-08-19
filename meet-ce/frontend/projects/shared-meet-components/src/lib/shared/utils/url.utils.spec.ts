@@ -7,6 +7,7 @@ import {
 	getReferrerOrigin,
 	isValidUrl,
 	lastPathSegment,
+	parseOptionalBoolean,
 	queryParam
 } from './url.utils';
 
@@ -102,6 +103,29 @@ describe('isValidUrl', () => {
 	it('is false for a malformed or empty string', () => {
 		expect(isValidUrl('not a url')).toBe(false);
 		expect(isValidUrl('')).toBe(false);
+	});
+});
+
+describe('parseOptionalBoolean', () => {
+	// The third state is the point: an absent param must stay distinguishable from an explicit
+	// `true`, because only the latter outranks the room's own initial-media default.
+	it('keeps an absent value undefined instead of defaulting it', () => {
+		expect(parseOptionalBoolean(undefined)).toBeUndefined();
+	});
+
+	it('reads only the literal "false" as false', () => {
+		expect(parseOptionalBoolean('false')).toBeFalse();
+		expect(parseOptionalBoolean('true')).toBeTrue();
+		expect(parseOptionalBoolean('')).toBeTrue();
+		expect(parseOptionalBoolean('anything')).toBeTrue();
+	});
+
+	// Same exact-literal rule Angular's `booleanAttribute` applies to the webcomponent attribute, so
+	// both transports agree on every spelling — including the surprising ones.
+	it('does not accept other spellings of false', () => {
+		expect(parseOptionalBoolean('FALSE')).toBeTrue();
+		expect(parseOptionalBoolean('False')).toBeTrue();
+		expect(parseOptionalBoolean('0')).toBeTrue();
 	});
 });
 
