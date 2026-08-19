@@ -141,9 +141,12 @@ export class RoomWizardStateService {
 		this._isInitialized.set(false);
 		this._editMode.set(editMode);
 
-		// Initialize room options with defaults merged with existing data
+		// Initialize room options with defaults merged with existing data. deepMerge mutates its
+		// target, so it's given a fresh clone rather than the current signal value directly — otherwise
+		// set() below would receive back the same object reference and signal consumers relying on
+		// Object.is (computed(), effect()) would never see the change.
 		const currentOptions = this._roomOptions();
-		const initialRoomOptions: MeetRoomOptions = deepMerge(currentOptions, existingData ?? {});
+		const initialRoomOptions: MeetRoomOptions = deepMerge(deepMerge({}, currentOptions), existingData ?? {});
 
 		this._roomOptions.set(initialRoomOptions);
 		this._pendingMembers.set([]);
@@ -340,8 +343,11 @@ export class RoomWizardStateService {
 	 * @param stepData - The data to update in the room options
 	 */
 	updateStepData(stepData: DeepPartial<MeetRoomOptions>): void {
+		// deepMerge mutates its target, so it's given a fresh clone rather than the current signal
+		// value directly — otherwise set() below would receive back the same object reference and
+		// signal consumers relying on Object.is (computed(), effect()) would never see the change.
 		const currentOptions = this._roomOptions();
-		const updatedOptions = deepMerge(currentOptions, stepData);
+		const updatedOptions = deepMerge(deepMerge({}, currentOptions), stepData);
 
 		this._roomOptions.set(updatedOptions);
 		this.updateStepsVisibility();
