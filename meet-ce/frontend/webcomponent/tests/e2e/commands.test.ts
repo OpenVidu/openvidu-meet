@@ -323,6 +323,31 @@ for (const integration of INTEGRATIONS) {
 				await expect(eventLocator(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED)).toHaveCount(0);
 			});
 
+			test('should invert the camera state correctly after a device was toggled across a leave and rejoin cycle', async ({
+				page
+			}) => {
+				// Camera off in prejoin, join, leave — the stored preference survives the cycle.
+				const first = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+				await first.meet('#camera-button').click();
+				await expectPrejoinCameraEnabled(page, integration, false, { timeout: 10_000 });
+				await first.meet('#join-button').click();
+				await first.meet('#layout-container').waitFor({ state: 'visible', timeout: 15_000 });
+				await leaveMeeting(page, { integration });
+
+				// Re-entering the same tab: turn the camera back ON in prejoin, then join.
+				const second = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+				await expectPrejoinCameraEnabled(page, integration, false, { timeout: 10_000 });
+				await second.meet('#camera-button').click();
+				await expectPrejoinCameraEnabled(page, integration, true, { timeout: 10_000 });
+				await second.meet('#join-button').click();
+				await second.meet('#layout-container').waitFor({ state: 'visible', timeout: 15_000 });
+				await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
+
+				// The omitted toggle must read the CURRENT (real) state and turn the camera off.
+				await mediaToggleVideoCommand(page);
+				await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
+			});
+
 			// The commands are documented as controlling the local devices, and the prejoin
 			// screen owns real local tracks — a host that mutes before the participant joins
 			// must be obeyed on both transports, not silently dropped by one of them.
@@ -483,3 +508,45 @@ for (const integration of INTEGRATIONS) {
 		});
 	});
 }
+
+// Not parametrized over INTEGRATIONS like the rest of this file: this is a lifecycle question
+// specific to the webcomponent transport. Unmounting and remounting <openvidu-meet> on a host
+// page keeps the same custom-element loader and the same root Angular injector alive across the
+// two meetings — the iframe transport has no equivalent, since re-entering with it tears down and
+// reloads the whole frame document.
+test.describe('MEDIA_TOGGLE Commands After Remounting the WebComponent', () => {
+	const integration = 'webcomponent';
+	const createdRoomIds: string[] = [];
+	let roomId: string;
+
+	test.beforeEach(async () => {
+		({ roomId } = await createRoom());
+		createdRoomIds.push(roomId);
+	});
+
+	test.afterAll(async () => {
+		await deleteRooms(createdRoomIds);
+	});
+
+	test('should disable the camera by setting enabled explicitly after a remount', async ({ page }) => {
+		await openMeeting(page, roomId, { integration, role: 'moderator' });
+		await leaveMeeting(page, { integration });
+
+		await openMeeting(page, roomId, { integration, role: 'moderator' });
+		await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
+
+		await mediaToggleVideoCommand(page, false);
+		await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
+	});
+
+	test('should invert the camera state when enabled is omitted after a remount', async ({ page }) => {
+		await openMeeting(page, roomId, { integration, role: 'moderator' });
+		await leaveMeeting(page, { integration });
+
+		await openMeeting(page, roomId, { integration, role: 'moderator' });
+		await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
+
+		await mediaToggleVideoCommand(page);
+		await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
+	});
+});
