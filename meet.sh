@@ -164,6 +164,11 @@ show_help() {
   echo -e "  ${BLUE}clone-pro${NC}"
   echo "    Clone the private 'meet-pro' repository into ./meet-pro if you have access"
   echo
+  echo -e "  ${BLUE}set-version${NC} <version>"
+  echo "    Set the \"version\" field in the root, backend and frontend package.json at once"
+  echo "    (via 'pnpm version'; meet-demo isn't a pnpm workspace member and isn't touched)"
+  echo "    Example: ./meet.sh set-version 3.9.0-dev"
+  echo
 }
 
 # Install dependencies
@@ -837,6 +842,40 @@ build_rest_api_doc() {
   echo -e "${YELLOW}Output file: $(cd "$(dirname "$output_file")" && pwd)/$(basename "$output_file")${NC}"
 }
 
+# Set the version field across the root, backend and frontend package.json in one shot, then
+# mirror the resolved version into meet-demo/package.json. meet-demo isn't a pnpm workspace member
+# (see pnpm-workspace.yaml), so pnpm can't touch it directly and it's patched separately below.
+# Resolving via the root package.json (rather than reusing "$new_version" verbatim) also makes this
+# correct when a bump keyword (patch/minor/major/...) is passed instead of an explicit version.
+set_version() {
+  local new_version="$1"
+
+  if [ -z "$new_version" ]; then
+    echo -e "${RED}Error: set-version requires a version argument${NC}"
+    echo -e "${YELLOW}Usage: ./meet.sh set-version <version>${NC}"
+    exit 1
+  fi
+
+  check_pnpm
+  pnpm version "$new_version" \
+    --filter openvidu-meet-workspace \
+    --filter @openvidu-meet/backend \
+    --filter @openvidu-meet/frontend \
+    --no-git-tag-version
+
+  local resolved_version
+  resolved_version=$(node -pe "require('./package.json').version")
+
+  local demo_pkg="meet-demo/package.json"
+  if ! grep -q '"version":' "$demo_pkg"; then
+    echo -e "${RED}Error: could not find a \"version\" field in ${demo_pkg}${NC}"
+    exit 1
+  fi
+
+  sed -i "s/\"version\": \"[^\"]*\"/\"version\": \"${resolved_version}\"/" "$demo_pkg"
+  echo -e "${GREEN}✓ ${demo_pkg} -> ${resolved_version}${NC}"
+}
+
 # Clone private meet-pro repository into repository root
 clone_meet_pro() {
   # Allow override of repo URL via environment variable
@@ -1017,6 +1056,9 @@ main() {
       ;;
     clone-pro)
       clone_meet_pro
+      ;;
+    set-version)
+      set_version "$1"
       ;;
     help|--help|-h)
       show_help

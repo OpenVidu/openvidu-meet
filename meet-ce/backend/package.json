@@ -1,6 +1,6 @@
 {
 	"name": "@openvidu-meet/backend",
-	"version": "3.8.0",
+	"version": "3.9.0-dev",
 	"description": "OpenVidu Meet Backend",
 	"author": "OpenVidu",
 	"license": "Apache-2.0",
@@ -88,6 +88,7 @@
 		"zod": "4.4.3"
 	},
 	"devDependencies": {
+		"@eslint/js": "10.0.1",
 		"@redocly/cli": "2.46.1",
 		"@swc/core": "1.16.0",
 		"@swc/jest": "0.2.39",
@@ -105,7 +106,6 @@
 		"@types/unzipper": "0.10.11",
 		"@types/validator": "13.15.10",
 		"@types/yamljs": "0.2.34",
-		"@eslint/js": "10.0.1",
 		"cross-env": "10.1.0",
 		"eslint": "10.8.1",
 		"eslint-config-prettier": "10.1.8",

@@ -1,6 +1,6 @@
 {
 	"name": "@openvidu-meet/frontend",
-	"version": "3.8.0",
+	"version": "3.9.0-dev",
 	"scripts": {
 		"clean": "rm -rf node_modules dist test-results .angular",
 		"assets:livekit": "node scripts/copy-livekit-assets.mjs",
@@ -46,11 +46,11 @@
 		"@angular-devkit/build-angular": "22.1.4",
 		"@angular/cli": "22.1.4",
 		"@angular/compiler-cli": "22.1.2",
+		"@eslint/js": "10.0.1",
 		"@playwright/test": "1.62.1",
 		"@types/jasmine": "5.1.15",
 		"@types/node": "24.13.3",
 		"@types/pngjs": "6.0.5",
-		"@eslint/js": "10.0.1",
 		"angular-eslint": "22.1.0",
 		"cross-env": "10.1.0",
 		"eslint": "10.8.1",
