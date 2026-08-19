@@ -16,6 +16,8 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSidenavModule } from '@angular/material/sidenav';
+import type { ILogger } from '../../../../../shared/models/logger.model';
+import { LoggerService } from '../../../../../shared/services/logger.service';
 import { SidenavLayoutDirective } from '../../directives/layout/sidenav-layout.directive';
 import {
 	LayoutAdditionalElementsDirective,
@@ -64,7 +66,9 @@ import { TemplateRegistryService } from '../../services/template/template-regist
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 import { ViewportService } from '../../services/viewport/viewport.service';
 import { VirtualBackgroundService } from '../../services/virtual-background/virtual-background.service';
+import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
 import { SmartLayoutComponent } from '../layout/smart-layout/smart-layout.component';
+import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
 import { ActivitiesPanelComponent } from '../panel/activities-panel/activities-panel.component';
 import { BackgroundEffectsPanelComponent } from '../panel/background-effects-panel/background-effects-panel.component';
 import { ChatPanelComponent } from '../panel/chat-panel/chat-panel.component';
@@ -72,12 +76,8 @@ import { PanelComponent } from '../panel/panel.component';
 import { ParticipantPanelItemComponent } from '../panel/participants-panel/participant-panel-item/participant-panel-item.component';
 import { ParticipantsPanelComponent } from '../panel/participants-panel/participants-panel/participants-panel.component';
 import { SettingsPanelComponent } from '../panel/settings-panel/settings-panel.component';
-import { LandscapeWarningComponent } from '../landscape-warning/landscape-warning.component';
-import { MeetingMediaSetupComponent } from '../meeting-media-setup/meeting-media-setup.component';
 import { StreamComponent } from '../stream/stream.component';
 import { ToolbarComponent } from '../toolbar/toolbar.component';
-import { LoggerService } from '../../../../../shared/services/logger.service';
-import type { ILogger } from '../../../../../shared/models/logger.model';
 
 /**
  * The **MeetingViewComponent** is the parent of all OpenVidu components: it owns the phase machine
@@ -428,9 +428,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 			await this.disconnectRoom(ParticipantLeftReason.LEAVE);
 		}
 
-		if (this.meetingLiveKitService.isInitialized()) {
-			this.meetingLiveKitService.getRoom().removeAllListeners();
-		}
+		await this.meetingLiveKitService.teardown();
 
 		this.participantService.clear();
 		this.deviceSrv.clear();

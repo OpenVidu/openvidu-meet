@@ -17,8 +17,9 @@ import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { MediaStorageService } from '../storage/storage.service';
 
 /**
- * Owns the live meeting connection: the LiveKit Room lifecycle (create/connect/disconnect),
- * its E2EE setup (worker + key provider) and the connection token. Local media capture lives
+ * Owns the live meeting connection end to end: the LiveKit Room lifecycle (create / connect /
+ * disconnect / teardown), its E2EE setup (worker + key provider) and the connection token. Nothing
+ * outside subscribes or unsubscribes Room listeners on its behalf. Local media capture lives
  * separately in LocalTrackService.
  */
 @Service()
@@ -31,8 +32,18 @@ export class MeetingLiveKitService {
 
 	private room: Room | undefined = undefined;
 	private keyProvider: ExternalE2EEKeyProvider | undefined;
+	// Held only so teardown() can terminate it: the Room owns it while it lives, and a Room is
+	// discarded once per meeting.
+	private e2eeWorker: Worker | undefined;
 
 	private readonly _connectionState = signal<ConnectionState>(ConnectionState.Disconnected);
+
+	/**
+	 * The single writer of {@link connectionState}, held as a stable reference so it can be removed
+	 * again: this service adds and removes its OWN Room listener and never reaches for
+	 * `removeAllListeners()`, which would take down every other subscriber of the Room too.
+	 */
+	private readonly publishConnectionState = (state: ConnectionState): void => this._connectionState.set(state);
 
 	/**
 	 * Reactive mirror of the Room's `ConnectionState`, with a single writer: the
@@ -80,12 +91,17 @@ export class MeetingLiveKitService {
 		// If room already exists and doesn't need E2EE reconfiguration, don't recreate it
 		if (this.room && !needsE2EEConfig) {
 			this.log.d('Room already initialized, skipping re-initialization');
+			// Re-arm the subscription instead of trusting it: it is idempotent (removed before it is
+			// added), so a Room whose listeners were stripped from outside still ends up with exactly
+			// one writer for `connectionState` rather than a signal frozen for the whole meeting.
+			this.trackConnectionState(this.room);
 			return;
 		}
 
 		// If room exists but needs E2EE configuration, we need to recreate it
 		if (this.room && needsE2EEConfig) {
 			this.log.d('Room needs E2EE configuration, recreating room');
+			this.untrackConnectionState(this.room);
 			this.room = undefined;
 		}
 
@@ -125,21 +141,32 @@ export class MeetingLiveKitService {
 	}
 
 	/**
-	 * Publishes the Room's connection state into {@link connectionState}. Subscribed once per Room
-	 * instance, right where it is created, so that signal has exactly one writer. The state is seeded
-	 * from the fresh Room rather than assumed, because `init()` also recreates the Room to apply E2EE.
+	 * Publishes the Room's connection state into {@link connectionState}. Subscribed where the Room is
+	 * created, so that signal has exactly one writer, and safe to call again on the same Room: the
+	 * listener is removed before it is added. The state is seeded from the Room rather than assumed,
+	 * because `init()` also recreates the Room to apply E2EE.
 	 */
 	private trackConnectionState(room: Room): void {
+		room.off(RoomEvent.ConnectionStateChanged, this.publishConnectionState);
 		this._connectionState.set(room.state);
-		room.on(RoomEvent.ConnectionStateChanged, (state: ConnectionState) => this._connectionState.set(state));
+		room.on(RoomEvent.ConnectionStateChanged, this.publishConnectionState);
+	}
+
+	/**
+	 * Removes this service's own connection-state subscription from `room`, leaving every other
+	 * subscriber of that Room untouched.
+	 */
+	private untrackConnectionState(room: Room): void {
+		room.off(RoomEvent.ConnectionStateChanged, this.publishConnectionState);
 	}
 
 	private buildE2EEOptions(): E2EEOptions {
 		this.log.d('Configuring E2EE with provided key');
 		this.keyProvider = new ExternalE2EEKeyProvider();
+		this.e2eeWorker = this.createE2EEWorker();
 		return {
 			keyProvider: this.keyProvider,
-			worker: this.createE2EEWorker()
+			worker: this.e2eeWorker
 		};
 	}
 
@@ -220,6 +247,53 @@ export class MeetingLiveKitService {
 			await this.livekitSdkService.disconnectRoom(room);
 
 			if (callback) callback();
+		}
+	}
+
+	/**
+	 * Tears down the current Room and leaves the service ready for a clean `init()`.
+	 *
+	 * The Room's lifecycle belongs to this service alone, so this is the only way out: it removes the
+	 * listener it registered itself — never the caller's, and never `removeAllListeners()` — makes sure
+	 * the connection is closed, and clears `this.room` so the next `init()` builds a fresh Room with a
+	 * fresh connection-state subscription instead of silently reusing the outgoing one. Called from
+	 * outside with `removeAllListeners()` instead, as it used to be, this service's own subscription
+	 * went down with it and `connectionState` stayed frozen for the whole next meeting.
+	 */
+	async teardown(): Promise<void> {
+		const room = this.room;
+
+		if (!room) return;
+
+		this.log.d('Tearing down the room');
+
+		const state = this._connectionState();
+
+		try {
+			if (state === ConnectionState.Connected) {
+				// Not a client-initiated leave: whoever ended the meeting emitted its own event already.
+				await this.disconnect(undefined, false);
+			} else if (state !== ConnectionState.Disconnected) {
+				// Connecting / reconnecting: `disconnect()` guards on `isConnected()` and would skip
+				// this Room, leaving it negotiating in the background with the local tracks attached to
+				// a meeting nobody can see any more.
+				this.log.d(`Closing a room left in state '${state}'`);
+				this.shouldHandleClientInitiatedDisconnectEvent = false;
+				await this.livekitSdkService.disconnectRoom(room);
+			}
+		} finally {
+			this.untrackConnectionState(room);
+
+			// Reset the service only if a new meeting has not claimed it while the disconnect was in
+			// flight: Angular does not await `ngOnDestroy`, so a remount can overlap this teardown.
+			if (this.room === room) {
+				this.room = undefined;
+				this.keyProvider = undefined;
+				this.e2eeWorker?.terminate();
+				this.e2eeWorker = undefined;
+				this.shouldHandleClientInitiatedDisconnectEvent = true;
+				this._connectionState.set(ConnectionState.Disconnected);
+			}
 		}
 	}
 
