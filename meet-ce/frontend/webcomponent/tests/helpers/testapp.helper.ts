@@ -107,9 +107,9 @@ type OpenMeetingOptions = {
 	name?: string;
 	externalId?: string;
 	metadata?: string;
-	/** Sets the `initial-audio-enabled` attribute/query param. Defaults to true (omitted). */
+	/** Sets the `initial-audio-enabled` attribute/query param. Omitted by default (the room decides). */
 	initialAudioEnabled?: boolean;
-	/** Sets the `initial-video-enabled` attribute/query param. Defaults to true (omitted). */
+	/** Sets the `initial-video-enabled` attribute/query param. Omitted by default (the room decides). */
 	initialVideoEnabled?: boolean;
 };
 
@@ -163,19 +163,11 @@ export const openMeetingAtMediaSetup = async (
 		await page.getByTestId('input-participantMetadata').fill(metadata);
 	}
 
-	// Defaults to checked (the attribute itself defaults to `true`): only an explicit `false`
-	// unchecks it.
-	const initialAudioEnabledCheckbox = page.getByTestId('input-initialAudioEnabled');
-
-	if ((await initialAudioEnabledCheckbox.isChecked()) !== (initialAudioEnabled ?? true)) {
-		await initialAudioEnabledCheckbox.click();
-	}
-
-	const initialVideoEnabledCheckbox = page.getByTestId('input-initialVideoEnabled');
-
-	if ((await initialVideoEnabledCheckbox.isChecked()) !== (initialVideoEnabled ?? true)) {
-		await initialVideoEnabledCheckbox.click();
-	}
+	// Tri-state selectors: the empty option omits the attribute, which is not the same request as
+	// setting it to `true` — only a value that is set outranks the room's own `*EnabledOnJoin` default.
+	const toSelectValue = (value: boolean | undefined) => (value === undefined ? '' : String(value));
+	await page.getByTestId('select-initialAudioEnabled').selectOption(toSelectValue(initialAudioEnabled));
+	await page.getByTestId('select-initialVideoEnabled').selectOption(toSelectValue(initialVideoEnabled));
 
 	await page.getByTestId('btn-apply-config').click();
 

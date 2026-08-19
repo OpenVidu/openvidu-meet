@@ -54,25 +54,25 @@ export class FeatureCalculator {
 	}
 
 	/**
-	 * Applies the participant's initial media state: the embedding application's
-	 * initial-audio-enabled / initial-video-enabled attributes combined (logical AND) with the
-	 * room-wide `config.audioEnabledOnJoin` / `config.videoEnabledOnJoin` (absent = enabled).
-	 * It only ever lowers `audioEnabled`/`videoEnabled`, so a permission that already denies the
-	 * device always wins, and it leaves the `show*` controls untouched: this is the initial state,
-	 * not a capability — the participant may re-enable the device.
+	 * Resolves the participant's initial media state by precedence, not by conjunction: the embedding
+	 * application's initial-audio-enabled / initial-video-enabled attribute decides whenever it is set
+	 * — to either value — otherwise the room-wide `config.*EnabledOnJoin` does, and `true` when neither
+	 * says anything. So an explicit attribute can also *raise* a room default of `false`: the room field
+	 * is a default, not a policy (enforcing needs the permission, which is signed into the token).
+	 *
+	 * The permission is outside the chain: {@link applyPermissions} has already written it into
+	 * `audioEnabled`/`videoEnabled` and this only narrows that, so a denied device stays denied. The
+	 * `show*` controls are left untouched — this is the initial state, not a capability.
 	 */
 	static applyInitialMediaEnabled(
 		features: RoomFeatures,
 		initialMediaEnabled: InitialMediaEnabledPreferences,
 		roomConfig?: MeetRoomConfig
 	): void {
-		if (!initialMediaEnabled.audioEnabled || roomConfig?.audioEnabledOnJoin === false) {
-			features.audioEnabled = false;
-		}
-
-		if (!initialMediaEnabled.videoEnabled || roomConfig?.videoEnabledOnJoin === false) {
-			features.videoEnabled = false;
-		}
+		features.audioEnabled =
+			features.audioEnabled && (initialMediaEnabled.audioEnabled ?? roomConfig?.audioEnabledOnJoin ?? true);
+		features.videoEnabled =
+			features.videoEnabled && (initialMediaEnabled.videoEnabled ?? roomConfig?.videoEnabledOnJoin ?? true);
 	}
 
 	static applyAppearanceConfig(features: RoomFeatures, appearanceConfig: MeetAppearanceConfig): void {

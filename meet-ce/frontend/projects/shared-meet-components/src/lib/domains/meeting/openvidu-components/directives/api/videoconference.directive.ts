@@ -1,7 +1,7 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
-import { LocalMediaService } from '../../services/local-media/local-media.service';
+import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 /**
@@ -402,7 +402,7 @@ export class PrejoinDirective implements OnDestroy {
 @Directive({
 	selector: 'ov-meeting-view[videoEnabled]'
 })
-export class VideoEnabledDirective implements OnDestroy {
+export class VideoEnabledDirective {
 	/**
 	 * @ignore
 	 */
@@ -412,35 +412,21 @@ export class VideoEnabledDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(MeetingUiConfigService);
-	private readonly localMediaService = inject(LocalMediaService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly videoEnabledEffect = effect(() => {
 		this.update(this.videoEnabled());
 	});
 
-	/**
-	 * @ignore
-	 */
-	ngOnDestroy(): void {
-		this.clear();
-	}
+	// No teardown on purpose: the intent is per-entry state owned by the meeting view, which resets
+	// it. Pushing a default from here would make the next entry's identical request a no-op.
 
 	/**
 	 * @ignore
-	 */
-	clear() {
-		this.update(true);
-	}
-
-	/**
-	 * @ignore
+	 * Seeds the camera intent with the initial state the embedding layer resolved: permission ∧ the
+	 * host's request or the room's default.
 	 */
 	update(enabled: boolean) {
-		const finalEnabledState = this.localMediaService.applyInitialCameraPreference(enabled);
-
-		if (this.libService.isVideoEnabled() !== finalEnabledState) {
-			this.libService.updateStreamConfig({ videoEnabled: finalEnabledState });
-		}
+		this.mediaIntent.applyInitialCameraState(enabled);
 	}
 }
 
@@ -458,7 +444,7 @@ export class VideoEnabledDirective implements OnDestroy {
 @Directive({
 	selector: 'ov-meeting-view[audioEnabled]'
 })
-export class AudioEnabledDirective implements OnDestroy {
+export class AudioEnabledDirective {
 	/**
 	 * @ignore
 	 */
@@ -468,32 +454,18 @@ export class AudioEnabledDirective implements OnDestroy {
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
-	private readonly libService = inject(MeetingUiConfigService);
-	private readonly localMediaService = inject(LocalMediaService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly audioEnabledEffect = effect(() => {
 		this.update(this.audioEnabled());
 	});
 
-	ngOnDestroy(): void {
-		this.clear();
-	}
-
 	/**
 	 * @ignore
-	 */
-	clear() {
-		this.update(true);
-	}
-
-	/**
-	 * @ignore
+	 * Seeds the microphone intent with the initial state the embedding layer resolved. See
+	 * {@link VideoEnabledDirective} for why neither directive has a teardown.
 	 */
 	update(enabled: boolean) {
-		const finalEnabledState = this.localMediaService.applyInitialMicrophonePreference(enabled);
-
-		if (this.libService.isAudioEnabled() !== finalEnabledState) {
-			this.libService.updateStreamConfig({ audioEnabled: finalEnabledState });
-		}
+		this.mediaIntent.applyInitialMicrophoneState(enabled);
 	}
 }
 
@@ -538,8 +510,7 @@ export class ChatWritableDirective implements OnDestroy {
 /**
  * The **showCameraControls** directive shows/hides every camera control: the toolbar button, the
  * prejoin screen and the settings panel. It is a capability — whether the participant may use the
- * camera at all — and not a toolbar decoration, which is why it lives here and not with the
- * toolbar directives. Whether the camera *starts* enabled is a separate axis.
+ * camera at all — not a toolbar decoration, and a separate axis from whether the camera *starts* on.
  *
  * It is only available for {@link MeetingViewComponent}.
  *
@@ -576,9 +547,8 @@ export class ShowCameraControlsDirective implements OnDestroy {
 
 /**
  * The **showMicrophoneControls** directive shows/hides every microphone control: the toolbar button,
- * the prejoin screen and the settings panel. It is a capability — whether the participant may use
- * the microphone at all — and not a toolbar decoration, which is why it lives here and not with the
- * toolbar directives. Whether the microphone *starts* enabled is a separate axis.
+ * the prejoin screen and the settings panel. It is a capability — whether the participant may use the
+ * microphone at all — not a toolbar decoration, and a separate axis from whether it *starts* on.
  *
  * It is only available for {@link MeetingViewComponent}.
  *

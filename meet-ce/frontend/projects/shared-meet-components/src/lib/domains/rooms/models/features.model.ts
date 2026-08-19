@@ -4,13 +4,17 @@
 export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
 
 /**
- * Client preference from the initial-audio-enabled / initial-video-enabled embed attributes (or
- * their URL query params): the local participant's initial media state when joining. Initial state
- * only — the permissions always win, and the participant may re-enable a disabled device afterwards.
+ * What the embedding application asked for through the initial-audio-enabled / initial-video-enabled
+ * embed attributes (or their URL query params): the local participant's initial media state when
+ * joining. Initial state only — the permissions always win, and the participant may re-enable a
+ * disabled device afterwards.
+ *
+ * `undefined` per device means the host said nothing, which is **not** the same as `true`: only a
+ * value that is set takes precedence over the room's own `config.*EnabledOnJoin`.
  */
 export interface InitialMediaEnabledPreferences {
-	audioEnabled: boolean;
-	videoEnabled: boolean;
+	audioEnabled?: boolean;
+	videoEnabled?: boolean;
 }
 
 /**

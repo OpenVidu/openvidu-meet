@@ -53,21 +53,23 @@ export const openWebcomponentWithAttributes = async (
 		await page.getByTestId(testId).fill(filled);
 	}
 
-	// [attribute, testId, default checkbox state when the attribute is omitted]. The media-enabled
-	// pair defaults to checked (the attribute itself defaults to `true`), unlike the others.
-	const CHECKBOX_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string, boolean]> = [
-		[EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'input-showOnlyRecordings', false],
-		[EmbeddedAttribute.INITIAL_AUDIO_ENABLED, 'input-initialAudioEnabled', true],
-		[EmbeddedAttribute.INITIAL_VIDEO_ENABLED, 'input-initialVideoEnabled', true]
+	const checkbox = page.getByTestId('input-showOnlyRecordings');
+	const showOnlyRecordings = toBoolean(attributes[EmbeddedAttribute.SHOW_ONLY_RECORDINGS]);
+
+	if ((await checkbox.isChecked()) !== showOnlyRecordings) {
+		await checkbox.click();
+	}
+
+	// Tri-state in the form ('' = attribute omitted): omitting it and setting it to `true` are
+	// different requests, and only the latter outranks the room's own `*EnabledOnJoin` default.
+	const TRI_STATE_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
+		[EmbeddedAttribute.INITIAL_AUDIO_ENABLED, 'select-initialAudioEnabled'],
+		[EmbeddedAttribute.INITIAL_VIDEO_ENABLED, 'select-initialVideoEnabled']
 	];
 
-	for (const [property, testId, defaultValue] of CHECKBOX_TESTIDS) {
-		const checkbox = page.getByTestId(testId);
-		const desired = attributes[property] === undefined ? defaultValue : toBoolean(attributes[property]);
-
-		if ((await checkbox.isChecked()) !== desired) {
-			await checkbox.click();
-		}
+	for (const [property, testId] of TRI_STATE_TESTIDS) {
+		const value = attributes[property];
+		await page.getByTestId(testId).selectOption(value === undefined ? '' : String(value));
 	}
 
 	await page.getByTestId('btn-apply-config').click();

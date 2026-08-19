@@ -10,6 +10,8 @@ import type {
 	RemoteParticipant
 } from '../livekit';
 import { ConnectionQuality, Track } from '../livekit';
+import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
+import { LocalTrackService } from '../local-track/local-track.service';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -18,6 +20,8 @@ import { LoggerService } from '../../../../../shared/services/logger.service';
 export class ParticipantService {
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
+	private readonly deviceSrv = inject(DeviceService);
 	private readonly e2eeService = inject(E2eeService);
 	private readonly log = inject(LoggerService).get('ParticipantService');
 
@@ -81,7 +85,26 @@ export class ParticipantService {
 	 * reference through `releaseJoinTracks`).
 	 * @internal
 	 */
-	async connect(tracks: LocalTrack[]): Promise<void> {
+	async connect(): Promise<void> {
+		let prejoinTracks = this.localTrackService.getLocalTracks();
+
+		if (prejoinTracks.length === 0) {
+			// No prejoin page ran, so the local tracks have not been created yet. Decide what to open
+			// from the participant's intent — the same value the prejoin path reads, so both paths open
+			// exactly the same devices (availability-independent: on first visit the device list is
+			// empty until permission is granted by this very call). Single getUserMedia of this path.
+			const wantCamera = this.mediaIntent.cameraEnabled();
+			const wantMicrophone = this.mediaIntent.microphoneEnabled();
+
+			if (wantCamera || wantMicrophone) {
+				prejoinTracks = await this.localTrackService.createLocalTracks(wantCamera, wantMicrophone);
+
+				// Permission may have just been granted → populate the device list and align the
+				// selection with the opened devices so the in-room selectors work.
+				await this.deviceSrv.syncDevicesAfterTrackCreation(prejoinTracks);
+			}
+		}
+
 		await this.meetingLiveKitService.connect();
 		this.setLocalParticipant(this.meetingLiveKitService.getRoom().localParticipant);
 

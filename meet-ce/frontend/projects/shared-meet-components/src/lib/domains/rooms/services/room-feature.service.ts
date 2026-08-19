@@ -50,9 +50,11 @@ export class RoomFeatureService {
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
-	// Client preference from the initial-audio-enabled / initial-video-enabled embed attributes (and
-	// their URL query params): the participant's initial media state, not a permission.
-	protected initialMediaEnabled = signal<InitialMediaEnabledPreferences>({ audioEnabled: true, videoEnabled: true });
+	// What the embedding application asked for through the initial-audio-enabled /
+	// initial-video-enabled embed attributes (and their URL query params): the participant's initial
+	// media state, not a permission. Empty until an entry seeds it, and a device left out of it keeps
+	// being decided by the room's own default.
+	protected initialMediaEnabled = signal<InitialMediaEnabledPreferences>({});
 	permissions = this.roomMemberContextService.permissions;
 
 	// Computed signal to derive features based on current configurations
@@ -88,8 +90,9 @@ export class RoomFeatureService {
 
 	/**
 	 * Updates the initial media state the embedding application asked for (initial-audio-enabled /
-	 * initial-video-enabled). It only lowers the initial state — the permissions always win — and
-	 * the participant may re-enable the device afterwards.
+	 * initial-video-enabled). A device set here takes precedence over the room's own
+	 * `config.*EnabledOnJoin`; one left `undefined` leaves that decision to the room. Either way the
+	 * permissions win, and the participant may re-enable the device afterwards.
 	 */
 	setInitialMediaEnabled(preferences: InitialMediaEnabledPreferences): void {
 		this.log.d('Updating initial media enabled preferences', preferences);
@@ -131,12 +134,9 @@ export class RoomFeatureService {
 			FeatureCalculator.applyPermissions(features, permissions);
 		}
 
-		// Also covers the room-wide *OnJoin config: lowering with all-true attributes is a no-op
-		FeatureCalculator.applyInitialMediaEnabled(
-			features,
-			initialMediaEnabled ?? { audioEnabled: true, videoEnabled: true },
-			roomConfig
-		);
+		// Always applied: it is the only place that reads the room-wide *OnJoin config, and with nothing
+		// set anywhere it resolves to the product default.
+		FeatureCalculator.applyInitialMediaEnabled(features, initialMediaEnabled ?? {}, roomConfig);
 
 		if (appearanceConfig) {
 			FeatureCalculator.applyAppearanceConfig(features, appearanceConfig);

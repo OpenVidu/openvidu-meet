@@ -59,6 +59,7 @@ import { DeviceService } from '../../services/device/device.service';
 import type { Room } from '../../services/livekit';
 import { LocalMediaService } from '../../services/local-media/local-media.service';
 import { MeetingEventsService } from '../../services/meeting-events/meeting-events.service';
+import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
 import { MeetingLiveKitService } from '../../services/meeting-livekit/meeting-livekit.service';
 import { PanelService } from '../../services/panel/panel.service';
 import { ParticipantService } from '../../services/participant/participant.service';
@@ -118,6 +119,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly deviceSrv = inject(DeviceService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly actionService = inject(ActionService);
 	private readonly libService = inject(MeetingUiConfigService);
@@ -434,10 +436,8 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 
 		this.participantService.clear();
 		this.deviceSrv.clear();
-		// No-op after a successful join, when the tracks were handed over to the participant. It
-		// matters when the connection failed midway: the acquired camera/microphone would otherwise
-		// stay open with nobody holding them, and a later join would try to publish dead tracks.
-		this.localMediaService.discardPrejoinMedia();
+		// Per entry: the next meeting resolves its own instead of inheriting this one's toggles.
+		this.mediaIntent.reset();
 	}
 
 	/**

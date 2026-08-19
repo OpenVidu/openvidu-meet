@@ -1,7 +1,7 @@
 import { inject } from '@angular/core';
 import { ActivatedRouteSnapshot, CanActivateFn } from '@angular/router';
 import { NavigationService } from '../../../shared/services/navigation.service';
-import { extractParams } from '../../../shared/utils/url.utils';
+import { extractParams, parseOptionalBoolean } from '../../../shared/utils/url.utils';
 import { MeetingEntryService } from '../services/meeting-entry.service';
 
 /**
@@ -35,9 +35,10 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		participantName,
 		participantExternalId,
 		participantMetadata,
-		// Defaults to enabled: only an explicit `false` query param lowers it.
-		initialAudioEnabled: initialAudioEnabled !== 'false',
-		initialVideoEnabled: initialVideoEnabled !== 'false',
+		// Kept tri-state: an absent query param means "no opinion" (the room's own default decides),
+		// while either explicit value outranks it.
+		initialAudioEnabled: parseOptionalBoolean(initialAudioEnabled),
+		initialVideoEnabled: parseOptionalBoolean(initialVideoEnabled),
 		showRecording,
 		showOnlyRecordings: showOnlyRecordings === 'true'
 	});

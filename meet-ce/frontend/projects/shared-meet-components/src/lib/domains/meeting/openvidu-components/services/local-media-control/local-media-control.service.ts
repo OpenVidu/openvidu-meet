@@ -3,6 +3,7 @@ import { ParticipantModel } from '../../models/participant.model';
 import { StreamLayoutStateService } from '../layout/stream-layout-state.service';
 import type { AudioCaptureOptions, ScreenShareCaptureOptions, VideoCaptureOptions } from '../livekit';
 import { VideoPresets } from '../livekit';
+import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../local-track/local-track.service';
 import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../participant/participant.service';
@@ -118,6 +119,7 @@ export class LocalMediaControlService {
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly log = inject(LoggerService).get('LocalMediaControlService');
 
 	/** Resolved lazily to avoid a construction-time DI cycle with the participant registry. */
@@ -140,11 +142,9 @@ export class LocalMediaControlService {
 	 * Sets the local participant camera enabled or disabled.
 	 */
 	async setCameraEnabled(enabled: boolean): Promise<void> {
-		// Single writer of the camera preference: a call here always represents user/app intent.
-		// The only other legitimate writer is CameraEnabledDirective (embedding-app default).
-		// Recorded BEFORE acting, because opening a camera that was never acquired reads the
-		// preference to decide whether the fresh track starts muted.
-		this.storageSrv.setCameraEnabled(enabled);
+		// Single writer of the camera intent. Recorded BEFORE acting, because opening a camera that was
+		// never acquired reads the intent to decide whether the fresh track starts muted.
+		this.mediaIntent.setCameraEnabled(enabled);
 		await this.target.setCameraEnabled(enabled);
 	}
 
@@ -152,9 +152,8 @@ export class LocalMediaControlService {
 	 * Sets the local participant microphone enabled or disabled.
 	 */
 	async setMicrophoneEnabled(enabled: boolean): Promise<void> {
-		// Single writer of the microphone preference. See setCameraEnabled; the only other
-		// legitimate writer is AudioEnabledDirective (embedding-app default).
-		this.storageSrv.setMicrophoneEnabled(enabled);
+		// Single writer of the microphone intent; recorded before acting, as above.
+		this.mediaIntent.setMicrophoneEnabled(enabled);
 		await this.target.setMicrophoneEnabled(enabled);
 	}
 

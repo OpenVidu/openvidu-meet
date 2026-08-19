@@ -4,6 +4,7 @@ import type { LocalTrack } from '../livekit';
 import { Track } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
 import { PlatformService } from '../platform/platform.service';
+import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
 import type { ILogger } from '../../../../../shared/models/logger.model';
@@ -27,6 +28,7 @@ export class DeviceService implements OnDestroy {
 	private readonly loggerSrv = inject(LoggerService);
 	private readonly platformSrv = inject(PlatformService);
 	private readonly storageSrv = inject(MediaStorageService);
+	private readonly mediaIntent = inject(LocalMediaIntentService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 
 	// Reactive device lists with Signals
@@ -331,6 +333,23 @@ export class DeviceService implements OnDestroy {
 		// Register listener
 		navigator.mediaDevices.addEventListener('devicechange', this.deviceChangeHandler);
 		this.log.d('Device change detection enabled');
+	}
+
+	/**
+	 * Whether the camera should be opened: the participant's current intent AND a camera being
+	 * present. Combines intent with availability, so it is not a plain signal alias and stays here.
+	 */
+	isCameraEnabled(): boolean {
+		return this.hasVideoDevices() && this.mediaIntent.cameraEnabled();
+	}
+
+	/**
+	 * Whether the microphone should be opened: the participant's current intent AND a microphone
+	 * being present. Combines intent with availability, so it is not a plain signal alias and stays
+	 * here.
+	 */
+	isMicrophoneEnabled(): boolean {
+		return this.hasAudioDevices() && this.mediaIntent.microphoneEnabled();
 	}
 
 	/**
