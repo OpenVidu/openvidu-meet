@@ -13,7 +13,6 @@ describe('system-info.utils - GET /info payload', () => {
 			gitCommit: expect.any(String),
 			buildDate: expect.any(String),
 			edition: MEET_ENV.EDITION,
-			environment: expect.any(String),
 			apiVersion: expect.any(String)
 		});
 	});
