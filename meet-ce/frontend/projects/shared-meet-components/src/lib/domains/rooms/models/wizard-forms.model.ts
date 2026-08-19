@@ -123,14 +123,14 @@ export function autoStartToTriggerFormValue(
 /**
  * Maps the wizard's two-level trigger selection back to the persisted `config.recording.autoStart`
  * value. `manual` maps to `null` (not `undefined`) so the wizard's own deep-merge of step data can
- * distinguish "explicitly turned off" from "field not touched by this step".
+ * distinguish "explicitly turned off" from "field not touched by this step". Takes the full,
+ * non-partial form value (e.g. `getRawValue()`) so a field missing from a `valueChanges` emission
+ * (which types as `Partial`, e.g. while a control is disabled) can't be mistaken for "manual".
  */
-export function triggerFormValueToAutoStart(
-	formValue: Partial<RecordingTriggerFormValue>
-): MeetRecordingAutoStartMode | null {
+export function triggerFormValueToAutoStart(formValue: RecordingTriggerFormValue): MeetRecordingAutoStartMode | null {
 	if (formValue.triggerMode !== 'auto') return null;
 
-	return formValue.autoStartMode ?? MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS;
+	return formValue.autoStartMode;
 }
 
 // Form value and group types for the recording layout step

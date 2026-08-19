@@ -97,12 +97,12 @@ export class RecordingTriggerComponent {
 
 		this.triggerForm = recordingTriggerStep.formGroup;
 
-		this.triggerForm.valueChanges.pipe(takeUntilDestroyed()).subscribe((value) => {
-			this.saveFormData(value);
+		this.triggerForm.valueChanges.pipe(takeUntilDestroyed()).subscribe(() => {
+			this.saveFormData(this.triggerForm.getRawValue());
 		});
 	}
 
-	private saveFormData(formValue: Partial<RecordingTriggerFormValue>) {
+	private saveFormData(formValue: RecordingTriggerFormValue) {
 		const roomOptions = this.wizardService.roomOptions();
 		const stepData: Partial<MeetRoomOptions> = {
 			config: {
