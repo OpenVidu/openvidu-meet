@@ -1,9 +1,14 @@
 import { EmbeddedAttribute } from '@openvidu-meet/typings';
 import { expect, test, type Page } from '@playwright/test';
 import { createRoom, deleteRooms, getRecordingUrl, listRecordingsByRoomId } from '../helpers/meet-api.helper';
-import { expectPrejoinCameraEnabled, expectPrejoinMicEnabled } from '../helpers/media-controls.helper';
+import {
+	expectPrejoinCameraEnabled,
+	expectPrejoinMicEnabled,
+	expectToolbarCameraEnabled,
+	expectToolbarMicEnabled
+} from '../helpers/media-controls.helper';
 import { startRecording, stopRecording } from '../helpers/recordings.helper';
-import { endMeetingCommand, openMeeting } from '../helpers/testapp.helper';
+import { endMeetingCommand, leaveMeeting, openMeeting, openMeetingAtMediaSetup } from '../helpers/testapp.helper';
 import {
 	openWebcomponentWithAttributes,
 	type WebComponentAttributes
@@ -146,6 +151,61 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 				await expectPrejoinMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+			});
+		});
+
+		test.describe('persistence of initial-audio-enabled / initial-video-enabled across meetings', () => {
+			// Own room for the same reason as the sibling block above: describe blocks run in
+			// file order, and reusing the outer `accessUrl` would risk joining whatever room a
+			// later-declared block's `beforeAll` has since assigned it to.
+			let persistenceRoomId: string;
+
+			test.beforeAll(async () => {
+				const room = await createRoom();
+				createdRoomIds.push(room.roomId);
+				persistenceRoomId = room.roomId;
+			});
+
+			test('should not persist initial-audio-enabled=false into the stored microphone preference across meetings', async ({
+				page
+			}) => {
+				await openMeeting(page, persistenceRoomId, { role: 'moderator', initialAudioEnabled: false });
+				await expectToolbarMicEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+				await leaveMeeting(page);
+
+				// Re-entering the SAME tab WITHOUT the attribute: the participant never expressed
+				// a preference of their own, so the microphone must come back on (the default).
+				await openMeeting(page, persistenceRoomId, { role: 'moderator' });
+				await expectToolbarMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+			});
+
+			test('should not persist initial-video-enabled=false into the stored camera preference across meetings', async ({
+				page
+			}) => {
+				await openMeeting(page, persistenceRoomId, { role: 'moderator', initialVideoEnabled: false });
+				await expectToolbarCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+				await leaveMeeting(page);
+
+				await openMeeting(page, persistenceRoomId, { role: 'moderator' });
+				await expectToolbarCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+			});
+
+			test('should keep the stored camera preference across meetings when the attribute is absent', async ({
+				page
+			}) => {
+				// The participant turns the camera off themselves in prejoin: that IS a preference.
+				const { meet } = await openMeetingAtMediaSetup(page, persistenceRoomId, { role: 'moderator' });
+				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
+				await meet('#camera-button').click();
+				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
+
+				await meet('#join-button').click();
+				await meet('#layout-container').waitFor({ state: 'visible', timeout: 15_000 });
+				await leaveMeeting(page);
+
+				// Re-entering the same tab: the stored preference must hold.
+				await openMeetingAtMediaSetup(page, persistenceRoomId, { role: 'moderator' });
+				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
 			});
 		});
 
