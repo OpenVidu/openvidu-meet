@@ -6,8 +6,6 @@ import { ToolbarAdditionalButtonsPosition } from '../../models/toolbar.model';
  * Toolbar configuration grouped by domain
  */
 interface ToolbarConfig {
-	camera: boolean;
-	microphone: boolean;
 	screenshare: boolean;
 	fullscreen: boolean;
 	settings: boolean;
@@ -76,8 +74,6 @@ export class MeetingUiConfigService {
 	});
 
 	private readonly toolbarConfig = signal<ToolbarConfig>({
-		camera: true,
-		microphone: true,
 		screenshare: true,
 		fullscreen: true,
 		settings: true,
@@ -115,6 +111,11 @@ export class MeetingUiConfigService {
 	// Whether the chat message input is enabled (the participant may send messages). The chat panel
 	// visibility is a separate concern (chatPanel above); this only gates writing.
 	private readonly chatInputEnabledConfig = signal<boolean>(true);
+	// Whether the camera / microphone controls are shown. Deliberately NOT in ToolbarConfig: each one
+	// gates every control of its device — the toolbar button, the prejoin screen and the settings
+	// panel — so it is a meeting-wide capability rather than a toolbar decoration.
+	private readonly showCameraControlsConfig = signal<boolean>(true);
+	private readonly showMicrophoneControlsConfig = signal<boolean>(true);
 
 	// Signals-first selectors used by migrated consumers/directives
 	readonly tokenSignal = computed(() => this.generalConfig().token);
@@ -125,8 +126,8 @@ export class MeetingUiConfigService {
 	readonly displayAudioDetectionSignal = computed(() => this.streamConfig().displayAudioDetection);
 	readonly streamVideoControlsSignal = computed(() => this.streamConfig().videoControls);
 	readonly participantItemMuteButtonSignal = computed(() => this.streamConfig().participantItemMuteButton);
-	readonly cameraButtonSignal = computed(() => this.toolbarConfig().camera);
-	readonly microphoneButtonSignal = computed(() => this.toolbarConfig().microphone);
+	readonly showCameraControlsSignal = this.showCameraControlsConfig.asReadonly();
+	readonly showMicrophoneControlsSignal = this.showMicrophoneControlsConfig.asReadonly();
 	readonly screenshareButtonSignal = computed(() => this.toolbarConfig().screenshare);
 	readonly fullscreenButtonSignal = computed(() => this.toolbarConfig().fullscreen);
 	readonly toolbarSettingsButtonSignal = computed(() => this.toolbarConfig().settings);
@@ -186,6 +187,21 @@ export class MeetingUiConfigService {
 	 */
 	setChatInputEnabled(enabled: boolean): void {
 		this.chatInputEnabledConfig.set(enabled);
+	}
+
+	/**
+	 * Show or hide every camera control: the toolbar button, the prejoin screen and the settings panel.
+	 */
+	setShowCameraControls(show: boolean): void {
+		this.showCameraControlsConfig.set(show);
+	}
+
+	/**
+	 * Show or hide every microphone control: the toolbar button, the prejoin screen and the settings
+	 * panel.
+	 */
+	setShowMicrophoneControls(show: boolean): void {
+		this.showMicrophoneControlsConfig.set(show);
 	}
 
 	// ============================================
