@@ -56,7 +56,7 @@ export class FeatureCalculator {
 	/**
 	 * Resolves the participant's initial media state by precedence, not by conjunction: the embedding
 	 * application's initial-audio-enabled / initial-video-enabled attribute decides whenever it is set
-	 * — to either value — otherwise the room-wide `config.*EnabledOnJoin` does, and `true` when neither
+	 * — to either value — otherwise the room-wide `config.initial*Enabled` does, and `true` when neither
 	 * says anything. So an explicit attribute can also *raise* a room default of `false`: the room field
 	 * is a default, not a policy (enforcing needs the permission, which is signed into the token).
 	 *
@@ -70,9 +70,9 @@ export class FeatureCalculator {
 		roomConfig?: MeetRoomConfig
 	): void {
 		features.audioEnabled =
-			features.audioEnabled && (initialMediaEnabled.audioEnabled ?? roomConfig?.audioEnabledOnJoin ?? true);
+			features.audioEnabled && (initialMediaEnabled.audioEnabled ?? roomConfig?.initialAudioEnabled ?? true);
 		features.videoEnabled =
-			features.videoEnabled && (initialMediaEnabled.videoEnabled ?? roomConfig?.videoEnabledOnJoin ?? true);
+			features.videoEnabled && (initialMediaEnabled.videoEnabled ?? roomConfig?.initialVideoEnabled ?? true);
 	}
 
 	static applyAppearanceConfig(features: RoomFeatures, appearanceConfig: MeetAppearanceConfig): void {

@@ -154,15 +154,15 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			});
 		});
 
-		// The room's `*EnabledOnJoin` is a default; an attribute that is set outranks it, in both
+		// The room's `config.initial*Enabled` is a default; an attribute that is set outranks it, in both
 		// directions. Not parametrized over INTEGRATIONS, like the rest of this file.
-		test.describe('precedence of initial-*-enabled over the room-wide *EnabledOnJoin default', () => {
+		test.describe('precedence of the initial-*-enabled attribute over the room-wide config.initial*Enabled', () => {
 			let mediaDisabledByRoomUrl: string;
 			let mediaDisabledByRoomId: string;
 
 			test.beforeAll(async () => {
 				const room = await createRoom({
-					config: { audioEnabledOnJoin: false, videoEnabledOnJoin: false }
+					config: { initialAudioEnabled: false, initialVideoEnabled: false }
 				});
 				createdRoomIds.push(room.roomId);
 				mediaDisabledByRoomId = room.roomId;

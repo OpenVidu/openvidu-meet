@@ -5,7 +5,7 @@ import { Service, signal } from '@angular/core';
  * memory for the lifetime of the tab's app instance and **never persisted**.
  *
  * It starts as the initial state resolved by the embedding layer (permission ∧ the host's
- * `initial-*-enabled` attribute, or the room's `*EnabledOnJoin` default when the attribute says
+ * `initial-*-enabled` attribute, or the room's `config.initial*Enabled` default when the attribute says
  * nothing) and is then moved by the participant themselves, through
  * `LocalMediaControlService.set{Camera,Microphone}Enabled` — the single writer of a user/host toggle.
  *

@@ -10,7 +10,7 @@ export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
  * disabled device afterwards.
  *
  * `undefined` per device means the host said nothing, which is **not** the same as `true`: only a
- * value that is set takes precedence over the room's own `config.*EnabledOnJoin`.
+ * value that is set takes precedence over the room's own `config.initial*Enabled`.
  */
 export interface InitialMediaEnabledPreferences {
 	audioEnabled?: boolean;

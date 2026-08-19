@@ -51,7 +51,7 @@ export class App {
 	protected e2eeKeyInput = '';
 	protected leaveRedirectUrlInput = '';
 	/**
-	 * `''` = attribute omitted (no opinion, so the room's own `*EnabledOnJoin` default decides);
+	 * `''` = attribute omitted (no opinion, so the room's own `config.initial*Enabled` default decides);
 	 * `'true'`/`'false'` = set explicitly, which takes precedence over that room default.
 	 */
 	protected initialAudioEnabledInput: '' | 'true' | 'false' = '';

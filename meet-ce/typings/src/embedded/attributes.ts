@@ -32,7 +32,7 @@ export enum EmbeddedAttribute {
 	 * they may mute afterwards.
 	 *
 	 * Setting it — to either value — **takes precedence over the room's own
-	 * `config.audioEnabledOnJoin`**; leaving it out means "no opinion", so the room's value applies
+	 * `config.initialAudioEnabled`**; leaving it out means "no opinion", so the room's value applies
 	 * (and `true` when the room has none either). The `mediaPublishAudio` permission is not part of
 	 * that chain: it is a capability, and a denial always wins.
 	 */
@@ -42,7 +42,7 @@ export enum EmbeddedAttribute {
 	 * may disable it afterwards.
 	 *
 	 * Setting it — to either value — **takes precedence over the room's own
-	 * `config.videoEnabledOnJoin`**; leaving it out means "no opinion", so the room's value applies
+	 * `config.initialVideoEnabled`**; leaving it out means "no opinion", so the room's value applies
 	 * (and `true` when the room has none either). The `mediaPublishVideo` permission is not part of
 	 * that chain: it is a capability, and a denial always wins.
 	 */
@@ -83,9 +83,9 @@ export interface WebComponentPropertyValues {
 	participantExternalId?: string;
 	/** Opaque application-defined payload for the local participant (JSON recommended, ≤ 2 KB). Never interpreted by Meet. */
 	participantMetadata?: string;
-	/** Initial microphone state; they may unmute afterwards. Set: wins over the room's `audioEnabledOnJoin`. Omitted: the room decides. */
+	/** Initial microphone state (they may unmute later). Set: wins over `config.initialAudioEnabled`; omitted: the room decides. */
 	initialAudioEnabled?: boolean;
-	/** Initial camera state; they may enable it afterwards. Set: wins over the room's `videoEnabledOnJoin`. Omitted: the room decides. */
+	/** Initial camera state (they may enable it later). Set: wins over `config.initialVideoEnabled`; omitted: the room decides. */
 	initialVideoEnabled?: boolean;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;

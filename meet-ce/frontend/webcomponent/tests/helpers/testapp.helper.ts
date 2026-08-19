@@ -164,7 +164,7 @@ export const openMeetingAtMediaSetup = async (
 	}
 
 	// Tri-state selectors: the empty option omits the attribute, which is not the same request as
-	// setting it to `true` — only a value that is set outranks the room's own `*EnabledOnJoin` default.
+	// setting it to `true` — only a value that is set outranks the room's own `config.initial*Enabled` default.
 	const toSelectValue = (value: boolean | undefined) => (value === undefined ? '' : String(value));
 	await page.getByTestId('select-initialAudioEnabled').selectOption(toSelectValue(initialAudioEnabled));
 	await page.getByTestId('select-initialVideoEnabled').selectOption(toSelectValue(initialVideoEnabled));
