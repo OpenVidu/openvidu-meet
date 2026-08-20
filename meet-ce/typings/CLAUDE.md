@@ -47,7 +47,7 @@ or through the folder's `index.ts`).
   - `scripts/generate-webcomponent-docs.js` parses the JSDoc of the enums in `src/embedded/` to
     generate `docs/webcomponent/{attributes,commands,events}.md`. It reads the raw text, so keep the
     `/** … */` block directly above each enum member and keep one member per line. Tags like
-    `@required`, `@moderator` and `@category` are meaningful to that generator, and so is
+    `@required`, `@moderator`, `@prejoin` and `@category` are meaningful to that generator, and so is
     **`@deprecated`**: a member carrying it is **excluded** from the generated tables (like `@private`),
     so the public docs only ever show canonical names. The generator prints what it excluded.
   - `{@link Other}` references are used throughout; keep them valid when renaming.

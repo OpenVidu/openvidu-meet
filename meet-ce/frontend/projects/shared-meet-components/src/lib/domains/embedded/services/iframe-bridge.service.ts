@@ -8,7 +8,6 @@ import {
 } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../shared/services/logger.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
-import { MeetingLiveKitService } from '../../meeting/openvidu-components';
 import { EmbeddedCommandService } from './embedded-command.service';
 import { EmbeddedEventBusService } from './embedded-event-bus.service';
 
@@ -21,8 +20,8 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
  * delegates to the already-centralized API so the iframe exposes the *same* public
  * surface as the webcomponent:
  *
- * - **Commands** (host → app) are forwarded to {@link EmbeddedCommandService}
- *   (the shared, permission-checked command bridge).
+ * - **Commands** (host → app) are forwarded to {@link EmbeddedCommandService}, which checks the
+ *   permission and meeting phase each command declares. The bridge applies no gating of its own.
  * - **Events** (app → host) are drained from {@link EmbeddedEventBusService.events}
  *   (the shared lifecycle-event queue, canonical names only) and relayed as `postMessage` events —
  *   each canonical event is followed by a second post under its deprecated 3.8.0 name, if it has
@@ -32,7 +31,6 @@ import { EmbeddedEventBusService } from './embedded-event-bus.service';
 export class IframeBridgeService {
 	private readonly commandService = inject(EmbeddedCommandService);
 	private readonly eventBus = inject(EmbeddedEventBusService);
-	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly runtimeConfig = inject(RuntimeConfigService);
 	private readonly log = inject(LoggerService).get('IframeBridgeService');
 
@@ -130,12 +128,6 @@ export class IframeBridgeService {
 		// Reject anything not coming from the trusted parent origin (resolved at start).
 		if (event.origin !== this.parentDomain()) {
 			this.log.w(`Ignoring message from untrusted origin: ${event.origin}`);
-			return;
-		}
-
-		// Commands only make sense once connected to the room.
-		if (!this.meetingLiveKitService.isConnected()) {
-			this.log.w('Received command but participant is not connected to the room');
 			return;
 		}
 

@@ -23,10 +23,12 @@ export enum EmbeddedCommandName {
 	PARTICIPANT_KICK = 'participantKick',
 	/**
 	 * Toggles the local participant's microphone, or sets it when `enabled` is provided.
+	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
 	 */
 	MEDIA_TOGGLE_AUDIO = 'mediaToggleAudio',
 	/**
 	 * Toggles the local participant's camera, or sets it when `enabled` is provided.
+	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
 	 */
 	MEDIA_TOGGLE_VIDEO = 'mediaToggleVideo',
 	/**

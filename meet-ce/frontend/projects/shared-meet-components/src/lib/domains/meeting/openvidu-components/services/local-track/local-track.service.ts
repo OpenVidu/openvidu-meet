@@ -51,6 +51,10 @@ export class LocalTrackService {
 	 */
 	private readonly _localTracks = signal<LocalTrack[]>([]);
 
+	/** Whether the prejoin (media-setup) screen is mounted with its devices ready. */
+	private readonly _prejoinActive = signal(false);
+	readonly prejoinActive = this._prejoinActive.asReadonly();
+
 	/**
 	 * Current prejoin microphone track, or undefined. Equality is compared by the underlying
 	 * MediaStreamTrack id, so an in-place device switch (restartTrack keeps the same LocalAudioTrack
@@ -113,6 +117,11 @@ export class LocalTrackService {
 	 */
 	getLocalTracks(): LocalTrack[] {
 		return this._localTracks();
+	}
+
+	/** @internal */
+	setPrejoinActive(active: boolean): void {
+		this._prejoinActive.set(active);
 	}
 
 	/**

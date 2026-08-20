@@ -68,6 +68,17 @@ export class MeetingLiveKitService {
 	 */
 	readonly isReconnecting = computed(() => this._connectionState() === ConnectionState.Reconnecting);
 
+	/** Whether a room session is in progress — connected or mid-reconnect — unlike the stricter {@link isConnected}. */
+	readonly isSessionActive = computed(() => {
+		const state = this._connectionState();
+
+		return (
+			state === ConnectionState.Connected ||
+			state === ConnectionState.Reconnecting ||
+			state === ConnectionState.SignalReconnecting
+		);
+	});
+
 	/**
 	 * @internal
 	 * Indicates whether the client initiated disconnect event should be handled.

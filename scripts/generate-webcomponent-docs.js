@@ -99,6 +99,7 @@ class WebComponentDocGenerator {
                         isPrivate: commentLines.some(c => c.includes('@private')),
                         isDeprecated: commentLines.some(c => c.includes('@deprecated')),
                         isModerator: commentLines.some(c => c.includes('@moderator')),
+                        isPrejoin: commentLines.some(c => c.includes('@prejoin')),
                         isRequired: commentLines.some(c => c.includes('@required')),
                         requiredText: requiredText
                     };
@@ -219,8 +220,8 @@ class WebComponentDocGenerator {
         const commandEnum = enums.find(e => e.name === 'EmbeddedCommandName');
         if (!commandEnum) return '';
 
-        let markdown = '| Method | Command | Description | Parameters | Access Level |\n';
-        markdown += '|--------|---------|-------------|------------|-------------|\n';
+        let markdown = '| Method | Command | Description | Parameters | Access Level | Restriction |\n';
+        markdown += '|--------|---------|-------------|------------|--------------|-------------|\n';
 
         for (const item of commandEnum.items) {
             // Skip private commands and deprecated aliases (see isDocumented)
@@ -236,7 +237,9 @@ class WebComponentDocGenerator {
             // Determine access level based on @moderator annotation
             const accessLevel = this.getAccessLevel(item);
 
-            markdown += `| \`${methodName}\` | \`${item.value}\` | ${item.description || 'No description available'} | ${params} | ${accessLevel} |\n`;
+            const restriction = this.getRestriction(item);
+
+            markdown += `| \`${methodName}\` | \`${item.value}\` | ${item.description || 'No description available'} | ${params} | ${accessLevel} | ${restriction} |\n`;
         }
 
         return markdown;
@@ -290,6 +293,13 @@ class WebComponentDocGenerator {
      */
     getAccessLevel(item) {
         return item.isModerator ? 'Moderator' : 'All';
+    }
+
+    /**
+     * When a command may be sent, from its `@prejoin` annotation.
+     */
+    getRestriction(item) {
+        return item.isPrejoin ? '-' : 'Requires having joined the meeting';
     }
 
     /**

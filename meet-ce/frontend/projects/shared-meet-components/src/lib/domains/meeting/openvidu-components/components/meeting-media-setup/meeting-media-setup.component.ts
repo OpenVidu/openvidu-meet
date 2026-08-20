@@ -118,10 +118,12 @@ export class MeetingMediaSetupComponent implements OnInit, OnDestroy {
 	async ngOnInit() {
 		await this.initializeDevicesWithRetry();
 		this.isLoading.set(false);
+		this.localTrackService.setPrejoinActive(true);
 	}
 
 	async ngOnDestroy() {
 		this.cdkSrv.setSelector('body');
+		this.localTrackService.setPrejoinActive(false);
 
 		if (this.shouldRemoveTracksWhenComponentIsDestroyed) {
 			// Stop and release the prejoin tracks. Clearing the track signal drops the local-media
