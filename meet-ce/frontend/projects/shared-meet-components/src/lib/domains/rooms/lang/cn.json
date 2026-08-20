@@ -252,12 +252,12 @@
         "MAX_DURATION_DESC": "达到该时长后会议将自动结束。留空表示不限时长",
         "MAX_DURATION_LABEL": "分钟",
         "MAX_DURATION_PLACEHOLDER": "不限",
-        "MAX_DURATION_INVALID": "请输入不小于 1 的整数分钟数",
+        "MAX_DURATION_INVALID": "请输入整数分钟数",
         "MAX_PARTICIPANTS": "参与者人数上限",
         "MAX_PARTICIPANTS_DESC": "可加入会议的最大参与者数量。留空表示不限",
         "MAX_PARTICIPANTS_LABEL": "人数",
         "MAX_PARTICIPANTS_PLACEHOLDER": "不限",
-        "MAX_PARTICIPANTS_INVALID": "请输入不小于 1 的整数人数"
+        "MAX_PARTICIPANTS_INVALID": "请输入整数人数"
       },
       "RECORDING_CONFIG": {
         "TITLE": "录制配置",

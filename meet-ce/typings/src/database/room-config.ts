@@ -7,13 +7,15 @@ export interface MeetRoomConfig {
 	/**
 	 * Maximum number of participants that may be in the meeting at the same time.
 	 * Once reached, further join attempts are rejected.
-	 * `null` (or an absent key) means the number of participants is unlimited.
+	 * `null` (or an absent key) means the number of participants is unlimited; the highest limit
+	 * that can be set is `30`.
 	 */
 	maxParticipants?: number | null;
 	/**
 	 * Maximum duration of the meeting in minutes. When reached, the meeting ends for every
 	 * participant, exactly as if a moderator had ended it.
-	 * `null` (or an absent key) means the meeting duration is unlimited.
+	 * `null` (or an absent key) means the meeting duration is unlimited; the highest limit that can
+	 * be set is `1440` (1 day).
 	 */
 	maxDurationMinutes?: number | null;
 	/**

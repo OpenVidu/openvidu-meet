@@ -252,12 +252,12 @@
         "MAX_DURATION_DESC": "Beëindigt de meeting automatisch na deze tijd. Laat leeg voor onbeperkte duur",
         "MAX_DURATION_LABEL": "Minuten",
         "MAX_DURATION_PLACEHOLDER": "Onbeperkt",
-        "MAX_DURATION_INVALID": "Voer een geheel aantal minuten in (1 of meer)",
+        "MAX_DURATION_INVALID": "Voer een geheel aantal minuten in",
         "MAX_PARTICIPANTS": "Deelnemerslimiet",
         "MAX_PARTICIPANTS_DESC": "Maximaal aantal deelnemers dat aan de meeting kan deelnemen. Laat leeg voor geen limiet",
         "MAX_PARTICIPANTS_LABEL": "Deelnemers",
         "MAX_PARTICIPANTS_PLACEHOLDER": "Onbeperkt",
-        "MAX_PARTICIPANTS_INVALID": "Voer een geheel aantal deelnemers in (1 of meer)"
+        "MAX_PARTICIPANTS_INVALID": "Voer een geheel aantal deelnemers in"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Opnameconfiguratie",

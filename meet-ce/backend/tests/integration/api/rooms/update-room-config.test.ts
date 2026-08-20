@@ -420,7 +420,7 @@ describe('Room API Tests', () => {
 			expect(JSON.stringify(response.body.details)).toContain('recording.enabled');
 		});
 
-		it('should reject non-positive or non-integer meeting limits', async () => {
+		it('should reject meeting limits outside the accepted range', async () => {
 			const createdRoom = await createRoom({ roomName: 'meeting-limits-validation-test' });
 
 			let response = await updateRoomConfig(createdRoom.roomId, {
@@ -434,6 +434,24 @@ describe('Room API Tests', () => {
 			} as unknown as MeetRoomConfig);
 			expect(response.status).toBe(422);
 			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
+
+			// Above the ceilings: a value LiveKit cannot encode must never reach the stored config
+			response = await updateRoomConfig(createdRoom.roomId, { maxParticipants: 31 });
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxParticipants');
+
+			response = await updateRoomConfig(createdRoom.roomId, { maxDurationMinutes: 1_441 });
+			expect(response.status).toBe(422);
+			expect(JSON.stringify(response.body.details)).toContain('maxDurationMinutes');
+
+			// The ceilings themselves are valid
+			response = await updateRoomConfig(createdRoom.roomId, {
+				maxParticipants: 30,
+				maxDurationMinutes: 1_440
+			});
+			expect(response.status).toBe(200);
+			expect(response.body.maxParticipants).toBe(30);
+			expect(response.body.maxDurationMinutes).toBe(1_440);
 		});
 
 		it('should reject an auto-start threshold that the participant limit can never reach', async () => {

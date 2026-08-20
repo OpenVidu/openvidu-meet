@@ -16,6 +16,8 @@ import { WizardNavigationConfig, WizardStepId } from '../models';
 import {
 	AnyWizardStep,
 	autoStartToTriggerFormValue,
+	MAX_DURATION_MINUTES_LIMIT,
+	MAX_PARTICIPANTS_LIMIT,
 	RecordingEnabledOption,
 	RoomAccessPermissionsControls,
 	RoomDetailsFormGroup
@@ -268,14 +270,14 @@ export class RoomWizardStateService {
 					),
 					e2eeEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.e2ee!.enabled),
 					captionsEnabled: this.formBuilder.nonNullable.control(initialRoomOptions.config!.captions!.enabled),
-					// Empty (null) means unlimited; the backend accepts integers >= 1 or null
+					// Empty (null) means unlimited; the backend accepts null or an integer within these bounds
 					maxParticipants: this.formBuilder.control<number | null>(
 						initialRoomOptions.config!.maxParticipants ?? null,
-						[Validators.min(1), Validators.pattern(/^\d+$/)]
+						[Validators.min(1), Validators.max(MAX_PARTICIPANTS_LIMIT), Validators.pattern(/^\d+$/)]
 					),
 					maxDurationMinutes: this.formBuilder.control<number | null>(
 						initialRoomOptions.config!.maxDurationMinutes ?? null,
-						[Validators.min(1), Validators.pattern(/^\d+$/)]
+						[Validators.min(1), Validators.max(MAX_DURATION_MINUTES_LIMIT), Validators.pattern(/^\d+$/)]
 					)
 				})
 			},

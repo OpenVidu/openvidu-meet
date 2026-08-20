@@ -169,12 +169,16 @@ export const encodingValidator = z.any().superRefine((value: unknown, ctx) => {
 /**
  * Meeting limits (`maxParticipants`, `maxDurationMinutes`): `null` is the explicit "no limit"
  * value, so it is stored as such. Config updates deep-merge with the stored config, which makes
- * omitting a limit keep its current value and sending `null` lift it.
+ * omitting a limit keep its current value and sending `null` lift it. The ceilings come from
+ * `INTERNAL_CONFIG`, where the reason each one exists is documented.
  */
+const { MEETING_MAX_PARTICIPANTS_LIMIT, MEETING_MAX_DURATION_MINUTES_LIMIT } = INTERNAL_CONFIG;
+
 const maxParticipantsSchema = z
 	.number('Must be a number')
 	.int('Must be an integer')
 	.min(1, 'Must allow at least one participant')
+	.max(MEETING_MAX_PARTICIPANTS_LIMIT, `Must not exceed ${MEETING_MAX_PARTICIPANTS_LIMIT} participants`)
 	.nullable()
 	.optional();
 
@@ -182,6 +186,7 @@ const maxDurationMinutesSchema = z
 	.number('Must be a number')
 	.int('Must be an integer')
 	.min(1, 'Must last at least one minute')
+	.max(MEETING_MAX_DURATION_MINUTES_LIMIT, `Must not exceed ${MEETING_MAX_DURATION_MINUTES_LIMIT} minutes`)
 	.nullable()
 	.optional();
 

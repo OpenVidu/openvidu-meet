@@ -252,12 +252,12 @@
         "MAX_DURATION_DESC": "Termina automaticamente la riunione dopo questo tempo. Lascia vuoto per durata illimitata",
         "MAX_DURATION_LABEL": "Minuti",
         "MAX_DURATION_PLACEHOLDER": "Illimitata",
-        "MAX_DURATION_INVALID": "Inserisci un numero intero di minuti (1 o più)",
+        "MAX_DURATION_INVALID": "Inserisci un numero intero di minuti",
         "MAX_PARTICIPANTS": "Limite di partecipanti",
         "MAX_PARTICIPANTS_DESC": "Numero massimo di partecipanti che possono unirsi alla riunione. Lascia vuoto per nessun limite",
         "MAX_PARTICIPANTS_LABEL": "Partecipanti",
         "MAX_PARTICIPANTS_PLACEHOLDER": "Illimitato",
-        "MAX_PARTICIPANTS_INVALID": "Inserisci un numero intero di partecipanti (1 o più)"
+        "MAX_PARTICIPANTS_INVALID": "Inserisci un numero intero di partecipanti"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Configurazione della registrazione",

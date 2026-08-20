@@ -30,6 +30,15 @@ export type RoomDetailsFormGroup = FormGroup<{
 
 // Form value and group types for the room config step
 
+/**
+ * Ceilings the meeting-limit inputs validate against, mirroring the backend's
+ * `MEETING_MAX_PARTICIPANTS_LIMIT`/`MEETING_MAX_DURATION_MINUTES_LIMIT` (`INTERNAL_CONFIG`), which is
+ * the authority: this is a pre-submit check so the wizard can explain the bound instead of showing a
+ * `422`.
+ */
+export const MAX_PARTICIPANTS_LIMIT = 30;
+export const MAX_DURATION_MINUTES_LIMIT = 1_440;
+
 export interface RoomConfigFormValue {
 	chatEnabled: boolean;
 	virtualBackgroundEnabled: boolean;
