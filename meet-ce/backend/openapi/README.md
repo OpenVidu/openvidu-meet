@@ -35,8 +35,8 @@ error responses (`unauthorized`, `validation`, `forbidden`, `internal-server`,
 
 ### Public vs internal
 
-A domain is **public-only** (`rooms`, `recordings`, `webhooks`), **internal-only** (`auth`,
-`meetings`, `config`, `ai-assistants`, `analytics`, `api-keys`), or **mixed**
+A domain is **public-only** (`rooms`, `meetings`, `recordings`, `webhooks`), **internal-only**
+(`auth`, `config`, `ai-assistants`, `analytics`, `api-keys`), or **mixed**
 (`users`, `room-members`). A mixed domain keeps its internal-only members under
 an `internal/` subfolder (e.g. `users/internal/`). Internal-only domains are
 ordinary top-level folders — which spec they belong to is defined by which

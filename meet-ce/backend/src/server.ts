@@ -21,7 +21,7 @@ import { apiKeyRouter } from './routes/api-key.routes.js';
 import { authRouter } from './routes/auth.routes.js';
 import { configRouter } from './routes/global-config.routes.js';
 import { livekitWebhookRouter } from './routes/livekit.routes.js';
-import { internalMeetingRouter } from './routes/meeting.routes.js';
+import { meetingRouter } from './routes/meeting.routes.js';
 import { recordingRouter } from './routes/recording.routes.js';
 import { internalRoomRouter, roomRouter } from './routes/room.routes.js';
 import { internalUserRouter, userRouter } from './routes/user.routes.js';
@@ -98,6 +98,7 @@ const createApp = () => {
 	);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/users`, userRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/rooms`, /*mediaTypeValidatorMiddleware,*/ roomRouter);
+	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`, meetingRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/recordings`, /*mediaTypeValidatorMiddleware,*/ recordingRouter);
 	appRouter.use(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/webhooks`, webhookRouter);
 
@@ -115,7 +116,6 @@ const createApp = () => {
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/api-keys`, apiKeyRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/users`, internalUserRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/rooms`, internalRoomRouter);
-	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`, internalMeetingRouter);
 	// appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/recordings`, internalRecordingRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/config`, configRouter);
 	appRouter.use(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/analytics`, analyticsRouter);

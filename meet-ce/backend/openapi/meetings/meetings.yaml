@@ -5,8 +5,9 @@
         description: >
             Returns the live info of the meeting currently running in an OpenVidu Meet room.
         tags:
-            - Internal API - Meetings
+            - OpenVidu Meet - Meetings
         security:
+            - apiKeyHeader: []
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
@@ -31,8 +32,9 @@
 
             This endpoint is idempotent. If the meeting is already ended, it will return a success response without any action.
         tags:
-            - Internal API - Meetings
+            - OpenVidu Meet - Meetings
         security:
+            - apiKeyHeader: []
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
@@ -58,8 +60,9 @@
             snapshots: identity, the application-provided correlation fields (`externalId`,
             `metadata`), effective role, join date and current media state.
         tags:
-            - Internal API - Meetings
+            - OpenVidu Meet - Meetings
         security:
+            - apiKeyHeader: []
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
@@ -83,11 +86,13 @@
         description: >
             Returns the live snapshot of one participant in the meeting of an OpenVidu Meet room.
         tags:
-            - Internal API - Meetings
+            - OpenVidu Meet - Meetings
         security:
+            - apiKeyHeader: []
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/participant-identity-path.yaml'
         responses:
             '200':
                 $ref: './responses/success/get-meeting-participant.yaml'
@@ -107,11 +112,13 @@
         description: >
             Kicks a participant from the current meeting in an OpenVidu Meet room.
         tags:
-            - Internal API - Meetings
+            - OpenVidu Meet - Meetings
         security:
+            - apiKeyHeader: []
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/participant-identity-path.yaml'
         responses:
             '200':
                 $ref: './responses/success/kick-participant.yaml'
@@ -133,11 +140,13 @@
             Applies a moderation action to a participant in the current meeting in an OpenVidu Meet room.
             Supported actions are `upgrade` (promote to moderator) and `downgrade` (restore original permissions).
         tags:
-            - Internal API - Meetings
+            - OpenVidu Meet - Meetings
         security:
+            - apiKeyHeader: []
             - roomMemberTokenHeader: []
         parameters:
             - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/participant-identity-path.yaml'
         requestBody:
             $ref: './requests/update-participant-role.yaml'
         responses:

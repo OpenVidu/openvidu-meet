@@ -4,6 +4,8 @@
   description: Operations related to managing OpenVidu Meet rooms
 - name: OpenVidu Meet - Room Members
   description: Operations related to managing members within OpenVidu Meet rooms
+- name: OpenVidu Meet - Meetings
+  description: Operations related to managing the live meetings running in OpenVidu Meet rooms
 - name: OpenVidu Meet - Recordings
   description: Operations related to managing OpenVidu Meet recordings
 - name: OpenVidu Meet - Webhooks
@@ -20,8 +22,6 @@
   description: Operations related to managing global config in OpenVidu Meet
 - name: Internal API - Room Members
   description: Operations related to managing members within OpenVidu Meet rooms
-- name: Internal API - Meetings
-  description: Operations related to managing meetings in OpenVidu Meet rooms
 - name: Internal API - AI Assistants
   description: High-level operations to manage AI assistance capabilities in meetings
 - name: Internal API - Recordings

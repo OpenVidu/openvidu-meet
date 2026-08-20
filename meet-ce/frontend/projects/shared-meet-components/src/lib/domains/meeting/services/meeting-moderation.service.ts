@@ -5,7 +5,7 @@ import { LoggerService } from '../../../shared/services/logger.service';
 
 @Service()
 export class MeetingModerationService {
-	protected readonly MEETINGS_API = `${HttpService.INTERNAL_API_PATH_PREFIX}/meetings`;
+	protected readonly MEETINGS_API = `${HttpService.API_PATH_PREFIX}/meetings`;
 
 	protected httpService = inject(HttpService);
 	protected loggerService = inject(LoggerService);

@@ -901,7 +901,7 @@ export const updateParticipant = async (
 	const response = await request(app)
 		.put(
 			getFullPath(
-				`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`
+				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/role`
 			)
 		)
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
@@ -915,7 +915,7 @@ export const kickParticipant = async (roomId: string, participantIdentity: strin
 	const response = await request(app)
 		.delete(
 			getFullPath(
-				`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`
+				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`
 			)
 		)
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
@@ -927,7 +927,7 @@ export const endMeeting = async (roomId: string, roomMemberToken: string) => {
 	checkAppIsRunning();
 
 	const response = await request(app)
-		.delete(getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings/${roomId}`))
+		.delete(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}`))
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send();
 

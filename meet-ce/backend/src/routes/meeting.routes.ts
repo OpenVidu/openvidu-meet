@@ -1,61 +1,61 @@
 import bodyParser from 'body-parser';
 import { Router } from 'express';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
-import { roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
+import { apiKeyValidator, roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
 import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
 import { validateUpdateParticipantRoleReq } from '../middlewares/request-validators/meeting-validator.middleware.js';
 import { withValidRoomId } from '../middlewares/request-validators/room-validator.middleware.js';
-import { withRoomMemberPermission } from '../middlewares/room-member.middleware.js';
+import { withRoomPermission } from '../middlewares/room.middleware.js';
 
-export const internalMeetingRouter: Router = Router();
-internalMeetingRouter.use(bodyParser.urlencoded({ extended: true }));
-internalMeetingRouter.use(bodyParser.json());
-internalMeetingRouter.use(apiLimiter);
+export const meetingRouter: Router = Router();
+meetingRouter.use(bodyParser.urlencoded({ extended: true }));
+meetingRouter.use(bodyParser.json());
+meetingRouter.use(apiLimiter);
 
-// Internal Meetings Routes
+// Meetings Routes
 // Live introspection (the meeting and its participants). Gated on `meetingRead`, which defaults to
 // the holder's `meetingJoin` — so whoever may enter the meeting observes it and a recording-only
 // link does not, unless an operator grants the two apart.
-internalMeetingRouter.get(
+meetingRouter.get(
 	'/:roomId',
-	withAuth(roomMemberTokenValidator),
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomMemberPermission('meetingRead'),
+	withRoomPermission('meetingRead'),
 	meetingCtrl.getMeeting
 );
-internalMeetingRouter.get(
+meetingRouter.get(
 	'/:roomId/participants',
-	withAuth(roomMemberTokenValidator),
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomMemberPermission('meetingRead'),
+	withRoomPermission('meetingRead'),
 	meetingCtrl.getMeetingParticipants
 );
-internalMeetingRouter.get(
+meetingRouter.get(
 	'/:roomId/participants/:participantIdentity',
-	withAuth(roomMemberTokenValidator),
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomMemberPermission('meetingRead'),
+	withRoomPermission('meetingRead'),
 	meetingCtrl.getMeetingParticipant
 );
-internalMeetingRouter.delete(
+meetingRouter.delete(
 	'/:roomId',
-	withAuth(roomMemberTokenValidator),
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomMemberPermission('meetingEnd'),
+	withRoomPermission('meetingEnd'),
 	meetingCtrl.endMeeting
 );
-internalMeetingRouter.delete(
+meetingRouter.delete(
 	'/:roomId/participants/:participantIdentity',
-	withAuth(roomMemberTokenValidator),
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
-	withRoomMemberPermission('participantKick'),
+	withRoomPermission('participantKick'),
 	meetingCtrl.kickParticipantFromMeeting
 );
-internalMeetingRouter.put(
+meetingRouter.put(
 	'/:roomId/participants/:participantIdentity/role',
-	withAuth(roomMemberTokenValidator),
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
 	withValidRoomId,
 	validateUpdateParticipantRoleReq,
-	withRoomMemberPermission('participantPromote'),
+	withRoomPermission('participantPromote'),
 	meetingCtrl.updateParticipantRole
 );
