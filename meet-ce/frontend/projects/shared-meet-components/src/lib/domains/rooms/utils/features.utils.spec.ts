@@ -1,6 +1,16 @@
 import { MEET_PERMISSION_KEYS, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
-import { RoomFeatures } from '../models/features.model';
+import { InitialMediaRequest, RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from './features.utils';
+
+const buildPermissions = (overrides: Partial<MeetRoomMemberPermissions> = {}): MeetRoomMemberPermissions => {
+	const permissions = {} as Record<string, boolean>;
+
+	for (const key of MEET_PERMISSION_KEYS) {
+		permissions[key] = true;
+	}
+
+	return { ...(permissions as unknown as MeetRoomMemberPermissions), ...overrides };
+};
 
 /**
  * Pins the permission → feature wiring of `FeatureCalculator.applyPermissions`, with special care for
@@ -17,16 +27,6 @@ describe('FeatureCalculator.applyPermissions', () => {
 			showBackgrounds: true
 		}) as RoomFeatures;
 
-	const buildPermissions = (overrides: Partial<MeetRoomMemberPermissions> = {}): MeetRoomMemberPermissions => {
-		const permissions = {} as Record<string, boolean>;
-
-		for (const key of MEET_PERMISSION_KEYS) {
-			permissions[key] = true;
-		}
-
-		return { ...(permissions as unknown as MeetRoomMemberPermissions), ...overrides };
-	};
-
 	const featuresFor = (overrides: Partial<MeetRoomMemberPermissions> = {}): RoomFeatures => {
 		const features = buildFeatures();
 		FeatureCalculator.applyPermissions(features, buildPermissions(overrides));
@@ -36,8 +36,8 @@ describe('FeatureCalculator.applyPermissions', () => {
 
 	// Each permission drives exactly these feature flags, and no other permission does.
 	const DIRECT_MAPPINGS: [keyof MeetRoomMemberPermissions, (keyof RoomFeatures)[]][] = [
-		['mediaPublishVideo', ['videoEnabled', 'showCamera']],
-		['mediaPublishAudio', ['audioEnabled', 'showMicrophone']],
+		['mediaPublishVideo', ['showCamera']],
+		['mediaPublishAudio', ['showMicrophone']],
 		['mediaShareScreen', ['showScreenShare']],
 		['roomShareAccessLinks', ['showShareAccessLinks']],
 		['participantPromote', ['showMakeModerator']],
@@ -105,109 +105,89 @@ describe('FeatureCalculator.applyPermissions', () => {
 		expect(featuresFor().showBackgrounds).toBeTrue();
 		expect(featuresFor({ mediaChangeVirtualBackground: false }).showBackgrounds).toBeFalse();
 	});
+});
 
-	describe('applyInitialMediaEnabled', () => {
-		it('should lower the initial media state without touching the controls', () => {
-			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: false, videoEnabled: false });
+/**
+ * Pins the precedence of `FeatureCalculator.resolveInitialMediaState`: permission above the embedding
+ * application's request, request above the room-wide default, and `true` when nothing says anything.
+ */
+describe('FeatureCalculator.resolveInitialMediaState', () => {
+	const stateFor = (
+		request: InitialMediaRequest,
+		roomConfig?: Partial<MeetRoomConfig>,
+		permissions: Partial<MeetRoomMemberPermissions> = {}
+	) =>
+		FeatureCalculator.resolveInitialMediaState(
+			request,
+			buildPermissions(permissions),
+			roomConfig as MeetRoomConfig | undefined
+		);
 
-			expect(features.audioEnabled).toBeFalse();
-			expect(features.videoEnabled).toBeFalse();
-			// Initial state, not a capability: the participant may re-enable the devices
-			expect(features.showMicrophone).toBeTrue();
-			expect(features.showCamera).toBeTrue();
-		});
+	it('should open what the request asks for', () => {
+		expect(stateFor({ audioEnabled: false, videoEnabled: false })).toEqual({ microphone: false, camera: false });
+		expect(stateFor({ audioEnabled: true, videoEnabled: true })).toEqual({ microphone: true, camera: true });
+	});
 
-		it('should leave an enabled attribute alone', () => {
-			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true, videoEnabled: true });
+	it('should default to enabled when nothing is set anywhere', () => {
+		expect(stateFor({})).toEqual({ microphone: true, camera: true });
+	});
 
-			expect(features.audioEnabled).toBeTrue();
-			expect(features.videoEnabled).toBeTrue();
-		});
+	it('should default to enabled while the permissions have not arrived yet', () => {
+		expect(FeatureCalculator.resolveInitialMediaState({})).toEqual({ microphone: true, camera: true });
+	});
 
-		it('should default to enabled when nothing is set anywhere', () => {
-			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaEnabled(features, {});
+	it('should never open a device its permission denies', () => {
+		const state = stateFor({ audioEnabled: true, videoEnabled: true }, undefined, { mediaPublishVideo: false });
 
-			expect(features.audioEnabled).toBeTrue();
-			expect(features.videoEnabled).toBeTrue();
-		});
+		expect(state).toEqual({ microphone: true, camera: false });
+	});
 
-		it('should never raise a state a permission already denied', () => {
-			const features = featuresFor({ mediaPublishVideo: false });
-			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true, videoEnabled: true });
+	it('should apply the room-wide config.initial*Enabled when the request says nothing', () => {
+		const state = stateFor({}, { initialAudioEnabled: false, initialVideoEnabled: false });
 
-			expect(features.videoEnabled).toBeFalse();
-		});
+		expect(state).toEqual({ microphone: false, camera: false });
+	});
 
-		it('should apply the room-wide config.initial*Enabled when the attribute says nothing', () => {
-			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaEnabled(features, {}, {
+	it('should treat an absent room-wide initial media config as enabled', () => {
+		expect(stateFor({}, {})).toEqual({ microphone: true, camera: true });
+	});
+
+	// The precedence rule holds in both directions, so the next two tests are not the same test twice.
+	it('should let an explicit request raise a room default of false', () => {
+		const state = stateFor(
+			{ audioEnabled: true, videoEnabled: true },
+			{
 				initialAudioEnabled: false,
 				initialVideoEnabled: false
-			} as MeetRoomConfig);
+			}
+		);
 
-			expect(features.audioEnabled).toBeFalse();
-			expect(features.videoEnabled).toBeFalse();
-			// Initial state, not a capability: the participant may re-enable the devices
-			expect(features.showMicrophone).toBeTrue();
-			expect(features.showCamera).toBeTrue();
-		});
+		expect(state).toEqual({ microphone: true, camera: true });
+	});
 
-		it('should treat an absent room-wide initial media config as enabled', () => {
-			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaEnabled(features, {}, {} as MeetRoomConfig);
-
-			expect(features.audioEnabled).toBeTrue();
-			expect(features.videoEnabled).toBeTrue();
-		});
-
-		// The precedence rule, in both directions: an attribute that is set decides, so it can raise a
-		// room default of `false` as well as lower one of `true`. The room field is a default, not a
-		// policy — enforcing a device off is the permission's job.
-		it('should let an explicit attribute raise a room default of false', () => {
-			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true, videoEnabled: true }, {
-				initialAudioEnabled: false,
-				initialVideoEnabled: false
-			} as MeetRoomConfig);
-
-			expect(features.audioEnabled).toBeTrue();
-			expect(features.videoEnabled).toBeTrue();
-		});
-
-		it('should let an explicit attribute lower a room default of true', () => {
-			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: false, videoEnabled: false }, {
+	it('should let an explicit request lower a room default of true', () => {
+		const state = stateFor(
+			{ audioEnabled: false, videoEnabled: false },
+			{
 				initialAudioEnabled: true,
 				initialVideoEnabled: true
-			} as MeetRoomConfig);
+			}
+		);
 
-			expect(features.audioEnabled).toBeFalse();
-			expect(features.videoEnabled).toBeFalse();
-		});
+		expect(state).toEqual({ microphone: false, camera: false });
+	});
 
-		it('should resolve each device independently', () => {
-			// Audio: the attribute decides (on, over a room default of off).
-			// Video: the attribute says nothing, so the room decides (off).
-			const features = featuresFor();
-			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true }, {
-				initialAudioEnabled: false,
-				initialVideoEnabled: false
-			} as MeetRoomConfig);
+	it('should resolve each device independently', () => {
+		// Audio: the request decides (on, over a room default of off).
+		// Video: the request says nothing, so the room decides (off).
+		const state = stateFor({ audioEnabled: true }, { initialAudioEnabled: false, initialVideoEnabled: false });
 
-			expect(features.audioEnabled).toBeTrue();
-			expect(features.videoEnabled).toBeFalse();
-		});
+		expect(state).toEqual({ microphone: true, camera: false });
+	});
 
-		it('should keep a denying permission above an explicit attribute and the room config', () => {
-			const features = featuresFor({ mediaPublishAudio: false });
-			FeatureCalculator.applyInitialMediaEnabled(features, { audioEnabled: true }, {
-				initialAudioEnabled: true
-			} as MeetRoomConfig);
+	it('should keep a denying permission above an explicit request and the room config', () => {
+		const state = stateFor({ audioEnabled: true }, { initialAudioEnabled: true }, { mediaPublishAudio: false });
 
-			expect(features.audioEnabled).toBeFalse();
-		});
+		expect(state.microphone).toBeFalse();
 	});
 });

@@ -32,8 +32,8 @@ import {
     ToolbarSettingsButtonDirective
 } from './toolbar.directive';
 import {
-    AudioEnabledDirective,
     ChatWritableDirective,
+    InitialMediaStateDirective,
     LangDirective,
     LangOptionsDirective,
     LivekitUrlDirective,
@@ -42,8 +42,7 @@ import {
     ShowCameraControlsDirective,
     ShowMicrophoneControlsDirective,
     TokenDirective,
-    TokenErrorDirective,
-    VideoEnabledDirective
+    TokenErrorDirective
 } from './videoconference.directive';
 
 const directives = [
@@ -53,8 +52,7 @@ const directives = [
 	LangDirective,
 	LangOptionsDirective,
 	PrejoinDirective,
-	VideoEnabledDirective,
-	AudioEnabledDirective,
+	InitialMediaStateDirective,
 	ShowCameraControlsDirective,
 	ShowMicrophoneControlsDirective,
 	ToolbarScreenshareButtonDirective,

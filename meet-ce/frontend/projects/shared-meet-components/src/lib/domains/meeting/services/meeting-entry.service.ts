@@ -105,10 +105,9 @@ export class MeetingEntryService {
 		this.roomMemberContextService.setParticipantExternalId(participantExternalId);
 		this.roomMemberContextService.setParticipantMetadata(participantMetadata);
 
-		// Initial media state asked by the embedding application; seeded (or cleared) on every entry,
-		// like the correlation fields above. `undefined` is passed through: it means "no opinion", and
-		// only a value that is set takes precedence over the room's own default.
-		this.roomFeatureService.setInitialMediaEnabled({
+		// Initial media state asked by the embedding application, seeded (or cleared) on every entry
+		// like the correlation fields above: `undefined` means "no opinion", so the room decides.
+		this.roomFeatureService.setInitialMediaRequest({
 			audioEnabled: initialAudioEnabled,
 			videoEnabled: initialVideoEnabled
 		});

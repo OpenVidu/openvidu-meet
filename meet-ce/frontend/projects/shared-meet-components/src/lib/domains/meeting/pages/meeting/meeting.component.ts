@@ -79,6 +79,7 @@ export class MeetingComponent implements OnInit, OnDestroy {
 	roomMemberToken = this.lobbyService.roomMemberToken;
 	e2eeKey = this.lobbyService.e2eeKeyValue;
 	features = this.meetingContextService.meetingUI;
+	initialMediaState = this.meetingContextService.initialMediaState;
 	hasRecordings = this.meetingContextService.hasRecordings;
 
 	constructor() {

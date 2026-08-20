@@ -1,9 +1,10 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
 import { MeetAppearanceConfig, MeetRoomConfig, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import type { InitialMediaState } from '../../meeting/openvidu-components';
 import { GlobalConfigService } from '../../../shared/services/global-config.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { RoomMemberContextService } from '../../room-members/services/room-member-context.service';
-import { InitialMediaEnabledPreferences, RoomFeatures } from '../models/features.model';
+import { InitialMediaRequest, RoomFeatures } from '../models/features.model';
 import { FeatureCalculator } from '../utils/features.utils';
 import { LoggerService } from '../../../shared/services/logger.service';
 import type { ILogger } from '../../../shared/models/logger.model';
@@ -12,8 +13,6 @@ import type { ILogger } from '../../../shared/models/logger.model';
  * Base configuration for features, used as a starting point before applying room-specific and user-specific configurations
  */
 const DEFAULT_FEATURES: RoomFeatures = {
-	videoEnabled: true,
-	audioEnabled: true,
 	showCamera: true,
 	showMicrophone: true,
 	showScreenShare: true,
@@ -50,11 +49,7 @@ export class RoomFeatureService {
 
 	// Signals to handle reactive state
 	protected roomConfig = signal<MeetRoomConfig | undefined>(undefined);
-	// What the embedding application asked for through the initial-audio-enabled /
-	// initial-video-enabled embed attributes (and their URL query params): the participant's initial
-	// media state, not a permission. Empty until an entry seeds it, and a device left out of it keeps
-	// being decided by the room's own default.
-	protected initialMediaEnabled = signal<InitialMediaEnabledPreferences>({});
+	protected initialMediaRequest = signal<InitialMediaRequest>({});
 	permissions = this.roomMemberContextService.permissions;
 
 	// Computed signal to derive features based on current configurations
@@ -63,9 +58,16 @@ export class RoomFeatureService {
 			this.roomConfig(),
 			this.permissions(),
 			this.globalConfigService.roomAppearanceConfig(),
-			this.globalConfigService.captionsGlobalEnabled(),
-			this.initialMediaEnabled()
+			this.globalConfigService.captionsGlobalEnabled()
 		)
+	);
+
+	/**
+	 * Which local devices the participant starts with. A seed consumed once per entry when the local
+	 * tracks are created, not live state.
+	 */
+	public readonly initialMediaState = computed<InitialMediaState>(() =>
+		FeatureCalculator.resolveInitialMediaState(this.initialMediaRequest(), this.permissions(), this.roomConfig())
 	);
 
 	/**
@@ -88,15 +90,9 @@ export class RoomFeatureService {
 		this.roomConfig.set(config);
 	}
 
-	/**
-	 * Updates the initial media state the embedding application asked for (initial-audio-enabled /
-	 * initial-video-enabled). A device set here takes precedence over the room's own
-	 * `config.initial*Enabled`; one left `undefined` leaves that decision to the room. Either way the
-	 * permissions win, and the participant may re-enable the device afterwards.
-	 */
-	setInitialMediaEnabled(preferences: InitialMediaEnabledPreferences): void {
-		this.log.d('Updating initial media enabled preferences', preferences);
-		this.initialMediaEnabled.set(preferences);
+	setInitialMediaRequest(request: InitialMediaRequest): void {
+		this.log.d('Updating initial media request', request);
+		this.initialMediaRequest.set(request);
 	}
 
 	protected async loadGlobalFeatureConfigs(): Promise<void> {
@@ -121,8 +117,7 @@ export class RoomFeatureService {
 		roomConfig?: MeetRoomConfig,
 		permissions?: MeetRoomMemberPermissions,
 		appearanceConfig?: MeetAppearanceConfig,
-		captionsGlobalEnabled = false,
-		initialMediaEnabled?: InitialMediaEnabledPreferences
+		captionsGlobalEnabled = false
 	): RoomFeatures {
 		const features = structuredClone(DEFAULT_FEATURES);
 
@@ -133,10 +128,6 @@ export class RoomFeatureService {
 		if (permissions) {
 			FeatureCalculator.applyPermissions(features, permissions);
 		}
-
-		// Always applied: it is the only place that reads the room-wide `config.initial*Enabled`, and with nothing
-		// set anywhere it resolves to the product default.
-		FeatureCalculator.applyInitialMediaEnabled(features, initialMediaEnabled ?? {}, roomConfig);
 
 		if (appearanceConfig) {
 			FeatureCalculator.applyAppearanceConfig(features, appearanceConfig);
