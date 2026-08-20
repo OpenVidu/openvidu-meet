@@ -252,12 +252,12 @@
         "MAX_DURATION_DESC": "Beendet das Meeting automatisch nach dieser Zeit. Leer lassen für unbegrenzte Dauer",
         "MAX_DURATION_LABEL": "Minuten",
         "MAX_DURATION_PLACEHOLDER": "Unbegrenzt",
-        "MAX_DURATION_INVALID": "Geben Sie eine ganze Minutenzahl ein (mindestens 1)",
+        "MAX_DURATION_INVALID": "Geben Sie eine ganze Minutenzahl ein",
         "MAX_PARTICIPANTS": "Teilnehmerlimit",
         "MAX_PARTICIPANTS_DESC": "Maximale Anzahl an Teilnehmern, die dem Meeting beitreten können. Leer lassen für kein Limit",
         "MAX_PARTICIPANTS_LABEL": "Teilnehmer",
         "MAX_PARTICIPANTS_PLACEHOLDER": "Unbegrenzt",
-        "MAX_PARTICIPANTS_INVALID": "Geben Sie eine ganze Teilnehmerzahl ein (mindestens 1)"
+        "MAX_PARTICIPANTS_INVALID": "Geben Sie eine ganze Teilnehmerzahl ein"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Aufnahmekonfiguration",

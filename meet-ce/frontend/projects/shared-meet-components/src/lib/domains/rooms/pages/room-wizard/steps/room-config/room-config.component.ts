@@ -7,7 +7,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MeetRoomOptions } from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../../../shared/pipes/translate.pipe';
-import { RoomConfigFormGroup, RoomConfigFormValue } from '../../../../models/wizard-forms.model';
+import {
+	MAX_DURATION_MINUTES_LIMIT,
+	MAX_PARTICIPANTS_LIMIT,
+	RoomConfigFormGroup,
+	RoomConfigFormValue
+} from '../../../../models/wizard-forms.model';
 import { WizardStepId } from '../../../../models/wizard.model';
 import { RoomWizardStateService } from '../../../../services';
 
@@ -26,6 +31,9 @@ import { RoomWizardStateService } from '../../../../services';
 })
 export class RoomConfigComponent {
 	private wizardService = inject(RoomWizardStateService);
+
+	readonly maxParticipantsLimit = MAX_PARTICIPANTS_LIMIT;
+	readonly maxDurationMinutesLimit = MAX_DURATION_MINUTES_LIMIT;
 
 	roomConfigForm: RoomConfigFormGroup;
 

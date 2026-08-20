@@ -252,12 +252,12 @@
         "MAX_DURATION_DESC": "End the meeting automatically after this time. Leave empty for unlimited duration",
         "MAX_DURATION_LABEL": "Minutes",
         "MAX_DURATION_PLACEHOLDER": "Unlimited",
-        "MAX_DURATION_INVALID": "Enter a whole number of minutes (1 or more)",
+        "MAX_DURATION_INVALID": "Enter a whole number of minutes",
         "MAX_PARTICIPANTS": "Participant limit",
         "MAX_PARTICIPANTS_DESC": "Maximum number of participants that can join the meeting. Leave empty for no limit",
         "MAX_PARTICIPANTS_LABEL": "Participants",
         "MAX_PARTICIPANTS_PLACEHOLDER": "Unlimited",
-        "MAX_PARTICIPANTS_INVALID": "Enter a whole number of participants (1 or more)"
+        "MAX_PARTICIPANTS_INVALID": "Enter a whole number of participants"
       },
       "RECORDING_CONFIG": {
         "TITLE": "Recording Configuration",

@@ -33,12 +33,17 @@
 								matInput
 								type="number"
 								min="1"
+								[max]="maxParticipantsLimit"
 								step="1"
 								formControlName="maxParticipants"
 								[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_PLACEHOLDER' | translate"
 							/>
 							@if (roomConfigForm.controls.maxParticipants.invalid) {
-								<mat-error>{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_INVALID' | translate }}</mat-error>
+								<mat-error>
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_PARTICIPANTS_INVALID' | translate }} (1-{{
+										maxParticipantsLimit
+									}})
+								</mat-error>
 							}
 						</mat-form-field>
 					</div>
@@ -58,12 +63,17 @@
 								matInput
 								type="number"
 								min="1"
+								[max]="maxDurationMinutesLimit"
 								step="1"
 								formControlName="maxDurationMinutes"
 								[placeholder]="'ROOMS.WIZARD.FEATURES.MAX_DURATION_PLACEHOLDER' | translate"
 							/>
 							@if (roomConfigForm.controls.maxDurationMinutes.invalid) {
-								<mat-error>{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_INVALID' | translate }}</mat-error>
+								<mat-error>
+									{{ 'ROOMS.WIZARD.FEATURES.MAX_DURATION_INVALID' | translate }} (1-{{
+										maxDurationMinutesLimit
+									}})
+								</mat-error>
 							}
 						</mat-form-field>
 					</div>

@@ -4,11 +4,13 @@ MeetRoomConfig:
         maxParticipants:
             type: [integer, 'null']
             minimum: 1
-            example: 25
+            maximum: 30
+            example: 10
             description: >
                 Maximum number of participants that may be in the meeting at the same time.
                 Once reached, further join attempts are rejected.
-                `null` means the number of participants is unlimited.
+                `null` means the number of participants is unlimited; the highest limit that can
+                be set is `30`.
                 Config updates merge with the stored config, so an omitted limit keeps its
                 current value; send `null` to lift it.
                 A limit of `1` is incompatible with the `when_second_participant_joins` recording
@@ -16,11 +18,13 @@ MeetRoomConfig:
         maxDurationMinutes:
             type: [integer, 'null']
             minimum: 1
+            maximum: 1440
             example: 60
             description: >
                 Maximum duration of the meeting in minutes. When reached, the meeting ends for
                 every participant, exactly as if a moderator had ended it.
-                `null` means the meeting duration is unlimited.
+                `null` means the meeting duration is unlimited; the highest limit that can be set
+                is `1440` (1 day).
                 Config updates merge with the stored config, so an omitted limit keeps its
                 current value; send `null` to lift it.
         initialAudioEnabled:
