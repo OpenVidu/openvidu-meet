@@ -95,6 +95,18 @@ frontend). Two details matter when things look stale:
 
 ## Code style
 
+- **Simplicity is the goal.** Fixing a bug or adding a feature must leave the code simpler and easier
+  to read and maintain, never more complex. Spend the smallest amount of technical complexity that
+  solves the problem; prefer removing code to adding it.
+- **Refactor before you add.** When resolving a bug, prefer refactoring, deleting and restructuring the
+  existing code over piling new code on top. Reworking what is there keeps the system smaller; a fix
+  that only adds is the last resort, not the first.
+- **Few comments.** Code must read and explain itself; if it needs a comment to be understood, it is
+  written wrong — rename, restructure or simplify instead. Never write historical-narrative comments
+  or comments that explain a bug fix or how a problem was solved (that belongs in commits, not the
+  source). A rare comment is acceptable only to state a genuine non-obvious constraint the code cannot
+  express. (Typings are the one exception: `meet-ce/typings/src` requires a concise TSDoc on every
+  exported member because the docs are generated from it — keep those factual, not narrative.)
 - Prettier (`.prettierrc`) is the formatter: **tabs**, tab width 4, print width 120, single quotes,
   no trailing commas, semicolons. Match it; do not reformat unrelated code.
 - ESLint is flat-config (`eslint.config.mjs`) per package and runs with `--max-warnings 0`, so
