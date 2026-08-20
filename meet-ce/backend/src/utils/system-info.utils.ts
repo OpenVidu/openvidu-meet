@@ -45,7 +45,7 @@ export const getSystemInfo = (): SystemInfo => {
 		version: getVersion(),
 		gitCommit: buildInfo.gitCommit,
 		buildDate: buildInfo.buildDate,
-		edition: MEET_ENV.EDITION,
+		edition: MEET_ENV.EDITION.toLowerCase(),
 		// environment: process.env.NODE_ENV ?? 'production',
 		apiVersion: INTERNAL_CONFIG.API_BASE_PATH_V1.split('/').pop() ?? 'v1'
 	};
