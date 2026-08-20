@@ -373,6 +373,8 @@
             Stops a recording with the specified recording ID.
 
             > **Note:** The recording must be in an `active` state; otherwise, a 409 error is returned.
+            > Stops are also serialized per room: while one stop is in flight, another stop for the
+            > same room is rejected with a 409 error.
         tags:
             - OpenVidu Meet - Recordings
         security:

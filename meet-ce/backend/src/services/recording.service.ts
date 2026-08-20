@@ -33,10 +33,12 @@ import {
 	errorRecordingNotStopped,
 	errorRecordingNotStreamable,
 	errorRecordingStartTimeout,
+	errorRecordingStopInProgress,
 	errorRoomHasNoParticipants,
 	isErrorRecordingAlreadyStopped,
 	isErrorRecordingCannotBeStoppedWhileStarting,
 	isErrorRecordingNotFound,
+	isErrorRecordingStopInProgress,
 	OpenViduMeetError
 } from '../models/error.model.js';
 import type { RedisLock } from '../models/redis-lock.model.js';
@@ -283,58 +285,63 @@ export class RecordingService {
 	 * Stops a recording's egress. `disableAutoStart` distinguishes a deliberate stop (REST surface)
 	 * from a system cleanup ({@link handleRecordingTimeout}), which must keep auto-start armed so a
 	 * later join can retry a recording that never managed to start.
+	 *
+	 * Serialized per room while it runs, so a second stop is rejected with a 409 instead of racing
+	 * this one in LiveKit.
 	 */
 	protected async stopRecordingEgress(recordingId: string, disableAutoStart: boolean): Promise<MeetRecordingInfo> {
-		let disabledRoomId: string | undefined;
-		let egressStopped = false;
+		const { roomId, egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+		const lockKey = MeetLock.getRecordingStopLock(roomId);
 
-		try {
-			const { roomId, egressId } = RecordingHelper.extractInfoFromRecordingId(recordingId);
+		const recordingInfo = await this.mutexService.withLock(
+			lockKey,
+			ms(INTERNAL_CONFIG.RECORDING_STOP_LOCK_TTL),
+			async () => {
+				try {
+					const [egress] = await this.livekitService.getEgress(roomId, egressId);
 
-			const [egress] = await this.livekitService.getEgress(roomId, egressId);
+					if (!egress) {
+						throw errorRecordingNotFound(egressId);
+					}
 
-			if (!egress) {
-				throw errorRecordingNotFound(egressId);
+					const isStoppable = [EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_STARTING].includes(
+						egress.status
+					);
+
+					if (disableAutoStart && isStoppable) {
+						// Written BEFORE stopping the egress: the flag is guaranteed to be visible on
+						// every replica before the egress_ended webhook releases the recording-active lock.
+						await this.recAutoStartStateService.markDisabled(roomId, egress.roomId);
+					}
+
+					switch (egress.status) {
+						case EgressStatus.EGRESS_ACTIVE:
+							// Everything is fine, the recording can be stopped.
+							break;
+						case EgressStatus.EGRESS_STARTING:
+							// Avoid pending egress after timeout, stop it immediately
+							await this.livekitService.stopEgress(egressId);
+							// The recording is still starting, it cannot be stopped yet.
+							throw errorRecordingCannotBeStoppedWhileStarting(recordingId);
+						default:
+							// The recording is already stopped.
+							throw errorRecordingAlreadyStopped(recordingId);
+					}
+
+					const egressInfo = await this.livekitService.stopEgress(egressId);
+
+					this.logger.info(`Recording stopped successfully for room '${roomId}'`);
+					return await RecordingHelper.toRecordingInfo(egressInfo);
+				} catch (error) {
+					this.logger.debug(`Error stopping recording '${recordingId}'`, error);
+					throw error;
+				}
 			}
+		);
 
-			const isStoppable = [EgressStatus.EGRESS_ACTIVE, EgressStatus.EGRESS_STARTING].includes(egress.status);
+		if (!recordingInfo) throw errorRecordingStopInProgress(recordingId);
 
-			if (disableAutoStart && isStoppable) {
-				// Written BEFORE stopping the egress: the flag is guaranteed to be visible on every
-				// replica before the egress_ended webhook releases the recording-active lock.
-				await this.recAutoStartStateService.markDisabled(roomId, egress.roomId);
-				disabledRoomId = roomId;
-			}
-
-			switch (egress.status) {
-				case EgressStatus.EGRESS_ACTIVE:
-					// Everything is fine, the recording can be stopped.
-					break;
-				case EgressStatus.EGRESS_STARTING:
-					// Avoid pending egress after timeout, stop it immediately
-					await this.livekitService.stopEgress(egressId);
-					egressStopped = true;
-					// The recording is still starting, it cannot be stopped yet.
-					throw errorRecordingCannotBeStoppedWhileStarting(recordingId);
-				default:
-					// The recording is already stopped.
-					throw errorRecordingAlreadyStopped(recordingId);
-			}
-
-			const egressInfo = await this.livekitService.stopEgress(egressId);
-			egressStopped = true;
-
-			this.logger.info(`Recording stopped successfully for room '${roomId}'`);
-			return await RecordingHelper.toRecordingInfo(egressInfo);
-		} catch (error) {
-			if (disabledRoomId && !egressStopped) {
-				// The stop itself failed and the egress is still running: reactivate the auto-start
-				await this.recAutoStartStateService.activateAutoStart(disabledRoomId);
-			}
-
-			this.logger.debug(`Error stopping recording '${recordingId}'`, error);
-			throw error;
-		}
+		return recordingInfo;
 	}
 
 	/**
@@ -954,6 +961,11 @@ export class RecordingService {
 						`Recording '${recordingId}' is already stopped or not found. Releasing the active lock.`
 					);
 					shouldReleaseLock = true;
+				} else if (isErrorRecordingStopInProgress(error, recordingId)) {
+					// Another stop is already handling this recording and owns the lock release
+					this.logger.verbose(
+						`Recording '${recordingId}' is already being stopped. Skipping recording active lock release.`
+					);
 				} else if (isErrorRecordingCannotBeStoppedWhileStarting(error, recordingId)) {
 					// The recording is still starting, the cleanup timer will be cancelled.
 					this.logger.warn(
