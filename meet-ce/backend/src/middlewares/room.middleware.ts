@@ -1,3 +1,4 @@
+import type { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
@@ -119,6 +120,38 @@ export const authorizeRoomAccess = async (req: Request, res: Response, next: Nex
 
 	// If there is no token and no user, reject the request
 	return rejectRequestFromMeetError(res, forbiddenError);
+};
+
+/**
+ * Middleware to check if the authenticated principal has a specific permission in the room.
+ *
+ * @param permission The permission to check (key of MeetRoomMemberPermissions).
+ */
+export const withRoomPermission = (permission: keyof MeetRoomMemberPermissions) => {
+	return async (req: Request, res: Response, next: NextFunction) => {
+		const roomId = req.params.roomId as string;
+		const roomService = container.get(RoomService);
+
+		try {
+			const roomExists = await roomService.meetRoomExists(roomId);
+
+			if (!roomExists) {
+				const error = errorRoomNotFound(roomId);
+				return rejectRequestFromMeetError(res, error);
+			}
+
+			const permissions = await roomService.getAuthenticatedRoomMemberPermissions(roomId);
+
+			if (!permissions[permission]) {
+				const error = errorInsufficientPermissions();
+				return rejectRequestFromMeetError(res, error);
+			}
+
+			return next();
+		} catch (error) {
+			return handleError(res, error, `checking '${permission}' permission in room '${roomId}'`);
+		}
+	};
 };
 
 /**

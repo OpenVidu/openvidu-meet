@@ -28,12 +28,6 @@ config/schemas/rooms-appearance-config.yaml:
     - '#/MeetAppearanceConfig'
     - '#/MeetRoomTheme'
     - '#/MeetRoomThemeMode'
-meetings/meetings.yaml:
-  path-parameters-defined:
-    - >-
-      #/~1meetings~1{roomId}~1participants~1{participantIdentity}/delete/parameters
-    - >-
-      #/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role/put/parameters
 auth/auth.yaml:
   security-defined:
     - '#/~1auth~1login/post'

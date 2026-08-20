@@ -33,6 +33,14 @@ paths:
         $ref: './room-members/room-members.yaml#/~1rooms~1{roomId}~1members'
     /rooms/{roomId}/members/{memberId}:
         $ref: './room-members/room-members.yaml#/~1rooms~1{roomId}~1members~1{memberId}'
+    /meetings/{roomId}:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}'
+    /meetings/{roomId}/participants:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants'
+    /meetings/{roomId}/participants/{participantIdentity}:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
+    /meetings/{roomId}/participants/{participantIdentity}/role:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role'
     /recordings:
         $ref: './recordings/recordings.yaml#/~1recordings'
     /recordings/download:
@@ -71,6 +79,10 @@ components:
             $ref: ./room-members/schemas/meet-room-member.yaml
         MeetPermissions:
             $ref: ./rooms/schemas/meet-permissions.yaml
+        MeetMeetingInfo:
+            $ref: ./meetings/schemas/meet-meeting-info.yaml
+        MeetParticipantInfo:
+            $ref: ./meetings/schemas/meet-participant-info.yaml
         MeetRecording:
             $ref: ./recordings/schemas/meet-recording.yaml
         MeetWebhook:

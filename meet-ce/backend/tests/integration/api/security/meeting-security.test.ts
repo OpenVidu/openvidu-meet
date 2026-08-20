@@ -27,7 +27,7 @@ import {
 import { setupRoomMember, setupSingleRoom, updateRoomMemberPermissions } from '../../../helpers/test-scenarios.js';
 import { RoomData, RoomMemberData } from '../../../interfaces/scenarios.js';
 
-const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`);
+const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`);
 const ASSISTANTS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/ai/assistants`);
 const LIVE_CAPTIONS_BODY = { capabilities: [{ name: MeetAssistantCapabilityName.LIVE_CAPTIONS }] };
 
@@ -59,11 +59,14 @@ describe('Meeting API Security Tests', () => {
 	});
 
 	describe('End Meeting Tests', () => {
-		it('should fail when request includes API key', async () => {
+		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
+
+			// Re-join participant for further tests
+			await joinFakeParticipant(roomId, participantIdentity);
 		});
 
 		it('should fail when using access token', async () => {
@@ -127,12 +130,15 @@ describe('Meeting API Security Tests', () => {
 			await setParticipantMetadata();
 		});
 
-		it('should fail when request includes API key', async () => {
+		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.put(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}/role`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY)
 				.send({ action });
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
+
+			// Restore the participant's original metadata for further tests
+			await setParticipantMetadata();
 		});
 
 		it('should fail when using access token', async () => {
@@ -185,11 +191,14 @@ describe('Meeting API Security Tests', () => {
 	});
 
 	describe('Kick Participant from Meeting Tests', () => {
-		it('should fail when request includes API key', async () => {
+		it('should succeed when request includes API key', async () => {
 			const response = await request(app)
 				.delete(`${MEETINGS_PATH}/${roomId}/participants/${participantIdentity}`)
 				.set(INTERNAL_CONFIG.API_KEY_HEADER, MEET_ENV.INITIAL_API_KEY);
-			expect(response.status).toBe(401);
+			expect(response.status).toBe(200);
+
+			// Re-join participant for further tests
+			await joinFakeParticipant(roomId, participantIdentity);
 		});
 
 		it('should fail when using access token', async () => {

@@ -29,9 +29,9 @@ Entry point: `src/server.ts`. It also serves the built SPA and the webcomponent 
 Two OpenAPI specs, two base paths (`src/config/internal-config.ts`):
 
 - **Public** `/api/v1` — the documented, supported, backwards-compatible surface: `users`, `rooms`
-  (incl. room members), `recordings`. Docs at `<basePath>/api/v1/docs`.
+  (incl. room members), `meetings`, `recordings`, `webhooks`. Docs at `<basePath>/api/v1/docs`.
 - **Internal** `/internal-api/v1` — consumed by our own frontend/webcomponent, no compatibility
-  promise: `auth`, `api-keys`, `meetings`, `config`, `analytics`, `ai`, plus internal room/user
+  promise: `auth`, `api-keys`, `config`, `analytics`, `ai`, plus internal room/user
   routes. Docs only served in `NODE_ENV=development`.
 
 Some routers export both (`roomRouter` + `internalRoomRouter`). Adding an endpoint means updating the

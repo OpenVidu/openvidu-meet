@@ -1,4 +1,4 @@
-import type { MeetRoomMemberPermissions, MeetRoomMemberTokenOptions } from '@openvidu-meet/typings';
+import type { MeetRoomMemberTokenOptions } from '@openvidu-meet/typings';
 import { MeetUserRole } from '@openvidu-meet/typings';
 import type { NextFunction, Request, Response } from 'express';
 import { container } from '../config/dependency-injector.config.js';
@@ -179,40 +179,4 @@ export const authorizeRoomMemberTokenGeneration = async (req: Request, res: Resp
 	}
 
 	return rejectRequestFromMeetError(res, forbiddenError);
-};
-
-/**
- * Middleware to check if the room member has a specific permission.
- *
- * @param permission The permission to check (key of MeetRoomMemberPermissions).
- */
-export const withRoomMemberPermission = (permission: keyof MeetRoomMemberPermissions) => {
-	return async (req: Request, res: Response, next: NextFunction) => {
-		const roomId = req.params.roomId as string;
-
-		const roomService = container.get(RoomService);
-		const roomExists = await roomService.meetRoomExists(roomId);
-
-		// Fail fast if room does not exist
-		if (!roomExists) {
-			const error = errorRoomNotFound(roomId);
-			return rejectRequestFromMeetError(res, error);
-		}
-
-		const requestSessionService = container.get(RequestSessionService);
-		const memberRoomId = requestSessionService.getRoomIdFromMember();
-		const permissions = requestSessionService.getRoomMemberPermissions();
-
-		// Check if room member belongs to the requested room
-		// and has the required permission
-		const sameRoom = memberRoomId === roomId;
-		const hasPermission = permissions && permissions[permission];
-
-		if (!sameRoom || !hasPermission) {
-			const error = errorInsufficientPermissions();
-			return rejectRequestFromMeetError(res, error);
-		}
-
-		return next();
-	};
 };

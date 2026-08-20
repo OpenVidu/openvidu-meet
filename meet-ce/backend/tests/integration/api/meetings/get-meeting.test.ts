@@ -19,7 +19,7 @@ import {
 import { setupSingleRoom } from '../../../helpers/test-scenarios.js';
 import { RoomData } from '../../../interfaces/scenarios.js';
 
-const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.INTERNAL_API_BASE_PATH_V1}/meetings`);
+const MEETINGS_PATH = getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings`);
 
 const PARTICIPANT_IDENTITY = 'TEST_PARTICIPANT';
 const EXTERNAL_ID = 'crm-user_42';
