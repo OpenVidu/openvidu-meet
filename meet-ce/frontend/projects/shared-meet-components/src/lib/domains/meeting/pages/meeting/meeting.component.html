@@ -17,8 +17,7 @@
 	<ov-meeting-view
 		[token]="roomMemberToken()!"
 		[prejoin]="true"
-		[videoEnabled]="features().videoEnabled"
-		[audioEnabled]="features().audioEnabled"
+		[initialMediaState]="initialMediaState()"
 		[e2eeKey]="e2eeKey()"
 		[toolbarRoomName]="roomName()"
 		[showCameraControls]="features().showCamera"

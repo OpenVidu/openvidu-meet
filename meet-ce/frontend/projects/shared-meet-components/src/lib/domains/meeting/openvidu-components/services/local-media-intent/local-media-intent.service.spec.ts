@@ -19,8 +19,7 @@ describe('LocalMediaIntentService', () => {
 	});
 
 	it('takes the initial state resolved outside the library', () => {
-		service.applyInitialMicrophoneState(false);
-		service.applyInitialCameraState(false);
+		service.applyInitialState({ camera: false, microphone: false });
 
 		expect(service.microphoneEnabled()).toBeFalse();
 		expect(service.cameraEnabled()).toBeFalse();
@@ -37,14 +36,13 @@ describe('LocalMediaIntentService', () => {
 		expect(service.cameraEnabled()).toBeTrue();
 	});
 
-	// The initial state arrives through a reactive input, so it is re-pushed on every recomputation of
-	// the features it derives from. Without this guard, muting from the prejoin would be undone by the
-	// next unrelated feature change that re-emitted the same initial value.
+	// The initial state arrives through a reactive input that re-emits on every recomputation, so
+	// re-pushing the same value must not clobber a toggle made in the meantime.
 	it('does not undo a toggle when the same initial state is pushed again', () => {
-		service.applyInitialMicrophoneState(true);
+		service.applyInitialState({ camera: true, microphone: true });
 		service.setMicrophoneEnabled(false);
 
-		service.applyInitialMicrophoneState(true);
+		service.applyInitialState({ camera: true, microphone: true });
 
 		expect(service.microphoneEnabled()).toBeFalse();
 	});
@@ -52,23 +50,32 @@ describe('LocalMediaIntentService', () => {
 	it('applies an initial state that actually changed, even after a toggle', () => {
 		// A room config or a permission landing later resolves to a different initial state; that is a
 		// new decision from outside and it does apply.
-		service.applyInitialCameraState(true);
+		service.applyInitialState({ camera: true, microphone: true });
 		service.setCameraEnabled(true);
 
-		service.applyInitialCameraState(false);
+		service.applyInitialState({ camera: false, microphone: true });
 
 		expect(service.cameraEnabled()).toBeFalse();
 	});
 
-	// The bug this reset exists for, caught by an e2e: within one entry the guard above must hold, but
-	// across entries the same resolved value is a NEW request. Without the reset, a participant who
-	// muted in the previous meeting stayed muted while the host explicitly asked for the device.
+	// Both devices travel in one object, but the guard is per device.
+	it('leaves the other device alone when only one resolved value changed', () => {
+		service.applyInitialState({ camera: true, microphone: true });
+		service.setMicrophoneEnabled(false);
+
+		service.applyInitialState({ camera: false, microphone: true });
+
+		expect(service.cameraEnabled()).toBeFalse();
+		expect(service.microphoneEnabled()).toBeFalse();
+	});
+
+	// Across entries the same resolved value is a NEW request, so the guard must not survive the reset.
 	it('re-applies the same initial state in a new entry, after a reset', () => {
-		service.applyInitialCameraState(true);
+		service.applyInitialState({ camera: true, microphone: true });
 		service.setCameraEnabled(false);
 
 		service.reset();
-		service.applyInitialCameraState(true);
+		service.applyInitialState({ camera: true, microphone: true });
 
 		expect(service.cameraEnabled()).toBeTrue();
 	});
@@ -80,13 +87,6 @@ describe('LocalMediaIntentService', () => {
 		service.reset();
 
 		expect(service.microphoneEnabled()).toBeTrue();
-		expect(service.cameraEnabled()).toBeTrue();
-	});
-
-	it('keeps the two devices independent', () => {
-		service.applyInitialMicrophoneState(false);
-
-		expect(service.microphoneEnabled()).toBeFalse();
 		expect(service.cameraEnabled()).toBeTrue();
 	});
 });

@@ -4,11 +4,13 @@ import {
 	MeetRoomConfig,
 	MeetRoomMemberPermissions
 } from '@openvidu-meet/typings';
-import { CaptionsStatus, InitialMediaEnabledPreferences, RoomFeatures } from '../models/features.model';
+import type { InitialMediaState } from '../../meeting/openvidu-components';
+import { CaptionsStatus, InitialMediaRequest, RoomFeatures } from '../models/features.model';
 
 /**
- * Utility class responsible for calculating the enabled features in the meeting based on room configuration, participant permissions, and global appearance settings.
- * This class provides static methods to apply different layers of configuration to derive the final set of features that should be available in the UI.
+ * Utility class responsible for calculating the enabled features in the meeting — and the participant's
+ * initial media state — from the room configuration, the participant permissions and the global
+ * appearance settings.
  */
 export class FeatureCalculator {
 	static applyRoomConfig(features: RoomFeatures, roomConfig: MeetRoomConfig, captionsGlobalEnabled: boolean): void {
@@ -40,9 +42,7 @@ export class FeatureCalculator {
 		}
 
 		// Media features
-		features.videoEnabled = permissions.mediaPublishVideo;
 		features.showCamera = permissions.mediaPublishVideo;
-		features.audioEnabled = permissions.mediaPublishAudio;
 		features.showMicrophone = permissions.mediaPublishAudio;
 		features.showScreenShare = permissions.mediaShareScreen;
 		features.showShareAccessLinks = permissions.roomShareAccessLinks;
@@ -54,25 +54,25 @@ export class FeatureCalculator {
 	}
 
 	/**
-	 * Resolves the participant's initial media state by precedence, not by conjunction: the embedding
-	 * application's initial-audio-enabled / initial-video-enabled attribute decides whenever it is set
-	 * — to either value — otherwise the room-wide `config.initial*Enabled` does, and `true` when neither
-	 * says anything. So an explicit attribute can also *raise* a room default of `false`: the room field
-	 * is a default, not a policy (enforcing needs the permission, which is signed into the token).
-	 *
-	 * The permission is outside the chain: {@link applyPermissions} has already written it into
-	 * `audioEnabled`/`videoEnabled` and this only narrows that, so a denied device stays denied. The
-	 * `show*` controls are left untouched — this is the initial state, not a capability.
+	 * Precedence, not conjunction: the embedding application's request decides whenever it is set — to
+	 * either value, so it can also *raise* a room default of `false` — otherwise the room-wide
+	 * `config.initial*Enabled` does, and `true` when neither says anything. The room field is a default,
+	 * not a policy: enforcing a device off is the `mediaPublish*` permission's job, and being signed
+	 * into the token puts it above the whole chain.
 	 */
-	static applyInitialMediaEnabled(
-		features: RoomFeatures,
-		initialMediaEnabled: InitialMediaEnabledPreferences,
+	static resolveInitialMediaState(
+		request: InitialMediaRequest,
+		permissions?: MeetRoomMemberPermissions,
 		roomConfig?: MeetRoomConfig
-	): void {
-		features.audioEnabled =
-			features.audioEnabled && (initialMediaEnabled.audioEnabled ?? roomConfig?.initialAudioEnabled ?? true);
-		features.videoEnabled =
-			features.videoEnabled && (initialMediaEnabled.videoEnabled ?? roomConfig?.initialVideoEnabled ?? true);
+	): InitialMediaState {
+		return {
+			microphone:
+				(permissions?.mediaPublishAudio ?? true) &&
+				(request.audioEnabled ?? roomConfig?.initialAudioEnabled ?? true),
+			camera:
+				(permissions?.mediaPublishVideo ?? true) &&
+				(request.videoEnabled ?? roomConfig?.initialVideoEnabled ?? true)
+		};
 	}
 
 	static applyAppearanceConfig(features: RoomFeatures, appearanceConfig: MeetAppearanceConfig): void {

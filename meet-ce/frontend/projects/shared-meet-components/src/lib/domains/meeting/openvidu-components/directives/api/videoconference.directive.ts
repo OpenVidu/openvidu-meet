@@ -1,7 +1,10 @@
 import { Directive, ElementRef, OnDestroy, effect, inject, input } from '@angular/core';
 import { AvailableLangs, LangOption } from '../../models/lang.model';
 import { MeetingUiConfigService } from '../../services/config/meeting-ui-config.service';
-import { LocalMediaIntentService } from '../../services/local-media-intent/local-media-intent.service';
+import {
+	InitialMediaState,
+	LocalMediaIntentService
+} from '../../services/local-media-intent/local-media-intent.service';
 import { MeetingTranslateService } from '../../services/translate/meeting-translate.service';
 
 /**
@@ -389,32 +392,34 @@ export class PrejoinDirective implements OnDestroy {
 }
 
 /**
- * The **videoEnabled** directive allows to join the meeting with camera enabled or disabled.
+ * The **initialMediaState** directive sets which local devices are opened when the participant joins.
+ * Initial state only — the participant may toggle either device afterwards — and a separate axis from
+ * whether the controls exist at all ({@link ShowCameraControlsDirective} /
+ * {@link ShowMicrophoneControlsDirective}).
  *
  * It is only available for {@link MeetingViewComponent}.
  *
- * Default: `true`
- *
+ * Default: `{ camera: true, microphone: true }`
  *
  * @example
- * <ov-meeting-view [videoEnabled]="false"></ov-meeting-view>
+ * <ov-meeting-view [initialMediaState]="{ camera: false, microphone: true }"></ov-meeting-view>
  */
 @Directive({
-	selector: 'ov-meeting-view[videoEnabled]'
+	selector: 'ov-meeting-view[initialMediaState]'
 })
-export class VideoEnabledDirective {
+export class InitialMediaStateDirective {
 	/**
 	 * @ignore
 	 */
-	readonly videoEnabled = input<boolean>(true);
+	readonly initialMediaState = input<InitialMediaState>({ camera: true, microphone: true });
 
 	/**
 	 * @ignore
 	 */
 	public elementRef = inject(ElementRef);
 	private readonly mediaIntent = inject(LocalMediaIntentService);
-	private readonly videoEnabledEffect = effect(() => {
-		this.update(this.videoEnabled());
+	private readonly initialMediaStateEffect = effect(() => {
+		this.update(this.initialMediaState());
 	});
 
 	// No teardown on purpose: the intent is per-entry state owned by the meeting view, which resets
@@ -422,50 +427,9 @@ export class VideoEnabledDirective {
 
 	/**
 	 * @ignore
-	 * Seeds the camera intent with the initial state the embedding layer resolved: permission ∧ the
-	 * host's request or the room's default.
 	 */
-	update(enabled: boolean) {
-		this.mediaIntent.applyInitialCameraState(enabled);
-	}
-}
-
-/**
- * The **audioEnabled** directive allows to join the meeting with microphone enabled or disabled.
- *
- * It is only available for {@link MeetingViewComponent}.
- *
- * Default: `true`
- *
- * @example
- * <ov-meeting-view [audioEnabled]="false"></ov-meeting-view>
- */
-
-@Directive({
-	selector: 'ov-meeting-view[audioEnabled]'
-})
-export class AudioEnabledDirective {
-	/**
-	 * @ignore
-	 */
-	readonly audioEnabled = input<boolean>(true);
-
-	/**
-	 * @ignore
-	 */
-	public elementRef = inject(ElementRef);
-	private readonly mediaIntent = inject(LocalMediaIntentService);
-	private readonly audioEnabledEffect = effect(() => {
-		this.update(this.audioEnabled());
-	});
-
-	/**
-	 * @ignore
-	 * Seeds the microphone intent with the initial state the embedding layer resolved. See
-	 * {@link VideoEnabledDirective} for why neither directive has a teardown.
-	 */
-	update(enabled: boolean) {
-		this.mediaIntent.applyInitialMicrophoneState(enabled);
+	update(state: InitialMediaState) {
+		this.mediaIntent.applyInitialState(state);
 	}
 }
 
