@@ -11,7 +11,8 @@ import {
 	mediaToggleAudioCommand,
 	mediaToggleScreenShareCommand,
 	mediaToggleVideoCommand,
-	openMeeting
+	openMeeting,
+	openMeetingAtMediaSetup
 } from '../helpers/testapp.helper';
 
 // Events carry the same names/payloads regardless of transport; run every spec
@@ -249,9 +250,11 @@ for (const integration of INTEGRATIONS) {
 			});
 		});
 
-		// These events describe the LOCAL participant's devices and are deduplicated per kind,
-		// so one user action must reach the host exactly once. `origin` is the first payload
-		// field carrying MeetEventOrigin — everything emitted today is `participant`.
+		// These events describe the LOCAL participant's devices and are derived from the media state,
+		// so one user action must reach the host exactly once however many track events LiveKit
+		// surfaced for it, and the state the entry starts with is a baseline rather than a
+		// transition. `origin` is the first payload field carrying MeetEventOrigin — everything
+		// emitted today is `participant`, since only the participant's own side can change a device.
 		test.describe('MEDIA_*_STATUS_CHANGED Events', () => {
 			test('should emit mediaAudioStatusChanged once per microphone transition', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
@@ -309,6 +312,50 @@ for (const integration of INTEGRATIONS) {
 
 				await expect(screenShareStatus).toHaveCount(2, { timeout: 15_000 });
 				await expect(screenShareStatus.nth(1)).toContainText('"enabled":false');
+			});
+
+			// The state exists in the prejoin screen too, so a change made before joining is reported
+			// like any other — there are no Room events to listen to in that window.
+			test('should emit mediaAudioStatusChanged for a mute done before joining', async ({ page }) => {
+				await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+
+				const audioStatus = eventLocator(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED);
+				await expect(audioStatus).toHaveCount(0);
+
+				await mediaToggleAudioCommand(page, false);
+
+				await expect(audioStatus).toHaveCount(1, { timeout: 10_000 });
+				await expect(audioStatus.first()).toContainText('"enabled":false');
+				await expect(audioStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
+			});
+
+			test('should emit mediaVideoStatusChanged for a camera disabled before joining', async ({ page }) => {
+				await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+
+				const videoStatus = eventLocator(page, EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED);
+				await expect(videoStatus).toHaveCount(0);
+
+				await mediaToggleVideoCommand(page, false);
+
+				await expect(videoStatus).toHaveCount(1, { timeout: 10_000 });
+				await expect(videoStatus.first()).toContainText('"enabled":false');
+			});
+
+			// Joining publishes the prejoin tracks as they are: the host already knows that state and
+			// must not be told again.
+			test('should not repeat the prejoin state when the participant joins', async ({ page }) => {
+				const { meet } = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
+
+				const audioStatus = eventLocator(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED);
+
+				await mediaToggleAudioCommand(page, false);
+				await expect(audioStatus).toHaveCount(1, { timeout: 10_000 });
+
+				await meet('#join-button').click();
+				await expect(meet('#layout-container')).toBeVisible({ timeout: 15_000 });
+				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
+
+				await expect(audioStatus).toHaveCount(1);
 			});
 
 			test('should emit the audio event for a mute done from the in-meeting UI', async ({ page }) => {

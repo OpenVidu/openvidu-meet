@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, effect, inject, untracked } from '@angular/core';
 import {
 	EmbeddedEventName,
 	LeftEventReason,
@@ -12,9 +12,9 @@ import {
 	MeetSignalType
 } from '@openvidu-meet/typings';
 import { NavigationErrorReason } from '../../../shared/models/navigation.model';
+import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../shared/services/navigation.service';
 import { NotificationService } from '../../../shared/services/notification.service';
-import { TranslateService } from '../../../shared/services/i18n/translate.service';
 import { RuntimeConfigService } from '../../../shared/services/runtime-config.service';
 import { SoundService } from '../../../shared/services/sound.service';
 import { EmbeddedEventBusService } from '../../embedded/services/embedded-event-bus.service';
@@ -24,16 +24,21 @@ import { RoomFeatureService } from '../../rooms/services/room-feature.service';
 import type {
 	DataPacket_Kind,
 	LocalParticipant,
-	Participant,
 	ParticipantLeftEvent,
 	ParticipantModel,
 	RecordingStartRequestedEvent,
 	RecordingStopRequestedEvent,
 	RemoteParticipant,
-	Room,
-	TrackPublication
+	Room
 } from '../openvidu-components';
-import { ParticipantLeftReason, RoomEvent, parseParticipantMetadata } from '../openvidu-components';
+import {
+	LocalMediaIntentService,
+	LocalMediaStateService,
+	ParticipantLeftReason,
+	RoomEvent,
+	Track,
+	parseParticipantMetadata
+} from '../openvidu-components';
 import { toEmbeddedParticipantPayload } from '../utils/embedded-participant.utils';
 import { toMediaStatusChangedEvent } from '../utils/media-status-event.utils';
 import { MeetingContextService } from './meeting-context.service';
@@ -58,6 +63,8 @@ export class MeetingEventHandlerService {
 	protected soundService = inject(SoundService);
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected translateService = inject(TranslateService);
+	protected localMediaState = inject(LocalMediaStateService);
+	protected mediaIntent = inject(LocalMediaIntentService);
 
 	// Shown longer than the 3s default: this warning is the only notice before the meeting ends
 	private readonly MEETING_ENDING_SOON_SNACKBAR_DURATION = 10_000;
@@ -134,55 +141,63 @@ export class MeetingEventHandlerService {
 		room.on(RoomEvent.ParticipantDisconnected, (participant: RemoteParticipant) => {
 			this.onRemoteParticipantDisconnected(participant);
 		});
-
-		// Local media status → host media*StatusChanged events. Mute/unmute cover the camera and
-		// microphone (their publications survive being disabled); publish/unpublish cover the
-		// initial publications and the screen share, which has no muted state.
-		this.lastLocalMediaStatus.clear();
-
-		room.on(RoomEvent.TrackMuted, (publication: TrackPublication, participant: Participant) => {
-			this.onLocalMediaStatusChanged(publication, participant, false);
-		});
-
-		room.on(RoomEvent.TrackUnmuted, (publication: TrackPublication, participant: Participant) => {
-			this.onLocalMediaStatusChanged(publication, participant, true);
-		});
-
-		room.on(RoomEvent.LocalTrackPublished, (publication: TrackPublication, participant: LocalParticipant) => {
-			this.onLocalMediaStatusChanged(publication, participant, !publication.isMuted);
-		});
-
-		room.on(RoomEvent.LocalTrackUnpublished, (publication: TrackPublication, participant: LocalParticipant) => {
-			this.onLocalMediaStatusChanged(publication, participant, false);
-		});
 	}
 
-	// Last state notified to the host per media event, so LiveKit surfacing one user action as
-	// several track events (a publish plus an unmute) reaches the host as a single transition
-	private readonly lastLocalMediaStatus = new Map<EmbeddedEventName, boolean>();
+	// What the host has been told about each local device's status in the current entry.
+	private mediaStatusLedger: Partial<Record<EmbeddedEventName, boolean>> = {};
 
 	/**
-	 * Forwards a local participant's media state change to the host as the matching
-	 * `media*StatusChanged` event (embedded modes only). Remote participants' tracks are ignored:
-	 * these events describe the local participant, like `meetingJoined`/`meetingLeft`.
+	 * Notifies the host of the local participant's media status (embedded modes only) from the state
+	 * itself, so the prejoin screen — where there is no Room to listen to — reports like the meeting
+	 * does. Only that state is a dependency: what the host was told and what was asked for are read
+	 * untracked, being inputs to the decision rather than triggers.
 	 */
-	protected onLocalMediaStatusChanged(
-		publication: TrackPublication,
-		participant: Participant,
-		enabled: boolean
-	): void {
-		if (!this.runtimeConfigService.isEmbeddedMode() || !participant.isLocal) {
+	private readonly localMediaStatusEffect = effect(() => {
+		const microphone = this.localMediaState.microphoneEnabled();
+		const camera = this.localMediaState.cameraEnabled();
+		const screenShare = this.localMediaState.screenShareEnabled();
+
+		if (!this.runtimeConfigService.isEmbeddedMode()) {
 			return;
 		}
 
-		const embeddedEvent = toMediaStatusChangedEvent(publication.source, enabled);
+		untracked(() => {
+			this.notifyMediaStatus(Track.Source.Microphone, microphone, this.mediaIntent.microphoneEnabled());
+			this.notifyMediaStatus(Track.Source.Camera, camera, this.mediaIntent.cameraEnabled());
+			// Nobody can stop someone else's screen share.
+			this.notifyMediaStatus(Track.Source.ScreenShare, screenShare);
+		});
+	});
 
-		if (!embeddedEvent || this.lastLocalMediaStatus.get(embeddedEvent.event) === enabled) {
-			return;
-		}
+	/**
+	 * Notifies the host of a local media status change (embedded modes only) if it is a transition
+	 * from the last known state. Only a reading that matches the intended state (the one that will
+	 * be applied when the next track is created) counts — the local participant object briefly
+	 * reports its own last-known value again right after connecting, before the prejoin track is
+	 * handed off to it, and that transient reading must not overwrite the real one.
+	 * @param source The media source (microphone, camera, screen share)
+	 * @param live The current state of the media source (enabled/disabled)
+	 * @param intended The intended state of the media source (enabled/disabled). Defaults to `live` if not provided.
+	 * @returns
+	 */
+	protected notifyMediaStatus(source: Track.Source, live: boolean, intended: boolean = live): void {
+		const event = toMediaStatusChangedEvent(source, live);
 
-		this.lastLocalMediaStatus.set(embeddedEvent.event, enabled);
-		this.eventBus.emit(embeddedEvent);
+		if (!event) return;
+
+		if (live !== intended) return;
+
+		const eventName = event.event;
+		const previous = this.mediaStatusLedger[eventName];
+		this.mediaStatusLedger[eventName] = live;
+
+		// First reading: only start tracking, nothing to compare against yet.
+		if (previous === undefined) return;
+
+		// No change.
+		if (previous === live) return;
+
+		this.eventBus.emit(event);
 	}
 
 	/**
@@ -261,6 +276,8 @@ export class MeetingEventHandlerService {
 		// Clear meeting context but keep session storage intact
 		this.meetingContext.clearMeetingContext(false);
 		this.meetingState.clear();
+		// Per entry: the next one starts up again, against its own initial state.
+		this.mediaStatusLedger = {};
 
 		// Notify the host that the local participant left (embedded modes only; the bus is drained there).
 		if (this.runtimeConfigService.isEmbeddedMode()) {
