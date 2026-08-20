@@ -157,6 +157,10 @@ export const errorRecordingCannotBeStoppedWhileStarting = (recordingId: string):
 	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' cannot be stopped while starting`, 409);
 };
 
+export const errorRecordingStopInProgress = (recordingId: string): OpenViduMeetError => {
+	return new OpenViduMeetError('Recording Error', `Recording '${recordingId}' is already being stopped`, 409);
+};
+
 export const errorRecordingAlreadyStarted = (roomId: string): OpenViduMeetError => {
 	return new OpenViduMeetError('Recording Error', `Room '${roomId}' is already being recorded`, 409);
 };
@@ -212,6 +216,10 @@ export const isErrorRecordingAlreadyStopped = (error: OpenViduMeetError, recordi
 
 export const isErrorRecordingNotFound = (error: OpenViduMeetError, recordingId: string): boolean => {
 	return isMatchingError(error, errorRecordingNotFound(recordingId));
+};
+
+export const isErrorRecordingStopInProgress = (error: OpenViduMeetError, recordingId: string): boolean => {
+	return isMatchingError(error, errorRecordingStopInProgress(recordingId));
 };
 
 export const isErrorRecordingCannotBeStoppedWhileStarting = (

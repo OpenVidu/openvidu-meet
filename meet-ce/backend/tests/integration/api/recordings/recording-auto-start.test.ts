@@ -316,6 +316,58 @@ describe('Recording Auto-Start Tests', () => {
 		expect(await recAutoStartStateService.isDisabled(room.roomId, lkRoom.sid)).toBe(true);
 	}, 90_000);
 
+	it('should keep the auto-start disarmed when two stops race for the same recording', async () => {
+		const { room } = await setupSingleRoom(false, 'CONCURRENT_STOP_ROOM', {
+			recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS }
+		});
+
+		await joinFakeParticipant(room.roomId, 'FIRST_PARTICIPANT');
+		await simulateParticipantJoined(room.roomId, 'FIRST_PARTICIPANT');
+
+		// The handler fires the start in the background; poll until the recording shows up
+		let recordings = await findRoomRecordings(room.roomId);
+		const startDeadline = Date.now() + 30_000;
+
+		while (recordings.length === 0 && Date.now() < startDeadline) {
+			await sleep('1s');
+			recordings = await findRoomRecordings(room.roomId);
+		}
+
+		expect(recordings.length).toBe(1);
+
+		// A STARTING egress answers 409 to every stop, which would hide the race: wait until the
+		// egress is active (the only status `getActiveEgress` reports) so a stop can succeed
+		let activeEgress = await livekitService.getActiveEgress(room.roomId);
+		const activeDeadline = Date.now() + 30_000;
+
+		while (activeEgress.length === 0 && Date.now() < activeDeadline) {
+			await sleep('1s');
+			activeEgress = await livekitService.getActiveEgress(room.roomId);
+		}
+
+		expect(activeEgress.length).toBe(1);
+
+		// Only one stop reaches LiveKit; the other is rejected instead of racing it
+		const responses = await Promise.all([
+			stopRecording(recordings[0].recordingId),
+			stopRecording(recordings[0].recordingId)
+		]);
+		expect(responses.map((response) => response.status).sort()).toEqual([202, 409]);
+
+		await waitForEgressToEnd(room.roomId);
+		await recordingService.releaseRecordingLockIfNoEgress(room.roomId);
+
+		// The rejected stop must not have undone the disarm the accepted one wrote
+		const lkRoom = await livekitService.getRoom(room.roomId);
+		expect(await recAutoStartStateService.isDisabled(room.roomId, lkRoom.sid)).toBe(true);
+
+		await joinFakeParticipant(room.roomId, 'SECOND_PARTICIPANT');
+		await simulateParticipantJoined(room.roomId, 'SECOND_PARTICIPANT');
+		await sleep('5s');
+
+		expect((await findRoomRecordings(room.roomId)).length).toBe(1);
+	}, 90_000);
+
 	it('should auto-start a recording again in the next meeting after a manual stop', async () => {
 		const { room } = await setupSingleRoom(false, 'REARM_NEXT_MEETING_ROOM', {
 			recording: { enabled: true, autoStart: MeetRecordingAutoStartMode.WHEN_FIRST_PARTICIPANT_JOINS }

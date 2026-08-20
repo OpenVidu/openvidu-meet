@@ -27,6 +27,7 @@ export const enum RedisLockPrefix {
 
 export const enum RedisLockName {
 	RECORDING_ACTIVE = 'recording_active',
+	RECORDING_STOP = 'recording_stop',
 	SCHEDULED_TASK = 'scheduled_task',
 	STORAGE_INITIALIZATION = 'storage_initialization',
 	MIGRATION = 'migration',

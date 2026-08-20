@@ -1,4 +1,4 @@
-description: Conflict — The recording is starting or already stopped
+description: Conflict — The recording is starting, already stopped, or already being stopped
 content:
     application/json:
         schema:
@@ -14,3 +14,8 @@ content:
                 value:
                     error: 'Recording Error'
                     message: 'Recording "room-123--EG_XYZ--XX445" is already stopped'
+            stop_in_progress:
+                summary: Another stop for the same room is still in flight
+                value:
+                    error: 'Recording Error'
+                    message: 'Recording "room-123--EG_XYZ--XX445" is already being stopped'
