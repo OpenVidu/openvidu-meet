@@ -5,7 +5,6 @@ import type { AudioCaptureOptions, ScreenShareCaptureOptions, VideoCaptureOption
 import { VideoPresets } from '../livekit';
 import { LocalMediaIntentService } from '../local-media-intent/local-media-intent.service';
 import { LocalTrackService } from '../local-track/local-track.service';
-import { MeetingLiveKitService } from '../meeting-livekit/meeting-livekit.service';
 import { ParticipantService } from '../participant/participant.service';
 import { MediaStorageService } from '../storage/storage.service';
 import { LoggerService } from '../../../../../shared/services/logger.service';
@@ -115,7 +114,6 @@ class PrejoinTarget implements LocalMediaTarget {
 @Service()
 export class LocalMediaControlService {
 	private readonly injector = inject(Injector);
-	private readonly meetingLiveKitService = inject(MeetingLiveKitService);
 	private readonly localTrackService = inject(LocalTrackService);
 	private readonly storageSrv = inject(MediaStorageService);
 	private readonly streamLayoutService = inject(StreamLayoutStateService);
@@ -128,14 +126,13 @@ export class LocalMediaControlService {
 	}
 
 	/**
-	 * The single prejoin-vs-room branching point. A RoomTarget is used only when the Room is
-	 * connected AND the local participant exists; otherwise the prejoin tracks are the target.
+	 * Prejoin-vs-room branching point: the published participant once it exists, the prejoin tracks
+	 * before. Keyed on the same signal {@link LocalMediaStateService} reads the state from, so the
+	 * write and read sides never disagree.
 	 */
 	private get target(): LocalMediaTarget {
 		const local = this.participantService.localParticipant();
-		return this.meetingLiveKitService.isConnected() && local
-			? new RoomTarget(local, this.storageSrv)
-			: new PrejoinTarget(this.localTrackService);
+		return local ? new RoomTarget(local, this.storageSrv) : new PrejoinTarget(this.localTrackService);
 	}
 
 	/**
