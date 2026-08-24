@@ -23,10 +23,13 @@ import {
 	expectKickButton,
 	expectMakeModeratorButton,
 	expectModerationControls,
+	expectMuteAllButton,
 	expectMuteButton,
+	expectMutedByModeratorNotification,
 	expectNoKickButton,
 	expectNoMakeModeratorButton,
 	expectNoModerationControls,
+	expectNoMuteAllButton,
 	expectNoMuteButton,
 	expectNoParticipantBadge,
 	expectNoRemoveModeratorButton,
@@ -37,6 +40,7 @@ import {
 	joinParticipants,
 	kickParticipant,
 	makeParticipantModerator,
+	muteAllParticipantsMedia,
 	muteParticipantMedia,
 	removeParticipantModerator,
 	type ParticipantConfig
@@ -451,6 +455,7 @@ test.describe('Participants E2E Tests', () => {
 				await expectKickButton(moderatorPage, speakerId);
 				await expectNoMuteButton(moderatorPage, speakerId, 'audio');
 				await expectNoMuteButton(moderatorPage, speakerId, 'video');
+				await expectNoMuteAllButton(moderatorPage);
 			} finally {
 				await removeAllParticipants();
 			}
@@ -474,6 +479,57 @@ test.describe('Participants E2E Tests', () => {
 				await expectParticipantBadge(moderatorPage, otherModeratorId, MeetRoomMemberUIBadge.MODERATOR);
 				await expectNoMuteButton(moderatorPage, otherModeratorId, 'audio');
 				await expectNoMuteButton(moderatorPage, otherModeratorId, 'video');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should notify the muted participant with a snackbar', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+
+				await expectMutedByModeratorNotification(speakerPage);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should mute every participant microphone via the mute-all button, leaving the caller alone', async ({
+			browser
+		}) => {
+			const secondSpeakerName = 'Second Speaker';
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER, headless: true },
+					{ name: secondSpeakerName, baseRole: MeetRoomMemberRole.SPEAKER, headless: true }
+				]
+			});
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+				const secondSpeakerPage = byName[secondSpeakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				await expectMuteAllButton(moderatorPage);
+				await muteAllParticipantsMedia(moderatorPage);
+
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+				await expect(secondSpeakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+
+				// The backend excludes the caller from a bulk mute: muting everyone else must not
+				// reach back to the moderator's own microphone.
+				await expect(moderatorPage.locator('#mic-btn #mic')).toBeVisible();
 			} finally {
 				await removeAllParticipants();
 			}

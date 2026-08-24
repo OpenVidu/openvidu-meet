@@ -444,6 +444,39 @@ export const expectNoMuteButton = async (page: Page, participantId: string, medi
 	await expect(muteButton(page, participantId, media)).toHaveCount(0, { timeout: 10_000 });
 };
 
+/**
+ * Clicks the participants panel header's "mute all" button, turning off every non-moderator
+ * participant's microphone (the caller and any moderator are excluded server-side).
+ */
+export const muteAllParticipantsMedia = async (page: Page): Promise<void> => {
+	await page.locator('#mute-all-participants-btn').click({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the participants panel header's "mute all" button is available.
+ */
+export const expectMuteAllButton = async (page: Page): Promise<void> => {
+	await expect(page.locator('#mute-all-participants-btn')).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the participants panel header's "mute all" button is not available.
+ */
+export const expectNoMuteAllButton = async (page: Page): Promise<void> => {
+	await expect(page.locator('#mute-all-participants-btn')).toHaveCount(0, { timeout: 10_000 });
+};
+
+/**
+ * Asserts that the local participant sees the snackbar `NotificationService` shows when a moderator
+ * mute lands — the only notice of it, since the API sends no message the muted device is a target of.
+ * The vendored `ActionService` fires its own snackbar (`.snackbarNotification`, see
+ * {@link expectSnackbarNotification} in `ui-utils.helper`) under a different panel class, so the two
+ * must not be confused.
+ */
+export const expectMutedByModeratorNotification = async (page: Page): Promise<void> => {
+	await expect(page.locator('.custom-snackbar')).toBeVisible({ timeout: 10_000 });
+};
+
 // ─── Participants panel: badge assertions ─────────────────────────────────────
 
 const PARTICIPANT_BADGE_CLASS: Record<MeetRoomMemberUIBadge, string> = {
