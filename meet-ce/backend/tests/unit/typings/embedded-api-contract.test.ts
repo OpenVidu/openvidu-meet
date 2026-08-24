@@ -27,6 +27,8 @@ describe('Embedded command names', () => {
 				'meetingLeave',
 				'meetingEnd',
 				'participantKick',
+				'participantMute',
+				'participantMuteAll',
 				'mediaToggleAudio',
 				'mediaToggleVideo',
 				'mediaToggleScreenShare',

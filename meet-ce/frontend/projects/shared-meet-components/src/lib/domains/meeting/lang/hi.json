@@ -205,6 +205,9 @@
 		"PROMOTE_TOOLTIP": "मॉडरेटर बनाएं",
 		"DOWNGRADE_TOOLTIP": "मूल अनुमतियों पर वापस लाएं",
 		"KICK_TOOLTIP": "सदस्य को निकालें",
+		"MUTE_AUDIO_TOOLTIP": "माइक्रोफ़ोन म्यूट करें",
+		"MUTE_VIDEO_TOOLTIP": "कैमरा बंद करें",
+		"STOP_SCREEN_SHARE_TOOLTIP": "स्क्रीन शेयर रोकें",
 		"BADGE_OWNER": "स्वामी",
 		"BADGE_ADMIN": "व्यवस्थापक",
 		"BADGE_MODERATOR": "मॉडरेटर"

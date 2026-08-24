@@ -1,4 +1,4 @@
-import { LeftEventReason, MeetWebhookEventType, EmbeddedEventName } from '@openvidu-meet/typings';
+import { LeftEventReason, MeetEventOrigin, MeetWebhookEventType, EmbeddedEventName } from '@openvidu-meet/typings';
 import { expect, test } from '@playwright/test';
 import { INTEGRATIONS, meetLocator, wcLocator } from '../helpers/webcomponent.helper';
 import { createRoom, deleteRooms } from '../helpers/meet-api.helper';
@@ -14,6 +14,7 @@ import {
 	eventLocator,
 	expectEvent,
 	expectWebhook,
+	joinedParticipantIdentity,
 	kickParticipantCommand,
 	kickParticipantLegacyCommand,
 	leaveMeeting,
@@ -23,7 +24,9 @@ import {
 	mediaToggleScreenShareCommand,
 	mediaToggleVideoCommand,
 	openMeeting,
-	openMeetingAtMediaSetup
+	openMeetingAtMediaSetup,
+	participantMuteAllCommand,
+	participantMuteCommand
 } from '../helpers/testapp.helper';
 
 // The command/event API is identical across embedding transports — only the
@@ -143,10 +146,7 @@ for (const integration of INTEGRATIONS) {
 				const speakerName = 'Speaker';
 				await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
 
-				const speakerJoined = await expectEvent(speakerPage, EmbeddedEventName.JOINED);
-				const speakerJoinedText = (await speakerJoined.textContent()) ?? '';
-				const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
-				const speakerIdentity = match?.[1] ?? speakerName;
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
 
 				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
@@ -167,10 +167,7 @@ for (const integration of INTEGRATIONS) {
 				const speakerName = 'Speaker';
 				await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
 
-				const speakerJoined = await expectEvent(speakerPage, EmbeddedEventName.JOINED);
-				const speakerJoinedText = (await speakerJoined.textContent()) ?? '';
-				const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
-				const speakerIdentity = match?.[1] ?? speakerName;
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
 
 				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
@@ -199,10 +196,7 @@ for (const integration of INTEGRATIONS) {
 				const speakerPage = await speakerContext.newPage();
 				await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
 
-				const speakerJoined = await expectEvent(speakerPage, EmbeddedEventName.JOINED);
-				const speakerJoinedText = (await speakerJoined.textContent()) ?? '';
-				const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
-				const speakerIdentity = match?.[1] ?? speakerName;
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
 
 				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 
@@ -215,6 +209,147 @@ for (const integration of INTEGRATIONS) {
 				await expect(speakerLeft).toContainText(roomId);
 
 				await leaveMeeting(page, { integration, role: 'moderator' });
+				await speakerContext.close();
+			});
+		});
+
+		// The mute commands are the only ones whose effect lands on ANOTHER participant's browser, so
+		// every assertion here reads the target page's real device state — the toolbar buttons bind
+		// straight off the track state, which a client-side-only "please mute" could not move.
+		test.describe('PARTICIPANT_MUTE Command', () => {
+			test('should turn off a speaker microphone and camera', async ({ page, browser }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				await openMeeting(speakerPage, roomId, { role: 'speaker', name: 'Speaker' });
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
+
+				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
+
+				await participantMuteCommand(page, speakerIdentity, 'audio');
+				await expectToolbarMicEnabled(speakerPage, 'webcomponent', false, { timeout: 15_000 });
+
+				await participantMuteCommand(page, speakerIdentity, 'video');
+				await expectToolbarCameraEnabled(speakerPage, 'webcomponent', false, { timeout: 15_000 });
+
+				await speakerContext.close();
+			});
+
+			// A mute, not a lock: the speaker keeps their publish permission, so the toolbar must let
+			// them back on — and a second mute must land on a device that was re-enabled.
+			test('should let the muted speaker turn the microphone back on', async ({ page, browser }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				await openMeeting(speakerPage, roomId, { role: 'speaker', name: 'Speaker' });
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
+
+				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
+
+				await participantMuteCommand(page, speakerIdentity, 'audio');
+				await expectToolbarMicEnabled(speakerPage, 'webcomponent', false, { timeout: 15_000 });
+
+				await wcLocator(speakerPage, '#mic-btn').click();
+				await expectToolbarMicEnabled(speakerPage, 'webcomponent', true, { timeout: 10_000 });
+
+				await participantMuteCommand(page, speakerIdentity, 'audio');
+				await expectToolbarMicEnabled(speakerPage, 'webcomponent', false, { timeout: 15_000 });
+
+				await speakerContext.close();
+			});
+
+			// A LiveKit mute leaves the publication in place and the UI reads sharing off publication
+			// presence, so this is the one device whose mute is only honest if the client unpublishes.
+			test('should stop a speaker screen share', async ({ page, browser }) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				await openMeeting(speakerPage, roomId, { role: 'speaker', name: 'Speaker' });
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
+
+				await mediaToggleScreenShareCommand(speakerPage, true);
+				const speakerScreenShare = wcLocator(speakerPage, '.OV_stream.screen-source.local');
+				await expect(speakerScreenShare).toBeVisible({ timeout: 15_000 });
+
+				await participantMuteCommand(page, speakerIdentity, 'screenShare');
+
+				await expect(speakerScreenShare).toHaveCount(0, { timeout: 15_000 });
+				const screenShareStatus = await expectEvent(
+					speakerPage,
+					EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED,
+					{ count: 2 }
+				);
+				await expect(screenShareStatus.nth(1)).toContainText('"active":false');
+				await expect(screenShareStatus.nth(1)).toContainText(MeetEventOrigin.MODERATOR);
+
+				await speakerContext.close();
+			});
+
+			// The permission is editable per role, so a speaker can be handed the command without being
+			// handed the permission. The successful mute at the end is the barrier: once the moderator's
+			// mute has landed, the speaker's earlier attempt has had every chance to land too.
+			test('should not mute a speaker who lacks the participantMute permission', async ({ page, browser }) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Actor' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const targetContext = await browser.newContext();
+				const targetPage = await targetContext.newPage();
+				await openMeeting(targetPage, roomId, { role: 'speaker', name: 'Target' });
+				const targetIdentity = await joinedParticipantIdentity(targetPage);
+
+				const moderatorContext = await browser.newContext();
+				const moderatorPage = await moderatorContext.newPage();
+				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
+				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
+
+				await participantMuteCommand(page, targetIdentity, 'audio');
+
+				await participantMuteCommand(moderatorPage, targetIdentity, 'video');
+				await expectToolbarCameraEnabled(targetPage, 'webcomponent', false, { timeout: 15_000 });
+
+				await expectToolbarMicEnabled(targetPage, 'webcomponent', true);
+				await expect(eventLocator(targetPage, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED)).toHaveCount(0);
+
+				await moderatorContext.close();
+				await targetContext.close();
+			});
+		});
+
+		// Muting everyone is one signal addressed to the participants it names, so the interesting
+		// assertions are the exclusions: the other moderators and the caller must be left alone.
+		test.describe('PARTICIPANT_MUTE_ALL Command', () => {
+			test('should mute the speakers and leave the moderators and the caller untouched', async ({
+				page,
+				browser
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'moderator' });
+				await expectEvent(page, EmbeddedEventName.JOINED);
+
+				const speakerContext = await browser.newContext();
+				const speakerPage = await speakerContext.newPage();
+				await openMeeting(speakerPage, roomId, { role: 'speaker', name: 'Speaker' });
+				await expectEvent(speakerPage, EmbeddedEventName.JOINED);
+
+				const moderatorContext = await browser.newContext();
+				const moderatorPage = await moderatorContext.newPage();
+				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
+				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
+
+				await participantMuteAllCommand(page, 'audio');
+
+				// The speaker's mute is the round trip: the same signal would already have reached the
+				// moderators, so their microphones being on is an exclusion and not a race.
+				await expectToolbarMicEnabled(speakerPage, 'webcomponent', false, { timeout: 15_000 });
+				await expectToolbarMicEnabled(moderatorPage, 'webcomponent', true);
+				await expectToolbarMicEnabled(page, integration, true);
+
+				await moderatorContext.close();
 				await speakerContext.close();
 			});
 		});
@@ -291,7 +426,9 @@ for (const integration of INTEGRATIONS) {
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 
 				await mediaToggleScreenShareCommand(page, true);
-				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toBeVisible({ timeout: 15_000 });
+				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toBeVisible({
+					timeout: 15_000
+				});
 
 				await mediaToggleScreenShareCommand(page, false);
 				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toHaveCount(0, {
@@ -304,7 +441,9 @@ for (const integration of INTEGRATIONS) {
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 
 				await mediaToggleScreenShareCommand(page);
-				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toBeVisible({ timeout: 15_000 });
+				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toBeVisible({
+					timeout: 15_000
+				});
 
 				await mediaToggleScreenShareCommand(page);
 				await expect(meetLocator(page, integration, '.OV_stream.screen-source.local')).toHaveCount(0, {
@@ -494,10 +633,7 @@ for (const integration of INTEGRATIONS) {
 				const speakerName = 'Speaker';
 				await openMeeting(speakerPage, roomId, { role: 'speaker', name: speakerName });
 
-				const speakerJoined = await expectEvent(speakerPage, EmbeddedEventName.JOINED);
-				const speakerJoinedText = (await speakerJoined.textContent()) ?? '';
-				const match = speakerJoinedText.match(/"participantIdentity"\s*:\s*"([^"]+)"/);
-				const speakerIdentity = match?.[1] ?? speakerName;
+				const speakerIdentity = await joinedParticipantIdentity(speakerPage);
 
 				await expect(meetLocator(page, integration, '.OV_stream.remote')).toBeVisible({ timeout: 10_000 });
 

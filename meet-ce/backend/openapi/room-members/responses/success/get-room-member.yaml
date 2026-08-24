@@ -47,9 +47,11 @@ content:
                         recordingDownload: true
                         recordingDelete: true
                         meetingJoin: true
+                        meetingRead: true
                         roomShareAccessLinks: true
                         participantPromote: true
                         participantKick: true
+                        participantMute: true
                         meetingEnd: false
                         mediaPublishVideo: true
                         mediaPublishAudio: true

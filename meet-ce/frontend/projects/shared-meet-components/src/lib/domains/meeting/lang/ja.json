@@ -205,6 +205,9 @@
 		"PROMOTE_TOOLTIP": "モデレーターに昇格",
 		"DOWNGRADE_TOOLTIP": "元の権限に戻す",
 		"KICK_TOOLTIP": "参加者を退出させる",
+		"MUTE_AUDIO_TOOLTIP": "マイクをミュート",
+		"MUTE_VIDEO_TOOLTIP": "カメラをオフ",
+		"STOP_SCREEN_SHARE_TOOLTIP": "画面共有を停止",
 		"BADGE_OWNER": "オーナー",
 		"BADGE_ADMIN": "管理者",
 		"BADGE_MODERATOR": "モデレーター"

@@ -138,6 +138,10 @@
           "LABEL": "可踢出参与者",
           "DESCRIPTION": "允许将参与者移出会议"
         },
+        "participantMute": {
+          "LABEL": "可静音参与者",
+          "DESCRIPTION": "允许关闭其他参与者的麦克风、摄像头或屏幕共享"
+        },
         "roomShareAccessLinks": {
           "LABEL": "可共享访问链接",
           "DESCRIPTION": "允许与他人共享邀请链接"

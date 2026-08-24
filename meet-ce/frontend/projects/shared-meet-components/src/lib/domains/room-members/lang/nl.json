@@ -138,6 +138,10 @@
           "LABEL": "Kan deelnemers verwijderen",
           "DESCRIPTION": "Deelnemers uit de meeting verwijderen toestaan"
         },
+        "participantMute": {
+          "LABEL": "Kan deelnemers dempen",
+          "DESCRIPTION": "Microfoon, camera of schermdeling van andere deelnemers uitschakelen toestaan"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Kan toegangslinks delen",
           "DESCRIPTION": "Uitnodigingslinks met anderen delen toestaan"

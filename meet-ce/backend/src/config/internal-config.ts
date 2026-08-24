@@ -79,6 +79,7 @@ export const INTERNAL_CONFIG = {
 	CONCURRENCY_BULK_RETRIEVE_RECORDINGS: 10, // Concurrency limit for bulk retrieving recording info
 	CONCURRENCY_BULK_DELETE_STORAGE: 20, // Concurrency limit for bulk deleting objects in storage
 	CONCURRENCY_BULK_KICK_MEMBERS: 20, // Concurrency limit for bulk kicking members from a room
+	CONCURRENCY_BULK_MUTE_PARTICIPANTS: 20, // Concurrency limit for bulk muting participants in a meeting
 	CONCURRENCY_BULK_UPDATE_PERMISSIONS: 20, // Concurrency limit for bulk updating room members' permissions
 	CONCURRENCY_BULK_CLEANUP_USER_RESOURCES: 20, // Concurrency limit for bulk cleanup of user resources
 	CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS: 20, // Concurrency limit for bulk cleanup of participant name reservations
@@ -91,8 +92,8 @@ export const INTERNAL_CONFIG = {
 	GLOBAL_CONFIG_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1786652415187
 	USER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1774181859233
 	API_KEY_SCHEMA_VERSION: 1 as SchemaVersion, // MIGRATION_REV: 1771328577054
-	ROOM_SCHEMA_VERSION: 4 as SchemaVersion, // MIGRATION_REV: 1786646094345
-	ROOM_MEMBER_SCHEMA_VERSION: 2 as SchemaVersion, // MIGRATION_REV: 1786646094345
+	ROOM_SCHEMA_VERSION: 5 as SchemaVersion, // MIGRATION_REV: 1787569647276
+	ROOM_MEMBER_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1787569647276
 	RECORDING_SCHEMA_VERSION: 3 as SchemaVersion, // MIGRATION_REV: 1781616231619
 	WEBHOOK_SCHEMA_VERSION: 1 as SchemaVersion // MIGRATION_REV: 1786634401242
 };

@@ -79,8 +79,8 @@ const RoomMemberRoleSchema: z.ZodType<MeetRoomMemberRole> = z.enum(MeetRoomMembe
 // request may actually use is decided per parse by MEET_MODE — declaring the deprecated keys even in
 // '3.9.0' mode is what lets that mode *reject* them with a pointed message instead of silently
 // stripping them (a stripped permission would just read as denied). Every key is optional at the
-// shape level: requiredness ("all 16 keys defined after normalization") only applies to the full
-// schemas and is enforced in their superRefine. The deprecated branch is removed in 3.12.0.
+// shape level: requiredness (every permission key defined after normalization) only applies to the
+// full schemas and is enforced in their superRefine. The deprecated branch is removed in 3.12.0.
 const dualNamingPermissionShape = (): Record<string, z.ZodOptional<z.ZodBoolean>> => {
 	const shape: Record<string, z.ZodOptional<z.ZodBoolean>> = {};
 
@@ -125,7 +125,7 @@ const addDeprecatedKeyRejectionIssues = (input: Record<string, unknown>, ctx: z.
 
 // Completeness: every current key must be defined once deprecated spellings are expanded.
 const addMissingPermissionIssues = (input: Record<string, unknown>, ctx: z.RefinementCtx): void => {
-	const normalized = normalizePermissions(input);
+	const normalized = normalizePermissions(input, { complete: true });
 
 	for (const key of MEET_PERMISSION_KEYS) {
 		if (typeof normalized[key] !== 'boolean') {
@@ -155,7 +155,7 @@ const permissionsShapeSchema = (options: { complete: boolean; alwaysAcceptDeprec
 
 export const MeetPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = permissionsShapeSchema({
 	complete: true
-}).transform((input) => normalizePermissions(input) as MeetRoomMemberPermissions);
+}).transform((input) => normalizePermissions(input, { complete: true }) as MeetRoomMemberPermissions);
 
 export const PartialMeetPermissionsSchema: z.ZodType<Partial<MeetRoomMemberPermissions>> = permissionsShapeSchema({
 	complete: false
@@ -167,7 +167,7 @@ export const PartialMeetPermissionsSchema: z.ZodType<Partial<MeetRoomMemberPermi
 export const MeetTokenPermissionsSchema: z.ZodType<MeetRoomMemberPermissions> = permissionsShapeSchema({
 	complete: true,
 	alwaysAcceptDeprecated: true
-}).transform((input) => normalizePermissions(input) as MeetRoomMemberPermissions);
+}).transform((input) => normalizePermissions(input, { complete: true }) as MeetRoomMemberPermissions);
 
 export const RoomMemberOptionsSchema: z.ZodType<MeetRoomMemberOptions> = z
 	.object({

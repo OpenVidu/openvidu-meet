@@ -367,10 +367,9 @@ for (const prop of PROPERTIES) {
 	});
 }
 
-// Proxy the imperative methods (meetingEnd, meetingLeave, participantKick and their deprecated
-// aliases, removed in 3.12.0): delegate once the inner element exists, otherwise buffer for
-// replay in _upgrade(). The buffered call keeps the name it was made with — resolving an alias is
-// the wrapper's job.
+// Proxy the imperative methods (canonical commands and their deprecated aliases, removed in
+// 3.12.0): delegate once the inner element exists, otherwise buffer for replay in _upgrade().
+// The buffered call keeps the name it was made with — resolving an alias is the wrapper's job.
 for (const method of METHODS) {
 	Object.defineProperty(OpenViduMeetLoader.prototype, method, {
 		configurable: true,

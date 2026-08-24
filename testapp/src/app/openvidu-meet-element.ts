@@ -1,4 +1,4 @@
-import { EmbeddedEventName, EmbeddedEventPayloadFor } from '@openvidu-meet/typings';
+import { EmbeddedEventName, EmbeddedEventPayloadFor, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 
 /**
  * Minimal typing for the `<openvidu-meet>` custom element registered by the
@@ -12,6 +12,8 @@ export interface OpenViduMeetElement extends HTMLElement {
 	meetingEnd(): void;
 	meetingLeave(): void;
 	participantKick(participantIdentity: string): void;
+	participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): void;
+	participantMuteAll(media: MeetParticipantMuteOptions): void;
 	mediaToggleAudio(active?: boolean): void;
 	mediaToggleVideo(active?: boolean): void;
 	mediaToggleScreenShare(active?: boolean): void;

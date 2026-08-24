@@ -79,6 +79,38 @@
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':
                 $ref: '../shared/responses/errors/internal-server.yaml'
+/meetings/{roomId}/participants/media:
+    put:
+        operationId: participantMuteAll
+        summary: Mute every participant of a meeting
+        description: >
+            Turns off the requested devices of every participant in the current meeting of an OpenVidu Meet
+            room, except the moderators and the caller. Only `false` is accepted: moderation never turns a
+            remote device on, and each participant may turn theirs back on afterwards.
+        tags:
+            - OpenVidu Meet - Meetings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../rooms/parameters/room-id-path.yaml'
+        requestBody:
+            $ref: './requests/mute-participant-media.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/mute-all-participants-media.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/no-active-meeting.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
 /meetings/{roomId}/participants/{participantIdentity}:
     get:
         operationId: participantGet
@@ -128,6 +160,41 @@
                 $ref: '../shared/responses/errors/forbidden.yaml'
             '404':
                 $ref: './responses/errors/room-participant-not-found.yaml'
+            '429':
+                $ref: '../shared/responses/errors/too-many-requests.yaml'
+            '500':
+                $ref: '../shared/responses/errors/internal-server.yaml'
+/meetings/{roomId}/participants/{participantIdentity}/media:
+    put:
+        operationId: participantMute
+        summary: Mute a participant of a meeting
+        description: >
+            Turns off the requested devices of a participant in the current meeting of an OpenVidu Meet room.
+            Only `false` is accepted: moderation never turns a remote device on, and the participant may turn
+            theirs back on afterwards. Moderators cannot be muted.
+        tags:
+            - OpenVidu Meet - Meetings
+        security:
+            - apiKeyHeader: []
+            - roomMemberTokenHeader: []
+        parameters:
+            - $ref: '../rooms/parameters/room-id-path.yaml'
+            - $ref: './parameters/participant-identity-path.yaml'
+        requestBody:
+            $ref: './requests/mute-participant-media.yaml'
+        responses:
+            '200':
+                $ref: './responses/success/mute-participant-media.yaml'
+            '401':
+                $ref: '../shared/responses/errors/unauthorized.yaml'
+            '403':
+                $ref: '../shared/responses/errors/forbidden.yaml'
+            '404':
+                $ref: './responses/errors/room-participant-not-found.yaml'
+            '409':
+                $ref: './responses/errors/participant-mute-conflict.yaml'
+            '422':
+                $ref: '../shared/responses/errors/validation.yaml'
             '429':
                 $ref: '../shared/responses/errors/too-many-requests.yaml'
             '500':

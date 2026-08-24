@@ -54,6 +54,12 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
 				icon: 'person_remove'
 			},
 			{
+				key: 'participantMute',
+				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantMute.LABEL',
+				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.participantMute.DESCRIPTION',
+				icon: 'mic_off'
+			},
+			{
 				key: 'roomShareAccessLinks',
 				label: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.roomShareAccessLinks.LABEL',
 				description: 'ROOM_MEMBERS.PERMISSIONS.ITEMS.roomShareAccessLinks.DESCRIPTION',

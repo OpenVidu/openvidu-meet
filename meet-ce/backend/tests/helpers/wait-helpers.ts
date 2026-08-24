@@ -1,6 +1,13 @@
-import { MeetRecordingStatus, MeetRoomStatus, MeetWebhookEvent, MeetWebhookEventType } from '@openvidu-meet/typings';
+import {
+	MeetParticipantInfo,
+	MeetRecordingStatus,
+	MeetRoomStatus,
+	MeetWebhookEvent,
+	MeetWebhookEventType
+} from '@openvidu-meet/typings';
 import http from 'http';
 import { container } from '../../src/config/dependency-injector.config.js';
+import { MeetParticipantHelper } from '../../src/helpers/participant.helper.js';
 import { RecordingRepository } from '../../src/repositories/recording.repository.js';
 import { RoomMemberRepository } from '../../src/repositories/room-member.repository.js';
 import { RoomRepository } from '../../src/repositories/room.repository.js';
@@ -184,6 +191,39 @@ export const waitForParticipantToConnect = async (
 		{
 			timeoutMs,
 			errorMessage: `No participants connected to room '${roomId}'`
+		}
+	);
+};
+
+/**
+ * Waits until a participant's published tracks read as the expected media state, exactly as
+ * `MeetParticipantHelper.extractMediaState` serializes them for the live snapshots — the
+ * authoritative view of what LiveKit currently publishes.
+ *
+ * @param roomId              - Room identifier to query.
+ * @param participantIdentity - Participant identity to inspect.
+ * @param expected            - The media flags that must hold (omitted ones are not checked).
+ * @param timeoutMs           - Maximum wait time in milliseconds (default: 15 000).
+ */
+export const waitForParticipantMediaState = async (
+	roomId: string,
+	participantIdentity: string,
+	expected: Partial<Pick<MeetParticipantInfo, 'audioActive' | 'videoActive' | 'screenShareActive'>>,
+	timeoutMs = DEFAULT_PARTICIPANT_TIMEOUT_MS
+): Promise<void> => {
+	const livekitService = container.get(LiveKitService);
+
+	await pollUntil(
+		async () => {
+			const participant = await livekitService.getParticipant(roomId, participantIdentity);
+			const media = MeetParticipantHelper.extractMediaState(participant) as Record<string, boolean>;
+			return Object.entries(expected).every(([device, active]) => media[device] === active);
+		},
+		{
+			timeoutMs,
+			errorMessage:
+				`Participant '${participantIdentity}' in room '${roomId}' did not reach ` +
+				`media state ${JSON.stringify(expected)}`
 		}
 	);
 };

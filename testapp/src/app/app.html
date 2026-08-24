@@ -114,9 +114,9 @@
 			<div class="ta-row">
 				<input
 					id="participant-identity-input"
-					[(ngModel)]="kickIdentityInput"
+					[(ngModel)]="participantIdentityInput"
 					placeholder="participant identity"
-					data-testid="input-kick-identity"
+					data-testid="input-participant-identity"
 				/>
 				<button
 					id="kick-participant-btn"
@@ -125,6 +125,29 @@
 					data-testid="btn-kick-participant"
 				>
 					participantKick()
+				</button>
+			</div>
+			<div class="ta-row">
+				<select id="muteMedia" data-testid="select-mute-media" [(ngModel)]="muteMediaInput">
+					<option value="audio">audio</option>
+					<option value="video">video</option>
+					<option value="screenShare">screenShare</option>
+				</select>
+				<button
+					id="participant-mute-btn"
+					class="ta-btn"
+					(click)="callParticipantMute()"
+					data-testid="btn-participant-mute"
+				>
+					participantMute()
+				</button>
+				<button
+					id="participant-mute-all-btn"
+					class="ta-btn"
+					(click)="callParticipantMuteAll()"
+					data-testid="btn-participant-mute-all"
+				>
+					participantMuteAll()
 				</button>
 			</div>
 			<div class="ta-field">

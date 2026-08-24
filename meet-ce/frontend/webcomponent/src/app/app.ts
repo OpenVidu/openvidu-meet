@@ -36,6 +36,7 @@ import {
 	EmbeddedEventPayloadFor,
 	LeftEventReason,
 	type EmbeddedEvent,
+	type MeetParticipantMuteOptions,
 	type WebComponentPropertyValues
 } from '@openvidu-meet/typings';
 import { ShadowOverlayContainer } from './shadow-dom/overlay-container.service';
@@ -274,6 +275,14 @@ export class App {
 
 	participantKick(participantIdentity: string): Promise<void> {
 		return this.commandService.participantKick(participantIdentity);
+	}
+
+	participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): Promise<void> {
+		return this.commandService.participantMute(participantIdentity, media);
+	}
+
+	participantMuteAll(media: MeetParticipantMuteOptions): Promise<void> {
+		return this.commandService.participantMuteAll(media);
 	}
 
 	mediaToggleAudio(active?: boolean): Promise<void> {

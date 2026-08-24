@@ -238,18 +238,21 @@ export class MeetingEventsService {
 			async (payload: Uint8Array, participant?: RemoteParticipant, _?: DataPacket_Kind, topic?: string) => {
 				try {
 					const decoder = new TextDecoder();
-					const fromServer = participant === undefined;
+
+					// Meet signals carry server authority (recording state), so only the server may
+					// send them: a packet relayed from a participant arrives with that participant,
+					// one sent by the server does not.
+					if (participant && Object.values(MeetSignalType).includes(topic as MeetSignalType)) {
+						this.log.w(`Discarding '${topic}' data relayed from a participant`, participant.identity);
+						return;
+					}
+
 					const storedParticipant = participant
 						? this.participantService.getRemoteParticipantBySid(participant.sid || '')
 						: undefined;
 
 					if (participant && !storedParticipant) {
 						this.log.w('DataReceived from unknown participant', participant);
-						return;
-					}
-
-					if (!fromServer && !participant) {
-						this.log.w('DataReceived from unknown source', payload);
 						return;
 					}
 

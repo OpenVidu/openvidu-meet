@@ -3,7 +3,10 @@ import { Router } from 'express';
 import * as meetingCtrl from '../controllers/meeting.controller.js';
 import { apiKeyValidator, roomMemberTokenValidator, withAuth } from '../middlewares/auth.middleware.js';
 import { apiLimiter } from '../middlewares/rate-limit.middleware.js';
-import { validateUpdateParticipantRoleReq } from '../middlewares/request-validators/meeting-validator.middleware.js';
+import {
+	validateMuteParticipantMediaReq,
+	validateUpdateParticipantRoleReq
+} from '../middlewares/request-validators/meeting-validator.middleware.js';
 import { withValidRoomId } from '../middlewares/request-validators/room-validator.middleware.js';
 import { withRoomPermission } from '../middlewares/room.middleware.js';
 
@@ -50,6 +53,22 @@ meetingRouter.delete(
 	withValidRoomId,
 	withRoomPermission('participantKick'),
 	meetingCtrl.kickParticipantFromMeeting
+);
+meetingRouter.put(
+	'/:roomId/participants/media',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	withValidRoomId,
+	validateMuteParticipantMediaReq,
+	withRoomPermission('participantMute'),
+	meetingCtrl.muteAllParticipantsMedia
+);
+meetingRouter.put(
+	'/:roomId/participants/:participantIdentity/media',
+	withAuth(apiKeyValidator, roomMemberTokenValidator),
+	withValidRoomId,
+	validateMuteParticipantMediaReq,
+	withRoomPermission('participantMute'),
+	meetingCtrl.muteParticipantMedia
 );
 meetingRouter.put(
 	'/:roomId/participants/:participantIdentity/role',

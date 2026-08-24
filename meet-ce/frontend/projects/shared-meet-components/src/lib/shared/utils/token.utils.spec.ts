@@ -36,8 +36,12 @@ describe('decodeToken', () => {
 
 		const permissions = permissionsOf(buildToken({ roomId: 'room-1', permissions: deprecatedPermissions }));
 
+		// A key the deprecated surface cannot name is completed, not granted: `meetingRead` takes
+		// the value of the `meetingJoin` that used to gate it, `participantMute` its own default.
 		for (const key of MEET_PERMISSION_KEYS) {
-			expect(permissions[key]).withContext(key).toBe(true);
+			expect(permissions[key])
+				.withContext(key)
+				.toBe(key !== 'participantMute');
 		}
 
 		for (const key of MEET_DEPRECATED_PERMISSION_KEYS) {

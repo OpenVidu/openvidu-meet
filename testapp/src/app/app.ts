@@ -10,7 +10,13 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
-import { EmbeddedAttribute, EmbeddedEvent, EmbeddedEventName, EmbeddedEventPayloadFor } from '@openvidu-meet/typings';
+import {
+	EmbeddedAttribute,
+	EmbeddedEvent,
+	EmbeddedEventName,
+	EmbeddedEventPayloadFor,
+	MeetParticipantMuteOptions
+} from '@openvidu-meet/typings';
 import { EventLog } from './components/event-log/event-log';
 import type { OpenViduMeetElement } from './openvidu-meet-element';
 import { EventLogService } from './services/event-log';
@@ -58,9 +64,10 @@ export class App {
 	protected initialVideoActiveInput: '' | 'true' | 'false' = '';
 	protected showRecordingInput = '';
 	protected showOnlyRecordingsInput = false;
-	protected kickIdentityInput = 'test-participant-1';
+	protected participantIdentityInput = 'test-participant-1';
 	/** `''` = omitted (toggle); `'true'`/`'false'` = explicit `active` for the media commands below. */
 	protected mediaActiveInput: '' | 'true' | 'false' = '';
+	protected muteMediaInput: 'audio' | 'video' | 'screenShare' = 'audio';
 
 	// ── Applied signals (bound to the WC via Angular wrapper inputs) ────────
 	protected readonly roomUrl = signal<string | undefined>(undefined);
@@ -323,11 +330,44 @@ export class App {
 
 	protected callParticipantKick(): void {
 		if (this.integration() === 'iframe') {
-			this.iframeHost.participantKick(this.kickIdentityInput);
+			this.iframeHost.participantKick(this.participantIdentityInput);
 		} else {
-			this.meetRef()?.nativeElement.participantKick(this.kickIdentityInput);
+			this.meetRef()?.nativeElement.participantKick(this.participantIdentityInput);
 		}
-		this.log.log(`→ participantKick("${this.kickIdentityInput}")`);
+		this.log.log(`→ participantKick("${this.participantIdentityInput}")`);
+	}
+
+	protected callParticipantMute(): void {
+		const media = this.resolveMuteMedia();
+
+		if (this.integration() === 'iframe') {
+			this.iframeHost.participantMute(this.participantIdentityInput, media);
+		} else {
+			this.meetRef()?.nativeElement.participantMute(this.participantIdentityInput, media);
+		}
+
+		this.log.log(`→ participantMute("${this.participantIdentityInput}", ${JSON.stringify(media)})`);
+	}
+
+	protected callParticipantMuteAll(): void {
+		const media = this.resolveMuteMedia();
+
+		if (this.integration() === 'iframe') {
+			this.iframeHost.participantMuteAll(media);
+		} else {
+			this.meetRef()?.nativeElement.participantMuteAll(media);
+		}
+
+		this.log.log(`→ participantMuteAll(${JSON.stringify(media)})`);
+	}
+
+	/** Resolves the device selector to the one-way mute options the moderation commands carry. */
+	private resolveMuteMedia(): MeetParticipantMuteOptions {
+		if (this.muteMediaInput === 'video') return { videoActive: false };
+
+		if (this.muteMediaInput === 'screenShare') return { screenShareActive: false };
+
+		return { audioActive: false };
 	}
 
 	/** Maps a tri-state form selector (`'' | 'true' | 'false'`) to the value the WC input expects. */
@@ -403,11 +443,11 @@ export class App {
 	/** @deprecated Sends the 3.8.0 `kickParticipant` command. Removed in 3.12.0. */
 	protected callLegacyKickParticipant(): void {
 		if (this.integration() === 'iframe') {
-			this.iframeHost.legacyKickParticipant(this.kickIdentityInput);
+			this.iframeHost.legacyKickParticipant(this.participantIdentityInput);
 		} else {
-			this.meetRef()?.nativeElement.kickParticipant(this.kickIdentityInput);
+			this.meetRef()?.nativeElement.kickParticipant(this.participantIdentityInput);
 		}
-		this.log.log(`→ kickParticipant("${this.kickIdentityInput}") [deprecated]`);
+		this.log.log(`→ kickParticipant("${this.participantIdentityInput}") [deprecated]`);
 	}
 
 	// ── on / once / off API (webcomponent element only) ─────────────────────

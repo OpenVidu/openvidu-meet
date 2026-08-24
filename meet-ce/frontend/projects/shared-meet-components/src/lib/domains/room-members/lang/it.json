@@ -138,6 +138,10 @@
           "LABEL": "Può espellere i partecipanti",
           "DESCRIPTION": "Consenti di rimuovere i partecipanti dalla riunione"
         },
+        "participantMute": {
+          "LABEL": "Può silenziare i partecipanti",
+          "DESCRIPTION": "Consenti di disattivare microfono, videocamera o condivisione schermo degli altri partecipanti"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Può condividere i link di accesso",
           "DESCRIPTION": "Consenti di condividere i link di invito con altri"

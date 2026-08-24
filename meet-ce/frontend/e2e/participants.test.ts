@@ -1,5 +1,5 @@
 import { MeetRoom, MeetRoomMemberRole, MeetRoomMemberUIBadge, MeetUserRole } from '@openvidu-meet/typings';
-import { expect, test } from '@playwright/test';
+import { expect, test, type Browser } from '@playwright/test';
 import {
 	expectParticipantPanelMuted,
 	expectParticipantPanelUnmuted,
@@ -23,9 +23,11 @@ import {
 	expectKickButton,
 	expectMakeModeratorButton,
 	expectModerationControls,
+	expectMuteButton,
 	expectNoKickButton,
 	expectNoMakeModeratorButton,
 	expectNoModerationControls,
+	expectNoMuteButton,
 	expectNoParticipantBadge,
 	expectNoRemoveModeratorButton,
 	expectParticipantBadge,
@@ -35,7 +37,9 @@ import {
 	joinParticipants,
 	kickParticipant,
 	makeParticipantModerator,
-	removeParticipantModerator
+	muteParticipantMedia,
+	removeParticipantModerator,
+	type ParticipantConfig
 } from './helpers/participant-management.helper';
 
 test.describe('Participants E2E Tests', () => {
@@ -334,6 +338,142 @@ test.describe('Participants E2E Tests', () => {
 				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
 
 				await expectNoKickButton(moderatorPage, speakerId);
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+	});
+
+	// The panel is the only UI that mutes someone else, and the muted participant is never told in
+	// words — their own toolbar reading off IS the notice, so that is what every case asserts.
+	test.describe('Mute participant media (participantMute)', () => {
+		const joinModeratorAndSpeaker = (browser: Browser, speaker: Partial<ParticipantConfig> = {}) =>
+			joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER, headless: true, ...speaker }
+				]
+			});
+
+		test('should turn off a participant microphone and camera from the participants panel', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				await expectMuteButton(moderatorPage, speakerId, 'audio');
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+
+				// A device that is already off cannot be muted again, so its button goes away.
+				await expectNoMuteButton(moderatorPage, speakerId, 'audio');
+
+				await muteParticipantMedia(moderatorPage, speakerId, 'video');
+				await expect(speakerPage.locator('#camera-btn #videocam_off')).toBeVisible({ timeout: 15_000 });
+				await expectNoMuteButton(moderatorPage, speakerId, 'video');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should let the muted participant turn the microphone back on', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser);
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+
+				// A mute, not a lock: the participant keeps the permission to publish audio.
+				await toggleMicrophone(speakerPage);
+				await expect(speakerPage.locator('#mic-btn #mic')).toBeVisible({ timeout: 10_000 });
+
+				// And nothing latched — the moderator can mute the re-enabled device again.
+				await expectMuteButton(moderatorPage, speakerId, 'audio');
+				await muteParticipantMedia(moderatorPage, speakerId, 'audio');
+				await expect(speakerPage.locator('#mic-btn #mic_off')).toBeVisible({ timeout: 15_000 });
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should stop a participant screen share', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinModeratorAndSpeaker(browser, { screenShare: true });
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				const speakerPage = byName[speakerName];
+
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				await expectMuteButton(moderatorPage, speakerId, 'screenShare');
+				await muteParticipantMedia(moderatorPage, speakerId, 'screenShare');
+
+				// Muting the track alone would leave the publication — and every UI saying "sharing".
+				await expect(speakerPage.locator('.OV_screen .local')).toHaveCount(0, { timeout: 15_000 });
+				await expectNoMuteButton(moderatorPage, speakerId, 'screenShare');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should not offer the mute controls to a participant without participantMute', async ({ browser }) => {
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{
+						name: moderatorName,
+						baseRole: MeetRoomMemberRole.MODERATOR,
+						customPermissions: { participantMute: false }
+					},
+					{ name: speakerName, baseRole: MeetRoomMemberRole.SPEAKER, headless: true }
+				]
+			});
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				await toggleParticipantsPanel(moderatorPage);
+				const speakerId = await getParticipantIdByName(moderatorPage, speakerName);
+
+				// The rest of the moderation controls are still there, so the absence is the permission
+				// and not an unrendered panel item.
+				await expectKickButton(moderatorPage, speakerId);
+				await expectNoMuteButton(moderatorPage, speakerId, 'audio');
+				await expectNoMuteButton(moderatorPage, speakerId, 'video');
+			} finally {
+				await removeAllParticipants();
+			}
+		});
+
+		test('should not offer the mute controls for another moderator', async ({ browser }) => {
+			const otherModeratorName = 'Other Moderator';
+			const { byName, removeAllParticipants } = await joinParticipants(browser, {
+				roomId,
+				participants: [
+					{ name: moderatorName, baseRole: MeetRoomMemberRole.MODERATOR },
+					{ name: otherModeratorName, baseRole: MeetRoomMemberRole.MODERATOR, headless: true }
+				]
+			});
+
+			try {
+				const moderatorPage = byName[moderatorName];
+				await toggleParticipantsPanel(moderatorPage);
+				const otherModeratorId = await getParticipantIdByName(moderatorPage, otherModeratorName);
+
+				await expectParticipantBadge(moderatorPage, otherModeratorId, MeetRoomMemberUIBadge.MODERATOR);
+				await expectNoMuteButton(moderatorPage, otherModeratorId, 'audio');
+				await expectNoMuteButton(moderatorPage, otherModeratorId, 'video');
 			} finally {
 				await removeAllParticipants();
 			}

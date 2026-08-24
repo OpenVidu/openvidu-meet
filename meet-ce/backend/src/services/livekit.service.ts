@@ -168,7 +168,7 @@ export class LiveKitService {
 		try {
 			await this.lk.room.deleteRoom(roomName);
 		} catch (error) {
-			if (this.isRoomNotFoundError(error)) {
+			if (this.isNotFoundError(error)) {
 				this.logger.warn(`LiveKit room '${roomName}' not found. Skipping deletion`);
 				return;
 			}
@@ -179,10 +179,10 @@ export class LiveKitService {
 	}
 
 	/**
-	 * Whether the given error is LiveKit reporting that the room does not exist.
+	 * Whether the given error is LiveKit reporting that the addressed resource does not exist.
 	 * LiveKit's Twirp errors carry the HTTP status (404) and a twirp code ('not_found').
 	 */
-	private isRoomNotFoundError(error: unknown): boolean {
+	private isNotFoundError(error: unknown): boolean {
 		const err = error as { status?: number; code?: string } | null;
 		return err?.status === 404 || err?.code === 'not_found';
 	}
@@ -316,6 +316,39 @@ export class LiveKitService {
 		}
 	}
 
+	/**
+	 * Mutes a track a participant is publishing. LiveKit pushes the mute to the publisher's client,
+	 * so it is enforced server-side rather than being a request the participant could ignore.
+	 *
+	 * @param roomName - The name of the room where the participant is located
+	 * @param participantIdentity - The identity of the participant publishing the track
+	 * @param trackSid - The SID of the published track to mute
+	 * @throws An internal error if the track cannot be muted
+	 */
+	async mutePublishedTrack(roomName: string, participantIdentity: string, trackSid: string): Promise<void> {
+		try {
+			await this.lk.room.mutePublishedTrack(roomName, participantIdentity, trackSid, true);
+			this.logger.verbose(
+				`Muted track '${trackSid}' of participant '${participantIdentity}' in room '${roomName}'`
+			);
+		} catch (error) {
+			// A track the participant stopped publishing while the mute was in flight is already
+			// in the state the mute was asking for.
+			if (this.isNotFoundError(error)) {
+				this.logger.warn(
+					`Track '${trackSid}' of participant '${participantIdentity}' in room '${roomName}' is already gone. Skipping mute`
+				);
+				return;
+			}
+
+			this.logger.error(
+				`Error muting track '${trackSid}' of participant '${participantIdentity}' in room '${roomName}'`,
+				error
+			);
+			throw internalError(`muting track '${trackSid}' of participant '${participantIdentity}'`);
+		}
+	}
+
 	async deleteParticipant(roomName: string, participantIdentity: string): Promise<void> {
 		const participantExists = await this.participantExists(roomName, participantIdentity);
 
@@ -400,7 +433,7 @@ export class LiveKitService {
 		try {
 			await this.lk.agentDispatch.deleteDispatch(agentId, roomName);
 		} catch (error) {
-			if (this.isRoomNotFoundError(error)) {
+			if (this.isNotFoundError(error)) {
 				this.logger.debug(`Agent dispatch '${agentId}' already gone in room '${roomName}', skipping stop.`);
 				return;
 			}

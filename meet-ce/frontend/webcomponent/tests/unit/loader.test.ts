@@ -12,6 +12,8 @@ class FakeImpl extends HTMLElement {
 	meetingEnd = jest.fn();
 	meetingLeave = jest.fn();
 	participantKick = jest.fn();
+	participantMute = jest.fn();
+	participantMuteAll = jest.fn();
 	mediaToggleAudio = jest.fn();
 	mediaToggleVideo = jest.fn();
 	mediaToggleScreenShare = jest.fn();

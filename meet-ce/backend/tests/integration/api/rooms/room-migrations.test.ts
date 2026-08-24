@@ -133,7 +133,7 @@ const buildLegacyRoomV3 = (roomId: string) => ({
 
 // Current-keyed permission sets every old room must end up with after the chain reaches the current
 // version (they descend from the v2→v3 defaults, renamed and completed by v3→v4, which also fills in
-// the permissions added after the rename — `meetingRead`, inherited from `meetingJoin`).
+// the permissions added after the rename — `meetingRead`, completed from the value of `meetingJoin`).
 const expectedCurrentModeratorPermissions = {
 	recordingControl: true,
 	recordingList: true,
@@ -145,6 +145,7 @@ const expectedCurrentModeratorPermissions = {
 	roomShareAccessLinks: true,
 	participantPromote: true,
 	participantKick: true,
+	participantMute: false,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -165,6 +166,7 @@ const expectedCurrentSpeakerPermissions = {
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
+	participantMute: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,

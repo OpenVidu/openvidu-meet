@@ -159,6 +159,34 @@ export class IframeBridgeService {
 				break;
 			}
 
+			case EmbeddedCommandName.PARTICIPANT_MUTE: {
+				const payload = 'payload' in message ? message.payload : undefined;
+				const participantIdentity =
+					payload && 'participantIdentity' in payload ? payload.participantIdentity : undefined;
+				const media = payload && 'media' in payload ? payload.media : undefined;
+
+				if (!participantIdentity || !media) {
+					this.log.e('participantMute command received without a participantIdentity or media');
+					return;
+				}
+
+				await this.commandService.participantMute(participantIdentity, media);
+				break;
+			}
+
+			case EmbeddedCommandName.PARTICIPANT_MUTE_ALL: {
+				const payload = 'payload' in message ? message.payload : undefined;
+				const media = payload && 'media' in payload ? payload.media : undefined;
+
+				if (!media) {
+					this.log.e('participantMuteAll command received without media');
+					return;
+				}
+
+				await this.commandService.participantMuteAll(media);
+				break;
+			}
+
 			case EmbeddedCommandName.MEDIA_TOGGLE_AUDIO:
 				await this.commandService.mediaToggleAudio(this.extractActivePayload(message));
 				break;

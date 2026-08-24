@@ -1,5 +1,7 @@
 import type {
 	MeetMeetingEndingSoonPayload,
+	MeetParticipantMediaMutedPayload,
+	MeetParticipantMuteOptions,
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingInfo,
@@ -120,6 +122,35 @@ export class FrontendEventService {
 		const signalOptions: SendDataOptions = {
 			topic: MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
 			destinationIdentities: [participantIdentity]
+		};
+
+		await this.sendSignal(roomId, signalPayload, signalOptions);
+	}
+
+	/**
+	 * Sends a signal telling the given participants which of their devices a moderator just turned
+	 * off, so their clients can attribute the change and stop reopening a device the moderator closed.
+	 *
+	 * One signal carries every recipient: they were all told the same thing, and the destinations are
+	 * what scopes it to them.
+	 */
+	async sendParticipantMediaMutedSignal(
+		roomId: string,
+		participantIdentities: string[],
+		media: MeetParticipantMuteOptions
+	): Promise<void> {
+		this.logger.debug(
+			`Sending participant media muted signal to ${participantIdentities.length} participant(s) in room '${roomId}'`
+		);
+
+		const signalPayload: MeetParticipantMediaMutedPayload = {
+			roomId,
+			media,
+			timestamp: Date.now()
+		};
+		const signalOptions: SendDataOptions = {
+			topic: MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
+			destinationIdentities: participantIdentities
 		};
 
 		await this.sendSignal(roomId, signalPayload, signalOptions);

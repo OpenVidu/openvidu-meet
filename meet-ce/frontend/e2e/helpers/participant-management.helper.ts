@@ -1,5 +1,5 @@
 import { MeetRoomMemberRole, MeetRoomMemberUIBadge } from '@openvidu-meet/typings';
-import { Browser, chromium, expect, type BrowserContext, type Page } from '@playwright/test';
+import { Browser, chromium, expect, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { existsSync, rmSync } from 'fs';
 import path from 'path';
 import { startScreensharing } from './media-controls.helper';
@@ -409,6 +409,39 @@ export const removeParticipantModerator = async (page: Page, participantId: stri
  */
 export const kickParticipant = async (page: Page, participantId: string): Promise<void> => {
 	await page.locator(`#kick-participant-btn-${participantId}`).click({ timeout: 10_000 });
+};
+
+/** The device a moderation mute turns off. */
+export type MuteMedia = 'audio' | 'video' | 'screenShare';
+
+const MUTE_BUTTON_ID: Record<MuteMedia, string> = {
+	audio: 'mute-audio-btn',
+	video: 'mute-video-btn',
+	screenShare: 'stop-screen-share-btn'
+};
+
+const muteButton = (page: Page, participantId: string, media: MuteMedia): Locator =>
+	page.locator(`#${MUTE_BUTTON_ID[media]}-${participantId}`);
+
+/**
+ * Turns off one of a participant's devices via the participants panel moderation button.
+ */
+export const muteParticipantMedia = async (page: Page, participantId: string, media: MuteMedia): Promise<void> => {
+	await muteButton(page, participantId, media).click({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the button turning off {@link media} is available for the given participant.
+ */
+export const expectMuteButton = async (page: Page, participantId: string, media: MuteMedia): Promise<void> => {
+	await expect(muteButton(page, participantId, media)).toBeVisible({ timeout: 10_000 });
+};
+
+/**
+ * Asserts that the button turning off {@link media} is not available for the given participant.
+ */
+export const expectNoMuteButton = async (page: Page, participantId: string, media: MuteMedia): Promise<void> => {
+	await expect(muteButton(page, participantId, media)).toHaveCount(0, { timeout: 10_000 });
 };
 
 // ─── Participants panel: badge assertions ─────────────────────────────────────

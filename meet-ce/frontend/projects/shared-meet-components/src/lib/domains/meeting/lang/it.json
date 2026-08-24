@@ -205,6 +205,9 @@
 		"PROMOTE_TOOLTIP": "Promuovi a moderatore",
 		"DOWNGRADE_TOOLTIP": "Ripristina le autorizzazioni originali",
 		"KICK_TOOLTIP": "Espelli partecipante",
+		"MUTE_AUDIO_TOOLTIP": "Silenzia microfono",
+		"MUTE_VIDEO_TOOLTIP": "Spegni videocamera",
+		"STOP_SCREEN_SHARE_TOOLTIP": "Interrompi condivisione schermo",
 		"BADGE_OWNER": "Proprietario",
 		"BADGE_ADMIN": "Amministratore",
 		"BADGE_MODERATOR": "Moderatore"

@@ -1,6 +1,8 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { MeetRecordingStatus, MeetSignalType } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../../shared/services/logger.service';
+import { DataTopic } from '../../models/data-topic.model';
 import { ParticipantModel } from '../../models/participant.model';
 import { RemoteParticipant, Room, RoomEvent } from '../../services/livekit';
 import { ActionService } from '../action/action.service';
@@ -12,6 +14,106 @@ import { ParticipantService } from '../participant/participant.service';
 import { RecordingService } from '../recording/recording.service';
 import { MeetingTranslateService } from '../translate/meeting-translate.service';
 import { MeetingEventCallbacks, MeetingEventsService } from './meeting-events.service';
+
+class LoggerServiceStub {
+	get() {
+		return { d: () => {}, w: () => {}, e: () => {} };
+	}
+}
+
+describe('MeetingEventsService', () => {
+	let service: MeetingEventsService;
+	let chatService: jasmine.SpyObj<ChatService>;
+	let recordingService: jasmine.SpyObj<RecordingService>;
+	let onData: (payload: Uint8Array, participant?: unknown, kind?: unknown, topic?: string) => Promise<void>;
+
+	const storedParticipant = { sid: 'sid1', identity: 'speaker1', name: 'Speaker 1' };
+
+	function receive(topic: string, payload: object, participant?: { sid: string }): Promise<void> {
+		return onData(new TextEncoder().encode(JSON.stringify(payload)), participant, undefined, topic);
+	}
+
+	beforeEach(() => {
+		chatService = jasmine.createSpyObj<ChatService>('ChatService', ['addRemoteMessage']);
+		recordingService = jasmine.createSpyObj<RecordingService>('RecordingService', [
+			'setRecordingStarting',
+			'setRecordingStarted',
+			'setRecordingStopping',
+			'setRecordingStopped',
+			'setRecordingFailed'
+		]);
+
+		TestBed.configureTestingModule({
+			providers: [
+				provideZonelessChangeDetection(),
+				MeetingEventsService,
+				{ provide: LoggerService, useClass: LoggerServiceStub },
+				{ provide: ChatService, useValue: chatService },
+				{ provide: RecordingService, useValue: recordingService },
+				{
+					provide: ParticipantService,
+					useValue: {
+						getRemoteParticipantBySid: (sid: string) =>
+							sid === storedParticipant.sid ? storedParticipant : undefined
+					}
+				},
+				{ provide: ActionService, useValue: {} },
+				{ provide: MeetingUiConfigService, useValue: {} },
+				{ provide: MeetingLiveKitService, useValue: {} },
+				{ provide: StreamLayoutStateService, useValue: {} },
+				{ provide: MeetingTranslateService, useValue: {} }
+			]
+		});
+
+		service = TestBed.inject(MeetingEventsService);
+		const room = {
+			on(event: string, handler: (...args: never[]) => void) {
+				if (event === RoomEvent.DataReceived) onData = handler as typeof onData;
+
+				return room;
+			}
+		};
+		service.bindRoom(room as never, {
+			onRoomReconnecting: () => {},
+			onRoomReconnected: () => {},
+			onParticipantLeft: () => {}
+		});
+	});
+
+	describe('data message sender', () => {
+		const recordingUpdate = {
+			roomId: 'room1',
+			recording: { recordingId: 'rec1', status: MeetRecordingStatus.COMPLETE },
+			timestamp: 0
+		};
+
+		it('drives the recording indicator from a server-sent recording update', async () => {
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate);
+
+			expect(recordingService.setRecordingStopped).toHaveBeenCalled();
+		});
+
+		// Meet's chat is the data channel, so a participant allowed to chat can publish on any
+		// topic: the recording indicator must not be steerable by a forged packet.
+		it('ignores a recording update relayed from a participant', async () => {
+			await receive(MeetSignalType.MEET_RECORDING_UPDATED, recordingUpdate, storedParticipant);
+
+			expect(recordingService.setRecordingStopped).not.toHaveBeenCalled();
+		});
+
+		it('still delivers chat messages relayed from a known participant', async () => {
+			await receive(DataTopic.CHAT, { message: 'hello' }, storedParticipant);
+
+			expect(chatService.addRemoteMessage).toHaveBeenCalledWith('hello', 'Speaker 1');
+		});
+
+		it('discards chat messages from a participant that is not in the roster', async () => {
+			await receive(DataTopic.CHAT, { message: 'hello' }, { sid: 'unknown-sid' });
+
+			expect(chatService.addRemoteMessage).not.toHaveBeenCalled();
+		});
+	});
+});
 
 type RoomHandler = (...args: unknown[]) => void;
 

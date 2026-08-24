@@ -1,10 +1,22 @@
-import type { MeetMeetingInfo, MeetParticipantInfo } from '@openvidu-meet/typings';
+import { TrackSource } from '@livekit/protocol';
+import type { MeetMeetingInfo, MeetParticipantInfo, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
+import { MeetRoomMemberRole } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
 import type { ParticipantInfo, Room } from 'livekit-server-sdk';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetParticipantHelper } from '../helpers/participant.helper.js';
 import { MeetRoomHelper } from '../helpers/room.helper.js';
-import { errorNoActiveMeeting, errorParticipantNotFound, OpenViduMeetError } from '../models/error.model.js';
+import {
+	errorNoActiveMeeting,
+	errorParticipantCannotBeMuted,
+	errorParticipantNotFound,
+	OpenViduMeetError
+} from '../models/error.model.js';
+import { runConcurrently } from '../utils/concurrency.utils.js';
+import { FrontendEventService } from './frontend-event.service.js';
 import { LiveKitService } from './livekit.service.js';
+import { LoggerService } from './logger.service.js';
+import { RequestSessionService } from './request-session.service.js';
 import { RoomService } from './room.service.js';
 
 /**
@@ -17,8 +29,11 @@ import { RoomService } from './room.service.js';
 @injectable()
 export class MeetingService {
 	constructor(
+		@inject(LoggerService) protected logger: LoggerService,
 		@inject(LiveKitService) protected livekitService: LiveKitService,
-		@inject(RoomService) protected roomService: RoomService
+		@inject(RoomService) protected roomService: RoomService,
+		@inject(FrontendEventService) protected frontendEventService: FrontendEventService,
+		@inject(RequestSessionService) protected requestSessionService: RequestSessionService
 	) {}
 
 	/**
@@ -76,6 +91,123 @@ export class MeetingService {
 		}
 
 		return MeetParticipantHelper.toParticipantInfo(participant);
+	}
+
+	/**
+	 * Turns off some of a participant's devices in the meeting of a room.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param participantIdentity - The identity of the participant to mute
+	 * @param media - The devices to turn off
+	 * @throws A 404 error when the participant is not in the meeting, or a 409 when they are a
+	 * moderator: moderation does not apply to moderators
+	 */
+	async muteParticipant(
+		roomId: string,
+		participantIdentity: string,
+		media: MeetParticipantMuteOptions
+	): Promise<void> {
+		const participant = await this.livekitService.getParticipant(roomId, participantIdentity);
+
+		if (!this.livekitService.isStandardParticipant(participant)) {
+			throw errorParticipantNotFound(participantIdentity, roomId);
+		}
+
+		if (MeetParticipantHelper.extractRole(participant) === MeetRoomMemberRole.MODERATOR) {
+			throw errorParticipantCannotBeMuted(participantIdentity, roomId);
+		}
+
+		await this.muteParticipantTracks(roomId, participant, media);
+		await this.frontendEventService.sendParticipantMediaMutedSignal(roomId, [participant.identity], media);
+	}
+
+	/**
+	 * Turns off some of the devices of every other participant in the meeting except the moderators.
+	 * The caller is left alone: muting everyone is an action on the rest of the meeting, and their own
+	 * devices are theirs to control.
+	 *
+	 * Best-effort by nature: a participant that leaves while the mutes are in flight is reported as a
+	 * warning instead of failing the whole operation for everybody else.
+	 *
+	 * @param roomId - The ID of the room
+	 * @param media - The devices to turn off
+	 * @throws A 404 error when the room has no active meeting
+	 */
+	async muteAllParticipants(roomId: string, media: MeetParticipantMuteOptions): Promise<void> {
+		const [, participants] = await this.withActiveMeetingRoom(roomId, this.getStandardParticipants(roomId));
+		const callerIdentity = this.requestSessionService.getParticipantIdentity();
+		const targets = participants.filter(
+			(participant) =>
+				participant.identity !== callerIdentity &&
+				MeetParticipantHelper.extractRole(participant) !== MeetRoomMemberRole.MODERATOR
+		);
+		const results = await runConcurrently(
+			targets,
+			(participant) => this.muteParticipantTracks(roomId, participant, media),
+			{ concurrency: INTERNAL_CONFIG.CONCURRENCY_BULK_MUTE_PARTICIPANTS }
+		);
+		const failures = results.filter((result): result is PromiseRejectedResult => result.status === 'rejected');
+		const muted = targets
+			.filter((_participant, index) => results[index].status === 'fulfilled')
+			.map((participant) => participant.identity);
+
+		if (failures.length > 0) {
+			this.logger.warn(
+				`Failed to mute ${failures.length} participant(s) in room '${roomId}'`,
+				failures[0].reason
+			);
+		}
+
+		if (muted.length > 0) {
+			await this.frontendEventService.sendParticipantMediaMutedSignal(roomId, muted, media);
+		}
+	}
+
+	/**
+	 * Mutes the published tracks of the requested sources, resolving only once every one of them is
+	 * off — telling a participant a device was turned off is the caller's next step, and a device
+	 * still publishing must not be reported as muted. A source with no matching track is already in
+	 * the requested state, so it is not a failure.
+	 */
+	protected async muteParticipantTracks(
+		roomId: string,
+		participant: ParticipantInfo,
+		media: MeetParticipantMuteOptions
+	): Promise<void> {
+		const sources = this.mutedTrackSources(media);
+		const trackSids = participant.tracks
+			.filter((track) => !track.muted && sources.includes(track.source))
+			.map((track) => track.sid);
+		const mutes = await Promise.allSettled(
+			trackSids.map((trackSid) => this.livekitService.mutePublishedTrack(roomId, participant.identity, trackSid))
+		);
+		const failedMute = mutes.find((mute) => mute.status === 'rejected');
+
+		if (failedMute) {
+			throw failedMute.reason;
+		}
+	}
+
+	/**
+	 * The LiveKit track sources a mute request covers. Screen share includes its audio track: they
+	 * are one share for the participant, and LiveKit publishes them separately.
+	 */
+	protected mutedTrackSources(media: MeetParticipantMuteOptions): TrackSource[] {
+		const sources: TrackSource[] = [];
+
+		if (media.audioActive === false) {
+			sources.push(TrackSource.MICROPHONE);
+		}
+
+		if (media.videoActive === false) {
+			sources.push(TrackSource.CAMERA);
+		}
+
+		if (media.screenShareActive === false) {
+			sources.push(TrackSource.SCREEN_SHARE, TrackSource.SCREEN_SHARE_AUDIO);
+		}
+
+		return sources;
 	}
 
 	/**

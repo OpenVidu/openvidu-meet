@@ -37,8 +37,12 @@ paths:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}'
     /meetings/{roomId}/participants:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants'
+    /meetings/{roomId}/participants/media:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1media'
     /meetings/{roomId}/participants/{participantIdentity}:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}'
+    /meetings/{roomId}/participants/{participantIdentity}/media:
+        $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1media'
     /meetings/{roomId}/participants/{participantIdentity}/role:
         $ref: './meetings/meetings.yaml#/~1meetings~1{roomId}~1participants~1{participantIdentity}~1role'
     /recordings:

@@ -13,8 +13,11 @@ import { LoggerService } from '../../../shared/services/logger.service';
 import { EmbeddedCommandService } from './embedded-command.service';
 
 class LoggerServiceStub {
+	readonly warn = jasmine.createSpy('warn');
+	readonly error = jasmine.createSpy('error');
+
 	get() {
-		return { d: () => {}, w: () => {}, e: () => {} };
+		return { d: () => {}, w: this.warn, e: this.error };
 	}
 }
 
@@ -36,6 +39,7 @@ describe('EmbeddedCommandService', () => {
 	let liveKitService: { isSessionActive: ReturnType<typeof signal<boolean>>; disconnect: jasmine.Spy };
 	let prejoinActive: ReturnType<typeof signal<boolean>>;
 	let hasPermission: jasmine.Spy;
+	let logger: LoggerServiceStub;
 	let roomId: ReturnType<typeof signal<string | undefined>>;
 	let microphoneEnabled: ReturnType<typeof signal<boolean>>;
 	let cameraEnabled: ReturnType<typeof signal<boolean>>;
@@ -45,10 +49,14 @@ describe('EmbeddedCommandService', () => {
 	beforeEach(() => {
 		moderationService = jasmine.createSpyObj<MeetingModerationService>('MeetingModerationService', [
 			'endMeeting',
-			'kickParticipant'
+			'kickParticipant',
+			'muteParticipant',
+			'muteAllParticipants'
 		]);
 		moderationService.endMeeting.and.resolveTo();
 		moderationService.kickParticipant.and.resolveTo();
+		moderationService.muteParticipant.and.resolveTo();
+		moderationService.muteAllParticipants.and.resolveTo();
 
 		mediaControlService = jasmine.createSpyObj<LocalMediaControlService>('LocalMediaControlService', [
 			'setMicrophoneEnabled',
@@ -96,6 +104,7 @@ describe('EmbeddedCommandService', () => {
 		});
 
 		service = TestBed.inject(EmbeddedCommandService);
+		logger = TestBed.inject(LoggerService) as unknown as LoggerServiceStub;
 	});
 
 	describe('phase gating', () => {
@@ -160,6 +169,14 @@ describe('EmbeddedCommandService', () => {
 			expect(moderationService.kickParticipant).not.toHaveBeenCalled();
 		});
 
+		it('rejects participantMute with no active session', async () => {
+			liveKitService.isSessionActive.set(false);
+
+			await service.participantMute(IDENTITY, { audioActive: false });
+
+			expect(moderationService.muteParticipant).not.toHaveBeenCalled();
+		});
+
 		it('rejects meetingLeave with no active session (disconnect would be a no-op anyway)', async () => {
 			liveKitService.isSessionActive.set(false);
 
@@ -189,6 +206,16 @@ describe('EmbeddedCommandService', () => {
 			await service.meetingEnd();
 			expect(moderationService.endMeeting).not.toHaveBeenCalled();
 		});
+
+		// There is no public event telling the host a command did nothing, so this warning is
+		// currently the only diagnostic available for a rejected command.
+		it('logs a warning when a command is rejected for the meeting phase', async () => {
+			liveKitService.isSessionActive.set(false);
+
+			await service.meetingEnd();
+
+			expect(logger.warn).toHaveBeenCalledWith('meetingEnd rejected: not available in the current meeting phase');
+		});
 	});
 
 	describe('permission gating', () => {
@@ -208,6 +235,22 @@ describe('EmbeddedCommandService', () => {
 
 			expect(hasPermission).toHaveBeenCalledWith('participantKick');
 			expect(moderationService.kickParticipant).not.toHaveBeenCalled();
+		});
+
+		it('rejects participantMute without the participantMute permission', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.participantMute(IDENTITY, { audioActive: false });
+
+			expect(hasPermission).toHaveBeenCalledWith('participantMute');
+			expect(moderationService.muteParticipant).not.toHaveBeenCalled();
+		});
+
+		it('gates participantMuteAll on the same participantMute permission', async () => {
+			await service.participantMuteAll({ videoActive: false });
+
+			expect(hasPermission).toHaveBeenCalledWith('participantMute');
+			expect(moderationService.muteAllParticipants).toHaveBeenCalledOnceWith(ROOM_ID, { videoActive: false });
 		});
 
 		it('rejects mediaToggleAudio without the mediaPublishAudio permission', async () => {
@@ -245,6 +288,18 @@ describe('EmbeddedCommandService', () => {
 			expect(hasPermission).not.toHaveBeenCalled();
 			expect(liveKitService.disconnect).toHaveBeenCalledTimes(1);
 		});
+
+		// There is no public event telling the host a command did nothing, so this warning is
+		// currently the only diagnostic available for a rejected command.
+		it('logs a warning when a command is rejected for lack of permission', async () => {
+			hasPermission.and.returnValue(false);
+
+			await service.mediaToggleAudio(false);
+
+			expect(logger.warn).toHaveBeenCalledWith(
+				"mediaToggleAudio rejected: local participant lacks the 'mediaPublishAudio' permission"
+			);
+		});
 	});
 
 	describe('command actions', () => {
@@ -272,6 +327,16 @@ describe('EmbeddedCommandService', () => {
 			await service.participantKick('');
 
 			expect(moderationService.kickParticipant).not.toHaveBeenCalled();
+		});
+
+		// A third rejection path, inside the action itself rather than run()'s own guards, logs the
+		// same way — there is no rejection a host-side developer cannot at least see in the console.
+		it('logs a warning when participantKick is rejected without a participant identity', async () => {
+			await service.participantKick('');
+
+			expect(logger.warn).toHaveBeenCalledWith(
+				'participantKick() called without a participant identity or room id'
+			);
 		});
 
 		it('mediaToggleAudio passes an explicit active flag through', async () => {

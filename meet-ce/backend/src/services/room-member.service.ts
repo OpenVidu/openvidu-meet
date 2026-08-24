@@ -940,6 +940,7 @@ export class RoomMemberService {
 			roomShareAccessLinks: true,
 			participantPromote: true,
 			participantKick: true,
+			participantMute: true,
 			meetingEnd: true,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -965,6 +966,7 @@ export class RoomMemberService {
 			roomShareAccessLinks: false,
 			participantPromote: false,
 			participantKick: false,
+			participantMute: false,
 			meetingEnd: false,
 			mediaPublishVideo: false,
 			mediaPublishAudio: false,
@@ -1239,7 +1241,11 @@ export class RoomMemberService {
 			// touch it); normalize here so a later demotion restores the current keys instead of feeding
 			// deprecated-keyed permissions back into grants and metadata.
 			...(parsed.originalPermissions
-				? { originalPermissions: normalizePermissions(parsed.originalPermissions) as MeetRoomMemberPermissions }
+				? {
+						originalPermissions: normalizePermissions(parsed.originalPermissions, {
+							complete: true
+						}) as MeetRoomMemberPermissions
+					}
 				: {})
 		};
 	}

@@ -402,6 +402,14 @@ export const errorParticipantCannotBeDemotedFromModerator = (
 	);
 };
 
+export const errorParticipantCannotBeMuted = (participantIdentity: string, roomId: string): OpenViduMeetError => {
+	return new OpenViduMeetError(
+		'Participant Error',
+		`Participant '${participantIdentity}' in room '${roomId}' cannot be muted because they are a moderator`,
+		409
+	);
+};
+
 // AI Assistant errors
 
 export const errorAiAssistantAlreadyStarting = (roomId: string): OpenViduMeetError => {

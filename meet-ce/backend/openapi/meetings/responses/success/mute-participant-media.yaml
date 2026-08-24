@@ -1,0 +1,9 @@
+description: Successfully muted the participant's devices
+content:
+    application/json:
+        schema:
+            type: object
+            properties:
+                message:
+                    type: string
+                    example: Media of participant 'Alice' muted in meeting in room 'room-123'

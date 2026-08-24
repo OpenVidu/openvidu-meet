@@ -138,6 +138,10 @@
           "LABEL": "Can kick participants",
           "DESCRIPTION": "Allow removing participants from the meeting"
         },
+        "participantMute": {
+          "LABEL": "Can mute participants",
+          "DESCRIPTION": "Allow turning off other participants' microphone, camera or screen share"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Can share access links",
           "DESCRIPTION": "Allow sharing invite links with others"

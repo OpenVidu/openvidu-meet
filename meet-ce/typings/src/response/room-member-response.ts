@@ -26,6 +26,7 @@ export const MEET_ROOM_MEMBER_PERMISSIONS_FIELDS = [
 	'roomShareAccessLinks',
 	'participantPromote',
 	'participantKick',
+	'participantMute',
 	'meetingEnd',
 	'mediaPublishVideo',
 	'mediaPublishAudio',

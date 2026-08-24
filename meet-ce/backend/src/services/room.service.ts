@@ -114,6 +114,7 @@ export class RoomService {
 			roomShareAccessLinks: true,
 			participantPromote: true,
 			participantKick: true,
+			participantMute: true,
 			meetingEnd: true,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -136,6 +137,7 @@ export class RoomService {
 			roomShareAccessLinks: false,
 			participantPromote: false,
 			participantKick: false,
+			participantMute: false,
 			meetingEnd: false,
 			mediaPublishVideo: true,
 			mediaPublishAudio: true,
@@ -377,8 +379,7 @@ export class RoomService {
 
 		if (updatedUserAccessEnabled !== previousUserAccessEnabled) {
 			await this.recordingService.updateRoomRecordingsAccessScopeMetadata(roomId, {
-				roomUserAccess:
-					updatedRoom.access.user.enabled && updatedRoom.roles.speaker.permissions.recordingList
+				roomUserAccess: updatedRoom.access.user.enabled && updatedRoom.roles.speaker.permissions.recordingList
 			});
 		}
 

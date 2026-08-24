@@ -1,5 +1,6 @@
 import { MeetRecordingInfo } from './database/recording.entity.js';
 import { MeetRoomConfig } from './database/room-config.js';
+import { MeetParticipantMuteOptions } from './request/meeting-request.js';
 import { MeetRoomMemberUIBadge } from './response/room-member-response.js';
 
 /**
@@ -14,6 +15,8 @@ export enum MeetSignalType {
 	MEET_PARTICIPANT_ROLE_UPDATED = 'meet_participant_role_updated',
 	/** Emitted when a participant must regenerate their room member token to sync updated permissions */
 	MEET_PARTICIPANT_PERMISSIONS_UPDATED = 'meet_participant_permissions_updated',
+	/** Emitted when a moderator turns off a participant's microphone, camera or screen share */
+	MEET_PARTICIPANT_MEDIA_MUTED = 'meet_participant_media_muted',
 	/** Emitted once per meeting when a duration-limited meeting is about to reach its limit and be force-ended */
 	MEET_MEETING_ENDING_SOON = 'meet_meeting_ending_soon'
 }
@@ -73,6 +76,24 @@ export interface MeetParticipantPermissionsUpdatedPayload {
 }
 
 /**
+ * Payload for MEET_PARTICIPANT_MEDIA_MUTED signal, telling the affected participants which of their
+ * devices a moderator just turned off. The signal is addressed to exactly those participants, so
+ * the payload names the devices and not who they belong to.
+ *
+ * The mute itself travels through LiveKit, which stops the tracks on its own; this signal is what
+ * lets the client attribute the change to a moderator and stop asking for a device the moderator
+ * closed.
+ */
+export interface MeetParticipantMediaMutedPayload {
+	/** ID of the room where the participants were muted */
+	roomId: string;
+	/** The devices that were turned off */
+	media: MeetParticipantMuteOptions;
+	/** Timestamp in milliseconds when the mute occurred */
+	timestamp: number;
+}
+
+/**
  * Payload for MEET_MEETING_ENDING_SOON signal,
  * warning every participant that the meeting is about to reach its duration limit
  * (`maxDurationMinutes`) and will be ended for everyone.
@@ -93,12 +114,14 @@ export interface MeetingChatSignalPayload {
 /**
  * Union type representing the payload of a MeetSignal.
  * It can be either a {@link MeetRecordingUpdatedPayload}, {@link MeetRoomConfigUpdatedPayload},
- * {@link MeetParticipantRoleUpdatedPayload}, {@link MeetParticipantPermissionsUpdatedPayload}
- * or {@link MeetMeetingEndingSoonPayload}, depending on the signal type.
+ * {@link MeetParticipantRoleUpdatedPayload}, {@link MeetParticipantPermissionsUpdatedPayload},
+ * {@link MeetParticipantMediaMutedPayload} or {@link MeetMeetingEndingSoonPayload}, depending on the
+ * signal type.
  */
 export type MeetSignalPayload =
 	| MeetRecordingUpdatedPayload
 	| MeetRoomConfigUpdatedPayload
 	| MeetParticipantRoleUpdatedPayload
 	| MeetParticipantPermissionsUpdatedPayload
+	| MeetParticipantMediaMutedPayload
 	| MeetMeetingEndingSoonPayload;

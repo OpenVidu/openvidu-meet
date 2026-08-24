@@ -138,6 +138,10 @@
           "LABEL": "Kann Teilnehmer entfernen",
           "DESCRIPTION": "Erlaubt das Entfernen von Teilnehmern aus dem Meeting"
         },
+        "participantMute": {
+          "LABEL": "Kann Teilnehmer stummschalten",
+          "DESCRIPTION": "Erlaubt das Ausschalten von Mikrofon, Kamera oder Bildschirmfreigabe anderer Teilnehmer"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Kann Zugangslinks teilen",
           "DESCRIPTION": "Erlaubt das Teilen von Einladungslinks mit anderen"

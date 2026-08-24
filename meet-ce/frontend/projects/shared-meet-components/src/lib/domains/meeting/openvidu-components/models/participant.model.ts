@@ -131,6 +131,9 @@ export interface ParticipantDisplayProperties {
 	showMakeModeratorButton: boolean;
 	showUnmakeModeratorButton: boolean;
 	showKickButton: boolean;
+	showMuteAudioButton: boolean;
+	showMuteVideoButton: boolean;
+	showStopScreenShareButton: boolean;
 }
 
 /**

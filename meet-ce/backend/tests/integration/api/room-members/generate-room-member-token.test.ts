@@ -52,6 +52,7 @@ const allPermissions: MeetRoomMemberPermissions = {
 	roomShareAccessLinks: true,
 	participantPromote: true,
 	participantKick: true,
+	participantMute: true,
 	meetingEnd: true,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -72,6 +73,7 @@ const recordingReadOnlyPermissions: MeetRoomMemberPermissions = {
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
+	participantMute: false,
 	meetingEnd: false,
 	mediaPublishVideo: false,
 	mediaPublishAudio: false,
@@ -92,6 +94,7 @@ const noPermissions: MeetRoomMemberPermissions = {
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
+	participantMute: false,
 	meetingEnd: false,
 	mediaPublishVideo: false,
 	mediaPublishAudio: false,
@@ -542,6 +545,7 @@ describe('Room Members API Tests', () => {
 					roomShareAccessLinks: true,
 					participantPromote: true,
 					participantKick: true,
+					participantMute: true,
 					meetingEnd: true
 				}
 			});

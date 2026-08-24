@@ -10,6 +10,7 @@ properties:
                 example:
                     recordingControl: false
                     participantKick: false
+                    participantMute: false
                 description: |
                     Partial permissions object for the moderator role.
                     Only specify the permissions you want to override from the default or previously configured moderator permissions.

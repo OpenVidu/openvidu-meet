@@ -2,7 +2,7 @@ import { Component, computed, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MeetParticipantModerationAction } from '@openvidu-meet/typings';
+import { MeetParticipantModerationAction, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RoomMemberUiUtils } from '../../../room-members/utils/ui';
 import { OpenViduComponentsUiModule, ParticipantDisplayProperties, ParticipantModel } from '../../openvidu-components';
@@ -11,8 +11,8 @@ import { MeetingModerationService } from '../../services/meeting-moderation.serv
 import { LoggerService } from '../../../../shared/services/logger.service';
 
 /**
- * Renders a single participant panel item — the role badge and the moderation controls
- * (make/unmake moderator, kick) — for one participant.
+ * Renders a single participant panel item — the role badge and the moderation controls —
+ * for one participant.
  */
 @Component({
 	selector: 'ov-meeting-participant-item-content',
@@ -44,7 +44,10 @@ export class MeetingParticipantItemContentComponent {
 			showModerationControls: false,
 			showMakeModeratorButton: false,
 			showUnmakeModeratorButton: false,
-			showKickButton: false
+			showKickButton: false,
+			showMuteAudioButton: false,
+			showMuteVideoButton: false,
+			showStopScreenShareButton: false
 		};
 
 		// Moderation controls are only shown for remote participants, never for the current user.
@@ -54,9 +57,10 @@ export class MeetingParticipantItemContentComponent {
 
 		const canMakeModerator = this.roomMemberContextService.hasPermission('participantPromote');
 		const canKickParticipants = this.roomMemberContextService.hasPermission('participantKick');
+		const canMuteParticipants = this.roomMemberContextService.hasPermission('participantMute');
 
 		// If the user doesn't have any moderation permissions, no need to compute further.
-		if (!canMakeModerator && !canKickParticipants) {
+		if (!canMakeModerator && !canKickParticipants && !canMuteParticipants) {
 			return displayProperties;
 		}
 
@@ -72,11 +76,22 @@ export class MeetingParticipantItemContentComponent {
 			displayProperties.showKickButton = canKickParticipants && !hasBadge;
 		}
 
+		// A device is only mutable while it is on, and a moderator is muted by nobody but themselves —
+		// the same rule the API enforces.
+		const canMuteThisParticipant = canMuteParticipants && !hasBadge;
+
+		displayProperties.showMuteAudioButton = canMuteThisParticipant && participant.isMicrophoneEnabled;
+		displayProperties.showMuteVideoButton = canMuteThisParticipant && participant.isCameraEnabled;
+		displayProperties.showStopScreenShareButton = canMuteThisParticipant && participant.isScreenShareEnabled;
+
 		// Show the moderation controls container if any of the buttons should be shown.
 		displayProperties.showModerationControls =
 			displayProperties.showMakeModeratorButton ||
 			displayProperties.showUnmakeModeratorButton ||
-			displayProperties.showKickButton;
+			displayProperties.showKickButton ||
+			displayProperties.showMuteAudioButton ||
+			displayProperties.showMuteVideoButton ||
+			displayProperties.showStopScreenShareButton;
 		return displayProperties;
 	});
 
@@ -121,6 +136,36 @@ export class MeetingParticipantItemContentComponent {
 			this.log.d('Moderator unassigned successfully');
 		} catch (error) {
 			this.log.e('Error unassigning moderator:', error);
+		}
+	}
+
+	onMuteAudioClick(): Promise<void> {
+		return this.muteParticipant({ audioActive: false });
+	}
+
+	onMuteVideoClick(): Promise<void> {
+		return this.muteParticipant({ videoActive: false });
+	}
+
+	onStopScreenShareClick(): Promise<void> {
+		return this.muteParticipant({ screenShareActive: false });
+	}
+
+	protected async muteParticipant(media: MeetParticipantMuteOptions): Promise<void> {
+		if (!this.roomMemberContextService.hasPermission('participantMute')) return;
+
+		const roomId = this.meetingContextService.roomId();
+
+		if (!roomId) {
+			this.log.e('Cannot mute participant: room ID is undefined');
+			return;
+		}
+
+		try {
+			await this.meetingModerationService.muteParticipant(roomId, this.participant().identity, media);
+			this.log.d('Participant muted successfully');
+		} catch (error) {
+			this.log.e('Error muting participant:', error);
 		}
 	}
 

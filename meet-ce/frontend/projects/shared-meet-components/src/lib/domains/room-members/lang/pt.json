@@ -138,6 +138,10 @@
           "LABEL": "Pode expulsar participantes",
           "DESCRIPTION": "Permitir remover participantes da reunião"
         },
+        "participantMute": {
+          "LABEL": "Pode silenciar participantes",
+          "DESCRIPTION": "Permitir desligar o microfone, a câmara ou a partilha de ecrã de outros participantes"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Pode compartilhar links de acesso",
           "DESCRIPTION": "Permitir compartilhar links de convite com outras pessoas"

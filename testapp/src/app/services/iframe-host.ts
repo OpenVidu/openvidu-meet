@@ -1,5 +1,10 @@
 import { Injectable } from '@angular/core';
-import { EmbeddedCommandName, EmbeddedCommand, EmbeddedEvent } from '@openvidu-meet/typings';
+import {
+	EmbeddedCommandName,
+	EmbeddedCommand,
+	EmbeddedEvent,
+	MeetParticipantMuteOptions
+} from '@openvidu-meet/typings';
 
 /** Receives a lifecycle event object posted by the embedded iframe. */
 export type IframeLifecycleHandler = (event: EmbeddedEvent) => void;
@@ -11,8 +16,8 @@ export type IframeLifecycleHandler = (event: EmbeddedEvent) => void;
  *
  * - validates that inbound events come from the iframe's origin;
  * - relays `joined/left/closed` to the caller;
- * - sends `meetingEnd/meetingLeave/participantKick` commands (and their deprecated
- *   3.8.0 spellings, so both wire formats stay exercised).
+ * - sends `meetingEnd/meetingLeave/participantKick/participantMute` commands (and the
+ *   deprecated 3.8.0 spellings, so both wire formats stay exercised).
  *
  * The embedded app resolves the trusted host origin on its own (from
  * `ancestorOrigins`/`referrer`), so no `READY`/`INITIALIZE` handshake is needed.
@@ -70,6 +75,14 @@ export class IframeHostService {
 
 	participantKick(participantIdentity: string): void {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_KICK, payload: { participantIdentity } });
+	}
+
+	participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_MUTE, payload: { participantIdentity, media } });
+	}
+
+	participantMuteAll(media: MeetParticipantMuteOptions): void {
+		this.post({ command: EmbeddedCommandName.PARTICIPANT_MUTE_ALL, payload: { media } });
 	}
 
 	mediaToggleAudio(active?: boolean): void {

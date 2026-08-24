@@ -57,8 +57,10 @@ properties:
         description: >
             Can read the live state of the meeting (its info and the participants currently in it)
             without necessarily joining it. Introduced after the deprecated spellings were frozen, so
-            it has none of its own; when omitted from a request it takes the value of `meetingJoin`,
-            which gated this capability before the permission existed.
+            it has none of its own; it is independent of every other permission — a complete
+            permission set that omits it takes the value of `meetingJoin` (which gated this
+            capability before the permission existed), and a partial update that omits it leaves it
+            untouched.
     roomShareAccessLinks:
         type: boolean
         example: false
@@ -71,6 +73,14 @@ properties:
         type: boolean
         example: false
         description: Can remove other participants from the meeting.
+    participantMute:
+        type: boolean
+        example: false
+        description: >
+            Can turn off another participant's microphone, camera or screen share. The affected participant
+            may turn the device back on. Introduced after the deprecated spellings were frozen, so it has none
+            of its own; it is independent of every other permission, and a request that sends a complete
+            permission set without it is read as `false`.
     meetingEnd:
         type: boolean
         example: false

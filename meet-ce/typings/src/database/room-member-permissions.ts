@@ -57,6 +57,16 @@ export interface MeetRoomMemberPermissions {
 	 */
 	participantKick: boolean;
 	/**
+	 * Can turn off another participant's microphone, camera or screen share in the meeting. The
+	 * affected participant may turn the device back on: this mutes, it does not revoke
+	 * `mediaPublishAudio`/`mediaPublishVideo`/`mediaShareScreen`.
+	 *
+	 * Introduced after the rename, so it has no deprecated `can*` spelling (see
+	 * {@link MEET_UNALIASED_PERMISSION_KEYS}). Independent of every other permission: when a complete
+	 * input omits it, it is `false`.
+	 */
+	participantMute: boolean;
+	/**
 	 * Can end the meeting for all participants.
 	 */
 	meetingEnd: boolean;
@@ -207,6 +217,35 @@ export const MEET_PERMISSION_ALIASES = {
 >;
 
 /**
+ * What each key introduced after the rename completes to when a **complete** input omits it: either
+ * the value of another permission, or a literal.
+ *
+ * Those keys are missing from everything issued before they shipped: tokens of meetings in progress,
+ * stored documents awaiting their migration, requests from clients built against the previous
+ * contract, and every input that spells its permissions the deprecated way. Rejecting those (the
+ * schemas require a complete set) would interrupt live meetings and break integrations over a
+ * permission they cannot even name yet.
+ *
+ * These are starting values, not implications: every permission is independent of every other, an
+ * explicit value always wins, and a patch over stored permissions receives none of them — an absent
+ * key there means "not touched", and writing one would change a permission the caller never
+ * mentioned.
+ *
+ * - `meetingRead` ← the value of `meetingJoin`, which gated the live meeting reads before this key
+ *   existed, so a complete input that cannot name it keeps behaving as it did. An operator grants
+ *   the two apart by naming both (observe without entering, or enter without observing).
+ * - `participantMute` ← `false`: a moderation capability nothing hands out unasked. Deliberately
+ *   not derived from `participantKick` — removing someone from a meeting and silencing their
+ *   microphone are different powers, and a deployment that granted one never decided on the other.
+ */
+const UNALIASED_PERMISSION_DEFAULTS = {
+	meetingRead: 'meetingJoin',
+	participantMute: false
+} as const satisfies Readonly<
+	Partial<Record<keyof MeetRoomMemberPermissions, keyof MeetRoomMemberPermissions | boolean>>
+>;
+
+/**
  * Permission keys that have **no** deprecated `can*` spelling, because they were introduced after
  * the rename froze that surface. They are part of the contract like any other key, they simply never
  * appear in {@link MEET_PERMISSION_ALIASES}, in a compatibility-mode response or in a request that
@@ -215,13 +254,13 @@ export const MEET_PERMISSION_ALIASES = {
  * The deprecated set stays frozen at its 14 keys until 3.12.0: a capability that did not exist in
  * 3.8.0 never gets a `can*` name invented for it. Every permission added from now on belongs here.
  *
- * Each entry documents how a caller that omits it is treated (there is no "unset" permission — the
- * effective value must always be a boolean); `meetingRead` inherits `meetingJoin`, the flag that
- * gated live introspection before it was split out.
+ * There is no "unset" permission — the effective value must always be a boolean — so every key here
+ * declares in {@link UNALIASED_PERMISSION_DEFAULTS} what it completes to when a complete input omits
+ * it.
  */
-export const MEET_UNALIASED_PERMISSION_KEYS = [
-	'meetingRead'
-] as const satisfies readonly (keyof MeetRoomMemberPermissions)[];
+export const MEET_UNALIASED_PERMISSION_KEYS = Object.keys(
+	UNALIASED_PERMISSION_DEFAULTS
+) as readonly (keyof typeof UNALIASED_PERMISSION_DEFAULTS)[];
 
 /**
  * A deprecated (`can*`) permission key, replaced by its current `moduleAbility` key(s).
@@ -331,13 +370,21 @@ export interface MeetPermissionAliasConflict {
  * Rewrites a permission object to the current keys, dropping anything that is neither a known key
  * nor a boolean. Deprecated keys are applied first, so an explicit current key always wins over its
  * alias — callers that must reject a contradiction should run {@link findPermissionAliasConflicts}
- * first. Finally the keys introduced after the rename inherit their documented source when they are
- * absent (see {@link applyUnaliasedPermissionDefaults}).
+ * first.
+ *
+ * When the caller asks for a `complete` set, the post-rename keys the input omitted are then filled
+ * from {@link UNALIASED_PERMISSION_DEFAULTS}. A patch over stored permissions receives no defaults —
+ * an absent key there means "not touched", and writing one would change a permission the caller
+ * never mentioned.
  *
  * @param input - A permission object with deprecated keys, current keys, or a mix of both
+ * @param options - `complete` also fills the defaults, for a caller producing a whole set
  * @returns The same permissions under the current keys
  */
-export function normalizePermissions(input: MeetPermissionsInput): Partial<Record<MeetPermissionKey, boolean>> {
+export function normalizePermissions(
+	input: MeetPermissionsInput,
+	options: { complete?: boolean } = {}
+): Partial<Record<MeetPermissionKey, boolean>> {
 	const record = input as Readonly<Record<string, unknown>>;
 	const normalized: Partial<Record<MeetPermissionKey, boolean>> = {};
 
@@ -361,28 +408,34 @@ export function normalizePermissions(input: MeetPermissionsInput): Partial<Recor
 		}
 	}
 
-	applyUnaliasedPermissionDefaults(normalized);
+	applyUnaliasedPermissionDefaults(normalized, options.complete === true);
 	return normalized;
 }
 
 /**
- * Fills in the keys of {@link MEET_UNALIASED_PERMISSION_KEYS} that the input did not carry, from the
- * permission that used to govern the same capability. Mutates the object it is given.
- *
- * These keys did not exist in 3.8.0, so they are missing from everything issued before they shipped:
- * tokens of meetings in progress, stored documents awaiting their migration, requests from clients
- * built against the previous contract, and every input that spells its permissions the deprecated
- * way. Rejecting those (the schemas require a complete set) would interrupt live meetings and break
- * integrations over a permission they cannot even name yet, and defaulting them to `false` would
- * silently revoke access that already worked. Inheriting keeps behaviour identical until someone
- * sets the new key explicitly, which is the only way to make the two diverge.
- *
- * - `meetingRead` ← `meetingJoin`: reading the live meeting state used to be gated by the permission
- *   to join it, so whoever could join keeps observing and whoever could not, still cannot.
+ * Fills the keys of {@link MEET_UNALIASED_PERMISSION_KEYS} a complete input did not carry, from
+ * {@link UNALIASED_PERMISSION_DEFAULTS}. A patch receives none. Mutates the object it is given.
  */
-function applyUnaliasedPermissionDefaults(permissions: Partial<Record<MeetPermissionKey, boolean>>): void {
-	if (typeof permissions.meetingRead !== 'boolean' && typeof permissions.meetingJoin === 'boolean') {
-		permissions.meetingRead = permissions.meetingJoin;
+function applyUnaliasedPermissionDefaults(
+	permissions: Partial<Record<MeetPermissionKey, boolean>>,
+	complete: boolean
+): void {
+	if (!complete) {
+		return;
+	}
+
+	const entries = Object.entries(UNALIASED_PERMISSION_DEFAULTS) as [MeetPermissionKey, MeetPermissionKey | boolean][];
+
+	for (const [permissionKey, resolution] of entries) {
+		if (typeof permissions[permissionKey] === 'boolean') {
+			continue;
+		}
+
+		const value = typeof resolution === 'boolean' ? resolution : permissions[resolution];
+
+		if (typeof value === 'boolean') {
+			permissions[permissionKey] = value;
+		}
 	}
 }
 

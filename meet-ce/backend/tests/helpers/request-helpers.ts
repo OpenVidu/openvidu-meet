@@ -3,6 +3,7 @@ import {
 	MeetAppearanceConfig,
 	MeetAssistantCapabilityName,
 	MeetParticipantModerationAction,
+	MeetParticipantMuteOptions,
 	MeetPermissionsInput,
 	MeetRecordingEncodingOptions,
 	MeetRecordingEncodingPreset,
@@ -906,6 +907,50 @@ export const updateParticipant = async (
 		)
 		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
 		.send({ action });
+	return response;
+};
+
+export const muteParticipantMedia = async (
+	roomId: string,
+	participantIdentity: string,
+	media: MeetParticipantMuteOptions,
+	roomMemberToken: string
+) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.put(
+			getFullPath(
+				`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}/media`
+			)
+		)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		.send(media);
+	return response;
+};
+
+export const muteAllParticipantsMedia = async (
+	roomId: string,
+	media: MeetParticipantMuteOptions,
+	roomMemberToken: string
+) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.put(getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/media`))
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken)
+		.send(media);
+	return response;
+};
+
+export const getMeetingParticipant = async (roomId: string, participantIdentity: string, roomMemberToken: string) => {
+	checkAppIsRunning();
+
+	const response = await request(app)
+		.get(
+			getFullPath(`${INTERNAL_CONFIG.API_BASE_PATH_V1}/meetings/${roomId}/participants/${participantIdentity}`)
+		)
+		.set(INTERNAL_CONFIG.ROOM_MEMBER_TOKEN_HEADER, roomMemberToken);
 	return response;
 };
 

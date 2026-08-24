@@ -34,6 +34,7 @@ const fullCurrentInput = {
 	roomShareAccessLinks: false,
 	participantPromote: false,
 	participantKick: false,
+	participantMute: false,
 	meetingEnd: false,
 	mediaPublishVideo: true,
 	mediaPublishAudio: true,
@@ -218,5 +219,13 @@ describe('Permissions introduced after the rename', () => {
 		const result = PartialMeetPermissionsSchema.safeParse({ chatWrite: false });
 		expect(result.success).toBe(true);
 		expect(result.data).toEqual({ chatWrite: false });
+	});
+
+	// The two permissions are independent: a patch naming only meetingJoin must not rewrite a stored
+	// meetingRead the caller never mentioned.
+	it('should not rewrite meetingRead when a partial update mentions meetingJoin', () => {
+		const result = PartialMeetPermissionsSchema.safeParse({ meetingJoin: true });
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual({ meetingJoin: true });
 	});
 });

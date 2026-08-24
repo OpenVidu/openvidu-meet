@@ -1,3 +1,5 @@
+import { MeetParticipantMuteOptions } from '../request/meeting-request.js';
+
 /**
  * All available commands that can be sent to the embedded OpenVidu Meet application.
  *
@@ -21,6 +23,18 @@ export enum EmbeddedCommandName {
 	 * @moderator
 	 */
 	PARTICIPANT_KICK = 'participantKick',
+	/**
+	 * Turns off a participant's microphone, camera or screen share. The participant may turn the
+	 * device back on.
+	 * @moderator
+	 */
+	PARTICIPANT_MUTE = 'participantMute',
+	/**
+	 * Turns off the microphone, camera or screen share of every participant except the moderators.
+	 * Each participant may turn their devices back on.
+	 * @moderator
+	 */
+	PARTICIPANT_MUTE_ALL = 'participantMuteAll',
 	/**
 	 * Toggles the local participant's microphone, or sets it when `active` is provided.
 	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
@@ -76,6 +90,19 @@ export interface EmbeddedCommandPayloads {
 	 */
 	[EmbeddedCommandName.PARTICIPANT_KICK]: {
 		participantIdentity: string;
+	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_MUTE} command.
+	 */
+	[EmbeddedCommandName.PARTICIPANT_MUTE]: {
+		participantIdentity: string;
+		media: MeetParticipantMuteOptions;
+	};
+	/**
+	 * Payload for the {@link EmbeddedCommandName.PARTICIPANT_MUTE_ALL} command.
+	 */
+	[EmbeddedCommandName.PARTICIPANT_MUTE_ALL]: {
+		media: MeetParticipantMuteOptions;
 	};
 	/**
 	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO} command.
@@ -184,6 +211,26 @@ export interface EmbeddedParticipantKickCommand {
 }
 
 /**
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_MUTE}: the command name plus its payload,
+ * derived from {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantMuteCommand {
+	command: EmbeddedCommandName.PARTICIPANT_MUTE;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_MUTE>;
+}
+
+/**
+ * Command message for {@link EmbeddedCommandName.PARTICIPANT_MUTE_ALL}: the command name plus its
+ * payload, derived from {@link EmbeddedCommandPayloadFor}.
+ * @category Communication
+ */
+export interface EmbeddedParticipantMuteAllCommand {
+	command: EmbeddedCommandName.PARTICIPANT_MUTE_ALL;
+	payload: EmbeddedCommandPayloadFor<EmbeddedCommandName.PARTICIPANT_MUTE_ALL>;
+}
+
+/**
  * Command message for {@link EmbeddedCommandName.END_MEETING} (no payload).
  * @category Communication
  * @deprecated Use {@link EmbeddedMeetingEndCommand}. Removed in 3.12.0.
@@ -252,6 +299,8 @@ export type EmbeddedCommand =
 	| EmbeddedMeetingLeaveCommand
 	| EmbeddedMeetingEndCommand
 	| EmbeddedParticipantKickCommand
+	| EmbeddedParticipantMuteCommand
+	| EmbeddedParticipantMuteAllCommand
 	| EmbeddedMediaToggleAudioCommand
 	| EmbeddedMediaToggleVideoCommand
 	| EmbeddedMediaToggleScreenShareCommand

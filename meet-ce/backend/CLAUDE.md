@@ -91,10 +91,13 @@ the more obvious `applyFieldFilters` helper, so don't assume that one already co
   grants or denies all three at once. That's why `recording.middleware.ts` checks three things where
   it used to check one, and why `GET /recordings/{recordingId}/download` is a new endpoint: it used to
   share `/media` with playback, and the server had no way to tell "play" from "download" apart there.
-- **The database already stores the new names** — two migrations (`room` v3→v4, `roomMember` v1→v2)
+- **The database already stores the new names** — migrations (`room` v3→v4, `roomMember` v1→v2)
   rewrote existing data. If you add a new permission, add it to `MEET_PERMISSION_KEYS` too: Mongoose
   silently drops any key it doesn't recognize, so a missed entry means the permission quietly reads as
-  `false` instead of raising an error.
+  `false` instead of raising an error. It also needs a migration **step of its own** (`room` v4→v5,
+  `roomMember` v2→v3 for `participantMute`) that re-runs the same permission normalization: documents
+  already at the previous version are up to date as far as the runner is concerned, so extending the
+  previous step would never reach them.
 - **Login tokens carry permissions too.** Renaming a permission doesn't invalidate tokens already
   issued — that would kick everyone out of an ongoing meeting — so decoding a token normalizes old
   names to new ones instead, in **both** modes (`MeetTokenPermissionsSchema`): tokens are our own

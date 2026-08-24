@@ -6,13 +6,15 @@ import {
 	endMeetingCommand,
 	eventLocator,
 	expectEvent,
+	joinedParticipantIdentity,
 	leaveMeeting,
 	leaveRoomCommand,
 	mediaToggleAudioCommand,
 	mediaToggleScreenShareCommand,
 	mediaToggleVideoCommand,
 	openMeeting,
-	openMeetingAtMediaSetup
+	openMeetingAtMediaSetup,
+	participantMuteCommand
 } from '../helpers/testapp.helper';
 
 // Events carry the same names/payloads regardless of transport; run every spec
@@ -400,6 +402,51 @@ for (const integration of INTEGRATIONS) {
 
 				await leaveMeeting(speakerPage, { role: 'speaker' });
 				await speakerContext.close();
+			});
+
+			// A moderator mute is the only change a participant is told about that they did not make,
+			// and the only source of an origin other than `participant`. It stays a LOCAL event: it
+			// describes the muted participant's own devices, so neither the moderator who acted nor a
+			// third participant hears about it.
+			test('should attribute a moderator mute to the moderator and tell only the muted participant', async ({
+				page,
+				browser
+			}) => {
+				await openMeeting(page, roomId, { integration, role: 'speaker', name: 'Muted' });
+				const mutedIdentity = await joinedParticipantIdentity(page);
+
+				const bystanderContext = await browser.newContext();
+				const bystanderPage = await bystanderContext.newPage();
+				await openMeeting(bystanderPage, roomId, { role: 'speaker', name: 'Bystander' });
+				await expectEvent(bystanderPage, EmbeddedEventName.JOINED);
+
+				const moderatorContext = await browser.newContext();
+				const moderatorPage = await moderatorContext.newPage();
+				await openMeeting(moderatorPage, roomId, { role: 'moderator' });
+				await expectEvent(moderatorPage, EmbeddedEventName.JOINED);
+
+				await participantMuteCommand(moderatorPage, mutedIdentity, 'audio');
+				await participantMuteCommand(moderatorPage, mutedIdentity, 'video');
+
+				const audioStatus = await expectEvent(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED, {
+					timeout: 15_000
+				});
+				await expect(audioStatus).toContainText('"active":false');
+				await expect(audioStatus).toContainText(MeetEventOrigin.MODERATOR);
+
+				const videoStatus = await expectEvent(page, EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED, {
+					timeout: 15_000
+				});
+				await expect(videoStatus).toContainText('"active":false');
+				await expect(videoStatus).toContainText(MeetEventOrigin.MODERATOR);
+
+				for (const otherPage of [moderatorPage, bystanderPage]) {
+					await expect(eventLocator(otherPage, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED)).toHaveCount(0);
+					await expect(eventLocator(otherPage, EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED)).toHaveCount(0);
+				}
+
+				await moderatorContext.close();
+				await bystanderContext.close();
 			});
 		});
 

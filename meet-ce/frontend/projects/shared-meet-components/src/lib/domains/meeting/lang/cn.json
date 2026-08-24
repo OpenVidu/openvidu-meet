@@ -205,6 +205,9 @@
 		"PROMOTE_TOOLTIP": "提升为主持人",
 		"DOWNGRADE_TOOLTIP": "降级为原始权限",
 		"KICK_TOOLTIP": "踢出参与者",
+		"MUTE_AUDIO_TOOLTIP": "静音麦克风",
+		"MUTE_VIDEO_TOOLTIP": "关闭摄像头",
+		"STOP_SCREEN_SHARE_TOOLTIP": "停止屏幕共享",
 		"BADGE_OWNER": "所有者",
 		"BADGE_ADMIN": "管理员",
 		"BADGE_MODERATOR": "主持人"

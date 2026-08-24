@@ -9,8 +9,95 @@ class WebComponentDocGenerator {
         // Single source of truth for the embedding API: the documented enums in the
         // shared typings package (attributes.ts / commands.ts / events.ts).
         this.typingsPath = path.join(__dirname, '../meet-ce/typings/src/embedded');
+        // Where payload type names (interfaces, enums) are resolved from.
+        this.typingsRoot = path.join(__dirname, '../meet-ce/typings/src');
+        this.typeIndex = null;
         // Identifiers left out of the tables (private or deprecated), reported at the end.
         this.excluded = [];
+    }
+
+    /**
+     * Indexes the flat exported interfaces and the string enums of the typings package by name,
+     * rendered inline ("{ a?: false; b: string }" / "'x' | 'y'"). An interface whose body still
+     * contains braces after comment stripping is not indexed: a reference to it must fail the
+     * generation rather than render truncated.
+     */
+    getTypeIndex() {
+        if (this.typeIndex) return this.typeIndex;
+
+        this.typeIndex = new Map();
+
+        for (const file of this.collectTypingsFiles(this.typingsRoot)) {
+            const content = fs.readFileSync(file, 'utf8')
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/\/\/.*$/gm, '');
+
+            for (const match of content.matchAll(/export interface (\w+)(?:\s+extends\s+[^{]+)?\s*{([^{}]*)}/g)) {
+                const [, name, body] = match;
+                const props = [...body.matchAll(/(\w+\??)\s*:\s*([^;\n]+)/g)]
+                    .map(([, key, type]) => `${key}: ${type.trim()}`);
+
+                if (props.length > 0) this.typeIndex.set(name, `{ ${props.join('; ')} }`);
+            }
+
+            for (const match of content.matchAll(/export enum (\w+)\s*{([^}]*)}/g)) {
+                const [, name, body] = match;
+                const values = [...body.matchAll(/=\s*'([^']+)'/g)].map(([, value]) => `'${value}'`);
+
+                if (values.length > 0) this.typeIndex.set(name, values.join(' | '));
+            }
+        }
+
+        return this.typeIndex;
+    }
+
+    collectTypingsFiles(dir) {
+        return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+            const fullPath = path.join(dir, entry.name);
+            if (entry.isDirectory()) return this.collectTypingsFiles(fullPath);
+            return entry.name.endsWith('.ts') ? [fullPath] : [];
+        });
+    }
+
+    /**
+     * Replaces every type name in `type` with its inline shape from the typings, recursively
+     * (an interface may reference an enum). A name that is neither a primitive nor resolvable
+     * aborts the generation: the published reference must never show a type it does not define.
+     * Union pipes are escaped because every rendering lands in a markdown table cell.
+     */
+    resolveTypeNames(type, context) {
+        const PRIMITIVES = new Set([
+            'string', 'number', 'boolean', 'true', 'false', 'void', 'null', 'undefined', 'any', 'unknown', 'object'
+        ]);
+        const index = this.getTypeIndex();
+        const seen = new Set();
+        let resolved = type;
+        let changed = true;
+
+        while (changed) {
+            changed = false;
+            resolved = resolved.replace(/\b[A-Za-z_]\w*\b/g, (name) => {
+                if (PRIMITIVES.has(name) || seen.has(name) || !index.has(name)) return name;
+
+                seen.add(name);
+                changed = true;
+                return index.get(name);
+            });
+        }
+
+        const unquoted = resolved.replace(/'[^']*'/g, '');
+        const unresolved = [...new Set(
+            [...unquoted.matchAll(/\b([A-Z]\w*)\b/g)].map((match) => match[1]).filter((name) => !PRIMITIVES.has(name))
+        )];
+
+        if (unresolved.length > 0) {
+            throw new Error(
+                `Cannot render '${context}': type name(s) ${unresolved.join(', ')} are not defined in the ` +
+                'generated reference and could not be resolved from the typings sources'
+            );
+        }
+
+        return resolved.replace(/\|/g, '\\|');
     }
 
     /**
@@ -372,7 +459,7 @@ class WebComponentDocGenerator {
                 .filter(prop => prop)
                 .map(prop => {
                     const [key, value] = prop.split(':').map(s => s.trim());
-                    return `"${key}": "${value}"`;
+                    return `"${key}": "${this.resolveTypeNames(value, key)}"`;
                 });
 
             if (properties.length > 0) {
@@ -384,7 +471,7 @@ class WebComponentDocGenerator {
             }
         }
 
-        return `\`${type}\``;
+        return `\`${this.resolveTypeNames(type, type)}\``;
     }
 
     /**
@@ -409,14 +496,14 @@ class WebComponentDocGenerator {
                 .filter(prop => prop && !prop.startsWith('//') && !prop.startsWith('/*'))
                 .map(prop => {
                     const [key, value] = prop.split(':').map(s => s.trim());
-                    return `• \`${key}\`: ${value}`;
+                    return value ? `• \`${key}\`: \`${this.resolveTypeNames(value, key)}\`` : undefined;
                 })
-                .filter(param => param && !param.includes('undefined')); // Remove malformed parameters
+                .filter(param => param); // Remove malformed parameters
 
             return properties.length > 0 ? properties.join('<br>') : 'object';
         }
 
-        return type;
+        return `\`${this.resolveTypeNames(type, type)}\``;
     }
 
     /**

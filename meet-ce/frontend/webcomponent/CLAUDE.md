@@ -65,6 +65,8 @@ events are re-dispatched on the outer element.
   outputs from a single switch on the canonical name, and the iframe bridge posts a second
   `postMessage` under the deprecated name via `deprecatedEmbeddedEventAliasOf()` from the typings.
 - **Methods**: `meetingEnd()`, `meetingLeave()`, `participantKick(identity)`,
+  `participantMute(identity, media)`, `participantMuteAll(media)` (moderation is one-way: `media`
+  only accepts `false` values, e.g. `{audioActive: false}`, and never applies to a moderator),
   `mediaToggleAudio(active?)`, `mediaToggleVideo(active?)`, `mediaToggleScreenShare(active?)`
   (omitted = toggle), and the convenience listener API `on()` / `once()` / `off()` added in
   `src/app/custom-element/wrapper.ts`. Every command runs through `EmbeddedCommandService.run()`,

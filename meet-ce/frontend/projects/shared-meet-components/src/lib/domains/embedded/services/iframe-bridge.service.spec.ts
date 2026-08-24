@@ -37,6 +37,8 @@ describe('IframeBridgeService', () => {
 			'meetingEnd',
 			'meetingLeave',
 			'participantKick',
+			'participantMute',
+			'participantMuteAll',
 			'mediaToggleAudio',
 			'mediaToggleVideo',
 			'mediaToggleScreenShare'
@@ -44,6 +46,8 @@ describe('IframeBridgeService', () => {
 		commandService.meetingEnd.and.resolveTo();
 		commandService.meetingLeave.and.resolveTo();
 		commandService.participantKick.and.resolveTo();
+		commandService.participantMute.and.resolveTo();
+		commandService.participantMuteAll.and.resolveTo();
 		commandService.mediaToggleAudio.and.resolveTo();
 		commandService.mediaToggleVideo.and.resolveTo();
 		commandService.mediaToggleScreenShare.and.resolveTo();
@@ -200,6 +204,74 @@ describe('IframeBridgeService', () => {
 			postFromHost({ command: EmbeddedCommandName.PARTICIPANT_KICK, payload: { participantIdentity: '' } });
 
 			expect(commandService.participantKick).not.toHaveBeenCalled();
+		});
+
+		describe('participant mute commands', () => {
+			it('forwards PARTICIPANT_MUTE with the participant identity and the media', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE,
+					payload: { participantIdentity: IDENTITY, media: { audioActive: false } }
+				});
+
+				expect(commandService.participantMute).toHaveBeenCalledOnceWith(IDENTITY, { audioActive: false });
+			});
+
+			it('ignores PARTICIPANT_MUTE without a participant identity', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE,
+					payload: { media: { audioActive: false } }
+				});
+
+				expect(commandService.participantMute).not.toHaveBeenCalled();
+			});
+
+			it('ignores PARTICIPANT_MUTE with an empty participant identity', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE,
+					payload: { participantIdentity: '', media: { audioActive: false } }
+				});
+
+				expect(commandService.participantMute).not.toHaveBeenCalled();
+			});
+
+			it('ignores PARTICIPANT_MUTE without media', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE,
+					payload: { participantIdentity: IDENTITY }
+				});
+
+				expect(commandService.participantMute).not.toHaveBeenCalled();
+			});
+
+			it('forwards PARTICIPANT_MUTE_ALL with the media', () => {
+				startBridge();
+
+				postFromHost({
+					command: EmbeddedCommandName.PARTICIPANT_MUTE_ALL,
+					payload: { media: { audioActive: false, videoActive: false } }
+				});
+
+				expect(commandService.participantMuteAll).toHaveBeenCalledOnceWith({
+					audioActive: false,
+					videoActive: false
+				});
+			});
+
+			it('ignores PARTICIPANT_MUTE_ALL without media', () => {
+				startBridge();
+
+				postFromHost({ command: EmbeddedCommandName.PARTICIPANT_MUTE_ALL });
+
+				expect(commandService.participantMuteAll).not.toHaveBeenCalled();
+			});
 		});
 
 		// The bridge forwards without gating; phase and permission are enforced by EmbeddedCommandService.

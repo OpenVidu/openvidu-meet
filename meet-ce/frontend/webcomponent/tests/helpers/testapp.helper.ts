@@ -284,10 +284,40 @@ export const endMeetingCommand = async (page: Page): Promise<void> => {
 	await page.getByTestId('btn-end-meeting').click();
 };
 
+/** Sets the participant identity every command addressing one participant reads from. */
+const fillParticipantIdentity = async (page: Page, participantIdentity: string): Promise<void> => {
+	await page.getByTestId('input-participant-identity').fill(participantIdentity);
+};
+
 /** Fills the participant identity and clicks the testapp's `kickParticipant()` button. */
 export const kickParticipantCommand = async (page: Page, participantIdentity: string): Promise<void> => {
-	await page.getByTestId('input-kick-identity').fill(participantIdentity);
+	await fillParticipantIdentity(page, participantIdentity);
 	await page.getByTestId('btn-kick-participant').click();
+};
+
+/** The device a moderation mute turns off. */
+export type MuteMedia = 'audio' | 'video' | 'screenShare';
+
+/** Sets the shared device selector the two moderation-mute buttons below read from. */
+const selectMuteMedia = async (page: Page, media: MuteMedia): Promise<void> => {
+	await page.getByTestId('select-mute-media').selectOption(media);
+};
+
+/** Fills the participant identity, picks the device and clicks the testapp's `participantMute()` button. */
+export const participantMuteCommand = async (
+	page: Page,
+	participantIdentity: string,
+	media: MuteMedia
+): Promise<void> => {
+	await fillParticipantIdentity(page, participantIdentity);
+	await selectMuteMedia(page, media);
+	await page.getByTestId('btn-participant-mute').click();
+};
+
+/** Picks the device and clicks the testapp's `participantMuteAll()` button. */
+export const participantMuteAllCommand = async (page: Page, media: MuteMedia): Promise<void> => {
+	await selectMuteMedia(page, media);
+	await page.getByTestId('btn-participant-mute-all').click();
 };
 
 /** Sets the shared `active` selector the three media-toggle buttons below read from. */
@@ -325,7 +355,7 @@ export const endMeetingLegacyCommand = async (page: Page): Promise<void> => {
 
 /** Fills the participant identity and clicks the testapp's deprecated `kickParticipant()` button. Removed in 3.12.0. */
 export const kickParticipantLegacyCommand = async (page: Page, participantIdentity: string): Promise<void> => {
-	await page.getByTestId('input-kick-identity').fill(participantIdentity);
+	await page.getByTestId('input-participant-identity').fill(participantIdentity);
 	await page.getByTestId('btn-legacy-kick-participant').click();
 };
 
@@ -356,6 +386,22 @@ export const expectEvent = async (
 	const locator = eventLocator(page, eventName);
 	await expect(locator).toHaveCount(count, { timeout });
 	return locator;
+};
+
+/**
+ * Reads the participant identity out of the page's `joined` event marker — the value the moderation
+ * commands address a participant by, which is derived from the display name rather than equal to it.
+ */
+export const joinedParticipantIdentity = async (page: Page): Promise<string> => {
+	const joined = await expectEvent(page, EmbeddedEventName.JOINED);
+	const payload = (await joined.textContent()) ?? '';
+	const identity = payload.match(/"participantIdentity"\s*:\s*"([^"]+)"/)?.[1];
+
+	if (!identity) {
+		throw new Error(`No participantIdentity in the joined event payload: ${payload}`);
+	}
+
+	return identity;
 };
 
 /**

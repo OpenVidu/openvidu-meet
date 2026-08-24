@@ -1,5 +1,5 @@
 import { inject, Service } from '@angular/core';
-import { EmbeddedCommandName, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import { EmbeddedCommandName, MeetParticipantMuteOptions, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import {
 	LocalMediaControlService,
 	LocalMediaStateService,
@@ -60,6 +60,32 @@ export class EmbeddedCommandService {
 			}
 
 			await this.meetingModerationService.kickParticipant(roomId, participantIdentity);
+		});
+	}
+
+	async participantMute(participantIdentity: string, media: MeetParticipantMuteOptions): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_MUTE, 'participantMute', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!participantIdentity || !roomId) {
+				this.log.w('participantMute() called without a participant identity or room id');
+				return;
+			}
+
+			await this.meetingModerationService.muteParticipant(roomId, participantIdentity, media);
+		});
+	}
+
+	async participantMuteAll(media: MeetParticipantMuteOptions): Promise<void> {
+		await this.run(EmbeddedCommandName.PARTICIPANT_MUTE_ALL, 'participantMute', async () => {
+			const roomId = this.meetingContextService.roomId();
+
+			if (!roomId) {
+				this.log.w('participantMuteAll() called but room id is undefined');
+				return;
+			}
+
+			await this.meetingModerationService.muteAllParticipants(roomId, media);
 		});
 	}
 

@@ -205,6 +205,9 @@
 		"PROMOTE_TOOLTIP": "Promoveren tot moderator",
 		"DOWNGRADE_TOOLTIP": "Terugzetten naar oorspronkelijke rechten",
 		"KICK_TOOLTIP": "Deelnemer verwijderen",
+		"MUTE_AUDIO_TOOLTIP": "Microfoon dempen",
+		"MUTE_VIDEO_TOOLTIP": "Camera uitschakelen",
+		"STOP_SCREEN_SHARE_TOOLTIP": "Schermdeling stoppen",
 		"BADGE_OWNER": "Eigenaar",
 		"BADGE_ADMIN": "Beheerder",
 		"BADGE_MODERATOR": "Moderator"

@@ -2,7 +2,9 @@ import { Injectable, effect, inject, untracked } from '@angular/core';
 import {
 	EmbeddedEventName,
 	LeftEventReason,
+	MeetEventOrigin,
 	MeetMeetingEndingSoonPayload,
+	MeetParticipantMediaMutedPayload,
 	MeetParticipantPermissionsUpdatedPayload,
 	MeetParticipantRoleUpdatedPayload,
 	MeetRecordingStatus,
@@ -32,6 +34,7 @@ import type {
 	Room
 } from '../openvidu-components';
 import {
+	LocalMediaControlService,
 	LocalMediaIntentService,
 	LocalMediaStateService,
 	ParticipantLeftReason,
@@ -64,6 +67,7 @@ export class MeetingEventHandlerService {
 	protected runtimeConfigService = inject(RuntimeConfigService);
 	protected translateService = inject(TranslateService);
 	protected localMediaState = inject(LocalMediaStateService);
+	protected localMediaControl = inject(LocalMediaControlService);
 	protected mediaIntent = inject(LocalMediaIntentService);
 
 	// Shown longer than the 3s default: this warning is the only notice before the meeting ends
@@ -82,16 +86,23 @@ export class MeetingEventHandlerService {
 	setupRoomListeners(room: Room): void {
 		room.on(
 			RoomEvent.DataReceived,
-			async (payload: Uint8Array, _participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
+			async (payload: Uint8Array, participant?: RemoteParticipant, _kind?: DataPacket_Kind, topic?: string) => {
 				// Only process topics that this handler is responsible for
 				const relevantTopics: string[] = [
 					MeetSignalType.MEET_RECORDING_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_ROLE_UPDATED,
 					MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED,
+					MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED,
 					MeetSignalType.MEET_MEETING_ENDING_SOON
 				];
 
 				if (!topic || !relevantTopics.includes(topic)) {
+					return;
+				}
+
+				// These signals carry moderation authority, so only the server may send them: a packet
+				// relayed from a participant arrives with that participant, one sent by the server does not.
+				if (participant) {
 					return;
 				}
 
@@ -112,6 +123,12 @@ export class MeetingEventHandlerService {
 						case MeetSignalType.MEET_PARTICIPANT_PERMISSIONS_UPDATED: {
 							const permissionsUpdateEvent = event as MeetParticipantPermissionsUpdatedPayload;
 							await this.handleParticipantPermissionsUpdated(permissionsUpdateEvent);
+							break;
+						}
+
+						case MeetSignalType.MEET_PARTICIPANT_MEDIA_MUTED: {
+							const mediaMutedEvent = event as MeetParticipantMediaMutedPayload;
+							await this.handleParticipantMediaMuted(mediaMutedEvent);
 							break;
 						}
 
@@ -157,14 +174,10 @@ export class MeetingEventHandlerService {
 		const camera = this.localMediaState.cameraEnabled();
 		const screenShare = this.localMediaState.screenShareEnabled();
 
-		if (!this.runtimeConfigService.isEmbeddedMode()) {
-			return;
-		}
-
 		untracked(() => {
 			this.notifyMediaStatus(Track.Source.Microphone, microphone, this.mediaIntent.microphoneEnabled());
 			this.notifyMediaStatus(Track.Source.Camera, camera, this.mediaIntent.cameraEnabled());
-			// Nobody can stop someone else's screen share.
+			// A screen share has no intent to disagree with: it is on exactly while its track is published.
 			this.notifyMediaStatus(Track.Source.ScreenShare, screenShare);
 		});
 	});
@@ -178,10 +191,18 @@ export class MeetingEventHandlerService {
 	 * @param source The media source (microphone, camera, screen share)
 	 * @param live The current state of the media source (enabled/disabled)
 	 * @param intended The intended state of the media source (enabled/disabled). Defaults to `live` if not provided.
+	 * @param origin Who caused the change. Defaults to the local participant acting on themselves.
 	 * @returns
 	 */
-	protected notifyMediaStatus(source: Track.Source, live: boolean, intended: boolean = live): void {
-		const event = toMediaStatusChangedEvent(source, live);
+	protected notifyMediaStatus(
+		source: Track.Source,
+		live: boolean,
+		intended: boolean = live,
+		origin: MeetEventOrigin = MeetEventOrigin.PARTICIPANT
+	): void {
+		if (!this.runtimeConfigService.isEmbeddedMode()) return;
+
+		const event = toMediaStatusChangedEvent(source, live, origin);
 
 		if (!event) return;
 
@@ -198,6 +219,47 @@ export class MeetingEventHandlerService {
 		if (previous === live) return;
 
 		this.eventBus.emit(event);
+	}
+
+	/**
+	 * Reacts to a moderator turning off the local participant's devices: attributes the change to the
+	 * moderator and turns each device off through the same control service the participant's own
+	 * toggles go through, so the intent deciding whether the next track reopens a device keeps a
+	 * single writer. LiveKit's mute leaves a screen-share publication in place, so only that path
+	 * actually stops a share.
+	 *
+	 * The host is notified before the local state is touched: the status effect then sees no
+	 * transition left to report and cannot attribute it to the participant.
+	 *
+	 * Each device settles independently: LiveKit has already muted every requested track
+	 * server-side, so one failing control (e.g. a microphone re-acquire error) must not keep the
+	 * other devices from latching their intent off.
+	 */
+	protected async handleParticipantMediaMuted({ media }: MeetParticipantMediaMutedPayload): Promise<void> {
+		const controls: Promise<void>[] = [];
+
+		if (media.audioActive === false) {
+			this.notifyMediaStatus(Track.Source.Microphone, false, false, MeetEventOrigin.MODERATOR);
+			controls.push(this.localMediaControl.setMicrophoneEnabled(false));
+		}
+
+		if (media.videoActive === false) {
+			this.notifyMediaStatus(Track.Source.Camera, false, false, MeetEventOrigin.MODERATOR);
+			controls.push(this.localMediaControl.setCameraEnabled(false));
+		}
+
+		if (media.screenShareActive === false) {
+			this.notifyMediaStatus(Track.Source.ScreenShare, false, false, MeetEventOrigin.MODERATOR);
+			controls.push(this.localMediaControl.setScreenShareEnabled(false));
+		}
+
+		const results = await Promise.allSettled(controls);
+
+		for (const result of results) {
+			if (result.status === 'rejected') {
+				console.warn('A device could not be turned off after a moderator mute', result.reason);
+			}
+		}
 	}
 
 	/**

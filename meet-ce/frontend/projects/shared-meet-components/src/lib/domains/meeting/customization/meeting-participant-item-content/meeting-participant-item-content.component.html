@@ -53,6 +53,45 @@
 					</button>
 				}
 
+				<!-- Mute Microphone Button -->
+				@if (ctx.showMuteAudioButton) {
+					<button
+						mat-icon-button
+						(click)="onMuteAudioClick()"
+						[matTooltip]="'PARTICIPANT_ITEM.MUTE_AUDIO_TOOLTIP' | translate"
+						class="mute-audio-btn"
+						[attr.id]="'mute-audio-btn-' + participant().sid"
+					>
+						<mat-icon class="material-symbols-outlined">mic_off</mat-icon>
+					</button>
+				}
+
+				<!-- Turn Off Camera Button -->
+				@if (ctx.showMuteVideoButton) {
+					<button
+						mat-icon-button
+						(click)="onMuteVideoClick()"
+						[matTooltip]="'PARTICIPANT_ITEM.MUTE_VIDEO_TOOLTIP' | translate"
+						class="mute-video-btn"
+						[attr.id]="'mute-video-btn-' + participant().sid"
+					>
+						<mat-icon class="material-symbols-outlined">videocam_off</mat-icon>
+					</button>
+				}
+
+				<!-- Stop Screen Share Button -->
+				@if (ctx.showStopScreenShareButton) {
+					<button
+						mat-icon-button
+						(click)="onStopScreenShareClick()"
+						[matTooltip]="'PARTICIPANT_ITEM.STOP_SCREEN_SHARE_TOOLTIP' | translate"
+						class="stop-screen-share-btn"
+						[attr.id]="'stop-screen-share-btn-' + participant().sid"
+					>
+						<mat-icon class="material-symbols-outlined">stop_screen_share</mat-icon>
+					</button>
+				}
+
 				<!-- Kick Participant Button -->
 				@if (ctx.showKickButton) {
 					<button

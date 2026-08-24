@@ -138,6 +138,10 @@
           "LABEL": "Peut expulser des participants",
           "DESCRIPTION": "Autoriser à retirer des participants de la réunion"
         },
+        "participantMute": {
+          "LABEL": "Peut couper le micro des participants",
+          "DESCRIPTION": "Autoriser à couper le microphone, la caméra ou le partage d'écran des autres participants"
+        },
         "roomShareAccessLinks": {
           "LABEL": "Peut partager des liens d'accès",
           "DESCRIPTION": "Autoriser à partager des liens d'invitation avec d'autres personnes"
