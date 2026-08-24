@@ -6,17 +6,17 @@ describe('toMediaStatusChangedEvent', () => {
 	it('should map each notified track source to its media status event', () => {
 		expect(toMediaStatusChangedEvent(Track.Source.Microphone, true)).toEqual({
 			event: EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED,
-			payload: { enabled: true, origin: MeetEventOrigin.PARTICIPANT }
+			payload: { active: true, origin: MeetEventOrigin.PARTICIPANT }
 		});
 
 		expect(toMediaStatusChangedEvent(Track.Source.Camera, false)).toEqual({
 			event: EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED,
-			payload: { enabled: false, origin: MeetEventOrigin.PARTICIPANT }
+			payload: { active: false, origin: MeetEventOrigin.PARTICIPANT }
 		});
 
 		expect(toMediaStatusChangedEvent(Track.Source.ScreenShare, true)).toEqual({
 			event: EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED,
-			payload: { enabled: true, origin: MeetEventOrigin.PARTICIPANT }
+			payload: { active: true, origin: MeetEventOrigin.PARTICIPANT }
 		});
 	});
 
@@ -30,7 +30,7 @@ describe('toMediaStatusChangedEvent', () => {
 
 		expect(embeddedEvent).toEqual({
 			event: EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED,
-			payload: { enabled: false, origin: MeetEventOrigin.MODERATOR }
+			payload: { active: false, origin: MeetEventOrigin.MODERATOR }
 		});
 	});
 });

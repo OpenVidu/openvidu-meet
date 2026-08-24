@@ -76,11 +76,11 @@
 				</label>
 			</div>
 			<div class="ta-field">
-				<label for="initialAudioEnabled">initialAudioEnabled</label>
+				<label for="initialAudioActive">initialAudioActive</label>
 				<select
-					id="initialAudioEnabled"
-					data-testid="select-initialAudioEnabled"
-					[(ngModel)]="initialAudioEnabledInput"
+					id="initialAudioActive"
+					data-testid="select-initialAudioActive"
+					[(ngModel)]="initialAudioActiveInput"
 				>
 					<option value="">omitted (room default)</option>
 					<option value="true">true</option>
@@ -88,11 +88,11 @@
 				</select>
 			</div>
 			<div class="ta-field">
-				<label for="initialVideoEnabled">initialVideoEnabled</label>
+				<label for="initialVideoActive">initialVideoActive</label>
 				<select
-					id="initialVideoEnabled"
-					data-testid="select-initialVideoEnabled"
-					[(ngModel)]="initialVideoEnabledInput"
+					id="initialVideoActive"
+					data-testid="select-initialVideoActive"
+					[(ngModel)]="initialVideoActiveInput"
 				>
 					<option value="">omitted (room default)</option>
 					<option value="true">true</option>
@@ -128,8 +128,8 @@
 				</button>
 			</div>
 			<div class="ta-field">
-				<label for="mediaEnabled">enabled</label>
-				<select id="mediaEnabled" data-testid="select-media-enabled" [(ngModel)]="mediaEnabledInput">
+				<label for="mediaActive">active</label>
+				<select id="mediaActive" data-testid="select-media-active" [(ngModel)]="mediaActiveInput">
 					<option value="">omitted (toggle)</option>
 					<option value="true">true</option>
 					<option value="false">false</option>
@@ -214,8 +214,8 @@
 			[participantName]="participantName()"
 			[participantExternalId]="participantExternalId()"
 			[participantMetadata]="participantMetadata()"
-			[initialAudioEnabled]="initialAudioEnabled()"
-			[initialVideoEnabled]="initialVideoEnabled()"
+			[initialAudioActive]="initialAudioActive()"
+			[initialVideoActive]="initialVideoActive()"
 			[e2eeKey]="e2eeKey()"
 			[leaveRedirectUrl]="leaveRedirectUrl()"
 			[showOnlyRecordings]="showOnlyRecordings()"

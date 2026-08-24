@@ -28,25 +28,25 @@ export enum EmbeddedAttribute {
 	 */
 	PARTICIPANT_METADATA = 'participant-metadata',
 	/**
-	 * Join the meeting with the microphone enabled. This is the participant's initial state only:
+	 * Join the meeting with the microphone active. This is the participant's initial state only:
 	 * they may mute afterwards.
 	 *
 	 * Setting it — to either value — **takes precedence over the room's own
-	 * `config.initialAudioEnabled`**; leaving it out means "no opinion", so the room's value applies
+	 * `config.initialAudioActive`**; leaving it out means "no opinion", so the room's value applies
 	 * (and `true` when the room has none either). The `mediaPublishAudio` permission is not part of
 	 * that chain: it is a capability, and a denial always wins.
 	 */
-	INITIAL_AUDIO_ENABLED = 'initial-audio-enabled',
+	INITIAL_AUDIO_ACTIVE = 'initial-audio-active',
 	/**
-	 * Join the meeting with the camera enabled. This is the participant's initial state only: they
-	 * may disable it afterwards.
+	 * Join the meeting with the camera active. This is the participant's initial state only: they
+	 * may deactivate it afterwards.
 	 *
 	 * Setting it — to either value — **takes precedence over the room's own
-	 * `config.initialVideoEnabled`**; leaving it out means "no opinion", so the room's value applies
+	 * `config.initialVideoActive`**; leaving it out means "no opinion", so the room's value applies
 	 * (and `true` when the room has none either). The `mediaPublishVideo` permission is not part of
 	 * that chain: it is a capability, and a denial always wins.
 	 */
-	INITIAL_VIDEO_ENABLED = 'initial-video-enabled',
+	INITIAL_VIDEO_ACTIVE = 'initial-video-active',
 	/**
 	 * Secret key for end-to-end encryption (E2EE).
 	 * If provided, the participant will join the meeting using E2EE key.
@@ -83,10 +83,10 @@ export interface WebComponentPropertyValues {
 	participantExternalId?: string;
 	/** Opaque application-defined payload for the local participant (JSON recommended, ≤ 2 KB). Never interpreted by Meet. */
 	participantMetadata?: string;
-	/** Initial microphone state (they may unmute later). Set: wins over `config.initialAudioEnabled`; omitted: the room decides. */
-	initialAudioEnabled?: boolean;
-	/** Initial camera state (they may enable it later). Set: wins over `config.initialVideoEnabled`; omitted: the room decides. */
-	initialVideoEnabled?: boolean;
+	/** Initial microphone state (they may unmute later). Set: wins over `config.initialAudioActive`; omitted: the room decides. */
+	initialAudioActive?: boolean;
+	/** Initial camera state (they may activate it later). Set: wins over `config.initialVideoActive`; omitted: the room decides. */
+	initialVideoActive?: boolean;
 	/** Secret key for end-to-end encryption (E2EE). When provided the participant joins using E2EE. */
 	e2eeKey?: string;
 	/** URL to redirect to after the `CLOSED` event fires when leaving OpenVidu Meet. */

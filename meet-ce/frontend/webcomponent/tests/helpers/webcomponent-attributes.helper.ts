@@ -61,10 +61,10 @@ export const openWebcomponentWithAttributes = async (
 	}
 
 	// Tri-state in the form ('' = attribute omitted): omitting it and setting it to `true` are
-	// different requests, and only the latter outranks the room's own `config.initial*Enabled` default.
+	// different requests, and only the latter outranks the room's own `config.initial*Active` default.
 	const TRI_STATE_TESTIDS: ReadonlyArray<[EmbeddedAttribute, string]> = [
-		[EmbeddedAttribute.INITIAL_AUDIO_ENABLED, 'select-initialAudioEnabled'],
-		[EmbeddedAttribute.INITIAL_VIDEO_ENABLED, 'select-initialVideoEnabled']
+		[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE, 'select-initialAudioActive'],
+		[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, 'select-initialVideoActive']
 	];
 
 	for (const [property, testId] of TRI_STATE_TESTIDS) {

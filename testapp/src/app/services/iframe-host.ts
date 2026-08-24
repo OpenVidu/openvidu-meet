@@ -72,24 +72,24 @@ export class IframeHostService {
 		this.post({ command: EmbeddedCommandName.PARTICIPANT_KICK, payload: { participantIdentity } });
 	}
 
-	mediaToggleAudio(enabled?: boolean): void {
+	mediaToggleAudio(active?: boolean): void {
 		this.post({
 			command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO,
-			payload: enabled === undefined ? undefined : { enabled }
+			payload: active === undefined ? undefined : { active }
 		});
 	}
 
-	mediaToggleVideo(enabled?: boolean): void {
+	mediaToggleVideo(active?: boolean): void {
 		this.post({
 			command: EmbeddedCommandName.MEDIA_TOGGLE_VIDEO,
-			payload: enabled === undefined ? undefined : { enabled }
+			payload: active === undefined ? undefined : { active }
 		});
 	}
 
-	mediaToggleScreenShare(enabled?: boolean): void {
+	mediaToggleScreenShare(active?: boolean): void {
 		this.post({
 			command: EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE,
-			payload: enabled === undefined ? undefined : { enabled }
+			payload: active === undefined ? undefined : { active }
 		});
 	}
 

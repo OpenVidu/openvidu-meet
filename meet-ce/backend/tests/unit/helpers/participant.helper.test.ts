@@ -48,7 +48,7 @@ describe('MeetParticipantHelper.toParticipantPayload', () => {
 			tracks: [track(TrackSource.MICROPHONE), track(TrackSource.SCREEN_SHARE)]
 		});
 
-		// Exact equality pins the absence of audioEnabled/videoEnabled/screenSharing: at the time
+		// Exact equality pins the absence of audioActive/videoActive/screenShareActive: at the time
 		// lifecycle events fire, tracks are not published yet (or already gone), so a media flag
 		// here would systematically read as "joined muted".
 		expect(MeetParticipantHelper.toParticipantPayload(participant)).toEqual({
@@ -99,9 +99,9 @@ describe('MeetParticipantHelper.toParticipantInfo', () => {
 			metadata: '{"plan":"premium"}',
 			role: MeetRoomMemberRole.MODERATOR,
 			joinDate: 1_620_000_000_000,
-			audioEnabled: true,
-			videoEnabled: false,
-			screenSharing: true
+			audioActive: true,
+			videoActive: false,
+			screenShareActive: true
 		});
 	});
 
@@ -112,9 +112,9 @@ describe('MeetParticipantHelper.toParticipantInfo', () => {
 		expect(info.metadata).toBeUndefined();
 		expect(info.role).toBe(MeetRoomMemberRole.SPEAKER);
 		expect(info.joinDate).toBe(0);
-		expect(info.audioEnabled).toBe(false);
-		expect(info.videoEnabled).toBe(false);
-		expect(info.screenSharing).toBe(false);
+		expect(info.audioActive).toBe(false);
+		expect(info.videoActive).toBe(false);
+		expect(info.screenShareActive).toBe(false);
 	});
 
 	it('treats unparseable or foreign metadata as absent', () => {
@@ -233,9 +233,9 @@ describe('MeetParticipantHelper.extractLeftReason', () => {
 describe('MeetParticipantHelper.extractMediaState', () => {
 	it('reports everything disabled for a participant without tracks', () => {
 		expect(MeetParticipantHelper.extractMediaState(participantWith({}))).toEqual({
-			audioEnabled: false,
-			videoEnabled: false,
-			screenSharing: false
+			audioActive: false,
+			videoActive: false,
+			screenShareActive: false
 		});
 	});
 
@@ -245,9 +245,9 @@ describe('MeetParticipantHelper.extractMediaState', () => {
 		});
 
 		expect(MeetParticipantHelper.extractMediaState(participant)).toEqual({
-			audioEnabled: false,
-			videoEnabled: true,
-			screenSharing: false
+			audioActive: false,
+			videoActive: true,
+			screenShareActive: false
 		});
 	});
 
@@ -256,20 +256,20 @@ describe('MeetParticipantHelper.extractMediaState', () => {
 			tracks: [track(TrackSource.MICROPHONE, true), track(TrackSource.MICROPHONE, false)]
 		});
 
-		expect(MeetParticipantHelper.extractMediaState(participant).audioEnabled).toBe(true);
+		expect(MeetParticipantHelper.extractMediaState(participant).audioActive).toBe(true);
 	});
 
 	it('counts a screen share as active as soon as its track is published, muted or not', () => {
 		expect(
 			MeetParticipantHelper.extractMediaState(
 				participantWith({ tracks: [track(TrackSource.SCREEN_SHARE, true)] })
-			).screenSharing
+			).screenShareActive
 		).toBe(true);
 
 		expect(
 			MeetParticipantHelper.extractMediaState(
 				participantWith({ tracks: [track(TrackSource.SCREEN_SHARE_AUDIO)] })
-			).screenSharing
+			).screenShareActive
 		).toBe(true);
 	});
 });

@@ -4,14 +4,14 @@
 export type CaptionsStatus = 'HIDDEN' | 'ENABLED' | 'DISABLED_WITH_WARNING';
 
 /**
- * What the embedding application asked for through the initial-audio-enabled / initial-video-enabled
+ * What the embedding application asked for through the initial-audio-active / initial-video-active
  * embed attributes (or their URL query params). `undefined` per device means the host said nothing,
  * which is **not** the same as `true`: only a value that is set outranks the room's own
- * `config.initial*Enabled`.
+ * `config.initial*Active`.
  */
 export interface InitialMediaRequest {
-	audioEnabled?: boolean;
-	videoEnabled?: boolean;
+	audioActive?: boolean;
+	videoActive?: boolean;
 }
 
 /**

@@ -160,15 +160,15 @@ export class IframeBridgeService {
 			}
 
 			case EmbeddedCommandName.MEDIA_TOGGLE_AUDIO:
-				await this.commandService.mediaToggleAudio(this.extractEnabledPayload(message));
+				await this.commandService.mediaToggleAudio(this.extractActivePayload(message));
 				break;
 
 			case EmbeddedCommandName.MEDIA_TOGGLE_VIDEO:
-				await this.commandService.mediaToggleVideo(this.extractEnabledPayload(message));
+				await this.commandService.mediaToggleVideo(this.extractActivePayload(message));
 				break;
 
 			case EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE:
-				await this.commandService.mediaToggleScreenShare(this.extractEnabledPayload(message));
+				await this.commandService.mediaToggleScreenShare(this.extractActivePayload(message));
 				break;
 
 			default:
@@ -177,12 +177,12 @@ export class IframeBridgeService {
 	}
 
 	/**
-	 * Reads the optional `enabled` flag of a media toggle command message: absent payload (or
+	 * Reads the optional `active` flag of a media toggle command message: absent payload (or
 	 * flag) means "toggle".
 	 */
-	private extractEnabledPayload(message: EmbeddedCommand): boolean | undefined {
+	private extractActivePayload(message: EmbeddedCommand): boolean | undefined {
 		const payload = 'payload' in message ? message.payload : undefined;
-		return payload && 'enabled' in payload ? payload.enabled : undefined;
+		return payload && 'active' in payload ? payload.active : undefined;
 	}
 
 	/**

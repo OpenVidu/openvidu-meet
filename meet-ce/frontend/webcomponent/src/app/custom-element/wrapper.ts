@@ -99,16 +99,16 @@ export function createOpenViduMeetElementClass(
 			this._getComponentInstance()?.participantKick(participantIdentity);
 		}
 
-		mediaToggleAudio(enabled?: boolean): void {
-			this._getComponentInstance()?.mediaToggleAudio(enabled);
+		mediaToggleAudio(active?: boolean): void {
+			this._getComponentInstance()?.mediaToggleAudio(active);
 		}
 
-		mediaToggleVideo(enabled?: boolean): void {
-			this._getComponentInstance()?.mediaToggleVideo(enabled);
+		mediaToggleVideo(active?: boolean): void {
+			this._getComponentInstance()?.mediaToggleVideo(active);
 		}
 
-		mediaToggleScreenShare(enabled?: boolean): void {
-			this._getComponentInstance()?.mediaToggleScreenShare(enabled);
+		mediaToggleScreenShare(active?: boolean): void {
+			this._getComponentInstance()?.mediaToggleScreenShare(active);
 		}
 
 		// ── Deprecated method aliases ────────────────────────────────────────

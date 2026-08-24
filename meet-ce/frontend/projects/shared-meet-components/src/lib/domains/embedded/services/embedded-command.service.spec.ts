@@ -274,7 +274,7 @@ describe('EmbeddedCommandService', () => {
 			expect(moderationService.kickParticipant).not.toHaveBeenCalled();
 		});
 
-		it('mediaToggleAudio passes an explicit enabled flag through', async () => {
+		it('mediaToggleAudio passes an explicit active flag through', async () => {
 			await service.mediaToggleAudio(false);
 
 			expect(mediaControlService.setMicrophoneEnabled).toHaveBeenCalledOnceWith(false);

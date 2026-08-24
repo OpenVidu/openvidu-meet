@@ -63,21 +63,21 @@ export class EmbeddedCommandService {
 		});
 	}
 
-	async mediaToggleAudio(enabled?: boolean): Promise<void> {
+	async mediaToggleAudio(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, 'mediaPublishAudio', () =>
-			this.localMediaControlService.setMicrophoneEnabled(enabled ?? !this.localMediaState.microphoneEnabled())
+			this.localMediaControlService.setMicrophoneEnabled(active ?? !this.localMediaState.microphoneEnabled())
 		);
 	}
 
-	async mediaToggleVideo(enabled?: boolean): Promise<void> {
+	async mediaToggleVideo(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, 'mediaPublishVideo', () =>
-			this.localMediaControlService.setCameraEnabled(enabled ?? !this.localMediaState.cameraEnabled())
+			this.localMediaControlService.setCameraEnabled(active ?? !this.localMediaState.cameraEnabled())
 		);
 	}
 
-	async mediaToggleScreenShare(enabled?: boolean): Promise<void> {
+	async mediaToggleScreenShare(active?: boolean): Promise<void> {
 		await this.run(EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, 'mediaShareScreen', () =>
-			this.localMediaControlService.setScreenShareEnabled(enabled ?? !this.localMediaState.screenShareEnabled())
+			this.localMediaControlService.setScreenShareEnabled(active ?? !this.localMediaState.screenShareEnabled())
 		);
 	}
 

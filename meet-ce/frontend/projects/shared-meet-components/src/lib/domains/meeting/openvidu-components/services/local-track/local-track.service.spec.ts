@@ -171,7 +171,7 @@ describe('LocalTrackService', () => {
 		});
 	});
 
-	// Enabling a device that was never opened — joined with initial-video-enabled="false", or the
+	// Enabling a device that was never opened — joined with initial-video-active="false", or the
 	// stored preference was off, so createLocalTracks() skipped it. This used to live behind a UI
 	// click in the prejoin component, so an embedded host's mediaToggleVideo(true) did nothing at all.
 	describe('enabling a device that was never opened', () => {

@@ -148,7 +148,7 @@ export interface EmbeddedEventPayloads {
 	 * `origin` says who caused the change (see {@link MeetEventOrigin}).
 	 */
 	[EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED]: {
-		enabled: boolean;
+		active: boolean;
 		origin: MeetEventOrigin;
 	};
 	/**
@@ -156,7 +156,7 @@ export interface EmbeddedEventPayloads {
 	 * `origin` says who caused the change (see {@link MeetEventOrigin}).
 	 */
 	[EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED]: {
-		enabled: boolean;
+		active: boolean;
 		origin: MeetEventOrigin;
 	};
 	/**
@@ -164,7 +164,7 @@ export interface EmbeddedEventPayloads {
 	 * `origin` says who caused the change (see {@link MeetEventOrigin}).
 	 */
 	[EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED]: {
-		enabled: boolean;
+		active: boolean;
 		origin: MeetEventOrigin;
 	};
 	/**

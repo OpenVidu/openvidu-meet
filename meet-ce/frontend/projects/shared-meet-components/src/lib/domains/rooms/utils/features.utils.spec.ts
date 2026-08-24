@@ -124,8 +124,8 @@ describe('FeatureCalculator.resolveInitialMediaState', () => {
 		);
 
 	it('should open what the request asks for', () => {
-		expect(stateFor({ audioEnabled: false, videoEnabled: false })).toEqual({ microphone: false, camera: false });
-		expect(stateFor({ audioEnabled: true, videoEnabled: true })).toEqual({ microphone: true, camera: true });
+		expect(stateFor({ audioActive: false, videoActive: false })).toEqual({ microphone: false, camera: false });
+		expect(stateFor({ audioActive: true, videoActive: true })).toEqual({ microphone: true, camera: true });
 	});
 
 	it('should default to enabled when nothing is set anywhere', () => {
@@ -137,13 +137,13 @@ describe('FeatureCalculator.resolveInitialMediaState', () => {
 	});
 
 	it('should never open a device its permission denies', () => {
-		const state = stateFor({ audioEnabled: true, videoEnabled: true }, undefined, { mediaPublishVideo: false });
+		const state = stateFor({ audioActive: true, videoActive: true }, undefined, { mediaPublishVideo: false });
 
 		expect(state).toEqual({ microphone: true, camera: false });
 	});
 
-	it('should apply the room-wide config.initial*Enabled when the request says nothing', () => {
-		const state = stateFor({}, { initialAudioEnabled: false, initialVideoEnabled: false });
+	it('should apply the room-wide config.initial*Active when the request says nothing', () => {
+		const state = stateFor({}, { initialAudioActive: false, initialVideoActive: false });
 
 		expect(state).toEqual({ microphone: false, camera: false });
 	});
@@ -155,10 +155,10 @@ describe('FeatureCalculator.resolveInitialMediaState', () => {
 	// The precedence rule holds in both directions, so the next two tests are not the same test twice.
 	it('should let an explicit request raise a room default of false', () => {
 		const state = stateFor(
-			{ audioEnabled: true, videoEnabled: true },
+			{ audioActive: true, videoActive: true },
 			{
-				initialAudioEnabled: false,
-				initialVideoEnabled: false
+				initialAudioActive: false,
+				initialVideoActive: false
 			}
 		);
 
@@ -167,10 +167,10 @@ describe('FeatureCalculator.resolveInitialMediaState', () => {
 
 	it('should let an explicit request lower a room default of true', () => {
 		const state = stateFor(
-			{ audioEnabled: false, videoEnabled: false },
+			{ audioActive: false, videoActive: false },
 			{
-				initialAudioEnabled: true,
-				initialVideoEnabled: true
+				initialAudioActive: true,
+				initialVideoActive: true
 			}
 		);
 
@@ -180,13 +180,13 @@ describe('FeatureCalculator.resolveInitialMediaState', () => {
 	it('should resolve each device independently', () => {
 		// Audio: the request decides (on, over a room default of off).
 		// Video: the request says nothing, so the room decides (off).
-		const state = stateFor({ audioEnabled: true }, { initialAudioEnabled: false, initialVideoEnabled: false });
+		const state = stateFor({ audioActive: true }, { initialAudioActive: false, initialVideoActive: false });
 
 		expect(state).toEqual({ microphone: true, camera: false });
 	});
 
 	it('should keep a denying permission above an explicit request and the room config', () => {
-		const state = stateFor({ audioEnabled: true }, { initialAudioEnabled: true }, { mediaPublishAudio: false });
+		const state = stateFor({ audioActive: true }, { initialAudioActive: true }, { mediaPublishAudio: false });
 
 		expect(state.microphone).toBeFalse();
 	});

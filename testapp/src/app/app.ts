@@ -51,16 +51,16 @@ export class App {
 	protected e2eeKeyInput = '';
 	protected leaveRedirectUrlInput = '';
 	/**
-	 * `''` = attribute omitted (no opinion, so the room's own `config.initial*Enabled` default decides);
+	 * `''` = attribute omitted (no opinion, so the room's own `config.initial*Active` default decides);
 	 * `'true'`/`'false'` = set explicitly, which takes precedence over that room default.
 	 */
-	protected initialAudioEnabledInput: '' | 'true' | 'false' = '';
-	protected initialVideoEnabledInput: '' | 'true' | 'false' = '';
+	protected initialAudioActiveInput: '' | 'true' | 'false' = '';
+	protected initialVideoActiveInput: '' | 'true' | 'false' = '';
 	protected showRecordingInput = '';
 	protected showOnlyRecordingsInput = false;
 	protected kickIdentityInput = 'test-participant-1';
-	/** `''` = omitted (toggle); `'true'`/`'false'` = explicit `enabled` for the media commands below. */
-	protected mediaEnabledInput: '' | 'true' | 'false' = '';
+	/** `''` = omitted (toggle); `'true'`/`'false'` = explicit `active` for the media commands below. */
+	protected mediaActiveInput: '' | 'true' | 'false' = '';
 
 	// ── Applied signals (bound to the WC via Angular wrapper inputs) ────────
 	protected readonly roomUrl = signal<string | undefined>(undefined);
@@ -68,8 +68,8 @@ export class App {
 	protected readonly participantName = signal<string | undefined>(undefined);
 	protected readonly participantExternalId = signal<string | undefined>(undefined);
 	protected readonly participantMetadata = signal<string | undefined>(undefined);
-	protected readonly initialAudioEnabled = signal<boolean | undefined>(undefined);
-	protected readonly initialVideoEnabled = signal<boolean | undefined>(undefined);
+	protected readonly initialAudioActive = signal<boolean | undefined>(undefined);
+	protected readonly initialVideoActive = signal<boolean | undefined>(undefined);
 	protected readonly e2eeKey = signal<string | undefined>(undefined);
 	protected readonly leaveRedirectUrl = signal<string | undefined>(undefined);
 	protected readonly showRecording = signal<string | undefined>(undefined);
@@ -131,8 +131,8 @@ export class App {
 				this.participantName.set(this.participantNameInput || undefined);
 				this.participantExternalId.set(this.participantExternalIdInput || undefined);
 				this.participantMetadata.set(this.participantMetadataInput || undefined);
-				this.initialAudioEnabled.set(this.toOptionalBoolean(this.initialAudioEnabledInput));
-				this.initialVideoEnabled.set(this.toOptionalBoolean(this.initialVideoEnabledInput));
+				this.initialAudioActive.set(this.toOptionalBoolean(this.initialAudioActiveInput));
+				this.initialVideoActive.set(this.toOptionalBoolean(this.initialVideoActiveInput));
 				this.e2eeKey.set(this.e2eeKeyInput || undefined);
 				this.leaveRedirectUrl.set(this.leaveRedirectUrlInput || undefined);
 				this.showRecording.set(this.showRecordingInput || undefined);
@@ -185,11 +185,11 @@ export class App {
 		set(EmbeddedAttribute.SHOW_RECORDING, this.showRecordingInput);
 		// Omitted stays omitted: the query param is only written when the form sets a value, so the
 		// iframe transport carries the same three states as the webcomponent one.
-		if (this.initialAudioEnabledInput) {
-			url.searchParams.set(EmbeddedAttribute.INITIAL_AUDIO_ENABLED, this.initialAudioEnabledInput);
+		if (this.initialAudioActiveInput) {
+			url.searchParams.set(EmbeddedAttribute.INITIAL_AUDIO_ACTIVE, this.initialAudioActiveInput);
 		}
-		if (this.initialVideoEnabledInput) {
-			url.searchParams.set(EmbeddedAttribute.INITIAL_VIDEO_ENABLED, this.initialVideoEnabledInput);
+		if (this.initialVideoActiveInput) {
+			url.searchParams.set(EmbeddedAttribute.INITIAL_VIDEO_ACTIVE, this.initialVideoActiveInput);
 		}
 		if (this.showOnlyRecordingsInput) {
 			url.searchParams.set(EmbeddedAttribute.SHOW_ONLY_RECORDINGS, 'true');
@@ -335,47 +335,47 @@ export class App {
 		return value === '' ? undefined : value === 'true';
 	}
 
-	/** Resolves the shared `enabled` selector to the argument the media commands below pass on. */
-	private resolveMediaEnabled(): boolean | undefined {
-		if (this.mediaEnabledInput === 'true') return true;
-		if (this.mediaEnabledInput === 'false') return false;
+	/** Resolves the shared `active` selector to the argument the media commands below pass on. */
+	private resolveMediaActive(): boolean | undefined {
+		if (this.mediaActiveInput === 'true') return true;
+		if (this.mediaActiveInput === 'false') return false;
 		return undefined;
 	}
 
 	protected callMediaToggleAudio(): void {
-		const enabled = this.resolveMediaEnabled();
+		const active = this.resolveMediaActive();
 
 		if (this.integration() === 'iframe') {
-			this.iframeHost.mediaToggleAudio(enabled);
+			this.iframeHost.mediaToggleAudio(active);
 		} else {
-			this.meetRef()?.nativeElement.mediaToggleAudio(enabled);
+			this.meetRef()?.nativeElement.mediaToggleAudio(active);
 		}
 
-		this.log.log(`→ mediaToggleAudio(${enabled === undefined ? '' : enabled})`);
+		this.log.log(`→ mediaToggleAudio(${active === undefined ? '' : active})`);
 	}
 
 	protected callMediaToggleVideo(): void {
-		const enabled = this.resolveMediaEnabled();
+		const active = this.resolveMediaActive();
 
 		if (this.integration() === 'iframe') {
-			this.iframeHost.mediaToggleVideo(enabled);
+			this.iframeHost.mediaToggleVideo(active);
 		} else {
-			this.meetRef()?.nativeElement.mediaToggleVideo(enabled);
+			this.meetRef()?.nativeElement.mediaToggleVideo(active);
 		}
 
-		this.log.log(`→ mediaToggleVideo(${enabled === undefined ? '' : enabled})`);
+		this.log.log(`→ mediaToggleVideo(${active === undefined ? '' : active})`);
 	}
 
 	protected callMediaToggleScreenShare(): void {
-		const enabled = this.resolveMediaEnabled();
+		const active = this.resolveMediaActive();
 
 		if (this.integration() === 'iframe') {
-			this.iframeHost.mediaToggleScreenShare(enabled);
+			this.iframeHost.mediaToggleScreenShare(active);
 		} else {
-			this.meetRef()?.nativeElement.mediaToggleScreenShare(enabled);
+			this.meetRef()?.nativeElement.mediaToggleScreenShare(active);
 		}
 
-		this.log.log(`→ mediaToggleScreenShare(${enabled === undefined ? '' : enabled})`);
+		this.log.log(`→ mediaToggleScreenShare(${active === undefined ? '' : active})`);
 	}
 
 	// ── Deprecated command spellings (kept so the e2e covers the 3.8.0 surface) ──

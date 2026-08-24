@@ -104,7 +104,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			});
 		});
 
-		test.describe('with initial-audio-enabled / initial-video-enabled', () => {
+		test.describe('with initial-audio-active / initial-video-active', () => {
 			// Its own room rather than reusing the outer `accessUrl`: the E2EE sibling block
 			// above reassigns that shared variable in ITS `beforeAll`, and describe blocks run
 			// in file order, so relying on it here would silently join an E2EE room instead.
@@ -129,8 +129,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(wcLocator(page, 'ov-meeting-media-setup')).toBeVisible({ timeout: 15_000 });
 			};
 
-			test('should join with the microphone muted when initial-audio-enabled is false', async ({ page }) => {
-				await openMediaSetup(page, { [EmbeddedAttribute.INITIAL_AUDIO_ENABLED]: 'false' });
+			test('should join with the microphone muted when initial-audio-active is false', async ({ page }) => {
+				await openMediaSetup(page, { [EmbeddedAttribute.INITIAL_AUDIO_ACTIVE]: 'false' });
 
 				await expectPrejoinMicEnabled(page, 'webcomponent', false, { timeout: 10_000 });
 
@@ -139,14 +139,14 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expect(wcLocator(page, '#microphone-button')).toBeEnabled();
 			});
 
-			test('should join with the camera off when initial-video-enabled is false', async ({ page }) => {
-				await openMediaSetup(page, { [EmbeddedAttribute.INITIAL_VIDEO_ENABLED]: 'false' });
+			test('should join with the camera off when initial-video-active is false', async ({ page }) => {
+				await openMediaSetup(page, { [EmbeddedAttribute.INITIAL_VIDEO_ACTIVE]: 'false' });
 
 				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
 				await expect(wcLocator(page, '#camera-button')).toBeEnabled();
 			});
 
-			test('should join with both devices enabled when neither attribute is set', async ({ page }) => {
+			test('should join with both devices active when neither attribute is set', async ({ page }) => {
 				await openMediaSetup(page, {});
 
 				await expectPrejoinMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
@@ -154,15 +154,15 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 			});
 		});
 
-		// The room's `config.initial*Enabled` is a default; an attribute that is set outranks it, in both
+		// The room's `config.initial*Active` is a default; an attribute that is set outranks it, in both
 		// directions. Not parametrized over INTEGRATIONS, like the rest of this file.
-		test.describe('precedence of the initial-*-enabled attribute over the room-wide config.initial*Enabled', () => {
+		test.describe('precedence of the initial-*-active attribute over the room-wide config.initial*Active', () => {
 			let mediaDisabledByRoomUrl: string;
 			let mediaDisabledByRoomId: string;
 
 			test.beforeAll(async () => {
 				const room = await createRoom({
-					config: { initialAudioEnabled: false, initialVideoEnabled: false }
+					config: { initialAudioActive: false, initialVideoActive: false }
 				});
 				createdRoomIds.push(room.roomId);
 				mediaDisabledByRoomId = room.roomId;
@@ -190,8 +190,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 			test('should let an explicit true override a room default of false', async ({ page }) => {
 				await openMediaSetupInRoom(page, {
-					[EmbeddedAttribute.INITIAL_AUDIO_ENABLED]: 'true',
-					[EmbeddedAttribute.INITIAL_VIDEO_ENABLED]: 'true'
+					[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE]: 'true',
+					[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE]: 'true'
 				});
 
 				await expectPrejoinMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
@@ -213,8 +213,8 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await openMeetingAtMediaSetup(page, mediaDisabledByRoomId, {
 					integration: 'iframe',
 					role: 'moderator',
-					initialAudioEnabled: true,
-					initialVideoEnabled: true
+					initialAudioActive: true,
+					initialVideoActive: true
 				});
 
 				await expectPrejoinMicEnabled(page, 'iframe', true, { timeout: 10_000 });
@@ -247,7 +247,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 			test('should resolve each device independently', async ({ page }) => {
 				// Audio set explicitly (wins over the room), video left out (the room decides).
-				await openMediaSetupInRoom(page, { [EmbeddedAttribute.INITIAL_AUDIO_ENABLED]: 'true' });
+				await openMediaSetupInRoom(page, { [EmbeddedAttribute.INITIAL_AUDIO_ACTIVE]: 'true' });
 
 				await expectPrejoinMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 				await expectPrejoinCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
@@ -266,10 +266,10 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				persistenceRoomId = room.roomId;
 			});
 
-			test('should not persist initial-audio-enabled=false into the stored microphone preference across meetings', async ({
+			test('should not persist initial-audio-active=false into the stored microphone preference across meetings', async ({
 				page
 			}) => {
-				await openMeeting(page, persistenceRoomId, { role: 'moderator', initialAudioEnabled: false });
+				await openMeeting(page, persistenceRoomId, { role: 'moderator', initialAudioActive: false });
 				await expectToolbarMicEnabled(page, 'webcomponent', false, { timeout: 10_000 });
 				await leaveMeeting(page);
 
@@ -279,10 +279,10 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				await expectToolbarMicEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 			});
 
-			test('should not persist initial-video-enabled=false into the stored camera preference across meetings', async ({
+			test('should not persist initial-video-active=false into the stored camera preference across meetings', async ({
 				page
 			}) => {
-				await openMeeting(page, persistenceRoomId, { role: 'moderator', initialVideoEnabled: false });
+				await openMeeting(page, persistenceRoomId, { role: 'moderator', initialVideoActive: false });
 				await expectToolbarCameraEnabled(page, 'webcomponent', false, { timeout: 10_000 });
 				await leaveMeeting(page);
 
@@ -292,7 +292,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 
 			// An explicit request must win over what the participant did in an earlier meeting of the
 			// same tab: nothing from that meeting is kept, so nothing from it can outrank the request.
-			test('should let an explicit initial-video-enabled=true override an earlier camera-off choice', async ({
+			test('should let an explicit initial-video-active=true override an earlier camera-off choice', async ({
 				page
 			}) => {
 				const { meet } = await openMeetingAtMediaSetup(page, persistenceRoomId, { role: 'moderator' });
@@ -306,7 +306,7 @@ test.describe('WebComponent Attributes E2E Tests', () => {
 				// explicit, so it must win over what the previous meeting left stored.
 				await openMeetingAtMediaSetup(page, persistenceRoomId, {
 					role: 'moderator',
-					initialVideoEnabled: true
+					initialVideoActive: true
 				});
 				await expectPrejoinCameraEnabled(page, 'webcomponent', true, { timeout: 10_000 });
 			});

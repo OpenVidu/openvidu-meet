@@ -19,8 +19,8 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		participantName,
 		participantExternalId,
 		participantMetadata,
-		initialAudioEnabled,
-		initialVideoEnabled,
+		initialAudioActive,
+		initialVideoActive,
 		leaveRedirectUrl,
 		showOnlyRecordings,
 		showRecording,
@@ -37,8 +37,8 @@ export const extractRoomMeetingParamsGuard: CanActivateFn = (route: ActivatedRou
 		participantMetadata,
 		// Kept tri-state: an absent query param means "no opinion" (the room's own default decides),
 		// while either explicit value outranks it.
-		initialAudioEnabled: parseOptionalBoolean(initialAudioEnabled),
-		initialVideoEnabled: parseOptionalBoolean(initialVideoEnabled),
+		initialAudioActive: parseOptionalBoolean(initialAudioActive),
+		initialVideoActive: parseOptionalBoolean(initialVideoActive),
 		showRecording,
 		showOnlyRecordings: showOnlyRecordings === 'true'
 	});

@@ -267,13 +267,13 @@ for (const integration of INTEGRATIONS) {
 				await mediaToggleAudioCommand(page, false);
 
 				await expect(audioStatus).toHaveCount(1, { timeout: 10_000 });
-				await expect(audioStatus.first()).toContainText('"enabled":false');
+				await expect(audioStatus.first()).toContainText('"active":false');
 				await expect(audioStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
 
 				await mediaToggleAudioCommand(page, true);
 
 				await expect(audioStatus).toHaveCount(2, { timeout: 10_000 });
-				await expect(audioStatus.nth(1)).toContainText('"enabled":true');
+				await expect(audioStatus.nth(1)).toContainText('"active":true');
 			});
 
 			test('should emit mediaVideoStatusChanged once per camera transition', async ({ page }) => {
@@ -286,13 +286,13 @@ for (const integration of INTEGRATIONS) {
 				await mediaToggleVideoCommand(page, false);
 
 				await expect(videoStatus).toHaveCount(1, { timeout: 10_000 });
-				await expect(videoStatus.first()).toContainText('"enabled":false');
+				await expect(videoStatus.first()).toContainText('"active":false');
 				await expect(videoStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
 
 				await mediaToggleVideoCommand(page, true);
 
 				await expect(videoStatus).toHaveCount(2, { timeout: 10_000 });
-				await expect(videoStatus.nth(1)).toContainText('"enabled":true');
+				await expect(videoStatus.nth(1)).toContainText('"active":true');
 			});
 
 			test('should emit mediaScreenShareStatusChanged on start and stop', async ({ page }) => {
@@ -305,13 +305,13 @@ for (const integration of INTEGRATIONS) {
 				await mediaToggleScreenShareCommand(page, true);
 
 				await expect(screenShareStatus).toHaveCount(1, { timeout: 15_000 });
-				await expect(screenShareStatus.first()).toContainText('"enabled":true');
+				await expect(screenShareStatus.first()).toContainText('"active":true');
 				await expect(screenShareStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
 
 				await mediaToggleScreenShareCommand(page, false);
 
 				await expect(screenShareStatus).toHaveCount(2, { timeout: 15_000 });
-				await expect(screenShareStatus.nth(1)).toContainText('"enabled":false');
+				await expect(screenShareStatus.nth(1)).toContainText('"active":false');
 			});
 
 			// The state exists in the prejoin screen too, so a change made before joining is reported
@@ -325,7 +325,7 @@ for (const integration of INTEGRATIONS) {
 				await mediaToggleAudioCommand(page, false);
 
 				await expect(audioStatus).toHaveCount(1, { timeout: 10_000 });
-				await expect(audioStatus.first()).toContainText('"enabled":false');
+				await expect(audioStatus.first()).toContainText('"active":false');
 				await expect(audioStatus.first()).toContainText(MeetEventOrigin.PARTICIPANT);
 			});
 
@@ -338,7 +338,7 @@ for (const integration of INTEGRATIONS) {
 				await mediaToggleVideoCommand(page, false);
 
 				await expect(videoStatus).toHaveCount(1, { timeout: 10_000 });
-				await expect(videoStatus.first()).toContainText('"enabled":false');
+				await expect(videoStatus.first()).toContainText('"active":false');
 			});
 
 			// Joining publishes the prejoin tracks as they are: the host already knows that state and
@@ -366,7 +366,7 @@ for (const integration of INTEGRATIONS) {
 				await meetLocator(page, integration, '#mic-btn').click();
 
 				const audioStatus = await expectEvent(page, EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED);
-				await expect(audioStatus.first()).toContainText('"enabled":false');
+				await expect(audioStatus.first()).toContainText('"active":false');
 			});
 
 			test('should not emit a media event when the requested state is already active', async ({ page }) => {

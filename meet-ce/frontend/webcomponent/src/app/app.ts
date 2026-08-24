@@ -97,8 +97,8 @@ export class App {
 	readonly participantMetadata = input<string | undefined>(undefined);
 	// Tri-state: unset means "no opinion", so the room's own default applies; either value set takes
 	// precedence over it. A plain `input(true, …)` cannot tell those two apart.
-	readonly initialAudioEnabled = input(undefined, { transform: optionalBooleanAttribute });
-	readonly initialVideoEnabled = input(undefined, { transform: optionalBooleanAttribute });
+	readonly initialAudioActive = input(undefined, { transform: optionalBooleanAttribute });
+	readonly initialVideoActive = input(undefined, { transform: optionalBooleanAttribute });
 	readonly e2eeKey = input<string | undefined>(undefined);
 	readonly leaveRedirectUrl = input<string | undefined>(undefined);
 	readonly showOnlyRecordings = input<boolean>(false);
@@ -137,8 +137,8 @@ export class App {
 		participantName: this.participantName(),
 		participantExternalId: this.participantExternalId(),
 		participantMetadata: this.participantMetadata(),
-		initialAudioEnabled: this.initialAudioEnabled(),
-		initialVideoEnabled: this.initialVideoEnabled(),
+		initialAudioActive: this.initialAudioActive(),
+		initialVideoActive: this.initialVideoActive(),
 		e2eeKey: this.e2eeKey(),
 		leaveRedirectUrl: this.leaveRedirectUrl(),
 		showOnlyRecordings: this.showOnlyRecordings(),
@@ -276,16 +276,16 @@ export class App {
 		return this.commandService.participantKick(participantIdentity);
 	}
 
-	mediaToggleAudio(enabled?: boolean): Promise<void> {
-		return this.commandService.mediaToggleAudio(enabled);
+	mediaToggleAudio(active?: boolean): Promise<void> {
+		return this.commandService.mediaToggleAudio(active);
 	}
 
-	mediaToggleVideo(enabled?: boolean): Promise<void> {
-		return this.commandService.mediaToggleVideo(enabled);
+	mediaToggleVideo(active?: boolean): Promise<void> {
+		return this.commandService.mediaToggleVideo(active);
 	}
 
-	mediaToggleScreenShare(enabled?: boolean): Promise<void> {
-		return this.commandService.mediaToggleScreenShare(enabled);
+	mediaToggleScreenShare(active?: boolean): Promise<void> {
+		return this.commandService.mediaToggleScreenShare(active);
 	}
 
 	// ── Internal ─────────────────────────────────────────────────────────────

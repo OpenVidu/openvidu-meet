@@ -48,12 +48,12 @@ events are re-dispatched on the outer element.
 
 - **Attributes/properties** — kebab-case attribute ⇄ camelCase property: `room-url`,
   `recording-url`, `participant-name`, `participant-external-id`, `participant-metadata`,
-  `initial-audio-enabled`, `initial-video-enabled` (tri-state: set values outrank the room's
-  `config.initial*Enabled`, unset defers to it), `e2ee-key`, `leave-redirect-url`,
+  `initial-audio-active`, `initial-video-active` (tri-state: set values outrank the room's
+  `config.initial*Active`, unset defers to it), `e2ee-key`, `leave-redirect-url`,
   `show-only-recordings`, `show-recording`. Either `room-url` or `recording-url` is required.
 - **Events** (`CustomEvent`, `detail` = payload): `meetingJoined`, `meetingLeft` (with
   `LeftEventReason`), `meetingClosed`, `mediaAudioStatusChanged`/`mediaVideoStatusChanged`/
-  `mediaScreenShareStatusChanged` (local participant only, payload `{enabled, origin}`),
+  `mediaScreenShareStatusChanged` (local participant only, payload `{active, origin}`),
   `participantJoined`/`participantLeft` (**remote**
   participants only; payload `{ roomId, participant: MeetParticipantPayload }` — identity,
   correlation fields and role; live transitions only, no replay of participants already present,
@@ -65,7 +65,7 @@ events are re-dispatched on the outer element.
   outputs from a single switch on the canonical name, and the iframe bridge posts a second
   `postMessage` under the deprecated name via `deprecatedEmbeddedEventAliasOf()` from the typings.
 - **Methods**: `meetingEnd()`, `meetingLeave()`, `participantKick(identity)`,
-  `mediaToggleAudio(enabled?)`, `mediaToggleVideo(enabled?)`, `mediaToggleScreenShare(enabled?)`
+  `mediaToggleAudio(active?)`, `mediaToggleVideo(active?)`, `mediaToggleScreenShare(active?)`
   (omitted = toggle), and the convenience listener API `on()` / `once()` / `off()` added in
   `src/app/custom-element/wrapper.ts`. Every command runs through `EmbeddedCommandService.run()`,
   which enforces the permission and, internally, which commands work from the prejoin screen — the

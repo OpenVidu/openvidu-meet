@@ -12,9 +12,9 @@ export interface OpenViduMeetElement extends HTMLElement {
 	meetingEnd(): void;
 	meetingLeave(): void;
 	participantKick(participantIdentity: string): void;
-	mediaToggleAudio(enabled?: boolean): void;
-	mediaToggleVideo(enabled?: boolean): void;
-	mediaToggleScreenShare(enabled?: boolean): void;
+	mediaToggleAudio(active?: boolean): void;
+	mediaToggleVideo(active?: boolean): void;
+	mediaToggleScreenShare(active?: boolean): void;
 	/** @deprecated Renamed to `meetingEnd()`. Removed in 3.12.0. Declared so the e2e can drive it. */
 	endMeeting(): void;
 	/** @deprecated Renamed to `meetingLeave()`. Removed in 3.12.0. Declared so the e2e can drive it. */

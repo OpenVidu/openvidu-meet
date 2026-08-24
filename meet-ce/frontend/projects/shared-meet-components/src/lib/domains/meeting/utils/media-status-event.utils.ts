@@ -11,16 +11,16 @@ import { Track } from '../openvidu-components';
  */
 export const toMediaStatusChangedEvent = (
 	source: Track.Source,
-	enabled: boolean,
+	active: boolean,
 	origin: MeetEventOrigin = MeetEventOrigin.PARTICIPANT
 ): EmbeddedEvent | undefined => {
 	switch (source) {
 		case Track.Source.Microphone:
-			return { event: EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED, payload: { enabled, origin } };
+			return { event: EmbeddedEventName.MEDIA_AUDIO_STATUS_CHANGED, payload: { active, origin } };
 		case Track.Source.Camera:
-			return { event: EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED, payload: { enabled, origin } };
+			return { event: EmbeddedEventName.MEDIA_VIDEO_STATUS_CHANGED, payload: { active, origin } };
 		case Track.Source.ScreenShare:
-			return { event: EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED, payload: { enabled, origin } };
+			return { event: EmbeddedEventName.MEDIA_SCREEN_SHARE_STATUS_CHANGED, payload: { active, origin } };
 		default:
 			return undefined;
 	}

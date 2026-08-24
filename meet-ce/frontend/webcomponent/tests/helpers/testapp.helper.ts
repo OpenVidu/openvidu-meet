@@ -107,10 +107,10 @@ type OpenMeetingOptions = {
 	name?: string;
 	externalId?: string;
 	metadata?: string;
-	/** Sets the `initial-audio-enabled` attribute/query param. Omitted by default (the room decides). */
-	initialAudioEnabled?: boolean;
-	/** Sets the `initial-video-enabled` attribute/query param. Omitted by default (the room decides). */
-	initialVideoEnabled?: boolean;
+	/** Sets the `initial-audio-active` attribute/query param. Omitted by default (the room decides). */
+	initialAudioActive?: boolean;
+	/** Sets the `initial-video-active` attribute/query param. Omitted by default (the room decides). */
+	initialVideoActive?: boolean;
 };
 
 /**
@@ -134,8 +134,8 @@ export const openMeetingAtMediaSetup = async (
 		name,
 		externalId,
 		metadata,
-		initialAudioEnabled,
-		initialVideoEnabled
+		initialAudioActive,
+		initialVideoActive
 	} = options ?? {};
 	const participantName = name ?? `pw-${Math.random().toString(36).substring(2, 9)}`;
 
@@ -164,10 +164,10 @@ export const openMeetingAtMediaSetup = async (
 	}
 
 	// Tri-state selectors: the empty option omits the attribute, which is not the same request as
-	// setting it to `true` — only a value that is set outranks the room's own `config.initial*Enabled` default.
+	// setting it to `true` — only a value that is set outranks the room's own `config.initial*Active` default.
 	const toSelectValue = (value: boolean | undefined) => (value === undefined ? '' : String(value));
-	await page.getByTestId('select-initialAudioEnabled').selectOption(toSelectValue(initialAudioEnabled));
-	await page.getByTestId('select-initialVideoEnabled').selectOption(toSelectValue(initialVideoEnabled));
+	await page.getByTestId('select-initialAudioActive').selectOption(toSelectValue(initialAudioActive));
+	await page.getByTestId('select-initialVideoActive').selectOption(toSelectValue(initialVideoActive));
 
 	await page.getByTestId('btn-apply-config').click();
 
@@ -212,8 +212,8 @@ export const openMeetingAtMediaSetup = async (
  * @param options.name - Participant display name (auto-generated when omitted).
  * @param options.externalId - Value for the `participant-external-id` attribute (app↔Meet correlation key).
  * @param options.metadata - Value for the `participant-metadata` attribute (opaque app payload).
- * @param options.initialAudioEnabled - Sets the `initial-audio-enabled` attribute/query param.
- * @param options.initialVideoEnabled - Sets the `initial-video-enabled` attribute/query param.
+ * @param options.initialAudioActive - Sets the `initial-audio-active` attribute/query param.
+ * @param options.initialVideoActive - Sets the `initial-video-active` attribute/query param.
  */
 export const openMeeting = async (page: Page, roomId: string, options?: OpenMeetingOptions): Promise<void> => {
 	const { meet } = await openMeetingAtMediaSetup(page, roomId, options);
@@ -290,26 +290,26 @@ export const kickParticipantCommand = async (page: Page, participantIdentity: st
 	await page.getByTestId('btn-kick-participant').click();
 };
 
-/** Sets the shared `enabled` selector the three media-toggle buttons below read from. */
-const selectMediaEnabled = async (page: Page, enabled?: boolean): Promise<void> => {
-	await page.getByTestId('select-media-enabled').selectOption(enabled === undefined ? '' : String(enabled));
+/** Sets the shared `active` selector the three media-toggle buttons below read from. */
+const selectMediaActive = async (page: Page, active?: boolean): Promise<void> => {
+	await page.getByTestId('select-media-active').selectOption(active === undefined ? '' : String(active));
 };
 
-/** Clicks the testapp's `mediaToggleAudio()` button. Omitted `enabled` = toggle. */
-export const mediaToggleAudioCommand = async (page: Page, enabled?: boolean): Promise<void> => {
-	await selectMediaEnabled(page, enabled);
+/** Clicks the testapp's `mediaToggleAudio()` button. Omitted `active` = toggle. */
+export const mediaToggleAudioCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await selectMediaActive(page, active);
 	await page.getByTestId('btn-media-toggle-audio').click();
 };
 
-/** Clicks the testapp's `mediaToggleVideo()` button. Omitted `enabled` = toggle. */
-export const mediaToggleVideoCommand = async (page: Page, enabled?: boolean): Promise<void> => {
-	await selectMediaEnabled(page, enabled);
+/** Clicks the testapp's `mediaToggleVideo()` button. Omitted `active` = toggle. */
+export const mediaToggleVideoCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await selectMediaActive(page, active);
 	await page.getByTestId('btn-media-toggle-video').click();
 };
 
-/** Clicks the testapp's `mediaToggleScreenShare()` button. Omitted `enabled` = toggle. */
-export const mediaToggleScreenShareCommand = async (page: Page, enabled?: boolean): Promise<void> => {
-	await selectMediaEnabled(page, enabled);
+/** Clicks the testapp's `mediaToggleScreenShare()` button. Omitted `active` = toggle. */
+export const mediaToggleScreenShareCommand = async (page: Page, active?: boolean): Promise<void> => {
+	await selectMediaActive(page, active);
 	await page.getByTestId('btn-media-toggle-screen-share').click();
 };
 

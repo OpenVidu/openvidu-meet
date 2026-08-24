@@ -204,15 +204,15 @@ describe('IframeBridgeService', () => {
 
 		// The bridge forwards without gating; phase and permission are enforced by EmbeddedCommandService.
 		describe('media toggle commands', () => {
-			it('forwards MEDIA_TOGGLE_AUDIO with its explicit enabled flag', () => {
+			it('forwards MEDIA_TOGGLE_AUDIO with its explicit active flag', () => {
 				startBridge();
 
-				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, payload: { enabled: false } });
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO, payload: { active: false } });
 
 				expect(commandService.mediaToggleAudio).toHaveBeenCalledOnceWith(false);
 			});
 
-			it('forwards MEDIA_TOGGLE_AUDIO without payload as a toggle (undefined enabled)', () => {
+			it('forwards MEDIA_TOGGLE_AUDIO without payload as a toggle (undefined active)', () => {
 				startBridge();
 
 				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_AUDIO });
@@ -220,15 +220,15 @@ describe('IframeBridgeService', () => {
 				expect(commandService.mediaToggleAudio).toHaveBeenCalledOnceWith(undefined);
 			});
 
-			it('forwards MEDIA_TOGGLE_VIDEO with its explicit enabled flag', () => {
+			it('forwards MEDIA_TOGGLE_VIDEO with its explicit active flag', () => {
 				startBridge();
 
-				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, payload: { enabled: true } });
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_VIDEO, payload: { active: true } });
 
 				expect(commandService.mediaToggleVideo).toHaveBeenCalledOnceWith(true);
 			});
 
-			it('forwards MEDIA_TOGGLE_VIDEO without payload as a toggle (undefined enabled)', () => {
+			it('forwards MEDIA_TOGGLE_VIDEO without payload as a toggle (undefined active)', () => {
 				startBridge();
 
 				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_VIDEO });
@@ -236,15 +236,15 @@ describe('IframeBridgeService', () => {
 				expect(commandService.mediaToggleVideo).toHaveBeenCalledOnceWith(undefined);
 			});
 
-			it('forwards MEDIA_TOGGLE_SCREEN_SHARE with its explicit enabled flag', () => {
+			it('forwards MEDIA_TOGGLE_SCREEN_SHARE with its explicit active flag', () => {
 				startBridge();
 
-				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, payload: { enabled: true } });
+				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE, payload: { active: true } });
 
 				expect(commandService.mediaToggleScreenShare).toHaveBeenCalledOnceWith(true);
 			});
 
-			it('forwards MEDIA_TOGGLE_SCREEN_SHARE without payload as a toggle (undefined enabled)', () => {
+			it('forwards MEDIA_TOGGLE_SCREEN_SHARE without payload as a toggle (undefined active)', () => {
 				startBridge();
 
 				postFromHost({ command: EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE });

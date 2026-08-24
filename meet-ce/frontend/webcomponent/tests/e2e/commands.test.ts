@@ -224,7 +224,7 @@ for (const integration of INTEGRATIONS) {
 		// optional boolean: omitted = toggle, provided = set. Both halves of that contract
 		// are asserted here against the participant's real device state.
 		test.describe('MEDIA_TOGGLE Commands', () => {
-			test('should mute and unmute the microphone by setting enabled explicitly', async ({ page }) => {
+			test('should mute and unmute the microphone by setting active explicitly', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
@@ -236,7 +236,7 @@ for (const integration of INTEGRATIONS) {
 				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
 			});
 
-			test('should disable and enable the camera by setting enabled explicitly', async ({ page }) => {
+			test('should disable and enable the camera by setting active explicitly', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 				await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
@@ -248,7 +248,7 @@ for (const integration of INTEGRATIONS) {
 				await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
 			});
 
-			test('should invert the microphone state when enabled is omitted', async ({ page }) => {
+			test('should invert the microphone state when active is omitted', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
@@ -261,7 +261,7 @@ for (const integration of INTEGRATIONS) {
 				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
 			});
 
-			test('should invert the camera state when enabled is omitted', async ({ page }) => {
+			test('should invert the camera state when active is omitted', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 				await expectToolbarCameraEnabled(page, integration, true, { timeout: 10_000 });
@@ -286,7 +286,7 @@ for (const integration of INTEGRATIONS) {
 				await expectToolbarMicEnabled(page, integration, true, { timeout: 10_000 });
 			});
 
-			test('should start and stop screen sharing by setting enabled explicitly', async ({ page }) => {
+			test('should start and stop screen sharing by setting active explicitly', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 
@@ -299,7 +299,7 @@ for (const integration of INTEGRATIONS) {
 				});
 			});
 
-			test('should toggle screen sharing on and off when enabled is omitted', async ({ page }) => {
+			test('should toggle screen sharing on and off when active is omitted', async ({ page }) => {
 				await openMeeting(page, roomId, { integration, role: 'moderator' });
 				await expectEvent(page, EmbeddedEventName.MEETING_JOINED);
 
@@ -387,11 +387,11 @@ for (const integration of INTEGRATIONS) {
 					await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
 				});
 
-				test('should invert the microphone state when enabled is omitted before joining', async ({ page }) => {
+				test('should invert the microphone state when active is omitted before joining', async ({ page }) => {
 					const { meet } = await openMeetingAtMediaSetup(page, roomId, { integration, role: 'moderator' });
 
 					// An ODD number of toggles, all still in prejoin: a real toggle ends up flipped
-					// from the start (enabled); a dropped/no-op command would leave it unchanged, so
+					// from the start (active); a dropped/no-op command would leave it unchanged, so
 					// this — unlike a round trip — can tell the two apart with a single join at the end.
 					await mediaToggleAudioCommand(page);
 					await mediaToggleAudioCommand(page);
@@ -404,13 +404,13 @@ for (const integration of INTEGRATIONS) {
 				// The attribute only lowers the initial state (permissions still win, the control
 				// stays live) — so the participant must be able to unmute from the prejoin screen and
 				// have a later host toggle correctly mute them back, not just repeat "enable".
-				test('should mute back a participant who unmuted from initial-audio-enabled=false, on a later omitted toggle', async ({
+				test('should mute back a participant who unmuted from initial-audio-active=false, on a later omitted toggle', async ({
 					page
 				}) => {
 					const { meet } = await openMeetingAtMediaSetup(page, roomId, {
 						integration,
 						role: 'moderator',
-						initialAudioEnabled: false
+						initialAudioActive: false
 					});
 
 					await meet('#microphone-button').click(); // participant unmutes themselves
@@ -420,13 +420,13 @@ for (const integration of INTEGRATIONS) {
 					await expectToolbarMicEnabled(page, integration, false, { timeout: 10_000 });
 				});
 
-				test('should turn the camera back off for a participant who unmuted from initial-video-enabled=false, on a later omitted toggle', async ({
+				test('should turn the camera back off for a participant who unmuted from initial-video-active=false, on a later omitted toggle', async ({
 					page
 				}) => {
 					const { meet } = await openMeetingAtMediaSetup(page, roomId, {
 						integration,
 						role: 'moderator',
-						initialVideoEnabled: false
+						initialVideoActive: false
 					});
 
 					await meet('#camera-button').click();
@@ -531,7 +531,7 @@ test.describe('MEDIA_TOGGLE Commands After Remounting the WebComponent', () => {
 		await deleteRooms(createdRoomIds);
 	});
 
-	test('should disable the camera by setting enabled explicitly after a remount', async ({ page }) => {
+	test('should disable the camera by setting active explicitly after a remount', async ({ page }) => {
 		await openMeeting(page, roomId, { integration, role: 'moderator' });
 		await leaveMeeting(page, { integration });
 
@@ -542,7 +542,7 @@ test.describe('MEDIA_TOGGLE Commands After Remounting the WebComponent', () => {
 		await expectToolbarCameraEnabled(page, integration, false, { timeout: 10_000 });
 	});
 
-	test('should invert the camera state when enabled is omitted after a remount', async ({ page }) => {
+	test('should invert the camera state when active is omitted after a remount', async ({ page }) => {
 		await openMeeting(page, roomId, { integration, role: 'moderator' });
 		await leaveMeeting(page, { integration });
 

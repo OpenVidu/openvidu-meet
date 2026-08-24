@@ -270,11 +270,11 @@ const MeetRoomConfigSchema = new Schema(
 			type: Number,
 			required: false
 		},
-		initialAudioEnabled: {
+		initialAudioActive: {
 			type: Boolean,
 			required: false
 		},
-		initialVideoEnabled: {
+		initialVideoActive: {
 			type: Boolean,
 			required: false
 		},

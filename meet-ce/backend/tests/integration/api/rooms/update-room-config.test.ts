@@ -60,8 +60,8 @@ describe('Room API Tests', () => {
 			expect(updateResponse.status).toBe(200);
 			expect(updateResponse.body).toEqual({
 				...updatedConfig,
-				initialAudioEnabled: true, // Creation default, unchanged
-				initialVideoEnabled: true, // Creation default, unchanged
+				initialAudioActive: true, // Creation default, unchanged
+				initialVideoActive: true, // Creation default, unchanged
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
 			});
 
@@ -70,8 +70,8 @@ describe('Room API Tests', () => {
 			expect(getResponse.status).toBe(200);
 			expect(getResponse.body.config).toEqual({
 				...updatedConfig,
-				initialAudioEnabled: true, // Creation default, unchanged
-				initialVideoEnabled: true, // Creation default, unchanged
+				initialAudioActive: true, // Creation default, unchanged
+				initialVideoActive: true, // Creation default, unchanged
 				recording: { ...updatedConfig.recording, layout: MeetRecordingLayout.GRID } // Layout remains unchanged
 			});
 		});
@@ -117,26 +117,26 @@ describe('Room API Tests', () => {
 			const createdRoom = await createRoom({ roomName: 'initial-media-state-test' }, undefined, {
 				xExtraFields: 'config'
 			});
-			expect(createdRoom.config.initialAudioEnabled).toBe(true);
-			expect(createdRoom.config.initialVideoEnabled).toBe(true);
+			expect(createdRoom.config.initialAudioActive).toBe(true);
+			expect(createdRoom.config.initialVideoActive).toBe(true);
 
 			const updateResponse = await updateRoomConfig(createdRoom.roomId, {
-				initialAudioEnabled: false
+				initialAudioActive: false
 			});
 
 			expect(updateResponse.status).toBe(200);
-			expect(updateResponse.body.initialAudioEnabled).toBe(false);
+			expect(updateResponse.body.initialAudioActive).toBe(false);
 			// Config updates deep-merge, so the omitted sibling keeps its value
-			expect(updateResponse.body.initialVideoEnabled).toBe(true);
+			expect(updateResponse.body.initialVideoActive).toBe(true);
 
 			const restoreResponse = await updateRoomConfig(createdRoom.roomId, {
-				initialAudioEnabled: true,
-				initialVideoEnabled: false
+				initialAudioActive: true,
+				initialVideoActive: false
 			});
 
 			expect(restoreResponse.status).toBe(200);
-			expect(restoreResponse.body.initialAudioEnabled).toBe(true);
-			expect(restoreResponse.body.initialVideoEnabled).toBe(false);
+			expect(restoreResponse.body.initialAudioActive).toBe(true);
+			expect(restoreResponse.body.initialVideoActive).toBe(false);
 		});
 
 		it('should allow partial config updates', async () => {
@@ -181,8 +181,8 @@ describe('Room API Tests', () => {
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true },
-				initialAudioEnabled: true, // Creation default
-				initialVideoEnabled: true // Creation default
+				initialAudioActive: true, // Creation default
+				initialVideoActive: true // Creation default
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
 		});
@@ -392,8 +392,8 @@ describe('Room API Tests', () => {
 				virtualBackground: { enabled: true },
 				e2ee: { enabled: false },
 				captions: { enabled: true },
-				initialAudioEnabled: true, // Creation default
-				initialVideoEnabled: true // Creation default
+				initialAudioActive: true, // Creation default
+				initialVideoActive: true // Creation default
 			};
 			expect(getResponse.body.config).toEqual(expectedConfig);
 		});

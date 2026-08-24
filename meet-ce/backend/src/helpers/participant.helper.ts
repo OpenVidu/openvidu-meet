@@ -201,34 +201,34 @@ export class MeetParticipantHelper {
 
 	/**
 	 * Extracts the current media state of a participant from its published tracks: a device counts
-	 * as enabled when a track from it is published and not muted, while a screen share counts as
+	 * as active when a track from it is published and not muted, while a screen share counts as
 	 * active as soon as its track is published.
 	 *
 	 * @param participant - The LiveKit participant to inspect.
 	 */
 	static extractMediaState(
 		participant: ParticipantInfo
-	): Pick<MeetParticipantInfo, 'audioEnabled' | 'videoEnabled' | 'screenSharing'> {
-		let audioEnabled = false;
-		let videoEnabled = false;
-		let screenSharing = false;
+	): Pick<MeetParticipantInfo, 'audioActive' | 'videoActive' | 'screenShareActive'> {
+		let audioActive = false;
+		let videoActive = false;
+		let screenShareActive = false;
 
 		for (const track of participant.tracks) {
 			switch (track.source) {
 				case TrackSource.MICROPHONE:
-					audioEnabled ||= !track.muted;
+					audioActive ||= !track.muted;
 					break;
 				case TrackSource.CAMERA:
-					videoEnabled ||= !track.muted;
+					videoActive ||= !track.muted;
 					break;
 				case TrackSource.SCREEN_SHARE:
 				case TrackSource.SCREEN_SHARE_AUDIO:
-					screenSharing = true;
+					screenShareActive = true;
 					break;
 			}
 		}
 
-		return { audioEnabled, videoEnabled, screenSharing };
+		return { audioActive, videoActive, screenShareActive };
 	}
 
 	/**

@@ -27,24 +27,24 @@ MeetRoomConfig:
                 is `1440` (1 day).
                 Config updates merge with the stored config, so an omitted limit keeps its
                 current value; send `null` to lift it.
-        initialAudioEnabled:
+        initialAudioActive:
             type: boolean
             default: true
             description: >
-                Room-wide **default** for whether participants join with their microphone enabled.
-                This is the initial state, not a capability: the participant may re-enable the
+                Room-wide **default** for whether participants join with their microphone active.
+                This is the initial state, not a capability: the participant may reactivate the
                 device afterwards, and a denying `mediaPublishAudio` permission always wins.
-                It is a default, not a policy — the embedding application's `initial-audio-enabled`
+                It is a default, not a policy — the embedding application's `initial-audio-active`
                 attribute takes precedence whenever it is set, to either value. To *enforce*
                 silence, deny the permission instead.
-        initialVideoEnabled:
+        initialVideoActive:
             type: boolean
             default: true
             description: >
-                Room-wide **default** for whether participants join with their camera enabled.
-                This is the initial state, not a capability: the participant may re-enable the
+                Room-wide **default** for whether participants join with their camera active.
+                This is the initial state, not a capability: the participant may reactivate the
                 device afterwards, and a denying `mediaPublishVideo` permission always wins.
-                It is a default, not a policy — the embedding application's `initial-video-enabled`
+                It is a default, not a policy — the embedding application's `initial-video-active`
                 attribute takes precedence whenever it is set, to either value. To *enforce* a
                 camera-off meeting, deny the permission instead.
         chat:

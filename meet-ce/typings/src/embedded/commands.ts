@@ -22,17 +22,17 @@ export enum EmbeddedCommandName {
 	 */
 	PARTICIPANT_KICK = 'participantKick',
 	/**
-	 * Toggles the local participant's microphone, or sets it when `enabled` is provided.
+	 * Toggles the local participant's microphone, or sets it when `active` is provided.
 	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
 	 */
 	MEDIA_TOGGLE_AUDIO = 'mediaToggleAudio',
 	/**
-	 * Toggles the local participant's camera, or sets it when `enabled` is provided.
+	 * Toggles the local participant's camera, or sets it when `active` is provided.
 	 * @prejoin Works from the prejoin screen onwards, before the meeting is joined.
 	 */
 	MEDIA_TOGGLE_VIDEO = 'mediaToggleVideo',
 	/**
-	 * Toggles the local participant's screen share, or sets it when `enabled` is provided.
+	 * Toggles the local participant's screen share, or sets it when `active` is provided.
 	 */
 	MEDIA_TOGGLE_SCREEN_SHARE = 'mediaToggleScreenShare',
 	/**
@@ -79,24 +79,24 @@ export interface EmbeddedCommandPayloads {
 	};
 	/**
 	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO} command.
-	 * When `enabled` is omitted, the microphone state is toggled.
+	 * When `active` is omitted, the microphone state is toggled.
 	 */
 	[EmbeddedCommandName.MEDIA_TOGGLE_AUDIO]: {
-		enabled?: boolean;
+		active?: boolean;
 	};
 	/**
 	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_VIDEO} command.
-	 * When `enabled` is omitted, the camera state is toggled.
+	 * When `active` is omitted, the camera state is toggled.
 	 */
 	[EmbeddedCommandName.MEDIA_TOGGLE_VIDEO]: {
-		enabled?: boolean;
+		active?: boolean;
 	};
 	/**
 	 * Payload for the {@link EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE} command.
-	 * When `enabled` is omitted, the screen share state is toggled.
+	 * When `active` is omitted, the screen share state is toggled.
 	 */
 	[EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE]: {
-		enabled?: boolean;
+		active?: boolean;
 	};
 	/**
 	 * Payload for the {@link EmbeddedCommandName.END_MEETING} command.
@@ -220,7 +220,7 @@ export interface EmbeddedKickParticipantCommand {
  */
 /**
  * Command message for {@link EmbeddedCommandName.MEDIA_TOGGLE_AUDIO}: the command name plus its
- * optional payload (omitted payload or `enabled` = toggle), derived from
+ * optional payload (omitted payload or `active` = toggle), derived from
  * {@link EmbeddedCommandPayloadFor}.
  */
 export interface EmbeddedMediaToggleAudioCommand {
@@ -230,7 +230,7 @@ export interface EmbeddedMediaToggleAudioCommand {
 
 /**
  * Command message for {@link EmbeddedCommandName.MEDIA_TOGGLE_VIDEO}: the command name plus its
- * optional payload (omitted payload or `enabled` = toggle), derived from
+ * optional payload (omitted payload or `active` = toggle), derived from
  * {@link EmbeddedCommandPayloadFor}.
  */
 export interface EmbeddedMediaToggleVideoCommand {
@@ -240,7 +240,7 @@ export interface EmbeddedMediaToggleVideoCommand {
 
 /**
  * Command message for {@link EmbeddedCommandName.MEDIA_TOGGLE_SCREEN_SHARE}: the command name plus
- * its optional payload (omitted payload or `enabled` = toggle), derived from
+ * its optional payload (omitted payload or `active` = toggle), derived from
  * {@link EmbeddedCommandPayloadFor}.
  */
 export interface EmbeddedMediaToggleScreenShareCommand {

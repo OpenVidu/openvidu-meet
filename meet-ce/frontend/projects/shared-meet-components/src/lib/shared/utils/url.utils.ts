@@ -49,7 +49,7 @@ export const queryParam = (rawUrl: string, name: string): string | null => {
  * Parses a boolean query param with three meaningful states: absent ("no opinion", so a
  * lower-precedence source decides), `'false'`, and anything else (`true`). Collapsing the absent case
  * to a default would make it indistinguishable from an explicit `true`, and for
- * `initial-audio-enabled` / `initial-video-enabled` only the latter outranks the room's own default.
+ * `initial-audio-active` / `initial-video-active` only the latter outranks the room's own default.
  */
 export const parseOptionalBoolean = (value: string | undefined): boolean | undefined =>
 	value === undefined ? undefined : value !== 'false';
@@ -68,8 +68,8 @@ export const extractParams = (route: {
 		participantName: queryParams[EmbeddedAttribute.PARTICIPANT_NAME],
 		participantExternalId: queryParams[EmbeddedAttribute.PARTICIPANT_EXTERNAL_ID],
 		participantMetadata: queryParams[EmbeddedAttribute.PARTICIPANT_METADATA],
-		initialAudioEnabled: queryParams[EmbeddedAttribute.INITIAL_AUDIO_ENABLED],
-		initialVideoEnabled: queryParams[EmbeddedAttribute.INITIAL_VIDEO_ENABLED],
+		initialAudioActive: queryParams[EmbeddedAttribute.INITIAL_AUDIO_ACTIVE],
+		initialVideoActive: queryParams[EmbeddedAttribute.INITIAL_VIDEO_ACTIVE],
 		leaveRedirectUrl: queryParams[EmbeddedAttribute.LEAVE_REDIRECT_URL],
 		showOnlyRecordings: queryParams[EmbeddedAttribute.SHOW_ONLY_RECORDINGS] || 'false',
 		showRecording: queryParams[EmbeddedAttribute.SHOW_RECORDING],

@@ -39,9 +39,9 @@ export interface MeetParticipantPayload {
  */
 export interface MeetParticipantInfo extends MeetParticipantPayload {
 	/** Whether the participant's microphone is currently publishing (present and not muted). */
-	audioEnabled: boolean;
+	audioActive: boolean;
 	/** Whether the participant's camera is currently publishing (present and not muted). */
-	videoEnabled: boolean;
+	videoActive: boolean;
 	/** Whether the participant is currently sharing their screen. */
-	screenSharing: boolean;
+	screenShareActive: boolean;
 }

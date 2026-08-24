@@ -27,10 +27,10 @@ export interface MeetingEntryParams {
 	participantExternalId?: string;
 	/** Optional opaque application-defined participant payload (JSON recommended, ≤ 2 KB). */
 	participantMetadata?: string;
-	/** Join with the microphone enabled (initial state only; the participant may mute afterwards). Defaults to true. */
-	initialAudioEnabled?: boolean;
-	/** Join with the camera enabled (initial state only; the participant may disable it afterwards). Defaults to true. */
-	initialVideoEnabled?: boolean;
+	/** Join with the microphone active (initial state only; the participant may mute afterwards). Defaults to true. */
+	initialAudioActive?: boolean;
+	/** Join with the camera active (initial state only; the participant may deactivate it afterwards). Defaults to true. */
+	initialVideoActive?: boolean;
 	/** Optional leave-redirect URL passed to {@link LeaveRedirectService}. */
 	leaveRedirectUrl?: string;
 	/** Request a redirect to `/recording/<id>` instead of the meeting. */
@@ -92,8 +92,8 @@ export class MeetingEntryService {
 		participantName,
 		participantExternalId,
 		participantMetadata,
-		initialAudioEnabled,
-		initialVideoEnabled
+		initialAudioActive,
+		initialVideoActive
 	}: MeetingEntryParams): MeetingEntryDecision {
 		this.leaveRedirect.handleLeaveRedirectUrl(leaveRedirectUrl);
 
@@ -108,8 +108,8 @@ export class MeetingEntryService {
 		// Initial media state asked by the embedding application, seeded (or cleared) on every entry
 		// like the correlation fields above: `undefined` means "no opinion", so the room decides.
 		this.roomFeatureService.setInitialMediaRequest({
-			audioEnabled: initialAudioEnabled,
-			videoEnabled: initialVideoEnabled
+			audioActive: initialAudioActive,
+			videoActive: initialVideoActive
 		});
 
 		// Prefer the caller-supplied secret (URL/input); otherwise restore the one

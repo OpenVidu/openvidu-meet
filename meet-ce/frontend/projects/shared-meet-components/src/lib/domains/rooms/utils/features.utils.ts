@@ -56,7 +56,7 @@ export class FeatureCalculator {
 	/**
 	 * Precedence, not conjunction: the embedding application's request decides whenever it is set — to
 	 * either value, so it can also *raise* a room default of `false` — otherwise the room-wide
-	 * `config.initial*Enabled` does, and `true` when neither says anything. The room field is a default,
+	 * `config.initial*Active` does, and `true` when neither says anything. The room field is a default,
 	 * not a policy: enforcing a device off is the `mediaPublish*` permission's job, and being signed
 	 * into the token puts it above the whole chain.
 	 */
@@ -68,10 +68,10 @@ export class FeatureCalculator {
 		return {
 			microphone:
 				(permissions?.mediaPublishAudio ?? true) &&
-				(request.audioEnabled ?? roomConfig?.initialAudioEnabled ?? true),
+				(request.audioActive ?? roomConfig?.initialAudioActive ?? true),
 			camera:
 				(permissions?.mediaPublishVideo ?? true) &&
-				(request.videoEnabled ?? roomConfig?.initialVideoEnabled ?? true)
+				(request.videoActive ?? roomConfig?.initialVideoActive ?? true)
 		};
 	}
 

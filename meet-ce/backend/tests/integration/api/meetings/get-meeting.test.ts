@@ -158,9 +158,9 @@ describe('Meetings API Tests', () => {
 			expect(participant.metadata).toBe(APP_METADATA);
 			expect(participant.role).toBe(MeetRoomMemberRole.SPEAKER);
 			expect(participant.joinDate).toBeLessThanOrEqual(Date.now());
-			expect(typeof participant.audioEnabled).toBe('boolean');
-			expect(typeof participant.videoEnabled).toBe('boolean');
-			expect(participant.screenSharing).toBe(false);
+			expect(typeof participant.audioActive).toBe('boolean');
+			expect(typeof participant.videoActive).toBe('boolean');
+			expect(participant.screenShareActive).toBe(false);
 		});
 
 		it('should fail with 404 when the room has no active meeting', async () => {
