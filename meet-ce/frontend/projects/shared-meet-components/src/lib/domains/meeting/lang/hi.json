@@ -212,6 +212,12 @@
 		"BADGE_ADMIN": "व्यवस्थापक",
 		"BADGE_MODERATOR": "मॉडरेटर"
 	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"MUTE_ALL_TOOLTIP": "सभी का माइक्रोफ़ोन म्यूट करें"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "एक मॉडरेटर ने आपका एक डिवाइस बंद कर दिया"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "आपने मीटिंग छोड़ दी",
 		"LEFT_MESSAGE": "आपने सफलतापूर्वक मीटिंग छोड़ दी है",

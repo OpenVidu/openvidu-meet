@@ -54,6 +54,7 @@ export class ParticipantsPanelComponent {
 	readonly participantPanelAfterLocalParticipantTemplate = computed(() =>
 		this.templateRegistry.participantPanelAfterLocalParticipant()
 	);
+	readonly headerActionsTemplate = computed(() => this.templateRegistry.participantsPanelHeaderActions());
 
 	close() {
 		this.panelService.togglePanel(PanelType.PARTICIPANTS);

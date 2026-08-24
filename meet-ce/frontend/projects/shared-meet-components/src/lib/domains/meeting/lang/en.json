@@ -212,6 +212,12 @@
 		"BADGE_ADMIN": "Admin",
 		"BADGE_MODERATOR": "Moderator"
 	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"MUTE_ALL_TOOLTIP": "Mute everyone's microphone"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "A moderator turned off one of your devices"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "You Left the Meeting",
 		"LEFT_MESSAGE": "You have successfully left the meeting",

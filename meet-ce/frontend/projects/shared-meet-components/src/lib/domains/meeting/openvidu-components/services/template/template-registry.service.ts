@@ -23,6 +23,7 @@ export class TemplateRegistryService {
 	readonly chatPanel = signal<TemplateRef<any> | undefined>(undefined);
 	readonly activitiesPanel = signal<TemplateRef<any> | undefined>(undefined);
 	readonly participantsPanel = signal<TemplateRef<any> | undefined>(undefined);
+	readonly participantsPanelHeaderActions = signal<TemplateRef<any> | undefined>(undefined);
 	readonly additionalPanels = signal<TemplateRef<any> | undefined>(undefined);
 	readonly backgroundEffectsPanel = signal<TemplateRef<any> | undefined>(undefined);
 	readonly settingsPanel = signal<TemplateRef<any> | undefined>(undefined);

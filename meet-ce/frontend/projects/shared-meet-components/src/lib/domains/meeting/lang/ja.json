@@ -212,6 +212,12 @@
 		"BADGE_ADMIN": "管理者",
 		"BADGE_MODERATOR": "モデレーター"
 	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"MUTE_ALL_TOOLTIP": "全員のマイクをミュート"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "モデレーターがあなたのデバイスの1つをオフにしました"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "会議を退出しました",
 		"LEFT_MESSAGE": "会議から正常に退出しました",

@@ -23,6 +23,7 @@ import {
 	LayoutAdditionalElementsDirective,
 	LeaveButtonDirective,
 	ParticipantPanelAfterLocalParticipantDirective,
+	ParticipantsPanelHeaderActionsDirective,
 	PreJoinDirective,
 	SettingsPanelGeneralAdditionalElementsDirective,
 	ToolbarMoreOptionsAdditionalMenuItemsDirective
@@ -150,6 +151,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 	readonly externalChatPanel = contentChild(ChatPanelDirective);
 	readonly externalActivitiesPanel = contentChild(ActivitiesPanelDirective);
 	readonly externalParticipantsPanel = contentChild(ParticipantsPanelDirective);
+	readonly externalParticipantsPanelHeaderActions = contentChild(ParticipantsPanelHeaderActionsDirective);
 	readonly externalParticipantPanelItem = contentChild(ParticipantPanelItemDirective);
 	readonly externalParticipantPanelItemElements = contentChild(ParticipantPanelItemElementsDirective);
 
@@ -628,6 +630,7 @@ export class MeetingViewComponent implements OnDestroy, AfterViewInit {
 		// Panel slots
 		r.chatPanel.set(this.externalChatPanel()?.template ?? this.defaultChatPanelTemplate()!);
 		r.participantsPanel.set(this.externalParticipantsPanel()?.template ?? this.defaultParticipantsPanelTemplate()!);
+		r.participantsPanelHeaderActions.set(this.externalParticipantsPanelHeaderActions()?.template);
 		r.activitiesPanel.set(this.externalActivitiesPanel()?.template ?? this.defaultActivitiesPanelTemplate()!);
 		r.additionalPanels.set(this.externalAdditionalPanels()?.template);
 		r.backgroundEffectsPanel.set(this.defaultBackgroundEffectsPanelTemplate());

@@ -253,6 +253,10 @@ export class MeetingEventHandlerService {
 			controls.push(this.localMediaControl.setScreenShareEnabled(false));
 		}
 
+		if (controls.length > 0) {
+			this.notificationService.showSnackbar(this.translateService.translate('MODERATION.MUTED_BY_MODERATOR'));
+		}
+
 		const results = await Promise.allSettled(controls);
 
 		for (const result of results) {

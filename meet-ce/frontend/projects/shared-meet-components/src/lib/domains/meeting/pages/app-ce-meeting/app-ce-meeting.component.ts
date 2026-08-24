@@ -3,6 +3,7 @@ import { IframeBridgeService } from '../../../embedded/services/iframe-bridge.se
 import { MeetingCustomLayoutComponent } from '../../customization/meeting-custom-layout/meeting-custom-layout.component';
 import { MeetingInvitePanelComponent } from '../../customization/meeting-invite-panel/meeting-invite-panel.component';
 import { MeetingParticipantItemComponent } from '../../customization/meeting-participant-item/meeting-participant-item.component';
+import { MeetingParticipantsPanelActionsComponent } from '../../customization/meeting-participants-panel-actions/meeting-participants-panel-actions.component';
 import { MeetingSettingsExtensionsComponent } from '../../customization/meeting-settings-extensions/meeting-settings-extensions.component';
 import { MeetingToolbarExtraButtonsComponent } from '../../customization/meeting-toolbar-extra-buttons/meeting-toolbar-extra-buttons.component';
 import { MeetingToolbarLeaveButtonComponent } from '../../customization/meeting-toolbar-leave-button/meeting-toolbar-leave-button.component';
@@ -19,6 +20,7 @@ import { MeetingComponent } from '../meeting/meeting.component';
 		MeetingInvitePanelComponent,
 		MeetingWaitingPanelComponent,
 		MeetingParticipantItemComponent,
+		MeetingParticipantsPanelActionsComponent,
 		MeetingCustomLayoutComponent,
 		MeetingToolbarMoreOptionsMenuComponent,
 		MeetingSettingsExtensionsComponent
@@ -31,6 +33,7 @@ import { MeetingComponent } from '../meeting/meeting.component';
 			<ov-meeting-invite-panel />
 			<ov-meeting-waiting-panel />
 			<ov-meeting-participant-item />
+			<ov-meeting-participants-panel-actions />
 			<ov-meeting-settings-extensions />
 			<ov-meeting-custom-layout />
 		</ov-meeting>

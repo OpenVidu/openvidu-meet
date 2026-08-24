@@ -78,6 +78,11 @@
 			}
 		</div>
 
+		<!-- Participants Panel Header Actions (mute-all, for moderators) -->
+		<ng-container *ovParticipantsPanelHeaderActions>
+			<ng-content select="ov-meeting-participants-panel-actions" />
+		</ng-container>
+
 		<!-- Participant Panel Item Template -->
 		<div *ovParticipantPanelItem="let participant">
 			<ng-container

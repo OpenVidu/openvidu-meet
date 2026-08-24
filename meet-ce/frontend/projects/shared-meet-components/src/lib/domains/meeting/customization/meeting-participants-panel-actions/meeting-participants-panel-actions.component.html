@@ -1,0 +1,11 @@
+@if (canMuteAll()) {
+	<button
+		id="mute-all-participants-btn"
+		mat-icon-button
+		(click)="onMuteAllClick()"
+		[matTooltip]="'PARTICIPANTS_PANEL_ACTIONS.MUTE_ALL_TOOLTIP' | translate"
+		class="mute-all-btn"
+	>
+		<mat-icon class="material-symbols-outlined">mic_off</mat-icon>
+	</button>
+}

@@ -37,6 +37,7 @@ describe('MeetingEventHandlerService', () => {
 	let service: MeetingEventHandlerService;
 	let eventBus: EmbeddedEventBusService;
 	let mediaControl: jasmine.SpyObj<LocalMediaControlService>;
+	let notificationService: jasmine.SpyObj<NotificationService>;
 	let microphoneEnabled: WritableSignal<boolean>;
 	let cameraEnabled: WritableSignal<boolean>;
 	let screenShareEnabled: WritableSignal<boolean>;
@@ -66,6 +67,8 @@ describe('MeetingEventHandlerService', () => {
 			TestBed.tick();
 		});
 
+		notificationService = jasmine.createSpyObj<NotificationService>('NotificationService', ['showSnackbar']);
+
 		TestBed.configureTestingModule({
 			providers: [
 				provideZonelessChangeDetection(),
@@ -85,9 +88,9 @@ describe('MeetingEventHandlerService', () => {
 				{ provide: RecordingService, useValue: {} },
 				{ provide: RoomMemberContextService, useValue: {} },
 				{ provide: NavigationService, useValue: {} },
-				{ provide: NotificationService, useValue: {} },
+				{ provide: NotificationService, useValue: notificationService },
 				{ provide: SoundService, useValue: {} },
-				{ provide: TranslateService, useValue: {} }
+				{ provide: TranslateService, useValue: { translate: (key: string) => key } }
 			]
 		});
 
@@ -219,6 +222,24 @@ describe('MeetingEventHandlerService', () => {
 			expect(mediaControl.setMicrophoneEnabled).not.toHaveBeenCalled();
 			expect(mediaControl.setCameraEnabled).not.toHaveBeenCalled();
 			expect(mediaControl.setScreenShareEnabled).not.toHaveBeenCalled();
+			expect(notificationService.showSnackbar).not.toHaveBeenCalled();
+		});
+
+		it('notifies the local participant with a snackbar', async () => {
+			seedMediaStatus();
+
+			await muteFromModerator({ audioActive: false });
+
+			expect(notificationService.showSnackbar).toHaveBeenCalledOnceWith('MODERATION.MUTED_BY_MODERATOR');
+		});
+
+		it('shows exactly one snackbar even when several devices are muted at once', async () => {
+			screenShareEnabled.set(true);
+			seedMediaStatus();
+
+			await muteFromModerator({ audioActive: false, videoActive: false, screenShareActive: false });
+
+			expect(notificationService.showSnackbar).toHaveBeenCalledTimes(1);
 		});
 	});
 

@@ -212,6 +212,12 @@
 		"BADGE_ADMIN": "管理员",
 		"BADGE_MODERATOR": "主持人"
 	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"MUTE_ALL_TOOLTIP": "将所有人的麦克风静音"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "主持人已关闭您的一个设备"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "您已离开会议",
 		"LEFT_MESSAGE": "您已成功离开会议",

@@ -217,6 +217,29 @@ export class ParticipantPanelAfterLocalParticipantDirective {
 }
 
 /**
+ * The ***ovParticipantsPanelHeaderActions** directive allows you to inject custom HTML or Angular
+ * templates into the participants panel header, next to the close button — the place for
+ * panel-wide moderation actions (e.g. muting every participant at once), as opposed to
+ * **ovParticipantPanelItemElements**, which extends a single participant's row.
+ *
+ * Usage example:
+ * ```html
+ * <ov-participants-panel>
+ *   <ng-container *ovParticipantsPanelHeaderActions>
+ *     <button (click)="muteEveryone()">Mute all</button>
+ *   </ng-container>
+ * </ov-participants-panel>
+ * ```
+ */
+@Directive({
+	selector: '[ovParticipantsPanelHeaderActions]'
+})
+export class ParticipantsPanelHeaderActionsDirective {
+	public template = inject(TemplateRef<any>);
+	public container = inject(ViewContainerRef);
+}
+
+/**
  * The ***ovLeaveButton** directive allows you to inject a custom leave button template. You can use the toolbarLeaveButton = false for
  * replacing the default leave button with your custom one.
  *

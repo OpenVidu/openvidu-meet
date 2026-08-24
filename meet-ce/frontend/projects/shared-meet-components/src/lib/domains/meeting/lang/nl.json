@@ -212,6 +212,12 @@
 		"BADGE_ADMIN": "Beheerder",
 		"BADGE_MODERATOR": "Moderator"
 	},
+	"PARTICIPANTS_PANEL_ACTIONS": {
+		"MUTE_ALL_TOOLTIP": "Microfoon van iedereen dempen"
+	},
+	"MODERATION": {
+		"MUTED_BY_MODERATOR": "Een moderator heeft een van uw apparaten uitgeschakeld"
+	},
 	"END_MEETING": {
 		"LEFT_TITLE": "U heeft de meeting verlaten",
 		"LEFT_MESSAGE": "U heeft de meeting succesvol verlaten",
