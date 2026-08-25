@@ -13,6 +13,7 @@ import {
 	OnDestroy,
 	signal,
 	TemplateRef,
+	untracked,
 	viewChild,
 	viewChildren,
 	ViewContainerRef
@@ -171,12 +172,43 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	// ── Reactive effect ───────────────────────────────────────────────────────────
 
-	private readonly reactiveStateEffect = effect(() => {
-		const localParticipant = this.localParticipant();
-		// Read local streams so this effect re-runs when float/pin/mute state changes.
-		const localStreams = localParticipant?.streams() ?? [];
-		const isLocalFloating = localStreams.some((s) => s.isFloating);
+	private readonly localStreams = computed(() => this.localParticipant()?.streams() ?? []);
 
+	private readonly isLocalFloating = computed(() => this.localStreams().some((stream) => stream.isFloating));
+
+	/**
+	 * Everything about the streams on screen that can move a tile: which tiles exist, and which of
+	 * them floats or is pinned. The layout tracks this rather than the stream arrays themselves,
+	 * whose identity also changes when participant state the layout cannot act on churns — speaker
+	 * priority alone rebuilt them about twice a second while anyone talked.
+	 */
+	private readonly layoutShape = computed(() => {
+		const describe = (stream: ParticipantStream) =>
+			[
+				stream.streamId,
+				// A tile showing video and the same tile showing the avatar are laid out from
+				// different aspect ratios, so this belongs to the shape.
+				stream.videoTrack?.track && !stream.videoTrack.isMuted ? 'video' : 'poster',
+				stream.isFloating ? 'floating' : '',
+				stream.isPinned ? 'pinned' : ''
+			].join(':');
+
+		return [...this.localStreams(), ...this.remoteStreams()].map(describe).join('|');
+	});
+
+	private readonly reactiveStateEffect = effect(() => {
+		this.layoutShape();
+		const isLocalFloating = this.isLocalFloating();
+
+		untracked(() => this.applyFloatingTransition(isLocalFloating));
+	});
+
+	/**
+	 * Moves the local tile in or out of its floating position and re-runs the layout. Called with no
+	 * reactive context: the DOM reads and the layout options below would otherwise subscribe this
+	 * component's effect to signals that say nothing about where the tiles go.
+	 */
+	private applyFloatingTransition(isLocalFloating: boolean): void {
 		if (this.wasLocalFloating && !isLocalFloating) {
 			// Restore from floating: clear CSS resize state, reset drag offset, reposition.
 			this.floatPlacementSettling = false;
@@ -212,9 +244,8 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 		}
 
 		this.wasLocalFloating = isLocalFloating;
-		this.remoteStreams(); // subscribe to remote track publish/unpublish, pin, mute changes
 		this.layoutService.update();
-	});
+	}
 
 	// ── Lifecycle ─────────────────────────────────────────────────────────────────
 
@@ -322,9 +353,7 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 
 	private listenToLayoutDomChanges(container: HTMLElement): void {
 		this.mutationObserver = new MutationObserver((mutations) => {
-			const hasStructuralChanges = mutations.some(
-				(m) => m.type === 'childList' && (m.addedNodes.length > 0 || m.removedNodes.length > 0)
-			);
+			const hasStructuralChanges = mutations.some((m) => m.addedNodes.length > 0 || m.removedNodes.length > 0);
 
 			if (!hasStructuralChanges) return;
 
@@ -332,7 +361,9 @@ export class BaseLayoutComponent implements OnDestroy, AfterViewInit {
 			this.mutationTimeout = setTimeout(() => this.layoutService.update(), 0);
 		});
 
-		this.mutationObserver.observe(container, { childList: true, subtree: true });
+		// Direct children only: those are the tiles the layout positions, so nodes coming and going
+		// inside a tile (the audio wave of whoever is talking, a badge) are not a layout change.
+		this.mutationObserver.observe(container, { childList: true });
 	}
 
 	/**

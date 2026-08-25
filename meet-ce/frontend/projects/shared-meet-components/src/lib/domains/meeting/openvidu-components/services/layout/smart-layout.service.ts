@@ -1,5 +1,5 @@
 import { computed, effect, inject, Service, signal, untracked } from '@angular/core';
-import { SmartLayoutMode } from '../../models/layout/smart-layout.model';
+import { sameIdentityOrder, SmartLayoutMode } from '../../models/layout/smart-layout.model';
 import type { Participant } from '../../services/livekit';
 import { MeetingEventsService } from '../meeting-events/meeting-events.service';
 import { ViewportService } from '../viewport/viewport.service';
@@ -228,7 +228,16 @@ export class SmartLayoutService extends BaseLayoutService {
 		// Group 3: no longer qualified — keep at the tail for ordered removal
 		const inactive = currentOrder.filter((id) => !qualifiedSet.has(id));
 
-		const updated = [...existingActiveSpeakers, ...newActiveSpeakers, ...gracePeriodExisting, ...newGracePeriod, ...inactive];
-		this._speakerPriorityOrder.set(updated.slice(0, this._maxVisibleRemoteParticipants() * 2));
+		const updated = [
+			...existingActiveSpeakers,
+			...newActiveSpeakers,
+			...gracePeriodExisting,
+			...newGracePeriod,
+			...inactive
+		].slice(0, this._maxVisibleRemoteParticipants() * 2);
+
+		if (sameIdentityOrder(currentOrder, updated)) return;
+
+		this._speakerPriorityOrder.set(updated);
 	}
 }
