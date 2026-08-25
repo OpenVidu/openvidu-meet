@@ -133,7 +133,10 @@ backend serves it at `<basePath>/`.
   variable decides what responses carry: in `compatibility` mode (the default) permission objects
   include both the new keys and the deprecated `can*` ones, and with `MEET_MODE='3.9.0'` only the new
   keys — either way the new keys are always present, so the library needs no request header and never
-  looks at the `can*` spellings. Cached room-member tokens can still carry old-style permission
+  looks at the `can*` spellings. It must not **echo them back** either: a permission object read from
+  the API and posted again after flipping one key would carry the old spelling contradicting the new
+  value, and the whole request is rejected with a 422 (this is why the room wizard normalizes the
+  roles it loads in edit mode). Cached room-member tokens can still carry old-style permission
   names; `shared/utils/token.utils.ts` is the one place that fixes those up when a token is decoded —
   don't add a second decode path. That normalization goes away once the old names are fully removed.
 - `scripts/copy-livekit-assets.mjs` runs on `postinstall` and before every build/serve; it vendors the

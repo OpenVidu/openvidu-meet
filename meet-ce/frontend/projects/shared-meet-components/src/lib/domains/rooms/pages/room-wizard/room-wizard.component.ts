@@ -4,7 +4,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { ActivatedRoute } from '@angular/router';
-import { MeetRoomMemberOptions, MeetRoomOptions } from '@openvidu-meet/typings';
+import {
+	MeetRoomMemberOptions,
+	MeetRoomOptions,
+	MeetRoomRoles,
+	MeetRoomRolesConfig,
+	normalizePermissions
+} from '@openvidu-meet/typings';
 import { TranslatePipe } from '../../../../shared/pipes/translate.pipe';
 import { TranslateService } from '../../../../shared/services/i18n/translate.service';
 import { NavigationService } from '../../../../shared/services/navigation.service';
@@ -112,7 +118,13 @@ export class RoomWizardComponent implements OnInit {
 				});
 
 			// Populate existing room options based on fetched data
-			this.existingRoomData = { roomName, autoDeletionDate, autoDeletionPolicy, config, roles };
+			this.existingRoomData = {
+				roomName,
+				autoDeletionDate,
+				autoDeletionPolicy,
+				config,
+				roles: this.toCurrentPermissionKeys(roles)
+			};
 			this.existingRoomData.access = {
 				anonymous: {
 					moderator: { enabled: access.anonymous.moderator.enabled },
@@ -132,6 +144,19 @@ export class RoomWizardComponent implements OnInit {
 			// Navigate back to rooms list if room not found
 			await this.navigationService.navigateTo('/rooms', undefined, true);
 		}
+	}
+
+	/**
+	 * In compatibility mode the API serves each role's permissions under the current keys *and* the
+	 * deprecated `can*` ones. The wizard edits only the current keys and sends the whole object back on
+	 * update, so a permission the user flips would reach the API contradicting its own alias and the
+	 * update would be rejected as a whole — the deprecated half is dropped here instead. Removed in 3.12.0.
+	 */
+	private toCurrentPermissionKeys(roles: MeetRoomRoles): MeetRoomRolesConfig {
+		return {
+			moderator: { permissions: normalizePermissions(roles.moderator.permissions) },
+			speaker: { permissions: normalizePermissions(roles.speaker.permissions) }
+		};
 	}
 
 	onOpenAdvancedMode() {
