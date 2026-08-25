@@ -6,6 +6,7 @@ import {
 	LocalAudioTrack,
 	LocalTrack,
 	LocalVideoTrack,
+	MediaDeviceFailure,
 	Track,
 	VideoCaptureOptions
 } from '../livekit';
@@ -152,14 +153,12 @@ export class LocalTrackService {
 	 *
 	 * @param videoDeviceId - The ID of the video device to use. If not provided, the default video device will be used.
 	 * @param audioDeviceId - The ID of the audio device to use. If not provided, the default audio device will be used.
-	 * @param allowPartialCreation - If true, allows creating tracks even if some devices fail
 	 * @returns A promise that resolves to an array of LocalTrack objects representing the created tracks.
 	 * @internal
 	 */
 	async createLocalTracks(
 		videoDeviceId: string | boolean | undefined = undefined,
-		audioDeviceId: string | boolean | undefined = undefined,
-		allowPartialCreation = true
+		audioDeviceId: string | boolean | undefined = undefined
 	): Promise<LocalTrack[]> {
 		// Default to the participant's current intent (availability-independent). Whether a device is
 		// actually opened — and which one — is resolved by the per-kind logic below; on first visit the
@@ -213,14 +212,7 @@ export class LocalTrackService {
 
 		if (options.audio || options.video) {
 			this.log.d('Creating local tracks with options', options);
-
-			if (allowPartialCreation) {
-				// Try to create tracks separately to handle device conflicts gracefully
-				newLocalTracks = await this.createTracksWithFallback(options);
-			} else {
-				// Original behavior - all or nothing
-				newLocalTracks = await this.livekitSdkService.createLocalTracks(options);
-			}
+			newLocalTracks = await this.requestTracks(options);
 
 			const videoTrack = newLocalTracks.find((t) => t.kind === Track.Kind.Video) as LocalVideoTrack | undefined;
 
@@ -243,34 +235,37 @@ export class LocalTrackService {
 	}
 
 	/**
-	 * Creates tracks with fallback strategy to handle device conflicts
-	 * @param options - The track creation options
-	 * @returns Array of successfully created tracks
+	 * Asks for every wanted device in one `getUserMedia`, which costs a single browser permission
+	 * prompt. That request is all-or-nothing, so a camera held by another application would take the
+	 * microphone down with it: only then is each device asked for on its own. A denied permission is
+	 * never retried — the prompt would come back asking for an answer already given.
 	 * @internal
 	 */
-	private async createTracksWithFallback(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
+	private async requestTracks(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
+		try {
+			return await this.livekitSdkService.createLocalTracks(options);
+		} catch (error) {
+			const denied = MediaDeviceFailure.getFailure(error) === MediaDeviceFailure.PermissionDenied;
+
+			if (denied || !options.audio || !options.video) {
+				this.log.w('Failed to create the local tracks:', error);
+				return [];
+			}
+
+			this.log.w('Failed to create both local tracks at once, asking device by device:', error);
+
+			return this.requestTracksDeviceByDevice(options);
+		}
+	}
+
+	private async requestTracksDeviceByDevice(options: CreateLocalTracksOptions): Promise<LocalTrack[]> {
 		const tracks: LocalTrack[] = [];
 
-		// Try to create video track separately
-		if (options.video) {
+		for (const deviceOptions of [{ video: options.video }, { audio: options.audio }]) {
 			try {
-				const videoTracks = await this.livekitSdkService.createLocalTracks({ video: options.video });
-				tracks.push(...videoTracks);
-				this.log.d('Video track created successfully');
+				tracks.push(...(await this.livekitSdkService.createLocalTracks(deviceOptions)));
 			} catch (error) {
-				this.log.w('Failed to create video track, device may be busy:', error);
-				// Still continue to try audio track
-			}
-		}
-
-		// Try to create audio track separately
-		if (options.audio) {
-			try {
-				const audioTracks = await this.livekitSdkService.createLocalTracks({ audio: options.audio });
-				tracks.push(...audioTracks);
-				this.log.d('Audio track created successfully');
-			} catch (error) {
-				this.log.w('Failed to create audio track, device may be busy:', error);
+				this.log.w('Failed to create a local track, the device may be busy:', error);
 			}
 		}
 

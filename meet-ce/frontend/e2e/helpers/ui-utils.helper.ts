@@ -271,9 +271,8 @@ export const installGetUserMediaCounter = async (page: Page): Promise<void> => {
 		};
 
 		mediaDevices.getUserMedia = (constraints?: MediaStreamConstraints) => {
-			const audio = typeof constraints?.audio === 'object' ? (constraints.audio as MediaTrackConstraints) : {};
-			const video = typeof constraints?.video === 'object' ? (constraints.video as MediaTrackConstraints) : {};
-
+			// Record only whether each kind was requested — enough to tell the single combined
+			// acquisition apart from a probe or a per-kind split, and trivially serialisable.
 			w.__ovGumCalls?.push({
 				audio: Boolean(constraints?.audio),
 				video: Boolean(constraints?.video),
@@ -300,8 +299,9 @@ export const getGetUserMediaCallCount = async (page: Page): Promise<number> => {
 
 /**
  * Returns one entry per `navigator.mediaDevices.getUserMedia` call since
- * {@link installGetUserMediaCounter} was installed. A combined `{ audio: true, video: true }` entry
- * is the signature of the old permission probe.
+ * {@link installGetUserMediaCounter} was installed, each flagging whether audio/video was requested.
+ * A prejoin that wants both devices asks for them in one combined call, so more than one entry is
+ * the signature of a throwaway permission probe or of a request split per kind.
  */
 export const getGetUserMediaCalls = async (page: Page): Promise<GetUserMediaCall[]> => {
 	return (await page.evaluate(

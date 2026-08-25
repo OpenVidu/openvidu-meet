@@ -219,4 +219,44 @@ describe('LocalTrackService', () => {
 			expect(service.microphoneEnabled()).toBeTrue();
 		});
 	});
+
+	describe('opening the camera and the microphone together', () => {
+		const failWith = (name: string) => Object.assign(new Error(name), { name });
+
+		it('asks for both devices in a single request, so the browser prompts once', async () => {
+			livekitSdkService.createLocalTracks.and.resolveTo([asTrack(video), asTrack(audio)]);
+
+			await service.createLocalTracks();
+
+			expect(livekitSdkService.createLocalTracks).toHaveBeenCalledTimes(1);
+
+			const options = livekitSdkService.createLocalTracks.calls.mostRecent().args[0];
+			expect(options.video).toBeTruthy();
+			expect(options.audio).toBeTruthy();
+		});
+
+		it('asks device by device when the combined request finds one of them busy', async () => {
+			livekitSdkService.createLocalTracks.and.callFake(async (options) => {
+				if (options.audio && options.video) {
+					throw failWith('NotReadableError');
+				}
+
+				return options.audio ? [asTrack(audio)] : [];
+			});
+
+			const tracks = await service.createLocalTracks();
+
+			expect(livekitSdkService.createLocalTracks).toHaveBeenCalledTimes(3);
+			expect(tracks).toEqual([asTrack(audio)]);
+		});
+
+		it('never asks a second time once the permission was denied', async () => {
+			livekitSdkService.createLocalTracks.and.rejectWith(failWith('NotAllowedError'));
+
+			const tracks = await service.createLocalTracks();
+
+			expect(livekitSdkService.createLocalTracks).toHaveBeenCalledTimes(1);
+			expect(tracks).toEqual([]);
+		});
+	});
 });

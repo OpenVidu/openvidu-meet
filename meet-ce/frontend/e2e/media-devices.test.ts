@@ -239,7 +239,7 @@ test.describe('Media Devices E2E Tests', () => {
 			await expect(page.locator('#no-video-device-message')).toHaveCount(0);
 		});
 
-		test('opens the prejoin without a redundant getUserMedia probe', async ({ page }) => {
+		test('opens the prejoin with a single combined getUserMedia', async ({ page }) => {
 			await installGetUserMediaCounter(page);
 
 			await openPrejoin(page, accessUrl);
@@ -247,12 +247,11 @@ test.describe('Media Devices E2E Tests', () => {
 
 			const calls = await getGetUserMediaCalls(page);
 
-			// The pre-reorder design — and LiveKit's getLocalDevices() with requestPermissions=true —
-			// probed for permission with a throwaway getUserMedia({audio,video}) before acquiring the
-			// real tracks. The reorder requests media per kind (video-only / audio-only) and never as a
-			// combined audio+video acquisition, so no call carries both kinds.
-			expect(calls.length).toBeGreaterThan(0);
-			expect(calls.filter((call) => call.audio && call.video)).toEqual([]);
+			// Two things are pinned here. There is no throwaway permission probe (LiveKit's
+			// getLocalDevices() with requestPermissions=true would add one before the real tracks), and
+			// the microphone and the camera are asked for together: one request is one browser
+			// permission prompt, where a request per kind costs the participant two.
+			expect(calls).toEqual([{ audio: true, video: true }]);
 		});
 
 		test('re-selecting the active camera does not re-acquire the track', async ({ page }) => {
