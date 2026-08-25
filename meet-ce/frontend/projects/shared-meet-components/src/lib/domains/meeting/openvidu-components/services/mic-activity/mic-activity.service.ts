@@ -14,19 +14,20 @@ const SPEAKING_THRESHOLD = 0.045;
 const SPEAKING_ATTACK_MS = 150;
 // Once speaking, stay "speaking" through short pauses between words/sentences.
 const SPEAKING_RELEASE_MS = 1000;
+// How often the analyser is read. Voice activity is decided over SPEAKING_ATTACK_MS, so there is
+// nothing to gain from reading once per animation frame — and a frame-rate loop keeps the whole
+// rendering pipeline awake for as long as a microphone track exists.
+const SAMPLE_INTERVAL_MS = 50;
 
 /**
  * Monitors the live signal of the local microphone to power the "microphone status" warnings
  */
 @Service()
 export class MicActivityService implements OnDestroy {
-	private readonly _level = signal(0);
 	private readonly _isSpeaking = signal(false);
 	private readonly _systemMuted = signal(false);
 	private readonly _active = signal(false);
 
-	/** Normalized (0-1) input level of the monitored microphone. */
-	readonly level = this._level.asReadonly();
 	/** Whether voice activity is currently detected (with a short release window). */
 	readonly isSpeaking = this._isSpeaking.asReadonly();
 	/** Whether the OS reports the microphone input as muted. */
@@ -39,7 +40,7 @@ export class MicActivityService implements OnDestroy {
 	private timeDomainBuffer?: Uint8Array<ArrayBuffer>;
 	private monitorTrack?: MediaStreamTrack;
 	private sourceTrack?: MediaStreamTrack;
-	private rafId: number | null = null;
+	private sampleTimer: ReturnType<typeof setInterval> | null = null;
 	private lastSpeakingAt = 0;
 	private aboveThresholdSince = 0;
 	private currentTrackId?: string;
@@ -96,7 +97,8 @@ export class MicActivityService implements OnDestroy {
 			this.aboveThresholdSince = 0;
 			this._systemMuted.set(source.muted);
 			this._active.set(true);
-			this.loop();
+			this.sample();
+			this.sampleTimer = setInterval(this.sample, SAMPLE_INTERVAL_MS);
 		} catch (error) {
 			this.log.e('Failed to attach microphone activity analyser', error);
 			this.detach();
@@ -104,13 +106,13 @@ export class MicActivityService implements OnDestroy {
 	}
 
 	/**
-	 * Stops monitoring: cancels the read loop, closes the AudioContext and stops the cloned
+	 * Stops monitoring: stops the sampling timer, closes the AudioContext and stops the cloned
 	 * MediaStreamTrack so the capture device is released. Safe to call repeatedly.
 	 */
 	private detach(): void {
-		if (this.rafId !== null) {
-			cancelAnimationFrame(this.rafId);
-			this.rafId = null;
+		if (this.sampleTimer !== null) {
+			clearInterval(this.sampleTimer);
+			this.sampleTimer = null;
 		}
 
 		const cleanupAnalyser = this.cleanupAnalyser;
@@ -123,7 +125,6 @@ export class MicActivityService implements OnDestroy {
 		this.currentTrackId = undefined;
 		this.aboveThresholdSince = 0;
 
-		this._level.set(0);
 		this._isSpeaking.set(false);
 		this._systemMuted.set(false);
 		this._active.set(false);
@@ -141,7 +142,7 @@ export class MicActivityService implements OnDestroy {
 		this.detach();
 	}
 
-	private readonly loop = (): void => {
+	private readonly sample = (): void => {
 		const analyser = this.analyser;
 		const buffer = this.timeDomainBuffer;
 
@@ -160,10 +161,9 @@ export class MicActivityService implements OnDestroy {
 		}
 
 		const rms = Math.sqrt(sumSquares / buffer.length);
-		this._level.set(rms);
 
 		// The system-mute state has no reliable event across browsers once tracks are cloned,
-		// so it is refreshed on every read of the loop (~1 frame of latency).
+		// so it is refreshed on every read (one sampling period of latency).
 		this._systemMuted.set(this.sourceTrack?.muted ?? false);
 
 		const now = performance.now();
@@ -187,7 +187,5 @@ export class MicActivityService implements OnDestroy {
 				this._isSpeaking.set(false);
 			}
 		}
-
-		this.rafId = requestAnimationFrame(this.loop);
 	};
 }
