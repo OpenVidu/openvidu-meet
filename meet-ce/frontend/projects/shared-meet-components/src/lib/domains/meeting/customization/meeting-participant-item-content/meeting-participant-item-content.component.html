@@ -1,7 +1,11 @@
 @let ctx = displayProperties();
 
 <div class="participant-item-container">
-	<ov-participant-panel-item [participant]="participant()">
+	<ov-participant-panel-item
+		[participant]="participant()"
+		[canMuteMedia]="ctx.canMuteMedia"
+		(mediaMuteRequested)="onMediaMuteRequested($event)"
+	>
 		<!-- Participant Badge -->
 		<ng-container *ovParticipantPanelParticipantBadge>
 			@if (ctx.showBadge) {
@@ -22,89 +26,49 @@
 
 		<!-- Moderation Controls -->
 		@if (ctx.showModerationControls) {
-			<div
-				*ovParticipantPanelItemElements
-				class="moderation-controls"
-				[attr.id]="'moderation-controls-' + participant().sid"
-			>
-				<!-- Make Moderator Button -->
-				@if (ctx.showMakeModeratorButton) {
-					<button
-						mat-icon-button
-						(click)="onMakeModeratorClick()"
-						[matTooltip]="'PARTICIPANT_ITEM.PROMOTE_TOOLTIP' | translate"
-						class="make-moderator-btn"
-						[attr.id]="'make-moderator-btn-' + participant().sid"
-					>
-						<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
-					</button>
-				}
+			<ng-container *ovParticipantPanelItemElements>
+				<div class="moderation-controls" [attr.id]="'moderation-controls-' + participant().sid">
+					@if (ctx.showMakeModeratorButton) {
+						<button
+							mat-menu-item
+							(click)="onMakeModeratorClick()"
+							class="make-moderator-btn"
+							[attr.id]="'make-moderator-btn-' + participant().sid"
+						>
+							<mat-icon class="material-symbols-outlined">add_moderator</mat-icon>
+							<span>{{ 'PARTICIPANT_ITEM.PROMOTE' | translate }}</span>
+						</button>
+					}
 
-				<!-- Unmake Moderator Button -->
-				@if (ctx.showUnmakeModeratorButton) {
-					<button
-						mat-icon-button
-						(click)="onUnmakeModeratorClick()"
-						[matTooltip]="'PARTICIPANT_ITEM.DOWNGRADE_TOOLTIP' | translate"
-						class="remove-moderator-btn"
-						[attr.id]="'remove-moderator-btn-' + participant().sid"
-					>
-						<mat-icon class="material-symbols-outlined">remove_moderator</mat-icon>
-					</button>
-				}
+					@if (ctx.showUnmakeModeratorButton) {
+						<button
+							mat-menu-item
+							(click)="onUnmakeModeratorClick()"
+							class="remove-moderator-btn"
+							[attr.id]="'remove-moderator-btn-' + participant().sid"
+						>
+							<mat-icon class="material-symbols-outlined">remove_moderator</mat-icon>
+							<span>{{ 'PARTICIPANT_ITEM.DOWNGRADE' | translate }}</span>
+						</button>
+					}
 
-				<!-- Mute Microphone Button -->
-				@if (ctx.showMuteAudioButton) {
-					<button
-						mat-icon-button
-						(click)="onMuteAudioClick()"
-						[matTooltip]="'PARTICIPANT_ITEM.MUTE_AUDIO_TOOLTIP' | translate"
-						class="mute-audio-btn"
-						[attr.id]="'mute-audio-btn-' + participant().sid"
-					>
-						<mat-icon class="material-symbols-outlined">mic_off</mat-icon>
-					</button>
-				}
+					@if (ctx.showKickButton && (ctx.showMakeModeratorButton || ctx.showUnmakeModeratorButton)) {
+						<mat-divider />
+					}
 
-				<!-- Turn Off Camera Button -->
-				@if (ctx.showMuteVideoButton) {
-					<button
-						mat-icon-button
-						(click)="onMuteVideoClick()"
-						[matTooltip]="'PARTICIPANT_ITEM.MUTE_VIDEO_TOOLTIP' | translate"
-						class="mute-video-btn"
-						[attr.id]="'mute-video-btn-' + participant().sid"
-					>
-						<mat-icon class="material-symbols-outlined">videocam_off</mat-icon>
-					</button>
-				}
-
-				<!-- Stop Screen Share Button -->
-				@if (ctx.showStopScreenShareButton) {
-					<button
-						mat-icon-button
-						(click)="onStopScreenShareClick()"
-						[matTooltip]="'PARTICIPANT_ITEM.STOP_SCREEN_SHARE_TOOLTIP' | translate"
-						class="stop-screen-share-btn"
-						[attr.id]="'stop-screen-share-btn-' + participant().sid"
-					>
-						<mat-icon class="material-symbols-outlined">stop_screen_share</mat-icon>
-					</button>
-				}
-
-				<!-- Kick Participant Button -->
-				@if (ctx.showKickButton) {
-					<button
-						mat-icon-button
-						(click)="onKickParticipantClick()"
-						[matTooltip]="'PARTICIPANT_ITEM.KICK_TOOLTIP' | translate"
-						class="force-disconnect-btn"
-						[attr.id]="'kick-participant-btn-' + participant().sid"
-					>
-						<mat-icon>call_end</mat-icon>
-					</button>
-				}
-			</div>
+					@if (ctx.showKickButton) {
+						<button
+							mat-menu-item
+							(click)="onKickParticipantClick()"
+							class="force-disconnect-btn"
+							[attr.id]="'kick-participant-btn-' + participant().sid"
+						>
+							<mat-icon class="material-symbols-outlined">person_remove</mat-icon>
+							<span>{{ 'PARTICIPANT_ITEM.REMOVE' | translate }}</span>
+						</button>
+					}
+				</div>
+			</ng-container>
 		}
 	</ov-participant-panel-item>
 </div>

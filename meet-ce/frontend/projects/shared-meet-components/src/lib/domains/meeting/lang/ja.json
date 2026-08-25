@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "参加者",
 			"YOU": "あなた",
-			"MUTE": "ミュート",
-			"UNMUTE": "ミュート解除",
+			"MORE_ACTIONS": "その他の操作",
+			"MIC_ON": "マイクオン",
+			"MIC_OFF": "マイクオフ",
+			"CAM_ON": "カメラオン",
+			"CAM_OFF": "カメラオフ",
+			"SHARING_SCREEN": "画面を共有中",
+			"MUTE_MICROPHONE": "マイクをミュート",
+			"TURN_OFF_CAMERA": "カメラをオフ",
+			"STOP_SCREEN_SHARE": "画面共有を停止",
+			"MUTE_FOR_ME": "自分にだけミュート",
+			"UNMUTE_FOR_ME": "自分へのミュートを解除",
+			"MUTED_FOR_YOU": "あなたにだけミュート中",
 			"CONNECTION_QUALITY": {
 				"LABEL": "接続品質",
 				"EXCELLENT": "優れた",
 				"GOOD": "良好",
 				"POOR": "不良",
 				"LOST": "失われた"
-			},
-			"SHARING_SCREEN": "画面を共有中",
-			"MIC_OFF": "マイクオフ",
-			"CAM_OFF": "カメラオフ"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "設定",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "表示する参加者数"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "モデレーターに昇格",
-		"DOWNGRADE_TOOLTIP": "元の権限に戻す",
-		"KICK_TOOLTIP": "参加者を退出させる",
-		"MUTE_AUDIO_TOOLTIP": "マイクをミュート",
-		"MUTE_VIDEO_TOOLTIP": "カメラをオフ",
-		"STOP_SCREEN_SHARE_TOOLTIP": "画面共有を停止",
+		"PROMOTE": "モデレーターに昇格",
+		"DOWNGRADE": "元の権限に戻す",
+		"REMOVE": "会議から削除",
 		"BADGE_OWNER": "オーナー",
 		"BADGE_ADMIN": "管理者",
 		"BADGE_MODERATOR": "モデレーター"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "全員のマイクをミュート"
+		"TURN_OFF_FOR_EVERYONE": "全員に対してオフにする",
+		"MUTE_ALL_TOOLTIP": "全員のマイクをミュート",
+		"MUTE_ALL_NONE": "すべてのマイクはすでにオフです",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "全員のカメラをオフにする",
+		"TURN_OFF_ALL_CAMERAS_NONE": "すべてのカメラはすでにオフです",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "すべての画面共有を停止",
+		"STOP_ALL_SCREEN_SHARES_NONE": "誰も画面を共有していません"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "モデレーターがあなたのデバイスの1つをオフにしました"

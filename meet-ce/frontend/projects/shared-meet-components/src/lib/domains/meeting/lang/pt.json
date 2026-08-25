@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Participantes",
 			"YOU": "Você (eu)",
-			"MUTE": "Silenciar",
-			"UNMUTE": "Ativar som",
+			"MORE_ACTIONS": "Mais ações",
+			"MIC_ON": "Microfone ligado",
+			"MIC_OFF": "Microfone desligado",
+			"CAM_ON": "Câmera ligada",
+			"CAM_OFF": "Câmera desligada",
+			"SHARING_SCREEN": "Compartilhando tela",
+			"MUTE_MICROPHONE": "Silenciar microfone",
+			"TURN_OFF_CAMERA": "Desligar câmara",
+			"STOP_SCREEN_SHARE": "Parar partilha de ecrã",
+			"MUTE_FOR_ME": "Silenciar apenas para mim",
+			"UNMUTE_FOR_ME": "Reativar o som para mim",
+			"MUTED_FOR_YOU": "Silenciado apenas para você",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Qualidade de conexão",
 				"EXCELLENT": "Excelente",
 				"GOOD": "Boa",
 				"POOR": "Fraca",
 				"LOST": "Perdida"
-			},
-			"SHARING_SCREEN": "Compartilhando tela",
-			"MIC_OFF": "Microfone desligado",
-			"CAM_OFF": "Câmera desligada"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Configurações",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "Número de participantes a exibir"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Promover a moderador",
-		"DOWNGRADE_TOOLTIP": "Rebaixar para as permissões originais",
-		"KICK_TOOLTIP": "Expulsar participante",
-		"MUTE_AUDIO_TOOLTIP": "Silenciar microfone",
-		"MUTE_VIDEO_TOOLTIP": "Desligar câmara",
-		"STOP_SCREEN_SHARE_TOOLTIP": "Parar partilha de ecrã",
+		"PROMOTE": "Promover a moderador",
+		"DOWNGRADE": "Rebaixar para as permissões originais",
+		"REMOVE": "Remover da reunião",
 		"BADGE_OWNER": "Proprietário",
 		"BADGE_ADMIN": "Administrador",
 		"BADGE_MODERATOR": "Moderador"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "Silenciar o microfone de todos"
+		"TURN_OFF_FOR_EVERYONE": "Desligar para todos",
+		"MUTE_ALL_TOOLTIP": "Silenciar o microfone de todos",
+		"MUTE_ALL_NONE": "Todos os microfones já estão desligados",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Desligar a câmera de todos",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Todas as câmeras já estão desligadas",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Parar todos os compartilhamentos de tela",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Ninguém está compartilhando a tela"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "Um moderador desligou um dos seus dispositivos"

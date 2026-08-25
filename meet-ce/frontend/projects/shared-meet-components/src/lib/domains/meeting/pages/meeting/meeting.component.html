@@ -63,7 +63,8 @@
 			<ng-content select="ov-meeting-toolbar-more-options-menu" />
 		</ng-container>
 
-		<!-- Panel After Local Participant (only while alone) -->
+		<!-- Panel After Local Participant: an invitation while alone, otherwise the panel-wide
+		     moderation strip, which heads the remote list because it never touches your own devices -->
 		<div *ovParticipantPanelAfterLocalParticipant>
 			@if (isAlone()) {
 				@if (isEmbeddedMode()) {
@@ -75,13 +76,10 @@
 					<!-- Standalone SPA mode: show the share/copy room access link panel -->
 					<ng-content select="ov-meeting-invite-panel" />
 				}
+			} @else {
+				<ng-content select="ov-meeting-participants-panel-actions" />
 			}
 		</div>
-
-		<!-- Participants Panel Header Actions (mute-all, for moderators) -->
-		<ng-container *ovParticipantsPanelHeaderActions>
-			<ng-content select="ov-meeting-participants-panel-actions" />
-		</ng-container>
 
 		<!-- Participant Panel Item Template -->
 		<div *ovParticipantPanelItem="let participant">

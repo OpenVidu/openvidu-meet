@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Partecipanti",
 			"YOU": "Tu",
-			"MUTE": "Disattiva l'audio",
-			"UNMUTE": "Attiva l'audio",
+			"MORE_ACTIONS": "Altre azioni",
+			"MIC_ON": "Microfono acceso",
+			"MIC_OFF": "Microfono spento",
+			"CAM_ON": "Videocamera accesa",
+			"CAM_OFF": "Videocamera spenta",
+			"SHARING_SCREEN": "Sta condividendo lo schermo",
+			"MUTE_MICROPHONE": "Silenzia microfono",
+			"TURN_OFF_CAMERA": "Spegni videocamera",
+			"STOP_SCREEN_SHARE": "Interrompi condivisione schermo",
+			"MUTE_FOR_ME": "Silenzia solo per me",
+			"UNMUTE_FOR_ME": "Riattiva l'audio per me",
+			"MUTED_FOR_YOU": "Silenziato solo per te",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Qualità della connessione",
 				"EXCELLENT": "Eccellente",
 				"GOOD": "Buona",
 				"POOR": "Scarsa",
 				"LOST": "Persa"
-			},
-			"SHARING_SCREEN": "Sta condividendo lo schermo",
-			"MIC_OFF": "Microfono spento",
-			"CAM_OFF": "Videocamera spenta"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Impostazioni",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "Numero di partecipanti da visualizzare"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Promuovi a moderatore",
-		"DOWNGRADE_TOOLTIP": "Ripristina le autorizzazioni originali",
-		"KICK_TOOLTIP": "Espelli partecipante",
-		"MUTE_AUDIO_TOOLTIP": "Silenzia microfono",
-		"MUTE_VIDEO_TOOLTIP": "Spegni videocamera",
-		"STOP_SCREEN_SHARE_TOOLTIP": "Interrompi condivisione schermo",
+		"PROMOTE": "Promuovi a moderatore",
+		"DOWNGRADE": "Ripristina le autorizzazioni originali",
+		"REMOVE": "Rimuovi dalla riunione",
 		"BADGE_OWNER": "Proprietario",
 		"BADGE_ADMIN": "Amministratore",
 		"BADGE_MODERATOR": "Moderatore"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "Silenzia il microfono di tutti"
+		"TURN_OFF_FOR_EVERYONE": "Disattiva per tutti",
+		"MUTE_ALL_TOOLTIP": "Silenzia il microfono di tutti",
+		"MUTE_ALL_NONE": "Tutti i microfoni sono già spenti",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Spegni la videocamera di tutti",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Tutte le videocamere sono già spente",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Interrompi tutte le condivisioni schermo",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Nessuno sta condividendo lo schermo"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "Un moderatore ha disattivato uno dei tuoi dispositivi"

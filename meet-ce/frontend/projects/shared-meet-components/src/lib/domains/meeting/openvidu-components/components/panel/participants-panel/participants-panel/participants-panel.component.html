@@ -1,6 +1,7 @@
 <div class="panel-container" id="participants-container">
 	<div class="panel-header-container">
 		<h3 class="panel-title">{{ 'PANEL.PARTICIPANTS.TITLE' | translate }}</h3>
+		<span class="panel-count" id="participants-count">{{ participantCount() }}</span>
 		<ng-container *ngTemplateOutlet="headerActionsTemplate()" />
 		<button
 			class="panel-close-button"

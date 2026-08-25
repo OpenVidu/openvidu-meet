@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Deelnemers",
 			"YOU": "Jij",
-			"MUTE": "Dempen",
-			"UNMUTE": "Dempen opheffen",
+			"MORE_ACTIONS": "Meer acties",
+			"MIC_ON": "Microfoon aan",
+			"MIC_OFF": "Microfoon uit",
+			"CAM_ON": "Camera aan",
+			"CAM_OFF": "Camera uit",
+			"SHARING_SCREEN": "Scherm delen",
+			"MUTE_MICROPHONE": "Microfoon dempen",
+			"TURN_OFF_CAMERA": "Camera uitschakelen",
+			"STOP_SCREEN_SHARE": "Schermdeling stoppen",
+			"MUTE_FOR_ME": "Alleen voor mij dempen",
+			"UNMUTE_FOR_ME": "Voor mij weer hoorbaar maken",
+			"MUTED_FOR_YOU": "Alleen voor jou gedempt",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Verbindingskwaliteit",
 				"EXCELLENT": "Uitstekend",
 				"GOOD": "Goed",
 				"POOR": "Slecht",
 				"LOST": "Verloren"
-			},
-			"SHARING_SCREEN": "Scherm delen",
-			"MIC_OFF": "Microfoon uit",
-			"CAM_OFF": "Camera uit"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Instellingen",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "Aantal weer te geven deelnemers"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Promoveren tot moderator",
-		"DOWNGRADE_TOOLTIP": "Terugzetten naar oorspronkelijke rechten",
-		"KICK_TOOLTIP": "Deelnemer verwijderen",
-		"MUTE_AUDIO_TOOLTIP": "Microfoon dempen",
-		"MUTE_VIDEO_TOOLTIP": "Camera uitschakelen",
-		"STOP_SCREEN_SHARE_TOOLTIP": "Schermdeling stoppen",
+		"PROMOTE": "Promoveren tot moderator",
+		"DOWNGRADE": "Terugzetten naar oorspronkelijke rechten",
+		"REMOVE": "Uit de vergadering verwijderen",
 		"BADGE_OWNER": "Eigenaar",
 		"BADGE_ADMIN": "Beheerder",
 		"BADGE_MODERATOR": "Moderator"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "Microfoon van iedereen dempen"
+		"TURN_OFF_FOR_EVERYONE": "Voor iedereen uitschakelen",
+		"MUTE_ALL_TOOLTIP": "Microfoon van iedereen dempen",
+		"MUTE_ALL_NONE": "Alle microfoons staan al uit",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Camera van iedereen uitschakelen",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Alle camera's staan al uit",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Alle schermdelingen stoppen",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Niemand deelt zijn scherm"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "Een moderator heeft een van uw apparaten uitgeschakeld"

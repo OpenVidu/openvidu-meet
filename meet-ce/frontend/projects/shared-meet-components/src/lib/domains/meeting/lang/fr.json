@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Participants",
 			"YOU": "Vous",
-			"MUTE": "Couper le son",
-			"UNMUTE": "Désactiver le son",
+			"MORE_ACTIONS": "Plus d'actions",
+			"MIC_ON": "Microphone activé",
+			"MIC_OFF": "Microphone désactivé",
+			"CAM_ON": "Caméra activée",
+			"CAM_OFF": "Caméra désactivée",
+			"SHARING_SCREEN": "Partage d'écran en cours",
+			"MUTE_MICROPHONE": "Couper le microphone",
+			"TURN_OFF_CAMERA": "Désactiver la caméra",
+			"STOP_SCREEN_SHARE": "Arrêter le partage d'écran",
+			"MUTE_FOR_ME": "Couper le son pour moi uniquement",
+			"UNMUTE_FOR_ME": "Rétablir le son pour moi",
+			"MUTED_FOR_YOU": "Coupé pour vous uniquement",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Qualité de connexion",
 				"EXCELLENT": "Excellent",
 				"GOOD": "Bonne",
 				"POOR": "Médiocre",
 				"LOST": "Perdue"
-			},
-			"SHARING_SCREEN": "Partage d'écran en cours",
-			"MIC_OFF": "Microphone désactivé",
-			"CAM_OFF": "Caméra désactivée"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Paramètres",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "Nombre de participants à afficher"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Promouvoir en modérateur",
-		"DOWNGRADE_TOOLTIP": "Rétrograder aux autorisations d'origine",
-		"KICK_TOOLTIP": "Expulser le participant",
-		"MUTE_AUDIO_TOOLTIP": "Couper le microphone",
-		"MUTE_VIDEO_TOOLTIP": "Désactiver la caméra",
-		"STOP_SCREEN_SHARE_TOOLTIP": "Arrêter le partage d'écran",
+		"PROMOTE": "Promouvoir en modérateur",
+		"DOWNGRADE": "Rétrograder aux autorisations d'origine",
+		"REMOVE": "Retirer de la réunion",
 		"BADGE_OWNER": "Propriétaire",
 		"BADGE_ADMIN": "Administrateur",
 		"BADGE_MODERATOR": "Modérateur"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "Couper le microphone de tout le monde"
+		"TURN_OFF_FOR_EVERYONE": "Désactiver pour tout le monde",
+		"MUTE_ALL_TOOLTIP": "Couper le microphone de tout le monde",
+		"MUTE_ALL_NONE": "Tous les microphones sont déjà coupés",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Désactiver la caméra de tout le monde",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Toutes les caméras sont déjà désactivées",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Arrêter tous les partages d'écran",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Personne ne partage son écran"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "Un modérateur a désactivé l'un de vos appareils"

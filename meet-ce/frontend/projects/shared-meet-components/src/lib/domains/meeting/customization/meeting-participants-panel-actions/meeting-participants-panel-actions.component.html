@@ -1,11 +1,22 @@
 @if (canMuteAll()) {
-	<button
-		id="mute-all-participants-btn"
-		mat-icon-button
-		(click)="onMuteAllClick()"
-		[matTooltip]="'PARTICIPANTS_PANEL_ACTIONS.MUTE_ALL_TOOLTIP' | translate"
-		class="mute-all-btn"
-	>
-		<mat-icon class="material-symbols-outlined">mic_off</mat-icon>
-	</button>
+	<div class="panel-bulk-actions" id="panel-bulk-actions">
+		<span class="bulk-label">{{ 'PARTICIPANTS_PANEL_ACTIONS.TURN_OFF_FOR_EVERYONE' | translate }}</span>
+		<div class="bulk-group">
+			@for (action of bulkActions(); track action.id) {
+				<span class="bulk-slot" [matTooltip]="action.labelKey | translate">
+					<button
+						mat-icon-button
+						class="bulk-btn"
+						[id]="action.id"
+						[disabled]="!action.enabled"
+						[attr.aria-label]="action.labelKey | translate"
+						(click)="onBulkActionClick(action)"
+					>
+						<mat-icon class="material-symbols-outlined">{{ action.icon }}</mat-icon>
+					</button>
+				</span>
+			}
+		</div>
+		<div class="bulk-menu-slot"></div>
+	</div>
 }

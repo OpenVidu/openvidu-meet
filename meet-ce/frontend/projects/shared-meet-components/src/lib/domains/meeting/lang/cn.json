@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "参与者",
 			"YOU": "你",
-			"MUTE": "静音",
-			"UNMUTE": "取消静音",
+			"MORE_ACTIONS": "更多操作",
+			"MIC_ON": "麦克风已开启",
+			"MIC_OFF": "麦克风已关闭",
+			"CAM_ON": "摄像头已开启",
+			"CAM_OFF": "摄像头已关闭",
+			"SHARING_SCREEN": "正在共享屏幕",
+			"MUTE_MICROPHONE": "静音麦克风",
+			"TURN_OFF_CAMERA": "关闭摄像头",
+			"STOP_SCREEN_SHARE": "停止屏幕共享",
+			"MUTE_FOR_ME": "仅对我静音",
+			"UNMUTE_FOR_ME": "对我取消静音",
+			"MUTED_FOR_YOU": "仅对你静音",
 			"CONNECTION_QUALITY": {
 				"LABEL": "连接质量",
 				"EXCELLENT": "优秀",
 				"GOOD": "良好",
 				"POOR": "较差",
 				"LOST": "丢失"
-			},
-			"SHARING_SCREEN": "正在共享屏幕",
-			"MIC_OFF": "麦克风已关闭",
-			"CAM_OFF": "摄像头已关闭"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "设置",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "要显示的参与者数量"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "提升为主持人",
-		"DOWNGRADE_TOOLTIP": "降级为原始权限",
-		"KICK_TOOLTIP": "踢出参与者",
-		"MUTE_AUDIO_TOOLTIP": "静音麦克风",
-		"MUTE_VIDEO_TOOLTIP": "关闭摄像头",
-		"STOP_SCREEN_SHARE_TOOLTIP": "停止屏幕共享",
+		"PROMOTE": "提升为主持人",
+		"DOWNGRADE": "降级为原始权限",
+		"REMOVE": "移出会议",
 		"BADGE_OWNER": "所有者",
 		"BADGE_ADMIN": "管理员",
 		"BADGE_MODERATOR": "主持人"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "将所有人的麦克风静音"
+		"TURN_OFF_FOR_EVERYONE": "对所有人关闭",
+		"MUTE_ALL_TOOLTIP": "将所有人的麦克风静音",
+		"MUTE_ALL_NONE": "所有麦克风均已关闭",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "关闭所有人的摄像头",
+		"TURN_OFF_ALL_CAMERAS_NONE": "所有摄像头均已关闭",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "停止所有屏幕共享",
+		"STOP_ALL_SCREEN_SHARES_NONE": "没有人在共享屏幕"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "主持人已关闭您的一个设备"

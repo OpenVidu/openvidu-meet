@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "सदस्य",
 			"YOU": "आप",
-			"MUTE": "मौन",
-			"UNMUTE": "अनमौन",
+			"MORE_ACTIONS": "और कार्रवाइयाँ",
+			"MIC_ON": "माइक्रोफ़ोन चालू",
+			"MIC_OFF": "माइक्रोफ़ोन बंद",
+			"CAM_ON": "कैमरा चालू",
+			"CAM_OFF": "कैमरा बंद",
+			"SHARING_SCREEN": "स्क्रीन साझा कर रहे हैं",
+			"MUTE_MICROPHONE": "माइक्रोफ़ोन म्यूट करें",
+			"TURN_OFF_CAMERA": "कैमरा बंद करें",
+			"STOP_SCREEN_SHARE": "स्क्रीन शेयर रोकें",
+			"MUTE_FOR_ME": "केवल मेरे लिए म्यूट करें",
+			"UNMUTE_FOR_ME": "मेरे लिए अनम्यूट करें",
+			"MUTED_FOR_YOU": "केवल आपके लिए म्यूट",
 			"CONNECTION_QUALITY": {
 				"LABEL": "कनेक्शन गुणवत्ता",
 				"EXCELLENT": "उत्कृष्ट",
 				"GOOD": "अच्छा",
 				"POOR": "खराब",
 				"LOST": "खो गया"
-			},
-			"SHARING_SCREEN": "स्क्रीन साझा कर रहे हैं",
-			"MIC_OFF": "माइक्रोफ़ोन बंद",
-			"CAM_OFF": "कैमरा बंद"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "सेटिंग्स",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "प्रदर्शित करने के लिए सदस्यों की संख्या"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "मॉडरेटर बनाएं",
-		"DOWNGRADE_TOOLTIP": "मूल अनुमतियों पर वापस लाएं",
-		"KICK_TOOLTIP": "सदस्य को निकालें",
-		"MUTE_AUDIO_TOOLTIP": "माइक्रोफ़ोन म्यूट करें",
-		"MUTE_VIDEO_TOOLTIP": "कैमरा बंद करें",
-		"STOP_SCREEN_SHARE_TOOLTIP": "स्क्रीन शेयर रोकें",
+		"PROMOTE": "मॉडरेटर बनाएं",
+		"DOWNGRADE": "मूल अनुमतियों पर वापस लाएं",
+		"REMOVE": "मीटिंग से हटाएँ",
 		"BADGE_OWNER": "स्वामी",
 		"BADGE_ADMIN": "व्यवस्थापक",
 		"BADGE_MODERATOR": "मॉडरेटर"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "सभी का माइक्रोफ़ोन म्यूट करें"
+		"TURN_OFF_FOR_EVERYONE": "सभी के लिए बंद करें",
+		"MUTE_ALL_TOOLTIP": "सभी का माइक्रोफ़ोन म्यूट करें",
+		"MUTE_ALL_NONE": "सभी माइक्रोफ़ोन पहले से बंद हैं",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "सभी का कैमरा बंद करें",
+		"TURN_OFF_ALL_CAMERAS_NONE": "सभी कैमरे पहले से बंद हैं",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "सभी स्क्रीन शेयर रोकें",
+		"STOP_ALL_SCREEN_SHARES_NONE": "कोई भी स्क्रीन साझा नहीं कर रहा"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "एक मॉडरेटर ने आपका एक डिवाइस बंद कर दिया"

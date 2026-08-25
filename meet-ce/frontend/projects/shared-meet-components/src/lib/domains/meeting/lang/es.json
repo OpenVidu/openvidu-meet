@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Participantes",
 			"YOU": "Tú",
-			"MUTE": "Silenciar",
-			"UNMUTE": "Activar audio",
+			"MORE_ACTIONS": "Más acciones",
+			"MIC_ON": "Micrófono activado",
+			"MIC_OFF": "Micrófono apagado",
+			"CAM_ON": "Cámara activada",
+			"CAM_OFF": "Cámara apagada",
 			"SHARING_SCREEN": "Compartiendo pantalla",
+			"MUTE_MICROPHONE": "Silenciar micrófono",
+			"TURN_OFF_CAMERA": "Apagar cámara",
+			"STOP_SCREEN_SHARE": "Detener pantalla compartida",
+			"MUTE_FOR_ME": "Silenciar solo para mí",
+			"UNMUTE_FOR_ME": "Dejar de silenciar para mí",
+			"MUTED_FOR_YOU": "Silenciado solo para ti",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Calidad de conexión",
 				"EXCELLENT": "Excelente",
 				"GOOD": "Buena",
 				"POOR": "Deficiente",
 				"LOST": "Perdida"
-			},
-			"MIC_OFF": "Micrófono apagado",
-			"CAM_OFF": "Cámara apagada"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Configuración",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "Número de participantes a mostrar"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Ascender a moderador",
-		"DOWNGRADE_TOOLTIP": "Restablecer los permisos originales",
-		"KICK_TOOLTIP": "Expulsar participante",
-		"MUTE_AUDIO_TOOLTIP": "Silenciar micrófono",
-		"MUTE_VIDEO_TOOLTIP": "Apagar cámara",
-		"STOP_SCREEN_SHARE_TOOLTIP": "Detener pantalla compartida",
+		"PROMOTE": "Ascender a moderador",
+		"DOWNGRADE": "Restablecer los permisos originales",
+		"REMOVE": "Expulsar de la reunión",
 		"BADGE_OWNER": "Propietario",
 		"BADGE_ADMIN": "Administrador",
 		"BADGE_MODERATOR": "Moderador"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "Silenciar el micrófono de todos"
+		"TURN_OFF_FOR_EVERYONE": "Apagar para todos",
+		"MUTE_ALL_TOOLTIP": "Silenciar el micrófono de todos",
+		"MUTE_ALL_NONE": "Todos los micrófonos ya están apagados",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Apagar la cámara de todos",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Todas las cámaras ya están apagadas",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Detener todas las pantallas compartidas",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Nadie está compartiendo pantalla"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "Un moderador ha apagado uno de tus dispositivos"

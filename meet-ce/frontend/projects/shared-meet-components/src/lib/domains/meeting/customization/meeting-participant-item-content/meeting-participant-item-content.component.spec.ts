@@ -1,6 +1,6 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, ComponentFixtureAutoDetect, TestBed } from '@angular/core/testing';
-import { MeetRoomMemberPermissions } from '@openvidu-meet/typings';
+import { MeetParticipantMuteOptions, MeetRoomMemberPermissions } from '@openvidu-meet/typings';
 import { LoggerService } from '../../../../shared/services/logger.service';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { ParticipantDisplayProperties, ParticipantModel } from '../../openvidu-components';
@@ -47,15 +47,20 @@ function participantWith(state: Partial<ParticipantStub>): ParticipantModel {
 }
 
 /**
- * Which moderation buttons a participant panel item offers. The rules are only expressible here —
- * the API answers a button that should not exist with a 409 the UI merely logs.
+ * What a participant panel item lets a moderator reach. The rules are only expressible here — the
+ * API answers an action that should not have been offered with a 409 the UI merely logs.
+ *
+ * Which of the three devices are actually live is deliberately not decided here: the row owns that,
+ * because a device that is off can never be turned back on by anyone.
  */
 describe('MeetingParticipantItemContentComponent', () => {
 	let fixture: ComponentFixture<MeetingParticipantItemContentComponent>;
 	let granted: Set<keyof MeetRoomMemberPermissions>;
+	let muteParticipant: MeetingModerationService['muteParticipant'];
 
 	beforeEach(async () => {
 		granted = new Set<keyof MeetRoomMemberPermissions>();
+		muteParticipant = () => Promise.resolve();
 
 		await TestBed.configureTestingModule({
 			imports: [MeetingParticipantItemContentComponent],
@@ -71,7 +76,13 @@ describe('MeetingParticipantItemContentComponent', () => {
 					}
 				},
 				{ provide: MeetingContextService, useValue: { roomId: () => 'room-1' } },
-				{ provide: MeetingModerationService, useValue: {} }
+				{
+					provide: MeetingModerationService,
+					useValue: {
+						muteParticipant: (roomId: string, identity: string, media: MeetParticipantMuteOptions) =>
+							muteParticipant(roomId, identity, media)
+					}
+				}
 			]
 		}).compileComponents();
 
@@ -91,9 +102,7 @@ describe('MeetingParticipantItemContentComponent', () => {
 		const properties = displayPropertiesOf(participantWith({ microphone: true, camera: true }));
 
 		expect(properties.showModerationControls).toBeFalse();
-		expect(properties.showMuteAudioButton).toBeFalse();
-		expect(properties.showMuteVideoButton).toBeFalse();
-		expect(properties.showStopScreenShareButton).toBeFalse();
+		expect(properties.canMuteMedia).toBeFalse();
 	});
 
 	it('never moderates the local participant', () => {
@@ -102,40 +111,39 @@ describe('MeetingParticipantItemContentComponent', () => {
 		const properties = displayPropertiesOf(participantWith({ isLocal: true, microphone: true }));
 
 		expect(properties.showModerationControls).toBeFalse();
-		expect(properties.showMuteAudioButton).toBeFalse();
+		expect(properties.canMuteMedia).toBeFalse();
 	});
 
-	it('offers a mute for each device that is on, and none for the devices that are off', () => {
+	// The permission is about the person, not about what they happen to be doing right now: a row
+	// whose devices are all off still grants it, and simply has nothing to act on.
+	it('grants muting whatever the participant currently has switched on', () => {
 		grant('participantMute');
 
-		const properties = displayPropertiesOf(participantWith({ microphone: true, screenShare: true }));
-
-		expect(properties.showMuteAudioButton).toBeTrue();
-		expect(properties.showStopScreenShareButton).toBeTrue();
-		expect(properties.showMuteVideoButton).toBeFalse();
+		expect(displayPropertiesOf(participantWith({ microphone: true, screenShare: true })).canMuteMedia).toBeTrue();
+		expect(displayPropertiesOf(participantWith({})).canMuteMedia).toBeTrue();
 	});
 
 	// The server answers a mute aimed at a moderator with a 409, and the caller only logs it, so the
-	// button must not be there in the first place.
-	it('offers no mute for a badged participant', () => {
+	// buttons must never come alive in the first place.
+	it('grants no muting over a badged participant', () => {
 		grant('participantMute', 'participantKick', 'participantPromote');
 
 		const properties = displayPropertiesOf(
 			participantWith({ badged: true, microphone: true, camera: true, screenShare: true })
 		);
 
-		expect(properties.showMuteAudioButton).toBeFalse();
-		expect(properties.showMuteVideoButton).toBeFalse();
-		expect(properties.showStopScreenShareButton).toBeFalse();
+		expect(properties.canMuteMedia).toBeFalse();
 		expect(properties.showModerationControls).toBeFalse();
 	});
 
-	it('opens the control strip for a participant whose only available action is a mute', () => {
+	// Muting lives in the row itself, so it alone opens no menu section.
+	it('opens no menu section for a participant who can only be muted', () => {
 		grant('participantMute');
 
 		const properties = displayPropertiesOf(participantWith({ camera: true }));
 
-		expect(properties.showModerationControls).toBeTrue();
+		expect(properties.canMuteMedia).toBeTrue();
+		expect(properties.showModerationControls).toBeFalse();
 		expect(properties.showKickButton).toBeFalse();
 		expect(properties.showMakeModeratorButton).toBeFalse();
 	});
@@ -149,7 +157,32 @@ describe('MeetingParticipantItemContentComponent', () => {
 
 		expect(properties.showUnmakeModeratorButton).toBeTrue();
 		expect(properties.showKickButton).toBeTrue();
-		expect(properties.showMuteAudioButton).toBeFalse();
+		expect(properties.canMuteMedia).toBeFalse();
 		expect(properties.showModerationControls).toBeTrue();
+	});
+
+	describe('device buttons', () => {
+		let muted: MeetParticipantMuteOptions[];
+
+		beforeEach(() => {
+			muted = [];
+
+			muteParticipant = (_roomId, _identity, media) => {
+				muted.push(media);
+				return Promise.resolve();
+			};
+
+			grant('participantMute');
+		});
+
+		it('asks the API to turn off exactly the device that was activated', async () => {
+			displayPropertiesOf(participantWith({ microphone: true, camera: true, screenShare: true }));
+
+			await fixture.componentInstance.onMediaMuteRequested('audio');
+			await fixture.componentInstance.onMediaMuteRequested('video');
+			await fixture.componentInstance.onMediaMuteRequested('screenShare');
+
+			expect(muted).toEqual([{ audioActive: false }, { videoActive: false }, { screenShareActive: false }]);
+		});
 	});
 });

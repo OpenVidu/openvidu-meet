@@ -71,18 +71,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Teilnehmer",
 			"YOU": "Sie",
-			"MUTE": "Stummschalten",
-			"UNMUTE": "Stummschaltung aufheben",
+			"MORE_ACTIONS": "Weitere Aktionen",
+			"MIC_ON": "Mikrofon an",
+			"MIC_OFF": "Mikrofon aus",
+			"CAM_ON": "Kamera an",
+			"CAM_OFF": "Kamera aus",
+			"SHARING_SCREEN": "Bildschirm wird geteilt",
+			"MUTE_MICROPHONE": "Mikrofon stummschalten",
+			"TURN_OFF_CAMERA": "Kamera ausschalten",
+			"STOP_SCREEN_SHARE": "Bildschirmfreigabe beenden",
+			"MUTE_FOR_ME": "Nur für mich stummschalten",
+			"UNMUTE_FOR_ME": "Für mich wieder hörbar machen",
+			"MUTED_FOR_YOU": "Nur für dich stummgeschaltet",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Verbindungsqualität",
 				"EXCELLENT": "Ausgezeichnet",
 				"GOOD": "Gut",
 				"POOR": "Schlecht",
 				"LOST": "Verloren"
-			},
-			"SHARING_SCREEN": "Bildschirm wird geteilt",
-			"MIC_OFF": "Mikrofon aus",
-			"CAM_OFF": "Kamera aus"
+			}
 		},
 		"SETTINGS": {
 			"TITLE": "Einstellungen",
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "Anzahl der anzuzeigenden Teilnehmer"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Zum Moderator hochstufen",
-		"DOWNGRADE_TOOLTIP": "Auf ursprüngliche Berechtigungen herabstufen",
-		"KICK_TOOLTIP": "Teilnehmer entfernen",
-		"MUTE_AUDIO_TOOLTIP": "Mikrofon stummschalten",
-		"MUTE_VIDEO_TOOLTIP": "Kamera ausschalten",
-		"STOP_SCREEN_SHARE_TOOLTIP": "Bildschirmfreigabe beenden",
+		"PROMOTE": "Zum Moderator hochstufen",
+		"DOWNGRADE": "Auf ursprüngliche Berechtigungen herabstufen",
+		"REMOVE": "Aus dem Meeting entfernen",
 		"BADGE_OWNER": "Eigentümer",
 		"BADGE_ADMIN": "Administrator",
 		"BADGE_MODERATOR": "Moderator"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "Alle Mikrofone stummschalten"
+		"TURN_OFF_FOR_EVERYONE": "Für alle ausschalten",
+		"MUTE_ALL_TOOLTIP": "Alle Mikrofone stummschalten",
+		"MUTE_ALL_NONE": "Alle Mikrofone sind bereits aus",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Kamera von allen ausschalten",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Alle Kameras sind bereits aus",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Alle Bildschirmfreigaben beenden",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Niemand teilt seinen Bildschirm"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "Ein Moderator hat eines Ihrer Geräte ausgeschaltet"

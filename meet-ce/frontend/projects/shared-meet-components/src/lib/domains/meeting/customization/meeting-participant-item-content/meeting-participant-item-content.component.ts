@@ -1,14 +1,28 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
 import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MeetParticipantModerationAction, MeetParticipantMuteOptions } from '@openvidu-meet/typings';
 import { RoomMemberContextService } from '../../../room-members/services/room-member-context.service';
 import { RoomMemberUiUtils } from '../../../room-members/utils/ui';
-import { OpenViduComponentsUiModule, ParticipantDisplayProperties, ParticipantModel } from '../../openvidu-components';
+import {
+	OpenViduComponentsUiModule,
+	ParticipantDisplayProperties,
+	ParticipantMediaKind,
+	ParticipantModel
+} from '../../openvidu-components';
 import { MeetingContextService } from '../../services/meeting-context.service';
 import { MeetingModerationService } from '../../services/meeting-moderation.service';
 import { LoggerService } from '../../../../shared/services/logger.service';
+
+/** The mute request each device button sends. The API only ever turns a device off. */
+const MUTE_OPTIONS: Record<ParticipantMediaKind, MeetParticipantMuteOptions> = {
+	audio: { audioActive: false },
+	video: { videoActive: false },
+	screenShare: { screenShareActive: false }
+};
 
 /**
  * Renders a single participant panel item — the role badge and the moderation controls —
@@ -18,7 +32,14 @@ import { LoggerService } from '../../../../shared/services/logger.service';
 	selector: 'ov-meeting-participant-item-content',
 	templateUrl: './meeting-participant-item-content.component.html',
 	styleUrls: ['./meeting-participant-item-content.component.scss'],
-	imports: [MatButtonModule, MatIconModule, MatTooltipModule, OpenViduComponentsUiModule]
+	imports: [
+		MatButtonModule,
+		MatDividerModule,
+		MatIconModule,
+		MatMenuModule,
+		MatTooltipModule,
+		OpenViduComponentsUiModule
+	]
 })
 export class MeetingParticipantItemContentComponent {
 	readonly participant = input.required<ParticipantModel>();
@@ -45,9 +66,7 @@ export class MeetingParticipantItemContentComponent {
 			showMakeModeratorButton: false,
 			showUnmakeModeratorButton: false,
 			showKickButton: false,
-			showMuteAudioButton: false,
-			showMuteVideoButton: false,
-			showStopScreenShareButton: false
+			canMuteMedia: false
 		};
 
 		// Moderation controls are only shown for remote participants, never for the current user.
@@ -76,22 +95,15 @@ export class MeetingParticipantItemContentComponent {
 			displayProperties.showKickButton = canKickParticipants && !hasBadge;
 		}
 
-		// A device is only mutable while it is on, and a moderator is muted by nobody but themselves —
-		// the same rule the API enforces.
-		const canMuteThisParticipant = canMuteParticipants && !hasBadge;
+		// A moderator is muted by nobody but themselves — the same rule the API enforces. Which of the
+		// three devices are actually live is the row's business, not ours.
+		displayProperties.canMuteMedia = canMuteParticipants && !hasBadge;
 
-		displayProperties.showMuteAudioButton = canMuteThisParticipant && participant.isMicrophoneEnabled;
-		displayProperties.showMuteVideoButton = canMuteThisParticipant && participant.isCameraEnabled;
-		displayProperties.showStopScreenShareButton = canMuteThisParticipant && participant.isScreenShareEnabled;
-
-		// Show the moderation controls container if any of the buttons should be shown.
+		// Show the row menu's moderation section if any of its items should be shown.
 		displayProperties.showModerationControls =
 			displayProperties.showMakeModeratorButton ||
 			displayProperties.showUnmakeModeratorButton ||
-			displayProperties.showKickButton ||
-			displayProperties.showMuteAudioButton ||
-			displayProperties.showMuteVideoButton ||
-			displayProperties.showStopScreenShareButton;
+			displayProperties.showKickButton;
 		return displayProperties;
 	});
 
@@ -139,16 +151,8 @@ export class MeetingParticipantItemContentComponent {
 		}
 	}
 
-	onMuteAudioClick(): Promise<void> {
-		return this.muteParticipant({ audioActive: false });
-	}
-
-	onMuteVideoClick(): Promise<void> {
-		return this.muteParticipant({ videoActive: false });
-	}
-
-	onStopScreenShareClick(): Promise<void> {
-		return this.muteParticipant({ screenShareActive: false });
+	onMediaMuteRequested(kind: ParticipantMediaKind): Promise<void> {
+		return this.muteParticipant(MUTE_OPTIONS[kind]);
 	}
 
 	protected async muteParticipant(media: MeetParticipantMuteOptions): Promise<void> {

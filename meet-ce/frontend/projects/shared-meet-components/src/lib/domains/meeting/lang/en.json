@@ -68,18 +68,25 @@
 		"PARTICIPANTS": {
 			"TITLE": "Participants",
 			"YOU": "You",
-			"MUTE": "Mute",
-			"UNMUTE": "Unmute",
+			"MORE_ACTIONS": "More actions",
+			"MIC_ON": "Microphone on",
+			"MIC_OFF": "Microphone off",
+			"CAM_ON": "Camera on",
+			"CAM_OFF": "Camera off",
 			"SHARING_SCREEN": "Sharing screen",
+			"MUTE_MICROPHONE": "Mute microphone",
+			"TURN_OFF_CAMERA": "Turn off camera",
+			"STOP_SCREEN_SHARE": "Stop screen share",
+			"MUTE_FOR_ME": "Mute for me only",
+			"UNMUTE_FOR_ME": "Unmute for me",
+			"MUTED_FOR_YOU": "Muted for you only",
 			"CONNECTION_QUALITY": {
 				"LABEL": "Connection quality",
 				"EXCELLENT": "Excellent",
 				"GOOD": "Good",
 				"POOR": "Poor",
 				"LOST": "Lost"
-			},
-			"MIC_OFF": "Microphone off",
-			"CAM_OFF": "Camera off"
+			}
 		},
 		"ACTIVITIES": {
 			"TITLE": "Activities"
@@ -202,18 +209,21 @@
 		"COUNT_ARIA": "Number of participants to display"
 	},
 	"PARTICIPANT_ITEM": {
-		"PROMOTE_TOOLTIP": "Promote to moderator",
-		"DOWNGRADE_TOOLTIP": "Downgrade to original permissions",
-		"KICK_TOOLTIP": "Kick participant",
-		"MUTE_AUDIO_TOOLTIP": "Mute microphone",
-		"MUTE_VIDEO_TOOLTIP": "Turn off camera",
-		"STOP_SCREEN_SHARE_TOOLTIP": "Stop screen share",
+		"PROMOTE": "Promote to moderator",
+		"DOWNGRADE": "Downgrade to original permissions",
+		"REMOVE": "Remove from meeting",
 		"BADGE_OWNER": "Owner",
 		"BADGE_ADMIN": "Admin",
 		"BADGE_MODERATOR": "Moderator"
 	},
 	"PARTICIPANTS_PANEL_ACTIONS": {
-		"MUTE_ALL_TOOLTIP": "Mute everyone's microphone"
+		"TURN_OFF_FOR_EVERYONE": "Turn off for everyone",
+		"MUTE_ALL_TOOLTIP": "Mute everyone's microphone",
+		"MUTE_ALL_NONE": "Every microphone is already off",
+		"TURN_OFF_ALL_CAMERAS_TOOLTIP": "Turn off everyone's camera",
+		"TURN_OFF_ALL_CAMERAS_NONE": "Every camera is already off",
+		"STOP_ALL_SCREEN_SHARES_TOOLTIP": "Stop all screen shares",
+		"STOP_ALL_SCREEN_SHARES_NONE": "Nobody is sharing their screen"
 	},
 	"MODERATION": {
 		"MUTED_BY_MODERATOR": "A moderator turned off one of your devices"

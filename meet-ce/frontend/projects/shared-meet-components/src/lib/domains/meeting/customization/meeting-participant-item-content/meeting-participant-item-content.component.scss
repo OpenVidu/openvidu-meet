@@ -2,11 +2,6 @@
 
 .participant-item-container {
 	width: 100%;
-	align-items: center;
-
-	::ng-deep .participant-container {
-		padding: 2px 10px !important;
-	}
 
 	.owner-badge,
 	.admin-badge,
@@ -35,11 +30,22 @@
 	}
 }
 
-.force-disconnect-btn,
-.remove-moderator-btn {
+// Colour is reserved for meaning: removing someone is the only irreversible item in the row menu,
+// so it is the only one that carries any.
+//
+// Both escape hatches are forced from outside this component. Material themes the label through a
+// wrapper element it generates itself, which carries none of our encapsulation attributes, hence
+// ::ng-deep. And toolbar.component.scss declares an unscoped `::ng-deep .mat-mdc-menu-item mat-icon
+// { color: ... !important }` that leaks over every menu in the application, so the icon cannot be
+// recoloured by specificity alone.
+.force-disconnect-btn.force-disconnect-btn {
 	color: var(--ov-meet-color-error);
-}
 
-.make-moderator-btn {
-	color: var(--ov-meet-color-warning);
+	::ng-deep .mat-mdc-menu-item-text {
+		color: var(--ov-meet-color-error);
+	}
+
+	::ng-deep .mat-icon {
+		color: var(--ov-meet-color-error) !important;
+	}
 }

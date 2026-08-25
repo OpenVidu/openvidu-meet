@@ -1,4 +1,68 @@
-.mute-all-btn {
-	margin-left: auto;
-	color: var(--ov-text-surface-color);
+:host {
+	display: block;
+}
+
+// Same slots as a participant row, so each button lands at the head of its media column.
+.panel-bulk-actions {
+	display: flex;
+	align-items: center;
+	height: 40px;
+	box-sizing: border-box;
+	margin: 0 10px;
+	padding: 0 8px 0 10px;
+}
+
+.bulk-label {
+	flex: 1;
+	min-width: 0;
+	margin-right: 8px;
+	font-size: 12px;
+	font-weight: var(--ov-meet-font-weight-medium);
+	color: var(--ov-text-secondary-color);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bulk-group {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	width: 84px;
+	flex-shrink: 0;
+	margin-right: 4px;
+}
+
+.bulk-slot {
+	display: inline-flex;
+	line-height: 0;
+}
+
+.bulk-btn {
+	--mdc-icon-button-state-layer-size: 28px;
+	--mdc-icon-button-icon-size: 18px;
+	--mdc-icon-button-icon-color: currentColor;
+	--mdc-icon-button-disabled-icon-color: currentColor;
+	width: 28px;
+	height: 28px;
+	padding: 0;
+	flex-shrink: 0;
+	color: var(--ov-text-secondary-color);
+
+	&:disabled {
+		opacity: 1;
+		color: var(--ov-text-disabled-color);
+	}
+
+	mat-icon {
+		font-size: 18px;
+		width: 18px;
+		height: 18px;
+	}
+}
+
+.bulk-menu-slot {
+	width: 28px;
+	height: 28px;
+	flex-shrink: 0;
 }

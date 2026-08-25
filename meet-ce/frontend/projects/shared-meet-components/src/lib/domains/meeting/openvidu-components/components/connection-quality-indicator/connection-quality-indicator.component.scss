@@ -32,18 +32,38 @@
 			color: var(--ov-error-color, #dc3545);
 		}
 
-		&.transparent {
-			position: static;
-			background-color: transparent;
+		// Pinned to the corner of a participant avatar. Only poor and lost reach this variant, so the
+		// quality colour is the fill and the glyph is punched out of it.
+		&.badge {
+			position: absolute;
+			top: auto;
+			bottom: -5px;
+			right: -5px;
+			width: 16px;
+			height: 16px;
+			background-color: var(--ov-text-secondary-color);
 			backdrop-filter: none;
 			border-radius: 50%;
-			width: 24px;
-			height: 24px;
+			box-shadow: 0 0 0 2px var(--ov-surface-color);
 
 			mat-icon {
-				font-size: 16px;
-				width: 16px;
-				height: 16px;
+				font-size: 11px;
+				width: 11px;
+				height: 11px;
+				color: var(--ov-surface-color);
+			}
+
+			&.quality-poor {
+				background-color: var(--ov-warn-color);
+			}
+
+			&.quality-lost {
+				background-color: var(--ov-error-color);
+			}
+
+			&.quality-poor mat-icon,
+			&.quality-lost mat-icon {
+				color: var(--ov-surface-color);
 			}
 		}
 	}
