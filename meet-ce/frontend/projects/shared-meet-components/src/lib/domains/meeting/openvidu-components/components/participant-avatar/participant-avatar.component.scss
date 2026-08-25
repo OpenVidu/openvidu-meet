@@ -100,7 +100,19 @@
 			0 8px 32px rgba(0, 0, 0, 0.4),
 			0 0 0 1px rgba(255, 255, 255, 0.05),
 			0 0 0 3px var(--ov-accent-action-color);
-		animation: posterSpeakingPulse 1.5s ease-in-out infinite;
+
+		// The pulse is a ring of its own, animated on transform and opacity, because those are the
+		// two properties the compositor can animate by itself. Growing a `box-shadow` spread — what
+		// this used to do — repaints the avatar on every frame for as long as the participant talks.
+		&::after {
+			content: '';
+			position: absolute;
+			inset: -3px;
+			border: 3px solid var(--ov-accent-action-color);
+			border-radius: inherit;
+			pointer-events: none;
+			animation: speakingRingPulse 1.5s ease-in-out infinite;
+		}
 	}
 }
 
@@ -151,35 +163,42 @@
 
 	&.speaking {
 		box-shadow: 0 0 0 2px var(--ov-accent-action-color);
-		animation: panelSpeakingPulse 1.5s ease-in-out infinite;
+
+		// Same reason as the poster ring; this one only fades, since `overflow: hidden` above would
+		// clip a growing one.
+		&::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			border: 2px solid var(--ov-accent-action-color);
+			border-radius: inherit;
+			pointer-events: none;
+			animation: panelRingPulse 1.5s ease-in-out infinite;
+		}
 	}
 }
 
 // ── Animations ──────────────────────────────────────────────────────────────
 
-@keyframes posterSpeakingPulse {
+@keyframes speakingRingPulse {
 	0%,
 	100% {
-		box-shadow:
-			0 8px 32px rgba(0, 0, 0, 0.4),
-			0 0 0 1px rgba(255, 255, 255, 0.05),
-			0 0 0 3px var(--ov-accent-action-color);
+		transform: scale(1);
+		opacity: 0.9;
 	}
 	50% {
-		box-shadow:
-			0 8px 32px rgba(0, 0, 0, 0.4),
-			0 0 0 1px rgba(255, 255, 255, 0.05),
-			0 0 0 6px var(--ov-accent-action-color);
+		transform: scale(1.06);
+		opacity: 0.35;
 	}
 }
 
-@keyframes panelSpeakingPulse {
+@keyframes panelRingPulse {
 	0%,
 	100% {
-		box-shadow: 0 0 0 2px var(--ov-accent-action-color);
+		opacity: 0.9;
 	}
 	50% {
-		box-shadow: 0 0 0 4px var(--ov-accent-action-color);
+		opacity: 0.3;
 	}
 }
 
@@ -205,8 +224,8 @@
 // ── Accessibility ───────────────────────────────────────────────────────────
 
 @media (prefers-reduced-motion: reduce) {
-	.initial.speaking,
-	.panel-avatar.speaking {
+	.initial.speaking::after,
+	.panel-avatar.speaking::after {
 		animation: none;
 	}
 }
