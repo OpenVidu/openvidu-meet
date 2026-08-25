@@ -4,15 +4,17 @@ import { openMeeting } from './helpers/meeting-navigation.helper';
 import { toggleParticipantsPanel } from './helpers/panels.helper';
 
 /**
- * The connection-quality badge is surfaced only transiently: when LiveKit reports a
- * quality for the local participant — under e2e's fake media this is consistently
- * "excellent" — the badge appears and then auto-hides after a short delay (the
- * component's BADGE_TIMEOUT, 3s).
+ * The indicator reads differently in the two places it is rendered. On the local video tile it
+ * surfaces any quality LiveKit reports, transiently: the badge appears and auto-hides after a short
+ * delay (the component's BADGE_TIMEOUT, 3s). On a participants-panel row it is pinned to the corner
+ * of the avatar and only speaks up when the connection is actually in trouble, because a healthy
+ * connection marked on every row is noise.
  *
- * These tests just assert that appear → auto-hide cycle in the two places the indicator
- * is rendered: the local video tile (stream component) and the participants panel. They
- * don't force any specific quality value, so they need no dev-only debug API and no
- * app-side test hooks — they run against the production build CI serves.
+ * Under e2e's fake media the quality is consistently "excellent", so that is exactly what these
+ * tests can pin down: the tile cycles, and the row stays silent. Neither forces a quality value, so
+ * they need no dev-only debug API and no app-side test hooks — they run against the production
+ * build CI serves. Trouble itself is not reachable from here; the rule that selects it is covered
+ * in the component's spec.
  */
 test.describe('Connection Quality Indicator E2E Tests', () => {
 	const createdRoomIds: string[] = [];
@@ -37,12 +39,15 @@ test.describe('Connection Quality Indicator E2E Tests', () => {
 		await expect(badge).toBeHidden({ timeout: 10_000 });
 	});
 
-	test('shows the badge in the participants panel, then auto-hides it', async ({ page }) => {
+	test('keeps the badge off a participants panel row while the connection is healthy', async ({ page }) => {
 		await openMeeting(page, accessUrl, { videoEnabled: true, audioEnabled: true });
+
+		// The tile badge appearing is what makes the row's silence meaningful: it proves LiveKit
+		// reported a quality at all, so the row is applying the rule rather than waiting for news.
+		await expect(page.locator('.OV_stream.local #connection-quality-badge')).toBeVisible({ timeout: 15_000 });
+
 		await toggleParticipantsPanel(page);
 
-		const badge = page.locator('.local-participant-container #connection-quality-badge');
-		await expect(badge).toBeVisible({ timeout: 15_000 });
-		await expect(badge).toBeHidden({ timeout: 10_000 });
+		await expect(page.locator('.local-participant-container #connection-quality-badge')).toHaveCount(0);
 	});
 });
