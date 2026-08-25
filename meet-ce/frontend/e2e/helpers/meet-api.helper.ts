@@ -7,6 +7,7 @@ import {
 	MeetRoomMemberOptions,
 	MeetRoomMemberRole,
 	MeetRoomOptions,
+	MeetRoomRoles,
 	MeetUserDTO,
 	MeetUserOptions,
 	MeetUserRole
@@ -129,6 +130,24 @@ export const createRoomAsUser = async (accessToken: string, options: MeetRoomOpt
 	assertOk(response, responseText, 'create room as user');
 
 	return JSON.parse(responseText) as MeetRoom;
+};
+
+/**
+ * Reads a room's role permissions. `roles` is an extra field, excluded from the default projection,
+ * so it has to be asked for explicitly.
+ */
+export const getRoomRoles = async (roomId: string): Promise<MeetRoomRoles> => {
+	const response = await fetch(withApiPath(`/rooms/${encodeURIComponent(roomId)}?extraFields=roles`), {
+		method: 'GET',
+		headers: {
+			'x-api-key': API_KEY
+		}
+	});
+
+	const responseText = await response.text();
+	assertOk(response, responseText, 'get room roles');
+
+	return (JSON.parse(responseText) as MeetRoom).roles;
 };
 
 /**
