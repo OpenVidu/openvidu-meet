@@ -112,12 +112,23 @@ export class RoomScheduledTasksService {
 	}
 
 	/**
+	 * Reconciles Mongo's room status against LiveKit's, in both directions: rooms marked active in
+	 * the database that no longer exist in LiveKit, and rooms marked open that already have a live
+	 * meeting there. Each direction is independent and self-contained, so one failing doesn't skip
+	 * the other.
+	 */
+	protected async validateRoomsStatusGC(): Promise<void> {
+		await this.reconcileActiveMeetingsGoneFromLiveKit();
+		await this.reconcileOpenRoomsGC();
+	}
+
+	/**
 	 * Checks for inconsistent rooms.
 	 *
 	 * This method checks for rooms that are marked as active in the database but do not exist in LiveKit.
 	 * If such a room is found, it triggers the room finished logic to clean up the room.
 	 */
-	protected async validateRoomsStatusGC(): Promise<void> {
+	protected async reconcileActiveMeetingsGoneFromLiveKit(): Promise<void> {
 		this.logger.verbose(`Checking inconsistent rooms at ${new Date(Date.now()).toISOString()}`);
 
 		try {
@@ -155,7 +166,9 @@ export class RoomScheduledTasksService {
 						roomsToCleanup,
 						async (room) => {
 							try {
-								await this.livekitWebhookService.handleRoomFinished({ name: room.roomId } as unknown as Room);
+								await this.livekitWebhookService.handleRoomFinished({
+									name: room.roomId
+								} as unknown as Room);
 							} catch (error) {
 								this.logger.error(`Error cleaning up room '${room.roomId}':`, error);
 								// Continue with other rooms even if one fails
@@ -179,9 +192,56 @@ export class RoomScheduledTasksService {
 				return;
 			}
 
-			this.logger.warn(`Room consistency check finished. Total inconsistent rooms processed: ${totalInconsistentRooms}`);
+			this.logger.warn(
+				`Room consistency check finished. Total inconsistent rooms processed: ${totalInconsistentRooms}`
+			);
 		} catch (error) {
 			this.logger.error('Error checking inconsistent rooms:', error);
+		}
+	}
+
+	/**
+	 * Checks for rooms that are marked as open in the database but already have a live meeting in LiveKit.
+	 */
+	protected async reconcileOpenRoomsGC(): Promise<void> {
+		this.logger.verbose(`Checking open rooms with a live meeting at ${new Date(Date.now()).toISOString()}`);
+
+		try {
+			const liveRooms = await this.livekitService.listRooms();
+
+			if (liveRooms.length === 0) {
+				this.logger.verbose('No active LiveKit rooms found. Skipping open-room reconciliation.');
+				return;
+			}
+
+			const liveRoomIds = liveRooms.map((room) => room.name);
+			const roomIdsToReconcile = await this.roomRepository.findOpenRoomIds(liveRoomIds);
+
+			if (roomIdsToReconcile.length === 0) {
+				this.logger.verbose('All LiveKit-active rooms are already reflected as active in DB.');
+				return;
+			}
+
+			this.logger.warn(
+				`Found ${roomIdsToReconcile.length} rooms active in LiveKit but still 'open' in DB. Reconciling...`
+			);
+
+			await runConcurrently(
+				roomIdsToReconcile,
+				async (roomId) => {
+					try {
+						await this.livekitWebhookService.handleRoomStarted({ name: roomId } as unknown as Room);
+					} catch (error) {
+						this.logger.error(`Error reconciling room '${roomId}':`, error);
+						// Continue with other rooms even if one fails
+					}
+				},
+				{ concurrency: INTERNAL_CONFIG.CONCURRENCY_VALIDATE_ROOMS_STATUS, failFast: true }
+			);
+
+			this.logger.warn(`Open-room reconciliation finished. Total rooms reconciled: ${roomIdsToReconcile.length}`);
+		} catch (error) {
+			this.logger.error('Error reconciling open rooms with a live meeting:', error);
 		}
 	}
 

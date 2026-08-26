@@ -351,6 +351,24 @@ export class RoomRepository extends BaseRepository<MeetRoom, MeetRoomDocument> {
 	}
 
 	/**
+	 * Finds which of the given room IDs are currently `open` in Mongo.
+	 *
+	 * The candidate set is expected to be small (LiveKit's currently active rooms, not the full room
+	 * history), so this is intentionally unbounded rather than paginated.
+	 *
+	 * @param roomIds - Candidate room identifiers to check
+	 * @returns The subset of roomIds whose Mongo status is `open`
+	 */
+	async findOpenRoomIds(roomIds: string[]): Promise<string[]> {
+		if (roomIds.length === 0) {
+			return [];
+		}
+
+		const rooms = await this.findAll({ roomId: { $in: roomIds }, status: MeetRoomStatus.OPEN }, ['roomId']);
+		return rooms.map((room) => room.roomId);
+	}
+
+	/**
 	 * Deletes a room by its roomId.
 	 *
 	 * @param roomId - The unique room identifier
