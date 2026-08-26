@@ -5,4 +5,4 @@ content:
             $ref: '../../../shared/schemas/error.yaml'
         example:
             error: 'Webhook Error'
-            message: 'The maximum number of registered webhooks (20) has been reached'
+            message: 'The maximum number of registered webhooks (10) has been reached'

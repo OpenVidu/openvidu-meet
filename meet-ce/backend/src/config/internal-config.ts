@@ -53,7 +53,7 @@ export const INTERNAL_CONFIG = {
 	MEETING_PRESENCE_TTL: '32d' as StringValue, // Time-to-live for user/room presence mappings used to kick users from meetings
 
 	// Webhooks
-	WEBHOOK_MAX_ENDPOINTS: 20, // Maximum number of registered webhooks per deployment (caps the delivery fan-out)
+	WEBHOOK_MAX_ENDPOINTS: 10, // Maximum number of registered webhooks per deployment; also the delivery concurrency, so no endpoint ever queues behind another
 	WEBHOOK_RETRY_ATTEMPTS: 5, // Delivery retries per endpoint and event (exponential backoff, isolated per endpoint)
 	WEBHOOK_RETRY_INITIAL_DELAY: 300, // Initial backoff delay in ms between webhook delivery retries (doubles per retry)
 	WEBHOOK_REQUEST_TIMEOUT: 5000, // Timeout in ms for each webhook HTTP request (delivery and URL test)
@@ -62,7 +62,6 @@ export const INTERNAL_CONFIG = {
 	ASSISTANT_STATE_LOCK_TTL: '60s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
 
 	// Batch and concurrency processing settings
-	DEFAULT_CONCURRENCY: 10, // Default concurrency limit for concurrent operations
 	BATCH_SIZE_ROOMS_EXPIRED_GC: 100, // Number of expired rooms to process per batch during GC
 	BATCH_SIZE_ROOMS_STATUS_VALIDATION_GC: 100, // Number of active rooms to validate per batch during status consistency GC
 	BATCH_SIZE_MEETING_MAX_DURATION_GC: 100, // Number of duration-limited active rooms to evaluate per batch during max-duration GC

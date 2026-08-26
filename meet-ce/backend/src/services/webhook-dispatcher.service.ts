@@ -253,7 +253,11 @@ export class WebhookDispatcherService {
 			},
 			body
 		};
-		const deliveries = await runConcurrently(webhooks, (webhook) => this.fetchWithRetry(webhook.url, requestInit));
+		const deliveries = await runConcurrently(
+			webhooks,
+			(webhook) => this.fetchWithRetry(webhook.url, requestInit),
+			{ concurrency: INTERNAL_CONFIG.WEBHOOK_MAX_ENDPOINTS }
+		);
 
 		deliveries.forEach((delivery, index) => {
 			if (delivery.status === 'rejected') {
