@@ -2,8 +2,10 @@
     get:
         operationId: meetingGet
         summary: Get the live meeting info
-        description: >
+        description: |
             Returns the live info of the meeting currently running in an OpenVidu Meet room.
+
+            Requires the `meetingRead` permission when using a room-member token.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -55,10 +57,12 @@
     get:
         operationId: participantList
         summary: List the participants of a meeting
-        description: >
+        description: |
             Lists the participants currently in the meeting of an OpenVidu Meet room, as live
             snapshots: identity, the application-provided correlation fields (`externalId`,
             `metadata`), effective role, join date and current media state.
+
+            Requires the `meetingRead` permission when using a room-member token.
         tags:
             - OpenVidu Meet - Meetings
         security:
@@ -115,8 +119,10 @@
     get:
         operationId: participantGet
         summary: Get one participant of a meeting
-        description: >
+        description: |
             Returns the live snapshot of one participant in the meeting of an OpenVidu Meet room.
+
+            Requires the `meetingRead` permission when using a room-member token.
         tags:
             - OpenVidu Meet - Meetings
         security:
