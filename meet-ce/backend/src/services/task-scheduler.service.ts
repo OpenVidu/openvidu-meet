@@ -10,8 +10,8 @@ import { MutexService } from './mutex.service.js';
 
 @injectable()
 export class TaskSchedulerService {
-	private taskRegistry: IScheduledTask[] = [];
-	private scheduledTasks = new Map<string, CronJob | NodeJS.Timeout>();
+	protected taskRegistry: IScheduledTask[] = [];
+	protected scheduledTasks = new Map<string, CronJob | NodeJS.Timeout>();
 	private started = false;
 
 	constructor(
@@ -25,14 +25,12 @@ export class TaskSchedulerService {
 				void this.scheduleTask(task);
 			});
 			this.started = true;
+		});
 
-			this.systemEventService.onceRedisError(() => {
-				this.logger.warn('Redis shutdown detected. Cancelling all scheduled tasks...');
-				this.scheduledTasks.forEach((task, name) => {
-					this.cancelTask(name);
-				});
-				this.started = false;
-			});
+		this.systemEventService.onRedisDisconnected(() => {
+			this.logger.warn('Redis disconnected. Stopping all scheduled tasks until it is back...');
+			this.taskRegistry.forEach(({ name }) => this.stopTask(name));
+			this.started = false;
 		});
 	}
 
@@ -100,6 +98,7 @@ export class TaskSchedulerService {
 				void (async () => {
 					try {
 						this.scheduledTasks.delete(name);
+						this.unregisterTask(name);
 						await callback();
 					} catch (error) {
 						this.logger.error(`Error running timeout task "${name}":`, error);
@@ -111,22 +110,36 @@ export class TaskSchedulerService {
 	}
 
 	/**
-	 * Cancel the scheduled task with the given name.
+	 * Stops the scheduled task with the given name and unregisters it, so it is not
+	 * scheduled again when Redis reconnects.
 	 */
 	public cancelTask(name: string): void {
+		this.stopTask(name);
+		this.unregisterTask(name);
+		this.logger.debug(`Task '${name}' cancelled.`);
+	}
+
+	/**
+	 * Stops the schedule of the given task, keeping it registered so it can be scheduled again.
+	 */
+	protected stopTask(name: string): void {
 		const scheduled = this.scheduledTasks.get(name);
 
-		if (scheduled) {
-			if (scheduled instanceof CronJob) {
-				void scheduled.stop();
-			} else {
-				clearTimeout(scheduled);
-			}
-
-			this.scheduledTasks.delete(name);
-			this.taskRegistry = this.taskRegistry.filter((task) => task.name !== name);
-			this.logger.debug(`Task '${name}' cancelled.`);
+		if (!scheduled) {
+			return;
 		}
+
+		if (scheduled instanceof CronJob) {
+			void scheduled.stop();
+		} else {
+			clearTimeout(scheduled);
+		}
+
+		this.scheduledTasks.delete(name);
+	}
+
+	protected unregisterTask(name: string): void {
+		this.taskRegistry = this.taskRegistry.filter((task) => task.name !== name);
 	}
 
 	/**

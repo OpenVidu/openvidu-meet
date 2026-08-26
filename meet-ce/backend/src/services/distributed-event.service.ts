@@ -76,8 +76,13 @@ export class DistributedEventService {
 		this.redisService.onReady(callback);
 	}
 
-	onceRedisError(callback: () => void) {
-		this.redisService.onceError(callback);
+	/**
+	 * Registers a callback function to be executed when the Redis connection is lost.
+	 *
+	 * @param callback - A function to be called when the Redis connection goes down.
+	 */
+	onRedisDisconnected(callback: () => void) {
+		this.redisService.onDisconnected(callback);
 	}
 
 	/**

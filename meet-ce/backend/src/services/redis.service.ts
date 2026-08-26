@@ -91,8 +91,8 @@ export class RedisService extends EventEmitter {
 		this.on('redisConnected', callback);
 	}
 
-	public onceError(callback: () => void) {
-		this.once('redisError', callback);
+	public onDisconnected(callback: () => void) {
+		this.on('redisDisconnected', callback);
 	}
 
 	/**
