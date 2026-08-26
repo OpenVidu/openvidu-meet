@@ -1023,7 +1023,7 @@ export class RoomMemberService {
 			canPublishSources,
 			canSubscribe: true,
 			canPublishData: permissions.chatWrite,
-			canUpdateOwnMetadata: true
+			canUpdateOwnMetadata: false
 		};
 		return livekitPermissions;
 	}

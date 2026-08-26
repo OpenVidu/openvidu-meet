@@ -747,7 +747,7 @@ const getLiveKitPermissions = (roomId: string, permissions: MeetRoomMemberPermis
 		canPublishSources,
 		canSubscribe: true,
 		canPublishData: true,
-		canUpdateOwnMetadata: true
+		canUpdateOwnMetadata: false
 	};
 	return livekitPermissions;
 };

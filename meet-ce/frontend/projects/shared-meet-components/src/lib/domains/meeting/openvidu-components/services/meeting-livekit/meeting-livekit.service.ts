@@ -6,7 +6,6 @@ import { CAMERA_CAPTURE_DEFAULTS, MICROPHONE_CAPTURE_DEFAULTS } from '../../mode
 import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { ConnectionState, E2EEOptions, ExternalE2EEKeyProvider, Room, RoomEvent, RoomOptions } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
-import { MediaStorageService } from '../storage/storage.service';
 
 /**
  * Owns the live meeting connection end to end: the LiveKit Room lifecycle (create / connect /
@@ -16,7 +15,7 @@ import { MediaStorageService } from '../storage/storage.service';
  */
 @Service()
 export class MeetingLiveKitService {
-	private readonly storageService = inject(MediaStorageService);
+	private readonly deviceService = inject(DeviceService);
 	private readonly configService = inject(MeetingUiConfigService);
 	private readonly livekitSdkService = inject(LivekitSdkService);
 	private readonly assets = inject(AssetsService);
@@ -203,12 +202,6 @@ export class MeetingLiveKitService {
 
 			await this.livekitSdkService.connectRoom(room, this.livekitUrl, this.livekitToken);
 			this.log.d(`Successfully connected to room ${room.name}`);
-
-			const participantName = this.storageService.getParticipantName();
-
-			if (participantName) {
-				room.localParticipant.setName(participantName);
-			}
 		} catch (error) {
 			this.log.e('Error connecting to room:', error);
 			throw {

@@ -6,7 +6,6 @@ import { MeetingUiConfigService } from '../config/meeting-ui-config.service';
 import { DeviceService } from '../device/device.service';
 import { ConnectionState, Room, RoomEvent } from '../livekit';
 import { LivekitSdkService } from '../livekit/livekit-sdk.service';
-import { MediaStorageService } from '../storage/storage.service';
 import { MeetingLiveKitService } from './meeting-livekit.service';
 
 class LoggerServiceStub {
@@ -80,10 +79,6 @@ describe('MeetingLiveKitService', () => {
 						cameraSelected: () => undefined,
 						microphoneSelected: () => undefined
 					} as unknown as DeviceService
-				},
-				{
-					provide: MediaStorageService,
-					useValue: { getParticipantName: () => null } as unknown as MediaStorageService
 				},
 				// No E2EE key: init() takes the plain path and never touches the worker.
 				{
