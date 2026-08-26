@@ -321,7 +321,10 @@ export class WebhookDispatcherService {
 
 			// Handle timeout error specifically
 			if (error instanceof Error && error.name === 'AbortError') {
-				throw new Error(`Request timed out after  seconds`, { cause: error });
+				throw new Error(
+					`Request timed out after ${INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT / 1000} seconds`,
+					{ cause: error }
+				);
 			}
 
 			// Re-throw other errors
@@ -374,7 +377,7 @@ export class WebhookDispatcherService {
 			const errorMessage = error instanceof Error ? error.message : String(error);
 
 			if (errorName === 'AbortError') {
-				reason = `Request timed out after  seconds`;
+				reason = `Request timed out after ${INTERNAL_CONFIG.WEBHOOK_REQUEST_TIMEOUT / 1000} seconds`;
 			} else if (errorName === 'TypeError' && errorMessage.includes('fetch')) {
 				// Network errors
 				const errorCode =
