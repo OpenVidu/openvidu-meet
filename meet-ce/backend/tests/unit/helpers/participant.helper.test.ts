@@ -228,6 +228,26 @@ describe('MeetParticipantHelper.extractLeftReason', () => {
 		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.UNKNOWN_REASON)).toBe(LeftEventReason.UNKNOWN);
 		expect(MeetParticipantHelper.extractLeftReason(DisconnectReason.MIGRATION)).toBe(LeftEventReason.UNKNOWN);
 	});
+
+	it('never produces MEETING_ENDED_BY_SELF: no disconnect reason carries who ended the meeting', () => {
+		const everyDisconnectReason = Object.values(DisconnectReason).filter(
+			(value): value is DisconnectReason => typeof value === 'number'
+		);
+		const reachable = new Set(everyDisconnectReason.map((reason) => MeetParticipantHelper.extractLeftReason(reason)));
+
+		expect(reachable.has(LeftEventReason.MEETING_ENDED_BY_SELF)).toBe(false);
+		expect(reachable).toEqual(
+			new Set([
+				LeftEventReason.VOLUNTARY_LEAVE,
+				LeftEventReason.NETWORK_DISCONNECT,
+				LeftEventReason.SERVER_SHUTDOWN,
+				LeftEventReason.PARTICIPANT_KICKED,
+				LeftEventReason.MEETING_ENDED,
+				LeftEventReason.DUPLICATE_IDENTITY,
+				LeftEventReason.UNKNOWN
+			])
+		);
+	});
 });
 
 describe('MeetParticipantHelper.extractMediaState', () => {

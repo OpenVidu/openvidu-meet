@@ -24,7 +24,6 @@ allOf:
                   - server_shutdown
                   - participant_kicked
                   - meeting_ended
-                  - meeting_ended_by_self
                   - duplicate_identity
                   - unknown
               example: 'voluntary_leave'
