@@ -301,6 +301,49 @@ describe('findPermissionAliasConflicts', () => {
 		]);
 	});
 
+	it('should accept a split alias that matches the AND of its complete group', () => {
+		// The shape the server itself serializes for a partial recording grant: the alias is
+		// redundant, and rejecting it would 422 the echo of a compatibility-mode response.
+		expect(
+			findPermissionAliasConflicts({
+				canRetrieveRecordings: false,
+				recordingList: true,
+				recordingPlay: true,
+				recordingDownload: false
+			})
+		).toEqual([]);
+	});
+
+	it('should still report a split alias that contradicts the AND of its complete group', () => {
+		// A legacy revoke echoing a stale all-true group: resolving it silently (current keys win in
+		// normalizePermissions) would keep granted a permission the caller believes revoked.
+		expect(
+			findPermissionAliasConflicts({
+				canRetrieveRecordings: false,
+				recordingList: true,
+				recordingPlay: true,
+				recordingDownload: true
+			})
+		).toHaveLength(3);
+
+		// The grant direction stays loud too: the alias asks for the whole group.
+		expect(
+			findPermissionAliasConflicts({
+				canRetrieveRecordings: true,
+				recordingList: true,
+				recordingPlay: true,
+				recordingDownload: false
+			})
+		).toEqual([
+			{
+				deprecatedKey: 'canRetrieveRecordings',
+				replacementKey: 'recordingDownload',
+				deprecatedValue: true,
+				replacementValue: false
+			}
+		]);
+	});
+
 	it('should report every contradicting pair', () => {
 		const conflicts = findPermissionAliasConflicts({
 			canRecord: false,

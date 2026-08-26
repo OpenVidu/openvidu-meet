@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
 import { MEET_PERMISSION_KEYS } from '@openvidu-meet/typings';
+import { withDeprecatedPermissionAliases } from '../../src/helpers/permission-naming.helper.js';
 import {
 	MeetPermissionsSchema,
 	MeetTokenPermissionsSchema,
@@ -127,6 +128,23 @@ describe('PartialMeetPermissionsSchema (partial, compatibility mode)', () => {
 		const result = PartialMeetPermissionsSchema.safeParse({ somethingElse: true, chatRead: true });
 		expect(result.success).toBe(true);
 		expect(result.data).toEqual({ chatRead: true });
+	});
+});
+
+/**
+ * GET → PUT round-trip: both permission-carrying PUT endpoints (member customPermissions and room
+ * roles) validate with PartialMeetPermissionsSchema, so the wire shape the server produces in
+ * compatibility mode must always parse back to the stored permissions. The deprecated split flag
+ * collapses with AND, so a partial recording grant is the shape where the served alias disagrees
+ * with part of its group. Removed in 3.12.0 together with the deprecated aliases.
+ */
+describe('Compatibility-mode round-trip (served permissions echoed back)', () => {
+	it('should accept its own wire output when the recording grant is partial', () => {
+		const stored = { ...fullCurrentInput, recordingDownload: false };
+		const result = PartialMeetPermissionsSchema.safeParse(withDeprecatedPermissionAliases(stored));
+
+		expect(result.success).toBe(true);
+		expect(result.data).toEqual(stored);
 	});
 });
 

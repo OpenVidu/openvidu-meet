@@ -6,11 +6,12 @@ description: |
     server, with two values.
 
     - **`compatibility`** (the default): the former `can*` spellings remain available alongside the new keys.
-      Requests accept any mix of both key sets — sending a deprecated key together with one of its replacements
-      with a contradicting value is rejected with a `422` — and responses (and webhooks) carry **both** key sets,
-      so integrations can migrate endpoint by endpoint. Responses carrying the deprecated names include a
-      `Deprecation: true` header. When updating an object read from the API, change **both** spellings of a
-      permission (or strip one key set first): editing only one of them produces a contradiction and a `422`.
+      Requests accept any mix of both key sets — a deprecated key that contradicts what its replacements say
+      (for `canRetrieveRecordings`, the AND of its group) is rejected with a `422` — and responses (and
+      webhooks) carry **both** key sets, so integrations can migrate endpoint by endpoint: an object read from
+      the API is always accepted back unchanged. Responses carrying the deprecated names include a
+      `Deprecation: true` header. When updating a permission, change **both** spellings of it (or strip one
+      key set first): a stale spelling contradicting the edit produces a `422`.
     - **`3.9.0`**: only the new keys exist. A request using a deprecated key is rejected with a `422` naming its
       replacement, and responses and webhooks carry only the new keys.
 

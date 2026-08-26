@@ -482,12 +482,15 @@ export function toDeprecatedPermissions(
 }
 
 /**
- * Finds alias keys supplied together with a replacement key that contradicts them. An empty array
+ * Finds alias keys supplied together with replacement keys that contradict them. An empty array
  * means the input is unambiguous and safe to {@link normalizePermissions}.
  *
- * A split alias is checked against **every** key of its group, so
- * `{ canRetrieveRecordings: true, recordingDownload: false }` is reported: the caller is asking for
- * two different things at once and the request should be rejected rather than silently resolved.
+ * An alias equal to what {@link toDeprecatedPermissions} derives from the supplied current keys is
+ * redundant, not a conflict — a compatibility-mode response echoed back unchanged is always valid
+ * input. Everything else is checked key by key: `{ canRetrieveRecordings: true, recordingDownload:
+ * false }` is reported (the alias grants the whole group), and so is a stale
+ * `canRetrieveRecordings: false` next to an all-true group — resolving that silently would leave
+ * granted a permission the caller meant to revoke.
  *
  * Removed in **3.12.0** together with the deprecated aliases.
  *
@@ -496,12 +499,17 @@ export function toDeprecatedPermissions(
  */
 export function findPermissionAliasConflicts(input: MeetPermissionsInput): MeetPermissionAliasConflict[] {
 	const record = input as Readonly<Record<string, unknown>>;
+	const serialized = toDeprecatedPermissions(record as Readonly<Partial<Record<MeetPermissionKey, boolean>>>);
 	const conflicts: MeetPermissionAliasConflict[] = [];
 
 	for (const [deprecatedKey, replacementKeys] of Object.entries(MEET_PERMISSION_ALIASES)) {
 		const deprecatedValue = record[deprecatedKey];
 
 		if (typeof deprecatedValue !== 'boolean') {
+			continue;
+		}
+
+		if (deprecatedValue === serialized[deprecatedKey as MeetDeprecatedPermissionKey]) {
 			continue;
 		}
 
