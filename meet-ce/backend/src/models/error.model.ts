@@ -446,6 +446,10 @@ export const errorMaxWebhooksReached = (max: number): OpenViduMeetError => {
 	);
 };
 
+export const errorWebhookCreationInProgress = (): OpenViduMeetError => {
+	return new OpenViduMeetError('Webhook Error', 'Another webhook registration is in progress, please retry', 409);
+};
+
 // Handlers
 
 export const handleError = (res: Response, error: unknown, operationDescription: string) => {

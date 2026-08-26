@@ -1,12 +1,19 @@
 import type { MeetWebhook, MeetWebhookOptions } from '@openvidu-meet/typings';
 import { inject, injectable } from 'inversify';
+import ms from 'ms';
 import { uid } from 'uid/single';
 import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MEET_ENV } from '../environment.js';
+import { MeetLock } from '../helpers/redis.helper.js';
 import { DocumentNotFoundError } from '../models/database.model.js';
-import { errorMaxWebhooksReached, errorWebhookNotFound } from '../models/error.model.js';
+import {
+	errorMaxWebhooksReached,
+	errorWebhookCreationInProgress,
+	errorWebhookNotFound
+} from '../models/error.model.js';
 import { WebhookRepository } from '../repositories/webhook.repository.js';
 import { LoggerService } from './logger.service.js';
+import { MutexService } from './mutex.service.js';
 import { WebhookDispatcherService } from './webhook-dispatcher.service.js';
 
 /**
@@ -25,7 +32,8 @@ export class WebhookRegistryService {
 	constructor(
 		@inject(LoggerService) protected logger: LoggerService,
 		@inject(WebhookRepository) protected webhookRepository: WebhookRepository,
-		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService
+		@inject(WebhookDispatcherService) protected webhookDispatcherService: WebhookDispatcherService,
+		@inject(MutexService) protected mutexService: MutexService
 	) {}
 
 	/**
@@ -51,25 +59,41 @@ export class WebhookRegistryService {
 	/**
 	 * Registers a new webhook.
 	 *
+	 * Serialized deployment-wide: counting the existing webhooks and inserting the new one must
+	 * happen as one unit, or two concurrent registrations at the cap boundary could both pass the
+	 * count check and together overshoot `WEBHOOK_MAX_ENDPOINTS`.
+	 *
 	 * @throws A 409 error when the maximum number of registered webhooks has been reached
+	 * @throws A 409 error when another registration is already in progress
 	 */
 	async createWebhook(options: MeetWebhookOptions): Promise<MeetWebhook> {
-		const count = await this.webhookRepository.count();
+		const createdWebhook = await this.mutexService.withLock(
+			MeetLock.getWebhookRegistrationLock(),
+			ms(INTERNAL_CONFIG.WEBHOOK_REGISTRY_LOCK_TTL),
+			async () => {
+				const count = await this.webhookRepository.count();
 
-		if (count >= INTERNAL_CONFIG.WEBHOOK_MAX_ENDPOINTS) {
-			throw errorMaxWebhooksReached(INTERNAL_CONFIG.WEBHOOK_MAX_ENDPOINTS);
+				if (count >= INTERNAL_CONFIG.WEBHOOK_MAX_ENDPOINTS) {
+					throw errorMaxWebhooksReached(INTERNAL_CONFIG.WEBHOOK_MAX_ENDPOINTS);
+				}
+
+				const webhook: MeetWebhook = {
+					webhookId: `wh-${uid(15)}`,
+					url: options.url,
+					events: options.events,
+					roomId: options.roomId,
+					enabled: options.enabled ?? true,
+					creationDate: Date.now()
+				};
+
+				return this.webhookRepository.create(webhook);
+			}
+		);
+
+		if (!createdWebhook) {
+			throw errorWebhookCreationInProgress();
 		}
 
-		const webhook: MeetWebhook = {
-			webhookId: `wh-${uid(15)}`,
-			url: options.url,
-			events: options.events,
-			roomId: options.roomId,
-			enabled: options.enabled ?? true,
-			creationDate: Date.now()
-		};
-
-		const createdWebhook = await this.webhookRepository.create(webhook);
 		this.logger.info(`Webhook '${createdWebhook.webhookId}' created for URL '${createdWebhook.url}'`);
 		return createdWebhook;
 	}

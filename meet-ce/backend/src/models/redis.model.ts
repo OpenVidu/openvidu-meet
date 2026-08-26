@@ -32,5 +32,6 @@ export const enum RedisLockName {
 	STORAGE_INITIALIZATION = 'storage_initialization',
 	MIGRATION = 'migration',
 	WEBHOOK = 'webhook',
+	WEBHOOK_REGISTRATION = 'webhook_registration',
 	AI_ASSISTANT = 'ai_assistant'
 }

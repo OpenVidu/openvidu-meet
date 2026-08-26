@@ -57,6 +57,7 @@ export const INTERNAL_CONFIG = {
 	WEBHOOK_RETRY_ATTEMPTS: 5, // Delivery retries per endpoint and event (exponential backoff, isolated per endpoint)
 	WEBHOOK_RETRY_INITIAL_DELAY: 300, // Initial backoff delay in ms between webhook delivery retries (doubles per retry)
 	WEBHOOK_REQUEST_TIMEOUT: 5000, // Timeout in ms for each webhook HTTP request (delivery and URL test)
+	WEBHOOK_REGISTRY_LOCK_TTL: '5s' as StringValue, // Redis lock TTL serializing the webhook registration count-then-create against WEBHOOK_MAX_ENDPOINTS
 
 	CAPTIONS_AGENT_NAME: 'speech-processing',
 	ASSISTANT_STATE_LOCK_TTL: '60s' as StringValue, // Redis lock TTL for AI assistant state (start/stop operations)
