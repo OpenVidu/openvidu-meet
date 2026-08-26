@@ -1,5 +1,6 @@
 import { inject, injectable } from 'inversify';
 import ms from 'ms';
+import { INTERNAL_CONFIG } from '../../config/internal-config.js';
 import { MEET_ENV } from '../../environment.js';
 import { MeetLock } from '../../helpers/redis.helper.js';
 import { internalError } from '../../models/error.model.js';
@@ -31,38 +32,48 @@ export class StorageInitService {
 	/**
 	 * Initializes the storage with default data if not already initialized.
 	 * This includes global config, admin user and API key.
+	 *
+	 * The initialization is state-gated, so an instance that finds the lock taken waits and then
+	 * runs the check itself instead of assuming the holder completed it. If the lock is still
+	 * unavailable after the retry budget, startup fails rather than serving on unseeded storage.
 	 */
 	async initializeStorage(): Promise<void> {
 		const lockKey = MeetLock.getStorageInitializationLock();
 
 		try {
-			const executionResult = await this.mutexService.withLock(lockKey, ms('30s'), async () => {
-				const isInitialized = await this.checkStorageInitialization();
+			const executionResult = await this.mutexService.withRetryLock(
+				lockKey,
+				ms(INTERNAL_CONFIG.STORAGE_INIT_LOCK_TTL),
+				async () => {
+					const isInitialized = await this.checkStorageInitialization();
 
-				if (isInitialized) {
-					this.logger.verbose('Storage already initialized for this project');
-					return;
-				}
+					if (isInitialized) {
+						this.logger.verbose('Storage already initialized for this project');
+						return true;
+					}
 
-				this.logger.info('Starting storage initialization with default data');
+					this.logger.info('Starting storage initialization with default data');
 
-				// Initialize all components
-				await Promise.all([
-					this.globalConfigService.initializeGlobalConfig(),
-					this.userService.initializeAdminUser(),
-					this.apiKeyService.initializeApiKey(),
-					this.webhookRegistryService.initializeDefaultWebhook()
-				]);
+					// Initialize all components
+					await Promise.all([
+						this.globalConfigService.initializeGlobalConfig(),
+						this.userService.initializeAdminUser(),
+						this.apiKeyService.initializeApiKey(),
+						this.webhookRegistryService.initializeDefaultWebhook()
+					]);
 
-				this.logger.info('Storage initialization completed successfully');
-				return true;
-			});
+					this.logger.info('Storage initialization completed successfully');
+					return true;
+				},
+				INTERNAL_CONFIG.STORAGE_INIT_LOCK_MAX_ATTEMPTS,
+				ms(INTERNAL_CONFIG.STORAGE_INIT_LOCK_RETRY_DELAY)
+			);
 
 			if (executionResult === null) {
-				this.logger.warn(
-					'Unable to acquire lock for storage initialization. May be already initialized by another instance.'
+				throw new Error(
+					`Could not acquire storage initialization lock '${lockKey}' after ` +
+						`${INTERNAL_CONFIG.STORAGE_INIT_LOCK_MAX_ATTEMPTS} attempts`
 				);
-				return;
 			}
 		} catch (error) {
 			this.logger.error('Error initializing storage with default data:', error);

@@ -84,6 +84,16 @@ export const INTERNAL_CONFIG = {
 	CONCURRENCY_BULK_CLEANUP_USER_RESOURCES: 20, // Concurrency limit for bulk cleanup of user resources
 	CONCURRENCY_BULK_CLEANUP_PARTICIPANT_NAME_RESERVATIONS: 20, // Concurrency limit for bulk cleanup of participant name reservations
 
+	// Boot-time locks (migrations, storage seeding). The guarded routines are idempotent, so a
+	// contender waits for the lock and re-runs them itself instead of assuming the holder finished;
+	// each retry budget outlives its lock TTL so a dead holder's lock lapses within the window.
+	MIGRATION_LOCK_TTL: '5m' as StringValue, // Redis lock TTL serializing startup migrations across instances
+	MIGRATION_LOCK_RETRY_DELAY: '5s' as StringValue, // Delay between migration lock acquisition attempts
+	MIGRATION_LOCK_MAX_ATTEMPTS: 72, // ~6min budget; boot fails if the lock is still unavailable after this
+	STORAGE_INIT_LOCK_TTL: '30s' as StringValue, // Redis lock TTL serializing default-data seeding across instances
+	STORAGE_INIT_LOCK_RETRY_DELAY: '2s' as StringValue, // Delay between storage init lock acquisition attempts
+	STORAGE_INIT_LOCK_MAX_ATTEMPTS: 30, // ~1min budget; boot fails if the lock is still unavailable after this
+
 	// MongoDB Schema Versions
 	// These define the current schema version for each collection
 	// Increment when making breaking changes to the schema structure

@@ -1,6 +1,7 @@
 import { inject, injectable } from 'inversify';
 import type { Model, QueryFilter, Require_id, Types } from 'mongoose';
 import ms from 'ms';
+import { INTERNAL_CONFIG } from '../config/internal-config.js';
 import { MeetLock } from '../helpers/redis.helper.js';
 import { runtimeMigrationRegistry } from '../migrations/migration-registry.js';
 import { WebhookMigration } from '../migrations/webhooks-migration.js';
@@ -29,7 +30,11 @@ export class MigrationService {
 	 * Runs all necessary migrations to update existing data structures.
 	 * This method should be called during startup to ensure backwards compatibility.
 	 *
-	 * Uses distributed locking to ensure only one instance runs migrations in HA mode.
+	 * Every instance runs the migrations; the distributed lock only serializes them. All steps are
+	 * idempotent (state-gated), so an instance that finds the lock taken waits and then runs the
+	 * scan itself instead of assuming the holder completed it — the holder may have crashed or be
+	 * an older version that doesn't know these migrations. If the lock is still unavailable after
+	 * the retry budget, startup fails rather than serving traffic on possibly unmigrated data.
 	 *
 	 * Migration flow:
 	 * 1) Data migrations (e.g. WebhookMigration) — may depend on fields step 2 is about to remove
@@ -41,22 +46,31 @@ export class MigrationService {
 		const lockKey = MeetLock.getMigrationLock();
 
 		try {
-			const executionResult = await this.mutexService.withLock(lockKey, ms('5m'), async () => {
-				// Run data migrations that may depend on existing schema fields
-				await this.webhookMigration.run();
+			const executionResult = await this.mutexService.withRetryLock(
+				lockKey,
+				ms(INTERNAL_CONFIG.MIGRATION_LOCK_TTL),
+				async () => {
+					// Run data migrations that may depend on existing schema fields
+					await this.webhookMigration.run();
 
-				// Run schema migrations to upgrade document structures
-				await this.runSchemaMigrations();
+					// Run schema migrations to upgrade document structures
+					await this.runSchemaMigrations();
 
-				// Sync collection indexes to match current schema definitions
-				await this.runIndexMigrations();
+					// Sync collection indexes to match current schema definitions
+					await this.runIndexMigrations();
 
-				return true;
-			});
+					return true;
+				},
+				INTERNAL_CONFIG.MIGRATION_LOCK_MAX_ATTEMPTS,
+				ms(INTERNAL_CONFIG.MIGRATION_LOCK_RETRY_DELAY)
+			);
 
 			if (executionResult === null) {
-				this.logger.warn('Unable to acquire lock for migrations. May be already running on another instance.');
-				return;
+				throw new Error(
+					`Could not acquire migration lock '${lockKey}' after ` +
+						`${INTERNAL_CONFIG.MIGRATION_LOCK_MAX_ATTEMPTS} attempts. Aborting startup ` +
+						'instead of serving traffic on possibly unmigrated data.'
+				);
 			}
 
 			this.logger.info('All migrations completed successfully');
@@ -268,7 +282,9 @@ export class MigrationService {
 		);
 
 		if (pendingDocumentsBefore === 0) {
-			this.logger.verbose(`Migration ${migrationChainExecutionName} has no pending documents, skipping execution`);
+			this.logger.verbose(
+				`Migration ${migrationChainExecutionName} has no pending documents, skipping execution`
+			);
 			return 0;
 		}
 
